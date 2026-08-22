@@ -131,12 +131,7 @@ class Cardinal(MathematicalObject):
             return False
         if self._kind is CardinalKind.INDEXED_SUM or self._kind is CardinalKind.INDEXED_PRODUCT:
             return False
-        return (
-            self._kind is value._kind
-            and self._finite_value == value._finite_value
-            and self._name == value._name
-            and self._terms == value._terms
-        )
+        return self._kind is value._kind and self._finite_value == value._finite_value and self._name == value._name and self._terms == value._terms
 
     def __hash__(self) -> int:
         if self._kind is CardinalKind.INDEXED_SUM or self._kind is CardinalKind.INDEXED_PRODUCT:

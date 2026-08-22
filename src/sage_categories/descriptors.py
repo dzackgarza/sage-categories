@@ -1,32 +1,33 @@
-"""Descriptors installed on complete implementation classes."""
+"""Descriptors for functorial method inheritance."""
 
 from __future__ import annotations
 
-from types import MethodType
+from types import FunctionType, MethodType
 from typing import TYPE_CHECKING
 
-from sage_categories.values import MathematicalObject
-
 if TYPE_CHECKING:
-    from sage_categories.category import Category
+    from sage_categories.abstract_categories.functors import StructuralFunctor
+    from sage_categories.values import MathematicalObject
 
 
-class ForwardedAttribute:
-    """Read a method from an object's cached functor image."""
+class ForwardedMethod:
+    """Bind a category-owned method to an object's structural-functor image."""
 
-    def __init__(self, owner: Category, name: str) -> None:
-        self._owner = owner
-        self._name = name
+    def __init__(
+        self,
+        route: tuple[StructuralFunctor, ...],
+        method: FunctionType,
+    ) -> None:
+        assert route
+        self._route = route
+        self._method = method
 
     def __get__(
         self,
         instance: MathematicalObject | None,
-        owner_type: type[MathematicalObject] | None = None,
-    ) -> ForwardedAttribute | MethodType:
+        owner: type[MathematicalObject] | None = None,
+    ) -> ForwardedMethod | MethodType:
         if instance is None:
             return self
-        implementation = instance.implementation_in(self._owner)
-        method = getattr(implementation, self._name)
-        if not isinstance(method, MethodType):
-            raise TypeError(f"{self._owner!r}.{self._name} is not an instance method")
-        return method
+        image = instance._image_along(self._route)
+        return self._method.__get__(image)

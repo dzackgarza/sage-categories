@@ -1,19 +1,19 @@
-"""Compile category-local declarations into complete implementation types."""
+"""Compile category-owned methods along selected structural functors."""
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+import inspect
+from collections.abc import Callable, Mapping
 from types import FunctionType, new_class
+from typing import TYPE_CHECKING
 
-from sage_categories.category import Category, ImplementationKind
-from sage_categories.descriptors import ForwardedAttribute
-from sage_categories.errors import IncoherentRouteError, MethodCollisionError
-from sage_categories.functor import Functor
-from sage_categories.values import (
-    MathematicalElement,
-    MathematicalMorphism,
-    MathematicalObject,
-)
+from sage_categories.descriptors import ForwardedMethod
+from sage_categories.values import MathematicalElement, MathematicalObject
+
+if TYPE_CHECKING:
+    from sage_categories.abstract_categories.functors import StructuralFunctor
+    from sage_categories.category import Category
+
 
 _IGNORED_METHODS = frozenset(
     {
@@ -26,132 +26,192 @@ _IGNORED_METHODS = frozenset(
     }
 )
 
-type ClassNamespaceValue = ForwardedAttribute | str
+type ImplementationType = type[MathematicalObject] | type[MathematicalElement]
+type CompiledClassMember = ForwardedMethod | str
+
+
+class DeclaredMethod:
+    """A method and the category which declares it."""
+
+    def __init__(self, owner: Category, method: FunctionType) -> None:
+        self.owner = owner
+        self.method = method
 
 
 class CategoryCompiler:
-    """Compile method surfaces and structural implementation routes."""
+    """Compile object and element method surfaces from a functor graph."""
 
     def __init__(self) -> None:
         self._object_types: dict[Category, type[MathematicalObject]] = {}
         self._element_types: dict[Category, type[MathematicalElement]] = {}
-        self._arrow_types: dict[Category, type[MathematicalMorphism]] = {}
-        self._catalogues: dict[tuple[Category, ImplementationKind], dict[str, Category]] = {}
-        self._routes: dict[tuple[Category, Category], tuple[Functor, ...]] = {}
+        self._object_catalogues: dict[Category, dict[str, DeclaredMethod]] = {}
+        self._element_catalogues: dict[Category, dict[str, DeclaredMethod]] = {}
+        self._routes: dict[
+            tuple[Category, Category], tuple[StructuralFunctor, ...]
+        ] = {}
 
-    def compiled_object_type(self, category: Category) -> type[MathematicalObject]:
-        """Return the complete object implementation type."""
+    def compiled_object_type(
+        self,
+        category: Category,
+        local_type: type[MathematicalObject],
+    ) -> type[MathematicalObject]:
+        """Return the complete implementation type for objects of ``category``."""
         cached = self._object_types.get(category)
         if cached is not None:
             return cached
-        compiled = self._compile_type(category, ImplementationKind.OBJECT)
-        if not issubclass(compiled, MathematicalObject):
-            raise TypeError("compiled object type has the wrong base")
+        compiled = self._compile_type(
+            category,
+            local_type,
+            self.object_method_catalogue(category),
+        )
         self._object_types[category] = compiled
         return compiled
 
-    def compiled_element_type(self, category: Category) -> type[MathematicalElement]:
-        """Return the complete element implementation type."""
+    def compiled_element_type(
+        self,
+        category: Category,
+        local_type: type[MathematicalElement],
+    ) -> type[MathematicalElement]:
+        """Return the complete implementation type for elements of ``category``."""
         cached = self._element_types.get(category)
         if cached is not None:
             return cached
-        compiled = self._compile_type(category, ImplementationKind.ELEMENT)
-        if not issubclass(compiled, MathematicalElement):
-            raise TypeError("compiled element type has the wrong base")
+        compiled = self._compile_type(
+            category,
+            local_type,
+            self.element_method_catalogue(category),
+        )
         self._element_types[category] = compiled
         return compiled
 
-    def compiled_arrow_type(self, category: Category) -> type[MathematicalMorphism]:
-        """Return the complete arrow implementation type."""
-        cached = self._arrow_types.get(category)
-        if cached is not None:
-            return cached
-        compiled = self._compile_type(category, ImplementationKind.ARROW)
-        if not issubclass(compiled, MathematicalMorphism):
-            raise TypeError("compiled arrow type has the wrong base")
-        self._arrow_types[category] = compiled
-        return compiled
-
-    def method_catalogue(
+    def object_method_catalogue(
         self,
         category: Category,
-        kind: ImplementationKind,
-    ) -> Mapping[str, Category]:
-        """Map exposed method names to their declaring categories."""
-        key = (category, kind)
-        cached = self._catalogues.get(key)
+    ) -> Mapping[str, DeclaredMethod]:
+        """Return the object methods visible in ``category``."""
+        cached = self._object_catalogues.get(category)
         if cached is not None:
             return cached
-
-        local_names = self._local_method_names(category, kind)
-        catalogue: dict[str, Category] = {}
-        for functor in category.super_functors():
-            inherited = self.method_catalogue(functor.codomain(), kind)
-            for name, declaring_category in inherited.items():
-                previous_owner = catalogue.get(name)
-                if previous_owner is None or previous_owner == declaring_category:
-                    catalogue[name] = declaring_category
-                    continue
-                if name not in local_names:
-                    raise MethodCollisionError(f"{category!r} inherits {name!r} from both {previous_owner!r} and {declaring_category!r}")
-        catalogue.update(dict.fromkeys(local_names, category))
-        self._catalogues[key] = catalogue
+        catalogue = self._method_catalogue(
+            category,
+            category.local_object_type(),
+            self.object_method_catalogue,
+        )
+        self._object_catalogues[category] = catalogue
         return catalogue
 
-    def implementation_route(self, source: Category, target: Category) -> tuple[Functor, ...]:
-        """Return the unique selected structural route to a target."""
-        if source == target:
+    def element_method_catalogue(
+        self,
+        category: Category,
+    ) -> Mapping[str, DeclaredMethod]:
+        """Return the element methods visible in ``category``."""
+        cached = self._element_catalogues.get(category)
+        if cached is not None:
+            return cached
+        catalogue = self._method_catalogue(
+            category,
+            category.local_element_type(),
+            self.element_method_catalogue,
+        )
+        self._element_catalogues[category] = catalogue
+        return catalogue
+
+    def implementation_route(
+        self,
+        source: Category,
+        target: Category,
+    ) -> tuple[StructuralFunctor, ...]:
+        """Return the unique structural-functor route from source to target."""
+        if source is target:
             return ()
-        key = (source, target)
+        key = source, target
         cached = self._routes.get(key)
         if cached is not None:
             return cached
-
         routes = self._routes_from(source, target, (source,))
-        if len(routes) > 1:
-            raise IncoherentRouteError(f"{source!r} has {len(routes)} structural routes to {target!r}")
-        if not routes:
-            return ()
-        self._routes[key] = routes[0]
-        return routes[0]
+        assert len(routes) == 1, (
+            f"expected one structural route from {source} to {target}; "
+            f"found {len(routes)}"
+        )
+        route = routes[0]
+        self._routes[key] = route
+        return route
+
+    def _method_catalogue(
+        self,
+        category: Category,
+        local_type: ImplementationType,
+        inherited_catalogue: Callable[[Category], Mapping[str, DeclaredMethod]],
+    ) -> dict[str, DeclaredMethod]:
+        local = self._local_methods(local_type)
+        catalogue: dict[str, DeclaredMethod] = {}
+        for functor in category.super_functors():
+            inherited = inherited_catalogue(functor.codomain())
+            for name, declaration in inherited.items():
+                previous = catalogue.get(name)
+                if previous is None or previous.owner is declaration.owner:
+                    catalogue[name] = declaration
+                    continue
+                assert name in local, (
+                    f"{category} inherits {name} from unrelated categories "
+                    f"{previous.owner} and {declaration.owner}"
+                )
+        for name, method in local.items():
+            catalogue[name] = DeclaredMethod(category, method)
+        return catalogue
 
     def _compile_type(
         self,
         category: Category,
-        kind: ImplementationKind,
-    ) -> type[MathematicalObject] | type[MathematicalElement] | type[MathematicalMorphism]:
-        local_type = category.local_type(kind)
-        local_names = self._local_method_names(category, kind)
-        catalogue = self.method_catalogue(category, kind)
-        inherited = {name: ForwardedAttribute(owner, name) for name, owner in catalogue.items() if name not in local_names}
+        local_type: ImplementationType,
+        catalogue: Mapping[str, DeclaredMethod],
+    ) -> ImplementationType:
+        local = self._local_methods(local_type)
+        inherited = {
+            name: ForwardedMethod(
+                self.implementation_route(category, declaration.owner),
+                declaration.method,
+            )
+            for name, declaration in catalogue.items()
+            if name not in local
+        }
+        if not inherited:
+            return local_type
 
-        def install(namespace: dict[str, ClassNamespaceValue]) -> None:
+        def install(namespace: dict[str, CompiledClassMember]) -> None:
             namespace.update(inherited)
             namespace["__module__"] = local_type.__module__
 
-        name = f"Complete{type(category).__name__}{kind.value}"
+        name = f"Complete{category.__class__.__name__}{local_type.__name__}"
         return new_class(name, (local_type,), exec_body=install)
 
-    def _local_method_names(self, category: Category, kind: ImplementationKind) -> frozenset[str]:
-        local_type = category.local_type(kind)
-        return frozenset(
-            name
-            for name, member in vars(local_type).items()
-            if name not in _IGNORED_METHODS and (not name.startswith("_") or name.startswith("__")) and isinstance(member, FunctionType)
-        )
+    def _local_methods(
+        self,
+        local_type: ImplementationType,
+    ) -> dict[str, FunctionType]:
+        owner = local_type.__qualname__
+        return {
+            name: method
+            for name, method in inspect.getmembers_static(
+                local_type,
+                predicate=inspect.isfunction,
+            )
+            if name not in _IGNORED_METHODS
+            and (not name.startswith("_") or name.startswith("__"))
+            and method.__qualname__.rsplit(".", 1)[0] == owner
+        }
 
     def _routes_from(
         self,
         source: Category,
         target: Category,
         visited: tuple[Category, ...],
-    ) -> list[tuple[Functor, ...]]:
-        routes: list[tuple[Functor, ...]] = []
+    ) -> list[tuple[StructuralFunctor, ...]]:
+        routes: list[tuple[StructuralFunctor, ...]] = []
         for functor in source.super_functors():
             codomain = functor.codomain()
-            if codomain in visited:
-                raise IncoherentRouteError("the structural functor graph has a cycle")
-            if codomain == target:
+            assert codomain not in visited, "the structural-functor graph has a cycle"
+            if codomain is target:
                 routes.append((functor,))
                 continue
             for suffix in self._routes_from(codomain, target, (*visited, codomain)):
@@ -163,5 +223,5 @@ _CATEGORY_COMPILER = CategoryCompiler()
 
 
 def category_compiler() -> CategoryCompiler:
-    """Return the process-wide category compiler."""
+    """Return the compiler for the current Python process."""
     return _CATEGORY_COMPILER

@@ -305,9 +305,17 @@ class SetSubset(SetFunction):
         self._underlying_set = underlying_set
         self._inclusion = inclusion
         self._members = members
+
+        def characteristic_value(member: SetElementInput) -> bool:
+            answer = predicate(member)
+            assert answer is not UNKNOWN, (
+                f"membership of {member} in {underlying_set} is unknown"
+            )
+            return answer
+
         super().__init__(
             hom_category=hom_category,
-            rule=lambda member: predicate(member) is True,
+            rule=characteristic_value,
         )
 
     def category(self) -> Category:
@@ -341,6 +349,9 @@ class SetSubset(SetFunction):
 
     def members(self) -> frozenset[SetElementInput] | None:
         return self._members
+
+    def contains(self, member: SetElementInput) -> Decision:
+        return self._predicate(member)
 
     def equals(self, other: SetSubset) -> Decision:
         if self is other:
@@ -635,6 +646,10 @@ class SetHomCategory(HomCategory, SetObject):
         assert Sets().contains_set(value)
         return value
 
+    def base_set(self) -> SetObject:
+        assert self.is_power_set()
+        return self.exponent()
+
     def is_power_set(self) -> bool:
         return self.codomain() is TruthValues()
 
@@ -666,6 +681,17 @@ class SetHomCategory(HomCategory, SetObject):
             members=members,
         )
 
+    def from_characteristic_morphism(self, characteristic: SetFunction) -> SetSubset:
+        assert self.is_power_set()
+        assert characteristic in self
+        value = registered_value(characteristic)
+        assert value is not None
+        subsets = SubsetsOfSet(self.base_set())
+        if subsets.contains_subset(value):
+            return value
+        assert Sets().contains_function(value)
+        return self.from_predicate(lambda member: value(member))
+
     def top(self) -> SetSubset:
         assert self.is_power_set()
         return self.from_predicate(
@@ -677,6 +703,57 @@ class SetHomCategory(HomCategory, SetObject):
     def bottom(self) -> SetSubset:
         assert self.is_power_set()
         return self.from_members(frozenset())
+
+    def inverse_image_morphism(self, function: SetFunction) -> SetFunction:
+        assert self.is_power_set()
+        assert function.codomain() is self.base_set()
+        source = function.domain()
+        assert Sets().contains_set(source)
+        target_power_set = PowerSet(source)
+
+        def inverse_image(candidate: SetElementInput) -> SetSubset:
+            subset = self._represented_subset(candidate)
+            return target_power_set.from_predicate(
+                lambda member: subset.contains(function(member))
+            )
+
+        return SetMap(
+            self,
+            target_power_set,
+            inverse_image,
+            injective=function.is_surjective(),
+            surjective=function.is_injective(),
+        )
+
+    def direct_image_morphism(self, function: SetFunction) -> SetFunction:
+        assert self.is_power_set()
+        assert function.domain() is self.base_set()
+        target = function.codomain()
+        assert Sets().contains_set(target)
+        target_power_set = PowerSet(target)
+
+        def direct_image(candidate: SetElementInput) -> SetSubset:
+            subset = self._represented_subset(candidate)
+            inclusion = subset.inclusion().forward()
+            assert Sets().contains_function(inclusion)
+            restricted = Sets().compose(function, inclusion)
+            assert Sets().contains_function(restricted)
+            return ImageSet(restricted)
+
+        return SetMap(
+            self,
+            target_power_set,
+            direct_image,
+            injective=function.is_injective(),
+            surjective=function.is_surjective(),
+        )
+
+    def _represented_subset(self, candidate: SetElementInput) -> SetSubset:
+        value = registered_value(candidate)
+        assert value is not None and value in self
+        subsets = SubsetsOfSet(self.base_set())
+        assert subsets.contains_subset(value)
+        return value
 
     def evaluation(self) -> SetFunction:
         if self._evaluation is None:
@@ -2042,14 +2119,34 @@ def _is_finite_subset(
     return value.is_finite()
 
 
-def ImageSet(function: SetFunction) -> SetObject:
+def ImageSet(
+    function: SetFunction,
+    *,
+    cardinality: Cardinal | None = None,
+) -> SetSubset:
     domain = function.domain()
+    codomain = function.codomain()
     assert Sets().contains_set(domain)
-    if domain.is_finite() is True:
-        return FiniteSet(frozenset(function(member) for member in domain))
-    return PredicateSet(
-        category=Sets(),
-        predicate=lambda member: UNKNOWN,
-        cardinality=UnknownCardinality(),
-        name=f"Image of {function}",
+    assert Sets().contains_set(codomain)
+    if function.is_surjective() is True:
+        return PowerSet(codomain).top()
+    if domain.cardinality() == 0:
+        return PowerSet(codomain).bottom()
+    size = cardinality
+    if size is None and function.is_injective() is True:
+        size = domain.cardinality()
+    return PowerSet(codomain).from_predicate(
+        lambda member: _image_membership(function, member),
+        cardinality=size,
     )
+
+
+def _image_membership(
+    function: SetFunction,
+    member: SetElementInput,
+) -> Decision:
+    codomain = function.codomain()
+    assert Sets().contains_set(codomain)
+    if codomain.contains(member) is False:
+        return False
+    return UNKNOWN

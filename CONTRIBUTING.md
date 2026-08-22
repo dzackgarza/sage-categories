@@ -132,9 +132,11 @@ Do not reuse a retired identifier.
 | `POL-CAT-024` | Make the generic `ArrowType` store its endpoints and expose them through `domain()` and `codomain()`. |
 | `POL-CAT-025` | Implement a general arrow predicate as containment in its arrow subcategory, such as `f in C.Monomorphisms()`. |
 | `POL-CAT-026` | Represent a covering object of `Y` as `(X, p: X -> Y)` with `p` an epimorphism. The arrow `p` alone is not the object. |
-| `POL-CAT-027` | Treat every represented entity as a category or as an object in a stated category. Do not default an arbitrary entity to an object of `Sets()`. |
+| `POL-CAT-027` | Never assume that an arbitrary mathematical entity is a set. Treat it as a category or as an object in its stated category. |
 | `POL-CAT-028` | Keep `Hom_C(X, Y)` category-valued at the general level. Obtain a set of arrows only through an explicit set-valued construction with the required hypotheses. |
 | `POL-CAT-029` | Distinguish an internal Hom object from its global arrows. Apply the relevant global-sections, object-set, or underlying-set functor explicitly. |
+| `POL-CAT-030` | Establish `X in Sets()` or apply an explicit functor to `Sets()` before using elements, membership, cardinality, enumeration, subsets, or set equality. |
+| `POL-CAT-031` | Treat an unjustified reduction to `Sets()` as a foundational error. Rebuild every dependent definition, type, arrow, and conclusion in the correct category. |
 
 Grounding examples: a sheaf is an object of a sheaf category, and an internal Hom of sheaves is again a sheaf.
 A functor is an object of `Fun(C, D)`. None enters `Sets()` without a specified functor.

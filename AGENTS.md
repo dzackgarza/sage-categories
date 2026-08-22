@@ -119,6 +119,17 @@ For each category `C`:
 The same architecture applies to objects, elements, and arrows.
 Do not solve one surface with a mechanism that cannot support the other two.
 
+Never assume that an arbitrary mathematical entity is a set.
+Every represented entity is a category or an object in its stated category.
+Establish that `X in Sets()` or apply an explicit functor to `Sets()` before using elements, membership, cardinality, enumeration, subsets, or set equality.
+An unjustified reduction to `Sets()` is a foundational error.
+Rebuild every dependent definition, type, arrow, and conclusion in the correct category.
+
+A sheaf is an object of a sheaf category.
+An internal Hom of sheaves is again a sheaf.
+A functor is an object of `Fun(C, D)`.
+None is a set without a specified set-valued functor.
+
 The following are categories and therefore objects of `Cat`:
 
 - `Ar(C)`, `EndAr(C)`, and `AutAr(C)`;

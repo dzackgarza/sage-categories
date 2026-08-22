@@ -9,6 +9,7 @@ from sage_categories.abstract_categories.arrow_categories import (
     declare_isomorphism,
 )
 from sage_categories.abstract_categories.cat import Cat
+from sage_categories.abstract_categories.category_constructions import FullSubcategory
 from sage_categories.abstract_categories.functors import (
     ComposedFunctor,
     Functor,
@@ -135,6 +136,7 @@ __all__ = [
     "FiniteDiscreteCategories",
     "FiniteSet",
     "FiniteSubsets",
+    "FullSubcategory",
     "FinitelySupportedFunctions",
     "Functor",
     "IdentityFunctor",

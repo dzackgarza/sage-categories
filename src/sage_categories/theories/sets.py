@@ -14,6 +14,7 @@ from math import comb
 from typing import Any, Protocol, TypeIs
 
 from sage_categories.abstract_categories.category_constructions import (
+    FullSubcategory,
     is_opposite_arrow,
     is_product_arrow,
     is_product_category,
@@ -1337,77 +1338,57 @@ class SetsCategory(Category):
         return "Sets"
 
 
-class CountableSetsCategory(Category):
+class CountableSetsCategory(FullSubcategory):
     def __init__(self, sets: SetsCategory) -> None:
         self._sets = sets
-        self._inclusion: InclusionFunctor | None = None
-        super().__init__()
+        super().__init__(sets, self._is_countable, name="Countable sets")
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
-        value = registered_value(candidate)
-        if value is None or not Sets().contains_set(value):
-            return False
+    def _is_countable(self, value: MathematicalObject) -> bool:
+        assert Sets().contains_set(value)
         finite = value.cardinality().is_finite()
         return finite is True or value.cardinality() == Cardinals().aleph()
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
-        if self._inclusion is None:
-            self._inclusion = InclusionFunctor(self, self._sets)
-        return (self._inclusion,)
 
-
-class FiniteSetsCategory(Category):
+class FiniteSetsCategory(FullSubcategory):
     def __init__(self, sets: SetsCategory) -> None:
         self._sets = sets
-        self._countable_inclusion: InclusionFunctor | None = None
-        super().__init__()
+        super().__init__(
+            sets.Countable(),
+            self._is_finite,
+            name="Finite sets",
+        )
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
-        value = registered_value(candidate)
-        return value is not None and Sets().contains_set(value) and value.cardinality().is_finite() is True
-
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
-        if self._countable_inclusion is None:
-            self._countable_inclusion = InclusionFunctor(self, self._sets.Countable())
-        return (self._countable_inclusion,)
+    def _is_finite(self, value: MathematicalObject) -> bool:
+        assert Sets().contains_set(value)
+        return value.cardinality().is_finite() is True
 
     def contains_finite_set(self, candidate: MathematicalObject) -> TypeIs[SetObject]:
         return candidate in self
 
 
-class InfiniteSetsCategory(Category):
+class InfiniteSetsCategory(FullSubcategory):
     def __init__(self, sets: SetsCategory) -> None:
         self._sets = sets
-        self._inclusion: InclusionFunctor | None = None
-        super().__init__()
+        super().__init__(sets, self._is_infinite, name="Infinite sets")
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
-        value = registered_value(candidate)
-        return value is not None and Sets().contains_set(value) and value.cardinality().is_infinite() is True
-
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
-        if self._inclusion is None:
-            self._inclusion = InclusionFunctor(self, self._sets)
-        return (self._inclusion,)
+    def _is_infinite(self, value: MathematicalObject) -> bool:
+        assert Sets().contains_set(value)
+        return value.cardinality().is_infinite() is True
 
 
-class UncountableSetsCategory(Category):
+class UncountableSetsCategory(FullSubcategory):
     def __init__(self, sets: SetsCategory) -> None:
         self._sets = sets
-        self._infinite_inclusion: InclusionFunctor | None = None
-        super().__init__()
+        super().__init__(
+            sets.Infinite(),
+            self._is_uncountable,
+            name="Uncountable sets",
+        )
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
-        value = registered_value(candidate)
-        if value is None or not Sets().contains_set(value):
-            return False
+    def _is_uncountable(self, value: MathematicalObject) -> bool:
+        assert Sets().contains_set(value)
         size = value.cardinality()
         return size.is_infinite() is True and size != Cardinals().aleph()
-
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
-        if self._infinite_inclusion is None:
-            self._infinite_inclusion = InclusionFunctor(self, self._sets.Infinite())
-        return (self._infinite_inclusion,)
 
 
 _SETS = SetsCategory()

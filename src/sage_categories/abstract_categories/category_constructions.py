@@ -6,16 +6,27 @@ constructions in Mathlib's category-theory library.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import TypeIs
 
-from sage_categories.abstract_categories.hom_categories import HomCategory
+from sage_categories.abstract_categories.functors import (
+    InclusionFunctor,
+    StructuralFunctor,
+)
+from sage_categories.abstract_categories.hom_categories import (
+    HomCategory,
+    HomCategoryFamily,
+)
 from sage_categories.category import Category
 from sage_categories.values import (
     Arrow,
     MathematicalElement,
     MathematicalObject,
     MembershipInput,
+    registered_value,
 )
+
+type ObjectPredicate = Callable[[MathematicalObject], bool]
 
 
 class OppositeArrow(Arrow):
@@ -245,6 +256,102 @@ class ProductCategory(Category):
         return f"{self._first_category} x {self._second_category}"
 
 
+class FullSubcategoryHomCategory(HomCategory):
+    """The ambient arrows between two objects of a full subcategory."""
+
+    def __init__(
+        self,
+        *,
+        domain: MathematicalObject,
+        codomain: MathematicalObject,
+        hom_category: HomCategoryFamily,
+    ) -> None:
+        self._ambient_inclusion: StructuralFunctor | None = None
+        super().__init__(
+            domain=domain,
+            codomain=codomain,
+            hom_category=hom_category,
+        )
+
+    def full_subcategory(self) -> FullSubcategory:
+        category = self.base_category()
+        assert is_full_subcategory(category)
+        return category
+
+    def ambient_hom_category(self) -> HomCategory:
+        category = self.full_subcategory()
+        return category.ambient_category().Hom(self.domain(), self.codomain())
+
+    def __contains__(self, candidate: MembershipInput) -> bool:
+        return candidate in self.ambient_hom_category()
+
+    def __call__(self, arrow: Arrow) -> Arrow:
+        assert arrow in self
+        return arrow
+
+    def identity(self, value: MathematicalObject | None = None) -> Arrow:
+        assert value is None
+        assert self.domain() is self.codomain()
+        return self.ambient_hom_category().identity()
+
+    def compose(self, second: Arrow, first: Arrow) -> Arrow:
+        assert first in self.full_subcategory().ArrowCategory()
+        assert second in self.full_subcategory().ArrowCategory()
+        return self.full_subcategory().ambient_category().compose(second, first)
+
+    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+        if self._ambient_inclusion is None:
+            self._ambient_inclusion = InclusionFunctor(
+                self,
+                self.ambient_hom_category(),
+            )
+        return (self._ambient_inclusion,)
+
+
+class FullSubcategory(Category):
+    """The full subcategory on objects satisfying one predicate."""
+
+    def __init__(
+        self,
+        ambient_category: Category,
+        predicate: ObjectPredicate,
+        *,
+        name: str,
+    ) -> None:
+        self._ambient_category = ambient_category
+        self._predicate = predicate
+        self._name = name
+        self._inclusion: InclusionFunctor | None = None
+        super().__init__(
+            object_type=ambient_category.ObjectType,
+            element_type=ambient_category.ElementType,
+            category=FullSubcategoryCategoryObjects(),
+        )
+
+    def ambient_category(self) -> Category:
+        return self._ambient_category
+
+    def __contains__(self, candidate: MembershipInput) -> bool:
+        value = registered_value(candidate)
+        return value is not None and value in self._ambient_category and self._predicate(value)
+
+    def contains_arrow(self, candidate: MathematicalObject) -> TypeIs[Arrow]:
+        if not self._ambient_category.contains_arrow(candidate):
+            return False
+        return candidate.domain() in self and candidate.codomain() in self
+
+    def _hom_category_type(self) -> type[HomCategory]:
+        return FullSubcategoryHomCategory
+
+    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+        if self._inclusion is None:
+            self._inclusion = InclusionFunctor(self, self._ambient_category)
+        return (self._inclusion,)
+
+    def __repr__(self) -> str:
+        return self._name
+
+
 class OppositeCategoryObjects(Category):
     """The category of opposite-category objects in ``Cat``."""
 
@@ -259,8 +366,16 @@ class ProductCategoryObjects(Category):
         super().__init__(object_type=ProductCategory)
 
 
+class FullSubcategoryObjects(Category):
+    """The represented category of full subcategories."""
+
+    def __init__(self) -> None:
+        super().__init__(object_type=FullSubcategory)
+
+
 _OPPOSITE_CATEGORIES = OppositeCategoryObjects()
 _PRODUCT_CATEGORIES = ProductCategoryObjects()
+_FULL_SUBCATEGORIES = FullSubcategoryObjects()
 
 
 def OppositeCategories() -> OppositeCategoryObjects:
@@ -271,12 +386,20 @@ def ProductCategories() -> ProductCategoryObjects:
     return _PRODUCT_CATEGORIES
 
 
+def FullSubcategoryCategoryObjects() -> FullSubcategoryObjects:
+    return _FULL_SUBCATEGORIES
+
+
 def is_opposite_category(category: Category) -> TypeIs[OppositeCategory]:
     return category in OppositeCategories()
 
 
 def is_product_category(category: Category) -> TypeIs[ProductCategory]:
     return category in ProductCategories()
+
+
+def is_full_subcategory(category: Category) -> TypeIs[FullSubcategory]:
+    return category in FullSubcategoryCategoryObjects()
 
 
 def is_opposite_arrow(arrow: Arrow) -> TypeIs[OppositeArrow]:

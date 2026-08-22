@@ -5,6 +5,7 @@ description = "Owned Sage categories."
 requires-python = ">=3.14"
 dependencies = [
     "sagemath @ git+https://github.com/dzackgarza/sage@develop",
+    "sympy",
     "tree-sitter-sage @ git+https://github.com/dzackgarza/tree-sitter-sage",
 ]
 

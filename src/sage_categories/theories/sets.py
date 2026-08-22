@@ -172,17 +172,6 @@ class FiniteSetObject(SetObject):
     def members(self) -> frozenset[SetElementInput]:
         return self._members
 
-    def __eq__(self, other: Any) -> bool:
-        if other is self:
-            return True
-        value = registered_value(other)
-        if value is None or not FiniteSets().contains_finite_set(value):
-            return False
-        return self._members == value._members
-
-    def __hash__(self) -> int:
-        return hash(self._members)
-
     def __repr__(self) -> str:
         return "{" + ", ".join(map(repr, self._members)) + "}"
 
@@ -375,6 +364,9 @@ class SetSubset(SetFunction):
                 answer = UNKNOWN
         return answer
 
+    def __le__(self, other: SetSubset) -> Decision:
+        return self.is_subset_of(other)
+
     def union(self, other: SetSubset) -> SetSubset:
         assert self.base_set() is other.base_set()
         if self._members is not None and other._members is not None:
@@ -561,7 +553,7 @@ class SetHomCategory(HomCategory, SetObject):
 
     def contains(self, candidate: SetElementInput) -> Decision:
         value = registered_value(candidate)
-        return value is not None and value._belongs_to_hom(self)
+        return value is not None and value in self
 
     def cardinality(self) -> Cardinal:
         domain = self.domain()
@@ -993,7 +985,7 @@ class SetsCategory(Category):
     def finite(self, members: frozenset[SetElementInput]) -> FiniteSetObject:
         cached = self._finite_sets_by_members.get(members)
         if cached is None:
-            cached = FiniteSetObject(category=self.Finite(), members=members)
+            cached = FiniteSetObject(category=self, members=members)
             self._finite_sets_by_members[members] = cached
         return cached
 
@@ -1077,8 +1069,6 @@ class CountableSetsCategory(SetPropertyCategory):
 
 
 class FiniteSetsCategory(SetPropertyCategory):
-    ObjectType = FiniteSetObject
-
     def __init__(self, sets: SetsCategory) -> None:
         self._countable_inclusion: InclusionFunctor | None = None
         super().__init__(sets)
@@ -1092,7 +1082,7 @@ class FiniteSetsCategory(SetPropertyCategory):
             self._countable_inclusion = InclusionFunctor(self, self._sets.Countable())
         return (self._countable_inclusion,)
 
-    def contains_finite_set(self, candidate: MathematicalObject) -> TypeIs[FiniteSetObject]:
+    def contains_finite_set(self, candidate: MathematicalObject) -> TypeIs[SetObject]:
         return candidate in self
 
 

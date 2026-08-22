@@ -34,12 +34,12 @@ class Functor(Arrow, ABC):
         *,
         hom_category: HomCategory | None = None,
     ) -> None:
-        from sage_categories.abstract_categories.cat import Cat
+        from sage_categories.abstract_categories.cat import category_universe
 
         self._cached_image_category: Category | None = None
         self._functor_domain = domain
         self._functor_codomain = codomain
-        functor_hom_category = Cat().Hom(domain, codomain) if hom_category is None else hom_category
+        functor_hom_category = category_universe(domain, codomain).Hom(domain, codomain) if hom_category is None else hom_category
         assert functor_hom_category.domain() is domain
         assert functor_hom_category.codomain() is codomain
         super().__init__(hom_category=functor_hom_category)
@@ -766,17 +766,21 @@ class FunctorCategory(HomCategory):
         return NaturalTransformationHomCategory
 
     def domain(self) -> Category:
-        from sage_categories.abstract_categories.cat import Cat
+        from sage_categories.abstract_categories.cat import is_category_of_categories
 
         source = HomCategory.domain(self)
-        assert Cat().contains_category(source)
+        universe = self.base_category()
+        assert is_category_of_categories(universe)
+        assert universe.contains_category(source)
         return source
 
     def codomain(self) -> Category:
-        from sage_categories.abstract_categories.cat import Cat
+        from sage_categories.abstract_categories.cat import is_category_of_categories
 
         target = HomCategory.codomain(self)
-        assert Cat().contains_category(target)
+        universe = self.base_category()
+        assert is_category_of_categories(universe)
+        assert universe.contains_category(target)
         return target
 
     def identity(self, value: MathematicalObject | None = None) -> Arrow:
@@ -797,9 +801,9 @@ class FunctorCategory(HomCategory):
 
 def is_functor(candidate: MathematicalObject) -> TypeIs[Functor]:
     """Narrow an owned value by membership in ``Ar(Cat)``."""
-    from sage_categories.abstract_categories.cat import Cat
+    from sage_categories.abstract_categories.cat import category_universes
 
-    return candidate in Cat().ArrowCategory()
+    return any(candidate in universe.ArrowCategory() for universe in category_universes())
 
 
 def NaturalTransformations(
@@ -842,7 +846,7 @@ def is_natural_transformation_hom_category(
     category: HomCategory,
 ) -> TypeIs[NaturalTransformationHomCategory]:
     """Return whether ``category`` contains natural transformations."""
-    from sage_categories.abstract_categories.cat import Cat
+    from sage_categories.abstract_categories.cat import category_universes
 
     base = category.base_category()
-    return base in Cat().HomCategory() and category in base.HomCategory()
+    return any(base in universe.HomCategory() for universe in category_universes()) and category in base.HomCategory()

@@ -76,9 +76,9 @@ class MathematicalObject:
 
             category = common_category((self, target))
         else:
-            from sage_categories.abstract_categories.cat import Cat
+            from sage_categories.abstract_categories.cat import is_category
 
-            assert Cat().contains_category(codomain)
+            assert is_category(codomain)
             category = codomain
         return category.Hom(self, target)
 

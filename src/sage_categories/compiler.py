@@ -134,9 +134,10 @@ class CategoryCompiler:
         cached = self._routes.get(key)
         if cached is not None:
             return cached
-        routes = self._routes_from(source, target, (id(source),))
-        assert len(routes) == 1, f"expected one structural route from {source} to {target}; found {len(routes)}"
-        route = routes[0]
+        routes = tuple(self._routes_from(source, target, (id(source),)))
+        assert routes, f"no structural route from {source} to {target}"
+        route = source._canonical_implementation_route(target, routes)
+        assert route in routes
         self._routes[key] = route
         return route
 
@@ -168,7 +169,12 @@ class CategoryCompiler:
         *,
         element_methods: bool,
     ) -> type[Implementation]:
-        local = self._local_methods(local_type)
+        available = {
+            name
+            for implementation in local_type.__mro__
+            for name, method in implementation.__dict__.items()
+            if inspect.isfunction(method)
+        }
         inherited = {
             name: ForwardedMethod(
                 self.implementation_route(category, declaration.owner),
@@ -176,7 +182,7 @@ class CategoryCompiler:
                 element_method=element_methods,
             )
             for name, declaration in catalogue.items()
-            if name not in local
+            if name not in available
         }
         if not inherited:
             return local_type
@@ -194,11 +200,8 @@ class CategoryCompiler:
     ) -> dict[str, FunctionType]:
         return {
             name: method
-            for name, method in inspect.getmembers_static(
-                local_type,
-                predicate=inspect.isfunction,
-            )
-            if name not in _IGNORED_METHODS and (not name.startswith("_") or name.startswith("__"))
+            for name, method in local_type.__dict__.items()
+            if name not in _IGNORED_METHODS and (not name.startswith("_") or name.startswith("__")) and inspect.isfunction(method)
         }
 
     def _routes_from(

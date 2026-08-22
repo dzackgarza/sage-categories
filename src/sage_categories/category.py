@@ -76,6 +76,7 @@ class Category(MathematicalObject):
         self._local_object_type = object_type
         self._local_element_type = element_type
         self._hom_category_family: HomCategoryFamily | None = None
+        self._identity_arrows: dict[int, Arrow] = {}
         self._arrow_category: ArrowCategoryObject | None = None
         self._end_arrow_category: Category | None = None
         self._mono_arrow_category: Category | None = None
@@ -120,6 +121,15 @@ class Category(MathematicalObject):
         """Return the category graph derived from structural functors."""
         return tuple(functor.codomain() for functor in self.super_functors())
 
+    def _canonical_implementation_route(
+        self,
+        target: Category,
+        routes: tuple[tuple[StructuralFunctor, ...], ...],
+    ) -> tuple[StructuralFunctor, ...]:
+        distinct = tuple(route for position, route in enumerate(routes) if route not in routes[:position])
+        assert len(distinct) == 1, f"structural routes from {self} to {target} are not declared coherent"
+        return distinct[0]
+
     def is_subcategory(self, category: Category) -> bool:
         """Return whether the structural-functor graph includes ``category``."""
         if self is category:
@@ -143,10 +153,12 @@ class Category(MathematicalObject):
         assert False, f"{self} has no represented arrow set"
 
     def _belongs_to(self, category: Category) -> bool:
-        from sage_categories.abstract_categories.cat import Cat
+        from sage_categories.abstract_categories.cat import is_category_of_categories
 
-        if category is Cat():
-            return self is not category
+        if is_category_of_categories(category):
+            if self is category or self._category is None:
+                return False
+            return self._category is category or self._category._belongs_to(category)
         return super()._belongs_to(category)
 
     def _hom_category_type(self) -> type[HomCategoryObject]:
@@ -343,7 +355,13 @@ class Category(MathematicalObject):
         """Return the identity arrow of ``value``."""
         if value is None:
             return MathematicalObject.identity(self)
-        return self.Aut(value).identity()
+        assert value in self
+        key = id(value)
+        cached = self._identity_arrows.get(key)
+        if cached is None:
+            cached = self.Hom(value, value).identity()
+            self._identity_arrows[key] = cached
+        return cached
 
     def compose(self, second: Arrow, first: Arrow) -> Arrow:
         """Return ``second`` after ``first``."""
@@ -443,9 +461,9 @@ class Category(MathematicalObject):
 
     def FunctorCategory(self, codomain: Category) -> HomCategoryObject:
         """Return the functor category from this category to ``codomain``."""
-        from sage_categories.abstract_categories.cat import Cat
+        from sage_categories.abstract_categories.cat import category_universe
 
-        return Cat().Hom(self, codomain)
+        return category_universe(self, codomain).Hom(self, codomain)
 
     def Diagram(self, index_category: Category) -> HomCategoryObject:
         """Return the category of diagrams of shape ``index_category``."""

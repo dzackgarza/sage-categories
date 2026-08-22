@@ -10,6 +10,7 @@ from collections.abc import Callable
 from typing import TypeIs
 
 from sage_categories.abstract_categories.functors import (
+    Functor,
     InclusionFunctor,
     StructuralFunctor,
 )
@@ -220,6 +221,9 @@ class ProductCategory(Category):
     def __init__(self, first_category: Category, second_category: Category) -> None:
         self._first_category = first_category
         self._second_category = second_category
+        self._pairs: dict[tuple[int, int], CategoryPair] = {}
+        self._first_projection: ProductProjectionFunctor | None = None
+        self._second_projection: ProductProjectionFunctor | None = None
         super().__init__(
             object_type=CategoryPair,
             element_type=MathematicalElement,
@@ -237,7 +241,14 @@ class ProductCategory(Category):
         first: MathematicalObject,
         second: MathematicalObject,
     ) -> CategoryPair:
-        return self.ObjectType(category=self, first=first, second=second)
+        assert first in self._first_category
+        assert second in self._second_category
+        key = id(first), id(second)
+        cached = self._pairs.get(key)
+        if cached is None:
+            cached = self.ObjectType(category=self, first=first, second=second)
+            self._pairs[key] = cached
+        return cached
 
     def contains_pair(self, candidate: MathematicalObject) -> TypeIs[CategoryPair]:
         return candidate in self
@@ -252,12 +263,431 @@ class ProductCategory(Category):
     def _hom_category_type(self) -> type[HomCategory]:
         return ProductHomCategory
 
+    def first_projection(self) -> ProductProjectionFunctor:
+        if self._first_projection is None:
+            self._first_projection = ProductProjectionFunctor(self, first=True)
+        return self._first_projection
+
+    def second_projection(self) -> ProductProjectionFunctor:
+        if self._second_projection is None:
+            self._second_projection = ProductProjectionFunctor(self, first=False)
+        return self._second_projection
+
+    def pair_functor(self, first: Functor, second: Functor) -> PairFunctor:
+        return PairFunctor(self, first, second)
+
     def __repr__(self) -> str:
         return f"{self._first_category} x {self._second_category}"
 
 
+class ProductProjectionFunctor(Functor):
+    """One projection from a binary product category."""
+
+    def __init__(self, product: ProductCategory, *, first: bool) -> None:
+        self._product = product
+        self._first = first
+        codomain = product.first_category() if first else product.second_category()
+        super().__init__(product, codomain)
+
+    def on_object(self, source: MathematicalObject) -> MathematicalObject:
+        assert self._product.contains_pair(source)
+        return source.first() if self._first else source.second()
+
+    def on_morphism(self, morphism: Arrow) -> Arrow:
+        assert is_product_arrow(morphism)
+        return morphism.first() if self._first else morphism.second()
+
+
+class PairFunctor(Functor):
+    """The functor into a product induced by two functors."""
+
+    def __init__(
+        self,
+        product: ProductCategory,
+        first: Functor,
+        second: Functor,
+    ) -> None:
+        assert first.domain() is second.domain()
+        assert first.codomain() is product.first_category()
+        assert second.codomain() is product.second_category()
+        self._product = product
+        self._first = first
+        self._second = second
+        super().__init__(first.domain(), product)
+
+    def on_object(self, source: MathematicalObject) -> CategoryPair:
+        return self._product(self._first(source), self._second(source))
+
+    def on_morphism(self, morphism: Arrow) -> ProductArrow:
+        source = self.on_object(morphism.domain())
+        target = self.on_object(morphism.codomain())
+        hom_category = self._product.Hom(source, target)
+        assert is_product_hom_category(hom_category)
+        first = self._first(morphism)
+        second = self._second(morphism)
+        assert self._first.codomain().contains_arrow(first)
+        assert self._second.codomain().contains_arrow(second)
+        return hom_category(first, second)
+
+
+class PullbackObject(MathematicalObject):
+    """A compatible pair of objects in a strict pullback of categories."""
+
+    def __init__(
+        self,
+        *,
+        category: PullbackCategory,
+        first: MathematicalObject,
+        second: MathematicalObject,
+    ) -> None:
+        assert first in category.first_category()
+        assert second in category.second_category()
+        assert category.first_functor()(first) is category.second_functor()(second)
+        self._first = first
+        self._second = second
+        super().__init__(category=category)
+
+    def first(self) -> MathematicalObject:
+        return self._first
+
+    def second(self) -> MathematicalObject:
+        return self._second
+
+    def common_object(self) -> MathematicalObject:
+        category = self.category()
+        assert is_pullback_category(category)
+        return category.first_functor()(self._first)
+
+
+class PullbackElement(MathematicalElement):
+    """A compatible pair of elements in a pullback object."""
+
+    def __init__(
+        self,
+        *,
+        category: PullbackCategory,
+        element_of: PullbackObject,
+        first: MathematicalElement,
+        second: MathematicalElement,
+    ) -> None:
+        assert first.element_of() is element_of.first()
+        assert second.element_of() is element_of.second()
+        self._first = first
+        self._second = second
+        super().__init__(category=category, element_of=element_of)
+        _PULLBACK_ELEMENTS[id(self)] = self
+
+    def first(self) -> MathematicalElement:
+        return self._first
+
+    def second(self) -> MathematicalElement:
+        return self._second
+
+
+class PullbackArrow(Arrow):
+    """A compatible pair of arrows in a pullback category."""
+
+    def __init__(
+        self,
+        *,
+        hom_category: HomCategory,
+        first: Arrow,
+        second: Arrow,
+    ) -> None:
+        pullback = hom_category.base_category()
+        assert is_pullback_category(pullback)
+        domain = hom_category.domain()
+        codomain = hom_category.codomain()
+        assert pullback.contains_pullback_object(domain)
+        assert pullback.contains_pullback_object(codomain)
+        assert first in pullback.first_category().Hom(
+            domain.first(),
+            codomain.first(),
+        )
+        assert second in pullback.second_category().Hom(
+            domain.second(),
+            codomain.second(),
+        )
+        common_first = pullback.first_functor()(first)
+        common_second = pullback.second_functor()(second)
+        assert pullback.common_category().contains_arrow(common_first)
+        assert pullback.common_category().contains_arrow(common_second)
+        assert common_first is common_second
+        self._first = first
+        self._second = second
+        super().__init__(hom_category=hom_category)
+
+    def first(self) -> Arrow:
+        return self._first
+
+    def second(self) -> Arrow:
+        return self._second
+
+
+class PullbackHomCategory(HomCategory):
+    """Compatible pairs of arrows between pullback objects."""
+
+    ObjectType = PullbackArrow
+    ElementType = PullbackArrow
+
+    def __call__(self, first: Arrow, second: Arrow) -> PullbackArrow:
+        return self.ObjectType(
+            hom_category=self,
+            first=first,
+            second=second,
+        )
+
+    def identity(self, value: MathematicalObject | None = None) -> PullbackArrow:
+        assert value is None
+        assert self.domain() is self.codomain()
+        pullback = self.base_category()
+        assert is_pullback_category(pullback)
+        domain = self.domain()
+        assert pullback.contains_pullback_object(domain)
+        return self(
+            pullback.first_category().identity(domain.first()),
+            pullback.second_category().identity(domain.second()),
+        )
+
+    def compose(self, second: Arrow, first: Arrow) -> PullbackArrow:
+        assert self.contains_pullback_arrow(second)
+        assert self.contains_pullback_arrow(first)
+        assert first.codomain() is second.domain()
+        pullback = self.base_category()
+        assert is_pullback_category(pullback)
+        return self(
+            pullback.first_category().compose(second.first(), first.first()),
+            pullback.second_category().compose(second.second(), first.second()),
+        )
+
+    def contains_pullback_arrow(self, arrow: Arrow) -> TypeIs[PullbackArrow]:
+        return arrow in self
+
+
+class PullbackProjectionFunctor(StructuralFunctor):
+    """One structural projection from a pullback category."""
+
+    def __init__(self, pullback: PullbackCategory, *, first: bool) -> None:
+        self._pullback = pullback
+        self._first = first
+        codomain = pullback.first_category() if first else pullback.second_category()
+        super().__init__(pullback, codomain)
+
+    def on_object(self, source: MathematicalObject) -> MathematicalObject:
+        assert self._pullback.contains_pullback_object(source)
+        return source.first() if self._first else source.second()
+
+    def on_morphism(self, morphism: Arrow) -> Arrow:
+        assert self._pullback.contains_pullback_arrow(morphism)
+        return morphism.first() if self._first else morphism.second()
+
+    def on_element(
+        self,
+        source: MathematicalObject,
+        element: MathematicalElement,
+    ) -> MathematicalElement:
+        assert self._pullback.contains_pullback_object(source)
+        assert self._pullback.contains_pullback_element(element)
+        return element.first() if self._first else element.second()
+
+
+class PullbackMediatingFunctor(Functor):
+    """The functor induced by a compatible pair of functors."""
+
+    def __init__(
+        self,
+        pullback: PullbackCategory,
+        first: Functor,
+        second: Functor,
+    ) -> None:
+        assert first.domain() is second.domain()
+        assert first.codomain() is pullback.first_category()
+        assert second.codomain() is pullback.second_category()
+        self._pullback = pullback
+        self._first = first
+        self._second = second
+        super().__init__(first.domain(), pullback)
+
+    def on_object(self, source: MathematicalObject) -> PullbackObject:
+        return self._pullback(self._first(source), self._second(source))
+
+    def on_morphism(self, morphism: Arrow) -> PullbackArrow:
+        source = self.on_object(morphism.domain())
+        target = self.on_object(morphism.codomain())
+        hom_category = self._pullback.Hom(source, target)
+        assert is_pullback_hom_category(hom_category)
+        first = self._first(morphism)
+        second = self._second(morphism)
+        assert self._first.codomain().contains_arrow(first)
+        assert self._second.codomain().contains_arrow(second)
+        return hom_category(first, second)
+
+
+class PullbackCategory(Category):
+    """The strict pullback of two functors with one codomain."""
+
+    ObjectType = PullbackObject
+    ElementType = PullbackElement
+
+    def __init__(self, first: Functor, second: Functor) -> None:
+        assert first.codomain() is second.codomain()
+        self._first_functor = first
+        self._second_functor = second
+        self._objects: dict[tuple[int, int], PullbackObject] = {}
+        self._first_projection: PullbackProjectionFunctor | None = None
+        self._second_projection: PullbackProjectionFunctor | None = None
+        super().__init__(
+            object_type=PullbackObject,
+            element_type=PullbackElement,
+            category=PullbackCategories(),
+        )
+
+    def first_functor(self) -> Functor:
+        return self._first_functor
+
+    def second_functor(self) -> Functor:
+        return self._second_functor
+
+    def first_category(self) -> Category:
+        return self._first_functor.domain()
+
+    def second_category(self) -> Category:
+        return self._second_functor.domain()
+
+    def common_category(self) -> Category:
+        return self._first_functor.codomain()
+
+    def __call__(
+        self,
+        first: MathematicalObject,
+        second: MathematicalObject,
+    ) -> PullbackObject:
+        key = id(first), id(second)
+        cached = self._objects.get(key)
+        if cached is None:
+            cached = self.ObjectType(
+                category=self,
+                first=first,
+                second=second,
+            )
+            self._objects[key] = cached
+        return cached
+
+    def element(
+        self,
+        source: PullbackObject,
+        first: MathematicalElement,
+        second: MathematicalElement,
+    ) -> PullbackElement:
+        return self.ElementType(
+            category=self,
+            element_of=source,
+            first=first,
+            second=second,
+        )
+
+    def contains_pullback_object(
+        self,
+        candidate: MathematicalObject,
+    ) -> TypeIs[PullbackObject]:
+        return candidate in self
+
+    def contains_pullback_element(
+        self,
+        candidate: MathematicalObject,
+    ) -> TypeIs[PullbackElement]:
+        value = _PULLBACK_ELEMENTS.get(id(candidate))
+        return value is candidate and candidate in self
+
+    def contains_pullback_arrow(self, candidate: Arrow) -> TypeIs[PullbackArrow]:
+        return candidate in self.ArrowCategory()
+
+    def _hom_category_type(self) -> type[HomCategory]:
+        return PullbackHomCategory
+
+    def first_projection(self) -> PullbackProjectionFunctor:
+        if self._first_projection is None:
+            self._first_projection = PullbackProjectionFunctor(self, first=True)
+        return self._first_projection
+
+    def second_projection(self) -> PullbackProjectionFunctor:
+        if self._second_projection is None:
+            self._second_projection = PullbackProjectionFunctor(self, first=False)
+        return self._second_projection
+
+    def mediating_functor(
+        self,
+        first: Functor,
+        second: Functor,
+    ) -> PullbackMediatingFunctor:
+        return PullbackMediatingFunctor(self, first, second)
+
+    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+        return self.first_projection(), self.second_projection()
+
+    def _canonical_implementation_route(
+        self,
+        target: Category,
+        routes: tuple[tuple[StructuralFunctor, ...], ...],
+    ) -> tuple[StructuralFunctor, ...]:
+        if len(routes) == 1:
+            return routes[0]
+        common = self.common_category()
+        assert target is common or common.is_subcategory(target)
+        first_prefix = (
+            self.first_projection(),
+            *self._first_functor.factors(),
+        )
+        second_prefix = (
+            self.second_projection(),
+            *self._second_functor.factors(),
+        )
+        suffixes: list[tuple[StructuralFunctor, ...]] = []
+        for route in routes:
+            if route[: len(first_prefix)] == first_prefix:
+                suffixes.append(route[len(first_prefix) :])
+                continue
+            assert route[: len(second_prefix)] == second_prefix
+            suffixes.append(route[len(second_prefix) :])
+        if target is common:
+            canonical_suffix: tuple[StructuralFunctor, ...] = ()
+        else:
+            canonical_suffix = common._canonical_implementation_route(
+                target,
+                tuple(suffixes),
+            )
+        for route in routes:
+            if route[: len(first_prefix)] == first_prefix and route[len(first_prefix) :] == canonical_suffix:
+                return route
+        for route in routes:
+            if route[: len(second_prefix)] == second_prefix and route[len(second_prefix) :] == canonical_suffix:
+                return route
+        assert False, f"pullback routes from {self} to {target} have no canonical representative"
+
+    def __repr__(self) -> str:
+        return f"{self.first_category()} x_{self.common_category()} {self.second_category()}"
+
+
+_PULLBACK_ELEMENTS: dict[int, PullbackElement] = {}
+
+
+class FullSubcategoryObject(MathematicalObject):
+    """The local object implementation of a full subcategory."""
+
+
+class FullSubcategoryElement(MathematicalElement):
+    """The local element implementation of a full subcategory."""
+
+
+class FullSubcategoryArrow(Arrow):
+    """The local arrow implementation of a full subcategory."""
+
+
 class FullSubcategoryHomCategory(HomCategory):
     """The ambient arrows between two objects of a full subcategory."""
+
+    ObjectType = FullSubcategoryArrow
+    ElementType = FullSubcategoryArrow
 
     def __init__(
         self,
@@ -292,7 +722,7 @@ class FullSubcategoryHomCategory(HomCategory):
     def identity(self, value: MathematicalObject | None = None) -> Arrow:
         assert value is None
         assert self.domain() is self.codomain()
-        return self.ambient_hom_category().identity()
+        return self.full_subcategory().ambient_category().identity(self.domain())
 
     def compose(self, second: Arrow, first: Arrow) -> Arrow:
         assert first in self.full_subcategory().ArrowCategory()
@@ -323,8 +753,8 @@ class FullSubcategory(Category):
         self._name = name
         self._inclusion: InclusionFunctor | None = None
         super().__init__(
-            object_type=ambient_category.ObjectType,
-            element_type=ambient_category.ElementType,
+            object_type=FullSubcategoryObject,
+            element_type=FullSubcategoryElement,
             category=FullSubcategoryCategoryObjects(),
         )
 
@@ -366,6 +796,13 @@ class ProductCategoryObjects(Category):
         super().__init__(object_type=ProductCategory)
 
 
+class PullbackCategoryObjects(Category):
+    """The category of strict pullback-category objects in ``Cat``."""
+
+    def __init__(self) -> None:
+        super().__init__(object_type=PullbackCategory)
+
+
 class FullSubcategoryObjects(Category):
     """The represented category of full subcategories."""
 
@@ -375,6 +812,7 @@ class FullSubcategoryObjects(Category):
 
 _OPPOSITE_CATEGORIES = OppositeCategoryObjects()
 _PRODUCT_CATEGORIES = ProductCategoryObjects()
+_PULLBACK_CATEGORIES = PullbackCategoryObjects()
 _FULL_SUBCATEGORIES = FullSubcategoryObjects()
 
 
@@ -384,6 +822,10 @@ def OppositeCategories() -> OppositeCategoryObjects:
 
 def ProductCategories() -> ProductCategoryObjects:
     return _PRODUCT_CATEGORIES
+
+
+def PullbackCategories() -> PullbackCategoryObjects:
+    return _PULLBACK_CATEGORIES
 
 
 def FullSubcategoryCategoryObjects() -> FullSubcategoryObjects:
@@ -398,6 +840,10 @@ def is_product_category(category: Category) -> TypeIs[ProductCategory]:
     return category in ProductCategories()
 
 
+def is_pullback_category(category: Category) -> TypeIs[PullbackCategory]:
+    return category in PullbackCategories()
+
+
 def is_full_subcategory(category: Category) -> TypeIs[FullSubcategory]:
     return category in FullSubcategoryCategoryObjects()
 
@@ -408,3 +854,23 @@ def is_opposite_arrow(arrow: Arrow) -> TypeIs[OppositeArrow]:
 
 def is_product_arrow(arrow: Arrow) -> TypeIs[ProductArrow]:
     return is_product_category(arrow.hom_category().base_category()) and arrow in arrow.hom_category().base_category().ArrowCategory()
+
+
+def is_product_hom_category(
+    hom_category: HomCategory,
+) -> TypeIs[ProductHomCategory]:
+    product = hom_category.base_category()
+    return is_product_category(product) and hom_category is product.Hom(
+        hom_category.domain(),
+        hom_category.codomain(),
+    )
+
+
+def is_pullback_hom_category(
+    hom_category: HomCategory,
+) -> TypeIs[PullbackHomCategory]:
+    pullback = hom_category.base_category()
+    return is_pullback_category(pullback) and hom_category is pullback.Hom(
+        hom_category.domain(),
+        hom_category.codomain(),
+    )

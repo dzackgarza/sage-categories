@@ -233,7 +233,7 @@ A functor is an object of `Fun(C, D)`. None enters `Sets()` without a specified 
 | `POL-SET-002` | A set map requires a domain, codomain, and rule. It does not require a finite table. |
 | `POL-SET-003` | Permit maps whose rules have no linearity, continuity, or finiteness hypothesis. |
 | `POL-SET-004` | Support maps such as `QQ -> NN`, `QQ -> ZZ`, and `RR -> RR^2` as ordinary arrows in `Sets()`. |
-| `POL-SET-005` | Let membership predicates return <code>bool | Unknown</code>. |
+| `POL-SET-005` | Let membership predicates return `bool` or `Unknown`. |
 | `POL-SET-006` | Treat `Unknown` as unavailable knowledge, not as `False`. |
 | `POL-SET-007` | Construct a predicate-defined subset as an object with an inclusion arrow. |
 | `POL-SET-008` | Support infinite predicate subobjects such as the even integers and prime integers inside `ZZ`. |

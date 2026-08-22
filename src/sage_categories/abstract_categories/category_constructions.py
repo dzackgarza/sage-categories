@@ -277,3 +277,17 @@ def is_opposite_category(category: Category) -> TypeIs[OppositeCategory]:
 
 def is_product_category(category: Category) -> TypeIs[ProductCategory]:
     return category in ProductCategories()
+
+
+def is_opposite_arrow(arrow: Arrow) -> TypeIs[OppositeArrow]:
+    return (
+        is_opposite_category(arrow.hom_category().base_category())
+        and arrow in arrow.hom_category().base_category().ArrowCategory()
+    )
+
+
+def is_product_arrow(arrow: Arrow) -> TypeIs[ProductArrow]:
+    return (
+        is_product_category(arrow.hom_category().base_category())
+        and arrow in arrow.hom_category().base_category().ArrowCategory()
+    )

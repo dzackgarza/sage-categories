@@ -22,6 +22,11 @@ from sage_categories.abstract_categories.functors import (
     NaturalTransformation,
     StructuralFunctor,
 )
+from sage_categories.abstract_categories.category_constructions import (
+    is_opposite_arrow,
+    is_product_arrow,
+    is_product_category,
+)
 from sage_categories.abstract_categories.functors import (
     DiscreteCategory as DiscreteCategoryObject,
 )
@@ -1013,6 +1018,64 @@ class CardinalityFunctor(Functor):
         return hom_category()
 
 
+class ExponentialFunctor(Functor):
+    """The internal-hom bifunctor ``Sets^op x Sets -> Sets``."""
+
+    def __init__(self) -> None:
+        super().__init__(Sets().OppositeCategory().ProductCategory(Sets()), Sets())
+
+    def on_object(self, source: MathematicalObject) -> SetHomCategory:
+        domain = self.domain()
+        assert is_product_category(domain)
+        assert domain.contains_pair(source)
+        exponent = source.first()
+        base = source.second()
+        assert Sets().contains_set(exponent)
+        assert Sets().contains_set(base)
+        return ExponentialOfSets(base, exponent)
+
+    def on_morphism(self, morphism: Arrow) -> SetFunction:
+        assert is_product_arrow(morphism)
+        first = morphism.first()
+        second = morphism.second()
+        assert is_opposite_arrow(first)
+        precompose = first.underlying_arrow()
+        assert Sets().contains_function(precompose)
+        assert Sets().contains_function(second)
+        source = self(morphism.domain())
+        target = self(morphism.codomain())
+        assert is_set_hom_category(source)
+        assert is_set_hom_category(target)
+
+        def transport(candidate: SetElementInput) -> SetFunction:
+            value = registered_value(candidate)
+            assert value is not None and Sets().contains_function(value)
+            return target(
+                lambda member: second(value(precompose(member)))
+            )
+
+        return SetMap(source, target, transport)
+
+
+class InverseImagePowerSetFunctor(Functor):
+    """The contravariant power-set functor ``Sets^op -> Sets``."""
+
+    def __init__(self) -> None:
+        super().__init__(Sets().OppositeCategory(), Sets())
+
+    def on_object(self, source: MathematicalObject) -> SetHomCategory:
+        assert Sets().contains_set(source)
+        return PowerSet(source)
+
+    def on_morphism(self, morphism: Arrow) -> SetFunction:
+        assert is_opposite_arrow(morphism)
+        underlying = morphism.underlying_arrow()
+        assert Sets().contains_function(underlying)
+        source = self(morphism.domain())
+        assert is_set_hom_category(source)
+        return source.inverse_image_morphism(underlying)
+
+
 class SetsCategory(Category):
     """The category of arbitrary sets and arbitrary functions."""
 
@@ -1028,6 +1091,8 @@ class SetsCategory(Category):
         self._countable_sets: CountableSetsCategory | None = None
         self._uncountable_sets: UncountableSetsCategory | None = None
         self._cardinality_functor: CardinalityFunctor | None = None
+        self._exponential_functor: ExponentialFunctor | None = None
+        self._inverse_image_power_set_functor: InverseImagePowerSetFunctor | None = None
         super().__init__(object_type=SetObject)
 
     def _hom_category_type(self) -> type[HomCategory]:
@@ -1103,6 +1168,16 @@ class SetsCategory(Category):
         if self._cardinality_functor is None:
             self._cardinality_functor = CardinalityFunctor(self)
         return self._cardinality_functor
+
+    def ExponentialFunctor(self) -> ExponentialFunctor:
+        if self._exponential_functor is None:
+            self._exponential_functor = ExponentialFunctor()
+        return self._exponential_functor
+
+    def InverseImagePowerSetFunctor(self) -> InverseImagePowerSetFunctor:
+        if self._inverse_image_power_set_functor is None:
+            self._inverse_image_power_set_functor = InverseImagePowerSetFunctor()
+        return self._inverse_image_power_set_functor
 
     def chosen_limit(self, diagram: Functor) -> ProductPresentation:
         if diagram.domain() in DiscreteCategories():
@@ -1206,7 +1281,7 @@ def UncountableSets() -> UncountableSetsCategory:
     return Sets().Uncountable()
 
 
-def is_set_hom_category(category: HomCategory) -> TypeIs[SetHomCategory]:
+def is_set_hom_category(category: MathematicalObject) -> TypeIs[SetHomCategory]:
     return category in Sets().HomCategory()
 
 

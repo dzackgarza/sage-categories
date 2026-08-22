@@ -256,9 +256,13 @@ class DiagramHomCategory(HomCategory):
         assert second in self.diagram_category().ArrowCategory()
         assert first.codomain() is second.domain()
         diagram = self.diagram_category()
-        composite = diagram.ambient_category().Hom(first.domain(), second.codomain()).compose(
-            second.forward(),
-            first.forward(),
+        composite = (
+            diagram.ambient_category()
+            .Hom(first.domain(), second.codomain())
+            .compose(
+                second.forward(),
+                first.forward(),
+            )
         )
         diagram.admit(composite)
         return composite

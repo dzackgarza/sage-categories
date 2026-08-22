@@ -102,11 +102,16 @@ Do not reuse a retired identifier.
 | `POL-GEN-010` | Preserve infinite algebra-generation data. Do not force a finitely generated presentation onto an algebra such as `QQ` over `ZZ`. |
 | `POL-GEN-011` | Keep rank, dimension, cardinality, and minimum number of module generators distinct. Use each invariant only under its defining hypotheses. |
 | `POL-GEN-012` | Assume finiteness only when the mathematical definition or a selected property subcategory requires it. Define the arbitrary small indexed construction first and obtain its finite form by restriction. |
+| `POL-GEN-013` | Place a coefficient family with potentially infinite support in the appropriate formal power-series ring. Do not declare its sum to be a polynomial without established finite support. |
+| `POL-GEN-014` | Recover polynomials as the finitely supported elements of a formal power-series ring. Make polynomial-valued methods restrictions of the general power-series-valued construction. |
 
 For a family \((X_i)_{i\in I}\), the product \(\prod_{i\in I}X_i\) is the limit of the corresponding discrete diagram.
 The foundational product constructor therefore accepts an arbitrary small index set \(I\).
 A finite product is its restriction to `I in Sets().Finite()`.
 A constructor based on a finite tuple of factors cannot express the integral adeles \(\prod_p\mathbb Z_p\).
+
+Likewise, \(\sum_{n\in\mathbb N}a_nt^n\) belongs to \(R[[t]]\) for a general coefficient family.
+It belongs to \(R[t]\) after the support of \((a_n)\) is known to be finite.
 
 ## Forms and lattices
 

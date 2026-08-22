@@ -528,7 +528,7 @@ SymPy supplies private symbolic representations and simplification algorithms be
 | --- | --- | --- |
 | Three-valued membership | `Contains(x, X)` can remain symbolic. Fuzzy queries return `True`, `False`, or `None`. | Translate definite results to `bool` and `None` to Sage `Unknown`. Retain an unevaluated `Contains` proposition for later symbolic evaluation. |
 | Predicate-defined subobjects | `ConditionSet(x, P(x), X)` represents \(\{x\in X\mid P(x)\}\) without enumeration. | Use `ConditionSet` as a private representation. The public object retains its inclusion arrow. |
-| Three-valued subset relations | SymPy set properties can return `None` when unresolved. | Normalize every public subset predicate to <code>bool |
+| Three-valued subset relations | SymPy set properties can return `None` when unresolved. | Normalize every public subset predicate to <code>bool &#124; Unknown</code>. Translate `None` and unresolved symbolic propositions to `Unknown`. |
 | Semantic equality of sets | SymPy `==` supplies structural equality. | Treat structural equality as sufficient evidence for `True`. Use the owned subobject order for semantic equality. Return `Unknown` when available methods prove neither equality nor inequality. |
 | Cardinal objects | SymPy supplies finite sizes and Lebesgue measure for supported representations. | `Cardinalities()` owns cardinal arithmetic, normalization, comparisons, and the cardinality functor. Construction data and proved relationships determine cardinality. |
 | Cardinal predicates and comparisons | SymPy supplies symbolic expression simplification. | `Cardinalities()` evaluates finite, countable, continuum-sized, and larger cardinal expressions. Unproved predicates and comparisons return `Unknown`. |

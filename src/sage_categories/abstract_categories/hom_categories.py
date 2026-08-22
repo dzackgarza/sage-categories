@@ -268,9 +268,7 @@ class RestrictedHomCategory(HomCategory):
 
     def compose(self, second: Arrow, first: Arrow) -> RestrictedArrow:
         assert first.codomain() is second.domain()
-        return self(
-            self.base_category().compose(second.forward(), first.forward())
-        )
+        return self(self.base_category().compose(second.forward(), first.forward()))
 
 
 class EndomorphismHomCategory(RestrictedHomCategory):
@@ -426,10 +424,7 @@ class IsomorphismCategoryFamily(HomCategoryFamily):
         return (self._inclusion,)
 
     def is_subcategory(self, category: Category) -> bool:
-        return (
-            category is self.base_category().EpiCategory()
-            or super().is_subcategory(category)
-        )
+        return category is self.base_category().EpiCategory() or super().is_subcategory(category)
 
 
 class AutomorphismCategoryFamily(HomCategoryFamily):
@@ -452,10 +447,7 @@ class AutomorphismCategoryFamily(HomCategoryFamily):
         return (self._inclusion,)
 
     def is_subcategory(self, category: Category) -> bool:
-        return (
-            category is self.base_category().EndCategory()
-            or super().is_subcategory(category)
-        )
+        return category is self.base_category().EndCategory() or super().is_subcategory(category)
 
     def Of(
         self,
@@ -477,10 +469,7 @@ def is_isomorphism_hom_category(
 def is_isomorphism(arrow: Arrow) -> TypeIs[Isomorphism]:
     """Return whether ``arrow`` is in an isomorphism arrow category."""
     category = arrow.base_category()
-    return (
-        arrow in category.IsomorphismArrowCategory()
-        or arrow in category.AutomorphismArrowCategory()
-    )
+    return arrow in category.IsomorphismArrowCategory() or arrow in category.AutomorphismArrowCategory()
 
 
 def is_restricted_hom_category(
@@ -488,8 +477,4 @@ def is_restricted_hom_category(
 ) -> TypeIs[RestrictedHomCategory]:
     """Return whether ``category`` constructs restricted arrows."""
     base = category.base_category()
-    return (
-        category in base.EndCategory()
-        or category in base.MonoCategory()
-        or category in base.EpiCategory()
-    )
+    return category in base.EndCategory() or category in base.MonoCategory() or category in base.EpiCategory()

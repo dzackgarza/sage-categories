@@ -33,9 +33,7 @@ class Functor(Arrow, ABC):
         self._image_category: Category | None = None
         self._functor_domain = domain
         self._functor_codomain = codomain
-        functor_hom_category = (
-            Cat().Hom(domain, codomain) if hom_category is None else hom_category
-        )
+        functor_hom_category = Cat().Hom(domain, codomain) if hom_category is None else hom_category
         assert functor_hom_category.domain() is domain
         assert functor_hom_category.codomain() is codomain
         super().__init__(hom_category=functor_hom_category)
@@ -374,9 +372,7 @@ class NaturalTransformationHomCategory(HomCategory):
         assert self.contains_transformation(second)
         assert self.contains_transformation(first)
         assert first.codomain() is second.domain()
-        return self(
-            lambda value: second.component(value) * first.component(value)
-        )
+        return self(lambda value: second.component(value) * first.component(value))
 
     def contains_transformation(
         self,

@@ -151,9 +151,7 @@ class SliceOverCategory(Category):
 
     def __contains__(self, candidate: MembershipInput) -> bool:
         arrow_category = self._ambient_category.ArrowCategory()
-        return arrow_category.contains_arrow(candidate) and (
-            candidate.codomain() is self._target
-        )
+        return arrow_category.contains_arrow(candidate) and (candidate.codomain() is self._target)
 
     def contains_slice_object(
         self,
@@ -197,9 +195,7 @@ class CosliceUnderCategory(Category):
 
     def __contains__(self, candidate: MembershipInput) -> bool:
         arrow_category = self._ambient_category.ArrowCategory()
-        return arrow_category.contains_arrow(candidate) and (
-            candidate.domain() is self._source
-        )
+        return arrow_category.contains_arrow(candidate) and (candidate.domain() is self._source)
 
     def contains_coslice_object(
         self,
@@ -232,9 +228,7 @@ class SubobjectCategory(Category):
         super().__init__(object_type=ambient_category.MonoArrowType)
 
     def __contains__(self, candidate: MembershipInput) -> bool:
-        return candidate in self._ambient_category.SliceOver(self._target) and (
-            candidate in self._ambient_category.MonomorphismArrowCategory()
-        )
+        return candidate in self._ambient_category.SliceOver(self._target) and (candidate in self._ambient_category.MonomorphismArrowCategory())
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
         if self._inclusion is None:
@@ -255,9 +249,7 @@ class SuperobjectCategory(Category):
         super().__init__(object_type=ambient_category.MonoArrowType)
 
     def __contains__(self, candidate: MembershipInput) -> bool:
-        return candidate in self._ambient_category.CosliceUnder(self._source) and (
-            candidate in self._ambient_category.MonomorphismArrowCategory()
-        )
+        return candidate in self._ambient_category.CosliceUnder(self._source) and (candidate in self._ambient_category.MonomorphismArrowCategory())
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
         if self._inclusion is None:
@@ -278,9 +270,7 @@ class CoveringObjectCategory(Category):
         super().__init__(object_type=ambient_category.EpiArrowType)
 
     def __contains__(self, candidate: MembershipInput) -> bool:
-        return candidate in self._ambient_category.SliceOver(self._target) and (
-            candidate in self._ambient_category.EpimorphismArrowCategory()
-        )
+        return candidate in self._ambient_category.SliceOver(self._target) and (candidate in self._ambient_category.EpimorphismArrowCategory())
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
         if self._inclusion is None:
@@ -301,9 +291,7 @@ class CoveredObjectCategory(Category):
         super().__init__(object_type=ambient_category.EpiArrowType)
 
     def __contains__(self, candidate: MembershipInput) -> bool:
-        return candidate in self._ambient_category.CosliceUnder(self._source) and (
-            candidate in self._ambient_category.EpimorphismArrowCategory()
-        )
+        return candidate in self._ambient_category.CosliceUnder(self._source) and (candidate in self._ambient_category.EpimorphismArrowCategory())
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
         if self._inclusion is None:
@@ -396,9 +384,7 @@ def Slice(structure_morphism: Arrow) -> Arrow:
 def Coslice(costructure_morphism: Arrow) -> Arrow:
     """Place an arrow as an object of its coslice category."""
     category = costructure_morphism.base_category()
-    assert costructure_morphism in category.CosliceUnder(
-        costructure_morphism.domain()
-    )
+    assert costructure_morphism in category.CosliceUnder(costructure_morphism.domain())
     return costructure_morphism
 
 
@@ -426,9 +412,7 @@ def Superobject(costructure_morphism: Arrow) -> Arrow:
         )
         assert is_restricted_hom_category(monomorphisms)
         costructure_morphism = monomorphisms(costructure_morphism)
-    assert costructure_morphism in category.Superobjects(
-        costructure_morphism.domain()
-    )
+    assert costructure_morphism in category.Superobjects(costructure_morphism.domain())
     return costructure_morphism
 
 
@@ -442,9 +426,7 @@ def Covering(structure_morphism: Arrow) -> Arrow:
         )
         assert is_restricted_hom_category(epimorphisms)
         structure_morphism = epimorphisms(structure_morphism)
-    assert structure_morphism in category.CoveringObjects(
-        structure_morphism.codomain()
-    )
+    assert structure_morphism in category.CoveringObjects(structure_morphism.codomain())
     return structure_morphism
 
 
@@ -458,7 +440,5 @@ def Covered(costructure_morphism: Arrow) -> Arrow:
         )
         assert is_restricted_hom_category(epimorphisms)
         costructure_morphism = epimorphisms(costructure_morphism)
-    assert costructure_morphism in category.CoveredObjects(
-        costructure_morphism.domain()
-    )
+    assert costructure_morphism in category.CoveredObjects(costructure_morphism.domain())
     return costructure_morphism

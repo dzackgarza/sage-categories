@@ -26,9 +26,9 @@ from sage_categories.abstract_categories.products import (
     Product,
 )
 from sage_categories.abstract_categories.slice_categories import (
+    Coslice,
     Covered,
     Covering,
-    Coslice,
     Slice,
     Subobject,
     Superobject,

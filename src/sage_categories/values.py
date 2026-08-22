@@ -11,8 +11,8 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.functors import StructuralFunctor
-    from sage_categories.category import Category
     from sage_categories.abstract_categories.hom_categories import HomCategory
+    from sage_categories.category import Category
 
 type MembershipInput = Any
 
@@ -122,9 +122,7 @@ class Arrow(MathematicalElement):
         return own_hom_category is hom_category or (
             own_hom_category.domain() is hom_category.domain()
             and own_hom_category.codomain() is hom_category.codomain()
-            and own_hom_category.hom_category().is_subcategory(
-                hom_category.hom_category()
-            )
+            and own_hom_category.hom_category().is_subcategory(hom_category.hom_category())
         )
 
     def _is_arrow_in(self, category: Category) -> bool:

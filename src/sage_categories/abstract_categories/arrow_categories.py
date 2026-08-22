@@ -8,6 +8,10 @@ from __future__ import annotations
 
 from typing import TypeIs
 
+from sage_categories.abstract_categories.functors import (
+    InclusionFunctor,
+    StructuralFunctor,
+)
 from sage_categories.abstract_categories.hom_categories import (
     HomCategory,
     HomCategoryFamily,
@@ -16,15 +20,9 @@ from sage_categories.abstract_categories.hom_categories import (
 from sage_categories.category import Category
 from sage_categories.values import (
     Arrow,
-    MathematicalElement,
     MathematicalObject,
     MembershipInput,
     registered_value,
-)
-
-from sage_categories.abstract_categories.functors import (
-    InclusionFunctor,
-    StructuralFunctor,
 )
 
 
@@ -212,9 +210,7 @@ class MonomorphismArrowCategory(Category):
         value = registered_value(candidate)
         if value is None or not self._base_category.ArrowCategory().contains_arrow(value):
             return False
-        return value.hom_category() in self._base_category.MonoCategory() or (
-            value.hom_category() in self._base_category.IsoCategory()
-        )
+        return value.hom_category() in self._base_category.MonoCategory() or (value.hom_category() in self._base_category.IsoCategory())
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
         if self._inclusion is None:
@@ -240,9 +236,7 @@ class EpimorphismArrowCategory(Category):
         value = registered_value(candidate)
         if value is None or not self._base_category.ArrowCategory().contains_arrow(value):
             return False
-        return value.hom_category() in self._base_category.EpiCategory() or (
-            value.hom_category() in self._base_category.IsoCategory()
-        )
+        return value.hom_category() in self._base_category.EpiCategory() or (value.hom_category() in self._base_category.IsoCategory())
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
         if self._inclusion is None:
@@ -279,10 +273,7 @@ class IsomorphismArrowCategory(Category):
         return (self._inclusion,)
 
     def is_subcategory(self, category: Category) -> bool:
-        return (
-            category is self._base_category.EpimorphismArrowCategory()
-            or super().is_subcategory(category)
-        )
+        return category is self._base_category.EpimorphismArrowCategory() or super().is_subcategory(category)
 
 
 class AutomorphismArrowCategory(Category):
@@ -311,10 +302,7 @@ class AutomorphismArrowCategory(Category):
         return (self._inclusion,)
 
     def is_subcategory(self, category: Category) -> bool:
-        return (
-            category is self._base_category.EndArrowCategory()
-            or super().is_subcategory(category)
-        )
+        return category is self._base_category.EndArrowCategory() or super().is_subcategory(category)
 
 
 class WideSubcategory(Category):

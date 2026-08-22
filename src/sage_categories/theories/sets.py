@@ -37,13 +37,7 @@ from sage_categories.values import (
     registered_value,
 )
 
-type SetValue = (
-    int
-    | str
-    | MathematicalObject
-    | ProductChoice
-    | CoproductValue
-)
+type SetValue = int | str | MathematicalObject | ProductChoice | CoproductValue
 type SetFunctionRule = Callable[[SetValue], SetValue]
 
 
@@ -72,9 +66,7 @@ class SetObject(MathematicalObject):
         value = registered_value(other)
         if value is None or not Sets().contains_set(value):
             return False
-        return self.cardinality() == value.cardinality() and all(
-            member in value for member in self._members
-        )
+        return self.cardinality() == value.cardinality() and all(member in value for member in self._members)
 
     def __hash__(self) -> int:
         return hash(self._members)
@@ -191,12 +183,9 @@ class SetHomCategory(HomCategory):
             codomain_members,
             repeat=len(domain_members),
         ):
+
             def mapping(value: SetValue, images: tuple[SetValue, ...] = images) -> SetValue:
-                position = next(
-                    index
-                    for index, member in enumerate(domain_members)
-                    if member == value
-                )
+                position = next(index for index, member in enumerate(domain_members) if member == value)
                 return images[position]
 
             functions.add(self(mapping))
@@ -377,10 +366,7 @@ class FiniteDiscreteCategory(DiscreteCategoryObject):
         label_set: SetObject,
     ) -> None:
         self._label_set = label_set
-        self._objects = tuple(
-            DiscreteObject(category=self, label=label)
-            for label in label_set
-        )
+        self._objects = tuple(DiscreteObject(category=self, label=label) for label in label_set)
         self._object_set = FiniteSet(frozenset(self._objects))
         Category.__init__(
             self,
@@ -431,6 +417,7 @@ class ObjectSetFunctor(StructuralFunctor):
         target = morphism.codomain()
         assert self._discrete_categories.contains_discrete_category(source)
         assert self._discrete_categories.contains_discrete_category(target)
+
         def map_object(value: SetValue) -> SetValue:
             assert source.contains_object(value)
             image = morphism(value)
@@ -562,11 +549,7 @@ class ProductChoice(MathematicalObject):
         if other is self:
             return True
         value = registered_value(other)
-        return (
-            value is not None
-            and ProductChoices().contains_choice(value)
-            and self._graph == value._graph
-        )
+        return value is not None and ProductChoices().contains_choice(value) and self._graph == value._graph
 
     def __hash__(self) -> int:
         return hash(self._graph)
@@ -593,12 +576,7 @@ class CoproductValue(MathematicalObject):
         if other is self:
             return True
         candidate = registered_value(other)
-        return (
-            candidate is not None
-            and CoproductValues().contains_value(candidate)
-            and self._index is candidate._index
-            and self._value == candidate._value
-        )
+        return candidate is not None and CoproductValues().contains_value(candidate) and self._index is candidate._index and self._value == candidate._value
 
     def __hash__(self) -> int:
         return hash((self._index, self._value))
@@ -658,12 +636,7 @@ def ProductOfSets(diagram: DiscreteDiagram) -> ProductPresentation:
         return value
 
     factors = tuple(factor(index) for index in indices)
-    choices = frozenset(
-        ProductChoice(tuple(zip(indices, values, strict=True)))
-        for values in cartesian_product(
-            *(tuple(factor) for factor in factors)
-        )
-    )
+    choices = frozenset(ProductChoice(tuple(zip(indices, values, strict=True))) for values in cartesian_product(*(tuple(factor) for factor in factors)))
     apex = FiniteSet(choices)
 
     def projection(index: MathematicalObject) -> Arrow:
@@ -691,9 +664,7 @@ def ProductOfSets(diagram: DiscreteDiagram) -> ProductPresentation:
                 assert Sets().contains_function(component)
                 return component(value)
 
-            return ProductChoice(
-                tuple((index, component_value(index)) for index in indices)
-            )
+            return ProductChoice(tuple((index, component_value(index)) for index in indices))
 
         return SetMap(
             other_apex,
@@ -717,11 +688,7 @@ def CoproductOfSets(diagram: DiscreteDiagram) -> CoproductPresentation:
         return value
 
     factors = tuple(factor(index) for index in indices)
-    members = frozenset(
-        CoproductValue(index, value)
-        for index, factor in zip(indices, factors, strict=True)
-        for value in factor
-    )
+    members = frozenset(CoproductValue(index, value) for index, factor in zip(indices, factors, strict=True) for value in factor)
     apex = FiniteSet(members)
 
     def injection(index: MathematicalObject) -> Arrow:

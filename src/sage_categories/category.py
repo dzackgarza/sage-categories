@@ -28,6 +28,8 @@ if TYPE_CHECKING:
     )
     from sage_categories.abstract_categories.hom_categories import (
         HomCategory as HomCategoryObject,
+    )
+    from sage_categories.abstract_categories.hom_categories import (
         HomCategoryFamily,
     )
 
@@ -103,10 +105,7 @@ class Category(MathematicalObject):
         """Return whether the structural-functor graph includes ``category``."""
         if self is category:
             return True
-        return any(
-            codomain is category or codomain.is_subcategory(category)
-            for codomain in self.super_categories()
-        )
+        return any(codomain is category or codomain.is_subcategory(category) for codomain in self.super_categories())
 
     def __contains__(self, candidate: MembershipInput) -> bool:
         value = registered_value(candidate)

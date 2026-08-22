@@ -36,12 +36,8 @@ class CategoryCompiler:
         self._object_types: dict[Category, type[MathematicalObject]] = {}
         self._element_types: dict[Category, type[MathematicalElement]] = {}
         self._arrow_types: dict[Category, type[MathematicalMorphism]] = {}
-        self._catalogues: dict[
-            tuple[Category, ImplementationKind], dict[str, Category]
-        ] = {}
-        self._routes: dict[
-            tuple[Category, Category], tuple[Functor, ...]
-        ] = {}
+        self._catalogues: dict[tuple[Category, ImplementationKind], dict[str, Category]] = {}
+        self._routes: dict[tuple[Category, Category], tuple[Functor, ...]] = {}
 
     def compiled_object_type(self, category: Category) -> type[MathematicalObject]:
         """Return the complete object implementation type."""
@@ -54,9 +50,7 @@ class CategoryCompiler:
         self._object_types[category] = compiled
         return compiled
 
-    def compiled_element_type(
-        self, category: Category
-    ) -> type[MathematicalElement]:
+    def compiled_element_type(self, category: Category) -> type[MathematicalElement]:
         """Return the complete element implementation type."""
         cached = self._element_types.get(category)
         if cached is not None:
@@ -67,9 +61,7 @@ class CategoryCompiler:
         self._element_types[category] = compiled
         return compiled
 
-    def compiled_arrow_type(
-        self, category: Category
-    ) -> type[MathematicalMorphism]:
+    def compiled_arrow_type(self, category: Category) -> type[MathematicalMorphism]:
         """Return the complete arrow implementation type."""
         cached = self._arrow_types.get(category)
         if cached is not None:
@@ -101,17 +93,12 @@ class CategoryCompiler:
                     catalogue[name] = declaring_category
                     continue
                 if name not in local_names:
-                    raise MethodCollisionError(
-                        f"{category!r} inherits {name!r} from both "
-                        f"{previous_owner!r} and {declaring_category!r}"
-                    )
+                    raise MethodCollisionError(f"{category!r} inherits {name!r} from both {previous_owner!r} and {declaring_category!r}")
         catalogue.update(dict.fromkeys(local_names, category))
         self._catalogues[key] = catalogue
         return catalogue
 
-    def implementation_route(
-        self, source: Category, target: Category
-    ) -> tuple[Functor, ...]:
+    def implementation_route(self, source: Category, target: Category) -> tuple[Functor, ...]:
         """Return the unique selected structural route to a target."""
         if source == target:
             return ()
@@ -122,9 +109,7 @@ class CategoryCompiler:
 
         routes = self._routes_from(source, target, (source,))
         if len(routes) > 1:
-            raise IncoherentRouteError(
-                f"{source!r} has {len(routes)} structural routes to {target!r}"
-            )
+            raise IncoherentRouteError(f"{source!r} has {len(routes)} structural routes to {target!r}")
         if not routes:
             return ()
         self._routes[key] = routes[0]
@@ -138,11 +123,7 @@ class CategoryCompiler:
         local_type = category.local_type(kind)
         local_names = self._local_method_names(category, kind)
         catalogue = self.method_catalogue(category, kind)
-        inherited = {
-            name: ForwardedAttribute(owner, name)
-            for name, owner in catalogue.items()
-            if name not in local_names
-        }
+        inherited = {name: ForwardedAttribute(owner, name) for name, owner in catalogue.items() if name not in local_names}
 
         def install(namespace: dict[str, ClassNamespaceValue]) -> None:
             namespace.update(inherited)
@@ -151,16 +132,12 @@ class CategoryCompiler:
         name = f"Complete{type(category).__name__}{kind.value}"
         return new_class(name, (local_type,), exec_body=install)
 
-    def _local_method_names(
-        self, category: Category, kind: ImplementationKind
-    ) -> frozenset[str]:
+    def _local_method_names(self, category: Category, kind: ImplementationKind) -> frozenset[str]:
         local_type = category.local_type(kind)
         return frozenset(
             name
             for name, member in vars(local_type).items()
-            if name not in _IGNORED_METHODS
-            and (not name.startswith("_") or name.startswith("__"))
-            and isinstance(member, FunctionType)
+            if name not in _IGNORED_METHODS and (not name.startswith("_") or name.startswith("__")) and isinstance(member, FunctionType)
         )
 
     def _routes_from(

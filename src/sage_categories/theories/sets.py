@@ -23,14 +23,7 @@ from sage_categories.values import (
     MathematicalObject,
 )
 
-type SetMember = (
-    Element
-    | MathematicalElement
-    | MathematicalMorphism
-    | MathematicalObject
-    | int
-    | str
-)
+type SetMember = Element | MathematicalElement | MathematicalMorphism | MathematicalObject | int | str
 
 
 class SetObject(MathematicalObject, ABC):

@@ -41,9 +41,7 @@ class Category:
             declared_type = cls.__dict__.get(public_name)
             if declared_type is None:
                 continue
-            if not isinstance(declared_type, type) or not issubclass(
-                declared_type, base_type
-            ):
+            if not isinstance(declared_type, type) or not issubclass(declared_type, base_type):
                 raise TypeError(f"{cls.__name__}.{public_name} has the wrong base")
             setattr(cls, storage_name, declared_type)
             delattr(cls, public_name)
@@ -69,9 +67,7 @@ class Category:
 
         return category_compiler().compiled_arrow_type(self)
 
-    def local_type(
-        self, kind: ImplementationKind
-    ) -> type[MathematicalObject] | type[MathematicalElement] | type[MathematicalMorphism]:
+    def local_type(self, kind: ImplementationKind) -> type[MathematicalObject] | type[MathematicalElement] | type[MathematicalMorphism]:
         """Return the implementation type declared directly by this category."""
         if kind is ImplementationKind.OBJECT:
             return self._local_object_type
@@ -98,4 +94,3 @@ class Category:
         from sage_categories.compiler import category_compiler
 
         return dict(category_compiler().method_catalogue(self, ImplementationKind.OBJECT))
-

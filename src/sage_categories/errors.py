@@ -15,4 +15,3 @@ class IncoherentRouteError(CategoryFrameworkError):
 
 class MissingImplementationRouteError(CategoryFrameworkError):
     """No structural functor route reaches the requested category."""
-

@@ -28,8 +28,5 @@ class ForwardedAttribute:
         implementation = instance.implementation_in(self._owner)
         method = getattr(implementation, self._name)
         if not isinstance(method, MethodType):
-            raise TypeError(
-                f"{self._owner!r}.{self._name} is not an instance method"
-            )
+            raise TypeError(f"{self._owner!r}.{self._name} is not an instance method")
         return method
-

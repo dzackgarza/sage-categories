@@ -9,10 +9,9 @@ from sage.rings.infinity import PlusInfinity
 from sage.rings.integer import Integer
 
 from sage_categories.category import Category
-from sage_categories.values import MathematicalObject
+from sage_categories.values import EqualityOperand, MathematicalObject
 
 type CardinalNumber = Integer | PlusInfinity
-type EqualityOperand = object
 
 
 class CardinalObject(MathematicalObject, ABC):

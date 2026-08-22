@@ -46,25 +46,17 @@ class Functor(ABC):
     @overload
     def __call__(self, value: MathematicalMorphism) -> MathematicalMorphism: ...
 
-    def __call__(
-        self, value: MathematicalObject | MathematicalMorphism
-    ) -> MathematicalObject | MathematicalMorphism:
+    def __call__(self, value: MathematicalObject | MathematicalMorphism) -> MathematicalObject | MathematicalMorphism:
         """Apply the functor to an object or morphism."""
         if isinstance(value, MathematicalMorphism):
             morphism_image = self.on_morphism(value)
             if morphism_image.category() != self._codomain:
-                raise TypeError(
-                    f"functor image belongs to {morphism_image.category()!r}, "
-                    f"not {self._codomain!r}"
-                )
+                raise TypeError(f"functor image belongs to {morphism_image.category()!r}, not {self._codomain!r}")
             return morphism_image
 
         object_image = self.on_object(value)
         if object_image.category() != self._codomain:
-            raise TypeError(
-                f"functor image belongs to {object_image.category()!r}, "
-                f"not {self._codomain!r}"
-            )
+            raise TypeError(f"functor image belongs to {object_image.category()!r}, not {self._codomain!r}")
         return object_image
 
     def then(self, following: Functor) -> ComposedFunctor:

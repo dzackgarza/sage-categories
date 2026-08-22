@@ -61,7 +61,6 @@ from sage_categories.abstract_categories.products import (
     ProductPresentation,
     is_products_of_category,
 )
-from sage_categories.backends.sage.finite_posets import SageFinitePosetBackend
 from sage_categories.category import Category
 from sage_categories.theories.cardinals import (
     Aleph0,
@@ -70,7 +69,6 @@ from sage_categories.theories.cardinals import (
     UnknownCardinality,
     aleph,
     cardinal,
-    is_cardinal,
     is_cardinal_hom_category,
 )
 from sage_categories.values import (
@@ -87,7 +85,6 @@ type SetMapRule = Callable[[SetElementInput], SetElementInput]
 type SetMapDefinition = SetMapRule | Mapping[SetElementInput, SetElementInput]
 type MembershipPredicate = Callable[[SetElementInput], Decision]
 type SetIterator = Callable[[], Iterator[SetElementInput]]
-type OrderRelation = Callable[[SetElementInput, SetElementInput], Decision]
 
 
 class SymbolicSetRepresentation(Protocol):
@@ -199,265 +196,11 @@ class FiniteSetObject(SetObject):
         return "{" + ", ".join(map(repr, self._members)) + "}"
 
 
-class SetOrder:
-    """A represented partial order on one owned set."""
-
-    def __init__(self, relation: OrderRelation, *, total: Decision) -> None:
-        self._relation = relation
-        self._total = total
-
-    def le(
-        self,
-        left: SetElementInput,
-        right: SetElementInput,
-    ) -> Decision:
-        return self._relation(left, right)
-
-    def is_total(self) -> Decision:
-        return self._total
-
-
-class PartiallyOrderedSetObject(SetObject):
-    """A set whose category supplies a represented partial order."""
-
-    def le(
-        self,
-        left: SetElementInput,
-        right: SetElementInput,
-    ) -> Decision:
-        assert self.contains(left) is True
-        assert self.contains(right) is True
-        return set_order(self).le(left, right)
-
-    def is_lequal(
-        self,
-        left: SetElementInput,
-        right: SetElementInput,
-    ) -> Decision:
-        return self.le(left, right)
-
-
-_SET_ORDERS: dict[int, SetOrder] = {}
-
-
-def set_order(source: SetObject) -> SetOrder:
-    order = _SET_ORDERS.get(id(source))
-    assert order is not None, f"{source} has no represented partial order"
-    return order
-
-
-class FinitePosetObject(PartiallyOrderedSetObject, FiniteSetObject):
-    """An owned finite set ordered by Sage's finite-poset algorithms."""
-
-    def __init__(
-        self,
-        elements: tuple[SetElementInput, ...],
-        relation: OrderRelation,
-        *,
-        category: Category | None = None,
-    ) -> None:
-        assert len(frozenset(elements)) == len(elements)
-        self._elements = elements
-        self._backend = SageFinitePosetBackend(
-            elements,
-            lambda left, right: relation(left, right) is True,
-        )
-        FiniteSetObject.__init__(
-            self,
-            category=Sets().PartiallyOrdered() if category is None else category,
-            members=frozenset(elements),
-        )
-        _SET_ORDERS[id(self)] = SetOrder(self._backend.is_lequal, total=False)
-
-    def __iter__(self) -> Iterator[SetElementInput]:
-        return iter(self._elements)
-
-    def is_less_than(
-        self,
-        left: SetElementInput,
-        right: SetElementInput,
-    ) -> bool:
-        return self._backend.is_less_than(left, right)
-
-    def compare_elements(
-        self,
-        left: SetElementInput,
-        right: SetElementInput,
-    ) -> int | None:
-        return self._backend.compare_elements(left, right)
-
-    def covers(
-        self,
-        lower: SetElementInput,
-        upper: SetElementInput,
-    ) -> bool:
-        return self._backend.covers(lower, upper)
-
-    def lower_covers(self, member: SetElementInput) -> tuple[SetElementInput, ...]:
-        return self._backend.lower_covers(member)
-
-    def upper_covers(self, member: SetElementInput) -> tuple[SetElementInput, ...]:
-        return self._backend.upper_covers(member)
-
-    def common_lower_covers(
-        self,
-        members: Iterable[SetElementInput],
-    ) -> tuple[SetElementInput, ...]:
-        return self._backend.common_lower_covers(members)
-
-    def common_upper_covers(
-        self,
-        members: Iterable[SetElementInput],
-    ) -> tuple[SetElementInput, ...]:
-        return self._backend.common_upper_covers(members)
-
-    def open_interval(
-        self,
-        lower: SetElementInput,
-        upper: SetElementInput,
-    ) -> tuple[SetElementInput, ...]:
-        return self._backend.open_interval(lower, upper)
-
-    def closed_interval(
-        self,
-        lower: SetElementInput,
-        upper: SetElementInput,
-    ) -> tuple[SetElementInput, ...]:
-        return self._backend.closed_interval(lower, upper)
-
-    def principal_order_ideal(
-        self,
-        member: SetElementInput,
-    ) -> tuple[SetElementInput, ...]:
-        return self._backend.order_ideal((member,))
-
-    def principal_order_filter(
-        self,
-        member: SetElementInput,
-    ) -> tuple[SetElementInput, ...]:
-        return self._backend.order_filter((member,))
-
-    def order_ideal(
-        self,
-        members: Iterable[SetElementInput],
-    ) -> tuple[SetElementInput, ...]:
-        return self._backend.order_ideal(members)
-
-    def order_filter(
-        self,
-        members: Iterable[SetElementInput],
-    ) -> tuple[SetElementInput, ...]:
-        return self._backend.order_filter(members)
-
-    def minimal_elements(self) -> tuple[SetElementInput, ...]:
-        return self._backend.minimal_elements()
-
-    def maximal_elements(self) -> tuple[SetElementInput, ...]:
-        return self._backend.maximal_elements()
-
-    def has_bottom(self) -> bool:
-        return self._backend.has_bottom()
-
-    def bottom(self) -> SetElementInput:
-        assert self.has_bottom()
-        return self._backend.bottom()
-
-    def has_top(self) -> bool:
-        return self._backend.has_top()
-
-    def top(self) -> SetElementInput:
-        assert self.has_top()
-        return self._backend.top()
-
-    def is_bounded(self) -> bool:
-        return self._backend.is_bounded()
-
-    def height(self) -> int:
-        return self._backend.height()
-
-    def width(self) -> int:
-        return self._backend.width()
-
-    def level_sets(self) -> tuple[tuple[SetElementInput, ...], ...]:
-        return self._backend.level_sets()
-
-    def is_ranked(self) -> bool:
-        return self._backend.is_ranked()
-
-    def is_graded(self) -> bool:
-        return self._backend.is_graded()
-
-    def __repr__(self) -> str:
-        return f"Finite poset on {self._elements!r}"
-
-
-def Poset(
-    data: tuple[Iterable[SetElementInput], OrderRelation],
-) -> FinitePosetObject:
-    """Construct the finite poset defined by ``(members, leq)``."""
-    members, relation = data
-    return FinitePosetObject(tuple(dict.fromkeys(members)), relation)
-
-
-class OrderedFiniteSetObject(FinitePosetObject):
-    """A finite set with the total order of one displayed enumeration."""
-
-    def __init__(self, elements: tuple[SetElementInput, ...]) -> None:
-        positions = {element: index for index, element in enumerate(elements)}
-        assert len(positions) == len(elements)
-        super().__init__(
-            elements,
-            lambda left, right: positions[left] <= positions[right],
-            category=Sets().TotallyOrdered(),
-        )
-        _SET_ORDERS[id(self)] = SetOrder(
-            lambda left, right: positions[left] <= positions[right],
-            total=True,
-        )
-
-    def __iter__(self) -> Iterator[SetElementInput]:
-        return iter(self._elements)
-
-    def __getitem__(self, position: int) -> SetElementInput:
-        return self._elements[position]
-
-    def position(self, member: SetElementInput) -> int:
-        assert self.contains(member) is True
-        return self._elements.index(member)
-
-    def __repr__(self) -> str:
-        return "[" + ", ".join(map(repr, self._elements)) + "]"
-
-
-_ORDERED_FINITE_SETS: dict[
-    tuple[SetElementInput, ...],
-    OrderedFiniteSetObject,
-] = {}
-
-
-def ordered_set_owned_by(
-    elements: Iterable[SetElementInput],
-) -> OrderedFiniteSetObject:
-    displayed = tuple(dict.fromkeys(elements))
-    cached = _ORDERED_FINITE_SETS.get(displayed)
-    if cached is None:
-        cached = OrderedFiniteSetObject(displayed)
-        _ORDERED_FINITE_SETS[displayed] = cached
-    return cached
-
-
-def finite_ordered_set(
-    elements: Iterable[SetElementInput],
-) -> OrderedFiniteSetObject:
-    return ordered_set_owned_by(elements)
-
-
 class NaturalNumbersSet(SetObject):
-    """The finite ordinals with their standard total order."""
+    """The set of finite ordinals."""
 
     def __init__(self) -> None:
         super().__init__(category=Sets(), cardinality=Aleph0())
-        _SET_ORDERS[id(self)] = SetOrder(self._le, total=True)
 
     def contains(self, member: SetElementInput) -> Decision:
         from sage_categories.theories.ordinals import OrdinalKind, Ordinals
@@ -483,30 +226,6 @@ class NaturalNumbersSet(SetObject):
         assert value is not None and Ordinals().contains_ordinal(value)
         assert value.kind() is OrdinalKind.FINITE
         return int(value)
-
-    def is_lequal(
-        self,
-        left: SetElementInput,
-        right: SetElementInput,
-    ) -> Decision:
-        assert self.contains(left) is True
-        assert self.contains(right) is True
-        return self._le(left, right)
-
-    def _le(
-        self,
-        left: SetElementInput,
-        right: SetElementInput,
-    ) -> Decision:
-        from sage_categories.theories.ordinals import Ordinals
-
-        represented_left = registered_value(left)
-        represented_right = registered_value(right)
-        assert represented_left is not None
-        assert represented_right is not None
-        assert Ordinals().contains_ordinal(represented_left)
-        assert Ordinals().contains_ordinal(represented_right)
-        return represented_left <= represented_right
 
     def __repr__(self) -> str:
         return "Natural numbers"
@@ -540,22 +259,6 @@ def _enumeration_injection(
     return monomorphisms(function)
 
 
-class DeltaIndexing:
-    """Finite and countable simplex indexing sets."""
-
-    def __getitem__(self, dimension: int | Cardinal) -> SetObject:
-        if is_cardinal(dimension):
-            assert dimension == Aleph0()
-            return NaturalNumbers()
-        assert dimension >= -1
-        from sage_categories.theories.ordinals import ordinal
-
-        return ordered_set_owned_by(ordinal(index) for index in range(dimension + 1))
-
-    def __repr__(self) -> str:
-        return "Δ"
-
-
 class AlephIndexing:
     """The aleph cardinals at finite ordinal indices."""
 
@@ -567,7 +270,6 @@ class AlephIndexing:
         return "ℵ"
 
 
-Delta = DeltaIndexing()
 Aleph = AlephIndexing()
 
 
@@ -667,14 +369,10 @@ class SetFunction(Arrow):
         rule: SetMapRule,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
-        order_preserving: Decision = UNKNOWN,
-        order_reflecting: Decision = UNKNOWN,
     ) -> None:
         self._rule = rule
         self._injective = injective
         self._surjective = surjective
-        self._order_preserving = order_preserving
-        self._order_reflecting = order_reflecting
         super().__init__(hom_category=hom_category)
 
     def __call__(self, member: SetElementInput) -> SetElementInput:
@@ -699,27 +397,8 @@ class SetFunction(Arrow):
     def is_bijective(self) -> Decision:
         return _decision_and(self._injective, self._surjective)
 
-    def is_order_preserving(self) -> Decision:
-        if self._order_preserving is not UNKNOWN:
-            return self._order_preserving
-        return self._finite_order_preservation()
-
-    def is_order_reflecting(self) -> Decision:
-        if self._order_reflecting is not UNKNOWN:
-            return self._order_reflecting
-        return self._finite_order_reflection()
-
-    def is_order_embedding(self) -> Decision:
-        return _decision_and(
-            self.is_order_preserving(),
-            self.is_order_reflecting(),
-        )
-
-    def is_order_isomorphism(self) -> Decision:
-        return _decision_and(self.is_order_embedding(), self.is_bijective())
-
     def inverse(self) -> SetFunction:
-        assert self.is_order_isomorphism() is True
+        assert self.is_bijective() is True
         domain = self.domain()
         codomain = self.codomain()
         assert Sets().contains_set(domain)
@@ -732,51 +411,7 @@ class SetFunction(Arrow):
             inverse_values,
             injective=True,
             surjective=True,
-            order_preserving=True,
-            order_reflecting=True,
         )
-
-    def _finite_order_preservation(self) -> Decision:
-        domain = self.domain()
-        codomain = self.codomain()
-        assert Sets().contains_set(domain)
-        assert Sets().contains_set(codomain)
-        if domain not in Sets().PartiallyOrdered():
-            return UNKNOWN
-        if codomain not in Sets().PartiallyOrdered():
-            return UNKNOWN
-        if domain.is_finite() is not True:
-            return UNKNOWN
-        for left in domain:
-            for right in domain:
-                source_order = set_order(domain).le(left, right)
-                target_order = set_order(codomain).le(self(left), self(right))
-                if source_order is True and target_order is False:
-                    return False
-                if source_order is True and target_order is UNKNOWN:
-                    return UNKNOWN
-        return True
-
-    def _finite_order_reflection(self) -> Decision:
-        domain = self.domain()
-        codomain = self.codomain()
-        assert Sets().contains_set(domain)
-        assert Sets().contains_set(codomain)
-        if domain not in Sets().PartiallyOrdered():
-            return UNKNOWN
-        if codomain not in Sets().PartiallyOrdered():
-            return UNKNOWN
-        if domain.is_finite() is not True:
-            return UNKNOWN
-        for left in domain:
-            for right in domain:
-                source_order = set_order(domain).le(left, right)
-                target_order = set_order(codomain).le(self(left), self(right))
-                if target_order is True and source_order is False:
-                    return False
-                if target_order is True and source_order is UNKNOWN:
-                    return UNKNOWN
-        return True
 
 
 class SetSubset(SetFunction):
@@ -1047,8 +682,6 @@ class SetHomCategory(HomCategory, SetObject):
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
-        order_preserving: Decision = UNKNOWN,
-        order_reflecting: Decision = UNKNOWN,
     ) -> SetFunction:
         existing = registered_value(definition)
         if existing is not None:
@@ -1061,8 +694,6 @@ class SetHomCategory(HomCategory, SetObject):
             rule=rule,
             injective=injective,
             surjective=surjective,
-            order_preserving=order_preserving,
-            order_reflecting=order_reflecting,
         )
 
     def _rule_from_definition(self, definition: SetMapDefinition) -> SetMapRule:
@@ -1105,8 +736,6 @@ class SetHomCategory(HomCategory, SetObject):
             lambda member: member,
             injective=True,
             surjective=True,
-            order_preserving=True,
-            order_reflecting=True,
         )
 
     def compose(self, second: Arrow, first: Arrow) -> SetFunction:
@@ -1119,14 +748,6 @@ class SetHomCategory(HomCategory, SetObject):
             lambda member: second(first(member)),
             injective=_decision_and(first.is_injective(), second.is_injective()),
             surjective=_decision_and(first.is_surjective(), second.is_surjective()),
-            order_preserving=_decision_and(
-                first.is_order_preserving(),
-                second.is_order_preserving(),
-            ),
-            order_reflecting=_decision_and(
-                first.is_order_reflecting(),
-                second.is_order_reflecting(),
-            ),
         )
 
     def __iter__(self) -> Iterator[SetElementInput]:
@@ -1314,34 +935,6 @@ class SetHomCategory(HomCategory, SetObject):
 
     def __repr__(self) -> str:
         return f"{self.codomain()}^{self.domain()}"
-
-
-class PosetHomCategory(SetHomCategory):
-    """The set of order-preserving functions between two posets."""
-
-    def __call__(
-        self,
-        definition: SetMapDefinition | SetFunction,
-        *,
-        injective: Decision = UNKNOWN,
-        surjective: Decision = UNKNOWN,
-        order_preserving: Decision = True,
-        order_reflecting: Decision = UNKNOWN,
-    ) -> SetFunction:
-        assert order_preserving is True
-        return super().__call__(
-            definition,
-            injective=injective,
-            surjective=surjective,
-            order_preserving=True,
-            order_reflecting=order_reflecting,
-        )
-
-    def cardinality(self) -> Cardinal:
-        return UnknownCardinality()
-
-    def __iter__(self) -> Iterator[SetElementInput]:
-        assert False, f"{self} has no chosen enumeration"
 
 
 def _underlying_set_function(arrow: Arrow) -> SetFunction:
@@ -1543,15 +1136,6 @@ class SetHomCategoryFamily(HomCategoryFamily):
         return (self._sets_inclusion,)
 
 
-class PosetHomCategoryFamily(SetHomCategoryFamily):
-    """The family of order-preserving function sets."""
-
-    ObjectType = PosetHomCategory
-
-    def is_subcategory(self, category: Category) -> bool:
-        return category is Sets().HomCategory() or super().is_subcategory(category)
-
-
 class CardinalityFunctor(Functor):
     """The cardinality functor from the core of ``Sets`` to ``Cardinals``."""
 
@@ -1640,7 +1224,6 @@ class SetsCategory(Category):
     ObjectType = SetObject
 
     def __init__(self) -> None:
-        self.Δ = Delta
         self.ℵ = Aleph
         self.א = Aleph
         self._finite_sets_by_members: dict[
@@ -1651,8 +1234,6 @@ class SetsCategory(Category):
         self._infinite_sets: InfiniteSetsCategory | None = None
         self._countable_sets: CountableSetsCategory | None = None
         self._uncountable_sets: UncountableSetsCategory | None = None
-        self._partially_ordered_sets: PartiallyOrderedSetsCategory | None = None
-        self._totally_ordered_sets: TotallyOrderedSetsCategory | None = None
         self._cardinality_functor: CardinalityFunctor | None = None
         self._exponential_functor: ExponentialFunctor | None = None
         self._inverse_image_power_set_functor: InverseImagePowerSetFunctor | None = None
@@ -1726,16 +1307,6 @@ class SetsCategory(Category):
         if self._uncountable_sets is None:
             self._uncountable_sets = UncountableSetsCategory(self)
         return self._uncountable_sets
-
-    def PartiallyOrdered(self) -> PartiallyOrderedSetsCategory:
-        if self._partially_ordered_sets is None:
-            self._partially_ordered_sets = PartiallyOrderedSetsCategory(self)
-        return self._partially_ordered_sets
-
-    def TotallyOrdered(self) -> TotallyOrderedSetsCategory:
-        if self._totally_ordered_sets is None:
-            self._totally_ordered_sets = TotallyOrderedSetsCategory(self)
-        return self._totally_ordered_sets
 
     def CardinalityFunctor(self) -> CardinalityFunctor:
         if self._cardinality_functor is None:
@@ -1839,56 +1410,6 @@ class UncountableSetsCategory(Category):
         return (self._infinite_inclusion,)
 
 
-class PartiallyOrderedSetsCategory(Category):
-    def __init__(self, sets: SetsCategory) -> None:
-        self._sets = sets
-        self._inclusion: InclusionFunctor | None = None
-        super().__init__(object_type=PartiallyOrderedSetObject)
-
-    def _hom_category_type(self) -> type[HomCategory]:
-        return PosetHomCategory
-
-    def _hom_category_family_type(self) -> type[HomCategoryFamily]:
-        return PosetHomCategoryFamily
-
-    def __contains__(self, candidate: MembershipInput) -> bool:
-        value = registered_value(candidate)
-        return value is not None and Sets().contains_set(value) and id(value) in _SET_ORDERS
-
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
-        if self._inclusion is None:
-            self._inclusion = InclusionFunctor(self, self._sets)
-        return (self._inclusion,)
-
-
-class TotallyOrderedSetsCategory(Category):
-    def __init__(self, sets: SetsCategory) -> None:
-        self._sets = sets
-        self._partial_order_inclusion: InclusionFunctor | None = None
-        super().__init__()
-
-    def _hom_category_type(self) -> type[HomCategory]:
-        return PosetHomCategory
-
-    def _hom_category_family_type(self) -> type[HomCategoryFamily]:
-        return PosetHomCategoryFamily
-
-    def __contains__(self, candidate: MembershipInput) -> bool:
-        value = registered_value(candidate)
-        if value is None or not Sets().contains_set(value):
-            return False
-        order = _SET_ORDERS.get(id(value))
-        return order is not None and order.is_total() is True
-
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
-        if self._partial_order_inclusion is None:
-            self._partial_order_inclusion = InclusionFunctor(
-                self,
-                self._sets.PartiallyOrdered(),
-            )
-        return (self._partial_order_inclusion,)
-
-
 _SETS = SetsCategory()
 
 
@@ -1914,14 +1435,6 @@ def UncountableSets() -> UncountableSetsCategory:
 
 def cardinality_functor() -> CardinalityFunctor:
     return Sets().CardinalityFunctor()
-
-
-def PartiallyOrderedSets() -> PartiallyOrderedSetsCategory:
-    return Sets().PartiallyOrdered()
-
-
-def TotallyOrderedSets() -> TotallyOrderedSetsCategory:
-    return Sets().TotallyOrdered()
 
 
 def is_set_hom_category(category: MathematicalObject) -> TypeIs[SetHomCategory]:
@@ -1978,8 +1491,6 @@ def SetMap(
     *,
     injective: Decision = UNKNOWN,
     surjective: Decision = UNKNOWN,
-    order_preserving: Decision = UNKNOWN,
-    order_reflecting: Decision = UNKNOWN,
 ) -> SetFunction:
     hom_category = Sets().Hom(domain, codomain)
     assert is_set_hom_category(hom_category)
@@ -1987,8 +1498,6 @@ def SetMap(
         rule,
         injective=injective,
         surjective=surjective,
-        order_preserving=order_preserving,
-        order_reflecting=order_reflecting,
     )
 
 
@@ -1999,8 +1508,6 @@ def SetMapFromMapping(
     *,
     injective: Decision = UNKNOWN,
     surjective: Decision = UNKNOWN,
-    order_preserving: Decision = UNKNOWN,
-    order_reflecting: Decision = UNKNOWN,
 ) -> SetFunction:
     return SetMap(
         domain,
@@ -2008,8 +1515,6 @@ def SetMapFromMapping(
         mapping.__getitem__,
         injective=injective,
         surjective=surjective,
-        order_preserving=order_preserving,
-        order_reflecting=order_reflecting,
     )
 
 

@@ -135,9 +135,7 @@ class CategoryCompiler:
         if cached is not None:
             return cached
         routes = self._routes_from(source, target, (id(source),))
-        assert len(routes) == 1, (
-            f"expected one structural route from {source} to {target}; found {len(routes)}"
-        )
+        assert len(routes) == 1, f"expected one structural route from {source} to {target}; found {len(routes)}"
         route = routes[0]
         self._routes[key] = route
         return route
@@ -157,9 +155,7 @@ class CategoryCompiler:
                 if previous is None or previous.owner is declaration.owner:
                     catalogue[name] = declaration
                     continue
-                assert name in local, (
-                    f"{category} inherits {name} from unrelated categories {previous.owner} and {declaration.owner}"
-                )
+                assert name in local, f"{category} inherits {name} from unrelated categories {previous.owner} and {declaration.owner}"
         for name, method in local.items():
             catalogue[name] = DeclaredMethod(category, method)
         return catalogue
@@ -202,8 +198,7 @@ class CategoryCompiler:
                 local_type,
                 predicate=inspect.isfunction,
             )
-            if name not in _IGNORED_METHODS
-            and (not name.startswith("_") or name.startswith("__"))
+            if name not in _IGNORED_METHODS and (not name.startswith("_") or name.startswith("__"))
         }
 
     def _routes_from(
@@ -215,9 +210,7 @@ class CategoryCompiler:
         routes: list[tuple[StructuralFunctor, ...]] = []
         for functor in source.super_functors():
             codomain = functor.codomain()
-            assert id(codomain) not in visited, (
-                "the structural-functor graph has a cycle"
-            )
+            assert id(codomain) not in visited, "the structural-functor graph has a cycle"
             if codomain is target:
                 routes.append((functor,))
                 continue

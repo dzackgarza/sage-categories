@@ -1534,7 +1534,7 @@ class SetsCategory(Category):
 
     def chosen_colimit(self, diagram: Functor) -> CoproductPresentation:
         if diagram.domain() in DiscreteCategories():
-            return CoproductOfSets(diagram)
+            return _CoproductPresentationOfSets(diagram)
         return ColimitOfSets(diagram)
 
     def __repr__(self) -> str:
@@ -1654,6 +1654,10 @@ def CountableSets() -> CountableSetsCategory:
 
 def UncountableSets() -> UncountableSetsCategory:
     return Sets().Uncountable()
+
+
+def cardinality_functor() -> CardinalityFunctor:
+    return Sets().CardinalityFunctor()
 
 
 def PartiallyOrderedSets() -> PartiallyOrderedSetsCategory:
@@ -2334,7 +2338,7 @@ def _cone_component_value(
     return component(member)
 
 
-def CoproductOfSets(diagram: Functor) -> CoproductPresentation:
+def _CoproductPresentationOfSets(diagram: Functor) -> CoproductPresentation:
     assert diagram.codomain() is Sets()
     apex = CoproductSet(diagram)
 
@@ -2415,6 +2419,20 @@ def CartesianProductOfSets(factors: tuple[SetObject, ...]) -> SetObject:
     return image
 
 
+def CartesianProductOfFamily(
+    index_set: SetObject,
+    factors: Callable[[SetElementInput], SetObject],
+) -> SetObject:
+    index_category = DiscreteCategory(index_set)
+    diagram = SetFamily(
+        index_category,
+        lambda index: factors(index.label()),
+    )
+    image = Sets().ProductFunctor(index_category)(diagram)
+    assert Sets().contains_set(image)
+    return image
+
+
 def CartesianProductMorphismOfFamily(
     index_category: DiscreteCategoryObject,
     functions: SetFunctionFamily,
@@ -2468,6 +2486,24 @@ def DisjointUnionOfSets(cofactors: tuple[SetObject, ...]) -> SetObject:
     index = DiscreteCategory(labels)
     diagram = SetFamily(index, lambda value: cofactors[value.label()])
     image = Sets().CoproductFunctor(index)(diagram)
+    assert Sets().contains_set(image)
+    return image
+
+
+def CoproductOfSets(cofactors: tuple[SetObject, ...]) -> SetObject:
+    return DisjointUnionOfSets(cofactors)
+
+
+def CoproductOfFamily(
+    index_set: SetObject,
+    cofactors: Callable[[SetElementInput], SetObject],
+) -> SetObject:
+    index_category = DiscreteCategory(index_set)
+    diagram = SetFamily(
+        index_category,
+        lambda index: cofactors(index.label()),
+    )
+    image = Sets().CoproductFunctor(index_category)(diagram)
     assert Sets().contains_set(image)
     return image
 

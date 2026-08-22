@@ -22,8 +22,9 @@ _VALUES: dict[int, MathematicalObject] = {}
 
 def registered_value(candidate: MembershipInput) -> MathematicalObject | None:
     """Return the owned mathematical value represented by ``candidate``."""
-    value = _VALUES.get(id(candidate))
-    if value is candidate:
+    candidate_id = id(candidate)
+    value = _VALUES.get(candidate_id)
+    if value is not None and id(value) == candidate_id:
         return value
     return None
 
@@ -75,13 +76,8 @@ class MathematicalObject:
 class MathematicalElement(MathematicalObject):
     """An element of a mathematical object."""
 
-    def __init__(self, *, parent: MathematicalObject, category: Category) -> None:
-        self._parent = parent
+    def __init__(self, *, category: Category) -> None:
         super().__init__(category=category)
-
-    def parent(self) -> MathematicalObject:
-        """Return the mathematical object containing this element."""
-        return self._parent
 
 
 class Arrow(MathematicalElement):
@@ -90,7 +86,6 @@ class Arrow(MathematicalElement):
     def __init__(self, *, hom_category: HomCategory) -> None:
         self._hom_category = hom_category
         super().__init__(
-            parent=hom_category,
             category=hom_category.base_category().ArrowCategory(),
         )
 

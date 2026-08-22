@@ -863,16 +863,10 @@ def is_totally_ordered_sets_category(
 def is_poset_hom_category(
     category: HomCategory,
 ) -> TypeIs[PosetHomCategory]:
-    return (
-        category.base_category() is PartiallyOrderedSets()
-        and category in PartiallyOrderedSets().HomCategory()
-    )
+    return category.base_category() is PartiallyOrderedSets() and category in PartiallyOrderedSets().HomCategory()
 
 
 def is_total_order_hom_category(
     category: HomCategory,
 ) -> TypeIs[TotallyOrderedSetHomCategory]:
-    return (
-        category.base_category() is TotallyOrderedSets()
-        and category in TotallyOrderedSets().HomCategory()
-    )
+    return category.base_category() is TotallyOrderedSets() and category in TotallyOrderedSets().HomCategory()

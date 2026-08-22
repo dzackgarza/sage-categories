@@ -82,11 +82,7 @@ class Cardinal(MathematicalObject):
             assert name is not None
         if kind is CardinalKind.POWER:
             assert len(terms) == 2
-        if (
-            kind is CardinalKind.SUM
-            or kind is CardinalKind.PRODUCT
-            or kind is CardinalKind.SUPREMUM
-        ):
+        if kind is CardinalKind.SUM or kind is CardinalKind.PRODUCT or kind is CardinalKind.SUPREMUM:
             assert terms
         if kind is CardinalKind.INDEXED_SUM or kind is CardinalKind.INDEXED_PRODUCT:
             assert index_set is not None and family is not None
@@ -122,11 +118,7 @@ class Cardinal(MathematicalObject):
         return self._kind is CardinalKind.ALEPH
 
     def is_continuum(self) -> bool:
-        return (
-            self._kind is CardinalKind.POWER
-            and self._terms[0] == 2
-            and self._terms[1].is_countably_infinite()
-        )
+        return self._kind is CardinalKind.POWER and self._terms[0] == 2 and self._terms[1].is_countably_infinite()
 
     def is_countably_infinite(self) -> bool:
         return self._kind is CardinalKind.ALEPH and self.aleph_index() == 0
@@ -222,10 +214,7 @@ class Cardinal(MathematicalObject):
         value = registered_value(other)
         if value is None or not Cardinals().contains_cardinal(value):
             return False
-        if (
-            self._kind is CardinalKind.INDEXED_SUM
-            or self._kind is CardinalKind.INDEXED_PRODUCT
-        ):
+        if self._kind is CardinalKind.INDEXED_SUM or self._kind is CardinalKind.INDEXED_PRODUCT:
             return False
         return (
             self._kind is value._kind
@@ -238,10 +227,7 @@ class Cardinal(MathematicalObject):
     def __hash__(self) -> int:
         if self._kind is CardinalKind.FINITE:
             return hash(self.finite_value())
-        if (
-            self._kind is CardinalKind.INDEXED_SUM
-            or self._kind is CardinalKind.INDEXED_PRODUCT
-        ):
+        if self._kind is CardinalKind.INDEXED_SUM or self._kind is CardinalKind.INDEXED_PRODUCT:
             return id(self)
         return hash(
             (
@@ -512,18 +498,11 @@ class CardinalsCategory(Category):
             return self(0)
         if base == 1:
             return self(1)
-        if (
-            base.kind() is CardinalKind.FINITE
-            and exponent.kind() is CardinalKind.FINITE
-        ):
+        if base.kind() is CardinalKind.FINITE and exponent.kind() is CardinalKind.FINITE:
             return self(base.finite_value() ** exponent.finite_value())
         if base.is_infinite() is True and exponent.kind() is CardinalKind.FINITE:
             return base
-        if (
-            exponent.is_infinite() is True
-            and base.kind() is CardinalKind.FINITE
-            and base.finite_value() >= 2
-        ):
+        if exponent.is_infinite() is True and base.kind() is CardinalKind.FINITE and base.finite_value() >= 2:
             base = self(2)
         return Cardinal(
             category=self,
@@ -592,10 +571,7 @@ class CardinalsCategory(Category):
             if any(answer is True for answer in answers):
                 return True
             return UNKNOWN
-        if (
-            source.kind() is CardinalKind.FINITE
-            and target.kind() is CardinalKind.FINITE
-        ):
+        if source.kind() is CardinalKind.FINITE and target.kind() is CardinalKind.FINITE:
             return source.finite_value() <= target.finite_value()
         if source.kind() is CardinalKind.FINITE and target.is_infinite() is True:
             return True
@@ -605,19 +581,12 @@ class CardinalsCategory(Category):
             return source.aleph_index() <= target.aleph_index()
         if source.is_countably_infinite() and target.is_infinite() is True:
             return True
-        if (
-            source.kind() is CardinalKind.ALEPH
-            and source.aleph_index() == 1
-            and target.is_uncountable() is True
-        ):
+        if source.kind() is CardinalKind.ALEPH and source.aleph_index() == 1 and target.is_uncountable() is True:
             return True
         if target.kind() is CardinalKind.POWER:
             if self.le(source, target.terms()[0]) is True:
                 return True
-            if (
-                self.le(self(2), target.terms()[0]) is True
-                and self.le(source, target.terms()[1]) is True
-            ):
+            if self.le(self(2), target.terms()[0]) is True and self.le(source, target.terms()[1]) is True:
                 return True
             if source.kind() is CardinalKind.POWER:
                 base_comparison = self.le(source.terms()[0], target.terms()[0])

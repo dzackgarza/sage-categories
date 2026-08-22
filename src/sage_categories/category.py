@@ -19,13 +19,15 @@ from sage_categories.values import (
 )
 
 if TYPE_CHECKING:
-    from sage_categories.abstract_categories.arrow_categories import ArrowCategory
+    from sage_categories.abstract_categories.arrow_categories import (
+        ArrowCategory as ArrowCategoryObject,
+    )
     from sage_categories.abstract_categories.functors import (
         Functor,
         StructuralFunctor,
     )
     from sage_categories.abstract_categories.hom_categories import (
-        HomCategory,
+        HomCategory as HomCategoryObject,
         HomCategoryFamily,
     )
 
@@ -58,7 +60,7 @@ class Category(MathematicalObject):
         self._local_object_type = object_type
         self._local_element_type = element_type
         self._hom_category_family: HomCategoryFamily | None = None
-        self._arrow_category: ArrowCategory | None = None
+        self._arrow_category: ArrowCategoryObject | None = None
         self._end_arrow_category: Category | None = None
         self._mono_arrow_category: Category | None = None
         self._epi_arrow_category: Category | None = None
@@ -117,7 +119,7 @@ class Category(MathematicalObject):
             return self is not category
         return super()._belongs_to(category)
 
-    def _hom_category_type(self) -> type[HomCategory]:
+    def _hom_category_type(self) -> type[HomCategoryObject]:
         from sage_categories.abstract_categories.hom_categories import HomCategory
 
         return HomCategory
@@ -190,27 +192,27 @@ class Category(MathematicalObject):
         return self._aut_category
 
     @property
-    def HomCatType(self) -> type[HomCategory]:
+    def HomCatType(self) -> type[HomCategoryObject]:
         return self.HomCategory().ObjectType
 
     @property
-    def EndCatType(self) -> type[HomCategory]:
+    def EndCatType(self) -> type[HomCategoryObject]:
         return self.EndCategory().ObjectType
 
     @property
-    def MonoCatType(self) -> type[HomCategory]:
+    def MonoCatType(self) -> type[HomCategoryObject]:
         return self.MonoCategory().ObjectType
 
     @property
-    def EpiCatType(self) -> type[HomCategory]:
+    def EpiCatType(self) -> type[HomCategoryObject]:
         return self.EpiCategory().ObjectType
 
     @property
-    def IsoCatType(self) -> type[HomCategory]:
+    def IsoCatType(self) -> type[HomCategoryObject]:
         return self.IsoCategory().ObjectType
 
     @property
-    def AutCatType(self) -> type[HomCategory]:
+    def AutCatType(self) -> type[HomCategoryObject]:
         return self.AutCategory().ObjectType
 
     @property
@@ -242,12 +244,12 @@ class Category(MathematicalObject):
         self,
         domain: MathematicalObject,
         codomain: MathematicalObject,
-    ) -> HomCategory:
+    ) -> HomCategoryObject:
         """Return ``Hom_C(domain, codomain)``."""
         assert domain in self and codomain in self
         return self.HomCategory().Of(domain, codomain)
 
-    def End(self, value: MathematicalObject) -> HomCategory:
+    def End(self, value: MathematicalObject) -> HomCategoryObject:
         """Return ``End_C(value)``."""
         assert value in self
         return self.EndCategory().Of(value, value)
@@ -256,7 +258,7 @@ class Category(MathematicalObject):
         self,
         domain: MathematicalObject,
         codomain: MathematicalObject,
-    ) -> HomCategory:
+    ) -> HomCategoryObject:
         """Return the monomorphisms from domain to codomain."""
         return self.MonoCategory().Of(domain, codomain)
 
@@ -264,7 +266,7 @@ class Category(MathematicalObject):
         self,
         domain: MathematicalObject,
         codomain: MathematicalObject,
-    ) -> HomCategory:
+    ) -> HomCategoryObject:
         """Return the epimorphisms from domain to codomain."""
         return self.EpiCategory().Of(domain, codomain)
 
@@ -272,11 +274,11 @@ class Category(MathematicalObject):
         self,
         domain: MathematicalObject,
         codomain: MathematicalObject,
-    ) -> HomCategory:
+    ) -> HomCategoryObject:
         """Return the isomorphisms from domain to codomain."""
         return self.IsoCategory().Of(domain, codomain)
 
-    def Aut(self, value: MathematicalObject) -> HomCategory:
+    def Aut(self, value: MathematicalObject) -> HomCategoryObject:
         """Return the automorphisms of ``value``."""
         return self.AutCategory().Of(value, value)
 
@@ -291,7 +293,7 @@ class Category(MathematicalObject):
         assert first.codomain() is second.domain()
         return self.Hom(first.domain(), second.codomain()).compose(second, first)
 
-    def ArrowCategory(self) -> ArrowCategory:
+    def ArrowCategory(self) -> ArrowCategoryObject:
         """Return ``Ar(C)``."""
         if self._arrow_category is None:
             from sage_categories.abstract_categories.arrow_categories import (
@@ -369,13 +371,13 @@ class Category(MathematicalObject):
 
         return CodomainFunctor(self)
 
-    def FunctorCategory(self, codomain: Category) -> HomCategory:
+    def FunctorCategory(self, codomain: Category) -> HomCategoryObject:
         """Return the functor category from this category to ``codomain``."""
         from sage_categories.abstract_categories.cat import Cat
 
         return Cat().Hom(self, codomain)
 
-    def Diagram(self, index_category: Category) -> HomCategory:
+    def Diagram(self, index_category: Category) -> HomCategoryObject:
         """Return the category of diagrams of shape ``index_category``."""
         return index_category.FunctorCategory(self)
 

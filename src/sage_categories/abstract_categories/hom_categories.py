@@ -6,10 +6,11 @@ The semantics are migrated from the research preamble's
 
 from __future__ import annotations
 
+from typing import TypeIs
+
 from sage_categories.category import Category
 from sage_categories.values import (
     Arrow,
-    MathematicalElement,
     MathematicalObject,
     MembershipInput,
     registered_value,
@@ -19,6 +20,7 @@ from sage_categories.values import (
 class HomCategory(Category):
     """One category ``Hom_C(X, Y)`` whose objects are arrows of ``C``."""
 
+    ObjectType: type[Arrow] = Arrow
     ElementType: type[Arrow] = Arrow
 
     def __init__(
@@ -32,8 +34,8 @@ class HomCategory(Category):
         self._codomain = codomain
         self._hom_category = hom_category
         super().__init__(
-            object_type=self.__class__.ElementType,
-            element_type=MathematicalElement,
+            object_type=self.__class__.ObjectType,
+            element_type=self.__class__.ElementType,
             category=hom_category,
         )
 
@@ -57,13 +59,15 @@ class HomCategory(Category):
         value = registered_value(candidate)
         return value is not None and value._belongs_to_hom(self)
 
-    def __call__(self, arrow: Arrow) -> Arrow:
+    def include(self, arrow: Arrow) -> Arrow:
         """Return an arrow already contained in this hom category."""
         assert arrow in self
         return arrow
 
-    def identity(self) -> Arrow:
+    def identity(self, value: MathematicalObject | None = None) -> Arrow:
         """Construct the identity when this is an endomorphism category."""
+        if value is not None:
+            return Category.identity(self, value)
         assert False, f"{self.base_category()} does not define identity arrows"
 
     def compose(self, second: Arrow, first: Arrow) -> Arrow:
@@ -77,6 +81,8 @@ class HomCategory(Category):
 class HomCategoryFamily(Category):
     """The category whose objects are the hom categories of one category."""
 
+    ObjectType: type[HomCategory] = HomCategory
+
     def __init__(
         self,
         base_category: Category,
@@ -84,7 +90,7 @@ class HomCategoryFamily(Category):
         hom_category_type: type[HomCategory] = HomCategory,
     ) -> None:
         self._base_category = base_category
-        self._hom_category_type = hom_category_type
+        self._member_type = hom_category_type
         self._hom_categories: dict[tuple[int, int], HomCategory] = {}
         super().__init__(object_type=hom_category_type)
 
@@ -193,7 +199,12 @@ class Isomorphism(Arrow):
 
     def inverse(self) -> Isomorphism:
         """Return the inverse isomorphism."""
-        return self.base_category().Iso(self.codomain(), self.domain())(
+        inverse_category = self.base_category().Iso(
+            self.codomain(),
+            self.domain(),
+        )
+        assert is_isomorphism_hom_category(inverse_category)
+        return inverse_category(
             self._backward,
             self._forward,
         )
@@ -224,6 +235,7 @@ class Automorphism(Isomorphism):
 class RestrictedHomCategory(HomCategory):
     """A hom category whose arrows carry a declared restriction."""
 
+    ObjectType: type[RestrictedArrow] = RestrictedArrow
     ElementType: type[RestrictedArrow] = RestrictedArrow
 
     def __call__(self, underlying_arrow: Arrow) -> RestrictedArrow:
@@ -232,7 +244,8 @@ class RestrictedHomCategory(HomCategory):
             underlying_arrow=underlying_arrow,
         )
 
-    def identity(self) -> RestrictedArrow:
+    def identity(self, value: MathematicalObject | None = None) -> RestrictedArrow:
+        assert value is None
         assert self.domain() is self.codomain()
         return self(self.base_category().Hom(self.domain(), self.codomain()).identity())
 
@@ -246,24 +259,28 @@ class RestrictedHomCategory(HomCategory):
 class EndomorphismHomCategory(RestrictedHomCategory):
     """One endomorphism category."""
 
+    ObjectType = Endomorphism
     ElementType = Endomorphism
 
 
 class MonomorphismHomCategory(RestrictedHomCategory):
     """One monomorphism category."""
 
+    ObjectType = Monomorphism
     ElementType = Monomorphism
 
 
 class EpimorphismHomCategory(RestrictedHomCategory):
     """One epimorphism category."""
 
+    ObjectType = Epimorphism
     ElementType = Epimorphism
 
 
 class IsomorphismHomCategory(HomCategory):
     """One category of isomorphisms between two objects."""
 
+    ObjectType = Isomorphism
     ElementType = Isomorphism
 
     def __call__(self, forward: Arrow, backward: Arrow) -> Isomorphism:
@@ -273,12 +290,15 @@ class IsomorphismHomCategory(HomCategory):
             backward=backward,
         )
 
-    def identity(self) -> Isomorphism:
+    def identity(self, value: MathematicalObject | None = None) -> Isomorphism:
+        assert value is None
         assert self.domain() is self.codomain()
         identity = self.base_category().Hom(self.domain(), self.codomain()).identity()
         return self(identity, identity)
 
-    def compose(self, second: Isomorphism, first: Isomorphism) -> Isomorphism:
+    def compose(self, second: Arrow, first: Arrow) -> Isomorphism:
+        assert self.contains_isomorphism(second)
+        assert self.contains_isomorphism(first)
         assert first.codomain() is second.domain()
         category = self.base_category()
         return self(
@@ -289,10 +309,15 @@ class IsomorphismHomCategory(HomCategory):
             ),
         )
 
+    def contains_isomorphism(self, arrow: Arrow) -> TypeIs[Isomorphism]:
+        """Return whether ``arrow`` is an object of this isomorphism category."""
+        return arrow in self
+
 
 class AutomorphismHomCategory(IsomorphismHomCategory):
     """One automorphism category."""
 
+    ObjectType = Automorphism
     ElementType = Automorphism
 
 
@@ -345,3 +370,10 @@ class AutomorphismCategoryFamily(HomCategoryFamily):
     ) -> HomCategory:
         assert domain is codomain
         return super().Of(domain, codomain)
+
+
+def is_isomorphism_hom_category(
+    category: HomCategory,
+) -> TypeIs[IsomorphismHomCategory]:
+    """Return whether ``category`` belongs to an isomorphism family."""
+    return category in category.base_category().IsoCategory()

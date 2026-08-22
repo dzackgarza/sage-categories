@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 from collections.abc import Callable, Mapping
 from types import FunctionType, new_class
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar
 
 from sage_categories.descriptors import ForwardedMethod
 from sage_categories.values import MathematicalElement, MathematicalObject
@@ -28,6 +28,8 @@ _IGNORED_METHODS = frozenset(
 
 type ImplementationType = type[MathematicalObject] | type[MathematicalElement]
 type CompiledClassMember = ForwardedMethod | str
+
+Implementation = TypeVar("Implementation", bound=MathematicalObject)
 
 
 class DeclaredMethod:
@@ -167,9 +169,9 @@ class CategoryCompiler:
     def _compile_type(
         self,
         category: Category,
-        local_type: ImplementationType,
+        local_type: type[Implementation],
         catalogue: Mapping[str, DeclaredMethod],
-    ) -> ImplementationType:
+    ) -> type[Implementation]:
         local = self._local_methods(local_type)
         inherited = {
             name: ForwardedMethod(

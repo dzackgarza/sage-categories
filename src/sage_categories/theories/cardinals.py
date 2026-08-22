@@ -19,7 +19,7 @@ class FiniteCardinal(MathematicalObject):
     def __eq__(self, other: Any) -> bool:
         if other is self:
             return True
-        return self._number == other
+        return True if self._number == other else False
 
     def __hash__(self) -> int:
         return hash(self._number)

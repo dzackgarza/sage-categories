@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from typing import TypeIs
+from typing import TypeIs, overload
 
 from sage_categories.abstract_categories.hom_categories import HomCategory
 from sage_categories.category import Category
@@ -30,10 +30,12 @@ class Functor(Arrow, ABC):
         self._image_category: Category | None = None
         self._functor_domain = domain
         self._functor_codomain = codomain
-        parent = Cat().Hom(domain, codomain) if hom_category is None else hom_category
-        assert parent.domain() is domain
-        assert parent.codomain() is codomain
-        super().__init__(hom_category=parent)
+        functor_hom_category = (
+            Cat().Hom(domain, codomain) if hom_category is None else hom_category
+        )
+        assert functor_hom_category.domain() is domain
+        assert functor_hom_category.codomain() is codomain
+        super().__init__(hom_category=functor_hom_category)
 
     def domain(self) -> Category:
         """Return the domain category."""
@@ -55,13 +57,13 @@ class Functor(Arrow, ABC):
         """Apply this functor to an object or arrow by categorical membership."""
         arrow_category = self.domain().ArrowCategory()
         if arrow_category.contains_arrow(value):
-            image = self.on_morphism(value)
-            assert image in self.codomain().ArrowCategory()
-            return image
+            arrow_image = self.on_morphism(value)
+            assert arrow_image in self.codomain().ArrowCategory()
+            return arrow_image
         assert value in self.domain()
-        image = self.on_object(value)
-        assert image in self.codomain()
-        return image
+        object_image = self.on_object(value)
+        assert object_image in self.codomain()
+        return object_image
 
     def is_faithful(self) -> bool:
         return False
@@ -314,6 +316,7 @@ class _NaturalTransformation(Arrow):
 class NaturalTransformationHomCategory(HomCategory):
     """Natural transformations between two parallel functors."""
 
+    ObjectType = _NaturalTransformation
     ElementType = _NaturalTransformation
 
     def __call__(
@@ -322,7 +325,11 @@ class NaturalTransformationHomCategory(HomCategory):
     ) -> _NaturalTransformation:
         return self.ObjectType(hom_category=self, components=components)
 
-    def identity(self) -> _NaturalTransformation:
+    def identity(
+        self,
+        value: MathematicalObject | None = None,
+    ) -> _NaturalTransformation:
+        assert value is None
         source = self.domain()
         assert source is self.codomain()
         assert is_functor(source)
@@ -346,12 +353,35 @@ class NaturalTransformationHomCategory(HomCategory):
 class FunctorCategory(HomCategory):
     """The category ``Fun(C, D)`` of functors and natural transformations."""
 
+    ObjectType = Functor
     ElementType = Functor
 
     def _hom_category_type(self) -> type[HomCategory]:
         return NaturalTransformationHomCategory
 
-    def identity(self) -> Functor:
+    def domain(self) -> Category:
+        from sage_categories.abstract_categories.cat import Cat
+
+        source = HomCategory.domain(self)
+        assert Cat().contains_category(source)
+        return source
+
+    def codomain(self) -> Category:
+        from sage_categories.abstract_categories.cat import Cat
+
+        target = HomCategory.codomain(self)
+        assert Cat().contains_category(target)
+        return target
+
+    @overload
+    def identity(self) -> Functor: ...
+
+    @overload
+    def identity(self, value: MathematicalObject) -> Arrow: ...
+
+    def identity(self, value: MathematicalObject | None = None) -> Arrow:
+        if value is not None:
+            return Category.identity(self, value)
         assert self.domain() is self.codomain()
         return IdentityFunctor(self.domain(), hom_category=self)
 
@@ -372,10 +402,15 @@ def is_functor(candidate: MathematicalObject) -> TypeIs[Functor]:
     return candidate in Cat().ArrowCategory()
 
 
-def NaturalTransformations(source: Functor, target: Functor) -> HomCategory:
+def NaturalTransformations(
+    source: Functor,
+    target: Functor,
+) -> NaturalTransformationHomCategory:
     """Return the natural transformations from source to target."""
     assert source.hom_category() is target.hom_category()
-    return source.hom_category().Hom(source, target)
+    category = source.hom_category().Hom(source, target)
+    assert is_natural_transformation_hom_category(category)
+    return category
 
 
 def NaturalTransformation(
@@ -401,3 +436,13 @@ def NaturalIsomorphism(
     forward = NaturalTransformation(source, target, components)
     backward = NaturalTransformation(target, source, inverse_components)
     return declare_isomorphism(forward, backward)
+
+
+def is_natural_transformation_hom_category(
+    category: HomCategory,
+) -> TypeIs[NaturalTransformationHomCategory]:
+    """Return whether ``category`` contains natural transformations."""
+    from sage_categories.abstract_categories.cat import Cat
+
+    base = category.base_category()
+    return base in Cat().HomCategory() and category in base.HomCategory()

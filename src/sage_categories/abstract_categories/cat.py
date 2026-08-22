@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeIs
 
 from sage_categories.category import Category
 from sage_categories.values import (
@@ -31,6 +31,13 @@ class CategoryOfCategories(Category):
     def __contains__(self, candidate: MembershipInput) -> bool:
         value = registered_value(candidate)
         return value is not None and value._belongs_to(self)
+
+    def contains_category(
+        self,
+        candidate: MathematicalObject,
+    ) -> TypeIs[Category]:
+        """Return whether ``candidate`` is an object of ``Cat``."""
+        return candidate in self
 
     def _belongs_to(self, category: Category) -> bool:
         return False

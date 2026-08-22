@@ -6,7 +6,7 @@ The semantics are migrated from the research preamble's
 
 from __future__ import annotations
 
-from typing import TypeIs
+from typing import TypeIs, overload
 
 from sage_categories.category import Category
 from sage_categories.values import (
@@ -34,7 +34,7 @@ class HomCategory(Category):
         self._codomain = codomain
         self._hom_category = hom_category
         super().__init__(
-            object_type=self.__class__.ObjectType,
+            object_type=self.__class__.ElementType,
             element_type=self.__class__.ElementType,
             category=hom_category,
         )
@@ -63,6 +63,12 @@ class HomCategory(Category):
         """Return an arrow already contained in this hom category."""
         assert arrow in self
         return arrow
+
+    @overload
+    def identity(self) -> Arrow: ...
+
+    @overload
+    def identity(self, value: MathematicalObject) -> Arrow: ...
 
     def identity(self, value: MathematicalObject | None = None) -> Arrow:
         """Construct the identity when this is an endomorphism category."""

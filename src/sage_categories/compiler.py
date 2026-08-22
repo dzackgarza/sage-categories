@@ -169,12 +169,7 @@ class CategoryCompiler:
         *,
         element_methods: bool,
     ) -> type[Implementation]:
-        available = {
-            name
-            for implementation in local_type.__mro__
-            for name, method in implementation.__dict__.items()
-            if inspect.isfunction(method)
-        }
+        available = {name for implementation in local_type.__mro__ for name, method in implementation.__dict__.items() if inspect.isfunction(method)}
         inherited = {
             name: ForwardedMethod(
                 self.implementation_route(category, declaration.owner),

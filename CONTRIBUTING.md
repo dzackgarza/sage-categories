@@ -173,7 +173,7 @@ Do not reuse a retired identifier.
 | `POL-SET-013` | Support products and coproducts indexed by arbitrary small diagrams. |
 | `POL-SET-014` | Support general limits and colimits in `Sets()`. |
 | `POL-SET-015` | Propagate set operations, including cardinality, to objects produced by functors and universal constructions. |
-| `POL-SET-016` | Do not enumerate an infinite set to answer a structural predicate. |
+| `POL-SET-016` | Derive structural properties from construction data, defining predicates, functors, injections, bijections, and universal constructions before considering enumeration. |
 | `POL-SET-017` | Use one parent and implementation for `Hom_Set(X, Y)`, the set of functions `X -> Y`, and the exponential `Y^X`. |
 | `POL-SET-018` | Use one parent and implementation for `P(X)`, `2^X`, and `Hom_Set(X, 2)`. |
 | `POL-SET-019` | Construct a set arrow from a well-typed callable or explicit mapping data. A callable must represent maps such as `QQ -> ZZ` without enumerating `QQ`. |
@@ -186,6 +186,13 @@ Do not reuse a retired identifier.
 | `POL-SET-026` | Let cardinal arithmetic, equality, and order return `Unknown` when the available data does not decide the result. |
 | `POL-SET-027` | Use `len()` only for a finite sequence whose order is part of its meaning. Use `cardinality()` for every mathematical set. |
 | `POL-SET-028` | When `rank()` or `ngens()` counts a mathematical set, return its cardinality rather than a sequence length. |
+| `POL-SET-029` | Before enumerating a set, determine how the operation behaves for an infinite set and for a very large finite set. Keep unbounded enumeration out of the normal path. |
+| `POL-SET-030` | Enumerate to compute cardinality only when a concrete cardinality is required, finiteness is established, and no construction formula or structural relation supplies it. |
+| `POL-SET-031` | A constructor that knows a set's cardinality or structural property records it. Functors and related objects derive and transport that information. |
+
+Grounding examples: the even positive integers are infinite, and \(\{1,2,\ldots,10^{10}\}\) is finite but unsuitable for materialization.
+The set \(\{n\in\mathbb N\mid n\leq100\}\) is finite from its defining bound.
+None requires enumeration to establish finiteness.
 
 ## Sage boundary
 
@@ -298,6 +305,10 @@ Do not reuse a retired identifier.
 | `POL-PERF-002` | Use call counts only to locate repeated work. Do not use them as efficiency evidence. |
 | `POL-PERF-003` | Preserve code that displays the mathematical sequence when a faster form hides it. |
 | `POL-PERF-004` | Use small mathematical specimens unless the claim concerns a large named object. |
+| `POL-PERF-005` | Keep an enumeration-based approximation explicit and outside foundational paths. Log a clear warning before a potentially large enumeration begins. |
+
+Enumerating isotropic subgroups of a torsion bilinear module can be an explicit first approximation.
+It remains a replaceable algorithm, not the representation or default structural method.
 
 ## Policy maintenance
 

@@ -25,8 +25,22 @@ from sage_categories.abstract_categories.functors import (
     DiscreteCategory as DiscreteCategoryObject,
 )
 from sage_categories.abstract_categories.hom_categories import (
+    Automorphism,
+    AutomorphismCategoryFamily,
+    EndCategoryFamily,
+    Endomorphism,
+    EndomorphismHomCategory,
+    Epimorphism,
+    EpimorphismCategoryFamily,
+    EpimorphismHomCategory,
     HomCategory,
     HomCategoryFamily,
+    Isomorphism,
+    IsomorphismCategoryFamily,
+    IsomorphismHomCategory,
+    Monomorphism,
+    MonomorphismCategoryFamily,
+    MonomorphismHomCategory,
     is_restricted_hom_category,
 )
 from sage_categories.abstract_categories.products import (
@@ -133,7 +147,9 @@ class SetObject(MathematicalObject):
 class FiniteSetObject(SetObject):
     """A set given by its complete finite member set."""
 
-    def __init__(self, *, category: Category, members: frozenset[SetElementInput]) -> None:
+    def __init__(
+        self, *, category: Category, members: frozenset[SetElementInput]
+    ) -> None:
         self._members = members
         super().__init__(category=category, cardinality=Cardinals()(len(members)))
 
@@ -258,7 +274,10 @@ class SetSubset(SetFunction):
         return self._subset_category
 
     def _belongs_to(self, category: Category) -> bool:
-        return self._subset_category is category or self._subset_category.is_subcategory(category)
+        return (
+            self._subset_category is category
+            or self._subset_category.is_subcategory(category)
+        )
 
     def object(self) -> SetObject:
         return self._underlying_set
@@ -348,7 +367,9 @@ class SetSubset(SetFunction):
         return self.union(other).difference(self.intersection(other))
 
     def complement(self) -> SetSubset:
-        return self.power_set().from_predicate(lambda member: _decision_not(self.underlying_set().contains(member)))
+        return self.power_set().from_predicate(
+            lambda member: _decision_not(self.underlying_set().contains(member))
+        )
 
     def __or__(self, other: SetSubset) -> SetSubset:
         return self.union(other)
@@ -656,6 +677,185 @@ class SetHomCategory(HomCategory, SetObject):
         return f"{self.codomain()}^{self.domain()}"
 
 
+def _underlying_set_function(arrow: Arrow) -> SetFunction:
+    underlying = arrow.forward()
+    assert Sets().contains_function(underlying)
+    return underlying
+
+
+class SetEndomorphism(Endomorphism):
+    """A callable endomorphism in ``Sets``."""
+
+    def __call__(self, member: SetElementInput) -> SetElementInput:
+        return _underlying_set_function(self)(member)
+
+
+class SetMonomorphism(Monomorphism):
+    """A callable declared injection in ``Sets``."""
+
+    def __call__(self, member: SetElementInput) -> SetElementInput:
+        return _underlying_set_function(self)(member)
+
+    def is_injective(self) -> Decision:
+        return True
+
+
+class SetEpimorphism(Epimorphism):
+    """A callable declared surjection in ``Sets``."""
+
+    def __call__(self, member: SetElementInput) -> SetElementInput:
+        return _underlying_set_function(self)(member)
+
+    def is_surjective(self) -> Decision:
+        return True
+
+
+class SetIsomorphism(Isomorphism):
+    """A callable declared bijection in ``Sets``."""
+
+    def __call__(self, member: SetElementInput) -> SetElementInput:
+        return _underlying_set_function(self)(member)
+
+    def is_injective(self) -> Decision:
+        return True
+
+    def is_surjective(self) -> Decision:
+        return True
+
+    def is_bijective(self) -> Decision:
+        return True
+
+
+class SetAutomorphism(Automorphism):
+    """A callable declared automorphism in ``Sets``."""
+
+    def __call__(self, member: SetElementInput) -> SetElementInput:
+        return _underlying_set_function(self)(member)
+
+    def is_injective(self) -> Decision:
+        return True
+
+    def is_surjective(self) -> Decision:
+        return True
+
+    def is_bijective(self) -> Decision:
+        return True
+
+
+class SetEndomorphismHomCategory(EndomorphismHomCategory):
+    ObjectType = SetEndomorphism
+    ElementType = SetEndomorphism
+
+    def __call__(self, underlying_arrow: Arrow) -> SetEndomorphism:
+        assert Sets().contains_function(underlying_arrow)
+        return self.ObjectType(
+            hom_category=self,
+            underlying_arrow=underlying_arrow,
+        )
+
+
+class SetMonomorphismHomCategory(MonomorphismHomCategory):
+    ObjectType = SetMonomorphism
+    ElementType = SetMonomorphism
+
+    def __call__(self, underlying_arrow: Arrow) -> SetMonomorphism:
+        assert Sets().contains_function(underlying_arrow)
+        return self.ObjectType(
+            hom_category=self,
+            underlying_arrow=underlying_arrow,
+        )
+
+
+class SetEpimorphismHomCategory(EpimorphismHomCategory):
+    ObjectType = SetEpimorphism
+    ElementType = SetEpimorphism
+
+    def __call__(self, underlying_arrow: Arrow) -> SetEpimorphism:
+        assert Sets().contains_function(underlying_arrow)
+        return self.ObjectType(
+            hom_category=self,
+            underlying_arrow=underlying_arrow,
+        )
+
+
+class SetIsomorphismHomCategory(IsomorphismHomCategory):
+    ObjectType = SetIsomorphism
+    ElementType = SetIsomorphism
+
+    def __call__(self, forward: Arrow, backward: Arrow) -> SetIsomorphism:
+        assert Sets().contains_function(forward)
+        assert Sets().contains_function(backward)
+        return self.ObjectType(
+            hom_category=self,
+            forward=forward,
+            backward=backward,
+        )
+
+
+class SetAutomorphismHomCategory(IsomorphismHomCategory):
+    ObjectType = SetAutomorphism
+    ElementType = SetAutomorphism
+
+    def __call__(self, forward: Arrow, backward: Arrow) -> SetAutomorphism:
+        assert Sets().contains_function(forward)
+        assert Sets().contains_function(backward)
+        return self.ObjectType(
+            hom_category=self,
+            forward=forward,
+            backward=backward,
+        )
+
+
+class SetEndomorphismCategoryFamily(EndCategoryFamily):
+    def __init__(self, base_category: Category) -> None:
+        self._inclusion: StructuralFunctor | None = None
+        HomCategoryFamily.__init__(
+            self,
+            base_category,
+            hom_category_type=SetEndomorphismHomCategory,
+        )
+
+
+class SetMonomorphismCategoryFamily(MonomorphismCategoryFamily):
+    def __init__(self, base_category: Category) -> None:
+        self._inclusion: StructuralFunctor | None = None
+        HomCategoryFamily.__init__(
+            self,
+            base_category,
+            hom_category_type=SetMonomorphismHomCategory,
+        )
+
+
+class SetEpimorphismCategoryFamily(EpimorphismCategoryFamily):
+    def __init__(self, base_category: Category) -> None:
+        self._inclusion: StructuralFunctor | None = None
+        HomCategoryFamily.__init__(
+            self,
+            base_category,
+            hom_category_type=SetEpimorphismHomCategory,
+        )
+
+
+class SetIsomorphismCategoryFamily(IsomorphismCategoryFamily):
+    def __init__(self, base_category: Category) -> None:
+        self._inclusion: StructuralFunctor | None = None
+        HomCategoryFamily.__init__(
+            self,
+            base_category,
+            hom_category_type=SetIsomorphismHomCategory,
+        )
+
+
+class SetAutomorphismCategoryFamily(AutomorphismCategoryFamily):
+    def __init__(self, base_category: Category) -> None:
+        self._inclusion: StructuralFunctor | None = None
+        HomCategoryFamily.__init__(
+            self,
+            base_category,
+            hom_category_type=SetAutomorphismHomCategory,
+        )
+
+
 class SetHomCategoryFamily(HomCategoryFamily):
     """The family of function sets of ``Sets``."""
 
@@ -724,6 +924,21 @@ class SetsCategory(Category):
 
     def _hom_category_family_type(self) -> type[HomCategoryFamily]:
         return SetHomCategoryFamily
+
+    def _end_category_family_type(self) -> type[HomCategoryFamily]:
+        return SetEndomorphismCategoryFamily
+
+    def _mono_category_family_type(self) -> type[HomCategoryFamily]:
+        return SetMonomorphismCategoryFamily
+
+    def _epi_category_family_type(self) -> type[HomCategoryFamily]:
+        return SetEpimorphismCategoryFamily
+
+    def _iso_category_family_type(self) -> type[HomCategoryFamily]:
+        return SetIsomorphismCategoryFamily
+
+    def _aut_category_family_type(self) -> type[HomCategoryFamily]:
+        return SetAutomorphismCategoryFamily
 
     def __call__(self, members: frozenset[SetElementInput]) -> FiniteSetObject:
         cached = self._finite_sets_by_members.get(members)
@@ -820,21 +1035,31 @@ class FiniteSetsCategory(SetPropertyCategory):
 
     def __contains__(self, candidate: MembershipInput) -> bool:
         value = registered_value(candidate)
-        return value is not None and Sets().contains_set(value) and value.cardinality().is_finite() is True
+        return (
+            value is not None
+            and Sets().contains_set(value)
+            and value.cardinality().is_finite() is True
+        )
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
         if self._countable_inclusion is None:
             self._countable_inclusion = InclusionFunctor(self, self._sets.Countable())
         return (self._countable_inclusion,)
 
-    def contains_finite_set(self, candidate: MathematicalObject) -> TypeIs[FiniteSetObject]:
+    def contains_finite_set(
+        self, candidate: MathematicalObject
+    ) -> TypeIs[FiniteSetObject]:
         return candidate in self
 
 
 class InfiniteSetsCategory(SetPropertyCategory):
     def __contains__(self, candidate: MembershipInput) -> bool:
         value = registered_value(candidate)
-        return value is not None and Sets().contains_set(value) and value.cardinality().is_infinite() is True
+        return (
+            value is not None
+            and Sets().contains_set(value)
+            and value.cardinality().is_infinite() is True
+        )
 
 
 class UncountableSetsCategory(SetPropertyCategory):
@@ -954,7 +1179,9 @@ class DiscreteObjectSet(SetObject):
         return value is not None and value in self._discrete_category
 
     def __iter__(self) -> Iterator[SetElementInput]:
-        return iter(tuple(self._discrete_category.object(label) for label in self._labels))
+        return iter(
+            tuple(self._discrete_category.object(label) for label in self._labels)
+        )
 
 
 class DiscreteArrowSet(SetObject):
@@ -973,7 +1200,12 @@ class DiscreteArrowSet(SetObject):
         return value.domain() is value.codomain()
 
     def __iter__(self) -> Iterator[SetElementInput]:
-        return iter(tuple(self._discrete_category.Hom(value, value).identity() for value in self._discrete_category))
+        return iter(
+            tuple(
+                self._discrete_category.Hom(value, value).identity()
+                for value in self._discrete_category
+            )
+        )
 
 
 class FiniteDiscreteCategoriesCategory(Category):
@@ -1101,7 +1333,11 @@ class ProductSet(SetObject):
 
     def contains(self, member: SetElementInput) -> Decision:
         value = registered_value(member)
-        return value is not None and ProductElements().contains_product_element(value) and value.product() is self
+        return (
+            value is not None
+            and ProductElements().contains_product_element(value)
+            and value.product() is self
+        )
 
     def __iter__(self) -> Iterator[SetElementInput]:
         assert self.index_set().is_finite() is True
@@ -1124,7 +1360,9 @@ class ProductSet(SetObject):
 
         def project(member: SetElementInput) -> SetElementInput:
             value = registered_value(member)
-            assert value is not None and ProductElements().contains_product_element(value)
+            assert value is not None and ProductElements().contains_product_element(
+                value
+            )
             assert value.product() is self
             return value.component(index)
 
@@ -1199,12 +1437,18 @@ class CoproductSet(SetObject):
         assert Sets().contains_set(value)
         return value
 
-    def element(self, index: SetElementInput, value: SetElementInput) -> CoproductElement:
+    def element(
+        self, index: SetElementInput, value: SetElementInput
+    ) -> CoproductElement:
         return CoproductElement(self, index, value)
 
     def contains(self, member: SetElementInput) -> Decision:
         value = registered_value(member)
-        return value is not None and CoproductElements().contains_coproduct_element(value) and value.coproduct() is self
+        return (
+            value is not None
+            and CoproductElements().contains_coproduct_element(value)
+            and value.coproduct() is self
+        )
 
     def __iter__(self) -> Iterator[SetElementInput]:
         assert self.index_set().is_finite() is True
@@ -1251,7 +1495,9 @@ class LimitSet(ProductSet):
             assert arrow is not None and self.diagram().domain().contains_arrow(arrow)
             image = self.diagram()(arrow)
             assert Sets().contains_function(image)
-            if image(value.component(arrow.domain())) != value.component(arrow.codomain()):
+            if image(value.component(arrow.domain())) != value.component(
+                arrow.codomain()
+            ):
                 return False
         return True
 
@@ -1285,7 +1531,9 @@ class ColimitElement(MathematicalObject):
         if value.colimit() is not self._colimit:
             return False
         answer = self._colimit.equivalent(self, value)
-        assert answer is not UNKNOWN, "equality in this colimit is not decidable from its presentation"
+        assert answer is not UNKNOWN, (
+            "equality in this colimit is not decidable from its presentation"
+        )
         return answer
 
     def __hash__(self) -> int:
@@ -1334,7 +1582,11 @@ class ColimitSet(SetObject):
 
     def contains(self, member: SetElementInput) -> Decision:
         value = registered_value(member)
-        return value is not None and ColimitElements().contains_colimit_element(value) and value.colimit() is self
+        return (
+            value is not None
+            and ColimitElements().contains_colimit_element(value)
+            and value.colimit() is self
+        )
 
     def equivalent(
         self,
@@ -1378,7 +1630,9 @@ class ColimitSet(SetObject):
             if not enlarged:
                 return False
             reached = (*reached, *enlarged)
-            if any(_same_coproduct_term(right_representative, known) for known in reached):
+            if any(
+                _same_coproduct_term(right_representative, known) for known in reached
+            ):
                 return True
 
     def __iter__(self) -> Iterator[SetElementInput]:
@@ -1386,7 +1640,9 @@ class ColimitSet(SetObject):
         chosen: tuple[ColimitElement, ...] = ()
         for representative in self._coproduct:
             value = registered_value(representative)
-            assert value is not None and CoproductElements().contains_coproduct_element(value)
+            assert value is not None and CoproductElements().contains_coproduct_element(
+                value
+            )
             candidate = ColimitElement(self, value)
             if any(self.equivalent(candidate, known) is True for known in chosen):
                 continue
@@ -1419,9 +1675,17 @@ def _colimit_terms_are_related(
         assert arrow is not None and diagram.domain().contains_arrow(arrow)
         image = diagram(arrow)
         assert Sets().contains_function(image)
-        if left.index() is arrow.domain() and right.index() is arrow.codomain() and image(left.value()) == right.value():
+        if (
+            left.index() is arrow.domain()
+            and right.index() is arrow.codomain()
+            and image(left.value()) == right.value()
+        ):
             return True
-        if right.index() is arrow.domain() and left.index() is arrow.codomain() and image(right.value()) == left.value():
+        if (
+            right.index() is arrow.domain()
+            and left.index() is arrow.codomain()
+            and image(right.value()) == left.value()
+        ):
             return True
     return False
 
@@ -1477,7 +1741,9 @@ def ProductOfSets(diagram: Functor) -> ProductPresentation:
         return SetMap(
             source,
             apex,
-            lambda member: apex.element(lambda index: _cone_component_value(other, index, member)),
+            lambda member: apex.element(
+                lambda index: _cone_component_value(other, index, member)
+            ),
         )
 
     return Product(cone, mediate)
@@ -1508,7 +1774,9 @@ def CoproductOfSets(diagram: Functor) -> CoproductPresentation:
 
         def induced(member: SetElementInput) -> SetElementInput:
             value = registered_value(member)
-            assert value is not None and CoproductElements().contains_coproduct_element(value)
+            assert value is not None and CoproductElements().contains_coproduct_element(
+                value
+            )
             component = other.costructure_morphism(value.index())
             assert Sets().contains_function(component)
             return component(value.value())
@@ -1533,7 +1801,9 @@ def LimitOfSets(
         return SetMap(
             source,
             apex,
-            lambda member: apex.element(lambda index: _cone_component_value(other, index, member)),
+            lambda member: apex.element(
+                lambda index: _cone_component_value(other, index, member)
+            ),
         )
 
     return Product(cone, mediate)
@@ -1554,7 +1824,9 @@ def ColimitOfSets(
 
         def induced(member: SetElementInput) -> SetElementInput:
             value = registered_value(member)
-            assert value is not None and ColimitElements().contains_colimit_element(value)
+            assert value is not None and ColimitElements().contains_colimit_element(
+                value
+            )
             representative = value.representative()
             component = other.costructure_morphism(representative.index())
             assert Sets().contains_function(component)

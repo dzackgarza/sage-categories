@@ -22,8 +22,10 @@ from sage_categories.abstract_categories.functors import (
 from sage_categories.abstract_categories.hom_categories import HomCategory
 from sage_categories.category import Category
 from sage_categories.theories.sets import (
+    EnumerationInjection,
     FiniteSet,
     FiniteSets,
+    NaturalNumbers,
     SetElementInput,
     SetFunction,
     SetMapDefinition,
@@ -44,8 +46,11 @@ if TYPE_CHECKING:
     from sage_categories.backends.sage.finite_posets import (
         SageFinitePosetObject,
     )
+    from sage_categories.theories.cardinals import Cardinal
 
 type OrderRelation = Callable[[SetElementInput, SetElementInput], bool]
+type EnumerationRule = Callable[[int], SetElementInput]
+type PositionRule = Callable[[SetElementInput], int]
 type PosetMapDefinition = SetMapDefinition | SetFunction
 
 
@@ -459,17 +464,21 @@ class PartiallyOrderedSetsCategory(Category):
 
 
 class TotallyOrderedSetObject(MathematicalObject):
-    """A poset with a chosen finite total-order enumeration."""
+    """A poset with a chosen total-order enumeration."""
 
     def __init__(
         self,
         *,
         category: TotallyOrderedSetsCategory,
         poset: PosetObject,
-        enumeration: tuple[SetElementInput, ...],
+        element_at: EnumerationRule,
+        position_of: PositionRule,
+        finite_enumeration: tuple[SetElementInput, ...] | None,
     ) -> None:
         self._poset = poset
-        self._enumeration = enumeration
+        self._element_at = element_at
+        self._position_of = position_of
+        self._finite_enumeration = finite_enumeration
         super().__init__(category=category)
 
     def _poset_implementation(self) -> PosetObject:
@@ -477,11 +486,16 @@ class TotallyOrderedSetObject(MathematicalObject):
 
     def __getitem__(self, position: int) -> SetElementInput:
         assert position >= 0
-        return self._enumeration[position]
+        member = self._element_at(position)
+        assert self._poset._set_implementation().contains(member) is True
+        return member
 
     def position(self, member: SetElementInput) -> int:
         assert self._poset._set_implementation().contains(member) is True
-        return self._enumeration.index(member)
+        position = self._position_of(member)
+        assert position >= 0
+        assert self[position] == member
+        return position
 
     def rank(self, member: SetElementInput) -> int:
         return self.position(member)
@@ -489,8 +503,16 @@ class TotallyOrderedSetObject(MathematicalObject):
     def unrank(self, position: int) -> SetElementInput:
         return self[position]
 
+    def enumeration_injection(self) -> Arrow:
+        return EnumerationInjection(
+            self._poset._set_implementation(),
+            self.position,
+        )
+
     def __repr__(self) -> str:
-        return "[" + ", ".join(map(repr, self._enumeration)) + "]"
+        if self._finite_enumeration is None:
+            return f"Totally ordered {self._poset._set_implementation()}"
+        return "[" + ", ".join(map(repr, self._finite_enumeration)) + "]"
 
 
 class TotallyOrderedSetMorphism(Arrow):
@@ -649,14 +671,19 @@ class TotallyOrderedSetsCategory(Category):
     def __call__(
         self,
         poset: PosetObject,
-        enumeration: tuple[SetElementInput, ...],
+        element_at: EnumerationRule,
+        position_of: PositionRule,
+        *,
+        finite_enumeration: tuple[SetElementInput, ...] | None = None,
     ) -> TotallyOrderedSetObject:
-        assert poset._set_implementation().is_finite() is True
-        assert len(enumeration) == poset._set_implementation().cardinality()
+        if finite_enumeration is not None:
+            assert len(finite_enumeration) == poset._set_implementation().cardinality()
         return self.ObjectType(
             category=self,
             poset=poset,
-            enumeration=enumeration,
+            element_at=element_at,
+            position_of=position_of,
+            finite_enumeration=finite_enumeration,
         )
 
     def _hom_category_type(self) -> type[HomCategory]:
@@ -748,7 +775,12 @@ def ordered_set_owned_by(
             underlying_set,
             lambda left, right: positions[left] <= positions[right],
         )
-        total_order = TotallyOrderedSets()(poset, enumeration)
+        total_order = TotallyOrderedSets()(
+            poset,
+            enumeration.__getitem__,
+            enumeration.index,
+            finite_enumeration=enumeration,
+        )
         finite_poset = FinitePosets()(poset, underlying_set)
         cached = FiniteTotallyOrderedSets()(total_order, finite_poset)
         _ORDERED_FINITE_SETS[enumeration] = cached
@@ -759,6 +791,61 @@ def finite_ordered_set(
     elements: Iterable[SetElementInput],
 ) -> PullbackObject:
     return ordered_set_owned_by(elements)
+
+
+class SimplexOrderIndexing:
+    """The canonical total orders ``Delta[n]`` and ``Delta[aleph0]``."""
+
+    def __init__(self) -> None:
+        self._countable_simplex: TotallyOrderedSetObject | None = None
+
+    def __getitem__(self, index: int | Cardinal) -> MathematicalObject:
+        from sage_categories.theories.cardinals import is_cardinal
+        from sage_categories.theories.ordinals import Ordinals, ordinal
+
+        if is_cardinal(index):
+            if index.is_finite() is True:
+                maximum = index.finite_value()
+            else:
+                assert index.is_countably_infinite()
+                if self._countable_simplex is None:
+                    naturals = NaturalNumbers()
+
+                    def natural_order(
+                        left: SetElementInput,
+                        right: SetElementInput,
+                    ) -> bool:
+                        left_ordinal = registered_value(left)
+                        right_ordinal = registered_value(right)
+                        assert left_ordinal is not None
+                        assert right_ordinal is not None
+                        assert Ordinals().contains_ordinal(left_ordinal)
+                        assert Ordinals().contains_ordinal(right_ordinal)
+                        decision = Ordinals().le(left_ordinal, right_ordinal)
+                        assert decision is not UNKNOWN
+                        return decision
+
+                    poset = PartiallyOrderedSets()(naturals, natural_order)
+                    self._countable_simplex = TotallyOrderedSets()(
+                        poset,
+                        naturals.__getitem__,
+                        naturals.position,
+                    )
+                return self._countable_simplex
+        else:
+            maximum = index
+        assert maximum >= -1
+        return finite_ordered_set(ordinal(position) for position in range(maximum + 1))
+
+    def __repr__(self) -> str:
+        return "Delta"
+
+
+_SIMPLEX_ORDERS = SimplexOrderIndexing()
+
+
+def SimplexOrders() -> SimplexOrderIndexing:
+    return _SIMPLEX_ORDERS
 
 
 def is_partially_ordered_sets_category(
@@ -776,10 +863,16 @@ def is_totally_ordered_sets_category(
 def is_poset_hom_category(
     category: HomCategory,
 ) -> TypeIs[PosetHomCategory]:
-    return category.base_category() is PartiallyOrderedSets() and category in PartiallyOrderedSets().HomCategory()
+    return (
+        category.base_category() is PartiallyOrderedSets()
+        and category in PartiallyOrderedSets().HomCategory()
+    )
 
 
 def is_total_order_hom_category(
     category: HomCategory,
 ) -> TypeIs[TotallyOrderedSetHomCategory]:
-    return category.base_category() is TotallyOrderedSets() and category in TotallyOrderedSets().HomCategory()
+    return (
+        category.base_category() is TotallyOrderedSets()
+        and category in TotallyOrderedSets().HomCategory()
+    )

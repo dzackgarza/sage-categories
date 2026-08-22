@@ -8,7 +8,7 @@ Mathlib's ``SetTheory/Ordinal/Arithmetic.lean`` implementation.
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any, TypeIs
+from typing import TYPE_CHECKING, TypeIs
 
 from sage_categories.abstract_categories.hom_categories import HomCategory
 from sage_categories.category import Category
@@ -55,7 +55,11 @@ class Ordinal(MathematicalObject):
             assert index is not None
         if kind is OrdinalKind.NATURAL_SUM or kind is OrdinalKind.NATURAL_PRODUCT:
             assert terms
-        if kind is OrdinalKind.ORDINAL_SUM or kind is OrdinalKind.ORDINAL_PRODUCT or kind is OrdinalKind.ORDINAL_POWER:
+        if (
+            kind is OrdinalKind.ORDINAL_SUM
+            or kind is OrdinalKind.ORDINAL_PRODUCT
+            or kind is OrdinalKind.ORDINAL_POWER
+        ):
             assert len(terms) == 2
         self._kind = kind
         self._finite_value = finite_value
@@ -89,16 +93,22 @@ class Ordinal(MathematicalObject):
             return cardinal(self.finite_value())
         if self._kind is OrdinalKind.INITIAL:
             return aleph(self.initial_index())
-        if self._kind is OrdinalKind.NATURAL_SUM or self._kind is OrdinalKind.ORDINAL_SUM:
+        if (
+            self._kind is OrdinalKind.NATURAL_SUM
+            or self._kind is OrdinalKind.ORDINAL_SUM
+        ):
             return Cardinals().sum(*(term.cardinality() for term in self._terms))
-        if self._kind is OrdinalKind.NATURAL_PRODUCT or self._kind is OrdinalKind.ORDINAL_PRODUCT:
+        if (
+            self._kind is OrdinalKind.NATURAL_PRODUCT
+            or self._kind is OrdinalKind.ORDINAL_PRODUCT
+        ):
             return Cardinals().product(*(term.cardinality() for term in self._terms))
         return Cardinals().power(
             self._terms[0].cardinality(),
             self._terms[1].cardinality(),
         )
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if other is self:
             return True
         if self._kind is OrdinalKind.FINITE and self._finite_value == other:
@@ -106,7 +116,12 @@ class Ordinal(MathematicalObject):
         value = registered_value(other)
         if value is None or not Ordinals().contains_ordinal(value):
             return False
-        return self._kind is value._kind and self._finite_value == value._finite_value and self._terms == value._terms and self._index == value._index
+        return (
+            self._kind is value._kind
+            and self._finite_value == value._finite_value
+            and self._terms == value._terms
+            and self._index == value._index
+        )
 
     def __hash__(self) -> int:
         if self._kind is OrdinalKind.FINITE:
@@ -214,15 +229,17 @@ class OrdinalsCategory(Category):
         return OrdinalHomCategory
 
     def __call__(self, number: int) -> Ordinal:
-        assert number >= 0
-        cached = self._finite_ordinals.get(number)
+        normalized = int(number)
+        assert normalized == number
+        assert normalized >= 0
+        cached = self._finite_ordinals.get(normalized)
         if cached is None:
             cached = Ordinal(
                 category=self,
                 kind=OrdinalKind.FINITE,
-                finite_value=number,
+                finite_value=normalized,
             )
-            self._finite_ordinals[number] = cached
+            self._finite_ordinals[normalized] = cached
         return cached
 
     def contains_ordinal(self, candidate: MathematicalObject) -> TypeIs[Ordinal]:
@@ -270,7 +287,12 @@ class OrdinalsCategory(Category):
             if factor.kind() is OrdinalKind.NATURAL_SUM:
                 preceding = factors[:index]
                 following = factors[index + 1 :]
-                return self.natural_sum(*(self.natural_product(*preceding, term, *following) for term in factor.terms()))
+                return self.natural_sum(
+                    *(
+                        self.natural_product(*preceding, term, *following)
+                        for term in factor.terms()
+                    )
+                )
         terms: list[Ordinal] = []
         finite_part = 1
         for factor in factors:
@@ -341,7 +363,10 @@ class OrdinalsCategory(Category):
             return True
         if target.kind() is OrdinalKind.FINITE:
             return False
-        if source.kind() is OrdinalKind.INITIAL and target.kind() is OrdinalKind.INITIAL:
+        if (
+            source.kind() is OrdinalKind.INITIAL
+            and target.kind() is OrdinalKind.INITIAL
+        ):
             return self.le(source.initial_index(), target.initial_index())
         return UNKNOWN
 

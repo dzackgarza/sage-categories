@@ -87,11 +87,7 @@ class Cardinal(MathematicalObject):
             assert name is not None
         if kind is CardinalKind.POWER:
             assert len(terms) == 2
-        if (
-            kind is CardinalKind.SUM
-            or kind is CardinalKind.PRODUCT
-            or kind is CardinalKind.SUPREMUM
-        ):
+        if kind is CardinalKind.SUM or kind is CardinalKind.PRODUCT or kind is CardinalKind.SUPREMUM:
             assert terms
         if kind is CardinalKind.INDEXED_SUM or kind is CardinalKind.INDEXED_PRODUCT:
             assert index_set is not None and family is not None
@@ -127,11 +123,7 @@ class Cardinal(MathematicalObject):
         return self._kind is CardinalKind.ALEPH
 
     def is_continuum(self) -> bool:
-        return (
-            self._kind is CardinalKind.POWER
-            and self._terms[0] == 2
-            and self._terms[1].is_countably_infinite()
-        )
+        return self._kind is CardinalKind.POWER and self._terms[0] == 2 and self._terms[1].is_countably_infinite()
 
     def is_countably_infinite(self) -> bool:
         return self._kind is CardinalKind.ALEPH and self.aleph_index() == 0
@@ -207,10 +199,7 @@ class Cardinal(MathematicalObject):
         value = registered_value(other)
         if value is None or not Cardinals().contains_cardinal(value):
             return False
-        if (
-            self._kind is CardinalKind.INDEXED_SUM
-            or self._kind is CardinalKind.INDEXED_PRODUCT
-        ):
+        if self._kind is CardinalKind.INDEXED_SUM or self._kind is CardinalKind.INDEXED_PRODUCT:
             return False
         return (
             self._kind is value._kind
@@ -451,11 +440,7 @@ class CardinalsCategory(Category):
             return self(base.finite_value() ** exponent.finite_value())
         if base.is_infinite() is True and exponent.kind() is CardinalKind.FINITE:
             return base
-        if (
-            exponent.is_infinite() is True
-            and base.kind() is CardinalKind.FINITE
-            and base.finite_value() >= 2
-        ):
+        if exponent.is_infinite() is True and base.kind() is CardinalKind.FINITE and base.finite_value() >= 2:
             base = self(2)
         return Cardinal(
             category=self,
@@ -499,11 +484,7 @@ class CardinalsCategory(Category):
         for candidate in sorted(set(terms), key=repr):
             if any(self.le(candidate, term) is True for term in maximal):
                 continue
-            maximal = [
-                term
-                for term in maximal
-                if self.le(term, candidate) is not True
-            ]
+            maximal = [term for term in maximal if self.le(term, candidate) is not True]
             maximal.append(candidate)
         if len(maximal) == 1:
             return maximal[0]
@@ -541,10 +522,7 @@ class CardinalsCategory(Category):
         if target.kind() is CardinalKind.POWER:
             if self.le(source, target.terms()[0]) is True:
                 return True
-            if (
-                self.le(self(2), target.terms()[0]) is True
-                and self.le(source, target.terms()[1]) is True
-            ):
+            if self.le(self(2), target.terms()[0]) is True and self.le(source, target.terms()[1]) is True:
                 return True
             if source.kind() is CardinalKind.POWER:
                 base_comparison = self.le(source.terms()[0], target.terms()[0])

@@ -46,12 +46,6 @@ class ForwardedMethod:
         implementation = next(
             candidate
             for implementation_type in image.__class__.__mro__
-            if (
-                candidate := implementation_type.__dict__.get(
-                    self._method.__name__
-                )
-            )
-            is not None
-            and inspect.isfunction(candidate)
+            if (candidate := implementation_type.__dict__.get(self._method.__name__)) is not None and inspect.isfunction(candidate)
         )
         return MethodType(implementation, image)

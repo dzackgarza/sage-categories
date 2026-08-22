@@ -68,9 +68,7 @@ class Functor(Arrow, ABC):
         if arrow_category.contains_arrow(value):
             source_arrow = value
             source_category = source_arrow.base_category()
-            if source_category is not self.domain() and source_category.is_subcategory(
-                self.domain()
-            ):
+            if source_category is not self.domain() and source_category.is_subcategory(self.domain()):
                 route = category_compiler().implementation_route(
                     source_category,
                     self.domain(),
@@ -82,9 +80,7 @@ class Functor(Arrow, ABC):
         assert value in self.domain()
         source_object = value
         source_category = source_object.category()
-        if source_category is not self.domain() and source_category.is_subcategory(
-            self.domain()
-        ):
+        if source_category is not self.domain() and source_category.is_subcategory(self.domain()):
             route = category_compiler().implementation_route(
                 source_category,
                 self.domain(),

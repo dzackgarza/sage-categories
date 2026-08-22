@@ -15,7 +15,6 @@ from sage_categories.abstract_categories.category_constructions import (
     PullbackObject,
 )
 from sage_categories.abstract_categories.functors import (
-    Functor,
     StructuralFunctor,
     compose_functors,
 )

@@ -26,24 +26,31 @@ test-push:
 test-ci:
     @just -f ~/ai-review-ci/justfiles/sage.just -d . test-ci
 
-# CI: install this package and its Sage into a venv, and export SAGE_BIN.
+# The research Sage environment, pulled rather than rebuilt.
 #
-# The sage profile installs nothing and asserts SAGE_BIN is executable, so
-# this has to run before that assertion -- _qc.yml calls it ahead of
-# setup-profile for exactly that reason, and $GITHUB_ENV is the channel that
-# reaches the validating step. The repo's .envrc cannot serve: _qc.yml sources
-# it a step later, and its SAGE_BIN is a path on the developer's machine.
+# ghcr.io/dzackgarza/sage:develop is published by the fork itself, from the
+# same `just research-environment-sync` the desk runs. Every repository that
+# writes Sage against that fork consumes this one build; none of them compiles
+# Sage, and none of them reaches for upstream's image, which is a different
+# Sage on Python 3.12.
 #
-# Sage arrives the way every other dependency does -- from the fork declared
-# in pyproject.toml, which pins the interpreter this package is written
-# against.
+# SAGE_ROOT is baked in at configure time, so the tree is restored to /sage --
+# the path it was configured at -- rather than relocated.
+#
+# The sage profile installs nothing and asserts SAGE_BIN is executable, so this
+# runs before that assertion: _qc.yml calls it ahead of setup-profile, and
+# $GITHUB_ENV is the channel that reaches the validating step.
 
-# CI: install Sage and this package into a venv, and export SAGE_BIN.
+# CI: pull the research Sage environment and export SAGE_BIN.
 ci-provision-sage:
     #!/usr/bin/env bash
     set -euo pipefail
-    sage_venv="${RUNNER_TEMP:-/tmp}/sage-venv"
-    uv venv --python 3.14 "$sage_venv"
-    uv pip install --python "$sage_venv/bin/python" .
-    echo "SAGE_BIN=$sage_venv/bin/sage" >> "${GITHUB_ENV:-/dev/stdout}"
-    "$sage_venv/bin/sage" -c "import sage_categories; print('sage_categories', sage_categories.version())"
+    docker create --name sage-env ghcr.io/dzackgarza/sage:develop
+    sudo install -d -o "$(id -un)" -g "$(id -gn)" /sage
+    docker cp sage-env:/sage/. /sage/
+    docker rm sage-env
+    sage_bin=/sage/.venv/bin/sage
+    # The checkout under test, not whatever version the image happened to carry.
+    "$sage_bin" -pip install --quiet --no-deps -e .
+    echo "SAGE_BIN=$sage_bin" >> "${GITHUB_ENV:-/dev/stdout}"
+    "$sage_bin" -c "import sage_categories; print('sage_categories', sage_categories.version())"

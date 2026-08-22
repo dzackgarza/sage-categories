@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterator, Mapping
 from itertools import product as cartesian_product
 from math import comb
-from typing import Any, TypeIs
+from typing import Any, Protocol, TypeIs
 
 from sage_categories.abstract_categories.functors import (
     DiscreteCategories,
@@ -76,6 +76,14 @@ type SetElementInput = Any
 type SetMapRule = Callable[[SetElementInput], SetElementInput]
 type MembershipPredicate = Callable[[SetElementInput], Decision]
 type SetIterator = Callable[[], Iterator[SetElementInput]]
+
+
+class SymbolicSetRepresentation(Protocol):
+    """The private symbolic operations required by an owned set."""
+
+    def contains(self, member: SetElementInput) -> SetElementInput: ...
+
+    def __iter__(self) -> Iterator[SetElementInput]: ...
 type SetFunctionFamily = Callable[[DiscreteObject], SetFunction]
 
 
@@ -149,7 +157,9 @@ class SetObject(MathematicalObject):
 class FiniteSetObject(SetObject):
     """A set given by its complete finite member set."""
 
-    def __init__(self, *, category: Category, members: frozenset[SetElementInput]) -> None:
+    def __init__(
+        self, *, category: Category, members: frozenset[SetElementInput]
+    ) -> None:
         self._members = members
         super().__init__(category=category, cardinality=Cardinals()(len(members)))
 
@@ -187,10 +197,12 @@ class PredicateSet(SetObject):
         predicate: MembershipPredicate,
         cardinality: Cardinal,
         iterator: SetIterator | None = None,
+        representation: SymbolicSetRepresentation | None = None,
         name: str = "Predicate-defined set",
     ) -> None:
         self._predicate = predicate
         self._iterator = iterator
+        self._representation = representation
         self._name = name
         super().__init__(category=category, cardinality=cardinality)
 
@@ -200,6 +212,45 @@ class PredicateSet(SetObject):
     def __iter__(self) -> Iterator[SetElementInput]:
         assert self._iterator is not None, f"{self} has no chosen enumeration"
         return self._iterator()
+
+    def symbolic_representation(self) -> SymbolicSetRepresentation:
+        assert self._representation is not None
+        return self._representation
+
+    def __repr__(self) -> str:
+        return self._name
+
+
+class SympySetObject(SetObject):
+    """An owned set with a private SymPy set representation."""
+
+    def __init__(
+        self,
+        *,
+        representation: SymbolicSetRepresentation,
+        cardinality: Cardinal | None = None,
+        name: str = "Symbolic set",
+    ) -> None:
+        self._representation = representation
+        self._name = name
+        super().__init__(category=Sets(), cardinality=cardinality)
+
+    def symbolic_representation(self) -> SymbolicSetRepresentation:
+        return self._representation
+
+    def membership_proposition(self, member: SetElementInput) -> SetElementInput:
+        return self._representation.contains(member)
+
+    def contains(self, member: SetElementInput) -> Decision:
+        proposition = self.membership_proposition(member)
+        if proposition == True:
+            return True
+        if proposition == False:
+            return False
+        return UNKNOWN
+
+    def __iter__(self) -> Iterator[SetElementInput]:
+        return iter(self._representation)
 
     def __repr__(self) -> str:
         return self._name
@@ -274,7 +325,10 @@ class SetSubset(SetFunction):
         return self._subset_category
 
     def _belongs_to(self, category: Category) -> bool:
-        return self._subset_category is category or self._subset_category.is_subcategory(category)
+        return (
+            self._subset_category is category
+            or self._subset_category.is_subcategory(category)
+        )
 
     def object(self) -> SetObject:
         return self._underlying_set
@@ -364,7 +418,9 @@ class SetSubset(SetFunction):
         return self.union(other).difference(self.intersection(other))
 
     def complement(self) -> SetSubset:
-        return self.power_set().from_predicate(lambda member: _decision_not(self.underlying_set().contains(member)))
+        return self.power_set().from_predicate(
+            lambda member: _decision_not(self.underlying_set().contains(member))
+        )
 
     def __or__(self, other: SetSubset) -> SetSubset:
         return self.union(other)
@@ -1034,21 +1090,31 @@ class FiniteSetsCategory(SetPropertyCategory):
 
     def __contains__(self, candidate: MembershipInput) -> bool:
         value = registered_value(candidate)
-        return value is not None and Sets().contains_set(value) and value.cardinality().is_finite() is True
+        return (
+            value is not None
+            and Sets().contains_set(value)
+            and value.cardinality().is_finite() is True
+        )
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
         if self._countable_inclusion is None:
             self._countable_inclusion = InclusionFunctor(self, self._sets.Countable())
         return (self._countable_inclusion,)
 
-    def contains_finite_set(self, candidate: MathematicalObject) -> TypeIs[FiniteSetObject]:
+    def contains_finite_set(
+        self, candidate: MathematicalObject
+    ) -> TypeIs[FiniteSetObject]:
         return candidate in self
 
 
 class InfiniteSetsCategory(SetPropertyCategory):
     def __contains__(self, candidate: MembershipInput) -> bool:
         value = registered_value(candidate)
-        return value is not None and Sets().contains_set(value) and value.cardinality().is_infinite() is True
+        return (
+            value is not None
+            and Sets().contains_set(value)
+            and value.cardinality().is_infinite() is True
+        )
 
 
 class UncountableSetsCategory(SetPropertyCategory):
@@ -1109,6 +1175,7 @@ def ConditionSet(
     *,
     cardinality: Cardinal | None = None,
     iterator: SetIterator | None = None,
+    representation: SymbolicSetRepresentation | None = None,
     name: str = "Predicate-defined set",
 ) -> PredicateSet:
     size = UnknownCardinality() if cardinality is None else cardinality
@@ -1117,6 +1184,20 @@ def ConditionSet(
         predicate=predicate,
         cardinality=size,
         iterator=iterator,
+        representation=representation,
+        name=name,
+    )
+
+
+def SetFromSympy(
+    representation: SymbolicSetRepresentation,
+    *,
+    cardinality: Cardinal | None = None,
+    name: str = "Symbolic set",
+) -> SympySetObject:
+    return SympySetObject(
+        representation=representation,
+        cardinality=cardinality,
         name=name,
     )
 
@@ -1168,7 +1249,9 @@ class DiscreteObjectSet(SetObject):
         return value is not None and value in self._discrete_category
 
     def __iter__(self) -> Iterator[SetElementInput]:
-        return iter(tuple(self._discrete_category.object(label) for label in self._labels))
+        return iter(
+            tuple(self._discrete_category.object(label) for label in self._labels)
+        )
 
 
 class DiscreteArrowSet(SetObject):
@@ -1187,7 +1270,12 @@ class DiscreteArrowSet(SetObject):
         return value.domain() is value.codomain()
 
     def __iter__(self) -> Iterator[SetElementInput]:
-        return iter(tuple(self._discrete_category.Hom(value, value).identity() for value in self._discrete_category))
+        return iter(
+            tuple(
+                self._discrete_category.Hom(value, value).identity()
+                for value in self._discrete_category
+            )
+        )
 
 
 class FiniteDiscreteCategoriesCategory(Category):
@@ -1330,7 +1418,11 @@ class ProductSet(SetObject):
 
     def contains(self, member: SetElementInput) -> Decision:
         value = registered_value(member)
-        return value is not None and ProductElements().contains_product_element(value) and value.product() is self
+        return (
+            value is not None
+            and ProductElements().contains_product_element(value)
+            and value.product() is self
+        )
 
     def __iter__(self) -> Iterator[SetElementInput]:
         assert self.index_set().is_finite() is True
@@ -1353,7 +1445,9 @@ class ProductSet(SetObject):
 
         def project(member: SetElementInput) -> SetElementInput:
             value = registered_value(member)
-            assert value is not None and ProductElements().contains_product_element(value)
+            assert value is not None and ProductElements().contains_product_element(
+                value
+            )
             assert value.product() is self
             return value.component(index)
 
@@ -1440,12 +1534,18 @@ class CoproductSet(SetObject):
             lambda index: self.cofactor(index).cardinality(),
         )
 
-    def element(self, index: SetElementInput, value: SetElementInput) -> CoproductElement:
+    def element(
+        self, index: SetElementInput, value: SetElementInput
+    ) -> CoproductElement:
         return CoproductElement(self, index, value)
 
     def contains(self, member: SetElementInput) -> Decision:
         value = registered_value(member)
-        return value is not None and CoproductElements().contains_coproduct_element(value) and value.coproduct() is self
+        return (
+            value is not None
+            and CoproductElements().contains_coproduct_element(value)
+            and value.coproduct() is self
+        )
 
     def __iter__(self) -> Iterator[SetElementInput]:
         assert self.index_set().is_finite() is True
@@ -1492,7 +1592,9 @@ class LimitSet(ProductSet):
             assert arrow is not None and self.diagram().domain().contains_arrow(arrow)
             image = self.diagram()(arrow)
             assert Sets().contains_function(image)
-            if image(value.component(arrow.domain())) != value.component(arrow.codomain()):
+            if image(value.component(arrow.domain())) != value.component(
+                arrow.codomain()
+            ):
                 return False
         return True
 
@@ -1526,7 +1628,9 @@ class ColimitElement(MathematicalObject):
         if value.colimit() is not self._colimit:
             return False
         answer = self._colimit.equivalent(self, value)
-        assert answer is not UNKNOWN, "equality in this colimit is not decidable from its presentation"
+        assert answer is not UNKNOWN, (
+            "equality in this colimit is not decidable from its presentation"
+        )
         return answer
 
     def __hash__(self) -> int:
@@ -1575,7 +1679,11 @@ class ColimitSet(SetObject):
 
     def contains(self, member: SetElementInput) -> Decision:
         value = registered_value(member)
-        return value is not None and ColimitElements().contains_colimit_element(value) and value.colimit() is self
+        return (
+            value is not None
+            and ColimitElements().contains_colimit_element(value)
+            and value.colimit() is self
+        )
 
     def equivalent(
         self,
@@ -1619,7 +1727,9 @@ class ColimitSet(SetObject):
             if not enlarged:
                 return False
             reached = (*reached, *enlarged)
-            if any(_same_coproduct_term(right_representative, known) for known in reached):
+            if any(
+                _same_coproduct_term(right_representative, known) for known in reached
+            ):
                 return True
 
     def __iter__(self) -> Iterator[SetElementInput]:
@@ -1627,7 +1737,9 @@ class ColimitSet(SetObject):
         chosen: tuple[ColimitElement, ...] = ()
         for representative in self._coproduct:
             value = registered_value(representative)
-            assert value is not None and CoproductElements().contains_coproduct_element(value)
+            assert value is not None and CoproductElements().contains_coproduct_element(
+                value
+            )
             candidate = ColimitElement(self, value)
             if any(self.equivalent(candidate, known) is True for known in chosen):
                 continue
@@ -1660,9 +1772,17 @@ def _colimit_terms_are_related(
         assert arrow is not None and diagram.domain().contains_arrow(arrow)
         image = diagram(arrow)
         assert Sets().contains_function(image)
-        if left.index() is arrow.domain() and right.index() is arrow.codomain() and image(left.value()) == right.value():
+        if (
+            left.index() is arrow.domain()
+            and right.index() is arrow.codomain()
+            and image(left.value()) == right.value()
+        ):
             return True
-        if right.index() is arrow.domain() and left.index() is arrow.codomain() and image(right.value()) == left.value():
+        if (
+            right.index() is arrow.domain()
+            and left.index() is arrow.codomain()
+            and image(right.value()) == left.value()
+        ):
             return True
     return False
 
@@ -1718,7 +1838,9 @@ def ProductOfSets(diagram: Functor) -> ProductPresentation:
         return SetMap(
             source,
             apex,
-            lambda member: apex.element(lambda index: _cone_component_value(other, index, member)),
+            lambda member: apex.element(
+                lambda index: _cone_component_value(other, index, member)
+            ),
         )
 
     return Product(cone, mediate)
@@ -1749,7 +1871,9 @@ def CoproductOfSets(diagram: Functor) -> CoproductPresentation:
 
         def induced(member: SetElementInput) -> SetElementInput:
             value = registered_value(member)
-            assert value is not None and CoproductElements().contains_coproduct_element(value)
+            assert value is not None and CoproductElements().contains_coproduct_element(
+                value
+            )
             component = other.costructure_morphism(value.index())
             assert Sets().contains_function(component)
             return component(value.value())
@@ -1774,7 +1898,9 @@ def LimitOfSets(
         return SetMap(
             source,
             apex,
-            lambda member: apex.element(lambda index: _cone_component_value(other, index, member)),
+            lambda member: apex.element(
+                lambda index: _cone_component_value(other, index, member)
+            ),
         )
 
     return Product(cone, mediate)
@@ -1795,7 +1921,9 @@ def ColimitOfSets(
 
         def induced(member: SetElementInput) -> SetElementInput:
             value = registered_value(member)
-            assert value is not None and ColimitElements().contains_colimit_element(value)
+            assert value is not None and ColimitElements().contains_colimit_element(
+                value
+            )
             representative = value.representative()
             component = other.costructure_morphism(representative.index())
             assert Sets().contains_function(component)

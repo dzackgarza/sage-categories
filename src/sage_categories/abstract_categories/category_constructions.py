@@ -38,6 +38,7 @@ class OppositeArrow(Arrow):
 class OppositeHomCategory(HomCategory):
     """Arrows of an opposite category."""
 
+    ObjectType = OppositeArrow
     ElementType = OppositeArrow
 
     def __call__(self, underlying_arrow: Arrow) -> OppositeArrow:
@@ -46,7 +47,11 @@ class OppositeHomCategory(HomCategory):
             underlying_arrow=underlying_arrow,
         )
 
-    def identity(self) -> OppositeArrow:
+    def identity(
+        self,
+        value: MathematicalObject | None = None,
+    ) -> OppositeArrow:
+        assert value is None
         assert self.domain() is self.codomain()
         opposite = self.base_category()
         assert is_opposite_category(opposite)
@@ -134,15 +139,17 @@ class ProductArrow(Arrow):
     ) -> None:
         product = hom_category.base_category()
         assert is_product_category(product)
-        assert product.contains_pair(hom_category.domain())
-        assert product.contains_pair(hom_category.codomain())
+        domain = hom_category.domain()
+        codomain = hom_category.codomain()
+        assert product.contains_pair(domain)
+        assert product.contains_pair(codomain)
         assert first in product.first_category().Hom(
-            hom_category.domain().first(),
-            hom_category.codomain().first(),
+            domain.first(),
+            codomain.first(),
         )
         assert second in product.second_category().Hom(
-            hom_category.domain().second(),
-            hom_category.codomain().second(),
+            domain.second(),
+            codomain.second(),
         )
         self._first = first
         self._second = second
@@ -158,19 +165,25 @@ class ProductArrow(Arrow):
 class ProductHomCategory(HomCategory):
     """A hom category in a binary product category."""
 
+    ObjectType = ProductArrow
     ElementType = ProductArrow
 
     def __call__(self, first: Arrow, second: Arrow) -> ProductArrow:
         return self.ObjectType(hom_category=self, first=first, second=second)
 
-    def identity(self) -> ProductArrow:
+    def identity(
+        self,
+        value: MathematicalObject | None = None,
+    ) -> ProductArrow:
+        assert value is None
         assert self.domain() is self.codomain()
         product = self.base_category()
         assert is_product_category(product)
-        assert product.contains_pair(self.domain())
+        domain = self.domain()
+        assert product.contains_pair(domain)
         return self(
-            product.first_category().identity(self.domain().first()),
-            product.second_category().identity(self.domain().second()),
+            product.first_category().identity(domain.first()),
+            product.second_category().identity(domain.second()),
         )
 
     def compose(self, second: Arrow, first: Arrow) -> ProductArrow:
@@ -190,6 +203,8 @@ class ProductHomCategory(HomCategory):
 
 class ProductCategory(Category):
     """The binary product category ``C x D``."""
+
+    ObjectType = CategoryPair
 
     def __init__(self, first_category: Category, second_category: Category) -> None:
         self._first_category = first_category

@@ -283,11 +283,7 @@ class NaturalNumbersSet(SetObject):
         from sage_categories.theories.ordinals import OrdinalKind, Ordinals
 
         value = registered_value(member)
-        return (
-            value is not None
-            and Ordinals().contains_ordinal(value)
-            and value.kind() is OrdinalKind.FINITE
-        )
+        return value is not None and Ordinals().contains_ordinal(value) and value.kind() is OrdinalKind.FINITE
 
     def __iter__(self) -> Iterator[SetElementInput]:
         from sage_categories.theories.ordinals import ordinal
@@ -357,9 +353,7 @@ class DeltaIndexing:
         assert dimension >= -1
         from sage_categories.theories.ordinals import ordinal
 
-        return ordered_set_owned_by(
-            ordinal(index) for index in range(dimension + 1)
-        )
+        return ordered_set_owned_by(ordinal(index) for index in range(dimension + 1))
 
     def __repr__(self) -> str:
         return "Δ"

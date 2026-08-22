@@ -44,11 +44,7 @@ def common_category(objects: Iterable[MathematicalObject]) -> Category:
     for value in values:
         add_with_super_categories(value.category())
     common = tuple(category for category in candidates.values() if all(value in category for value in values))
-    most_specific = tuple(
-        category
-        for category in common
-        if not any(other is not category and other.is_subcategory(category) for other in common)
-    )
+    most_specific = tuple(category for category in common if not any(other is not category and other.is_subcategory(category) for other in common))
     assert len(most_specific) == 1
     return most_specific[0]
 

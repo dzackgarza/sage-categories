@@ -34,9 +34,10 @@ class MathematicalObject:
 
     def __init__(self, *, category: Category | None) -> None:
         self._category = category
-        self._structural_images: dict[int, MathematicalObject] = {}
+        self._object_structural_images: dict[int, MathematicalObject] = {}
+        self._element_structural_images: dict[int, MathematicalElement] = {}
         if category is not None:
-            self._structural_images[id(category)] = self
+            self._object_structural_images[id(category)] = self
         _VALUES[id(self)] = self
 
     def category(self) -> Category:
@@ -148,7 +149,7 @@ class MathematicalObject:
     def _is_arrow_in(self, category: Category) -> bool:
         return False
 
-    def _image_along(
+    def _object_image_along(
         self,
         route: tuple[StructuralFunctor, ...],
     ) -> MathematicalObject:
@@ -156,28 +157,65 @@ class MathematicalObject:
         for functor in route:
             codomain = functor.codomain()
             key = id(codomain)
-            cached = self._structural_images.get(key)
+            cached = self._object_structural_images.get(key)
             if cached is not None:
                 value = cached
                 continue
             value = functor.on_object(value)
             assert value in codomain
-            self._structural_images[key] = value
+            self._object_structural_images[key] = value
         return value
+
+    def _element_image_along(
+        self,
+        route: tuple[StructuralFunctor, ...],
+    ) -> MathematicalObject:
+        assert False, f"{self} is not represented as an element"
 
     def implementation_in(self, category: Category) -> MathematicalObject:
         """Return this object's canonical implementation in ``category``."""
         from sage_categories.compiler import category_compiler
 
         route = category_compiler().implementation_route(self.category(), category)
-        return self._image_along(route)
+        return self._object_image_along(route)
 
 
 class MathematicalElement(MathematicalObject):
     """An element of a mathematical object."""
 
-    def __init__(self, *, category: Category) -> None:
+    def __init__(
+        self,
+        *,
+        category: Category,
+        element_of: MathematicalObject,
+    ) -> None:
+        self._element_of = element_of
         super().__init__(category=category)
+        self._element_structural_images[id(element_of.category())] = self
+
+    def element_of(self) -> MathematicalObject:
+        """Return the mathematical object which contains this element."""
+        return self._element_of
+
+    def _element_image_along(
+        self,
+        route: tuple[StructuralFunctor, ...],
+    ) -> MathematicalElement:
+        source = self._element_of
+        element = self
+        for functor in route:
+            codomain = functor.codomain()
+            key = id(codomain)
+            cached = self._element_structural_images.get(key)
+            if cached is not None:
+                source = functor.on_object(source)
+                element = cached
+                continue
+            element = functor.on_element(source, element)
+            source = functor.on_object(source)
+            assert source in codomain
+            self._element_structural_images[key] = element
+        return element
 
 
 class Arrow(MathematicalElement):
@@ -187,6 +225,7 @@ class Arrow(MathematicalElement):
         self._hom_category = hom_category
         super().__init__(
             category=hom_category.base_category().ArrowCategory(),
+            element_of=hom_category,
         )
 
     def hom_category(self) -> HomCategory:
@@ -222,30 +261,14 @@ class Arrow(MathematicalElement):
         return own_hom_category is hom_category or (
             own_hom_category.domain() is hom_category.domain()
             and own_hom_category.codomain() is hom_category.codomain()
-            and own_hom_category.hom_category().is_subcategory(hom_category.hom_category())
+            and own_hom_category.hom_category().is_subcategory(
+                hom_category.hom_category()
+            )
         )
 
     def _is_arrow_in(self, category: Category) -> bool:
         base = self.base_category()
         return base is category or base.is_subcategory(category)
-
-    def _image_along(
-        self,
-        route: tuple[StructuralFunctor, ...],
-    ) -> MathematicalObject:
-        value = self
-        for functor in route:
-            codomain = functor.codomain()
-            key = id(codomain)
-            cached = self._structural_images.get(key)
-            if cached is not None:
-                assert codomain.contains_arrow(cached)
-                value = cached
-                continue
-            value = functor.on_morphism(value)
-            assert codomain.contains_arrow(value)
-            self._structural_images[key] = value
-        return value
 
     def __mul__(self, first: Arrow) -> Arrow:
         """Return this arrow after ``first``."""

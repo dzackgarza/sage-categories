@@ -17,10 +17,13 @@ class ForwardedMethod:
         self,
         route: tuple[StructuralFunctor, ...],
         method: FunctionType,
+        *,
+        element_method: bool,
     ) -> None:
         assert route
         self._route = route
         self._method = method
+        self._element_method = element_method
 
     def __get__(
         self,
@@ -29,6 +32,9 @@ class ForwardedMethod:
     ) -> ForwardedMethod | MethodType:
         if instance is None:
             return self
-        image = instance._image_along(self._route)
+        if self._element_method:
+            image = instance._element_image_along(self._route)
+        else:
+            image = instance._object_image_along(self._route)
         bound: MethodType = image.__getattribute__(self._method.__name__)
         return bound

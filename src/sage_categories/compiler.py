@@ -64,6 +64,7 @@ class CategoryCompiler:
             category,
             local_type,
             self.object_method_catalogue(category),
+            element_methods=False,
         )
         self._object_types[key] = compiled
         return compiled
@@ -82,6 +83,7 @@ class CategoryCompiler:
             category,
             local_type,
             self.element_method_catalogue(category),
+            element_methods=True,
         )
         self._element_types[key] = compiled
         return compiled
@@ -133,7 +135,9 @@ class CategoryCompiler:
         if cached is not None:
             return cached
         routes = self._routes_from(source, target, (id(source),))
-        assert len(routes) == 1, f"expected one structural route from {source} to {target}; found {len(routes)}"
+        assert len(routes) == 1, (
+            f"expected one structural route from {source} to {target}; found {len(routes)}"
+        )
         route = routes[0]
         self._routes[key] = route
         return route
@@ -153,7 +157,9 @@ class CategoryCompiler:
                 if previous is None or previous.owner is declaration.owner:
                     catalogue[name] = declaration
                     continue
-                assert name in local, f"{category} inherits {name} from unrelated categories {previous.owner} and {declaration.owner}"
+                assert name in local, (
+                    f"{category} inherits {name} from unrelated categories {previous.owner} and {declaration.owner}"
+                )
         for name, method in local.items():
             catalogue[name] = DeclaredMethod(category, method)
         return catalogue
@@ -163,12 +169,15 @@ class CategoryCompiler:
         category: Category,
         local_type: type[Implementation],
         catalogue: Mapping[str, DeclaredMethod],
+        *,
+        element_methods: bool,
     ) -> type[Implementation]:
         local = self._local_methods(local_type)
         inherited = {
             name: ForwardedMethod(
                 self.implementation_route(category, declaration.owner),
                 declaration.method,
+                element_method=element_methods,
             )
             for name, declaration in catalogue.items()
             if name not in local
@@ -193,7 +202,8 @@ class CategoryCompiler:
                 local_type,
                 predicate=inspect.isfunction,
             )
-            if name not in _IGNORED_METHODS and (not name.startswith("_") or name.startswith("__"))
+            if name not in _IGNORED_METHODS
+            and (not name.startswith("_") or name.startswith("__"))
         }
 
     def _routes_from(
@@ -205,7 +215,9 @@ class CategoryCompiler:
         routes: list[tuple[StructuralFunctor, ...]] = []
         for functor in source.super_functors():
             codomain = functor.codomain()
-            assert id(codomain) not in visited, "the structural-functor graph has a cycle"
+            assert id(codomain) not in visited, (
+                "the structural-functor graph has a cycle"
+            )
             if codomain is target:
                 routes.append((functor,))
                 continue

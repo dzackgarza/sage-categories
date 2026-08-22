@@ -520,6 +520,56 @@ The representation boundaries are:
 
 No construction must enumerate an infinite set merely to establish its mathematical form.
 
+## SymPy integration strategy
+
+SymPy supplies private symbolic representations and simplification algorithms behind the owned `Sets()` API.
+
+| Owned requirement | SymPy contribution | Integration contract |
+|---|---|---|
+| Three-valued membership | `Contains(x, X)` can remain symbolic. Fuzzy queries return `True`, `False`, or `None`. | Translate definite results to `bool` and `None` to Sage `Unknown`. Retain an unevaluated `Contains` proposition for later symbolic evaluation. |
+| Predicate-defined subobjects | `ConditionSet(x, P(x), X)` represents \(\{x\in X\mid P(x)\}\) without enumeration. | Use `ConditionSet` as a private representation. The public object retains its inclusion arrow. |
+| Three-valued subset relations | SymPy set properties can return `None` when unresolved. | Normalize every public subset predicate to `bool | Unknown`. Translate `None` and unresolved symbolic propositions to `Unknown`. |
+| Semantic equality of sets | SymPy `==` supplies structural equality. | Treat structural equality as sufficient evidence for `True`. Use the owned subobject order for semantic equality. Return `Unknown` when available methods prove neither equality nor inequality. |
+| Cardinal objects | SymPy supplies finite sizes and Lebesgue measure for supported representations. | `Cardinalities()` owns cardinal arithmetic, normalization, comparisons, and the cardinality functor. Construction data and proved relationships determine cardinality. |
+| Cardinal predicates and comparisons | SymPy supplies symbolic expression simplification. | `Cardinalities()` evaluates finite, countable, continuum-sized, and larger cardinal expressions. Unproved predicates and comparisons return `Unknown`. |
+| Images of arbitrary sets | `ImageSet(f, X)` represents \(\{f(x)\mid x\in X\}\) and can remain unevaluated. | Use `ImageSet` as a private symbolic representation. The public result retains its monomorphism into the codomain. |
+| Subobjects | `ConditionSet` supplies the predicate-defined underlying set expression. | The owned subobject stores both that set object and the inclusion arrow \(A\hookrightarrow X\). |
+| Universal set constructions | SymPy represents and simplifies products, unions, intersections, power sets, and images. | The owned categories retain diagrams, cones, cocones, projections, injections, and universal morphisms. |
+| Non-finitary function sets | SymPy supplies symbolic expressions used by callable rules. | Construct \(Y^X\) through `X.Hom(Y).objects()`, `ExponentialOfSets(Y, X)`, and `Y ** X`. Callable rules represent arbitrary domains. |
+
+The preferred SymPy components are:
+
+- `ConditionSet` for symbolic predicate subsets;
+
+- `ImageSet` for images without enumeration;
+
+- `Contains` for unresolved membership propositions;
+
+- SymPy's three-valued fuzzy logic operations;
+
+- simplifiers for unions, intersections, intervals, ranges, power sets, and images.
+
+Membership queries use `Contains(x, X)` or `X.contains(x)` and translate into the owned `bool | Unknown` contract.
+
+The public semantic layer supplies:
+
+- Sage `Unknown` throughout semantic predicates;
+
+- sets as objects and functions as arrows;
+
+- predicate subsets with explicit inclusion arrows;
+
+- general cardinal objects and cardinal arithmetic;
+
+- products, coproducts, images, inverse images, limits, and colimits through functors;
+
+- function sets such as \(\mathbb Q^{\mathbb Q}\) and \((\mathbb R^2)^{\mathbb R}\);
+
+- mathematical equality distinct from structural representation equality.
+
+SymPy integration is confined to set representations and computations.
+Sheaves, morphisms of sheaves, functors, and other categorical objects retain their own categories.
+
 ## Unknown and partial computation
 
 The mathematical object and the available decision procedure are separate data.

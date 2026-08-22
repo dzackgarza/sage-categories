@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Owned Sage categories."
 requires-python = ">=3.14"
 dependencies = [
-    "tree-sitter-sage",
+    "tree-sitter-sage @ git+https://github.com/dzackgarza/tree-sitter-sage",
 ]
 
 [build-system]

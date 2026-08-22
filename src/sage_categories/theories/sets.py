@@ -13,10 +13,16 @@ from math import comb
 from typing import Any, TypeIs
 
 from sage_categories.abstract_categories.functors import (
+    DiscreteCategories,
+    DiscreteDiagram,
+    DiscreteHomCategory,
+    DiscreteObject,
     Functor,
     InclusionFunctor,
     StructuralFunctor,
-    is_functor,
+)
+from sage_categories.abstract_categories.functors import (
+    DiscreteCategory as DiscreteCategoryObject,
 )
 from sage_categories.abstract_categories.hom_categories import (
     HomCategory,
@@ -44,7 +50,6 @@ from sage_categories.theories.cardinals import (
 )
 from sage_categories.values import (
     Arrow,
-    MathematicalElement,
     MathematicalObject,
     MembershipInput,
     registered_value,
@@ -303,34 +308,6 @@ def _decision_not(value: Decision) -> Decision:
     if value is UNKNOWN:
         return UNKNOWN
     return not value
-
-
-class DiscreteIdentity(Arrow):
-    """The unique arrow at one object of a discrete category."""
-
-
-class DiscreteHomCategory(HomCategory):
-    """A singleton hom category when both endpoints are equal."""
-
-    ObjectType = DiscreteIdentity
-    ElementType = DiscreteIdentity
-
-    def __call__(self) -> DiscreteIdentity:
-        return self.identity()
-
-    def identity(self, value: MathematicalObject | None = None) -> DiscreteIdentity:
-        assert value is None
-        assert self.domain() is self.codomain()
-        return self.ObjectType(hom_category=self)
-
-    def compose(self, second: Arrow, first: Arrow) -> DiscreteIdentity:
-        assert first in self and second in self
-        return self.identity()
-
-    def objects(self) -> SetObject:
-        if self.domain() is self.codomain():
-            return FiniteSet(frozenset({self.identity()}))
-        return FiniteSet(frozenset())
 
 
 class SetHomCategory(HomCategory, SetObject):
@@ -687,20 +664,6 @@ def SetMapFromMapping(
     return SetMap(domain, codomain, mapping.__getitem__)
 
 
-class DiscreteObject(MathematicalObject):
-    """One object of a represented discrete category."""
-
-    def __init__(self, *, category: DiscreteCategoryObject, label: SetElementInput) -> None:
-        self._label = label
-        super().__init__(category=category)
-
-    def label(self) -> SetElementInput:
-        return self._label
-
-    def __repr__(self) -> str:
-        return repr(self._label)
-
-
 class DiscreteObjectSet(SetObject):
     """The object set of one discrete category."""
 
@@ -722,7 +685,9 @@ class DiscreteArrowSet(SetObject):
 
     def __init__(self, category: DiscreteCategoryObject) -> None:
         self._discrete_category = category
-        super().__init__(category=Sets(), cardinality=category.objects().cardinality())
+        objects = category.objects()
+        assert Sets().contains_set(objects)
+        super().__init__(category=Sets(), cardinality=objects.cardinality())
 
     def contains(self, member: SetElementInput) -> Decision:
         value = registered_value(member)
@@ -732,112 +697,6 @@ class DiscreteArrowSet(SetObject):
 
     def __iter__(self) -> Iterator[SetElementInput]:
         return iter(tuple(self._discrete_category.Hom(value, value).identity() for value in self._discrete_category))
-
-
-class DiscreteCategoryObject(Category):
-    """The discrete category on one arbitrary set."""
-
-    ObjectType = DiscreteObject
-
-    def __init__(self, *, category: Category, label_set: SetObject) -> None:
-        self._label_set = label_set
-        self._objects_by_label: list[tuple[SetElementInput, DiscreteObject]] = []
-        self._object_set: DiscreteObjectSet | None = None
-        self._arrow_set: DiscreteArrowSet | None = None
-        super().__init__(object_type=DiscreteObject, category=category)
-
-    def label_set(self) -> SetObject:
-        return self._label_set
-
-    def object(self, label: SetElementInput) -> DiscreteObject:
-        assert self._label_set.contains(label) is True
-        for saved_label, value in self._objects_by_label:
-            if saved_label == label:
-                return value
-        value = self.ObjectType(category=self, label=label)
-        assert self.contains_object(value)
-        self._objects_by_label.append((label, value))
-        return value
-
-    def objects(self) -> SetObject:
-        if self._object_set is None:
-            self._object_set = DiscreteObjectSet(self, self._label_set)
-        return self._object_set
-
-    def arrows(self) -> SetObject:
-        if self._arrow_set is None:
-            self._arrow_set = DiscreteArrowSet(self)
-        return self._arrow_set
-
-    def __iter__(self) -> Iterator[DiscreteObject]:
-        return iter(tuple(self.object(label) for label in self._label_set))
-
-    def contains_object(self, candidate: MathematicalObject) -> TypeIs[DiscreteObject]:
-        return candidate in self
-
-    def _hom_category_type(self) -> type[HomCategory]:
-        return DiscreteHomCategory
-
-    def __repr__(self) -> str:
-        return f"Discrete({self._label_set})"
-
-
-class ObjectSetFunctor(StructuralFunctor):
-    """Send a discrete category to its object set."""
-
-    def __init__(self, domain: DiscreteCategoriesCategory) -> None:
-        self._discrete_categories = domain
-        super().__init__(domain, Sets())
-
-    def on_object(self, source: MathematicalObject) -> MathematicalObject:
-        assert self._discrete_categories.contains_discrete_category(source)
-        return source.objects()
-
-    def on_morphism(self, morphism: Arrow) -> Arrow:
-        assert is_functor(morphism)
-        source = morphism.domain()
-        target = morphism.codomain()
-        assert self._discrete_categories.contains_discrete_category(source)
-        assert self._discrete_categories.contains_discrete_category(target)
-
-        def map_object(value: SetElementInput) -> SetElementInput:
-            assert source.contains_object(value)
-            image = morphism(value)
-            assert target.contains_object(image)
-            return image
-
-        return SetMap(source.objects(), target.objects(), map_object)
-
-    def on_element(
-        self,
-        source: MathematicalObject,
-        element: MathematicalElement,
-    ) -> MathematicalElement:
-        return element
-
-
-class DiscreteCategoriesCategory(Category):
-    """The category of arbitrary discrete categories."""
-
-    ObjectType = DiscreteCategoryObject
-
-    def __init__(self) -> None:
-        self._object_set_functor: ObjectSetFunctor | None = None
-        super().__init__(object_type=DiscreteCategoryObject)
-
-    def __call__(self, label_set: SetObject) -> DiscreteCategoryObject:
-        return self.ObjectType(category=self, label_set=label_set)
-
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
-        if self._object_set_functor is None:
-            self._object_set_functor = ObjectSetFunctor(self)
-        return (self._object_set_functor,)
-
-    def contains_discrete_category(
-        self,
-        candidate: MathematicalObject,
-    ) -> TypeIs[DiscreteCategoryObject]:
-        return candidate in self
 
 
 class FiniteDiscreteCategoriesCategory(Category):
@@ -857,11 +716,13 @@ class FiniteDiscreteCategoriesCategory(Category):
         value = registered_value(candidate)
         if value is None or not DiscreteCategories().contains_discrete_category(value):
             return False
-        return value.objects().is_finite() is True
+        objects = value.objects()
+        assert Sets().contains_set(objects)
+        return objects.is_finite() is True
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
         if self._inclusion is None:
-            self._inclusion = InclusionFunctor(self, _DISCRETE_CATEGORIES)
+            self._inclusion = InclusionFunctor(self, DiscreteCategories())
         return (self._inclusion,)
 
     def contains_finite_discrete_category(
@@ -871,15 +732,14 @@ class FiniteDiscreteCategoriesCategory(Category):
         return candidate in self
 
 
-_DISCRETE_CATEGORIES = DiscreteCategoriesCategory()
-_FINITE_DISCRETE_CATEGORIES = FiniteDiscreteCategoriesCategory()
-
-
-def DiscreteCategories() -> DiscreteCategoriesCategory:
-    return _DISCRETE_CATEGORIES
+_FINITE_DISCRETE_CATEGORIES: FiniteDiscreteCategoriesCategory | None = None
 
 
 def FiniteDiscreteCategories() -> FiniteDiscreteCategoriesCategory:
+    global _FINITE_DISCRETE_CATEGORIES
+
+    if _FINITE_DISCRETE_CATEGORIES is None:
+        _FINITE_DISCRETE_CATEGORIES = FiniteDiscreteCategoriesCategory()
     return _FINITE_DISCRETE_CATEGORIES
 
 
@@ -887,32 +747,6 @@ def DiscreteCategory(label_set: SetObject) -> DiscreteCategoryObject:
     if label_set.is_finite() is True:
         return FiniteDiscreteCategories()(label_set)
     return DiscreteCategories()(label_set)
-
-
-class DiscreteDiagram(Functor):
-    """A functor from a discrete category, given on objects."""
-
-    def __init__(
-        self,
-        domain: DiscreteCategoryObject,
-        codomain: Category,
-        values: Callable[[DiscreteObject], MathematicalObject],
-    ) -> None:
-        self._index_category = domain
-        self._values = values
-        super().__init__(domain, codomain)
-
-    def domain(self) -> DiscreteCategoryObject:
-        return self._index_category
-
-    def on_object(self, source: MathematicalObject) -> MathematicalObject:
-        assert self.domain().contains_object(source)
-        image = self._values(source)
-        assert image in self.codomain()
-        return image
-
-    def on_morphism(self, morphism: Arrow) -> Arrow:
-        return self.codomain().identity(self.on_object(morphism.domain()))
 
 
 def SetFamily(

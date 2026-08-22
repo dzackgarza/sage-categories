@@ -104,6 +104,7 @@ Do not reuse a retired identifier.
 | `POL-GEN-012` | Assume finiteness only when the mathematical definition or a selected property subcategory requires it. Define the arbitrary small indexed construction first and obtain its finite form by restriction. |
 | `POL-GEN-013` | Place a coefficient family with potentially infinite support in the appropriate formal power-series ring. Do not declare its sum to be a polynomial without established finite support. |
 | `POL-GEN-014` | Recover polynomials as the finitely supported elements of a formal power-series ring. Make polynomial-valued methods restrictions of the general power-series-valued construction. |
+| `POL-GEN-015` | Return a lazy iterator when a method enumerates a result family and materialization is not part of the mathematics. Do not encode an unproved finiteness assumption by returning a list or tuple. |
 
 For a family \((X_i)_{i\in I}\), the product \(\prod_{i\in I}X_i\) is the limit of the corresponding discrete diagram.
 The foundational product constructor therefore accepts an arbitrary small index set \(I\).
@@ -339,6 +340,8 @@ None requires enumeration to establish finiteness.
 | `POL-API-011` | Treat every public method-name collision as mathematical ambiguity. Resolve it by naming the exact mathematical operation, not by inheritance precedence, overload selection, or context. |
 | `POL-API-012` | Let a structured object expose every applicable operation under its unambiguous name. Its discoverable method surface must preserve distinctions between its structures. |
 | `POL-API-013` | Name categorical arrows as morphisms or arrows. Do not replace the standard mathematical object with implementation names such as `Map` or `Rule`. |
+| `POL-API-014` | Ban nondescript identifiers that do not state what they contain or denote. Never name a type, method, parameter, field, or local value `data`, `container`, `rule`, or a similarly contentless term. |
+| `POL-API-015` | Do not add a public method that duplicates standard Python or Sage protocol syntax. Implement the protocol and use its established notation for comparison, containment, indexing, equality, iteration, and calls. |
 | `POL-TYPE-001` | Give every value the type that names its mathematical role. |
 | `POL-TYPE-002` | Distinguish categories, objects, elements, arrows, functors, rings, sets, domains, and codomains in types. |
 | `POL-TYPE-003` | Never use `object` as a type. |
@@ -360,6 +363,7 @@ None requires enumeration to establish finiteness.
 | `POL-TYPE-019` | Type each method parameter and result by the most specific category that supplies the required structure. Do not widen it to an element or object type from a supercategory. |
 | `POL-TYPE-020` | Preserve category-specific types even when a category adds no new runtime fields or methods. Reusing an implementation does not erase the mathematical refinement. |
 | `POL-TYPE-021` | Admit raw Python containers only at an explicit construction or coercion boundary. Convert them immediately into the required mathematical collection before category-owned code receives them. |
+| `POL-TYPE-022` | Use `Iterator[T]` for a lazy enumeration result. This output type describes traversal and does not replace a named mathematical collection type at an input boundary. |
 
 For example, `gens()` is ambiguous on an object that can be a group, module, and algebra.
 Expose `group_generators()`, `module_generators()`, and `algebra_generators()` side by side.
@@ -377,6 +381,13 @@ Typing `x` as `SetElement` would admit an element without the required poset str
 
 Likewise, use `OrderedSet[MyCatElement]`, not `Iterable[MyCatElement]`, when order and uniqueness are the mathematical input.
 The latter type also admits raw lists, tuples, and Python iterators, which discards the required collection semantics.
+
+Use `x <= y`, `x in X`, `X[i]`, and `x == y` instead of public methods such as `x.le(y)`, `X.contains(x)`, `X.index(i)`, or `x.equals(y)` that shadow those protocols.
+
+Replace a nondescript name with the exact entity, such as `tensor_coefficients`, `ordered_set`, or `set_morphism`.
+
+A method that enumerates solutions yields them lazily.
+The caller can materialize a finite result when its application requires one.
 
 ## Implementation style
 

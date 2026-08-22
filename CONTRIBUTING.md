@@ -101,6 +101,12 @@ Do not reuse a retired identifier.
 | `POL-GEN-009` | Treat `QQ` in `Algebras(ZZ)` and `QQ` in `Algebras(QQ)` as different algebra objects related by scalar change. |
 | `POL-GEN-010` | Preserve infinite algebra-generation data. Do not force a finitely generated presentation onto an algebra such as `QQ` over `ZZ`. |
 | `POL-GEN-011` | Keep rank, dimension, cardinality, and minimum number of module generators distinct. Use each invariant only under its defining hypotheses. |
+| `POL-GEN-012` | Assume finiteness only when the mathematical definition or a selected property subcategory requires it. Define the arbitrary small indexed construction first and obtain its finite form by restriction. |
+
+For a family \((X_i)_{i\in I}\), the product \(\prod_{i\in I}X_i\) is the limit of the corresponding discrete diagram.
+The foundational product constructor therefore accepts an arbitrary small index set \(I\).
+A finite product is its restriction to `I in Sets().Finite()`.
+A constructor based on a finite tuple of factors cannot express the integral adeles \(\prod_p\mathbb Z_p\).
 
 ## Forms and lattices
 

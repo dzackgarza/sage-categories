@@ -406,6 +406,24 @@ None requires enumeration to establish finiteness.
 Enumerating isotropic subgroups of a torsion bilinear module can be an explicit first approximation.
 It remains a replaceable algorithm, not the representation or default structural method.
 
+## Documentation ownership
+
+| ID | Policy |
+| --- | --- |
+| `POL-DOC-001` | Use `CONTRIBUTING.md` for general contribution principles and recurring patterns. State the general rule first and use concrete cases only as grounding examples. |
+| `POL-DOC-002` | Add a specific observed antipattern to `CONTRIBUTING.md` only when its recurrence or severity makes a dedicated indexed warning useful. Keep its governing general principle explicit. |
+| `POL-DOC-003` | Make each specification a forward-facing inventory of the desired mathematical capabilities and public API. |
+| `POL-DOC-004` | A specification can describe a private implementation strategy when it constrains feasibility or architecture. Keep backend types, names, and decisions outside the public contract. |
+| `POL-DOC-005` | Make each category specification declare its selected structural functors. These functors replace an independent `super_categories` declaration and determine inherited structure. |
+| `POL-DOC-006` | State which capabilities the specified category owns. State inherited capabilities by naming their owning category and the functor path that supplies them. |
+| `POL-DOC-007` | Keep one authoritative catalogue for each public method surface. Reference that catalogue from dependent specifications instead of copying it. |
+| `POL-DOC-008` | Mention a small number of inherited methods only when they clarify a category-specific example. Do not reproduce the inherited API inventory. |
+| `POL-DOC-009` | Declare only mathematically meaningful immediate structural functors. Obtain deeper inherited capabilities by functor composition, not by adding direct functors for convenience. |
+
+For example, a lattice specification declares its selected functor to the appropriate formed-module category.
+It states that cardinality arrives through the existing functor chain from formed modules through modules to `Sets()`.
+It does not list cardinality as a lattice-owned method or add a direct lattice-to-`Sets()` functor.
+
 ## Policy maintenance
 
 | ID | Policy |

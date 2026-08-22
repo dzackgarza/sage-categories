@@ -189,6 +189,7 @@ class MathematicalObject:
     ) -> MathematicalObject:
         assert False, f"{self} is not represented as an element"
 
+
 class MathematicalElement(MathematicalObject):
     """An element of a mathematical object."""
 

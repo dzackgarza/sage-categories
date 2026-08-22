@@ -150,7 +150,9 @@ class CosliceHomCategory(HomCategory):
         target = self.codomain()
         assert category.contains_coslice_object(source)
         assert category.contains_coslice_object(target)
-        assert right in category.ambient_category().Hom(source.object(), target.object())
+        assert right in category.ambient_category().Hom(
+            source.object(), target.object()
+        )
         return self.ObjectType(hom_category=self, varying_arrow=right)
 
     def identity(
@@ -321,10 +323,6 @@ class SubobjectCategory(Category):
             structure_morphism=structure_morphism,
         )
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
-        value = registered_value(candidate)
-        return value is not None and value.category() is self
-
     def contains_subobject(
         self,
         candidate: MathematicalObject,
@@ -361,10 +359,6 @@ class SuperobjectCategory(Category):
             structure_morphism=structure_morphism,
         )
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
-        value = registered_value(candidate)
-        return value is not None and value.category() is self
-
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
         if self._inclusion is None:
             self._inclusion = InclusionFunctor(
@@ -395,10 +389,6 @@ class CoveringObjectCategory(Category):
             structure_morphism=structure_morphism,
         )
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
-        value = registered_value(candidate)
-        return value is not None and value.category() is self
-
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
         if self._inclusion is None:
             self._inclusion = InclusionFunctor(
@@ -428,10 +418,6 @@ class CoveredObjectCategory(Category):
             fixed_object=self._source,
             structure_morphism=structure_morphism,
         )
-
-    def __contains__(self, candidate: MembershipInput) -> bool:
-        value = registered_value(candidate)
-        return value is not None and value.category() is self
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
         if self._inclusion is None:
@@ -558,7 +544,9 @@ def Superobject(costructure_morphism: Arrow) -> SliceObject:
         assert is_restricted_hom_category(monomorphisms)
         costructure_morphism = monomorphisms(costructure_morphism)
     superobjects = category.Superobjects(costructure_morphism.domain())
-    assert superobjects.is_subcategory(category.CosliceUnder(costructure_morphism.domain()))
+    assert superobjects.is_subcategory(
+        category.CosliceUnder(costructure_morphism.domain())
+    )
     return superobjects(costructure_morphism)
 
 
@@ -588,5 +576,7 @@ def Covered(costructure_morphism: Arrow) -> SliceObject:
         assert is_restricted_hom_category(epimorphisms)
         costructure_morphism = epimorphisms(costructure_morphism)
     covered_objects = category.CoveredObjects(costructure_morphism.domain())
-    assert covered_objects.is_subcategory(category.CosliceUnder(costructure_morphism.domain()))
+    assert covered_objects.is_subcategory(
+        category.CosliceUnder(costructure_morphism.domain())
+    )
     return covered_objects(costructure_morphism)

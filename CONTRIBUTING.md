@@ -344,8 +344,8 @@ None requires enumeration to establish finiteness.
 | `POL-API-015` | Do not add a public method that duplicates standard Python or Sage protocol syntax. Implement the protocol and use its established notation for comparison, containment, indexing, equality, iteration, and calls. |
 | `POL-TYPE-001` | Give every value the type that names its mathematical role. |
 | `POL-TYPE-002` | Distinguish categories, objects, elements, arrows, functors, rings, sets, domains, and codomains in types. |
-| `POL-TYPE-003` | Never use `object` as a type. |
-| `POL-TYPE-004` | Use `Any` only for a parameter that accepts every input. The normal sites are the candidate parameters of `__eq__` and `__contains__`. |
+| `POL-TYPE-003` | Never use `object` in a type annotation. There are no exceptions. |
+| `POL-TYPE-004` | Annotate the candidate parameter of every `__eq__` and `__contains__` method as raw `Any`. These two parameter positions are the only permitted uses of `Any`. |
 | `POL-TYPE-005` | Never use `Any` as a return type. |
 | `POL-TYPE-006` | Do not silence a type error with a cast, ignored diagnostic, deleted annotation, or wider type. |
 | `POL-TYPE-007` | Fix the mathematical model, method owner, import boundary, or missing type declaration exposed by a type error. |
@@ -371,6 +371,9 @@ Each name identifies the structure whose generating set it returns.
 
 For example, `SomeMathematicalObjectInput` names a constructor role rather than a mathematical object.
 If the parameter denotes an element of a set, its type is `SetElement`.
+
+The protocol signatures are `__eq__(self, candidate: Any)` and `__contains__(self, candidate: Any)`.
+Do not replace `Any` there with `object`, `MembershipInput`, or an indirect alias.
 
 Likewise, do not define `MathematicalObject = Any` and then type `SetMapRule` as a callable on that alias.
 A `SetMorphism` acts from `SetElement` to `SetElement`, with its specific domain and codomain stored on the morphism.

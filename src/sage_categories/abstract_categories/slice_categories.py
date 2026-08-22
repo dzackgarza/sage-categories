@@ -13,7 +13,65 @@ from sage_categories.abstract_categories.hom_categories import (
     is_restricted_hom_category,
 )
 from sage_categories.category import Category
-from sage_categories.values import Arrow, MathematicalObject, MembershipInput
+from sage_categories.values import (
+    Arrow,
+    MathematicalElement,
+    MathematicalObject,
+    MembershipInput,
+    registered_value,
+)
+
+
+class SliceObject(MathematicalObject):
+    """An object together with its defining arrow in a slice or coslice."""
+
+    def __init__(
+        self,
+        *,
+        category: Category,
+        varying_object: MathematicalObject,
+        fixed_object: MathematicalObject,
+        structure_morphism: Arrow,
+    ) -> None:
+        self._varying_object = varying_object
+        self._fixed_object = fixed_object
+        self._structure_morphism = structure_morphism
+        super().__init__(category=category)
+
+    def object(self) -> MathematicalObject:
+        return self._varying_object
+
+    def fixed_object(self) -> MathematicalObject:
+        return self._fixed_object
+
+    def structure_morphism(self) -> Arrow:
+        return self._structure_morphism
+
+
+class SliceForgetfulFunctor(StructuralFunctor):
+    """Send a chosen arrow object to its varying ambient object."""
+
+    def __init__(
+        self,
+        domain: SliceOverCategory | CosliceUnderCategory,
+    ) -> None:
+        self._slice_category = domain
+        super().__init__(domain, domain.ambient_category())
+
+    def on_object(self, source: MathematicalObject) -> MathematicalObject:
+        assert self._slice_category.contains_slice_object(source)
+        return source.object()
+
+    def on_morphism(self, morphism: Arrow) -> Arrow:
+        assert self._slice_category.contains_slice_arrow(morphism)
+        return morphism.varying_arrow()
+
+    def on_element(
+        self,
+        source: MathematicalObject,
+        element: MathematicalElement,
+    ) -> MathematicalElement:
+        return element
 
 
 class SliceArrow(Arrow):
@@ -47,10 +105,7 @@ class SliceHomCategory(HomCategory):
         target = self.codomain()
         assert category.contains_slice_object(source)
         assert category.contains_slice_object(target)
-        assert left in category.ambient_category().Hom(
-            source.domain(),
-            target.domain(),
-        )
+        assert left in category.ambient_category().Hom(source.object(), target.object())
         return self.ObjectType(hom_category=self, varying_arrow=left)
 
     def identity(
@@ -63,7 +118,7 @@ class SliceHomCategory(HomCategory):
         assert is_slice_over(category)
         domain = self.domain()
         assert category.contains_slice_object(domain)
-        return self(category.ambient_category().identity(domain.domain()))
+        return self(category.ambient_category().identity(domain.object()))
 
     def compose(self, second: Arrow, first: Arrow) -> SliceArrow:
         assert self.contains_slice_arrow(second)
@@ -95,10 +150,7 @@ class CosliceHomCategory(HomCategory):
         target = self.codomain()
         assert category.contains_coslice_object(source)
         assert category.contains_coslice_object(target)
-        assert right in category.ambient_category().Hom(
-            source.codomain(),
-            target.codomain(),
-        )
+        assert right in category.ambient_category().Hom(source.object(), target.object())
         return self.ObjectType(hom_category=self, varying_arrow=right)
 
     def identity(
@@ -111,7 +163,7 @@ class CosliceHomCategory(HomCategory):
         assert is_coslice_under(category)
         domain = self.domain()
         assert category.contains_coslice_object(domain)
-        return self(category.ambient_category().identity(domain.codomain()))
+        return self(category.ambient_category().identity(domain.object()))
 
     def compose(self, second: Arrow, first: Arrow) -> SliceArrow:
         assert self.contains_slice_arrow(second)
@@ -133,14 +185,26 @@ class CosliceHomCategory(HomCategory):
 class SliceOverCategory(Category):
     """The slice category ``C / X``."""
 
+    ObjectType: type[SliceObject] = SliceObject
+
     def __init__(self, ambient_category: Category, target: MathematicalObject) -> None:
         assert target in ambient_category
         self._ambient_category = ambient_category
         self._target = target
-        self._inclusion: InclusionFunctor | None = None
+        self._forgetful: SliceForgetfulFunctor | None = None
         super().__init__(
-            object_type=ambient_category.ArrowType,
+            object_type=SliceObject,
             category=SliceOverCategories(),
+        )
+
+    def __call__(self, structure_morphism: Arrow) -> SliceObject:
+        assert structure_morphism in self._ambient_category.ArrowCategory()
+        assert structure_morphism.codomain() is self._target
+        return self.ObjectType(
+            category=self,
+            varying_object=structure_morphism.domain(),
+            fixed_object=self._target,
+            structure_morphism=structure_morphism,
         )
 
     def ambient_category(self) -> Category:
@@ -150,25 +214,25 @@ class SliceOverCategory(Category):
         return self._target
 
     def __contains__(self, candidate: MembershipInput) -> bool:
-        arrow_category = self._ambient_category.ArrowCategory()
-        return arrow_category.contains_arrow(candidate) and (candidate.codomain() is self._target)
+        value = registered_value(candidate)
+        return value is not None and value._belongs_to(self)
 
     def contains_slice_object(
         self,
         candidate: MathematicalObject,
-    ) -> TypeIs[Arrow]:
+    ) -> TypeIs[SliceObject]:
         return candidate in self
+
+    def contains_slice_arrow(self, candidate: Arrow) -> TypeIs[SliceArrow]:
+        return candidate in self.ArrowCategory()
 
     def _hom_category_type(self) -> type[HomCategory]:
         return SliceHomCategory
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
-        if self._inclusion is None:
-            self._inclusion = InclusionFunctor(
-                self,
-                self._ambient_category.ArrowCategory(),
-            )
-        return (self._inclusion,)
+        if self._forgetful is None:
+            self._forgetful = SliceForgetfulFunctor(self)
+        return (self._forgetful,)
 
     def __repr__(self) -> str:
         return f"{self._ambient_category}/{self._target}"
@@ -177,14 +241,26 @@ class SliceOverCategory(Category):
 class CosliceUnderCategory(Category):
     """The coslice category ``X \\ C``."""
 
+    ObjectType: type[SliceObject] = SliceObject
+
     def __init__(self, ambient_category: Category, source: MathematicalObject) -> None:
         assert source in ambient_category
         self._ambient_category = ambient_category
         self._source = source
-        self._inclusion: InclusionFunctor | None = None
+        self._forgetful: SliceForgetfulFunctor | None = None
         super().__init__(
-            object_type=ambient_category.ArrowType,
+            object_type=SliceObject,
             category=CosliceUnderCategories(),
+        )
+
+    def __call__(self, structure_morphism: Arrow) -> SliceObject:
+        assert structure_morphism in self._ambient_category.ArrowCategory()
+        assert structure_morphism.domain() is self._source
+        return self.ObjectType(
+            category=self,
+            varying_object=structure_morphism.codomain(),
+            fixed_object=self._source,
+            structure_morphism=structure_morphism,
         )
 
     def ambient_category(self) -> Category:
@@ -194,25 +270,31 @@ class CosliceUnderCategory(Category):
         return self._source
 
     def __contains__(self, candidate: MembershipInput) -> bool:
-        arrow_category = self._ambient_category.ArrowCategory()
-        return arrow_category.contains_arrow(candidate) and (candidate.domain() is self._source)
+        value = registered_value(candidate)
+        return value is not None and value._belongs_to(self)
 
     def contains_coslice_object(
         self,
         candidate: MathematicalObject,
-    ) -> TypeIs[Arrow]:
+    ) -> TypeIs[SliceObject]:
         return candidate in self
+
+    def contains_slice_object(
+        self,
+        candidate: MathematicalObject,
+    ) -> TypeIs[SliceObject]:
+        return candidate in self
+
+    def contains_slice_arrow(self, candidate: Arrow) -> TypeIs[SliceArrow]:
+        return candidate in self.ArrowCategory()
 
     def _hom_category_type(self) -> type[HomCategory]:
         return CosliceHomCategory
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
-        if self._inclusion is None:
-            self._inclusion = InclusionFunctor(
-                self,
-                self._ambient_category.ArrowCategory(),
-            )
-        return (self._inclusion,)
+        if self._forgetful is None:
+            self._forgetful = SliceForgetfulFunctor(self)
+        return (self._forgetful,)
 
     def __repr__(self) -> str:
         return f"{self._source}\\{self._ambient_category}"
@@ -221,14 +303,33 @@ class CosliceUnderCategory(Category):
 class SubobjectCategory(Category):
     """Monomorphisms into one fixed object."""
 
+    ObjectType: type[SliceObject] = SliceObject
+
     def __init__(self, ambient_category: Category, target: MathematicalObject) -> None:
         self._ambient_category = ambient_category
         self._target = target
         self._inclusion: InclusionFunctor | None = None
-        super().__init__(object_type=ambient_category.MonoArrowType)
+        super().__init__(object_type=SliceObject)
+
+    def __call__(self, structure_morphism: Arrow) -> SliceObject:
+        assert structure_morphism in self._ambient_category.MonomorphismArrowCategory()
+        assert structure_morphism.codomain() is self._target
+        return self.ObjectType(
+            category=self,
+            varying_object=structure_morphism.domain(),
+            fixed_object=self._target,
+            structure_morphism=structure_morphism,
+        )
 
     def __contains__(self, candidate: MembershipInput) -> bool:
-        return candidate in self._ambient_category.SliceOver(self._target) and (candidate in self._ambient_category.MonomorphismArrowCategory())
+        value = registered_value(candidate)
+        return value is not None and value.category() is self
+
+    def contains_subobject(
+        self,
+        candidate: MathematicalObject,
+    ) -> TypeIs[SliceObject]:
+        return candidate in self
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
         if self._inclusion is None:
@@ -242,14 +343,27 @@ class SubobjectCategory(Category):
 class SuperobjectCategory(Category):
     """Monomorphisms from one fixed object."""
 
+    ObjectType: type[SliceObject] = SliceObject
+
     def __init__(self, ambient_category: Category, source: MathematicalObject) -> None:
         self._ambient_category = ambient_category
         self._source = source
         self._inclusion: InclusionFunctor | None = None
-        super().__init__(object_type=ambient_category.MonoArrowType)
+        super().__init__(object_type=SliceObject)
+
+    def __call__(self, structure_morphism: Arrow) -> SliceObject:
+        assert structure_morphism in self._ambient_category.MonomorphismArrowCategory()
+        assert structure_morphism.domain() is self._source
+        return self.ObjectType(
+            category=self,
+            varying_object=structure_morphism.codomain(),
+            fixed_object=self._source,
+            structure_morphism=structure_morphism,
+        )
 
     def __contains__(self, candidate: MembershipInput) -> bool:
-        return candidate in self._ambient_category.CosliceUnder(self._source) and (candidate in self._ambient_category.MonomorphismArrowCategory())
+        value = registered_value(candidate)
+        return value is not None and value.category() is self
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
         if self._inclusion is None:
@@ -263,14 +377,27 @@ class SuperobjectCategory(Category):
 class CoveringObjectCategory(Category):
     """Epimorphisms into one fixed object."""
 
+    ObjectType: type[SliceObject] = SliceObject
+
     def __init__(self, ambient_category: Category, target: MathematicalObject) -> None:
         self._ambient_category = ambient_category
         self._target = target
         self._inclusion: InclusionFunctor | None = None
-        super().__init__(object_type=ambient_category.EpiArrowType)
+        super().__init__(object_type=SliceObject)
+
+    def __call__(self, structure_morphism: Arrow) -> SliceObject:
+        assert structure_morphism in self._ambient_category.EpimorphismArrowCategory()
+        assert structure_morphism.codomain() is self._target
+        return self.ObjectType(
+            category=self,
+            varying_object=structure_morphism.domain(),
+            fixed_object=self._target,
+            structure_morphism=structure_morphism,
+        )
 
     def __contains__(self, candidate: MembershipInput) -> bool:
-        return candidate in self._ambient_category.SliceOver(self._target) and (candidate in self._ambient_category.EpimorphismArrowCategory())
+        value = registered_value(candidate)
+        return value is not None and value.category() is self
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
         if self._inclusion is None:
@@ -284,14 +411,27 @@ class CoveringObjectCategory(Category):
 class CoveredObjectCategory(Category):
     """Epimorphisms from one fixed object."""
 
+    ObjectType: type[SliceObject] = SliceObject
+
     def __init__(self, ambient_category: Category, source: MathematicalObject) -> None:
         self._ambient_category = ambient_category
         self._source = source
         self._inclusion: InclusionFunctor | None = None
-        super().__init__(object_type=ambient_category.EpiArrowType)
+        super().__init__(object_type=SliceObject)
+
+    def __call__(self, structure_morphism: Arrow) -> SliceObject:
+        assert structure_morphism in self._ambient_category.EpimorphismArrowCategory()
+        assert structure_morphism.domain() is self._source
+        return self.ObjectType(
+            category=self,
+            varying_object=structure_morphism.codomain(),
+            fixed_object=self._source,
+            structure_morphism=structure_morphism,
+        )
 
     def __contains__(self, candidate: MembershipInput) -> bool:
-        return candidate in self._ambient_category.CosliceUnder(self._source) and (candidate in self._ambient_category.EpimorphismArrowCategory())
+        value = registered_value(candidate)
+        return value is not None and value.category() is self
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
         if self._inclusion is None:
@@ -374,21 +514,23 @@ def CoveredObjects(
     return CoveredObjectCategory(ambient_category, source)
 
 
-def Slice(structure_morphism: Arrow) -> Arrow:
-    """Place an arrow as an object of its slice category."""
+def Slice(structure_morphism: Arrow) -> SliceObject:
+    """Construct the object represented by an arrow into a fixed object."""
     category = structure_morphism.base_category()
-    assert structure_morphism in category.SliceOver(structure_morphism.codomain())
-    return structure_morphism
+    slice_category = category.SliceOver(structure_morphism.codomain())
+    assert is_slice_over(slice_category)
+    return slice_category(structure_morphism)
 
 
-def Coslice(costructure_morphism: Arrow) -> Arrow:
-    """Place an arrow as an object of its coslice category."""
+def Coslice(costructure_morphism: Arrow) -> SliceObject:
+    """Construct the object represented by an arrow from a fixed object."""
     category = costructure_morphism.base_category()
-    assert costructure_morphism in category.CosliceUnder(costructure_morphism.domain())
-    return costructure_morphism
+    coslice_category = category.CosliceUnder(costructure_morphism.domain())
+    assert is_coslice_under(coslice_category)
+    return coslice_category(costructure_morphism)
 
 
-def Subobject(structure_morphism: Arrow) -> Arrow:
+def Subobject(structure_morphism: Arrow) -> SliceObject:
     """Construct a subobject from a declared monomorphism."""
     category = structure_morphism.base_category()
     if structure_morphism not in category.MonomorphismArrowCategory():
@@ -398,11 +540,14 @@ def Subobject(structure_morphism: Arrow) -> Arrow:
         )
         assert is_restricted_hom_category(monomorphisms)
         structure_morphism = monomorphisms(structure_morphism)
-    assert structure_morphism in category.Subobjects(structure_morphism.codomain())
-    return structure_morphism
+    subobjects = category.Subobjects(structure_morphism.codomain())
+    assert subobjects.is_subcategory(category.SliceOver(structure_morphism.codomain()))
+    result = subobjects(structure_morphism)
+    assert result in subobjects
+    return result
 
 
-def Superobject(costructure_morphism: Arrow) -> Arrow:
+def Superobject(costructure_morphism: Arrow) -> SliceObject:
     """Construct a superobject from a declared monomorphism."""
     category = costructure_morphism.base_category()
     if costructure_morphism not in category.MonomorphismArrowCategory():
@@ -412,11 +557,12 @@ def Superobject(costructure_morphism: Arrow) -> Arrow:
         )
         assert is_restricted_hom_category(monomorphisms)
         costructure_morphism = monomorphisms(costructure_morphism)
-    assert costructure_morphism in category.Superobjects(costructure_morphism.domain())
-    return costructure_morphism
+    superobjects = category.Superobjects(costructure_morphism.domain())
+    assert superobjects.is_subcategory(category.CosliceUnder(costructure_morphism.domain()))
+    return superobjects(costructure_morphism)
 
 
-def Covering(structure_morphism: Arrow) -> Arrow:
+def Covering(structure_morphism: Arrow) -> SliceObject:
     """Construct a covering object from a declared epimorphism."""
     category = structure_morphism.base_category()
     if structure_morphism not in category.EpimorphismArrowCategory():
@@ -426,11 +572,12 @@ def Covering(structure_morphism: Arrow) -> Arrow:
         )
         assert is_restricted_hom_category(epimorphisms)
         structure_morphism = epimorphisms(structure_morphism)
-    assert structure_morphism in category.CoveringObjects(structure_morphism.codomain())
-    return structure_morphism
+    coverings = category.CoveringObjects(structure_morphism.codomain())
+    assert coverings.is_subcategory(category.SliceOver(structure_morphism.codomain()))
+    return coverings(structure_morphism)
 
 
-def Covered(costructure_morphism: Arrow) -> Arrow:
+def Covered(costructure_morphism: Arrow) -> SliceObject:
     """Construct a covered object from a declared epimorphism."""
     category = costructure_morphism.base_category()
     if costructure_morphism not in category.EpimorphismArrowCategory():
@@ -440,5 +587,6 @@ def Covered(costructure_morphism: Arrow) -> Arrow:
         )
         assert is_restricted_hom_category(epimorphisms)
         costructure_morphism = epimorphisms(costructure_morphism)
-    assert costructure_morphism in category.CoveredObjects(costructure_morphism.domain())
-    return costructure_morphism
+    covered_objects = category.CoveredObjects(costructure_morphism.domain())
+    assert covered_objects.is_subcategory(category.CosliceUnder(costructure_morphism.domain()))
+    return covered_objects(costructure_morphism)

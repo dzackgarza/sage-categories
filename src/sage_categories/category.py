@@ -36,6 +36,14 @@ if TYPE_CHECKING:
         CoproductPresentation,
         ProductPresentation,
     )
+    from sage_categories.abstract_categories.slice_categories import (
+        CoveredObjectCategory,
+        CoveringObjectCategory,
+        CosliceUnderCategory,
+        SliceOverCategory,
+        SubobjectCategory,
+        SuperobjectCategory,
+    )
 
 
 class Category(MathematicalObject):
@@ -79,12 +87,12 @@ class Category(MathematicalObject):
         self._colimit_functors: dict[int, Functor] = {}
         self._product_functors: dict[int, Functor] = {}
         self._coproduct_functors: dict[int, Functor] = {}
-        self._slice_over_categories: dict[int, Category] = {}
-        self._coslice_under_categories: dict[int, Category] = {}
-        self._subobject_categories: dict[int, Category] = {}
-        self._superobject_categories: dict[int, Category] = {}
-        self._covering_object_categories: dict[int, Category] = {}
-        self._covered_object_categories: dict[int, Category] = {}
+        self._slice_over_categories: dict[int, SliceOverCategory] = {}
+        self._coslice_under_categories: dict[int, CosliceUnderCategory] = {}
+        self._subobject_categories: dict[int, SubobjectCategory] = {}
+        self._superobject_categories: dict[int, SuperobjectCategory] = {}
+        self._covering_object_categories: dict[int, CoveringObjectCategory] = {}
+        self._covered_object_categories: dict[int, CoveredObjectCategory] = {}
         self._end_category: HomCategoryFamily | None = None
         self._mono_category: HomCategoryFamily | None = None
         self._epi_category: HomCategoryFamily | None = None
@@ -532,7 +540,7 @@ class Category(MathematicalObject):
             self._product_categories[key] = cached
         return cached
 
-    def SliceOver(self, value: MathematicalObject) -> Category:
+    def SliceOver(self, value: MathematicalObject) -> SliceOverCategory:
         """Return the slice category over ``value``."""
         from sage_categories.abstract_categories.slice_categories import SliceOver
 
@@ -543,7 +551,7 @@ class Category(MathematicalObject):
             self._slice_over_categories[key] = cached
         return cached
 
-    def CosliceUnder(self, value: MathematicalObject) -> Category:
+    def CosliceUnder(self, value: MathematicalObject) -> CosliceUnderCategory:
         """Return the coslice category under ``value``."""
         from sage_categories.abstract_categories.slice_categories import CosliceUnder
 
@@ -554,7 +562,7 @@ class Category(MathematicalObject):
             self._coslice_under_categories[key] = cached
         return cached
 
-    def Subobjects(self, value: MathematicalObject) -> Category:
+    def Subobjects(self, value: MathematicalObject) -> SubobjectCategory:
         """Return the category of subobjects of ``value``."""
         from sage_categories.abstract_categories.slice_categories import Subobjects
 
@@ -565,7 +573,7 @@ class Category(MathematicalObject):
             self._subobject_categories[key] = cached
         return cached
 
-    def Superobjects(self, value: MathematicalObject) -> Category:
+    def Superobjects(self, value: MathematicalObject) -> SuperobjectCategory:
         """Return the category of superobjects of ``value``."""
         from sage_categories.abstract_categories.slice_categories import Superobjects
 
@@ -576,7 +584,7 @@ class Category(MathematicalObject):
             self._superobject_categories[key] = cached
         return cached
 
-    def CoveringObjects(self, value: MathematicalObject) -> Category:
+    def CoveringObjects(self, value: MathematicalObject) -> CoveringObjectCategory:
         """Return the category of epimorphisms into ``value``."""
         from sage_categories.abstract_categories.slice_categories import CoveringObjects
 
@@ -587,7 +595,7 @@ class Category(MathematicalObject):
             self._covering_object_categories[key] = cached
         return cached
 
-    def CoveredObjects(self, value: MathematicalObject) -> Category:
+    def CoveredObjects(self, value: MathematicalObject) -> CoveredObjectCategory:
         """Return the category of epimorphisms from ``value``."""
         from sage_categories.abstract_categories.slice_categories import CoveredObjects
 

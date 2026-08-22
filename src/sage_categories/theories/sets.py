@@ -265,6 +265,12 @@ class SetsCategory(Category):
     ) -> TypeIs[SetFunction]:
         return candidate in self.ArrowCategory()
 
+    def chosen_limit(self, diagram: Functor) -> ProductPresentation:
+        return ProductOfSets(diagram)
+
+    def chosen_colimit(self, diagram: Functor) -> CoproductPresentation:
+        return CoproductOfSets(diagram)
+
     def __repr__(self) -> str:
         return "Sets"
 
@@ -629,7 +635,7 @@ def CoproductValues() -> CoproductValuesCategory:
     return _COPRODUCT_VALUES
 
 
-def ProductOfSets(diagram: DiscreteDiagram) -> ProductPresentation:
+def ProductOfSets(diagram: Functor) -> ProductPresentation:
     """Construct the categorical product of a finite family of sets."""
     assert diagram.codomain() is Sets()
     domain = diagram.domain()
@@ -681,7 +687,7 @@ def ProductOfSets(diagram: DiscreteDiagram) -> ProductPresentation:
     return Product(cone, mediate)
 
 
-def CoproductOfSets(diagram: DiscreteDiagram) -> CoproductPresentation:
+def CoproductOfSets(diagram: Functor) -> CoproductPresentation:
     """Construct the categorical coproduct of a finite family of sets."""
     assert diagram.codomain() is Sets()
     domain = diagram.domain()

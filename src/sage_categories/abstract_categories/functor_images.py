@@ -132,11 +132,16 @@ class ImageOfFunctor(Category):
 
     ObjectType = FunctorImageObject
 
-    def __init__(self, functor: Functor) -> None:
+    def __init__(
+        self,
+        functor: Functor,
+        *,
+        object_type: type[FunctorImageObject] = FunctorImageObject,
+    ) -> None:
         self._functor = functor
         self._inclusion: ImageInclusionFunctor | None = None
         super().__init__(
-            object_type=FunctorImageObject,
+            object_type=object_type,
             category=FunctorImageCategoryObjects(),
         )
 

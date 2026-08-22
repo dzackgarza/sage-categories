@@ -30,7 +30,7 @@ class Functor(Arrow, ABC):
     ) -> None:
         from sage_categories.abstract_categories.cat import Cat
 
-        self._image_category: Category | None = None
+        self._cached_image_category: Category | None = None
         self._functor_domain = domain
         self._functor_codomain = codomain
         functor_hom_category = Cat().Hom(domain, codomain) if hom_category is None else hom_category
@@ -74,13 +74,16 @@ class Functor(Arrow, ABC):
 
     def Image(self) -> Category:
         """Return outputs of this functor with their chosen preimages."""
-        if self._image_category is None:
-            from sage_categories.abstract_categories.functor_images import (
-                ImageOfFunctor,
-            )
+        if self._cached_image_category is None:
+            self._cached_image_category = self._construct_image_category()
+        return self._cached_image_category
 
-            self._image_category = ImageOfFunctor(self)
-        return self._image_category
+    def _construct_image_category(self) -> Category:
+        from sage_categories.abstract_categories.functor_images import (
+            ImageOfFunctor,
+        )
+
+        return ImageOfFunctor(self)
 
     def then(self, following: Functor) -> Functor:
         """Return ``following`` after this functor."""
@@ -320,6 +323,146 @@ class DiagonalFunctor(Functor):
         source = self.on_object(morphism.domain())
         target = self.on_object(morphism.codomain())
         return NaturalTransformation(source, target, lambda index: morphism)
+
+
+class LimitFunctor(Functor):
+    """A chosen limit functor on diagrams of one fixed shape."""
+
+    def __init__(self, codomain: Category, index_category: Category) -> None:
+        self._index_category = index_category
+        super().__init__(codomain.Diagram(index_category), codomain)
+
+    def index_category(self) -> Category:
+        return self._index_category
+
+    def _construct_image_category(self) -> Category:
+        from sage_categories.abstract_categories.products import LimitsOfCategory
+
+        return LimitsOfCategory(self)
+
+    def on_object(self, source: MathematicalObject) -> MathematicalObject:
+        assert is_functor(source)
+        assert source in self.domain()
+        from sage_categories.abstract_categories.products import (
+            is_limits_of_category,
+        )
+
+        image = self.Image()
+        assert is_limits_of_category(image)
+        return image.limit_of(source).image()
+
+    def on_morphism(self, morphism: Arrow) -> Arrow:
+        hom_category = morphism.hom_category()
+        assert is_natural_transformation_hom_category(hom_category)
+        assert hom_category.contains_transformation(morphism)
+        source = morphism.domain()
+        target = morphism.codomain()
+        assert is_functor(source)
+        assert is_functor(target)
+        from sage_categories.abstract_categories.products import (
+            Cone,
+            is_limits_of_category,
+        )
+
+        image = self.Image()
+        assert is_limits_of_category(image)
+        source_limit = image.limit_of(source)
+        target_limit = image.limit_of(target)
+        source_cone = source_limit.limit_cone()
+        cone = Cone(
+            target,
+            source_limit.image(),
+            lambda index: self.codomain().compose(
+                morphism.component(index),
+                source_cone.structure_morphism(index),
+            ),
+        )
+        return target_limit.universal_morphism(cone)
+
+
+class ColimitFunctor(Functor):
+    """A chosen colimit functor on diagrams of one fixed shape."""
+
+    def __init__(self, codomain: Category, index_category: Category) -> None:
+        self._index_category = index_category
+        super().__init__(codomain.Diagram(index_category), codomain)
+
+    def index_category(self) -> Category:
+        return self._index_category
+
+    def _construct_image_category(self) -> Category:
+        from sage_categories.abstract_categories.products import ColimitsOfCategory
+
+        return ColimitsOfCategory(self)
+
+    def on_object(self, source: MathematicalObject) -> MathematicalObject:
+        assert is_functor(source)
+        assert source in self.domain()
+        from sage_categories.abstract_categories.products import (
+            is_colimits_of_category,
+        )
+
+        image = self.Image()
+        assert is_colimits_of_category(image)
+        return image.colimit_of(source).image()
+
+    def on_morphism(self, morphism: Arrow) -> Arrow:
+        hom_category = morphism.hom_category()
+        assert is_natural_transformation_hom_category(hom_category)
+        assert hom_category.contains_transformation(morphism)
+        source = morphism.domain()
+        target = morphism.codomain()
+        assert is_functor(source)
+        assert is_functor(target)
+        from sage_categories.abstract_categories.products import (
+            Cocone,
+            is_colimits_of_category,
+        )
+
+        image = self.Image()
+        assert is_colimits_of_category(image)
+        source_colimit = image.colimit_of(source)
+        target_colimit = image.colimit_of(target)
+        target_cocone = target_colimit.colimit_cocone()
+        cocone = Cocone(
+            source,
+            target_colimit.image(),
+            lambda index: self.codomain().compose(
+                target_cocone.costructure_morphism(index),
+                morphism.component(index),
+            ),
+        )
+        return source_colimit.universal_morphism(cocone)
+
+
+class ProductFunctor(LimitFunctor):
+    """The chosen limit functor on diagrams with discrete domain."""
+
+    def __init__(self, codomain: Category, index_category: Category) -> None:
+        from sage_categories.theories.sets import DiscreteCategories
+
+        assert index_category in DiscreteCategories()
+        super().__init__(codomain, index_category)
+
+    def _construct_image_category(self) -> Category:
+        from sage_categories.abstract_categories.products import ProductsOfCategory
+
+        return ProductsOfCategory(self)
+
+
+class CoproductFunctor(ColimitFunctor):
+    """The chosen colimit functor on diagrams with discrete domain."""
+
+    def __init__(self, codomain: Category, index_category: Category) -> None:
+        from sage_categories.theories.sets import DiscreteCategories
+
+        assert index_category in DiscreteCategories()
+        super().__init__(codomain, index_category)
+
+    def _construct_image_category(self) -> Category:
+        from sage_categories.abstract_categories.products import CoproductsOfCategory
+
+        return CoproductsOfCategory(self)
 
 
 class _NaturalTransformation(Arrow):

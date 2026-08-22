@@ -32,6 +32,10 @@ if TYPE_CHECKING:
     from sage_categories.abstract_categories.hom_categories import (
         HomCategoryFamily,
     )
+    from sage_categories.abstract_categories.products import (
+        CoproductPresentation,
+        ProductPresentation,
+    )
 
 
 class Category(MathematicalObject):
@@ -71,6 +75,10 @@ class Category(MathematicalObject):
         self._opposite_category: Category | None = None
         self._product_categories: dict[int, Category] = {}
         self._wide_subcategories: dict[int, Category] = {}
+        self._limit_functors: dict[int, Functor] = {}
+        self._colimit_functors: dict[int, Functor] = {}
+        self._product_functors: dict[int, Functor] = {}
+        self._coproduct_functors: dict[int, Functor] = {}
         self._slice_over_categories: dict[int, Category] = {}
         self._coslice_under_categories: dict[int, Category] = {}
         self._subobject_categories: dict[int, Category] = {}
@@ -416,19 +424,75 @@ class Category(MathematicalObject):
 
         return DiagonalFunctor(self, index_category)
 
-    def Products(self, diagram: Functor) -> Category:
-        """Return chosen product presentations for ``diagram``."""
-        from sage_categories.abstract_categories.products import Products
+    def LimitFunctor(self, index_category: Category) -> Functor:
+        """Return the chosen limit functor on diagrams of one shape."""
+        from sage_categories.abstract_categories.functors import LimitFunctor
 
+        key = id(index_category)
+        cached = self._limit_functors.get(key)
+        if cached is None:
+            cached = LimitFunctor(self, index_category)
+            self._limit_functors[key] = cached
+        return cached
+
+    def Limits(self, index_category: Category) -> Category:
+        """Return the image category of one chosen limit functor."""
+        return self.LimitFunctor(index_category).Image()
+
+    def ColimitFunctor(self, index_category: Category) -> Functor:
+        """Return the chosen colimit functor on diagrams of one shape."""
+        from sage_categories.abstract_categories.functors import ColimitFunctor
+
+        key = id(index_category)
+        cached = self._colimit_functors.get(key)
+        if cached is None:
+            cached = ColimitFunctor(self, index_category)
+            self._colimit_functors[key] = cached
+        return cached
+
+    def Colimits(self, index_category: Category) -> Category:
+        """Return the image category of one chosen colimit functor."""
+        return self.ColimitFunctor(index_category).Image()
+
+    def ProductFunctor(self, index_category: Category) -> Functor:
+        """Return the chosen product functor on discrete diagrams."""
+        from sage_categories.abstract_categories.functors import ProductFunctor
+
+        key = id(index_category)
+        cached = self._product_functors.get(key)
+        if cached is None:
+            cached = ProductFunctor(self, index_category)
+            self._product_functors[key] = cached
+        return cached
+
+    def Products(self, index_category: Category) -> Category:
+        """Return the image category of one chosen product functor."""
+        return self.ProductFunctor(index_category).Image()
+
+    def CoproductFunctor(self, index_category: Category) -> Functor:
+        """Return the chosen coproduct functor on discrete diagrams."""
+        from sage_categories.abstract_categories.functors import CoproductFunctor
+
+        key = id(index_category)
+        cached = self._coproduct_functors.get(key)
+        if cached is None:
+            cached = CoproductFunctor(self, index_category)
+            self._coproduct_functors[key] = cached
+        return cached
+
+    def Coproducts(self, index_category: Category) -> Category:
+        """Return the image category of one chosen coproduct functor."""
+        return self.CoproductFunctor(index_category).Image()
+
+    def chosen_limit(self, diagram: Functor) -> ProductPresentation:
+        """Return the chosen limit presentation of ``diagram``."""
         assert diagram.codomain() is self
-        return Products(diagram)
+        assert False, f"{self} does not define chosen limits"
 
-    def Coproducts(self, diagram: Functor) -> Category:
-        """Return chosen coproduct presentations for ``diagram``."""
-        from sage_categories.abstract_categories.products import Coproducts
-
+    def chosen_colimit(self, diagram: Functor) -> CoproductPresentation:
+        """Return the chosen colimit presentation of ``diagram``."""
         assert diagram.codomain() is self
-        return Coproducts(diagram)
+        assert False, f"{self} does not define chosen colimits"
 
     def Biproducts(self, diagram: Functor) -> Category:
         """Return chosen biproduct presentations for ``diagram``."""

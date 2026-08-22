@@ -363,6 +363,12 @@ def is_cardinal(value: int | Cardinal) -> TypeIs[Cardinal]:
     return represented is not None and Cardinals().contains_cardinal(represented)
 
 
+def is_cardinal_hom_category(
+    category: HomCategory,
+) -> TypeIs[CardinalHomCategory]:
+    return category in Cardinals().HomCategory()
+
+
 def cardinal(value: int | Cardinal) -> Cardinal:
     if is_cardinal(value):
         return value

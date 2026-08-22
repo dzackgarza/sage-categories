@@ -465,6 +465,10 @@ class SetsCategory(Category):
     ObjectType = SetObject
 
     def __init__(self) -> None:
+        self._finite_sets_by_members: dict[
+            frozenset[SetElementInput],
+            FiniteSetObject,
+        ] = {}
         self._finite_sets: FiniteSetsCategory | None = None
         self._infinite_sets: InfiniteSetsCategory | None = None
         self._countable_sets: CountableSetsCategory | None = None
@@ -478,7 +482,11 @@ class SetsCategory(Category):
         return SetHomCategoryFamily
 
     def __call__(self, members: frozenset[SetElementInput]) -> FiniteSetObject:
-        return FiniteSetObject(category=self.Finite(), members=members)
+        cached = self._finite_sets_by_members.get(members)
+        if cached is None:
+            cached = FiniteSetObject(category=self.Finite(), members=members)
+            self._finite_sets_by_members[members] = cached
+        return cached
 
     def Hom(
         self,

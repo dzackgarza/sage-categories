@@ -8,7 +8,7 @@ categorical foundation. Sage is not part of this category graph.
 from __future__ import annotations
 
 from collections.abc import Callable, Iterator, Mapping
-from itertools import product as cartesian_product
+from itertools import combinations, product as cartesian_product
 from math import comb
 from typing import Any, Protocol, TypeIs
 
@@ -2135,53 +2135,149 @@ def PowerSet(base_set: SetObject) -> SetHomCategory:
     return ExponentialOfSets(TruthValues(), base_set)
 
 
-def SubsetsOfSize(base_set: SetObject, size: int) -> SetObject:
-    assert size >= 0
-    power_set = PowerSet(base_set)
-    cardinality = UnknownCardinality()
-    if base_set.is_finite() is True:
-        cardinality = Cardinals()(comb(int(base_set.cardinality()), size))
-    return PredicateSet(
-        category=Sets(),
-        predicate=lambda candidate: _has_subset_cardinality(power_set, candidate, size),
-        cardinality=cardinality,
-        name=f"Subsets of {base_set} with cardinality {size}",
-    )
+class FixedCardinalitySubsetSet(SetObject):
+    """The set of subsets with one fixed finite cardinality."""
+
+    def __init__(self, source: SetObject, subset_cardinality: int) -> None:
+        assert subset_cardinality >= 0
+        self._source = source
+        self._subset_cardinality = subset_cardinality
+        size: Cardinal | None = None
+        if subset_cardinality == 0:
+            size = cardinal(1)
+        elif source.is_finite() is True:
+            size = cardinal(comb(int(source.cardinality()), subset_cardinality))
+        elif source.is_infinite() is True:
+            size = source.cardinality()
+        super().__init__(category=Sets(), cardinality=size)
+
+    def source(self) -> SetObject:
+        return self._source
+
+    def power_set(self) -> SetHomCategory:
+        return PowerSet(self._source)
+
+    def subset_cardinality(self) -> int:
+        return self._subset_cardinality
+
+    def contains(self, candidate: SetElementInput) -> Decision:
+        value = registered_value(candidate)
+        if value is None or not SubsetsOfSet(self._source).contains_subset(value):
+            return False
+        return value.underlying_set().cardinality() == self._subset_cardinality
+
+    def __iter__(self) -> Iterator[SetElementInput]:
+        size = self._subset_cardinality
+        if size == 0:
+            yield self.power_set().bottom()
+            return
+        preceding: list[SetElementInput] = []
+        for maximum in self._source:
+            if len(preceding) >= size - 1:
+                for initial in combinations(preceding, size - 1):
+                    yield self.power_set().from_members(
+                        frozenset((*initial, maximum))
+                    )
+            preceding.append(maximum)
+
+    def __getitem__(self, position: int) -> SetSubset:
+        assert position >= 0
+        for index, candidate in enumerate(self):
+            if index == position:
+                value = registered_value(candidate)
+                assert value is not None
+                assert SubsetsOfSet(self._source).contains_subset(value)
+                return value
+        assert False, f"{position} is outside {self}"
+
+    def __repr__(self) -> str:
+        return (
+            f"Subsets of {self._source} of cardinality "
+            f"{self._subset_cardinality}"
+        )
 
 
-def _has_subset_cardinality(
-    power_set: SetHomCategory,
-    candidate: SetElementInput,
+class FiniteSubsetSet(SetObject):
+    """The set of finite subsets of one set."""
+
+    def __init__(self, source: SetObject) -> None:
+        self._source = source
+        size: Cardinal | None = None
+        if source.is_finite() is True:
+            size = cardinal(2) ** source.cardinality()
+        elif source.is_infinite() is True:
+            size = source.cardinality()
+        super().__init__(category=Sets(), cardinality=size)
+
+    def source(self) -> SetObject:
+        return self._source
+
+    def power_set(self) -> SetHomCategory:
+        return PowerSet(self._source)
+
+    def contains(self, candidate: SetElementInput) -> Decision:
+        value = registered_value(candidate)
+        if value is None or not SubsetsOfSet(self._source).contains_subset(value):
+            return False
+        return value.underlying_set().cardinality().is_finite()
+
+    def __iter__(self) -> Iterator[SetElementInput]:
+        power_set = self.power_set()
+        yield power_set.bottom()
+        preceding: list[SetElementInput] = []
+        for maximum in self._source:
+            for size in range(len(preceding) + 1):
+                for initial in combinations(preceding, size):
+                    yield power_set.from_members(frozenset((*initial, maximum)))
+            preceding.append(maximum)
+
+    def index(self, subset: SetSubset) -> int:
+        assert self.contains(subset) is True
+        for position, candidate in enumerate(self):
+            value = registered_value(candidate)
+            assert value is not None
+            assert SubsetsOfSet(self._source).contains_subset(value)
+            if value.equals(subset) is True:
+                return position
+        assert False, f"{subset} has no position in the chosen enumeration"
+
+    def __getitem__(self, position: int) -> SetSubset:
+        assert position >= 0
+        for index, candidate in enumerate(self):
+            if index == position:
+                value = registered_value(candidate)
+                assert value is not None
+                assert SubsetsOfSet(self._source).contains_subset(value)
+                return value
+        assert False, f"{position} is outside {self}"
+
+    def __repr__(self) -> str:
+        return f"Finite subsets of {self._source}"
+
+
+_FIXED_CARDINALITY_SUBSETS: dict[tuple[int, int], FixedCardinalitySubsetSet] = {}
+_FINITE_SUBSETS: dict[int, FiniteSubsetSet] = {}
+
+
+def SubsetsOfSize(
+    base_set: SetObject,
     size: int,
-) -> Decision:
-    value = registered_value(candidate)
-    if value is None or not Sets().contains_set(value):
-        return False
-    if value not in power_set:
-        return False
-    return value.cardinality() == size
+) -> FixedCardinalitySubsetSet:
+    key = id(base_set), size
+    cached = _FIXED_CARDINALITY_SUBSETS.get(key)
+    if cached is None:
+        cached = FixedCardinalitySubsetSet(base_set, size)
+        _FIXED_CARDINALITY_SUBSETS[key] = cached
+    return cached
 
 
-def FiniteSubsets(base_set: SetObject) -> SetObject:
-    power_set = PowerSet(base_set)
-    return PredicateSet(
-        category=Sets(),
-        predicate=lambda candidate: _is_finite_subset(power_set, candidate),
-        cardinality=UnknownCardinality(),
-        name=f"Finite subsets of {base_set}",
-    )
-
-
-def _is_finite_subset(
-    power_set: SetHomCategory,
-    candidate: SetElementInput,
-) -> Decision:
-    value = registered_value(candidate)
-    if value is None or not Sets().contains_set(value):
-        return False
-    if value not in power_set:
-        return False
-    return value.is_finite()
+def FiniteSubsets(base_set: SetObject) -> FiniteSubsetSet:
+    key = id(base_set)
+    cached = _FINITE_SUBSETS.get(key)
+    if cached is None:
+        cached = FiniteSubsetSet(base_set)
+        _FINITE_SUBSETS[key] = cached
+    return cached
 
 
 def ImageSet(

@@ -25,3 +25,31 @@ test-push:
 # Run CI acceptance QC through the central implementation.
 test-ci:
     @just -f ~/ai-review-ci/justfiles/sage.just -d . test-ci
+
+# Put Sage on the CI runner and report where it landed.
+#
+# The sage profile installs nothing and asserts SAGE_BIN is executable, so
+# this recipe has to provide Sage before that assertion runs -- _qc.yml calls
+# it ahead of setup-profile for exactly that reason. The repo's .envrc cannot
+# serve here: _qc.yml sources it a step later, and its SAGE_BIN is a path on
+# the developer's machine. $GITHUB_ENV is the channel that reaches the
+# validating step.
+#
+# `sagemath/sagemath` is the distribution build, driver script included; the
+# apt and conda routes do not carry that script. The tag is `develop`, which
+# follows Sage's development branch, so the gate runs the Sage this package is
+# written against rather than the last release.
+
+# CI: install Sage on the runner and export SAGE_BIN.
+ci-provision-sage:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    docker create --name sage-dist sagemath/sagemath:develop
+    sudo install -d -o "$(id -un)" -g "$(id -gn)" /home/sage
+    docker cp sage-dist:/home/sage/sage /home/sage/sage
+    docker rm sage-dist
+    sage_bin=/home/sage/sage/sage
+    "$sage_bin" -pip install --quiet pytest coverage
+    "$sage_bin" -pip install --quiet -e .
+    echo "SAGE_BIN=$sage_bin" >> "${GITHUB_ENV:-/dev/stdout}"
+    "$sage_bin" -c "import sage_categories; print('sage_categories', sage_categories.version())"

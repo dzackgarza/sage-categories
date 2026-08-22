@@ -11,6 +11,7 @@ jobs:
       tier: test-ci
       profile: 'sage'
       infra_ref: 'main'
+      setup_recipe: ci-provision-sage
   deterministic-diff:
     uses: dzackgarza/ai-review-ci/.github/workflows/_gates.yml@main
     permissions:

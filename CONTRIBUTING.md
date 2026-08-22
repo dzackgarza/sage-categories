@@ -49,22 +49,27 @@ Do not reuse a retired identifier.
 
 | ID | Policy |
 | --- | --- |
-| `POL-REP-001` | Treat a matrix as a basis-dependent representation, not as a morphism, bilinear form, quadratic form, or tensor. |
+| `POL-REP-001` | Treat Sage vectors and matrices only as private computation representations. The owned linear-algebra object is always a tensor. |
 | `POL-REP-002` | Accept and return the semantic mathematical object at every public API. |
-| `POL-REP-003` | Compare elements through their parent and element interface, not by unwrapping coordinate vectors. |
+| `POL-REP-003` | Compare tensor elements through their parent and element interface, not by unwrapping coordinate data. |
 | `POL-REP-004` | Compare and compose arrows as arrows, not by unwrapping their representing matrices. |
 | `POL-REP-005` | Expose `f.kernel()`, `f.image()`, and `f.cokernel()` as semantic objects with their defining arrows. |
 | `POL-REP-006` | Ask `f.is_surjective()` instead of testing whether a presentation of `f.image()` is isomorphic to `f.codomain()`. |
-| `POL-REP-007` | Treat a form as a callable hom element. Derive its matrix only after choosing a basis. |
-| `POL-REP-008` | Retain a tensor as a tensor. Derive a matrix only at a basis-dependent computation boundary. |
-| `POL-REP-009` | Lower a semantic object to coordinates or a matrix once, inside one private computation boundary. |
+| `POL-REP-007` | Treat a bilinear form as a callable hom element encoded by its Gram tensor. |
+| `POL-REP-008` | Encode every linear-algebra element as a tensor. A vector or matrix notation does not create another semantic type. |
+| `POL-REP-009` | Lower a tensor to a Sage computation representation once, inside one private computation boundary. |
 | `POL-REP-010` | Keep matrix algorithms behind private hooks such as `_kernel_matrix_`. Do not expose those hooks to callers or tests. |
-| `POL-REP-011` | Reconstruct the semantic object or arrow before returning from a matrix or coordinate computation. |
+| `POL-REP-011` | Reconstruct the tensor, semantic object, or arrow before returning from a private computation. |
 | `POL-REP-012` | Do not reinterpret a list, tuple, or numerical vector as a module, algebra, lattice, or tensor element. |
 | `POL-REP-013` | Form `sum(a_i * g_i)` from semantic module generators when a finite linear combination is required. |
 | `POL-REP-014` | Do not provide a coefficient-vector helper that bypasses construction from semantic module generators. |
-| `POL-REP-015` | Do not invent types such as a matrix-specific morphism type. Type the morphism and its matrix representation separately. |
-| `POL-REP-016` | Implement scalar change and other functors on semantic objects and arrows. Derive matrices only after the functor acts and new bases are chosen. |
+| `POL-REP-015` | Type a module morphism by its semantic arrow and tensor element. Keep any Sage matrix realization private and unexported. |
+| `POL-REP-016` | Implement scalar change and other functors on tensors, semantic objects, and arrows. Choose a private computation representation only after the functor acts. |
+| `POL-REP-017` | Define the tensor model at the module `ElementType` layer. Every module element has tensor valence `(p, q)`. |
+| `POL-REP-018` | Make `tensor()` the fundamental linear-algebra constructor. It accepts valence `(p, q)`, a base ring, and multi-indexable coefficient data. |
+| `POL-REP-019` | Shadow Sage's `vector()` and `matrix()` constructors. Make both delegate to `tensor()` with the corresponding valence. |
+| `POL-REP-020` | Return tensor elements from `vector()` and `matrix()`. Do not expose Sage vector or matrix elements through the owned API. |
+| `POL-REP-021` | Require tensor coefficient data to support one index per tensor slot. Keep storage order private to the tensor implementation. |
 
 ## Algebraic generality
 
@@ -87,7 +92,7 @@ Do not reuse a retired identifier.
 | ID | Policy |
 | --- | --- |
 | `POL-FORM-001` | Model an `R`-lattice as a finitely generated projective `R`-module `M` with the specified form, not as a free `ZZ`-module. |
-| `POL-FORM-002` | Model a `W`-valued bilinear form as an arrow `M tensor_R M -> W`. Do not replace that arrow with a matrix. |
+| `POL-FORM-002` | Model a `W`-valued bilinear form as an arrow `M tensor_R M -> W`, encoded by its Gram tensor. |
 | `POL-FORM-003` | Use “inner product” only for a positive-definite symmetric bilinear form. |
 | `POL-FORM-004` | Do not assume that a lattice is positive definite, embedded in a vector space, free, based, or unimodular. |
 | `POL-FORM-005` | Distinguish left and right radicals for a nonsymmetric bilinear form. |
@@ -95,7 +100,7 @@ Do not reuse a retired identifier.
 | `POL-FORM-007` | Determine definiteness from the exact behavior of the form on elements, not from floating eigenvalues or numerical spectra. |
 | `POL-FORM-008` | Use exact coefficient rings and exact arithmetic for form and lattice predicates. |
 | `POL-FORM-009` | Choose the minimal exact coefficient extension required by the mathematical object. Do not approximate algebraic coefficients by floats. |
-| `POL-FORM-010` | Treat the Gram matrix as the matrix of a form in a chosen basis, not as the form itself. |
+| `POL-FORM-010` | Use “Gram tensor” for the tensor that encodes a bilinear form. Keep its chosen-basis coefficient data inside that tensor. |
 
 ## Category ownership and inheritance
 
@@ -196,7 +201,7 @@ Do not reuse a retired identifier.
 | `POL-SAGE-008` | Keep Sage's category runtime only for dynamic classes, refinement, joins, and construction support. |
 | `POL-SAGE-009` | Preserve Sage `Parent`, `Element`, homsets, morphisms, and coercion where they implement the owned model. |
 | `POL-SAGE-010` | Use Sage's exact algorithms before writing a parallel local implementation. |
-| `POL-SAGE-011` | Use Sage's canonical mathematical object when it exists. Do not replace it with an arbitrary matrix, vector, list, or tuple. |
+| `POL-SAGE-011` | Use Sage's exact linear-algebra algorithms only behind the tensor realization boundary. Do not expose Sage vectors or matrices as owned objects. |
 | `POL-SAGE-012` | Treat agreement with Sage or a Sage doctest as secondary evidence. It is not an independent mathematical oracle for owned behavior. |
 
 ## Public API and types

@@ -197,6 +197,11 @@ class CategoryCompiler:
                 if previous is None or previous.owner is declaration.owner:
                     catalogue[name] = declaration
                     continue
+                if previous.owner.is_subcategory(declaration.owner):
+                    continue
+                if declaration.owner.is_subcategory(previous.owner):
+                    catalogue[name] = declaration
+                    continue
                 assert name in local, f"{category} inherits {name} from unrelated categories {previous.owner} and {declaration.owner}"
         for name, method in local.items():
             catalogue[name] = DeclaredMethod(category, method)

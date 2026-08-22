@@ -55,6 +55,17 @@ from sage_categories.theories.ordinals import (
     omega0,
     ordinal,
 )
+from sage_categories.theories.posets import (
+    FinitePosets,
+    FiniteTotallyOrderedSets,
+    PartiallyOrderedSets,
+    Poset,
+    PosetMorphism,
+    PosetObject,
+    TotallyOrderedSets,
+    finite_ordered_set,
+    ordered_set_owned_by,
+)
 from sage_categories.theories.sets import (
     Aleph,
     CartesianProductMorphismOfFamily,
@@ -136,6 +147,8 @@ __all__ = [
     "FiniteDiscreteCategories",
     "FiniteSet",
     "FiniteSubsets",
+    "FinitePosets",
+    "FiniteTotallyOrderedSets",
     "FullSubcategory",
     "FinitelySupportedFunctions",
     "Functor",
@@ -151,7 +164,11 @@ __all__ = [
     "ObjectSet",
     "Ordinal",
     "Ordinals",
+    "PartiallyOrderedSets",
     "PowerSet",
+    "Poset",
+    "PosetMorphism",
+    "PosetObject",
     "Product",
     "ProductOfSets",
     "Set",
@@ -165,6 +182,7 @@ __all__ = [
     "SubsetsOfSize",
     "Superobject",
     "TruthValues",
+    "TotallyOrderedSets",
     "Unknown",
     "WideSubcategory",
     "__version__",
@@ -176,9 +194,11 @@ __all__ = [
     "continuum",
     "coproduct_morphism",
     "declare_isomorphism",
+    "finite_ordered_set",
     "omega",
     "omega0",
     "ordinal",
+    "ordered_set_owned_by",
     "version",
 ]
 

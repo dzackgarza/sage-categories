@@ -11,7 +11,7 @@ from collections.abc import Callable, Iterable, Iterator, Mapping
 from itertools import combinations, count
 from itertools import product as cartesian_product
 from math import comb
-from typing import Any, Protocol, TypeIs
+from typing import TYPE_CHECKING, Any, Protocol, TypeIs
 
 from sage_categories.abstract_categories.category_constructions import (
     FullSubcategory,
@@ -80,6 +80,12 @@ from sage_categories.values import (
     MembershipInput,
     registered_value,
 )
+
+if TYPE_CHECKING:
+    from sage_categories.theories.posets import (
+        PartiallyOrderedSetsCategory,
+        TotallyOrderedSetsCategory,
+    )
 
 type SetElementInput = Any
 type SetMapRule = Callable[[SetElementInput], SetElementInput]
@@ -1238,6 +1244,8 @@ class SetsCategory(Category):
         self._cardinality_functor: CardinalityFunctor | None = None
         self._exponential_functor: ExponentialFunctor | None = None
         self._inverse_image_power_set_functor: InverseImagePowerSetFunctor | None = None
+        self._partially_ordered_sets: PartiallyOrderedSetsCategory | None = None
+        self._totally_ordered_sets: TotallyOrderedSetsCategory | None = None
         super().__init__(object_type=SetObject)
 
     def _hom_category_type(self) -> type[HomCategory]:
@@ -1323,6 +1331,20 @@ class SetsCategory(Category):
         if self._inverse_image_power_set_functor is None:
             self._inverse_image_power_set_functor = InverseImagePowerSetFunctor()
         return self._inverse_image_power_set_functor
+
+    def PartiallyOrdered(self) -> PartiallyOrderedSetsCategory:
+        if self._partially_ordered_sets is None:
+            from sage_categories.theories.posets import PartiallyOrderedSets
+
+            self._partially_ordered_sets = PartiallyOrderedSets()
+        return self._partially_ordered_sets
+
+    def TotallyOrdered(self) -> TotallyOrderedSetsCategory:
+        if self._totally_ordered_sets is None:
+            from sage_categories.theories.posets import TotallyOrderedSets
+
+            self._totally_ordered_sets = TotallyOrderedSets()
+        return self._totally_ordered_sets
 
     def chosen_limit(self, diagram: Functor) -> ProductPresentation:
         if diagram.domain() in DiscreteCategories():

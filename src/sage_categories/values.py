@@ -235,6 +235,10 @@ class MathematicalElement(MathematicalObject):
         return element
 
 
+class CategoryElement(MathematicalElement):
+    """The local element type when a category adds no element operations."""
+
+
 class Arrow(MathematicalElement):
     """An object of ``Ar(C)`` and an element of one hom category of ``C``."""
 

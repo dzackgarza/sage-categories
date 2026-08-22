@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, TypeIs
 from sage_categories.category import Category
 from sage_categories.values import (
     Arrow,
-    MathematicalElement,
+    CategoryElement,
     MathematicalObject,
     MembershipInput,
     registered_value,
@@ -33,7 +33,7 @@ class CategoryOfCategories(Category):
     ) -> None:
         self._name = name
         MathematicalObject.__init__(self, category=category)
-        self._initialize_category(Category, MathematicalElement)
+        self._initialize_category(Category, CategoryElement)
 
     def _hom_category_type(self) -> type[HomCategory]:
         from sage_categories.abstract_categories.functors import FunctorCategory

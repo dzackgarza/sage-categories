@@ -21,6 +21,7 @@ from sage_categories.abstract_categories.hom_categories import (
 from sage_categories.category import Category
 from sage_categories.values import (
     Arrow,
+    CategoryElement,
     MathematicalElement,
     MathematicalObject,
     MembershipInput,
@@ -226,7 +227,7 @@ class ProductCategory(Category):
         self._second_projection: ProductProjectionFunctor | None = None
         super().__init__(
             object_type=CategoryPair,
-            element_type=MathematicalElement,
+            element_type=CategoryElement,
             category=ProductCategories(),
         )
 

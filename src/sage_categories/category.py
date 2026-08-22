@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, TypeIs
 from sage_categories.compiler import DeclaredMethod, category_compiler
 from sage_categories.values import (
     Arrow,
+    CategoryElement,
     MathematicalElement,
     MathematicalObject,
     MembershipInput,
@@ -58,7 +59,7 @@ class Category(MathematicalObject):
         self,
         *,
         object_type: type[MathematicalObject] = MathematicalObject,
-        element_type: type[MathematicalElement] = MathematicalElement,
+        element_type: type[MathematicalElement] = CategoryElement,
         category: Category | None = None,
     ) -> None:
         if category is None:

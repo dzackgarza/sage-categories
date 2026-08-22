@@ -62,13 +62,35 @@ class Functor(Arrow, ABC):
 
     def __call__(self, value: MathematicalObject) -> MathematicalObject:
         """Apply this functor to an object or arrow by categorical membership."""
+        from sage_categories.compiler import category_compiler
+
         arrow_category = self.domain().ArrowCategory()
         if arrow_category.contains_arrow(value):
-            arrow_image = self.on_morphism(value)
+            source_arrow = value
+            source_category = source_arrow.base_category()
+            if source_category is not self.domain() and source_category.is_subcategory(
+                self.domain()
+            ):
+                route = category_compiler().implementation_route(
+                    source_category,
+                    self.domain(),
+                )
+                source_arrow = source_arrow._morphism_image_along(route)
+            arrow_image = self.on_morphism(source_arrow)
             assert arrow_image in self.codomain().ArrowCategory()
             return arrow_image
         assert value in self.domain()
-        object_image = self.on_object(value)
+        source_object = value
+        source_category = source_object.category()
+        if source_category is not self.domain() and source_category.is_subcategory(
+            self.domain()
+        ):
+            route = category_compiler().implementation_route(
+                source_category,
+                self.domain(),
+            )
+            source_object = source_object._object_image_along(route)
+        object_image = self.on_object(source_object)
         assert object_image in self.codomain()
         return object_image
 

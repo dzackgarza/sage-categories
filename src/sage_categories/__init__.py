@@ -77,6 +77,7 @@ from sage_categories.theories.sets import (
     NaturalNumbers,
     ObjectSet,
     PartiallyOrderedSets,
+    Poset,
     PowerSet,
     ProductOfSets,
     Set,
@@ -103,6 +104,7 @@ from sage_categories.values import (
 )
 
 __all__ = [
+    "UNKNOWN",
     "Aleph",
     "Aleph0",
     "Arrow",
@@ -155,6 +157,7 @@ __all__ = [
     "Ordinal",
     "Ordinals",
     "PartiallyOrderedSets",
+    "Poset",
     "PowerSet",
     "Product",
     "ProductOfSets",
@@ -170,7 +173,6 @@ __all__ = [
     "Superobject",
     "TotallyOrderedSets",
     "TruthValues",
-    "UNKNOWN",
     "Unknown",
     "WideSubcategory",
     "__version__",
@@ -185,8 +187,8 @@ __all__ = [
     "finite_ordered_set",
     "omega",
     "omega0",
-    "ordinal",
     "ordered_set_owned_by",
+    "ordinal",
     "version",
 ]
 

@@ -61,6 +61,7 @@ from sage_categories.abstract_categories.products import (
     ProductPresentation,
     is_products_of_category,
 )
+from sage_categories.backends.sage.finite_posets import SageFinitePosetBackend
 from sage_categories.category import Category
 from sage_categories.theories.cardinals import (
     Aleph0,
@@ -169,7 +170,9 @@ class SetObject(MathematicalObject):
 class FiniteSetObject(SetObject):
     """A set given by its complete finite member set."""
 
-    def __init__(self, *, category: Category, members: frozenset[SetElementInput]) -> None:
+    def __init__(
+        self, *, category: Category, members: frozenset[SetElementInput]
+    ) -> None:
         self._members = members
         super().__init__(category=category, cardinality=Cardinals()(len(members)))
 
@@ -215,6 +218,26 @@ class SetOrder:
         return self._total
 
 
+class PartiallyOrderedSetObject(SetObject):
+    """A set whose category supplies a represented partial order."""
+
+    def le(
+        self,
+        left: SetElementInput,
+        right: SetElementInput,
+    ) -> Decision:
+        assert self.contains(left) is True
+        assert self.contains(right) is True
+        return set_order(self).le(left, right)
+
+    def is_lequal(
+        self,
+        left: SetElementInput,
+        right: SetElementInput,
+    ) -> Decision:
+        return self.le(left, right)
+
+
 _SET_ORDERS: dict[int, SetOrder] = {}
 
 
@@ -224,14 +247,170 @@ def set_order(source: SetObject) -> SetOrder:
     return order
 
 
-class OrderedFiniteSetObject(FiniteSetObject):
+class FinitePosetObject(PartiallyOrderedSetObject, FiniteSetObject):
+    """An owned finite set ordered by Sage's finite-poset algorithms."""
+
+    def __init__(
+        self,
+        elements: tuple[SetElementInput, ...],
+        relation: OrderRelation,
+        *,
+        category: Category | None = None,
+    ) -> None:
+        assert len(frozenset(elements)) == len(elements)
+        self._elements = elements
+        self._backend = SageFinitePosetBackend(
+            elements,
+            lambda left, right: relation(left, right) is True,
+        )
+        FiniteSetObject.__init__(
+            self,
+            category=Sets().PartiallyOrdered() if category is None else category,
+            members=frozenset(elements),
+        )
+        _SET_ORDERS[id(self)] = SetOrder(self._backend.is_lequal, total=False)
+
+    def __iter__(self) -> Iterator[SetElementInput]:
+        return iter(self._elements)
+
+    def is_less_than(
+        self,
+        left: SetElementInput,
+        right: SetElementInput,
+    ) -> bool:
+        return self._backend.is_less_than(left, right)
+
+    def compare_elements(
+        self,
+        left: SetElementInput,
+        right: SetElementInput,
+    ) -> int | None:
+        return self._backend.compare_elements(left, right)
+
+    def covers(
+        self,
+        lower: SetElementInput,
+        upper: SetElementInput,
+    ) -> bool:
+        return self._backend.covers(lower, upper)
+
+    def lower_covers(self, member: SetElementInput) -> tuple[SetElementInput, ...]:
+        return self._backend.lower_covers(member)
+
+    def upper_covers(self, member: SetElementInput) -> tuple[SetElementInput, ...]:
+        return self._backend.upper_covers(member)
+
+    def common_lower_covers(
+        self,
+        members: Iterable[SetElementInput],
+    ) -> tuple[SetElementInput, ...]:
+        return self._backend.common_lower_covers(members)
+
+    def common_upper_covers(
+        self,
+        members: Iterable[SetElementInput],
+    ) -> tuple[SetElementInput, ...]:
+        return self._backend.common_upper_covers(members)
+
+    def open_interval(
+        self,
+        lower: SetElementInput,
+        upper: SetElementInput,
+    ) -> tuple[SetElementInput, ...]:
+        return self._backend.open_interval(lower, upper)
+
+    def closed_interval(
+        self,
+        lower: SetElementInput,
+        upper: SetElementInput,
+    ) -> tuple[SetElementInput, ...]:
+        return self._backend.closed_interval(lower, upper)
+
+    def principal_order_ideal(
+        self,
+        member: SetElementInput,
+    ) -> tuple[SetElementInput, ...]:
+        return self._backend.order_ideal((member,))
+
+    def principal_order_filter(
+        self,
+        member: SetElementInput,
+    ) -> tuple[SetElementInput, ...]:
+        return self._backend.order_filter((member,))
+
+    def order_ideal(
+        self,
+        members: Iterable[SetElementInput],
+    ) -> tuple[SetElementInput, ...]:
+        return self._backend.order_ideal(members)
+
+    def order_filter(
+        self,
+        members: Iterable[SetElementInput],
+    ) -> tuple[SetElementInput, ...]:
+        return self._backend.order_filter(members)
+
+    def minimal_elements(self) -> tuple[SetElementInput, ...]:
+        return self._backend.minimal_elements()
+
+    def maximal_elements(self) -> tuple[SetElementInput, ...]:
+        return self._backend.maximal_elements()
+
+    def has_bottom(self) -> bool:
+        return self._backend.has_bottom()
+
+    def bottom(self) -> SetElementInput:
+        assert self.has_bottom()
+        return self._backend.bottom()
+
+    def has_top(self) -> bool:
+        return self._backend.has_top()
+
+    def top(self) -> SetElementInput:
+        assert self.has_top()
+        return self._backend.top()
+
+    def is_bounded(self) -> bool:
+        return self._backend.is_bounded()
+
+    def height(self) -> int:
+        return self._backend.height()
+
+    def width(self) -> int:
+        return self._backend.width()
+
+    def level_sets(self) -> tuple[tuple[SetElementInput, ...], ...]:
+        return self._backend.level_sets()
+
+    def is_ranked(self) -> bool:
+        return self._backend.is_ranked()
+
+    def is_graded(self) -> bool:
+        return self._backend.is_graded()
+
+    def __repr__(self) -> str:
+        return f"Finite poset on {self._elements!r}"
+
+
+def Poset(
+    data: tuple[Iterable[SetElementInput], OrderRelation],
+) -> FinitePosetObject:
+    """Construct the finite poset defined by ``(members, leq)``."""
+    members, relation = data
+    return FinitePosetObject(tuple(dict.fromkeys(members)), relation)
+
+
+class OrderedFiniteSetObject(FinitePosetObject):
     """A finite set with the total order of one displayed enumeration."""
 
     def __init__(self, elements: tuple[SetElementInput, ...]) -> None:
         positions = {element: index for index, element in enumerate(elements)}
         assert len(positions) == len(elements)
-        self._elements = elements
-        super().__init__(category=Sets(), members=frozenset(elements))
+        super().__init__(
+            elements,
+            lambda left, right: positions[left] <= positions[right],
+            category=Sets().TotallyOrdered(),
+        )
         _SET_ORDERS[id(self)] = SetOrder(
             lambda left, right: positions[left] <= positions[right],
             total=True,
@@ -246,15 +425,6 @@ class OrderedFiniteSetObject(FiniteSetObject):
     def position(self, member: SetElementInput) -> int:
         assert self.contains(member) is True
         return self._elements.index(member)
-
-    def is_lequal(
-        self,
-        left: SetElementInput,
-        right: SetElementInput,
-    ) -> Decision:
-        assert self.contains(left) is True
-        assert self.contains(right) is True
-        return set_order(self).le(left, right)
 
     def __repr__(self) -> str:
         return "[" + ", ".join(map(repr, self._elements)) + "]"
@@ -294,7 +464,11 @@ class NaturalNumbersSet(SetObject):
         from sage_categories.theories.ordinals import OrdinalKind, Ordinals
 
         value = registered_value(member)
-        return value is not None and Ordinals().contains_ordinal(value) and value.kind() is OrdinalKind.FINITE
+        return (
+            value is not None
+            and Ordinals().contains_ordinal(value)
+            and value.kind() is OrdinalKind.FINITE
+        )
 
     def __iter__(self) -> Iterator[SetElementInput]:
         from sage_categories.theories.ordinals import ordinal
@@ -634,7 +808,9 @@ class SetSubset(SetFunction):
 
         def characteristic_value(member: SetElementInput) -> bool:
             answer = predicate(member)
-            assert answer is not UNKNOWN, f"membership of {member} in {underlying_set} is unknown"
+            assert answer is not UNKNOWN, (
+                f"membership of {member} in {underlying_set} is unknown"
+            )
             return answer
 
         super().__init__(
@@ -646,7 +822,10 @@ class SetSubset(SetFunction):
         return self._subset_category
 
     def _belongs_to(self, category: Category) -> bool:
-        return self._subset_category is category or self._subset_category.is_subcategory(category)
+        return (
+            self._subset_category is category
+            or self._subset_category.is_subcategory(category)
+        )
 
     def object(self) -> SetObject:
         return self._underlying_set
@@ -742,7 +921,9 @@ class SetSubset(SetFunction):
         return self.union(other).difference(self.intersection(other))
 
     def complement(self) -> SetSubset:
-        return self.power_set().from_predicate(lambda member: _decision_not(self.underlying_set().contains(member)))
+        return self.power_set().from_predicate(
+            lambda member: _decision_not(self.underlying_set().contains(member))
+        )
 
     def __or__(self, other: SetSubset) -> SetSubset:
         return self.union(other)
@@ -1051,7 +1232,9 @@ class SetHomCategory(HomCategory, SetObject):
 
         def inverse_image(candidate: SetElementInput) -> SetSubset:
             subset = self._represented_subset(candidate)
-            return target_power_set.from_predicate(lambda member: subset.contains(function(member)))
+            return target_power_set.from_predicate(
+                lambda member: subset.contains(function(member))
+            )
 
         return SetMap(
             self,
@@ -1126,6 +1309,40 @@ class SetHomCategory(HomCategory, SetObject):
 
     def __repr__(self) -> str:
         return f"{self.codomain()}^{self.domain()}"
+
+
+class PosetHomCategory(SetHomCategory):
+    """The set of order-preserving functions between two posets."""
+
+    def __call__(
+        self,
+        rule: SetMapRule | SetFunction,
+        *,
+        injective: Decision = UNKNOWN,
+        surjective: Decision = UNKNOWN,
+        order_preserving: Decision = True,
+        order_reflecting: Decision = UNKNOWN,
+    ) -> SetFunction:
+        existing = registered_value(rule)
+        if existing is not None:
+            assert existing in self
+            assert Sets().contains_function(existing)
+            return existing
+        assert callable(rule)
+        assert order_preserving is True
+        return super().__call__(
+            rule,
+            injective=injective,
+            surjective=surjective,
+            order_preserving=True,
+            order_reflecting=order_reflecting,
+        )
+
+    def cardinality(self) -> Cardinal:
+        return UnknownCardinality()
+
+    def __iter__(self) -> Iterator[SetElementInput]:
+        assert False, f"{self} has no chosen enumeration"
 
 
 def _underlying_set_function(arrow: Arrow) -> SetFunction:
@@ -1325,6 +1542,15 @@ class SetHomCategoryFamily(HomCategoryFamily):
         if self._sets_inclusion is None:
             self._sets_inclusion = InclusionFunctor(self, Sets())
         return (self._sets_inclusion,)
+
+
+class PosetHomCategoryFamily(SetHomCategoryFamily):
+    """The family of order-preserving function sets."""
+
+    ObjectType = PosetHomCategory
+
+    def is_subcategory(self, category: Category) -> bool:
+        return category is Sets().HomCategory() or super().is_subcategory(category)
 
 
 class CardinalityFunctor(Functor):
@@ -1544,10 +1770,17 @@ class SetsCategory(Category):
 class SetPropertyCategory(Category):
     """A property subcategory of ``Sets``."""
 
-    def __init__(self, sets: SetsCategory) -> None:
+    def __init__(
+        self,
+        sets: SetsCategory,
+        *,
+        object_type: type[SetObject] | None = None,
+    ) -> None:
         self._sets = sets
         self._inclusion: InclusionFunctor | None = None
-        super().__init__(object_type=sets.ObjectType)
+        super().__init__(
+            object_type=sets.ObjectType if object_type is None else object_type
+        )
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
         if self._inclusion is None:
@@ -1571,7 +1804,11 @@ class FiniteSetsCategory(SetPropertyCategory):
 
     def __contains__(self, candidate: MembershipInput) -> bool:
         value = registered_value(candidate)
-        return value is not None and Sets().contains_set(value) and value.cardinality().is_finite() is True
+        return (
+            value is not None
+            and Sets().contains_set(value)
+            and value.cardinality().is_finite() is True
+        )
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
         if self._countable_inclusion is None:
@@ -1585,7 +1822,11 @@ class FiniteSetsCategory(SetPropertyCategory):
 class InfiniteSetsCategory(SetPropertyCategory):
     def __contains__(self, candidate: MembershipInput) -> bool:
         value = registered_value(candidate)
-        return value is not None and Sets().contains_set(value) and value.cardinality().is_infinite() is True
+        return (
+            value is not None
+            and Sets().contains_set(value)
+            and value.cardinality().is_infinite() is True
+        )
 
 
 class UncountableSetsCategory(SetPropertyCategory):
@@ -1607,15 +1848,34 @@ class UncountableSetsCategory(SetPropertyCategory):
 
 
 class PartiallyOrderedSetsCategory(SetPropertyCategory):
+    def __init__(self, sets: SetsCategory) -> None:
+        super().__init__(sets, object_type=PartiallyOrderedSetObject)
+
+    def _hom_category_type(self) -> type[HomCategory]:
+        return PosetHomCategory
+
+    def _hom_category_family_type(self) -> type[HomCategoryFamily]:
+        return PosetHomCategoryFamily
+
     def __contains__(self, candidate: MembershipInput) -> bool:
         value = registered_value(candidate)
-        return value is not None and Sets().contains_set(value) and id(value) in _SET_ORDERS
+        return (
+            value is not None
+            and Sets().contains_set(value)
+            and id(value) in _SET_ORDERS
+        )
 
 
 class TotallyOrderedSetsCategory(SetPropertyCategory):
     def __init__(self, sets: SetsCategory) -> None:
         self._partial_order_inclusion: InclusionFunctor | None = None
-        super().__init__(sets)
+        super().__init__(sets, object_type=PartiallyOrderedSetObject)
+
+    def _hom_category_type(self) -> type[HomCategory]:
+        return PosetHomCategory
+
+    def _hom_category_family_type(self) -> type[HomCategoryFamily]:
+        return PosetHomCategoryFamily
 
     def __contains__(self, candidate: MembershipInput) -> bool:
         value = registered_value(candidate)
@@ -1770,7 +2030,9 @@ class DiscreteObjectSet(SetObject):
         return value is not None and value in self._discrete_category
 
     def __iter__(self) -> Iterator[SetElementInput]:
-        return iter(tuple(self._discrete_category.object(label) for label in self._labels))
+        return iter(
+            tuple(self._discrete_category.object(label) for label in self._labels)
+        )
 
 
 class DiscreteArrowSet(SetObject):
@@ -1789,7 +2051,12 @@ class DiscreteArrowSet(SetObject):
         return value.domain() is value.codomain()
 
     def __iter__(self) -> Iterator[SetElementInput]:
-        return iter(tuple(self._discrete_category.Hom(value, value).identity() for value in self._discrete_category))
+        return iter(
+            tuple(
+                self._discrete_category.Hom(value, value).identity()
+                for value in self._discrete_category
+            )
+        )
 
 
 class FiniteDiscreteCategoriesCategory(Category):
@@ -1938,7 +2205,11 @@ class ProductSet(SetObject):
 
     def contains(self, member: SetElementInput) -> Decision:
         value = registered_value(member)
-        return value is not None and ProductElements().contains_product_element(value) and value.product() is self
+        return (
+            value is not None
+            and ProductElements().contains_product_element(value)
+            and value.product() is self
+        )
 
     def __iter__(self) -> Iterator[SetElementInput]:
         assert self.index_set().is_finite() is True
@@ -1961,7 +2232,9 @@ class ProductSet(SetObject):
 
         def project(member: SetElementInput) -> SetElementInput:
             value = registered_value(member)
-            assert value is not None and ProductElements().contains_product_element(value)
+            assert value is not None and ProductElements().contains_product_element(
+                value
+            )
             assert value.product() is self
             return value.component(index)
 
@@ -2048,12 +2321,18 @@ class CoproductSet(SetObject):
             lambda index: self.cofactor(index).cardinality(),
         )
 
-    def element(self, index: SetElementInput, value: SetElementInput) -> CoproductElement:
+    def element(
+        self, index: SetElementInput, value: SetElementInput
+    ) -> CoproductElement:
         return CoproductElement(self, index, value)
 
     def contains(self, member: SetElementInput) -> Decision:
         value = registered_value(member)
-        return value is not None and CoproductElements().contains_coproduct_element(value) and value.coproduct() is self
+        return (
+            value is not None
+            and CoproductElements().contains_coproduct_element(value)
+            and value.coproduct() is self
+        )
 
     def __iter__(self) -> Iterator[SetElementInput]:
         assert self.index_set().is_finite() is True
@@ -2100,7 +2379,9 @@ class LimitSet(ProductSet):
             assert arrow is not None and self.diagram().domain().contains_arrow(arrow)
             image = self.diagram()(arrow)
             assert Sets().contains_function(image)
-            if image(value.component(arrow.domain())) != value.component(arrow.codomain()):
+            if image(value.component(arrow.domain())) != value.component(
+                arrow.codomain()
+            ):
                 return False
         return True
 
@@ -2134,7 +2415,9 @@ class ColimitElement(MathematicalObject):
         if value.colimit() is not self._colimit:
             return False
         answer = self._colimit.equivalent(self, value)
-        assert answer is not UNKNOWN, "equality in this colimit is not decidable from its presentation"
+        assert answer is not UNKNOWN, (
+            "equality in this colimit is not decidable from its presentation"
+        )
         return answer
 
     def __hash__(self) -> int:
@@ -2183,7 +2466,11 @@ class ColimitSet(SetObject):
 
     def contains(self, member: SetElementInput) -> Decision:
         value = registered_value(member)
-        return value is not None and ColimitElements().contains_colimit_element(value) and value.colimit() is self
+        return (
+            value is not None
+            and ColimitElements().contains_colimit_element(value)
+            and value.colimit() is self
+        )
 
     def equivalent(
         self,
@@ -2227,7 +2514,9 @@ class ColimitSet(SetObject):
             if not enlarged:
                 return False
             reached = (*reached, *enlarged)
-            if any(_same_coproduct_term(right_representative, known) for known in reached):
+            if any(
+                _same_coproduct_term(right_representative, known) for known in reached
+            ):
                 return True
 
     def __iter__(self) -> Iterator[SetElementInput]:
@@ -2235,7 +2524,9 @@ class ColimitSet(SetObject):
         chosen: tuple[ColimitElement, ...] = ()
         for representative in self._coproduct:
             value = registered_value(representative)
-            assert value is not None and CoproductElements().contains_coproduct_element(value)
+            assert value is not None and CoproductElements().contains_coproduct_element(
+                value
+            )
             candidate = ColimitElement(self, value)
             if any(self.equivalent(candidate, known) is True for known in chosen):
                 continue
@@ -2268,9 +2559,17 @@ def _colimit_terms_are_related(
         assert arrow is not None and diagram.domain().contains_arrow(arrow)
         image = diagram(arrow)
         assert Sets().contains_function(image)
-        if left.index() is arrow.domain() and right.index() is arrow.codomain() and image(left.value()) == right.value():
+        if (
+            left.index() is arrow.domain()
+            and right.index() is arrow.codomain()
+            and image(left.value()) == right.value()
+        ):
             return True
-        if right.index() is arrow.domain() and left.index() is arrow.codomain() and image(right.value()) == left.value():
+        if (
+            right.index() is arrow.domain()
+            and left.index() is arrow.codomain()
+            and image(right.value()) == left.value()
+        ):
             return True
     return False
 
@@ -2322,7 +2621,9 @@ def ProductOfSets(diagram: Functor) -> ProductPresentation:
         return SetMap(
             source,
             apex,
-            lambda member: apex.element(lambda index: _cone_component_value(other, index, member)),
+            lambda member: apex.element(
+                lambda index: _cone_component_value(other, index, member)
+            ),
         )
 
     return Product(cone, mediate)
@@ -2353,7 +2654,9 @@ def _CoproductPresentationOfSets(diagram: Functor) -> CoproductPresentation:
 
         def induced(member: SetElementInput) -> SetElementInput:
             value = registered_value(member)
-            assert value is not None and CoproductElements().contains_coproduct_element(value)
+            assert value is not None and CoproductElements().contains_coproduct_element(
+                value
+            )
             component = other.costructure_morphism(value.index())
             assert Sets().contains_function(component)
             return component(value.value())
@@ -2378,7 +2681,9 @@ def LimitOfSets(
         return SetMap(
             source,
             apex,
-            lambda member: apex.element(lambda index: _cone_component_value(other, index, member)),
+            lambda member: apex.element(
+                lambda index: _cone_component_value(other, index, member)
+            ),
         )
 
     return Product(cone, mediate)
@@ -2399,7 +2704,9 @@ def ColimitOfSets(
 
         def induced(member: SetElementInput) -> SetElementInput:
             value = registered_value(member)
-            assert value is not None and ColimitElements().contains_colimit_element(value)
+            assert value is not None and ColimitElements().contains_colimit_element(
+                value
+            )
             representative = value.representative()
             component = other.costructure_morphism(representative.index())
             assert Sets().contains_function(component)

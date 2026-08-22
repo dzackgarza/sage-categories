@@ -153,13 +153,15 @@ class Cardinal(MathematicalObject):
         return self
 
     def sort_key(self) -> tuple[int, str]:
-        order = {
-            CardinalKind.FINITE: 0,
-            CardinalKind.ALEPH: 1,
-            CardinalKind.POWER: 2,
-            CardinalKind.SUPREMUM: 3,
-        }
-        return order.get(self._kind, 4), repr(self)
+        if self._kind is CardinalKind.FINITE:
+            return 0, repr(self)
+        if self._kind is CardinalKind.ALEPH:
+            return 1, repr(self)
+        if self._kind is CardinalKind.POWER:
+            return 2, repr(self)
+        if self._kind is CardinalKind.SUPREMUM:
+            return 3, repr(self)
+        return 4, repr(self)
 
     def is_finite(self) -> Decision:
         if self._kind is CardinalKind.FINITE:
@@ -580,25 +582,15 @@ class CardinalsCategory(Category):
             return UNKNOWN
         if source.kind() is CardinalKind.FINITE and target.kind() is CardinalKind.FINITE:
             return source.finite_value() <= target.finite_value()
-        if (
-            source.kind() is CardinalKind.FINITE
-            and target.is_infinite() is True
-        ):
+        if source.kind() is CardinalKind.FINITE and target.is_infinite() is True:
             return True
-        if (
-            source.is_infinite() is True
-            and target.kind() is CardinalKind.FINITE
-        ):
+        if source.is_infinite() is True and target.kind() is CardinalKind.FINITE:
             return False
         if source.kind() is CardinalKind.ALEPH and target.kind() is CardinalKind.ALEPH:
             return source.aleph_index() <= target.aleph_index()
         if source.is_countably_infinite() and target.is_infinite() is True:
             return True
-        if (
-            source.kind() is CardinalKind.ALEPH
-            and source.aleph_index() == 1
-            and target.is_uncountable() is True
-        ):
+        if source.kind() is CardinalKind.ALEPH and source.aleph_index() == 1 and target.is_uncountable() is True:
             return True
         if target.kind() is CardinalKind.POWER:
             if self.le(source, target.terms()[0]) is True:

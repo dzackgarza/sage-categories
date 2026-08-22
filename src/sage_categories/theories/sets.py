@@ -8,7 +8,8 @@ categorical foundation. Sage is not part of this category graph.
 from __future__ import annotations
 
 from collections.abc import Callable, Iterator, Mapping
-from itertools import combinations, product as cartesian_product
+from itertools import combinations
+from itertools import product as cartesian_product
 from math import comb
 from typing import Any, Protocol, TypeIs
 
@@ -2175,9 +2176,7 @@ class FixedCardinalitySubsetSet(SetObject):
         for maximum in self._source:
             if len(preceding) >= size - 1:
                 for initial in combinations(preceding, size - 1):
-                    yield self.power_set().from_members(
-                        frozenset((*initial, maximum))
-                    )
+                    yield self.power_set().from_members(frozenset((*initial, maximum)))
             preceding.append(maximum)
 
     def __getitem__(self, position: int) -> SetSubset:
@@ -2191,10 +2190,7 @@ class FixedCardinalitySubsetSet(SetObject):
         assert False, f"{position} is outside {self}"
 
     def __repr__(self) -> str:
-        return (
-            f"Subsets of {self._source} of cardinality "
-            f"{self._subset_cardinality}"
-        )
+        return f"Subsets of {self._source} of cardinality {self._subset_cardinality}"
 
 
 class FiniteSubsetSet(SetObject):

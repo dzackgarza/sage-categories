@@ -8,7 +8,7 @@ from types import FunctionType, new_class
 from typing import TYPE_CHECKING, TypeVar
 
 from sage_categories.descriptors import ForwardedMethod
-from sage_categories.values import MathematicalElement, MathematicalObject
+from sage_categories.values import Arrow, MathematicalElement, MathematicalObject
 
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.functors import StructuralFunctor
@@ -46,8 +46,10 @@ class CategoryCompiler:
     def __init__(self) -> None:
         self._object_types: dict[int, type[MathematicalObject]] = {}
         self._element_types: dict[int, type[MathematicalElement]] = {}
+        self._arrow_types: dict[int, type[Arrow]] = {}
         self._object_catalogues: dict[int, dict[str, DeclaredMethod]] = {}
         self._element_catalogues: dict[int, dict[str, DeclaredMethod]] = {}
+        self._arrow_catalogues: dict[int, dict[str, DeclaredMethod]] = {}
         self._routes: dict[tuple[int, int], tuple[StructuralFunctor, ...]] = {}
 
     def compiled_object_type(
@@ -65,6 +67,7 @@ class CategoryCompiler:
             local_type,
             self.object_method_catalogue(category),
             element_methods=False,
+            morphism_methods=False,
         )
         self._object_types[key] = compiled
         return compiled
@@ -84,8 +87,29 @@ class CategoryCompiler:
             local_type,
             self.element_method_catalogue(category),
             element_methods=True,
+            morphism_methods=False,
         )
         self._element_types[key] = compiled
+        return compiled
+
+    def compiled_arrow_type(
+        self,
+        category: Category,
+        local_type: type[Arrow],
+    ) -> type[Arrow]:
+        """Return the complete implementation type for arrows of ``category``."""
+        key = id(category)
+        cached = self._arrow_types.get(key)
+        if cached is not None:
+            return cached
+        compiled = self._compile_type(
+            category,
+            local_type,
+            self.arrow_method_catalogue(category),
+            element_methods=False,
+            morphism_methods=True,
+        )
+        self._arrow_types[key] = compiled
         return compiled
 
     def object_method_catalogue(
@@ -120,6 +144,23 @@ class CategoryCompiler:
             self.element_method_catalogue,
         )
         self._element_catalogues[key] = catalogue
+        return catalogue
+
+    def arrow_method_catalogue(
+        self,
+        category: Category,
+    ) -> Mapping[str, DeclaredMethod]:
+        """Return the arrow methods visible in ``category``."""
+        key = id(category)
+        cached = self._arrow_catalogues.get(key)
+        if cached is not None:
+            return cached
+        catalogue = self._method_catalogue(
+            category,
+            category.local_arrow_type(),
+            self.arrow_method_catalogue,
+        )
+        self._arrow_catalogues[key] = catalogue
         return catalogue
 
     def implementation_route(
@@ -168,6 +209,7 @@ class CategoryCompiler:
         catalogue: Mapping[str, DeclaredMethod],
         *,
         element_methods: bool,
+        morphism_methods: bool,
     ) -> type[Implementation]:
         available = {name for implementation in local_type.__mro__ for name, method in implementation.__dict__.items() if inspect.isfunction(method)}
         inherited = {
@@ -175,6 +217,7 @@ class CategoryCompiler:
                 self.implementation_route(category, declaration.owner),
                 declaration.method,
                 element_method=element_methods,
+                morphism_method=morphism_methods,
             )
             for name, declaration in catalogue.items()
             if name not in available

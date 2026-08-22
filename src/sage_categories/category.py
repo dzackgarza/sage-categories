@@ -75,6 +75,7 @@ class Category(MathematicalObject):
     ) -> None:
         self._local_object_type = object_type
         self._local_element_type = element_type
+        self._local_arrow_type = self._hom_category_type().ElementType
         self._hom_category_family: HomCategoryFamily | None = None
         self._identity_arrows: dict[int, Arrow] = {}
         self._arrow_category: ArrowCategoryObject | None = None
@@ -104,6 +105,10 @@ class Category(MathematicalObject):
         compiler = category_compiler()
         self.ObjectType = compiler.compiled_object_type(self, object_type)
         self.ElementType = compiler.compiled_element_type(self, element_type)
+        self._compiled_arrow_type = compiler.compiled_arrow_type(
+            self,
+            self._local_arrow_type,
+        )
 
     def local_object_type(self) -> type[MathematicalObject]:
         """Return the object implementation declared at this category."""
@@ -112,6 +117,10 @@ class Category(MathematicalObject):
     def local_element_type(self) -> type[MathematicalElement]:
         """Return the element implementation declared at this category."""
         return self._local_element_type
+
+    def local_arrow_type(self) -> type[Arrow]:
+        """Return the arrow implementation declared at this category."""
+        return self._local_arrow_type
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
         """Return functors selected for implicit implementation inheritance."""
@@ -216,6 +225,9 @@ class Category(MathematicalObject):
                 self,
                 hom_category_type=self._hom_category_type(),
             )
+            self._hom_category_family.ElementType = self._compiled_arrow_type
+            self._hom_category_family.ObjectType.ObjectType = self._compiled_arrow_type
+            self._hom_category_family.ObjectType.ElementType = self._compiled_arrow_type
         return self._hom_category_family
 
     def EndCategory(self) -> HomCategoryFamily:
@@ -275,27 +287,27 @@ class Category(MathematicalObject):
     @property
     def ArrowType(self) -> type[Arrow]:
         """Return the arrow type as ``HomCatType.ElementType``."""
-        return self.HomCatType.ElementType
+        return self._compiled_arrow_type
 
     @property
     def EndArrowType(self) -> type[Arrow]:
-        return self.EndCatType.ElementType
+        return self.EndCategory().ElementType
 
     @property
     def MonoArrowType(self) -> type[Arrow]:
-        return self.MonoCatType.ElementType
+        return self.MonoCategory().ElementType
 
     @property
     def EpiArrowType(self) -> type[Arrow]:
-        return self.EpiCatType.ElementType
+        return self.EpiCategory().ElementType
 
     @property
     def IsoArrowType(self) -> type[Arrow]:
-        return self.IsoCatType.ElementType
+        return self.IsoCategory().ElementType
 
     @property
     def AutArrowType(self) -> type[Arrow]:
-        return self.AutCatType.ElementType
+        return self.AutCategory().ElementType
 
     def Hom(
         self,

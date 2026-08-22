@@ -53,6 +53,7 @@ class MathematicalObject:
         self._category = category
         self._object_structural_images: dict[int, MathematicalObject] = {}
         self._element_structural_images: dict[int, MathematicalElement] = {}
+        self._morphism_structural_images: dict[int, Arrow] = {}
         if category is not None:
             self._object_structural_images[id(category)] = self
         _VALUES[id(self)] = self
@@ -189,6 +190,12 @@ class MathematicalObject:
     ) -> MathematicalObject:
         assert False, f"{self} is not represented as an element"
 
+    def _morphism_image_along(
+        self,
+        route: tuple[StructuralFunctor, ...],
+    ) -> Arrow:
+        assert False, f"{self} is not represented as a morphism"
+
 
 class MathematicalElement(MathematicalObject):
     """An element of a mathematical object."""
@@ -277,6 +284,24 @@ class Arrow(MathematicalElement):
     def _is_arrow_in(self, category: Category) -> bool:
         base = self.base_category()
         return base is category or base.is_subcategory(category)
+
+    def _morphism_image_along(
+        self,
+        route: tuple[StructuralFunctor, ...],
+    ) -> Arrow:
+        value = self
+        for functor in route:
+            codomain = functor.codomain()
+            key = id(codomain)
+            cached = self._morphism_structural_images.get(key)
+            if cached is not None:
+                value = cached
+                continue
+            image = functor.on_morphism(value)
+            assert codomain.contains_arrow(image)
+            self._morphism_structural_images[key] = image
+            value = image
+        return value
 
     def __mul__(self, first: Arrow) -> Arrow:
         """Return this arrow after ``first``."""

@@ -36,9 +36,10 @@ class HomCategory(Category):
         self._domain = domain
         self._codomain = codomain
         self._hom_category = hom_category
+        arrow_type = hom_category.ElementType
         super().__init__(
-            object_type=self.__class__.ElementType,
-            element_type=self.__class__.ElementType,
+            object_type=arrow_type,
+            element_type=arrow_type,
             category=hom_category,
         )
 
@@ -85,6 +86,7 @@ class HomCategoryFamily(Category):
     """The category whose objects are the hom categories of one category."""
 
     ObjectType: type[HomCategory] = HomCategory
+    ElementType: type[Arrow] = Arrow
 
     def __init__(
         self,
@@ -95,7 +97,12 @@ class HomCategoryFamily(Category):
         self._base_category = base_category
         self._member_type = hom_category_type
         self._hom_categories: dict[tuple[int, int], HomCategory] = {}
-        super().__init__(object_type=hom_category_type)
+        super().__init__(
+            object_type=hom_category_type,
+            element_type=hom_category_type.ElementType,
+        )
+        self.ObjectType.ObjectType = self.ElementType
+        self.ObjectType.ElementType = self.ElementType
 
     def base_category(self) -> Category:
         """Return the category whose hom categories form this family."""

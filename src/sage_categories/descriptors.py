@@ -19,11 +19,14 @@ class ForwardedMethod:
         method: FunctionType,
         *,
         element_method: bool,
+        morphism_method: bool,
     ) -> None:
         assert route
+        assert not (element_method and morphism_method)
         self._route = route
         self._method = method
         self._element_method = element_method
+        self._morphism_method = morphism_method
 
     def __get__(
         self,
@@ -32,7 +35,10 @@ class ForwardedMethod:
     ) -> ForwardedMethod | MethodType:
         if instance is None:
             return self
-        if self._element_method:
+        image: MathematicalObject
+        if self._morphism_method:
+            image = instance._morphism_image_along(self._route)
+        elif self._element_method:
             image = instance._element_image_along(self._route)
         else:
             image = instance._object_image_along(self._route)

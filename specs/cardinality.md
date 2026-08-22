@@ -26,6 +26,12 @@ I also traced relevant definitions in:
 
 - [install.sage](/home/dzack/research/src/dzack_research/preamble/install.sage:99)
 
+## Implementation ownership
+
+[Category ownership](../CONTRIBUTING.md#category-ownership-and-inheritance), [leaf-category encapsulation](../CONTRIBUTING.md#leaf-category-encapsulation), and [functor policies](../CONTRIBUTING.md#functors-and-universal-constructions) govern the general inheritance rules.
+
+`Cardinalities()` owns cardinal objects, comparison arrows, arithmetic, and expression normalization. `Ordinals()` owns ordinal order and arithmetic. `Sets()` owns set cardinality.
+
 ## Cardinal model
 
 `Cardinalities()` is the thin category associated with the represented cardinal order.
@@ -630,6 +636,14 @@ Sets().CardinalityFunctor()
 ```
 
 See [CardinalityFunctor](/home/dzack/research/src/dzack_research/preamble/categories/functors/cardinality.sage:22).
+
+For a category \(\mathbf C\) with selected forgetful functor \(U_{\mathbf C}:\mathbf C\to\mathbf{Sets}\), the composite
+
+\[
+\#\circ\operatorname{core}(U_{\mathbf C})
+\]
+
+supplies cardinality. A constructor can pass known cardinality data to its underlying-set constructor.
 
 Set constructions use cardinal expressions directly:
 

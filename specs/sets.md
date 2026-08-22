@@ -1,7 +1,6 @@
 # Sets specification
 
-`Sets()` is the foundation of every owned mathematical object.
-It supplies the complete set-theoretic surface used by higher categories.
+`Sets()` owns the set-theoretic surface inherited by categories with a selected functor to `Sets()`.
 
 This document specifies the public API and its mathematical semantics.
 Concrete realizations can use Sage algorithms and runtime machinery internally.
@@ -16,8 +15,7 @@ Concrete realizations can use Sage algorithms and runtime machinery internally.
 
 - `Sets.ArrowType`: a total function with a declared domain and codomain.
 
-Every higher mathematical object inherits this set-level surface.
-Rings, modules, groups, and lattices do not define parallel notions of cardinality or set maps.
+The object and arrow maps of a selected forgetful functor provide this surface to another category.
 
 A set can be represented by:
 
@@ -33,13 +31,19 @@ A set can be represented by:
 
 - a universal construction from other sets.
 
-The public constructors are `Set`, `ConditionSet`, `ImageSet`, and `ObjectSet`.
+The public surface constructs a set directly, a predicate subobject through `X.subset_from(predicate)`, an image through `f.image()`, and the object set through `C.objects()`.
 
 Infinite objects do not require enumeration.
 A predicate or callable can define them directly.
 
 `Unknown` records unavailable computational knowledge.
 It never means `False` and never changes the underlying mathematical object.
+
+## Implementation ownership
+
+[Category ownership](../CONTRIBUTING.md#category-ownership-and-inheritance), [leaf-category encapsulation](../CONTRIBUTING.md#leaf-category-encapsulation), and [functor policies](../CONTRIBUTING.md#functors-and-universal-constructions) govern inheritance.
+
+The `Sets()` subtree owns sets, elements, total functions, set subobjects, cardinality, and universal constructions in `Sets()`. For \(U_C:C\to\mathbf{Sets}\), declaring its object and arrow maps supplies this surface to \(C\). Property subcategories such as `Sets().Finite()` add their property-specific constructions and inherit the rest through inclusion.
 
 ## API on every set object
 
@@ -304,101 +308,10 @@ For infinite \(X\):
 |P_{\mathrm{fin}}(X)|=|X|.
 \]
 
-## Cardinalities
+## Cardinalities and ordinals
 
-Cardinalities are mathematical objects, not integers or metadata.
-
-`Cardinalities()` is the thin category defined by cardinal order.
-A unique arrow \(\kappa\to\lambda\) exists when the represented theory proves \(\kappa\leq\lambda\).
-
-Constructors include:
-
-```python
-cardinal(n)
-aleph(alpha)
-
-aleph0
-continuum
-Sets.ℵ[n]
-Sets.א[n]
-```
-
-Cardinal objects support:
-
-```python
-k + l
-k * l
-k ** l
-
-k <= l
-k < l
-
-k.is_finite()
-k.is_infinite()
-k.is_countable()
-k.is_uncountable()
-k.is_aleph()
-k.is_continuum()
-k.aleph_index()
-k.initial_ordinal()
-```
-
-The category supports:
-
-```python
-Cardinalities().sum(...)
-Cardinalities().product(...)
-Cardinalities().indexed_sum(I, family)
-Cardinalities().indexed_product(I, family)
-Cardinalities().power(base, exponent)
-Cardinalities().supremum(...)
-Cardinalities().compare(k, l)
-```
-
-Symbolic expressions remain symbolic when the represented theory cannot normalize them.
-This avoids assuming the continuum hypothesis.
-
-Cardinal predicates and comparisons return `bool | Unknown`. Failure to prove an inequality does not prove its negation.
-
-`Cardinalities().compare(k, l)` returns a proved order relation or `Unknown`.
-
-The cardinality functor is:
-
-\[
-\#:\operatorname{core}(\mathbf{Set})\longrightarrow\mathbf{Cardinalities}.
-\]
-
-It sends isomorphic sets to equal cardinal objects.
-It also supplies comparison arrows for products, coproducts, and power objects.
-
-The cardinality functor is defined on every owned set.
-It returns formal cardinal expressions when a concrete simplification is unavailable.
-
-## Ordinals
-
-`Ordinals()` is the commutative semiring under Hessenberg natural sum and product.
-
-Its user API includes:
-
-```python
-ordinal(n)
-omega(alpha)
-omega0
-
-a + b
-a * b
-a.ordinal_sum(b)
-a.ordinal_product(b)
-a.ordinal_power(b)
-
-a.is_initial()
-a.initial_index()
-a.cardinality()
-```
-
-Natural operations use `+` and `*`. Ordinary noncommutative ordinal operations have explicit names.
-
-`omega(alpha).cardinality()` returns `aleph(alpha)`.
+The complete cardinal and ordinal APIs are specified in [cardinality.md](cardinality.md).
+Within `Sets()`, `X.cardinality()` and the cardinality functor expose that theory; each set construction supplies its own cardinal expression.
 
 ## Cardinality and enumeration are distinct
 
@@ -430,38 +343,10 @@ X.enumeration_injection()
 
 Countably infinite sets have exact cardinality `aleph0`. Uncountable sets inherit infinitude.
 
-## Ordered sets and finite ordinals
+## Ordered sets
 
-`finite_ordered_set(elements)` transports the displayed enumeration into a total order.
-It does not sort the elements.
-
-`ordered_set_owned_by(elements)` preserves an already meaningful order.
-
-The standard indexing objects are:
-
-```python
-Sets.Δ[-1]  # empty
-Sets.Δ[n]   # {0, ..., n}
-Sets.Δ[aleph0]  # NN with its standard order
-```
-
-Partially ordered sets add:
-
-```python
-f.is_order_preserving()
-f.is_order_reflecting()
-f.is_order_embedding()
-f.is_order_isomorphism()
-f.inverse()
-
-X.hasse_layout()
-X.hasse_tikz()
-X.tikz()
-```
-
-Order predicates return `bool | Unknown` when no applicable decision procedure is available.
-
-Finite posets render as TikZ, LaTeX, HTML, and notebook MIME output.
+The complete API is specified in [ordered-sets.md](ordered-sets.md).
+Within `Sets()`, partial and total order are independent of cardinality, while a chosen enumeration supplies positional access.
 
 ## Finitely supported function sets
 
@@ -490,35 +375,10 @@ For infinite \(S\) and nontrivial \(X\), it is:
 
 ## Representation strategy
 
-The representation boundaries are:
+[Representation policies](../CONTRIBUTING.md#semantic-representations), [engine-boundary policies](../CONTRIBUTING.md#computation-engine-encapsulation), and [repository-layout policies](../CONTRIBUTING.md#mathematical-encapsulation-and-repository-layout) govern the general boundary.
 
-- Owned parents and elements define the public set surface.
-
-- Sage parents can supply private concrete realizations.
-
-- Elements retain their exact parent.
-
-- Infinite set maps use callables.
-
-- Finite set maps can use explicit mappings.
-
-- Product elements use indexed functions.
-
-- Coproduct elements use tagged values.
-
-- Subsets use monomorphisms and characteristic morphisms.
-
-- Function sets reuse Hom-category objects.
-
-- Universal constructions retain their diagrams.
-
-- Cardinalities and ordinals retain symbolic expression trees.
-
-- Category refinement records only established properties.
-
-- Enumeration remains optional structure.
-
-No construction must enumerate an infinite set merely to establish its mathematical form.
+Set-specific representations preserve the mathematics: callables for infinite maps, indexed families for products, tagged values for coproducts, monomorphisms for subsets, symbolic cardinal expressions, and diagrams for universal constructions.
+Enumeration remains optional structure.
 
 ## SymPy integration strategy
 
@@ -537,35 +397,7 @@ SymPy supplies private symbolic representations and simplification algorithms be
 | Universal set constructions | SymPy represents and simplifies products, unions, intersections, power sets, and images. | The owned categories retain diagrams, cones, cocones, projections, injections, and universal morphisms. |
 | Non-finitary function sets | SymPy supplies symbolic expressions used by callable rules. | Construct \(Y^X\) through `X.Hom(Y).objects()`, `ExponentialOfSets(Y, X)`, and `Y ** X`. Callable rules represent arbitrary domains. |
 
-The preferred SymPy components are:
-
-- `ConditionSet` for symbolic predicate subsets;
-
-- `ImageSet` for images without enumeration;
-
-- `Contains` for unresolved membership propositions;
-
-- SymPy's three-valued fuzzy logic operations;
-
-- simplifiers for unions, intersections, intervals, ranges, power sets, and images.
-
 Membership queries use `Contains(x, X)` or `X.contains(x)` and translate into the owned `bool | Unknown` contract.
-
-The public semantic layer supplies:
-
-- Sage `Unknown` throughout semantic predicates;
-
-- sets as objects and functions as arrows;
-
-- predicate subsets with explicit inclusion arrows;
-
-- general cardinal objects and cardinal arithmetic;
-
-- products, coproducts, images, inverse images, limits, and colimits through functors;
-
-- function sets such as \(\mathbb Q^{\mathbb Q}\) and \((\mathbb R^2)^{\mathbb R}\);
-
-- mathematical equality distinct from structural representation equality.
 
 SymPy integration is confined to set representations and computations.
 Sheaves, morphisms of sheaves, functors, and other categorical objects retain their own categories.

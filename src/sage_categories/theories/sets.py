@@ -1668,12 +1668,15 @@ def is_set_hom_category(category: MathematicalObject) -> TypeIs[SetHomCategory]:
     return category in Sets().HomCategory()
 
 
-def FiniteSet(members: frozenset[SetElementInput]) -> FiniteSetObject:
-    return Sets().finite(members)
+def FiniteSet(members: Iterable[SetElementInput]) -> FiniteSetObject:
+    return Sets().finite(frozenset(members))
 
 
-def Set(members: frozenset[SetElementInput]) -> FiniteSetObject:
-    return FiniteSet(members)
+def Set(source: SetObject | Iterable[SetElementInput]) -> SetObject:
+    value = registered_value(source)
+    if value is not None and Sets().contains_set(value):
+        return value
+    return FiniteSet(source)
 
 
 def ConditionSet(
@@ -1840,6 +1843,12 @@ def SetFamily(
     values: Callable[[DiscreteObject], SetObject],
 ) -> DiscreteDiagram:
     return DiscreteDiagram(index_category, Sets(), values)
+
+
+def ObjectSet(discrete_category: DiscreteCategoryObject) -> SetObject:
+    objects = discrete_category.objects()
+    assert Sets().contains_set(objects)
+    return objects
 
 
 class ProductElement(MathematicalObject):

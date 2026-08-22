@@ -140,6 +140,7 @@ class SetFunction(Arrow):
 class SetHomCategory(HomCategory):
     """The discrete category of functions between two finite sets."""
 
+    ObjectType = SetFunction
     ElementType = SetFunction
 
     def __init__(
@@ -161,7 +162,11 @@ class SetHomCategory(HomCategory):
         assert Sets().contains_function(result)
         return result
 
-    def identity(self) -> SetFunction:
+    def identity(
+        self,
+        value: MathematicalObject | None = None,
+    ) -> SetFunction:
+        assert value is None
         assert self.domain() is self.codomain()
         return self(lambda value: value)
 
@@ -198,9 +203,15 @@ class SetHomCategory(HomCategory):
         self._object_set = FiniteSet(frozenset(functions))
         return self._object_set
 
+    def contains_object(self, candidate: SetValue) -> TypeIs[SetFunction]:
+        """Return whether ``candidate`` is one function in this hom category."""
+        return candidate in self
+
 
 class SetHomCategoryFamily(HomCategoryFamily):
     """The hom categories of finite sets, all discrete."""
+
+    ObjectType = SetHomCategory
 
     def __init__(
         self,
@@ -242,6 +253,16 @@ class SetsCategory(Category):
         assert self.contains_set(result)
         return result
 
+    def Hom(
+        self,
+        domain: MathematicalObject,
+        codomain: MathematicalObject,
+    ) -> SetHomCategory:
+        category = Category.Hom(self, domain, codomain)
+        assert category in self.HomCategory()
+        assert is_set_hom_category(category)
+        return category
+
     def contains_set(self, candidate: MathematicalObject) -> TypeIs[SetObject]:
         return candidate in self
 
@@ -261,6 +282,13 @@ _SETS = SetsCategory()
 def Sets() -> SetsCategory:
     """Return the owned category of finite sets."""
     return _SETS
+
+
+def is_set_hom_category(
+    category: HomCategory,
+) -> TypeIs[SetHomCategory]:
+    """Return whether ``category`` contains functions between finite sets."""
+    return category in Sets().HomCategory()
 
 
 def FiniteSet(members: frozenset[SetValue]) -> SetObject:
@@ -284,6 +312,13 @@ class DiscreteCategoryObject(Category, ABC):
     def objects(self) -> SetObject:
         """Return the set of objects."""
 
+    @abstractmethod
+    def contains_object(
+        self,
+        candidate: SetValue,
+    ) -> TypeIs[DiscreteObject]:
+        """Return whether ``candidate`` is an object of this category."""
+
 
 class DiscreteIdentity(Arrow):
     """The unique identity arrow at one object of a discrete category."""
@@ -292,12 +327,17 @@ class DiscreteIdentity(Arrow):
 class DiscreteHomCategory(HomCategory):
     """A hom category with one identity or no objects."""
 
+    ObjectType = DiscreteIdentity
     ElementType = DiscreteIdentity
 
     def __call__(self) -> DiscreteIdentity:
         return self.identity()
 
-    def identity(self) -> DiscreteIdentity:
+    def identity(
+        self,
+        value: MathematicalObject | None = None,
+    ) -> DiscreteIdentity:
+        assert value is None
         assert self.domain() is self.codomain()
         return self.ObjectType(hom_category=self)
 
@@ -328,6 +368,8 @@ class DiscreteObject(MathematicalObject):
 class FiniteDiscreteCategory(DiscreteCategoryObject):
     """The discrete category on one finite set."""
 
+    ObjectType = DiscreteObject
+
     def __init__(
         self,
         *,
@@ -348,6 +390,9 @@ class FiniteDiscreteCategory(DiscreteCategoryObject):
 
     def objects(self) -> SetObject:
         return self._object_set
+
+    def __iter__(self) -> Iterator[DiscreteObject]:
+        return iter(self._objects)
 
     def object(self, label: SetValue) -> DiscreteObject:
         assert label in self._label_set
@@ -405,6 +450,8 @@ class ObjectSetFunctor(StructuralFunctor):
 class DiscreteCategoriesCategory(Category):
     """The category of discrete categories."""
 
+    ObjectType = DiscreteCategoryObject
+
     def __init__(self) -> None:
         self._objects_functor: ObjectSetFunctor | None = None
         super().__init__(object_type=DiscreteCategoryObject)
@@ -423,6 +470,8 @@ class DiscreteCategoriesCategory(Category):
 
 class FiniteDiscreteCategoriesCategory(Category):
     """The category of finite discrete categories."""
+
+    ObjectType = FiniteDiscreteCategory
 
     def __init__(self) -> None:
         self._inclusion: InclusionFunctor | None = None
@@ -471,8 +520,12 @@ class DiscreteDiagram(Functor):
         codomain: Category,
         values: Callable[[DiscreteObject], MathematicalObject],
     ) -> None:
+        self._index_category = domain
         self._values = values
         super().__init__(domain, codomain)
+
+    def domain(self) -> FiniteDiscreteCategory:
+        return self._index_category
 
     def on_object(self, source: MathematicalObject) -> MathematicalObject:
         assert self.domain().contains_object(source)
@@ -597,7 +650,7 @@ def ProductOfSets(diagram: DiscreteDiagram) -> ProductPresentation:
     assert diagram.codomain() is Sets()
     domain = diagram.domain()
     assert FiniteDiscreteCategories().contains_finite_discrete_category(domain)
-    indices = tuple(domain.objects())
+    indices = tuple(domain)
 
     def factor(index: DiscreteObject) -> SetObject:
         value = diagram(index)
@@ -633,11 +686,13 @@ def ProductOfSets(diagram: DiscreteDiagram) -> ProductPresentation:
         assert Sets().contains_set(other_apex)
 
         def choice(value: SetValue) -> SetValue:
+            def component_value(index: DiscreteObject) -> SetValue:
+                component = other.structure_morphism(index)
+                assert Sets().contains_function(component)
+                return component(value)
+
             return ProductChoice(
-                tuple(
-                    (index, other.structure_morphism(index)(value))
-                    for index in indices
-                )
+                tuple((index, component_value(index)) for index in indices)
             )
 
         return SetMap(
@@ -654,7 +709,7 @@ def CoproductOfSets(diagram: DiscreteDiagram) -> CoproductPresentation:
     assert diagram.codomain() is Sets()
     domain = diagram.domain()
     assert FiniteDiscreteCategories().contains_finite_discrete_category(domain)
-    indices = tuple(domain.objects())
+    indices = tuple(domain)
 
     def factor(index: DiscreteObject) -> SetObject:
         value = diagram(index)
@@ -689,7 +744,9 @@ def CoproductOfSets(diagram: DiscreteDiagram) -> CoproductPresentation:
 
         def induced(tagged: SetValue) -> SetValue:
             assert CoproductValues().contains_value(tagged)
-            return other.costructure_morphism(tagged.index())(tagged.value())
+            component = other.costructure_morphism(tagged.index())
+            assert Sets().contains_function(component)
+            return component(tagged.value())
 
         return SetMap(
             apex,

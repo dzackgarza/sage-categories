@@ -1812,8 +1812,6 @@ def _indexed_product_cardinality(
     indices: SetObject,
     factors: Callable[[SetElementInput], SetObject],
 ) -> Cardinal:
-    if indices.is_finite() is True:
-        return Cardinals().product(*(factors(index).cardinality() for index in indices))
     return Cardinals().indexed_product(
         indices,
         lambda index: factors(index).cardinality(),
@@ -1824,8 +1822,6 @@ def _indexed_sum_cardinality(
     indices: SetObject,
     summands: Callable[[SetElementInput], SetObject],
 ) -> Cardinal:
-    if indices.is_finite() is True:
-        return Cardinals().sum(*(summands(index).cardinality() for index in indices))
     return Cardinals().indexed_sum(
         indices,
         lambda index: summands(index).cardinality(),

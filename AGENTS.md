@@ -92,6 +92,14 @@ Predicates follow their definitions and their available algorithms.
 Return `Unknown` when the implementation cannot determine a result.
 Do not replace missing knowledge with a fabricated Boolean answer.
 
+Refine a result into a property subcategory only when an exact computation or a cited theorem establishes the property.
+Otherwise, return it in the strongest category that the available mathematics establishes.
+Do not create certificate classes, proof records, or prose fields to simulate this refinement.
+
+Open and inspect a mathematical source before adding a definition or citation.
+Record the exact theorem, section, table, or page that supports the statement.
+Do not reconstruct a definition, citation, or expected value from memory.
+
 Prefer standard categorical constructions and established algorithms over local encodings.
 If the current vocabulary cannot state the general mathematical object, treat that absence as the finding.
 Extend the foundation instead of hiding the gap inside a special case.
@@ -249,6 +257,14 @@ The cardinality functor transports those results; it does not contain constructi
 Write `X.cardinality() == 3`.
 Do not write `X.cardinality().value == 3`.
 
+Cardinalities are elements of an ordered semiring, not integer wrappers.
+Their addition, multiplication, exponentiation, equality, and order can produce finite, infinite, symbolic, or unknown results.
+Preserve an unknown comparison as `Unknown`; do not throw an exception or select a Boolean value.
+
+Use `cardinality()` for a mathematical set, including a set of module elements or module generators.
+Use `len()` only for a finite ordered Python sequence whose sequence length is the stated concept.
+Methods such as `ngens()` and `rank()` return cardinalities when their definitions count mathematical sets.
+
 Every object whose parent is `Sets()` receives the complete `Sets.ObjectType` method surface.
 This includes ordinary sets, products, coproducts, subsets, `Y^X`, and `Hom_Set(X, Y)`.
 Products and subsets must delegate to the categorical constructions that create them.
@@ -287,6 +303,74 @@ Do not duplicate the codomain or inclusion data in storage fields.
 Implement the general mathematical notion.
 Recover special cases through restriction, category refinement, or specialized functors.
 Do not patch only the example that exposed a missing general construction.
+
+Prefer categorical and homological definitions over element-wise tests:
+
+- use a kernel instead of testing that every output is zero;
+- use a cokernel instead of a quotient presentation;
+- use vanishing terms in an exact sequence instead of a presentation-specific isomorphism test;
+- use fibers, cofibers, pullbacks, limits, and colimits when they state the general definition.
+
+The public definition must remain meaningful in categories without elements.
+Element-wise formulas can implement or prove consequences of that definition.
+
+## Semantic representations and computation boundaries
+
+A matrix is a basis-dependent representation.
+A matrix is not a morphism, bilinear form, quadratic form, or tensor.
+Public APIs accept and return the semantic mathematical object.
+
+Use these boundaries:
+
+- compare elements through their parent and element interface, not their coordinates;
+- compare arrows as arrows, not by comparing representing matrices;
+- compute `f.kernel()`, `f.image()`, and `f.cokernel()` as semantic objects;
+- ask `f.is_surjective()` instead of comparing a presentation of `f.image()` with `f.codomain()`;
+- evaluate a form as a callable hom element;
+- retain a tensor as a tensor and derive a matrix only after a basis is chosen.
+
+Lower a semantic object to coordinates or a matrix in one private computation boundary.
+Use private implementation hooks such as `_kernel_matrix_` for matrix algorithms.
+Reconstruct the semantic result before returning through the public API.
+Tests and downstream code must not call those hooks or repeat the lowering.
+
+A public constructor for a module or algebra element accepts semantic elements.
+It must not reinterpret a list, tuple, or numerical vector as such an element.
+To form a finite linear combination, obtain the module generators and write `sum(a_i * g_i)`.
+Do not add a differently named helper that accepts coefficient vectors.
+
+Implement scalar change and other functors on semantic objects and arrows.
+Apply the functor before choosing bases and deriving a matrix in the new realization.
+
+## Generality and hypotheses
+
+State the weakest algebraic hypotheses that make an operation valid.
+Parameterize the implementation by the base ring and its category.
+Do not hard-code `ZZ` when the definition or algorithm works over a PID, integral domain, or commutative ring.
+
+A lattice over `R` starts from a finitely generated projective `R`-module with the specified form.
+Free `ZZ`-modules are specimens of that notion, not its definition.
+Select algorithms by proved ring properties, not by identity checks against `ZZ` or `QQ`.
+
+A `W`-valued bilinear form is an arrow from `M tensor_R M` to `W`.
+Its Gram matrix is its representation in a chosen basis.
+Use “inner product” only for a positive-definite symmetric bilinear form.
+Do not assume that a lattice is positive definite, free, based, embedded, or unimodular.
+Distinguish left and right radicals when the form is not symmetric.
+State the symmetry and nondegeneracy hypotheses needed for orthogonal complements, norms, and reflections.
+Use exact coefficient rings and exact arithmetic for form and lattice predicates.
+Do not define definiteness through floating eigenvalues or numerical spectra.
+
+Do not import vector-space equivalences into modules over a general ring.
+A nonzero torsion module can have rank zero.
+A nonzero torsion kernel can have rank zero.
+Therefore, neither `M.rank() == 0` nor `matrix(f).right_kernel().rank() == 0` proves that a module or kernel is zero.
+Use the semantic zero-object or kernel predicate supported by the relevant category.
+
+The same Python realization can define different mathematical objects in different categories.
+For example, `QQ` in `Algebras(ZZ)` and `QQ` in `Algebras(QQ)` have different structure morphisms.
+A scalar-change functor relates them.
+Do not erase the base category from the type, parent, or arrow data.
 
 ## Sage boundary
 
@@ -327,9 +411,9 @@ Use standard hom notation and dispatch.
 Callers use `X.Hom(Y)`.
 Only the owning public dispatch may call the private `_Hom_` method.
 
-Treat private fields as private to their owner or documented subclass contract.
+Treat private fields and private methods as private to their owner or documented subclass contract.
 Ask another object through its public mathematical interface.
-Invoke Python protocols through public syntax such as `f(x)`, `iter(x)`, and `len(x)`.
+Invoke Python protocols through public syntax such as `f(x)` and `iter(x)`.
 
 Give every value the type that names its mathematical role.
 Distinguish categories, objects, elements, arrows, functors, rings, sets, domains, and codomains.
@@ -375,7 +459,8 @@ Keep code direct:
 Do not add compatibility layers, fallbacks, migrations, obsolete aliases, or parallel implementations.
 Fail loudly when required mathematical structure or a dependency is absent.
 
-Do not use runtime `setattr` to assemble the mathematical API.
+Do not use `setattr` to assemble or modify the mathematical API.
+Do not use `hasattr` to guess which mathematical interface an object supports.
 Do not recover mathematical structure from storage fields.
 Fix a repeated defect at its category, functor, or construction owner.
 
@@ -399,6 +484,14 @@ Read the test guidelines before editing a test file.
 Every assertion must state a mathematical proposition or an essential type invariant.
 Test the real category compiler and public API.
 
+Every expected mathematical fact needs an independent oracle.
+Use a source that you inspected, with a theorem, section, table, or page citation when available.
+Sage behavior can guide a realization, but Sage parity is not an oracle for repository-owned mathematics.
+Never change an expected mathematical fact because the implementation returned another value.
+
+Use canonical mathematical objects when they exist.
+An explicit matrix is suitable only when the cited mathematical datum is that matrix or the test concerns its semantic realization.
+
 As applicable, assert:
 
 - category and parent;
@@ -408,7 +501,21 @@ As applicable, assert:
 - functor laws;
 - naturality;
 - universal arrows;
-- mathematical equality.
+- mathematical equality;
+- isomorphisms and classification results;
+- semantic kernels, images, cokernels, and induced maps.
+
+Rank, determinant, signature, parity, dimension, and nonemptiness can be setup guards.
+They do not by themselves prove a richer claim about isomorphism, genus, a discriminant form, a universal construction, or an arrow.
+State and test the stronger semantic claim.
+
+Tests must use semantic objects and public operations.
+Do not assert coordinate arrays, matrix ranks, Python classes, private fields, helper output, or source layout when those are not the public contract.
+Do not use `isinstance`, `hasattr`, `getattr`, or `setattr` in a mathematical test.
+
+Use exact arithmetic and exact equality.
+Do not replace a mathematical equality with a numerical tolerance.
+For an ambiguous computation, combine a cited fixture with an independent formula, construction, or representation.
 
 Use the smallest specimen that distinguishes correct behavior from a plausible failure.
 Use a real Sage process for Sage behavior.
@@ -416,6 +523,7 @@ Use a real Sage process for Sage behavior.
 Do not test implementation layout, diagnostic totals, source text, caches, or correction history.
 Do not add a test whose only purpose is to assert the absence of a previous mistake.
 A passing test is evidence only for the proposition that it executes.
+Do not use mocks, simulations, skipped cases, or expected-failure markers as mathematical evidence.
 
 ## Performance
 

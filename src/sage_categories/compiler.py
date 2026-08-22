@@ -193,7 +193,9 @@ class CategoryCompiler:
                 local_type,
                 predicate=inspect.isfunction,
             )
-            if name not in _IGNORED_METHODS and (not name.startswith("_") or name.startswith("__"))
+            if method.__qualname__.rsplit(".", 1)[0] == local_type.__qualname__
+            and name not in _IGNORED_METHODS
+            and (not name.startswith("_") or name.startswith("__"))
         }
 
     def _routes_from(

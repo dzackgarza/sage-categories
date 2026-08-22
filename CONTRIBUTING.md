@@ -36,6 +36,66 @@ Do not reuse a retired identifier.
 | `POL-MATH-013` | Keep axiomatic truths distinct from runtime algorithms. |
 | `POL-MATH-014` | Cite a standard theorem or reference implementation instead of reproducing its proof as runtime validation. |
 | `POL-MATH-015` | Treat a form as a callable element of its hom object. A matrix can represent a form but cannot define the general notion. |
+| `POL-MATH-016` | Refine a result into a property subcategory only when an exact computation or inspected theorem establishes the property. |
+| `POL-MATH-017` | Return an object in the strongest category established by available mathematics. Do not add certificate classes, proof records, or prose fields. |
+| `POL-MATH-018` | Prefer kernels, cokernels, exact sequences, fibers, cofibers, pullbacks, limits, and colimits over element-wise definitions. |
+| `POL-MATH-019` | State each public definition so it remains meaningful in a category without elements. Treat element-wise formulas as implementations or consequences. |
+| `POL-MATH-020` | Treat one Python realization in different categories as different mathematical objects when their structure maps differ. |
+| `POL-MATH-021` | Preserve the base category and structure morphism in every parent, type, and arrow that depends on them. |
+| `POL-MATH-022` | State the weakest algebraic hypotheses that make a definition or algorithm valid. |
+| `POL-MATH-023` | Open and inspect a mathematical source before adding a definition or citation. Record the exact theorem, section, table, or page that supports it. |
+
+## Semantic representations
+
+| ID | Policy |
+| --- | --- |
+| `POL-REP-001` | Treat a matrix as a basis-dependent representation, not as a morphism, bilinear form, quadratic form, or tensor. |
+| `POL-REP-002` | Accept and return the semantic mathematical object at every public API. |
+| `POL-REP-003` | Compare elements through their parent and element interface, not by unwrapping coordinate vectors. |
+| `POL-REP-004` | Compare and compose arrows as arrows, not by unwrapping their representing matrices. |
+| `POL-REP-005` | Expose `f.kernel()`, `f.image()`, and `f.cokernel()` as semantic objects with their defining arrows. |
+| `POL-REP-006` | Ask `f.is_surjective()` instead of testing whether a presentation of `f.image()` is isomorphic to `f.codomain()`. |
+| `POL-REP-007` | Treat a form as a callable hom element. Derive its matrix only after choosing a basis. |
+| `POL-REP-008` | Retain a tensor as a tensor. Derive a matrix only at a basis-dependent computation boundary. |
+| `POL-REP-009` | Lower a semantic object to coordinates or a matrix once, inside one private computation boundary. |
+| `POL-REP-010` | Keep matrix algorithms behind private hooks such as `_kernel_matrix_`. Do not expose those hooks to callers or tests. |
+| `POL-REP-011` | Reconstruct the semantic object or arrow before returning from a matrix or coordinate computation. |
+| `POL-REP-012` | Do not reinterpret a list, tuple, or numerical vector as a module, algebra, lattice, or tensor element. |
+| `POL-REP-013` | Form `sum(a_i * g_i)` from semantic module generators when a finite linear combination is required. |
+| `POL-REP-014` | Do not provide a coefficient-vector helper that bypasses construction from semantic module generators. |
+| `POL-REP-015` | Do not invent types such as a matrix-specific morphism type. Type the morphism and its matrix representation separately. |
+| `POL-REP-016` | Implement scalar change and other functors on semantic objects and arrows. Derive matrices only after the functor acts and new bases are chosen. |
+
+## Algebraic generality
+
+| ID | Policy |
+| --- | --- |
+| `POL-GEN-001` | Parameterize each construction by its base ring and the category that supplies the required hypotheses. |
+| `POL-GEN-002` | Do not hard-code `ZZ` when the definition or algorithm works over a PID, integral domain, or commutative ring. |
+| `POL-GEN-003` | Select algorithms by proved ring properties, not by identity checks against `ZZ`, `QQ`, or another named ring. |
+| `POL-GEN-004` | Do not import vector-space equivalences into modules over a general ring. |
+| `POL-GEN-005` | Do not infer that a module is zero from `M.rank() == 0`; a nonzero torsion module can have rank zero. |
+| `POL-GEN-006` | Do not infer that `ker(f) = 0` from a zero matrix-nullspace rank; a nonzero torsion kernel can have rank zero. |
+| `POL-GEN-007` | Use matrix-rank criteria for injectivity, surjectivity, or exactness only when the required field hypotheses are established. |
+| `POL-GEN-008` | Use the semantic zero-object, kernel, cokernel, and exactness predicates supplied by the relevant category. |
+| `POL-GEN-009` | Treat `QQ` in `Algebras(ZZ)` and `QQ` in `Algebras(QQ)` as different algebra objects related by scalar change. |
+| `POL-GEN-010` | Preserve infinite algebra-generation data. Do not force a finitely generated presentation onto an algebra such as `QQ` over `ZZ`. |
+| `POL-GEN-011` | Keep rank, dimension, cardinality, and minimum number of module generators distinct. Use each invariant only under its defining hypotheses. |
+
+## Forms and lattices
+
+| ID | Policy |
+| --- | --- |
+| `POL-FORM-001` | Model an `R`-lattice as a finitely generated projective `R`-module `M` with the specified form, not as a free `ZZ`-module. |
+| `POL-FORM-002` | Model a `W`-valued bilinear form as an arrow `M tensor_R M -> W`. Do not replace that arrow with a matrix. |
+| `POL-FORM-003` | Use “inner product” only for a positive-definite symmetric bilinear form. |
+| `POL-FORM-004` | Do not assume that a lattice is positive definite, embedded in a vector space, free, based, or unimodular. |
+| `POL-FORM-005` | Distinguish left and right radicals for a nonsymmetric bilinear form. |
+| `POL-FORM-006` | Define orthogonal complements, norms, and reflections only under the symmetry and nondegeneracy hypotheses they require. |
+| `POL-FORM-007` | Determine definiteness from the exact behavior of the form on elements, not from floating eigenvalues or numerical spectra. |
+| `POL-FORM-008` | Use exact coefficient rings and exact arithmetic for form and lattice predicates. |
+| `POL-FORM-009` | Choose the minimal exact coefficient extension required by the mathematical object. Do not approximate algebraic coefficients by floats. |
+| `POL-FORM-010` | Treat the Gram matrix as the matrix of a form in a chosen basis, not as the form itself. |
 
 ## Category ownership and inheritance
 
@@ -117,6 +177,10 @@ Do not reuse a retired identifier.
 | `POL-SET-022` | Support `X.cardinality() == 3`. Do not require `X.cardinality().value == 3`. |
 | `POL-SET-023` | Give every object of `Sets()` the complete `Sets.ObjectType` method surface, including products, coproducts, subsets, exponentials, and hom objects. |
 | `POL-SET-024` | Make set products and subsets delegate to the categorical product and subobject constructions instead of defining parallel APIs. |
+| `POL-SET-025` | Make cardinalities an ordered semiring of finite, infinite, symbolic, and unknown values, not integer wrappers. |
+| `POL-SET-026` | Let cardinal arithmetic, equality, and order return `Unknown` when the available data does not decide the result. |
+| `POL-SET-027` | Use `len()` only for a finite sequence whose order is part of its meaning. Use `cardinality()` for every mathematical set. |
+| `POL-SET-028` | When `rank()` or `ngens()` counts a mathematical set, return its cardinality rather than a sequence length. |
 
 ## Sage boundary
 
@@ -132,6 +196,8 @@ Do not reuse a retired identifier.
 | `POL-SAGE-008` | Keep Sage's category runtime only for dynamic classes, refinement, joins, and construction support. |
 | `POL-SAGE-009` | Preserve Sage `Parent`, `Element`, homsets, morphisms, and coercion where they implement the owned model. |
 | `POL-SAGE-010` | Use Sage's exact algorithms before writing a parallel local implementation. |
+| `POL-SAGE-011` | Use Sage's canonical mathematical object when it exists. Do not replace it with an arbitrary matrix, vector, list, or tuple. |
+| `POL-SAGE-012` | Treat agreement with Sage or a Sage doctest as secondary evidence. It is not an independent mathematical oracle for owned behavior. |
 
 ## Public API and types
 
@@ -177,7 +243,7 @@ Do not reuse a retired identifier.
 | `POL-CODE-010` | Fix a repeated defect at its mathematical owner, not at each call site. |
 | `POL-CODE-011` | Fail loudly when required mathematical structure or a dependency is absent. |
 | `POL-CODE-012` | Do not inspect `__dict__` or recover mathematical structure from storage fields. |
-| `POL-CODE-013` | Do not use `setattr` to assemble mathematical APIs after class construction. |
+| `POL-CODE-013` | Do not use `setattr` to assemble or modify a mathematical API. Define the method on its owning category or class. |
 | `POL-CODE-014` | Keep a matrix distinct from the morphism it represents. |
 | `POL-CODE-015` | Keep coordinates distinct from elements of their parent. |
 | `POL-CODE-016` | Lower to a computation representation once and reconstruct the mathematical result once. |
@@ -191,6 +257,7 @@ Do not reuse a retired identifier.
 | `POL-CODE-024` | Use an assertion for a violated mathematical precondition. Do not add `try`/`except`, fallback values, or recovery branches. |
 | `POL-CODE-025` | When ownership is wrong, stop runtime debugging and repair `Cat`, arrow categories, method inheritance, and `Sets()` in dependency order. |
 | `POL-CODE-026` | During a foundational migration, move each required behavior to its new owner before deleting its old implementation. |
+| `POL-CODE-027` | Do not use `hasattr` to guess mathematical capabilities. Ask category membership or call the required owned protocol. |
 
 ## Tests and performance
 
@@ -206,6 +273,22 @@ Do not reuse a retired identifier.
 | `POL-TEST-008` | Use a real Sage process for Sage behavior. |
 | `POL-TEST-009` | Do not add a test that only asserts the absence of a previous mistake. |
 | `POL-TEST-010` | Treat a passing test as evidence only for the proposition it executes. |
+| `POL-TEST-011` | Give every mathematical expected value an independent oracle: an inspected source, a theorem-derived formula, or an independently verified canonical fixture. |
+| `POL-TEST-012` | Cite the exact theorem, section, table, or page that fixes a literature-based test value. |
+| `POL-TEST-013` | Inspect the cited source before writing the fixture. Do not reconstruct a citation or expected value from memory. |
+| `POL-TEST-014` | Use Sage parity only as a secondary check. Do not make the implementation under test or Sage's matching output its own oracle. |
+| `POL-TEST-015` | Never change an expected mathematical fact to match the implementation output. Repair the implementation or establish a better oracle. |
+| `POL-TEST-016` | Use a canonical object or a source-defined fixture. Use a matrix fixture only when the source datum is that matrix or the test constructs its semantic realization. |
+| `POL-TEST-017` | Use rank, determinant, signature, parity, dimension, and nonemptiness only as guards when the claim under test is stronger. |
+| `POL-TEST-018` | Assert isomorphism, classification data, action, semantic kernel, semantic cokernel, or a universal arrow when that is the mathematical claim. |
+| `POL-TEST-019` | Test through the public semantic API. Do not assert coordinate arrays, matrix ranks, private hooks, concrete classes, helper calls, or field layout. |
+| `POL-TEST-020` | Do not use `is not None`, `len(x) > 0`, `isinstance`, `hasattr`, `getattr`, or `setattr` as the main evidence for a mathematical claim. |
+| `POL-TEST-021` | Use exact arithmetic and exact equality for exact mathematical claims. |
+| `POL-TEST-022` | Cross-check an ambiguous expected fact through an independent theorem, implementation, or representation. |
+| `POL-TEST-023` | Do not use mocks, simulations, skipped tests, or expected failures as evidence for mathematical behavior. |
+| `POL-TEST-024` | Test repository-owned behavior. Do not spend assertions re-proving Sage, Python, or a cited theorem in isolation. |
+| `POL-TEST-025` | Keep an assertion only if a plausible mathematically wrong implementation can fail it. |
+| `POL-TEST-026` | Let a citation establish the oracle. Assert the resulting mathematical fact rather than the citation text or source layout. |
 | `POL-PERF-001` | Measure performance with wall time as a function of input size. |
 | `POL-PERF-002` | Use call counts only to locate repeated work. Do not use them as efficiency evidence. |
 | `POL-PERF-003` | Preserve code that displays the mathematical sequence when a faster form hides it. |

@@ -165,6 +165,13 @@ class MathematicalObject:
             self._structural_images[key] = value
         return value
 
+    def implementation_in(self, category: Category) -> MathematicalObject:
+        """Return this object's canonical implementation in ``category``."""
+        from sage_categories.compiler import category_compiler
+
+        route = category_compiler().implementation_route(self.category(), category)
+        return self._image_along(route)
+
 
 class MathematicalElement(MathematicalObject):
     """An element of a mathematical object."""
@@ -221,6 +228,24 @@ class Arrow(MathematicalElement):
     def _is_arrow_in(self, category: Category) -> bool:
         base = self.base_category()
         return base is category or base.is_subcategory(category)
+
+    def _image_along(
+        self,
+        route: tuple[StructuralFunctor, ...],
+    ) -> MathematicalObject:
+        value = self
+        for functor in route:
+            codomain = functor.codomain()
+            key = id(codomain)
+            cached = self._structural_images.get(key)
+            if cached is not None:
+                assert codomain.contains_arrow(cached)
+                value = cached
+                continue
+            value = functor.on_morphism(value)
+            assert codomain.contains_arrow(value)
+            self._structural_images[key] = value
+        return value
 
     def __mul__(self, first: Arrow) -> Arrow:
         """Return this arrow after ``first``."""

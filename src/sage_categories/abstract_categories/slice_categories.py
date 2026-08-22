@@ -150,9 +150,7 @@ class CosliceHomCategory(HomCategory):
         target = self.codomain()
         assert category.contains_coslice_object(source)
         assert category.contains_coslice_object(target)
-        assert right in category.ambient_category().Hom(
-            source.object(), target.object()
-        )
+        assert right in category.ambient_category().Hom(source.object(), target.object())
         return self.ObjectType(hom_category=self, varying_arrow=right)
 
     def identity(
@@ -544,9 +542,7 @@ def Superobject(costructure_morphism: Arrow) -> SliceObject:
         assert is_restricted_hom_category(monomorphisms)
         costructure_morphism = monomorphisms(costructure_morphism)
     superobjects = category.Superobjects(costructure_morphism.domain())
-    assert superobjects.is_subcategory(
-        category.CosliceUnder(costructure_morphism.domain())
-    )
+    assert superobjects.is_subcategory(category.CosliceUnder(costructure_morphism.domain()))
     return superobjects(costructure_morphism)
 
 
@@ -576,7 +572,5 @@ def Covered(costructure_morphism: Arrow) -> SliceObject:
         assert is_restricted_hom_category(epimorphisms)
         costructure_morphism = epimorphisms(costructure_morphism)
     covered_objects = category.CoveredObjects(costructure_morphism.domain())
-    assert covered_objects.is_subcategory(
-        category.CosliceUnder(costructure_morphism.domain())
-    )
+    assert covered_objects.is_subcategory(category.CosliceUnder(costructure_morphism.domain()))
     return covered_objects(costructure_morphism)

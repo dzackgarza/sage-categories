@@ -25,6 +25,11 @@ Work in mathematical dependency order:
 The current implementation surface ends at `Sets()`.
 Complete this foundation before extending the theory graph.
 
+Use later structures only as vertical acceptance examples.
+An algebra's cardinality must eventually come from its structural path to `Sets()`.
+A lattice isometry must eventually pass through module homs to set homs.
+These examples test the foundation; they do not authorize implementation of algebras, modules, or lattices now.
+
 The arrow-category foundation includes:
 
 - arrow categories and commuting squares;
@@ -106,18 +111,24 @@ For each category `C`:
 The same architecture applies to objects, elements, and arrows.
 Do not solve one surface with a mechanism that cannot support the other two.
 
-Treat the category-level arrow constructions as categories and therefore as objects of `Cat`.
-This includes `Ar(C)`, its endomorphism and automorphism variants, `Fun(C, D)`, and the hom categories.
-Do not assume that a hom category is a set.
-Only a set-valued specialization may supply that conclusion.
+The following are categories and therefore objects of `Cat`:
+
+- `Ar(C)`, `EndAr(C)`, and `AutAr(C)`;
+- `Fun(C, D)`;
+- `Hom_C(x, y)`.
+
+Use `HomCatType`, not `HomSetType`, at the `Cat` level.
+For example, a hom category between sheaves can have natural transformations as its objects.
+Only `Sets()` identifies its hom objects with sets of functions.
 
 The `Cat` level supplies the uniform category constructors:
 
 - `HomCategory()`, `EndCategory()`, and `AutCategory()`;
 - `ArrowCategory()`, `EndArrowCategory()`, and `AutArrowCategory()`.
 
-The generic arrow implementation owns its domain and codomain.
-Route general arrow predicates through category containment when the predicate names an arrow subcategory.
+The generic `ArrowType` stores its domain and codomain and exposes `domain()` and `codomain()`.
+If an arrow predicate names a subcategory, implement it as containment in that subcategory.
+For example, test `f in C.Monomorphisms()` instead of inspecting the Python class of `f`.
 Prefer an arrow or functor formulation when the mathematical definition names a relation or transport.
 
 For each functor `F: C -> D`:
@@ -163,12 +174,13 @@ Let each apex inherit methods from the category in which it lives.
 Use functor composition and natural transformations to move structure.
 Do not create a separate method-propagation system for constructions.
 
-For a construction functor `F` with codomain `C`, `F(D)` is an object of `Image(F)`.
+For a construction functor `F: Diag(C) -> C`, give `F(D)` the parent `Image(F)`.
 The immediate structural supercategory of `Image(F)` is `C`.
-Its image in `C` is the apex constructed from the diagram `D`.
+Construct the corresponding object of `C` from the diagram `D`.
+This applies to products, coproducts, limits, and colimits.
 
-A covering object is an object together with its epimorphism.
-The epimorphism alone is not the covering object.
+A covering object of `Y` is a pair `(X, p: X -> Y)` with `p` an epimorphism.
+It is not the arrow `p` alone.
 
 Implement constructions for arbitrary small diagrams.
 Finite diagrams are specimens, not the general interface.
@@ -222,12 +234,25 @@ The power set is the corresponding exponential into the two-element set:
 
 Construct set maps from a well-typed callable or explicit mapping data.
 Neither representation requires enumeration of the domain.
+In particular, a map `QQ -> ZZ` can use a callable rule even though no explicit table exists.
 
 The resulting set objects own their cardinality rules.
-For example, products, coproducts, and exponentials implement multiplication, addition, and exponentiation of cardinalities.
+They must satisfy, when the cardinal arithmetic is known,
+
+\[
+\#(X\times Y)=\#X\,\#Y,\qquad
+\#(X\sqcup Y)=\#X+\#Y,\qquad
+\#(Y^X)=(\#Y)^{\#X}.
+\]
+
 The cardinality functor transports those results; it does not contain construction-specific cases.
-Compare a cardinality directly with integers and other cardinalities.
-Do not require a separate value accessor.
+Write `X.cardinality() == 3`.
+Do not write `X.cardinality().value == 3`.
+
+Every object whose parent is `Sets()` receives the complete `Sets.ObjectType` method surface.
+This includes ordinary sets, products, coproducts, subsets, `Y^X`, and `Hom_Set(X, Y)`.
+Products and subsets must delegate to the categorical constructions that create them.
+They must not define parallel set APIs.
 
 Propagate these operations along structural functors and universal constructions.
 Do not implement a second copy of a set operation in a higher category.
@@ -299,6 +324,8 @@ Name an accessor for the exact object or arrow that it returns.
 
 Use standard hom notation and dispatch.
 `X.Hom(Y)` takes `Y` as its codomain and delegates to `X._Hom_(Y)`.
+Callers use `X.Hom(Y)`.
+Only the owning public dispatch may call the private `_Hom_` method.
 
 Treat private fields as private to their owner or documented subclass contract.
 Ask another object through its public mathematical interface.
@@ -308,10 +335,12 @@ Give every value the type that names its mathematical role.
 Distinguish categories, objects, elements, arrows, functors, rings, sets, domains, and codomains.
 
 Never use `object` as a type.
-Use `Any` only for a parameter that genuinely accepts every input, such as an equality or membership candidate.
+Use `Any` only for a parameter that genuinely accepts every input.
+The normal examples are the candidate parameters of `__eq__` and `__contains__`.
 Never return `Any`.
 
 Use `Self`, `None`, or a type for the returned mathematical object.
+For example, return the element type of `NN`, `ZZ`, or `RR` for a natural number, integer, or real number.
 Do not replace an exact mathematical result with `float` or a built-in container type.
 Use the mathematical collection type: set, ordered set, multiset, or another named structure.
 
@@ -319,7 +348,8 @@ Primitive types can occur inside a private implementation boundary.
 No external consumer may depend on that private signature.
 
 Create a new type when it names a genuine mathematical object.
-Do not create a constructor-data wrapper only to make an invalid input signature type-check.
+Do not wrap a union of invalid constructor inputs in a new engineering type.
+Replace the invalid inputs with the mathematical object that the constructor requires.
 
 Treat a type error as evidence about the mathematical model or import boundary.
 Fix the owner, type hierarchy, return contract, import path, or missing declaration.
@@ -354,8 +384,10 @@ Do not use `isinstance` for mathematical classification.
 Use the owned public interface and categorical containment.
 
 Use assertions for mathematical preconditions, functionality gates, and type narrowing.
-An assertion must state a mathematical fact whose truth does not change with the code layout.
-Do not add exception-catching or recovery branches around a violated mathematical precondition.
+Write `assert x in C` when membership in `C` is the required fact.
+Do not replace it with `assert isinstance(x, C.ObjectType)`.
+The assertion must remain true when the Python implementation class changes.
+Do not add `try`/`except`, fallback values, or recovery branches for a violated mathematical precondition.
 
 Preserve exact arithmetic until an explicit numerical boundary.
 Keep precision parameters at that boundary.
@@ -412,8 +444,9 @@ The first deliverable of a work unit is a falsifiable specimen.
 When a correction invalidates a foundational assumption, stop the local patch.
 Reconstruct the requested mathematical object and resume from the corrected model.
 
-Settle the category graph, mathematical ownership, and type relations before runtime debugging.
-During a foundational migration, preserve each required mathematical behavior through its new owner.
+If the category graph or method owner is wrong, stop runtime debugging.
+Fix `Cat`, the arrow categories, the method compiler, and `Sets()` in dependency order.
+During that migration, move each required behavior to its new owner before deleting its old implementation.
 
 Continue while the next in-scope action is clear and safe.
 Do not stop at an administrative artifact when implementation remains.

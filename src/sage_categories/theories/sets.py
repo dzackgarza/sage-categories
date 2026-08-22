@@ -39,7 +39,6 @@ from sage_categories.theories.cardinals import (
     Cardinal,
     Cardinals,
     Decision,
-    Unknown,
     UnknownCardinality,
     cardinal,
 )
@@ -50,7 +49,6 @@ from sage_categories.values import (
     MembershipInput,
     registered_value,
 )
-
 
 type SetElementInput = Any
 type SetMapRule = Callable[[SetElementInput], SetElementInput]
@@ -269,15 +267,11 @@ class SetSubset(SetFunction, SetObject):
 
     def union(self, other: SetSubset) -> SetSubset:
         assert self.base_set() is other.base_set()
-        return self.power_set().from_predicate(
-            lambda member: _decision_or(self.contains(member), other.contains(member))
-        )
+        return self.power_set().from_predicate(lambda member: _decision_or(self.contains(member), other.contains(member)))
 
     def intersection(self, other: SetSubset) -> SetSubset:
         assert self.base_set() is other.base_set()
-        return self.power_set().from_predicate(
-            lambda member: _decision_and(self.contains(member), other.contains(member))
-        )
+        return self.power_set().from_predicate(lambda member: _decision_and(self.contains(member), other.contains(member)))
 
     def complement(self) -> SetSubset:
         return self.power_set().from_predicate(lambda member: _decision_not(self.contains(member)))
@@ -1264,9 +1258,7 @@ def ProductOfSets(diagram: Functor) -> ProductPresentation:
         return SetMap(
             source,
             apex,
-            lambda member: apex.element(
-                lambda index: _cone_component_value(other, index, member)
-            ),
+            lambda member: apex.element(lambda index: _cone_component_value(other, index, member)),
         )
 
     return Product(cone, mediate)
@@ -1318,9 +1310,7 @@ def LimitOfSets(diagram: Functor) -> ProductPresentation:
         return SetMap(
             source,
             apex,
-            lambda member: apex.element(
-                lambda index: _cone_component_value(other, index, member)
-            ),
+            lambda member: apex.element(lambda index: _cone_component_value(other, index, member)),
         )
 
     return Product(cone, mediate)

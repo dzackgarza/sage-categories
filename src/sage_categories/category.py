@@ -33,7 +33,9 @@ if TYPE_CHECKING:
         HomCategoryFamily,
     )
     from sage_categories.abstract_categories.products import (
+        ColimitObject,
         CoproductPresentation,
+        LimitObject,
         ProductPresentation,
     )
     from sage_categories.abstract_categories.slice_categories import (
@@ -509,6 +511,96 @@ class Category(MathematicalObject):
         """Return the chosen colimit presentation of ``diagram``."""
         assert diagram.codomain() is self
         assert False, f"{self} does not define chosen colimits"
+
+    def equalizer(self, first: Arrow, second: Arrow) -> LimitObject:
+        """Return the chosen equalizer of two parallel arrows."""
+        from sage_categories.abstract_categories.functors import InclusionFunctor
+        from sage_categories.abstract_categories.products import (
+            DiagramCategory,
+            is_limits_of_category,
+        )
+
+        assert first in self.ArrowCategory() and second in self.ArrowCategory()
+        assert first.domain() is second.domain()
+        assert first.codomain() is second.codomain()
+        index = DiagramCategory(
+            self,
+            (first.domain(), first.codomain()),
+            (first, second),
+        )
+        diagram = InclusionFunctor(index, self)
+        result = self.LimitFunctor(index)(diagram)
+        image = self.Limits(index)
+        assert is_limits_of_category(image)
+        assert image.contains_limit(result)
+        return result
+
+    def coequalizer(self, first: Arrow, second: Arrow) -> ColimitObject:
+        """Return the chosen coequalizer of two parallel arrows."""
+        from sage_categories.abstract_categories.functors import InclusionFunctor
+        from sage_categories.abstract_categories.products import (
+            DiagramCategory,
+            is_colimits_of_category,
+        )
+
+        assert first in self.ArrowCategory() and second in self.ArrowCategory()
+        assert first.domain() is second.domain()
+        assert first.codomain() is second.codomain()
+        index = DiagramCategory(
+            self,
+            (first.domain(), first.codomain()),
+            (first, second),
+        )
+        diagram = InclusionFunctor(index, self)
+        result = self.ColimitFunctor(index)(diagram)
+        image = self.Colimits(index)
+        assert is_colimits_of_category(image)
+        assert image.contains_colimit(result)
+        return result
+
+    def pullback(self, first: Arrow, second: Arrow) -> LimitObject:
+        """Return the chosen pullback of arrows with one codomain."""
+        from sage_categories.abstract_categories.functors import InclusionFunctor
+        from sage_categories.abstract_categories.products import (
+            DiagramCategory,
+            is_limits_of_category,
+        )
+
+        assert first in self.ArrowCategory() and second in self.ArrowCategory()
+        assert first.codomain() is second.codomain()
+        index = DiagramCategory(
+            self,
+            (first.domain(), second.domain(), first.codomain()),
+            (first, second),
+        )
+        diagram = InclusionFunctor(index, self)
+        result = self.LimitFunctor(index)(diagram)
+        image = self.Limits(index)
+        assert is_limits_of_category(image)
+        assert image.contains_limit(result)
+        return result
+
+    def pushout(self, first: Arrow, second: Arrow) -> ColimitObject:
+        """Return the chosen pushout of arrows with one domain."""
+        from sage_categories.abstract_categories.functors import InclusionFunctor
+        from sage_categories.abstract_categories.products import (
+            DiagramCategory,
+            is_colimits_of_category,
+        )
+
+        assert first in self.ArrowCategory() and second in self.ArrowCategory()
+        assert first.domain() is second.domain()
+        index = DiagramCategory(
+            self,
+            (first.domain(), first.codomain(), second.codomain()),
+            (first, second),
+        )
+        diagram = InclusionFunctor(index, self)
+        result = self.ColimitFunctor(index)(diagram)
+        image = self.Colimits(index)
+        assert is_colimits_of_category(image)
+        assert image.contains_colimit(result)
+        return result
 
     def Biproducts(self, diagram: Functor) -> Category:
         """Return chosen biproduct presentations for ``diagram``."""

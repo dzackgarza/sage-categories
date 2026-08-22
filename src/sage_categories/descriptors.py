@@ -30,4 +30,5 @@ class ForwardedMethod:
         if instance is None:
             return self
         image = instance._image_along(self._route)
-        return self._method.__get__(image)
+        bound: MethodType = image.__getattribute__(self._method.__name__)
+        return bound

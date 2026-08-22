@@ -950,9 +950,14 @@ class CoproductSet(SetObject):
 class LimitSet(ProductSet):
     """The compatible families that form a limit in ``Sets``."""
 
-    def __init__(self, diagram: Functor) -> None:
+    def __init__(
+        self,
+        diagram: Functor,
+        *,
+        cardinality: Cardinal | None = None,
+    ) -> None:
         super().__init__(diagram)
-        self._cardinality = UnknownCardinality()
+        self._cardinality = UnknownCardinality() if cardinality is None else cardinality
 
     def contains(self, member: SetElementInput) -> Decision:
         product_membership = super().contains(member)
@@ -993,6 +998,21 @@ class ColimitElement(MathematicalObject):
     def representative(self) -> CoproductElement:
         return self._representative
 
+    def __eq__(self, other: Any) -> bool:
+        if other is self:
+            return True
+        value = registered_value(other)
+        if value is None or not ColimitElements().contains_colimit_element(value):
+            return False
+        if value.colimit() is not self._colimit:
+            return False
+        answer = self._colimit.equivalent(self, value)
+        assert answer is not UNKNOWN, "equality in this colimit is not decidable from its presentation"
+        return answer
+
+    def __hash__(self) -> int:
+        return hash(id(self._colimit))
+
 
 class ColimitElementsCategory(Category):
     def __init__(self) -> None:
@@ -1015,10 +1035,15 @@ def ColimitElements() -> ColimitElementsCategory:
 class ColimitSet(SetObject):
     """The quotient presentation of a small Set diagram's coproduct."""
 
-    def __init__(self, diagram: Functor) -> None:
+    def __init__(
+        self,
+        diagram: Functor,
+        *,
+        cardinality: Cardinal | None = None,
+    ) -> None:
         self._diagram = diagram
         self._coproduct = CoproductSet(diagram)
-        super().__init__(category=Sets(), cardinality=UnknownCardinality())
+        super().__init__(category=Sets(), cardinality=cardinality)
 
     def diagram(self) -> Functor:
         return self._diagram
@@ -1033,12 +1058,94 @@ class ColimitSet(SetObject):
         value = registered_value(member)
         return value is not None and ColimitElements().contains_colimit_element(value) and value.colimit() is self
 
+    def equivalent(
+        self,
+        left: ColimitElement,
+        right: ColimitElement,
+    ) -> Decision:
+        assert left.colimit() is self and right.colimit() is self
+        left_representative = left.representative()
+        right_representative = right.representative()
+        if _same_coproduct_term(left_representative, right_representative):
+            return True
+        arrows = index_arrows(self._diagram.domain())
+        if arrows.is_finite() is not True:
+            return UNKNOWN
+        if _colimit_terms_are_related(
+            self._diagram,
+            arrows,
+            left_representative,
+            right_representative,
+        ):
+            return True
+        if self._coproduct.is_finite() is not True:
+            return UNKNOWN
+        representatives = tuple(self._coproduct)
+        reached = (left_representative,)
+        while True:
+            enlarged = tuple(
+                candidate
+                for candidate in representatives
+                if not any(_same_coproduct_term(candidate, known) for known in reached)
+                and any(
+                    _colimit_terms_are_related(
+                        self._diagram,
+                        arrows,
+                        candidate,
+                        known,
+                    )
+                    for known in reached
+                )
+            )
+            if not enlarged:
+                return False
+            reached = (*reached, *enlarged)
+            if any(_same_coproduct_term(right_representative, known) for known in reached):
+                return True
+
+    def __iter__(self) -> Iterator[SetElementInput]:
+        assert self._coproduct.is_finite() is True
+        chosen: tuple[ColimitElement, ...] = ()
+        for representative in self._coproduct:
+            value = registered_value(representative)
+            assert value is not None and CoproductElements().contains_coproduct_element(value)
+            candidate = ColimitElement(self, value)
+            if any(self.equivalent(candidate, known) is True for known in chosen):
+                continue
+            chosen = (*chosen, candidate)
+            yield candidate
+
     def injection(self, index: SetElementInput) -> SetFunction:
         return SetMap(
             self._coproduct.cofactor(index),
             self,
             lambda value: self.element(index, value),
         )
+
+
+def _same_coproduct_term(
+    left: CoproductElement,
+    right: CoproductElement,
+) -> bool:
+    return left.index() is right.index() and left.value() == right.value()
+
+
+def _colimit_terms_are_related(
+    diagram: Functor,
+    arrows: SetObject,
+    left: CoproductElement,
+    right: CoproductElement,
+) -> bool:
+    for candidate in arrows:
+        arrow = registered_value(candidate)
+        assert arrow is not None and diagram.domain().contains_arrow(arrow)
+        image = diagram(arrow)
+        assert Sets().contains_function(image)
+        if left.index() is arrow.domain() and right.index() is arrow.codomain() and image(left.value()) == right.value():
+            return True
+        if right.index() is arrow.domain() and left.index() is arrow.codomain() and image(right.value()) == left.value():
+            return True
+    return False
 
 
 def index_objects(index_category: Category) -> SetObject:
@@ -1133,9 +1240,13 @@ def CoproductOfSets(diagram: Functor) -> CoproductPresentation:
     return Coproduct(cocone, mediate)
 
 
-def LimitOfSets(diagram: Functor) -> ProductPresentation:
+def LimitOfSets(
+    diagram: Functor,
+    *,
+    cardinality: Cardinal | None = None,
+) -> ProductPresentation:
     assert diagram.codomain() is Sets()
-    apex = LimitSet(diagram)
+    apex = LimitSet(diagram, cardinality=cardinality)
     cone = Cone(diagram, apex, apex.projection)
 
     def mediate(other: ConeObject) -> Arrow:
@@ -1150,9 +1261,13 @@ def LimitOfSets(diagram: Functor) -> ProductPresentation:
     return Product(cone, mediate)
 
 
-def ColimitOfSets(diagram: Functor) -> CoproductPresentation:
+def ColimitOfSets(
+    diagram: Functor,
+    *,
+    cardinality: Cardinal | None = None,
+) -> CoproductPresentation:
     assert diagram.codomain() is Sets()
-    apex = ColimitSet(diagram)
+    apex = ColimitSet(diagram, cardinality=cardinality)
     cocone = Cocone(diagram, apex, apex.injection)
 
     def mediate(other: CoconeObject) -> Arrow:

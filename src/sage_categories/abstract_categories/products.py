@@ -55,6 +55,9 @@ class LimitObject(FunctorImageObject):
     def limit_cone(self) -> ConeObject:
         return self._limit_presentation.limit_cone()
 
+    def projection(self, index: MathematicalObject) -> Arrow:
+        return self._limit_presentation.projection(index)
+
     def universal_morphism(self, cone: ConeObject) -> Arrow:
         return self._limit_presentation.universal_morphism(cone)
 
@@ -86,6 +89,9 @@ class ColimitObject(FunctorImageObject):
 
     def colimit_cocone(self) -> CoconeObject:
         return self._colimit_presentation.colimit_cocone()
+
+    def injection(self, index: MathematicalObject) -> Arrow:
+        return self._colimit_presentation.injection(index)
 
     def universal_morphism(self, cocone: CoconeObject) -> Arrow:
         return self._colimit_presentation.universal_morphism(cocone)

@@ -243,9 +243,9 @@ class SympySetObject(SetObject):
 
     def contains(self, member: SetElementInput) -> Decision:
         proposition = self.membership_proposition(member)
-        if proposition == True:
+        if proposition in (True,):
             return True
-        if proposition == False:
+        if proposition in (False,):
             return False
         return UNKNOWN
 

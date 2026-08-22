@@ -7,7 +7,7 @@ implementations through explicit structural functors.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Iterator, Mapping
 from typing import TYPE_CHECKING, TypeIs
 
 from sage_categories.abstract_categories.category_constructions import (
@@ -26,9 +26,9 @@ from sage_categories.theories.sets import (
     FiniteSet,
     FiniteSets,
     NaturalNumbers,
-    SetElementInput,
+    SetElement,
+    SetElements,
     SetFunction,
-    SetMapDefinition,
     SetObject,
     Sets,
     is_set_hom_category,
@@ -39,6 +39,7 @@ from sage_categories.values import (
     Decision,
     MathematicalElement,
     MathematicalObject,
+    MembershipInput,
     registered_value,
 )
 
@@ -48,10 +49,77 @@ if TYPE_CHECKING:
     )
     from sage_categories.theories.cardinals import Cardinal
 
-type OrderRelation = Callable[[SetElementInput, SetElementInput], bool]
-type EnumerationRule = Callable[[int], SetElementInput]
-type PositionRule = Callable[[SetElementInput], int]
-type PosetMapDefinition = SetMapDefinition | SetFunction
+type OrderRelation = Callable[[SetElement, SetElement], bool]
+type PosetMorphismDefinition = (
+    Callable[[PosetElement], PosetElement]
+    | Mapping[PosetElement, PosetElement]
+)
+
+
+class PosetElement(MathematicalElement):
+    """An element of one partially ordered set."""
+
+    def __init__(
+        self,
+        *,
+        ambient_object: PosetObject,
+        set_element: SetElement,
+    ) -> None:
+        assert ambient_object in PartiallyOrderedSets()
+        underlying_set = PartiallyOrderedSets().underlying_set(ambient_object)
+        assert set_element.ambient_set() is underlying_set
+        assert underlying_set.contains(set_element) is True
+        self._set_element = set_element
+        super().__init__(
+            category=PosetElements(),
+            ambient_object=ambient_object,
+        )
+
+    def _set_implementation(self) -> SetElement:
+        return self._set_element
+
+    def ambient_poset(self) -> PosetObject:
+        ambient = self.ambient_object()
+        assert PartiallyOrderedSets().contains_poset(ambient)
+        return ambient
+
+    def __le__(self, other: PosetElement) -> bool:
+        return self.ambient_poset()._is_lequal(self, other)
+
+    def __lt__(self, other: PosetElement) -> bool:
+        return self <= other and self != other
+
+    def __repr__(self) -> str:
+        return repr(self._set_element)
+
+
+class PosetElementsCategory(Category):
+    """The total category of elements of partially ordered sets."""
+
+    ObjectType = PosetElement
+
+    def __init__(self) -> None:
+        super().__init__(object_type=PosetElement)
+
+    def contains_poset_element(
+        self,
+        candidate: MathematicalObject,
+    ) -> TypeIs[PosetElement]:
+        return candidate in self
+
+    def __repr__(self) -> str:
+        return "Elements of partially ordered sets"
+
+
+_POSET_ELEMENTS: PosetElementsCategory | None = None
+
+
+def PosetElements() -> PosetElementsCategory:
+    global _POSET_ELEMENTS
+
+    if _POSET_ELEMENTS is None:
+        _POSET_ELEMENTS = PosetElementsCategory()
+    return _POSET_ELEMENTS
 
 
 class PosetObject(MathematicalObject):
@@ -67,32 +135,47 @@ class PosetObject(MathematicalObject):
         assert underlying_set in Sets()
         self._underlying_set = underlying_set
         self._relation = relation
+        self._elements: dict[int, PosetElement] = {}
         super().__init__(category=category)
 
     def _set_implementation(self) -> SetObject:
         return self._underlying_set
 
-    def le(self, left: SetElementInput, right: SetElementInput) -> bool:
-        assert self._underlying_set.contains(left) is True
-        assert self._underlying_set.contains(right) is True
-        return self._relation(left, right)
+    def element(self, set_element: SetElement) -> PosetElement:
+        assert set_element.ambient_set() is self._underlying_set
+        assert self._underlying_set.contains(set_element) is True
+        key = id(set_element)
+        cached = self._elements.get(key)
+        if cached is None:
+            cached = PartiallyOrderedSets().ElementType(
+                ambient_object=self,
+                set_element=set_element,
+            )
+            self._elements[key] = cached
+        return cached
 
-    def is_lequal(self, left: SetElementInput, right: SetElementInput) -> bool:
-        return self.le(left, right)
+    def contains(self, member: PosetElement) -> Decision:
+        assert PosetElements().contains_poset_element(member)
+        return member.ambient_poset() is self
 
-    def is_less_than(self, left: SetElementInput, right: SetElementInput) -> bool:
-        return self.le(left, right) and left != right
+    def __contains__(self, member: MembershipInput) -> bool:
+        value = registered_value(member)
+        return (
+            value is not None
+            and PosetElements().contains_poset_element(value)
+            and self.contains(value) is True
+        )
 
-    def compare_elements(
-        self,
-        left: SetElementInput,
-        right: SetElementInput,
-    ) -> int | None:
-        if self.le(left, right):
-            return 0 if self.le(right, left) else -1
-        if self.le(right, left):
-            return 1
-        return None
+    def __iter__(self) -> Iterator[PosetElement]:
+        return iter(self.element(member) for member in self._underlying_set)
+
+    def _is_lequal(self, left: PosetElement, right: PosetElement) -> bool:
+        assert self.contains(left) is True
+        assert self.contains(right) is True
+        return self._relation(
+            left._set_implementation(),
+            right._set_implementation(),
+        )
 
     def __repr__(self) -> str:
         return f"Partially ordered {self._underlying_set}"
@@ -123,6 +206,17 @@ class PosetMorphism(Arrow):
     def _set_implementation(self) -> SetFunction:
         return self._underlying_function
 
+    def __call__(self, member: PosetElement) -> PosetElement:
+        source = self.domain()
+        target = self.codomain()
+        category = self.base_category()
+        assert is_partially_ordered_sets_category(category)
+        assert category.contains_poset(source)
+        assert category.contains_poset(target)
+        assert source.contains(member) is True
+        image = self._underlying_function(member._set_implementation())
+        return target.element(image)
+
     def is_order_preserving(self) -> bool:
         return True
 
@@ -133,15 +227,12 @@ class PosetMorphism(Arrow):
         assert is_partially_ordered_sets_category(category)
         assert category.contains_poset(source)
         assert category.contains_poset(target)
-        members = category.underlying_set(source)
-        if members.is_finite() is not True:
+        underlying_set = category.underlying_set(source)
+        if underlying_set.is_finite() is not True:
             return UNKNOWN
-        for left in members:
-            for right in members:
-                if target.le(
-                    self._underlying_function(left),
-                    self._underlying_function(right),
-                ) and not source.le(left, right):
+        for left in source:
+            for right in source:
+                if self(left) <= self(right) and not left <= right:
                     return False
         return True
 
@@ -164,7 +255,10 @@ class PosetMorphism(Arrow):
         inverse = self._underlying_function.inverse()
         hom_category = category.Hom(self.codomain(), self.domain())
         assert is_poset_hom_category(hom_category)
-        return hom_category(inverse)
+        return hom_category.ObjectType(
+            hom_category=hom_category,
+            underlying_function=inverse,
+        )
 
 
 class PosetHomCategory(HomCategory):
@@ -175,13 +269,14 @@ class PosetHomCategory(HomCategory):
 
     def __call__(
         self,
-        definition: PosetMapDefinition,
+        definition: PosetMorphismDefinition | PosetMorphism,
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
     ) -> PosetMorphism:
         existing = registered_value(definition)
-        if existing is not None and self.contains_poset_morphism(existing):
+        if existing is not None:
+            assert self.contains_poset_morphism(existing)
             return existing
         source = self.domain()
         target = self.codomain()
@@ -194,15 +289,21 @@ class PosetHomCategory(HomCategory):
             category.underlying_set(target),
         )
         assert is_set_hom_category(set_hom)
-        if existing is not None:
-            assert Sets().contains_function(existing)
-            underlying = existing
-        else:
-            underlying = set_hom(
-                definition,
-                injective=injective,
-                surjective=surjective,
-            )
+        def underlying_action(member: SetElement) -> SetElement:
+            source_member = source.element(member)
+            if callable(definition):
+                image = definition(source_member)
+            else:
+                image = definition[source_member]
+            assert PosetElements().contains_poset_element(image)
+            assert target.contains(image) is True
+            return image._set_implementation()
+
+        underlying = set_hom(
+            underlying_action,
+            injective=injective,
+            surjective=surjective,
+        )
         return self.ObjectType(
             hom_category=self,
             underlying_function=underlying,
@@ -264,9 +365,11 @@ class ForgetPosetFunctor(StructuralFunctor):
         self,
         source: MathematicalObject,
         element: MathematicalElement,
-    ) -> MathematicalElement:
+    ) -> SetElement:
         assert self._posets.contains_poset(source)
-        return element
+        assert PosetElements().contains_poset_element(element)
+        assert element.ambient_poset() is source
+        return element._set_implementation()
 
     def is_faithful(self) -> bool:
         return True
@@ -284,83 +387,83 @@ class FinitePosetObject(PullbackObject):
 
     def covers(
         self,
-        lower: SetElementInput,
-        upper: SetElementInput,
+        lower: PosetElement,
+        upper: PosetElement,
     ) -> bool:
         return self._realization().covers(lower, upper)
 
-    def lower_covers(self, member: SetElementInput) -> tuple[SetElementInput, ...]:
+    def lower_covers(self, member: PosetElement) -> tuple[PosetElement, ...]:
         return self._realization().lower_covers(member)
 
-    def upper_covers(self, member: SetElementInput) -> tuple[SetElementInput, ...]:
+    def upper_covers(self, member: PosetElement) -> tuple[PosetElement, ...]:
         return self._realization().upper_covers(member)
 
     def common_lower_covers(
         self,
-        members: Iterable[SetElementInput],
-    ) -> tuple[SetElementInput, ...]:
+        members: Iterable[PosetElement],
+    ) -> tuple[PosetElement, ...]:
         return self._realization().common_lower_covers(members)
 
     def common_upper_covers(
         self,
-        members: Iterable[SetElementInput],
-    ) -> tuple[SetElementInput, ...]:
+        members: Iterable[PosetElement],
+    ) -> tuple[PosetElement, ...]:
         return self._realization().common_upper_covers(members)
 
     def open_interval(
         self,
-        lower: SetElementInput,
-        upper: SetElementInput,
-    ) -> tuple[SetElementInput, ...]:
+        lower: PosetElement,
+        upper: PosetElement,
+    ) -> tuple[PosetElement, ...]:
         return self._realization().open_interval(lower, upper)
 
     def closed_interval(
         self,
-        lower: SetElementInput,
-        upper: SetElementInput,
-    ) -> tuple[SetElementInput, ...]:
+        lower: PosetElement,
+        upper: PosetElement,
+    ) -> tuple[PosetElement, ...]:
         return self._realization().closed_interval(lower, upper)
 
     def principal_order_ideal(
         self,
-        member: SetElementInput,
-    ) -> tuple[SetElementInput, ...]:
+        member: PosetElement,
+    ) -> tuple[PosetElement, ...]:
         return self._realization().principal_order_ideal(member)
 
     def principal_order_filter(
         self,
-        member: SetElementInput,
-    ) -> tuple[SetElementInput, ...]:
+        member: PosetElement,
+    ) -> tuple[PosetElement, ...]:
         return self._realization().principal_order_filter(member)
 
     def order_ideal(
         self,
-        members: Iterable[SetElementInput],
-    ) -> tuple[SetElementInput, ...]:
+        members: Iterable[PosetElement],
+    ) -> tuple[PosetElement, ...]:
         return self._realization().order_ideal(members)
 
     def order_filter(
         self,
-        members: Iterable[SetElementInput],
-    ) -> tuple[SetElementInput, ...]:
+        members: Iterable[PosetElement],
+    ) -> tuple[PosetElement, ...]:
         return self._realization().order_filter(members)
 
-    def minimal_elements(self) -> tuple[SetElementInput, ...]:
+    def minimal_elements(self) -> tuple[PosetElement, ...]:
         return self._realization().minimal_elements()
 
-    def maximal_elements(self) -> tuple[SetElementInput, ...]:
+    def maximal_elements(self) -> tuple[PosetElement, ...]:
         return self._realization().maximal_elements()
 
     def has_bottom(self) -> bool:
         return self._realization().has_bottom()
 
-    def bottom(self) -> SetElementInput:
+    def bottom(self) -> PosetElement:
         return self._realization().bottom()
 
     def has_top(self) -> bool:
         return self._realization().has_top()
 
-    def top(self) -> SetElementInput:
+    def top(self) -> PosetElement:
         return self._realization().top()
 
     def is_bounded(self) -> bool:
@@ -372,10 +475,10 @@ class FinitePosetObject(PullbackObject):
     def width(self) -> int:
         return self._realization().width()
 
-    def rank(self, member: SetElementInput | None = None) -> int:
+    def rank(self, member: PosetElement | None = None) -> int:
         return self._realization().rank(member)
 
-    def level_sets(self) -> tuple[tuple[SetElementInput, ...], ...]:
+    def level_sets(self) -> tuple[tuple[PosetElement, ...], ...]:
         return self._realization().level_sets()
 
     def is_ranked(self) -> bool:
@@ -387,10 +490,10 @@ class FinitePosetObject(PullbackObject):
     def is_chain(self) -> bool:
         return self._realization().is_chain()
 
-    def is_chain_of_poset(self, members: Iterable[SetElementInput]) -> bool:
+    def is_chain_of_poset(self, members: Iterable[PosetElement]) -> bool:
         return self._realization().is_chain_of_poset(members)
 
-    def is_antichain_of_poset(self, members: Iterable[SetElementInput]) -> bool:
+    def is_antichain_of_poset(self, members: Iterable[PosetElement]) -> bool:
         return self._realization().is_antichain_of_poset(members)
 
 
@@ -408,11 +511,15 @@ class PartiallyOrderedSetsCategory(Category):
     """Sets equipped with a chosen partial order."""
 
     ObjectType = PosetObject
+    ElementType = PosetElement
 
     def __init__(self) -> None:
         self._forgetful_functor: ForgetPosetFunctor | None = None
         self._finite_posets: FinitePosetsCategory | None = None
-        super().__init__(object_type=PosetObject)
+        super().__init__(
+            object_type=PosetObject,
+            element_type=PosetElement,
+        )
 
     def __call__(
         self,
@@ -463,6 +570,84 @@ class PartiallyOrderedSetsCategory(Category):
         return "Partially ordered sets"
 
 
+type PosetEnumeration = Callable[[int], PosetElement]
+type PosetPosition = Callable[[PosetElement], int]
+type TotalOrderMorphismDefinition = (
+    Callable[[TotallyOrderedSetElement], TotallyOrderedSetElement]
+    | Mapping[TotallyOrderedSetElement, TotallyOrderedSetElement]
+)
+
+
+class TotallyOrderedSetElement(MathematicalElement):
+    """An element of one totally ordered set."""
+
+    def __init__(
+        self,
+        *,
+        ambient_object: TotallyOrderedSetObject,
+        poset_element: PosetElement,
+    ) -> None:
+        assert ambient_object in TotallyOrderedSets()
+        assert poset_element.ambient_poset() is ambient_object._poset_implementation()
+        self._poset_element = poset_element
+        super().__init__(
+            category=TotallyOrderedSetElements(),
+            ambient_object=ambient_object,
+        )
+
+    def _poset_implementation(self) -> PosetElement:
+        return self._poset_element
+
+    def ambient_total_order(self) -> TotallyOrderedSetObject:
+        ambient = self.ambient_object()
+        assert TotallyOrderedSets().contains_total_order(ambient)
+        return ambient
+
+    def position(self) -> int:
+        return self.ambient_total_order().position(self)
+
+    def rank(self) -> int:
+        return self.position()
+
+    def __le__(self, other: TotallyOrderedSetElement) -> bool:
+        return self._poset_element <= other._poset_implementation()
+
+    def __lt__(self, other: TotallyOrderedSetElement) -> bool:
+        return self._poset_element < other._poset_implementation()
+
+    def __repr__(self) -> str:
+        return repr(self._poset_element)
+
+
+class TotallyOrderedSetElementsCategory(Category):
+    """The total category of elements of totally ordered sets."""
+
+    ObjectType = TotallyOrderedSetElement
+
+    def __init__(self) -> None:
+        super().__init__(object_type=TotallyOrderedSetElement)
+
+    def contains_total_order_element(
+        self,
+        candidate: MathematicalObject,
+    ) -> TypeIs[TotallyOrderedSetElement]:
+        return candidate in self
+
+    def __repr__(self) -> str:
+        return "Elements of totally ordered sets"
+
+
+_TOTALLY_ORDERED_SET_ELEMENTS: TotallyOrderedSetElementsCategory | None = None
+
+
+def TotallyOrderedSetElements() -> TotallyOrderedSetElementsCategory:
+    global _TOTALLY_ORDERED_SET_ELEMENTS
+
+    if _TOTALLY_ORDERED_SET_ELEMENTS is None:
+        _TOTALLY_ORDERED_SET_ELEMENTS = TotallyOrderedSetElementsCategory()
+    return _TOTALLY_ORDERED_SET_ELEMENTS
+
+
 class TotallyOrderedSetObject(MathematicalObject):
     """A poset with a chosen total-order enumeration."""
 
@@ -471,42 +656,73 @@ class TotallyOrderedSetObject(MathematicalObject):
         *,
         category: TotallyOrderedSetsCategory,
         poset: PosetObject,
-        element_at: EnumerationRule,
-        position_of: PositionRule,
-        finite_enumeration: tuple[SetElementInput, ...] | None,
+        element_at: PosetEnumeration,
+        position_of: PosetPosition,
+        finite_enumeration: tuple[PosetElement, ...] | None,
     ) -> None:
         self._poset = poset
         self._element_at = element_at
         self._position_of = position_of
         self._finite_enumeration = finite_enumeration
+        self._elements: dict[int, TotallyOrderedSetElement] = {}
         super().__init__(category=category)
 
     def _poset_implementation(self) -> PosetObject:
         return self._poset
 
-    def __getitem__(self, position: int) -> SetElementInput:
+    def element(self, poset_element: PosetElement) -> TotallyOrderedSetElement:
+        assert poset_element.ambient_poset() is self._poset
+        key = id(poset_element)
+        cached = self._elements.get(key)
+        if cached is None:
+            cached = TotallyOrderedSets().ElementType(
+                ambient_object=self,
+                poset_element=poset_element,
+            )
+            self._elements[key] = cached
+        return cached
+
+    def contains(self, member: TotallyOrderedSetElement) -> Decision:
+        assert TotallyOrderedSetElements().contains_total_order_element(member)
+        return member.ambient_total_order() is self
+
+    def __contains__(self, member: MembershipInput) -> bool:
+        value = registered_value(member)
+        return (
+            value is not None
+            and TotallyOrderedSetElements().contains_total_order_element(value)
+            and self.contains(value) is True
+        )
+
+    def __iter__(self) -> Iterator[TotallyOrderedSetElement]:
+        return iter(self.element(member) for member in self._poset)
+
+    def __getitem__(self, position: int) -> TotallyOrderedSetElement:
         assert position >= 0
         member = self._element_at(position)
-        assert self._poset._set_implementation().contains(member) is True
-        return member
+        assert self._poset.contains(member) is True
+        return self.element(member)
 
-    def position(self, member: SetElementInput) -> int:
-        assert self._poset._set_implementation().contains(member) is True
-        position = self._position_of(member)
+    def position(self, member: TotallyOrderedSetElement) -> int:
+        assert self.contains(member) is True
+        position = self._position_of(member._poset_implementation())
         assert position >= 0
         assert self[position] == member
         return position
 
-    def rank(self, member: SetElementInput) -> int:
+    def rank(self, member: TotallyOrderedSetElement) -> int:
         return self.position(member)
 
-    def unrank(self, position: int) -> SetElementInput:
+    def unrank(self, position: int) -> TotallyOrderedSetElement:
         return self[position]
 
     def enumeration_injection(self) -> Arrow:
+        def position_of_set_element(member: SetElement) -> int:
+            return self._position_of(self._poset.element(member))
+
         return EnumerationInjection(
             self._poset._set_implementation(),
-            self.position,
+            position_of_set_element,
         )
 
     def __repr__(self) -> str:
@@ -530,6 +746,20 @@ class TotallyOrderedSetMorphism(Arrow):
     def _poset_implementation(self) -> PosetMorphism:
         return self._poset_morphism
 
+    def __call__(
+        self,
+        member: TotallyOrderedSetElement,
+    ) -> TotallyOrderedSetElement:
+        category = self.base_category()
+        assert is_totally_ordered_sets_category(category)
+        source = self.domain()
+        target = self.codomain()
+        assert category.contains_total_order(source)
+        assert category.contains_total_order(target)
+        assert source.contains(member) is True
+        image = self._poset_morphism(member._poset_implementation())
+        return target.element(image)
+
 
 class TotallyOrderedSetHomCategory(HomCategory):
     """The monotone maps between two totally ordered sets."""
@@ -539,7 +769,7 @@ class TotallyOrderedSetHomCategory(HomCategory):
 
     def __call__(
         self,
-        definition: PosetMapDefinition,
+        definition: TotalOrderMorphismDefinition | TotallyOrderedSetMorphism,
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
@@ -554,8 +784,24 @@ class TotallyOrderedSetHomCategory(HomCategory):
         target = category.underlying_poset(codomain)
         poset_hom = PartiallyOrderedSets().Hom(source, target)
         assert is_poset_hom_category(poset_hom)
+
+        existing = registered_value(definition)
+        if existing is not None:
+            assert self.contains_total_order_morphism(existing)
+            return existing
+
+        def poset_action(member: PosetElement) -> PosetElement:
+            source_member = domain.element(member)
+            if callable(definition):
+                image = definition(source_member)
+            else:
+                image = definition[source_member]
+            assert TotallyOrderedSetElements().contains_total_order_element(image)
+            assert codomain.contains(image) is True
+            return image._poset_implementation()
+
         underlying = poset_hom(
-            definition,
+            poset_action,
             injective=injective,
             surjective=surjective,
         )
@@ -631,9 +877,11 @@ class TotalOrderInclusionFunctor(StructuralFunctor):
         self,
         source: MathematicalObject,
         element: MathematicalElement,
-    ) -> MathematicalElement:
+    ) -> PosetElement:
         assert self._total_orders.contains_total_order(source)
-        return element
+        assert TotallyOrderedSetElements().contains_total_order_element(element)
+        assert element.ambient_total_order() is source
+        return element._poset_implementation()
 
     def is_faithful(self) -> bool:
         return True
@@ -642,7 +890,7 @@ class TotalOrderInclusionFunctor(StructuralFunctor):
 class FiniteTotallyOrderedSetObject(PullbackObject):
     """A represented finite total order."""
 
-    def rank(self, member: SetElementInput) -> int:
+    def rank(self, member: TotallyOrderedSetElement) -> int:
         total_order = FiniteTotallyOrderedSets().first_projection()(self)
         assert TotallyOrderedSets().contains_total_order(total_order)
         return total_order.rank(member)
@@ -662,19 +910,23 @@ class TotallyOrderedSetsCategory(Category):
     """Sets equipped with a chosen total order."""
 
     ObjectType = TotallyOrderedSetObject
+    ElementType = TotallyOrderedSetElement
 
     def __init__(self) -> None:
         self._inclusion: TotalOrderInclusionFunctor | None = None
         self._finite_orders: FiniteTotallyOrderedSetsCategory | None = None
-        super().__init__(object_type=TotallyOrderedSetObject)
+        super().__init__(
+            object_type=TotallyOrderedSetObject,
+            element_type=TotallyOrderedSetElement,
+        )
 
     def __call__(
         self,
         poset: PosetObject,
-        element_at: EnumerationRule,
-        position_of: PositionRule,
+        element_at: PosetEnumeration,
+        position_of: PosetPosition,
         *,
-        finite_enumeration: tuple[SetElementInput, ...] | None = None,
+        finite_enumeration: tuple[PosetElement, ...] | None = None,
     ) -> TotallyOrderedSetObject:
         if finite_enumeration is not None:
             assert len(finite_enumeration) == poset._set_implementation().cardinality()
@@ -724,7 +976,7 @@ class TotallyOrderedSetsCategory(Category):
 _PARTIALLY_ORDERED_SETS: PartiallyOrderedSetsCategory | None = None
 _TOTALLY_ORDERED_SETS: TotallyOrderedSetsCategory | None = None
 _ORDERED_FINITE_SETS: dict[
-    tuple[SetElementInput, ...],
+    tuple[SetElement, ...],
     PullbackObject,
 ] = {}
 
@@ -754,32 +1006,56 @@ def FiniteTotallyOrderedSets() -> FiniteTotallyOrderedSetsCategory:
 
 
 def Poset(
-    data: tuple[Iterable[SetElementInput], OrderRelation],
+    data: tuple[Iterable[SetElement], OrderRelation],
 ) -> PullbackObject:
     """Construct the finite poset defined by ``(members, leq)``."""
     members, relation = data
-    underlying_set = FiniteSet(tuple(dict.fromkeys(members)))
-    poset = PartiallyOrderedSets()(underlying_set, relation)
+    values = tuple(dict.fromkeys(members))
+    underlying_set = FiniteSet(values)
+
+    def transported_relation(left: SetElement, right: SetElement) -> bool:
+        left_value = left.value()
+        right_value = right.value()
+        assert SetElements().contains_set_element(left_value)
+        assert SetElements().contains_set_element(right_value)
+        return relation(left_value, right_value)
+
+    poset = PartiallyOrderedSets()(underlying_set, transported_relation)
     return FinitePosets()(poset, underlying_set)
 
 
 def ordered_set_owned_by(
-    elements: Iterable[SetElementInput],
+    elements: Iterable[SetElement],
 ) -> PullbackObject:
     enumeration = tuple(dict.fromkeys(elements))
     cached = _ORDERED_FINITE_SETS.get(enumeration)
     if cached is None:
         underlying_set = FiniteSet(enumeration)
-        positions = {element: index for index, element in enumerate(enumeration)}
+        owned_enumeration = tuple(
+            underlying_set.element(element)
+            for element in enumeration
+        )
+        positions: dict[SetElement, int] = {
+            element: index
+            for index, element in enumerate(owned_enumeration)
+        }
         poset = PartiallyOrderedSets()(
             underlying_set,
             lambda left, right: positions[left] <= positions[right],
         )
+        poset_enumeration = tuple(
+            poset.element(element)
+            for element in owned_enumeration
+        )
+
+        def position_of(member: PosetElement) -> int:
+            return positions[member._set_implementation()]
+
         total_order = TotallyOrderedSets()(
             poset,
-            enumeration.__getitem__,
-            enumeration.index,
-            finite_enumeration=enumeration,
+            poset_enumeration.__getitem__,
+            position_of,
+            finite_enumeration=poset_enumeration,
         )
         finite_poset = FinitePosets()(poset, underlying_set)
         cached = FiniteTotallyOrderedSets()(total_order, finite_poset)
@@ -788,7 +1064,7 @@ def ordered_set_owned_by(
 
 
 def finite_ordered_set(
-    elements: Iterable[SetElementInput],
+    elements: Iterable[SetElement],
 ) -> PullbackObject:
     return ordered_set_owned_by(elements)
 
@@ -812,13 +1088,11 @@ class SimplexOrderIndexing:
                     naturals = NaturalNumbers()
 
                     def natural_order(
-                        left: SetElementInput,
-                        right: SetElementInput,
+                        left: SetElement,
+                        right: SetElement,
                     ) -> bool:
-                        left_ordinal = registered_value(left)
-                        right_ordinal = registered_value(right)
-                        assert left_ordinal is not None
-                        assert right_ordinal is not None
+                        left_ordinal = left.value()
+                        right_ordinal = right.value()
                         assert Ordinals().contains_ordinal(left_ordinal)
                         assert Ordinals().contains_ordinal(right_ordinal)
                         decision = Ordinals().le(left_ordinal, right_ordinal)
@@ -826,16 +1100,27 @@ class SimplexOrderIndexing:
                         return decision
 
                     poset = PartiallyOrderedSets()(naturals, natural_order)
+
+                    def natural_element(position: int) -> PosetElement:
+                        return poset.element(naturals[position])
+
+                    def natural_position(member: PosetElement) -> int:
+                        return naturals.position(member._set_implementation())
+
                     self._countable_simplex = TotallyOrderedSets()(
                         poset,
-                        naturals.__getitem__,
-                        naturals.position,
+                        natural_element,
+                        natural_position,
                     )
                 return self._countable_simplex
         else:
             maximum = index
         assert maximum >= -1
-        return finite_ordered_set(ordinal(position) for position in range(maximum + 1))
+        naturals = NaturalNumbers()
+        return finite_ordered_set(
+            naturals.element(ordinal(position))
+            for position in range(maximum + 1)
+        )
 
     def __repr__(self) -> str:
         return "Delta"

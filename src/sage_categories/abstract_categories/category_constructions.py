@@ -367,15 +367,15 @@ class PullbackElement(MathematicalElement):
         self,
         *,
         category: PullbackCategory,
-        element_of: PullbackObject,
+        ambient_object: PullbackObject,
         first: MathematicalElement,
         second: MathematicalElement,
     ) -> None:
-        assert first.element_of() is element_of._first_implementation()
-        assert second.element_of() is element_of._second_implementation()
+        assert first.ambient_object() is ambient_object._first_implementation()
+        assert second.ambient_object() is ambient_object._second_implementation()
         self._first = first
         self._second = second
-        super().__init__(category=category, element_of=element_of)
+        super().__init__(category=category, ambient_object=ambient_object)
         _PULLBACK_ELEMENTS[id(self)] = self
 
     def _first_implementation(self) -> MathematicalElement:
@@ -601,7 +601,7 @@ class PullbackCategory(Category):
     ) -> PullbackElement:
         return self.ElementType(
             category=self,
-            element_of=source,
+            ambient_object=source,
             first=first,
             second=second,
         )

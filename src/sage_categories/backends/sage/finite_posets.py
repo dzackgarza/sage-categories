@@ -17,93 +17,76 @@ from sage_categories.category import Category
 from sage_categories.theories.posets import (
     FinitePosets,
     PartiallyOrderedSets,
+    PosetElement,
+    PosetObject,
 )
-from sage_categories.theories.sets import SetElementInput
 from sage_categories.values import Arrow, MathematicalObject
 
-type PartialOrder = Callable[[SetElementInput, SetElementInput], bool]
+type PartialOrder = Callable[[PosetElement, PosetElement], bool]
 
 
 class ExternalFinitePoset(Protocol):
     """The Sage finite-poset operations used at this boundary."""
 
-    def is_lequal(
-        self,
-        left: SetElementInput,
-        right: SetElementInput,
-    ) -> bool: ...
-
-    def is_less_than(
-        self,
-        left: SetElementInput,
-        right: SetElementInput,
-    ) -> bool: ...
-
-    def compare_elements(
-        self,
-        left: SetElementInput,
-        right: SetElementInput,
-    ) -> int | None: ...
-
     def covers(
         self,
-        lower: SetElementInput,
-        upper: SetElementInput,
+        lower: PosetElement,
+        upper: PosetElement,
     ) -> bool: ...
 
     def lower_covers(
         self,
-        member: SetElementInput,
-    ) -> Iterable[SetElementInput]: ...
+        member: PosetElement,
+    ) -> Iterable[PosetElement]: ...
 
     def upper_covers(
         self,
-        member: SetElementInput,
-    ) -> Iterable[SetElementInput]: ...
+        member: PosetElement,
+    ) -> Iterable[PosetElement]: ...
 
     def common_lower_covers(
         self,
-        members: Iterable[SetElementInput],
-    ) -> Iterable[SetElementInput]: ...
+        members: Iterable[PosetElement],
+    ) -> Iterable[PosetElement]: ...
 
     def common_upper_covers(
         self,
-        members: Iterable[SetElementInput],
-    ) -> Iterable[SetElementInput]: ...
+        members: Iterable[PosetElement],
+    ) -> Iterable[PosetElement]: ...
 
     def open_interval(
         self,
-        lower: SetElementInput,
-        upper: SetElementInput,
-    ) -> Iterable[SetElementInput]: ...
+        lower: PosetElement,
+        upper: PosetElement,
+    ) -> Iterable[PosetElement]: ...
 
     def closed_interval(
         self,
-        lower: SetElementInput,
-        upper: SetElementInput,
-    ) -> Iterable[SetElementInput]: ...
+        lower: PosetElement,
+        upper: PosetElement,
+    ) -> Iterable[PosetElement]: ...
 
     def order_ideal(
         self,
-        members: Iterable[SetElementInput],
-    ) -> Iterable[SetElementInput]: ...
+        members: Iterable[PosetElement],
+    ) -> Iterable[PosetElement]: ...
 
     def order_filter(
         self,
-        members: Iterable[SetElementInput],
-    ) -> Iterable[SetElementInput]: ...
+        members: Iterable[PosetElement],
+    ) -> Iterable[PosetElement]: ...
 
-    def minimal_elements(self) -> Iterable[SetElementInput]: ...
+    def minimal_elements(self) -> Iterable[PosetElement]: ...
 
-    def maximal_elements(self) -> Iterable[SetElementInput]: ...
+    def maximal_elements(self) -> Iterable[PosetElement]: ...
 
     def has_bottom(self) -> bool: ...
 
-    def bottom(self) -> SetElementInput: ...
+    def bottom(self) -> PosetElement: ...
 
     def has_top(self) -> bool: ...
 
-    def top(self) -> SetElementInput: ...
+    def top(self) -> PosetElement: ...
 
     def is_bounded(self) -> bool: ...
 
@@ -111,9 +94,9 @@ class ExternalFinitePoset(Protocol):
 
     def width(self) -> int: ...
 
-    def rank(self, member: SetElementInput | None = None) -> int: ...
+    def rank(self, member: PosetElement | None = None) -> int: ...
 
-    def level_sets(self) -> Iterable[Iterable[SetElementInput]]: ...
+    def level_sets(self) -> Iterable[Iterable[PosetElement]]: ...
 
     def is_ranked(self) -> bool: ...
 
@@ -123,12 +106,12 @@ class ExternalFinitePoset(Protocol):
 
     def is_chain_of_poset(
         self,
-        members: Iterable[SetElementInput],
+        members: Iterable[PosetElement],
     ) -> bool: ...
 
     def is_antichain_of_poset(
         self,
-        members: Iterable[SetElementInput],
+        members: Iterable[PosetElement],
     ) -> bool: ...
 
 
@@ -137,7 +120,7 @@ class ExternalPosetConstructor(Protocol):
 
     def __call__(
         self,
-        data: tuple[tuple[SetElementInput, ...], PartialOrder],
+        data: tuple[tuple[PosetElement, ...], PartialOrder],
         *,
         facade: bool,
     ) -> ExternalFinitePoset: ...
@@ -163,116 +146,102 @@ class SageFinitePosetObject(MathematicalObject):
         assert PartiallyOrderedSets().contains_poset(poset)
         underlying_set = PartiallyOrderedSets().underlying_set(poset)
         assert underlying_set.is_finite() is True
-        members = tuple(underlying_set)
+        members = tuple(poset)
 
         self._source = source
-        self._value = _sage_poset_constructor((members, poset.le), facade=True)
+        self._poset = poset
+        self._value = _sage_poset_constructor(
+            (members, lambda left, right: left <= right),
+            facade=True,
+        )
         super().__init__(category=category)
 
     def source(self) -> MathematicalObject:
         return self._source
 
-    def is_lequal(
-        self,
-        left: SetElementInput,
-        right: SetElementInput,
-    ) -> bool:
-        return self._value.is_lequal(left, right)
-
-    def is_less_than(
-        self,
-        left: SetElementInput,
-        right: SetElementInput,
-    ) -> bool:
-        return self._value.is_less_than(left, right)
-
-    def compare_elements(
-        self,
-        left: SetElementInput,
-        right: SetElementInput,
-    ) -> int | None:
-        return self._value.compare_elements(left, right)
+    def poset(self) -> PosetObject:
+        return self._poset
 
     def covers(
         self,
-        lower: SetElementInput,
-        upper: SetElementInput,
+        lower: PosetElement,
+        upper: PosetElement,
     ) -> bool:
         return self._value.covers(lower, upper)
 
-    def lower_covers(self, member: SetElementInput) -> tuple[SetElementInput, ...]:
+    def lower_covers(self, member: PosetElement) -> tuple[PosetElement, ...]:
         return tuple(self._value.lower_covers(member))
 
-    def upper_covers(self, member: SetElementInput) -> tuple[SetElementInput, ...]:
+    def upper_covers(self, member: PosetElement) -> tuple[PosetElement, ...]:
         return tuple(self._value.upper_covers(member))
 
     def common_lower_covers(
         self,
-        members: Iterable[SetElementInput],
-    ) -> tuple[SetElementInput, ...]:
+        members: Iterable[PosetElement],
+    ) -> tuple[PosetElement, ...]:
         return tuple(self._value.common_lower_covers(tuple(members)))
 
     def common_upper_covers(
         self,
-        members: Iterable[SetElementInput],
-    ) -> tuple[SetElementInput, ...]:
+        members: Iterable[PosetElement],
+    ) -> tuple[PosetElement, ...]:
         return tuple(self._value.common_upper_covers(tuple(members)))
 
     def open_interval(
         self,
-        lower: SetElementInput,
-        upper: SetElementInput,
-    ) -> tuple[SetElementInput, ...]:
+        lower: PosetElement,
+        upper: PosetElement,
+    ) -> tuple[PosetElement, ...]:
         return tuple(self._value.open_interval(lower, upper))
 
     def closed_interval(
         self,
-        lower: SetElementInput,
-        upper: SetElementInput,
-    ) -> tuple[SetElementInput, ...]:
+        lower: PosetElement,
+        upper: PosetElement,
+    ) -> tuple[PosetElement, ...]:
         return tuple(self._value.closed_interval(lower, upper))
 
     def principal_order_ideal(
         self,
-        member: SetElementInput,
-    ) -> tuple[SetElementInput, ...]:
+        member: PosetElement,
+    ) -> tuple[PosetElement, ...]:
         return self.order_ideal((member,))
 
     def principal_order_filter(
         self,
-        member: SetElementInput,
-    ) -> tuple[SetElementInput, ...]:
+        member: PosetElement,
+    ) -> tuple[PosetElement, ...]:
         return self.order_filter((member,))
 
     def order_ideal(
         self,
-        members: Iterable[SetElementInput],
-    ) -> tuple[SetElementInput, ...]:
+        members: Iterable[PosetElement],
+    ) -> tuple[PosetElement, ...]:
         return tuple(self._value.order_ideal(tuple(members)))
 
     def order_filter(
         self,
-        members: Iterable[SetElementInput],
-    ) -> tuple[SetElementInput, ...]:
+        members: Iterable[PosetElement],
+    ) -> tuple[PosetElement, ...]:
         return tuple(self._value.order_filter(tuple(members)))
 
-    def minimal_elements(self) -> tuple[SetElementInput, ...]:
+    def minimal_elements(self) -> tuple[PosetElement, ...]:
         return tuple(self._value.minimal_elements())
 
-    def maximal_elements(self) -> tuple[SetElementInput, ...]:
+    def maximal_elements(self) -> tuple[PosetElement, ...]:
         return tuple(self._value.maximal_elements())
 
     def has_bottom(self) -> bool:
         return self._value.has_bottom()
 
-    def bottom(self) -> SetElementInput:
+    def bottom(self) -> PosetElement:
         assert self.has_bottom()
         return self._value.bottom()
 
     def has_top(self) -> bool:
         return self._value.has_top()
 
-    def top(self) -> SetElementInput:
+    def top(self) -> PosetElement:
         assert self.has_top()
         return self._value.top()
 
@@ -285,10 +254,10 @@ class SageFinitePosetObject(MathematicalObject):
     def width(self) -> int:
         return int(self._value.width())
 
-    def rank(self, member: SetElementInput | None = None) -> int:
+    def rank(self, member: PosetElement | None = None) -> int:
         return int(self._value.rank(member))
 
-    def level_sets(self) -> tuple[tuple[SetElementInput, ...], ...]:
+    def level_sets(self) -> tuple[tuple[PosetElement, ...], ...]:
         return tuple(tuple(level) for level in self._value.level_sets())
 
     def is_ranked(self) -> bool:
@@ -300,10 +269,10 @@ class SageFinitePosetObject(MathematicalObject):
     def is_chain(self) -> bool:
         return self._value.is_chain()
 
-    def is_chain_of_poset(self, members: Iterable[SetElementInput]) -> bool:
+    def is_chain_of_poset(self, members: Iterable[PosetElement]) -> bool:
         return self._value.is_chain_of_poset(tuple(members))
 
-    def is_antichain_of_poset(self, members: Iterable[SetElementInput]) -> bool:
+    def is_antichain_of_poset(self, members: Iterable[PosetElement]) -> bool:
         return self._value.is_antichain_of_poset(tuple(members))
 
 

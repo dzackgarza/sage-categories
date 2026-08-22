@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator
-from typing import TypeIs
+from typing import TYPE_CHECKING, TypeIs
 
 from sage_categories.abstract_categories.hom_categories import (
     HomCategory,
@@ -22,6 +22,9 @@ from sage_categories.values import (
     MembershipInput,
     registered_value,
 )
+
+if TYPE_CHECKING:
+    from sage_categories.theories.sets import SetElement
 
 
 class Functor(Arrow, ABC):
@@ -315,12 +318,12 @@ class DiscreteObject(MathematicalObject):
         self,
         *,
         category: DiscreteCategory,
-        label: MembershipInput,
+        label: SetElement,
     ) -> None:
         self._label = label
         super().__init__(category=category)
 
-    def label(self) -> MembershipInput:
+    def label(self) -> SetElement:
         return self._label
 
     def __repr__(self) -> str:
@@ -375,7 +378,7 @@ class DiscreteCategory(Category):
 
         assert label_set in Sets()
         self._label_set = label_set
-        self._objects_by_label: list[tuple[MembershipInput, DiscreteObject]] = []
+        self._objects_by_label: list[tuple[SetElement, DiscreteObject]] = []
         self._object_set: MathematicalObject | None = None
         self._arrow_set: MathematicalObject | None = None
         super().__init__(object_type=DiscreteObject, category=category)
@@ -383,7 +386,7 @@ class DiscreteCategory(Category):
     def label_set(self) -> MathematicalObject:
         return self._label_set
 
-    def object(self, label: MembershipInput) -> DiscreteObject:
+    def object(self, label: SetElement) -> DiscreteObject:
         from sage_categories.theories.sets import Sets
 
         assert Sets().contains_set(self._label_set)

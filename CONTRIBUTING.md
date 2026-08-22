@@ -173,6 +173,11 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-037` | Route a general construction to every justified property subcategory from its input, construction data, and explicit optional claims. Use case analysis or pattern matching for this refinement. |
 | `POL-CAT-038` | Keep direct subcategory constructors available as optional expert entry points. Correct construction and category placement must not require knowledge of the category graph. |
 | `POL-CAT-039` | Make construction discoverable through standard categories such as `Sets()`, `Monoids()`, `Groups()`, `Rings()`, `Modules(R)`, and `Algebras(R)`. Let the implementation absorb the routing complexity. |
+| `POL-CAT-040` | For \(f:X\to Y\), evaluate `f` only on elements of `X` and return elements of `Y`. A morphism never accepts or returns an unowned Python value. |
+| `POL-CAT-041` | Construct or coerce raw representations into elements of the appropriate category objects before morphism evaluation. Keep this conversion outside the morphism. |
+| `POL-CAT-042` | Make Hom-category operations verify that each element's owning object lies in the base category and that evaluation respects the declared domain and codomain. |
+| `POL-CAT-043` | Prefer containment in a named property subcategory over a direct predicate call or an invariant comparison. The containment expression states the mathematical property and its owner. |
+| `POL-CAT-044` | Localize the computation that decides a property in the subcategory's `__contains__` method. A retained convenience predicate delegates to that containment check. |
 
 Grounding examples:
 
@@ -190,6 +195,9 @@ Grounding examples:
   A caller need not know or call a specialized `FiniteSet` constructor.
   Optional data such as `cardinality=3` or a claim such as `is_projective=True` can guide refinement when direct verification is difficult.
   A caller who already knows the relevant subcategory can use its constructor directly.
+
+- Prefer `X in Sets().Finite()` to `X.is_finite()` or `X.cardinality() < infinity`.
+  The finite-set category owns the decision procedure through `Sets().Finite().__contains__`.
 
 ## Leaf-category encapsulation
 
@@ -330,6 +338,7 @@ None requires enumeration to establish finiteness.
 | `POL-API-010` | Let callers use `X.Hom(Y)`. Only the public hom dispatch can call the private method `X._Hom_(Y)`. |
 | `POL-API-011` | Treat every public method-name collision as mathematical ambiguity. Resolve it by naming the exact mathematical operation, not by inheritance precedence, overload selection, or context. |
 | `POL-API-012` | Let a structured object expose every applicable operation under its unambiguous name. Its discoverable method surface must preserve distinctions between its structures. |
+| `POL-API-013` | Name categorical arrows as morphisms or arrows. Do not replace the standard mathematical object with implementation names such as `Map` or `Rule`. |
 | `POL-TYPE-001` | Give every value the type that names its mathematical role. |
 | `POL-TYPE-002` | Distinguish categories, objects, elements, arrows, functors, rings, sets, domains, and codomains in types. |
 | `POL-TYPE-003` | Never use `object` as a type. |
@@ -340,12 +349,17 @@ None requires enumeration to establish finiteness.
 | `POL-TYPE-008` | Use category membership as type information. Do not inspect fields or method names for capabilities. |
 | `POL-TYPE-009` | Do not invent wrapper types whose only purpose is to satisfy the type checker. |
 | `POL-TYPE-010` | Return `Self`, `None`, or the exact mathematical result type. Use the element type of `NN`, `ZZ`, or `RR` for natural numbers, integers, or real numbers. |
-| `POL-TYPE-011` | Use a set, ordered set, multiset, or another named mathematical collection instead of a built-in list or tuple. Use `float` only at an explicit numerical boundary. |
+| `POL-TYPE-011` | Use a set, ordered set, multiset, indexed family, or another named mathematical collection instead of `Iterable`, `Sequence`, `Collection`, `list`, or `tuple`. Use `float` only at an explicit numerical boundary. |
 | `POL-TYPE-012` | Primitive signatures can occur inside a private method only when every consumer remains inside that private boundary. |
 | `POL-TYPE-013` | Create a type for a genuine mathematical object. Do not wrap invalid constructor inputs in an engineering type to satisfy the checker. |
 | `POL-TYPE-014` | Never alias `Any`, directly or as part of a wider alias. Such an alias erases type information while giving the erasure a misleading semantic name. |
 | `POL-TYPE-015` | Do not create types with an `Input` suffix to model forms accepted by an implementation. Type each parameter as the mathematical object it denotes. |
 | `POL-TYPE-016` | Use types to express the mathematics. Keep parsing, coercion, normalization, and representation conversion behind the typed mathematical boundary. |
+| `POL-TYPE-017` | Type every morphism by the element types of its domain and codomain categories. Do not widen either endpoint to a generic mathematical-object type. |
+| `POL-TYPE-018` | Give every category its own semantic object, element, and arrow types through `ObjectType`, `ElementType`, and `ArrowType`. Use those types throughout that category's API. |
+| `POL-TYPE-019` | Type each method parameter and result by the most specific category that supplies the required structure. Do not widen it to an element or object type from a supercategory. |
+| `POL-TYPE-020` | Preserve category-specific types even when a category adds no new runtime fields or methods. Reusing an implementation does not erase the mathematical refinement. |
+| `POL-TYPE-021` | Admit raw Python containers only at an explicit construction or coercion boundary. Convert them immediately into the required mathematical collection before category-owned code receives them. |
 
 For example, `gens()` is ambiguous on an object that can be a group, module, and algebra.
 Expose `group_generators()`, `module_generators()`, and `algebra_generators()` side by side.
@@ -353,6 +367,16 @@ Each name identifies the structure whose generating set it returns.
 
 For example, `SomeMathematicalObjectInput` names a constructor role rather than a mathematical object.
 If the parameter denotes an element of a set, its type is `SetElement`.
+
+Likewise, do not define `MathematicalObject = Any` and then type `SetMapRule` as a callable on that alias.
+A `SetMorphism` acts from `SetElement` to `SetElement`, with its specific domain and codomain stored on the morphism.
+Its Hom-category evaluation can assert `x.ambient_object() in self.base_category()` before verifying that `x` belongs to the declared domain.
+
+For a poset, define `PosetElement = Posets.ElementType` and type `is_sup(x: PosetElement)` accordingly.
+Typing `x` as `SetElement` would admit an element without the required poset structure and conceal that error from static checking.
+
+Likewise, use `OrderedSet[MyCatElement]`, not `Iterable[MyCatElement]`, when order and uniqueness are the mathematical input.
+The latter type also admits raw lists, tuples, and Python iterators, which discards the required collection semantics.
 
 ## Implementation style
 

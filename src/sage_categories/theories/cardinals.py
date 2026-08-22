@@ -26,6 +26,7 @@ from sage_categories.values import (
 )
 
 if TYPE_CHECKING:
+    from sage_categories.theories.sets import SetElement
     from sage_categories.theories.ordinals import Ordinal, OrdinalInput
 
 
@@ -50,7 +51,7 @@ class CardinalKind(Enum):
     INDEXED_PRODUCT = "indexed product"
 
 
-type CardinalFamily = Callable[[MathematicalObject], Cardinal]
+type CardinalFamily = Callable[[SetElement], Cardinal]
 
 
 class CardinalComparison(Enum):

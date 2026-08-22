@@ -204,21 +204,21 @@ class MathematicalElement(MathematicalObject):
         self,
         *,
         category: Category,
-        element_of: MathematicalObject,
+        ambient_object: MathematicalObject,
     ) -> None:
-        self._element_of = element_of
+        self._ambient_object = ambient_object
         super().__init__(category=category)
-        self._element_structural_images[id(element_of.category())] = self
+        self._element_structural_images[id(ambient_object.category())] = self
 
-    def element_of(self) -> MathematicalObject:
+    def ambient_object(self) -> MathematicalObject:
         """Return the mathematical object which contains this element."""
-        return self._element_of
+        return self._ambient_object
 
     def _element_image_along(
         self,
         route: tuple[StructuralFunctor, ...],
     ) -> MathematicalElement:
-        source = self._element_of
+        source = self._ambient_object
         element = self
         for functor in route:
             codomain = functor.codomain()
@@ -244,9 +244,10 @@ class Arrow(MathematicalElement):
 
     def __init__(self, *, hom_category: HomCategory) -> None:
         self._hom_category = hom_category
-        super().__init__(
+        MathematicalElement.__init__(
+            self,
             category=hom_category.base_category().ArrowCategory(),
-            element_of=hom_category,
+            ambient_object=hom_category,
         )
 
     def hom_category(self) -> HomCategory:

@@ -476,4 +476,20 @@ def is_isomorphism_hom_category(
 
 def is_isomorphism(arrow: Arrow) -> TypeIs[Isomorphism]:
     """Return whether ``arrow`` is in an isomorphism arrow category."""
-    return arrow in arrow.base_category().IsomorphismArrowCategory()
+    category = arrow.base_category()
+    return (
+        arrow in category.IsomorphismArrowCategory()
+        or arrow in category.AutomorphismArrowCategory()
+    )
+
+
+def is_restricted_hom_category(
+    category: HomCategory,
+) -> TypeIs[RestrictedHomCategory]:
+    """Return whether ``category`` constructs restricted arrows."""
+    base = category.base_category()
+    return (
+        category in base.EndCategory()
+        or category in base.MonoCategory()
+        or category in base.EpiCategory()
+    )

@@ -38,6 +38,7 @@ from sage_categories.abstract_categories.products import (
     CoproductPresentation,
     Product,
     ProductPresentation,
+    is_products_of_category,
 )
 from sage_categories.category import Category
 from sage_categories.theories.cardinals import (
@@ -47,6 +48,7 @@ from sage_categories.theories.cardinals import (
     Decision,
     UnknownCardinality,
     cardinal,
+    is_cardinal_hom_category,
 )
 from sage_categories.values import (
     Arrow,
@@ -316,6 +318,20 @@ class SetHomCategory(HomCategory, SetObject):
     ObjectType = SetFunction
     ElementType = SetFunction
 
+    def __init__(
+        self,
+        *,
+        domain: MathematicalObject,
+        codomain: MathematicalObject,
+        hom_category: HomCategoryFamily,
+    ) -> None:
+        self._evaluation: SetFunction | None = None
+        super().__init__(
+            domain=domain,
+            codomain=codomain,
+            hom_category=hom_category,
+        )
+
     def __call__(self, rule: SetMapRule) -> SetFunction:
         return self.ObjectType(hom_category=self, rule=rule)
 
@@ -435,6 +451,39 @@ class SetHomCategory(HomCategory, SetObject):
         assert self.is_power_set()
         return self.from_members(frozenset())
 
+    def evaluation(self) -> SetFunction:
+        if self._evaluation is None:
+            sets = Sets()
+            exponent = self.exponent()
+            base = self.base()
+            labels = FiniteSet(frozenset({0, 1}))
+            index_category = DiscreteCategory(labels)
+            function_index = index_category.object(0)
+            argument_index = index_category.object(1)
+            diagram = SetFamily(
+                index_category,
+                lambda index: self if index is function_index else exponent,
+            )
+            product_functor = sets.ProductFunctor(index_category)
+            products = product_functor.Image()
+            assert is_products_of_category(products)
+            product_object = products.product_of(diagram)
+            product = product_object.image()
+            assert sets.contains_set(product)
+            function_projection = product_object.projection(function_index)
+            argument_projection = product_object.projection(argument_index)
+            assert sets.contains_function(function_projection)
+            assert sets.contains_function(argument_projection)
+
+            def evaluate(pair: SetElementInput) -> SetElementInput:
+                function_value = registered_value(function_projection(pair))
+                assert function_value is not None
+                assert sets.contains_function(function_value)
+                return function_value(argument_projection(pair))
+
+            self._evaluation = SetMap(product, base, evaluate)
+        return self._evaluation
+
     def __repr__(self) -> str:
         return f"{self.codomain()}^{self.domain()}"
 
@@ -459,6 +508,32 @@ class SetHomCategoryFamily(HomCategoryFamily):
         return (self._sets_inclusion,)
 
 
+class CardinalityFunctor(Functor):
+    """The cardinality functor from the core of ``Sets`` to ``Cardinals``."""
+
+    def __init__(self, sets: SetsCategory) -> None:
+        self._sets = sets
+        super().__init__(sets.core(), Cardinals())
+
+    def on_object(self, source: MathematicalObject) -> Cardinal:
+        assert source in self.domain()
+        assert self._sets.contains_set(source)
+        return source.cardinality()
+
+    def on_morphism(self, morphism: Arrow) -> Arrow:
+        assert morphism in self.domain().ArrowCategory()
+        source = morphism.domain()
+        target = morphism.codomain()
+        assert self._sets.contains_set(source)
+        assert self._sets.contains_set(target)
+        source_cardinality = source.cardinality()
+        target_cardinality = target.cardinality()
+        assert source_cardinality == target_cardinality
+        hom_category = Cardinals().Hom(source_cardinality, target_cardinality)
+        assert is_cardinal_hom_category(hom_category)
+        return hom_category()
+
+
 class SetsCategory(Category):
     """The category of arbitrary sets and arbitrary functions."""
 
@@ -473,6 +548,7 @@ class SetsCategory(Category):
         self._infinite_sets: InfiniteSetsCategory | None = None
         self._countable_sets: CountableSetsCategory | None = None
         self._uncountable_sets: UncountableSetsCategory | None = None
+        self._cardinality_functor: CardinalityFunctor | None = None
         super().__init__(object_type=SetObject)
 
     def _hom_category_type(self) -> type[HomCategory]:
@@ -524,6 +600,11 @@ class SetsCategory(Category):
         if self._uncountable_sets is None:
             self._uncountable_sets = UncountableSetsCategory(self)
         return self._uncountable_sets
+
+    def CardinalityFunctor(self) -> CardinalityFunctor:
+        if self._cardinality_functor is None:
+            self._cardinality_functor = CardinalityFunctor(self)
+        return self._cardinality_functor
 
     def chosen_limit(self, diagram: Functor) -> ProductPresentation:
         if diagram.domain() in DiscreteCategories():

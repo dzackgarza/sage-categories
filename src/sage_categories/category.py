@@ -124,7 +124,10 @@ class Category(MathematicalObject):
         """Return whether the structural-functor graph includes ``category``."""
         if self is category:
             return True
-        return any(codomain is category or codomain.is_subcategory(category) for codomain in self.super_categories())
+        return any(
+            codomain is category or codomain.is_subcategory(category)
+            for codomain in self.super_categories()
+        )
 
     def __contains__(self, candidate: MembershipInput) -> bool:
         value = registered_value(candidate)
@@ -161,6 +164,41 @@ class Category(MathematicalObject):
 
         return HomCategoryFamily
 
+    def _end_category_family_type(self) -> type[HomCategoryFamily]:
+        from sage_categories.abstract_categories.hom_categories import (
+            EndCategoryFamily,
+        )
+
+        return EndCategoryFamily
+
+    def _mono_category_family_type(self) -> type[HomCategoryFamily]:
+        from sage_categories.abstract_categories.hom_categories import (
+            MonomorphismCategoryFamily,
+        )
+
+        return MonomorphismCategoryFamily
+
+    def _epi_category_family_type(self) -> type[HomCategoryFamily]:
+        from sage_categories.abstract_categories.hom_categories import (
+            EpimorphismCategoryFamily,
+        )
+
+        return EpimorphismCategoryFamily
+
+    def _iso_category_family_type(self) -> type[HomCategoryFamily]:
+        from sage_categories.abstract_categories.hom_categories import (
+            IsomorphismCategoryFamily,
+        )
+
+        return IsomorphismCategoryFamily
+
+    def _aut_category_family_type(self) -> type[HomCategoryFamily]:
+        from sage_categories.abstract_categories.hom_categories import (
+            AutomorphismCategoryFamily,
+        )
+
+        return AutomorphismCategoryFamily
+
     def HomCategory(self) -> HomCategoryFamily:
         """Return the category of hom categories of this category."""
         if self._hom_category_family is None:
@@ -174,51 +212,31 @@ class Category(MathematicalObject):
     def EndCategory(self) -> HomCategoryFamily:
         """Return the category of endomorphism categories."""
         if self._end_category is None:
-            from sage_categories.abstract_categories.hom_categories import (
-                EndCategoryFamily,
-            )
-
-            self._end_category = EndCategoryFamily(self)
+            self._end_category = self._end_category_family_type()(self)
         return self._end_category
 
     def MonoCategory(self) -> HomCategoryFamily:
         """Return the category of monomorphism categories."""
         if self._mono_category is None:
-            from sage_categories.abstract_categories.hom_categories import (
-                MonomorphismCategoryFamily,
-            )
-
-            self._mono_category = MonomorphismCategoryFamily(self)
+            self._mono_category = self._mono_category_family_type()(self)
         return self._mono_category
 
     def EpiCategory(self) -> HomCategoryFamily:
         """Return the category of epimorphism categories."""
         if self._epi_category is None:
-            from sage_categories.abstract_categories.hom_categories import (
-                EpimorphismCategoryFamily,
-            )
-
-            self._epi_category = EpimorphismCategoryFamily(self)
+            self._epi_category = self._epi_category_family_type()(self)
         return self._epi_category
 
     def IsoCategory(self) -> HomCategoryFamily:
         """Return the category of isomorphism categories."""
         if self._iso_category is None:
-            from sage_categories.abstract_categories.hom_categories import (
-                IsomorphismCategoryFamily,
-            )
-
-            self._iso_category = IsomorphismCategoryFamily(self)
+            self._iso_category = self._iso_category_family_type()(self)
         return self._iso_category
 
     def AutCategory(self) -> HomCategoryFamily:
         """Return the category of automorphism categories."""
         if self._aut_category is None:
-            from sage_categories.abstract_categories.hom_categories import (
-                AutomorphismCategoryFamily,
-            )
-
-            self._aut_category = AutomorphismCategoryFamily(self)
+            self._aut_category = self._aut_category_family_type()(self)
         return self._aut_category
 
     @property

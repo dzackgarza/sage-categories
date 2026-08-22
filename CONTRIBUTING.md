@@ -321,6 +321,8 @@ None requires enumeration to establish finiteness.
 | `POL-API-008` | Name an accessor for the exact mathematical object or arrow it returns. |
 | `POL-API-009` | Use positional standard notation: `X.Hom(Y)` means the hom object from `X` to codomain `Y` and delegates to `X._Hom_(Y)`. |
 | `POL-API-010` | Let callers use `X.Hom(Y)`. Only the public hom dispatch can call the private method `X._Hom_(Y)`. |
+| `POL-API-011` | Treat every public method-name collision as mathematical ambiguity. Resolve it by naming the exact mathematical operation, not by inheritance precedence, overload selection, or context. |
+| `POL-API-012` | Let a structured object expose every applicable operation under its unambiguous name. Its discoverable method surface must preserve distinctions between its structures. |
 | `POL-TYPE-001` | Give every value the type that names its mathematical role. |
 | `POL-TYPE-002` | Distinguish categories, objects, elements, arrows, functors, rings, sets, domains, and codomains in types. |
 | `POL-TYPE-003` | Never use `object` as a type. |
@@ -334,6 +336,10 @@ None requires enumeration to establish finiteness.
 | `POL-TYPE-011` | Use a set, ordered set, multiset, or another named mathematical collection instead of a built-in list or tuple. Use `float` only at an explicit numerical boundary. |
 | `POL-TYPE-012` | Primitive signatures can occur inside a private method only when every consumer remains inside that private boundary. |
 | `POL-TYPE-013` | Create a type for a genuine mathematical object. Do not wrap invalid constructor inputs in an engineering type to satisfy the checker. |
+
+For example, `gens()` is ambiguous on an object that can be a group, module, and algebra.
+Expose `group_generators()`, `module_generators()`, and `algebra_generators()` side by side.
+Each name identifies the structure whose generating set it returns.
 
 ## Implementation style
 

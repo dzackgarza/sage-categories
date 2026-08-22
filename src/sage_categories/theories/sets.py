@@ -8,7 +8,7 @@ categorical foundation. Sage is not part of this category graph.
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Iterator, Mapping
-from itertools import combinations
+from itertools import combinations, count
 from itertools import product as cartesian_product
 from math import comb
 from typing import Any, Protocol, TypeIs
@@ -63,10 +63,13 @@ from sage_categories.abstract_categories.products import (
 )
 from sage_categories.category import Category
 from sage_categories.theories.cardinals import (
+    Aleph0,
     Cardinal,
     Cardinals,
     UnknownCardinality,
+    aleph,
     cardinal,
+    is_cardinal,
     is_cardinal_hom_category,
 )
 from sage_categories.values import (
@@ -267,6 +270,114 @@ def finite_ordered_set(
     elements: Iterable[SetElementInput],
 ) -> OrderedFiniteSetObject:
     return ordered_set_owned_by(elements)
+
+
+class NaturalNumbersSet(SetObject):
+    """The finite ordinals with their standard total order."""
+
+    def __init__(self) -> None:
+        super().__init__(category=Sets(), cardinality=Aleph0())
+        _SET_ORDERS[id(self)] = SetOrder(self._le, total=True)
+
+    def contains(self, member: SetElementInput) -> Decision:
+        from sage_categories.theories.ordinals import OrdinalKind, Ordinals
+
+        value = registered_value(member)
+        return (
+            value is not None
+            and Ordinals().contains_ordinal(value)
+            and value.kind() is OrdinalKind.FINITE
+        )
+
+    def __iter__(self) -> Iterator[SetElementInput]:
+        from sage_categories.theories.ordinals import ordinal
+
+        return iter(ordinal(index) for index in count())
+
+    def __getitem__(self, position: int) -> SetElementInput:
+        from sage_categories.theories.ordinals import ordinal
+
+        assert position >= 0
+        return ordinal(position)
+
+    def position(self, member: SetElementInput) -> int:
+        from sage_categories.theories.ordinals import OrdinalKind, Ordinals
+
+        value = registered_value(member)
+        assert value is not None and Ordinals().contains_ordinal(value)
+        assert value.kind() is OrdinalKind.FINITE
+        return int(value)
+
+    def is_lequal(
+        self,
+        left: SetElementInput,
+        right: SetElementInput,
+    ) -> Decision:
+        assert self.contains(left) is True
+        assert self.contains(right) is True
+        return self._le(left, right)
+
+    def _le(
+        self,
+        left: SetElementInput,
+        right: SetElementInput,
+    ) -> Decision:
+        from sage_categories.theories.ordinals import Ordinals
+
+        represented_left = registered_value(left)
+        represented_right = registered_value(right)
+        assert represented_left is not None
+        assert represented_right is not None
+        assert Ordinals().contains_ordinal(represented_left)
+        assert Ordinals().contains_ordinal(represented_right)
+        return represented_left <= represented_right
+
+    def __repr__(self) -> str:
+        return "Natural numbers"
+
+
+_NATURAL_NUMBERS: NaturalNumbersSet | None = None
+
+
+def NaturalNumbers() -> NaturalNumbersSet:
+    global _NATURAL_NUMBERS
+
+    if _NATURAL_NUMBERS is None:
+        _NATURAL_NUMBERS = NaturalNumbersSet()
+    return _NATURAL_NUMBERS
+
+
+class DeltaIndexing:
+    """Finite and countable simplex indexing sets."""
+
+    def __getitem__(self, dimension: int | Cardinal) -> SetObject:
+        if is_cardinal(dimension):
+            assert dimension == Aleph0()
+            return NaturalNumbers()
+        assert dimension >= -1
+        from sage_categories.theories.ordinals import ordinal
+
+        return ordered_set_owned_by(
+            ordinal(index) for index in range(dimension + 1)
+        )
+
+    def __repr__(self) -> str:
+        return "Δ"
+
+
+class AlephIndexing:
+    """The aleph cardinals at finite ordinal indices."""
+
+    def __getitem__(self, index: int) -> Cardinal:
+        assert index >= 0
+        return aleph(index)
+
+    def __repr__(self) -> str:
+        return "ℵ"
+
+
+Delta = DeltaIndexing()
+Aleph = AlephIndexing()
 
 
 class PredicateSet(SetObject):
@@ -1265,6 +1376,9 @@ class SetsCategory(Category):
     ObjectType = SetObject
 
     def __init__(self) -> None:
+        self.Δ = Delta
+        self.ℵ = Aleph
+        self.א = Aleph
         self._finite_sets_by_members: dict[
             frozenset[SetElementInput],
             FiniteSetObject,

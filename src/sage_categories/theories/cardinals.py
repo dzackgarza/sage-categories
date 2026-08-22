@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from enum import Enum
-from typing import Any, TypeIs
+from typing import TYPE_CHECKING, Any, TypeIs
 
 from sage_categories.abstract_categories.hom_categories import (
     HomCategory,
@@ -21,6 +21,9 @@ from sage_categories.values import (
     MathematicalObject,
     registered_value,
 )
+
+if TYPE_CHECKING:
+    from sage_categories.theories.ordinals import Ordinal, OrdinalInput
 
 
 class Unknown(Enum):
@@ -47,11 +50,18 @@ class CardinalKind(Enum):
     SUM = "sum"
     PRODUCT = "product"
     POWER = "power"
+    SUPREMUM = "supremum"
     INDEXED_SUM = "indexed sum"
     INDEXED_PRODUCT = "indexed product"
 
 
 type CardinalFamily = Callable[[MathematicalObject], Cardinal]
+
+
+class CardinalComparison(Enum):
+    LESS = -1
+    EQUAL = 0
+    GREATER = 1
 
 
 class Cardinal(MathematicalObject):
@@ -65,16 +75,23 @@ class Cardinal(MathematicalObject):
         finite_value: int | None = None,
         name: str | None = None,
         terms: tuple[Cardinal, ...] = (),
+        index: Ordinal | None = None,
         index_set: MathematicalObject | None = None,
         family: CardinalFamily | None = None,
     ) -> None:
         if kind is CardinalKind.FINITE:
             assert finite_value is not None and finite_value >= 0
-        if kind is CardinalKind.ALEPH or kind is CardinalKind.SYMBOL:
+        if kind is CardinalKind.ALEPH:
+            assert index is not None
+        if kind is CardinalKind.SYMBOL:
             assert name is not None
         if kind is CardinalKind.POWER:
             assert len(terms) == 2
-        if kind is CardinalKind.SUM or kind is CardinalKind.PRODUCT:
+        if (
+            kind is CardinalKind.SUM
+            or kind is CardinalKind.PRODUCT
+            or kind is CardinalKind.SUPREMUM
+        ):
             assert terms
         if kind is CardinalKind.INDEXED_SUM or kind is CardinalKind.INDEXED_PRODUCT:
             assert index_set is not None and family is not None
@@ -82,6 +99,7 @@ class Cardinal(MathematicalObject):
         self._finite_value = finite_value
         self._name = name
         self._terms = terms
+        self._index = index
         self._index_set = index_set
         self._family = family
         super().__init__(category=category)
@@ -105,24 +123,71 @@ class Cardinal(MathematicalObject):
         assert self._family is not None
         return self._family
 
+    def is_aleph(self) -> bool:
+        return self._kind is CardinalKind.ALEPH
+
+    def is_continuum(self) -> bool:
+        return (
+            self._kind is CardinalKind.POWER
+            and self._terms[0] == 2
+            and self._terms[1].is_countably_infinite()
+        )
+
+    def is_countably_infinite(self) -> bool:
+        return self._kind is CardinalKind.ALEPH and self.aleph_index() == 0
+
+    def aleph_index(self) -> Ordinal:
+        assert self._kind is CardinalKind.ALEPH
+        assert self._index is not None
+        return self._index
+
+    def initial_ordinal(self) -> Ordinal:
+        from sage_categories.theories.ordinals import omega, ordinal
+
+        if self._kind is CardinalKind.FINITE:
+            return ordinal(self.finite_value())
+        assert self._kind is CardinalKind.ALEPH
+        return omega(self.aleph_index())
+
     def is_finite(self) -> Decision:
         if self._kind is CardinalKind.FINITE:
             return True
         if self._kind is CardinalKind.ALEPH:
             return False
+        if self._kind is CardinalKind.SUPREMUM:
+            answers = tuple(term.is_finite() for term in self._terms)
+            if all(answer is True for answer in answers):
+                return True
+            if any(answer is False for answer in answers):
+                return False
         return UNKNOWN
 
     def is_infinite(self) -> Decision:
-        finite = self.is_finite()
-        if finite is UNKNOWN:
-            return UNKNOWN
-        return not finite
+        if self._kind is CardinalKind.FINITE:
+            return False
+        if self._kind is CardinalKind.ALEPH or self.is_continuum():
+            return True
+        if self._kind is CardinalKind.SUPREMUM:
+            answers = tuple(term.is_infinite() for term in self._terms)
+            if any(answer is True for answer in answers):
+                return True
+            if all(answer is False for answer in answers):
+                return False
+        return UNKNOWN
 
     def is_countable(self) -> Decision:
         if self._kind is CardinalKind.FINITE:
             return True
         if self._kind is CardinalKind.ALEPH:
-            return self._name == "aleph_0"
+            return self.is_countably_infinite()
+        if self._kind is CardinalKind.SUPREMUM:
+            answers = tuple(term.is_countable() for term in self._terms)
+            if all(answer is True for answer in answers):
+                return True
+            if any(answer is False for answer in answers):
+                return False
+        if self.is_continuum():
+            return False
         return UNKNOWN
 
     def is_uncountable(self) -> Decision:
@@ -142,20 +207,55 @@ class Cardinal(MathematicalObject):
         value = registered_value(other)
         if value is None or not Cardinals().contains_cardinal(value):
             return False
-        if self._kind is CardinalKind.INDEXED_SUM or self._kind is CardinalKind.INDEXED_PRODUCT:
+        if (
+            self._kind is CardinalKind.INDEXED_SUM
+            or self._kind is CardinalKind.INDEXED_PRODUCT
+        ):
             return False
-        return self._kind is value._kind and self._finite_value == value._finite_value and self._name == value._name and self._terms == value._terms
+        return (
+            self._kind is value._kind
+            and self._finite_value == value._finite_value
+            and self._name == value._name
+            and self._terms == value._terms
+            and self._index == value._index
+        )
 
     def __hash__(self) -> int:
         if self._kind is CardinalKind.INDEXED_SUM or self._kind is CardinalKind.INDEXED_PRODUCT:
             return id(self)
-        return hash((self._kind, self._finite_value, self._name, self._terms))
+        return hash(
+            (
+                self._kind,
+                self._finite_value,
+                self._name,
+                self._terms,
+                self._index,
+            )
+        )
+
+    def __le__(self, other: Cardinal | int) -> Decision:
+        return Cardinals().le(self, cardinal(other))
+
+    def __lt__(self, other: Cardinal | int) -> Decision:
+        return Cardinals().lt(self, cardinal(other))
+
+    def __ge__(self, other: Cardinal | int) -> Decision:
+        return Cardinals().le(cardinal(other), self)
+
+    def __gt__(self, other: Cardinal | int) -> Decision:
+        return Cardinals().lt(cardinal(other), self)
 
     def __add__(self, other: Cardinal) -> Cardinal:
         return Cardinals().sum(self, other)
 
+    def __radd__(self, other: Cardinal | int) -> Cardinal:
+        return Cardinals().sum(cardinal(other), self)
+
     def __mul__(self, other: Cardinal) -> Cardinal:
         return Cardinals().product(self, other)
+
+    def __rmul__(self, other: Cardinal | int) -> Cardinal:
+        return Cardinals().product(cardinal(other), self)
 
     def __pow__(self, exponent: Cardinal) -> Cardinal:
         return Cardinals().power(self, exponent)
@@ -163,7 +263,9 @@ class Cardinal(MathematicalObject):
     def __repr__(self) -> str:
         if self._kind is CardinalKind.FINITE:
             return str(self.finite_value())
-        if self._kind is CardinalKind.ALEPH or self._kind is CardinalKind.SYMBOL:
+        if self._kind is CardinalKind.ALEPH:
+            return f"ℵ_{self.aleph_index()}"
+        if self._kind is CardinalKind.SYMBOL:
             assert self._name is not None
             return self._name
         if self._kind is CardinalKind.UNKNOWN:
@@ -174,6 +276,8 @@ class Cardinal(MathematicalObject):
             return " * ".join(map(str, self._terms))
         if self._kind is CardinalKind.POWER:
             return f"({self._terms[0]})^({self._terms[1]})"
+        if self._kind is CardinalKind.SUPREMUM:
+            return "sup(" + ", ".join(map(str, self._terms)) + ")"
         return f"{self._kind.value} over {self.index_set()}"
 
 
@@ -214,7 +318,8 @@ class CardinalsCategory(Category):
 
     def __init__(self) -> None:
         self._finite_cardinals: dict[int, Cardinal] = {}
-        self._named_cardinals: dict[tuple[CardinalKind, str], Cardinal] = {}
+        self._aleph_cardinals: dict[Ordinal, Cardinal] = {}
+        self._symbolic_cardinals: dict[str, Cardinal] = {}
         self._unknown_cardinal: Cardinal | None = None
         super().__init__(object_type=Cardinal)
 
@@ -236,18 +341,29 @@ class CardinalsCategory(Category):
             self._finite_cardinals[number] = cached
         return cached
 
-    def aleph(self, name: str = "aleph_0") -> Cardinal:
-        return self._named(CardinalKind.ALEPH, name)
+    def aleph(self, index: OrdinalInput = 0) -> Cardinal:
+        from sage_categories.theories.ordinals import ordinal
+
+        ordinal_index = ordinal(index)
+        cached = self._aleph_cardinals.get(ordinal_index)
+        if cached is None:
+            cached = Cardinal(
+                category=self,
+                kind=CardinalKind.ALEPH,
+                index=ordinal_index,
+            )
+            self._aleph_cardinals[ordinal_index] = cached
+        return cached
 
     def symbol(self, name: str) -> Cardinal:
-        return self._named(CardinalKind.SYMBOL, name)
-
-    def _named(self, kind: CardinalKind, name: str) -> Cardinal:
-        key = kind, name
-        cached = self._named_cardinals.get(key)
+        cached = self._symbolic_cardinals.get(name)
         if cached is None:
-            cached = Cardinal(category=self, kind=kind, name=name)
-            self._named_cardinals[key] = cached
+            cached = Cardinal(
+                category=self,
+                kind=CardinalKind.SYMBOL,
+                name=name,
+            )
+            self._symbolic_cardinals[name] = cached
         return cached
 
     def unknown(self) -> Cardinal:
@@ -265,49 +381,63 @@ class CardinalsCategory(Category):
         return candidate in self
 
     def sum(self, *summands: Cardinal) -> Cardinal:
-        terms: list[Cardinal] = []
+        infinite_terms: list[Cardinal] = []
+        formal_terms: list[Cardinal] = []
         finite_total = 0
         for summand in summands:
             if summand.kind() is CardinalKind.FINITE:
                 finite_total += summand.finite_value()
+            elif summand.is_infinite() is True:
+                infinite_terms.append(summand)
             elif summand.kind() is CardinalKind.SUM:
-                terms.extend(summand.terms())
+                formal_terms.extend(summand.terms())
             else:
-                terms.append(summand)
-        if not terms:
+                formal_terms.append(summand)
+        if infinite_terms and not formal_terms:
+            return self.supremum(*infinite_terms)
+        if infinite_terms:
+            formal_terms.extend(infinite_terms)
+        if not formal_terms:
             return self(finite_total)
         if finite_total:
-            terms.append(self(finite_total))
-        if len(terms) == 1:
-            return terms[0]
+            formal_terms.append(self(finite_total))
+        if len(formal_terms) == 1:
+            return formal_terms[0]
         return Cardinal(
             category=self,
             kind=CardinalKind.SUM,
-            terms=tuple(terms),
+            terms=tuple(formal_terms),
         )
 
     def product(self, *factors: Cardinal) -> Cardinal:
-        terms: list[Cardinal] = []
+        infinite_terms: list[Cardinal] = []
+        formal_terms: list[Cardinal] = []
         finite_product = 1
         for factor in factors:
             if factor == 0:
                 return self(0)
             if factor.kind() is CardinalKind.FINITE:
                 finite_product *= factor.finite_value()
+            elif factor.is_infinite() is True:
+                infinite_terms.append(factor)
             elif factor.kind() is CardinalKind.PRODUCT:
-                terms.extend(factor.terms())
+                formal_terms.extend(factor.terms())
             else:
-                terms.append(factor)
-        if not terms:
+                formal_terms.append(factor)
+        if infinite_terms and not formal_terms:
+            return self.supremum(*infinite_terms)
+        if infinite_terms:
+            formal_terms.extend(infinite_terms)
+        if not formal_terms:
             return self(finite_product)
         if finite_product != 1:
-            terms.append(self(finite_product))
-        if len(terms) == 1:
-            return terms[0]
+            formal_terms.append(self(finite_product))
+        if len(formal_terms) == 1:
+            return formal_terms[0]
         return Cardinal(
             category=self,
             kind=CardinalKind.PRODUCT,
-            terms=tuple(terms),
+            terms=tuple(formal_terms),
         )
 
     def power(self, base: Cardinal, exponent: Cardinal) -> Cardinal:
@@ -319,6 +449,14 @@ class CardinalsCategory(Category):
             return self(1)
         if base.kind() is CardinalKind.FINITE and exponent.kind() is CardinalKind.FINITE:
             return self(base.finite_value() ** exponent.finite_value())
+        if base.is_infinite() is True and exponent.kind() is CardinalKind.FINITE:
+            return base
+        if (
+            exponent.is_infinite() is True
+            and base.kind() is CardinalKind.FINITE
+            and base.finite_value() >= 2
+        ):
+            base = self(2)
         return Cardinal(
             category=self,
             kind=CardinalKind.POWER,
@@ -349,15 +487,96 @@ class CardinalsCategory(Category):
             family=factors,
         )
 
+    def supremum(self, *cardinal_numbers: Cardinal) -> Cardinal:
+        terms: list[Cardinal] = []
+        for cardinal_number in cardinal_numbers:
+            if cardinal_number.kind() is CardinalKind.SUPREMUM:
+                terms.extend(cardinal_number.terms())
+            else:
+                terms.append(cardinal_number)
+        assert terms
+        maximal: list[Cardinal] = []
+        for candidate in sorted(set(terms), key=repr):
+            if any(self.le(candidate, term) is True for term in maximal):
+                continue
+            maximal = [
+                term
+                for term in maximal
+                if self.le(term, candidate) is not True
+            ]
+            maximal.append(candidate)
+        if len(maximal) == 1:
+            return maximal[0]
+        return Cardinal(
+            category=self,
+            kind=CardinalKind.SUPREMUM,
+            terms=tuple(maximal),
+        )
+
     def le(self, source: Cardinal, target: Cardinal) -> Decision:
         if source == target:
             return True
+        if source.kind() is CardinalKind.SUPREMUM:
+            answers = tuple(self.le(term, target) for term in source.terms())
+            if all(answer is True for answer in answers):
+                return True
+            if any(answer is False for answer in answers):
+                return False
+            return UNKNOWN
+        if target.kind() is CardinalKind.SUPREMUM:
+            answers = tuple(self.le(source, term) for term in target.terms())
+            if any(answer is True for answer in answers):
+                return True
+            return UNKNOWN
         if source.kind() is CardinalKind.FINITE and target.kind() is CardinalKind.FINITE:
             return source.finite_value() <= target.finite_value()
         if source.kind() is CardinalKind.FINITE and target.kind() is CardinalKind.ALEPH:
             return True
         if source.kind() is CardinalKind.ALEPH and target.kind() is CardinalKind.FINITE:
             return False
+        if source.kind() is CardinalKind.ALEPH and target.kind() is CardinalKind.ALEPH:
+            return source.aleph_index() <= target.aleph_index()
+        if source.is_countably_infinite() and target.is_infinite() is True:
+            return True
+        if target.kind() is CardinalKind.POWER:
+            if self.le(source, target.terms()[0]) is True:
+                return True
+            if (
+                self.le(self(2), target.terms()[0]) is True
+                and self.le(source, target.terms()[1]) is True
+            ):
+                return True
+            if source.kind() is CardinalKind.POWER:
+                base_comparison = self.le(source.terms()[0], target.terms()[0])
+                exponent_comparison = self.le(
+                    source.terms()[1],
+                    target.terms()[1],
+                )
+                if base_comparison is True and exponent_comparison is True:
+                    return True
+        return UNKNOWN
+
+    def lt(self, source: Cardinal, target: Cardinal) -> Decision:
+        if source == target:
+            return False
+        less_or_equal = self.le(source, target)
+        if less_or_equal is True:
+            return True
+        if self.le(target, source) is True:
+            return False
+        return UNKNOWN
+
+    def compare(
+        self,
+        source: Cardinal,
+        target: Cardinal,
+    ) -> CardinalComparison | Unknown:
+        if source == target:
+            return CardinalComparison.EQUAL
+        if self.lt(source, target) is True:
+            return CardinalComparison.LESS
+        if self.lt(target, source) is True:
+            return CardinalComparison.GREATER
         return UNKNOWN
 
     def __repr__(self) -> str:
@@ -388,8 +607,16 @@ def cardinal(value: int | Cardinal) -> Cardinal:
     return Cardinals()(value)
 
 
+def aleph(index: OrdinalInput = 0) -> Cardinal:
+    return Cardinals().aleph(index)
+
+
 def Aleph0() -> Cardinal:
-    return Cardinals().aleph()
+    return aleph(0)
+
+
+def Continuum() -> Cardinal:
+    return Cardinals().power(cardinal(2), Aleph0())
 
 
 def SymbolicCardinal(name: str) -> Cardinal:

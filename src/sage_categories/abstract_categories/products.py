@@ -108,6 +108,8 @@ class CoproductObject(ColimitObject):
 class LimitsOfCategory(ImageOfFunctor):
     """Chosen limits constructed by one limit functor."""
 
+    ObjectType: type[LimitObject] = LimitObject
+
     def __init__(
         self,
         functor: Functor,
@@ -115,7 +117,6 @@ class LimitsOfCategory(ImageOfFunctor):
         object_type: type[LimitObject] = LimitObject,
     ) -> None:
         self._limits: dict[int, LimitObject] = {}
-        self._limit_type = object_type
         super().__init__(functor, object_type=object_type)
         _LIMIT_IMAGE_CATEGORIES[id(self)] = self
 
@@ -131,17 +132,27 @@ class LimitsOfCategory(ImageOfFunctor):
         cached = self._limits.get(key)
         if cached is None:
             presentation = self.functor().codomain().chosen_limit(diagram)
-            cached = self._limit_type(
+            candidate = self.ObjectType(
                 category=self,
                 diagram=diagram,
                 presentation=presentation,
             )
+            assert self.contains_limit(candidate)
+            cached = candidate
             self._limits[key] = cached
         return cached
+
+    def contains_limit(
+        self,
+        candidate: MathematicalObject,
+    ) -> TypeIs[LimitObject]:
+        return candidate in self
 
 
 class ColimitsOfCategory(ImageOfFunctor):
     """Chosen colimits constructed by one colimit functor."""
+
+    ObjectType: type[ColimitObject] = ColimitObject
 
     def __init__(
         self,
@@ -150,7 +161,6 @@ class ColimitsOfCategory(ImageOfFunctor):
         object_type: type[ColimitObject] = ColimitObject,
     ) -> None:
         self._colimits: dict[int, ColimitObject] = {}
-        self._colimit_type = object_type
         super().__init__(functor, object_type=object_type)
         _COLIMIT_IMAGE_CATEGORIES[id(self)] = self
 
@@ -166,13 +176,21 @@ class ColimitsOfCategory(ImageOfFunctor):
         cached = self._colimits.get(key)
         if cached is None:
             presentation = self.functor().codomain().chosen_colimit(diagram)
-            cached = self._colimit_type(
+            candidate = self.ObjectType(
                 category=self,
                 diagram=diagram,
                 presentation=presentation,
             )
+            assert self.contains_colimit(candidate)
+            cached = candidate
             self._colimits[key] = cached
         return cached
+
+    def contains_colimit(
+        self,
+        candidate: MathematicalObject,
+    ) -> TypeIs[ColimitObject]:
+        return candidate in self
 
 
 class ProductsOfCategory(LimitsOfCategory):
@@ -299,6 +317,16 @@ class DiagramCategory(Category):
 
     def diagram_morphisms(self) -> tuple[Arrow, ...]:
         return self._diagram_morphisms
+
+    def objects(self) -> MathematicalObject:
+        from sage_categories.theories.sets import FiniteSet
+
+        return FiniteSet(frozenset(self._diagram_objects))
+
+    def arrows(self) -> MathematicalObject:
+        from sage_categories.theories.sets import FiniteSet
+
+        return FiniteSet(frozenset(self._diagram_morphisms))
 
     def _has_object(self, candidate: MathematicalObject) -> bool:
         return any(candidate is value for value in self._diagram_objects)

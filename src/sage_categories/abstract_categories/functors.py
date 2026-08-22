@@ -349,7 +349,7 @@ class LimitFunctor(Functor):
 
         image = self.Image()
         assert is_limits_of_category(image)
-        return image.limit_of(source).image()
+        return image.limit_of(source)
 
     def on_morphism(self, morphism: Arrow) -> Arrow:
         hom_category = morphism.hom_category()
@@ -404,7 +404,7 @@ class ColimitFunctor(Functor):
 
         image = self.Image()
         assert is_colimits_of_category(image)
-        return image.colimit_of(source).image()
+        return image.colimit_of(source)
 
     def on_morphism(self, morphism: Arrow) -> Arrow:
         hom_category = morphism.hom_category()

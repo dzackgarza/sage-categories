@@ -124,6 +124,14 @@ class Category(MathematicalObject):
         """Return whether ``candidate`` is an arrow of this category."""
         return candidate._is_arrow_in(self)
 
+    def objects(self) -> MathematicalObject:
+        """Return the object set when this category is represented as small."""
+        assert False, f"{self} has no represented object set"
+
+    def arrows(self) -> MathematicalObject:
+        """Return the arrow set when this category is represented as small."""
+        assert False, f"{self} has no represented arrow set"
+
     def _belongs_to(self, category: Category) -> bool:
         from sage_categories.abstract_categories.cat import Cat
 

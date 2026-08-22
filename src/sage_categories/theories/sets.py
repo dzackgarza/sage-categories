@@ -163,6 +163,8 @@ class SetHomCategory(HomCategory):
         return self(lambda value: value)
 
     def compose(self, second: Arrow, first: Arrow) -> SetFunction:
+        second = second.forward()
+        first = first.forward()
         assert Sets().contains_function(second)
         assert Sets().contains_function(first)
         assert first.codomain() is second.domain()
@@ -245,8 +247,10 @@ class SetsCategory(Category):
     def Hom(
         self,
         domain: MathematicalObject,
-        codomain: MathematicalObject,
-    ) -> SetHomCategory:
+        codomain: MathematicalObject | None = None,
+    ) -> HomCategory:
+        if codomain is None:
+            return Category.Hom(self, domain)
         category = Category.Hom(self, domain, codomain)
         assert category in self.HomCategory()
         assert is_set_hom_category(category)
@@ -291,7 +295,9 @@ def SetMap(
     mapping: SetFunctionRule,
 ) -> SetFunction:
     """Construct a function between two finite sets."""
-    return Sets().Hom(domain, codomain)(mapping)
+    hom_category = Sets().Hom(domain, codomain)
+    assert is_set_hom_category(hom_category)
+    return hom_category(mapping)
 
 
 class DiscreteCategoryObject(Category, ABC):

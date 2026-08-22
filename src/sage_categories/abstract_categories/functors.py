@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from typing import TypeIs, overload
+from typing import TypeIs
 
 from sage_categories.abstract_categories.hom_categories import (
     HomCategory,
@@ -403,12 +403,6 @@ class FunctorCategory(HomCategory):
         target = HomCategory.codomain(self)
         assert Cat().contains_category(target)
         return target
-
-    @overload
-    def identity(self) -> Functor: ...
-
-    @overload
-    def identity(self, value: MathematicalObject) -> Arrow: ...
 
     def identity(self, value: MathematicalObject | None = None) -> Arrow:
         if value is not None:

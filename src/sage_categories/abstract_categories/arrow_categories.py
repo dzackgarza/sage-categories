@@ -6,6 +6,7 @@ The semantics are migrated from the research preamble's
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from typing import TypeIs
 
 from sage_categories.abstract_categories.functors import (
@@ -24,6 +25,32 @@ from sage_categories.values import (
     MembershipInput,
     registered_value,
 )
+
+
+def common_category(objects: Iterable[MathematicalObject]) -> Category:
+    """Return the most specific represented category containing all objects."""
+    values = tuple(objects)
+    assert values
+    candidates: dict[int, Category] = {}
+
+    def add_with_super_categories(category: Category) -> None:
+        key = id(category)
+        if key in candidates:
+            return
+        candidates[key] = category
+        for super_category in category.super_categories():
+            add_with_super_categories(super_category)
+
+    for value in values:
+        add_with_super_categories(value.category())
+    common = tuple(category for category in candidates.values() if all(value in category for value in values))
+    most_specific = tuple(
+        category
+        for category in common
+        if not any(other is not category and other.is_subcategory(category) for other in common)
+    )
+    assert len(most_specific) == 1
+    return most_specific[0]
 
 
 class CommutingSquare(Arrow):
@@ -126,7 +153,7 @@ class ArrowCategory(Category):
 
     def __contains__(self, candidate: MembershipInput) -> bool:
         value = registered_value(candidate)
-        return value is not None and value._is_arrow_in(self._base_category)
+        return value is not None and self._base_category.contains_arrow(value)
 
     def contains_arrow(
         self,
@@ -316,6 +343,7 @@ class WideSubcategory(Category):
         super().__init__(
             object_type=base_category.ObjectType,
             element_type=base_category.ElementType,
+            category=WideSubcategoryCategoryObjects(),
         )
 
     def base_category(self) -> Category:
@@ -327,13 +355,111 @@ class WideSubcategory(Category):
     def __contains__(self, candidate: MembershipInput) -> bool:
         return candidate in self._base_category
 
+    def contains_arrow(self, candidate: MathematicalObject) -> TypeIs[Arrow]:
+        if not self._base_category.contains_arrow(candidate):
+            return False
+        return self.admits(candidate)
+
     def admits(self, arrow: Arrow) -> bool:
         return arrow in self._arrows
+
+    def arrow(self, arrow: Arrow) -> Arrow:
+        assert self.admits(arrow)
+        return arrow
+
+    def identity_arrow(self, value: MathematicalObject) -> Arrow:
+        if self._arrows is self._base_category.EndArrowCategory():
+            return self._base_category.End(value).identity()
+        if self._arrows is self._base_category.MonomorphismArrowCategory():
+            return self._base_category.Mono(value, value).identity()
+        if self._arrows is self._base_category.EpimorphismArrowCategory():
+            return self._base_category.Epi(value, value).identity()
+        if self._arrows is self._base_category.IsomorphismArrowCategory():
+            return self._base_category.Iso(value, value).identity()
+        if self._arrows is self._base_category.AutomorphismArrowCategory():
+            return self._base_category.Aut(value).identity()
+        identity = self._base_category.identity(value)
+        assert self.admits(identity)
+        return identity
+
+    def compose_arrows(self, second: Arrow, first: Arrow) -> Arrow:
+        domain = first.domain()
+        codomain = second.codomain()
+        if self._arrows is self._base_category.EndArrowCategory():
+            return self._base_category.End(domain).compose(second, first)
+        if self._arrows is self._base_category.MonomorphismArrowCategory():
+            return self._base_category.Mono(domain, codomain).compose(second, first)
+        if self._arrows is self._base_category.EpimorphismArrowCategory():
+            return self._base_category.Epi(domain, codomain).compose(second, first)
+        if self._arrows is self._base_category.IsomorphismArrowCategory():
+            return self._base_category.Iso(domain, codomain).compose(second, first)
+        if self._arrows is self._base_category.AutomorphismArrowCategory():
+            return self._base_category.Aut(domain).compose(second, first)
+        composite = self._base_category.compose(second, first)
+        assert self.admits(composite)
+        return composite
+
+    def _hom_category_type(self) -> type[HomCategory]:
+        return WideHomCategory
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
         if self._inclusion is None:
             self._inclusion = InclusionFunctor(self, self._base_category)
         return (self._inclusion,)
+
+
+class WideHomCategory(HomCategory):
+    """The admitted arrows between two objects of a wide subcategory."""
+
+    def wide_subcategory(self) -> WideSubcategory:
+        wide = self.base_category()
+        assert is_wide_subcategory(wide)
+        return wide
+
+    def __contains__(self, candidate: MembershipInput) -> bool:
+        value = registered_value(candidate)
+        if value is None:
+            return False
+        wide = self.wide_subcategory()
+        if not wide.base_category().contains_arrow(value):
+            return False
+        return value in wide.base_category().Hom(self.domain(), self.codomain()) and wide.admits(value)
+
+    def __call__(self, arrow: Arrow) -> Arrow:
+        assert arrow in self
+        return arrow
+
+    def identity(self, value: MathematicalObject | None = None) -> Arrow:
+        assert value is None
+        assert self.domain() is self.codomain()
+        wide = self.wide_subcategory()
+        identity = wide.identity_arrow(self.domain())
+        assert identity in self
+        return identity
+
+    def compose(self, second: Arrow, first: Arrow) -> Arrow:
+        wide = self.wide_subcategory()
+        composite = wide.compose_arrows(second, first)
+        assert composite in self
+        return composite
+
+
+class WideSubcategoryObjects(Category):
+    """The represented category of wide subcategories."""
+
+    def __init__(self) -> None:
+        super().__init__(object_type=WideSubcategory)
+
+
+_WIDE_SUBCATEGORY_OBJECTS = WideSubcategoryObjects()
+
+
+def WideSubcategoryCategoryObjects() -> WideSubcategoryObjects:
+    return _WIDE_SUBCATEGORY_OBJECTS
+
+
+def is_wide_subcategory(category: Category) -> TypeIs[WideSubcategory]:
+    return category in _WIDE_SUBCATEGORY_OBJECTS
 
 
 def Core(base_category: Category) -> WideSubcategory:

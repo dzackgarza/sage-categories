@@ -44,6 +44,99 @@ class MathematicalObject:
         assert self._category is not None
         return self._category
 
+    def Hom(
+        self,
+        domain: MathematicalObject,
+        codomain: MathematicalObject | None = None,
+    ) -> HomCategory:
+        """Return the hom category from this object to ``target``."""
+        target = domain
+        if codomain is None:
+            from sage_categories.abstract_categories.arrow_categories import (
+                common_category,
+            )
+
+            category = common_category((self, target))
+        else:
+            from sage_categories.abstract_categories.cat import Cat
+
+            assert Cat().contains_category(codomain)
+            category = codomain
+        return category.Hom(self, target)
+
+    def End(self, value: MathematicalObject | None = None) -> HomCategory:
+        """Return the endomorphism category of this object."""
+        assert value is None
+        return self.category().End(self)
+
+    def Aut(self, value: MathematicalObject | None = None) -> HomCategory:
+        """Return the automorphism category of this object."""
+        assert value is None
+        return self.category().Aut(self)
+
+    def Iso(
+        self,
+        domain: MathematicalObject,
+        codomain: MathematicalObject | None = None,
+    ) -> HomCategory:
+        """Return the isomorphisms from this object to ``target``."""
+        from sage_categories.abstract_categories.arrow_categories import (
+            common_category,
+        )
+
+        assert codomain is None
+        target = domain
+        return common_category((self, target)).Iso(self, target)
+
+    def Mono(
+        self,
+        domain: MathematicalObject,
+        codomain: MathematicalObject | None = None,
+    ) -> HomCategory:
+        """Return the monomorphisms from this object to ``target``."""
+        from sage_categories.abstract_categories.arrow_categories import (
+            common_category,
+        )
+
+        assert codomain is None
+        target = domain
+        return common_category((self, target)).Mono(self, target)
+
+    def Epi(
+        self,
+        domain: MathematicalObject,
+        codomain: MathematicalObject | None = None,
+    ) -> HomCategory:
+        """Return the epimorphisms from this object to ``target``."""
+        from sage_categories.abstract_categories.arrow_categories import (
+            common_category,
+        )
+
+        assert codomain is None
+        target = domain
+        return common_category((self, target)).Epi(self, target)
+
+    def identity(self, value: MathematicalObject | None = None) -> Arrow:
+        """Return the identity arrow of this object."""
+        assert value is None
+        return self.category().identity(self)
+
+    def subobjects(self) -> Category:
+        """Return the category of monomorphisms into this object."""
+        return self.category().Subobjects(self)
+
+    def superobjects(self) -> Category:
+        """Return the category of monomorphisms from this object."""
+        return self.category().Superobjects(self)
+
+    def covering_objects(self) -> Category:
+        """Return the category of epimorphisms into this object."""
+        return self.category().CoveringObjects(self)
+
+    def covered_objects(self) -> Category:
+        """Return the category of epimorphisms from this object."""
+        return self.category().CoveredObjects(self)
+
     def _belongs_to(self, category: Category) -> bool:
         if self._category is None:
             return False

@@ -7,7 +7,7 @@ This is the runtime-independent form of the architecture in
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeIs
 
 from sage_categories.compiler import DeclaredMethod, category_compiler
 from sage_categories.values import (
@@ -70,6 +70,7 @@ class Category(MathematicalObject):
         self._aut_arrow_category: Category | None = None
         self._opposite_category: Category | None = None
         self._product_categories: dict[int, Category] = {}
+        self._wide_subcategories: dict[int, Category] = {}
         self._slice_over_categories: dict[int, Category] = {}
         self._coslice_under_categories: dict[int, Category] = {}
         self._subobject_categories: dict[int, Category] = {}
@@ -110,6 +111,10 @@ class Category(MathematicalObject):
     def __contains__(self, candidate: MembershipInput) -> bool:
         value = registered_value(candidate)
         return value is not None and value._belongs_to(self)
+
+    def contains_arrow(self, candidate: MathematicalObject) -> TypeIs[Arrow]:
+        """Return whether ``candidate`` is an arrow of this category."""
+        return candidate._is_arrow_in(self)
 
     def _belongs_to(self, category: Category) -> bool:
         from sage_categories.abstract_categories.cat import Cat
@@ -242,48 +247,62 @@ class Category(MathematicalObject):
     def Hom(
         self,
         domain: MathematicalObject,
-        codomain: MathematicalObject,
+        codomain: MathematicalObject | None = None,
     ) -> HomCategoryObject:
         """Return ``Hom_C(domain, codomain)``."""
+        if codomain is None:
+            return MathematicalObject.Hom(self, domain)
         assert domain in self and codomain in self
         return self.HomCategory().Of(domain, codomain)
 
-    def End(self, value: MathematicalObject) -> HomCategoryObject:
+    def End(self, value: MathematicalObject | None = None) -> HomCategoryObject:
         """Return ``End_C(value)``."""
+        if value is None:
+            return MathematicalObject.End(self)
         assert value in self
         return self.EndCategory().Of(value, value)
 
     def Mono(
         self,
         domain: MathematicalObject,
-        codomain: MathematicalObject,
+        codomain: MathematicalObject | None = None,
     ) -> HomCategoryObject:
         """Return the monomorphisms from domain to codomain."""
+        if codomain is None:
+            return MathematicalObject.Mono(self, domain)
         return self.MonoCategory().Of(domain, codomain)
 
     def Epi(
         self,
         domain: MathematicalObject,
-        codomain: MathematicalObject,
+        codomain: MathematicalObject | None = None,
     ) -> HomCategoryObject:
         """Return the epimorphisms from domain to codomain."""
+        if codomain is None:
+            return MathematicalObject.Epi(self, domain)
         return self.EpiCategory().Of(domain, codomain)
 
     def Iso(
         self,
         domain: MathematicalObject,
-        codomain: MathematicalObject,
+        codomain: MathematicalObject | None = None,
     ) -> HomCategoryObject:
         """Return the isomorphisms from domain to codomain."""
+        if codomain is None:
+            return MathematicalObject.Iso(self, domain)
         return self.IsoCategory().Of(domain, codomain)
 
-    def Aut(self, value: MathematicalObject) -> HomCategoryObject:
+    def Aut(self, value: MathematicalObject | None = None) -> HomCategoryObject:
         """Return the automorphisms of ``value``."""
+        if value is None:
+            return MathematicalObject.Aut(self)
         return self.AutCategory().Of(value, value)
 
-    def identity(self, value: MathematicalObject) -> Arrow:
+    def identity(self, value: MathematicalObject | None = None) -> Arrow:
         """Return the identity arrow of ``value``."""
-        return self.Hom(value, value).identity()
+        if value is None:
+            return MathematicalObject.identity(self)
+        return self.Aut(value).identity()
 
     def compose(self, second: Arrow, first: Arrow) -> Arrow:
         """Return ``second`` after ``first``."""
@@ -354,9 +373,20 @@ class Category(MathematicalObject):
 
     def core(self) -> Category:
         """Return the maximal subgroupoid of this category."""
-        from sage_categories.abstract_categories.arrow_categories import Core
+        return self.WideSubcategory(self.IsomorphismArrowCategory())
 
-        return Core(self)
+    def WideSubcategory(self, arrows: Category) -> Category:
+        """Keep all objects and restrict the arrows to ``arrows``."""
+        from sage_categories.abstract_categories.arrow_categories import (
+            WideSubcategory,
+        )
+
+        key = id(arrows)
+        cached = self._wide_subcategories.get(key)
+        if cached is None:
+            cached = WideSubcategory(self, arrows)
+            self._wide_subcategories[key] = cached
+        return cached
 
     def DomainFunctor(self) -> Functor:
         """Return ``dom: Ar(C) -> C``."""

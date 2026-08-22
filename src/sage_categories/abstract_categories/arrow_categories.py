@@ -7,7 +7,7 @@ The semantics are migrated from the research preamble's
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import TypeIs
+from typing import Any, TypeIs
 
 from sage_categories.abstract_categories.functors import (
     InclusionFunctor,
@@ -22,7 +22,6 @@ from sage_categories.category import Category
 from sage_categories.values import (
     Arrow,
     MathematicalObject,
-    MembershipInput,
     registered_value,
 )
 
@@ -147,7 +146,7 @@ class ArrowCategory(Category):
         """Return ``C`` from ``Ar(C)``."""
         return self._base_category
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
+    def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
         return value is not None and self._base_category.contains_arrow(value)
 
@@ -203,7 +202,7 @@ class EndArrowCategory(Category):
     def base_category(self) -> Category:
         return self._base_category
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
+    def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
         if value is None or not self._base_category.ArrowCategory().contains_arrow(value):
             return False
@@ -229,7 +228,7 @@ class MonomorphismArrowCategory(Category):
     def base_category(self) -> Category:
         return self._base_category
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
+    def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
         if value is None or not self._base_category.ArrowCategory().contains_arrow(value):
             return False
@@ -255,7 +254,7 @@ class EpimorphismArrowCategory(Category):
     def base_category(self) -> Category:
         return self._base_category
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
+    def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
         if value is None or not self._base_category.ArrowCategory().contains_arrow(value):
             return False
@@ -281,7 +280,7 @@ class IsomorphismArrowCategory(Category):
     def base_category(self) -> Category:
         return self._base_category
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
+    def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
         if value is None or not self._base_category.ArrowCategory().contains_arrow(value):
             return False
@@ -310,7 +309,7 @@ class AutomorphismArrowCategory(Category):
     def base_category(self) -> Category:
         return self._base_category
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
+    def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
         if value is None or not self._base_category.ArrowCategory().contains_arrow(value):
             return False
@@ -348,7 +347,7 @@ class WideSubcategory(Category):
     def arrows(self) -> Category:
         return self._arrows
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
+    def __contains__(self, candidate: Any) -> bool:
         return candidate in self._base_category
 
     def contains_arrow(self, candidate: MathematicalObject) -> TypeIs[Arrow]:
@@ -412,7 +411,7 @@ class WideHomCategory(HomCategory):
         assert is_wide_subcategory(wide)
         return wide
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
+    def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
         if value is None:
             return False

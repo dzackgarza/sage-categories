@@ -8,14 +8,12 @@ independent of Sage's category classes.
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.functors import StructuralFunctor
     from sage_categories.abstract_categories.hom_categories import HomCategory
     from sage_categories.category import Category
-
-type MembershipInput = Any
 
 
 class Unknown(Enum):
@@ -37,7 +35,7 @@ type Decision = bool | Unknown
 _VALUES: dict[int, MathematicalObject] = {}
 
 
-def registered_value(candidate: MembershipInput) -> MathematicalObject | None:
+def registered_value[Candidate](candidate: Candidate) -> MathematicalObject | None:
     """Return the owned mathematical value represented by ``candidate``."""
     candidate_id = id(candidate)
     value = _VALUES.get(candidate_id)

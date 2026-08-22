@@ -8,7 +8,7 @@ poset category.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Iterator
 from typing import TYPE_CHECKING, Protocol, TypeIs
 
 from sage_categories.abstract_categories.functors import Functor
@@ -120,7 +120,7 @@ class ExternalPosetConstructor(Protocol):
 
     def __call__(
         self,
-        data: tuple[tuple[PosetElement, ...], PartialOrder],
+        presentation: tuple[tuple[PosetElement, ...], PartialOrder],
         *,
         facade: bool,
     ) -> ExternalFinitePoset: ...
@@ -169,67 +169,67 @@ class SageFinitePosetObject(MathematicalObject):
     ) -> bool:
         return self._value.covers(lower, upper)
 
-    def lower_covers(self, member: PosetElement) -> tuple[PosetElement, ...]:
-        return tuple(self._value.lower_covers(member))
+    def lower_covers(self, member: PosetElement) -> Iterator[PosetElement]:
+        return iter(self._value.lower_covers(member))
 
-    def upper_covers(self, member: PosetElement) -> tuple[PosetElement, ...]:
-        return tuple(self._value.upper_covers(member))
+    def upper_covers(self, member: PosetElement) -> Iterator[PosetElement]:
+        return iter(self._value.upper_covers(member))
 
     def common_lower_covers(
         self,
         members: Iterable[PosetElement],
-    ) -> tuple[PosetElement, ...]:
-        return tuple(self._value.common_lower_covers(tuple(members)))
+    ) -> Iterator[PosetElement]:
+        return iter(self._value.common_lower_covers(tuple(members)))
 
     def common_upper_covers(
         self,
         members: Iterable[PosetElement],
-    ) -> tuple[PosetElement, ...]:
-        return tuple(self._value.common_upper_covers(tuple(members)))
+    ) -> Iterator[PosetElement]:
+        return iter(self._value.common_upper_covers(tuple(members)))
 
     def open_interval(
         self,
         lower: PosetElement,
         upper: PosetElement,
-    ) -> tuple[PosetElement, ...]:
-        return tuple(self._value.open_interval(lower, upper))
+    ) -> Iterator[PosetElement]:
+        return iter(self._value.open_interval(lower, upper))
 
     def closed_interval(
         self,
         lower: PosetElement,
         upper: PosetElement,
-    ) -> tuple[PosetElement, ...]:
-        return tuple(self._value.closed_interval(lower, upper))
+    ) -> Iterator[PosetElement]:
+        return iter(self._value.closed_interval(lower, upper))
 
     def principal_order_ideal(
         self,
         member: PosetElement,
-    ) -> tuple[PosetElement, ...]:
+    ) -> Iterator[PosetElement]:
         return self.order_ideal((member,))
 
     def principal_order_filter(
         self,
         member: PosetElement,
-    ) -> tuple[PosetElement, ...]:
+    ) -> Iterator[PosetElement]:
         return self.order_filter((member,))
 
     def order_ideal(
         self,
         members: Iterable[PosetElement],
-    ) -> tuple[PosetElement, ...]:
-        return tuple(self._value.order_ideal(tuple(members)))
+    ) -> Iterator[PosetElement]:
+        return iter(self._value.order_ideal(tuple(members)))
 
     def order_filter(
         self,
         members: Iterable[PosetElement],
-    ) -> tuple[PosetElement, ...]:
-        return tuple(self._value.order_filter(tuple(members)))
+    ) -> Iterator[PosetElement]:
+        return iter(self._value.order_filter(tuple(members)))
 
-    def minimal_elements(self) -> tuple[PosetElement, ...]:
-        return tuple(self._value.minimal_elements())
+    def minimal_elements(self) -> Iterator[PosetElement]:
+        return iter(self._value.minimal_elements())
 
-    def maximal_elements(self) -> tuple[PosetElement, ...]:
-        return tuple(self._value.maximal_elements())
+    def maximal_elements(self) -> Iterator[PosetElement]:
+        return iter(self._value.maximal_elements())
 
     def has_bottom(self) -> bool:
         return self._value.has_bottom()
@@ -257,8 +257,8 @@ class SageFinitePosetObject(MathematicalObject):
     def rank(self, member: PosetElement | None = None) -> int:
         return int(self._value.rank(member))
 
-    def level_sets(self) -> tuple[tuple[PosetElement, ...], ...]:
-        return tuple(tuple(level) for level in self._value.level_sets())
+    def level_sets(self) -> Iterator[Iterator[PosetElement]]:
+        return iter(iter(level) for level in self._value.level_sets())
 
     def is_ranked(self) -> bool:
         return self._value.is_ranked()

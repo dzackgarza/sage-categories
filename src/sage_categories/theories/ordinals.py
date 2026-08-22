@@ -8,7 +8,7 @@ Mathlib's ``SetTheory/Ordinal/Arithmetic.lean`` implementation.
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, TypeIs
+from typing import TYPE_CHECKING, Any, TypeIs
 
 from sage_categories.abstract_categories.hom_categories import HomCategory
 from sage_categories.category import Category
@@ -98,12 +98,12 @@ class Ordinal(MathematicalObject):
             self._terms[1].cardinality(),
         )
 
-    def __eq__(self, other: object) -> bool:
-        if other is self:
+    def __eq__(self, candidate: Any) -> bool:
+        if candidate is self:
             return True
-        if self._kind is OrdinalKind.FINITE and self._finite_value == other:
+        if self._kind is OrdinalKind.FINITE and self._finite_value == candidate:
             return True
-        value = registered_value(other)
+        value = registered_value(candidate)
         if value is None or not Ordinals().contains_ordinal(value):
             return False
         return self._kind is value._kind and self._finite_value == value._finite_value and self._terms == value._terms and self._index == value._index
@@ -120,16 +120,16 @@ class Ordinal(MathematicalObject):
         return self.finite_value()
 
     def __le__(self, other: OrdinalInput) -> Decision:
-        return Ordinals().le(self, ordinal(other))
+        return Ordinals()._is_lequal(self, ordinal(other))
 
     def __lt__(self, other: OrdinalInput) -> Decision:
-        return Ordinals().lt(self, ordinal(other))
+        return Ordinals()._is_less_than(self, ordinal(other))
 
     def __ge__(self, other: OrdinalInput) -> Decision:
-        return Ordinals().le(ordinal(other), self)
+        return Ordinals()._is_lequal(ordinal(other), self)
 
     def __gt__(self, other: OrdinalInput) -> Decision:
-        return Ordinals().lt(ordinal(other), self)
+        return Ordinals()._is_less_than(ordinal(other), self)
 
     def __add__(self, other: OrdinalInput) -> Ordinal:
         return Ordinals().natural_sum(self, ordinal(other))
@@ -181,7 +181,7 @@ class OrdinalHomCategory(HomCategory):
         target = self.codomain()
         assert Ordinals().contains_ordinal(source)
         assert Ordinals().contains_ordinal(target)
-        assert Ordinals().le(source, target) is True
+        assert Ordinals()._is_lequal(source, target) is True
         return self.ObjectType(hom_category=self)
 
     def identity(self, value: MathematicalObject | None = None) -> OrdinalMorphism:
@@ -334,7 +334,7 @@ class OrdinalsCategory(Category):
             self._expressions[key] = cached
         return cached
 
-    def le(self, source: Ordinal, target: Ordinal) -> Decision:
+    def _is_lequal(self, source: Ordinal, target: Ordinal) -> Decision:
         if source == target:
             return True
         if source.kind() is OrdinalKind.FINITE:
@@ -344,13 +344,13 @@ class OrdinalsCategory(Category):
         if target.kind() is OrdinalKind.FINITE:
             return False
         if source.kind() is OrdinalKind.INITIAL and target.kind() is OrdinalKind.INITIAL:
-            return self.le(source.initial_index(), target.initial_index())
+            return self._is_lequal(source.initial_index(), target.initial_index())
         return UNKNOWN
 
-    def lt(self, source: Ordinal, target: Ordinal) -> Decision:
+    def _is_less_than(self, source: Ordinal, target: Ordinal) -> Decision:
         if source == target:
             return False
-        return self.le(source, target)
+        return self._is_lequal(source, target)
 
     def __repr__(self) -> str:
         return "Ordinals"

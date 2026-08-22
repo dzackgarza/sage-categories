@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeIs
+from typing import TYPE_CHECKING, Any, TypeIs
 
 from sage_categories.category import Category
 from sage_categories.values import (
     Arrow,
     CategoryElement,
     MathematicalObject,
-    MembershipInput,
     registered_value,
 )
 
@@ -40,7 +39,7 @@ class CategoryOfCategories(Category):
 
         return FunctorCategory
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
+    def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
         return value is not None and value._belongs_to(self)
 

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from enum import Enum
-from typing import TYPE_CHECKING, TypeIs
+from typing import TYPE_CHECKING, Any, TypeIs
 
 from sage_categories.abstract_categories.hom_categories import (
     HomCategory,
@@ -21,13 +21,12 @@ from sage_categories.values import (
     Arrow,
     Decision,
     MathematicalObject,
-    Unknown,
     registered_value,
 )
 
 if TYPE_CHECKING:
-    from sage_categories.theories.sets import SetElement
     from sage_categories.theories.ordinals import Ordinal, OrdinalInput
+    from sage_categories.theories.sets import SetElement
 
 
 def _decision_and(left: Decision, right: Decision) -> Decision:
@@ -52,12 +51,6 @@ class CardinalKind(Enum):
 
 
 type CardinalFamily = Callable[[SetElement], Cardinal]
-
-
-class CardinalComparison(Enum):
-    LESS = -1
-    EQUAL = 0
-    GREATER = 1
 
 
 class Cardinal(MathematicalObject):
@@ -207,12 +200,12 @@ class Cardinal(MathematicalObject):
     def __index__(self) -> int:
         return self.finite_value()
 
-    def __eq__(self, other: object) -> bool:
-        if other is self:
+    def __eq__(self, candidate: Any) -> bool:
+        if candidate is self:
             return True
-        if self._kind is CardinalKind.FINITE and self._finite_value == other:
+        if self._kind is CardinalKind.FINITE and self._finite_value == candidate:
             return True
-        value = registered_value(other)
+        value = registered_value(candidate)
         if value is None or not Cardinals().contains_cardinal(value):
             return False
         if self._kind is CardinalKind.INDEXED_SUM or self._kind is CardinalKind.INDEXED_PRODUCT:
@@ -241,16 +234,16 @@ class Cardinal(MathematicalObject):
         )
 
     def __le__(self, other: Cardinal | int) -> Decision:
-        return Cardinals().le(self, cardinal(other))
+        return Cardinals()._is_lequal(self, cardinal(other))
 
     def __lt__(self, other: Cardinal | int) -> Decision:
-        return Cardinals().lt(self, cardinal(other))
+        return Cardinals()._is_less_than(self, cardinal(other))
 
     def __ge__(self, other: Cardinal | int) -> Decision:
-        return Cardinals().le(cardinal(other), self)
+        return Cardinals()._is_lequal(cardinal(other), self)
 
     def __gt__(self, other: Cardinal | int) -> Decision:
-        return Cardinals().lt(cardinal(other), self)
+        return Cardinals()._is_less_than(cardinal(other), self)
 
     def __add__(self, other: Cardinal) -> Cardinal:
         return Cardinals().sum(self, other)
@@ -323,7 +316,7 @@ class CardinalHomCategory(HomCategory):
         target = self.codomain()
         assert Cardinals().contains_cardinal(source)
         assert Cardinals().contains_cardinal(target)
-        assert Cardinals().le(source, target) is True
+        assert Cardinals()._is_lequal(source, target) is True
         if self._unique_morphism is None:
             self._unique_morphism = self.ObjectType(hom_category=self)
         return self._unique_morphism
@@ -339,7 +332,7 @@ class CardinalHomCategory(HomCategory):
         assert Cardinals().contains_cardinal(source)
         assert Cardinals().contains_cardinal(target)
         members: frozenset[CardinalMorphism] = frozenset()
-        if Cardinals().le(source, target) is True:
+        if Cardinals()._is_lequal(source, target) is True:
             members = frozenset({self.unique_morphism()})
         return FiniteSet(members)
 
@@ -545,9 +538,9 @@ class CardinalsCategory(Category):
         assert terms
         maximal: list[Cardinal] = []
         for candidate in sorted(set(terms), key=repr):
-            if any(self.le(candidate, term) is True for term in maximal):
+            if any(self._is_lequal(candidate, term) is True for term in maximal):
                 continue
-            maximal = [term for term in maximal if self.le(term, candidate) is not True]
+            maximal = [term for term in maximal if self._is_lequal(term, candidate) is not True]
             maximal.append(candidate)
         if len(maximal) == 1:
             return maximal[0]
@@ -557,18 +550,18 @@ class CardinalsCategory(Category):
             terms=tuple(maximal),
         )
 
-    def le(self, source: Cardinal, target: Cardinal) -> Decision:
+    def _is_lequal(self, source: Cardinal, target: Cardinal) -> Decision:
         if source == target:
             return True
         if source.kind() is CardinalKind.SUPREMUM:
-            answers = tuple(self.le(term, target) for term in source.terms())
+            answers = tuple(self._is_lequal(term, target) for term in source.terms())
             if all(answer is True for answer in answers):
                 return True
             if any(answer is False for answer in answers):
                 return False
             return UNKNOWN
         if target.kind() is CardinalKind.SUPREMUM:
-            answers = tuple(self.le(source, term) for term in target.terms())
+            answers = tuple(self._is_lequal(source, term) for term in target.terms())
             if any(answer is True for answer in answers):
                 return True
             return UNKNOWN
@@ -585,13 +578,13 @@ class CardinalsCategory(Category):
         if source.kind() is CardinalKind.ALEPH and source.aleph_index() == 1 and target.is_uncountable() is True:
             return True
         if target.kind() is CardinalKind.POWER:
-            if self.le(source, target.terms()[0]) is True:
+            if self._is_lequal(source, target.terms()[0]) is True:
                 return True
-            if self.le(self(2), target.terms()[0]) is True and self.le(source, target.terms()[1]) is True:
+            if self._is_lequal(self(2), target.terms()[0]) is True and self._is_lequal(source, target.terms()[1]) is True:
                 return True
             if source.kind() is CardinalKind.POWER:
-                base_comparison = self.le(source.terms()[0], target.terms()[0])
-                exponent_comparison = self.le(
+                base_comparison = self._is_lequal(source.terms()[0], target.terms()[0])
+                exponent_comparison = self._is_lequal(
                     source.terms()[1],
                     target.terms()[1],
                 )
@@ -599,37 +592,18 @@ class CardinalsCategory(Category):
                     return True
         return UNKNOWN
 
-    def lt(self, source: Cardinal, target: Cardinal) -> Decision:
+    def _is_less_than(self, source: Cardinal, target: Cardinal) -> Decision:
         if source == target:
             return False
-        less_or_equal = self.le(source, target)
+        less_or_equal = self._is_lequal(source, target)
         if less_or_equal is True:
             return True
-        if self.le(target, source) is True:
+        if self._is_lequal(target, source) is True:
             return False
         return UNKNOWN
 
-    def compare(
-        self,
-        source: Cardinal,
-        target: Cardinal,
-    ) -> CardinalComparison | Unknown:
-        if source == target:
-            return CardinalComparison.EQUAL
-        if self.lt(source, target) is True:
-            return CardinalComparison.LESS
-        if self.lt(target, source) is True:
-            return CardinalComparison.GREATER
-        return UNKNOWN
-
-    def ge(self, source: Cardinal, target: Cardinal) -> Decision:
-        return self.le(target, source)
-
-    def gt(self, source: Cardinal, target: Cardinal) -> Decision:
-        return self.lt(target, source)
-
     def are_incomparable(self, source: Cardinal, target: Cardinal) -> Decision:
-        if self.le(source, target) is True or self.le(target, source) is True:
+        if self._is_lequal(source, target) is True or self._is_lequal(target, source) is True:
             return False
         return UNKNOWN
 
@@ -681,7 +655,7 @@ class CardinalsCategory(Category):
         assert self.contains_cardinal(target_base)
         assert self.contains_cardinal(source_exponent)
         assert self.contains_cardinal(target_exponent)
-        assert self.le(self.one(), source_base) is True
+        assert self._is_lequal(self.one(), source_base) is True
         hom_category = self.Hom(
             self.power(source_base, source_exponent),
             self.power(target_base, target_exponent),

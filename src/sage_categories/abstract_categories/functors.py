@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator
-from typing import TYPE_CHECKING, TypeIs
+from typing import TYPE_CHECKING, Any, TypeIs
 
 from sage_categories.abstract_categories.hom_categories import (
     HomCategory,
@@ -19,12 +19,11 @@ from sage_categories.values import (
     Arrow,
     MathematicalElement,
     MathematicalObject,
-    MembershipInput,
     registered_value,
 )
 
 if TYPE_CHECKING:
-    from sage_categories.theories.sets import SetElement
+    from sage_categories.theories.sets import DiscreteObjectSet, SetElement
 
 
 class Functor(Arrow, ABC):
@@ -379,7 +378,7 @@ class DiscreteCategory(Category):
         assert label_set in Sets()
         self._label_set = label_set
         self._objects_by_label: list[tuple[SetElement, DiscreteObject]] = []
-        self._object_set: MathematicalObject | None = None
+        self._object_set: DiscreteObjectSet | None = None
         self._arrow_set: MathematicalObject | None = None
         super().__init__(object_type=DiscreteObject, category=category)
 
@@ -390,7 +389,7 @@ class DiscreteCategory(Category):
         from sage_categories.theories.sets import Sets
 
         assert Sets().contains_set(self._label_set)
-        assert self._label_set.contains(label) is True
+        assert label in self._label_set
         for saved_label, value in self._objects_by_label:
             if saved_label == label:
                 return value
@@ -399,7 +398,7 @@ class DiscreteCategory(Category):
         self._objects_by_label.append((label, value))
         return value
 
-    def objects(self) -> MathematicalObject:
+    def objects(self) -> DiscreteObjectSet:
         from sage_categories.theories.sets import DiscreteObjectSet, Sets
 
         if self._object_set is None:
@@ -420,7 +419,7 @@ class DiscreteCategory(Category):
         assert Sets().contains_set(self._label_set)
         return iter(tuple(self.object(label) for label in self._label_set))
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
+    def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
         return value is not None and value.category() is self
 
@@ -451,7 +450,7 @@ class ObjectSetFunctor(StructuralFunctor):
         return source.objects()
 
     def on_morphism(self, morphism: Arrow) -> Arrow:
-        from sage_categories.theories.sets import SetMap, Sets
+        from sage_categories.theories.sets import Sets, is_set_hom_category
 
         assert is_functor(morphism)
         source = morphism.domain()
@@ -463,14 +462,16 @@ class ObjectSetFunctor(StructuralFunctor):
         assert Sets().contains_set(source_objects)
         assert Sets().contains_set(target_objects)
 
-        def map_object(value: MembershipInput) -> MembershipInput:
-            represented = registered_value(value)
-            assert represented is not None and source.contains_object(represented)
+        def map_object(value: SetElement) -> SetElement:
+            represented = value.value()
+            assert source.contains_object(represented)
             image = morphism(represented)
             assert target.contains_object(image)
-            return image
+            return target_objects.element(image)
 
-        return SetMap(source_objects, target_objects, map_object)
+        hom_category = Sets().Hom(source_objects, target_objects)
+        assert is_set_hom_category(hom_category)
+        return hom_category(map_object)
 
     def on_element(
         self,

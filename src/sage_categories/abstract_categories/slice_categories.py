@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TypeIs
+from typing import Any, TypeIs
 
 from sage_categories.abstract_categories.functors import (
     InclusionFunctor,
@@ -17,7 +17,6 @@ from sage_categories.values import (
     Arrow,
     MathematicalElement,
     MathematicalObject,
-    MembershipInput,
     registered_value,
 )
 
@@ -225,7 +224,7 @@ class SliceOverCategory(Category):
     def target_object(self) -> MathematicalObject:
         return self._target
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
+    def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
         return value is not None and value._belongs_to(self)
 
@@ -281,7 +280,7 @@ class CosliceUnderCategory(Category):
     def source_object(self) -> MathematicalObject:
         return self._source
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
+    def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
         return value is not None and value._belongs_to(self)
 

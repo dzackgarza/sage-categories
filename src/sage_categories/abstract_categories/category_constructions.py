@@ -7,7 +7,7 @@ constructions in Mathlib's category-theory library.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TypeIs
+from typing import Any, TypeIs
 
 from sage_categories.abstract_categories.functors import (
     Functor,
@@ -24,7 +24,6 @@ from sage_categories.values import (
     CategoryElement,
     MathematicalElement,
     MathematicalObject,
-    MembershipInput,
     registered_value,
 )
 
@@ -101,7 +100,7 @@ class OppositeCategory(Category):
     def base_category(self) -> Category:
         return self._base_category
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
+    def __contains__(self, candidate: Any) -> bool:
         return candidate in self._base_category
 
     def _hom_category_type(self) -> type[HomCategory]:
@@ -728,7 +727,7 @@ class FullSubcategoryHomCategory(HomCategory):
         category = self.full_subcategory()
         return category.ambient_category().Hom(self.domain(), self.codomain())
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
+    def __contains__(self, candidate: Any) -> bool:
         return candidate in self.ambient_hom_category()
 
     def __call__(self, arrow: Arrow) -> Arrow:
@@ -777,7 +776,7 @@ class FullSubcategory(Category):
     def ambient_category(self) -> Category:
         return self._ambient_category
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
+    def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
         return value is not None and value in self._ambient_category and self._predicate(value)
 

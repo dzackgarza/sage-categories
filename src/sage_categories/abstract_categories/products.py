@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TypeIs
+from typing import Any, TypeIs
 
 from sage_categories.abstract_categories.functor_images import (
     FunctorImageObject,
@@ -22,7 +22,6 @@ from sage_categories.values import (
     Arrow,
     MathematicalElement,
     MathematicalObject,
-    MembershipInput,
     registered_value,
 )
 
@@ -248,7 +247,7 @@ class DiagramHomCategory(HomCategory):
         assert is_diagram_category(category)
         return category
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
+    def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
         if value is None:
             return False
@@ -337,7 +336,7 @@ class DiagramCategory(Category):
     def _has_object(self, candidate: MathematicalObject) -> bool:
         return any(candidate is value for value in self._diagram_objects)
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
+    def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
         return value is not None and self._has_object(value)
 
@@ -1196,7 +1195,7 @@ def Biproduct(
     product: ProductPresentation,
     coproduct: CoproductPresentation,
 ) -> BiproductPresentation:
-    """Construct a chosen biproduct from compatible product and coproduct data."""
+    """Construct a chosen biproduct from compatible product and coproduct presentations."""
     assert product.diagram() is coproduct.diagram()
     assert product.apex() is coproduct.apex()
     return Biproducts(product.diagram())(product, coproduct)

@@ -6,13 +6,12 @@ The semantics are migrated from the research preamble's
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeIs
+from typing import TYPE_CHECKING, Any, TypeIs
 
 from sage_categories.category import Category
 from sage_categories.values import (
     Arrow,
     MathematicalObject,
-    MembershipInput,
     registered_value,
 )
 
@@ -59,7 +58,7 @@ class HomCategory(Category):
         """Return the category whose arrows these are."""
         return self._hom_category.base_category()
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
+    def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
         return value is not None and value._belongs_to_hom(self)
 

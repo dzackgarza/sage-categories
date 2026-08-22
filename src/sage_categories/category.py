@@ -7,7 +7,7 @@ This is the runtime-independent form of the architecture in
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, TypeIs
+from typing import TYPE_CHECKING, Any, TypeIs
 
 from sage_categories.compiler import DeclaredMethod, category_compiler
 from sage_categories.values import (
@@ -15,7 +15,6 @@ from sage_categories.values import (
     CategoryElement,
     MathematicalElement,
     MathematicalObject,
-    MembershipInput,
     registered_value,
 )
 
@@ -146,7 +145,7 @@ class Category(MathematicalObject):
             return True
         return any(codomain is category or codomain.is_subcategory(category) for codomain in self.super_categories())
 
-    def __contains__(self, candidate: MembershipInput) -> bool:
+    def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
         return value is not None and value._belongs_to(self)
 

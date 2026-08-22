@@ -36,5 +36,4 @@ class ForwardedMethod:
             image = instance._element_image_along(self._route)
         else:
             image = instance._object_image_along(self._route)
-        bound: MethodType = image.__getattribute__(self._method.__name__)
-        return bound
+        return MethodType(self._method, image)

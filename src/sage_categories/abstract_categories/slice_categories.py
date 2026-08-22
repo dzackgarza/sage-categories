@@ -48,6 +48,18 @@ class SliceObject(MathematicalObject):
         return self._structure_morphism
 
 
+class SubobjectObject(SliceObject):
+    """An object equipped with a monomorphism into one fixed object."""
+
+    def intersection(self, other: SliceObject) -> SubobjectObject:
+        assert self.fixed_object() is other.fixed_object()
+        ambient = self.structure_morphism().base_category()
+        category = ambient.Subobjects(self.fixed_object())
+        assert category.contains_subobject(self)
+        assert category.contains_subobject(other)
+        return category.intersection(self, other)
+
+
 class SliceForgetfulFunctor(StructuralFunctor):
     """Send a chosen arrow object to its varying ambient object."""
 
@@ -303,15 +315,15 @@ class CosliceUnderCategory(Category):
 class SubobjectCategory(Category):
     """Monomorphisms into one fixed object."""
 
-    ObjectType: type[SliceObject] = SliceObject
+    ObjectType: type[SubobjectObject] = SubobjectObject
 
     def __init__(self, ambient_category: Category, target: MathematicalObject) -> None:
         self._ambient_category = ambient_category
         self._target = target
         self._inclusion: InclusionFunctor | None = None
-        super().__init__(object_type=SliceObject)
+        super().__init__(object_type=SubobjectObject)
 
-    def __call__(self, structure_morphism: Arrow) -> SliceObject:
+    def __call__(self, structure_morphism: Arrow) -> SubobjectObject:
         assert structure_morphism in self._ambient_category.MonomorphismArrowCategory()
         assert structure_morphism.codomain() is self._target
         return self.ObjectType(
@@ -320,6 +332,26 @@ class SubobjectCategory(Category):
             fixed_object=self._target,
             structure_morphism=structure_morphism,
         )
+
+    def intersection(
+        self,
+        first: SliceObject,
+        second: SliceObject,
+    ) -> SubobjectObject:
+        assert first in self and second in self
+        pullback = self._ambient_category.pullback(
+            first.structure_morphism(),
+            second.structure_morphism(),
+        )
+        apex = pullback.image()
+        projection = pullback.projection(first.object())
+        structure_morphism = self._ambient_category.compose(
+            first.structure_morphism(),
+            projection,
+        )
+        monomorphisms = self._ambient_category.Mono(apex, self._target)
+        assert is_restricted_hom_category(monomorphisms)
+        return self(monomorphisms(structure_morphism))
 
     def contains_subobject(
         self,

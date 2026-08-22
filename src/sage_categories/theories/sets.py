@@ -882,17 +882,6 @@ class SetSubset(SetFunction):
             )
         )
 
-    def intersection(self, other: SetSubset) -> SetSubset:
-        assert self.base_set() is other.base_set()
-        if self._members is not None and other._members is not None:
-            return self.power_set().from_members(self._members & other._members)
-        return self.power_set().from_predicate(
-            lambda member: _decision_and(
-                self.underlying_set().contains(member),
-                other.underlying_set().contains(member),
-            )
-        )
-
     def difference(self, other: SetSubset) -> SetSubset:
         assert self.base_set() is other.base_set()
         if self._members is not None and other._members is not None:
@@ -908,7 +897,18 @@ class SetSubset(SetFunction):
         assert self.base_set() is other.base_set()
         if self._members is not None and other._members is not None:
             return self.power_set().from_members(self._members ^ other._members)
-        return self.union(other).difference(self.intersection(other))
+        return self.power_set().from_predicate(
+            lambda member: _decision_or(
+                _decision_and(
+                    self.underlying_set().contains(member),
+                    _decision_not(other.underlying_set().contains(member)),
+                ),
+                _decision_and(
+                    _decision_not(self.underlying_set().contains(member)),
+                    other.underlying_set().contains(member),
+                ),
+            )
+        )
 
     def complement(self) -> SetSubset:
         return self.power_set().from_predicate(lambda member: _decision_not(self.underlying_set().contains(member)))
@@ -1766,26 +1766,12 @@ class SetsCategory(Category):
         return "Sets"
 
 
-class SetPropertyCategory(Category):
-    """A property subcategory of ``Sets``."""
-
-    def __init__(
-        self,
-        sets: SetsCategory,
-        *,
-        object_type: type[SetObject] | None = None,
-    ) -> None:
+class CountableSetsCategory(Category):
+    def __init__(self, sets: SetsCategory) -> None:
         self._sets = sets
         self._inclusion: InclusionFunctor | None = None
-        super().__init__(object_type=sets.ObjectType if object_type is None else object_type)
+        super().__init__()
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
-        if self._inclusion is None:
-            self._inclusion = InclusionFunctor(self, self._sets)
-        return (self._inclusion,)
-
-
-class CountableSetsCategory(SetPropertyCategory):
     def __contains__(self, candidate: MembershipInput) -> bool:
         value = registered_value(candidate)
         if value is None or not Sets().contains_set(value):
@@ -1793,11 +1779,17 @@ class CountableSetsCategory(SetPropertyCategory):
         finite = value.cardinality().is_finite()
         return finite is True or value.cardinality() == Cardinals().aleph()
 
+    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+        if self._inclusion is None:
+            self._inclusion = InclusionFunctor(self, self._sets)
+        return (self._inclusion,)
 
-class FiniteSetsCategory(SetPropertyCategory):
+
+class FiniteSetsCategory(Category):
     def __init__(self, sets: SetsCategory) -> None:
+        self._sets = sets
         self._countable_inclusion: InclusionFunctor | None = None
-        super().__init__(sets)
+        super().__init__()
 
     def __contains__(self, candidate: MembershipInput) -> bool:
         value = registered_value(candidate)
@@ -1812,16 +1804,27 @@ class FiniteSetsCategory(SetPropertyCategory):
         return candidate in self
 
 
-class InfiniteSetsCategory(SetPropertyCategory):
+class InfiniteSetsCategory(Category):
+    def __init__(self, sets: SetsCategory) -> None:
+        self._sets = sets
+        self._inclusion: InclusionFunctor | None = None
+        super().__init__()
+
     def __contains__(self, candidate: MembershipInput) -> bool:
         value = registered_value(candidate)
         return value is not None and Sets().contains_set(value) and value.cardinality().is_infinite() is True
 
+    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+        if self._inclusion is None:
+            self._inclusion = InclusionFunctor(self, self._sets)
+        return (self._inclusion,)
 
-class UncountableSetsCategory(SetPropertyCategory):
+
+class UncountableSetsCategory(Category):
     def __init__(self, sets: SetsCategory) -> None:
+        self._sets = sets
         self._infinite_inclusion: InclusionFunctor | None = None
-        super().__init__(sets)
+        super().__init__()
 
     def __contains__(self, candidate: MembershipInput) -> bool:
         value = registered_value(candidate)
@@ -1836,9 +1839,11 @@ class UncountableSetsCategory(SetPropertyCategory):
         return (self._infinite_inclusion,)
 
 
-class PartiallyOrderedSetsCategory(SetPropertyCategory):
+class PartiallyOrderedSetsCategory(Category):
     def __init__(self, sets: SetsCategory) -> None:
-        super().__init__(sets, object_type=PartiallyOrderedSetObject)
+        self._sets = sets
+        self._inclusion: InclusionFunctor | None = None
+        super().__init__(object_type=PartiallyOrderedSetObject)
 
     def _hom_category_type(self) -> type[HomCategory]:
         return PosetHomCategory
@@ -1850,11 +1855,17 @@ class PartiallyOrderedSetsCategory(SetPropertyCategory):
         value = registered_value(candidate)
         return value is not None and Sets().contains_set(value) and id(value) in _SET_ORDERS
 
+    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+        if self._inclusion is None:
+            self._inclusion = InclusionFunctor(self, self._sets)
+        return (self._inclusion,)
 
-class TotallyOrderedSetsCategory(SetPropertyCategory):
+
+class TotallyOrderedSetsCategory(Category):
     def __init__(self, sets: SetsCategory) -> None:
+        self._sets = sets
         self._partial_order_inclusion: InclusionFunctor | None = None
-        super().__init__(sets, object_type=PartiallyOrderedSetObject)
+        super().__init__()
 
     def _hom_category_type(self) -> type[HomCategory]:
         return PosetHomCategory

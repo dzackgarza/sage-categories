@@ -2276,6 +2276,95 @@ def FiniteSubsets(base_set: SetObject) -> FiniteSubsetSet:
     return cached
 
 
+_FUNCTION_SUPPORTS: dict[int, SetSubset] = {}
+
+
+class FinitelySupportedFunctionSet(SetObject):
+    """Functions from an index set into a pointed set with finite support."""
+
+    def __init__(
+        self,
+        index_set: SetObject,
+        value_set: SetObject,
+        basepoint: SetElementInput,
+    ) -> None:
+        assert value_set.contains(basepoint) is True
+        self._index_set = index_set
+        self._value_set = value_set
+        self._basepoint = basepoint
+        super().__init__(
+            category=Sets(),
+            cardinality=self._construction_cardinality(),
+        )
+
+    def index_set(self) -> SetObject:
+        return self._index_set
+
+    def value_set(self) -> SetObject:
+        return self._value_set
+
+    def basepoint(self) -> SetElementInput:
+        return self._basepoint
+
+    def _construction_cardinality(self) -> Cardinal | None:
+        value_cardinality = self._value_set.cardinality()
+        index_cardinality = self._index_set.cardinality()
+        if value_cardinality == 1 or index_cardinality == 0:
+            return cardinal(1)
+        if index_cardinality.is_finite() is True:
+            return Cardinals().power(value_cardinality, index_cardinality)
+        if index_cardinality.is_infinite() is True:
+            return Cardinals().supremum(value_cardinality, index_cardinality)
+        return None
+
+    def __call__(
+        self,
+        rule: SetMapRule,
+        *,
+        support: SetSubset,
+    ) -> SetFunction:
+        assert support in FiniteSubsets(self._index_set)
+        function = SetMap(self._index_set, self._value_set, rule)
+        _FUNCTION_SUPPORTS[id(function)] = support
+        assert self.contains(function) is True
+        return function
+
+    def support(self, function: SetFunction) -> SetSubset:
+        assert function in self
+        support = _FUNCTION_SUPPORTS.get(id(function))
+        assert support is not None
+        return support
+
+    def contains(self, candidate: SetElementInput) -> Decision:
+        value = registered_value(candidate)
+        if value is None or value not in Sets().Hom(self._index_set, self._value_set):
+            return False
+        support = _FUNCTION_SUPPORTS.get(id(value))
+        return support is not None and support in FiniteSubsets(self._index_set)
+
+    def __repr__(self) -> str:
+        return f"Finitely supported functions {self._index_set} -> {self._value_set}"
+
+
+_FINITELY_SUPPORTED_FUNCTION_SETS: dict[
+    tuple[int, int, int],
+    FinitelySupportedFunctionSet,
+] = {}
+
+
+def FinitelySupportedFunctions(
+    index_set: SetObject,
+    value_set: SetObject,
+    basepoint: SetElementInput,
+) -> FinitelySupportedFunctionSet:
+    key = id(index_set), id(value_set), id(basepoint)
+    cached = _FINITELY_SUPPORTED_FUNCTION_SETS.get(key)
+    if cached is None:
+        cached = FinitelySupportedFunctionSet(index_set, value_set, basepoint)
+        _FINITELY_SUPPORTED_FUNCTION_SETS[key] = cached
+    return cached
+
+
 def ImageSet(
     function: SetFunction,
     *,

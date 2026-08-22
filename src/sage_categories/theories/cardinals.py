@@ -142,23 +142,12 @@ class Cardinal(MathematicalObject):
         value = registered_value(other)
         if value is None or not Cardinals().contains_cardinal(value):
             return False
-        if (
-            self._kind is CardinalKind.INDEXED_SUM
-            or self._kind is CardinalKind.INDEXED_PRODUCT
-        ):
+        if self._kind is CardinalKind.INDEXED_SUM or self._kind is CardinalKind.INDEXED_PRODUCT:
             return False
-        return (
-            self._kind is value._kind
-            and self._finite_value == value._finite_value
-            and self._name == value._name
-            and self._terms == value._terms
-        )
+        return self._kind is value._kind and self._finite_value == value._finite_value and self._name == value._name and self._terms == value._terms
 
     def __hash__(self) -> int:
-        if (
-            self._kind is CardinalKind.INDEXED_SUM
-            or self._kind is CardinalKind.INDEXED_PRODUCT
-        ):
+        if self._kind is CardinalKind.INDEXED_SUM or self._kind is CardinalKind.INDEXED_PRODUCT:
             return id(self)
         return hash((self._kind, self._finite_value, self._name, self._terms))
 
@@ -328,10 +317,7 @@ class CardinalsCategory(Category):
             return self(0)
         if base == 1:
             return self(1)
-        if (
-            base.kind() is CardinalKind.FINITE
-            and exponent.kind() is CardinalKind.FINITE
-        ):
+        if base.kind() is CardinalKind.FINITE and exponent.kind() is CardinalKind.FINITE:
             return self(base.finite_value() ** exponent.finite_value())
         return Cardinal(
             category=self,
@@ -366,10 +352,7 @@ class CardinalsCategory(Category):
     def le(self, source: Cardinal, target: Cardinal) -> Decision:
         if source == target:
             return True
-        if (
-            source.kind() is CardinalKind.FINITE
-            and target.kind() is CardinalKind.FINITE
-        ):
+        if source.kind() is CardinalKind.FINITE and target.kind() is CardinalKind.FINITE:
             return source.finite_value() <= target.finite_value()
         if source.kind() is CardinalKind.FINITE and target.kind() is CardinalKind.ALEPH:
             return True

@@ -162,6 +162,10 @@ A constructor based on a finite tuple of factors cannot express the integral ade
 | `POL-CAT-033` | Define a subcategory only for a genuine mathematical property or structure. Never define one only to select, store, or expose an implementation. |
 | `POL-CAT-034` | Let objects supply optional construction data to a general operation. Select applicable algorithms by case analysis on that data while preserving one public mathematical operation and result type. |
 | `POL-CAT-035` | Treat an implementation-shaped category or object name as evidence that an established mathematical owner or construction has been missed. Resolve the object, arrows, and construction before adding terminology. |
+| `POL-CAT-036` | Use a small set of general, mathematically standard category constructors as the primary construction interface. Do not require callers to know a specialized implementation constructor. |
+| `POL-CAT-037` | Route a general construction to every justified property subcategory from its input, construction data, and explicit optional claims. Use case analysis or pattern matching for this refinement. |
+| `POL-CAT-038` | Keep direct subcategory constructors available as optional expert entry points. Correct construction and category placement must not require knowledge of the category graph. |
+| `POL-CAT-039` | Make construction discoverable through standard categories such as `Sets()`, `Monoids()`, `Groups()`, `Rings()`, `Modules(R)`, and `Algebras(R)`. Let the implementation absorb the routing complexity. |
 
 Grounding examples:
 
@@ -174,6 +178,11 @@ Grounding examples:
   A private representation can retain the predicate or other construction provenance for computation.
   `PropertySet` or `Sets.PropertyCategory()` does not name a mathematical class: every set can be characterized by a property.
   Such a name mistakes the construction of an ordinary subset for a new kind of set.
+
+- `Sets({1, 2, 3})` constructs a finite set and routes it into the finite-set subcategory.
+  A caller need not know or call a specialized `FiniteSet` constructor.
+  Optional data such as `cardinality=3` or a claim such as `is_projective=True` can guide refinement when direct verification is difficult.
+  A caller who already knows the relevant subcategory can use its constructor directly.
 
 ## Leaf-category encapsulation
 

@@ -153,6 +153,28 @@ Do not reuse a retired identifier.
 | `POL-CAT-030` | Establish `X in Sets()` or apply an explicit functor to `Sets()` before using elements, membership, cardinality, enumeration, subsets, or set equality. |
 | `POL-CAT-031` | Treat an unjustified reduction to `Sets()` as a foundational error. Rebuild every dependent definition, type, arrow, and conclusion in the correct category. |
 
+## Leaf-category encapsulation
+
+| ID | Policy |
+| --- | --- |
+| `POL-LEAF-001` | Integrate a new leaf category by supplying its selected structural functors to known categories. These functors are the complete inheritance declaration. |
+| `POL-LEAF-002` | Make a leaf constructor accept only the minimal defining data that its selected structural functors do not already determine. Recover inherited objects and data through the defining arrows. |
+| `POL-LEAF-003` | Define each selected structural functor by an object map and an arrow map. Its object map feeds the recovered data into the target category's constructor. |
+| `POL-LEAF-004` | Make a realization constructor idempotent on an object already owned by its target category. In particular, `Sets(X)` returns `X` when `X in Sets()`. |
+| `POL-LEAF-005` | Let the category compiler inherit the target categories' object, element, and arrow methods along selected structural functors. A leaf category defines no forwarding methods. |
+| `POL-LEAF-006` | Treat a leaf implementation of an inherited operation as evidence of a missing structural functor, an incorrect functor image, or an operation placed at the wrong owner. |
+| `POL-LEAF-007` | Permit a structural functor to land in an arrow category when the defining arrow determines the required inherited object data through its domain or codomain. |
+| `POL-LEAF-008` | Confine private-field access to constructors and functor maps that cannot recover their required defining data through owned semantic interfaces. Use the smallest such access and reconstruct an owned target object immediately. |
+| `POL-LEAF-009` | Keep private representation access out of leaf methods, inherited methods, callers, tests, and downstream packages. |
+| `POL-LEAF-010` | Validate a leaf integration by calling inherited mathematical operations directly on its objects, elements, and arrows through the compiled public surface. |
+
+For example, an object of `Modules(R)` can be defined by an action morphism \(\rho:R\to\operatorname{End}(X)\). Its selected functor to `Sets()` recovers \(X\) from \(\rho\) and applies `Sets(X)`. The module category does not implement set operations independently.
+
+A lattice category supplies a selected functor to an appropriate module category or arrow category.
+The image can be its underlying free module or its defining form arrow.
+Cardinality then arrives through inherited module and set structure.
+A lattice-specific cardinality implementation signals a missing or incorrect structural functor.
+
 Grounding examples: a sheaf is an object of a sheaf category, and an internal Hom of sheaves is again a sheaf.
 A functor is an object of `Fun(C, D)`. None enters `Sets()` without a specified functor.
 

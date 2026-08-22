@@ -175,6 +175,25 @@ The image can be its underlying free module or its defining form arrow.
 Cardinality then arrives through inherited module and set structure.
 A lattice-specific cardinality implementation signals a missing or incorrect structural functor.
 
+## Mathematical encapsulation and repository layout
+
+| ID | Policy |
+| --- | --- |
+| `POL-LAYOUT-001` | Keep a leaf subtree expressed in the language of its own category, its defining structure, and its immediate structural functors. Deeply underlying operations belong to the category that owns them. |
+| `POL-LAYOUT-002` | Treat a reference to cardinality inside a lattice subtree as an ownership defect. Cardinality reaches lattice objects through their structural functors to modules and sets. |
+| `POL-LAYOUT-003` | Make filesystem subtrees follow mathematical ownership boundaries. A reader must be able to audit one category without reading implementations owned by unrelated categories. |
+| `POL-LAYOUT-004` | Isolate the non-mathematical implementation kernel in its own subtree. Category compilation, descriptors, dispatch, and other standard Python machinery belong behind this firewall. |
+| `POL-LAYOUT-005` | Mirror each source subtree in the test layout. Keep all implementation-kernel tests in a dedicated kernel testing subtree and each category's tests with that category's proof obligations. |
+| `POL-LAYOUT-006` | Split `Cat`, `Sets()`, modules, formed modules, algebras, and other substantial mathematical owners into separate subtrees when one-file or shared-subtree organization impedes a complete local audit. |
+| `POL-LAYOUT-007` | Give a frequently used property subcategory its own nested subtree when its constructors, arrows, algorithms, and tests form a substantial unit. Examples include finite or countable sets and free modules or algebras under stated ring hypotheses. |
+| `POL-LAYOUT-008` | Keep mathematical subtrees free of engine types, storage vocabulary, generic container types, and non-mathematical dispatch. Use owned categories, sets, ordered sets, arrows, and tensors in those subtrees. |
+| `POL-LAYOUT-009` | Put Sage, SymPy, and other engine adapters in dedicated backend subtrees separate from the mathematical category definitions they realize. |
+| `POL-LAYOUT-010` | Confine necessary engine imports, engine classes, conversion code, and engine-specific exceptions to backend subtrees. Translate inputs and results at that boundary. |
+| `POL-LAYOUT-011` | Define the public mathematical interface in the category subtree. Implement each engine realization against that interface in its backend subtree. |
+| `POL-LAYOUT-012` | Permit a backend subtree to use engine-specific types and required Python representations. Keep every such use inside the boundary and return owned semantic objects. |
+| `POL-LAYOUT-013` | Make dependency direction visible in the layout: mathematical categories depend on the implementation kernel and immediate mathematical owners; backend adapters depend on their public mathematical interfaces. |
+| `POL-LAYOUT-014` | Audit mathematical purity by subtree. Engine names, primitive container semantics, coordinate representations, and unrelated invariants in a mathematical subtree each indicate a misplaced responsibility. |
+
 Grounding examples: a sheaf is an object of a sheaf category, and an internal Hom of sheaves is again a sheaf.
 A functor is an object of `Fun(C, D)`. None enters `Sets()` without a specified functor.
 

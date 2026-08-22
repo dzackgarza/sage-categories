@@ -42,6 +42,14 @@ UNKNOWN = Unknown.VALUE
 type Decision = bool | Unknown
 
 
+def _decision_and(left: Decision, right: Decision) -> Decision:
+    if left is False or right is False:
+        return False
+    if left is UNKNOWN or right is UNKNOWN:
+        return UNKNOWN
+    return True
+
+
 class CardinalKind(Enum):
     FINITE = "finite"
     ALEPH = "aleph"
@@ -141,6 +149,18 @@ class Cardinal(MathematicalObject):
         assert self._kind is CardinalKind.ALEPH
         return omega(self.aleph_index())
 
+    def cardinality(self) -> Cardinal:
+        return self
+
+    def sort_key(self) -> tuple[int, str]:
+        order = {
+            CardinalKind.FINITE: 0,
+            CardinalKind.ALEPH: 1,
+            CardinalKind.POWER: 2,
+            CardinalKind.SUPREMUM: 3,
+        }
+        return order.get(self._kind, 4), repr(self)
+
     def is_finite(self) -> Decision:
         if self._kind is CardinalKind.FINITE:
             return True
@@ -188,7 +208,13 @@ class Cardinal(MathematicalObject):
             return UNKNOWN
         return not countable
 
+    def is_uncountably_infinite(self) -> Decision:
+        return _decision_and(self.is_infinite(), self.is_uncountable())
+
     def __int__(self) -> int:
+        return self.finite_value()
+
+    def __index__(self) -> int:
         return self.finite_value()
 
     def __eq__(self, other: Any) -> bool:
@@ -249,6 +275,9 @@ class Cardinal(MathematicalObject):
     def __pow__(self, exponent: Cardinal) -> Cardinal:
         return Cardinals().power(self, exponent)
 
+    def __rpow__(self, base: Cardinal | int) -> Cardinal:
+        return Cardinals().power(cardinal(base), self)
+
     def __repr__(self) -> str:
         if self._kind is CardinalKind.FINITE:
             return str(self.finite_value())
@@ -273,6 +302,9 @@ class Cardinal(MathematicalObject):
 class CardinalMorphism(Arrow):
     """The unique represented arrow between comparable cardinals."""
 
+    def __repr__(self) -> str:
+        return f"{self.domain()} <= {self.codomain()}"
+
 
 class CardinalHomCategory(HomCategory):
     """A singleton hom category when its source is at most its target."""
@@ -280,18 +312,49 @@ class CardinalHomCategory(HomCategory):
     ObjectType = CardinalMorphism
     ElementType = CardinalMorphism
 
-    def __call__(self) -> CardinalMorphism:
+    def __init__(
+        self,
+        *,
+        domain: MathematicalObject,
+        codomain: MathematicalObject,
+        hom_category: HomCategoryFamily,
+    ) -> None:
+        self._unique_morphism: CardinalMorphism | None = None
+        super().__init__(
+            domain=domain,
+            codomain=codomain,
+            hom_category=hom_category,
+        )
+
+    def unique_morphism(self) -> CardinalMorphism:
         source = self.domain()
         target = self.codomain()
         assert Cardinals().contains_cardinal(source)
         assert Cardinals().contains_cardinal(target)
         assert Cardinals().le(source, target) is True
-        return self.ObjectType(hom_category=self)
+        if self._unique_morphism is None:
+            self._unique_morphism = self.ObjectType(hom_category=self)
+        return self._unique_morphism
+
+    def __call__(self) -> CardinalMorphism:
+        return self.unique_morphism()
+
+    def objects(self) -> MathematicalObject:
+        from sage_categories.theories.sets import FiniteSet
+
+        source = self.domain()
+        target = self.codomain()
+        assert Cardinals().contains_cardinal(source)
+        assert Cardinals().contains_cardinal(target)
+        members: frozenset[CardinalMorphism] = frozenset()
+        if Cardinals().le(source, target) is True:
+            members = frozenset({self.unique_morphism()})
+        return FiniteSet(members)
 
     def identity(self, value: MathematicalObject | None = None) -> CardinalMorphism:
         assert value is None
-        assert self.domain() is self.codomain()
-        return self()
+        assert self.domain() == self.codomain()
+        return self.unique_morphism()
 
     def compose(self, second: Arrow, first: Arrow) -> CardinalMorphism:
         assert first in self.base_category().ArrowCategory()
@@ -329,6 +392,12 @@ class CardinalsCategory(Category):
             )
             self._finite_cardinals[number] = cached
         return cached
+
+    def zero(self) -> Cardinal:
+        return self(0)
+
+    def one(self) -> Cardinal:
+        return self(1)
 
     def aleph(self, index: OrdinalInput = 0) -> Cardinal:
         from sage_categories.theories.ordinals import ordinal
@@ -511,13 +580,25 @@ class CardinalsCategory(Category):
             return UNKNOWN
         if source.kind() is CardinalKind.FINITE and target.kind() is CardinalKind.FINITE:
             return source.finite_value() <= target.finite_value()
-        if source.kind() is CardinalKind.FINITE and target.kind() is CardinalKind.ALEPH:
+        if (
+            source.kind() is CardinalKind.FINITE
+            and target.is_infinite() is True
+        ):
             return True
-        if source.kind() is CardinalKind.ALEPH and target.kind() is CardinalKind.FINITE:
+        if (
+            source.is_infinite() is True
+            and target.kind() is CardinalKind.FINITE
+        ):
             return False
         if source.kind() is CardinalKind.ALEPH and target.kind() is CardinalKind.ALEPH:
             return source.aleph_index() <= target.aleph_index()
         if source.is_countably_infinite() and target.is_infinite() is True:
+            return True
+        if (
+            source.kind() is CardinalKind.ALEPH
+            and source.aleph_index() == 1
+            and target.is_uncountable() is True
+        ):
             return True
         if target.kind() is CardinalKind.POWER:
             if self.le(source, target.terms()[0]) is True:
@@ -556,6 +637,73 @@ class CardinalsCategory(Category):
         if self.lt(target, source) is True:
             return CardinalComparison.GREATER
         return UNKNOWN
+
+    def ge(self, source: Cardinal, target: Cardinal) -> Decision:
+        return self.le(target, source)
+
+    def gt(self, source: Cardinal, target: Cardinal) -> Decision:
+        return self.lt(target, source)
+
+    def are_incomparable(self, source: Cardinal, target: Cardinal) -> Decision:
+        if self.le(source, target) is True or self.le(target, source) is True:
+            return False
+        return UNKNOWN
+
+    def sum_morphism(self, *morphisms: CardinalMorphism) -> CardinalMorphism:
+        sources: list[Cardinal] = []
+        targets: list[Cardinal] = []
+        for morphism in morphisms:
+            assert morphism in self.ArrowCategory()
+            source = morphism.domain()
+            target = morphism.codomain()
+            assert self.contains_cardinal(source)
+            assert self.contains_cardinal(target)
+            sources.append(source)
+            targets.append(target)
+        hom_category = self.Hom(self.sum(*sources), self.sum(*targets))
+        assert is_cardinal_hom_category(hom_category)
+        return hom_category.unique_morphism()
+
+    def product_morphism(self, *morphisms: CardinalMorphism) -> CardinalMorphism:
+        sources: list[Cardinal] = []
+        targets: list[Cardinal] = []
+        for morphism in morphisms:
+            assert morphism in self.ArrowCategory()
+            source = morphism.domain()
+            target = morphism.codomain()
+            assert self.contains_cardinal(source)
+            assert self.contains_cardinal(target)
+            sources.append(source)
+            targets.append(target)
+        hom_category = self.Hom(
+            self.product(*sources),
+            self.product(*targets),
+        )
+        assert is_cardinal_hom_category(hom_category)
+        return hom_category.unique_morphism()
+
+    def power_morphism(
+        self,
+        base_morphism: CardinalMorphism,
+        exponent_morphism: CardinalMorphism,
+    ) -> CardinalMorphism:
+        assert base_morphism in self.ArrowCategory()
+        assert exponent_morphism in self.ArrowCategory()
+        source_base = base_morphism.domain()
+        target_base = base_morphism.codomain()
+        source_exponent = exponent_morphism.domain()
+        target_exponent = exponent_morphism.codomain()
+        assert self.contains_cardinal(source_base)
+        assert self.contains_cardinal(target_base)
+        assert self.contains_cardinal(source_exponent)
+        assert self.contains_cardinal(target_exponent)
+        assert self.le(self.one(), source_base) is True
+        hom_category = self.Hom(
+            self.power(source_base, source_exponent),
+            self.power(target_base, target_exponent),
+        )
+        assert is_cardinal_hom_category(hom_category)
+        return hom_category.unique_morphism()
 
     def __repr__(self) -> str:
         return "Card"

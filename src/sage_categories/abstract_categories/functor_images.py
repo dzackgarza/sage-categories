@@ -44,11 +44,13 @@ class FunctorImageArrow(Arrow):
     def __init__(self, *, hom_category: HomCategory, underlying_arrow: Arrow) -> None:
         image_category = hom_category.base_category()
         assert is_functor_image_category(image_category)
-        assert image_category.contains_image(hom_category.domain())
-        assert image_category.contains_image(hom_category.codomain())
+        domain = hom_category.domain()
+        codomain = hom_category.codomain()
+        assert image_category.contains_image(domain)
+        assert image_category.contains_image(codomain)
         assert underlying_arrow in image_category.functor().codomain().Hom(
-            hom_category.domain().image(),
-            hom_category.codomain().image(),
+            domain.image(),
+            codomain.image(),
         )
         self._underlying_arrow = underlying_arrow
         super().__init__(hom_category=hom_category)
@@ -60,6 +62,7 @@ class FunctorImageArrow(Arrow):
 class FunctorImageHomCategory(HomCategory):
     """Codomain arrows between two represented image objects."""
 
+    ObjectType = FunctorImageArrow
     ElementType = FunctorImageArrow
 
     def __call__(self, underlying_arrow: Arrow) -> FunctorImageArrow:
@@ -68,13 +71,18 @@ class FunctorImageHomCategory(HomCategory):
             underlying_arrow=underlying_arrow,
         )
 
-    def identity(self) -> FunctorImageArrow:
+    def identity(
+        self,
+        value: MathematicalObject | None = None,
+    ) -> FunctorImageArrow:
+        assert value is None
         assert self.domain() is self.codomain()
         image_category = self.base_category()
         assert is_functor_image_category(image_category)
-        assert image_category.contains_image(self.domain())
+        domain = self.domain()
+        assert image_category.contains_image(domain)
         return self(
-            image_category.functor().codomain().identity(self.domain().image())
+            image_category.functor().codomain().identity(domain.image())
         )
 
     def compose(self, second: Arrow, first: Arrow) -> FunctorImageArrow:
@@ -121,6 +129,8 @@ class ImageInclusionFunctor(StructuralFunctor):
 
 class ImageOfFunctor(Category):
     """Outputs of one functor, each with a chosen preimage."""
+
+    ObjectType = FunctorImageObject
 
     def __init__(self, functor: Functor) -> None:
         self._functor = functor

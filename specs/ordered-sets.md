@@ -42,7 +42,8 @@ The category does not infer finiteness from order.
 
 [Category ownership](../CONTRIBUTING.md#category-ownership-and-inheritance) and [leaf-category encapsulation](../CONTRIBUTING.md#leaf-category-encapsulation) govern the general inheritance rules.
 
-The poset subtree owns the order relation, monotone arrows, order constructions and invariants, and finite Hasse diagrams. Its selected forgetful functor is
+The poset subtree owns the order relation, monotone arrows, order constructions and invariants, and finite Hasse diagrams.
+Its selected forgetful functor is
 
 \[
 U:\mathbf{Posets}\longrightarrow\mathbf{Sets},
@@ -50,7 +51,9 @@ U:\mathbf{Posets}\longrightarrow\mathbf{Sets},
 \qquad U(f)=f.
 \]
 
-This functor supplies the complete set surface. The totally ordered set subtree owns totality and positional access. Its inclusion
+This functor supplies the complete set surface.
+The totally ordered set subtree owns totality and positional access.
+Its inclusion
 
 \[
 i:\mathbf{TotOrdSets}\hookrightarrow\mathbf{Posets}

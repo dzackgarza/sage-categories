@@ -12,6 +12,11 @@ from itertools import product as cartesian_product
 from math import comb
 from typing import Any, Protocol, TypeIs
 
+from sage_categories.abstract_categories.category_constructions import (
+    is_opposite_arrow,
+    is_product_arrow,
+    is_product_category,
+)
 from sage_categories.abstract_categories.functors import (
     DiscreteCategories,
     DiscreteDiagram,
@@ -21,11 +26,6 @@ from sage_categories.abstract_categories.functors import (
     InclusionFunctor,
     NaturalTransformation,
     StructuralFunctor,
-)
-from sage_categories.abstract_categories.category_constructions import (
-    is_opposite_arrow,
-    is_product_arrow,
-    is_product_category,
 )
 from sage_categories.abstract_categories.functors import (
     DiscreteCategory as DiscreteCategoryObject,
@@ -1050,9 +1050,7 @@ class ExponentialFunctor(Functor):
         def transport(candidate: SetElementInput) -> SetFunction:
             value = registered_value(candidate)
             assert value is not None and Sets().contains_function(value)
-            return target(
-                lambda member: second(value(precompose(member)))
-            )
+            return target(lambda member: second(value(precompose(member))))
 
         return SetMap(source, target, transport)
 

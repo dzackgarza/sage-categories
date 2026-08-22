@@ -1,0 +1,1 @@
+"""Foundational categorical constructions."""

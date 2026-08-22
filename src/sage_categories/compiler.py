@@ -42,12 +42,12 @@ class CategoryCompiler:
     """Compile object and element method surfaces from a functor graph."""
 
     def __init__(self) -> None:
-        self._object_types: dict[Category, type[MathematicalObject]] = {}
-        self._element_types: dict[Category, type[MathematicalElement]] = {}
-        self._object_catalogues: dict[Category, dict[str, DeclaredMethod]] = {}
-        self._element_catalogues: dict[Category, dict[str, DeclaredMethod]] = {}
+        self._object_types: dict[int, type[MathematicalObject]] = {}
+        self._element_types: dict[int, type[MathematicalElement]] = {}
+        self._object_catalogues: dict[int, dict[str, DeclaredMethod]] = {}
+        self._element_catalogues: dict[int, dict[str, DeclaredMethod]] = {}
         self._routes: dict[
-            tuple[Category, Category], tuple[StructuralFunctor, ...]
+            tuple[int, int], tuple[StructuralFunctor, ...]
         ] = {}
 
     def compiled_object_type(
@@ -56,7 +56,8 @@ class CategoryCompiler:
         local_type: type[MathematicalObject],
     ) -> type[MathematicalObject]:
         """Return the complete implementation type for objects of ``category``."""
-        cached = self._object_types.get(category)
+        key = id(category)
+        cached = self._object_types.get(key)
         if cached is not None:
             return cached
         compiled = self._compile_type(
@@ -64,7 +65,7 @@ class CategoryCompiler:
             local_type,
             self.object_method_catalogue(category),
         )
-        self._object_types[category] = compiled
+        self._object_types[key] = compiled
         return compiled
 
     def compiled_element_type(
@@ -73,7 +74,8 @@ class CategoryCompiler:
         local_type: type[MathematicalElement],
     ) -> type[MathematicalElement]:
         """Return the complete implementation type for elements of ``category``."""
-        cached = self._element_types.get(category)
+        key = id(category)
+        cached = self._element_types.get(key)
         if cached is not None:
             return cached
         compiled = self._compile_type(
@@ -81,7 +83,7 @@ class CategoryCompiler:
             local_type,
             self.element_method_catalogue(category),
         )
-        self._element_types[category] = compiled
+        self._element_types[key] = compiled
         return compiled
 
     def object_method_catalogue(
@@ -89,7 +91,8 @@ class CategoryCompiler:
         category: Category,
     ) -> Mapping[str, DeclaredMethod]:
         """Return the object methods visible in ``category``."""
-        cached = self._object_catalogues.get(category)
+        key = id(category)
+        cached = self._object_catalogues.get(key)
         if cached is not None:
             return cached
         catalogue = self._method_catalogue(
@@ -97,7 +100,7 @@ class CategoryCompiler:
             category.local_object_type(),
             self.object_method_catalogue,
         )
-        self._object_catalogues[category] = catalogue
+        self._object_catalogues[key] = catalogue
         return catalogue
 
     def element_method_catalogue(
@@ -105,7 +108,8 @@ class CategoryCompiler:
         category: Category,
     ) -> Mapping[str, DeclaredMethod]:
         """Return the element methods visible in ``category``."""
-        cached = self._element_catalogues.get(category)
+        key = id(category)
+        cached = self._element_catalogues.get(key)
         if cached is not None:
             return cached
         catalogue = self._method_catalogue(
@@ -113,7 +117,7 @@ class CategoryCompiler:
             category.local_element_type(),
             self.element_method_catalogue,
         )
-        self._element_catalogues[category] = catalogue
+        self._element_catalogues[key] = catalogue
         return catalogue
 
     def implementation_route(
@@ -124,11 +128,11 @@ class CategoryCompiler:
         """Return the unique structural-functor route from source to target."""
         if source is target:
             return ()
-        key = source, target
+        key = id(source), id(target)
         cached = self._routes.get(key)
         if cached is not None:
             return cached
-        routes = self._routes_from(source, target, (source,))
+        routes = self._routes_from(source, target, (id(source),))
         assert len(routes) == 1, (
             f"expected one structural route from {source} to {target}; "
             f"found {len(routes)}"
@@ -205,16 +209,22 @@ class CategoryCompiler:
         self,
         source: Category,
         target: Category,
-        visited: tuple[Category, ...],
+        visited: tuple[int, ...],
     ) -> list[tuple[StructuralFunctor, ...]]:
         routes: list[tuple[StructuralFunctor, ...]] = []
         for functor in source.super_functors():
             codomain = functor.codomain()
-            assert codomain not in visited, "the structural-functor graph has a cycle"
+            assert id(codomain) not in visited, (
+                "the structural-functor graph has a cycle"
+            )
             if codomain is target:
                 routes.append((functor,))
                 continue
-            for suffix in self._routes_from(codomain, target, (*visited, codomain)):
+            for suffix in self._routes_from(
+                codomain,
+                target,
+                (*visited, id(codomain)),
+            ):
                 routes.append((functor, *suffix))
         return routes
 

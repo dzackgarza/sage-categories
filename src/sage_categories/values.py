@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.functors import StructuralFunctor
     from sage_categories.category import Category
-    from sage_categories.hom_categories import HomCategory
+    from sage_categories.abstract_categories.hom_categories import HomCategory
 
 type MembershipInput = Any
 
@@ -33,9 +33,9 @@ class MathematicalObject:
 
     def __init__(self, *, category: Category | None) -> None:
         self._category = category
-        self._structural_images: dict[Category, MathematicalObject] = {}
+        self._structural_images: dict[int, MathematicalObject] = {}
         if category is not None:
-            self._structural_images[category] = self
+            self._structural_images[id(category)] = self
         _VALUES[id(self)] = self
 
     def category(self) -> Category:
@@ -61,13 +61,14 @@ class MathematicalObject:
         value = self
         for functor in route:
             codomain = functor.codomain()
-            cached = self._structural_images.get(codomain)
+            key = id(codomain)
+            cached = self._structural_images.get(key)
             if cached is not None:
                 value = cached
                 continue
             value = functor.on_object(value)
             assert value in codomain
-            self._structural_images[codomain] = value
+            self._structural_images[key] = value
         return value
 
 
@@ -116,6 +117,10 @@ class Arrow(MathematicalElement):
     def target(self) -> MathematicalObject:
         """Return the target object."""
         return self.codomain()
+
+    def forward(self) -> Arrow:
+        """Return the represented ordinary arrow."""
+        return self
 
     def _belongs_to_hom(self, hom_category: HomCategory) -> bool:
         return self._hom_category is hom_category

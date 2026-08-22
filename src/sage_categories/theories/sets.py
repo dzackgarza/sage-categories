@@ -63,16 +63,16 @@ from sage_categories.abstract_categories.products import (
 )
 from sage_categories.category import Category
 from sage_categories.theories.cardinals import (
-    UNKNOWN,
     Cardinal,
     Cardinals,
-    Decision,
     UnknownCardinality,
     cardinal,
     is_cardinal_hom_category,
 )
 from sage_categories.values import (
+    UNKNOWN,
     Arrow,
+    Decision,
     MathematicalObject,
     MembershipInput,
     registered_value,

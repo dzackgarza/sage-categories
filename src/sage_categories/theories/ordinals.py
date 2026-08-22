@@ -8,19 +8,20 @@ Mathlib's ``SetTheory/Ordinal/Arithmetic.lean`` implementation.
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, TypeIs
+from typing import TYPE_CHECKING, Any, TypeIs
 
 from sage_categories.abstract_categories.hom_categories import HomCategory
 from sage_categories.category import Category
-from sage_categories.theories.cardinals import (
+from sage_categories.values import (
     UNKNOWN,
-    Cardinal,
-    Cardinals,
+    Arrow,
     Decision,
-    aleph,
-    cardinal,
+    MathematicalObject,
+    registered_value,
 )
-from sage_categories.values import Arrow, MathematicalObject, registered_value
+
+if TYPE_CHECKING:
+    from sage_categories.theories.cardinals import Cardinal
 
 
 class OrdinalKind(Enum):
@@ -82,6 +83,8 @@ class Ordinal(MathematicalObject):
         return self._index
 
     def cardinality(self) -> Cardinal:
+        from sage_categories.theories.cardinals import Cardinals, aleph, cardinal
+
         if self._kind is OrdinalKind.FINITE:
             return cardinal(self.finite_value())
         if self._kind is OrdinalKind.INITIAL:

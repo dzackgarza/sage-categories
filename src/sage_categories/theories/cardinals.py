@@ -17,29 +17,16 @@ from sage_categories.abstract_categories.hom_categories import (
 )
 from sage_categories.category import Category
 from sage_categories.values import (
+    UNKNOWN,
     Arrow,
+    Decision,
     MathematicalObject,
+    Unknown,
     registered_value,
 )
 
 if TYPE_CHECKING:
     from sage_categories.theories.ordinals import Ordinal, OrdinalInput
-
-
-class Unknown(Enum):
-    """The result of a mathematical question with no represented answer."""
-
-    VALUE = "Unknown"
-
-    def __bool__(self) -> bool:
-        assert False, "Unknown is not a Boolean value"
-
-    def __repr__(self) -> str:
-        return "Unknown"
-
-
-UNKNOWN = Unknown.VALUE
-type Decision = bool | Unknown
 
 
 def _decision_and(left: Decision, right: Decision) -> Decision:
@@ -743,3 +730,7 @@ def SymbolicCardinal(name: str) -> Cardinal:
 
 def UnknownCardinality() -> Cardinal:
     return Cardinals().unknown()
+
+
+aleph0 = Aleph0()
+continuum = Continuum()

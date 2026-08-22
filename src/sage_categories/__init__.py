@@ -2,7 +2,38 @@
 
 from importlib.metadata import version as _distribution_version
 
-__all__ = ["__version__", "version"]
+from sage_categories.category import Category
+from sage_categories.functor import (
+    ComposedFunctor,
+    ConcreteFunctor,
+    Functor,
+    IdentityFunctor,
+    NaturalTransformation,
+)
+from sage_categories.theories.cardinals import Cardinals
+from sage_categories.theories.sets import FiniteSet, Sets
+from sage_categories.values import (
+    MathematicalElement,
+    MathematicalMorphism,
+    MathematicalObject,
+)
+
+__all__ = [
+    "Cardinals",
+    "Category",
+    "ComposedFunctor",
+    "ConcreteFunctor",
+    "FiniteSet",
+    "Functor",
+    "IdentityFunctor",
+    "MathematicalElement",
+    "MathematicalMorphism",
+    "MathematicalObject",
+    "NaturalTransformation",
+    "Sets",
+    "__version__",
+    "version",
+]
 
 # One source of truth. The version is declared once, in pyproject.toml, and
 # read back from the installed distribution metadata rather than restated

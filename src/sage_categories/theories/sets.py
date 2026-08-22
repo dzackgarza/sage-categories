@@ -308,9 +308,7 @@ class SetSubset(SetFunction):
 
         def characteristic_value(member: SetElementInput) -> bool:
             answer = predicate(member)
-            assert answer is not UNKNOWN, (
-                f"membership of {member} in {underlying_set} is unknown"
-            )
+            assert answer is not UNKNOWN, f"membership of {member} in {underlying_set} is unknown"
             return answer
 
         super().__init__(
@@ -713,9 +711,7 @@ class SetHomCategory(HomCategory, SetObject):
 
         def inverse_image(candidate: SetElementInput) -> SetSubset:
             subset = self._represented_subset(candidate)
-            return target_power_set.from_predicate(
-                lambda member: subset.contains(function(member))
-            )
+            return target_power_set.from_predicate(lambda member: subset.contains(function(member)))
 
         return SetMap(
             self,

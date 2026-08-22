@@ -71,6 +71,21 @@ Do not reuse a retired identifier.
 | `POL-REP-020` | Return tensor elements from `vector()` and `matrix()`. Do not expose Sage vector or matrix elements through the owned API. |
 | `POL-REP-021` | Require tensor coefficient data to support one index per tensor slot. Keep storage order private to the tensor implementation. |
 
+## Computation-engine encapsulation
+
+| ID | Policy |
+| --- | --- |
+| `POL-ENGINE-001` | Define the public API entirely from the owned categorical mathematics. A computation engine supplies private realizations and algorithms only. |
+| `POL-ENGINE-002` | Keep every engine type, constructor, method name, exception, return convention, and storage choice behind a private computation boundary. |
+| `POL-ENGINE-003` | Return owned categories, objects, elements, arrows, and functors from every public operation. Reconstruct the semantic result before it crosses the computation boundary. |
+| `POL-ENGINE-004` | Expose a set-theoretic image as `f.image()` and a predicate subobject as `X.subset_from(predicate)`. Keep constructors such as Sage or SymPy `ImageSet` and `ConditionSet` private. |
+| `POL-ENGINE-005` | Let categorical construction data select refinements and additional methods. An image subobject can retain its defining arrow and inherit operations owned by the corresponding image-subobject category. |
+| `POL-ENGINE-006` | Keep engine selection and dispatch private. Public signatures, return types, representations, documentation examples, and exceptions use only owned mathematical notions. |
+| `POL-ENGINE-007` | Make computation engines replaceable behind the realization boundary. Replacing Sage, SymPy, or another engine must preserve every downstream public call and mathematical result. |
+| `POL-ENGINE-008` | Write tests, notebooks, and downstream packages against the owned semantic API. Do not import, inspect, or assert engine implementation types or constructors. |
+| `POL-ENGINE-009` | Do not re-export an engine API, imitate its naming scheme, or let its available operations determine the owned public method surface. |
+| `POL-ENGINE-010` | Translate engine-specific partial results into the owned result type, including `Unknown` for unresolved semantic predicates. |
+
 ## Algebraic generality
 
 | ID | Policy |

@@ -37,9 +37,9 @@ if TYPE_CHECKING:
         ProductPresentation,
     )
     from sage_categories.abstract_categories.slice_categories import (
+        CosliceUnderCategory,
         CoveredObjectCategory,
         CoveringObjectCategory,
-        CosliceUnderCategory,
         SliceOverCategory,
         SubobjectCategory,
         SuperobjectCategory,

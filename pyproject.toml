@@ -1,7 +1,11 @@
 [project]
 name = "sage-categories"
 version = "0.1.0"
+description = "Owned Sage categories."
 requires-python = ">=3.14"
+dependencies = [
+    "tree-sitter-sage",
+]
 
 [build-system]
 requires = ["setuptools>=80"]
@@ -9,3 +13,6 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.uv.sources]
+tree-sitter-sage = { path = "../tree-sitter-sage", editable = true }

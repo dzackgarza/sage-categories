@@ -102,11 +102,13 @@ class ConeArrow(Arrow):
     def __init__(self, *, hom_category: HomCategory, apex_arrow: Arrow) -> None:
         category = hom_category.base_category()
         assert is_cone_category(category)
-        assert category.contains_cone(hom_category.domain())
-        assert category.contains_cone(hom_category.codomain())
+        domain = hom_category.domain()
+        codomain = hom_category.codomain()
+        assert category.contains_cone(domain)
+        assert category.contains_cone(codomain)
         assert apex_arrow in category.ambient_category().Hom(
-            hom_category.domain().apex(),
-            hom_category.codomain().apex(),
+            domain.apex(),
+            codomain.apex(),
         )
         self._apex_arrow = apex_arrow
         super().__init__(hom_category=hom_category)
@@ -121,11 +123,13 @@ class CoconeArrow(Arrow):
     def __init__(self, *, hom_category: HomCategory, apex_arrow: Arrow) -> None:
         category = hom_category.base_category()
         assert is_cocone_category(category)
-        assert category.contains_cocone(hom_category.domain())
-        assert category.contains_cocone(hom_category.codomain())
+        domain = hom_category.domain()
+        codomain = hom_category.codomain()
+        assert category.contains_cocone(domain)
+        assert category.contains_cocone(codomain)
         assert apex_arrow in category.ambient_category().Hom(
-            hom_category.domain().apex(),
-            hom_category.codomain().apex(),
+            domain.apex(),
+            codomain.apex(),
         )
         self._apex_arrow = apex_arrow
         super().__init__(hom_category=hom_category)
@@ -137,16 +141,22 @@ class CoconeArrow(Arrow):
 class ConeHomCategory(HomCategory):
     """Morphisms between cones over one diagram."""
 
+    ObjectType = ConeArrow
     ElementType = ConeArrow
 
     def __call__(self, apex_arrow: Arrow) -> ConeArrow:
         return self.ObjectType(hom_category=self, apex_arrow=apex_arrow)
 
-    def identity(self) -> ConeArrow:
+    def identity(
+        self,
+        value: MathematicalObject | None = None,
+    ) -> ConeArrow:
+        assert value is None
         category = self.base_category()
         assert is_cone_category(category)
-        assert category.contains_cone(self.domain())
-        return self(category.ambient_category().identity(self.domain().apex()))
+        domain = self.domain()
+        assert category.contains_cone(domain)
+        return self(category.ambient_category().identity(domain.apex()))
 
     def compose(self, second: Arrow, first: Arrow) -> ConeArrow:
         assert self.contains_cone_arrow(second)
@@ -167,16 +177,22 @@ class ConeHomCategory(HomCategory):
 class CoconeHomCategory(HomCategory):
     """Morphisms between cocones under one diagram."""
 
+    ObjectType = CoconeArrow
     ElementType = CoconeArrow
 
     def __call__(self, apex_arrow: Arrow) -> CoconeArrow:
         return self.ObjectType(hom_category=self, apex_arrow=apex_arrow)
 
-    def identity(self) -> CoconeArrow:
+    def identity(
+        self,
+        value: MathematicalObject | None = None,
+    ) -> CoconeArrow:
+        assert value is None
         category = self.base_category()
         assert is_cocone_category(category)
-        assert category.contains_cocone(self.domain())
-        return self(category.ambient_category().identity(self.domain().apex()))
+        domain = self.domain()
+        assert category.contains_cocone(domain)
+        return self(category.ambient_category().identity(domain.apex()))
 
     def compose(self, second: Arrow, first: Arrow) -> CoconeArrow:
         assert self.contains_cocone_arrow(second)
@@ -196,6 +212,8 @@ class CoconeHomCategory(HomCategory):
 
 class ConeCategory(Category):
     """The category of cones over one diagram."""
+
+    ObjectType = ConeObject
 
     def __init__(self, diagram: Functor) -> None:
         self._diagram = diagram
@@ -225,6 +243,8 @@ class ConeCategory(Category):
 
 class CoconeCategory(Category):
     """The category of cocones under one diagram."""
+
+    ObjectType = CoconeObject
 
     def __init__(self, diagram: Functor) -> None:
         self._diagram = diagram
@@ -364,6 +384,16 @@ class PresentationArrow(Arrow):
     """A morphism between universal presentations, represented on apexes."""
 
     def __init__(self, *, hom_category: HomCategory, apex_arrow: Arrow) -> None:
+        category = hom_category.base_category()
+        assert is_presentation_category(category)
+        domain = hom_category.domain()
+        codomain = hom_category.codomain()
+        assert category.contains_presentation(domain)
+        assert category.contains_presentation(codomain)
+        assert apex_arrow in category.ambient_category().Hom(
+            domain.apex(),
+            codomain.apex(),
+        )
         self._apex_arrow = apex_arrow
         super().__init__(hom_category=hom_category)
 
@@ -374,30 +404,28 @@ class PresentationArrow(Arrow):
 class PresentationHomCategory(HomCategory):
     """Morphisms between universal presentations."""
 
+    ObjectType = PresentationArrow
     ElementType = PresentationArrow
 
     def __call__(self, apex_arrow: Arrow) -> PresentationArrow:
         return self.ObjectType(hom_category=self, apex_arrow=apex_arrow)
 
-    def identity(self) -> PresentationArrow:
+    def identity(
+        self,
+        value: MathematicalObject | None = None,
+    ) -> PresentationArrow:
+        assert value is None
         category = self.base_category()
-        assert (
-            is_product_presentations(category)
-            or is_coproduct_presentations(category)
-            or is_biproduct_presentations(category)
-        )
-        assert category.contains_presentation(self.domain())
-        return self(category.ambient_category().identity(self.domain().apex()))
+        assert is_presentation_category(category)
+        domain = self.domain()
+        assert category.contains_presentation(domain)
+        return self(category.ambient_category().identity(domain.apex()))
 
     def compose(self, second: Arrow, first: Arrow) -> PresentationArrow:
         assert self.contains_presentation_arrow(second)
         assert self.contains_presentation_arrow(first)
         category = self.base_category()
-        assert (
-            is_product_presentations(category)
-            or is_coproduct_presentations(category)
-            or is_biproduct_presentations(category)
-        )
+        assert is_presentation_category(category)
         return self(
             category.ambient_category().compose(
                 second.apex_arrow(),
@@ -484,6 +512,8 @@ class BiproductApexFunctor(StructuralFunctor):
 class ProductPresentations(Category):
     """Chosen products of one diagram."""
 
+    ObjectType = ProductPresentation
+
     def __init__(self, diagram: Functor) -> None:
         self._diagram = diagram
         self._apex_functor: ProductApexFunctor | None = None
@@ -537,6 +567,8 @@ class ProductPresentations(Category):
 class CoproductPresentations(Category):
     """Chosen coproducts of one diagram."""
 
+    ObjectType = CoproductPresentation
+
     def __init__(self, diagram: Functor) -> None:
         self._diagram = diagram
         self._apex_functor: CoproductApexFunctor | None = None
@@ -589,6 +621,8 @@ class CoproductPresentations(Category):
 
 class BiproductPresentations(Category):
     """Chosen biproducts of one diagram."""
+
+    ObjectType = BiproductPresentation
 
     def __init__(self, diagram: Functor) -> None:
         self._diagram = diagram
@@ -757,3 +791,16 @@ def is_biproduct_presentations(
     category: Category,
 ) -> TypeIs[BiproductPresentations]:
     return any(category is candidate for candidate in _BIPRODUCT_CATEGORIES.values())
+
+
+def is_presentation_category(
+    category: Category,
+) -> TypeIs[
+    ProductPresentations | CoproductPresentations | BiproductPresentations
+]:
+    """Return whether ``category`` contains universal presentations."""
+    return (
+        is_product_presentations(category)
+        or is_coproduct_presentations(category)
+        or is_biproduct_presentations(category)
+    )

@@ -10,7 +10,10 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import TypeIs, overload
 
-from sage_categories.abstract_categories.hom_categories import HomCategory
+from sage_categories.abstract_categories.hom_categories import (
+    HomCategory,
+    HomCategoryFamily,
+)
 from sage_categories.category import Category
 from sage_categories.values import Arrow, MathematicalElement, MathematicalObject
 
@@ -147,6 +150,38 @@ class InclusionFunctor(StructuralFunctor):
     def on_morphism(self, morphism: Arrow) -> Arrow:
         assert morphism in self._included_domain.ArrowCategory()
         assert morphism in self.codomain().ArrowCategory()
+        return morphism
+
+    def on_element(
+        self,
+        source: MathematicalObject,
+        element: MathematicalElement,
+    ) -> MathematicalElement:
+        return element
+
+    def is_faithful(self) -> bool:
+        return True
+
+
+class HomCategoryFamilyInclusionFunctor(StructuralFunctor):
+    """Map each restricted hom category to its ambient hom category."""
+
+    def __init__(
+        self,
+        domain: HomCategoryFamily,
+        codomain: HomCategoryFamily,
+    ) -> None:
+        self._domain_family = domain
+        self._codomain_family = codomain
+        super().__init__(domain, codomain)
+
+    def on_object(self, source: MathematicalObject) -> HomCategory:
+        assert self._domain_family.contains_hom_category(source)
+        return self._codomain_family.Of(source.domain(), source.codomain())
+
+    def on_morphism(self, morphism: Arrow) -> Arrow:
+        assert morphism in self._domain_family.ArrowCategory()
+        assert morphism in self._codomain_family.ArrowCategory()
         return morphism
 
     def on_element(

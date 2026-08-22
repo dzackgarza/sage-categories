@@ -195,7 +195,6 @@ class CategoryCompiler:
         self,
         local_type: ImplementationType,
     ) -> dict[str, FunctionType]:
-        owner = local_type.__qualname__
         return {
             name: method
             for name, method in inspect.getmembers_static(
@@ -204,7 +203,6 @@ class CategoryCompiler:
             )
             if name not in _IGNORED_METHODS
             and (not name.startswith("_") or name.startswith("__"))
-            and method.__qualname__.rsplit(".", 1)[0] == owner
         }
 
     def _routes_from(

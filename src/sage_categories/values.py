@@ -118,7 +118,14 @@ class Arrow(MathematicalElement):
         return self
 
     def _belongs_to_hom(self, hom_category: HomCategory) -> bool:
-        return self._hom_category is hom_category
+        own_hom_category = self._hom_category
+        return own_hom_category is hom_category or (
+            own_hom_category.domain() is hom_category.domain()
+            and own_hom_category.codomain() is hom_category.codomain()
+            and own_hom_category.hom_category().is_subcategory(
+                hom_category.hom_category()
+            )
+        )
 
     def _is_arrow_in(self, category: Category) -> bool:
         base = self.base_category()

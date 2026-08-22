@@ -8,7 +8,11 @@ from __future__ import annotations
 
 from typing import TypeIs
 
-from sage_categories.abstract_categories.hom_categories import HomCategory
+from sage_categories.abstract_categories.hom_categories import (
+    HomCategory,
+    HomCategoryFamily,
+    is_isomorphism_hom_category,
+)
 from sage_categories.category import Category
 from sage_categories.values import (
     Arrow,
@@ -30,15 +34,16 @@ class CommutingSquare(Arrow):
     def __init__(
         self,
         *,
-        hom_category: HomCategory,
+        hom_category: SquareHomCategory,
         left: Arrow,
         right: Arrow,
     ) -> None:
         source = hom_category.domain()
         target = hom_category.codomain()
-        assert hom_category.base_category().contains_arrow(source)
-        assert hom_category.base_category().contains_arrow(target)
-        category = hom_category.base_category().base_category()
+        arrow_category = hom_category.base_category()
+        assert arrow_category.contains_arrow(source)
+        assert arrow_category.contains_arrow(target)
+        category = arrow_category.base_category()
         assert left in category.ArrowCategory()
         assert right in category.ArrowCategory()
         assert left.domain() is source.domain()
@@ -61,12 +66,34 @@ class CommutingSquare(Arrow):
 class SquareHomCategory(HomCategory):
     """A category of commuting squares between two arrows."""
 
+    ObjectType = CommutingSquare
     ElementType = CommutingSquare
+
+    def __init__(
+        self,
+        *,
+        domain: MathematicalObject,
+        codomain: MathematicalObject,
+        hom_category: ArrowHomCategoryFamily,
+    ) -> None:
+        self._square_family = hom_category
+        super().__init__(
+            domain=domain,
+            codomain=codomain,
+            hom_category=hom_category,
+        )
+
+    def base_category(self) -> ArrowCategory:
+        return self._square_family.base_category()
 
     def __call__(self, left: Arrow, right: Arrow) -> CommutingSquare:
         return self.ObjectType(hom_category=self, left=left, right=right)
 
-    def identity(self) -> CommutingSquare:
+    def identity(
+        self,
+        value: MathematicalObject | None = None,
+    ) -> CommutingSquare:
+        assert value is None
         source = self.domain()
         assert source is self.codomain()
         assert self.base_category().contains_arrow(source)
@@ -92,6 +119,7 @@ class ArrowCategory(Category):
 
     def __init__(self, base_category: Category) -> None:
         self._base_category = base_category
+        self._square_hom_family: ArrowHomCategoryFamily | None = None
         super().__init__(object_type=base_category.ArrowType)
 
     def base_category(self) -> Category:
@@ -120,8 +148,27 @@ class ArrowCategory(Category):
     def _hom_category_type(self) -> type[HomCategory]:
         return SquareHomCategory
 
+    def HomCategory(self) -> ArrowHomCategoryFamily:
+        """Return the category of square categories in ``Ar(C)``."""
+        if self._square_hom_family is None:
+            self._square_hom_family = ArrowHomCategoryFamily(self)
+        return self._square_hom_family
+
     def __repr__(self) -> str:
         return f"Ar({self._base_category})"
+
+
+class ArrowHomCategoryFamily(HomCategoryFamily):
+    """The hom-category family whose objects contain commuting squares."""
+
+    ObjectType = SquareHomCategory
+
+    def __init__(self, base_category: ArrowCategory) -> None:
+        self._square_base_category = base_category
+        super().__init__(base_category, hom_category_type=SquareHomCategory)
+
+    def base_category(self) -> ArrowCategory:
+        return self._square_base_category
 
 
 class EndArrowCategory(Category):
@@ -316,5 +363,8 @@ def declare_isomorphism(forward: Arrow, backward: Arrow) -> Arrow:
     category = forward.base_category()
     assert backward in category.ArrowCategory()
     if forward.domain() is forward.codomain():
-        return category.Aut(forward.domain())(forward, backward)
-    return category.Iso(forward.domain(), forward.codomain())(forward, backward)
+        isomorphisms = category.Aut(forward.domain())
+    else:
+        isomorphisms = category.Iso(forward.domain(), forward.codomain())
+    assert is_isomorphism_hom_category(isomorphisms)
+    return isomorphisms(forward, backward)

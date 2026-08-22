@@ -6,7 +6,7 @@ The semantics are migrated from the research preamble's
 
 from __future__ import annotations
 
-from typing import TypeIs, overload
+from typing import TYPE_CHECKING, TypeIs, overload
 
 from sage_categories.category import Category
 from sage_categories.values import (
@@ -15,6 +15,9 @@ from sage_categories.values import (
     MembershipInput,
     registered_value,
 )
+
+if TYPE_CHECKING:
+    from sage_categories.abstract_categories.functors import StructuralFunctor
 
 
 class HomCategory(Category):
@@ -132,6 +135,13 @@ class HomCategoryFamily(Category):
         """Return ``Hom_C(domain, codomain)``."""
         return self.Of(domain, codomain)
 
+    def contains_hom_category(
+        self,
+        candidate: MathematicalObject,
+    ) -> TypeIs[HomCategory]:
+        """Return whether ``candidate`` is one hom category in this family."""
+        return candidate in self
+
     def __repr__(self) -> str:
         return f"Hom categories of {self._base_category}"
 
@@ -205,15 +215,16 @@ class Isomorphism(Arrow):
 
     def inverse(self) -> Isomorphism:
         """Return the inverse isomorphism."""
-        inverse_category = self.base_category().Iso(
-            self.codomain(),
-            self.domain(),
+        from sage_categories.abstract_categories.arrow_categories import (
+            declare_isomorphism,
         )
-        assert is_isomorphism_hom_category(inverse_category)
-        return inverse_category(
+
+        inverse = declare_isomorphism(
             self._backward,
             self._forward,
         )
+        assert is_isomorphism(inverse)
+        return inverse
 
     def is_isomorphism(self) -> bool:
         return True
@@ -331,7 +342,20 @@ class EndCategoryFamily(HomCategoryFamily):
     """The endomorphism categories of one category."""
 
     def __init__(self, base_category: Category) -> None:
+        self._inclusion: StructuralFunctor | None = None
         super().__init__(base_category, hom_category_type=EndomorphismHomCategory)
+
+    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+        from sage_categories.abstract_categories.functors import (
+            HomCategoryFamilyInclusionFunctor,
+        )
+
+        if self._inclusion is None:
+            self._inclusion = HomCategoryFamilyInclusionFunctor(
+                self,
+                self.base_category().HomCategory(),
+            )
+        return (self._inclusion,)
 
     def Of(
         self,
@@ -346,28 +370,92 @@ class MonomorphismCategoryFamily(HomCategoryFamily):
     """The monomorphism categories of one category."""
 
     def __init__(self, base_category: Category) -> None:
+        self._inclusion: StructuralFunctor | None = None
         super().__init__(base_category, hom_category_type=MonomorphismHomCategory)
+
+    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+        from sage_categories.abstract_categories.functors import (
+            HomCategoryFamilyInclusionFunctor,
+        )
+
+        if self._inclusion is None:
+            self._inclusion = HomCategoryFamilyInclusionFunctor(
+                self,
+                self.base_category().HomCategory(),
+            )
+        return (self._inclusion,)
 
 
 class EpimorphismCategoryFamily(HomCategoryFamily):
     """The epimorphism categories of one category."""
 
     def __init__(self, base_category: Category) -> None:
+        self._inclusion: StructuralFunctor | None = None
         super().__init__(base_category, hom_category_type=EpimorphismHomCategory)
+
+    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+        from sage_categories.abstract_categories.functors import (
+            HomCategoryFamilyInclusionFunctor,
+        )
+
+        if self._inclusion is None:
+            self._inclusion = HomCategoryFamilyInclusionFunctor(
+                self,
+                self.base_category().HomCategory(),
+            )
+        return (self._inclusion,)
 
 
 class IsomorphismCategoryFamily(HomCategoryFamily):
     """The isomorphism categories of one category."""
 
     def __init__(self, base_category: Category) -> None:
+        self._inclusion: StructuralFunctor | None = None
         super().__init__(base_category, hom_category_type=IsomorphismHomCategory)
+
+    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+        from sage_categories.abstract_categories.functors import (
+            HomCategoryFamilyInclusionFunctor,
+        )
+
+        if self._inclusion is None:
+            self._inclusion = HomCategoryFamilyInclusionFunctor(
+                self,
+                self.base_category().MonoCategory(),
+            )
+        return (self._inclusion,)
+
+    def is_subcategory(self, category: Category) -> bool:
+        return (
+            category is self.base_category().EpiCategory()
+            or super().is_subcategory(category)
+        )
 
 
 class AutomorphismCategoryFamily(HomCategoryFamily):
     """The automorphism categories of one category."""
 
     def __init__(self, base_category: Category) -> None:
+        self._inclusion: StructuralFunctor | None = None
         super().__init__(base_category, hom_category_type=AutomorphismHomCategory)
+
+    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+        from sage_categories.abstract_categories.functors import (
+            HomCategoryFamilyInclusionFunctor,
+        )
+
+        if self._inclusion is None:
+            self._inclusion = HomCategoryFamilyInclusionFunctor(
+                self,
+                self.base_category().IsoCategory(),
+            )
+        return (self._inclusion,)
+
+    def is_subcategory(self, category: Category) -> bool:
+        return (
+            category is self.base_category().EndCategory()
+            or super().is_subcategory(category)
+        )
 
     def Of(
         self,
@@ -382,4 +470,10 @@ def is_isomorphism_hom_category(
     category: HomCategory,
 ) -> TypeIs[IsomorphismHomCategory]:
     """Return whether ``category`` belongs to an isomorphism family."""
-    return category in category.base_category().IsoCategory()
+    base = category.base_category()
+    return category in base.IsoCategory() or category in base.AutCategory()
+
+
+def is_isomorphism(arrow: Arrow) -> TypeIs[Isomorphism]:
+    """Return whether ``arrow`` is in an isomorphism arrow category."""
+    return arrow in arrow.base_category().IsomorphismArrowCategory()

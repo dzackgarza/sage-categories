@@ -106,6 +106,20 @@ For each category `C`:
 The same architecture applies to objects, elements, and arrows.
 Do not solve one surface with a mechanism that cannot support the other two.
 
+Treat the category-level arrow constructions as categories and therefore as objects of `Cat`.
+This includes `Ar(C)`, its endomorphism and automorphism variants, `Fun(C, D)`, and the hom categories.
+Do not assume that a hom category is a set.
+Only a set-valued specialization may supply that conclusion.
+
+The `Cat` level supplies the uniform category constructors:
+
+- `HomCategory()`, `EndCategory()`, and `AutCategory()`;
+- `ArrowCategory()`, `EndArrowCategory()`, and `AutArrowCategory()`.
+
+The generic arrow implementation owns its domain and codomain.
+Route general arrow predicates through category containment when the predicate names an arrow subcategory.
+Prefer an arrow or functor formulation when the mathematical definition names a relation or transport.
+
 For each functor `F: C -> D`:
 
 - `F.domain()` is `C`.
@@ -149,6 +163,13 @@ Let each apex inherit methods from the category in which it lives.
 Use functor composition and natural transformations to move structure.
 Do not create a separate method-propagation system for constructions.
 
+For a construction functor `F` with codomain `C`, `F(D)` is an object of `Image(F)`.
+The immediate structural supercategory of `Image(F)` is `C`.
+Its image in `C` is the apex constructed from the diagram `D`.
+
+A covering object is an object together with its epimorphism.
+The epimorphism alone is not the covering object.
+
 Implement constructions for arbitrary small diagrams.
 Finite diagrams are specimens, not the general interface.
 
@@ -186,6 +207,27 @@ This must support infinite subobjects such as the even integers and prime intege
 - products and coproducts of arbitrary small families;
 - general limits and colimits;
 - predicate subobjects and their inclusion arrows.
+
+In `Sets()`, the hom object, function set, and exponential are one object:
+
+\[
+\operatorname{Hom}_{\mathbf{Set}}(X,Y)=Y^X.
+\]
+
+The power set is the corresponding exponential into the two-element set:
+
+\[
+\mathcal{P}(X)=2^X=\operatorname{Hom}_{\mathbf{Set}}(X,2).
+\]
+
+Construct set maps from a well-typed callable or explicit mapping data.
+Neither representation requires enumeration of the domain.
+
+The resulting set objects own their cardinality rules.
+For example, products, coproducts, and exponentials implement multiplication, addition, and exponentiation of cardinalities.
+The cardinality functor transports those results; it does not contain construction-specific cases.
+Compare a cardinality directly with integers and other cardinalities.
+Do not require a separate value accessor.
 
 Propagate these operations along structural functors and universal constructions.
 Do not implement a second copy of a set operation in a higher category.
@@ -255,6 +297,9 @@ Use one owner, one public name, and one public export for each operation.
 Use established mathematical and Sage terminology.
 Name an accessor for the exact object or arrow that it returns.
 
+Use standard hom notation and dispatch.
+`X.Hom(Y)` takes `Y` as its codomain and delegates to `X._Hom_(Y)`.
+
 Treat private fields as private to their owner or documented subclass contract.
 Ask another object through its public mathematical interface.
 Invoke Python protocols through public syntax such as `f(x)`, `iter(x)`, and `len(x)`.
@@ -263,8 +308,18 @@ Give every value the type that names its mathematical role.
 Distinguish categories, objects, elements, arrows, functors, rings, sets, domains, and codomains.
 
 Never use `object` as a type.
-Use `Any` only for a parameter that genuinely accepts an arbitrary membership candidate.
+Use `Any` only for a parameter that genuinely accepts every input, such as an equality or membership candidate.
 Never return `Any`.
+
+Use `Self`, `None`, or a type for the returned mathematical object.
+Do not replace an exact mathematical result with `float` or a built-in container type.
+Use the mathematical collection type: set, ordered set, multiset, or another named structure.
+
+Primitive types can occur inside a private implementation boundary.
+No external consumer may depend on that private signature.
+
+Create a new type when it names a genuine mathematical object.
+Do not create a constructor-data wrapper only to make an invalid input signature type-check.
 
 Treat a type error as evidence about the mathematical model or import boundary.
 Fix the owner, type hierarchy, return contract, import path, or missing declaration.
@@ -293,6 +348,14 @@ Fail loudly when required mathematical structure or a dependency is absent.
 Do not use runtime `setattr` to assemble the mathematical API.
 Do not recover mathematical structure from storage fields.
 Fix a repeated defect at its category, functor, or construction owner.
+
+Do not use `getattr` for mathematical dispatch.
+Do not use `isinstance` for mathematical classification.
+Use the owned public interface and categorical containment.
+
+Use assertions for mathematical preconditions, functionality gates, and type narrowing.
+An assertion must state a mathematical fact whose truth does not change with the code layout.
+Do not add exception-catching or recovery branches around a violated mathematical precondition.
 
 Preserve exact arithmetic until an explicit numerical boundary.
 Keep precision parameters at that boundary.
@@ -348,6 +411,9 @@ The first deliverable of a work unit is a falsifiable specimen.
 
 When a correction invalidates a foundational assumption, stop the local patch.
 Reconstruct the requested mathematical object and resume from the corrected model.
+
+Settle the category graph, mathematical ownership, and type relations before runtime debugging.
+During a foundational migration, preserve each required mathematical behavior through its new owner.
 
 Continue while the next in-scope action is clear and safe.
 Do not stop at an administrative artifact when implementation remains.

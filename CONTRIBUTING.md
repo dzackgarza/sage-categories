@@ -59,6 +59,12 @@ Do not reuse a retired identifier.
 | `POL-CAT-018` | Distinguish a property subcategory from a category whose objects contain chosen data. |
 | `POL-CAT-019` | Require chosen data during construction. Do not infer its existence from a property name. |
 | `POL-CAT-020` | Enforce genuine category obligations when an object is constructed. |
+| `POL-CAT-021` | Treat arrow constructions, functor categories, and hom categories as objects of `Cat`. |
+| `POL-CAT-022` | Do not assume that a hom category is a set. Establish set-valued homs at the category that supplies them. |
+| `POL-CAT-023` | Supply hom, endomorphism, automorphism, arrow, end-arrow, and automorphism-arrow category constructors at the `Cat` level. |
+| `POL-CAT-024` | Make the generic arrow implementation own its domain and codomain. |
+| `POL-CAT-025` | Express a general arrow predicate through containment in its arrow subcategory. |
+| `POL-CAT-026` | Represent a covering object by an object together with its epimorphism. |
 
 ## Functors and universal constructions
 
@@ -78,6 +84,7 @@ Do not reuse a retired identifier.
 | `POL-FUN-012` | Implement arbitrary small diagrams. Do not encode finiteness into the general construction. |
 | `POL-FUN-013` | Represent a subobject by an object together with its monomorphism. |
 | `POL-FUN-014` | Obtain the containing object of a subobject from the monomorphism's codomain. |
+| `POL-FUN-015` | Give a construction functor an explicit image category whose immediate structural supercategory is its codomain. |
 
 ## The category of sets
 
@@ -99,6 +106,12 @@ Do not reuse a retired identifier.
 | `POL-SET-014` | Support general limits and colimits in `Sets()`. |
 | `POL-SET-015` | Propagate set operations, including cardinality, to objects produced by functors and universal constructions. |
 | `POL-SET-016` | Do not enumerate an infinite set to answer a structural predicate. |
+| `POL-SET-017` | In `Sets()`, identify `Hom(X, Y)`, the function set from `X` to `Y`, and the exponential `Y^X`. |
+| `POL-SET-018` | Identify the power set `P(X)` with `2^X` and `Hom(X, 2)`. |
+| `POL-SET-019` | Construct a set map from a well-typed callable or explicit mapping data without enumerating its domain. |
+| `POL-SET-020` | Put the product, coproduct, and exponential cardinality rules on the resulting set objects. |
+| `POL-SET-021` | Let the cardinality functor transport object-owned results instead of implementing construction-specific cases. |
+| `POL-SET-022` | Compare cardinalities directly with integers and other cardinalities. Do not require a value accessor. |
 
 ## Sage boundary
 
@@ -127,15 +140,20 @@ Do not reuse a retired identifier.
 | `POL-API-006` | Ask another object through its public mathematical interface. |
 | `POL-API-007` | Invoke Python protocols through public syntax such as `f(x)`, `iter(x)`, and `len(x)`. |
 | `POL-API-008` | Name an accessor for the exact mathematical object or arrow it returns. |
+| `POL-API-009` | Use `X.Hom(Y)` for the hom object with codomain `Y`, and delegate that call to `X._Hom_(Y)`. |
 | `POL-TYPE-001` | Give every value the type that names its mathematical role. |
 | `POL-TYPE-002` | Distinguish categories, objects, elements, arrows, functors, rings, sets, domains, and codomains in types. |
 | `POL-TYPE-003` | Never use `object` as a type. |
-| `POL-TYPE-004` | Use `Any` only for a parameter that must accept an arbitrary membership candidate. |
+| `POL-TYPE-004` | Use `Any` only for a parameter that accepts every input, such as an equality or membership candidate. |
 | `POL-TYPE-005` | Never use `Any` as a return type. |
 | `POL-TYPE-006` | Do not silence a type error with a cast, ignored diagnostic, deleted annotation, or wider type. |
 | `POL-TYPE-007` | Fix the mathematical model, method owner, import boundary, or missing type declaration exposed by a type error. |
 | `POL-TYPE-008` | Use category membership as type information. Do not inspect fields or method names for capabilities. |
 | `POL-TYPE-009` | Do not invent wrapper types whose only purpose is to satisfy the type checker. |
+| `POL-TYPE-010` | Return `Self`, `None`, or the type of the mathematical result instead of a wider substitute. |
+| `POL-TYPE-011` | Use a set, ordered set, multiset, or another named mathematical collection instead of a built-in list or tuple. |
+| `POL-TYPE-012` | Keep primitive private signatures behind private boundaries. Do not make an external consumer depend on them. |
+| `POL-TYPE-013` | Create a new type when it names a genuine mathematical object. |
 
 ## Implementation style
 
@@ -160,6 +178,13 @@ Do not reuse a retired identifier.
 | `POL-CODE-017` | Preserve exact arithmetic until an explicit numerical boundary. |
 | `POL-CODE-018` | Keep precision parameters at the numerical boundary. |
 | `POL-CODE-019` | Remove needless recomputation, enumeration, and verification without obscuring the mathematics. |
+| `POL-CODE-020` | Do not use `getattr` for mathematical dispatch. |
+| `POL-CODE-021` | Do not use `isinstance` for mathematical classification. Use categorical containment. |
+| `POL-CODE-022` | Use assertions for mathematical preconditions, functionality gates, and type narrowing. |
+| `POL-CODE-023` | Make each assertion state a mathematical fact whose truth does not depend on code layout. |
+| `POL-CODE-024` | Do not catch or recover from a violated mathematical precondition. |
+| `POL-CODE-025` | Settle the category graph, mathematical ownership, and type relations before runtime debugging. |
+| `POL-CODE-026` | Preserve required mathematical behavior when moving it to a new foundational owner. |
 
 ## Tests and performance
 

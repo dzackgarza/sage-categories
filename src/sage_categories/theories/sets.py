@@ -28,7 +28,7 @@ from sage_categories.abstract_categories.products import (
     ProductPresentation,
 )
 from sage_categories.category import Category
-from sage_categories.theories.cardinals import Cardinals, FiniteCardinal
+from sage_categories.theories.cardinals import Cardinal, Cardinals
 from sage_categories.values import (
     Arrow,
     MathematicalElement,
@@ -53,7 +53,7 @@ class SetObject(MathematicalObject):
         self._members = members
         super().__init__(category=category)
 
-    def cardinality(self) -> FiniteCardinal:
+    def cardinality(self) -> Cardinal:
         """Return the number of members."""
         return Cardinals()(len(self._members))
 

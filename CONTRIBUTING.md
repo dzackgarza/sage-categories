@@ -112,6 +112,8 @@ A constructor based on a finite tuple of factors cannot express the integral ade
 
 Likewise, \(\sum_{n\in\mathbb N}a_nt^n\) belongs to \(R[[t]]\) for a general coefficient family.
 It belongs to \(R[t]\) after the support of \((a_n)\) is known to be finite.
+Thus the public operation is `poincare_series()`, not `poincare_polynomial()`.
+The series remains defined when every grading has nonzero cohomology and becomes a polynomial when its support is finite.
 
 ## Forms and lattices
 

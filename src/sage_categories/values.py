@@ -189,14 +189,6 @@ class MathematicalObject:
     ) -> MathematicalObject:
         assert False, f"{self} is not represented as an element"
 
-    def implementation_in(self, category: Category) -> MathematicalObject:
-        """Return this object's canonical implementation in ``category``."""
-        from sage_categories.compiler import category_compiler
-
-        route = category_compiler().implementation_route(self.category(), category)
-        return self._object_image_along(route)
-
-
 class MathematicalElement(MathematicalObject):
     """An element of a mathematical object."""
 

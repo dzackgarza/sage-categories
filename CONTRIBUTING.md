@@ -158,6 +158,10 @@ A constructor based on a finite tuple of factors cannot express the integral ade
 | `POL-CAT-029` | Distinguish an internal Hom object from its global arrows. Apply the relevant global-sections, object-set, or underlying-set functor explicitly. |
 | `POL-CAT-030` | Establish `X in Sets()` or apply an explicit functor to `Sets()` before using elements, membership, cardinality, enumeration, subsets, or set equality. |
 | `POL-CAT-031` | Treat an unjustified reduction to `Sets()` as a foundational error. Rebuild every dependent definition, type, arrow, and conclusion in the correct category. |
+| `POL-CAT-032` | Put an operation at the most general category where its mathematical result can be declared. Partial knowledge or the absence of one general algorithm does not justify moving the operation to a narrower category. |
+| `POL-CAT-033` | Define a subcategory only for a genuine mathematical property or structure. Never define one only to select, store, or expose an implementation. |
+| `POL-CAT-034` | Let objects supply optional construction data to a general operation. Select applicable algorithms by case analysis on that data while preserving one public mathematical operation and result type. |
+| `POL-CAT-035` | Treat an implementation-shaped category or object name as evidence that an established mathematical owner or construction has been missed. Resolve the object, arrows, and construction before adding terminology. |
 
 ## Leaf-category encapsulation
 
@@ -235,7 +239,7 @@ A functor is an object of `Fun(C, D)`. None enters `Sets()` without a specified 
 | `POL-SET-004` | Support maps such as `QQ -> NN`, `QQ -> ZZ`, and `RR -> RR^2` as ordinary arrows in `Sets()`. |
 | `POL-SET-005` | Let membership predicates return `bool` or `Unknown`. |
 | `POL-SET-006` | Treat `Unknown` as unavailable knowledge, not as `False`. |
-| `POL-SET-007` | Construct a predicate-defined subset as an object with an inclusion arrow. |
+| `POL-SET-007` | Equip every set `X` with `X.subset_from(predicate)`. Construct its result as a subobject: a set together with its inclusion arrow into `X`. |
 | `POL-SET-008` | Support infinite predicate subobjects such as the even integers and prime integers inside `ZZ`. |
 | `POL-SET-009` | Put cardinality on the set implementation. |
 | `POL-SET-010` | Support finite, infinite, symbolic, and unknown cardinality results. |
@@ -260,10 +264,15 @@ A functor is an object of `Fun(C, D)`. None enters `Sets()` without a specified 
 | `POL-SET-029` | Before enumerating a set, determine how the operation behaves for an infinite set and for a very large finite set. Keep unbounded enumeration out of the normal path. |
 | `POL-SET-030` | Enumerate to compute cardinality only when a concrete cardinality is required, finiteness is established, and no construction formula or structural relation supplies it. |
 | `POL-SET-031` | A constructor that knows a set's cardinality or structural property records it. Functors and related objects derive and transport that information. |
+| `POL-SET-032` | Do not introduce `PropertySet`, `Sets.PropertyCategory()`, or an equivalent public notion for predicate-defined subsets. The predicate is construction data for an ordinary subobject in `Sets()`, not a new kind of set. |
 
 Grounding examples: the even positive integers are infinite, and \(\{1,2,\ldots,10^{10}\}\) is finite but unsuitable for materialization.
 The set \(\{n\in\mathbb N\mid n\leq100\}\) is finite from its defining bound.
 None requires enumeration to establish finiteness.
+
+For example, `X.subset_from(lambda x: x.is_even())` constructs a monomorphism \(A\hookrightarrow X\).
+A private representation can retain the predicate or other provenance to select a membership algorithm.
+The result remains an ordinary subobject in `Sets()`.
 
 ## Sage boundary
 

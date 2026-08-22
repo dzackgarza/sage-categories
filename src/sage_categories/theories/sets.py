@@ -935,7 +935,11 @@ class SetsCategory(Category):
     def _aut_category_family_type(self) -> type[HomCategoryFamily]:
         return SetAutomorphismCategoryFamily
 
-    def __call__(self, members: frozenset[SetElementInput]) -> FiniteSetObject:
+    def __call__(self, source: MathematicalObject) -> SetObject:
+        assert self.contains_set(source)
+        return source
+
+    def finite(self, members: frozenset[SetElementInput]) -> FiniteSetObject:
         cached = self._finite_sets_by_members.get(members)
         if cached is None:
             cached = FiniteSetObject(category=self.Finite(), members=members)
@@ -1093,7 +1097,7 @@ def is_set_hom_category(category: HomCategory) -> TypeIs[SetHomCategory]:
 
 
 def FiniteSet(members: frozenset[SetElementInput]) -> FiniteSetObject:
-    return Sets()(members)
+    return Sets().finite(members)
 
 
 def Set(members: frozenset[SetElementInput]) -> FiniteSetObject:

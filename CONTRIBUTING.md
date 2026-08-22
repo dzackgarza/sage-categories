@@ -163,9 +163,17 @@ A constructor based on a finite tuple of factors cannot express the integral ade
 | `POL-CAT-034` | Let objects supply optional construction data to a general operation. Select applicable algorithms by case analysis on that data while preserving one public mathematical operation and result type. |
 | `POL-CAT-035` | Treat an implementation-shaped category or object name as evidence that an established mathematical owner or construction has been missed. Resolve the object, arrows, and construction before adding terminology. |
 
-For example, a predicate on a set constructs a subobject in `Sets()`.
-Every set can support `X.subset_from(predicate)`, with private provenance used to select a membership algorithm when useful.
-Names such as `PropertySet` or `Sets.PropertyCategory()` incorrectly turn that implementation detail into new mathematics.
+Grounding examples:
+
+- Cardinality belongs on every object of `Sets()` because every set has a cardinality.
+  A constructor can supply exact or symbolic cardinal data.
+  Pattern matching on available data can select a computation without defining a subcategory for its implementation.
+
+- Every set can construct `X.subset_from(predicate)`.
+  The result is a subobject \(A\hookrightarrow X\), including infinite examples such as the even or prime integers inside \(\mathbb Z\).
+  A private representation can retain the predicate or other construction provenance for computation.
+  `PropertySet` or `Sets.PropertyCategory()` does not name a mathematical class: every set can be characterized by a property.
+  Such a name mistakes the construction of an ordinary subset for a new kind of set.
 
 ## Leaf-category encapsulation
 

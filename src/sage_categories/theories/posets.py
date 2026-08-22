@@ -8,13 +8,14 @@ implementations through explicit structural functors.
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
-from typing import TypeIs
+from typing import TYPE_CHECKING, TypeIs
 
 from sage_categories.abstract_categories.category_constructions import (
     PullbackCategory,
     PullbackObject,
 )
 from sage_categories.abstract_categories.functors import (
+    Functor,
     StructuralFunctor,
     compose_functors,
 )
@@ -38,6 +39,11 @@ from sage_categories.values import (
     MathematicalObject,
     registered_value,
 )
+
+if TYPE_CHECKING:
+    from sage_categories.backends.sage.finite_posets import (
+        SageFinitePosetObject,
+    )
 
 type OrderRelation = Callable[[SetElementInput, SetElementInput], bool]
 type PosetMapDefinition = SetMapDefinition | SetFunction
@@ -261,8 +267,133 @@ class ForgetPosetFunctor(StructuralFunctor):
         return True
 
 
+class FinitePosetObject(PullbackObject):
+    """A represented finite poset with finite order algorithms."""
+
+    def _realization(self) -> SageFinitePosetObject:
+        from sage_categories.backends.sage.finite_posets import (
+            realize_finite_poset,
+        )
+
+        return realize_finite_poset(self)
+
+    def covers(
+        self,
+        lower: SetElementInput,
+        upper: SetElementInput,
+    ) -> bool:
+        return self._realization().covers(lower, upper)
+
+    def lower_covers(self, member: SetElementInput) -> tuple[SetElementInput, ...]:
+        return self._realization().lower_covers(member)
+
+    def upper_covers(self, member: SetElementInput) -> tuple[SetElementInput, ...]:
+        return self._realization().upper_covers(member)
+
+    def common_lower_covers(
+        self,
+        members: Iterable[SetElementInput],
+    ) -> tuple[SetElementInput, ...]:
+        return self._realization().common_lower_covers(members)
+
+    def common_upper_covers(
+        self,
+        members: Iterable[SetElementInput],
+    ) -> tuple[SetElementInput, ...]:
+        return self._realization().common_upper_covers(members)
+
+    def open_interval(
+        self,
+        lower: SetElementInput,
+        upper: SetElementInput,
+    ) -> tuple[SetElementInput, ...]:
+        return self._realization().open_interval(lower, upper)
+
+    def closed_interval(
+        self,
+        lower: SetElementInput,
+        upper: SetElementInput,
+    ) -> tuple[SetElementInput, ...]:
+        return self._realization().closed_interval(lower, upper)
+
+    def principal_order_ideal(
+        self,
+        member: SetElementInput,
+    ) -> tuple[SetElementInput, ...]:
+        return self._realization().principal_order_ideal(member)
+
+    def principal_order_filter(
+        self,
+        member: SetElementInput,
+    ) -> tuple[SetElementInput, ...]:
+        return self._realization().principal_order_filter(member)
+
+    def order_ideal(
+        self,
+        members: Iterable[SetElementInput],
+    ) -> tuple[SetElementInput, ...]:
+        return self._realization().order_ideal(members)
+
+    def order_filter(
+        self,
+        members: Iterable[SetElementInput],
+    ) -> tuple[SetElementInput, ...]:
+        return self._realization().order_filter(members)
+
+    def minimal_elements(self) -> tuple[SetElementInput, ...]:
+        return self._realization().minimal_elements()
+
+    def maximal_elements(self) -> tuple[SetElementInput, ...]:
+        return self._realization().maximal_elements()
+
+    def has_bottom(self) -> bool:
+        return self._realization().has_bottom()
+
+    def bottom(self) -> SetElementInput:
+        return self._realization().bottom()
+
+    def has_top(self) -> bool:
+        return self._realization().has_top()
+
+    def top(self) -> SetElementInput:
+        return self._realization().top()
+
+    def is_bounded(self) -> bool:
+        return self._realization().is_bounded()
+
+    def height(self) -> int:
+        return self._realization().height()
+
+    def width(self) -> int:
+        return self._realization().width()
+
+    def rank(self, member: SetElementInput | None = None) -> int:
+        return self._realization().rank(member)
+
+    def level_sets(self) -> tuple[tuple[SetElementInput, ...], ...]:
+        return self._realization().level_sets()
+
+    def is_ranked(self) -> bool:
+        return self._realization().is_ranked()
+
+    def is_graded(self) -> bool:
+        return self._realization().is_graded()
+
+    def is_chain(self) -> bool:
+        return self._realization().is_chain()
+
+    def is_chain_of_poset(self, members: Iterable[SetElementInput]) -> bool:
+        return self._realization().is_chain_of_poset(members)
+
+    def is_antichain_of_poset(self, members: Iterable[SetElementInput]) -> bool:
+        return self._realization().is_antichain_of_poset(members)
+
+
 class FinitePosetsCategory(PullbackCategory):
     """The pullback of posets and finite sets over sets."""
+
+    def __init__(self, first: Functor, second: Functor) -> None:
+        super().__init__(first, second, object_type=FinitePosetObject)
 
     def __repr__(self) -> str:
         return "Finite partially ordered sets"
@@ -486,8 +617,20 @@ class TotalOrderInclusionFunctor(StructuralFunctor):
         return True
 
 
+class FiniteTotallyOrderedSetObject(PullbackObject):
+    """A represented finite total order."""
+
+    def rank(self, member: SetElementInput) -> int:
+        total_order = FiniteTotallyOrderedSets().first_projection()(self)
+        assert TotallyOrderedSets().contains_total_order(total_order)
+        return total_order.rank(member)
+
+
 class FiniteTotallyOrderedSetsCategory(PullbackCategory):
     """The pullback of total orders and finite sets over sets."""
+
+    def __init__(self, first: Functor, second: Functor) -> None:
+        super().__init__(first, second, object_type=FiniteTotallyOrderedSetObject)
 
     def __repr__(self) -> str:
         return "Finite totally ordered sets"
@@ -541,18 +684,9 @@ class TotallyOrderedSetsCategory(Category):
 
     def Finite(self) -> FiniteTotallyOrderedSetsCategory:
         if self._finite_orders is None:
-            total_to_sets = compose_functors(
-                PartiallyOrderedSets().forgetful_functor(),
-                self.inclusion(),
-            )
-            finite_to_countable = FiniteSets().super_functors()[0]
-            finite_to_sets = compose_functors(
-                finite_to_countable.codomain().super_functors()[0],
-                finite_to_countable,
-            )
             self._finite_orders = FiniteTotallyOrderedSetsCategory(
-                total_to_sets,
-                finite_to_sets,
+                self.inclusion(),
+                FinitePosets().first_projection(),
             )
         return self._finite_orders
 
@@ -615,7 +749,8 @@ def ordered_set_owned_by(
             lambda left, right: positions[left] <= positions[right],
         )
         total_order = TotallyOrderedSets()(poset, enumeration)
-        cached = FiniteTotallyOrderedSets()(total_order, underlying_set)
+        finite_poset = FinitePosets()(poset, underlying_set)
+        cached = FiniteTotallyOrderedSets()(total_order, finite_poset)
         _ORDERED_FINITE_SETS[enumeration] = cached
     return cached
 
@@ -641,10 +776,16 @@ def is_totally_ordered_sets_category(
 def is_poset_hom_category(
     category: HomCategory,
 ) -> TypeIs[PosetHomCategory]:
-    return category.base_category() is PartiallyOrderedSets() and category in PartiallyOrderedSets().HomCategory()
+    return (
+        category.base_category() is PartiallyOrderedSets()
+        and category in PartiallyOrderedSets().HomCategory()
+    )
 
 
 def is_total_order_hom_category(
     category: HomCategory,
 ) -> TypeIs[TotallyOrderedSetHomCategory]:
-    return category.base_category() is TotallyOrderedSets() and category in TotallyOrderedSets().HomCategory()
+    return (
+        category.base_category() is TotallyOrderedSets()
+        and category in TotallyOrderedSets().HomCategory()
+    )

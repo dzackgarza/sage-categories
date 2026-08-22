@@ -343,10 +343,16 @@ None requires enumeration to establish finiteness.
 | `POL-TYPE-011` | Use a set, ordered set, multiset, or another named mathematical collection instead of a built-in list or tuple. Use `float` only at an explicit numerical boundary. |
 | `POL-TYPE-012` | Primitive signatures can occur inside a private method only when every consumer remains inside that private boundary. |
 | `POL-TYPE-013` | Create a type for a genuine mathematical object. Do not wrap invalid constructor inputs in an engineering type to satisfy the checker. |
+| `POL-TYPE-014` | Never alias `Any`, directly or as part of a wider alias. Such an alias erases type information while giving the erasure a misleading semantic name. |
+| `POL-TYPE-015` | Do not create types with an `Input` suffix to model forms accepted by an implementation. Type each parameter as the mathematical object it denotes. |
+| `POL-TYPE-016` | Use types to express the mathematics. Keep parsing, coercion, normalization, and representation conversion behind the typed mathematical boundary. |
 
 For example, `gens()` is ambiguous on an object that can be a group, module, and algebra.
 Expose `group_generators()`, `module_generators()`, and `algebra_generators()` side by side.
 Each name identifies the structure whose generating set it returns.
+
+For example, `SomeMathematicalObjectInput` names a constructor role rather than a mathematical object.
+If the parameter denotes an element of a set, its type is `SetElement`.
 
 ## Implementation style
 

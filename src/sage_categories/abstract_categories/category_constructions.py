@@ -779,11 +779,7 @@ class FullSubcategory(Category):
 
     def __contains__(self, candidate: MembershipInput) -> bool:
         value = registered_value(candidate)
-        return (
-            value is not None
-            and value in self._ambient_category
-            and self._predicate(value)
-        )
+        return value is not None and value in self._ambient_category and self._predicate(value)
 
     def contains_arrow(self, candidate: MathematicalObject) -> TypeIs[Arrow]:
         if not self._ambient_category.contains_arrow(candidate):
@@ -869,17 +865,11 @@ def is_full_subcategory(category: Category) -> TypeIs[FullSubcategory]:
 
 
 def is_opposite_arrow(arrow: Arrow) -> TypeIs[OppositeArrow]:
-    return (
-        is_opposite_category(arrow.hom_category().base_category())
-        and arrow in arrow.hom_category().base_category().ArrowCategory()
-    )
+    return is_opposite_category(arrow.hom_category().base_category()) and arrow in arrow.hom_category().base_category().ArrowCategory()
 
 
 def is_product_arrow(arrow: Arrow) -> TypeIs[ProductArrow]:
-    return (
-        is_product_category(arrow.hom_category().base_category())
-        and arrow in arrow.hom_category().base_category().ArrowCategory()
-    )
+    return is_product_category(arrow.hom_category().base_category()) and arrow in arrow.hom_category().base_category().ArrowCategory()
 
 
 def is_product_hom_category(

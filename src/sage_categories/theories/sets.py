@@ -182,6 +182,17 @@ class FiniteSetObject(SetObject):
     def members(self) -> frozenset[SetElementInput]:
         return self._members
 
+    def __getitem__(self, position: int) -> SetElementInput:
+        assert position >= 0
+        return tuple(self._members)[position]
+
+    def position(self, member: SetElementInput) -> int:
+        assert self.contains(member) is True
+        return tuple(self._members).index(member)
+
+    def enumeration_injection(self) -> Arrow:
+        return _enumeration_injection(self, self.position)
+
     def __repr__(self) -> str:
         return "{" + ", ".join(map(repr, self._members)) + "}"
 
@@ -343,6 +354,23 @@ def NaturalNumbers() -> NaturalNumbersSet:
     return _NATURAL_NUMBERS
 
 
+def _enumeration_injection(
+    source: SetObject,
+    position: Callable[[SetElementInput], int],
+) -> Arrow:
+    from sage_categories.theories.ordinals import ordinal
+
+    function = SetMap(
+        source,
+        NaturalNumbers(),
+        lambda member: ordinal(position(member)),
+        injective=True,
+    )
+    monomorphisms = Sets().Mono(source, NaturalNumbers())
+    assert is_restricted_hom_category(monomorphisms)
+    return monomorphisms(function)
+
+
 class DeltaIndexing:
     """Finite and countable simplex indexing sets."""
 
@@ -399,6 +427,23 @@ class PredicateSet(SetObject):
     def __iter__(self) -> Iterator[SetElementInput]:
         assert self._iterator is not None, f"{self} has no chosen enumeration"
         return self._iterator()
+
+    def __getitem__(self, position: int) -> SetElementInput:
+        assert position >= 0
+        for index, member in enumerate(self):
+            if index == position:
+                return member
+        assert False, f"{position} is outside {self}"
+
+    def position(self, member: SetElementInput) -> int:
+        assert self.contains(member) is True
+        for position, candidate in enumerate(self):
+            if candidate == member:
+                return position
+        assert False, f"{member} has no position in the chosen enumeration"
+
+    def enumeration_injection(self) -> Arrow:
+        return _enumeration_injection(self, self.position)
 
     def symbolic_representation(self) -> SymbolicSetRepresentation:
         assert self._representation is not None

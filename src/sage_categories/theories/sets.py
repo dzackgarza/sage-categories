@@ -84,6 +84,7 @@ from sage_categories.values import (
 
 type SetElementInput = Any
 type SetMapRule = Callable[[SetElementInput], SetElementInput]
+type SetMapDefinition = SetMapRule | Mapping[SetElementInput, SetElementInput]
 type MembershipPredicate = Callable[[SetElementInput], Decision]
 type SetIterator = Callable[[], Iterator[SetElementInput]]
 type OrderRelation = Callable[[SetElementInput, SetElementInput], Decision]
@@ -1055,13 +1056,19 @@ class SetHomCategory(HomCategory, SetObject):
 
     def __call__(
         self,
-        rule: SetMapRule,
+        definition: SetMapDefinition | SetFunction,
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
         order_preserving: Decision = UNKNOWN,
         order_reflecting: Decision = UNKNOWN,
     ) -> SetFunction:
+        existing = registered_value(definition)
+        if existing is not None:
+            assert existing in self
+            assert Sets().contains_function(existing)
+            return existing
+        rule = self._rule_from_definition(definition)
         return self.ObjectType(
             hom_category=self,
             rule=rule,
@@ -1070,6 +1077,19 @@ class SetHomCategory(HomCategory, SetObject):
             order_preserving=order_preserving,
             order_reflecting=order_reflecting,
         )
+
+    def _rule_from_definition(self, definition: SetMapDefinition) -> SetMapRule:
+        if callable(definition):
+            return definition
+        domain = self.domain()
+        codomain = self.codomain()
+        assert Sets().contains_set(domain)
+        assert Sets().contains_set(codomain)
+        assert domain.is_finite() is True
+        assert all(domain.contains(key) is True for key in definition)
+        assert all(member in definition for member in domain)
+        assert all(codomain.contains(value) is True for value in definition.values())
+        return definition.__getitem__
 
     def contains(self, candidate: SetElementInput) -> Decision:
         value = registered_value(candidate)
@@ -1316,22 +1336,16 @@ class PosetHomCategory(SetHomCategory):
 
     def __call__(
         self,
-        rule: SetMapRule | SetFunction,
+        definition: SetMapDefinition | SetFunction,
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
         order_preserving: Decision = True,
         order_reflecting: Decision = UNKNOWN,
     ) -> SetFunction:
-        existing = registered_value(rule)
-        if existing is not None:
-            assert existing in self
-            assert Sets().contains_function(existing)
-            return existing
-        assert callable(rule)
         assert order_preserving is True
         return super().__call__(
-            rule,
+            definition,
             injective=injective,
             surjective=surjective,
             order_preserving=True,

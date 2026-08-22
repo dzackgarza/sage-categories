@@ -33,6 +33,64 @@ The arrow-category foundation includes:
 - cores and wide subcategories;
 - slices, coslices, subobjects, superobjects, covering objects, and covered objects.
 
+## Mathematical structure as implementation compression
+
+A short mathematical correction can expose a missing foundation rather than a missing method.
+Unfold the structure that makes the correction true before adding a local operation.
+
+For example, a product of sets must receive `cardinality()` because its apex is an object of `Sets()`.
+The product construction supplies projections and a structural route to that apex.
+The method compiler then exposes the operation owned by the set implementation.
+
+Adding `cardinality()` directly to a product class would preserve the missing relation.
+It would also create another local task for coproducts, limits, subobjects, and every later construction.
+The categorical foundation makes those operations consequences of one structure.
+
+This is the main form of implementation compression in this repository:
+
+- one category owns a generic operation;
+- one functor states each change of structure;
+- one universal construction retains its defining arrows;
+- the compiler turns those declarations into a direct public surface.
+
+Prefer a foundational correction when it removes an entire family of apparent method tasks.
+Do not preserve a mistaken architecture with a cheaper local implementation.
+
+Kernel complexity is justified only when it removes repetition from theory code.
+The theory layer must read like the mathematics it implements.
+A new category should state its new data and immediate structural functors, then inherit the rest.
+
+Foundational categories remain valuable before later theories use them.
+Their value is the mathematical structure they make expressible, not their current number of callers.
+
+## Mathematical judgment
+
+Treat a precise user description as a proposed mathematical model of the code.
+When the live implementation lacks the named category, functor, arrow, or universal property, surface that discrepancy.
+Do not substitute a nearby class, method, constructor, or data record.
+
+Category theory is not a metaphor in this package.
+A functor must map objects and arrows.
+A subobject must include its monomorphism.
+A universal construction must include its universal arrows.
+A computation-engine value must be used to construct an owned mathematical object.
+
+One false foundational assertion invalidates each downstream conclusion that uses it.
+When such an assertion appears, rederive the architecture from the mathematical definitions and the live code.
+Do not optimize a local patch, diagnostic count, or passing specimen built on the false premise.
+
+Implementation obstacles do not change mathematical ownership.
+A recursion, type error, slow path, or failing test is a fact about the implementation.
+Fix that implementation fact without moving an operation to the wrong object or weakening its type.
+
+Predicates follow their definitions and their available algorithms.
+Return `Unknown` when the implementation cannot determine a result.
+Do not replace missing knowledge with a fabricated Boolean answer.
+
+Prefer standard categorical constructions and established algorithms over local encodings.
+If the current vocabulary cannot state the general mathematical object, treat that absence as the finding.
+Extend the foundation instead of hiding the gap inside a special case.
+
 ## Core categorical architecture
 
 A category owns its implementations and constructors.

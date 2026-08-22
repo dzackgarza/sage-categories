@@ -1,36 +1,45 @@
-The `~/research` implementation defines `Sets()` as the foundation of every owned mathematical object. It is much larger than a set wrapper.
+# Sets specification
 
-I read the current working-tree versions of:
+`Sets()` is the foundation of every owned mathematical object.
+It supplies the complete set-theoretic surface used by higher categories.
 
-- [owned_sets.py](/home/dzack/research/src/dzack_research/preamble/categories/sets/owned_sets.py:230)
-- [sets.sage](/home/dzack/research/src/dzack_research/preamble/categories/sets/sets.sage:69)
-- [cardinals.py](/home/dzack/research/src/dzack_research/preamble/categories/sets/cardinals.py:106)
-- [ordinals.py](/home/dzack/research/src/dzack_research/preamble/categories/sets/ordinals.py:87)
-- [cardinality.sage](/home/dzack/research/src/dzack_research/preamble/categories/functors/cardinality.sage:22)
-- The inherited categorical object surface in [cat.sage](/home/dzack/research/src/dzack_research/preamble/categories/abstract_categories/cat.sage:73)
+This document specifies the public API and its mathematical semantics.
+Concrete realizations can use Sage algorithms and runtime machinery internally.
 
 ## Fundamental model
 
 `Sets()` owns three fundamental implementation types:
 
 - `Sets.ObjectType`: a set parent.
+
 - `Sets.ElementType`: an element with its parent.
+
 - `Sets.ArrowType`: a total function with a declared domain and codomain.
 
-Every higher mathematical object inherits this set-level surface. Rings, modules, groups, and lattices do not define parallel notions of cardinality or set maps.
+Every higher mathematical object inherits this set-level surface.
+Rings, modules, groups, and lattices do not define parallel notions of cardinality or set maps.
 
 A set can be represented by:
 
 - an existing Sage parent;
+
 - a finite or iterable collection;
-- a predicate inside another set;
+
+- a predicate `Element -> bool | Unknown` inside another set;
+
 - the image of a function;
+
 - the object set of a discrete category;
+
 - a universal construction from other sets.
 
 The public constructors are `Set`, `ConditionSet`, `ImageSet`, and `ObjectSet`.
 
-Infinite objects do not require enumeration. A predicate or callable can define them directly.
+Infinite objects do not require enumeration.
+A predicate or callable can define them directly.
+
+`Unknown` records unavailable computational knowledge.
+It never means `False` and never changes the underlying mathematical object.
 
 ## API on every set object
 
@@ -42,6 +51,7 @@ X.is_finite()
 X.is_infinite()
 X.is_countable()
 X.is_uncountable()
+X.contains(x)
 
 X.Hom(Y)
 X.End()
@@ -65,19 +75,27 @@ X.finite_subsets()
 
 The categorical operations come from `_CategoricalObject`. They are not redefined independently for sets.
 
+`X.cardinality()` always returns a cardinal object.
+The cardinal can remain a formal expression when no normalization is available.
+
+The predicates and `X.contains(x)` return `bool | Unknown`. Placement in a property subcategory supplies a definite answer.
+
 ## Functions and function sets
 
 `X.Hom(Y)` is the category of functions \(X\to Y\). A function can use:
 
 - a callable for arbitrary domains;
+
 - an explicit mapping for finite domains.
 
-Every evaluation checks both membership facts:
+Every evaluation checks both membership facts when their procedures return definite answers:
 
 ```python
-x in X
-f(x) in Y
+X.contains(x)
+Y.contains(f(x))
 ```
+
+A function remains a total semantic arrow when a membership procedure returns `Unknown`. Unavailable validation does not reject the arrow.
 
 The Hom category supplies:
 
@@ -106,17 +124,19 @@ Y ** X
 
 The exponential functor acts contravariantly in \(X\) and covariantly in \(Y\). It acts by precomposition and postcomposition.
 
-This model supports arbitrary rules such as `QQ -> NN`, `QQ -> ZZ`, or `RR -> RR^2`. No finite table is required.
+This model supports arbitrary rules such as `QQ -> NN`, `QQ -> ZZ`, or `RR -> RR^2`. The rules need not be linear or continuous.
 
 ## Isomorphisms, monomorphisms, and epimorphisms
 
 A set isomorphism stores a forward function and its declared inverse.
 
-A monomorphism stores its underlying injective set arrow. It acts as the semantic representation of a subset.
+A monomorphism stores its underlying injective set arrow.
+It acts as the semantic representation of a subset.
 
 An epimorphism stores its underlying surjective set arrow.
 
-These are objects of their own arrow categories. They are not Boolean annotations on ordinary functions.
+These are objects of their own arrow categories.
+They are not Boolean annotations on ordinary functions.
 
 ## Products
 
@@ -145,7 +165,8 @@ P.cardinality()
 P.factor_cardinalities()
 ```
 
-A product element is an indexed family. Its representation can be a callable or explicit mapping.
+A product element is an indexed family.
+Its representation can be a callable or explicit mapping.
 
 ```python
 x[i]
@@ -198,7 +219,7 @@ A.power_set()
 A.cardinality()
 ```
 
-Membership uses its characteristic morphism \(X\to\Delta[1]\).
+Membership is classified by a total characteristic morphism \(X\to\Delta[1]\). `A.contains(x)` is its computational query and can return `Unknown`.
 
 The power object `PowerSet(X)` supports:
 
@@ -217,6 +238,7 @@ Subset elements support:
 
 ```python
 x in A
+A.contains(x)
 A <= B
 A.union(B)
 A.intersection(B)
@@ -227,13 +249,21 @@ A.complement()
 A | B
 ```
 
+`A.contains(x)`, subset equality, and subset order return `bool | Unknown`. The `in` syntax is reserved for represented decidable membership.
+
 This makes \(P(X)\) both:
 
 - the set of subobjects of \(X\);
+
 - the function set \(\operatorname{Hom}(X,\Delta[1])\);
+
 - a bounded distributive Boolean lattice.
 
-Inverse image makes the power object contravariant. Finite direct image is also implemented.
+Inverse image makes the power object contravariant.
+Every set arrow also induces a direct-image arrow.
+
+Direct image constructs the semantic image subobject without enumerating its source.
+Its membership evaluator can return `Unknown`.
 
 ## Finite and fixed-cardinality subsets
 
@@ -278,7 +308,8 @@ For infinite \(X\):
 
 Cardinalities are mathematical objects, not integers or metadata.
 
-`Cardinalities()` is the thin category defined by cardinal order. A unique arrow \(\kappa\to\lambda\) exists when the represented theory proves \(\kappa\leq\lambda\).
+`Cardinalities()` is the thin category defined by cardinal order.
+A unique arrow \(\kappa\to\lambda\) exists when the represented theory proves \(\kappa\leq\lambda\).
 
 Constructors include:
 
@@ -324,7 +355,12 @@ Cardinalities().supremum(...)
 Cardinalities().compare(k, l)
 ```
 
-Symbolic expressions remain symbolic when the represented theory cannot normalize them. This avoids assuming the continuum hypothesis.
+Symbolic expressions remain symbolic when the represented theory cannot normalize them.
+This avoids assuming the continuum hypothesis.
+
+Cardinal predicates and comparisons return `bool | Unknown`. Failure to prove an inequality does not prove its negation.
+
+`Cardinalities().compare(k, l)` returns a proved order relation or `Unknown`.
 
 The cardinality functor is:
 
@@ -332,7 +368,11 @@ The cardinality functor is:
 \#:\operatorname{core}(\mathbf{Set})\longrightarrow\mathbf{Cardinalities}.
 \]
 
-It sends isomorphic sets to equal cardinal objects. It also supplies comparison arrows for products, coproducts, and power objects.
+It sends isomorphic sets to equal cardinal objects.
+It also supplies comparison arrows for products, coproducts, and power objects.
+
+The cardinality functor is defined on every owned set.
+It returns formal cardinal expressions when a concrete simplification is unavailable.
 
 ## Ordinals
 
@@ -373,7 +413,10 @@ Sets().PartiallyOrdered()
 Sets().TotallyOrdered()
 ```
 
-Countability means that an injection into `NN` exists. It does not select an enumeration.
+Countability means that an injection into `NN` exists.
+It does not select an enumeration.
+
+For a generic set, countability predicates can return `Unknown`. Placement in `Countable()` or `Uncountable()` records an established result.
 
 A chosen enumeration adds:
 
@@ -389,7 +432,8 @@ Countably infinite sets have exact cardinality `aleph0`. Uncountable sets inheri
 
 ## Ordered sets and finite ordinals
 
-`finite_ordered_set(elements)` transports the displayed enumeration into a total order. It does not sort the elements.
+`finite_ordered_set(elements)` transports the displayed enumeration into a total order.
+It does not sort the elements.
 
 `ordered_set_owned_by(elements)` preserves an already meaningful order.
 
@@ -414,6 +458,8 @@ X.hasse_layout()
 X.hasse_tikz()
 X.tikz()
 ```
+
+Order predicates return `bool | Unknown` when no applicable decision procedure is available.
 
 Finite posets render as TikZ, LaTeX, HTML, and notebook MIME output.
 
@@ -444,33 +490,78 @@ For infinite \(S\) and nontrivial \(X\), it is:
 
 ## Representation strategy
 
-The intended representation boundaries are:
+The representation boundaries are:
 
-- Sets use Sage parents internally.
+- Owned parents and elements define the public set surface.
+
+- Sage parents can supply private concrete realizations.
+
 - Elements retain their exact parent.
+
 - Infinite set maps use callables.
+
 - Finite set maps can use explicit mappings.
+
 - Product elements use indexed functions.
+
 - Coproduct elements use tagged values.
+
 - Subsets use monomorphisms and characteristic morphisms.
+
 - Function sets reuse Hom-category objects.
+
 - Universal constructions retain their diagrams.
+
 - Cardinalities and ordinals retain symbolic expression trees.
-- Category refinement records established properties.
+
+- Category refinement records only established properties.
+
 - Enumeration remains optional structure.
 
 No construction must enumerate an infinite set merely to establish its mathematical form.
 
-## Incomplete boundaries in the live implementation
+## Unknown and partial computation
 
-The live implementation does not yet meet the requested `Unknown` semantics.
+The mathematical object and the available decision procedure are separate data.
 
-- Predicates still use `Callable[[Element], bool]`.
-- Infinite subset equality can return `False` when no decision procedure exists.
-- Some cardinal predicates raise `NotImplementedError` for indexed expressions.
-- Cardinal order methods use `False` for unproved inequalities.
-- Direct-image membership currently requires a finite subset or another decision procedure.
+These operations return `bool | Unknown`:
 
-These surfaces should return `bool | Unknown`, or preserve a symbolic result where applicable.
+```python
+X.contains(x)
+X.is_finite()
+X.is_infinite()
+X.is_countable()
+X.is_uncountable()
 
-The power-set tests also reference earlier names that no longer exist. The working tree is therefore mid-migration, not a settled API snapshot.
+A == B
+A <= B
+
+kappa < lambda
+kappa <= lambda
+kappa.is_finite()
+kappa.is_infinite()
+kappa.is_countable()
+kappa.is_uncountable()
+```
+
+The following rules apply uniformly:
+
+- A proved proposition returns `True`.
+
+- A proved negation returns `False`.
+
+- Missing data or an unavailable algorithm returns `Unknown`.
+
+- Boolean negation preserves `Unknown`.
+
+- Conjunction and disjunction use Sage's three-valued logic.
+
+- A universal construction remains available when a predicate is unknown.
+
+- Category refinement occurs only after a definite result or cited theorem.
+
+A predicate-defined subobject remains an honest monomorphism when membership is not decidable for every input.
+
+An image remains an honest subobject when preimage existence cannot be decided computationally.
+
+A cardinal remains a cardinal object when its expression cannot be normalized or compared with another expression.

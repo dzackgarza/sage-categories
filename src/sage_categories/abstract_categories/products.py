@@ -12,12 +12,19 @@ from sage_categories.abstract_categories.functor_images import (
 from sage_categories.abstract_categories.functors import (
     ConstantDiagram,
     Functor,
+    InclusionFunctor,
     NaturalTransformation,
     StructuralFunctor,
 )
 from sage_categories.abstract_categories.hom_categories import HomCategory
 from sage_categories.category import Category
-from sage_categories.values import Arrow, MathematicalElement, MathematicalObject
+from sage_categories.values import (
+    Arrow,
+    MathematicalElement,
+    MathematicalObject,
+    MembershipInput,
+    registered_value,
+)
 
 
 class LimitObject(FunctorImageObject):
@@ -207,6 +214,203 @@ _LIMIT_IMAGE_CATEGORIES: dict[int, LimitsOfCategory] = {}
 _COLIMIT_IMAGE_CATEGORIES: dict[int, ColimitsOfCategory] = {}
 _PRODUCT_IMAGE_CATEGORIES: dict[int, ProductsOfCategory] = {}
 _COPRODUCT_IMAGE_CATEGORIES: dict[int, CoproductsOfCategory] = {}
+
+
+class DiagramHomCategory(HomCategory):
+    """The admitted arrows between two objects of a declared diagram."""
+
+    def diagram_category(self) -> DiagramCategory:
+        category = self.base_category()
+        assert is_diagram_category(category)
+        return category
+
+    def __contains__(self, candidate: MembershipInput) -> bool:
+        value = registered_value(candidate)
+        if value is None:
+            return False
+        diagram = self.diagram_category()
+        if not diagram.ambient_category().contains_arrow(value):
+            return False
+        forward = value.forward()
+        return (
+            value.domain() is self.domain()
+            and value.codomain() is self.codomain()
+            and forward in diagram.ambient_category().Hom(self.domain(), self.codomain())
+            and diagram.contains_arrow(value)
+        )
+
+    def __call__(self, arrow: Arrow) -> Arrow:
+        assert arrow in self
+        return arrow
+
+    def identity(self, value: MathematicalObject | None = None) -> Arrow:
+        assert value is None
+        assert self.domain() is self.codomain()
+        diagram = self.diagram_category()
+        identity = diagram.ambient_category().Hom(self.domain(), self.domain()).identity()
+        diagram.admit(identity)
+        return identity
+
+    def compose(self, second: Arrow, first: Arrow) -> Arrow:
+        assert first in self.diagram_category().ArrowCategory()
+        assert second in self.diagram_category().ArrowCategory()
+        assert first.codomain() is second.domain()
+        diagram = self.diagram_category()
+        composite = diagram.ambient_category().Hom(first.domain(), second.codomain()).compose(
+            second.forward(),
+            first.forward(),
+        )
+        diagram.admit(composite)
+        return composite
+
+
+class DiagramCategory(Category):
+    """A small declared diagram inside one ambient category."""
+
+    def __init__(
+        self,
+        ambient_category: Category,
+        objects: tuple[MathematicalObject, ...],
+        morphisms: tuple[Arrow, ...] = (),
+    ) -> None:
+        self._ambient_category = ambient_category
+        self._diagram_objects = tuple(objects)
+        self._diagram_morphisms = tuple(morphisms)
+        self._admitted_arrows = {id(morphism): morphism for morphism in morphisms}
+        self._ambient_inclusion: InclusionFunctor | None = None
+        assert all(value in ambient_category for value in self._diagram_objects)
+        assert all(ambient_category.contains_arrow(morphism) for morphism in morphisms)
+        assert all(self._has_object(morphism.domain()) and self._has_object(morphism.codomain()) for morphism in morphisms)
+        super().__init__(
+            object_type=ambient_category.ObjectType,
+            element_type=ambient_category.ElementType,
+        )
+        _DIAGRAM_CATEGORIES[id(self)] = self
+
+    def ambient_category(self) -> Category:
+        return self._ambient_category
+
+    def diagram_objects(self) -> tuple[MathematicalObject, ...]:
+        return self._diagram_objects
+
+    def diagram_morphisms(self) -> tuple[Arrow, ...]:
+        return self._diagram_morphisms
+
+    def _has_object(self, candidate: MathematicalObject) -> bool:
+        return any(candidate is value for value in self._diagram_objects)
+
+    def __contains__(self, candidate: MembershipInput) -> bool:
+        value = registered_value(candidate)
+        return value is not None and self._has_object(value)
+
+    def contains_arrow(self, candidate: MathematicalObject) -> TypeIs[Arrow]:
+        if not self._ambient_category.contains_arrow(candidate):
+            return False
+        admitted = self._admitted_arrows.get(id(candidate))
+        if admitted is candidate:
+            return True
+        forward = candidate.forward()
+        if forward is candidate:
+            return False
+        admitted_forward = self._admitted_arrows.get(id(forward))
+        return admitted_forward is forward
+
+    def admit(self, arrow: Arrow) -> Arrow:
+        assert arrow in self._ambient_category.ArrowCategory()
+        assert self._has_object(arrow.domain())
+        assert self._has_object(arrow.codomain())
+        self._admitted_arrows[id(arrow)] = arrow
+        return arrow
+
+    def _hom_category_type(self) -> type[HomCategory]:
+        return DiagramHomCategory
+
+    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+        if self._ambient_inclusion is None:
+            self._ambient_inclusion = InclusionFunctor(self, self._ambient_category)
+        return (self._ambient_inclusion,)
+
+    def __repr__(self) -> str:
+        return f"Diagram({self._diagram_objects}) in {self._ambient_category}"
+
+
+class DirectedSystem(DiagramCategory):
+    """A directed system indexed by one ordered set."""
+
+    def __init__(
+        self,
+        ambient_category: Category,
+        index_set: MathematicalObject,
+        objects: tuple[MathematicalObject, ...],
+        morphisms: tuple[Arrow, ...] = (),
+    ) -> None:
+        self._index_set = index_set
+        self._diagram_category = DiagramCategory(
+            ambient_category,
+            objects,
+            morphisms,
+        )
+        self._diagram_inclusion: InclusionFunctor | None = None
+        super().__init__(ambient_category, objects, morphisms)
+
+    def index_set(self) -> MathematicalObject:
+        return self._index_set
+
+    def diagram_category(self) -> DiagramCategory:
+        return self._diagram_category
+
+    def admit(self, arrow: Arrow) -> Arrow:
+        self._diagram_category.admit(arrow)
+        return super().admit(arrow)
+
+    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+        if self._diagram_inclusion is None:
+            self._diagram_inclusion = InclusionFunctor(
+                self,
+                self._diagram_category,
+            )
+        return (self._diagram_inclusion,)
+
+
+class InverseSystem(DiagramCategory):
+    """An inverse system indexed by one ordered set."""
+
+    def __init__(
+        self,
+        ambient_category: Category,
+        index_set: MathematicalObject,
+        objects: tuple[MathematicalObject, ...],
+        morphisms: tuple[Arrow, ...] = (),
+    ) -> None:
+        self._index_set = index_set
+        self._diagram_category = DiagramCategory(
+            ambient_category,
+            objects,
+            morphisms,
+        )
+        self._diagram_inclusion: InclusionFunctor | None = None
+        super().__init__(ambient_category, objects, morphisms)
+
+    def index_set(self) -> MathematicalObject:
+        return self._index_set
+
+    def diagram_category(self) -> DiagramCategory:
+        return self._diagram_category
+
+    def admit(self, arrow: Arrow) -> Arrow:
+        self._diagram_category.admit(arrow)
+        return super().admit(arrow)
+
+    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+        if self._diagram_inclusion is None:
+            self._diagram_inclusion = InclusionFunctor(
+                self,
+                self._diagram_category,
+            )
+        return (self._diagram_inclusion,)
+
+
+_DIAGRAM_CATEGORIES: dict[int, DiagramCategory] = {}
 
 
 class ConeObject(MathematicalObject):
@@ -962,6 +1166,11 @@ def Biproduct(
 
 def is_cone_category(category: Category) -> TypeIs[ConeCategory]:
     return any(category is candidate for candidate in _CONE_CATEGORIES.values())
+
+
+def is_diagram_category(category: Category) -> TypeIs[DiagramCategory]:
+    candidate = _DIAGRAM_CATEGORIES.get(id(category))
+    return candidate is category
 
 
 def is_limits_of_category(category: Category) -> TypeIs[LimitsOfCategory]:

@@ -109,7 +109,15 @@ class Ordinal(MathematicalObject):
         return self._kind is value._kind and self._finite_value == value._finite_value and self._terms == value._terms and self._index == value._index
 
     def __hash__(self) -> int:
+        if self._kind is OrdinalKind.FINITE:
+            return hash(self.finite_value())
         return hash((self._kind, self._finite_value, self._terms, self._index))
+
+    def __int__(self) -> int:
+        return self.finite_value()
+
+    def __index__(self) -> int:
+        return self.finite_value()
 
     def __le__(self, other: OrdinalInput) -> Decision:
         return Ordinals().le(self, ordinal(other))

@@ -225,6 +225,8 @@ class Cardinal(MathematicalObject):
         )
 
     def __hash__(self) -> int:
+        if self._kind is CardinalKind.FINITE:
+            return hash(self.finite_value())
         if self._kind is CardinalKind.INDEXED_SUM or self._kind is CardinalKind.INDEXED_PRODUCT:
             return id(self)
         return hash(

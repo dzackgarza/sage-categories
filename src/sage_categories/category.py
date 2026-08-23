@@ -47,6 +47,7 @@ if TYPE_CHECKING:
         SubobjectCategory,
         SuperobjectCategory,
     )
+    from sage_categories.theories.sets import SetElement
 
 
 class Category(MathematicalObject):
@@ -152,6 +153,10 @@ class Category(MathematicalObject):
     def objects(self) -> MathematicalObject:
         """Return the object set when this category is represented as small."""
         assert False, f"{self} has no represented object set"
+
+    def object_element(self, value: MathematicalObject) -> SetElement:
+        """Return ``value`` as an element of this category's object set."""
+        assert False, f"{self} has no represented object element for {value}"
 
     def arrows(self) -> MathematicalObject:
         """Return the arrow set when this category is represented as small."""

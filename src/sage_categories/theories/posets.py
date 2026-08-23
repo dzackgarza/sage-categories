@@ -391,6 +391,10 @@ class ThinCategory(Category):
             self._objects = ThinCategoryObjectSet(self)
         return self._objects
 
+    def object_element(self, value: MathematicalObject) -> SetElement:
+        assert PosetElements().contains_poset_element(value)
+        return self.objects().element(value)
+
     def Hom(
         self,
         domain: MathematicalObject,

@@ -480,6 +480,9 @@ class DiscreteCategory(Category):
             self._object_set = DiscreteObjectSet(self, self._label_set)
         return self._object_set
 
+    def object_element(self, value: MathematicalObject) -> SetElement:
+        return self.objects().element(value)
+
     def arrows(self) -> MathematicalObject:
         from sage_categories.theories.sets import DiscreteArrowSet
 

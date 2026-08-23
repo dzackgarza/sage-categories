@@ -27,7 +27,7 @@ from sage_categories.values import (
 )
 
 if TYPE_CHECKING:
-    from sage_categories.theories.sets import FiniteSetObject
+    from sage_categories.theories.sets import FiniteSetObject, SetElement
 
 
 class LimitObject(FunctorImageObject):
@@ -405,6 +405,10 @@ class DiagramCategory(Category):
         from sage_categories.theories.sets import FiniteSet
 
         return FiniteSet(frozenset(self._diagram_objects))
+
+    def object_element(self, value: MathematicalObject) -> SetElement:
+        assert value in self
+        return self.objects().element(value)
 
     def arrows(self) -> FiniteSetObject:
         from sage_categories.theories.sets import FiniteSet

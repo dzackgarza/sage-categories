@@ -2820,19 +2820,11 @@ def _object_set_element(
     index_category: Category,
     value: MathematicalObject,
 ) -> SetElement:
-    if DiscreteCategories().contains_discrete_category(index_category):
-        assert index_category.contains_object(value)
-        return index_category.objects().element(value)
-
-    from sage_categories.theories.posets import PosetElements, is_thin_category
-
-    if is_thin_category(index_category):
-        assert PosetElements().contains_poset_element(value)
-        return index_category.objects().element(value)
-
-    assert is_diagram_category(index_category)
     assert value in index_category
-    return index_category.objects().element(value)
+    element = index_category.object_element(value)
+    assert SetElements().contains_set_element(element)
+    assert element.ambient_set() is index_objects(index_category)
+    return element
 
 
 def index_objects(index_category: Category) -> SetObject:

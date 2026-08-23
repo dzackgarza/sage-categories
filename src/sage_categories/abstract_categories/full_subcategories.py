@@ -3,31 +3,20 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-
-from enum import Enum
-
-from typing import TYPE_CHECKING, Any, TypeIs, assert_never
+from typing import TYPE_CHECKING, Any, TypeIs
 
 from sage_categories.abstract_categories.functors import (
     Functor,
     InclusionFunctor,
-    NaturalIsomorphism,
     StructuralFunctor,
-    compose_functors,
 )
-
 from sage_categories.abstract_categories.hom_categories import (
     HomCategory,
     HomCategoryFamily,
-    Isomorphism,
-    is_isomorphism,
 )
-
 from sage_categories.category import Category
-
 from sage_categories.values import (
     Arrow,
-    CategoryElement,
     MathematicalElement,
     MathematicalObject,
     registered_value,
@@ -43,14 +32,18 @@ if TYPE_CHECKING:
 
 type ObjectPredicate = Callable[[MathematicalObject], bool]
 
+
 class FullSubcategoryObject(MathematicalObject):
     """The local object implementation of a full subcategory."""
+
 
 class FullSubcategoryElement(MathematicalElement):
     """The local element implementation of a full subcategory."""
 
+
 class FullSubcategoryArrow(Arrow):
     """The local arrow implementation of a full subcategory."""
+
 
 class FullSubcategoryHomCategory(HomCategory):
     """The ambient arrows between two objects of a full subcategory."""
@@ -106,6 +99,7 @@ class FullSubcategoryHomCategory(HomCategory):
             )
         return (self._ambient_inclusion,)
 
+
 class FullSubcategory(Category):
     """The full subcategory on objects satisfying one predicate."""
 
@@ -147,7 +141,10 @@ class FullSubcategory(Category):
             return True
         if value not in self._ambient_category:
             return False
-        return any(isomorphic in self._ambient_category and self._predicate(isomorphic) for isomorphic in _declared_isomorphic_objects(value))
+        return any(
+            isomorphic in self._ambient_category and self._predicate(isomorphic)
+            for isomorphic in _declared_isomorphic_objects(value)
+        )
 
     def contains_arrow(self, candidate: MathematicalObject) -> TypeIs[Arrow]:
         if not self._ambient_category.contains_arrow(candidate):
@@ -254,16 +251,20 @@ class FullSubcategory(Category):
     def __repr__(self) -> str:
         return self._name
 
+
 class FullSubcategoryObjects(Category):
     """The represented category of full subcategories."""
 
     def __init__(self) -> None:
         super().__init__(object_type=FullSubcategory)
 
+
 _FULL_SUBCATEGORIES = FullSubcategoryObjects()
+
 
 def FullSubcategoryCategoryObjects() -> FullSubcategoryObjects:
     return _FULL_SUBCATEGORIES
+
 
 def is_full_subcategory(category: Category) -> TypeIs[FullSubcategory]:
     return category in FullSubcategoryCategoryObjects()

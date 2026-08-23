@@ -2,44 +2,18 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
-
 from enum import Enum
-
-from typing import TYPE_CHECKING, Any, TypeIs, assert_never
-
-from sage_categories.abstract_categories.functors import (
-    Functor,
-    InclusionFunctor,
-    NaturalIsomorphism,
-    StructuralFunctor,
-    compose_functors,
-)
+from typing import Any, TypeIs, assert_never
 
 from sage_categories.abstract_categories.hom_categories import (
     HomCategory,
-    HomCategoryFamily,
-    Isomorphism,
-    is_isomorphism,
 )
-
 from sage_categories.category import Category
-
 from sage_categories.values import (
     Arrow,
-    CategoryElement,
-    MathematicalElement,
     MathematicalObject,
-    registered_value,
 )
 
-if TYPE_CHECKING:
-    from sage_categories.abstract_categories.products import (
-        CoconeObject,
-        ConeObject,
-        CoproductPresentation,
-        ProductPresentation,
-    )
 
 class BinaryProjectionSide(Enum):
     """One factor of a binary categorical construction."""
@@ -60,6 +34,7 @@ class BinaryProjectionSide(Enum):
             case _:
                 assert_never(self)
 
+
 class OppositeArrow(Arrow):
     """An arrow of an opposite category."""
 
@@ -75,6 +50,7 @@ class OppositeArrow(Arrow):
 
     def underlying_arrow(self) -> Arrow:
         return self._underlying_arrow
+
 
 class OppositeHomCategory(HomCategory):
     """Arrows of an opposite category."""
@@ -116,6 +92,7 @@ class OppositeHomCategory(HomCategory):
     def contains_opposite_arrow(self, arrow: Arrow) -> TypeIs[OppositeArrow]:
         return arrow in self
 
+
 class OppositeCategory(Category):
     """The opposite category ``C^op``."""
 
@@ -142,22 +119,31 @@ class OppositeCategory(Category):
     def __repr__(self) -> str:
         return f"{self._base_category}^op"
 
+
 class OppositeCategoryObjects(Category):
     """The category of opposite-category objects in ``Cat``."""
 
     def __init__(self) -> None:
         super().__init__(object_type=OppositeCategory)
 
+
 _OPPOSITE_CATEGORIES = OppositeCategoryObjects()
+
 
 def OppositeCategories() -> OppositeCategoryObjects:
     return _OPPOSITE_CATEGORIES
 
+
 def is_opposite_category(category: Category) -> TypeIs[OppositeCategory]:
     return category in OppositeCategories()
 
+
 def is_opposite_arrow(arrow: Arrow) -> TypeIs[OppositeArrow]:
-    return is_opposite_category(arrow.hom_category().base_category()) and arrow in arrow.hom_category().base_category().ArrowCategory()
+    return (
+        is_opposite_category(arrow.hom_category().base_category())
+        and arrow in arrow.hom_category().base_category().ArrowCategory()
+    )
+
 
 def is_opposite_hom_category(
     hom_category: HomCategory,

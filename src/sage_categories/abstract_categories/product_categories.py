@@ -2,46 +2,22 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
-
-from enum import Enum
-
-from typing import TYPE_CHECKING, Any, TypeIs, assert_never
+from typing import TypeIs
 
 from sage_categories.abstract_categories.functors import (
     Functor,
-    InclusionFunctor,
-    NaturalIsomorphism,
-    StructuralFunctor,
-    compose_functors,
 )
-
 from sage_categories.abstract_categories.hom_categories import (
     HomCategory,
-    HomCategoryFamily,
-    Isomorphism,
-    is_isomorphism,
 )
-
+from sage_categories.abstract_categories.opposite_categories import BinaryProjectionSide
 from sage_categories.category import Category
-
 from sage_categories.values import (
     Arrow,
     CategoryElement,
-    MathematicalElement,
     MathematicalObject,
-    registered_value,
 )
 
-if TYPE_CHECKING:
-    from sage_categories.abstract_categories.products import (
-        CoconeObject,
-        ConeObject,
-        CoproductPresentation,
-        ProductPresentation,
-    )
-
-from sage_categories.abstract_categories.opposite_categories import BinaryProjectionSide
 
 class CategoryPair(MathematicalObject):
     """An object of a binary product category."""
@@ -67,6 +43,7 @@ class CategoryPair(MathematicalObject):
 
     def __repr__(self) -> str:
         return f"({self._first}, {self._second})"
+
 
 class ProductArrow(Arrow):
     """A pair of arrows in a product category."""
@@ -101,6 +78,7 @@ class ProductArrow(Arrow):
 
     def second(self) -> Arrow:
         return self._second
+
 
 class ProductHomCategory(HomCategory):
     """A hom category in a binary product category."""
@@ -141,6 +119,7 @@ class ProductHomCategory(HomCategory):
 
     def contains_product_arrow(self, arrow: Arrow) -> TypeIs[ProductArrow]:
         return arrow in self
+
 
 class ProductCategory(Category):
     """The binary product category ``C x D``."""
@@ -214,6 +193,7 @@ class ProductCategory(Category):
     def __repr__(self) -> str:
         return f"{self._first_category} x {self._second_category}"
 
+
 class ProductProjectionFunctor(Functor):
     """One projection from a binary product category."""
 
@@ -238,6 +218,7 @@ class ProductProjectionFunctor(Functor):
     def _morphism_image(self, morphism: Arrow) -> Arrow:
         assert is_product_arrow(morphism)
         return self._side.select(morphism.first(), morphism.second())
+
 
 class PairFunctor(Functor):
     """The functor into a product induced by two functors."""
@@ -270,22 +251,31 @@ class PairFunctor(Functor):
         assert self._second.codomain().contains_arrow(second)
         return hom_category(first, second)
 
+
 class ProductCategoryObjects(Category):
     """The category of binary product-category objects in ``Cat``."""
 
     def __init__(self) -> None:
         super().__init__(object_type=ProductCategory)
 
+
 _PRODUCT_CATEGORIES = ProductCategoryObjects()
+
 
 def ProductCategories() -> ProductCategoryObjects:
     return _PRODUCT_CATEGORIES
 
+
 def is_product_category(category: Category) -> TypeIs[ProductCategory]:
     return category in ProductCategories()
 
+
 def is_product_arrow(arrow: Arrow) -> TypeIs[ProductArrow]:
-    return is_product_category(arrow.hom_category().base_category()) and arrow in arrow.hom_category().base_category().ArrowCategory()
+    return (
+        is_product_category(arrow.hom_category().base_category())
+        and arrow in arrow.hom_category().base_category().ArrowCategory()
+    )
+
 
 def is_product_hom_category(
     hom_category: HomCategory,

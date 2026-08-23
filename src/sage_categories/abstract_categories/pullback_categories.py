@@ -2,46 +2,29 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
-
-from enum import Enum
-
-from typing import TYPE_CHECKING, Any, TypeIs, assert_never
+from typing import TypeIs
 
 from sage_categories.abstract_categories.functors import (
     Functor,
-    InclusionFunctor,
     NaturalIsomorphism,
     StructuralFunctor,
     compose_functors,
 )
-
 from sage_categories.abstract_categories.hom_categories import (
     HomCategory,
-    HomCategoryFamily,
     Isomorphism,
     is_isomorphism,
 )
-
+from sage_categories.abstract_categories.opposite_categories import BinaryProjectionSide
 from sage_categories.category import Category
-
 from sage_categories.values import (
     Arrow,
-    CategoryElement,
     MathematicalElement,
     MathematicalObject,
-    registered_value,
 )
 
-if TYPE_CHECKING:
-    from sage_categories.abstract_categories.products import (
-        CoconeObject,
-        ConeObject,
-        CoproductPresentation,
-        ProductPresentation,
-    )
+_PULLBACK_ELEMENTS: dict[int, PullbackElement] = {}
 
-from sage_categories.abstract_categories.opposite_categories import BinaryProjectionSide
 
 class PullbackObject(MathematicalObject):
     """A compatible pair of objects in a strict pullback of categories."""
@@ -66,6 +49,7 @@ class PullbackObject(MathematicalObject):
     def _second_implementation(self) -> MathematicalObject:
         return self._second
 
+
 class PullbackElement(MathematicalElement):
     """A compatible pair of elements in a pullback object."""
 
@@ -89,6 +73,7 @@ class PullbackElement(MathematicalElement):
 
     def _second_implementation(self) -> MathematicalElement:
         return self._second
+
 
 class PullbackArrow(Arrow):
     """A compatible pair of arrows in a pullback category."""
@@ -128,6 +113,7 @@ class PullbackArrow(Arrow):
 
     def _second_implementation(self) -> Arrow:
         return self._second
+
 
 class PullbackHomCategory(HomCategory):
     """Compatible pairs of arrows between pullback objects."""
@@ -176,6 +162,7 @@ class PullbackHomCategory(HomCategory):
     def contains_pullback_arrow(self, arrow: Arrow) -> TypeIs[PullbackArrow]:
         return arrow in self
 
+
 class PullbackProjectionFunctor(StructuralFunctor):
     """One structural projection from a pullback category."""
 
@@ -219,6 +206,7 @@ class PullbackProjectionFunctor(StructuralFunctor):
             element._second_implementation(),
         )
 
+
 class PullbackMediatingFunctor(Functor):
     """The functor induced by a compatible pair of functors."""
 
@@ -249,6 +237,7 @@ class PullbackMediatingFunctor(Functor):
         assert self._first.codomain().contains_arrow(first)
         assert self._second.codomain().contains_arrow(second)
         return hom_category(first, second)
+
 
 class PullbackCategory(Category):
     """The strict pullback of two functors with one codomain."""
@@ -395,19 +384,24 @@ class PullbackCategory(Category):
     def __repr__(self) -> str:
         return f"{self.first_category()} x_{self.common_category()} {self.second_category()}"
 
+
 class PullbackCategoryObjects(Category):
     """The category of strict pullback-category objects in ``Cat``."""
 
     def __init__(self) -> None:
         super().__init__(object_type=PullbackCategory)
 
+
 _PULLBACK_CATEGORIES = PullbackCategoryObjects()
+
 
 def PullbackCategories() -> PullbackCategoryObjects:
     return _PULLBACK_CATEGORIES
 
+
 def is_pullback_category(category: Category) -> TypeIs[PullbackCategory]:
     return category in PullbackCategories()
+
 
 def is_pullback_hom_category(
     hom_category: HomCategory,

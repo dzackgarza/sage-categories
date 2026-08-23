@@ -86,6 +86,9 @@ ci-provision-sage:
     # This Sage's CLI takes only -c and a file; the environment's pip is reached
     # through its Python, which is the spelling the QC profile uses too.
     "${sage_dir}/python" -m pip install --quiet --no-deps -e .
+    docker exec -i -w "${workspace}" sage-env /sage/.venv/bin/uv pip install \
+        --python /sage/.venv/bin/python \
+        'git+https://github.com/dzackgarza/sagemath-mypy-plugin@main'
     # The CI tier measures coverage with the Sage interpreter's own Python, so
     # the tool has to live in that environment rather than on the runner.
     "${sage_dir}/python" -m pip install --quiet coverage

@@ -274,7 +274,7 @@ Grounding examples:
 | `POL-LEAF-015` | Let a leaf author work from the new mathematics and the contracts of nearby categories. Do not require knowledge of distant subtrees or the complete category graph. |
 | `POL-LEAF-016` | After the selected functors are declared, automatically supply the complete applicable object, element, arrow, and construction interfaces from their target categories. |
 | `POL-LEAF-017` | Give a full replete subcategory the inherited categorical interface without extra wiring. Descend a limit, colimit, or other functorial construction when closure of its results in the subcategory is declared or derived. |
-| `POL-LEAF-018` | Do not implement an inherited protocol in a leaf object. A local `__iter__`, `__contains__`, or `cardinality()` on a poset object duplicates the set interface instead of receiving it through the selected functor to `Sets()`. |
+| `POL-LEAF-018` | Do not implement an inherited category-owned mathematical operation in a leaf object. A local `__iter__`, `__contains__`, or `cardinality()` on a poset object duplicates the set interface instead of receiving it through the selected functor to `Sets()`. |
 | `POL-LEAF-019` | Do not create a free-standing category to hold the elements of another category. Poset elements belong to `Posets().ElementType`; a separate `PosetElements()` category disconnects their type and inheritance from `Posets()`. |
 | `POL-LEAF-020` | Give every refinement and construction its own compiled object, element, and arrow types. `FinitePosets().ElementType` is distinct from `Posets().ElementType`, and `Posets().Products().ElementType` is distinct from both, even when the new type declares no local methods. |
 | `POL-LEAF-021` | Lift a construction through functors, natural transformations, and the new mathematical structure only. A poset product supplies the componentwise order and its action on arrows; its implementation types do not subclass generic product types or reconstruct the underlying set product interface. |
@@ -441,7 +441,7 @@ None requires enumeration to establish finiteness.
 | `POL-API-004` | Use `as_*` only for an explicit conversion to another mathematical representation. |
 | `POL-API-005` | Keep private fields private to their owner or documented subclass contract. |
 | `POL-API-006` | Ask another object through its public mathematical interface. |
-| `POL-API-007` | Invoke Python protocols through public syntax such as `f(x)`, `iter(x)`, and `len(x)`. |
+| `POL-API-007` | Invoke Python special methods through public syntax such as `f(x)`, `iter(x)`, and `len(x)`. |
 | `POL-API-008` | Name an accessor for the exact mathematical object or arrow it returns. |
 | `POL-API-009` | Use positional standard notation: `X.Hom(Y)` means the hom object from `X` to codomain `Y` and delegates to `X._Hom_(Y)`. |
 | `POL-API-010` | Let callers use `X.Hom(Y)`. Only the public hom dispatch can call the private method `X._Hom_(Y)`. |
@@ -449,7 +449,7 @@ None requires enumeration to establish finiteness.
 | `POL-API-012` | Let a structured object expose every applicable operation under its unambiguous name. Its discoverable method surface must preserve distinctions between its structures. |
 | `POL-API-013` | Name categorical arrows as morphisms or arrows. Do not replace the standard mathematical object with implementation names such as `Map` or `Rule`. |
 | `POL-API-014` | Ban nondescript identifiers that do not state what they contain or denote. Never name a type, method, parameter, field, or local value `data`, `container`, `rule`, or a similarly contentless term. |
-| `POL-API-015` | Do not add a public method that duplicates standard Python or Sage protocol syntax. Implement the protocol and use its established notation for comparison, containment, indexing, equality, iteration, and calls. |
+| `POL-API-015` | Do not add a public method that duplicates standard Python or Sage syntax. Implement the applicable special method and use established notation for comparison, containment, indexing, equality, iteration, and calls. |
 | `POL-API-016` | Prefer a method or constructor on the mathematical owner over a standalone public function. Add a standalone public function only when the operation has no natural category, object, arrow, or functor owner. |
 | `POL-API-017` | Never expose a method whose complete implementation only asserts `False`, returns `NotImplemented`, or raises an error. Such a method advertises a capability that the object does not have. |
 | `POL-API-018` | Use an abstract method when every concrete object must supply an implementation. Prevent construction of an incomplete concrete object instead of deferring the failure to a method call. |
@@ -481,6 +481,7 @@ None requires enumeration to establish finiteness.
 | `POL-TYPE-024` | Make the category compiler expose functorial construction and dynamic object, element, and arrow inheritance to static type checkers. A checker's default inability to infer that structure does not justify weakening it. |
 | `POL-TYPE-025` | When a checker cannot infer the declared dynamic structure, use a type-checker plugin or generate static manifests, types, or stubs from the authoritative category and functor declarations. Do not maintain a second type graph by hand. |
 | `POL-TYPE-026` | Treat generated static typing artifacts as projections of repository-owned declarations. Regenerate them through the applicable commit, test, push, and release workflows whenever their source declarations change. |
+| `POL-TYPE-027` | Do not define or use `typing.Protocol` or another structural duck type. Type mathematical values through the exact category-owned `ObjectType`, `ElementType`, or `ArrowType`, and express capabilities through category membership and structural functors. |
 
 The runtime compiler constructs category relations dynamically, but one repository revision contains a finite declaration graph.
 A generator can project that graph into static typing artifacts without changing its mathematical owner.
@@ -492,8 +493,8 @@ Each name identifies the structure whose generating set it returns.
 For example, `SomeMathematicalObjectInput` names a constructor role rather than a mathematical object.
 If the parameter denotes an element of a set, its type is `SetElement`.
 
-The protocol signatures are `__eq__(self, candidate: Any)` and `__contains__(self, candidate: Any)`.
-Use raw `Any` at those two protocol boundaries.
+The special-method signatures are `__eq__(self, candidate: Any)` and `__contains__(self, candidate: Any)`.
+Use raw `Any` at those two special-method boundaries.
 
 Likewise, do not define `MathematicalObject = Any` and then type `SetMapRule` as a callable on that alias.
 A `SetMorphism` acts from `SetElement` to `SetElement`, with its specific domain and codomain stored on the morphism.
@@ -505,7 +506,7 @@ Typing `x` as `SetElement` would admit an element without the required poset str
 Likewise, use `OrderedSet[MyCatElement]`, not `Iterable[MyCatElement]`, when order and uniqueness are the mathematical input.
 The latter type also admits raw lists, tuples, and Python iterators, which discards the required collection semantics.
 
-Use `x <= y`, `x in X`, `X[i]`, and `x == y` instead of public methods such as `x.le(y)`, `X.contains(x)`, `X.index(i)`, or `x.equals(y)` that shadow those protocols.
+Use `x <= y`, `x in X`, `X[i]`, and `x == y` instead of public methods such as `x.le(y)`, `X.contains(x)`, `X.index(i)`, or `x.equals(y)` that shadow that standard syntax.
 
 Every object of `Sets()` has `cardinality()`.
 When its cardinality is not determined, the method returns the unknown cardinality value instead of raising an error.
@@ -546,7 +547,7 @@ The caller can materialize a finite result when its application requires one.
 | `POL-CODE-024` | Use an assertion for a violated mathematical precondition. Do not add `try`/`except`, fallback values, or recovery branches. |
 | `POL-CODE-025` | When ownership is wrong, stop runtime debugging and repair `Cat`, arrow categories, method inheritance, and `Sets()` in dependency order. |
 | `POL-CODE-026` | During a foundational migration, move each required behavior to its new owner before deleting its old implementation. |
-| `POL-CODE-027` | Do not use `hasattr` to guess mathematical capabilities. Ask category membership or call the required owned protocol. |
+| `POL-CODE-027` | Do not use `hasattr` to guess mathematical capabilities. Ask category membership or call the required category-owned operation. |
 | `POL-CODE-028` | Prefer a named primitive that states the mathematical construction over a generic Python composition that merely reproduces it. |
 | `POL-CODE-029` | Actively search the standard library, Sage, current dependencies, and maintained packages for primitives that make theory code read more like mathematics. |
 | `POL-CODE-030` | Propose a new dependency when it materially improves mathematical vocabulary, auditability, or categorical uniformity. State the mathematical construction that the dependency supplies. |
@@ -557,7 +558,7 @@ The caller can materialize a finite result when its application requires one.
 | `POL-CODE-035` | Handle trivial or decisive cases with early returns. Then assert the stronger invariants established by their exclusion before implementing the remaining case. |
 | `POL-CODE-036` | Prefer immutable transformations, explicit case analysis, and local equations in the style of Haskell and Lean over C-style mutable state and control flow. |
 | `POL-CODE-037` | Do not rewrap a value when the new wrapper does not change its required type or semantics. Calls such as `int(0)`, `Integer(0)`, and `ZZ(0)` require a local comment that proves why the conversion is necessary. |
-| `POL-CODE-038` | Do not add a function or method whose body only forwards to another function, method, operator, or protocol. Treat an extremely short function as a review signal and remove it unless it owns distinct mathematical behavior. |
+| `POL-CODE-038` | Do not add a function or method whose body only forwards to another function, method, operator, or special method. Treat an extremely short function as a review signal and remove it unless it owns distinct mathematical behavior. |
 
 For adjacent elements, use `itertools.pairwise(xs)` instead of `zip(xs, xs[1:])`.
 The named primitive states adjacency, remains lazy, and does not require slicing.
@@ -571,7 +572,7 @@ Return immediately for identities, zero objects, empty diagrams, or already-norm
 Assert the mathematical hypotheses that remain before entering the general branch.
 
 For example, do not define `equals(x, y)` to return `x == y` or define `Y.contains(X)` to return `X in Y`.
-Use the natural protocol syntax directly.
+Use the standard syntax directly.
 
 ## Tests and performance
 

@@ -10,7 +10,7 @@ from sage_categories.abstract_categories.hom_categories import (
     HomCategoryFamily,
 )
 from sage_categories.category import Category
-from sage_categories.theories.posets import (
+from sage_categories.theories.poset_core import (
     PartiallyOrderedSets,
     PosetElement,
     PosetElements,

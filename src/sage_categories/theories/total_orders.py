@@ -23,7 +23,7 @@ from sage_categories.category import Category
 from sage_categories.theories.finite_posets import (
     FinitePosetsCategory,
 )
-from sage_categories.theories.posets import (
+from sage_categories.theories.poset_core import (
     PartiallyOrderedSets,
     PartiallyOrderedSetsCategory,
     PosetElement,
@@ -628,18 +628,3 @@ def is_total_order_hom_category(
         category.base_category() is TotallyOrderedSets()
         and category in TotallyOrderedSets().HomCategory()
     )
-
-
-from sage_categories.theories.ordered_set_constructors import (
-    SimplexOrderIndexing,
-    SimplexOrders,
-    finite_ordered_set,
-    ordered_set_owned_by,
-)
-
-__all__ = (
-    "SimplexOrderIndexing",
-    "SimplexOrders",
-    "finite_ordered_set",
-    "ordered_set_owned_by",
-)

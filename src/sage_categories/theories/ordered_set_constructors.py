@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
-from sage_categories.theories.posets import (
+from sage_categories.theories.poset_core import (
     PartiallyOrderedSets,
     PosetElement,
 )

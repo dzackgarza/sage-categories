@@ -23,7 +23,7 @@ from sage_categories.abstract_categories.products import (
     ProductPresentation,
     ProductsOfCategory,
 )
-from sage_categories.theories.posets import (
+from sage_categories.theories.poset_core import (
     PartiallyOrderedSets,
     PosetElement,
     PosetElements,

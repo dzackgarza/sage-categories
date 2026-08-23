@@ -33,7 +33,7 @@ if TYPE_CHECKING:
         SageFinitePosetObject,
     )
 
-from sage_categories.theories.posets import (
+from sage_categories.theories.poset_core import (
     ForgetPosetFunctor,
     OrderRelation,
     PartiallyOrderedSets,

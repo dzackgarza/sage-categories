@@ -18,9 +18,7 @@ if TYPE_CHECKING:
 # A category that declares no implementation for a role falls back to one of
 # these. Such a fallback states nothing about the category graph, so it is not
 # reported as a declared relation.
-_KERNEL_IMPLEMENTATIONS = frozenset(
-    {MathematicalObject, MathematicalElement, CategoryElement, Arrow}
-)
+_KERNEL_IMPLEMENTATIONS = frozenset({MathematicalObject, MathematicalElement, CategoryElement, Arrow})
 
 
 # Names the source class a generated one completes. A generated class exists

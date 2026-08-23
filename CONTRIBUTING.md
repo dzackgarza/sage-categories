@@ -339,7 +339,7 @@ An enumeration is additional mathematical structure and therefore belongs to a s
 | `POL-LAYOUT-013` | Make dependency direction visible in the layout: mathematical categories depend on the implementation kernel and immediate mathematical owners; backend adapters depend on their public mathematical interfaces. |
 | `POL-LAYOUT-014` | Audit mathematical purity by subtree. Engine names, primitive container semantics, coordinate representations, and unrelated invariants in a mathematical subtree each indicate a misplaced responsibility. |
 | `POL-LAYOUT-015` | Permit a backend subtree to use engine-specific types and required Python representations. Keep every such use inside the boundary and return owned semantic objects. |
-| `POL-LAYOUT-016` | Split a large mathematical module by coherent mathematical owners, properties, or constructions, not by line count, implementation technique, or an arbitrary group of helpers. For `Sets()`, suitable modules include subsets, products, coproducts, and limits and colimits when each forms a substantive mathematical unit. |
+| `POL-LAYOUT-016` | Split a large mathematical module by coherent mathematical owners, properties, or constructions, not by line count, implementation technique, or an arbitrary group of helpers. Keep the owning category visible in each module name. For `Sets()`, suitable modules include `setsubsets.py`, `setproducts.py`, `setcoproducts.py`, and `setlimitscolimits.py` when each forms a substantive mathematical unit. |
 | `POL-LAYOUT-017` | Move non-mathematical wiring into relatively private infrastructure modules whenever it can be separated from the definitions. Keep caches, registration, compiler hooks, dispatch support, and representation plumbing out of modules that state mathematical objects, arrows, functors, and laws. |
 | `POL-LAYOUT-018` | Preserve separate audit surfaces for mathematics and engineering. A mathematical module must be reviewable against definitions and theorems without following private runtime wiring; an infrastructure module must be reviewable for implementation correctness without deciding new mathematics. |
 
@@ -347,7 +347,7 @@ Grounding examples: a sheaf is an object of a sheaf category, and an internal Ho
 A functor is an object of `Fun(C, D)`. None enters `Sets()` without a specified functor.
 
 Do not split `sets.py` into `sets_part_1.py`, `sets_helpers.py`, or files chosen only to satisfy a length limit.
-Split it into mathematical units such as `subsets.py`, `products.py`, `coproducts.py`, and `limits_colimits.py` when those units have distinct objects, arrows, universal properties, or algorithms.
+Split it into category-qualified mathematical units such as `setsubsets.py`, `setproducts.py`, `setcoproducts.py`, and `setlimitscolimits.py` when those units have distinct objects, arrows, universal properties, or algorithms.
 Place method compilation, descriptor installation, caches, registration, and backend conversion in private infrastructure modules outside those mathematical units.
 
 ## Functors and universal constructions

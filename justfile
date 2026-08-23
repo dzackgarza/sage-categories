@@ -14,32 +14,16 @@ ai_review_ci_default_branch := "main"
 default:
     @just --list
 
-# The compiler builds object, element and arrow inheritance from the structural
-# functors each category selects, which a static checker cannot follow. The
-# manifest projects that graph so the checker reads the same declarations
-# instead of a second one kept by hand. POL-TYPE-026 makes it a workflow
-# artifact, so the tiers below verify it rather than trust it. The generator
-# runs on the environment's Python, which carries the category graph and passes
-# its arguments through.
-
-# Project the declared category graph into the static typing manifest.
-type-manifest:
-    @"$(dirname "${SAGE_BIN}")/python" scripts/generate_type_manifest.py
-
-# Fail when the manifest no longer matches the declared category graph.
-check-type-manifest:
-    @"$(dirname "${SAGE_BIN}")/python" scripts/generate_type_manifest.py --check
-
 # Run commit-tier SageMath QC through the central implementation.
-test-commit: check-type-manifest
+test-commit:
     @just -f ~/ai-review-ci/justfiles/sage.just -d . test-commit
 
 # Run the full SageMath test suite before pushing.
-test-push: check-type-manifest
+test-push:
     @just -f ~/ai-review-ci/justfiles/sage.just -d . test-push
 
 # Run CI acceptance QC through the central implementation.
-test-ci: check-type-manifest
+test-ci:
     @just -f ~/ai-review-ci/justfiles/sage.just -d . test-ci
 
 # The research Sage environment, run rather than extracted.

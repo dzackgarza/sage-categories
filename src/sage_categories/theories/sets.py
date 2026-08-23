@@ -133,8 +133,12 @@ class SetElement(MathematicalElement):
 # The base of an element type whose category declares an inclusion into
 # SetElements(). The compiler supplies the set-element surface along that
 # inclusion, so at runtime the type introduces no implementation of its own and
-# POL-CAT-053 keeps it clear of SetElement. Static analysis cannot follow a
-# declared functor, so it is told the relation the inclusion already states.
+# POL-CAT-053 keeps it clear of SetElement.
+#
+# Stating the relation here is interim. POL-TYPE-025 wants it projected from the
+# declarations by a checker plugin; dzackgarza/sagemath-mypy-plugin already does
+# that for Sage's own named-class machinery and is the intended home once it
+# reads this framework's structural functors.
 if TYPE_CHECKING:
     IncludedSetElement = SetElement
 else:

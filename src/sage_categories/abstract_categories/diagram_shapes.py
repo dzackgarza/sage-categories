@@ -25,6 +25,7 @@ from sage_categories.values import (
 if TYPE_CHECKING:
     from sage_categories.theories.sets import FiniteSetObject, SetElement
 
+
 class DiagramHomCategory(HomCategory):
     """The admitted arrows between two objects of a declared diagram."""
 
@@ -253,13 +254,17 @@ def is_diagram_category(category: Category) -> TypeIs[DiagramCategory]:
 
 
 def is_cone_category(category: Category) -> TypeIs[ConeCategory]:
-    from sage_categories.abstract_categories.product_presentations import _CONE_CATEGORIES
+    from sage_categories.abstract_categories.product_presentations import (
+        _CONE_CATEGORIES,
+    )
 
     return any(category is candidate for candidate in _CONE_CATEGORIES.values())
 
 
 def is_cocone_category(category: Category) -> TypeIs[CoconeCategory]:
-    from sage_categories.abstract_categories.product_presentations import _COCONE_CATEGORIES
+    from sage_categories.abstract_categories.product_presentations import (
+        _COCONE_CATEGORIES,
+    )
 
     return any(category is candidate for candidate in _COCONE_CATEGORIES.values())
 

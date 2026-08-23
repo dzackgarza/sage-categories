@@ -26,6 +26,10 @@ from sage_categories.abstract_categories.product_images import (
     LimitsOfCategory,
     ProductObject,
     ProductsOfCategory,
+    is_colimits_of_category,
+    is_coproducts_of_category,
+    is_limits_of_category,
+    is_products_of_category,
 )
 from sage_categories.abstract_categories.product_presentations import (
     Biproduct,
@@ -51,13 +55,9 @@ from sage_categories.abstract_categories.product_presentations import (
     ProductPresentations,
     Products,
     is_biproduct_presentations,
-    is_colimits_of_category,
     is_coproduct_presentations,
-    is_coproducts_of_category,
-    is_limits_of_category,
     is_presentation_category,
     is_product_presentations,
-    is_products_of_category,
 )
 
 __all__ = (

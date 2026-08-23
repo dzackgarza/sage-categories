@@ -6,12 +6,10 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, TypeIs
 
 from sage_categories.abstract_categories.diagram_shapes import (
-    _DIAGRAM_CATEGORIES,
     CoconeCategory,
     CoconeObject,
     ConeCategory,
     ConeObject,
-    DiagramCategory,
 )
 from sage_categories.abstract_categories.functors import (
     Functor,
@@ -103,6 +101,10 @@ class ProductLift:
     def _inherited_apex(
         product: ProductPresentation | ProductObject,
     ) -> MathematicalObject:
+        from sage_categories.abstract_categories.product_images import (
+            is_products_of_category,
+        )
+
         category = product.category()
         if is_product_presentations(category):
             assert category.contains_product(product)

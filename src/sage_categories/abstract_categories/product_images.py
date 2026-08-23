@@ -21,6 +21,7 @@ from sage_categories.abstract_categories.product_presentations import (
     is_coproduct_presentations,
     is_product_presentations,
 )
+from sage_categories.category import Category
 from sage_categories.values import (
     Arrow,
     CategoryElement,

@@ -34,9 +34,6 @@ class OrdinalKind(Enum):
     ORDINAL_POWER = "ordinal power"
 
 
-type OrdinalInput = int | Ordinal
-
-
 class Ordinal(MathematicalObject):
     """An ordinal represented by a canonical expression."""
 
@@ -119,37 +116,37 @@ class Ordinal(MathematicalObject):
     def __index__(self) -> int:
         return self.finite_value()
 
-    def __le__(self, other: OrdinalInput) -> Decision:
+    def __le__(self, other: int | Ordinal) -> Decision:
         return Ordinals()._is_lequal(self, ordinal(other))
 
-    def __lt__(self, other: OrdinalInput) -> Decision:
+    def __lt__(self, other: int | Ordinal) -> Decision:
         return Ordinals()._is_less_than(self, ordinal(other))
 
-    def __ge__(self, other: OrdinalInput) -> Decision:
+    def __ge__(self, other: int | Ordinal) -> Decision:
         return Ordinals()._is_lequal(ordinal(other), self)
 
-    def __gt__(self, other: OrdinalInput) -> Decision:
+    def __gt__(self, other: int | Ordinal) -> Decision:
         return Ordinals()._is_less_than(ordinal(other), self)
 
-    def __add__(self, other: OrdinalInput) -> Ordinal:
+    def __add__(self, other: int | Ordinal) -> Ordinal:
         return Ordinals().natural_sum(self, ordinal(other))
 
-    def __radd__(self, other: OrdinalInput) -> Ordinal:
+    def __radd__(self, other: int | Ordinal) -> Ordinal:
         return Ordinals().natural_sum(ordinal(other), self)
 
-    def __mul__(self, other: OrdinalInput) -> Ordinal:
+    def __mul__(self, other: int | Ordinal) -> Ordinal:
         return Ordinals().natural_product(self, ordinal(other))
 
-    def __rmul__(self, other: OrdinalInput) -> Ordinal:
+    def __rmul__(self, other: int | Ordinal) -> Ordinal:
         return Ordinals().natural_product(ordinal(other), self)
 
-    def ordinal_sum(self, other: OrdinalInput) -> Ordinal:
+    def ordinal_sum(self, other: int | Ordinal) -> Ordinal:
         return Ordinals().ordinal_sum(self, ordinal(other))
 
-    def ordinal_product(self, other: OrdinalInput) -> Ordinal:
+    def ordinal_product(self, other: int | Ordinal) -> Ordinal:
         return Ordinals().ordinal_product(self, ordinal(other))
 
-    def ordinal_power(self, exponent: OrdinalInput) -> Ordinal:
+    def ordinal_power(self, exponent: int | Ordinal) -> Ordinal:
         return Ordinals().ordinal_power(self, ordinal(exponent))
 
     def __repr__(self) -> str:
@@ -236,7 +233,7 @@ class OrdinalsCategory(Category):
     def one(self) -> Ordinal:
         return self(1)
 
-    def initial(self, index: OrdinalInput) -> Ordinal:
+    def initial(self, index: int | Ordinal) -> Ordinal:
         ordinal_index = ordinal(index)
         cached = self._initial_ordinals.get(ordinal_index)
         if cached is None:
@@ -363,18 +360,18 @@ def Ordinals() -> OrdinalsCategory:
     return _ORDINALS
 
 
-def is_ordinal(value: OrdinalInput) -> TypeIs[Ordinal]:
+def is_ordinal(value: int | Ordinal) -> TypeIs[Ordinal]:
     represented = registered_value(value)
     return represented is not None and Ordinals().contains_ordinal(represented)
 
 
-def ordinal(value: OrdinalInput) -> Ordinal:
+def ordinal(value: int | Ordinal) -> Ordinal:
     if is_ordinal(value):
         return value
     return Ordinals()(value)
 
 
-def omega(index: OrdinalInput) -> Ordinal:
+def omega(index: int | Ordinal) -> Ordinal:
     return Ordinals().initial(index)
 
 

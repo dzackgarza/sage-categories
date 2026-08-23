@@ -52,7 +52,6 @@ if TYPE_CHECKING:
     from sage_categories.theories.cardinals import Cardinal
 
 type OrderRelation = Callable[[PosetElement, PosetElement], Decision]
-type PosetMorphismDefinition = Callable[[PosetElement], PosetElement] | Mapping[PosetElement, PosetElement]
 
 
 class PosetElement(MathematicalElement):
@@ -517,12 +516,14 @@ class PosetHomCategory(HomCategory):
 
     def __call__(
         self,
-        definition: PosetMorphismDefinition | PosetMorphism,
+        action: Callable[[PosetElement], PosetElement]
+        | Mapping[PosetElement, PosetElement]
+        | PosetMorphism,
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
     ) -> PosetMorphism:
-        existing = registered_value(definition)
+        existing = registered_value(action)
         if existing is not None:
             assert self.contains_poset_morphism(existing)
             return existing
@@ -540,10 +541,10 @@ class PosetHomCategory(HomCategory):
 
         def underlying_action(member: SetElement) -> SetElement:
             source_member = source.element(member)
-            if callable(definition):
-                image = definition(source_member)
+            if callable(action):
+                image = action(source_member)
             else:
-                image = definition[source_member]
+                image = action[source_member]
             assert PosetElements().contains_poset_element(image)
             assert target._membership(image) is True
             return image._set_implementation()
@@ -821,7 +822,6 @@ class PartiallyOrderedSetsCategory(Category):
 
 type PosetEnumeration = Callable[[int], PosetElement]
 type PosetPosition = Callable[[PosetElement], int]
-type TotalOrderMorphismDefinition = Callable[[TotallyOrderedSetElement], TotallyOrderedSetElement] | Mapping[TotallyOrderedSetElement, TotallyOrderedSetElement]
 
 
 class TotallyOrderedSetElement(MathematicalElement):
@@ -1015,7 +1015,9 @@ class TotallyOrderedSetHomCategory(HomCategory):
 
     def __call__(
         self,
-        definition: TotalOrderMorphismDefinition | TotallyOrderedSetMorphism,
+        action: Callable[[TotallyOrderedSetElement], TotallyOrderedSetElement]
+        | Mapping[TotallyOrderedSetElement, TotallyOrderedSetElement]
+        | TotallyOrderedSetMorphism,
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
@@ -1031,17 +1033,17 @@ class TotallyOrderedSetHomCategory(HomCategory):
         poset_hom = PartiallyOrderedSets().Hom(source, target)
         assert is_poset_hom_category(poset_hom)
 
-        existing = registered_value(definition)
+        existing = registered_value(action)
         if existing is not None:
             assert self.contains_total_order_morphism(existing)
             return existing
 
         def poset_action(member: PosetElement) -> PosetElement:
             source_member = domain.element(member)
-            if callable(definition):
-                image = definition(source_member)
+            if callable(action):
+                image = action(source_member)
             else:
-                image = definition[source_member]
+                image = action[source_member]
             assert TotallyOrderedSetElements().contains_total_order_element(image)
             assert codomain._membership(image) is True
             return image._poset_implementation()

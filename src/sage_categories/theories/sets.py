@@ -97,7 +97,6 @@ if TYPE_CHECKING:
         TotallyOrderedSetsCategory,
     )
 
-type SetMorphismDefinition = Callable[[SetElement], SetElement] | Mapping[SetElement, SetElement]
 type SetElementFamily = Callable[[SetElement], SetElement]
 type MembershipPredicate = Callable[[SetElement], Decision]
 type SetIterator = Callable[[], Iterator[SetElement]]
@@ -860,39 +859,42 @@ class SetHomCategory(HomCategory, SetObject):
 
     def __call__(
         self,
-        definition: SetMorphismDefinition | SetMorphism,
+        action: Callable[[SetElement], SetElement]
+        | Mapping[SetElement, SetElement]
+        | SetMorphism,
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
     ) -> SetMorphism:
-        existing = registered_value(definition)
+        existing = registered_value(action)
         if existing is not None:
             assert existing in self
             assert Sets().contains_set_morphism(existing)
             return existing
-        action = self._action_from_definition(definition)
+        set_action = self._set_action(action)
         return self.ObjectType(
             hom_category=self,
-            action=action,
+            action=set_action,
             injective=injective,
             surjective=surjective,
         )
 
-    def _action_from_definition(
+    def _set_action(
         self,
-        definition: SetMorphismDefinition,
+        action: Callable[[SetElement], SetElement]
+        | Mapping[SetElement, SetElement],
     ) -> Callable[[SetElement], SetElement]:
-        if callable(definition):
-            return definition
+        if callable(action):
+            return action
         domain = self.domain()
         codomain = self.codomain()
         assert Sets().contains_set(domain)
         assert Sets().contains_set(codomain)
         assert domain.is_finite() is True
-        assert all(key in domain for key in definition)
-        assert all(member in definition for member in domain)
-        assert all(value in codomain for value in definition.values())
-        return definition.__getitem__
+        assert all(key in domain for key in action)
+        assert all(member in action for member in domain)
+        assert all(value in codomain for value in action.values())
+        return action.__getitem__
 
     def _membership(self, candidate: SetElement) -> Decision:
         return candidate in self

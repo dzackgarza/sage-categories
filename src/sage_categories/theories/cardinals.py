@@ -25,7 +25,7 @@ from sage_categories.values import (
 )
 
 if TYPE_CHECKING:
-    from sage_categories.theories.ordinals import Ordinal, OrdinalInput
+    from sage_categories.theories.ordinals import Ordinal
     from sage_categories.theories.sets import SetElement, SetObject
 
 
@@ -386,7 +386,7 @@ class CardinalsCategory(Category):
     def one(self) -> Cardinal:
         return self(1)
 
-    def aleph(self, index: OrdinalInput = 0) -> Cardinal:
+    def aleph(self, index: int | Ordinal = 0) -> Cardinal:
         from sage_categories.theories.ordinals import ordinal
 
         ordinal_index = ordinal(index)
@@ -697,7 +697,7 @@ def cardinal(value: int | Cardinal) -> Cardinal:
     return Cardinals()(value)
 
 
-def aleph(index: OrdinalInput = 0) -> Cardinal:
+def aleph(index: int | Ordinal = 0) -> Cardinal:
     return Cardinals().aleph(index)
 
 

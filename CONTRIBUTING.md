@@ -16,6 +16,8 @@ Do not reuse a retired identifier.
 | `POL-SCOPE-004` | Make object, element, and arrow inheritance work before adding theories that depend on it. |
 | `POL-SCOPE-005` | Treat the full owned `Sets()` category as foundational work, not as a finite-set helper library. |
 | `POL-SCOPE-006` | Use algebra cardinality and the path from lattice isometries through module homs to set homs only as vertical acceptance examples. Do not implement those higher categories yet. |
+| `POL-SCOPE-007` | Judge the project by categorical uniformity, explicit mathematical ownership, functorial reuse, and legibility. Successful computation or compilation alone does not satisfy its purpose. |
+| `POL-SCOPE-008` | Make every theory subtree outside the implementation kernel auditable by a mathematician with little programming experience. Keep inheritance, dispatch, backend, and representation machinery behind the kernel boundary. |
 
 ## Shadowed package universe
 
@@ -469,6 +471,13 @@ The caller can materialize a finite result when its application requires one.
 | `POL-CODE-025` | When ownership is wrong, stop runtime debugging and repair `Cat`, arrow categories, method inheritance, and `Sets()` in dependency order. |
 | `POL-CODE-026` | During a foundational migration, move each required behavior to its new owner before deleting its old implementation. |
 | `POL-CODE-027` | Do not use `hasattr` to guess mathematical capabilities. Ask category membership or call the required owned protocol. |
+| `POL-CODE-028` | Prefer a named primitive that states the mathematical construction over a generic Python composition that merely reproduces it. |
+| `POL-CODE-029` | Actively search the standard library, Sage, current dependencies, and maintained packages for primitives that make theory code read more like mathematics. |
+| `POL-CODE-030` | Propose a new dependency when it materially improves mathematical vocabulary, auditability, or categorical uniformity. State the mathematical construction that the dependency supplies. |
+
+For adjacent elements, use `itertools.pairwise(xs)` instead of `zip(xs, xs[1:])`.
+The named primitive states adjacency, remains lazy, and does not require slicing.
+Use `zip` when the mathematics pairs separate indexed families.
 
 ## Tests and performance
 

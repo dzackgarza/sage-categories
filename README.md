@@ -66,6 +66,21 @@ A leaf category should define only its new structure.
 It should not copy methods from every category above it.
 For example, a finite mathematical object should receive `cardinality()` from its implementation in `Sets()`. The same rule must work through long chains of functors.
 
+## Mathematical auditability
+
+Sage already supplies most of the underlying computations.
+This project exists to make their interfaces uniform, their mathematical ownership explicit, and their composition categorical.
+Category theory supplies the reuse mechanism: actual functors replace copied methods and engineering inheritance throughout the theory layer.
+
+The kernel absorbs the Python machinery needed to compile that structure.
+Outside the kernel, category code should read as the mathematical definition it implements.
+A leaf-category contributor should mainly state new objects, arrows, functors, axioms, and construction rules.
+The inherited categorical machinery should supply the rest.
+
+The intended reviewer of a theory subtree is a mathematician with little programming experience.
+They should be able to compare a method with its definition without auditing dynamic inheritance, container plumbing, backend types, or dispatch machinery.
+Legibility and categorical uniformity are therefore primary requirements, not decoration around successful computation.
+
 ## Core model
 
 Each category `C` owns the implementation types relevant to its theory:

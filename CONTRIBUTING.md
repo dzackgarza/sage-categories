@@ -184,6 +184,9 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-047` | Decide inheritance functors case by case. Select one only when standard mathematical practice treats the source object as an object of the target category with additional structure. |
 | `POL-CAT-048` | Treat structure that an object has, rather than structure that it is, as attached mathematical data. Expose that object by its exact mathematical name without grafting its full method surface. |
 | `POL-CAT-049` | Scrutinize every public `underlying_*()` accessor. When the source is canonically a target-category object with additional structure, expose the target interface directly through inheritance instead of requiring accessor indirection. |
+| `POL-CAT-050` | Define every axiomatic or functorial category constructor at the highest categorical level where its mathematical meaning exists. Define it once and inherit it throughout the category graph. |
+| `POL-CAT-051` | Let a construction subcategory exist without asserting that it is nonempty or that its parent category is complete or cocomplete. Do not require a decision procedure for those properties. |
+| `POL-CAT-052` | Make generic category constructors propagate through selected structural functors. A descendant category supplies no boilerplate merely to form the inherited construction subcategory. |
 
 Grounding examples:
 
@@ -205,6 +208,10 @@ Grounding examples:
 - Prefer `X in Sets().Finite()` to `X.is_finite()` or `X.cardinality() < infinity`.
   The finite-set category owns the decision procedure through `Sets().Finite().__contains__`.
 
+- Every `C in Cat` can form `C.Products()`.
+  This subcategory can be empty, and its existence does not assert that `C` has all products.
+  Thus `Modules(R).Products()` requires no module-specific reconstruction of the generic product category.
+
 ## Leaf-category encapsulation
 
 | ID | Policy |
@@ -219,6 +226,8 @@ Grounding examples:
 | `POL-LEAF-008` | Confine private-field access to constructors and functor maps that cannot recover their required defining data through owned semantic interfaces. Use the smallest such access and reconstruct an owned target object immediately. |
 | `POL-LEAF-009` | Keep private representation access out of leaf methods, inherited methods, callers, tests, and downstream packages. |
 | `POL-LEAF-010` | Validate a leaf integration by calling inherited mathematical operations directly on its objects, elements, and arrows through the compiled public surface. |
+| `POL-LEAF-011` | Lift an inherited construction to a leaf category by specifying only how the leaf's additional structure acts on the inherited result and arrows. Make this lift compatible with the selected structural functors. |
+| `POL-LEAF-012` | Do not redefine the inherited construction's objects, elements, universal property, or general methods in a leaf subtree. Those remain owned by the category where the construction was introduced. |
 
 For example, an object of `Modules(R)` can be defined by an action morphism \(\rho:R\to\operatorname{End}(X)\). Its selected functor to `Sets()` recovers \(X\) from \(\rho\) and applies `Sets(X)`. The module category does not implement set operations independently.
 
@@ -227,6 +236,16 @@ The lattice exposes `L.bilinear_form()` to return \(b\); it does not inherit the
 An internal pair representation remains valid, but callers do not need `L.underlying_module()` to use \(L\) as a module.
 Cardinality then arrives through the existing functor chain from modules to sets.
 A lattice-specific cardinality implementation signals a missing or incorrect structural functor.
+
+If tensor products are introduced at `Modules(R)`, every structural descendant can form its tensor-product subcategory.
+For lattices, the leaf-specific lift is
+
+\[
+\bigotimes_i(L_i,b_i)=\left(\bigotimes_iL_i,\ \bigotimes_i b_i\right).
+\]
+
+The module subtree owns the tensor-product objects, elements, morphisms, and universal property.
+The lattice subtree supplies only the induced bilinear form and its compatibility with the projection to `Modules(R)`.
 
 ## Mathematical encapsulation and repository layout
 

@@ -2296,8 +2296,17 @@ class LimitSet(ProductSet):
         category: Category,
         cardinality: Cardinal | None = None,
     ) -> None:
+        self._compatible_elements: set[int] = set()
         size = UnknownCardinality() if cardinality is None else cardinality
         super().__init__(diagram, category=category, cardinality=size)
+
+    def _compatible_element(
+        self,
+        components: SetElementFamily,
+    ) -> ProductElement:
+        member = self.element(components)
+        self._compatible_elements.add(id(member))
+        return member
 
     def index_set(self) -> SetObject:
         return index_objects(self.diagram().domain())
@@ -2317,6 +2326,8 @@ class LimitSet(ProductSet):
         product_membership = super()._membership(member)
         if product_membership is not True:
             return product_membership
+        if id(member) in self._compatible_elements:
+            return True
         arrows = index_arrows(self.diagram().domain())
         if arrows.is_finite() is not True:
             return UNKNOWN
@@ -2877,7 +2888,7 @@ def _limit_presentation(
         return _set_morphism(
             source,
             apex,
-            lambda member: apex.element(
+            lambda member: apex._compatible_element(
                 lambda index: _cone_component_value(
                     other,
                     index.value(),

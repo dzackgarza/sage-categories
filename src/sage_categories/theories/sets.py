@@ -799,7 +799,7 @@ class SubsetsOfSetCategory(Category):
             second.structure_morphism(),
             cardinality=cardinality,
         )
-        apex = pullback.image()
+        apex = pullback.apex()
         assert Sets().contains_set(apex)
         projection = pullback.projection(first.object())
         structure_morphism = Sets().compose(
@@ -1610,6 +1610,22 @@ class SetsCategory(Category):
         if diagram.domain() in DiscreteCategories():
             return _CoproductPresentationOfSets(diagram)
         return ColimitOfSets(diagram)
+
+    def equalizer(self, first: Arrow, second: Arrow) -> SetLimitObject:
+        # The generic construction already builds it; in Sets its apex is a set.
+        result = super().equalizer(first, second)
+        limits = result.category()
+        assert is_limits_of_sets_category(limits)
+        assert limits.contains_set_limit(result)
+        return result
+
+    def coequalizer(self, first: Arrow, second: Arrow) -> SetColimitObject:
+        # The generic construction already builds it; in Sets its apex is a set.
+        result = super().coequalizer(first, second)
+        colimits = result.category()
+        assert is_colimits_of_sets_category(colimits)
+        assert colimits.contains_set_colimit(result)
+        return result
 
     def pullback(
         self,
@@ -2496,6 +2512,10 @@ class SetLimitObject(LimitObject, LimitSet):
         self._image = self
         self._limit_presentation = _limit_presentation(diagram, self)
 
+    def apex(self) -> SetObject:
+        # In Sets the presentation is the set its cone stands over.
+        return self
+
     def universal_morphism(self, cone: ConeObject) -> SetMorphism:
         morphism = LimitObject.universal_morphism(self, cone)
         assert Sets().contains_set_morphism(morphism)
@@ -2765,6 +2785,10 @@ class SetColimitObject(ColimitObject, ColimitSet):
         self._preimage = diagram
         self._image = self
         self._colimit_presentation = _colimit_presentation(diagram, self)
+
+    def apex(self) -> SetObject:
+        # In Sets the presentation is the set its cocone stands under.
+        return self
 
     def universal_morphism(self, cocone: CoconeObject) -> SetMorphism:
         morphism = ColimitObject.universal_morphism(self, cocone)

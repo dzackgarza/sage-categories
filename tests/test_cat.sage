@@ -176,7 +176,7 @@ def test_opposites_products_functor_images_and_constant_diagrams() -> None:
     assert is_functor_image_category(image_category)
     image = image_category(finite_set)
     assert image.constructing_functor() is identity_functor
-    assert image.image() is finite_set
+    assert image_category.inclusion()(image) is finite_set
 
 
 def test_directed_and_inverse_systems_retain_their_diagrams() -> None:

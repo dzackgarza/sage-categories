@@ -53,11 +53,15 @@ class LimitObject(FunctorImageObject):
         )
 
     def diagram(self) -> Functor:
-        value = self.preimage()
+        value = self._preimage
         from sage_categories.abstract_categories.functors import is_functor
 
         assert is_functor(value)
         return value
+
+    def apex(self) -> MathematicalObject:
+        """Return the object the limit cone stands over."""
+        return self._image
 
     def limit_cone(self) -> ConeObject:
         return self._limit_presentation.limit_cone()
@@ -88,11 +92,15 @@ class ColimitObject(FunctorImageObject):
         )
 
     def diagram(self) -> Functor:
-        value = self.preimage()
+        value = self._preimage
         from sage_categories.abstract_categories.functors import is_functor
 
         assert is_functor(value)
         return value
+
+    def apex(self) -> MathematicalObject:
+        """Return the object the colimit cocone stands under."""
+        return self._image
 
     def colimit_cocone(self) -> CoconeObject:
         return self._colimit_presentation.colimit_cocone()
@@ -882,7 +890,7 @@ class ProductLift:
             return product.apex()
         assert is_products_of_category(category)
         assert category.contains_product(product)
-        return product.image()
+        return product.apex()
 
     def presentation(self) -> ProductPresentation:
         # This is transport of a limiting cone across an isomorphism, as in

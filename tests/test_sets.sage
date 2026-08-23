@@ -275,11 +275,9 @@ def test_finite_equalizers_coequalizers_pullbacks_and_pushouts() -> None:
     equalizer = Sets().equalizer(constant, varying)
     coequalizer = Sets().coequalizer(constant, varying)
 
-    agreeing = equalizer.image()
-    identified = coequalizer.image()
-    assert Sets().contains_set(agreeing)
-    assert Sets().contains_set(identified)
-    assert agreeing.cardinality() == Cardinals()(int(2))
+    assert equalizer.apex() in Sets()
+    assert coequalizer.apex() in Sets()
+    assert equalizer.cardinality() == Cardinals()(int(2))
 
     finite_set = FiniteSet((ZZ(int(0)), ZZ(int(1))))
     identity = Sets().identity(finite_set)
@@ -290,8 +288,8 @@ def test_finite_equalizers_coequalizers_pullbacks_and_pushouts() -> None:
     )
     pushout = Sets().pushout(identity, identity)
 
-    assert pullback.image() in Sets()
-    assert pushout.image() in Sets()
+    assert pullback.apex() in Sets()
+    assert pushout.apex() in Sets()
     assert equalizer.limit_cone().diagram().codomain() is Sets()
     assert coequalizer.colimit_cocone().diagram().codomain() is Sets()
     assert pullback.limit_cone().diagram().codomain() is Sets()

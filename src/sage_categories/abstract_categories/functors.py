@@ -754,7 +754,7 @@ class LimitFunctor(Functor):
         source_cone = source_limit.limit_cone()
         cone = Cone(
             target,
-            source_limit.image(),
+            source_limit.apex(),
             lambda index: self.codomain().compose(
                 morphism.component(index),
                 source_cone.structure_morphism(index),
@@ -808,7 +808,7 @@ class ColimitFunctor(Functor):
         target_cocone = target_colimit.colimit_cocone()
         cocone = Cocone(
             source,
-            target_colimit.image(),
+            target_colimit.apex(),
             lambda index: self.codomain().compose(
                 target_cocone.costructure_morphism(index),
                 morphism.component(index),

@@ -31,11 +31,12 @@ class FunctorImageObject(MathematicalObject):
         self._image = image
         super().__init__(category=category)
 
-    def preimage(self) -> MathematicalObject:
-        return self._preimage
-
-    def image(self) -> MathematicalObject:
-        return self._image
+    # `_preimage` and `_image` record how this object was constructed. They stay
+    # private: the construction data reaches users under the name its own
+    # mathematics gives it, so a limit publishes `diagram()` and `apex()` and a
+    # product its factors and projections. "Preimage of what?" has no answer at
+    # a product. This module owns the field, and the inclusion functor and image
+    # arrows below read it directly.
 
     def constructing_functor(self) -> Functor:
         category = self.category()
@@ -54,8 +55,8 @@ class FunctorImageArrow(Arrow):
         assert image_category.contains_image(domain)
         assert image_category.contains_image(codomain)
         assert underlying_arrow in image_category.functor().codomain().Hom(
-            domain.image(),
-            codomain.image(),
+            domain._image,
+            codomain._image,
         )
         self._underlying_arrow = underlying_arrow
         super().__init__(hom_category=hom_category)
@@ -86,7 +87,7 @@ class FunctorImageHomCategory(HomCategory):
         assert is_functor_image_category(image_category)
         domain = self.domain()
         assert image_category.contains_image(domain)
-        return self(image_category.functor().codomain().identity(domain.image()))
+        return self(image_category.functor().codomain().identity(domain._image))
 
     def compose(self, second: Arrow, first: Arrow) -> FunctorImageArrow:
         image_category = self.base_category()
@@ -118,7 +119,7 @@ class ImageInclusionFunctor(StructuralFunctor):
 
     def _object_image(self, source: MathematicalObject) -> MathematicalObject:
         assert self._image.contains_image(source)
-        return source.image()
+        return source._image
 
     def _morphism_image(self, morphism: Arrow) -> Arrow:
         assert self._image.contains_image_arrow(morphism)

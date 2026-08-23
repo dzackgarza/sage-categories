@@ -359,7 +359,7 @@ class SubobjectCategory(FullSubcategory):
             first.structure_morphism(),
             second.structure_morphism(),
         )
-        apex = pullback.image()
+        apex = pullback.apex()
         projection = pullback.projection(first.object())
         structure_morphism = self._base_category.compose(
             first.structure_morphism(),

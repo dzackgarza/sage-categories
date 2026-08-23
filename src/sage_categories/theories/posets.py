@@ -1284,8 +1284,7 @@ def ordered_set_owned_by(
         positions: dict[SetElement, int] = {element: index for index, element in enumerate(owned_enumeration)}
         poset = PartiallyOrderedSets()(
             underlying_set,
-            lambda left, right: positions[left._set_implementation()]
-            <= positions[right._set_implementation()],
+            lambda left, right: positions[left._set_implementation()] <= positions[right._set_implementation()],
         )
         poset_enumeration = tuple(poset.element(element) for element in owned_enumeration)
 

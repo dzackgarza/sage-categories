@@ -13,6 +13,9 @@ from sage_categories.abstract_categories.diagram_shapes import (
     DiagramHomCategory,
     DirectedSystem,
     InverseSystem,
+    is_cocone_category,
+    is_cone_category,
+    is_diagram_category,
 )
 from sage_categories.abstract_categories.product_images import (
     ColimitObject,
@@ -48,12 +51,9 @@ from sage_categories.abstract_categories.product_presentations import (
     ProductPresentations,
     Products,
     is_biproduct_presentations,
-    is_cocone_category,
     is_colimits_of_category,
-    is_cone_category,
     is_coproduct_presentations,
     is_coproducts_of_category,
-    is_diagram_category,
     is_limits_of_category,
     is_presentation_category,
     is_product_presentations,

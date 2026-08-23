@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TypeIs
+from typing import TYPE_CHECKING, TypeIs
 
 from sage_categories.abstract_categories.diagram_shapes import (
     _DIAGRAM_CATEGORIES,
@@ -22,23 +22,15 @@ from sage_categories.abstract_categories.hom_categories import (
     Isomorphism,
     is_isomorphism,
 )
-from sage_categories.abstract_categories.product_images import (
-    _COLIMIT_IMAGE_CATEGORIES,
-    _COPRODUCT_IMAGE_CATEGORIES,
-    _LIMIT_IMAGE_CATEGORIES,
-    _PRODUCT_IMAGE_CATEGORIES,
-    ColimitsOfCategory,
-    CoproductsOfCategory,
-    LimitsOfCategory,
-    ProductObject,
-    ProductsOfCategory,
-)
 from sage_categories.category import Category
 from sage_categories.values import (
     Arrow,
     MathematicalElement,
     MathematicalObject,
 )
+
+if TYPE_CHECKING:
+    from sage_categories.abstract_categories.product_images import ProductObject
 
 
 class ProductPresentation(MathematicalObject):
@@ -627,41 +619,6 @@ def Biproduct(
     assert product.diagram() is coproduct.diagram()
     assert product.apex() is coproduct.apex()
     return Biproducts(product.diagram())(product, coproduct)
-
-
-def is_cone_category(category: Category) -> TypeIs[ConeCategory]:
-    return any(category is candidate for candidate in _CONE_CATEGORIES.values())
-
-
-def is_diagram_category(category: Category) -> TypeIs[DiagramCategory]:
-    candidate = _DIAGRAM_CATEGORIES.get(id(category))
-    return candidate is category
-
-
-def is_limits_of_category(category: Category) -> TypeIs[LimitsOfCategory]:
-    candidate = _LIMIT_IMAGE_CATEGORIES.get(id(category))
-    return candidate is category
-
-
-def is_colimits_of_category(category: Category) -> TypeIs[ColimitsOfCategory]:
-    candidate = _COLIMIT_IMAGE_CATEGORIES.get(id(category))
-    return candidate is category
-
-
-def is_products_of_category(category: Category) -> TypeIs[ProductsOfCategory]:
-    candidate = _PRODUCT_IMAGE_CATEGORIES.get(id(category))
-    return candidate is category
-
-
-def is_coproducts_of_category(
-    category: Category,
-) -> TypeIs[CoproductsOfCategory]:
-    candidate = _COPRODUCT_IMAGE_CATEGORIES.get(id(category))
-    return candidate is category
-
-
-def is_cocone_category(category: Category) -> TypeIs[CoconeCategory]:
-    return any(category is candidate for candidate in _COCONE_CATEGORIES.values())
 
 
 def is_product_presentations(

@@ -327,3 +327,25 @@ _COLIMIT_IMAGE_CATEGORIES: dict[int, ColimitsOfCategory] = {}
 _PRODUCT_IMAGE_CATEGORIES: dict[int, ProductsOfCategory] = {}
 
 _COPRODUCT_IMAGE_CATEGORIES: dict[int, CoproductsOfCategory] = {}
+
+
+def is_limits_of_category(category: Category) -> TypeIs[LimitsOfCategory]:
+    candidate = _LIMIT_IMAGE_CATEGORIES.get(id(category))
+    return candidate is category
+
+
+def is_colimits_of_category(category: Category) -> TypeIs[ColimitsOfCategory]:
+    candidate = _COLIMIT_IMAGE_CATEGORIES.get(id(category))
+    return candidate is category
+
+
+def is_products_of_category(category: Category) -> TypeIs[ProductsOfCategory]:
+    candidate = _PRODUCT_IMAGE_CATEGORIES.get(id(category))
+    return candidate is category
+
+
+def is_coproducts_of_category(
+    category: Category,
+) -> TypeIs[CoproductsOfCategory]:
+    candidate = _COPRODUCT_IMAGE_CATEGORIES.get(id(category))
+    return candidate is category

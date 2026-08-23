@@ -25,13 +25,6 @@ from sage_categories.values import (
 if TYPE_CHECKING:
     from sage_categories.theories.sets import FiniteSetObject, SetElement
 
-from sage_categories.abstract_categories.product_presentations import (
-    is_cocone_category,
-    is_cone_category,
-    is_diagram_category,
-)
-
-
 class DiagramHomCategory(HomCategory):
     """The admitted arrows between two objects of a declared diagram."""
 
@@ -252,6 +245,23 @@ class InverseSystem(DiagramCategory):
 
 
 _DIAGRAM_CATEGORIES: dict[int, DiagramCategory] = {}
+
+
+def is_diagram_category(category: Category) -> TypeIs[DiagramCategory]:
+    candidate = _DIAGRAM_CATEGORIES.get(id(category))
+    return candidate is category
+
+
+def is_cone_category(category: Category) -> TypeIs[ConeCategory]:
+    from sage_categories.abstract_categories.product_presentations import _CONE_CATEGORIES
+
+    return any(category is candidate for candidate in _CONE_CATEGORIES.values())
+
+
+def is_cocone_category(category: Category) -> TypeIs[CoconeCategory]:
+    from sage_categories.abstract_categories.product_presentations import _COCONE_CATEGORIES
+
+    return any(category is candidate for candidate in _COCONE_CATEGORIES.values())
 
 
 class ConeObject(MathematicalObject):

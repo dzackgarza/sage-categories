@@ -430,6 +430,10 @@ None requires enumeration to establish finiteness.
 | `POL-API-014` | Ban nondescript identifiers that do not state what they contain or denote. Never name a type, method, parameter, field, or local value `data`, `container`, `rule`, or a similarly contentless term. |
 | `POL-API-015` | Do not add a public method that duplicates standard Python or Sage protocol syntax. Implement the protocol and use its established notation for comparison, containment, indexing, equality, iteration, and calls. |
 | `POL-API-016` | Prefer a method or constructor on the mathematical owner over a standalone public function. Add a standalone public function only when the operation has no natural category, object, arrow, or functor owner. |
+| `POL-API-017` | Never expose a method whose complete implementation only asserts `False`, returns `NotImplemented`, or raises an error. Such a method advertises a capability that the object does not have. |
+| `POL-API-018` | Use an abstract method when every concrete object must supply an implementation. Prevent construction of an incomplete concrete object instead of deferring the failure to a method call. |
+| `POL-API-019` | When an operation requires a capability, place it on the category that supplies that capability and let the method compiler expose it there. Do not install a failing placeholder on objects outside that category. |
+| `POL-API-020` | When a mathematical operation exists but available algorithms cannot determine its result, return its typed unknown value, such as `Decision` or `bool | Unknown`. Do not replace missing knowledge with a runtime failure. |
 | `POL-TYPE-001` | Give every value the type that names its mathematical role. |
 | `POL-TYPE-002` | Distinguish categories, objects, elements, arrows, functors, rings, sets, domains, and codomains in types. |
 | `POL-TYPE-003` | Never use `object` in a type annotation. There are no exceptions. |
@@ -481,6 +485,10 @@ Likewise, use `OrderedSet[MyCatElement]`, not `Iterable[MyCatElement]`, when ord
 The latter type also admits raw lists, tuples, and Python iterators, which discards the required collection semantics.
 
 Use `x <= y`, `x in X`, `X[i]`, and `x == y` instead of public methods such as `x.le(y)`, `X.contains(x)`, `X.index(i)`, or `x.equals(y)` that shadow those protocols.
+
+Every object of `Sets()` has `cardinality()`.
+When its cardinality is not determined, the method returns the unknown cardinality value instead of raising an error.
+A method available only under an additional mathematical hypothesis belongs to the corresponding property category.
 
 Replace a nondescript name with the exact entity, such as `tensor_coefficients`, `ordered_set`, or `set_morphism`.
 

@@ -2034,11 +2034,7 @@ class ProductSet(SetObject):
             size = _indexed_product_cardinality(
                 self.index_set(),
                 self.factor,
-                factor_finiteness=(
-                    True
-                    if diagram.codomain().is_subcategory(FiniteSets())
-                    else UNKNOWN
-                ),
+                factor_finiteness=(True if diagram.codomain().is_subcategory(FiniteSets()) else UNKNOWN),
             )
         super().__init__(category=category, cardinality=size)
 
@@ -2260,11 +2256,7 @@ class CoproductSet(SetObject):
             size = _indexed_sum_cardinality(
                 self.index_set(),
                 self.cofactor,
-                summand_finiteness=(
-                    True
-                    if diagram.codomain().is_subcategory(FiniteSets())
-                    else UNKNOWN
-                ),
+                summand_finiteness=(True if diagram.codomain().is_subcategory(FiniteSets()) else UNKNOWN),
             )
         super().__init__(category=category, cardinality=size)
 
@@ -2873,11 +2865,7 @@ def _indexed_product_cardinality(
     return Cardinals().indexed_product(
         indices,
         lambda index: factors(index).cardinality(),
-        finiteness=(
-            True
-            if factor_finiteness is True and indices in FiniteSets()
-            else UNKNOWN
-        ),
+        finiteness=(True if factor_finiteness is True and indices in FiniteSets() else UNKNOWN),
     )
 
 
@@ -2890,11 +2878,7 @@ def _indexed_sum_cardinality(
     return Cardinals().indexed_sum(
         indices,
         lambda index: summands(index).cardinality(),
-        finiteness=(
-            True
-            if summand_finiteness is True and indices in FiniteSets()
-            else UNKNOWN
-        ),
+        finiteness=(True if summand_finiteness is True and indices in FiniteSets() else UNKNOWN),
     )
 
 

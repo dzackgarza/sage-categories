@@ -771,15 +771,31 @@ class SubsetsOfSetCategory(Category):
         second: SetSubset,
     ) -> SetSubset:
         assert first in self and second in self
-        subobjects = Sets().Subobjects(self._base_set)
-        intersection = subobjects.intersection(first, second)
-        underlying_set = intersection.object()
-        assert Sets().contains_set(underlying_set)
         members: frozenset[SetElement] | None = None
+        cardinality: Cardinal | None = None
         first_members = first.members()
         second_members = second.members()
         if first_members is not None and second_members is not None:
             members = first_members & second_members
+            cardinality = cardinal(len(members))
+        subobjects = Sets().Subobjects(self._base_set)
+        pullback = Sets().pullback(
+            first.structure_morphism(),
+            second.structure_morphism(),
+            cardinality=cardinality,
+        )
+        apex = pullback.image()
+        assert Sets().contains_set(apex)
+        projection = pullback.projection(first.object())
+        structure_morphism = Sets().compose(
+            first.structure_morphism(),
+            projection,
+        )
+        monomorphisms = Sets().Mono(apex, self._base_set)
+        assert is_restricted_hom_category(monomorphisms)
+        intersection = subobjects(monomorphisms(structure_morphism))
+        underlying_set = intersection.object()
+        assert Sets().contains_set(underlying_set)
         return self.ObjectType(
             category=self,
             hom_category=PowerSet(self._base_set),
@@ -1559,6 +1575,29 @@ class SetsCategory(Category):
         if diagram.domain() in DiscreteCategories():
             return _CoproductPresentationOfSets(diagram)
         return ColimitOfSets(diagram)
+
+    def pullback(
+        self,
+        first: Arrow,
+        second: Arrow,
+        *,
+        cardinality: Cardinal | None = None,
+    ) -> SetLimitObject:
+        from sage_categories.abstract_categories.functors import InclusionFunctor
+        from sage_categories.abstract_categories.products import DiagramCategory
+
+        assert self.contains_set_morphism(first)
+        assert self.contains_set_morphism(second)
+        assert first.codomain() is second.codomain()
+        index = DiagramCategory(
+            self,
+            (first.domain(), second.domain(), first.codomain()),
+            (first, second),
+        )
+        diagram = InclusionFunctor(index, self)
+        limits = self.Limits(index)
+        assert is_limits_of_sets_category(limits)
+        return limits(diagram, cardinality=cardinality)
 
     def _products_of_category(self, functor: Functor) -> Category:
         return ProductsOfSetsCategory(functor)

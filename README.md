@@ -23,8 +23,7 @@ The required opt-in surface is a `sage_categories.all` module analogous to `sage
 from sage_categories.all import *
 ```
 
-Python module names cannot contain hyphens, so the import uses `sage_categories`, not the distribution name `sage-categories`.
-The `all` module is part of the target public API and is not yet present in the current implementation.
+Python module names cannot contain hyphens, so the import uses `sage_categories`, not the distribution name `sage-categories`. The `all` module is part of the target public API and is not yet present in the current implementation.
 
 This import shadows supported standard Sage names with package-owned objects.
 For example, an owned `ZZ` starts every later operation inside the package universe.
@@ -59,8 +58,7 @@ Theory code should state the mathematical definition and the immediate functors 
 The kernel should compile that information into a direct method surface.
 
 The separation also preserves mathematical consequences that concrete Sage implementations can lose.
-For example, an integral lattice has an underlying finite-rank `ZZ`-module, hence an underlying set modeled by a finite product of copies of `ZZ`.
-That functor chain determines cardinality and supports lazy enumeration.
+For example, an integral lattice has an underlying finite-rank `ZZ`-module, hence an underlying set modeled by a finite product of copies of `ZZ`. That functor chain determines cardinality and supports lazy enumeration.
 A concrete lattice implementation that does not retain those categorical relationships can fail to expose either operation.
 Long-running searches, including bounded enumeration in Vinberg-type algorithms, need those consequences without bespoke lattice-level implementations.
 

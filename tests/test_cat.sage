@@ -7,6 +7,7 @@ from sage_categories.abstract_categories.functors import (
 )
 from sage_categories.abstract_categories.hom_categories import is_isomorphism
 from sage_categories.theories.posets import PosetElement, TotallyOrderedSetElements
+from sage_categories.theories.sets import is_products_of_sets_category
 
 
 def is_equal(left: PosetElement, right: PosetElement) -> bool:
@@ -170,3 +171,29 @@ def test_postcomposition_maps_diagrams_and_natural_transformations() -> None:
     assert component.domain() is ZZ
     assert component.codomain() is ZZ
     assert component(ZZ(int(7))) is ZZ(int(7))
+
+
+def test_poset_products_lift_products_of_underlying_sets() -> None:
+    labels = FiniteSet((ZZ(int(0)), ZZ(int(1))))
+    index_category = DiscreteCategory(labels)
+    factor_set = FiniteSet((ZZ(int(0)), ZZ(int(1))))
+    factor = finite_ordered_set((ZZ(int(0)), ZZ(int(1))))
+    diagram = PartiallyOrderedSets().DiagonalFunctor(index_category)(factor)
+    product = PartiallyOrderedSets().ProductFunctor(index_category)(diagram)
+    assert PartiallyOrderedSets().contains_poset(product)
+
+    forgetful = PartiallyOrderedSets().forgetful_functor()
+    underlying_product = forgetful.on_object(product)
+    assert Sets().contains_set(underlying_product)
+    underlying_category = underlying_product.category()
+    assert is_products_of_sets_category(underlying_category)
+    assert underlying_category.contains_set_product(underlying_product)
+    assert product.category().is_subcategory(underlying_category)
+
+    set_zero = factor_set.element(ZZ(int(0)))
+    set_one = factor_set.element(ZZ(int(1)))
+    lower = product.element(underlying_product.element(lambda index: set_zero))
+    upper = product.element(underlying_product.element(lambda index: set_one))
+
+    assert lower <= upper
+    assert (upper <= lower) is False

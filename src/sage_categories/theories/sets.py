@@ -19,6 +19,11 @@ from sage_categories.abstract_categories.category_constructions import (
     is_product_arrow,
     is_product_category,
 )
+from sage_categories.abstract_categories.functor_images import (
+    FunctorImageArrow,
+    FunctorImageHomCategory,
+    ImageInclusionFunctor,
+)
 from sage_categories.abstract_categories.functors import (
     DiscreteCategories,
     DiscreteDiagram,
@@ -29,11 +34,6 @@ from sage_categories.abstract_categories.functors import (
     NaturalTransformation,
     StructuralFunctor,
     is_functor,
-)
-from sage_categories.abstract_categories.functor_images import (
-    FunctorImageArrow,
-    FunctorImageHomCategory,
-    ImageInclusionFunctor,
 )
 from sage_categories.abstract_categories.functors import (
     DiscreteCategory as DiscreteCategoryObject,

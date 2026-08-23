@@ -26,6 +26,19 @@ _IGNORED_METHODS = frozenset(
     }
 )
 
+_ARROW_PROTOCOL_METHODS = frozenset(
+    {
+        "__mul__",
+        "base_category",
+        "codomain",
+        "domain",
+        "forward",
+        "hom_category",
+        "source",
+        "target",
+    }
+)
+
 type ImplementationType = type[MathematicalObject | MathematicalElement]
 type CompiledClassMember = ForwardedMethod | str
 
@@ -411,6 +424,8 @@ class CategoryCompiler:
         morphism_methods: bool,
     ) -> type[Implementation]:
         available = {name for name, declaration in catalogue.items() if inspect.getattr_static(local_type, name, None) is declaration.method}
+        if morphism_methods:
+            available.update(_ARROW_PROTOCOL_METHODS & catalogue.keys())
         inherited = {
             name: ForwardedMethod(
                 declaration.implementation_route,

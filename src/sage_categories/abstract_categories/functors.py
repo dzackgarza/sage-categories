@@ -760,7 +760,8 @@ class LimitFunctor(Functor):
                 source_cone.structure_morphism(index),
             ),
         )
-        return target_limit.universal_morphism(cone)
+        underlying_arrow = target_limit.universal_morphism(cone)
+        return image.Hom(source_limit, target_limit)(underlying_arrow)
 
 
 class ColimitFunctor(Functor):
@@ -813,7 +814,8 @@ class ColimitFunctor(Functor):
                 morphism.component(index),
             ),
         )
-        return source_colimit.universal_morphism(cocone)
+        underlying_arrow = source_colimit.universal_morphism(cocone)
+        return image.Hom(source_colimit, target_colimit)(underlying_arrow)
 
 
 class ProductFunctor(LimitFunctor):

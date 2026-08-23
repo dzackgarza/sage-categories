@@ -409,10 +409,16 @@ The products category does not define a second set interface or an independent c
 | `POL-SET-030` | Enumerate to compute cardinality only when a concrete cardinality is required, finiteness is established, and no construction formula or structural relation supplies it. |
 | `POL-SET-031` | A constructor that knows a set's cardinality or structural property records it. Functors and related objects derive and transport that information. |
 | `POL-SET-032` | Use `NN` for the positive integers. Zero is not an element of `NN`; use `ZZ_{>=0}` for the nonnegative integers. |
+| `POL-SET-033` | Compare cardinalities with cardinalities and standard integers through `==`, `!=`, `<`, `<=`, `>`, and `>=`. Do not expose named comparison methods or require callers to coerce an integer before comparison. |
+| `POL-SET-034` | Never require a caller to extract a stored value from a cardinality. A cardinal is the mathematical value, not a wrapper around one; public code does not use `.value`, `.finite_value()`, or an equivalent accessor to compare, calculate with, display, or return it. |
 
 Grounding examples: the even positive integers are infinite, and \(\{1,2,\ldots,10^{10}\}\) is finite but unsuitable for materialization.
 The set \(\{n\in\mathbb N\mid n\leq100\}\) is finite from its defining bound.
 None requires enumeration to establish finiteness.
+
+If `k` is a cardinal, write `k == 3`, `k <= 3`, or `3 < k`.
+Do not write `k.equals(3)`, `k.le(3)`, `k.value == 3`, or `k.finite_value() <= 3`.
+When an established finite algorithm requires a primitive loop bound, lower the cardinal once inside that private computation boundary.
 
 ## Sage boundary
 

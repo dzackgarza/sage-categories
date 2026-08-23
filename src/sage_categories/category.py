@@ -792,4 +792,4 @@ class Category(MathematicalObject):
         return category_compiler().arrow_method_catalogue(self)
 
     def __repr__(self) -> str:
-        return self.__class__.__name__
+        return type(self).__name__

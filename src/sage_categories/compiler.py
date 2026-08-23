@@ -443,7 +443,7 @@ class CategoryCompiler:
             namespace.update(inherited)
             namespace["__module__"] = local_type.__module__
 
-        name = f"Complete{category.__class__.__name__}{local_type.__name__}"
+        name = f"Complete{type(category).__name__}{local_type.__name__}"
         return new_class(name, (local_type,), exec_body=install)
 
     def _local_methods(

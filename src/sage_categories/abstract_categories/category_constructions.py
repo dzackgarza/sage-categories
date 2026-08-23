@@ -12,11 +12,15 @@ from typing import Any, TypeIs
 from sage_categories.abstract_categories.functors import (
     Functor,
     InclusionFunctor,
+    NaturalIsomorphism,
     StructuralFunctor,
+    compose_functors,
 )
 from sage_categories.abstract_categories.hom_categories import (
     HomCategory,
     HomCategoryFamily,
+    Isomorphism,
+    is_isomorphism,
 )
 from sage_categories.category import Category
 from sage_categories.values import (
@@ -561,6 +565,7 @@ class PullbackCategory(Category):
         self._objects: dict[tuple[int, int], PullbackObject] = {}
         self._first_projection: PullbackProjectionFunctor | None = None
         self._second_projection: PullbackProjectionFunctor | None = None
+        self._structural_coherence: Isomorphism | None = None
         super().__init__(
             object_type=object_type,
             element_type=element_type,
@@ -650,40 +655,31 @@ class PullbackCategory(Category):
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
         return self.first_projection(), self.second_projection()
 
-    def _canonical_implementation_route(
-        self,
-        target: Category,
-        routes: tuple[tuple[StructuralFunctor, ...], ...],
-    ) -> tuple[StructuralFunctor, ...]:
-        if len(routes) == 1:
-            return routes[0]
-        common = self.common_category()
-        assert target is common or common.is_subcategory(target)
-        first_projection = self.first_projection()
-        second_projection = self.second_projection()
-        first_routes: list[tuple[StructuralFunctor, ...]] = []
-        second_routes: list[tuple[StructuralFunctor, ...]] = []
-        for route in routes:
-            if route[0] is first_projection:
-                first_routes.append(route[1:])
-                continue
-            assert route[0] is second_projection
-            second_routes.append(route[1:])
-        assert first_routes and second_routes
-        first_route = self.first_category()._canonical_implementation_route(
-            target,
-            tuple(first_routes),
-        )
-        second_route = self.second_category()._canonical_implementation_route(
-            target,
-            tuple(second_routes),
-        )
-        first_leg = self._first_functor.factors()
-        second_leg = self._second_functor.factors()
-        assert first_route[: len(first_leg)] == first_leg
-        assert second_route[: len(second_leg)] == second_leg
-        assert first_route[len(first_leg) :] == second_route[len(second_leg) :]
-        return first_projection, *first_route
+    def structural_coherences(self) -> tuple[Isomorphism, ...]:
+        if self._structural_coherence is None:
+            first = compose_functors(
+                self.first_functor(),
+                self.first_projection(),
+            )
+            second = compose_functors(
+                self.second_functor(),
+                self.second_projection(),
+            )
+
+            def component(source: MathematicalObject) -> Arrow:
+                image = first(source)
+                assert image is second(source)
+                return self.common_category().identity(image)
+
+            coherence = NaturalIsomorphism(
+                first,
+                second,
+                component,
+                component,
+            )
+            assert is_isomorphism(coherence)
+            self._structural_coherence = coherence
+        return (self._structural_coherence,)
 
     def __repr__(self) -> str:
         return f"{self.first_category()} x_{self.common_category()} {self.second_category()}"

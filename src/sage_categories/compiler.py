@@ -183,10 +183,101 @@ class CategoryCompiler:
             return cached
         routes = tuple(self._routes_from(source, target, (id(source),)))
         assert routes, f"no structural route from {source} to {target}"
-        route = source._canonical_implementation_route(target, routes)
+        route = self._canonical_route(source, target, routes)
         assert route in routes
         self._routes[key] = route
         return route
+
+    def _canonical_route(
+        self,
+        source: Category,
+        target: Category,
+        routes: tuple[tuple[StructuralFunctor, ...], ...],
+    ) -> tuple[StructuralFunctor, ...]:
+        distinct = tuple(
+            route
+            for position, route in enumerate(routes)
+            if route not in routes[:position]
+        )
+        normalized = tuple(
+            self._normalize_route(source, route)
+            for route in distinct
+        )
+        canonical = normalized[0]
+        assert all(route == canonical for route in normalized), (
+            f"structural routes from {source} to {target} are not declared coherent"
+        )
+        assert canonical in distinct
+        return canonical
+
+    def _normalize_route(
+        self,
+        source: Category,
+        route: tuple[StructuralFunctor, ...],
+    ) -> tuple[StructuralFunctor, ...]:
+        if not route:
+            return ()
+        first = route[0]
+        assert first.domain() is source
+        current = (
+            first,
+            *self._normalize_route(first.codomain(), route[1:]),
+        )
+        seen: set[tuple[int, ...]] = set()
+        while True:
+            key = tuple(id(functor) for functor in current)
+            assert key not in seen, f"structural coherences of {source} contain a cycle"
+            seen.add(key)
+            replacement = self._coherent_replacement(source, current)
+            if replacement is None:
+                return current
+            replacement_first = replacement[0]
+            current = (
+                replacement_first,
+                *self._normalize_route(
+                    replacement_first.codomain(),
+                    replacement[1:],
+                ),
+            )
+
+    def _coherent_replacement(
+        self,
+        source: Category,
+        route: tuple[StructuralFunctor, ...],
+    ) -> tuple[StructuralFunctor, ...] | None:
+        # Bundled natural isomorphisms between parallel composites follow
+        # Mathlib's ``CategoryTheory.NatIso`` construction:
+        # https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/CategoryTheory/Grothendieck.lean
+        from sage_categories.abstract_categories.functors import (
+            is_functor,
+            is_structural_functor,
+        )
+        from sage_categories.abstract_categories.hom_categories import (
+            is_isomorphism,
+        )
+
+        for coherence in source.structural_coherences():
+            assert is_isomorphism(coherence)
+            canonical_functor = coherence.domain()
+            equivalent_functor = coherence.codomain()
+            assert is_functor(canonical_functor)
+            assert is_functor(equivalent_functor)
+            assert canonical_functor.domain() is source
+            assert equivalent_functor.domain() is source
+            assert canonical_functor.codomain() is equivalent_functor.codomain()
+            canonical: tuple[StructuralFunctor, ...] = ()
+            for factor in canonical_functor.factors():
+                assert is_structural_functor(factor)
+                canonical = (*canonical, factor)
+            equivalent: tuple[StructuralFunctor, ...] = ()
+            for factor in equivalent_functor.factors():
+                assert is_structural_functor(factor)
+                equivalent = (*equivalent, factor)
+            assert canonical
+            assert equivalent
+            if route[: len(equivalent)] == equivalent:
+                return canonical + route[len(equivalent) :]
+        return None
 
     def _method_catalogue(
         self,

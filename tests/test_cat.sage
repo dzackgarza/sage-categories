@@ -1,6 +1,8 @@
 """The owned category of categories and its arrow categories."""
 
 from sage_categories.all import *
+from sage_categories.abstract_categories.functors import is_functor
+from sage_categories.abstract_categories.hom_categories import is_isomorphism
 
 
 def test_cat_owns_functors_and_natural_transformations() -> None:
@@ -90,3 +92,16 @@ def test_compiler_exposes_object_element_and_arrow_routes() -> None:
     assert element_declaration.route
     assert arrow_declaration.owner is Sets()
     assert arrow_declaration.route
+
+
+def test_structural_coherence_identifies_parallel_forgetful_functors() -> None:
+    category = FiniteTotallyOrderedSets()
+    ordered_set = finite_ordered_set((ZZ(int(0)), ZZ(int(1))))
+    coherence, = category.structural_coherences()
+
+    assert is_isomorphism(coherence)
+    first = coherence.domain()
+    second = coherence.codomain()
+    assert is_functor(first)
+    assert is_functor(second)
+    assert first(ordered_set) is second(ordered_set)

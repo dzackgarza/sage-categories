@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     )
     from sage_categories.abstract_categories.hom_categories import (
         HomCategoryFamily,
+        Isomorphism,
     )
     from sage_categories.abstract_categories.products import (
         ColimitObject,
@@ -130,14 +131,9 @@ class Category(MathematicalObject):
         """Return the category graph derived from structural functors."""
         return tuple(functor.codomain() for functor in self.super_functors())
 
-    def _canonical_implementation_route(
-        self,
-        target: Category,
-        routes: tuple[tuple[StructuralFunctor, ...], ...],
-    ) -> tuple[StructuralFunctor, ...]:
-        distinct = tuple(route for position, route in enumerate(routes) if route not in routes[:position])
-        assert len(distinct) == 1, f"structural routes from {self} to {target} are not declared coherent"
-        return distinct[0]
+    def structural_coherences(self) -> tuple[Isomorphism, ...]:
+        """Return isomorphisms from canonical to equivalent structural composites."""
+        return ()
 
     def is_subcategory(self, category: Category) -> bool:
         """Return whether the structural-functor graph includes ``category``."""

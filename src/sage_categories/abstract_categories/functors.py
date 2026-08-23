@@ -127,6 +127,16 @@ class Functor(Arrow, ABC):
 class StructuralFunctor(Functor, ABC):
     """A functor selected to provide inherited object and element methods."""
 
+    def __init__(
+        self,
+        domain: Category,
+        codomain: Category,
+        *,
+        hom_category: HomCategory | None = None,
+    ) -> None:
+        super().__init__(domain, codomain, hom_category=hom_category)
+        _STRUCTURAL_FUNCTORS[id(self)] = self
+
     @abstractmethod
     def on_element(
         self,
@@ -134,6 +144,16 @@ class StructuralFunctor(Functor, ABC):
         element: MathematicalElement,
     ) -> MathematicalElement:
         """Construct the element image."""
+
+
+_STRUCTURAL_FUNCTORS: dict[int, StructuralFunctor] = {}
+
+
+def is_structural_functor(
+    candidate: MathematicalObject,
+) -> TypeIs[StructuralFunctor]:
+    """Return whether ``candidate`` is a selected structural functor."""
+    return _STRUCTURAL_FUNCTORS.get(id(candidate)) is candidate
 
 
 class IdentityFunctor(StructuralFunctor):

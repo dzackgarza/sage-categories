@@ -799,10 +799,7 @@ class FullSubcategory(Category):
         value = registered_value(candidate)
         if value is None or value not in self._ambient_category:
             return False
-        return any(
-            isomorphic in self._ambient_category and self._predicate(isomorphic)
-            for isomorphic in _declared_isomorphic_objects(value)
-        )
+        return any(isomorphic in self._ambient_category and self._predicate(isomorphic) for isomorphic in _declared_isomorphic_objects(value))
 
     def contains_arrow(self, candidate: MathematicalObject) -> TypeIs[Arrow]:
         if not self._ambient_category.contains_arrow(candidate):

@@ -139,10 +139,7 @@ def is_opposite_category(category: Category) -> TypeIs[OppositeCategory]:
 
 
 def is_opposite_arrow(arrow: Arrow) -> TypeIs[OppositeArrow]:
-    return (
-        is_opposite_category(arrow.hom_category().base_category())
-        and arrow in arrow.hom_category().base_category().ArrowCategory()
-    )
+    return is_opposite_category(arrow.hom_category().base_category()) and arrow in arrow.hom_category().base_category().ArrowCategory()
 
 
 def is_opposite_hom_category(

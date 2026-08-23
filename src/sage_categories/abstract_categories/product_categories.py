@@ -271,10 +271,7 @@ def is_product_category(category: Category) -> TypeIs[ProductCategory]:
 
 
 def is_product_arrow(arrow: Arrow) -> TypeIs[ProductArrow]:
-    return (
-        is_product_category(arrow.hom_category().base_category())
-        and arrow in arrow.hom_category().base_category().ArrowCategory()
-    )
+    return is_product_category(arrow.hom_category().base_category()) and arrow in arrow.hom_category().base_category().ArrowCategory()
 
 
 def is_product_hom_category(

@@ -15,7 +15,6 @@ from sage_categories.abstract_categories.category_constructions import (
     FullSubcategory,
 )
 from sage_categories.abstract_categories.functors import (
-    DiscreteCategories,
     Functor,
     NaturalIsomorphism,
     StructuralFunctor,
@@ -50,9 +49,9 @@ from sage_categories.theories.sets import (
     SetElements,
     SetMorphism,
     SetObject,
+    SetProductObject,
     Sets,
     SetsCategory,
-    SetProductObject,
     is_products_of_sets_category,
     is_set_hom_category,
 )
@@ -149,11 +148,7 @@ class PosetObject(MathematicalObject):
     def __init__(
         self,
         *,
-        category: (
-            PartiallyOrderedSetsCategory
-            | FinitePosetsCategory
-            | ProductsOfPosetsCategory
-        ),
+        category: (PartiallyOrderedSetsCategory | FinitePosetsCategory | ProductsOfPosetsCategory),
         underlying_set: SetObject,
         relation: OrderRelation,
     ) -> None:
@@ -726,9 +721,13 @@ class PosetProductObject(ProductObject, PosetObject):
             assert Sets().contains_set_morphism(set_projection)
 
             def project(member: PosetElement) -> PosetElement:
-                set_member = PartiallyOrderedSets().forgetful_functor().on_element(
-                    self,
-                    member,
+                set_member = (
+                    PartiallyOrderedSets()
+                    .forgetful_functor()
+                    .on_element(
+                        self,
+                        member,
+                    )
                 )
                 assert SetElements().contains_set_element(set_member)
                 return factor.element(set_projection(set_member))
@@ -749,11 +748,7 @@ class PosetProductObject(ProductObject, PosetObject):
                     assert is_poset_hom_category(component_hom)
                     assert component_hom.contains_poset_morphism(component_arrow)
                     image = component_arrow(member)
-                    set_image = (
-                        PartiallyOrderedSets()
-                        .forgetful_functor()
-                        .on_element(component_arrow.codomain(), image)
-                    )
+                    set_image = PartiallyOrderedSets().forgetful_functor().on_element(component_arrow.codomain(), image)
                     assert SetElements().contains_set_element(set_image)
                     return set_image
 
@@ -781,8 +776,12 @@ class ForgetPosetProductFunctor(StructuralFunctor):
         underlying_hom = underlying.hom_category()
         assert is_poset_hom_category(underlying_hom)
         assert underlying_hom.contains_poset_morphism(underlying)
-        set_morphism = PartiallyOrderedSets().forgetful_functor().on_morphism(
-            underlying,
+        set_morphism = (
+            PartiallyOrderedSets()
+            .forgetful_functor()
+            .on_morphism(
+                underlying,
+            )
         )
         target = self._products.set_products()
         domain = self.on_object(morphism.domain())
@@ -796,9 +795,13 @@ class ForgetPosetProductFunctor(StructuralFunctor):
     ) -> SetElement:
         assert self._products.contains_poset_product(source)
         assert PosetElements().contains_poset_element(element)
-        image = PartiallyOrderedSets().forgetful_functor().on_element(
-            source,
-            element,
+        image = (
+            PartiallyOrderedSets()
+            .forgetful_functor()
+            .on_element(
+                source,
+                element,
+            )
         )
         assert SetElements().contains_set_element(image)
         return image
@@ -845,11 +848,7 @@ class ProductsOfPosetsCategory(ProductsOfCategory):
 
     def set_diagram(self, diagram: Functor) -> Functor:
         assert diagram in self.functor().domain()
-        image = (
-            PartiallyOrderedSets()
-            .forgetful_functor()
-            .postcomposition(diagram.domain())(diagram)
-        )
+        image = PartiallyOrderedSets().forgetful_functor().postcomposition(diagram.domain())(diagram)
         assert is_functor(image)
         return image
 

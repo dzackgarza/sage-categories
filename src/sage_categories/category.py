@@ -226,8 +226,6 @@ class Category(MathematicalObject):
                 hom_category_type=self._hom_category_type(),
             )
             self._hom_category_family.ElementType = self._compiled_arrow_type
-            self._hom_category_family.ObjectType.ObjectType = self._compiled_arrow_type
-            self._hom_category_family.ObjectType.ElementType = self._compiled_arrow_type
         return self._hom_category_family
 
     def EndCategory(self) -> HomCategoryFamily:

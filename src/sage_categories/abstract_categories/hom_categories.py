@@ -100,8 +100,6 @@ class HomCategoryFamily(Category):
             object_type=hom_category_type,
             element_type=hom_category_type.ElementType,
         )
-        self.ObjectType.ObjectType = self.ElementType
-        self.ObjectType.ElementType = self.ElementType
 
     def base_category(self) -> Category:
         """Return the category whose hom categories form this family."""

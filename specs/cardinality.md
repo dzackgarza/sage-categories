@@ -753,14 +753,9 @@ For the last local-surface claim:
 
 ## Runtime status
 
-The declared API is not executable through the current Sage launcher.
+The live launcher boundary is `sage -c` from the repository root.
+The public import is `sage_categories.all`.
 
-- Searched: `sage -c` with the complete preamble import, then a direct cardinal and ordinal import.
-
-- Found: the complete import fails with `KeyError: 'Homsets'`. The direct import fails with `TypeError: duplicate base class Cardinalities.parent_class`.
-
-- Conclusion: the specification above describes the current source API. It is not a verified working runtime API.
-
-- Confidence: High for the current `/home/dzack/.local/bin/sage` launcher.
-
-- Gaps: another running notebook kernel or older installed checkout may have different loaded state.
+This boundary executes the owned `Cardinals()`, `Ordinals()`, and `Sets()` categories.
+It executes finite cardinal arithmetic and the infinite `aleph0` and `continuum` surfaces.
+It also executes finite and initial ordinals, natural and ordinary ordinal operations, and ordinal cardinality.

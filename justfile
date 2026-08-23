@@ -71,6 +71,8 @@ ci-provision-sage:
     done
     sage_bin="${sage_dir}/sage"
     # The checkout under test, not whatever version the image happened to carry.
-    "$sage_bin" -pip install --quiet --no-deps -e .
+    # This Sage's CLI takes only -c and a file; the environment's pip is reached
+    # through its Python, which is the spelling the QC profile uses too.
+    "${sage_dir}/python" -m pip install --quiet --no-deps -e .
     echo "SAGE_BIN=$sage_bin" >> "${GITHUB_ENV:-/dev/stdout}"
     "$sage_bin" -c "import sage_categories; print('sage_categories', sage_categories.version())"

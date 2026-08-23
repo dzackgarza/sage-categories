@@ -91,6 +91,12 @@ The compiler then supplies the complete inherited object, element, arrow, and co
 A specialized algebra category connected to `Algebras(R)`, modules, and sets receives their applicable operations without forwarding methods.
 Cardinality and other distant capabilities arrive through functor composition rather than leaf-specific code.
 
+For example, a researcher can add `FiniteSubsetsOfNN()` after the complete theory of sets exists.
+They declare its constructors, its inclusion functor into `Sets()`, and only its new methods, such as `minimal_element()` or `gcd_of_elements()`.
+The kernel constructs `FiniteSubsetsOfNN.ElementType` and supplies the full `Sets.ElementType` interface without a leaf-specific element class.
+The inherited set interface also makes products, coproducts, filtered limits, and other set constructions available without new implementations in the leaf.
+Each result remains an object of the category that owns the construction and returns to `FiniteSubsetsOfNN()` whenever the construction is known to land there.
+
 The same goal applies to functorial constructions.
 A full replete subcategory receives the inherited categorical interface automatically.
 Limits, colimits, and similar constructions descend automatically when their results are established to remain in that subcategory.

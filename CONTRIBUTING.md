@@ -273,6 +273,11 @@ The lattice subtree supplies only the induced bilinear form and its compatibilit
 A new specialized algebra category should start from the leaf template, declare its selected functors to nearby algebra and module categories, and add only its new algebraic methods.
 It receives distant operations such as cardinality through the resulting functor chain without importing or reimplementing them.
 
+For a toy leaf, `FiniteSubsetsOfNN()` declares its research-specific constructors, its inclusion functor into `Sets()`, and methods such as `minimal_element()` or `gcd_of_elements()`.
+Its elements automatically receive the `Sets.ElementType` interface through `FiniteSubsetsOfNN.ElementType`, even when the leaf adds no element methods.
+Products, coproducts, filtered limits, and other set constructions require no leaf implementations.
+Their results use the category that owns each construction and return to the leaf when closure is declared or derived.
+
 ## Mathematical encapsulation and repository layout
 
 | ID | Policy |

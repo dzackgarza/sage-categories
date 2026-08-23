@@ -766,9 +766,17 @@ class Category(MathematicalObject):
             self._covered_object_categories[key] = cached
         return cached
 
-    def declared_methods(self) -> Mapping[str, DeclaredMethod]:
-        """Return the compiled object-method catalogue."""
+    def declared_object_methods(self) -> Mapping[str, DeclaredMethod]:
+        """Return the declaring category of each object method."""
         return category_compiler().object_method_catalogue(self)
+
+    def declared_element_methods(self) -> Mapping[str, DeclaredMethod]:
+        """Return the declaring category of each element method."""
+        return category_compiler().element_method_catalogue(self)
+
+    def declared_arrow_methods(self) -> Mapping[str, DeclaredMethod]:
+        """Return the declaring category of each arrow method."""
+        return category_compiler().arrow_method_catalogue(self)
 
     def __repr__(self) -> str:
         return self.__class__.__name__

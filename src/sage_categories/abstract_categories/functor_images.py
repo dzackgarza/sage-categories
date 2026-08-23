@@ -135,6 +135,9 @@ class ImageInclusionFunctor(StructuralFunctor):
     def is_faithful(self) -> bool:
         return True
 
+    def is_inclusion(self) -> bool:
+        return True
+
 
 class ImageOfFunctor(Category):
     """Outputs of one functor, each with a chosen preimage."""

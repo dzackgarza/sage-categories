@@ -125,6 +125,17 @@ class CategoryCompiler:
         plugin reads the declarations from their owner here rather than from a
         second graph kept somewhere else.
         """
+        return self._declared_relations(inclusions_only=False)
+
+    def declared_subtyping(self) -> dict[str, dict[str, tuple[str, ...]]]:
+        """Report implementation subtyping declared by inclusion functors."""
+        return self._declared_relations(inclusions_only=True)
+
+    def _declared_relations(
+        self,
+        *,
+        inclusions_only: bool,
+    ) -> dict[str, dict[str, tuple[str, ...]]]:
         reported: dict[str, dict[str, tuple[str, ...]]] = {}
         for role in ImplementationRole:
             relations: dict[str, tuple[str, ...]] = {}
@@ -134,6 +145,8 @@ class CategoryCompiler:
                     continue
                 reached: tuple[str, ...] = ()
                 for functor in category.super_functors():
+                    if inclusions_only and not functor.is_inclusion():
+                        continue
                     codomain = functor.codomain()
                     if codomain is category:
                         continue

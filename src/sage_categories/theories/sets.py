@@ -272,7 +272,7 @@ class SetObject(MathematicalObject):
         return id(self)
 
 
-class FiniteSetElement(SetElement):
+class FiniteSetElement(MathematicalElement):
     """An element of a finite set."""
 
     def __init__(
@@ -282,7 +282,8 @@ class FiniteSetElement(SetElement):
         value: MathematicalObject,
     ) -> None:
         self._value = value
-        super().__init__(
+        MathematicalElement.__init__(
+            self,
             category=SetElements(),
             ambient_object=ambient_object,
         )
@@ -294,7 +295,7 @@ class FiniteSetElement(SetElement):
         return repr(self._value)
 
 
-class FiniteSetObject(SetObject):
+class FiniteSetObject(MathematicalObject):
     """A set given by its complete finite member set."""
 
     def __init__(
@@ -304,7 +305,9 @@ class FiniteSetObject(SetObject):
         values: frozenset[MathematicalObject],
     ) -> None:
         self._values = values
-        super().__init__(category=category, cardinality=Cardinals()(len(values)))
+        self._cardinality = Cardinals()(len(values))
+        self._subset_poset: PosetObject | None = None
+        super().__init__(category=category)
         self._members = frozenset(category.ElementType(ambient_object=self, value=value) for value in values)
 
     def membership(self, member: SetElement) -> Decision:
@@ -1491,6 +1494,10 @@ class SetsCategory(Category):
         self._partially_ordered_sets: PartiallyOrderedSetsCategory | None = None
         self._totally_ordered_sets: TotallyOrderedSetsCategory | None = None
         super().__init__()
+        from sage_categories.abstract_categories.cat import Cat
+
+        self.Limits(Cat())
+        self.Colimits(Cat())
 
     def _hom_category_type(self) -> type[HomCategory]:
         return SetHomCategory
@@ -1733,10 +1740,14 @@ class UncountableSetsCategory(FullSubcategory):
         return size.is_infinite() is True and size != Cardinals().aleph()
 
 
-_SETS = SetsCategory()
+_SETS: SetsCategory | None = None
 
 
 def Sets() -> SetsCategory:
+    global _SETS
+
+    if _SETS is None:
+        _SETS = SetsCategory()
     return _SETS
 
 
@@ -1978,7 +1989,11 @@ def ObjectSet(discrete_category: DiscreteCategoryObject) -> SetObject:
 class ProductElement(MathematicalElement):
     """A point of a set-indexed cartesian product."""
 
-    def __init__(self, product: ProductSet, components: SetElementFamily) -> None:
+    def __init__(
+        self,
+        product: ProductSet | SetProductObject | SetLimitObject,
+        components: SetElementFamily,
+    ) -> None:
         # The element surface arrives through the inclusion its category
         # declares into SetElements, not by inheriting the set element type.
         self._product = product
@@ -1988,7 +2003,7 @@ class ProductElement(MathematicalElement):
             ambient_object=product,
         )
 
-    def product(self) -> ProductSet:
+    def product(self) -> ProductSet | SetProductObject | SetLimitObject:
         return self._product
 
     def component(self, index: SetElement) -> SetElement:
@@ -2124,8 +2139,8 @@ class ProductSet(SetObject):
         return f"Product of {self._diagram}"
 
 
-class SetProductObject(ProductObject, ProductSet):
-    """A product presentation whose apex is the same owned set object."""
+class SetProductObject(ProductObject):
+    """A set product with its factors and universal arrows."""
 
     def __init__(
         self,
@@ -2134,15 +2149,90 @@ class SetProductObject(ProductObject, ProductSet):
         diagram: Functor,
         cardinality: Cardinal | None = None,
     ) -> None:
-        ProductSet.__init__(
-            self,
+        set_product = ProductSet(
             diagram,
-            category=category,
+            category=Sets(),
             cardinality=cardinality,
         )
-        self._preimage = diagram
-        self._image = self
-        self._limit_presentation = _product_presentation(diagram, self)
+        self._set_product = set_product
+        super().__init__(
+            category=category,
+            diagram=diagram,
+            presentation=_product_presentation(diagram, set_product),
+        )
+
+    def index_category(self) -> DiscreteCategoryObject:
+        return self._set_product.index_category()
+
+    def index_set(self) -> SetObject:
+        return self._set_product.index_set()
+
+    def factor(self, index: SetElement) -> SetObject:
+        return self._set_product.factor(index)
+
+    def factor_cardinalities(self) -> Functor:
+        return self._set_product.factor_cardinalities()
+
+    def element(self, components: SetElementFamily) -> ProductElement:
+        return ProductElements().ObjectType(self, components)
+
+    def membership(self, member: SetElement) -> Decision:
+        value = registered_value(member)
+        return value is not None and ProductElements().contains_product_element(value) and value.product() is self
+
+    def __contains__(self, candidate: Any) -> bool:
+        value = registered_value(candidate)
+        return value is not None and ProductElements().contains_product_element(value) and value.product() is self
+
+    def __iter__(self) -> Iterator[SetElement]:
+        assert self.index_set().is_finite() is True
+        indices = tuple(self.index_set())
+        factors = tuple(self.factor(index) for index in indices)
+        assert all(factor.is_finite() is True for factor in factors)
+        for values in cartesian_product(*(tuple(factor) for factor in factors)):
+            table = tuple(zip(indices, values, strict=True))
+
+            def component(
+                index: SetElement,
+                table: tuple[tuple[SetElement, SetElement], ...] = table,
+            ) -> SetElement:
+                return next(value for key, value in table if key is index)
+
+            yield self.element(component)
+
+    def projection(self, index: MathematicalObject) -> SetMorphism:
+        assert self.index_category().contains_object(index)
+        return self._projection(index.label())
+
+    def _projection(self, index: SetElement) -> SetMorphism:
+        factor = self.factor(index)
+
+        def project(member: SetElement) -> SetElement:
+            value = registered_value(member)
+            assert value is not None
+            assert ProductElements().contains_product_element(value)
+            assert value.product() is self
+            return value.component(index)
+
+        return _set_morphism(self, factor, project)
+
+    def universal_morphism(self, cone: ConeObject) -> SetMorphism:
+        source = cone.apex()
+        assert Sets().contains_set(source)
+        return _set_morphism(
+            source,
+            self,
+            lambda member: self.element(
+                lambda index: _cone_component_value(
+                    cone,
+                    self.index_category().object(index),
+                    member,
+                )
+            ),
+        )
+
+    def __repr__(self) -> str:
+        return f"Product of {self.diagram()}"
 
 
 class ProductsOfSetsCategory(ProductsOfCategory):
@@ -2214,7 +2304,7 @@ class CoproductElement(MathematicalElement):
 
     def __init__(
         self,
-        coproduct: CoproductSet,
+        coproduct: CoproductSet | SetCoproductObject,
         index: SetElement,
         value: SetElement,
     ) -> None:
@@ -2228,7 +2318,7 @@ class CoproductElement(MathematicalElement):
             ambient_object=coproduct,
         )
 
-    def coproduct(self) -> CoproductSet:
+    def coproduct(self) -> CoproductSet | SetCoproductObject:
         return self._coproduct
 
     def index(self) -> SetElement:
@@ -2337,8 +2427,8 @@ class CoproductSet(SetObject):
         return f"Coproduct of {self._diagram}"
 
 
-class SetCoproductObject(CoproductObject, CoproductSet):
-    """A coproduct presentation whose apex is the same owned set object."""
+class SetCoproductObject(CoproductObject):
+    """A set coproduct with its summands and universal arrows."""
 
     def __init__(
         self,
@@ -2347,15 +2437,75 @@ class SetCoproductObject(CoproductObject, CoproductSet):
         diagram: Functor,
         cardinality: Cardinal | None = None,
     ) -> None:
-        CoproductSet.__init__(
-            self,
+        set_coproduct = CoproductSet(
             diagram,
-            category=category,
+            category=Sets(),
             cardinality=cardinality,
         )
-        self._preimage = diagram
-        self._image = self
-        self._colimit_presentation = _coproduct_presentation(diagram, self)
+        self._set_coproduct = set_coproduct
+        super().__init__(
+            category=category,
+            diagram=diagram,
+            presentation=_coproduct_presentation(diagram, set_coproduct),
+        )
+
+    def index_category(self) -> DiscreteCategoryObject:
+        return self._set_coproduct.index_category()
+
+    def index_set(self) -> SetObject:
+        return self._set_coproduct.index_set()
+
+    def cofactor(self, index: SetElement) -> SetObject:
+        return self._set_coproduct.cofactor(index)
+
+    def cofactor_cardinalities(self) -> Functor:
+        return self._set_coproduct.cofactor_cardinalities()
+
+    def element(self, index: SetElement, value: SetElement) -> CoproductElement:
+        return CoproductElements().ObjectType(self, index, value)
+
+    def membership(self, member: SetElement) -> Decision:
+        value = registered_value(member)
+        return value is not None and CoproductElements().contains_coproduct_element(value) and value.coproduct() is self
+
+    def __contains__(self, candidate: Any) -> bool:
+        value = registered_value(candidate)
+        return value is not None and CoproductElements().contains_coproduct_element(value) and value.coproduct() is self
+
+    def __iter__(self) -> Iterator[SetElement]:
+        assert self.index_set().is_finite() is True
+        for index in self.index_set():
+            for value in self.cofactor(index):
+                yield self.element(index, value)
+
+    def injection(self, index: MathematicalObject) -> SetMorphism:
+        assert self.index_category().contains_object(index)
+        return self._injection(index.label())
+
+    def _injection(self, index: SetElement) -> SetMorphism:
+        return _set_morphism(
+            self.cofactor(index),
+            self,
+            lambda value: self.element(index, value),
+            injective=True,
+        )
+
+    def universal_morphism(self, cocone: CoconeObject) -> SetMorphism:
+        target = cocone.apex()
+        assert Sets().contains_set(target)
+
+        def induced(member: SetElement) -> SetElement:
+            assert CoproductElements().contains_coproduct_element(member)
+            component = cocone.costructure_morphism(
+                self.index_category().object(member.index()),
+            )
+            assert Sets().contains_set_morphism(component)
+            return component(member.value())
+
+        return _set_morphism(self, target, induced)
+
+    def __repr__(self) -> str:
+        return f"Coproduct of {self.diagram()}"
 
 
 class CoproductsOfSetsCategory(CoproductsOfCategory):
@@ -2500,8 +2650,8 @@ class LimitSet(ProductSet):
                 yield member
 
 
-class SetLimitObject(LimitObject, LimitSet):
-    """A limit presentation whose apex is the same owned set object."""
+class SetLimitObject(LimitObject):
+    """A set limit with its cone and compatible families."""
 
     def __init__(
         self,
@@ -2510,24 +2660,124 @@ class SetLimitObject(LimitObject, LimitSet):
         diagram: Functor,
         cardinality: Cardinal | None = None,
     ) -> None:
-        LimitSet.__init__(
-            self,
+        limit_set = LimitSet(
             diagram,
-            category=category,
+            category=Sets(),
             cardinality=cardinality,
         )
-        self._preimage = diagram
-        self._image = self
-        self._limit_presentation = _limit_presentation(diagram, self)
+        self._limit_set = limit_set
+        self._compatible_elements: set[int] = set()
+        super().__init__(
+            category=category,
+            diagram=diagram,
+            presentation=_limit_presentation(diagram, limit_set),
+        )
+
+    def index_set(self) -> SetObject:
+        return self._limit_set.index_set()
+
+    def factor(self, index: SetElement) -> SetObject:
+        return self._limit_set.factor(index)
+
+    def element(self, components: SetElementFamily) -> ProductElement:
+        return ProductElements().ObjectType(self, components)
+
+    def _compatible_element(
+        self,
+        components: SetElementFamily,
+    ) -> ProductElement:
+        member = self.element(components)
+        self._compatible_elements.add(id(member))
+        return member
+
+    def cardinality(self) -> Cardinal:
+        declared = self._limit_set.cardinality()
+        if declared != UnknownCardinality():
+            return declared
+        index_set = self.index_set()
+        if index_set.is_finite() is not True:
+            return declared
+        if any(self.factor(index).is_finite() is not True for index in index_set):
+            return declared
+        return Cardinals()(sum(1 for _ in self))
+
+    def membership(self, member: SetElement) -> Decision:
+        value = registered_value(member)
+        if value is None or not ProductElements().contains_product_element(value) or value.product() is not self:
+            return False
+        if id(member) in self._compatible_elements:
+            return True
+        arrows = index_arrows(self.diagram().domain())
+        if arrows.is_finite() is not True:
+            return UNKNOWN
+        for candidate in arrows:
+            arrow = candidate.value()
+            assert self.diagram().domain().contains_arrow(arrow)
+            image = self.diagram()(arrow)
+            assert Sets().contains_set_morphism(image)
+            source_index = _object_set_element(self.diagram().domain(), arrow.domain())
+            target_index = _object_set_element(self.diagram().domain(), arrow.codomain())
+            if image(value.component(source_index)) != value.component(target_index):
+                return False
+        return True
+
+    def __contains__(self, candidate: Any) -> bool:
+        value = registered_value(candidate)
+        if value is None or not ProductElements().contains_product_element(value):
+            return False
+        answer = self.membership(value)
+        assert answer is not UNKNOWN, f"membership in {self} is unknown"
+        return answer
+
+    def __iter__(self) -> Iterator[SetElement]:
+        indices = tuple(self.index_set())
+        factors = tuple(self.factor(index) for index in indices)
+        assert all(factor.is_finite() is True for factor in factors)
+        for values in cartesian_product(*(tuple(factor) for factor in factors)):
+            table = tuple(zip(indices, values, strict=True))
+
+            def component(
+                index: SetElement,
+                table: tuple[tuple[SetElement, SetElement], ...] = table,
+            ) -> SetElement:
+                return next(value for key, value in table if key is index)
+
+            member = self.element(component)
+            if self.membership(member) is True:
+                yield member
+
+    def projection(self, index: MathematicalObject) -> SetMorphism:
+        return self._projection(_object_set_element(self.diagram().domain(), index))
+
+    def _projection(self, index: SetElement) -> SetMorphism:
+        factor = self.factor(index)
+
+        def project(member: SetElement) -> SetElement:
+            value = registered_value(member)
+            assert value is not None
+            assert ProductElements().contains_product_element(value)
+            assert value.product() is self
+            return value.component(index)
+
+        return _set_morphism(self, factor, project)
 
     def apex(self) -> SetObject:
-        # In Sets the presentation is the set its cone stands over.
         return self
 
     def universal_morphism(self, cone: ConeObject) -> SetMorphism:
-        morphism = LimitObject.universal_morphism(self, cone)
-        assert Sets().contains_set_morphism(morphism)
-        return morphism
+        source = cone.apex()
+        assert Sets().contains_set(source)
+        return _set_morphism(
+            source,
+            self,
+            lambda member: self._compatible_element(
+                lambda index: _cone_component_value(
+                    cone,
+                    index.value(),
+                    member,
+                )
+            ),
+        )
 
 
 class LimitsOfSetsCategory(LimitsOfCategory):
@@ -2594,7 +2844,11 @@ def is_limits_of_sets_category(
 class ColimitElement(MathematicalElement):
     """An element of a Set colimit, represented by one coproduct term."""
 
-    def __init__(self, colimit: ColimitSet, representative: CoproductElement) -> None:
+    def __init__(
+        self,
+        colimit: ColimitSet | SetColimitObject,
+        representative: CoproductElement,
+    ) -> None:
         assert representative.coproduct() is colimit.coproduct()
         self._colimit = colimit
         self._representative = representative
@@ -2603,7 +2857,7 @@ class ColimitElement(MathematicalElement):
             ambient_object=colimit,
         )
 
-    def colimit(self) -> ColimitSet:
+    def colimit(self) -> ColimitSet | SetColimitObject:
         return self._colimit
 
     def representative(self) -> CoproductElement:
@@ -2776,8 +3030,8 @@ class ColimitSet(SetObject):
         )
 
 
-class SetColimitObject(ColimitObject, ColimitSet):
-    """A colimit presentation whose apex is the same owned set object."""
+class SetColimitObject(ColimitObject):
+    """A set colimit with its cocone and quotient presentation."""
 
     def __init__(
         self,
@@ -2786,24 +3040,143 @@ class SetColimitObject(ColimitObject, ColimitSet):
         diagram: Functor,
         cardinality: Cardinal | None = None,
     ) -> None:
-        ColimitSet.__init__(
-            self,
+        colimit_set = ColimitSet(
             diagram,
-            category=category,
+            category=Sets(),
             cardinality=cardinality,
         )
-        self._preimage = diagram
-        self._image = self
-        self._colimit_presentation = _colimit_presentation(diagram, self)
+        self._colimit_set = colimit_set
+        self._coproduct = colimit_set.coproduct()
+        super().__init__(
+            category=category,
+            diagram=diagram,
+            presentation=_colimit_presentation(diagram, colimit_set),
+        )
+
+    def coproduct(self) -> CoproductSet:
+        return self._coproduct
+
+    def element(self, index: SetElement, value: SetElement) -> ColimitElement:
+        return ColimitElements().ObjectType(
+            self,
+            self._coproduct.element(index, value),
+        )
+
+    def membership(self, member: SetElement) -> Decision:
+        value = registered_value(member)
+        return value is not None and ColimitElements().contains_colimit_element(value) and value.colimit() is self
+
+    def __contains__(self, candidate: Any) -> bool:
+        value = registered_value(candidate)
+        return value is not None and ColimitElements().contains_colimit_element(value) and value.colimit() is self
+
+    def equivalent(
+        self,
+        left: ColimitElement,
+        right: ColimitElement,
+    ) -> Decision:
+        assert left.colimit() is self and right.colimit() is self
+        left_representative = left.representative()
+        right_representative = right.representative()
+        if _same_coproduct_term(left_representative, right_representative):
+            return True
+        arrows = index_arrows(self.diagram().domain())
+        if arrows.is_finite() is not True:
+            return UNKNOWN
+        if _colimit_terms_are_related(
+            self.diagram(),
+            arrows,
+            left_representative,
+            right_representative,
+        ):
+            return True
+        if not self._has_finitely_many_terms():
+            return UNKNOWN
+        component = self._component_of(arrows, left_representative)
+        return any(
+            _same_coproduct_term(right_representative, term)
+            for term in component
+        )
+
+    def _has_finitely_many_terms(self) -> bool:
+        indices = self._coproduct.index_set()
+        if indices.is_finite() is not True:
+            return False
+        return all(
+            self._coproduct.cofactor(index).is_finite() is True
+            for index in indices
+        )
+
+    def _component_of(
+        self,
+        arrows: SetObject,
+        start: CoproductElement,
+    ) -> tuple[CoproductElement, ...]:
+        representatives: tuple[CoproductElement, ...] = ()
+        for representative in self._coproduct:
+            value = registered_value(representative)
+            assert value is not None
+            assert CoproductElements().contains_coproduct_element(value)
+            representatives = (*representatives, value)
+        reached: tuple[CoproductElement, ...] = (start,)
+        while True:
+            enlarged = tuple(
+                candidate
+                for candidate in representatives
+                if not any(
+                    _same_coproduct_term(candidate, known)
+                    for known in reached
+                )
+                and any(
+                    _colimit_terms_are_related(
+                        self.diagram(),
+                        arrows,
+                        candidate,
+                        known,
+                    )
+                    for known in reached
+                )
+            )
+            if not enlarged:
+                return reached
+            reached = (*reached, *enlarged)
+
+    def __iter__(self) -> Iterator[SetElement]:
+        chosen: tuple[ColimitElement, ...] = ()
+        for representative in self._coproduct:
+            value = registered_value(representative)
+            assert value is not None and CoproductElements().contains_coproduct_element(value)
+            candidate = ColimitElements().ObjectType(self, value)
+            if any(self.equivalent(candidate, known) is True for known in chosen):
+                continue
+            chosen = (*chosen, candidate)
+            yield candidate
+
+    def injection(self, index: MathematicalObject) -> SetMorphism:
+        return self._injection(_object_set_element(self.diagram().domain(), index))
+
+    def _injection(self, index: SetElement) -> SetMorphism:
+        return _set_morphism(
+            self._coproduct.cofactor(index),
+            self,
+            lambda value: self.element(index, value),
+        )
 
     def apex(self) -> SetObject:
-        # In Sets the presentation is the set its cocone stands under.
         return self
 
     def universal_morphism(self, cocone: CoconeObject) -> SetMorphism:
-        morphism = ColimitObject.universal_morphism(self, cocone)
-        assert Sets().contains_set_morphism(morphism)
-        return morphism
+        target = cocone.apex()
+        assert Sets().contains_set(target)
+
+        def induced(member: SetElement) -> SetElement:
+            assert ColimitElements().contains_colimit_element(member)
+            representative = member.representative()
+            component = cocone.costructure_morphism(representative.index().value())
+            assert Sets().contains_set_morphism(component)
+            return component(representative.value())
+
+        return _set_morphism(self, target, induced)
 
 
 class ColimitsOfSetsCategory(ColimitsOfCategory):

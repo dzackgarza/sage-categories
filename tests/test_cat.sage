@@ -247,8 +247,10 @@ def test_compiler_exposes_object_element_and_arrow_routes() -> None:
     set_route = category.structural_route_to(Sets())
     ordered_set = finite_ordered_set((ZZ(int(0)), ZZ(int(1))))
     member = next(iter(ordered_set))
+    assert member <= member
     finite_poset = category.finite_poset_functor()(ordered_set)
     assert FinitePosets().contains_finite_poset(finite_poset)
+    assert finite_poset.height() == 2
 
     assert object_declaration.owner is Sets()
     assert object_declaration.route
@@ -259,13 +261,6 @@ def test_compiler_exposes_object_element_and_arrow_routes() -> None:
     assert arrow_declaration.owner is Sets()
     assert arrow_declaration.route
     assert set_route == object_declaration.route
-    assert TotallyOrderedSetElements().contains_total_order_element(member)
-    assert ordered_set.category() is FiniteTotallyOrderedSets()
-    assert FiniteTotallyOrderedSets().inclusion()(ordered_set) is ordered_set
-    assert member.ambient_total_order() is ordered_set
-    assert member <= member
-    assert finite_poset.height() == 2
-
     # The same relation the compiler forwards along, reported for a checker
     # that cannot follow a declared functor. A poset is a set through its
     # forgetful functor, so its object type reaches the set object type.
@@ -273,6 +268,10 @@ def test_compiler_exposes_object_element_and_arrow_routes() -> None:
     poset_objects = f"{PosetObject.__module__}.{PosetObject.__qualname__}"
     set_objects = f"{SetObject.__module__}.{SetObject.__qualname__}"
     assert set_objects in reported["object"][poset_objects]
+    assert TotallyOrderedSetElements().contains_total_order_element(member)
+    assert ordered_set.category() is FiniteTotallyOrderedSets()
+    assert FiniteTotallyOrderedSets().inclusion()(ordered_set) is ordered_set
+    assert member.ambient_total_order() is ordered_set
 
 
 def test_structural_coherence_identifies_parallel_forgetful_functors() -> None:

@@ -660,7 +660,7 @@ class ForgetPosetFunctor(StructuralFunctor):
         return True
 
 
-class PosetProductObject(ProductObject, PosetObject):
+class PosetProductObject(ProductObject):
     """A product whose additional order is componentwise."""
 
     def __init__(
@@ -696,23 +696,29 @@ class PosetProductObject(ProductObject, PosetObject):
                     answer = UNKNOWN
             return answer
 
-        PosetObject.__init__(
-            self,
-            category=category,
-            underlying_set=underlying_product,
-            relation=componentwise,
-        )
+        self._underlying_set = underlying_product
+        self._relation = componentwise
+        self._elements: dict[int, PosetElement] = {}
+        self._thin_category: ThinCategory | None = None
+        MathematicalObject.__init__(self, category=category)
         self._preimage = diagram
         self._image = self
         self._set_product = underlying_product
         self._limit_presentation = self._lifted_product_presentation()
+
+    def _set_implementation(self) -> SetObject:
+        category = self._underlying_set.category()
+        assert is_products_of_sets_category(category)
+        image = category.inclusion().on_object(self._underlying_set)
+        assert Sets().contains_set(image)
+        return image
 
     def set_product(self) -> SetProductObject:
         return self._set_product
 
     def _lifted_product_presentation(self) -> ProductPresentation:
         forgetful = PartiallyOrderedSets().forgetful_functor()
-        identity = Sets().identity(self._set_product)
+        identity = Sets().identity(self._set_implementation())
         comparison = declare_isomorphism(identity, identity)
         assert is_isomorphism(comparison)
 
@@ -910,8 +916,25 @@ class ProductsOfPosetsCategory(ProductsOfCategory):
         return candidate in self
 
 
-class FinitePosetObject(PosetObject):
+class FinitePosetObject(MathematicalObject):
     """A finite poset with finite order algorithms."""
+
+    def __init__(
+        self,
+        *,
+        category: FinitePosetsCategory,
+        underlying_set: SetObject,
+        relation: OrderRelation,
+    ) -> None:
+        assert underlying_set in FiniteSets()
+        self._underlying_set = underlying_set
+        self._relation = relation
+        self._elements: dict[int, PosetElement] = {}
+        self._thin_category: ThinCategory | None = None
+        super().__init__(category=category)
+
+    def _set_implementation(self) -> SetObject:
+        return self._underlying_set
 
     def _realization(self) -> SageFinitePosetObject:
         from sage_categories.backends.sage.finite_posets import (
@@ -1522,9 +1545,32 @@ class TotalOrderInclusionFunctor(StructuralFunctor):
     def is_faithful(self) -> bool:
         return True
 
+    def is_inclusion(self) -> bool:
+        return True
 
-class FiniteTotallyOrderedSetObject(TotallyOrderedSetObject):
+
+class FiniteTotallyOrderedSetObject(MathematicalObject):
     """A finite totally ordered set."""
+
+    def __init__(
+        self,
+        *,
+        category: FiniteTotallyOrderedSetsCategory,
+        poset: PosetObject,
+        element_at: PosetEnumeration,
+        position_of: PosetPosition,
+        finite_enumeration: tuple[PosetElement, ...] | None,
+    ) -> None:
+        assert poset in FinitePosets()
+        self._poset = poset
+        self._element_at = element_at
+        self._position_of = position_of
+        self._finite_enumeration = finite_enumeration
+        self._elements: dict[int, TotallyOrderedSetElement] = {}
+        super().__init__(category=category)
+
+    def _poset_implementation(self) -> PosetObject:
+        return self._poset
 
 
 class FiniteTotallyOrderedSetsCategory(FullSubcategory):

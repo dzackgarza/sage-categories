@@ -201,6 +201,10 @@ class StructuralFunctor(Functor, ABC):
             self._element_images[key] = image
         return image
 
+    def is_inclusion(self) -> bool:
+        """Return whether this functor includes a subcategory."""
+        return False
+
 
 _STRUCTURAL_FUNCTORS: dict[int, StructuralFunctor] = {}
 
@@ -271,6 +275,9 @@ class InclusionFunctor(StructuralFunctor):
         return element
 
     def is_faithful(self) -> bool:
+        return True
+
+    def is_inclusion(self) -> bool:
         return True
 
 
@@ -744,6 +751,7 @@ class LimitFunctor(Functor):
         assert is_functor(target)
         from sage_categories.abstract_categories.products import (
             Cone,
+            LimitObject,
             is_limits_of_category,
         )
 
@@ -760,7 +768,7 @@ class LimitFunctor(Functor):
                 source_cone.structure_morphism(index),
             ),
         )
-        underlying_arrow = target_limit.universal_morphism(cone)
+        underlying_arrow = LimitObject.universal_morphism(target_limit, cone)
         return image.Hom(source_limit, target_limit)(underlying_arrow)
 
 
@@ -797,6 +805,7 @@ class ColimitFunctor(Functor):
         assert is_functor(source)
         assert is_functor(target)
         from sage_categories.abstract_categories.products import (
+            ColimitObject,
             Cocone,
             is_colimits_of_category,
         )
@@ -814,7 +823,10 @@ class ColimitFunctor(Functor):
                 morphism.component(index),
             ),
         )
-        underlying_arrow = source_colimit.universal_morphism(cocone)
+        underlying_arrow = ColimitObject.universal_morphism(
+            source_colimit,
+            cocone,
+        )
         return image.Hom(source_colimit, target_colimit)(underlying_arrow)
 
 

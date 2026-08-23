@@ -845,7 +845,12 @@ class FullSubcategory(Category):
         )
 
         value = registered_value(candidate)
-        if value is None or value not in self._ambient_category:
+        if value is None:
+            return False
+        category = value.category()
+        if category is self or category.is_subcategory(self):
+            return True
+        if value not in self._ambient_category:
             return False
         return any(isomorphic in self._ambient_category and self._predicate(isomorphic) for isomorphic in _declared_isomorphic_objects(value))
 

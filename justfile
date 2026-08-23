@@ -62,13 +62,23 @@ ci-provision-sage:
         ghcr.io/dzackgarza/sage:develop sleep infinity
     sage_dir=/usr/local/sage-env
     sudo install -d "${sage_dir}"
-    for tool in sage python sage-preparse; do
+    for tool in sage sage-preparse; do
         printf '%s\n' \
             '#!/usr/bin/env bash' \
             "exec docker exec -i -w \"\$(pwd -P)\" sage-env /sage/.venv/bin/${tool} \"\$@\"" \
             | sudo tee "${sage_dir}/${tool}" >/dev/null
         sudo chmod +x "${sage_dir}/${tool}"
     done
+    printf '%s\n' \
+        '#!/usr/bin/env bash' \
+        'set -euo pipefail' \
+        'if [ "$#" -gt 0 ] && [ "$1" = "/usr/local/sage-env/sage-preparse" ]; then' \
+        '    shift' \
+        '    exec docker exec -i -w "$(pwd -P)" sage-env /sage/.venv/bin/python /sage/.venv/bin/sage-preparse "$@"' \
+        'fi' \
+        'exec docker exec -i -w "$(pwd -P)" sage-env /sage/.venv/bin/python "$@"' \
+        | sudo tee "${sage_dir}/python" >/dev/null
+    sudo chmod +x "${sage_dir}/python"
     sage_bin="${sage_dir}/sage"
     # The checkout under test, not whatever version the image happened to carry.
     # This Sage's CLI takes only -c and a file; the environment's pip is reached

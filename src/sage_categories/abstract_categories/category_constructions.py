@@ -36,8 +36,8 @@ type ObjectPredicate = Callable[[MathematicalObject], bool]
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.products import (
         CoconeObject,
-        CoproductPresentation,
         ConeObject,
+        CoproductPresentation,
         ProductPresentation,
     )
 

@@ -49,6 +49,7 @@ class Functor(Arrow, ABC):
         self._morphism_map = morphism_map
         self._object_images: dict[int, MathematicalObject] = {}
         self._morphism_images: dict[int, Arrow] = {}
+        self._postcomposition_functors: dict[int, PostcompositionFunctor] = {}
         functor_hom_category = category_universe(domain, codomain).Hom(domain, codomain) if hom_category is None else hom_category
         assert functor_hom_category.domain() is domain
         assert functor_hom_category.codomain() is codomain
@@ -150,6 +151,15 @@ class Functor(Arrow, ABC):
     def then(self, following: Functor) -> Functor:
         """Return ``following`` after this functor."""
         return compose_functors(following, self)
+
+    def postcomposition(self, index_category: Category) -> PostcompositionFunctor:
+        """Postcompose diagrams of shape ``index_category`` with this functor."""
+        key = id(index_category)
+        cached = self._postcomposition_functors.get(key)
+        if cached is None:
+            cached = PostcompositionFunctor(index_category, self)
+            self._postcomposition_functors[key] = cached
+        return cached
 
 
 class StructuralFunctor(Functor, ABC):
@@ -350,6 +360,44 @@ def compose_functors(
     if len(factors) == 1:
         return factors[0]
     return ComposedFunctor(factors, hom_category=hom_category)
+
+
+class PostcompositionFunctor(Functor):
+    """Postcompose diagrams and right-whisker natural transformations."""
+
+    # This is Mathlib's ``Functor.whiskeringRight`` specialized at one functor:
+    # https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/CategoryTheory/Whiskering.lean
+    def __init__(self, index_category: Category, functor: Functor) -> None:
+        self._index_category = index_category
+        self._functor = functor
+        super().__init__(
+            functor.domain().Diagram(index_category),
+            functor.codomain().Diagram(index_category),
+        )
+
+    def index_category(self) -> Category:
+        return self._index_category
+
+    def functor(self) -> Functor:
+        return self._functor
+
+    def _object_image(self, source: MathematicalObject) -> Functor:
+        assert is_functor(source)
+        return compose_functors(self._functor, source)
+
+    def _morphism_image(self, morphism: Arrow) -> Arrow:
+        hom_category = morphism.hom_category()
+        assert is_natural_transformation_hom_category(hom_category)
+        assert hom_category.contains_transformation(morphism)
+        source = self.on_object(morphism.domain())
+        target = self.on_object(morphism.codomain())
+        assert is_functor(source)
+        assert is_functor(target)
+        return NaturalTransformation(
+            source,
+            target,
+            lambda index: self._functor.on_morphism(morphism.component(index)),
+        )
 
 
 class DomainFunctor(Functor):

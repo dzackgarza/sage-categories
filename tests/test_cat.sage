@@ -1,7 +1,10 @@
 """The owned category of categories and its arrow categories."""
 
 from sage_categories.all import *
-from sage_categories.abstract_categories.functors import is_functor
+from sage_categories.abstract_categories.functors import (
+    is_functor,
+    is_natural_transformation_hom_category,
+)
 from sage_categories.abstract_categories.hom_categories import is_isomorphism
 from sage_categories.theories.posets import PosetElement
 
@@ -126,3 +129,31 @@ def test_structural_functor_images_have_exact_ambient_objects_and_endpoints() ->
     assert element_image.ambient_object() is set_image
     assert arrow_image.domain() is set_image
     assert arrow_image.codomain() is set_image
+
+
+def test_postcomposition_maps_diagrams_and_natural_transformations() -> None:
+    labels = FiniteSet((ZZ(int(3)), ZZ(int(5))))
+    index_category = DiscreteCategory(labels)
+    poset = PartiallyOrderedSets()(ZZ, is_equal)
+    diagram = PartiallyOrderedSets().DiagonalFunctor(index_category)(poset)
+    assert is_functor(diagram)
+    identity = PartiallyOrderedSets().identity(poset)
+    transformations = NaturalTransformations(diagram, diagram)
+    transformation = transformations(lambda index: identity)
+    forgetful = PartiallyOrderedSets().forgetful_functor()
+    postcomposition = forgetful.postcomposition(index_category)
+
+    set_diagram = postcomposition.on_object(diagram)
+    set_transformation = postcomposition.on_morphism(transformation)
+    assert is_functor(set_diagram)
+    hom_category = set_transformation.hom_category()
+    assert is_natural_transformation_hom_category(hom_category)
+    assert hom_category.contains_transformation(set_transformation)
+    index = index_category.object(labels.element(ZZ(int(3))))
+    component = set_transformation.component(index)
+
+    assert set_diagram(index) is ZZ
+    assert Sets().contains_set_morphism(component)
+    assert component.domain() is ZZ
+    assert component.codomain() is ZZ
+    assert component(ZZ(int(7))) is ZZ(int(7))

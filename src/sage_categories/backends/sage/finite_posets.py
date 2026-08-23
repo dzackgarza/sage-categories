@@ -8,8 +8,8 @@ poset category.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Iterator
-from typing import TYPE_CHECKING, Protocol, TypeIs
+from collections.abc import Iterable, Iterator
+from typing import TYPE_CHECKING, TypeIs
 
 from sage_categories.abstract_categories.functors import Functor
 from sage_categories.abstract_categories.hom_categories import HomCategory
@@ -22,111 +22,11 @@ from sage_categories.theories.posets import (
 )
 from sage_categories.values import UNKNOWN, Arrow, MathematicalObject
 
-type PartialOrder = Callable[[PosetElement, PosetElement], bool]
-
-
-class ExternalFinitePoset(Protocol):
-    """The Sage finite-poset operations used at this boundary."""
-
-    def covers(
-        self,
-        lower: PosetElement,
-        upper: PosetElement,
-    ) -> bool: ...
-
-    def lower_covers(
-        self,
-        member: PosetElement,
-    ) -> Iterable[PosetElement]: ...
-
-    def upper_covers(
-        self,
-        member: PosetElement,
-    ) -> Iterable[PosetElement]: ...
-
-    def common_lower_covers(
-        self,
-        members: Iterable[PosetElement],
-    ) -> Iterable[PosetElement]: ...
-
-    def common_upper_covers(
-        self,
-        members: Iterable[PosetElement],
-    ) -> Iterable[PosetElement]: ...
-
-    def open_interval(
-        self,
-        lower: PosetElement,
-        upper: PosetElement,
-    ) -> Iterable[PosetElement]: ...
-
-    def closed_interval(
-        self,
-        lower: PosetElement,
-        upper: PosetElement,
-    ) -> Iterable[PosetElement]: ...
-
-    def order_ideal(
-        self,
-        members: Iterable[PosetElement],
-    ) -> Iterable[PosetElement]: ...
-
-    def order_filter(
-        self,
-        members: Iterable[PosetElement],
-    ) -> Iterable[PosetElement]: ...
-
-    def minimal_elements(self) -> Iterable[PosetElement]: ...
-
-    def maximal_elements(self) -> Iterable[PosetElement]: ...
-
-    def has_bottom(self) -> bool: ...
-
-    def bottom(self) -> PosetElement: ...
-
-    def has_top(self) -> bool: ...
-
-    def top(self) -> PosetElement: ...
-
-    def is_bounded(self) -> bool: ...
-
-    def height(self) -> int: ...
-
-    def width(self) -> int: ...
-
-    def rank(self, member: PosetElement | None = None) -> int: ...
-
-    def level_sets(self) -> Iterable[Iterable[PosetElement]]: ...
-
-    def is_ranked(self) -> bool: ...
-
-    def is_graded(self) -> bool: ...
-
-    def is_chain(self) -> bool: ...
-
-    def is_chain_of_poset(
-        self,
-        members: Iterable[PosetElement],
-    ) -> bool: ...
-
-    def is_antichain_of_poset(
-        self,
-        members: Iterable[PosetElement],
-    ) -> bool: ...
-
-
-class ExternalPosetConstructor(Protocol):
-    """The typed call surface of Sage's ``Poset`` constructor."""
-
-    def __call__(
-        self,
-        presentation: tuple[tuple[PosetElement, ...], PartialOrder],
-        *,
-        facade: bool,
-    ) -> ExternalFinitePoset: ...
-
-
 if TYPE_CHECKING:
+    from sage_categories.backends.sage._finite_posets_types import (
+        ExternalPosetConstructor,
+    )
+
     _sage_poset_constructor: ExternalPosetConstructor
 else:
     from sage.combinat.posets.posets import Poset as _sage_poset_constructor

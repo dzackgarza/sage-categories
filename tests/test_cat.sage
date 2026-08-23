@@ -1,15 +1,32 @@
 """The owned category of categories and its arrow categories."""
 
 from sage_categories.all import *
+from sage_categories.abstract_categories.category_constructions import (
+    is_opposite_category,
+    is_opposite_hom_category,
+    is_product_category,
+    is_product_hom_category,
+)
 from sage_categories.abstract_categories.functors import (
+    ConstantDiagram,
     InclusionFunctor,
     compose_functors,
     is_functor,
+    is_functor_category,
     is_natural_transformation_hom_category,
 )
-from sage_categories.abstract_categories.hom_categories import is_isomorphism
+from sage_categories.abstract_categories.functor_images import (
+    is_functor_image_category,
+)
+from sage_categories.abstract_categories.hom_categories import (
+    is_isomorphism,
+    is_isomorphism_hom_category,
+)
 from sage_categories.abstract_categories.products import (
     DiagramCategory,
+    DirectedSystem,
+    InverseSystem,
+    is_coproducts_of_category,
     is_products_of_category,
 )
 from sage_categories.theories.posets import (
@@ -72,10 +89,24 @@ def test_arrow_hom_end_iso_slice_and_coslice_categories() -> None:
     assert automorphism in sets.AutomorphismArrowCategory()
     assert automorphism in sets.IsomorphismArrowCategory()
     assert automorphism in sets.core().ArrowCategory()
+    assert is_isomorphism(automorphism)
+    assert automorphism.is_monomorphism()
+    assert automorphism.is_epimorphism()
+    isomorphisms = sets.Iso(finite_set, finite_set)
+    assert is_isomorphism_hom_category(isomorphisms)
+    assert isomorphisms.contains_isomorphism(automorphism)
+
+    assert sets.HomCatType is sets.HomCategory().ObjectType
+    assert sets.EndCatType is sets.EndCategory().ObjectType
+    assert sets.MonoCatType is sets.MonoCategory().ObjectType
+    assert sets.EpiCatType is sets.EpiCategory().ObjectType
+    assert sets.IsoCatType is sets.IsoCategory().ObjectType
+    assert sets.AutCatType is sets.AutCategory().ObjectType
 
     slice = sets.SliceOver(finite_set)
     slice_object = slice(identity)
     assert slice_object in slice
+    assert slice.target_object() is finite_set
     assert slice.Hom(
         slice_object,
         slice_object,
@@ -97,6 +128,108 @@ def test_arrow_hom_end_iso_slice_and_coslice_categories() -> None:
     assert superobject in sets.Superobjects(finite_set)
     assert covering_object in sets.CoveringObjects(finite_set)
     assert covered_object in sets.CoveredObjects(finite_set)
+    assert finite_set.covering_objects() is sets.CoveringObjects(finite_set)
+
+
+def test_opposites_products_functor_images_and_constant_diagrams() -> None:
+    sets = Sets()
+    finite_set = FiniteSet((ZZ(int(0)), ZZ(int(1))))
+    identity_functor = IdentityFunctor(sets)
+
+    opposite = sets.OppositeCategory()
+    assert is_opposite_category(opposite)
+    opposite_hom = opposite.Hom(finite_set, finite_set)
+    assert is_opposite_hom_category(opposite_hom)
+    opposite_identity = opposite_hom.identity()
+    assert opposite_hom.contains_opposite_arrow(opposite_identity)
+
+    product_category = sets.ProductCategory(sets)
+    assert is_product_category(product_category)
+    pair = product_category(finite_set, finite_set)
+    product_hom = product_category.Hom(pair, pair)
+    assert is_product_hom_category(product_hom)
+    product_identity = product_hom.identity()
+    assert product_hom.contains_product_arrow(product_identity)
+
+    pair_functor = product_category.pair_functor(
+        identity_functor,
+        identity_functor,
+    )
+    assert pair_functor(finite_set) is pair
+
+    composite = identity_functor.then(identity_functor)
+    assert composite(finite_set) is finite_set
+    functor_category = sets.FunctorCategory(sets)
+    assert is_functor_category(functor_category)
+    assert functor_category.contains_functor(composite)
+
+    labels = FiniteSet((ZZ(int(5)),))
+    index_category = DiscreteCategory(labels)
+    constant_diagram = ConstantDiagram(index_category, sets, finite_set)
+    assert constant_diagram.constant_value() is finite_set
+
+    image_category = sets.ImagesOfFunctor(identity_functor)
+    assert is_functor_image_category(image_category)
+    image = image_category(finite_set)
+    assert image.constructing_functor() is identity_functor
+    assert image.image() is finite_set
+
+
+def test_directed_and_inverse_systems_retain_their_diagrams() -> None:
+    finite_set = FiniteSet((ZZ(int(0)), ZZ(int(1))))
+    index_set = finite_ordered_set((ZZ(int(0)), ZZ(int(1))))
+    identity = Sets().identity(finite_set)
+    directed = DirectedSystem(
+        Sets(),
+        index_set,
+        (finite_set,),
+        (identity,),
+    )
+    inverse = InverseSystem(
+        Sets(),
+        index_set,
+        (finite_set,),
+        (identity,),
+    )
+
+    assert directed.index_set() is index_set
+    assert inverse.index_set() is index_set
+    assert directed.diagram_objects() == (finite_set,)
+    assert inverse.diagram_objects() == (finite_set,)
+    assert directed.contains_arrow(identity)
+    assert inverse.contains_arrow(identity)
+
+
+def test_singleton_products_coproducts_and_biproduct_presentations() -> None:
+    labels = FiniteSet((ZZ(int(0)),))
+    index_category = DiscreteCategory(labels)
+    factor = FiniteSet((ZZ(int(2)), ZZ(int(3))))
+    diagram = Sets().DiagonalFunctor(index_category)(factor)
+    assert is_functor(diagram)
+    index = index_category.object(labels.element(ZZ(int(0))))
+    identity = Sets().identity(factor)
+
+    cone = Cone(diagram, factor, lambda candidate: identity)
+    cocone = Cocone(diagram, factor, lambda candidate: identity)
+    product = Product(
+        cone,
+        lambda other: other.structure_morphism(index),
+    )
+    coproduct = Coproduct(
+        cocone,
+        lambda other: other.costructure_morphism(index),
+    )
+    biproduct = Biproduct(product, coproduct)
+
+    assert product.product_cone() is cone
+    assert coproduct.coproduct_cocone() is cocone
+    assert biproduct.product_presentation() is product
+    assert biproduct.coproduct_presentation() is coproduct
+
+    coproducts = Sets().Coproducts(index_category)
+    assert is_coproducts_of_category(coproducts)
+    chosen_coproduct = coproducts.coproduct_of(diagram)
+    assert chosen_coproduct.diagram() is diagram
 
 
 def test_compiler_exposes_object_element_and_arrow_routes() -> None:

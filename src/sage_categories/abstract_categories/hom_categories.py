@@ -62,11 +62,6 @@ class HomCategory(Category):
         value = registered_value(candidate)
         return value is not None and value._belongs_to_hom(self)
 
-    def include(self, arrow: Arrow) -> Arrow:
-        """Return an arrow already contained in this hom category."""
-        assert arrow in self
-        return arrow
-
     def identity(self, value: MathematicalObject | None = None) -> Arrow:
         """Construct the identity when this is an endomorphism category."""
         if value is not None:
@@ -94,7 +89,6 @@ class HomCategoryFamily(Category):
         hom_category_type: type[HomCategory] = HomCategory,
     ) -> None:
         self._base_category = base_category
-        self._member_type = hom_category_type
         self._hom_categories: dict[tuple[int, int], HomCategory] = {}
         super().__init__(
             object_type=hom_category_type,
@@ -124,14 +118,6 @@ class HomCategoryFamily(Category):
         )
         self._hom_categories[key] = result
         return result
-
-    def Between(
-        self,
-        domain: MathematicalObject,
-        codomain: MathematicalObject,
-    ) -> HomCategory:
-        """Return ``Hom_C(domain, codomain)``."""
-        return self.Of(domain, codomain)
 
     def contains_hom_category(
         self,

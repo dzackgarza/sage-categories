@@ -4,10 +4,15 @@ from sage.rings.integer import Integer as SageInteger
 
 from sage_categories.abstract_categories.functors import is_functor
 from sage_categories.all import *
+from sage_categories.theories.cardinals import (
+    SymbolicCardinal,
+    is_cardinal_hom_category,
+)
 from sage_categories.theories.posets import PosetElement, PosetElements
 from sage_categories.theories.sets import (
     CoproductElements,
     ProductElements,
+    SubsetsOfSet,
     is_colimits_of_sets_category,
     is_coproducts_of_sets_category,
     is_limits_of_sets_category,
@@ -142,6 +147,12 @@ def test_infinite_products_and_coproducts_use_direct_indexing() -> None:
     assert product.cardinality().family()(high_index) == aleph0
     assert coproduct.cardinality().index_set() is NN
     assert coproduct.cardinality().family()(high_index) == aleph0
+
+    product_cardinalities = product.factor_cardinalities()
+    coproduct_cardinalities = coproduct.cofactor_cardinalities()
+    index = product.index_category().object(high_index)
+    assert product_cardinalities(index) == aleph0
+    assert coproduct_cardinalities(index) == aleph0
 
 
 def test_infinite_product_and_coproduct_functors_act_on_maps() -> None:
@@ -320,3 +331,130 @@ def test_finite_sets_inherit_closed_products_and_coproducts() -> None:
     assert coproduct in FiniteSets()
     assert product.cardinality().is_finite() is True
     assert coproduct.cardinality().is_finite() is True
+
+
+def test_cardinal_and_ordinal_structure_maps() -> None:
+    one = cardinal(int(1))
+    two = cardinal(int(2))
+    hom_category = Cardinals().Hom(one, two)
+    assert is_cardinal_hom_category(hom_category)
+    inclusion = hom_category.unique_morphism()
+    summed = Cardinals().sum_morphism(inclusion, inclusion)
+    powered = Cardinals().power_morphism(inclusion, inclusion)
+    kappa = SymbolicCardinal("kappa")
+    lam = SymbolicCardinal("lambda")
+
+    assert aleph0.is_aleph()
+    assert aleph0.initial_ordinal() == omega0
+    assert cardinal(int(3)).initial_ordinal() == ordinal(int(3))
+    assert omega0.is_initial()
+    assert ordinal(int(3)).is_initial() is False
+    assert continuum.is_uncountably_infinite() is True
+    assert cardinal(int(3)).sort_key() < aleph0.sort_key()
+    assert Cardinals().are_incomparable(kappa, lam) is UNKNOWN
+
+    assert summed.domain() == Cardinals().sum(one, one)
+    assert summed.codomain() == Cardinals().sum(two, two)
+    assert powered.domain() == Cardinals().power(one, one)
+    assert powered.codomain() == Cardinals().power(two, two)
+
+
+def test_subset_constructions_and_power_set_maps() -> None:
+    finite_set = FiniteSet((ZZ(int(0)), ZZ(int(1)), ZZ(int(2))))
+    zero = finite_set.element(ZZ(int(0)))
+    one = finite_set.element(ZZ(int(1)))
+    powerset = PowerSet(finite_set)
+    singleton = powerset.from_members(frozenset((zero,)))
+    pair = powerset.from_members(frozenset((zero, one)))
+
+    subset_poset = finite_set.subset_poset()
+    singleton_in_poset = subset_poset.element(singleton)
+    pair_in_poset = subset_poset.element(pair)
+    assert singleton_in_poset <= pair_in_poset
+    assert (pair_in_poset <= singleton_in_poset) is False
+
+    pairs = finite_set.subsets_of_size(int(2))
+    finite_subsets = finite_set.finite_subsets()
+    assert pair in pairs
+    assert singleton not in pairs
+    assert singleton in finite_subsets
+    assert pair in finite_subsets
+
+    disjoint_union = finite_set.disjoint_union(finite_set)
+    left = disjoint_union.element(next(iter(disjoint_union.index_set())), zero)
+    assert left in disjoint_union
+
+    characteristic = singleton.characteristic_morphism()
+    recovered = powerset.from_characteristic_morphism(characteristic)
+    assert recovered.membership(zero) is True
+    assert recovered.membership(one) is False
+
+    identity = Sets().identity(finite_set)
+    assert Sets().contains_set_morphism(identity)
+    direct_image = powerset.direct_image_morphism(identity)
+    image = direct_image(singleton)
+    assert SubsetsOfSet(finite_set).contains_subset(image)
+    assert image.membership(zero) is True
+    assert image.membership(one) is False
+
+
+def test_standard_set_subcategories_and_order_categories() -> None:
+    finite_set = FiniteSet((ZZ(int(0)), ZZ(int(1))))
+    labels = FiniteSet((ZZ(int(7)),))
+    discrete = DiscreteCategory(labels)
+
+    assert Sets().ℵ[int(1)] == aleph(int(1))
+    assert Sets().א[int(1)] == aleph(int(1))
+    assert Sets().PartiallyOrdered() is PartiallyOrderedSets()
+    assert Sets().TotallyOrdered() is TotallyOrderedSets()
+    assert FiniteSets().contains_finite_set(finite_set)
+    assert FiniteDiscreteCategories().contains_finite_discrete_category(discrete)
+
+
+def test_finite_poset_realization_returns_owned_elements() -> None:
+    order = finite_ordered_set((ZZ(int(0)), ZZ(int(1)), ZZ(int(2))))
+    poset = FiniteTotallyOrderedSets().finite_poset_functor()(order)
+    assert FinitePosets().contains_finite_poset(poset)
+    inclusion = TotallyOrderedSets().inclusion()
+    lower = inclusion.on_element(order, order[int(0)])
+    middle = inclusion.on_element(order, order[int(1)])
+    upper = inclusion.on_element(order, order[int(2)])
+    assert PosetElements().contains_poset_element(lower)
+    assert PosetElements().contains_poset_element(middle)
+    assert PosetElements().contains_poset_element(upper)
+
+    assert poset.covers(lower, middle)
+    assert tuple(poset.lower_covers(middle)) == (lower,)
+    assert tuple(poset.upper_covers(middle)) == (upper,)
+    assert tuple(poset.common_lower_covers((middle,))) == (lower,)
+    assert tuple(poset.common_upper_covers((middle,))) == (upper,)
+    assert tuple(poset.open_interval(lower, upper)) == (middle,)
+    assert tuple(poset.closed_interval(lower, upper)) == (lower, middle, upper)
+    assert tuple(poset.principal_order_ideal(middle)) == (lower, middle)
+    assert tuple(poset.principal_order_filter(middle)) == (middle, upper)
+    assert tuple(poset.order_ideal((middle,))) == (lower, middle)
+    assert tuple(poset.order_filter((middle,))) == (middle, upper)
+    assert tuple(poset.minimal_elements()) == (lower,)
+    assert tuple(poset.maximal_elements()) == (upper,)
+    assert poset.has_bottom()
+    assert poset.bottom() is lower
+    assert poset.has_top()
+    assert poset.top() is upper
+    assert poset.is_bounded()
+    assert poset.height() == 3
+    assert poset.width() == 1
+    assert poset.rank(upper) == 2
+    assert tuple(tuple(level) for level in poset.level_sets()) == (
+        (lower,),
+        (middle,),
+        (upper,),
+    )
+    assert poset.is_ranked()
+    assert poset.is_graded()
+    assert poset.is_chain()
+    assert poset.is_chain_of_poset((lower, upper))
+    assert poset.is_antichain_of_poset((middle,))
+
+    identity = PartiallyOrderedSets().Hom(poset, poset).identity()
+    assert identity.is_order_preserving()
+    assert identity.is_order_embedding() is True

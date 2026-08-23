@@ -369,12 +369,6 @@ class PullbackObject(MathematicalObject):
     def _second_implementation(self) -> MathematicalObject:
         return self._second
 
-    def _common_implementation(self) -> MathematicalObject:
-        category = self.category()
-        assert is_pullback_category(category)
-        return category.first_functor()(self._first)
-
-
 class PullbackElement(MathematicalElement):
     """A compatible pair of elements in a pullback object."""
 
@@ -975,6 +969,16 @@ def is_full_subcategory(category: Category) -> TypeIs[FullSubcategory]:
 
 def is_opposite_arrow(arrow: Arrow) -> TypeIs[OppositeArrow]:
     return is_opposite_category(arrow.hom_category().base_category()) and arrow in arrow.hom_category().base_category().ArrowCategory()
+
+
+def is_opposite_hom_category(
+    hom_category: HomCategory,
+) -> TypeIs[OppositeHomCategory]:
+    opposite = hom_category.base_category()
+    return is_opposite_category(opposite) and hom_category is opposite.Hom(
+        hom_category.domain(),
+        hom_category.codomain(),
+    )
 
 
 def is_product_arrow(arrow: Arrow) -> TypeIs[ProductArrow]:

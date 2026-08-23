@@ -1124,6 +1124,11 @@ class SetHomCategory(HomCategory, SetObject):
 
         def direct_image(candidate: SetElement) -> SetSubset:
             subset = self._represented_subset(candidate)
+            members = subset.members()
+            if members is not None:
+                return target_power_set.from_members(
+                    frozenset(function(member) for member in members),
+                )
             inclusion = subset.inclusion().forward()
             assert Sets().contains_set_morphism(inclusion)
             restricted = Sets().compose(function, inclusion)

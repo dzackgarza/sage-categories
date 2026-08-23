@@ -278,16 +278,14 @@ X.powerset()
 X.subset_poset()
 ```
 
-`X.powerset()` is the set of subobjects of \(X\).
-`X.subset_poset()` has the same subsets as its elements and orders them by containment:
+`X.powerset()` is the set of subobjects of \(X\). `X.subset_poset()` has the same subsets as its elements and orders them by containment:
 
 \[
 A\leq B \quad\Longleftrightarrow\quad A\hookrightarrow X
 \text{ factors through } B\hookrightarrow X.
 \]
 
-Every poset \(P\) determines its thin category `P.thin_category()`.
-The elements of \(P\) become objects, and
+Every poset \(P\) determines its thin category `P.thin_category()`. The elements of \(P\) become objects, and
 
 \[
 \operatorname{Hom}(p,q)=
@@ -305,8 +303,7 @@ For a set \(X\), the following constructions are canonically equivalent:
 
 - the category of subobjects of \(X\) in `Sets()`.
 
-If \(X\) later receives the discrete topology, the topology layer identifies this category with \(\operatorname{Open}(X)\).
-Topology remains owned by its own category; `Sets()` supplies only the powerset, the containment order, and their categorical compatibility.
+If \(X\) later receives the discrete topology, the topology layer identifies this category with \(\operatorname{Open}(X)\). Topology remains owned by its own category; `Sets()` supplies only the powerset, the containment order, and their categorical compatibility.
 
 ## Finite and fixed-cardinality subsets
 

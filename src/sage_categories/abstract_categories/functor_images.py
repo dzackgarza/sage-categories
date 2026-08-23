@@ -171,6 +171,16 @@ class ImageOfFunctor(Category):
     def _hom_category_type(self) -> type[HomCategory]:
         return FunctorImageHomCategory
 
+    def Hom(
+        self,
+        domain: MathematicalObject,
+        codomain: MathematicalObject | None = None,
+    ) -> FunctorImageHomCategory:
+        assert codomain is not None
+        category = Category.Hom(self, domain, codomain)
+        assert is_functor_image_hom_category(category)
+        return category
+
     def __call__(self, preimage: MathematicalObject) -> FunctorImageObject:
         image = self._functor(preimage)
         result = self.ObjectType(category=self, preimage=preimage, image=image)
@@ -209,3 +219,10 @@ def FunctorImageCategoryObjects() -> FunctorImageCategories:
 
 def is_functor_image_category(category: Category) -> TypeIs[ImageOfFunctor]:
     return category in _FUNCTOR_IMAGE_CATEGORIES
+
+
+def is_functor_image_hom_category(
+    category: HomCategory,
+) -> TypeIs[FunctorImageHomCategory]:
+    image_category = category.base_category()
+    return is_functor_image_category(image_category) and category in image_category.HomCategory()

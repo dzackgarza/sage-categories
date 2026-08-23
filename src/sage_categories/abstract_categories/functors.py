@@ -961,6 +961,13 @@ class FunctorCategory(HomCategory):
         return arrow in self
 
 
+def is_functor_category(category: Category) -> TypeIs[FunctorCategory]:
+    """Return whether ``category`` is a functor category."""
+    from sage_categories.abstract_categories.cat import category_universes
+
+    return any(category in universe.HomCategory() for universe in category_universes())
+
+
 def is_functor(candidate: MathematicalObject) -> TypeIs[Functor]:
     """Narrow an owned value by membership in ``Ar(Cat)``."""
     from sage_categories.abstract_categories.cat import category_universes

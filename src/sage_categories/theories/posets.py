@@ -15,15 +15,27 @@ from sage_categories.abstract_categories.category_constructions import (
     FullSubcategory,
 )
 from sage_categories.abstract_categories.functors import (
+    DiscreteCategories,
+    Functor,
     NaturalIsomorphism,
     StructuralFunctor,
     compose_functors,
+    is_functor,
+    is_functor_category,
 )
 from sage_categories.abstract_categories.hom_categories import (
     HomCategory,
     HomCategoryFamily,
     Isomorphism,
     is_isomorphism,
+)
+from sage_categories.abstract_categories.products import (
+    Cone,
+    ConeObject,
+    Product,
+    ProductObject,
+    ProductPresentation,
+    ProductsOfCategory,
 )
 from sage_categories.category import Category
 from sage_categories.theories.sets import (
@@ -32,12 +44,16 @@ from sage_categories.theories.sets import (
     FiniteSets,
     FiniteSetsCategory,
     NaturalNumbers,
+    ProductElements,
+    ProductsOfSetsCategory,
     SetElement,
     SetElements,
     SetMorphism,
     SetObject,
     Sets,
     SetsCategory,
+    SetProductObject,
+    is_products_of_sets_category,
     is_set_hom_category,
 )
 from sage_categories.values import (
@@ -133,7 +149,11 @@ class PosetObject(MathematicalObject):
     def __init__(
         self,
         *,
-        category: PartiallyOrderedSetsCategory | FinitePosetsCategory,
+        category: (
+            PartiallyOrderedSetsCategory
+            | FinitePosetsCategory
+            | ProductsOfPosetsCategory
+        ),
         underlying_set: SetObject,
         relation: OrderRelation,
     ) -> None:
@@ -646,6 +666,245 @@ class ForgetPosetFunctor(StructuralFunctor):
         return True
 
 
+class PosetProductObject(ProductObject, PosetObject):
+    """A product whose additional order is componentwise."""
+
+    def __init__(
+        self,
+        *,
+        category: ProductsOfPosetsCategory,
+        diagram: Functor,
+    ) -> None:
+        underlying_product = category.set_product(diagram)
+
+        def componentwise(
+            left: PosetElement,
+            right: PosetElement,
+        ) -> Decision:
+            left_components = left._set_implementation()
+            right_components = right._set_implementation()
+            assert ProductElements().contains_product_element(left_components)
+            assert ProductElements().contains_product_element(right_components)
+            indices = underlying_product.index_set()
+            if indices.is_finite() is not True:
+                return UNKNOWN
+            answer: Decision = True
+            for index in indices:
+                diagram_object = underlying_product.index_category().object(index)
+                factor = diagram(diagram_object)
+                assert PartiallyOrderedSets().contains_poset(factor)
+                comparison = factor.element(left_components[index]) <= factor.element(
+                    right_components[index],
+                )
+                if comparison is False:
+                    return False
+                if comparison is UNKNOWN:
+                    answer = UNKNOWN
+            return answer
+
+        PosetObject.__init__(
+            self,
+            category=category,
+            underlying_set=underlying_product,
+            relation=componentwise,
+        )
+        self._preimage = diagram
+        self._image = self
+        self._set_product = underlying_product
+        self._limit_presentation = self._product_presentation()
+
+    def set_product(self) -> SetProductObject:
+        return self._set_product
+
+    def _product_presentation(self) -> ProductPresentation:
+        diagram = self.diagram()
+
+        def projection(index: MathematicalObject) -> Arrow:
+            factor = diagram(index)
+            assert PartiallyOrderedSets().contains_poset(factor)
+            set_projection = self._set_product.projection(index)
+            assert Sets().contains_set_morphism(set_projection)
+
+            def project(member: PosetElement) -> PosetElement:
+                set_member = PartiallyOrderedSets().forgetful_functor().on_element(
+                    self,
+                    member,
+                )
+                assert SetElements().contains_set_element(set_member)
+                return factor.element(set_projection(set_member))
+
+            return PartiallyOrderedSets().Hom(self, factor)(project)
+
+        cone = Cone(diagram, self, projection)
+
+        def mediate(other: ConeObject) -> Arrow:
+            source = other.apex()
+            assert PartiallyOrderedSets().contains_poset(source)
+
+            def assemble(member: PosetElement) -> PosetElement:
+                def component(index: SetElement) -> SetElement:
+                    diagram_object = self._set_product.index_category().object(index)
+                    component_arrow = other.structure_morphism(diagram_object)
+                    component_hom = component_arrow.hom_category()
+                    assert is_poset_hom_category(component_hom)
+                    assert component_hom.contains_poset_morphism(component_arrow)
+                    image = component_arrow(member)
+                    set_image = (
+                        PartiallyOrderedSets()
+                        .forgetful_functor()
+                        .on_element(component_arrow.codomain(), image)
+                    )
+                    assert SetElements().contains_set_element(set_image)
+                    return set_image
+
+                return self.element(self._set_product.element(component))
+
+            return PartiallyOrderedSets().Hom(source, self)(assemble)
+
+        return Product(cone, mediate)
+
+
+class ForgetPosetProductFunctor(StructuralFunctor):
+    """Forget componentwise order while retaining the chosen set product."""
+
+    def __init__(self, products: ProductsOfPosetsCategory) -> None:
+        self._products = products
+        super().__init__(products, products.set_products())
+
+    def _object_image(self, source: MathematicalObject) -> SetProductObject:
+        assert self._products.contains_poset_product(source)
+        return source.set_product()
+
+    def _morphism_image(self, morphism: Arrow) -> Arrow:
+        assert self._products.contains_image_arrow(morphism)
+        underlying = morphism.underlying_arrow()
+        underlying_hom = underlying.hom_category()
+        assert is_poset_hom_category(underlying_hom)
+        assert underlying_hom.contains_poset_morphism(underlying)
+        set_morphism = PartiallyOrderedSets().forgetful_functor().on_morphism(
+            underlying,
+        )
+        target = self._products.set_products()
+        domain = self.on_object(morphism.domain())
+        codomain = self.on_object(morphism.codomain())
+        return target.Hom(domain, codomain)(set_morphism)
+
+    def _element_image(
+        self,
+        source: MathematicalObject,
+        element: MathematicalElement,
+    ) -> SetElement:
+        assert self._products.contains_poset_product(source)
+        assert PosetElements().contains_poset_element(element)
+        image = PartiallyOrderedSets().forgetful_functor().on_element(
+            source,
+            element,
+        )
+        assert SetElements().contains_set_element(image)
+        return image
+
+    def is_faithful(self) -> bool:
+        return True
+
+
+class ProductsOfPosetsCategory(ProductsOfCategory):
+    """Products of posets with componentwise order."""
+
+    ObjectType: type[PosetProductObject] = PosetProductObject
+    ElementType: type[PosetElement] = PosetElement
+
+    def __init__(self, functor: Functor) -> None:
+        domain = functor.domain()
+        assert is_functor_category(domain)
+        self._index_category = domain.domain()
+        self._poset_products: dict[int, PosetProductObject] = {}
+        self._set_products: ProductsOfSetsCategory | None = None
+        self._forgetful_functor: ForgetPosetProductFunctor | None = None
+        self._structural_coherence: Isomorphism | None = None
+        super().__init__(
+            functor,
+            object_type=PosetProductObject,
+            element_type=PosetElement,
+        )
+
+    def __call__(self, preimage: MathematicalObject) -> PosetProductObject:
+        assert is_functor(preimage)
+        return self.product_of(preimage)
+
+    def limit_of(self, diagram: Functor) -> PosetProductObject:
+        return self.product_of(diagram)
+
+    def product_of(self, diagram: Functor) -> PosetProductObject:
+        assert diagram in self.functor().domain()
+        key = id(diagram)
+        cached = self._poset_products.get(key)
+        if cached is None:
+            cached = self.ObjectType(category=self, diagram=diagram)
+            self._poset_products[key] = cached
+        return cached
+
+    def set_diagram(self, diagram: Functor) -> Functor:
+        assert diagram in self.functor().domain()
+        image = (
+            PartiallyOrderedSets()
+            .forgetful_functor()
+            .postcomposition(diagram.domain())(diagram)
+        )
+        assert is_functor(image)
+        return image
+
+    def set_products(self) -> ProductsOfSetsCategory:
+        if self._set_products is None:
+            category = Sets().Products(self._index_category)
+            assert is_products_of_sets_category(category)
+            self._set_products = category
+        return self._set_products
+
+    def set_product(self, diagram: Functor) -> SetProductObject:
+        return self.set_products()(self.set_diagram(diagram))
+
+    def forgetful_functor(self) -> ForgetPosetProductFunctor:
+        if self._forgetful_functor is None:
+            self._forgetful_functor = ForgetPosetProductFunctor(self)
+        return self._forgetful_functor
+
+    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+        return (*super().super_functors(), self.forgetful_functor())
+
+    def structural_coherences(self) -> tuple[Isomorphism, ...]:
+        if self._structural_coherence is None:
+            inclusion = super().super_functors()[0]
+            first = compose_functors(
+                PartiallyOrderedSets().forgetful_functor(),
+                inclusion,
+            )
+            second = compose_functors(
+                self.set_products().inclusion(),
+                self.forgetful_functor(),
+            )
+
+            def component(source: MathematicalObject) -> Arrow:
+                image = first(source)
+                assert image is second(source)
+                return Sets().identity(image)
+
+            coherence = NaturalIsomorphism(
+                first,
+                second,
+                component,
+                component,
+            )
+            assert is_isomorphism(coherence)
+            self._structural_coherence = coherence
+        return (self._structural_coherence,)
+
+    def contains_poset_product(
+        self,
+        candidate: MathematicalObject,
+    ) -> TypeIs[PosetProductObject]:
+        return candidate in self
+
+
 class FinitePosetObject(PosetObject):
     """A finite poset with finite order algorithms."""
 
@@ -913,6 +1172,9 @@ class PartiallyOrderedSetsCategory(Category):
         if self._finite_posets is None:
             self._finite_posets = FinitePosetsCategory(self)
         return self._finite_posets
+
+    def _products_of_category(self, functor: Functor) -> Category:
+        return ProductsOfPosetsCategory(functor)
 
     def __repr__(self) -> str:
         return "Partially ordered sets"

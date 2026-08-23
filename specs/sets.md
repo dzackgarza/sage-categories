@@ -311,7 +311,9 @@ Because `X.powerset()` is itself a set, it has the standard predicate-subobject 
 tau = X.powerset().subset_from(is_open)
 ```
 
-This constructs a subobject \(\tau\hookrightarrow P(X)\) without enumerating \(P(X)\). A topology layer can accept \(\tau\), establish the topology axioms, and construct the associated topological space. In order-theoretic terms, \(\tau\) contains the bottom and top subsets and is closed under arbitrary joins and finite meets. The discrete topology is the case \(\tau=P(X)\).
+This constructs a subobject \(\tau\hookrightarrow P(X)\) without enumerating \(P(X)\). A topology layer can accept \(\tau\), establish the topology axioms, and construct the associated topological space.
+In order-theoretic terms, \(\tau\) contains the bottom and top subsets and is closed under arbitrary joins and finite meets.
+The discrete topology is the case \(\tau=P(X)\).
 
 ## Finite and fixed-cardinality subsets
 

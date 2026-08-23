@@ -60,6 +60,7 @@ from sage_categories.abstract_categories.products import (
     CoproductPresentation,
     Product,
     ProductPresentation,
+    is_coproducts_of_category,
     is_products_of_category,
 )
 from sage_categories.category import Category
@@ -1824,10 +1825,16 @@ def ProductElements() -> ProductElementsCategory:
 class ProductSet(SetObject):
     """The cartesian product of a set-indexed family of sets."""
 
-    def __init__(self, diagram: Functor) -> None:
+    def __init__(
+        self,
+        diagram: Functor,
+        *,
+        cardinality: Cardinal | None = None,
+    ) -> None:
         self._diagram = diagram
-        indices = self.index_set()
-        size = _indexed_product_cardinality(indices, self.factor)
+        size = cardinality
+        if size is None:
+            size = _indexed_product_cardinality(self.index_set(), self.factor)
         super().__init__(category=Sets(), cardinality=size)
 
     def diagram(self) -> Functor:
@@ -1950,10 +1957,16 @@ def CoproductElements() -> CoproductElementsCategory:
 class CoproductSet(SetObject):
     """The disjoint union of a set-indexed family of sets."""
 
-    def __init__(self, diagram: Functor) -> None:
+    def __init__(
+        self,
+        diagram: Functor,
+        *,
+        cardinality: Cardinal | None = None,
+    ) -> None:
         self._diagram = diagram
-        indices = self.index_set()
-        size = _indexed_sum_cardinality(indices, self.cofactor)
+        size = cardinality
+        if size is None:
+            size = _indexed_sum_cardinality(self.index_set(), self.cofactor)
         super().__init__(category=Sets(), cardinality=size)
 
     def diagram(self) -> Functor:
@@ -2018,8 +2031,8 @@ class LimitSet(ProductSet):
         *,
         cardinality: Cardinal | None = None,
     ) -> None:
-        super().__init__(diagram)
-        self._cardinality = UnknownCardinality() if cardinality is None else cardinality
+        size = UnknownCardinality() if cardinality is None else cardinality
+        super().__init__(diagram, cardinality=size)
 
     def index_set(self) -> SetObject:
         return index_objects(self.diagram().domain())
@@ -2290,9 +2303,13 @@ def _indexed_sum_cardinality(
     )
 
 
-def ProductOfSets(diagram: Functor) -> ProductPresentation:
+def ProductOfSets(
+    diagram: Functor,
+    *,
+    cardinality: Cardinal | None = None,
+) -> ProductPresentation:
     assert diagram.codomain() is Sets()
-    apex = ProductSet(diagram)
+    apex = ProductSet(diagram, cardinality=cardinality)
 
     def projection(index: MathematicalObject) -> Arrow:
         index_category = diagram.domain()
@@ -2330,9 +2347,13 @@ def _cone_component_value(
     return component(member)
 
 
-def _CoproductPresentationOfSets(diagram: Functor) -> CoproductPresentation:
+def _CoproductPresentationOfSets(
+    diagram: Functor,
+    *,
+    cardinality: Cardinal | None = None,
+) -> CoproductPresentation:
     assert diagram.codomain() is Sets()
-    apex = CoproductSet(diagram)
+    apex = CoproductSet(diagram, cardinality=cardinality)
 
     def injection(index: MathematicalObject) -> Arrow:
         index_category = diagram.domain()
@@ -2426,7 +2447,13 @@ def CartesianProductOfSets(factors: tuple[SetObject, ...]) -> SetObject:
         return factors[ordinal_index.finite_value()]
 
     diagram = SetFamily(index, factor)
-    image = Sets().ProductFunctor(index)(diagram)
+    presentation = ProductOfSets(
+        diagram,
+        cardinality=Cardinals().product(*(factor.cardinality() for factor in factors)),
+    )
+    products = Sets().Products(index)
+    assert is_products_of_category(products)
+    image = products(presentation)
     assert Sets().contains_set(image)
     return image
 
@@ -2434,13 +2461,18 @@ def CartesianProductOfSets(factors: tuple[SetObject, ...]) -> SetObject:
 def CartesianProductOfFamily(
     index_set: SetObject,
     factors: Callable[[SetElement], SetObject],
+    *,
+    cardinality: Cardinal | None = None,
 ) -> SetObject:
     index_category = DiscreteCategory(index_set)
     diagram = SetFamily(
         index_category,
         lambda index: factors(index.label()),
     )
-    image = Sets().ProductFunctor(index_category)(diagram)
+    presentation = ProductOfSets(diagram, cardinality=cardinality)
+    products = Sets().Products(index_category)
+    assert is_products_of_category(products)
+    image = products(presentation)
     assert Sets().contains_set(image)
     return image
 
@@ -2511,7 +2543,13 @@ def DisjointUnionOfSets(cofactors: tuple[SetObject, ...]) -> SetObject:
         return cofactors[ordinal_index.finite_value()]
 
     diagram = SetFamily(index, cofactor)
-    image = Sets().CoproductFunctor(index)(diagram)
+    presentation = _CoproductPresentationOfSets(
+        diagram,
+        cardinality=Cardinals().sum(*(cofactor.cardinality() for cofactor in cofactors)),
+    )
+    coproducts = Sets().Coproducts(index)
+    assert is_coproducts_of_category(coproducts)
+    image = coproducts(presentation)
     assert Sets().contains_set(image)
     return image
 
@@ -2523,13 +2561,21 @@ def CoproductOfSets(cofactors: tuple[SetObject, ...]) -> SetObject:
 def CoproductOfFamily(
     index_set: SetObject,
     cofactors: Callable[[SetElement], SetObject],
+    *,
+    cardinality: Cardinal | None = None,
 ) -> SetObject:
     index_category = DiscreteCategory(index_set)
     diagram = SetFamily(
         index_category,
         lambda index: cofactors(index.label()),
     )
-    image = Sets().CoproductFunctor(index_category)(diagram)
+    presentation = _CoproductPresentationOfSets(
+        diagram,
+        cardinality=cardinality,
+    )
+    coproducts = Sets().Coproducts(index_category)
+    assert is_coproducts_of_category(coproducts)
+    image = coproducts(presentation)
     assert Sets().contains_set(image)
     return image
 

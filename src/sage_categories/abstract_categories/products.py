@@ -126,6 +126,10 @@ class LimitsOfCategory(ImageOfFunctor):
         _LIMIT_IMAGE_CATEGORIES[id(self)] = self
 
     def __call__(self, preimage: MathematicalObject) -> LimitObject:
+        presentation_category = preimage.category()
+        if is_product_presentations(presentation_category):
+            assert presentation_category.contains_product(preimage)
+            return self._limit_from_presentation(preimage)
         from sage_categories.abstract_categories.functors import is_functor
 
         assert is_functor(preimage)
@@ -137,6 +141,19 @@ class LimitsOfCategory(ImageOfFunctor):
         cached = self._limits.get(key)
         if cached is None:
             presentation = self.functor().codomain().chosen_limit(diagram)
+            cached = self._limit_from_presentation(presentation)
+        return cached
+
+    def _limit_from_presentation(
+        self,
+        presentation: ProductPresentation,
+    ) -> LimitObject:
+        diagram = presentation.diagram()
+        assert diagram in self.functor().domain()
+        assert presentation.apex() in self.functor().codomain()
+        key = id(diagram)
+        cached = self._limits.get(key)
+        if cached is None:
             candidate = self.ObjectType(
                 category=self,
                 diagram=diagram,
@@ -170,6 +187,10 @@ class ColimitsOfCategory(ImageOfFunctor):
         _COLIMIT_IMAGE_CATEGORIES[id(self)] = self
 
     def __call__(self, preimage: MathematicalObject) -> ColimitObject:
+        presentation_category = preimage.category()
+        if is_coproduct_presentations(presentation_category):
+            assert presentation_category.contains_coproduct(preimage)
+            return self._colimit_from_presentation(preimage)
         from sage_categories.abstract_categories.functors import is_functor
 
         assert is_functor(preimage)
@@ -181,6 +202,19 @@ class ColimitsOfCategory(ImageOfFunctor):
         cached = self._colimits.get(key)
         if cached is None:
             presentation = self.functor().codomain().chosen_colimit(diagram)
+            cached = self._colimit_from_presentation(presentation)
+        return cached
+
+    def _colimit_from_presentation(
+        self,
+        presentation: CoproductPresentation,
+    ) -> ColimitObject:
+        diagram = presentation.diagram()
+        assert diagram in self.functor().domain()
+        assert presentation.apex() in self.functor().codomain()
+        key = id(diagram)
+        cached = self._colimits.get(key)
+        if cached is None:
             candidate = self.ObjectType(
                 category=self,
                 diagram=diagram,
@@ -205,6 +239,11 @@ class ProductsOfCategory(LimitsOfCategory):
         super().__init__(functor, object_type=ProductObject)
         _PRODUCT_IMAGE_CATEGORIES[id(self)] = self
 
+    def __call__(self, preimage: MathematicalObject) -> ProductObject:
+        product = super().__call__(preimage)
+        assert self.contains_product(product)
+        return product
+
     def product_of(self, diagram: Functor) -> ProductObject:
         product = self.limit_of(diagram)
         assert self.contains_product(product)
@@ -220,6 +259,11 @@ class CoproductsOfCategory(ColimitsOfCategory):
     def __init__(self, functor: Functor) -> None:
         super().__init__(functor, object_type=CoproductObject)
         _COPRODUCT_IMAGE_CATEGORIES[id(self)] = self
+
+    def __call__(self, preimage: MathematicalObject) -> CoproductObject:
+        coproduct = super().__call__(preimage)
+        assert self.contains_coproduct(coproduct)
+        return coproduct
 
     def coproduct_of(self, diagram: Functor) -> CoproductObject:
         coproduct = self.colimit_of(diagram)

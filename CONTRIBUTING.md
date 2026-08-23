@@ -494,6 +494,7 @@ The caller can materialize a finite result when its application requires one.
 | `POL-CODE-034` | Replace long structural `if` and `elif` cascades with exhaustive `match` and `case` routing when the cases form a mathematical decomposition. |
 | `POL-CODE-035` | Handle trivial or decisive cases with early returns. Then assert the stronger invariants established by their exclusion before implementing the remaining case. |
 | `POL-CODE-036` | Prefer immutable transformations, explicit case analysis, and local equations in the style of Haskell and Lean over C-style mutable state and control flow. |
+| `POL-CODE-037` | Do not rewrap a value when the new wrapper does not change its required type or semantics. Calls such as `int(0)`, `Integer(0)`, and `ZZ(0)` require a local comment that proves why the conversion is necessary. |
 
 For adjacent elements, use `itertools.pairwise(xs)` instead of `zip(xs, xs[1:])`.
 The named primitive states adjacency, remains lazy, and does not require slicing.

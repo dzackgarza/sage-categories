@@ -271,3 +271,22 @@ def test_finite_set_construction_refines_to_finite_sets() -> None:
     assert finite_set in Sets()
     assert enumeration.domain() is finite_set
     assert enumeration.codomain() is NaturalNumbers()
+
+
+def test_finite_sets_inherit_closed_products_and_coproducts() -> None:
+    labels = FiniteSet((ZZ(int(0)), ZZ(int(1))))
+    index_category = DiscreteCategory(labels)
+    factor = FiniteSet((ZZ(int(2)), ZZ(int(3))))
+    diagram = FiniteSets().DiagonalFunctor(index_category)(factor)
+
+    products = FiniteSets().Products(index_category)
+    coproducts = FiniteSets().Coproducts(index_category)
+    assert is_products_of_sets_category(products)
+    assert is_coproducts_of_sets_category(coproducts)
+    product = products(diagram)
+    coproduct = coproducts(diagram)
+
+    assert product in FiniteSets()
+    assert coproduct in FiniteSets()
+    assert product.cardinality() == 4
+    assert coproduct.cardinality() == 4

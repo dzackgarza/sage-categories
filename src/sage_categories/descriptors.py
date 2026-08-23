@@ -2,12 +2,21 @@
 
 from __future__ import annotations
 
+from enum import Enum
 from types import FunctionType, MethodType
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, assert_never
 
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.functors import StructuralFunctor
     from sage_categories.values import MathematicalObject
+
+
+class ImplementationRole(Enum):
+    """The mathematical role of a compiled implementation method."""
+
+    OBJECT = "object"
+    ELEMENT = "element"
+    ARROW = "arrow"
 
 
 class ForwardedMethod:
@@ -18,15 +27,12 @@ class ForwardedMethod:
         route: tuple[StructuralFunctor, ...],
         method: FunctionType,
         *,
-        element_method: bool,
-        morphism_method: bool,
+        role: ImplementationRole,
     ) -> None:
         assert route
-        assert not (element_method and morphism_method)
         self._route = route
         self._method = method
-        self._element_method = element_method
-        self._morphism_method = morphism_method
+        self._role = role
 
     def __get__(
         self,
@@ -36,10 +42,13 @@ class ForwardedMethod:
         if instance is None:
             return self
         image: MathematicalObject
-        if self._morphism_method:
-            image = instance._morphism_image_along(self._route)
-        elif self._element_method:
-            image = instance._element_image_along(self._route)
-        else:
-            image = instance._object_image_along(self._route)
+        match self._role:
+            case ImplementationRole.OBJECT:
+                image = instance._object_image_along(self._route)
+            case ImplementationRole.ELEMENT:
+                image = instance._element_image_along(self._route)
+            case ImplementationRole.ARROW:
+                image = instance._morphism_image_along(self._route)
+            case _:
+                assert_never(self._role)
         return MethodType(self._method, image)

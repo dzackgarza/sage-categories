@@ -7,7 +7,8 @@ constructions in Mathlib's category-theory library.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, TypeIs
+from enum import Enum
+from typing import TYPE_CHECKING, Any, TypeIs, assert_never
 
 from sage_categories.abstract_categories.functors import (
     Functor,
@@ -32,6 +33,27 @@ from sage_categories.values import (
 )
 
 type ObjectPredicate = Callable[[MathematicalObject], bool]
+
+
+class BinaryProjectionSide(Enum):
+    """One factor of a binary categorical construction."""
+
+    FIRST = "first"
+    SECOND = "second"
+
+    def select[Projected](
+        self,
+        first: Projected,
+        second: Projected,
+    ) -> Projected:
+        match self:
+            case BinaryProjectionSide.FIRST:
+                return first
+            case BinaryProjectionSide.SECOND:
+                return second
+            case _:
+                assert_never(self)
+
 
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.products import (
@@ -281,12 +303,18 @@ class ProductCategory(Category):
 
     def first_projection(self) -> ProductProjectionFunctor:
         if self._first_projection is None:
-            self._first_projection = ProductProjectionFunctor(self, first=True)
+            self._first_projection = ProductProjectionFunctor(
+                self,
+                side=BinaryProjectionSide.FIRST,
+            )
         return self._first_projection
 
     def second_projection(self) -> ProductProjectionFunctor:
         if self._second_projection is None:
-            self._second_projection = ProductProjectionFunctor(self, first=False)
+            self._second_projection = ProductProjectionFunctor(
+                self,
+                side=BinaryProjectionSide.SECOND,
+            )
         return self._second_projection
 
     def pair_functor(self, first: Functor, second: Functor) -> PairFunctor:
@@ -299,19 +327,27 @@ class ProductCategory(Category):
 class ProductProjectionFunctor(Functor):
     """One projection from a binary product category."""
 
-    def __init__(self, product: ProductCategory, *, first: bool) -> None:
+    def __init__(
+        self,
+        product: ProductCategory,
+        *,
+        side: BinaryProjectionSide,
+    ) -> None:
         self._product = product
-        self._first = first
-        codomain = product.first_category() if first else product.second_category()
+        self._side = side
+        codomain = side.select(
+            product.first_category(),
+            product.second_category(),
+        )
         super().__init__(product, codomain)
 
     def _object_image(self, source: MathematicalObject) -> MathematicalObject:
         assert self._product.contains_pair(source)
-        return source.first() if self._first else source.second()
+        return self._side.select(source.first(), source.second())
 
     def _morphism_image(self, morphism: Arrow) -> Arrow:
         assert is_product_arrow(morphism)
-        return morphism.first() if self._first else morphism.second()
+        return self._side.select(morphism.first(), morphism.second())
 
 
 class PairFunctor(Functor):
@@ -486,23 +522,33 @@ class PullbackHomCategory(HomCategory):
 class PullbackProjectionFunctor(StructuralFunctor):
     """One structural projection from a pullback category."""
 
-    def __init__(self, pullback: PullbackCategory, *, first: bool) -> None:
+    def __init__(
+        self,
+        pullback: PullbackCategory,
+        *,
+        side: BinaryProjectionSide,
+    ) -> None:
         self._pullback = pullback
-        self._first = first
-        codomain = pullback.first_category() if first else pullback.second_category()
+        self._side = side
+        codomain = side.select(
+            pullback.first_category(),
+            pullback.second_category(),
+        )
         super().__init__(pullback, codomain)
 
     def _object_image(self, source: MathematicalObject) -> MathematicalObject:
         assert self._pullback.contains_pullback_object(source)
-        if self._first:
-            return source._first_implementation()
-        return source._second_implementation()
+        return self._side.select(
+            source._first_implementation(),
+            source._second_implementation(),
+        )
 
     def _morphism_image(self, morphism: Arrow) -> Arrow:
         assert self._pullback.contains_pullback_arrow(morphism)
-        if self._first:
-            return morphism._first_implementation()
-        return morphism._second_implementation()
+        return self._side.select(
+            morphism._first_implementation(),
+            morphism._second_implementation(),
+        )
 
     def _element_image(
         self,
@@ -511,9 +557,10 @@ class PullbackProjectionFunctor(StructuralFunctor):
     ) -> MathematicalElement:
         assert self._pullback.contains_pullback_object(source)
         assert self._pullback.contains_pullback_element(element)
-        if self._first:
-            return element._first_implementation()
-        return element._second_implementation()
+        return self._side.select(
+            element._first_implementation(),
+            element._second_implementation(),
+        )
 
 
 class PullbackMediatingFunctor(Functor):
@@ -640,12 +687,18 @@ class PullbackCategory(Category):
 
     def first_projection(self) -> PullbackProjectionFunctor:
         if self._first_projection is None:
-            self._first_projection = PullbackProjectionFunctor(self, first=True)
+            self._first_projection = PullbackProjectionFunctor(
+                self,
+                side=BinaryProjectionSide.FIRST,
+            )
         return self._first_projection
 
     def second_projection(self) -> PullbackProjectionFunctor:
         if self._second_projection is None:
-            self._second_projection = PullbackProjectionFunctor(self, first=False)
+            self._second_projection = PullbackProjectionFunctor(
+                self,
+                side=BinaryProjectionSide.SECOND,
+            )
         return self._second_projection
 
     def mediating_functor(

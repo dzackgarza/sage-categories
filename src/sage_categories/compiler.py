@@ -5,9 +5,9 @@ from __future__ import annotations
 import inspect
 from collections.abc import Callable, Mapping
 from types import FunctionType, new_class
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, TypeVar, assert_never
 
-from sage_categories.descriptors import ForwardedMethod
+from sage_categories.descriptors import ForwardedMethod, ImplementationRole
 from sage_categories.values import Arrow, MathematicalElement, MathematicalObject
 
 if TYPE_CHECKING:
@@ -89,8 +89,7 @@ class CategoryCompiler:
             category,
             local_type,
             self.object_method_catalogue(category),
-            element_methods=False,
-            morphism_methods=False,
+            role=ImplementationRole.OBJECT,
         )
         self._object_types[key] = compiled
         return compiled
@@ -109,8 +108,7 @@ class CategoryCompiler:
             category,
             local_type,
             self.element_method_catalogue(category),
-            element_methods=True,
-            morphism_methods=False,
+            role=ImplementationRole.ELEMENT,
         )
         self._element_types[key] = compiled
         return compiled
@@ -129,8 +127,7 @@ class CategoryCompiler:
             category,
             local_type,
             self.arrow_method_catalogue(category),
-            element_methods=False,
-            morphism_methods=True,
+            role=ImplementationRole.ARROW,
         )
         self._arrow_types[key] = compiled
         return compiled
@@ -420,18 +417,21 @@ class CategoryCompiler:
         local_type: type[Implementation],
         catalogue: Mapping[str, DeclaredMethod],
         *,
-        element_methods: bool,
-        morphism_methods: bool,
+        role: ImplementationRole,
     ) -> type[Implementation]:
         available = {name for name, declaration in catalogue.items() if inspect.getattr_static(local_type, name, None) is declaration.method}
-        if morphism_methods:
-            available.update(_ARROW_PROTOCOL_METHODS & catalogue.keys())
+        match role:
+            case ImplementationRole.OBJECT | ImplementationRole.ELEMENT:
+                pass
+            case ImplementationRole.ARROW:
+                available.update(_ARROW_PROTOCOL_METHODS & catalogue.keys())
+            case _:
+                assert_never(role)
         inherited = {
             name: ForwardedMethod(
                 declaration.implementation_route,
                 declaration.method,
-                element_method=element_methods,
-                morphism_method=morphism_methods,
+                role=role,
             )
             for name, declaration in catalogue.items()
             if name not in available

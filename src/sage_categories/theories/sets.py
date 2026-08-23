@@ -2034,7 +2034,11 @@ class ProductSet(SetObject):
             size = _indexed_product_cardinality(
                 self.index_set(),
                 self.factor,
-                finite_factors=diagram.codomain().is_subcategory(FiniteSets()),
+                factor_finiteness=(
+                    True
+                    if diagram.codomain().is_subcategory(FiniteSets())
+                    else UNKNOWN
+                ),
             )
         super().__init__(category=category, cardinality=size)
 
@@ -2256,7 +2260,11 @@ class CoproductSet(SetObject):
             size = _indexed_sum_cardinality(
                 self.index_set(),
                 self.cofactor,
-                finite_summands=diagram.codomain().is_subcategory(FiniteSets()),
+                summand_finiteness=(
+                    True
+                    if diagram.codomain().is_subcategory(FiniteSets())
+                    else UNKNOWN
+                ),
             )
         super().__init__(category=category, cardinality=size)
 
@@ -2860,12 +2868,16 @@ def _indexed_product_cardinality(
     indices: SetObject,
     factors: Callable[[SetElement], SetObject],
     *,
-    finite_factors: bool = False,
+    factor_finiteness: Decision = UNKNOWN,
 ) -> Cardinal:
     return Cardinals().indexed_product(
         indices,
         lambda index: factors(index).cardinality(),
-        finiteness=True if finite_factors and indices in FiniteSets() else UNKNOWN,
+        finiteness=(
+            True
+            if factor_finiteness is True and indices in FiniteSets()
+            else UNKNOWN
+        ),
     )
 
 
@@ -2873,12 +2885,16 @@ def _indexed_sum_cardinality(
     indices: SetObject,
     summands: Callable[[SetElement], SetObject],
     *,
-    finite_summands: bool = False,
+    summand_finiteness: Decision = UNKNOWN,
 ) -> Cardinal:
     return Cardinals().indexed_sum(
         indices,
         lambda index: summands(index).cardinality(),
-        finiteness=True if finite_summands and indices in FiniteSets() else UNKNOWN,
+        finiteness=(
+            True
+            if summand_finiteness is True and indices in FiniteSets()
+            else UNKNOWN
+        ),
     )
 
 

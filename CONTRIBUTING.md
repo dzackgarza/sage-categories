@@ -205,8 +205,17 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-050` | Define every axiomatic or functorial category constructor at the highest categorical level where its mathematical meaning exists. Define it once and inherit it throughout the category graph. |
 | `POL-CAT-051` | Let a construction subcategory exist without asserting that it is nonempty or that its parent category is complete or cocomplete. Do not require a decision procedure for those properties. |
 | `POL-CAT-052` | Make generic category constructors propagate through selected structural functors. A descendant category supplies no boilerplate merely to form the inherited construction subcategory. |
+| `POL-CAT-053` | Never use explicit Python subclassing between category-owned object, element, or arrow implementations without prior user discussion and approval. Python subclassing bypasses the structural-functor framework. |
+| `POL-CAT-054` | Declare every relation between categories by a selected structural functor, including an inclusion, identity, or other trivial functor. A category without these functors is disconnected from the owned category graph. |
+| `POL-CAT-055` | Treat a failed structural functor or method compiler as a foundational defect. Its failure does not permit explicit subclassing or another inheritance path. |
 
 Grounding examples:
+
+- `ProductSetObject` does not subclass `SetObject`.
+  The selected functor from `Sets().Products()` to `Sets()` constructs its set implementation and supplies the complete set interface.
+
+- `Sets().Finite()` declares its inclusion functor to `Sets()` even when both categories use the same realization.
+  The inclusion states the categorical relation that replaces a Sage `super_categories` declaration.
 
 - Cardinality belongs on every object of `Sets()` because every set has a cardinality.
   A constructor can supply exact or symbolic cardinal data.

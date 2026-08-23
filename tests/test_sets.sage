@@ -24,6 +24,11 @@ def rational_floor(rational: SetElement) -> SetElement:
     return rational.floor()
 
 
+def integer_to_natural(integer: SetElement) -> SetElement:
+    assert ZZ.contains_integer(integer)
+    return NN[int(abs(int(integer)) + 1)]
+
+
 def is_even(integer: SetElement) -> bool:
     assert ZZ.contains_integer(integer)
     return int(integer) % 2 == 0
@@ -43,6 +48,12 @@ def test_arbitrary_set_maps_have_exact_endpoints() -> None:
     rational = QQ(int(7), int(3))
     rational_to_natural = Sets().Hom(QQ, NN)(constant_natural)
     rational_to_integer = Sets().Hom(QQ, ZZ)(rational_floor)
+    integer_to_natural_morphism = Sets().Hom(ZZ, NN)(integer_to_natural)
+    composite = Sets().compose(
+        integer_to_natural_morphism,
+        rational_to_integer,
+    )
+    assert Sets().contains_set_morphism(composite)
     real_plane = RR.cartesian_product(RR)
 
     def diagonal(real: SetElement) -> SetElement:
@@ -57,6 +68,7 @@ def test_arbitrary_set_maps_have_exact_endpoints() -> None:
     assert rational_to_natural.codomain() is NN
     assert rational_to_natural(rational) is NN[int(1)]
     assert rational_to_integer(rational) is ZZ(int(2))
+    assert composite(rational) is NN[int(3)]
     assert real_diagonal.domain() is RR
     assert real_diagonal.codomain() is real_plane
     assert ProductElements().contains_product_element(point)

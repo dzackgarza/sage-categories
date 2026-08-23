@@ -42,10 +42,15 @@ def test_arrow_hom_end_iso_slice_and_coslice_categories() -> None:
     assert sets.CodomainFunctor()(identity) is finite_set
 
     endomorphism = sets.End(finite_set).identity()
+    monomorphism = sets.Mono(finite_set, finite_set).identity()
+    epimorphism = sets.Epi(finite_set, finite_set).identity()
     automorphism = sets.Aut(finite_set).identity()
     assert endomorphism in sets.EndArrowCategory()
+    assert monomorphism in sets.MonomorphismArrowCategory()
+    assert epimorphism in sets.EpimorphismArrowCategory()
     assert automorphism in sets.AutomorphismArrowCategory()
     assert automorphism in sets.IsomorphismArrowCategory()
+    assert automorphism in sets.core().ArrowCategory()
 
     slice = sets.SliceOver(finite_set)
     slice_object = slice(identity)
@@ -62,6 +67,15 @@ def test_arrow_hom_end_iso_slice_and_coslice_categories() -> None:
         coslice_object,
         coslice_object,
     ).identity() in coslice.ArrowCategory()
+
+    subobject = sets.Subobjects(finite_set)(monomorphism)
+    superobject = sets.Superobjects(finite_set)(monomorphism)
+    covering_object = sets.CoveringObjects(finite_set)(epimorphism)
+    covered_object = sets.CoveredObjects(finite_set)(epimorphism)
+    assert subobject in sets.Subobjects(finite_set)
+    assert superobject in sets.Superobjects(finite_set)
+    assert covering_object in sets.CoveringObjects(finite_set)
+    assert covered_object in sets.CoveredObjects(finite_set)
 
 
 def test_compiler_exposes_object_element_and_arrow_routes() -> None:

@@ -805,8 +805,8 @@ class ColimitFunctor(Functor):
         assert is_functor(source)
         assert is_functor(target)
         from sage_categories.abstract_categories.products import (
-            ColimitObject,
             Cocone,
+            ColimitObject,
             is_colimits_of_category,
         )
 

@@ -3093,19 +3093,13 @@ class SetColimitObject(ColimitObject):
         if not self._has_finitely_many_terms():
             return UNKNOWN
         component = self._component_of(arrows, left_representative)
-        return any(
-            _same_coproduct_term(right_representative, term)
-            for term in component
-        )
+        return any(_same_coproduct_term(right_representative, term) for term in component)
 
     def _has_finitely_many_terms(self) -> bool:
         indices = self._coproduct.index_set()
         if indices.is_finite() is not True:
             return False
-        return all(
-            self._coproduct.cofactor(index).is_finite() is True
-            for index in indices
-        )
+        return all(self._coproduct.cofactor(index).is_finite() is True for index in indices)
 
     def _component_of(
         self,
@@ -3123,10 +3117,7 @@ class SetColimitObject(ColimitObject):
             enlarged = tuple(
                 candidate
                 for candidate in representatives
-                if not any(
-                    _same_coproduct_term(candidate, known)
-                    for known in reached
-                )
+                if not any(_same_coproduct_term(candidate, known) for known in reached)
                 and any(
                     _colimit_terms_are_related(
                         self.diagram(),

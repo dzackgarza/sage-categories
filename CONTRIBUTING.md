@@ -390,6 +390,7 @@ None requires enumeration to establish finiteness.
 | `POL-API-013` | Name categorical arrows as morphisms or arrows. Do not replace the standard mathematical object with implementation names such as `Map` or `Rule`. |
 | `POL-API-014` | Ban nondescript identifiers that do not state what they contain or denote. Never name a type, method, parameter, field, or local value `data`, `container`, `rule`, or a similarly contentless term. |
 | `POL-API-015` | Do not add a public method that duplicates standard Python or Sage protocol syntax. Implement the protocol and use its established notation for comparison, containment, indexing, equality, iteration, and calls. |
+| `POL-API-016` | Prefer a method or constructor on the mathematical owner over a standalone public function. Add a standalone public function only when the operation has no natural category, object, arrow, or functor owner. |
 | `POL-TYPE-001` | Give every value the type that names its mathematical role. |
 | `POL-TYPE-002` | Distinguish categories, objects, elements, arrows, functors, rings, sets, domains, and codomains in types. |
 | `POL-TYPE-003` | Never use `object` in a type annotation. There are no exceptions. |
@@ -474,10 +475,23 @@ The caller can materialize a finite result when its application requires one.
 | `POL-CODE-028` | Prefer a named primitive that states the mathematical construction over a generic Python composition that merely reproduces it. |
 | `POL-CODE-029` | Actively search the standard library, Sage, current dependencies, and maintained packages for primitives that make theory code read more like mathematics. |
 | `POL-CODE-030` | Propose a new dependency when it materially improves mathematical vocabulary, auditability, or categorical uniformity. State the mathematical construction that the dependency supplies. |
+| `POL-CODE-031` | Use `sum` and `prod` for established finite algebraic aggregations instead of mutable accumulator loops. Use the categorical indexed construction when the family can be infinite. |
+| `POL-CODE-032` | Prefer `map`, `reduce`, comprehensions, and named functional combinators when they state the mathematical transformation more directly than an imperative loop. |
+| `POL-CODE-033` | Make method bodies functional and expression-oriented. This style concerns transformations inside mathematically owned methods, not a proliferation of standalone functions. |
+| `POL-CODE-034` | Replace long structural `if` and `elif` cascades with exhaustive `match` and `case` routing when the cases form a mathematical decomposition. |
+| `POL-CODE-035` | Handle trivial or decisive cases with early returns. Then assert the stronger invariants established by their exclusion before implementing the remaining case. |
+| `POL-CODE-036` | Prefer immutable transformations, explicit case analysis, and local equations in the style of Haskell and Lean over C-style mutable state and control flow. |
 
 For adjacent elements, use `itertools.pairwise(xs)` instead of `zip(xs, xs[1:])`.
 The named primitive states adjacency, remains lazy, and does not require slicing.
 Use `zip` when the mathematics pairs separate indexed families.
+
+Write a finite linear combination as `sum(c_i * e_i for c_i, e_i in terms)` and a finite multiplicative aggregation as `prod(a_i for a_i in factors)`.
+The corresponding indexed categorical sum or product owns the potentially infinite case.
+
+Within an owned method, route disjoint construction forms with `match` and `case`.
+Return immediately for identities, zero objects, empty diagrams, or already-normal forms when those cases apply.
+Assert the mathematical hypotheses that remain before entering the general branch.
 
 ## Tests and performance
 

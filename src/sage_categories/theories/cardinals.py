@@ -26,7 +26,7 @@ from sage_categories.values import (
 
 if TYPE_CHECKING:
     from sage_categories.theories.ordinals import Ordinal, OrdinalInput
-    from sage_categories.theories.sets import SetElement
+    from sage_categories.theories.sets import SetElement, SetObject
 
 
 def _decision_and(left: Decision, right: Decision) -> Decision:
@@ -65,7 +65,7 @@ class Cardinal(MathematicalObject):
         name: str | None = None,
         terms: tuple[Cardinal, ...] = (),
         index: Ordinal | None = None,
-        index_set: MathematicalObject | None = None,
+        index_set: SetObject | None = None,
         family: CardinalFamily | None = None,
     ) -> None:
         if kind is CardinalKind.FINITE:
@@ -100,7 +100,7 @@ class Cardinal(MathematicalObject):
     def terms(self) -> tuple[Cardinal, ...]:
         return self._terms
 
-    def index_set(self) -> MathematicalObject:
+    def index_set(self) -> SetObject:
         assert self._index_set is not None
         return self._index_set
 
@@ -506,9 +506,12 @@ class CardinalsCategory(Category):
 
     def indexed_sum(
         self,
-        index_set: MathematicalObject,
+        index_set: SetObject,
         summands: CardinalFamily,
     ) -> Cardinal:
+        from sage_categories.theories.sets import Sets
+
+        assert index_set in Sets()
         return Cardinal(
             category=self,
             kind=CardinalKind.INDEXED_SUM,
@@ -518,9 +521,12 @@ class CardinalsCategory(Category):
 
     def indexed_product(
         self,
-        index_set: MathematicalObject,
+        index_set: SetObject,
         factors: CardinalFamily,
     ) -> Cardinal:
+        from sage_categories.theories.sets import Sets
+
+        assert index_set in Sets()
         return Cardinal(
             category=self,
             kind=CardinalKind.INDEXED_PRODUCT,

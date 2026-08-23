@@ -81,6 +81,21 @@ The intended reviewer of a theory subtree is a mathematician with little program
 They should be able to compare a method with its definition without auditing dynamic inheritance, container plumbing, backend types, or dispatch machinery.
 Legibility and categorical uniformity are therefore primary requirements, not decoration around successful computation.
 
+## Leaf-category end state
+
+Once the kernel is established, a researcher adding a leaf category should not need to understand its implementation.
+They should begin from a shipped category template, declare the new mathematical structure, connect it to nearby familiar categories through selected functors, and implement only the new methods.
+They should need to read only the mathematically relevant neighboring subtrees and their functor contracts.
+
+The compiler then supplies the complete inherited object, element, arrow, and construction interfaces.
+A specialized algebra category connected to `Algebras(R)`, modules, and sets receives their applicable operations without forwarding methods.
+Cardinality and other distant capabilities arrive through functor composition rather than leaf-specific code.
+
+The same goal applies to functorial constructions.
+A full replete subcategory receives the inherited categorical interface automatically.
+Limits, colimits, and similar constructions descend automatically when their results are established to remain in that subcategory.
+The leaf author supplies only the closure or lift that is mathematically specific to the new structure.
+
 ## Core model
 
 Each category `C` owns the implementation types relevant to its theory:

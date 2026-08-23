@@ -90,9 +90,7 @@ class ColimitElement(MathematicalElement):
         if value.colimit() is not self._colimit:
             return False
         answer = self._colimit.equivalent(self, value)
-        assert answer is not UNKNOWN, (
-            "equality in this colimit is not decidable from its presentation"
-        )
+        assert answer is not UNKNOWN, "equality in this colimit is not decidable from its presentation"
         return answer
 
     def __hash__(self) -> int:
@@ -164,11 +162,7 @@ class ColimitSet(SetObject):
 
     def membership(self, member: SetElement) -> Decision:
         value = registered_value(member)
-        return (
-            value is not None
-            and ColimitElements().contains_colimit_element(value)
-            and value.colimit() is self
-        )
+        return value is not None and ColimitElements().contains_colimit_element(value) and value.colimit() is self
 
     def equivalent(
         self,
@@ -196,17 +190,13 @@ class ColimitSet(SetObject):
         if not self._has_finitely_many_terms():
             return UNKNOWN
         component = self._component_of(arrows, left_representative)
-        return any(
-            _same_coproduct_term(right_representative, term) for term in component
-        )
+        return any(_same_coproduct_term(right_representative, term) for term in component)
 
     def _has_finitely_many_terms(self) -> bool:
         indices = self._coproduct.index_set()
         if indices.is_finite() is not True:
             return False
-        return all(
-            self._coproduct.cofactor(index).is_finite() is True for index in indices
-        )
+        return all(self._coproduct.cofactor(index).is_finite() is True for index in indices)
 
     def _component_of(
         self,
@@ -243,9 +233,7 @@ class ColimitSet(SetObject):
         chosen: tuple[ColimitElement, ...] = ()
         for representative in self._coproduct:
             value = registered_value(representative)
-            assert value is not None and CoproductElements().contains_coproduct_element(
-                value
-            )
+            assert value is not None and CoproductElements().contains_coproduct_element(value)
             candidate = ColimitElement(self, value)
             if any(self.equivalent(candidate, known) is True for known in chosen):
                 continue
@@ -296,19 +284,11 @@ class SetColimitObject(ColimitObject):
 
     def membership(self, member: SetElement) -> Decision:
         value = registered_value(member)
-        return (
-            value is not None
-            and ColimitElements().contains_colimit_element(value)
-            and value.colimit() is self
-        )
+        return value is not None and ColimitElements().contains_colimit_element(value) and value.colimit() is self
 
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
-        return (
-            value is not None
-            and ColimitElements().contains_colimit_element(value)
-            and value.colimit() is self
-        )
+        return value is not None and ColimitElements().contains_colimit_element(value) and value.colimit() is self
 
     def equivalent(
         self,
@@ -333,17 +313,13 @@ class SetColimitObject(ColimitObject):
         if not self._has_finitely_many_terms():
             return UNKNOWN
         component = self._component_of(arrows, left_representative)
-        return any(
-            _same_coproduct_term(right_representative, term) for term in component
-        )
+        return any(_same_coproduct_term(right_representative, term) for term in component)
 
     def _has_finitely_many_terms(self) -> bool:
         indices = self._coproduct.index_set()
         if indices.is_finite() is not True:
             return False
-        return all(
-            self._coproduct.cofactor(index).is_finite() is True for index in indices
-        )
+        return all(self._coproduct.cofactor(index).is_finite() is True for index in indices)
 
     def _component_of(
         self,
@@ -380,9 +356,7 @@ class SetColimitObject(ColimitObject):
         chosen: tuple[ColimitElement, ...] = ()
         for representative in self._coproduct:
             value = registered_value(representative)
-            assert value is not None and CoproductElements().contains_coproduct_element(
-                value
-            )
+            assert value is not None and CoproductElements().contains_coproduct_element(value)
             candidate = ColimitElements().ObjectType(self, value)
             if any(self.equivalent(candidate, known) is True for known in chosen):
                 continue
@@ -498,17 +472,9 @@ def _colimit_terms_are_related(
         assert diagram.domain().contains_arrow(arrow)
         image = diagram(arrow)
         assert Sets().contains_set_morphism(image)
-        if (
-            left.index().value() is arrow.domain()
-            and right.index().value() is arrow.codomain()
-            and image(left.value()) == right.value()
-        ):
+        if left.index().value() is arrow.domain() and right.index().value() is arrow.codomain() and image(left.value()) == right.value():
             return True
-        if (
-            right.index().value() is arrow.domain()
-            and left.index().value() is arrow.codomain()
-            and image(right.value()) == left.value()
-        ):
+        if right.index().value() is arrow.domain() and left.index().value() is arrow.codomain() and image(right.value()) == left.value():
             return True
     return False
 
@@ -545,9 +511,7 @@ def _indexed_product_cardinality(
     return Cardinals().indexed_product(
         indices,
         lambda index: factors(index).cardinality(),
-        finiteness=(
-            True if factor_finiteness is True and indices in FiniteSets() else UNKNOWN
-        ),
+        finiteness=(True if factor_finiteness is True and indices in FiniteSets() else UNKNOWN),
     )
 
 
@@ -560,7 +524,5 @@ def _indexed_sum_cardinality(
     return Cardinals().indexed_sum(
         indices,
         lambda index: summands(index).cardinality(),
-        finiteness=(
-            True if summand_finiteness is True and indices in FiniteSets() else UNKNOWN
-        ),
+        finiteness=(True if summand_finiteness is True and indices in FiniteSets() else UNKNOWN),
     )

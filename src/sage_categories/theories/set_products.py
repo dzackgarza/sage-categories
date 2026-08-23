@@ -153,9 +153,7 @@ class ProductSet(SetObject):
             size = _indexed_product_cardinality(
                 self.index_set(),
                 self.factor,
-                factor_finiteness=(
-                    True if diagram.codomain().is_subcategory(FiniteSets()) else UNKNOWN
-                ),
+                factor_finiteness=(True if diagram.codomain().is_subcategory(FiniteSets()) else UNKNOWN),
             )
         super().__init__(category=category, cardinality=size)
 
@@ -193,11 +191,7 @@ class ProductSet(SetObject):
 
     def membership(self, member: SetElement) -> Decision:
         value = registered_value(member)
-        return (
-            value is not None
-            and ProductElements().contains_product_element(value)
-            and value.product() is self
-        )
+        return value is not None and ProductElements().contains_product_element(value) and value.product() is self
 
     def __iter__(self) -> Iterator[SetElement]:
         assert self.index_set().is_finite() is True
@@ -274,19 +268,11 @@ class SetProductObject(ProductObject):
 
     def membership(self, member: SetElement) -> Decision:
         value = registered_value(member)
-        return (
-            value is not None
-            and ProductElements().contains_product_element(value)
-            and value.product() is self
-        )
+        return value is not None and ProductElements().contains_product_element(value) and value.product() is self
 
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
-        return (
-            value is not None
-            and ProductElements().contains_product_element(value)
-            and value.product() is self
-        )
+        return value is not None and ProductElements().contains_product_element(value) and value.product() is self
 
     def __iter__(self) -> Iterator[SetElement]:
         assert self.index_set().is_finite() is True

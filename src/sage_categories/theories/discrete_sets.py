@@ -63,12 +63,7 @@ class DiscreteObjectSet(SetObject):
         return member.ambient_set() is self
 
     def __iter__(self) -> Iterator[SetElement]:
-        return iter(
-            tuple(
-                self.element(self._discrete_category.object(label))
-                for label in self._labels
-            )
-        )
+        return iter(tuple(self.element(self._discrete_category.object(label)) for label in self._labels))
 
 
 class DiscreteObjectElement(SetElement):
@@ -117,12 +112,7 @@ class DiscreteArrowSet(SetObject):
         return member.ambient_set() is self
 
     def __iter__(self) -> Iterator[SetElement]:
-        return iter(
-            tuple(
-                self.element(self._discrete_category.Hom(value, value).identity())
-                for value in self._discrete_category
-            )
-        )
+        return iter(tuple(self.element(self._discrete_category.Hom(value, value).identity()) for value in self._discrete_category))
 
 
 class DiscreteArrowElement(SetElement):

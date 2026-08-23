@@ -171,9 +171,7 @@ def _coproduct_presentation(
 
         def induced(member: SetElement) -> SetElement:
             assert CoproductElements().contains_coproduct_element(member)
-            component = other.costructure_morphism(
-                apex.index_category().object(member.index())
-            )
+            component = other.costructure_morphism(apex.index_category().object(member.index()))
             assert Sets().contains_set_morphism(component)
             return component(member.value())
 
@@ -380,12 +378,8 @@ def cartesian_product_morphism(*functions: SetMorphism) -> SetMorphism:
     return CartesianProductMorphismOfFamily(
         index_category,
         function,
-        domain_cardinality=Cardinals().product(
-            *(_domain_cardinality(morphism) for morphism in functions)
-        ),
-        codomain_cardinality=Cardinals().product(
-            *(_codomain_cardinality(morphism) for morphism in functions)
-        ),
+        domain_cardinality=Cardinals().product(*(_domain_cardinality(morphism) for morphism in functions)),
+        codomain_cardinality=Cardinals().product(*(_codomain_cardinality(morphism) for morphism in functions)),
     )
 
 
@@ -408,9 +402,7 @@ def DisjointUnionOfSets(
     assert is_coproducts_of_sets_category(coproducts)
     image = coproducts(
         diagram,
-        cardinality=Cardinals().sum(
-            *(cofactor.cardinality() for cofactor in cofactors)
-        ),
+        cardinality=Cardinals().sum(*(cofactor.cardinality() for cofactor in cofactors)),
     )
     return image
 
@@ -498,12 +490,8 @@ def coproduct_morphism(*functions: SetMorphism) -> SetMorphism:
     return CoproductMorphismOfFamily(
         index_category,
         function,
-        domain_cardinality=Cardinals().sum(
-            *(_domain_cardinality(morphism) for morphism in functions)
-        ),
-        codomain_cardinality=Cardinals().sum(
-            *(_codomain_cardinality(morphism) for morphism in functions)
-        ),
+        domain_cardinality=Cardinals().sum(*(_domain_cardinality(morphism) for morphism in functions)),
+        codomain_cardinality=Cardinals().sum(*(_codomain_cardinality(morphism) for morphism in functions)),
     )
 
 

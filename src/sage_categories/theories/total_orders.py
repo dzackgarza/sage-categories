@@ -165,11 +165,7 @@ class TotallyOrderedSetObject(MathematicalObject):
 
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
-        return (
-            value is not None
-            and TotallyOrderedSetElements().contains_total_order_element(value)
-            and value.ambient_total_order() is self
-        )
+        return value is not None and TotallyOrderedSetElements().contains_total_order_element(value) and value.ambient_total_order() is self
 
     def __iter__(self) -> Iterator[TotallyOrderedSetElement]:
         if self._finite_enumeration is not None:
@@ -211,9 +207,7 @@ class TotallyOrderedSetObject(MathematicalObject):
 
     def __repr__(self) -> str:
         if self._finite_enumeration is None:
-            return (
-                f"Totally ordered {PartiallyOrderedSets().underlying_set(self._poset)}"
-            )
+            return f"Totally ordered {PartiallyOrderedSets().underlying_set(self._poset)}"
         return "[" + ", ".join(map(repr, self._finite_enumeration)) + "]"
 
 
@@ -258,9 +252,7 @@ class TotallyOrderedSetHomCategory(HomCategory):
 
     def __call__(
         self,
-        action: Callable[[TotallyOrderedSetElement], TotallyOrderedSetElement]
-        | Mapping[TotallyOrderedSetElement, TotallyOrderedSetElement]
-        | TotallyOrderedSetMorphism,
+        action: Callable[[TotallyOrderedSetElement], TotallyOrderedSetElement] | Mapping[TotallyOrderedSetElement, TotallyOrderedSetElement] | TotallyOrderedSetMorphism,
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
@@ -527,10 +519,7 @@ class TotallyOrderedSetsCategory(Category):
         finite_enumeration: tuple[PosetElement, ...] | None = None,
     ) -> TotallyOrderedSetObject:
         if finite_enumeration is not None:
-            assert (
-                len(finite_enumeration)
-                == PartiallyOrderedSets().underlying_set(poset).cardinality()
-            )
+            assert len(finite_enumeration) == PartiallyOrderedSets().underlying_set(poset).cardinality()
         if poset in FinitePosets():
             return self.Finite()(
                 poset,
@@ -624,7 +613,4 @@ def is_totally_ordered_sets_category(
 def is_total_order_hom_category(
     category: HomCategory,
 ) -> TypeIs[TotallyOrderedSetHomCategory]:
-    return (
-        category.base_category() is TotallyOrderedSets()
-        and category in TotallyOrderedSets().HomCategory()
-    )
+    return category.base_category() is TotallyOrderedSets() and category in TotallyOrderedSets().HomCategory()

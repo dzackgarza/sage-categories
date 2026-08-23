@@ -92,9 +92,7 @@ class SetHomCategory(HomCategory, SetObject):
 
     def __call__(
         self,
-        action: Callable[[SetElement], SetElement]
-        | Mapping[SetElement, SetElement]
-        | SetMorphism,
+        action: Callable[[SetElement], SetElement] | Mapping[SetElement, SetElement] | SetMorphism,
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
@@ -335,9 +333,7 @@ class SetHomCategory(HomCategory, SetObject):
 
         def inverse_image(candidate: SetElement) -> SetSubset:
             subset = self._represented_subset(candidate)
-            return target_power_set.from_predicate(
-                lambda member: subset.membership(function(member))
-            )
+            return target_power_set.from_predicate(lambda member: subset.membership(function(member)))
 
         return _set_morphism(
             self,

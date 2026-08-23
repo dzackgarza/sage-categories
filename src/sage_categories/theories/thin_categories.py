@@ -238,10 +238,7 @@ class ThinCategory(Category):
         self,
         candidate: MathematicalObject,
     ) -> TypeIs[PosetElement]:
-        return (
-            PosetElements().contains_poset_element(candidate)
-            and candidate.ambient_poset() is self._poset
-        )
+        return PosetElements().contains_poset_element(candidate) and candidate.ambient_poset() is self._poset
 
     def objects(self) -> ThinCategoryObjectSet:
         if self._objects is None:

@@ -116,11 +116,7 @@ class PosetProductObject(ProductObject):
 
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
-        return (
-            value is not None
-            and PosetElements().contains_poset_element(value)
-            and value.ambient_poset() is self
-        )
+        return value is not None and PosetElements().contains_poset_element(value) and value.ambient_poset() is self
 
     def _is_lequal(self, left: PosetElement, right: PosetElement) -> Decision:
         assert left in self
@@ -250,11 +246,7 @@ class ProductsOfPosetsCategory(ProductsOfCategory):
 
     def set_diagram(self, diagram: Functor) -> Functor:
         assert diagram in self.functor().domain()
-        image = (
-            PartiallyOrderedSets()
-            .forgetful_functor()
-            .postcomposition(diagram.domain())(diagram)
-        )
+        image = PartiallyOrderedSets().forgetful_functor().postcomposition(diagram.domain())(diagram)
         assert is_functor(image)
         return image
 

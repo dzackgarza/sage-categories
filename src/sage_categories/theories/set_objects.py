@@ -68,11 +68,7 @@ class SetObject(MathematicalObject):
 
         self._cardinality = UnknownCardinality() if cardinality is None else cardinality
         self._subset_poset: PosetObject | None = None
-        owner = (
-            _category_for_cardinality(self._cardinality)
-            if category is None
-            else category
-        )
+        owner = _category_for_cardinality(self._cardinality) if category is None else category
         super().__init__(category=owner)
 
     def membership(self, member: SetElement) -> Decision:
@@ -145,9 +141,7 @@ class SetObject(MathematicalObject):
             def contained(left: PosetElement, right: PosetElement) -> Decision:
                 forgetful_functor = PartiallyOrderedSets().forgetful_functor()
                 left_subset = forgetful_functor.on_element(left.ambient_poset(), left)
-                right_subset = forgetful_functor.on_element(
-                    right.ambient_poset(), right
-                )
+                right_subset = forgetful_functor.on_element(right.ambient_poset(), right)
                 assert subsets.contains_subset(left_subset)
                 assert subsets.contains_subset(right_subset)
                 return left_subset <= right_subset
@@ -232,9 +226,7 @@ class FiniteSetObject(MathematicalObject):
         self._cardinality = Cardinals()(len(values))
         self._subset_poset: PosetObject | None = None
         super().__init__(category=category)
-        self._members = frozenset(
-            category.ElementType(ambient_object=self, value=value) for value in values
-        )
+        self._members = frozenset(category.ElementType(ambient_object=self, value=value) for value in values)
 
     def membership(self, member: SetElement) -> Decision:
         return member.ambient_set() is self
@@ -324,11 +316,7 @@ class NaturalNumbersSet(SetObject):
 
     def position(self, member: SetElement) -> int:
         assert member in self
-        return next(
-            position
-            for position, candidate in self._members.items()
-            if candidate is member
-        )
+        return next(position for position, candidate in self._members.items() if candidate is member)
 
     def __repr__(self) -> str:
         return "Natural numbers"

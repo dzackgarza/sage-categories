@@ -213,9 +213,7 @@ class SetSubset(SetMorphism):
             from sage_categories.theories.set_constructions import TruthValues
 
             answer = predicate(member)
-            assert answer is not UNKNOWN, (
-                f"membership of {member} in {underlying_set} is unknown"
-            )
+            assert answer is not UNKNOWN, f"membership of {member} in {underlying_set} is unknown"
             return TruthValues().element(ordinal(1 if answer else 0))
 
         super().__init__(
@@ -227,11 +225,7 @@ class SetSubset(SetMorphism):
         return self._subset_category
 
     def _belongs_to(self, category: Category) -> bool:
-        return (
-            category is SetElements()
-            or self._subset_category is category
-            or self._subset_category.is_subcategory(category)
-        )
+        return category is SetElements() or self._subset_category is category or self._subset_category.is_subcategory(category)
 
     def object(self) -> SetObject:
         return self._underlying_set
@@ -311,9 +305,7 @@ class SetSubset(SetMorphism):
 
         assert self.base_set() is other.base_set()
         if self._members is not None and other._members is not None:
-            return PowerSet(self.base_set()).from_members(
-                self._members | other._members
-            )
+            return PowerSet(self.base_set()).from_members(self._members | other._members)
         return PowerSet(self.base_set()).from_predicate(
             lambda member: _decision_or(
                 self.membership(member),
@@ -330,9 +322,7 @@ class SetSubset(SetMorphism):
 
         assert self.base_set() is other.base_set()
         if self._members is not None and other._members is not None:
-            return PowerSet(self.base_set()).from_members(
-                self._members - other._members
-            )
+            return PowerSet(self.base_set()).from_members(self._members - other._members)
         return PowerSet(self.base_set()).from_predicate(
             lambda member: _decision_and(
                 self.membership(member),
@@ -345,9 +335,7 @@ class SetSubset(SetMorphism):
 
         assert self.base_set() is other.base_set()
         if self._members is not None and other._members is not None:
-            return PowerSet(self.base_set()).from_members(
-                self._members ^ other._members
-            )
+            return PowerSet(self.base_set()).from_members(self._members ^ other._members)
         return PowerSet(self.base_set()).from_predicate(
             lambda member: _decision_or(
                 _decision_and(
@@ -364,9 +352,7 @@ class SetSubset(SetMorphism):
     def __invert__(self) -> SetSubset:
         from sage_categories.theories.set_constructions import PowerSet
 
-        return PowerSet(self.base_set()).from_predicate(
-            lambda member: _decision_not(self.membership(member))
-        )
+        return PowerSet(self.base_set()).from_predicate(lambda member: _decision_not(self.membership(member)))
 
     def powerset(self) -> SetHomCategory:
         from sage_categories.theories.set_constructions import PowerSet

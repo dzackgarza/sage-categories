@@ -129,9 +129,7 @@ class LimitSet(ProductSet):
             image = self.diagram()(arrow)
             assert Sets().contains_set_morphism(image)
             source_index = _object_set_element(self.diagram().domain(), arrow.domain())
-            target_index = _object_set_element(
-                self.diagram().domain(), arrow.codomain()
-            )
+            target_index = _object_set_element(self.diagram().domain(), arrow.codomain())
             if image(value.component(source_index)) != value.component(target_index):
                 return False
         return True
@@ -202,11 +200,7 @@ class SetLimitObject(LimitObject):
         )
 
         value = registered_value(member)
-        if (
-            value is None
-            or not ProductElements().contains_product_element(value)
-            or value.product() is not self
-        ):
+        if value is None or not ProductElements().contains_product_element(value) or value.product() is not self:
             return False
         if id(member) in self._compatible_elements:
             return True
@@ -219,9 +213,7 @@ class SetLimitObject(LimitObject):
             image = self.diagram()(arrow)
             assert Sets().contains_set_morphism(image)
             source_index = _object_set_element(self.diagram().domain(), arrow.domain())
-            target_index = _object_set_element(
-                self.diagram().domain(), arrow.codomain()
-            )
+            target_index = _object_set_element(self.diagram().domain(), arrow.codomain())
             if image(value.component(source_index)) != value.component(target_index):
                 return False
         return True

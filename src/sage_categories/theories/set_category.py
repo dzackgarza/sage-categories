@@ -161,9 +161,7 @@ class SetsCategory(Category):
     def contains_set(self, candidate: MathematicalObject) -> TypeIs[SetObject]:
         return candidate in self
 
-    def contains_set_morphism(
-        self, candidate: MathematicalObject
-    ) -> TypeIs[SetMorphism]:
+    def contains_set_morphism(self, candidate: MathematicalObject) -> TypeIs[SetMorphism]:
         return candidate in self.ArrowCategory()
 
     def Finite(self) -> FiniteSetsCategory:

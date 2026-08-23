@@ -136,9 +136,7 @@ class CoproductSet(SetObject):
             size = _indexed_sum_cardinality(
                 self.index_set(),
                 self.cofactor,
-                summand_finiteness=(
-                    True if diagram.codomain().is_subcategory(FiniteSets()) else UNKNOWN
-                ),
+                summand_finiteness=(True if diagram.codomain().is_subcategory(FiniteSets()) else UNKNOWN),
             )
         super().__init__(category=category, cardinality=size)
 
@@ -174,11 +172,7 @@ class CoproductSet(SetObject):
 
     def membership(self, member: SetElement) -> Decision:
         value = registered_value(member)
-        return (
-            value is not None
-            and CoproductElements().contains_coproduct_element(value)
-            and value.coproduct() is self
-        )
+        return value is not None and CoproductElements().contains_coproduct_element(value) and value.coproduct() is self
 
     def __iter__(self) -> Iterator[SetElement]:
         assert self.index_set().is_finite() is True
@@ -244,19 +238,11 @@ class SetCoproductObject(CoproductObject):
 
     def membership(self, member: SetElement) -> Decision:
         value = registered_value(member)
-        return (
-            value is not None
-            and CoproductElements().contains_coproduct_element(value)
-            and value.coproduct() is self
-        )
+        return value is not None and CoproductElements().contains_coproduct_element(value) and value.coproduct() is self
 
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
-        return (
-            value is not None
-            and CoproductElements().contains_coproduct_element(value)
-            and value.coproduct() is self
-        )
+        return value is not None and CoproductElements().contains_coproduct_element(value) and value.coproduct() is self
 
     def __iter__(self) -> Iterator[SetElement]:
         assert self.index_set().is_finite() is True

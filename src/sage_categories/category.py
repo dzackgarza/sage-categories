@@ -1,8 +1,4 @@
-"""Categories as objects of ``Cat``.
-
-This is the runtime-independent form of the architecture in
-``abstract_categories/cat.sage`` from the research preamble.
-"""
+"""Categories as objects of ``Cat``."""
 
 from __future__ import annotations
 
@@ -152,7 +148,10 @@ class Category(MathematicalObject):
         """Return whether the structural-functor graph includes ``category``."""
         if self is category:
             return True
-        return any(codomain is category or codomain.is_subcategory(category) for codomain in self.super_categories())
+        return any(
+            codomain is category or codomain.is_subcategory(category)
+            for codomain in self.super_categories()
+        )
 
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
@@ -584,104 +583,32 @@ class Category(MathematicalObject):
         return CoproductsOfCategory(functor)
 
     def chosen_limit(self, diagram: Functor) -> ProductPresentation:
-        """Return the chosen limit presentation of ``diagram``."""
         assert diagram.codomain() is self
         assert False, f"{self} does not define chosen limits"
 
     def chosen_colimit(self, diagram: Functor) -> CoproductPresentation:
-        """Return the chosen colimit presentation of ``diagram``."""
         assert diagram.codomain() is self
         assert False, f"{self} does not define chosen colimits"
 
     def equalizer(self, first: Arrow, second: Arrow) -> LimitObject:
-        """Return the chosen equalizer of two parallel arrows."""
-        from sage_categories.abstract_categories.functors import InclusionFunctor
-        from sage_categories.abstract_categories.products import (
-            DiagramCategory,
-            is_limits_of_category,
-        )
+        from sage_categories.category_universal_constructions import equalizer
 
-        assert first in self.ArrowCategory() and second in self.ArrowCategory()
-        assert first.domain() is second.domain()
-        assert first.codomain() is second.codomain()
-        index = DiagramCategory(
-            self,
-            (first.domain(), first.codomain()),
-            (first, second),
-        )
-        diagram = InclusionFunctor(index, self)
-        result = self.LimitFunctor(index)(diagram)
-        image = self.Limits(index)
-        assert is_limits_of_category(image)
-        assert image.contains_limit(result)
-        return result
+        return equalizer(self, first, second)
 
     def coequalizer(self, first: Arrow, second: Arrow) -> ColimitObject:
-        """Return the chosen coequalizer of two parallel arrows."""
-        from sage_categories.abstract_categories.functors import InclusionFunctor
-        from sage_categories.abstract_categories.products import (
-            DiagramCategory,
-            is_colimits_of_category,
-        )
+        from sage_categories.category_universal_constructions import coequalizer
 
-        assert first in self.ArrowCategory() and second in self.ArrowCategory()
-        assert first.domain() is second.domain()
-        assert first.codomain() is second.codomain()
-        index = DiagramCategory(
-            self,
-            (first.domain(), first.codomain()),
-            (first, second),
-        )
-        diagram = InclusionFunctor(index, self)
-        result = self.ColimitFunctor(index)(diagram)
-        image = self.Colimits(index)
-        assert is_colimits_of_category(image)
-        assert image.contains_colimit(result)
-        return result
+        return coequalizer(self, first, second)
 
     def pullback(self, first: Arrow, second: Arrow) -> LimitObject:
-        """Return the chosen pullback of arrows with one codomain."""
-        from sage_categories.abstract_categories.functors import InclusionFunctor
-        from sage_categories.abstract_categories.products import (
-            DiagramCategory,
-            is_limits_of_category,
-        )
+        from sage_categories.category_universal_constructions import pullback
 
-        assert first in self.ArrowCategory() and second in self.ArrowCategory()
-        assert first.codomain() is second.codomain()
-        index = DiagramCategory(
-            self,
-            (first.domain(), second.domain(), first.codomain()),
-            (first, second),
-        )
-        diagram = InclusionFunctor(index, self)
-        result = self.LimitFunctor(index)(diagram)
-        image = self.Limits(index)
-        assert is_limits_of_category(image)
-        assert image.contains_limit(result)
-        return result
+        return pullback(self, first, second)
 
     def pushout(self, first: Arrow, second: Arrow) -> ColimitObject:
-        """Return the chosen pushout of arrows with one domain."""
-        from sage_categories.abstract_categories.functors import InclusionFunctor
-        from sage_categories.abstract_categories.products import (
-            DiagramCategory,
-            is_colimits_of_category,
-        )
+        from sage_categories.category_universal_constructions import pushout
 
-        assert first in self.ArrowCategory() and second in self.ArrowCategory()
-        assert first.domain() is second.domain()
-        index = DiagramCategory(
-            self,
-            (first.domain(), first.codomain(), second.codomain()),
-            (first, second),
-        )
-        diagram = InclusionFunctor(index, self)
-        result = self.ColimitFunctor(index)(diagram)
-        image = self.Colimits(index)
-        assert is_colimits_of_category(image)
-        assert image.contains_colimit(result)
-        return result
+        return pushout(self, first, second)
 
     def Biproducts(self, diagram: Functor) -> Category:
         """Return chosen biproduct presentations for ``diagram``."""
@@ -716,68 +643,48 @@ class Category(MathematicalObject):
     def SliceOver(self, value: MathematicalObject) -> SliceOverCategory:
         """Return the slice category over ``value``."""
         from sage_categories.abstract_categories.slice_categories import SliceOver
+        from sage_categories.category_slice_constructions import cached_slice
 
-        key = id(value)
-        cached = self._slice_over_categories.get(key)
-        if cached is None:
-            cached = SliceOver(self, value)
-            self._slice_over_categories[key] = cached
-        return cached
+        return cached_slice(self, value, self._slice_over_categories, SliceOver)
 
     def CosliceUnder(self, value: MathematicalObject) -> CosliceUnderCategory:
         """Return the coslice category under ``value``."""
         from sage_categories.abstract_categories.slice_categories import CosliceUnder
+        from sage_categories.category_slice_constructions import cached_slice
 
-        key = id(value)
-        cached = self._coslice_under_categories.get(key)
-        if cached is None:
-            cached = CosliceUnder(self, value)
-            self._coslice_under_categories[key] = cached
-        return cached
+        return cached_slice(self, value, self._coslice_under_categories, CosliceUnder)
 
     def Subobjects(self, value: MathematicalObject) -> SubobjectCategory:
         """Return the category of subobjects of ``value``."""
         from sage_categories.abstract_categories.slice_categories import Subobjects
+        from sage_categories.category_slice_constructions import cached_slice
 
-        key = id(value)
-        cached = self._subobject_categories.get(key)
-        if cached is None:
-            cached = Subobjects(self, value)
-            self._subobject_categories[key] = cached
-        return cached
+        return cached_slice(self, value, self._subobject_categories, Subobjects)
 
     def Superobjects(self, value: MathematicalObject) -> SuperobjectCategory:
         """Return the category of superobjects of ``value``."""
         from sage_categories.abstract_categories.slice_categories import Superobjects
+        from sage_categories.category_slice_constructions import cached_slice
 
-        key = id(value)
-        cached = self._superobject_categories.get(key)
-        if cached is None:
-            cached = Superobjects(self, value)
-            self._superobject_categories[key] = cached
-        return cached
+        return cached_slice(self, value, self._superobject_categories, Superobjects)
 
     def CoveringObjects(self, value: MathematicalObject) -> CoveringObjectCategory:
         """Return the category of epimorphisms into ``value``."""
         from sage_categories.abstract_categories.slice_categories import CoveringObjects
+        from sage_categories.category_slice_constructions import cached_slice
 
-        key = id(value)
-        cached = self._covering_object_categories.get(key)
-        if cached is None:
-            cached = CoveringObjects(self, value)
-            self._covering_object_categories[key] = cached
-        return cached
+        return cached_slice(
+            self, value, self._covering_object_categories, CoveringObjects
+        )
 
     def CoveredObjects(self, value: MathematicalObject) -> CoveredObjectCategory:
         """Return the category of epimorphisms from ``value``."""
         from sage_categories.abstract_categories.slice_categories import CoveredObjects
+        from sage_categories.category_slice_constructions import cached_slice
 
-        key = id(value)
-        cached = self._covered_object_categories.get(key)
-        if cached is None:
-            cached = CoveredObjects(self, value)
-            self._covered_object_categories[key] = cached
-        return cached
+        return cached_slice(
+            self, value, self._covered_object_categories, CoveredObjects
+        )
 
     def declared_object_methods(self) -> Mapping[str, DeclaredMethod]:
         """Return the declaring category of each object method."""

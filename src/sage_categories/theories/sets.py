@@ -496,7 +496,7 @@ class SetMorphism(Arrow, SetElement):
     def __init__(
         self,
         *,
-        hom_category: HomCategory,
+        hom_category: SetHomCategory,
         action: Callable[[SetElement], SetElement],
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
@@ -844,10 +844,12 @@ class SetHomCategory(HomCategory, SetObject):
     def __init__(
         self,
         *,
-        domain: MathematicalObject,
-        codomain: MathematicalObject,
-        hom_category: HomCategoryFamily,
+        domain: SetObject,
+        codomain: SetObject,
+        hom_category: SetHomCategoryFamily,
     ) -> None:
+        assert domain in Sets()
+        assert codomain in Sets()
         self._evaluation: SetMorphism | None = None
         self._top_subset: SetSubset | None = None
         self._bottom_subset: SetSubset | None = None

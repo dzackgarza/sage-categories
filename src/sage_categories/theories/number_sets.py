@@ -37,6 +37,12 @@ class IntegerElement(SetElement):
     def __index__(self) -> int:
         return self._integer
 
+    def is_prime(self) -> bool:
+        """Return whether this integer is prime."""
+        from sage.rings.integer import Integer as SageIntegerValue
+
+        return bool(SageIntegerValue(self._integer).is_prime())
+
     def __repr__(self) -> str:
         return str(self._integer)
 

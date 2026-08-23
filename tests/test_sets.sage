@@ -1,6 +1,5 @@
 """Arbitrary maps and universal constructions in the owned Sets category."""
 
-from sage.rings.integer import Integer as SageInteger
 
 from sage_categories.abstract_categories.functors import is_functor
 from sage_categories.all import *
@@ -42,7 +41,7 @@ def is_even(integer: SetElement) -> bool:
 
 def is_prime(integer: SetElement) -> bool:
     assert ZZ.contains_integer(integer)
-    return SageInteger(int(integer)).is_prime()
+    return integer.is_prime()
 
 
 def is_undecided(integer: SetElement) -> Decision:
@@ -50,8 +49,8 @@ def is_undecided(integer: SetElement) -> Decision:
     return UNKNOWN
 
 
-def is_equal(left: PosetElement, right: PosetElement) -> bool:
-    return left == right
+
+
 
 
 def test_arbitrary_set_maps_have_exact_endpoints() -> None:
@@ -234,8 +233,7 @@ def test_general_infinite_limits_and_colimits_have_universal_maps() -> None:
 
 
 def test_limits_and_colimits_do_not_enumerate_their_index_objects() -> None:
-    real_equality_order = PartiallyOrderedSets()(RR, is_equal)
-    index_category = real_equality_order.thin_category()
+    index_category = DiscreteCategory(RR)
     diagram = Sets().DiagonalFunctor(index_category)(ZZ)
     limits = Sets().Limits(index_category)
     colimits = Sets().Colimits(index_category)
@@ -243,7 +241,7 @@ def test_limits_and_colimits_do_not_enumerate_their_index_objects() -> None:
     assert is_colimits_of_sets_category(colimits)
     limit = limits(diagram)
     colimit = colimits(diagram)
-    index_object = real_equality_order.element(RR(int(0)))
+    index_object = index_category.object(RR(int(0)))
 
     projection = limit.projection(index_object)
     injection = colimit.injection(index_object)
@@ -255,10 +253,36 @@ def test_limits_and_colimits_do_not_enumerate_their_index_objects() -> None:
 
 
 def test_finite_equalizers_coequalizers_pullbacks_and_pushouts() -> None:
+    # Two arrows that genuinely differ. Both send the first and third members
+    # to the same place and disagree on the second, so they agree on exactly
+    # two of the three. A construction that ignored its parallel arrows would
+    # report three, which a pair of equal arrows could never expose.
+    domain = FiniteSet((ZZ(int(0)), ZZ(int(1)), ZZ(int(2))))
+    codomain = FiniteSet((ZZ(int(0)), ZZ(int(1))))
+    members = tuple(domain)
+    below, above = tuple(codomain)
+
+    def to_below(member: SetElement) -> SetElement:
+        assert member in domain
+        return below
+
+    def raise_the_middle(member: SetElement) -> SetElement:
+        assert member in domain
+        return above if member == members[int(1)] else below
+
+    constant = Sets().Hom(domain, codomain)(to_below)
+    varying = Sets().Hom(domain, codomain)(raise_the_middle)
+    equalizer = Sets().equalizer(constant, varying)
+    coequalizer = Sets().coequalizer(constant, varying)
+
+    agreeing = equalizer.image()
+    identified = coequalizer.image()
+    assert Sets().contains_set(agreeing)
+    assert Sets().contains_set(identified)
+    assert agreeing.cardinality() == Cardinals()(int(2))
+
     finite_set = FiniteSet((ZZ(int(0)), ZZ(int(1))))
     identity = Sets().identity(finite_set)
-    equalizer = Sets().equalizer(identity, identity)
-    coequalizer = Sets().coequalizer(identity, identity)
     pullback = Sets().pullback(
         identity,
         identity,
@@ -266,8 +290,6 @@ def test_finite_equalizers_coequalizers_pullbacks_and_pushouts() -> None:
     )
     pushout = Sets().pushout(identity, identity)
 
-    assert equalizer.image() in Sets()
-    assert coequalizer.image() in Sets()
     assert pullback.image() in Sets()
     assert pushout.image() in Sets()
     assert equalizer.limit_cone().diagram().codomain() is Sets()

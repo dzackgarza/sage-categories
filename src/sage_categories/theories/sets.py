@@ -2434,6 +2434,20 @@ class LimitSet(ProductSet):
     def _limit_projection(self, index: MathematicalObject) -> SetMorphism:
         return self._projection(_object_set_element(self.diagram().domain(), index))
 
+    def cardinality(self) -> Cardinal:
+        # A limit is the compatible part of its product. When that product is
+        # finite the limit is finite too, and membership decides each candidate,
+        # so counting supplies the cardinality no construction formula gives.
+        declared = super().cardinality()
+        if declared != UnknownCardinality():
+            return declared
+        index_set = self.index_set()
+        if index_set.is_finite() is not True:
+            return declared
+        if any(self.factor(index).is_finite() is not True for index in index_set):
+            return declared
+        return Cardinals()(sum(int(1) for _ in self))
+
     def membership(self, member: SetElement) -> Decision:
         product_membership = super().membership(member)
         if product_membership is not True:

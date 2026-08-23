@@ -1,5 +1,7 @@
 """The owned category of categories and its arrow categories."""
 
+import operator
+
 from sage_categories.all import *
 from sage_categories.abstract_categories.category_constructions import (
     is_opposite_category,
@@ -37,8 +39,6 @@ from sage_categories.theories.posets import (
 from sage_categories.theories.sets import is_products_of_sets_category
 
 
-def is_equal(left: PosetElement, right: PosetElement) -> bool:
-    return left == right
 
 
 def test_cat_owns_functors_and_natural_transformations() -> None:
@@ -279,7 +279,7 @@ def test_structural_coherence_identifies_parallel_forgetful_functors() -> None:
 
 
 def test_structural_functor_images_have_exact_ambient_objects_and_endpoints() -> None:
-    poset = PartiallyOrderedSets()(ZZ, is_equal)
+    poset = PartiallyOrderedSets()(ZZ, operator.eq)
     element = poset.element(ZZ(int(0)))
     identity = PartiallyOrderedSets().identity(poset)
     forgetful = PartiallyOrderedSets().forgetful_functor()
@@ -297,7 +297,7 @@ def test_structural_functor_images_have_exact_ambient_objects_and_endpoints() ->
 def test_postcomposition_maps_diagrams_and_natural_transformations() -> None:
     labels = FiniteSet((ZZ(int(3)), ZZ(int(5))))
     index_category = DiscreteCategory(labels)
-    poset = PartiallyOrderedSets()(ZZ, is_equal)
+    poset = PartiallyOrderedSets()(ZZ, operator.eq)
     diagram = PartiallyOrderedSets().DiagonalFunctor(index_category)(poset)
     assert is_functor(diagram)
     identity = PartiallyOrderedSets().identity(poset)

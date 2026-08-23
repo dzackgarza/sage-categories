@@ -709,6 +709,19 @@ class PosetProductObject(ProductObject):
     def _set_implementation(self) -> SetObject:
         return self._underlying_set
 
+    def element(self, set_element: SetElement) -> PosetElement:
+        assert set_element.ambient_set() is self._underlying_set
+        assert set_element in self._underlying_set
+        key = id(set_element)
+        cached = self._elements.get(key)
+        if cached is None:
+            cached = PartiallyOrderedSets().ElementType(
+                ambient_object=self,
+                set_element=set_element,
+            )
+            self._elements[key] = cached
+        return cached
+
     def set_product(self) -> SetProductObject:
         return self._set_product
 

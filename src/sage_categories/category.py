@@ -502,6 +502,11 @@ class Category(MathematicalObject):
         """Return the image category of one chosen limit functor."""
         return self.LimitFunctor(index_category).Image()
 
+    def _limits_of_category(self, functor: Functor) -> Category:
+        from sage_categories.abstract_categories.products import LimitsOfCategory
+
+        return LimitsOfCategory(functor)
+
     def ColimitFunctor(self, index_category: Category) -> Functor:
         """Return the chosen colimit functor on diagrams of one shape."""
         from sage_categories.abstract_categories.functors import ColimitFunctor
@@ -516,6 +521,11 @@ class Category(MathematicalObject):
     def Colimits(self, index_category: Category) -> Category:
         """Return the image category of one chosen colimit functor."""
         return self.ColimitFunctor(index_category).Image()
+
+    def _colimits_of_category(self, functor: Functor) -> Category:
+        from sage_categories.abstract_categories.products import ColimitsOfCategory
+
+        return ColimitsOfCategory(functor)
 
     def ProductFunctor(self, index_category: Category) -> Functor:
         """Return the chosen product functor on discrete diagrams."""

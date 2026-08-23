@@ -594,9 +594,7 @@ class LimitFunctor(Functor):
         return self._index_category
 
     def _construct_image_category(self) -> Category:
-        from sage_categories.abstract_categories.products import LimitsOfCategory
-
-        return LimitsOfCategory(self)
+        return self.codomain()._limits_of_category(self)
 
     def on_object(self, source: MathematicalObject) -> MathematicalObject:
         assert is_functor(source)
@@ -649,9 +647,7 @@ class ColimitFunctor(Functor):
         return self._index_category
 
     def _construct_image_category(self) -> Category:
-        from sage_categories.abstract_categories.products import ColimitsOfCategory
-
-        return ColimitsOfCategory(self)
+        return self.codomain()._colimits_of_category(self)
 
     def on_object(self, source: MathematicalObject) -> MathematicalObject:
         assert is_functor(source)

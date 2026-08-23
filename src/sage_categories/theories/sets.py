@@ -57,11 +57,15 @@ from sage_categories.abstract_categories.products import (
     CoconeObject,
     Cone,
     ConeObject,
+    ColimitObject,
+    ColimitsOfCategory,
     Coproduct,
     CoproductObject,
     CoproductPresentation,
     CoproductsOfCategory,
     Product,
+    LimitObject,
+    LimitsOfCategory,
     ProductObject,
     ProductPresentation,
     ProductsOfCategory,
@@ -1505,6 +1509,12 @@ class SetsCategory(Category):
     def _coproducts_of_category(self, functor: Functor) -> Category:
         return CoproductsOfSetsCategory(functor)
 
+    def _limits_of_category(self, functor: Functor) -> Category:
+        return LimitsOfSetsCategory(functor)
+
+    def _colimits_of_category(self, functor: Functor) -> Category:
+        return ColimitsOfSetsCategory(functor)
+
     def __repr__(self) -> str:
         return "Sets"
 
@@ -2221,10 +2231,11 @@ class LimitSet(ProductSet):
         self,
         diagram: Functor,
         *,
+        category: Category,
         cardinality: Cardinal | None = None,
     ) -> None:
         size = UnknownCardinality() if cardinality is None else cardinality
-        super().__init__(diagram, category=Sets(), cardinality=size)
+        super().__init__(diagram, category=category, cardinality=size)
 
     def index_set(self) -> SetObject:
         return index_objects(self.diagram().domain())
@@ -2237,7 +2248,7 @@ class LimitSet(ProductSet):
         assert Sets().contains_set(value)
         return value
 
-    def projection(self, index: MathematicalObject) -> SetMorphism:
+    def _limit_projection(self, index: MathematicalObject) -> SetMorphism:
         return self._projection(_element_named_by(self.index_set(), index))
 
     def _membership(self, member: SetElement) -> Decision:
@@ -2264,6 +2275,92 @@ class LimitSet(ProductSet):
         for member in super().__iter__():
             if self._membership(member) is True:
                 yield member
+
+
+class SetLimitObject(LimitObject, LimitSet):
+    """A limit presentation whose apex is the same owned set object."""
+
+    def __init__(
+        self,
+        *,
+        category: LimitsOfSetsCategory,
+        diagram: Functor,
+        cardinality: Cardinal | None = None,
+    ) -> None:
+        LimitSet.__init__(
+            self,
+            diagram,
+            category=category,
+            cardinality=cardinality,
+        )
+        self._preimage = diagram
+        self._image = self
+        self._limit_presentation = _limit_presentation(diagram, self)
+
+
+class LimitsOfSetsCategory(LimitsOfCategory):
+    """Limits in ``Sets()``, with each limit equal to its apex set."""
+
+    ObjectType: type[SetLimitObject] = SetLimitObject
+    ElementType: type[ProductElement] = ProductElement
+
+    def __init__(self, functor: Functor) -> None:
+        super().__init__(
+            functor,
+            object_type=SetLimitObject,
+            element_type=ProductElement,
+        )
+        _LIMITS_OF_SETS[id(self)] = self
+
+    def __call__(
+        self,
+        preimage: MathematicalObject,
+        *,
+        cardinality: Cardinal | None = None,
+    ) -> SetLimitObject:
+        assert is_functor(preimage)
+        return self._limit(preimage, cardinality=cardinality)
+
+    def limit_of(self, diagram: Functor) -> SetLimitObject:
+        return self._limit(diagram)
+
+    def _limit(
+        self,
+        diagram: Functor,
+        *,
+        cardinality: Cardinal | None = None,
+    ) -> SetLimitObject:
+        assert diagram in self.functor().domain()
+        key = id(diagram)
+        cached = self._limits.get(key)
+        if cached is None:
+            candidate = self.ObjectType(
+                category=self,
+                diagram=diagram,
+                cardinality=cardinality,
+            )
+            assert self.contains_set_limit(candidate)
+            cached = candidate
+            self._limits[key] = cached
+        assert self.contains_set_limit(cached)
+        if cardinality is not None:
+            assert cached.cardinality() == cardinality
+        return cached
+
+    def contains_set_limit(
+        self,
+        candidate: MathematicalObject,
+    ) -> TypeIs[SetLimitObject]:
+        return candidate in self
+
+
+_LIMITS_OF_SETS: dict[int, LimitsOfSetsCategory] = {}
+
+
+def is_limits_of_sets_category(
+    category: Category,
+) -> TypeIs[LimitsOfSetsCategory]:
+    return _LIMITS_OF_SETS.get(id(category)) is category
 
 
 class ColimitElement(SetElement):
@@ -2331,6 +2428,7 @@ class ColimitSet(SetObject):
         self,
         diagram: Functor,
         *,
+        category: Category,
         cardinality: Cardinal | None = None,
     ) -> None:
         self._diagram = diagram
@@ -2344,7 +2442,7 @@ class ColimitSet(SetObject):
             object_diagram,
             category=Sets(),
         )
-        super().__init__(category=Sets(), cardinality=cardinality)
+        super().__init__(category=category, cardinality=cardinality)
 
     def _object_image(self, index: SetElement) -> SetObject:
         value = self._diagram(index.value())
@@ -2384,8 +2482,12 @@ class ColimitSet(SetObject):
             right_representative,
         ):
             return True
-        if self._coproduct.is_finite() is not True:
+        indices = self._coproduct.index_set()
+        if indices.is_finite() is not True:
             return UNKNOWN
+        for index in indices:
+            if self._coproduct.cofactor(index).is_finite() is not True:
+                return UNKNOWN
         representatives: tuple[CoproductElement, ...] = ()
         for representative in self._coproduct:
             value = registered_value(representative)
@@ -2415,7 +2517,6 @@ class ColimitSet(SetObject):
                 return True
 
     def __iter__(self) -> Iterator[SetElement]:
-        assert self._coproduct.is_finite() is True
         chosen: tuple[ColimitElement, ...] = ()
         for representative in self._coproduct:
             value = registered_value(representative)
@@ -2426,12 +2527,98 @@ class ColimitSet(SetObject):
             chosen = (*chosen, candidate)
             yield candidate
 
-    def injection(self, index: SetElement) -> SetMorphism:
+    def _injection(self, index: SetElement) -> SetMorphism:
         return _set_morphism(
             self._coproduct.cofactor(index),
             self,
             lambda value: self.element(index, value),
         )
+
+
+class SetColimitObject(ColimitObject, ColimitSet):
+    """A colimit presentation whose apex is the same owned set object."""
+
+    def __init__(
+        self,
+        *,
+        category: ColimitsOfSetsCategory,
+        diagram: Functor,
+        cardinality: Cardinal | None = None,
+    ) -> None:
+        ColimitSet.__init__(
+            self,
+            diagram,
+            category=category,
+            cardinality=cardinality,
+        )
+        self._preimage = diagram
+        self._image = self
+        self._colimit_presentation = _colimit_presentation(diagram, self)
+
+
+class ColimitsOfSetsCategory(ColimitsOfCategory):
+    """Colimits in ``Sets()``, with each colimit equal to its apex set."""
+
+    ObjectType: type[SetColimitObject] = SetColimitObject
+    ElementType: type[ColimitElement] = ColimitElement
+
+    def __init__(self, functor: Functor) -> None:
+        super().__init__(
+            functor,
+            object_type=SetColimitObject,
+            element_type=ColimitElement,
+        )
+        _COLIMITS_OF_SETS[id(self)] = self
+
+    def __call__(
+        self,
+        preimage: MathematicalObject,
+        *,
+        cardinality: Cardinal | None = None,
+    ) -> SetColimitObject:
+        assert is_functor(preimage)
+        return self._colimit(preimage, cardinality=cardinality)
+
+    def colimit_of(self, diagram: Functor) -> SetColimitObject:
+        return self._colimit(diagram)
+
+    def _colimit(
+        self,
+        diagram: Functor,
+        *,
+        cardinality: Cardinal | None = None,
+    ) -> SetColimitObject:
+        assert diagram in self.functor().domain()
+        key = id(diagram)
+        cached = self._colimits.get(key)
+        if cached is None:
+            candidate = self.ObjectType(
+                category=self,
+                diagram=diagram,
+                cardinality=cardinality,
+            )
+            assert self.contains_set_colimit(candidate)
+            cached = candidate
+            self._colimits[key] = cached
+        assert self.contains_set_colimit(cached)
+        if cardinality is not None:
+            assert cached.cardinality() == cardinality
+        return cached
+
+    def contains_set_colimit(
+        self,
+        candidate: MathematicalObject,
+    ) -> TypeIs[SetColimitObject]:
+        return candidate in self
+
+
+_COLIMITS_OF_SETS: dict[int, ColimitsOfSetsCategory] = {}
+
+
+def is_colimits_of_sets_category(
+    category: Category,
+) -> TypeIs[ColimitsOfSetsCategory]:
+    return _COLIMITS_OF_SETS.get(id(category)) is category
 
 
 def _same_coproduct_term(
@@ -2603,8 +2790,24 @@ def LimitOfSets(
     cardinality: Cardinal | None = None,
 ) -> ProductPresentation:
     assert diagram.codomain() is Sets()
-    apex = LimitSet(diagram, cardinality=cardinality)
-    cone = Cone(diagram, apex, apex.projection)
+    apex = LimitSet(
+        diagram,
+        category=Sets(),
+        cardinality=cardinality,
+    )
+    return _limit_presentation(diagram, apex)
+
+
+def _limit_presentation(
+    diagram: Functor,
+    apex: LimitSet,
+) -> ProductPresentation:
+    assert apex.diagram() is diagram
+    cone = Cone(
+        diagram,
+        apex,
+        lambda index: apex._limit_projection(index),
+    )
 
     def mediate(other: ConeObject) -> Arrow:
         source = other.apex()
@@ -2630,10 +2833,22 @@ def ColimitOfSets(
     cardinality: Cardinal | None = None,
 ) -> CoproductPresentation:
     assert diagram.codomain() is Sets()
-    apex = ColimitSet(diagram, cardinality=cardinality)
+    apex = ColimitSet(
+        diagram,
+        category=Sets(),
+        cardinality=cardinality,
+    )
+    return _colimit_presentation(diagram, apex)
+
+
+def _colimit_presentation(
+    diagram: Functor,
+    apex: ColimitSet,
+) -> CoproductPresentation:
+    assert apex.diagram() is diagram
 
     def injection(index: MathematicalObject) -> Arrow:
-        return apex.injection(_element_named_by(index_objects(diagram.domain()), index))
+        return apex._injection(_element_named_by(index_objects(diagram.domain()), index))
 
     cocone = Cocone(diagram, apex, injection)
 

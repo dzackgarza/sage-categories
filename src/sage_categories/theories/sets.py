@@ -2446,7 +2446,7 @@ class LimitSet(ProductSet):
             return declared
         if any(self.factor(index).is_finite() is not True for index in index_set):
             return declared
-        return Cardinals()(sum(int(1) for _ in self))
+        return Cardinals()(sum(1 for _ in self))
 
     def membership(self, member: SetElement) -> Decision:
         product_membership = super().membership(member)

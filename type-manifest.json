@@ -1,0 +1,34 @@
+{
+  "arrow": {
+    "sage_categories.abstract_categories.category_constructions.FullSubcategoryArrow": [
+      "sage_categories.theories.sets.SetMorphism",
+      "sage_categories.theories.posets.TotallyOrderedSetMorphism",
+      "sage_categories.theories.posets.PosetMorphism"
+    ],
+    "sage_categories.theories.posets.PosetMorphism": ["sage_categories.theories.sets.SetMorphism"],
+    "sage_categories.theories.posets.TotallyOrderedSetMorphism": ["sage_categories.theories.posets.PosetMorphism"],
+    "sage_categories.values.Arrow": ["sage_categories.theories.sets.SetMorphism"]
+  },
+  "element": {
+    "sage_categories.abstract_categories.category_constructions.FullSubcategoryElement": ["sage_categories.theories.sets.SetElement"],
+    "sage_categories.theories.posets.PosetElement": ["sage_categories.theories.sets.SetElement", "sage_categories.theories.sets.FiniteSetElement"],
+    "sage_categories.theories.posets.TotallyOrderedSetElement": ["sage_categories.theories.posets.PosetElement"],
+    "sage_categories.theories.sets.FiniteSetElement": ["sage_categories.abstract_categories.category_constructions.FullSubcategoryElement"],
+    "sage_categories.values.CategoryElement": ["sage_categories.theories.sets.SetElement"]
+  },
+  "object": {
+    "sage_categories.abstract_categories.category_constructions.FullSubcategoryObject": ["sage_categories.theories.sets.SetObject"],
+    "sage_categories.abstract_categories.functors.DiscreteCategory": ["sage_categories.theories.sets.SetObject"],
+    "sage_categories.theories.posets.FinitePosetObject": ["sage_categories.theories.posets.PosetObject", "sage_categories.theories.sets.FiniteSetObject"],
+    "sage_categories.theories.posets.FiniteTotallyOrderedSetObject": [
+      "sage_categories.theories.posets.TotallyOrderedSetObject",
+      "sage_categories.theories.posets.FinitePosetObject"
+    ],
+    "sage_categories.theories.posets.PosetObject": ["sage_categories.theories.sets.SetObject"],
+    "sage_categories.theories.posets.TotallyOrderedSetObject": ["sage_categories.theories.posets.PosetObject"],
+    "sage_categories.theories.sets.ColimitElement": ["sage_categories.theories.sets.SetElement"],
+    "sage_categories.theories.sets.CoproductElement": ["sage_categories.theories.sets.SetElement"],
+    "sage_categories.theories.sets.FiniteSetObject": ["sage_categories.abstract_categories.category_constructions.FullSubcategoryObject"],
+    "sage_categories.theories.sets.ProductElement": ["sage_categories.theories.sets.SetElement"]
+  }
+}

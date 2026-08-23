@@ -361,7 +361,7 @@ class NaturalNumbersSet(SetObject):
 
     def __init__(self) -> None:
         self._members: dict[int, NaturalNumberElement] = {}
-        super().__init__(category=Sets(), cardinality=Aleph0())
+        super().__init__(category=CountableSets(), cardinality=Aleph0())
 
     def membership(self, member: SetElement) -> Decision:
         return member.ambient_set() is self

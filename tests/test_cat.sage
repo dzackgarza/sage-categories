@@ -257,3 +257,13 @@ def test_poset_products_lift_products_of_underlying_sets() -> None:
     diagonal_image = diagonal(factor_member)
     assert diagonal_image <= diagonal_image
     assert projection(diagonal_image) is factor_member
+
+    lift_comparison, = product_category.lift_comparisons()
+    assert is_isomorphism(lift_comparison)
+    comparison = lift_comparison.forward()
+    comparison_hom = comparison.hom_category()
+    assert is_natural_transformation_hom_category(comparison_hom)
+    assert comparison_hom.contains_transformation(comparison)
+    component = comparison.component(diagram)
+    assert component.domain() is underlying_product
+    assert component.codomain() is underlying_product

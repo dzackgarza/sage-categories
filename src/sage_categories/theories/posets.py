@@ -807,6 +807,7 @@ class ProductsOfPosetsCategory(ProductsOfCategory):
         self._set_products: ProductsOfSetsCategory | None = None
         self._forgetful_functor: ForgetPosetProductFunctor | None = None
         self._structural_coherence: Isomorphism | None = None
+        self._lift_comparison: Isomorphism | None = None
         super().__init__(
             functor,
             object_type=PosetProductObject,
@@ -879,6 +880,32 @@ class ProductsOfPosetsCategory(ProductsOfCategory):
             assert is_isomorphism(coherence)
             self._structural_coherence = coherence
         return (self._structural_coherence,)
+
+    def lift_comparisons(self) -> tuple[Isomorphism, ...]:
+        if self._lift_comparison is None:
+            forgetful = PartiallyOrderedSets().forgetful_functor()
+            lifted_product = compose_functors(forgetful, self.functor())
+            inherited_product = compose_functors(
+                self.set_products().functor(),
+                forgetful.postcomposition(self._index_category),
+            )
+
+            def component(source: MathematicalObject) -> Arrow:
+                assert is_functor(source)
+                first = lifted_product(source)
+                second = inherited_product(source)
+                assert first is second
+                return Sets().identity(first)
+
+            comparison = NaturalIsomorphism(
+                lifted_product,
+                inherited_product,
+                component,
+                component,
+            )
+            assert is_isomorphism(comparison)
+            self._lift_comparison = comparison
+        return (self._lift_comparison,)
 
     def contains_poset_product(
         self,

@@ -6,6 +6,7 @@ from typing import TypeIs
 
 from sage_categories.abstract_categories.functors import Functor, StructuralFunctor
 from sage_categories.abstract_categories.hom_categories import HomCategory
+from sage_categories.abstract_categories.hom_categories import Isomorphism
 from sage_categories.category import Category
 from sage_categories.values import (
     Arrow,
@@ -167,6 +168,10 @@ class ImageOfFunctor(Category):
         if self._inclusion is None:
             self._inclusion = ImageInclusionFunctor(self)
         return self._inclusion
+
+    def lift_comparisons(self) -> tuple[Isomorphism, ...]:
+        """Return natural isomorphisms that compare declared functor lifts."""
+        return ()
 
     def _hom_category_type(self) -> type[HomCategory]:
         return FunctorImageHomCategory

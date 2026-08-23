@@ -895,6 +895,10 @@ class SetHomCategory(HomCategory, SetObject):
             surjective=surjective,
         )
 
+    def __contains__(self, candidate: Any) -> bool:
+        value = registered_value(candidate)
+        return value is not None and value._belongs_to_hom(self)
+
     def _set_action(
         self,
         action: Callable[[SetElement], SetElement] | Mapping[SetElement, SetElement],

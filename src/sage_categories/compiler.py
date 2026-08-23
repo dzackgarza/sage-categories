@@ -216,7 +216,7 @@ class CategoryCompiler:
         element_methods: bool,
         morphism_methods: bool,
     ) -> type[Implementation]:
-        available = {name for name, method in local_type.__dict__.items() if inspect.isfunction(method)}
+        available = {name for name, method in vars(local_type).items() if inspect.isfunction(method)}
         inherited = {
             name: ForwardedMethod(
                 self.implementation_route(category, declaration.owner),
@@ -243,7 +243,7 @@ class CategoryCompiler:
     ) -> dict[str, FunctionType]:
         return {
             name: method
-            for name, method in local_type.__dict__.items()
+            for name, method in vars(local_type).items()
             if name not in _IGNORED_METHODS and (not name.startswith("_") or name.startswith("__")) and inspect.isfunction(method)
         }
 

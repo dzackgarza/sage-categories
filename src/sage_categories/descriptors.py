@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import inspect
 from types import FunctionType, MethodType
 from typing import TYPE_CHECKING
 
@@ -43,9 +42,4 @@ class ForwardedMethod:
             image = instance._element_image_along(self._route)
         else:
             image = instance._object_image_along(self._route)
-        implementation = next(
-            candidate
-            for implementation_type in image.__class__.__mro__
-            if (candidate := implementation_type.__dict__.get(self._method.__name__)) is not None and inspect.isfunction(candidate)
-        )
-        return MethodType(implementation, image)
+        return MethodType(self._method, image)

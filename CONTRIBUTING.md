@@ -209,6 +209,9 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-054` | Declare every relation between categories by a selected structural functor, including an inclusion, identity, or other trivial functor. A category without these functors is disconnected from the owned category graph. |
 | `POL-CAT-055` | Treat a failed structural functor or method compiler as a foundational defect. Its failure does not permit explicit subclassing or another inheritance path. |
 | `POL-CAT-056` | Apply the structural-functor framework to every functorial, universal, and arrow-based construction. Each construction category declares its correct inclusion, projection, source, target, or forgetful functor instead of subclassing an implementation from its image category. |
+| `POL-CAT-057` | Reject the concept of shared elements between categories. Every category owns a distinct `ElementType`, including property subcategories and dynamically constructed categories such as `C.Products()`. |
+| `POL-CAT-058` | Compile `ElementType` inheritance from selected structural functors by the same mechanism used for `ObjectType` and `ArrowType`. A subcategory never reuses another category's element implementation type. |
+| `POL-CAT-059` | Let each category add local methods to its `ElementType` while inheriting the complete applicable element interface through structural functors. Preserve the category-specific element type even when it adds no local methods. |
 
 Grounding examples:
 
@@ -220,6 +223,12 @@ Grounding examples:
 
 - `Sets().Finite()` declares its inclusion functor to `Sets()` even when both categories use the same realization.
   The inclusion states the categorical relation that replaces a Sage `super_categories` declaration.
+
+- An element of a finite set has type `Sets().Finite().ElementType`, not `Sets().ElementType`.
+  The inclusion functor supplies the set-element interface to the finite-set element type.
+
+- An element of a product has type `C.Products().ElementType`.
+  It inherits the applicable `C.ElementType` interface and can add `factors()` to return its indexed component family.
 
 - Cardinality belongs on every object of `Sets()` because every set has a cardinality.
   A constructor can supply exact or symbolic cardinal data.

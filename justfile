@@ -26,7 +26,7 @@ test-push:
 test-ci:
     @just -f ~/ai-review-ci/justfiles/sage.just -d . test-ci
 
-# The research Sage environment, pulled rather than rebuilt.
+# The research Sage environment, run rather than extracted.
 #
 # ghcr.io/dzackgarza/sage:develop is published by the fork itself, from the
 # same `just research-environment-sync` the desk runs. Every repository that
@@ -34,22 +34,42 @@ test-ci:
 # Sage, and none of them reaches for upstream's image, which is a different
 # Sage on Python 3.12.
 #
-# SAGE_ROOT is baked in at configure time, so the tree is restored to /sage --
-# the path it was configured at -- rather than relocated.
+# The image states its own consumption rule: /sage is neither relocatable nor
+# separable. SAGE_ROOT is baked in at configure time, sagelib's extension
+# modules link against the Debian libraries the image installs, and the venv
+# interpreter is a uv symlink into /root, outside /sage entirely. QC therefore
+# runs inside the container and reaches it through host wrappers.
+#
+# The profile derives `python` and `sage-preparse` as siblings of SAGE_BIN, so
+# all three wrappers share one directory. It preparses into host tempdirs and
+# byte-compiles from a script on stdin, so the tempdir roots are mounted at
+# their own paths and exec keeps stdin open.
 #
 # The sage profile installs nothing and asserts SAGE_BIN is executable, so this
 # runs before that assertion: _qc.yml calls it ahead of setup-profile, and
 # $GITHUB_ENV is the channel that reaches the validating step.
 
-# CI: pull the research Sage environment and export SAGE_BIN.
+# CI: start the research Sage environment and export SAGE_BIN.
 ci-provision-sage:
     #!/usr/bin/env bash
     set -euo pipefail
-    docker create --name sage-env ghcr.io/dzackgarza/sage:develop
-    sudo install -d -o "$(id -un)" -g "$(id -gn)" /sage
-    docker cp sage-env:/sage/. /sage/
-    docker rm sage-env
-    sage_bin=/sage/.venv/bin/sage
+    workspace="$(pwd -P)"
+    mounts=(-v "${workspace}:${workspace}" -v /tmp:/tmp)
+    if [ -n "${RUNNER_TEMP:-}" ] && [ "${RUNNER_TEMP#/tmp/}" = "${RUNNER_TEMP}" ]; then
+        mounts+=(-v "${RUNNER_TEMP}:${RUNNER_TEMP}")
+    fi
+    docker run --detach --name sage-env "${mounts[@]}" --workdir "${workspace}" \
+        ghcr.io/dzackgarza/sage:develop sleep infinity
+    sage_dir=/usr/local/sage-env
+    sudo install -d "${sage_dir}"
+    for tool in sage python sage-preparse; do
+        printf '%s\n' \
+            '#!/usr/bin/env bash' \
+            "exec docker exec -i -w \"\$(pwd -P)\" sage-env /sage/.venv/bin/${tool} \"\$@\"" \
+            | sudo tee "${sage_dir}/${tool}" >/dev/null
+        sudo chmod +x "${sage_dir}/${tool}"
+    done
+    sage_bin="${sage_dir}/sage"
     # The checkout under test, not whatever version the image happened to carry.
     "$sage_bin" -pip install --quiet --no-deps -e .
     echo "SAGE_BIN=$sage_bin" >> "${GITHUB_ENV:-/dev/stdout}"

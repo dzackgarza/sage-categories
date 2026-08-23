@@ -20,6 +20,7 @@ from sage_categories.abstract_categories.hom_categories import HomCategory
 from sage_categories.category import Category
 from sage_categories.values import (
     Arrow,
+    CategoryElement,
     MathematicalElement,
     MathematicalObject,
     registered_value,
@@ -120,9 +121,14 @@ class LimitsOfCategory(ImageOfFunctor):
         functor: Functor,
         *,
         object_type: type[LimitObject] = LimitObject,
+        element_type: type[MathematicalElement] = CategoryElement,
     ) -> None:
         self._limits: dict[int, LimitObject] = {}
-        super().__init__(functor, object_type=object_type)
+        super().__init__(
+            functor,
+            object_type=object_type,
+            element_type=element_type,
+        )
         _LIMIT_IMAGE_CATEGORIES[id(self)] = self
 
     def __call__(self, preimage: MathematicalObject) -> LimitObject:
@@ -181,9 +187,14 @@ class ColimitsOfCategory(ImageOfFunctor):
         functor: Functor,
         *,
         object_type: type[ColimitObject] = ColimitObject,
+        element_type: type[MathematicalElement] = CategoryElement,
     ) -> None:
         self._colimits: dict[int, ColimitObject] = {}
-        super().__init__(functor, object_type=object_type)
+        super().__init__(
+            functor,
+            object_type=object_type,
+            element_type=element_type,
+        )
         _COLIMIT_IMAGE_CATEGORIES[id(self)] = self
 
     def __call__(self, preimage: MathematicalObject) -> ColimitObject:
@@ -235,8 +246,18 @@ class ColimitsOfCategory(ImageOfFunctor):
 class ProductsOfCategory(LimitsOfCategory):
     """Chosen products constructed by one product functor."""
 
-    def __init__(self, functor: Functor) -> None:
-        super().__init__(functor, object_type=ProductObject)
+    def __init__(
+        self,
+        functor: Functor,
+        *,
+        object_type: type[ProductObject] = ProductObject,
+        element_type: type[MathematicalElement] = CategoryElement,
+    ) -> None:
+        super().__init__(
+            functor,
+            object_type=object_type,
+            element_type=element_type,
+        )
         _PRODUCT_IMAGE_CATEGORIES[id(self)] = self
 
     def __call__(self, preimage: MathematicalObject) -> ProductObject:
@@ -256,8 +277,18 @@ class ProductsOfCategory(LimitsOfCategory):
 class CoproductsOfCategory(ColimitsOfCategory):
     """Chosen coproducts constructed by one coproduct functor."""
 
-    def __init__(self, functor: Functor) -> None:
-        super().__init__(functor, object_type=CoproductObject)
+    def __init__(
+        self,
+        functor: Functor,
+        *,
+        object_type: type[CoproductObject] = CoproductObject,
+        element_type: type[MathematicalElement] = CategoryElement,
+    ) -> None:
+        super().__init__(
+            functor,
+            object_type=object_type,
+            element_type=element_type,
+        )
         _COPRODUCT_IMAGE_CATEGORIES[id(self)] = self
 
     def __call__(self, preimage: MathematicalObject) -> CoproductObject:

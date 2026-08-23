@@ -7,7 +7,12 @@ from typing import TypeIs
 from sage_categories.abstract_categories.functors import Functor, StructuralFunctor
 from sage_categories.abstract_categories.hom_categories import HomCategory
 from sage_categories.category import Category
-from sage_categories.values import Arrow, MathematicalElement, MathematicalObject
+from sage_categories.values import (
+    Arrow,
+    CategoryElement,
+    MathematicalElement,
+    MathematicalObject,
+)
 
 
 class FunctorImageObject(MathematicalObject):
@@ -137,11 +142,13 @@ class ImageOfFunctor(Category):
         functor: Functor,
         *,
         object_type: type[FunctorImageObject] = FunctorImageObject,
+        element_type: type[MathematicalElement] = CategoryElement,
     ) -> None:
         self._functor = functor
         self._inclusion: ImageInclusionFunctor | None = None
         super().__init__(
             object_type=object_type,
+            element_type=element_type,
             category=FunctorImageCategoryObjects(),
         )
 

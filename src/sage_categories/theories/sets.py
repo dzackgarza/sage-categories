@@ -28,6 +28,7 @@ from sage_categories.abstract_categories.functors import (
     InclusionFunctor,
     NaturalTransformation,
     StructuralFunctor,
+    is_functor,
 )
 from sage_categories.abstract_categories.functors import (
     DiscreteCategory as DiscreteCategoryObject,
@@ -57,11 +58,13 @@ from sage_categories.abstract_categories.products import (
     Cone,
     ConeObject,
     Coproduct,
+    CoproductObject,
     CoproductPresentation,
+    CoproductsOfCategory,
     Product,
+    ProductObject,
     ProductPresentation,
-    is_coproducts_of_category,
-    is_products_of_category,
+    ProductsOfCategory,
 )
 from sage_categories.category import Category
 from sage_categories.theories.cardinals import (
@@ -1048,14 +1051,17 @@ class SetHomCategory(HomCategory, SetObject):
                 index_category,
                 lambda index: self if index is function_index else exponent,
             )
-            product_functor = sets.ProductFunctor(index_category)
-            products = product_functor.Image()
-            assert is_products_of_category(products)
-            product_object = products.product_of(diagram)
-            product = product_object.image()
-            assert sets.contains_set(product)
-            function_projection = product_object.projection(function_index)
-            argument_projection = product_object.projection(argument_index)
+            products = sets.Products(index_category)
+            assert is_products_of_sets_category(products)
+            product = products(
+                diagram,
+                cardinality=Cardinals().product(
+                    self.cardinality(),
+                    exponent.cardinality(),
+                ),
+            )
+            function_projection = product.projection(function_index)
+            argument_projection = product.projection(argument_index)
             assert sets.contains_set_morphism(function_projection)
             assert sets.contains_set_morphism(argument_projection)
 
@@ -1493,6 +1499,12 @@ class SetsCategory(Category):
             return _CoproductPresentationOfSets(diagram)
         return ColimitOfSets(diagram)
 
+    def _products_of_category(self, functor: Functor) -> Category:
+        return ProductsOfSetsCategory(functor)
+
+    def _coproducts_of_category(self, functor: Functor) -> Category:
+        return CoproductsOfSetsCategory(functor)
+
     def __repr__(self) -> str:
         return "Sets"
 
@@ -1829,13 +1841,14 @@ class ProductSet(SetObject):
         self,
         diagram: Functor,
         *,
+        category: Category,
         cardinality: Cardinal | None = None,
     ) -> None:
         self._diagram = diagram
         size = cardinality
         if size is None:
             size = _indexed_product_cardinality(self.index_set(), self.factor)
-        super().__init__(category=Sets(), cardinality=size)
+        super().__init__(category=category, cardinality=size)
 
     def diagram(self) -> Functor:
         return self._diagram
@@ -1887,7 +1900,7 @@ class ProductSet(SetObject):
 
             yield self.element(component)
 
-    def projection(self, index: SetElement) -> SetMorphism:
+    def _projection(self, index: SetElement) -> SetMorphism:
         factor = self.factor(index)
 
         def project(member: SetElement) -> SetElement:
@@ -1899,6 +1912,95 @@ class ProductSet(SetObject):
 
     def __repr__(self) -> str:
         return f"Product of {self._diagram}"
+
+
+class SetProductObject(ProductObject, ProductSet):
+    """A product presentation whose apex is the same owned set object."""
+
+    def __init__(
+        self,
+        *,
+        category: ProductsOfSetsCategory,
+        diagram: Functor,
+        cardinality: Cardinal | None = None,
+    ) -> None:
+        ProductSet.__init__(
+            self,
+            diagram,
+            category=category,
+            cardinality=cardinality,
+        )
+        self._preimage = diagram
+        self._image = self
+        self._limit_presentation = _product_presentation(diagram, self)
+
+
+class ProductsOfSetsCategory(ProductsOfCategory):
+    """Products in ``Sets()``, with each product equal to its apex set."""
+
+    ObjectType: type[SetProductObject] = SetProductObject
+    ElementType: type[ProductElement] = ProductElement
+
+    def __init__(self, functor: Functor) -> None:
+        super().__init__(
+            functor,
+            object_type=SetProductObject,
+            element_type=ProductElement,
+        )
+        _PRODUCTS_OF_SETS[id(self)] = self
+
+    def __call__(
+        self,
+        preimage: MathematicalObject,
+        *,
+        cardinality: Cardinal | None = None,
+    ) -> SetProductObject:
+        assert is_functor(preimage)
+        return self._product(preimage, cardinality=cardinality)
+
+    def limit_of(self, diagram: Functor) -> SetProductObject:
+        return self._product(diagram)
+
+    def product_of(self, diagram: Functor) -> SetProductObject:
+        return self._product(diagram)
+
+    def _product(
+        self,
+        diagram: Functor,
+        *,
+        cardinality: Cardinal | None = None,
+    ) -> SetProductObject:
+        assert diagram in self.functor().domain()
+        key = id(diagram)
+        cached = self._limits.get(key)
+        if cached is None:
+            candidate = self.ObjectType(
+                category=self,
+                diagram=diagram,
+                cardinality=cardinality,
+            )
+            assert self.contains_set_product(candidate)
+            cached = candidate
+            self._limits[key] = cached
+        assert self.contains_set_product(cached)
+        if cardinality is not None:
+            assert cached.cardinality() == cardinality
+        return cached
+
+    def contains_set_product(
+        self,
+        candidate: MathematicalObject,
+    ) -> TypeIs[SetProductObject]:
+        return candidate in self
+
+
+_PRODUCTS_OF_SETS: dict[int, ProductsOfSetsCategory] = {}
+
+
+def is_products_of_sets_category(
+    category: Category,
+) -> TypeIs[ProductsOfSetsCategory]:
+    return _PRODUCTS_OF_SETS.get(id(category)) is category
 
 
 class CoproductElement(SetElement):
@@ -1961,13 +2063,14 @@ class CoproductSet(SetObject):
         self,
         diagram: Functor,
         *,
+        category: Category,
         cardinality: Cardinal | None = None,
     ) -> None:
         self._diagram = diagram
         size = cardinality
         if size is None:
             size = _indexed_sum_cardinality(self.index_set(), self.cofactor)
-        super().__init__(category=Sets(), cardinality=size)
+        super().__init__(category=category, cardinality=size)
 
     def diagram(self) -> Functor:
         return self._diagram
@@ -2010,7 +2113,7 @@ class CoproductSet(SetObject):
             for value in cofactor:
                 yield self.element(index, value)
 
-    def injection(self, index: SetElement) -> SetMorphism:
+    def _injection(self, index: SetElement) -> SetMorphism:
         return _set_morphism(
             self.cofactor(index),
             self,
@@ -2020,6 +2123,95 @@ class CoproductSet(SetObject):
 
     def __repr__(self) -> str:
         return f"Coproduct of {self._diagram}"
+
+
+class SetCoproductObject(CoproductObject, CoproductSet):
+    """A coproduct presentation whose apex is the same owned set object."""
+
+    def __init__(
+        self,
+        *,
+        category: CoproductsOfSetsCategory,
+        diagram: Functor,
+        cardinality: Cardinal | None = None,
+    ) -> None:
+        CoproductSet.__init__(
+            self,
+            diagram,
+            category=category,
+            cardinality=cardinality,
+        )
+        self._preimage = diagram
+        self._image = self
+        self._colimit_presentation = _coproduct_presentation(diagram, self)
+
+
+class CoproductsOfSetsCategory(CoproductsOfCategory):
+    """Coproducts in ``Sets()``, with each coproduct equal to its apex set."""
+
+    ObjectType: type[SetCoproductObject] = SetCoproductObject
+    ElementType: type[CoproductElement] = CoproductElement
+
+    def __init__(self, functor: Functor) -> None:
+        super().__init__(
+            functor,
+            object_type=SetCoproductObject,
+            element_type=CoproductElement,
+        )
+        _COPRODUCTS_OF_SETS[id(self)] = self
+
+    def __call__(
+        self,
+        preimage: MathematicalObject,
+        *,
+        cardinality: Cardinal | None = None,
+    ) -> SetCoproductObject:
+        assert is_functor(preimage)
+        return self._coproduct(preimage, cardinality=cardinality)
+
+    def colimit_of(self, diagram: Functor) -> SetCoproductObject:
+        return self._coproduct(diagram)
+
+    def coproduct_of(self, diagram: Functor) -> SetCoproductObject:
+        return self._coproduct(diagram)
+
+    def _coproduct(
+        self,
+        diagram: Functor,
+        *,
+        cardinality: Cardinal | None = None,
+    ) -> SetCoproductObject:
+        assert diagram in self.functor().domain()
+        key = id(diagram)
+        cached = self._colimits.get(key)
+        if cached is None:
+            candidate = self.ObjectType(
+                category=self,
+                diagram=diagram,
+                cardinality=cardinality,
+            )
+            assert self.contains_set_coproduct(candidate)
+            cached = candidate
+            self._colimits[key] = cached
+        assert self.contains_set_coproduct(cached)
+        if cardinality is not None:
+            assert cached.cardinality() == cardinality
+        return cached
+
+    def contains_set_coproduct(
+        self,
+        candidate: MathematicalObject,
+    ) -> TypeIs[SetCoproductObject]:
+        return candidate in self
+
+
+_COPRODUCTS_OF_SETS: dict[int, CoproductsOfSetsCategory] = {}
+
+
+def is_coproducts_of_sets_category(
+    category: Category,
+) -> TypeIs[CoproductsOfSetsCategory]:
+    return _COPRODUCTS_OF_SETS.get(id(category)) is category
 
 
 class LimitSet(ProductSet):
@@ -2032,7 +2224,7 @@ class LimitSet(ProductSet):
         cardinality: Cardinal | None = None,
     ) -> None:
         size = UnknownCardinality() if cardinality is None else cardinality
-        super().__init__(diagram, cardinality=size)
+        super().__init__(diagram, category=Sets(), cardinality=size)
 
     def index_set(self) -> SetObject:
         return index_objects(self.diagram().domain())
@@ -2046,7 +2238,7 @@ class LimitSet(ProductSet):
         return value
 
     def projection(self, index: MathematicalObject) -> SetMorphism:
-        return super().projection(_element_named_by(self.index_set(), index))
+        return self._projection(_element_named_by(self.index_set(), index))
 
     def _membership(self, member: SetElement) -> Decision:
         product_membership = super()._membership(member)
@@ -2148,7 +2340,10 @@ class ColimitSet(SetObject):
             discrete_objects,
             lambda index: self._object_image(index.label()),
         )
-        self._coproduct = CoproductSet(object_diagram)
+        self._coproduct = CoproductSet(
+            object_diagram,
+            category=Sets(),
+        )
         super().__init__(category=Sets(), cardinality=cardinality)
 
     def _object_image(self, index: SetElement) -> SetObject:
@@ -2309,13 +2504,25 @@ def ProductOfSets(
     cardinality: Cardinal | None = None,
 ) -> ProductPresentation:
     assert diagram.codomain() is Sets()
-    apex = ProductSet(diagram, cardinality=cardinality)
+    apex = ProductSet(
+        diagram,
+        category=Sets(),
+        cardinality=cardinality,
+    )
+    return _product_presentation(diagram, apex)
+
+
+def _product_presentation(
+    diagram: Functor,
+    apex: ProductSet,
+) -> ProductPresentation:
+    assert apex.diagram() is diagram
 
     def projection(index: MathematicalObject) -> Arrow:
         index_category = diagram.domain()
         assert DiscreteCategories().contains_discrete_category(index_category)
         assert index_category.contains_object(index)
-        return apex.projection(index.label())
+        return apex._projection(index.label())
 
     cone = Cone(diagram, apex, projection)
 
@@ -2328,7 +2535,7 @@ def ProductOfSets(
             lambda member: apex.element(
                 lambda index: _cone_component_value(
                     other,
-                    index.value(),
+                    apex.index_category().object(index),
                     member,
                 )
             ),
@@ -2353,13 +2560,25 @@ def _CoproductPresentationOfSets(
     cardinality: Cardinal | None = None,
 ) -> CoproductPresentation:
     assert diagram.codomain() is Sets()
-    apex = CoproductSet(diagram, cardinality=cardinality)
+    apex = CoproductSet(
+        diagram,
+        category=Sets(),
+        cardinality=cardinality,
+    )
+    return _coproduct_presentation(diagram, apex)
+
+
+def _coproduct_presentation(
+    diagram: Functor,
+    apex: CoproductSet,
+) -> CoproductPresentation:
+    assert apex.diagram() is diagram
 
     def injection(index: MathematicalObject) -> Arrow:
         index_category = diagram.domain()
         assert DiscreteCategories().contains_discrete_category(index_category)
         assert index_category.contains_object(index)
-        return apex.injection(index.label())
+        return apex._injection(index.label())
 
     cocone = Cocone(diagram, apex, injection)
 
@@ -2369,7 +2588,9 @@ def _CoproductPresentationOfSets(
 
         def induced(member: SetElement) -> SetElement:
             assert CoproductElements().contains_coproduct_element(member)
-            component = other.costructure_morphism(member.index().value())
+            component = other.costructure_morphism(
+                apex.index_category().object(member.index())
+            )
             assert Sets().contains_set_morphism(component)
             return component(member.value())
 
@@ -2447,13 +2668,13 @@ def CartesianProductOfSets(factors: tuple[SetObject, ...]) -> SetObject:
         return factors[ordinal_index.finite_value()]
 
     diagram = SetFamily(index, factor)
-    presentation = ProductOfSets(
-        diagram,
-        cardinality=Cardinals().product(*(factor.cardinality() for factor in factors)),
-    )
+    size = Cardinals().product(*(factor.cardinality() for factor in factors))
     products = Sets().Products(index)
-    assert is_products_of_category(products)
-    image = products(presentation)
+    assert is_products_of_sets_category(products)
+    image = products(
+        diagram,
+        cardinality=size,
+    )
     assert Sets().contains_set(image)
     return image
 
@@ -2469,10 +2690,9 @@ def CartesianProductOfFamily(
         index_category,
         lambda index: factors(index.label()),
     )
-    presentation = ProductOfSets(diagram, cardinality=cardinality)
     products = Sets().Products(index_category)
-    assert is_products_of_category(products)
-    image = products(presentation)
+    assert is_products_of_sets_category(products)
+    image = products(diagram, cardinality=cardinality)
     assert Sets().contains_set(image)
     return image
 
@@ -2480,6 +2700,9 @@ def CartesianProductOfFamily(
 def CartesianProductMorphismOfFamily(
     index_category: DiscreteCategoryObject,
     functions: SetMorphismFamily,
+    *,
+    domain_cardinality: Cardinal | None = None,
+    codomain_cardinality: Cardinal | None = None,
 ) -> SetMorphism:
     def function(index: DiscreteObject) -> SetMorphism:
         value = functions(index)
@@ -2508,9 +2731,25 @@ def CartesianProductMorphismOfFamily(
         target,
         component,
     )
+    products = Sets().Products(index_category)
+    assert is_products_of_sets_category(products)
+    products(source, cardinality=domain_cardinality)
+    products(target, cardinality=codomain_cardinality)
     image = Sets().ProductFunctor(index_category)(transformation)
     assert Sets().contains_set_morphism(image)
     return image
+
+
+def _domain_cardinality(morphism: SetMorphism) -> Cardinal:
+    domain = morphism.domain()
+    assert Sets().contains_set(domain)
+    return domain.cardinality()
+
+
+def _codomain_cardinality(morphism: SetMorphism) -> Cardinal:
+    codomain = morphism.codomain()
+    assert Sets().contains_set(codomain)
+    return codomain.cardinality()
 
 
 def cartesian_product_morphism(*functions: SetMorphism) -> SetMorphism:
@@ -2527,7 +2766,16 @@ def cartesian_product_morphism(*functions: SetMorphism) -> SetMorphism:
         assert Sets().contains_set_morphism(value)
         return value
 
-    return CartesianProductMorphismOfFamily(index_category, function)
+    return CartesianProductMorphismOfFamily(
+        index_category,
+        function,
+        domain_cardinality=Cardinals().product(
+            *(_domain_cardinality(morphism) for morphism in functions)
+        ),
+        codomain_cardinality=Cardinals().product(
+            *(_codomain_cardinality(morphism) for morphism in functions)
+        ),
+    )
 
 
 def DisjointUnionOfSets(cofactors: tuple[SetObject, ...]) -> SetObject:
@@ -2543,13 +2791,12 @@ def DisjointUnionOfSets(cofactors: tuple[SetObject, ...]) -> SetObject:
         return cofactors[ordinal_index.finite_value()]
 
     diagram = SetFamily(index, cofactor)
-    presentation = _CoproductPresentationOfSets(
+    coproducts = Sets().Coproducts(index)
+    assert is_coproducts_of_sets_category(coproducts)
+    image = coproducts(
         diagram,
         cardinality=Cardinals().sum(*(cofactor.cardinality() for cofactor in cofactors)),
     )
-    coproducts = Sets().Coproducts(index)
-    assert is_coproducts_of_category(coproducts)
-    image = coproducts(presentation)
     assert Sets().contains_set(image)
     return image
 
@@ -2569,13 +2816,9 @@ def CoproductOfFamily(
         index_category,
         lambda index: cofactors(index.label()),
     )
-    presentation = _CoproductPresentationOfSets(
-        diagram,
-        cardinality=cardinality,
-    )
     coproducts = Sets().Coproducts(index_category)
-    assert is_coproducts_of_category(coproducts)
-    image = coproducts(presentation)
+    assert is_coproducts_of_sets_category(coproducts)
+    image = coproducts(diagram, cardinality=cardinality)
     assert Sets().contains_set(image)
     return image
 
@@ -2583,6 +2826,9 @@ def CoproductOfFamily(
 def CoproductMorphismOfFamily(
     index_category: DiscreteCategoryObject,
     functions: SetMorphismFamily,
+    *,
+    domain_cardinality: Cardinal | None = None,
+    codomain_cardinality: Cardinal | None = None,
 ) -> SetMorphism:
     def function(index: DiscreteObject) -> SetMorphism:
         value = functions(index)
@@ -2611,6 +2857,10 @@ def CoproductMorphismOfFamily(
         target,
         component,
     )
+    coproducts = Sets().Coproducts(index_category)
+    assert is_coproducts_of_sets_category(coproducts)
+    coproducts(source, cardinality=domain_cardinality)
+    coproducts(target, cardinality=codomain_cardinality)
     image = Sets().CoproductFunctor(index_category)(transformation)
     assert Sets().contains_set_morphism(image)
     return image
@@ -2630,7 +2880,16 @@ def coproduct_morphism(*functions: SetMorphism) -> SetMorphism:
         assert Sets().contains_set_morphism(value)
         return value
 
-    return CoproductMorphismOfFamily(index_category, function)
+    return CoproductMorphismOfFamily(
+        index_category,
+        function,
+        domain_cardinality=Cardinals().sum(
+            *(_domain_cardinality(morphism) for morphism in functions)
+        ),
+        codomain_cardinality=Cardinals().sum(
+            *(_codomain_cardinality(morphism) for morphism in functions)
+        ),
+    )
 
 
 def ExponentialOfSets(codomain: SetObject, exponent: SetObject) -> SetHomCategory:

@@ -532,6 +532,11 @@ class Category(MathematicalObject):
         """Return the image category of one chosen product functor."""
         return self.ProductFunctor(index_category).Image()
 
+    def _products_of_category(self, functor: Functor) -> Category:
+        from sage_categories.abstract_categories.products import ProductsOfCategory
+
+        return ProductsOfCategory(functor)
+
     def CoproductFunctor(self, index_category: Category) -> Functor:
         """Return the chosen coproduct functor on discrete diagrams."""
         from sage_categories.abstract_categories.functors import CoproductFunctor
@@ -546,6 +551,11 @@ class Category(MathematicalObject):
     def Coproducts(self, index_category: Category) -> Category:
         """Return the image category of one chosen coproduct functor."""
         return self.CoproductFunctor(index_category).Image()
+
+    def _coproducts_of_category(self, functor: Functor) -> Category:
+        from sage_categories.abstract_categories.products import CoproductsOfCategory
+
+        return CoproductsOfCategory(functor)
 
     def chosen_limit(self, diagram: Functor) -> ProductPresentation:
         """Return the chosen limit presentation of ``diagram``."""

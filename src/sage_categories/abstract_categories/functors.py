@@ -701,9 +701,7 @@ class ProductFunctor(LimitFunctor):
         super().__init__(codomain, index_category)
 
     def _construct_image_category(self) -> Category:
-        from sage_categories.abstract_categories.products import ProductsOfCategory
-
-        return ProductsOfCategory(self)
+        return self.codomain()._products_of_category(self)
 
 
 class CoproductFunctor(ColimitFunctor):
@@ -714,9 +712,7 @@ class CoproductFunctor(ColimitFunctor):
         super().__init__(codomain, index_category)
 
     def _construct_image_category(self) -> Category:
-        from sage_categories.abstract_categories.products import CoproductsOfCategory
-
-        return CoproductsOfCategory(self)
+        return self.codomain()._coproducts_of_category(self)
 
 
 class _NaturalTransformation(Arrow):

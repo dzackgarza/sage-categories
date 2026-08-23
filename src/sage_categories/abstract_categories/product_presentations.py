@@ -645,8 +645,4 @@ def is_presentation_category(
     category: Category,
 ) -> TypeIs[ProductPresentations | CoproductPresentations | BiproductPresentations]:
     """Return whether ``category`` contains universal presentations."""
-    return (
-        is_product_presentations(category)
-        or is_coproduct_presentations(category)
-        or is_biproduct_presentations(category)
-    )
+    return is_product_presentations(category) or is_coproduct_presentations(category) or is_biproduct_presentations(category)

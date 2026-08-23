@@ -45,8 +45,7 @@ class DiagramHomCategory(HomCategory):
         return (
             value.domain() is self.domain()
             and value.codomain() is self.codomain()
-            and forward
-            in diagram.ambient_category().Hom(self.domain(), self.codomain())
+            and forward in diagram.ambient_category().Hom(self.domain(), self.codomain())
             and diagram.contains_arrow(value)
         )
 
@@ -58,9 +57,7 @@ class DiagramHomCategory(HomCategory):
         assert value is None
         assert self.domain() is self.codomain()
         diagram = self.diagram_category()
-        identity = (
-            diagram.ambient_category().Hom(self.domain(), self.domain()).identity()
-        )
+        identity = diagram.ambient_category().Hom(self.domain(), self.domain()).identity()
         diagram.admit(identity)
         return identity
 
@@ -97,11 +94,7 @@ class DiagramCategory(Category):
         self._ambient_inclusion: InclusionFunctor | None = None
         assert all(value in ambient_category for value in self._diagram_objects)
         assert all(ambient_category.contains_arrow(morphism) for morphism in morphisms)
-        assert all(
-            self._has_object(morphism.domain())
-            and self._has_object(morphism.codomain())
-            for morphism in morphisms
-        )
+        assert all(self._has_object(morphism.domain()) and self._has_object(morphism.codomain()) for morphism in morphisms)
         super().__init__(
             object_type=ambient_category.ObjectType,
             element_type=ambient_category.ElementType,

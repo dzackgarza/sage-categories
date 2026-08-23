@@ -495,6 +495,7 @@ The caller can materialize a finite result when its application requires one.
 | `POL-CODE-035` | Handle trivial or decisive cases with early returns. Then assert the stronger invariants established by their exclusion before implementing the remaining case. |
 | `POL-CODE-036` | Prefer immutable transformations, explicit case analysis, and local equations in the style of Haskell and Lean over C-style mutable state and control flow. |
 | `POL-CODE-037` | Do not rewrap a value when the new wrapper does not change its required type or semantics. Calls such as `int(0)`, `Integer(0)`, and `ZZ(0)` require a local comment that proves why the conversion is necessary. |
+| `POL-CODE-038` | Do not add a function or method whose body only forwards to another function, method, operator, or protocol. Treat an extremely short function as a review signal and remove it unless it owns distinct mathematical behavior. |
 
 For adjacent elements, use `itertools.pairwise(xs)` instead of `zip(xs, xs[1:])`.
 The named primitive states adjacency, remains lazy, and does not require slicing.
@@ -506,6 +507,9 @@ The corresponding indexed categorical sum or product owns the potentially infini
 Within an owned method, route disjoint construction forms with `match` and `case`.
 Return immediately for identities, zero objects, empty diagrams, or already-normal forms when those cases apply.
 Assert the mathematical hypotheses that remain before entering the general branch.
+
+For example, do not define `equals(x, y)` to return `x == y` or define `Y.contains(X)` to return `X in Y`.
+Use the natural protocol syntax directly.
 
 ## Tests and performance
 

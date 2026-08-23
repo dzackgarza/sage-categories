@@ -305,6 +305,14 @@ For a set \(X\), the following constructions are canonically equivalent:
 
 If \(X\) later receives the discrete topology, the topology layer identifies this category with \(\operatorname{Open}(X)\). Topology remains owned by its own category; `Sets()` supplies only the powerset, the containment order, and their categorical compatibility.
 
+Because `X.powerset()` is itself a set, it has the standard predicate-subobject interface:
+
+```python
+tau = X.powerset().subset_from(is_open)
+```
+
+This constructs a subobject \(\tau\hookrightarrow P(X)\) without enumerating \(P(X)\). A topology layer can accept \(\tau\), establish the topology axioms, and construct the associated topological space. In order-theoretic terms, \(\tau\) contains the bottom and top subsets and is closed under arbitrary joins and finite meets. The discrete topology is the case \(\tau=P(X)\).
+
 ## Finite and fixed-cardinality subsets
 
 The additional constructors are:

@@ -31,12 +31,14 @@ from sage_categories.abstract_categories.products import (
     is_coproducts_of_category,
     is_products_of_category,
 )
+from sage_categories.compiler import category_compiler
 from sage_categories.theories.posets import (
     PosetElement,
+    PosetObject,
     TotallyOrderedSetElements,
     is_poset_hom_category,
 )
-from sage_categories.theories.sets import is_products_of_sets_category
+from sage_categories.theories.sets import SetObject, is_products_of_sets_category
 
 
 
@@ -263,6 +265,14 @@ def test_compiler_exposes_object_element_and_arrow_routes() -> None:
     assert member.ambient_total_order() is ordered_set
     assert member <= member
     assert finite_poset.height() == 2
+
+    # The same relation the compiler forwards along, reported for a checker
+    # that cannot follow a declared functor. A poset is a set through its
+    # forgetful functor, so its object type reaches the set object type.
+    reported = category_compiler().declared_inheritance()
+    poset_objects = f"{PosetObject.__module__}.{PosetObject.__qualname__}"
+    set_objects = f"{SetObject.__module__}.{SetObject.__qualname__}"
+    assert set_objects in reported["object"][poset_objects]
 
 
 def test_structural_coherence_identifies_parallel_forgetful_functors() -> None:

@@ -15,6 +15,22 @@ if TYPE_CHECKING:
     from sage_categories.category import Category
 
 
+def _implementation_name(implementation: type) -> str:
+    return f"{implementation.__module__}.{implementation.__qualname__}"
+
+
+def _local_type(category: Category, role: ImplementationRole) -> type:
+    match role:
+        case ImplementationRole.OBJECT:
+            return category.local_object_type()
+        case ImplementationRole.ELEMENT:
+            return category.local_element_type()
+        case ImplementationRole.ARROW:
+            return category.local_arrow_type()
+        case _:
+            assert_never(role)
+
+
 _IGNORED_METHODS = frozenset(
     {
         "__class__",
@@ -74,6 +90,47 @@ class CategoryCompiler:
         self._element_catalogues: dict[int, dict[str, DeclaredMethod]] = {}
         self._arrow_catalogues: dict[int, dict[str, DeclaredMethod]] = {}
         self._routes: dict[tuple[int, int], tuple[StructuralFunctor, ...]] = {}
+        self._compiled_categories: dict[int, Category] = {}
+
+    def compiled_categories(self) -> tuple[Category, ...]:
+        """Return every category whose implementation types this has compiled."""
+        return tuple(self._compiled_categories.values())
+
+    def declared_inheritance(self) -> dict[str, dict[str, tuple[str, ...]]]:
+        """Report, per role, the implementation types each category inherits from.
+
+        The compiled surface follows selected structural functors, so nothing
+        states this relation in source and a static checker cannot infer it.
+        POL-TYPE-024 makes reporting it the compiler's obligation: a checker
+        plugin reads the declarations from their owner here rather than from a
+        second graph kept somewhere else.
+        """
+        reported: dict[str, dict[str, tuple[str, ...]]] = {}
+        for role in ImplementationRole:
+            relations: dict[str, tuple[str, ...]] = {}
+            for category in self.compiled_categories():
+                local_type = _local_type(category, role)
+                reached: tuple[str, ...] = ()
+                for functor in category.super_functors():
+                    codomain = functor.codomain()
+                    if codomain is category:
+                        continue
+                    inherited_type = _local_type(codomain, role)
+                    name = _implementation_name(inherited_type)
+                    if inherited_type is local_type or name in reached:
+                        continue
+                    reached = (*reached, name)
+                if not reached:
+                    continue
+                # Two categories can share one local type, so the relations
+                # already recorded for it stay and this adds what is new.
+                declaring = _implementation_name(local_type)
+                if declaring in relations:
+                    recorded = relations[declaring]
+                    reached = recorded + tuple(name for name in reached if name not in recorded)
+                relations[declaring] = reached
+            reported[role.value] = dict(sorted(relations.items()))
+        return reported
 
     def compiled_object_type(
         self,
@@ -92,6 +149,7 @@ class CategoryCompiler:
             role=ImplementationRole.OBJECT,
         )
         self._object_types[key] = compiled
+        self._compiled_categories[id(category)] = category
         return compiled
 
     def compiled_element_type(
@@ -111,6 +169,7 @@ class CategoryCompiler:
             role=ImplementationRole.ELEMENT,
         )
         self._element_types[key] = compiled
+        self._compiled_categories[id(category)] = category
         return compiled
 
     def compiled_arrow_type(
@@ -130,6 +189,7 @@ class CategoryCompiler:
             role=ImplementationRole.ARROW,
         )
         self._arrow_types[key] = compiled
+        self._compiled_categories[id(category)] = category
         return compiled
 
     def object_method_catalogue(

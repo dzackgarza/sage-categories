@@ -782,7 +782,11 @@ class FullSubcategory(Category):
 
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
-        return value is not None and value in self._ambient_category and self._predicate(value)
+        return (
+            value is not None
+            and value in self._ambient_category
+            and self._predicate(value)
+        )
 
     def contains_arrow(self, candidate: MathematicalObject) -> TypeIs[Arrow]:
         if not self._ambient_category.contains_arrow(candidate):
@@ -793,9 +797,12 @@ class FullSubcategory(Category):
         return FullSubcategoryHomCategory
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
+        return (self.inclusion(),)
+
+    def inclusion(self) -> InclusionFunctor:
         if self._inclusion is None:
             self._inclusion = InclusionFunctor(self, self._ambient_category)
-        return (self._inclusion,)
+        return self._inclusion
 
     def __repr__(self) -> str:
         return self._name
@@ -868,11 +875,17 @@ def is_full_subcategory(category: Category) -> TypeIs[FullSubcategory]:
 
 
 def is_opposite_arrow(arrow: Arrow) -> TypeIs[OppositeArrow]:
-    return is_opposite_category(arrow.hom_category().base_category()) and arrow in arrow.hom_category().base_category().ArrowCategory()
+    return (
+        is_opposite_category(arrow.hom_category().base_category())
+        and arrow in arrow.hom_category().base_category().ArrowCategory()
+    )
 
 
 def is_product_arrow(arrow: Arrow) -> TypeIs[ProductArrow]:
-    return is_product_category(arrow.hom_category().base_category()) and arrow in arrow.hom_category().base_category().ArrowCategory()
+    return (
+        is_product_category(arrow.hom_category().base_category())
+        and arrow in arrow.hom_category().base_category().ArrowCategory()
+    )
 
 
 def is_product_hom_category(

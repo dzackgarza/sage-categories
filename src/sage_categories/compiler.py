@@ -26,24 +26,28 @@ _IGNORED_METHODS = frozenset(
     }
 )
 
-type ImplementationType = type[MathematicalObject] | type[MathematicalElement]
+type ImplementationType = type[MathematicalObject | MathematicalElement]
 type CompiledClassMember = ForwardedMethod | str
 
 Implementation = TypeVar("Implementation", bound=MathematicalObject)
 
 
 class DeclaredMethod:
-    """A method and the category which declares it."""
+    """One operation owner and its selected implementation."""
 
     def __init__(
         self,
         owner: Category,
+        implementation_owner: Category,
         method: FunctionType,
         route: tuple[StructuralFunctor, ...] = (),
+        implementation_route: tuple[StructuralFunctor, ...] = (),
     ) -> None:
         self.owner = owner
+        self.implementation_owner = implementation_owner
         self.method = method
         self.route = route
+        self.implementation_route = implementation_route
 
 
 class CategoryCompiler:
@@ -194,10 +198,16 @@ class CategoryCompiler:
         target: Category,
         routes: tuple[tuple[StructuralFunctor, ...], ...],
     ) -> tuple[StructuralFunctor, ...]:
-        distinct = tuple(route for position, route in enumerate(routes) if route not in routes[:position])
+        distinct = tuple(
+            route
+            for position, route in enumerate(routes)
+            if route not in routes[:position]
+        )
         normalized = tuple(self._normalize_route(source, route) for route in distinct)
         canonical = normalized[0]
-        assert all(route == canonical for route in normalized), f"structural routes from {source} to {target} are not declared coherent"
+        assert all(route == canonical for route in normalized), (
+            f"structural routes from {source} to {target} are not declared coherent"
+        )
         assert canonical in distinct
         return canonical
 
@@ -279,30 +289,138 @@ class CategoryCompiler:
         local = self._local_methods(local_type)
         catalogue: dict[str, DeclaredMethod] = {}
         for functor in category.super_functors():
-            inherited = inherited_catalogue(functor.codomain())
-            for name, declaration in inherited.items():
+            inherited_methods = inherited_catalogue(functor.codomain())
+            for name, declaration in inherited_methods.items():
+                candidate = DeclaredMethod(
+                    declaration.owner,
+                    declaration.implementation_owner,
+                    declaration.method,
+                    (functor, *declaration.route),
+                    (functor, *declaration.implementation_route),
+                )
                 previous = catalogue.get(name)
-                if previous is None or previous.owner is declaration.owner:
-                    if previous is not None:
-                        assert previous.method is declaration.method
-                    catalogue[name] = declaration
+                if previous is None:
+                    catalogue[name] = candidate
                     continue
-                if previous.owner.is_subcategory(declaration.owner):
+                if previous.owner is candidate.owner:
+                    canonical = self.implementation_route(category, previous.owner)
+                    if candidate.route == canonical:
+                        catalogue[name] = candidate
+                        continue
+                    assert previous.route == canonical
                     continue
-                if declaration.owner.is_subcategory(previous.owner):
-                    catalogue[name] = declaration
+                if previous.owner.is_subcategory(candidate.owner):
                     continue
-                assert name in local, f"{category} inherits {name} from unrelated categories {previous.owner} and {declaration.owner}"
+                if candidate.owner.is_subcategory(previous.owner):
+                    catalogue[name] = candidate
+                    continue
+                local_method = local.get(name)
+                if local_method is not None:
+                    catalogue[name] = DeclaredMethod(
+                        category,
+                        category,
+                        local_method,
+                    )
+                    continue
+                coherent = self._coherent_declaration(
+                    category,
+                    previous,
+                    candidate,
+                )
+                assert coherent is not None, (
+                    f"{category} inherits {name} from unrelated categories {previous.owner} and {declaration.owner}"
+                )
+                catalogue[name] = coherent
         for name, method in local.items():
-            catalogue[name] = DeclaredMethod(category, method)
-        return {
-            name: DeclaredMethod(
-                declaration.owner,
-                declaration.method,
-                self.implementation_route(category, declaration.owner),
+            inherited_declaration = catalogue.get(name)
+            if (
+                inherited_declaration is not None
+                and method is inherited_declaration.method
+            ):
+                continue
+            if inherited_declaration is None or inherited_declaration.owner is category:
+                catalogue[name] = DeclaredMethod(
+                    category,
+                    category,
+                    method,
+                )
+                continue
+            catalogue[name] = DeclaredMethod(
+                inherited_declaration.owner,
+                category,
+                method,
+                self.implementation_route(
+                    category,
+                    inherited_declaration.owner,
+                ),
             )
-            for name, declaration in catalogue.items()
-        }
+        return catalogue
+
+    def _coherent_declaration(
+        self,
+        category: Category,
+        first: DeclaredMethod,
+        second: DeclaredMethod,
+    ) -> DeclaredMethod | None:
+        # A natural isomorphism is oriented from its chosen representative to
+        # an equivalent composite, as in Mathlib's ``NatIso`` constructions:
+        # https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/CategoryTheory/Grothendieck.lean
+        from sage_categories.abstract_categories.functors import (
+            is_functor,
+            is_structural_functor,
+        )
+        from sage_categories.abstract_categories.hom_categories import (
+            is_isomorphism,
+        )
+
+        preferred: DeclaredMethod | None = None
+        for coherence in category.structural_coherences():
+            assert is_isomorphism(coherence)
+            canonical_functor = coherence.domain()
+            equivalent_functor = coherence.codomain()
+            assert is_functor(canonical_functor)
+            assert is_functor(equivalent_functor)
+            canonical: tuple[StructuralFunctor, ...] = ()
+            for factor in canonical_functor.factors():
+                assert is_structural_functor(factor)
+                canonical = (*canonical, factor)
+            equivalent: tuple[StructuralFunctor, ...] = ()
+            for factor in equivalent_functor.factors():
+                assert is_structural_functor(factor)
+                equivalent = (*equivalent, factor)
+            divergence = next(
+                (
+                    position
+                    for position, pair in enumerate(
+                        zip(canonical, equivalent, strict=False)
+                    )
+                    if pair[0] is not pair[1]
+                ),
+                None,
+            )
+            assert divergence is not None
+
+            def follows(
+                declaration: DeclaredMethod,
+                route: tuple[StructuralFunctor, ...],
+                divergence_position: int = divergence,
+            ) -> bool:
+                return (
+                    len(declaration.route) > divergence_position
+                    and declaration.route[: divergence_position + 1]
+                    == route[: divergence_position + 1]
+                )
+
+            if follows(first, canonical) and follows(second, equivalent):
+                candidate = first
+            elif follows(second, canonical) and follows(first, equivalent):
+                candidate = second
+            else:
+                continue
+            if preferred is not None:
+                assert candidate is preferred
+            preferred = candidate
+        return preferred
 
     def _compile_type(
         self,
@@ -313,10 +431,14 @@ class CategoryCompiler:
         element_methods: bool,
         morphism_methods: bool,
     ) -> type[Implementation]:
-        available = {name for name, declaration in catalogue.items() if inspect.getattr_static(local_type, name, None) is declaration.method}
+        available = {
+            name
+            for name, declaration in catalogue.items()
+            if inspect.getattr_static(local_type, name, None) is declaration.method
+        }
         inherited = {
             name: ForwardedMethod(
-                declaration.route,
+                declaration.implementation_route,
                 declaration.method,
                 element_method=element_methods,
                 morphism_method=morphism_methods,
@@ -355,7 +477,9 @@ class CategoryCompiler:
                 {
                     name: method
                     for name, method in vars(implementation_type).items()
-                    if name not in _IGNORED_METHODS and (not name.startswith("_") or name.startswith("__")) and inspect.isfunction(method)
+                    if name not in _IGNORED_METHODS
+                    and (not name.startswith("_") or name.startswith("__"))
+                    and inspect.isfunction(method)
                 }
             )
         return methods
@@ -369,7 +493,9 @@ class CategoryCompiler:
         routes: list[tuple[StructuralFunctor, ...]] = []
         for functor in source.super_functors():
             codomain = functor.codomain()
-            assert id(codomain) not in visited, "the structural-functor graph has a cycle"
+            assert id(codomain) not in visited, (
+                "the structural-functor graph has a cycle"
+            )
             if codomain is target:
                 routes.append((functor,))
                 continue

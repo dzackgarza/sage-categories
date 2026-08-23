@@ -6,7 +6,7 @@ from sage_categories.abstract_categories.functors import (
     is_natural_transformation_hom_category,
 )
 from sage_categories.abstract_categories.hom_categories import is_isomorphism
-from sage_categories.theories.posets import PosetElement
+from sage_categories.theories.posets import PosetElement, TotallyOrderedSetElements
 
 
 def is_equal(left: PosetElement, right: PosetElement) -> bool:
@@ -91,15 +91,28 @@ def test_arrow_hom_end_iso_slice_and_coslice_categories() -> None:
 def test_compiler_exposes_object_element_and_arrow_routes() -> None:
     category = FiniteTotallyOrderedSets()
     object_declaration = category.declared_object_methods()["cardinality"]
+    iteration_declaration = category.declared_object_methods()["__iter__"]
     element_declaration = category.declared_element_methods()["__le__"]
     arrow_declaration = category.declared_arrow_methods()["is_injective"]
+    ordered_set = finite_ordered_set((ZZ(int(0)), ZZ(int(1))))
+    member = next(iter(ordered_set))
+    finite_poset = category.finite_poset_functor()(ordered_set)
+    assert FinitePosets().contains_finite_poset(finite_poset)
 
     assert object_declaration.owner is Sets()
     assert object_declaration.route
-    assert element_declaration.owner is TotallyOrderedSets()
+    assert iteration_declaration.owner is Sets()
+    assert iteration_declaration.route
+    assert element_declaration.owner is PartiallyOrderedSets()
     assert element_declaration.route
     assert arrow_declaration.owner is Sets()
     assert arrow_declaration.route
+    assert TotallyOrderedSetElements().contains_total_order_element(member)
+    assert ordered_set.category() is FiniteTotallyOrderedSets()
+    assert FiniteTotallyOrderedSets().inclusion()(ordered_set) is ordered_set
+    assert member.ambient_total_order() is ordered_set
+    assert member <= member
+    assert finite_poset.height() == 2
 
 
 def test_structural_coherence_identifies_parallel_forgetful_functors() -> None:

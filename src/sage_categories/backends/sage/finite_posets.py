@@ -142,7 +142,7 @@ class SageFinitePosetObject(MathematicalObject):
         source: MathematicalObject,
     ) -> None:
         assert source in FinitePosets()
-        poset = FinitePosets().first_projection()(source)
+        poset = FinitePosets().inclusion()(source)
         assert PartiallyOrderedSets().contains_poset(poset)
         underlying_set = PartiallyOrderedSets().underlying_set(poset)
         assert underlying_set.is_finite() is True

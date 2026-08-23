@@ -208,11 +208,15 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-053` | Never use explicit Python subclassing between category-owned object, element, or arrow implementations without prior user discussion and approval. Python subclassing bypasses the structural-functor framework. |
 | `POL-CAT-054` | Declare every relation between categories by a selected structural functor, including an inclusion, identity, or other trivial functor. A category without these functors is disconnected from the owned category graph. |
 | `POL-CAT-055` | Treat a failed structural functor or method compiler as a foundational defect. Its failure does not permit explicit subclassing or another inheritance path. |
+| `POL-CAT-056` | Apply the structural-functor framework to every functorial, universal, and arrow-based construction. Each construction category declares its correct inclusion, projection, source, target, or forgetful functor instead of subclassing an implementation from its image category. |
 
 Grounding examples:
 
-- `ProductSetObject` does not subclass `SetObject`.
-  The selected functor from `Sets().Products()` to `Sets()` constructs its set implementation and supplies the complete set interface.
+- Limits, colimits, products, coproducts, tensor products, and direct sums declare their structural functors to the categories of their resulting objects.
+  Their implementation types do not subclass the target category's implementation types.
+
+- Subobjects, superobjects, covering objects, and covered objects declare the projection or forgetful functors determined by their defining monomorphisms or epimorphisms.
+  Their implementation types do not obtain structure through Python subclassing.
 
 - `Sets().Finite()` declares its inclusion functor to `Sets()` even when both categories use the same realization.
   The inclusion states the categorical relation that replaces a Sage `super_categories` declaration.

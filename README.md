@@ -12,8 +12,8 @@ This rule replaces accidental inheritance with explicit mathematics.
 It also lets one public object receive operations from every category reached by the selected functors.
 
 The public API is not stable.
-The repository currently contains the categorical kernel and a finite Sets specimen.
-The complete Sets design described below remains the current implementation target.
+The repository contains the categorical kernel, the arrow-category family, and an owned `Sets()` implementation.
+The complete acceptance design described below remains the current implementation target.
 
 ## One import, one mathematical universe
 
@@ -23,7 +23,7 @@ The required opt-in surface is a `sage_categories.all` module analogous to `sage
 from sage_categories.all import *
 ```
 
-Python module names cannot contain hyphens, so the import uses `sage_categories`, not the distribution name `sage-categories`. The `all` module is part of the target public API and is not yet present in the current implementation.
+Python module names cannot contain hyphens, so the import uses `sage_categories`, not the distribution name `sage-categories`.
 
 This import shadows supported standard Sage names with package-owned objects.
 For example, an owned `ZZ` starts every later operation inside the package universe.

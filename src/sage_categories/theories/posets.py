@@ -11,10 +11,10 @@ from collections.abc import Callable, Iterable, Iterator, Mapping
 from itertools import count
 from typing import TYPE_CHECKING, Any, TypeIs
 
+from sage_categories.abstract_categories.arrow_categories import declare_isomorphism
 from sage_categories.abstract_categories.category_constructions import (
     FullSubcategory,
 )
-from sage_categories.abstract_categories.arrow_categories import declare_isomorphism
 from sage_categories.abstract_categories.functors import (
     Functor,
     NaturalIsomorphism,

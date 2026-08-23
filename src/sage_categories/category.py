@@ -136,6 +136,14 @@ class Category(MathematicalObject):
         """Return the category graph derived from structural functors."""
         return tuple(functor.codomain() for functor in self.super_functors())
 
+    def structural_route_to(
+        self,
+        category: Category,
+    ) -> tuple[StructuralFunctor, ...]:
+        """Return the canonical structural-functor route to ``category``."""
+        assert self.is_subcategory(category)
+        return category_compiler().implementation_route(self, category)
+
     def structural_coherences(self) -> tuple[Isomorphism, ...]:
         """Return isomorphisms from canonical to equivalent structural composites."""
         return ()

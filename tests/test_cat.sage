@@ -105,6 +105,7 @@ def test_compiler_exposes_object_element_and_arrow_routes() -> None:
     iteration_declaration = category.declared_object_methods()["__iter__"]
     element_declaration = category.declared_element_methods()["__le__"]
     arrow_declaration = category.declared_arrow_methods()["is_injective"]
+    set_route = category.structural_route_to(Sets())
     ordered_set = finite_ordered_set((ZZ(int(0)), ZZ(int(1))))
     member = next(iter(ordered_set))
     finite_poset = category.finite_poset_functor()(ordered_set)
@@ -118,6 +119,7 @@ def test_compiler_exposes_object_element_and_arrow_routes() -> None:
     assert element_declaration.route
     assert arrow_declaration.owner is Sets()
     assert arrow_declaration.route
+    assert set_route == object_declaration.route
     assert TotallyOrderedSetElements().contains_total_order_element(member)
     assert ordered_set.category() is FiniteTotallyOrderedSets()
     assert FiniteTotallyOrderedSets().inclusion()(ordered_set) is ordered_set

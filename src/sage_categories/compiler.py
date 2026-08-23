@@ -127,11 +127,7 @@ class CategoryCompiler:
         """
         inherited = self._declared_relations(inclusions_only=False)
         subtyping = self.declared_subtyping()
-        assert all(
-            set(parents).issubset(inherited[role][implementation])
-            for role, relations in subtyping.items()
-            for implementation, parents in relations.items()
-        )
+        assert all(set(parents).issubset(inherited[role][implementation]) for role, relations in subtyping.items() for implementation, parents in relations.items())
         return inherited
 
     def declared_subtyping(self) -> dict[str, dict[str, tuple[str, ...]]]:

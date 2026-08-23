@@ -859,9 +859,7 @@ class SetHomCategory(HomCategory, SetObject):
 
     def __call__(
         self,
-        action: Callable[[SetElement], SetElement]
-        | Mapping[SetElement, SetElement]
-        | SetMorphism,
+        action: Callable[[SetElement], SetElement] | Mapping[SetElement, SetElement] | SetMorphism,
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
@@ -881,8 +879,7 @@ class SetHomCategory(HomCategory, SetObject):
 
     def _set_action(
         self,
-        action: Callable[[SetElement], SetElement]
-        | Mapping[SetElement, SetElement],
+        action: Callable[[SetElement], SetElement] | Mapping[SetElement, SetElement],
     ) -> Callable[[SetElement], SetElement]:
         if callable(action):
             return action

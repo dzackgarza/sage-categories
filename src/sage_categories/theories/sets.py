@@ -30,6 +30,11 @@ from sage_categories.abstract_categories.functors import (
     StructuralFunctor,
     is_functor,
 )
+from sage_categories.abstract_categories.functor_images import (
+    FunctorImageArrow,
+    FunctorImageHomCategory,
+    ImageInclusionFunctor,
+)
 from sage_categories.abstract_categories.functors import (
     DiscreteCategory as DiscreteCategoryObject,
 )
@@ -2173,6 +2178,9 @@ class SetProductObject(ProductObject):
     def factor_cardinalities(self) -> Functor:
         return self._set_product.factor_cardinalities()
 
+    def apex(self) -> ProductSet:
+        return self._set_product
+
     def element(self, components: SetElementFamily) -> ProductElement:
         return ProductElements().ObjectType(self, components)
 
@@ -2235,6 +2243,51 @@ class SetProductObject(ProductObject):
         return f"Product of {self.diagram()}"
 
 
+class SetProductInclusionFunctor(ImageInclusionFunctor):
+    """Include a refined set product and its elements into ``Sets()``."""
+
+    def _element_image(
+        self,
+        source: MathematicalObject,
+        element: MathematicalElement,
+    ) -> SetElement:
+        category = self.domain()
+        assert is_products_of_sets_category(category)
+        assert category.contains_set_product(source)
+        assert ProductElements().contains_product_element(element)
+        image = source.apex()
+        return image.element(element.components())
+
+
+class SetProductMorphism(FunctorImageArrow):
+    """A map between refined set products."""
+
+    def __call__(self, member: SetElement) -> ProductElement:
+        category = self.base_category()
+        assert is_products_of_sets_category(category)
+        domain = self.domain()
+        codomain = self.codomain()
+        assert category.contains_set_product(domain)
+        assert category.contains_set_product(codomain)
+        value = registered_value(member)
+        assert value is not None
+        assert ProductElements().contains_product_element(value)
+        underlying_member = category.inclusion().on_element(domain, value)
+        assert SetElements().contains_set_element(underlying_member)
+        underlying = self.underlying_arrow()
+        assert Sets().contains_set_morphism(underlying)
+        image = underlying(underlying_member)
+        assert ProductElements().contains_product_element(image)
+        return codomain.element(image.components())
+
+
+class SetProductHomCategory(FunctorImageHomCategory):
+    """Maps between refined set products."""
+
+    ObjectType = SetProductMorphism
+    ElementType = SetProductMorphism
+
+
 class ProductsOfSetsCategory(ProductsOfCategory):
     """Products in ``Sets()``, with each product equal to its apex set."""
 
@@ -2242,8 +2295,20 @@ class ProductsOfSetsCategory(ProductsOfCategory):
     ElementType: type[ProductElement] = ProductElement
 
     def __init__(self, functor: Functor) -> None:
+        self._set_inclusion: SetProductInclusionFunctor | None = None
         super().__init__(functor)
         _PRODUCTS_OF_SETS[id(self)] = self
+
+    def _hom_category_type(self) -> type[HomCategory]:
+        return SetProductHomCategory
+
+    def inclusion(self) -> SetProductInclusionFunctor:
+        if self._set_inclusion is None:
+            self._set_inclusion = SetProductInclusionFunctor(self)
+        return self._set_inclusion
+
+    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+        return (self.inclusion(),)
 
     def __call__(
         self,
@@ -2461,6 +2526,9 @@ class SetCoproductObject(CoproductObject):
     def cofactor_cardinalities(self) -> Functor:
         return self._set_coproduct.cofactor_cardinalities()
 
+    def apex(self) -> CoproductSet:
+        return self._set_coproduct
+
     def element(self, index: SetElement, value: SetElement) -> CoproductElement:
         return CoproductElements().ObjectType(self, index, value)
 
@@ -2508,6 +2576,50 @@ class SetCoproductObject(CoproductObject):
         return f"Coproduct of {self.diagram()}"
 
 
+class SetCoproductInclusionFunctor(ImageInclusionFunctor):
+    """Include a refined set coproduct and its elements into ``Sets()``."""
+
+    def _element_image(
+        self,
+        source: MathematicalObject,
+        element: MathematicalElement,
+    ) -> SetElement:
+        category = self.domain()
+        assert is_coproducts_of_sets_category(category)
+        assert category.contains_set_coproduct(source)
+        assert CoproductElements().contains_coproduct_element(element)
+        return source.apex().element(element.index(), element.value())
+
+
+class SetCoproductMorphism(FunctorImageArrow):
+    """A map between refined set coproducts."""
+
+    def __call__(self, member: SetElement) -> CoproductElement:
+        category = self.base_category()
+        assert is_coproducts_of_sets_category(category)
+        domain = self.domain()
+        codomain = self.codomain()
+        assert category.contains_set_coproduct(domain)
+        assert category.contains_set_coproduct(codomain)
+        value = registered_value(member)
+        assert value is not None
+        assert CoproductElements().contains_coproduct_element(value)
+        underlying_member = category.inclusion().on_element(domain, value)
+        assert SetElements().contains_set_element(underlying_member)
+        underlying = self.underlying_arrow()
+        assert Sets().contains_set_morphism(underlying)
+        image = underlying(underlying_member)
+        assert CoproductElements().contains_coproduct_element(image)
+        return codomain.element(image.index(), image.value())
+
+
+class SetCoproductHomCategory(FunctorImageHomCategory):
+    """Maps between refined set coproducts."""
+
+    ObjectType = SetCoproductMorphism
+    ElementType = SetCoproductMorphism
+
+
 class CoproductsOfSetsCategory(CoproductsOfCategory):
     """Coproducts in ``Sets()``, with each coproduct equal to its apex set."""
 
@@ -2515,8 +2627,20 @@ class CoproductsOfSetsCategory(CoproductsOfCategory):
     ElementType: type[CoproductElement] = CoproductElement
 
     def __init__(self, functor: Functor) -> None:
+        self._set_inclusion: SetCoproductInclusionFunctor | None = None
         super().__init__(functor)
         _COPRODUCTS_OF_SETS[id(self)] = self
+
+    def _hom_category_type(self) -> type[HomCategory]:
+        return SetCoproductHomCategory
+
+    def inclusion(self) -> SetCoproductInclusionFunctor:
+        if self._set_inclusion is None:
+            self._set_inclusion = SetCoproductInclusionFunctor(self)
+        return self._set_inclusion
+
+    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+        return (self.inclusion(),)
 
     def __call__(
         self,

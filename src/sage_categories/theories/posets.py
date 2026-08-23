@@ -707,19 +707,42 @@ class PosetProductObject(ProductObject):
         self._limit_presentation = self._lifted_product_presentation()
 
     def _set_implementation(self) -> SetObject:
-        category = self._underlying_set.category()
-        assert is_products_of_sets_category(category)
-        image = category.inclusion().on_object(self._underlying_set)
-        assert Sets().contains_set(image)
-        return image
+        return self._underlying_set
 
     def set_product(self) -> SetProductObject:
         return self._set_product
 
     def _lifted_product_presentation(self) -> ProductPresentation:
         forgetful = PartiallyOrderedSets().forgetful_functor()
-        identity = Sets().identity(self._set_implementation())
-        comparison = declare_isomorphism(identity, identity)
+        set_products = self._set_product.category()
+        assert is_products_of_sets_category(set_products)
+        underlying_product = self._set_product.apex()
+
+        def forget_product_element(member: SetElement) -> SetElement:
+            value = registered_value(member)
+            assert value is not None
+            assert ProductElements().contains_product_element(value)
+            image = set_products.inclusion().on_element(self._set_product, value)
+            assert SetElements().contains_set_element(image)
+            return image
+
+        def refine_product_element(member: SetElement) -> SetElement:
+            value = registered_value(member)
+            assert value is not None
+            assert ProductElements().contains_product_element(value)
+            return self._set_product.element(value.components())
+
+        forward = Sets().Hom(self._set_product, underlying_product)(
+            forget_product_element,
+            injective=True,
+            surjective=True,
+        )
+        backward = Sets().Hom(underlying_product, self._set_product)(
+            refine_product_element,
+            injective=True,
+            surjective=True,
+        )
+        comparison = declare_isomorphism(forward, backward)
         assert is_isomorphism(comparison)
 
         def lift_morphism(
@@ -874,8 +897,8 @@ class ProductsOfPosetsCategory(ProductsOfCategory):
                 return Sets().identity(image)
 
             coherence = NaturalIsomorphism(
-                first,
                 second,
+                first,
                 component,
                 component,
             )
@@ -935,6 +958,11 @@ class FinitePosetObject(MathematicalObject):
 
     def _set_implementation(self) -> SetObject:
         return self._underlying_set
+
+    def _is_lequal(self, left: PosetElement, right: PosetElement) -> Decision:
+        assert left in self
+        assert right in self
+        return self._relation(left, right)
 
     def _realization(self) -> SageFinitePosetObject:
         from sage_categories.backends.sage.finite_posets import (

@@ -1,5 +1,6 @@
 """The public API for owned sets and functions."""
 
+from sage_categories.abstract_categories.functors import DiscreteCategories
 from sage_categories.theories.discrete_sets import (
     DiscreteArrowElement,
     DiscreteArrowSet,
@@ -193,6 +194,7 @@ __all__ = (
     "CoproductsOfSetsCategory",
     "CountableSets",
     "CountableSetsCategory",
+    "DiscreteCategories",
     "DiscreteArrowElement",
     "DiscreteArrowSet",
     "DiscreteCategory",

@@ -304,10 +304,7 @@ class FiniteSetObject(SetObject):
     ) -> None:
         self._values = values
         super().__init__(category=category, cardinality=Cardinals()(len(values)))
-        self._members = frozenset(
-            category.ElementType(ambient_object=self, value=value)
-            for value in values
-        )
+        self._members = frozenset(category.ElementType(ambient_object=self, value=value) for value in values)
 
     def membership(self, member: SetElement) -> Decision:
         return member.ambient_set() is self

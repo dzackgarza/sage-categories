@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, TypeIs
+from typing import TYPE_CHECKING, Any, TypeIs
 
 from sage_categories.abstract_categories.functor_images import (
     FunctorImageObject,
@@ -25,6 +25,9 @@ from sage_categories.values import (
     MathematicalObject,
     registered_value,
 )
+
+if TYPE_CHECKING:
+    from sage_categories.theories.sets import FiniteSetObject
 
 
 class LimitObject(FunctorImageObject):
@@ -398,12 +401,12 @@ class DiagramCategory(Category):
     def diagram_morphisms(self) -> tuple[Arrow, ...]:
         return self._diagram_morphisms
 
-    def objects(self) -> MathematicalObject:
+    def objects(self) -> FiniteSetObject:
         from sage_categories.theories.sets import FiniteSet
 
         return FiniteSet(frozenset(self._diagram_objects))
 
-    def arrows(self) -> MathematicalObject:
+    def arrows(self) -> FiniteSetObject:
         from sage_categories.theories.sets import FiniteSet
 
         return FiniteSet(frozenset(self._diagram_morphisms))

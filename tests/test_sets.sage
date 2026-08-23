@@ -4,6 +4,7 @@ from sage.rings.integer import Integer as SageInteger
 
 from sage_categories.abstract_categories.functors import is_functor
 from sage_categories.all import *
+from sage_categories.theories.posets import PosetElement
 from sage_categories.theories.sets import (
     CoproductElements,
     ProductElements,
@@ -42,6 +43,10 @@ def is_prime(integer: SetElement) -> bool:
 def is_undecided(integer: SetElement) -> Decision:
     assert ZZ.contains_integer(integer)
     return UNKNOWN
+
+
+def is_equal(left: PosetElement, right: PosetElement) -> bool:
+    return left == right
 
 
 def test_arbitrary_set_maps_have_exact_endpoints() -> None:
@@ -210,6 +215,27 @@ def test_general_infinite_limits_and_colimits_have_universal_maps() -> None:
     assert from_colimit.codomain() is ZZ
     assert limit.cardinality() == aleph0
     assert colimit.cardinality() == aleph0
+
+
+def test_limits_and_colimits_do_not_enumerate_their_index_objects() -> None:
+    real_equality_order = PartiallyOrderedSets()(RR, is_equal)
+    index_category = real_equality_order.thin_category()
+    diagram = Sets().DiagonalFunctor(index_category)(ZZ)
+    limits = Sets().Limits(index_category)
+    colimits = Sets().Colimits(index_category)
+    assert is_limits_of_sets_category(limits)
+    assert is_colimits_of_sets_category(colimits)
+    limit = limits(diagram)
+    colimit = colimits(diagram)
+    index_object = real_equality_order.element(RR(int(0)))
+
+    projection = limit.projection(index_object)
+    injection = colimit.injection(index_object)
+
+    assert projection.domain() is limit
+    assert projection.codomain() is ZZ
+    assert injection.domain() is ZZ
+    assert injection.codomain() is colimit
 
 
 def test_finite_equalizers_coequalizers_pullbacks_and_pushouts() -> None:

@@ -69,6 +69,7 @@ from sage_categories.abstract_categories.products import (
     ProductObject,
     ProductPresentation,
     ProductsOfCategory,
+    is_diagram_category,
 )
 from sage_categories.category import Category
 from sage_categories.theories.cardinals import (
@@ -2406,7 +2407,7 @@ class LimitSet(ProductSet):
         return value
 
     def _limit_projection(self, index: MathematicalObject) -> SetMorphism:
-        return self._projection(_element_named_by(self.index_set(), index))
+        return self._projection(_object_set_element(self.diagram().domain(), index))
 
     def membership(self, member: SetElement) -> Decision:
         product_membership = super().membership(member)
@@ -2424,8 +2425,8 @@ class LimitSet(ProductSet):
             assert self.diagram().domain().contains_arrow(arrow)
             image = self.diagram()(arrow)
             assert Sets().contains_set_morphism(image)
-            source_index = _element_named_by(self.index_set(), arrow.domain())
-            target_index = _element_named_by(self.index_set(), arrow.codomain())
+            source_index = _object_set_element(self.diagram().domain(), arrow.domain())
+            target_index = _object_set_element(self.diagram().domain(), arrow.codomain())
             if image(value.component(source_index)) != value.component(target_index):
                 return False
         return True
@@ -2815,11 +2816,23 @@ def _colimit_terms_are_related(
     return False
 
 
-def _element_named_by(
-    source: SetObject,
+def _object_set_element(
+    index_category: Category,
     value: MathematicalObject,
 ) -> SetElement:
-    return next(member for member in source if member.value() is value)
+    if DiscreteCategories().contains_discrete_category(index_category):
+        assert index_category.contains_object(value)
+        return index_category.objects().element(value)
+
+    from sage_categories.theories.posets import PosetElements, is_thin_category
+
+    if is_thin_category(index_category):
+        assert PosetElements().contains_poset_element(value)
+        return index_category.objects().element(value)
+
+    assert is_diagram_category(index_category)
+    assert value in index_category
+    return index_category.objects().element(value)
 
 
 def index_objects(index_category: Category) -> SetObject:
@@ -3017,7 +3030,7 @@ def _colimit_presentation(
     assert apex.diagram() is diagram
 
     def injection(index: MathematicalObject) -> Arrow:
-        return apex._injection(_element_named_by(index_objects(diagram.domain()), index))
+        return apex._injection(_object_set_element(diagram.domain(), index))
 
     cocone = Cocone(diagram, apex, injection)
 

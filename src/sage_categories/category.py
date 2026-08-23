@@ -481,6 +481,11 @@ class Category(MathematicalObject):
         """Return the category of diagrams of shape ``index_category``."""
         return index_category.FunctorCategory(self)
 
+    def ImagesOfFunctor(self, functor: Functor) -> Category:
+        """Return the category of outputs of a functor into this category."""
+        assert functor.codomain() is self
+        return functor.Image()
+
     def DiagonalFunctor(self, index_category: Category) -> Functor:
         """Return the diagonal functor into diagrams of one shape."""
         from sage_categories.abstract_categories.functors import DiagonalFunctor

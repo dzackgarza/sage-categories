@@ -241,11 +241,27 @@ class CategoryCompiler:
         self,
         local_type: ImplementationType,
     ) -> dict[str, FunctionType]:
-        return {
-            name: method
-            for name, method in vars(local_type).items()
-            if name not in _IGNORED_METHODS and (not name.startswith("_") or name.startswith("__")) and inspect.isfunction(method)
+        methods: dict[str, FunctionType] = {}
+        kernel_types = {
+            object,
+            MathematicalObject,
+            MathematicalElement,
+            Arrow,
         }
+        from sage_categories.category import Category
+
+        kernel_types.add(Category)
+        for implementation_type in reversed(local_type.__mro__):
+            if implementation_type in kernel_types:
+                continue
+            methods.update(
+                {
+                    name: method
+                    for name, method in vars(implementation_type).items()
+                    if name not in _IGNORED_METHODS and (not name.startswith("_") or name.startswith("__")) and inspect.isfunction(method)
+                }
+            )
+        return methods
 
     def _routes_from(
         self,

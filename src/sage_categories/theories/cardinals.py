@@ -67,6 +67,7 @@ class Cardinal(MathematicalObject):
         index: Ordinal | None = None,
         index_set: SetObject | None = None,
         family: CardinalFamily | None = None,
+        finiteness: Decision = UNKNOWN,
     ) -> None:
         if kind is CardinalKind.FINITE:
             assert finite_value is not None and finite_value >= 0
@@ -87,6 +88,7 @@ class Cardinal(MathematicalObject):
         self._index = index
         self._index_set = index_set
         self._family = family
+        self._finiteness = finiteness
         super().__init__(category=category)
 
     def kind(self) -> CardinalKind:
@@ -145,6 +147,8 @@ class Cardinal(MathematicalObject):
         return 4, repr(self)
 
     def is_finite(self) -> Decision:
+        if self._finiteness is not UNKNOWN:
+            return self._finiteness
         if self._kind is CardinalKind.FINITE:
             return True
         if self._kind is CardinalKind.ALEPH:
@@ -158,6 +162,8 @@ class Cardinal(MathematicalObject):
         return UNKNOWN
 
     def is_infinite(self) -> Decision:
+        if self._finiteness is not UNKNOWN:
+            return not self._finiteness
         if self._kind is CardinalKind.FINITE:
             return False
         if self._kind is CardinalKind.ALEPH or self.is_continuum():
@@ -171,6 +177,8 @@ class Cardinal(MathematicalObject):
         return UNKNOWN
 
     def is_countable(self) -> Decision:
+        if self._finiteness is True:
+            return True
         if self._kind is CardinalKind.FINITE:
             return True
         if self._kind is CardinalKind.ALEPH:
@@ -508,6 +516,8 @@ class CardinalsCategory(Category):
         self,
         index_set: SetObject,
         summands: CardinalFamily,
+        *,
+        finiteness: Decision = UNKNOWN,
     ) -> Cardinal:
         from sage_categories.theories.sets import Sets
 
@@ -517,12 +527,15 @@ class CardinalsCategory(Category):
             kind=CardinalKind.INDEXED_SUM,
             index_set=index_set,
             family=summands,
+            finiteness=finiteness,
         )
 
     def indexed_product(
         self,
         index_set: SetObject,
         factors: CardinalFamily,
+        *,
+        finiteness: Decision = UNKNOWN,
     ) -> Cardinal:
         from sage_categories.theories.sets import Sets
 
@@ -532,6 +545,7 @@ class CardinalsCategory(Category):
             kind=CardinalKind.INDEXED_PRODUCT,
             index_set=index_set,
             family=factors,
+            finiteness=finiteness,
         )
 
     def supremum(self, *cardinal_numbers: Cardinal) -> Cardinal:

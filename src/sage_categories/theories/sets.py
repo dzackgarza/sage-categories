@@ -2018,7 +2018,11 @@ class ProductSet(SetObject):
         self._diagram = diagram
         size = cardinality
         if size is None:
-            size = _indexed_product_cardinality(self.index_set(), self.factor)
+            size = _indexed_product_cardinality(
+                self.index_set(),
+                self.factor,
+                finite_factors=diagram.codomain().is_subcategory(FiniteSets()),
+            )
         super().__init__(category=category, cardinality=size)
 
     def diagram(self) -> Functor:
@@ -2240,7 +2244,11 @@ class CoproductSet(SetObject):
         self._diagram = diagram
         size = cardinality
         if size is None:
-            size = _indexed_sum_cardinality(self.index_set(), self.cofactor)
+            size = _indexed_sum_cardinality(
+                self.index_set(),
+                self.cofactor,
+                finite_summands=diagram.codomain().is_subcategory(FiniteSets()),
+            )
         super().__init__(category=category, cardinality=size)
 
     def diagram(self) -> Functor:
@@ -2854,20 +2862,26 @@ def index_arrows(index_category: Category) -> SetObject:
 def _indexed_product_cardinality(
     indices: SetObject,
     factors: Callable[[SetElement], SetObject],
+    *,
+    finite_factors: bool = False,
 ) -> Cardinal:
     return Cardinals().indexed_product(
         indices,
         lambda index: factors(index).cardinality(),
+        finiteness=True if finite_factors and indices in FiniteSets() else UNKNOWN,
     )
 
 
 def _indexed_sum_cardinality(
     indices: SetObject,
     summands: Callable[[SetElement], SetObject],
+    *,
+    finite_summands: bool = False,
 ) -> Cardinal:
     return Cardinals().indexed_sum(
         indices,
         lambda index: summands(index).cardinality(),
+        finiteness=True if finite_summands and indices in FiniteSets() else UNKNOWN,
     )
 
 

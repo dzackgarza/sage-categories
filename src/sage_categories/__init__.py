@@ -34,7 +34,6 @@ from sage_categories.abstract_categories.slice_categories import (
     Subobject,
     Superobject,
 )
-from sage_categories.backends.sage.sets import set_from_sage
 from sage_categories.category import Category
 from sage_categories.theories.cardinals import (
     Aleph0,
@@ -194,7 +193,6 @@ __all__ = [
     "omega0",
     "ordered_set_owned_by",
     "ordinal",
-    "set_from_sage",
     "version",
 ]
 

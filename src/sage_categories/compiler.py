@@ -216,7 +216,7 @@ class CategoryCompiler:
         element_methods: bool,
         morphism_methods: bool,
     ) -> type[Implementation]:
-        available = {name for name, method in vars(local_type).items() if inspect.isfunction(method)}
+        available = {name for name, declaration in catalogue.items() if inspect.getattr_static(local_type, name, None) is declaration.method}
         inherited = {
             name: ForwardedMethod(
                 self.implementation_route(category, declaration.owner),

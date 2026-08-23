@@ -768,14 +768,16 @@ class FullSubcategory(Category):
         predicate: ObjectPredicate,
         *,
         name: str,
+        object_type: type[MathematicalObject] = FullSubcategoryObject,
+        element_type: type[MathematicalElement] = FullSubcategoryElement,
     ) -> None:
         self._ambient_category = ambient_category
         self._predicate = predicate
         self._name = name
         self._inclusion: InclusionFunctor | None = None
         super().__init__(
-            object_type=FullSubcategoryObject,
-            element_type=FullSubcategoryElement,
+            object_type=object_type,
+            element_type=element_type,
             category=FullSubcategoryCategoryObjects(),
         )
 

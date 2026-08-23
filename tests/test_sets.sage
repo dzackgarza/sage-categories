@@ -34,6 +34,11 @@ def is_prime(integer: SetElement) -> bool:
     return SageInteger(int(integer)).is_prime()
 
 
+def is_undecided(integer: SetElement) -> Decision:
+    assert ZZ.contains_integer(integer)
+    return UNKNOWN
+
+
 def test_arbitrary_set_maps_have_exact_endpoints() -> None:
     rational = QQ(int(7), int(3))
     rational_to_natural = Sets().Hom(QQ, NN)(constant_natural)
@@ -61,11 +66,13 @@ def test_arbitrary_set_maps_have_exact_endpoints() -> None:
 def test_predicates_construct_infinite_subobjects() -> None:
     even_integers = ZZ.subset_from(is_even, cardinality=aleph0)
     prime_integers = ZZ.subset_from(is_prime, cardinality=aleph0)
+    undecided_integers = ZZ.subset_from(is_undecided)
 
     assert ZZ(int(2)) in even_integers
     assert ZZ(int(3)) not in even_integers
     assert ZZ(int(2)) in prime_integers
     assert ZZ(int(4)) not in prime_integers
+    assert undecided_integers.membership(ZZ(int(0))) is UNKNOWN
 
     assert even_integers.inclusion().domain() is even_integers.object()
     assert even_integers.inclusion().codomain() is ZZ

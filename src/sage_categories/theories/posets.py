@@ -157,20 +157,16 @@ class PosetObject(MathematicalObject):
             self._elements[key] = cached
         return cached
 
-    def _membership(self, member: PosetElement) -> Decision:
-        assert PosetElements().contains_poset_element(member)
-        return member.ambient_poset() is self
-
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
-        return value is not None and PosetElements().contains_poset_element(value) and self._membership(value) is True
+        return value is not None and PosetElements().contains_poset_element(value) and value.ambient_poset() is self
 
     def __iter__(self) -> Iterator[PosetElement]:
         return iter(self.element(member) for member in self._underlying_set)
 
     def _is_lequal(self, left: PosetElement, right: PosetElement) -> Decision:
-        assert self._membership(left) is True
-        assert self._membership(right) is True
+        assert left in self
+        assert right in self
         return self._relation(left, right)
 
     def thin_category(self) -> ThinCategory:
@@ -225,7 +221,7 @@ class ThinCategoryObjectSet(SetObject):
             self._elements[key] = cached
         return cached
 
-    def _membership(self, member: SetElement) -> Decision:
+    def membership(self, member: SetElement) -> Decision:
         return member.ambient_set() is self
 
     def __iter__(self) -> Iterator[SetElement]:
@@ -348,7 +344,7 @@ class ThinCategoryArrowSet(SetObject):
             self._elements[key] = cached
         return cached
 
-    def _membership(self, member: SetElement) -> Decision:
+    def membership(self, member: SetElement) -> Decision:
         return member.ambient_set() is self
 
     def __iter__(self) -> Iterator[SetElement]:
@@ -970,13 +966,9 @@ class TotallyOrderedSetObject(MathematicalObject):
             self._elements[key] = cached
         return cached
 
-    def _membership(self, member: TotallyOrderedSetElement) -> Decision:
-        assert TotallyOrderedSetElements().contains_total_order_element(member)
-        return member.ambient_total_order() is self
-
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
-        return value is not None and TotallyOrderedSetElements().contains_total_order_element(value) and self._membership(value) is True
+        return value is not None and TotallyOrderedSetElements().contains_total_order_element(value) and value.ambient_total_order() is self
 
     def __iter__(self) -> Iterator[TotallyOrderedSetElement]:
         if self._finite_enumeration is not None:

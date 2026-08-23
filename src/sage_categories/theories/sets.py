@@ -172,7 +172,7 @@ class SetObject(MathematicalObject):
         self._subset_poset: PosetObject | None = None
         super().__init__(category=category)
 
-    def _membership(self, member: SetElement) -> Decision:
+    def membership(self, member: SetElement) -> Decision:
         """Return the represented membership decision for ``member``."""
         assert False, f"{self} has no represented membership predicate"
 
@@ -180,7 +180,7 @@ class SetObject(MathematicalObject):
         value = registered_value(candidate)
         if value is None or not SetElements().contains_set_element(value):
             return False
-        answer = self._membership(value)
+        answer = self.membership(value)
         assert answer is not UNKNOWN, f"membership in {self} is unknown"
         return answer
 
@@ -301,7 +301,7 @@ class FiniteSetObject(SetObject):
         super().__init__(category=category, cardinality=Cardinals()(len(values)))
         self._members = frozenset(FiniteSetElement(ambient_object=self, value=value) for value in values)
 
-    def _membership(self, member: SetElement) -> Decision:
+    def membership(self, member: SetElement) -> Decision:
         return member.ambient_set() is self
 
     def __iter__(self) -> Iterator[SetElement]:
@@ -319,7 +319,7 @@ class FiniteSetObject(SetObject):
         return tuple(self._members)[position]
 
     def position(self, member: SetElement) -> int:
-        assert self._membership(member) is True
+        assert member in self
         return tuple(self._members).index(member)
 
     def enumeration_injection(self) -> Arrow:
@@ -358,7 +358,7 @@ class NaturalNumbersSet(SetObject):
         self._members: dict[int, NaturalNumberElement] = {}
         super().__init__(category=Sets(), cardinality=Aleph0())
 
-    def _membership(self, member: SetElement) -> Decision:
+    def membership(self, member: SetElement) -> Decision:
         return member.ambient_set() is self
 
     def element(self, ordinal_value: MathematicalObject) -> NaturalNumberElement:
@@ -388,7 +388,7 @@ class NaturalNumbersSet(SetObject):
         return self.element(ordinal(position))
 
     def position(self, member: SetElement) -> int:
-        assert self._membership(member) is True
+        assert member in self
         return next(position for position, candidate in self._members.items() if candidate is member)
 
     def __repr__(self) -> str:
@@ -488,7 +488,7 @@ class SubsetSetObject(SetObject):
         assert base_element is not None
         return base_element
 
-    def _membership(self, member: SetElement) -> Decision:
+    def membership(self, member: SetElement) -> Decision:
         return member.ambient_set() is self
 
     def __iter__(self) -> Iterator[SetElement]:
@@ -522,22 +522,12 @@ class SetMorphism(Arrow, SetElement):
         assert Sets().contains_set(codomain)
         assert member.ambient_object() in self.base_category()
         assert member.ambient_set() is domain
-        assert member in domain
+        assert domain.membership(member) is not False
         image = self._action(member)
         assert image.ambient_object() in self.base_category()
         assert image.ambient_set() is codomain
-        assert image in codomain
+        assert codomain.membership(image) is not False
         return image
-
-    def domain(self) -> SetObject:
-        source = Arrow.domain(self)
-        assert Sets().contains_set(source)
-        return source
-
-    def codomain(self) -> SetObject:
-        target = Arrow.codomain(self)
-        assert Sets().contains_set(target)
-        return target
 
     def _belongs_to(self, category: Category) -> bool:
         return category is SetElements() or super()._belongs_to(category)
@@ -637,14 +627,14 @@ class SetSubset(SetMorphism):
     def members(self) -> frozenset[SetElement] | None:
         return self._members
 
-    def _membership(self, member: SetElement) -> Decision:
+    def membership(self, member: SetElement) -> Decision:
         return self._predicate(member)
 
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
         if value is None or not SetElements().contains_set_element(value):
             return False
-        answer = self._membership(value)
+        answer = self.membership(value)
         assert answer is not UNKNOWN
         return answer
 
@@ -673,7 +663,7 @@ class SetSubset(SetMorphism):
             return UNKNOWN
         answer: Decision = True
         for member in self._members:
-            contained = other._membership(member)
+            contained = other.membership(member)
             if contained is False:
                 return False
             if contained is UNKNOWN:
@@ -686,8 +676,8 @@ class SetSubset(SetMorphism):
             return PowerSet(self.base_set()).from_members(self._members | other._members)
         return PowerSet(self.base_set()).from_predicate(
             lambda member: _decision_or(
-                self._membership(member),
-                other._membership(member),
+                self.membership(member),
+                other.membership(member),
             )
         )
 
@@ -701,8 +691,8 @@ class SetSubset(SetMorphism):
             return PowerSet(self.base_set()).from_members(self._members - other._members)
         return PowerSet(self.base_set()).from_predicate(
             lambda member: _decision_and(
-                self._membership(member),
-                _decision_not(other._membership(member)),
+                self.membership(member),
+                _decision_not(other.membership(member)),
             )
         )
 
@@ -713,18 +703,18 @@ class SetSubset(SetMorphism):
         return PowerSet(self.base_set()).from_predicate(
             lambda member: _decision_or(
                 _decision_and(
-                    self._membership(member),
-                    _decision_not(other._membership(member)),
+                    self.membership(member),
+                    _decision_not(other.membership(member)),
                 ),
                 _decision_and(
-                    _decision_not(self._membership(member)),
-                    other._membership(member),
+                    _decision_not(self.membership(member)),
+                    other.membership(member),
                 ),
             )
         )
 
     def __invert__(self) -> SetSubset:
-        return PowerSet(self.base_set()).from_predicate(lambda member: _decision_not(self._membership(member)))
+        return PowerSet(self.base_set()).from_predicate(lambda member: _decision_not(self.membership(member)))
 
     def powerset(self) -> SetHomCategory:
         return PowerSet(self.underlying_set())
@@ -821,8 +811,8 @@ class SubsetsOfSetCategory(Category):
             category=self,
             hom_category=PowerSet(self._base_set),
             predicate=lambda member: _decision_and(
-                first._membership(member),
-                second._membership(member),
+                first.membership(member),
+                second.membership(member),
             ),
             underlying_set=underlying_set,
             inclusion=inclusion,
@@ -945,7 +935,7 @@ class SetHomCategory(HomCategory, SetObject):
         assert all(value in codomain for value in action.values())
         return action.__getitem__
 
-    def _membership(self, candidate: SetElement) -> Decision:
+    def membership(self, candidate: SetElement) -> Decision:
         return candidate in self
 
     def cardinality(self) -> Cardinal:
@@ -1056,7 +1046,7 @@ class SetHomCategory(HomCategory, SetObject):
 
     def from_members(self, members: frozenset[SetElement]) -> SetSubset:
         assert self.is_power_set()
-        assert all(self.exponent()._membership(member) is True for member in members)
+        assert all(member in self.exponent() for member in members)
         return SubsetsOfSet(self.exponent())(
             self,
             lambda member: member in members,
@@ -1079,7 +1069,7 @@ class SetHomCategory(HomCategory, SetObject):
             from sage_categories.theories.ordinals import ordinal
 
             truth_value = value(member)
-            assert TruthValues()._membership(truth_value) is True
+            assert truth_value in TruthValues()
             return truth_value is TruthValues().element(ordinal(1))
 
         return self.from_predicate(predicate)
@@ -1088,7 +1078,7 @@ class SetHomCategory(HomCategory, SetObject):
         assert self.is_power_set()
         if self._top_subset is None:
             self._top_subset = self.from_predicate(
-                lambda member: self.exponent()._membership(member),
+                lambda member: self.exponent().membership(member),
                 cardinality=self.exponent().cardinality(),
                 iterator=lambda: iter(self.exponent()),
             )
@@ -1109,7 +1099,7 @@ class SetHomCategory(HomCategory, SetObject):
 
         def inverse_image(candidate: SetElement) -> SetSubset:
             subset = self._represented_subset(candidate)
-            return target_power_set.from_predicate(lambda member: subset._membership(function(member)))
+            return target_power_set.from_predicate(lambda member: subset.membership(function(member)))
 
         return _set_morphism(
             self,
@@ -1805,7 +1795,7 @@ class DiscreteObjectSet(SetObject):
             self._elements[key] = element
         return element
 
-    def _membership(self, member: SetElement) -> Decision:
+    def membership(self, member: SetElement) -> Decision:
         return member.ambient_set() is self
 
     def __iter__(self) -> Iterator[SetElement]:
@@ -1854,7 +1844,7 @@ class DiscreteArrowSet(SetObject):
             self._elements[key] = element
         return element
 
-    def _membership(self, member: SetElement) -> Decision:
+    def membership(self, member: SetElement) -> Decision:
         return member.ambient_set() is self
 
     def __iter__(self) -> Iterator[SetElement]:
@@ -1958,9 +1948,9 @@ class ProductElement(SetElement):
         return self._product
 
     def component(self, index: SetElement) -> SetElement:
-        assert self._product.index_set()._membership(index) is True
+        assert index in self._product.index_set()
         value = self._components(index)
-        assert self._product.factor(index)._membership(value) is True
+        assert value in self._product.factor(index)
         return value
 
     def __getitem__(self, index: SetElement) -> SetElement:
@@ -2033,7 +2023,7 @@ class ProductSet(SetObject):
         return value
 
     def factor(self, index: SetElement) -> SetObject:
-        assert self.index_set()._membership(index) is True
+        assert index in self.index_set()
         value = self._diagram(self.index_category().object(index))
         assert Sets().contains_set(value)
         return value
@@ -2048,7 +2038,7 @@ class ProductSet(SetObject):
     def element(self, components: SetElementFamily) -> ProductElement:
         return ProductElement(self, components)
 
-    def _membership(self, member: SetElement) -> Decision:
+    def membership(self, member: SetElement) -> Decision:
         value = registered_value(member)
         return value is not None and ProductElements().contains_product_element(value) and value.product() is self
 
@@ -2180,8 +2170,8 @@ class CoproductElement(SetElement):
         index: SetElement,
         value: SetElement,
     ) -> None:
-        assert coproduct.index_set()._membership(index) is True
-        assert coproduct.cofactor(index)._membership(value) is True
+        assert index in coproduct.index_set()
+        assert value in coproduct.cofactor(index)
         self._coproduct = coproduct
         self._index = index
         self._value = value
@@ -2255,7 +2245,7 @@ class CoproductSet(SetObject):
         return value
 
     def cofactor(self, index: SetElement) -> SetObject:
-        assert self.index_set()._membership(index) is True
+        assert index in self.index_set()
         value = self._diagram(self.index_category().object(index))
         assert Sets().contains_set(value)
         return value
@@ -2270,7 +2260,7 @@ class CoproductSet(SetObject):
     def element(self, index: SetElement, value: SetElement) -> CoproductElement:
         return CoproductElement(self, index, value)
 
-    def _membership(self, member: SetElement) -> Decision:
+    def membership(self, member: SetElement) -> Decision:
         value = registered_value(member)
         return value is not None and CoproductElements().contains_coproduct_element(value) and value.coproduct() is self
 
@@ -2408,7 +2398,7 @@ class LimitSet(ProductSet):
         return index_objects(self.diagram().domain())
 
     def factor(self, index: SetElement) -> SetObject:
-        assert self.index_set()._membership(index) is True
+        assert index in self.index_set()
         diagram_object = index.value()
         assert diagram_object in self.diagram().domain()
         value = self.diagram()(diagram_object)
@@ -2418,8 +2408,8 @@ class LimitSet(ProductSet):
     def _limit_projection(self, index: MathematicalObject) -> SetMorphism:
         return self._projection(_element_named_by(self.index_set(), index))
 
-    def _membership(self, member: SetElement) -> Decision:
-        product_membership = super()._membership(member)
+    def membership(self, member: SetElement) -> Decision:
+        product_membership = super().membership(member)
         if product_membership is not True:
             return product_membership
         if id(member) in self._compatible_elements:
@@ -2442,7 +2432,7 @@ class LimitSet(ProductSet):
 
     def __iter__(self) -> Iterator[SetElement]:
         for member in super().__iter__():
-            if self._membership(member) is True:
+            if self.membership(member) is True:
                 yield member
 
 
@@ -2632,7 +2622,7 @@ class ColimitSet(SetObject):
     def element(self, index: SetElement, value: SetElement) -> ColimitElement:
         return ColimitElement(self, self._coproduct.element(index, value))
 
-    def _membership(self, member: SetElement) -> Decision:
+    def membership(self, member: SetElement) -> Decision:
         value = registered_value(member)
         return value is not None and ColimitElements().contains_colimit_element(value) and value.colimit() is self
 
@@ -3324,7 +3314,7 @@ class FixedCardinalitySubsetSet(SetObject):
     def subset_cardinality(self) -> int:
         return self._subset_cardinality
 
-    def _membership(self, candidate: SetElement) -> Decision:
+    def membership(self, candidate: SetElement) -> Decision:
         if not SubsetsOfSet(self._source).contains_subset(candidate):
             return False
         return candidate.underlying_set().cardinality() == self._subset_cardinality
@@ -3373,7 +3363,7 @@ class FiniteSubsetSet(SetObject):
     def powerset(self) -> SetHomCategory:
         return PowerSet(self._source)
 
-    def _membership(self, candidate: SetElement) -> Decision:
+    def membership(self, candidate: SetElement) -> Decision:
         if not SubsetsOfSet(self._source).contains_subset(candidate):
             return False
         return candidate.underlying_set().cardinality().is_finite()
@@ -3389,7 +3379,7 @@ class FiniteSubsetSet(SetObject):
             preceding.append(maximum)
 
     def position(self, subset: SetSubset) -> int:
-        assert self._membership(subset) is True
+        assert subset in self
         for position, candidate in enumerate(self):
             value = registered_value(candidate)
             assert value is not None
@@ -3449,7 +3439,7 @@ class FinitelySupportedFunctionSet(SetObject):
         value_set: SetObject,
         basepoint: SetElement,
     ) -> None:
-        assert value_set._membership(basepoint) is True
+        assert basepoint in value_set
         self._index_set = index_set
         self._value_set = value_set
         self._basepoint = basepoint
@@ -3487,7 +3477,7 @@ class FinitelySupportedFunctionSet(SetObject):
         assert support in FiniteSubsets(self._index_set)
 
         def finitely_supported_action(index: SetElement) -> SetElement:
-            supported = support._membership(index)
+            supported = support.membership(index)
             assert supported is not UNKNOWN
             if supported:
                 value = action(index)
@@ -3501,7 +3491,7 @@ class FinitelySupportedFunctionSet(SetObject):
             finitely_supported_action,
         )
         _FUNCTION_SUPPORTS[id(function)] = support
-        assert self._membership(function) is True
+        assert function in self
         return function
 
     def support(self, function: SetMorphism) -> SetSubset:
@@ -3510,7 +3500,7 @@ class FinitelySupportedFunctionSet(SetObject):
         assert support is not None
         return support
 
-    def _membership(self, candidate: SetElement) -> Decision:
+    def membership(self, candidate: SetElement) -> Decision:
         if candidate not in Sets().Hom(self._index_set, self._value_set):
             return False
         support = _FUNCTION_SUPPORTS.get(id(candidate))
@@ -3558,17 +3548,17 @@ def _image_subobject(
     if size is None and function.is_injective() is True:
         size = domain.cardinality()
     return PowerSet(codomain).from_predicate(
-        lambda member: _image_membership(function, member),
+        lambda member: _imagemembership(function, member),
         cardinality=size,
     )
 
 
-def _image_membership(
+def _imagemembership(
     function: SetMorphism,
     member: SetElement,
 ) -> Decision:
     codomain = function.codomain()
     assert Sets().contains_set(codomain)
-    if codomain._membership(member) is False:
+    if codomain.membership(member) is False:
         return False
     return UNKNOWN

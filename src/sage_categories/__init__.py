@@ -34,6 +34,7 @@ from sage_categories.abstract_categories.slice_categories import (
     Subobject,
     Superobject,
 )
+from sage_categories.backends.sage.sets import set_from_sage
 from sage_categories.category import Category
 from sage_categories.theories.cardinals import (
     Aleph0,
@@ -140,12 +141,12 @@ __all__ = [
     "DiscreteCategory",
     "ExponentialOfSets",
     "FiniteDiscreteCategories",
+    "FinitePosets",
     "FiniteSet",
     "FiniteSubsets",
-    "FinitePosets",
     "FiniteTotallyOrderedSets",
-    "FullSubcategory",
     "FinitelySupportedFunctions",
+    "FullSubcategory",
     "Functor",
     "IdentityFunctor",
     "LimitOfSets",
@@ -159,10 +160,10 @@ __all__ = [
     "Ordinal",
     "Ordinals",
     "PartiallyOrderedSets",
-    "PowerSet",
     "Poset",
     "PosetMorphism",
     "PosetObject",
+    "PowerSet",
     "Product",
     "ProductOfSets",
     "Set",
@@ -175,8 +176,8 @@ __all__ = [
     "Subobject",
     "SubsetsOfSize",
     "Superobject",
-    "TruthValues",
     "TotallyOrderedSets",
+    "TruthValues",
     "Unknown",
     "WideSubcategory",
     "__version__",
@@ -191,8 +192,9 @@ __all__ = [
     "finite_ordered_set",
     "omega",
     "omega0",
-    "ordinal",
     "ordered_set_owned_by",
+    "ordinal",
+    "set_from_sage",
     "version",
 ]
 

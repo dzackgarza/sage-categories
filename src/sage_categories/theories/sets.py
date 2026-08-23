@@ -3366,7 +3366,21 @@ class FinitelySupportedFunctionSet(SetObject):
         support: SetSubset,
     ) -> SetMorphism:
         assert support in FiniteSubsets(self._index_set)
-        function = _set_morphism(self._index_set, self._value_set, action)
+
+        def finitely_supported_action(index: SetElement) -> SetElement:
+            supported = support._membership(index)
+            assert supported is not UNKNOWN
+            if supported:
+                value = action(index)
+                assert value != self._basepoint
+                return value
+            return self._basepoint
+
+        function = _set_morphism(
+            self._index_set,
+            self._value_set,
+            finitely_supported_action,
+        )
         _FUNCTION_SUPPORTS[id(function)] = support
         assert self._membership(function) is True
         return function
@@ -3381,7 +3395,9 @@ class FinitelySupportedFunctionSet(SetObject):
         if candidate not in Sets().Hom(self._index_set, self._value_set):
             return False
         support = _FUNCTION_SUPPORTS.get(id(candidate))
-        return support is not None and support in FiniteSubsets(self._index_set)
+        if support is None:
+            return UNKNOWN
+        return support in FiniteSubsets(self._index_set)
 
     def __repr__(self) -> str:
         return f"Finitely supported functions {self._index_set} -> {self._value_set}"

@@ -197,7 +197,7 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-041` | Construct or coerce raw representations into elements of the appropriate category objects before morphism evaluation. Keep this conversion outside the morphism. |
 | `POL-CAT-042` | Make Hom-category operations verify that each element's owning object lies in the base category and that evaluation respects the declared domain and codomain. |
 | `POL-CAT-043` | Prefer containment in a named property subcategory over a direct predicate call or an invariant comparison. The containment expression states the mathematical property and its owner. |
-| `POL-CAT-044` | Localize the computation that decides a property in the subcategory's `__contains__` method. A retained convenience predicate delegates to that containment check. |
+| `POL-CAT-044` | Localize the computation that decides a property in the subcategory's `__contains__` method. Do not retain a second named predicate for the same property. |
 | `POL-CAT-045` | Present every derived object through the complete public interface of the category in which it lives. Its construction can add methods but never replace or duplicate the inherited interface. |
 | `POL-CAT-046` | Make a construction subcategory a formal property subcategory of objects known to have that construction. Obtain the object's ordinary interface through selected structural functors. |
 | `POL-CAT-047` | Decide inheritance functors case by case. Select one only when standard mathematical practice treats the source object as an object of the target category with additional structure. |
@@ -213,6 +213,7 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-057` | Reject the concept of shared elements between categories. Every category owns a distinct `ElementType`, including property subcategories and dynamically constructed categories such as `C.Products()`. |
 | `POL-CAT-058` | Compile `ElementType` inheritance from selected structural functors by the same mechanism used for `ObjectType` and `ArrowType`. A subcategory never reuses another category's element implementation type. |
 | `POL-CAT-059` | Let each category add local methods to its `ElementType` while inheriting the complete applicable element interface through structural functors. Preserve the category-specific element type even when it adds no local methods. |
+| `POL-CAT-060` | Do not expose `is_X()` methods for properties represented by categories. Let the category own the decision and write `Y in X`; for example, write `f in C.Isomorphisms()`, `S in Sets().Finite()`, and `P in Posets().Products()` instead of `f.is_isomorphism()`, `S.is_finite()`, or `P.is_product()`. |
 
 Grounding examples:
 

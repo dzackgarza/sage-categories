@@ -54,7 +54,9 @@ ci-provision-sage:
     #!/usr/bin/env bash
     set -euo pipefail
     workspace="$(pwd -P)"
-    mounts=(-v "${workspace}:${workspace}" -v /tmp:/tmp)
+    qc_infra="${HOME}/ai-review-ci"
+    test -d "${qc_infra}"
+    mounts=(-v "${workspace}:${workspace}" -v "${qc_infra}:${qc_infra}" -v /tmp:/tmp)
     if [ -n "${RUNNER_TEMP:-}" ] && [ "${RUNNER_TEMP#/tmp/}" = "${RUNNER_TEMP}" ]; then
         mounts+=(-v "${RUNNER_TEMP}:${RUNNER_TEMP}")
     fi

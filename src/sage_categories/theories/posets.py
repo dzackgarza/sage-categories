@@ -48,7 +48,7 @@ if TYPE_CHECKING:
     )
     from sage_categories.theories.cardinals import Cardinal
 
-type OrderRelation = Callable[[SetElement, SetElement], bool]
+type OrderRelation = Callable[[SetElement, SetElement], Decision]
 type PosetMorphismDefinition = Callable[[PosetElement], PosetElement] | Mapping[PosetElement, PosetElement]
 
 
@@ -79,11 +79,14 @@ class PosetElement(MathematicalElement):
         assert PartiallyOrderedSets().contains_poset(ambient)
         return ambient
 
-    def __le__(self, other: PosetElement) -> bool:
+    def __le__(self, other: PosetElement) -> Decision:
         return self.ambient_poset()._is_lequal(self, other)
 
-    def __lt__(self, other: PosetElement) -> bool:
-        return self <= other and self != other
+    def __lt__(self, other: PosetElement) -> Decision:
+        comparison = self <= other
+        if comparison is UNKNOWN:
+            return UNKNOWN
+        return comparison and self != other
 
     def __repr__(self) -> str:
         return repr(self._set_element)
@@ -161,7 +164,7 @@ class PosetObject(MathematicalObject):
     def __iter__(self) -> Iterator[PosetElement]:
         return iter(self.element(member) for member in self._underlying_set)
 
-    def _is_lequal(self, left: PosetElement, right: PosetElement) -> bool:
+    def _is_lequal(self, left: PosetElement, right: PosetElement) -> Decision:
         assert self._membership(left) is True
         assert self._membership(right) is True
         return self._relation(
@@ -222,11 +225,16 @@ class PosetMorphism(Arrow):
         underlying_set = category.underlying_set(source)
         if underlying_set.is_finite() is not True:
             return UNKNOWN
+        answer: Decision = True
         for left in source:
             for right in source:
-                if self(left) <= self(right) and not left <= right:
+                image_comparison = self(left) <= self(right)
+                source_comparison = left <= right
+                if image_comparison is True and source_comparison is False:
                     return False
-        return True
+                if image_comparison is UNKNOWN or source_comparison is UNKNOWN:
+                    answer = UNKNOWN
+        return answer
 
     def is_order_embedding(self) -> Decision:
         return self.is_order_reflecting()
@@ -600,10 +608,14 @@ class TotallyOrderedSetElement(MathematicalElement):
         return self.position()
 
     def __le__(self, other: TotallyOrderedSetElement) -> bool:
-        return self._poset_element <= other._poset_implementation()
+        comparison = self._poset_element <= other._poset_implementation()
+        assert comparison is not UNKNOWN
+        return comparison
 
     def __lt__(self, other: TotallyOrderedSetElement) -> bool:
-        return self._poset_element < other._poset_implementation()
+        comparison = self._poset_element < other._poset_implementation()
+        assert comparison is not UNKNOWN
+        return comparison
 
     def __repr__(self) -> str:
         return repr(self._poset_element)
@@ -999,7 +1011,7 @@ def Poset(
     values = tuple(dict.fromkeys(members))
     underlying_set = FiniteSet(values)
 
-    def transported_relation(left: SetElement, right: SetElement) -> bool:
+    def transported_relation(left: SetElement, right: SetElement) -> Decision:
         left_value = left.value()
         right_value = right.value()
         assert SetElements().contains_set_element(left_value)

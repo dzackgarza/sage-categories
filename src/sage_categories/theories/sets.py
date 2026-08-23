@@ -92,6 +92,7 @@ from sage_categories.values import (
 if TYPE_CHECKING:
     from sage_categories.theories.posets import (
         PartiallyOrderedSetsCategory,
+        PosetObject,
         SimplexOrderIndexing,
         TotallyOrderedSetsCategory,
     )
@@ -169,6 +170,7 @@ class SetObject(MathematicalObject):
         cardinality: Cardinal | None = None,
     ) -> None:
         self._cardinality = UnknownCardinality() if cardinality is None else cardinality
+        self._subset_poset: PosetObject | None = None
         super().__init__(category=category)
 
     def _membership(self, member: SetElement) -> Decision:
@@ -207,8 +209,23 @@ class SetObject(MathematicalObject):
     def __pow__(self, exponent: SetObject) -> SetHomCategory:
         return self.exponential(exponent)
 
-    def power_set(self) -> SetHomCategory:
+    def powerset(self) -> SetHomCategory:
         return PowerSet(self)
+
+    def subset_poset(self) -> PosetObject:
+        if self._subset_poset is None:
+            from sage_categories.theories.posets import PartiallyOrderedSets
+
+            powerset = self.powerset()
+            subsets = SubsetsOfSet(self)
+
+            def contained(left: SetElement, right: SetElement) -> Decision:
+                assert subsets.contains_subset(left)
+                assert subsets.contains_subset(right)
+                return left <= right
+
+            self._subset_poset = PartiallyOrderedSets()(powerset, contained)
+        return self._subset_poset
 
     def subsets_of_size(self, size: int) -> SetObject:
         return SubsetsOfSize(self, size)
@@ -640,19 +657,23 @@ class SetSubset(SetMorphism):
     def __or__(self, other: SetSubset) -> SetSubset:
         assert self.base_set() is other.base_set()
         if self._members is not None and other._members is not None:
-            return self.power_set().from_members(self._members | other._members)
-        return self.power_set().from_predicate(
+            return PowerSet(self.base_set()).from_members(self._members | other._members)
+        return PowerSet(self.base_set()).from_predicate(
             lambda member: _decision_or(
                 self._membership(member),
                 other._membership(member),
             )
         )
 
+    def __and__(self, other: SetSubset) -> SetSubset:
+        assert self.base_set() is other.base_set()
+        return self._subset_category._intersection(self, other)
+
     def __sub__(self, other: SetSubset) -> SetSubset:
         assert self.base_set() is other.base_set()
         if self._members is not None and other._members is not None:
-            return self.power_set().from_members(self._members - other._members)
-        return self.power_set().from_predicate(
+            return PowerSet(self.base_set()).from_members(self._members - other._members)
+        return PowerSet(self.base_set()).from_predicate(
             lambda member: _decision_and(
                 self._membership(member),
                 _decision_not(other._membership(member)),
@@ -662,8 +683,8 @@ class SetSubset(SetMorphism):
     def __xor__(self, other: SetSubset) -> SetSubset:
         assert self.base_set() is other.base_set()
         if self._members is not None and other._members is not None:
-            return self.power_set().from_members(self._members ^ other._members)
-        return self.power_set().from_predicate(
+            return PowerSet(self.base_set()).from_members(self._members ^ other._members)
+        return PowerSet(self.base_set()).from_predicate(
             lambda member: _decision_or(
                 _decision_and(
                     self._membership(member),
@@ -677,10 +698,10 @@ class SetSubset(SetMorphism):
         )
 
     def __invert__(self) -> SetSubset:
-        return self.power_set().from_predicate(lambda member: _decision_not(self._membership(member)))
+        return PowerSet(self.base_set()).from_predicate(lambda member: _decision_not(self._membership(member)))
 
-    def power_set(self) -> SetHomCategory:
-        return PowerSet(self.base_set())
+    def powerset(self) -> SetHomCategory:
+        return PowerSet(self.underlying_set())
 
     def __repr__(self) -> str:
         return f"Subset of {self.base_set()}"
@@ -736,6 +757,33 @@ class SubsetsOfSetCategory(Category):
 
     def contains_subset(self, candidate: MathematicalObject) -> TypeIs[SetSubset]:
         return candidate in self
+
+    def _intersection(
+        self,
+        first: SetSubset,
+        second: SetSubset,
+    ) -> SetSubset:
+        assert first in self and second in self
+        subobjects = Sets().Subobjects(self._base_set)
+        intersection = subobjects.intersection(first, second)
+        underlying_set = intersection.object()
+        assert Sets().contains_set(underlying_set)
+        members: frozenset[SetElement] | None = None
+        first_members = first.members()
+        second_members = second.members()
+        if first_members is not None and second_members is not None:
+            members = first_members & second_members
+        return self.ObjectType(
+            category=self,
+            hom_category=PowerSet(self._base_set),
+            predicate=lambda member: _decision_and(
+                first._membership(member),
+                second._membership(member),
+            ),
+            underlying_set=underlying_set,
+            inclusion=intersection.structure_morphism(),
+            members=members,
+        )
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
         if self._inclusion is None:
@@ -3137,7 +3185,7 @@ class FixedCardinalitySubsetSet(SetObject):
     def source(self) -> SetObject:
         return self._source
 
-    def power_set(self) -> SetHomCategory:
+    def powerset(self) -> SetHomCategory:
         return PowerSet(self._source)
 
     def subset_cardinality(self) -> int:
@@ -3151,13 +3199,13 @@ class FixedCardinalitySubsetSet(SetObject):
     def __iter__(self) -> Iterator[SetElement]:
         size = self._subset_cardinality
         if size == 0:
-            yield self.power_set().bottom()
+            yield self.powerset().bottom()
             return
         preceding: list[SetElement] = []
         for maximum in self._source:
             if len(preceding) >= size - 1:
                 for initial in combinations(preceding, size - 1):
-                    yield self.power_set().from_members(frozenset((*initial, maximum)))
+                    yield self.powerset().from_members(frozenset((*initial, maximum)))
             preceding.append(maximum)
 
     def __getitem__(self, position: int) -> SetSubset:
@@ -3189,7 +3237,7 @@ class FiniteSubsetSet(SetObject):
     def source(self) -> SetObject:
         return self._source
 
-    def power_set(self) -> SetHomCategory:
+    def powerset(self) -> SetHomCategory:
         return PowerSet(self._source)
 
     def _membership(self, candidate: SetElement) -> Decision:
@@ -3198,13 +3246,13 @@ class FiniteSubsetSet(SetObject):
         return candidate.underlying_set().cardinality().is_finite()
 
     def __iter__(self) -> Iterator[SetElement]:
-        power_set = self.power_set()
-        yield power_set.bottom()
+        powerset = self.powerset()
+        yield powerset.bottom()
         preceding: list[SetElement] = []
         for maximum in self._source:
             for size in range(len(preceding) + 1):
                 for initial in combinations(preceding, size):
-                    yield power_set.from_members(frozenset((*initial, maximum)))
+                    yield powerset.from_members(frozenset((*initial, maximum)))
             preceding.append(maximum)
 
     def position(self, subset: SetSubset) -> int:

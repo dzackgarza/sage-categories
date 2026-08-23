@@ -50,12 +50,12 @@ class SliceObject(MathematicalObject):
 class SubobjectObject(SliceObject):
     """An object equipped with a monomorphism into one fixed object."""
 
-    def intersection(self, other: SliceObject) -> SubobjectObject:
-        assert self.fixed_object() is other.fixed_object()
+    def intersection(self, other: MathematicalObject) -> SubobjectObject:
         ambient = self.structure_morphism().base_category()
         category = ambient.Subobjects(self.fixed_object())
         assert category.contains_subobject(self)
         assert category.contains_subobject(other)
+        assert self.fixed_object() is other.fixed_object()
         return category.intersection(self, other)
 
 
@@ -334,10 +334,11 @@ class SubobjectCategory(Category):
 
     def intersection(
         self,
-        first: SliceObject,
-        second: SliceObject,
+        first: MathematicalObject,
+        second: MathematicalObject,
     ) -> SubobjectObject:
-        assert first in self and second in self
+        assert self.contains_subobject(first)
+        assert self.contains_subobject(second)
         pullback = self._ambient_category.pullback(
             first.structure_morphism(),
             second.structure_morphism(),

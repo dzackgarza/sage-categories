@@ -20,7 +20,7 @@ from sage_categories.theories.posets import (
     PosetElement,
     PosetObject,
 )
-from sage_categories.values import Arrow, MathematicalObject
+from sage_categories.values import UNKNOWN, Arrow, MathematicalObject
 
 type PartialOrder = Callable[[PosetElement, PosetElement], bool]
 
@@ -148,10 +148,15 @@ class SageFinitePosetObject(MathematicalObject):
         assert underlying_set.is_finite() is True
         members = tuple(poset)
 
+        def relation(left: PosetElement, right: PosetElement) -> bool:
+            comparison = left <= right
+            assert comparison is not UNKNOWN
+            return comparison
+
         self._source = source
         self._poset = poset
         self._value = _sage_poset_constructor(
-            (members, lambda left, right: left <= right),
+            (members, relation),
             facade=True,
         )
         super().__init__(category=category)

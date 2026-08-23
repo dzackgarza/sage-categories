@@ -5,8 +5,7 @@ from __future__ import annotations
 from typing import TypeIs
 
 from sage_categories.abstract_categories.functors import Functor, StructuralFunctor
-from sage_categories.abstract_categories.hom_categories import HomCategory
-from sage_categories.abstract_categories.hom_categories import Isomorphism
+from sage_categories.abstract_categories.hom_categories import HomCategory, Isomorphism
 from sage_categories.category import Category
 from sage_categories.values import (
     Arrow,

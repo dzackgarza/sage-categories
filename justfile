@@ -86,5 +86,8 @@ ci-provision-sage:
     # This Sage's CLI takes only -c and a file; the environment's pip is reached
     # through its Python, which is the spelling the QC profile uses too.
     "${sage_dir}/python" -m pip install --quiet --no-deps -e .
+    # The CI tier measures coverage with the Sage interpreter's own Python, so
+    # the tool has to live in that environment rather than on the runner.
+    "${sage_dir}/python" -m pip install --quiet coverage
     echo "SAGE_BIN=$sage_bin" >> "${GITHUB_ENV:-/dev/stdout}"
     "$sage_bin" -c "import sage_categories; print('sage_categories', sage_categories.version())"

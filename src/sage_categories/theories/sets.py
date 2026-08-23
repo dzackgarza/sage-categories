@@ -643,6 +643,8 @@ class SetSubset(SetMorphism):
 
     def __le__(self, other: SetSubset) -> Decision:
         assert self.base_set() is other.base_set()
+        if self is other:
+            return True
         if self._members is None:
             return UNKNOWN
         answer: Decision = True

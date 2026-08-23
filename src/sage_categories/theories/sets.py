@@ -69,7 +69,6 @@ from sage_categories.abstract_categories.products import (
     ProductObject,
     ProductPresentation,
     ProductsOfCategory,
-    is_diagram_category,
 )
 from sage_categories.category import Category
 from sage_categories.theories.cardinals import (

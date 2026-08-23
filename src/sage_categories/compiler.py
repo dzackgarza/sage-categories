@@ -35,9 +35,15 @@ Implementation = TypeVar("Implementation", bound=MathematicalObject)
 class DeclaredMethod:
     """A method and the category which declares it."""
 
-    def __init__(self, owner: Category, method: FunctionType) -> None:
+    def __init__(
+        self,
+        owner: Category,
+        method: FunctionType,
+        route: tuple[StructuralFunctor, ...] = (),
+    ) -> None:
         self.owner = owner
         self.method = method
+        self.route = route
 
 
 class CategoryCompiler:
@@ -195,6 +201,8 @@ class CategoryCompiler:
             for name, declaration in inherited.items():
                 previous = catalogue.get(name)
                 if previous is None or previous.owner is declaration.owner:
+                    if previous is not None:
+                        assert previous.method is declaration.method
                     catalogue[name] = declaration
                     continue
                 if previous.owner.is_subcategory(declaration.owner):
@@ -205,7 +213,14 @@ class CategoryCompiler:
                 assert name in local, f"{category} inherits {name} from unrelated categories {previous.owner} and {declaration.owner}"
         for name, method in local.items():
             catalogue[name] = DeclaredMethod(category, method)
-        return catalogue
+        return {
+            name: DeclaredMethod(
+                declaration.owner,
+                declaration.method,
+                self.implementation_route(category, declaration.owner),
+            )
+            for name, declaration in catalogue.items()
+        }
 
     def _compile_type(
         self,
@@ -219,7 +234,7 @@ class CategoryCompiler:
         available = {name for name, declaration in catalogue.items() if inspect.getattr_static(local_type, name, None) is declaration.method}
         inherited = {
             name: ForwardedMethod(
-                self.implementation_route(category, declaration.owner),
+                declaration.route,
                 declaration.method,
                 element_method=element_methods,
                 morphism_method=morphism_methods,

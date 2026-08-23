@@ -1,7 +1,7 @@
 # sage-categories
 
-`sage-categories` is an experimental categorical foundation for mathematics in Sage.
-It gives mathematical categories direct ownership of their objects, arrows, constructors, and methods.
+`sage-categories` is a categorical replacement universe for a significant subset of standard Sage mathematics.
+It shadows familiar Sage objects with package-owned versions whose categories own their objects, arrows, constructors, and methods.
 
 The central rule is simple:
 
@@ -14,6 +14,33 @@ It also lets one public object receive operations from every category reached by
 The public API is not stable.
 The repository currently contains the categorical kernel and a finite Sets specimen.
 The complete Sets design described below remains the current implementation target.
+
+## One import, one mathematical universe
+
+The required opt-in surface is a `sage_categories.all` module analogous to `sage.all`:
+
+```python
+from sage_categories.all import *
+```
+
+Python module names cannot contain hyphens, so the import uses `sage_categories`, not the distribution name `sage-categories`.
+The `all` module is part of the target public API and is not yet present in the current implementation.
+
+This import shadows supported standard Sage names with package-owned objects.
+For example, an owned `ZZ` starts every later operation inside the package universe.
+Products, modules, morphisms, subobjects, scalar changes, and every other supported construction return package-owned results.
+Their public operations remain mediated by the package's categorical APIs.
+
+The closure requirement applies recursively: every public result produced from package-owned inputs remains package-owned.
+A private computation can use a Sage value or algorithm, but it reconstructs the owned mathematical result before returning.
+
+The package does not refine arbitrary Sage objects into its category hierarchy.
+It also does not promise that ordinary Sage code accepts package-owned objects or that package code accepts ordinary Sage objects.
+Any such interoperability is incidental Python compatibility, not part of the contract.
+
+A notebook that imports `sage_categories.all` commits to this package universe.
+If a Sage construction is not yet owned, its downstream Sage code has no compatibility guarantee, even when that code internally uses familiar objects such as `ZZ` or free modules.
+The intended remedy is to absorb the required construction, use Sage privately as its computation engine, and expose a new owned categorical API.
 
 ## Why this project exists
 
@@ -30,6 +57,12 @@ These mechanisms can obscure three different facts:
 This project separates those facts.
 Theory code should state the mathematical definition and the immediate functors that connect it to existing theory.
 The kernel should compile that information into a direct method surface.
+
+The separation also preserves mathematical consequences that concrete Sage implementations can lose.
+For example, an integral lattice has an underlying finite-rank `ZZ`-module, hence an underlying set modeled by a finite product of copies of `ZZ`.
+That functor chain determines cardinality and supports lazy enumeration.
+A concrete lattice implementation that does not retain those categorical relationships can fail to expose either operation.
+Long-running searches, including bounded enumeration in Vinberg-type algorithms, need those consequences without bespoke lattice-level implementations.
 
 A leaf category should define only its new structure.
 It should not copy methods from every category above it.

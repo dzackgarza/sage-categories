@@ -890,7 +890,7 @@ class ProductLift:
             return product.apex()
         assert is_products_of_category(category)
         assert category.contains_product(product)
-        return product.apex()
+        return product
 
     def presentation(self) -> ProductPresentation:
         # This is transport of a limiting cone across an isomorphism, as in

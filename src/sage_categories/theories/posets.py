@@ -78,7 +78,7 @@ class PosetElement(MathematicalElement):
     def __init__(
         self,
         *,
-        ambient_object: PosetObject,
+        ambient_object: PosetObject | PosetProductObject,
         set_element: SetElement,
     ) -> None:
         assert ambient_object in PartiallyOrderedSets()
@@ -94,7 +94,7 @@ class PosetElement(MathematicalElement):
     def _set_implementation(self) -> SetElement:
         return self._set_element
 
-    def ambient_poset(self) -> PosetObject:
+    def ambient_poset(self) -> PosetObject | PosetProductObject:
         ambient = self.ambient_object()
         assert PartiallyOrderedSets().contains_poset(ambient)
         return ambient
@@ -696,7 +696,7 @@ class PosetProductObject(ProductObject):
                     answer = UNKNOWN
             return answer
 
-        self._underlying_set = underlying_product
+        self._underlying_set: SetObject = underlying_product
         self._relation = componentwise
         self._elements: dict[int, PosetElement] = {}
         self._thin_category: ThinCategory | None = None
@@ -722,39 +722,23 @@ class PosetProductObject(ProductObject):
             self._elements[key] = cached
         return cached
 
+    def __contains__(self, candidate: Any) -> bool:
+        value = registered_value(candidate)
+        return value is not None and PosetElements().contains_poset_element(value) and value.ambient_poset() is self
+
+    def _is_lequal(self, left: PosetElement, right: PosetElement) -> Decision:
+        assert left in self
+        assert right in self
+        return self._relation(left, right)
+
     def set_product(self) -> SetProductObject:
         return self._set_product
 
     def _lifted_product_presentation(self) -> ProductPresentation:
         forgetful = PartiallyOrderedSets().forgetful_functor()
-        set_products = self._set_product.category()
-        assert is_products_of_sets_category(set_products)
-        underlying_product = self._set_product.apex()
-
-        def forget_product_element(member: SetElement) -> SetElement:
-            value = registered_value(member)
-            assert value is not None
-            assert ProductElements().contains_product_element(value)
-            image = set_products.inclusion().on_element(self._set_product, value)
-            assert SetElements().contains_set_element(image)
-            return image
-
-        def refine_product_element(member: SetElement) -> SetElement:
-            value = registered_value(member)
-            assert value is not None
-            assert ProductElements().contains_product_element(value)
-            return self._set_product.element(value.components())
-
-        forward = Sets().Hom(self._set_product, underlying_product)(
-            forget_product_element,
-            injective=True,
-            surjective=True,
-        )
-        backward = Sets().Hom(underlying_product, self._set_product)(
-            refine_product_element,
-            injective=True,
-            surjective=True,
-        )
+        identity = Sets().identity(self._set_product)
+        forward = identity
+        backward = identity
         comparison = declare_isomorphism(forward, backward)
         assert is_isomorphism(comparison)
 

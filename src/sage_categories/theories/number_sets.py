@@ -14,11 +14,9 @@ from typing import TypeIs
 
 from sage_categories.theories.cardinals import aleph0, continuum
 from sage_categories.theories.sets import (
-    CountableSets,
     SetElement,
     SetElements,
     SetObject,
-    UncountableSets,
 )
 from sage_categories.values import Decision, MathematicalObject
 
@@ -48,7 +46,7 @@ class IntegerSet(SetObject):
 
     def __init__(self) -> None:
         self._integers: dict[int, IntegerElement] = {}
-        super().__init__(category=CountableSets(), cardinality=aleph0)
+        super().__init__(cardinality=aleph0)
 
     def __call__(self, integer: int | IntegerElement) -> IntegerElement:
         value = int(integer)
@@ -120,7 +118,7 @@ class RationalSet(SetObject):
 
     def __init__(self) -> None:
         self._rationals: dict[Fraction, RationalElement] = {}
-        super().__init__(category=CountableSets(), cardinality=aleph0)
+        super().__init__(cardinality=aleph0)
 
     def __call__(
         self,
@@ -180,7 +178,7 @@ class RealSet(SetObject):
 
     def __init__(self) -> None:
         self._rationals: dict[RationalElement, RealElement] = {}
-        super().__init__(category=UncountableSets(), cardinality=continuum)
+        super().__init__(cardinality=continuum)
 
     def __call__(self, integer: int | IntegerElement) -> RealElement:
         return self.rational(Rationals()(integer))

@@ -165,12 +165,13 @@ class SetObject(MathematicalObject):
     def __init__(
         self,
         *,
-        category: Category,
+        category: Category | None = None,
         cardinality: Cardinal | None = None,
     ) -> None:
         self._cardinality = UnknownCardinality() if cardinality is None else cardinality
         self._subset_poset: PosetObject | None = None
-        super().__init__(category=category)
+        owner = _category_for_cardinality(self._cardinality) if category is None else category
+        super().__init__(category=owner)
 
     def membership(self, member: SetElement) -> Decision:
         """Return the represented membership decision for ``member``."""
@@ -361,7 +362,7 @@ class NaturalNumbersSet(SetObject):
 
     def __init__(self) -> None:
         self._members: dict[int, NaturalNumberElement] = {}
-        super().__init__(category=CountableSets(), cardinality=Aleph0())
+        super().__init__(cardinality=Aleph0())
 
     def membership(self, member: SetElement) -> Decision:
         return member.ambient_set() is self
@@ -474,7 +475,7 @@ class SubsetSetObject(SetObject):
         self._iterator = iterator
         self._elements: dict[int, SubsetElement] = {}
         self._base_elements: dict[int, SetElement] = {}
-        super().__init__(category=Sets(), cardinality=cardinality)
+        super().__init__(cardinality=cardinality)
 
     def element(self, base_element: SetElement) -> SubsetElement:
         assert base_element.ambient_set() is self._base_set
@@ -1734,6 +1735,18 @@ def UncountableSets() -> UncountableSetsCategory:
     return Sets().Uncountable()
 
 
+def _category_for_cardinality(size: Cardinal) -> Category:
+    if size.is_finite() is True:
+        return FiniteSets()
+    if size.is_countable() is True:
+        return CountableSets()
+    if size.is_uncountable() is True:
+        return UncountableSets()
+    if size.is_infinite() is True:
+        return InfiniteSets()
+    return Sets()
+
+
 def cardinality_functor() -> CardinalityFunctor:
     return Sets().CardinalityFunctor()
 
@@ -1789,7 +1802,7 @@ class DiscreteObjectSet(SetObject):
         self._discrete_category = category
         self._labels = labels
         self._elements: dict[int, SetElement] = {}
-        super().__init__(category=Sets(), cardinality=labels.cardinality())
+        super().__init__(cardinality=labels.cardinality())
 
     def element(self, value: MathematicalObject) -> SetElement:
         assert value in self._discrete_category
@@ -1837,7 +1850,7 @@ class DiscreteArrowSet(SetObject):
         self._elements: dict[int, SetElement] = {}
         objects = category.objects()
         assert Sets().contains_set(objects)
-        super().__init__(category=Sets(), cardinality=objects.cardinality())
+        super().__init__(cardinality=objects.cardinality())
 
     def element(self, value: MathematicalObject) -> SetElement:
         assert self._discrete_category.contains_arrow(value)
@@ -3313,7 +3326,7 @@ class FixedCardinalitySubsetSet(SetObject):
             size = cardinal(comb(int(source.cardinality()), subset_cardinality))
         elif source.is_infinite() is True:
             size = source.cardinality()
-        super().__init__(category=Sets(), cardinality=size)
+        super().__init__(cardinality=size)
 
     def source(self) -> SetObject:
         return self._source
@@ -3365,7 +3378,7 @@ class FiniteSubsetSet(SetObject):
             size = cardinal(2) ** source.cardinality()
         elif source.is_infinite() is True:
             size = source.cardinality()
-        super().__init__(category=Sets(), cardinality=size)
+        super().__init__(cardinality=size)
 
     def source(self) -> SetObject:
         return self._source
@@ -3454,7 +3467,6 @@ class FinitelySupportedFunctionSet(SetObject):
         self._value_set = value_set
         self._basepoint = basepoint
         super().__init__(
-            category=Sets(),
             cardinality=self._construction_cardinality(),
         )
 

@@ -90,6 +90,9 @@ def test_predicates_construct_infinite_subobjects() -> None:
     assert ZZ(int(2)) in prime_integers
     assert ZZ(int(4)) not in prime_integers
     assert undecided_integers.membership(ZZ(int(0))) is UNKNOWN
+    assert even_integers.object().category() is CountableSets()
+    assert prime_integers.object().category() is CountableSets()
+    assert undecided_integers.object().category() is Sets()
 
     assert even_integers.inclusion().domain() is even_integers.object()
     assert even_integers.inclusion().codomain() is ZZ

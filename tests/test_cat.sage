@@ -8,8 +8,15 @@ from sage_categories.abstract_categories.functors import (
     is_natural_transformation_hom_category,
 )
 from sage_categories.abstract_categories.hom_categories import is_isomorphism
-from sage_categories.abstract_categories.products import DiagramCategory
-from sage_categories.theories.posets import PosetElement, TotallyOrderedSetElements
+from sage_categories.abstract_categories.products import (
+    DiagramCategory,
+    is_products_of_category,
+)
+from sage_categories.theories.posets import (
+    PosetElement,
+    TotallyOrderedSetElements,
+    is_poset_hom_category,
+)
 from sage_categories.theories.sets import is_products_of_sets_category
 
 
@@ -206,10 +213,16 @@ def test_poset_products_lift_products_of_underlying_sets() -> None:
     labels = FiniteSet((ZZ(int(0)), ZZ(int(1))))
     index_category = DiscreteCategory(labels)
     factor_set = FiniteSet((ZZ(int(0)), ZZ(int(1))))
-    factor = finite_ordered_set((ZZ(int(0)), ZZ(int(1))))
+    ordered_factor = finite_ordered_set((ZZ(int(0)), ZZ(int(1))))
+    factor = TotallyOrderedSets().inclusion().on_object(ordered_factor)
+    assert PartiallyOrderedSets().contains_poset(factor)
     diagram = PartiallyOrderedSets().DiagonalFunctor(index_category)(factor)
+    assert is_functor(diagram)
     product = PartiallyOrderedSets().ProductFunctor(index_category)(diagram)
     assert PartiallyOrderedSets().contains_poset(product)
+    product_category = product.category()
+    assert is_products_of_category(product_category)
+    assert product_category.contains_product(product)
 
     forgetful = PartiallyOrderedSets().forgetful_functor()
     underlying_product = forgetful.on_object(product)
@@ -226,3 +239,21 @@ def test_poset_products_lift_products_of_underlying_sets() -> None:
 
     assert lower <= upper
     assert (upper <= lower) is False
+
+    first_index = index_category.object(labels.element(ZZ(int(0))))
+    projection = product.projection(first_index)
+    projection_hom = projection.hom_category()
+    assert is_poset_hom_category(projection_hom)
+    assert projection_hom.contains_poset_morphism(projection)
+    assert projection(lower) is factor.element(set_zero)
+
+    identity = PartiallyOrderedSets().identity(factor)
+    cone = Cone(diagram, factor, lambda index: identity)
+    diagonal = product.universal_morphism(cone)
+    diagonal_hom = diagonal.hom_category()
+    assert is_poset_hom_category(diagonal_hom)
+    assert diagonal_hom.contains_poset_morphism(diagonal)
+    factor_member = factor.element(set_one)
+    diagonal_image = diagonal(factor_member)
+    assert diagonal_image <= diagonal_image
+    assert projection(diagonal_image) is factor_member

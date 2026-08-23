@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any, TypeIs
 from sage_categories.abstract_categories.category_constructions import (
     FullSubcategory,
 )
+from sage_categories.abstract_categories.arrow_categories import declare_isomorphism
 from sage_categories.abstract_categories.functors import (
     Functor,
     NaturalIsomorphism,
@@ -29,9 +30,7 @@ from sage_categories.abstract_categories.hom_categories import (
     is_isomorphism,
 )
 from sage_categories.abstract_categories.products import (
-    Cone,
-    ConeObject,
-    Product,
+    ProductLift,
     ProductObject,
     ProductPresentation,
     ProductsOfCategory,
@@ -706,57 +705,41 @@ class PosetProductObject(ProductObject, PosetObject):
         self._preimage = diagram
         self._image = self
         self._set_product = underlying_product
-        self._limit_presentation = self._product_presentation()
+        self._limit_presentation = self._lifted_product_presentation()
 
     def set_product(self) -> SetProductObject:
         return self._set_product
 
-    def _product_presentation(self) -> ProductPresentation:
-        diagram = self.diagram()
+    def _lifted_product_presentation(self) -> ProductPresentation:
+        forgetful = PartiallyOrderedSets().forgetful_functor()
+        identity = Sets().identity(self._set_product)
+        comparison = declare_isomorphism(identity, identity)
+        assert is_isomorphism(comparison)
 
-        def projection(index: MathematicalObject) -> Arrow:
-            factor = diagram(index)
-            assert PartiallyOrderedSets().contains_poset(factor)
-            set_projection = self._set_product.projection(index)
-            assert Sets().contains_set_morphism(set_projection)
-
-            def project(member: PosetElement) -> PosetElement:
-                set_member = (
-                    PartiallyOrderedSets()
-                    .forgetful_functor()
-                    .on_element(
-                        self,
-                        member,
-                    )
-                )
-                assert SetElements().contains_set_element(set_member)
-                return factor.element(set_projection(set_member))
-
-            return PartiallyOrderedSets().Hom(self, factor)(project)
-
-        cone = Cone(diagram, self, projection)
-
-        def mediate(other: ConeObject) -> Arrow:
-            source = other.apex()
+        def lift_morphism(
+            source: MathematicalObject,
+            target: MathematicalObject,
+            underlying: Arrow,
+        ) -> Arrow:
             assert PartiallyOrderedSets().contains_poset(source)
+            assert PartiallyOrderedSets().contains_poset(target)
+            assert Sets().contains_set_morphism(underlying)
 
-            def assemble(member: PosetElement) -> PosetElement:
-                def component(index: SetElement) -> SetElement:
-                    diagram_object = self._set_product.index_category().object(index)
-                    component_arrow = other.structure_morphism(diagram_object)
-                    component_hom = component_arrow.hom_category()
-                    assert is_poset_hom_category(component_hom)
-                    assert component_hom.contains_poset_morphism(component_arrow)
-                    image = component_arrow(member)
-                    set_image = PartiallyOrderedSets().forgetful_functor().on_element(component_arrow.codomain(), image)
-                    assert SetElements().contains_set_element(set_image)
-                    return set_image
+            def mapping(member: PosetElement) -> PosetElement:
+                set_member = forgetful.on_element(source, member)
+                assert SetElements().contains_set_element(set_member)
+                return target.element(underlying(set_member))
 
-                return self.element(self._set_product.element(component))
+            return PartiallyOrderedSets().Hom(source, target)(mapping)
 
-            return PartiallyOrderedSets().Hom(source, self)(assemble)
-
-        return Product(cone, mediate)
+        return ProductLift(
+            diagram=self.diagram(),
+            structural_functor=forgetful,
+            inherited_product=self._set_product,
+            apex=self,
+            comparison=comparison,
+            lift_morphism=lift_morphism,
+        ).presentation()
 
 
 class ForgetPosetProductFunctor(StructuralFunctor):

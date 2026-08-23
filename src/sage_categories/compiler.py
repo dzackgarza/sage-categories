@@ -125,7 +125,14 @@ class CategoryCompiler:
         plugin reads the declarations from their owner here rather than from a
         second graph kept somewhere else.
         """
-        return self._declared_relations(inclusions_only=False)
+        inherited = self._declared_relations(inclusions_only=False)
+        subtyping = self.declared_subtyping()
+        assert all(
+            set(parents).issubset(inherited[role][implementation])
+            for role, relations in subtyping.items()
+            for implementation, parents in relations.items()
+        )
+        return inherited
 
     def declared_subtyping(self) -> dict[str, dict[str, tuple[str, ...]]]:
         """Report implementation subtyping declared by inclusion functors."""

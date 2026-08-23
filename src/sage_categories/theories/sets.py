@@ -3169,7 +3169,6 @@ class SetColimitObject(ColimitObject):
             category=Sets(),
             cardinality=cardinality,
         )
-        self._colimit_set = colimit_set
         self._coproduct = colimit_set.coproduct()
         super().__init__(
             category=category,

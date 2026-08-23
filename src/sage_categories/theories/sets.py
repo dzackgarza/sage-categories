@@ -214,15 +214,20 @@ class SetObject(MathematicalObject):
 
     def subset_poset(self) -> PosetObject:
         if self._subset_poset is None:
-            from sage_categories.theories.posets import PartiallyOrderedSets
+            from sage_categories.theories.posets import (
+                PartiallyOrderedSets,
+                PosetElement,
+            )
 
             powerset = self.powerset()
             subsets = SubsetsOfSet(self)
 
-            def contained(left: SetElement, right: SetElement) -> Decision:
-                assert subsets.contains_subset(left)
-                assert subsets.contains_subset(right)
-                return left <= right
+            def contained(left: PosetElement, right: PosetElement) -> Decision:
+                left_subset = left._set_implementation()
+                right_subset = right._set_implementation()
+                assert subsets.contains_subset(left_subset)
+                assert subsets.contains_subset(right_subset)
+                return left_subset <= right_subset
 
             self._subset_poset = PartiallyOrderedSets()(powerset, contained)
         return self._subset_poset

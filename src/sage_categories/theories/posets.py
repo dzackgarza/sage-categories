@@ -51,7 +51,7 @@ if TYPE_CHECKING:
     )
     from sage_categories.theories.cardinals import Cardinal
 
-type OrderRelation = Callable[[SetElement, SetElement], Decision]
+type OrderRelation = Callable[[PosetElement, PosetElement], Decision]
 type PosetMorphismDefinition = Callable[[PosetElement], PosetElement] | Mapping[PosetElement, PosetElement]
 
 
@@ -171,10 +171,7 @@ class PosetObject(MathematicalObject):
     def _is_lequal(self, left: PosetElement, right: PosetElement) -> Decision:
         assert self._membership(left) is True
         assert self._membership(right) is True
-        return self._relation(
-            left._set_implementation(),
-            right._set_implementation(),
-        )
+        return self._relation(left, right)
 
     def thin_category(self) -> ThinCategory:
         if self._thin_category is None:
@@ -1255,16 +1252,19 @@ def FiniteTotallyOrderedSets() -> FiniteTotallyOrderedSetsCategory:
 
 
 def Poset(
-    members_and_relation: tuple[Iterable[SetElement], OrderRelation],
+    members_and_relation: tuple[
+        Iterable[SetElement],
+        Callable[[SetElement, SetElement], Decision],
+    ],
 ) -> PullbackObject:
     """Construct the finite poset defined by ``(members, leq)``."""
     members, relation = members_and_relation
     values = tuple(dict.fromkeys(members))
     underlying_set = FiniteSet(values)
 
-    def transported_relation(left: SetElement, right: SetElement) -> Decision:
-        left_value = left.value()
-        right_value = right.value()
+    def transported_relation(left: PosetElement, right: PosetElement) -> Decision:
+        left_value = left._set_implementation().value()
+        right_value = right._set_implementation().value()
         assert SetElements().contains_set_element(left_value)
         assert SetElements().contains_set_element(right_value)
         return relation(left_value, right_value)
@@ -1284,7 +1284,8 @@ def ordered_set_owned_by(
         positions: dict[SetElement, int] = {element: index for index, element in enumerate(owned_enumeration)}
         poset = PartiallyOrderedSets()(
             underlying_set,
-            lambda left, right: positions[left] <= positions[right],
+            lambda left, right: positions[left._set_implementation()]
+            <= positions[right._set_implementation()],
         )
         poset_enumeration = tuple(poset.element(element) for element in owned_enumeration)
 
@@ -1328,11 +1329,11 @@ class SimplexOrderIndexing:
                     naturals = NaturalNumbers()
 
                     def natural_order(
-                        left: SetElement,
-                        right: SetElement,
+                        left: PosetElement,
+                        right: PosetElement,
                     ) -> bool:
-                        left_ordinal = left.value()
-                        right_ordinal = right.value()
+                        left_ordinal = left._set_implementation().value()
+                        right_ordinal = right._set_implementation().value()
                         assert Ordinals().contains_ordinal(left_ordinal)
                         assert Ordinals().contains_ordinal(right_ordinal)
                         decision = Ordinals()._is_lequal(left_ordinal, right_ordinal)

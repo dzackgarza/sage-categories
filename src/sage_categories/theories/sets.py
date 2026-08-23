@@ -1866,6 +1866,11 @@ class ProductElement(SetElement):
     def components(self) -> SetElementFamily:
         return self._components
 
+    def __iter__(self) -> Iterator[SetElement]:
+        index_set = self._product.index_set()
+        assert index_set.is_finite() is True
+        return iter(self.component(index) for index in index_set)
+
     def __repr__(self) -> str:
         return f"Point of {self._product}"
 

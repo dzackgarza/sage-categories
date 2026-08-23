@@ -179,6 +179,11 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-042` | Make Hom-category operations verify that each element's owning object lies in the base category and that evaluation respects the declared domain and codomain. |
 | `POL-CAT-043` | Prefer containment in a named property subcategory over a direct predicate call or an invariant comparison. The containment expression states the mathematical property and its owner. |
 | `POL-CAT-044` | Localize the computation that decides a property in the subcategory's `__contains__` method. A retained convenience predicate delegates to that containment check. |
+| `POL-CAT-045` | Present every derived object through the complete public interface of the category in which it lives. Its construction can add methods but never replace or duplicate the inherited interface. |
+| `POL-CAT-046` | Make a construction subcategory define only the additional structure, canonical arrows, and operations introduced by that construction. Obtain the remaining interface through selected structural functors. |
+| `POL-CAT-047` | Decide inheritance functors case by case. Select one only when standard mathematical practice treats the source object as an object of the target category with additional structure. |
+| `POL-CAT-048` | Treat structure that an object has, rather than structure that it is, as attached mathematical data. Expose that object by its exact mathematical name without grafting its full method surface. |
+| `POL-CAT-049` | Scrutinize every public `underlying_*()` accessor. When the source is canonically a target-category object with additional structure, expose the target interface directly through inheritance instead of requiring accessor indirection. |
 
 Grounding examples:
 
@@ -217,9 +222,10 @@ Grounding examples:
 
 For example, an object of `Modules(R)` can be defined by an action morphism \(\rho:R\to\operatorname{End}(X)\). Its selected functor to `Sets()` recovers \(X\) from \(\rho\) and applies `Sets(X)`. The module category does not implement set operations independently.
 
-A lattice category supplies a selected functor to an appropriate module category or arrow category.
-The image can be its underlying free module or its defining form arrow.
-Cardinality then arrives through inherited module and set structure.
+For an \(R\)-lattice \(L=(M,b)\), the selected projection \(L\mapsto M\) lands in `Modules(R)` and supplies the module interface directly.
+The lattice exposes `L.bilinear_form()` to return \(b\); it does not inherit the full interface of a bilinear-form arrow.
+An internal pair representation remains valid, but callers do not need `L.underlying_module()` to use \(L\) as a module.
+Cardinality then arrives through the existing functor chain from modules to sets.
 A lattice-specific cardinality implementation signals a missing or incorrect structural functor.
 
 ## Mathematical encapsulation and repository layout
@@ -262,9 +268,14 @@ A functor is an object of `Fun(C, D)`. None enters `Sets()` without a specified 
 | `POL-FUN-012` | Implement arbitrary small diagrams. Do not encode finiteness into the general construction. |
 | `POL-FUN-013` | Represent a subobject by an object together with its monomorphism. |
 | `POL-FUN-014` | Obtain the containing object of a subobject from the monomorphism's codomain. |
-| `POL-FUN-015` | For `F: Diag(C) -> C`, put `F(D)` in `Image(F)`, make `C` its immediate structural supercategory, and construct its image in `C` from `D`. |
+| `POL-FUN-015` | For `F: D -> C`, put every `F(X)` in `C.ImagesOfFunctor(F)` and make `C` its immediate structural supercategory. A named construction category can refine this general image category. |
 | `POL-FUN-016` | Implement products, coproducts, limits, and colimits as functors on diagrams, including their action on diagram arrows. |
 | `POL-FUN-017` | Represent a functor as an object of `Fun(C, D)` with object and arrow actions. Do not reduce it to a callable or set of assignments. |
+
+For the product functor `Products`, an apex \(\prod_i X_i\) lies in `C.Products()` and, more generally, in `C.ImagesOfFunctor(Products)`.
+It presents as an ordinary object of `C` with additional access to its factors, projections, and mediating morphism.
+For `C = Sets()`, cardinality is the inherited set operation applied to the product object and satisfies \(\#(\prod_i X_i)=\prod_i\#X_i\).
+The products category does not define a second set interface or an independent cardinality operation.
 
 ## The category of sets
 

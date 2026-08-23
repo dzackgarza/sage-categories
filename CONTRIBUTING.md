@@ -452,6 +452,13 @@ None requires enumeration to establish finiteness.
 | `POL-TYPE-020` | Preserve category-specific types even when a category adds no new runtime fields or methods. Reusing an implementation does not erase the mathematical refinement. |
 | `POL-TYPE-021` | Admit raw Python containers only at an explicit construction or coercion boundary. Convert them immediately into the required mathematical collection before category-owned code receives them. |
 | `POL-TYPE-022` | Use `Iterator[T]` for a lazy enumeration result. This output type describes traversal and does not replace a named mathematical collection type at an input boundary. |
+| `POL-TYPE-023` | Treat type-checker output as a diagnostic signal. The mathematical architecture, category ownership, and functor declarations determine correctness. Never change them only to reduce or silence diagnostics. |
+| `POL-TYPE-024` | Make the category compiler expose functorial construction and dynamic object, element, and arrow inheritance to static type checkers. A checker's default inability to infer that structure does not justify weakening it. |
+| `POL-TYPE-025` | When a checker cannot infer the declared dynamic structure, use a type-checker plugin or generate static manifests, types, or stubs from the authoritative category and functor declarations. Do not maintain a second type graph by hand. |
+| `POL-TYPE-026` | Treat generated static typing artifacts as projections of repository-owned declarations. Regenerate them through the applicable commit, test, push, and release workflows whenever their source declarations change. |
+
+The runtime compiler constructs category relations dynamically, but one repository revision contains a finite declaration graph.
+A generator can project that graph into static typing artifacts without changing its mathematical owner.
 
 For example, `gens()` is ambiguous on an object that can be a group, module, and algebra.
 Expose `group_generators()`, `module_generators()`, and `algebra_generators()` side by side.

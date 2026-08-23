@@ -8,7 +8,12 @@ from types import FunctionType, new_class
 from typing import TYPE_CHECKING, TypeVar, assert_never
 
 from sage_categories.descriptors import ForwardedMethod, ImplementationRole
-from sage_categories.values import Arrow, CategoryElement, MathematicalElement, MathematicalObject
+from sage_categories.values import (
+    Arrow,
+    CategoryElement,
+    MathematicalElement,
+    MathematicalObject,
+)
 
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.functors import StructuralFunctor
@@ -18,7 +23,9 @@ if TYPE_CHECKING:
 # A category that declares no implementation for a role falls back to one of
 # these. Such a fallback states nothing about the category graph, so it is not
 # reported as a declared relation.
-_KERNEL_IMPLEMENTATIONS = frozenset({MathematicalObject, MathematicalElement, CategoryElement, Arrow})
+_KERNEL_IMPLEMENTATIONS = frozenset(
+    {MathematicalObject, MathematicalElement, CategoryElement, Arrow}
+)
 
 
 # Names the source class a generated one completes. A generated class exists
@@ -47,6 +54,14 @@ def _local_type(category: Category, role: ImplementationRole) -> type:
             return category.local_arrow_type()
         case _:
             assert_never(role)
+
+
+def _all_structural_functors(functor: StructuralFunctor) -> bool:
+    return True
+
+
+def _inclusion_functors(functor: StructuralFunctor) -> bool:
+    return functor.is_inclusion()
 
 
 _IGNORED_METHODS = frozenset(
@@ -125,19 +140,22 @@ class CategoryCompiler:
         plugin reads the declarations from their owner here rather than from a
         second graph kept somewhere else.
         """
-        inherited = self._declared_relations(inclusions_only=False)
+        inherited = self._declared_relations(_all_structural_functors)
         subtyping = self.declared_subtyping()
-        assert all(set(parents).issubset(inherited[role][implementation]) for role, relations in subtyping.items() for implementation, parents in relations.items())
+        assert all(
+            set(parents).issubset(inherited[role][implementation])
+            for role, relations in subtyping.items()
+            for implementation, parents in relations.items()
+        )
         return inherited
 
     def declared_subtyping(self) -> dict[str, dict[str, tuple[str, ...]]]:
         """Report implementation subtyping declared by inclusion functors."""
-        return self._declared_relations(inclusions_only=True)
+        return self._declared_relations(_inclusion_functors)
 
     def _declared_relations(
         self,
-        *,
-        inclusions_only: bool,
+        includes: Callable[[StructuralFunctor], bool],
     ) -> dict[str, dict[str, tuple[str, ...]]]:
         reported: dict[str, dict[str, tuple[str, ...]]] = {}
         for role in ImplementationRole:
@@ -148,7 +166,7 @@ class CategoryCompiler:
                     continue
                 reached: tuple[str, ...] = ()
                 for functor in category.super_functors():
-                    if inclusions_only and not functor.is_inclusion():
+                    if not includes(functor):
                         continue
                     codomain = functor.codomain()
                     if codomain is category:
@@ -167,7 +185,9 @@ class CategoryCompiler:
                 declaring = _implementation_name(local_type)
                 if declaring in relations:
                     recorded = relations[declaring]
-                    reached = recorded + tuple(name for name in reached if name not in recorded)
+                    reached = recorded + tuple(
+                        name for name in reached if name not in recorded
+                    )
                 relations[declaring] = reached
             reported[role.value] = dict(sorted(relations.items()))
         return reported
@@ -308,10 +328,16 @@ class CategoryCompiler:
         target: Category,
         routes: tuple[tuple[StructuralFunctor, ...], ...],
     ) -> tuple[StructuralFunctor, ...]:
-        distinct = tuple(route for position, route in enumerate(routes) if route not in routes[:position])
+        distinct = tuple(
+            route
+            for position, route in enumerate(routes)
+            if route not in routes[:position]
+        )
         normalized = tuple(self._normalize_route(source, route) for route in distinct)
         canonical = normalized[0]
-        assert all(route == canonical for route in normalized), f"structural routes from {source} to {target} are not declared coherent"
+        assert all(route == canonical for route in normalized), (
+            f"structural routes from {source} to {target} are not declared coherent"
+        )
         assert canonical in distinct
         return canonical
 
@@ -431,11 +457,16 @@ class CategoryCompiler:
                     previous,
                     candidate,
                 )
-                assert coherent is not None, f"{category} inherits {name} from unrelated categories {previous.owner} and {declaration.owner}"
+                assert coherent is not None, (
+                    f"{category} inherits {name} from unrelated categories {previous.owner} and {declaration.owner}"
+                )
                 catalogue[name] = coherent
         for name, method in local.items():
             inherited_declaration = catalogue.get(name)
-            if inherited_declaration is not None and method is inherited_declaration.method:
+            if (
+                inherited_declaration is not None
+                and method is inherited_declaration.method
+            ):
                 continue
             if inherited_declaration is None or inherited_declaration.owner is category:
                 catalogue[name] = DeclaredMethod(
@@ -488,7 +519,13 @@ class CategoryCompiler:
                 assert is_structural_functor(factor)
                 equivalent = (*equivalent, factor)
             divergence = next(
-                (position for position, pair in enumerate(zip(canonical, equivalent, strict=False)) if pair[0] is not pair[1]),
+                (
+                    position
+                    for position, pair in enumerate(
+                        zip(canonical, equivalent, strict=False)
+                    )
+                    if pair[0] is not pair[1]
+                ),
                 None,
             )
             assert divergence is not None
@@ -498,7 +535,11 @@ class CategoryCompiler:
                 route: tuple[StructuralFunctor, ...],
                 divergence_position: int = divergence,
             ) -> bool:
-                return len(declaration.route) > divergence_position and declaration.route[: divergence_position + 1] == route[: divergence_position + 1]
+                return (
+                    len(declaration.route) > divergence_position
+                    and declaration.route[: divergence_position + 1]
+                    == route[: divergence_position + 1]
+                )
 
             if follows(first, canonical) and follows(second, equivalent):
                 candidate = first
@@ -519,7 +560,11 @@ class CategoryCompiler:
         *,
         role: ImplementationRole,
     ) -> type[Implementation]:
-        available = {name for name, declaration in catalogue.items() if inspect.getattr_static(local_type, name, None) is declaration.method}
+        available = {
+            name
+            for name, declaration in catalogue.items()
+            if inspect.getattr_static(local_type, name, None) is declaration.method
+        }
         match role:
             case ImplementationRole.OBJECT | ImplementationRole.ELEMENT:
                 pass
@@ -568,7 +613,9 @@ class CategoryCompiler:
                 {
                     name: method
                     for name, method in vars(implementation_type).items()
-                    if name not in _IGNORED_METHODS and (not name.startswith("_") or name.startswith("__")) and inspect.isfunction(method)
+                    if name not in _IGNORED_METHODS
+                    and (not name.startswith("_") or name.startswith("__"))
+                    and inspect.isfunction(method)
                 }
             )
         return methods
@@ -582,7 +629,9 @@ class CategoryCompiler:
         routes: list[tuple[StructuralFunctor, ...]] = []
         for functor in source.super_functors():
             codomain = functor.codomain()
-            assert id(codomain) not in visited, "the structural-functor graph has a cycle"
+            assert id(codomain) not in visited, (
+                "the structural-functor graph has a cycle"
+            )
             if codomain is target:
                 routes.append((functor,))
                 continue

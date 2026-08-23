@@ -123,11 +123,7 @@ class PosetObject(MathematicalObject):
     def __init__(
         self,
         *,
-        category: (
-            PartiallyOrderedSetsCategory
-            | FinitePosetsCategory
-            | ProductsOfPosetsCategory
-        ),
+        category: (PartiallyOrderedSetsCategory | FinitePosetsCategory | ProductsOfPosetsCategory),
         underlying_set: SetObject,
         relation: OrderRelation,
     ) -> None:
@@ -156,11 +152,7 @@ class PosetObject(MathematicalObject):
 
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
-        return (
-            value is not None
-            and PosetElements().contains_poset_element(value)
-            and value.ambient_poset() is self
-        )
+        return value is not None and PosetElements().contains_poset_element(value) and value.ambient_poset() is self
 
     def __iter__(self) -> Iterator[PosetElement]:
         return iter(self.element(member) for member in self._underlying_set)
@@ -277,9 +269,7 @@ class PosetHomCategory(HomCategory):
 
     def __call__(
         self,
-        action: Callable[[PosetElement], PosetElement]
-        | Mapping[PosetElement, PosetElement]
-        | PosetMorphism,
+        action: Callable[[PosetElement], PosetElement] | Mapping[PosetElement, PosetElement] | PosetMorphism,
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
@@ -526,7 +516,4 @@ def is_partially_ordered_sets_category(
 def is_poset_hom_category(
     category: HomCategory,
 ) -> TypeIs[PosetHomCategory]:
-    return (
-        category.base_category() is PartiallyOrderedSets()
-        and category in PartiallyOrderedSets().HomCategory()
-    )
+    return category.base_category() is PartiallyOrderedSets() and category in PartiallyOrderedSets().HomCategory()

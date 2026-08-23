@@ -495,8 +495,6 @@ def Poset(
     ],
 ) -> FinitePosetObject:
     """Construct the finite poset defined by ``(members, leq)``."""
-    from sage_categories.theories.finite_posets import FinitePosets
-
     members, relation = members_and_relation
     values = tuple(dict.fromkeys(members))
     underlying_set = FiniteSet(values)
@@ -514,7 +512,8 @@ def Poset(
         return relation(left_value, right_value)
 
     poset = PartiallyOrderedSets()(underlying_set, transported_relation)
-    assert FinitePosets().contains_finite_poset(poset)
+    finite_posets = PartiallyOrderedSets().Finite()
+    assert finite_posets.contains_finite_poset(poset)
     return poset
 
 

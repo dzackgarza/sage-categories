@@ -2668,19 +2668,32 @@ class ColimitSet(SetObject):
             right_representative,
         ):
             return True
+        # Beyond a single arrow the relation is the equivalence relation the
+        # diagram generates, so the question becomes whether the two terms share
+        # a connected component. Generating one enumerates every term.
+        if not self._has_finitely_many_terms():
+            return UNKNOWN
+        component = self._component_of(arrows, left_representative)
+        return any(_same_coproduct_term(right_representative, term) for term in component)
+
+    def _has_finitely_many_terms(self) -> bool:
         indices = self._coproduct.index_set()
         if indices.is_finite() is not True:
-            return UNKNOWN
-        for index in indices:
-            if self._coproduct.cofactor(index).is_finite() is not True:
-                return UNKNOWN
+            return False
+        return all(self._coproduct.cofactor(index).is_finite() is True for index in indices)
+
+    def _component_of(
+        self,
+        arrows: SetObject,
+        start: CoproductElement,
+    ) -> tuple[CoproductElement, ...]:
         representatives: tuple[CoproductElement, ...] = ()
         for representative in self._coproduct:
             value = registered_value(representative)
             assert value is not None
             assert CoproductElements().contains_coproduct_element(value)
             representatives = (*representatives, value)
-        reached: tuple[CoproductElement, ...] = (left_representative,)
+        reached: tuple[CoproductElement, ...] = (start,)
         while True:
             enlarged = tuple(
                 candidate
@@ -2697,10 +2710,8 @@ class ColimitSet(SetObject):
                 )
             )
             if not enlarged:
-                return False
+                return reached
             reached = (*reached, *enlarged)
-            if any(_same_coproduct_term(right_representative, known) for known in reached):
-                return True
 
     def __iter__(self) -> Iterator[SetElement]:
         chosen: tuple[ColimitElement, ...] = ()

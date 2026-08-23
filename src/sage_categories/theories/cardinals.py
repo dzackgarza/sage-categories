@@ -574,17 +574,32 @@ class CardinalsCategory(Category):
         if source == target:
             return True
         if source.kind() is CardinalKind.SUPREMUM:
-            answers = tuple(self._is_lequal(term, target) for term in source.terms())
-            if all(answer is True for answer in answers):
-                return True
-            if any(answer is False for answer in answers):
-                return False
-            return UNKNOWN
+            return self._supremum_is_lequal(source, target)
         if target.kind() is CardinalKind.SUPREMUM:
-            answers = tuple(self._is_lequal(source, term) for term in target.terms())
-            if any(answer is True for answer in answers):
-                return True
-            return UNKNOWN
+            return self._is_lequal_to_supremum(source, target)
+        size_comparison = self._compare_size_classes(source, target)
+        if size_comparison is not UNKNOWN:
+            return size_comparison
+        if target.kind() is CardinalKind.POWER:
+            return self._is_lequal_to_power(source, target)
+        return UNKNOWN
+
+    def _supremum_is_lequal(self, source: Cardinal, target: Cardinal) -> Decision:
+        # A supremum is below a bound exactly when every term is.
+        answers = tuple(self._is_lequal(term, target) for term in source.terms())
+        if all(answer is True for answer in answers):
+            return True
+        if any(answer is False for answer in answers):
+            return False
+        return UNKNOWN
+
+    def _is_lequal_to_supremum(self, source: Cardinal, target: Cardinal) -> Decision:
+        # One term above the source suffices; no term above it decides nothing.
+        if any(self._is_lequal(source, term) is True for term in target.terms()):
+            return True
+        return UNKNOWN
+
+    def _compare_size_classes(self, source: Cardinal, target: Cardinal) -> Decision:
         if source.kind() is CardinalKind.FINITE and target.kind() is CardinalKind.FINITE:
             return source.finite_value() <= target.finite_value()
         if source.kind() is CardinalKind.FINITE and target.is_infinite() is True:
@@ -597,19 +612,19 @@ class CardinalsCategory(Category):
             return True
         if source.kind() is CardinalKind.ALEPH and source.aleph_index() == 1 and target.is_uncountable() is True:
             return True
-        if target.kind() is CardinalKind.POWER:
-            if self._is_lequal(source, target.terms()[0]) is True:
+        return UNKNOWN
+
+    def _is_lequal_to_power(self, source: Cardinal, target: Cardinal) -> Decision:
+        base, exponent = target.terms()
+        if self._is_lequal(source, base) is True:
+            return True
+        # A base of at least two makes the power dominate its own exponent.
+        if self._is_lequal(self(2), base) is True and self._is_lequal(source, exponent) is True:
+            return True
+        if source.kind() is CardinalKind.POWER:
+            source_base, source_exponent = source.terms()
+            if self._is_lequal(source_base, base) is True and self._is_lequal(source_exponent, exponent) is True:
                 return True
-            if self._is_lequal(self(2), target.terms()[0]) is True and self._is_lequal(source, target.terms()[1]) is True:
-                return True
-            if source.kind() is CardinalKind.POWER:
-                base_comparison = self._is_lequal(source.terms()[0], target.terms()[0])
-                exponent_comparison = self._is_lequal(
-                    source.terms()[1],
-                    target.terms()[1],
-                )
-                if base_comparison is True and exponent_comparison is True:
-                    return True
         return UNKNOWN
 
     def _is_less_than(self, source: Cardinal, target: Cardinal) -> Decision:

@@ -148,10 +148,7 @@ class Category(MathematicalObject):
         """Return whether the structural-functor graph includes ``category``."""
         if self is category:
             return True
-        return any(
-            codomain is category or codomain.is_subcategory(category)
-            for codomain in self.super_categories()
-        )
+        return any(codomain is category or codomain.is_subcategory(category) for codomain in self.super_categories())
 
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
@@ -673,18 +670,14 @@ class Category(MathematicalObject):
         from sage_categories.abstract_categories.slice_categories import CoveringObjects
         from sage_categories.category_slice_constructions import cached_slice
 
-        return cached_slice(
-            self, value, self._covering_object_categories, CoveringObjects
-        )
+        return cached_slice(self, value, self._covering_object_categories, CoveringObjects)
 
     def CoveredObjects(self, value: MathematicalObject) -> CoveredObjectCategory:
         """Return the category of epimorphisms from ``value``."""
         from sage_categories.abstract_categories.slice_categories import CoveredObjects
         from sage_categories.category_slice_constructions import cached_slice
 
-        return cached_slice(
-            self, value, self._covered_object_categories, CoveredObjects
-        )
+        return cached_slice(self, value, self._covered_object_categories, CoveredObjects)
 
     def declared_object_methods(self) -> Mapping[str, DeclaredMethod]:
         """Return the declaring category of each object method."""

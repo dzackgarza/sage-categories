@@ -22,9 +22,7 @@ def equalizer(category: Category, first: Arrow, second: Arrow) -> LimitObject:
     assert first in category.ArrowCategory() and second in category.ArrowCategory()
     assert first.domain() is second.domain()
     assert first.codomain() is second.codomain()
-    index = DiagramCategory(
-        category, (first.domain(), first.codomain()), (first, second)
-    )
+    index = DiagramCategory(category, (first.domain(), first.codomain()), (first, second))
     diagram = InclusionFunctor(index, category)
     result = category.LimitFunctor(index)(diagram)
     image = category.Limits(index)
@@ -38,9 +36,7 @@ def coequalizer(category: Category, first: Arrow, second: Arrow) -> ColimitObjec
     assert first in category.ArrowCategory() and second in category.ArrowCategory()
     assert first.domain() is second.domain()
     assert first.codomain() is second.codomain()
-    index = DiagramCategory(
-        category, (first.domain(), first.codomain()), (first, second)
-    )
+    index = DiagramCategory(category, (first.domain(), first.codomain()), (first, second))
     diagram = InclusionFunctor(index, category)
     result = category.ColimitFunctor(index)(diagram)
     image = category.Colimits(index)
@@ -53,9 +49,7 @@ def pullback(category: Category, first: Arrow, second: Arrow) -> LimitObject:
     """Return the chosen pullback of arrows with one codomain."""
     assert first in category.ArrowCategory() and second in category.ArrowCategory()
     assert first.codomain() is second.codomain()
-    index = DiagramCategory(
-        category, (first.domain(), second.domain(), first.codomain()), (first, second)
-    )
+    index = DiagramCategory(category, (first.domain(), second.domain(), first.codomain()), (first, second))
     diagram = InclusionFunctor(index, category)
     result = category.LimitFunctor(index)(diagram)
     image = category.Limits(index)
@@ -68,9 +62,7 @@ def pushout(category: Category, first: Arrow, second: Arrow) -> ColimitObject:
     """Return the chosen pushout of arrows with one domain."""
     assert first in category.ArrowCategory() and second in category.ArrowCategory()
     assert first.domain() is second.domain()
-    index = DiagramCategory(
-        category, (first.domain(), first.codomain(), second.codomain()), (first, second)
-    )
+    index = DiagramCategory(category, (first.domain(), first.codomain(), second.codomain()), (first, second))
     diagram = InclusionFunctor(index, category)
     result = category.ColimitFunctor(index)(diagram)
     image = category.Colimits(index)

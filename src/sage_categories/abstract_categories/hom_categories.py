@@ -265,7 +265,11 @@ class RestrictedHomCategory(HomCategory):
         return self(self.base_category().Hom(self.domain(), self.codomain()).identity())
 
     def compose(self, second: Arrow, first: Arrow) -> RestrictedArrow:
+        assert first.hom_category() in self.hom_category()
+        assert second.hom_category() in self.hom_category()
+        assert first.domain() is self.domain()
         assert first.codomain() is second.domain()
+        assert second.codomain() is self.codomain()
         return self(self.base_category().compose(second.forward(), first.forward()))
 
 
@@ -310,9 +314,11 @@ class IsomorphismHomCategory(HomCategory):
         return self(identity, identity)
 
     def compose(self, second: Arrow, first: Arrow) -> Isomorphism:
-        assert self.contains_isomorphism(second)
-        assert self.contains_isomorphism(first)
+        assert is_isomorphism(second)
+        assert is_isomorphism(first)
+        assert first.domain() is self.domain()
         assert first.codomain() is second.domain()
+        assert second.codomain() is self.codomain()
         category = self.base_category()
         return self(
             category.compose(second.forward(), first.forward()),

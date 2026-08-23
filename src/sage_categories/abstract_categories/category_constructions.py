@@ -70,9 +70,11 @@ class OppositeHomCategory(HomCategory):
         return self(opposite.base_category().identity(self.domain()))
 
     def compose(self, second: Arrow, first: Arrow) -> OppositeArrow:
-        assert self.contains_opposite_arrow(second)
-        assert self.contains_opposite_arrow(first)
+        assert is_opposite_arrow(second)
+        assert is_opposite_arrow(first)
+        assert first.domain() is self.domain()
         assert first.codomain() is second.domain()
+        assert second.codomain() is self.codomain()
         opposite = self.base_category()
         assert is_opposite_category(opposite)
         return self(
@@ -199,9 +201,11 @@ class ProductHomCategory(HomCategory):
         )
 
     def compose(self, second: Arrow, first: Arrow) -> ProductArrow:
-        assert self.contains_product_arrow(second)
-        assert self.contains_product_arrow(first)
+        assert is_product_arrow(second)
+        assert is_product_arrow(first)
+        assert first.domain() is self.domain()
         assert first.codomain() is second.domain()
+        assert second.codomain() is self.codomain()
         product = self.base_category()
         assert is_product_category(product)
         return self(
@@ -450,11 +454,13 @@ class PullbackHomCategory(HomCategory):
         )
 
     def compose(self, second: Arrow, first: Arrow) -> PullbackArrow:
-        assert self.contains_pullback_arrow(second)
-        assert self.contains_pullback_arrow(first)
-        assert first.codomain() is second.domain()
         pullback = self.base_category()
         assert is_pullback_category(pullback)
+        assert pullback.contains_pullback_arrow(second)
+        assert pullback.contains_pullback_arrow(first)
+        assert first.domain() is self.domain()
+        assert first.codomain() is second.domain()
+        assert second.codomain() is self.codomain()
         return self(
             pullback.first_category().compose(
                 second._first_implementation(),

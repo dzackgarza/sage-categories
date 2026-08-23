@@ -668,10 +668,13 @@ class ConeHomCategory(HomCategory):
         return self(category.ambient_category().identity(domain.apex()))
 
     def compose(self, second: Arrow, first: Arrow) -> ConeArrow:
-        assert self.contains_cone_arrow(second)
-        assert self.contains_cone_arrow(first)
         category = self.base_category()
         assert is_cone_category(category)
+        assert category.contains_cone_arrow(second)
+        assert category.contains_cone_arrow(first)
+        assert first.domain() is self.domain()
+        assert first.codomain() is second.domain()
+        assert second.codomain() is self.codomain()
         return self(
             category.ambient_category().compose(
                 second.apex_arrow(),
@@ -704,10 +707,13 @@ class CoconeHomCategory(HomCategory):
         return self(category.ambient_category().identity(domain.apex()))
 
     def compose(self, second: Arrow, first: Arrow) -> CoconeArrow:
-        assert self.contains_cocone_arrow(second)
-        assert self.contains_cocone_arrow(first)
         category = self.base_category()
         assert is_cocone_category(category)
+        assert category.contains_cocone_arrow(second)
+        assert category.contains_cocone_arrow(first)
+        assert first.domain() is self.domain()
+        assert first.codomain() is second.domain()
+        assert second.codomain() is self.codomain()
         return self(
             category.ambient_category().compose(
                 second.apex_arrow(),
@@ -746,6 +752,9 @@ class ConeCategory(Category):
     def contains_cone(self, candidate: MathematicalObject) -> TypeIs[ConeObject]:
         return candidate in self
 
+    def contains_cone_arrow(self, candidate: Arrow) -> TypeIs[ConeArrow]:
+        return candidate in self.ArrowCategory()
+
     def _hom_category_type(self) -> type[HomCategory]:
         return ConeHomCategory
 
@@ -776,6 +785,9 @@ class CoconeCategory(Category):
 
     def contains_cocone(self, candidate: MathematicalObject) -> TypeIs[CoconeObject]:
         return candidate in self
+
+    def contains_cocone_arrow(self, candidate: Arrow) -> TypeIs[CoconeArrow]:
+        return candidate in self.ArrowCategory()
 
     def _hom_category_type(self) -> type[HomCategory]:
         return CoconeHomCategory
@@ -931,10 +943,13 @@ class PresentationHomCategory(HomCategory):
         return self(category.ambient_category().identity(domain.apex()))
 
     def compose(self, second: Arrow, first: Arrow) -> PresentationArrow:
-        assert self.contains_presentation_arrow(second)
-        assert self.contains_presentation_arrow(first)
         category = self.base_category()
         assert is_presentation_category(category)
+        assert category.contains_presentation_arrow(second)
+        assert category.contains_presentation_arrow(first)
+        assert first.domain() is self.domain()
+        assert first.codomain() is second.domain()
+        assert second.codomain() is self.codomain()
         return self(
             category.ambient_category().compose(
                 second.apex_arrow(),

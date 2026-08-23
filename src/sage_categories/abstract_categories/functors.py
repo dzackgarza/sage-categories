@@ -75,7 +75,7 @@ class Functor(Arrow, ABC):
         from sage_categories.compiler import category_compiler
 
         arrow_category = self.domain().ArrowCategory()
-        if arrow_category.contains_arrow(value):
+        if arrow_category.contains_object(value):
             source_arrow = value
             source_category = source_arrow.base_category()
             if source_category is not self.domain() and source_category.is_subcategory(self.domain()):
@@ -262,7 +262,7 @@ class ComposedFunctor(Functor):
         value = morphism
         for factor in self._factors:
             image = factor(value)
-            assert factor.codomain().ArrowCategory().contains_arrow(image)
+            assert factor.codomain().ArrowCategory().contains_object(image)
             value = image
         return value
 
@@ -294,7 +294,7 @@ class DomainFunctor(Functor):
         super().__init__(self._arrow_domain, category)
 
     def on_object(self, source: MathematicalObject) -> MathematicalObject:
-        assert self._arrow_domain.contains_arrow(source)
+        assert self._arrow_domain.contains_object(source)
         return source.domain()
 
     def on_morphism(self, morphism: Arrow) -> Arrow:
@@ -310,7 +310,7 @@ class CodomainFunctor(Functor):
         super().__init__(self._arrow_domain, category)
 
     def on_object(self, source: MathematicalObject) -> MathematicalObject:
-        assert self._arrow_domain.contains_arrow(source)
+        assert self._arrow_domain.contains_object(source)
         return source.codomain()
 
     def on_morphism(self, morphism: Arrow) -> Arrow:

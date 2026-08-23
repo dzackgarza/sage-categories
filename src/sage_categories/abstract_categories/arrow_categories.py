@@ -61,8 +61,8 @@ class CommutingSquare(Arrow):
         source = hom_category.domain()
         target = hom_category.codomain()
         arrow_category = hom_category.base_category()
-        assert arrow_category.contains_arrow(source)
-        assert arrow_category.contains_arrow(target)
+        assert arrow_category.contains_object(source)
+        assert arrow_category.contains_object(target)
         category = arrow_category.base_category()
         assert left in category.ArrowCategory()
         assert right in category.ArrowCategory()
@@ -116,7 +116,7 @@ class SquareHomCategory(HomCategory):
         assert value is None
         source = self.domain()
         assert source is self.codomain()
-        assert self.base_category().contains_arrow(source)
+        assert self.base_category().contains_object(source)
         category = self.base_category().base_category()
         return self(
             category.identity(source.domain()),
@@ -126,7 +126,9 @@ class SquareHomCategory(HomCategory):
     def compose(self, second: Arrow, first: Arrow) -> CommutingSquare:
         assert self.base_category().contains_square(second)
         assert self.base_category().contains_square(first)
+        assert first.domain() is self.domain()
         assert first.codomain() is second.domain()
+        assert second.codomain() is self.codomain()
         category = self.base_category().base_category()
         return self(
             category.compose(second.left(), first.left()),
@@ -150,11 +152,11 @@ class ArrowCategory(Category):
         value = registered_value(candidate)
         return value is not None and self._base_category.contains_arrow(value)
 
-    def contains_arrow(
+    def contains_object(
         self,
         candidate: MathematicalObject,
     ) -> TypeIs[Arrow]:
-        """Narrow an owned value by categorical arrow membership."""
+        """Return whether an arrow of the base category is an object here."""
         return candidate in self
 
     def contains_square(self, candidate: Arrow) -> TypeIs[CommutingSquare]:
@@ -204,7 +206,7 @@ class EndArrowCategory(Category):
 
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
-        if value is None or not self._base_category.ArrowCategory().contains_arrow(value):
+        if value is None or not self._base_category.ArrowCategory().contains_object(value):
             return False
         return value.domain() is value.codomain()
 
@@ -230,7 +232,7 @@ class MonomorphismArrowCategory(Category):
 
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
-        if value is None or not self._base_category.ArrowCategory().contains_arrow(value):
+        if value is None or not self._base_category.ArrowCategory().contains_object(value):
             return False
         return value.hom_category() in self._base_category.MonoCategory() or (value.hom_category() in self._base_category.IsoCategory())
 
@@ -256,7 +258,7 @@ class EpimorphismArrowCategory(Category):
 
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
-        if value is None or not self._base_category.ArrowCategory().contains_arrow(value):
+        if value is None or not self._base_category.ArrowCategory().contains_object(value):
             return False
         return value.hom_category() in self._base_category.EpiCategory() or (value.hom_category() in self._base_category.IsoCategory())
 
@@ -282,7 +284,7 @@ class IsomorphismArrowCategory(Category):
 
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
-        if value is None or not self._base_category.ArrowCategory().contains_arrow(value):
+        if value is None or not self._base_category.ArrowCategory().contains_object(value):
             return False
         return value.hom_category() in self._base_category.IsoCategory()
 
@@ -311,7 +313,7 @@ class AutomorphismArrowCategory(Category):
 
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
-        if value is None or not self._base_category.ArrowCategory().contains_arrow(value):
+        if value is None or not self._base_category.ArrowCategory().contains_object(value):
             return False
         return value.hom_category() in self._base_category.AutCategory()
 

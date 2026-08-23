@@ -89,10 +89,13 @@ class FunctorImageHomCategory(HomCategory):
         return self(image_category.functor().codomain().identity(domain.image()))
 
     def compose(self, second: Arrow, first: Arrow) -> FunctorImageArrow:
-        assert self.contains_image_arrow(second)
-        assert self.contains_image_arrow(first)
         image_category = self.base_category()
         assert is_functor_image_category(image_category)
+        assert image_category.contains_image_arrow(second)
+        assert image_category.contains_image_arrow(first)
+        assert first.domain() is self.domain()
+        assert first.codomain() is second.domain()
+        assert second.codomain() is self.codomain()
         return self(
             image_category.functor()
             .codomain()

@@ -132,11 +132,13 @@ class SliceHomCategory(HomCategory):
         return self(category.ambient_category().identity(domain.object()))
 
     def compose(self, second: Arrow, first: Arrow) -> SliceArrow:
-        assert self.contains_slice_arrow(second)
-        assert self.contains_slice_arrow(first)
-        assert first.codomain() is second.domain()
         category = self.base_category()
         assert is_slice_over(category)
+        assert category.contains_slice_arrow(second)
+        assert category.contains_slice_arrow(first)
+        assert first.domain() is self.domain()
+        assert first.codomain() is second.domain()
+        assert second.codomain() is self.codomain()
         return self(
             category.ambient_category().compose(
                 second.varying_arrow(),
@@ -177,11 +179,13 @@ class CosliceHomCategory(HomCategory):
         return self(category.ambient_category().identity(domain.object()))
 
     def compose(self, second: Arrow, first: Arrow) -> SliceArrow:
-        assert self.contains_slice_arrow(second)
-        assert self.contains_slice_arrow(first)
-        assert first.codomain() is second.domain()
         category = self.base_category()
         assert is_coslice_under(category)
+        assert category.contains_slice_arrow(second)
+        assert category.contains_slice_arrow(first)
+        assert first.domain() is self.domain()
+        assert first.codomain() is second.domain()
+        assert second.codomain() is self.codomain()
         return self(
             category.ambient_category().compose(
                 second.varying_arrow(),

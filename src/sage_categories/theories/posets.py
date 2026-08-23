@@ -1263,8 +1263,9 @@ def Poset(
     underlying_set = FiniteSet(values)
 
     def transported_relation(left: PosetElement, right: PosetElement) -> Decision:
-        left_value = left._set_implementation().value()
-        right_value = right._set_implementation().value()
+        forgetful_functor = PartiallyOrderedSets().forgetful_functor()
+        left_value = forgetful_functor.on_element(left.ambient_poset(), left).value()
+        right_value = forgetful_functor.on_element(right.ambient_poset(), right).value()
         assert SetElements().contains_set_element(left_value)
         assert SetElements().contains_set_element(right_value)
         return relation(left_value, right_value)
@@ -1282,9 +1283,16 @@ def ordered_set_owned_by(
         underlying_set = FiniteSet(enumeration)
         owned_enumeration = tuple(underlying_set.element(element) for element in enumeration)
         positions: dict[SetElement, int] = {element: index for index, element in enumerate(owned_enumeration)}
+
+        def ordered_relation(left: PosetElement, right: PosetElement) -> bool:
+            forgetful_functor = PartiallyOrderedSets().forgetful_functor()
+            left_element = forgetful_functor.on_element(left.ambient_poset(), left)
+            right_element = forgetful_functor.on_element(right.ambient_poset(), right)
+            return positions[left_element] <= positions[right_element]
+
         poset = PartiallyOrderedSets()(
             underlying_set,
-            lambda left, right: positions[left._set_implementation()] <= positions[right._set_implementation()],
+            ordered_relation,
         )
         poset_enumeration = tuple(poset.element(element) for element in owned_enumeration)
 
@@ -1331,8 +1339,11 @@ class SimplexOrderIndexing:
                         left: PosetElement,
                         right: PosetElement,
                     ) -> bool:
-                        left_ordinal = left._set_implementation().value()
-                        right_ordinal = right._set_implementation().value()
+                        forgetful_functor = PartiallyOrderedSets().forgetful_functor()
+                        left_element = forgetful_functor.on_element(left.ambient_poset(), left)
+                        right_element = forgetful_functor.on_element(right.ambient_poset(), right)
+                        left_ordinal = left_element.value()
+                        right_ordinal = right_element.value()
                         assert Ordinals().contains_ordinal(left_ordinal)
                         assert Ordinals().contains_ordinal(right_ordinal)
                         decision = Ordinals()._is_lequal(left_ordinal, right_ordinal)

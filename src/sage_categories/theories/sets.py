@@ -223,8 +223,9 @@ class SetObject(MathematicalObject):
             subsets = SubsetsOfSet(self)
 
             def contained(left: PosetElement, right: PosetElement) -> Decision:
-                left_subset = left._set_implementation()
-                right_subset = right._set_implementation()
+                forgetful_functor = PartiallyOrderedSets().forgetful_functor()
+                left_subset = forgetful_functor.on_element(left.ambient_poset(), left)
+                right_subset = forgetful_functor.on_element(right.ambient_poset(), right)
                 assert subsets.contains_subset(left_subset)
                 assert subsets.contains_subset(right_subset)
                 return left_subset <= right_subset

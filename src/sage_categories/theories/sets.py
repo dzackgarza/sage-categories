@@ -296,10 +296,18 @@ class FiniteSetElement(SetElement):
 class FiniteSetObject(SetObject):
     """A set given by its complete finite member set."""
 
-    def __init__(self, *, category: Category, values: frozenset[MathematicalObject]) -> None:
+    def __init__(
+        self,
+        *,
+        category: FiniteSetsCategory,
+        values: frozenset[MathematicalObject],
+    ) -> None:
         self._values = values
         super().__init__(category=category, cardinality=Cardinals()(len(values)))
-        self._members = frozenset(FiniteSetElement(ambient_object=self, value=value) for value in values)
+        self._members = frozenset(
+            category.ElementType(ambient_object=self, value=value)
+            for value in values
+        )
 
     def membership(self, member: SetElement) -> Decision:
         return member.ambient_set() is self
@@ -1470,10 +1478,6 @@ class SetsCategory(Category):
     def __init__(self) -> None:
         self.ℵ = Aleph
         self.א = Aleph
-        self._finite_sets_by_members: dict[
-            frozenset[MathematicalObject],
-            FiniteSetObject,
-        ] = {}
         self._finite_sets: FiniteSetsCategory | None = None
         self._infinite_sets: InfiniteSetsCategory | None = None
         self._countable_sets: CountableSetsCategory | None = None
@@ -1514,11 +1518,7 @@ class SetsCategory(Category):
         return source
 
     def finite(self, members: frozenset[MathematicalObject]) -> FiniteSetObject:
-        cached = self._finite_sets_by_members.get(members)
-        if cached is None:
-            cached = FiniteSetObject(category=self, values=members)
-            self._finite_sets_by_members[members] = cached
-        return cached
+        return self.Finite()(members)
 
     def Hom(
         self,
@@ -1662,13 +1662,29 @@ class CountableSetsCategory(FullSubcategory):
 
 
 class FiniteSetsCategory(FullSubcategory):
+    ObjectType: type[FiniteSetObject] = FiniteSetObject
+    ElementType: type[FiniteSetElement] = FiniteSetElement
+
     def __init__(self, sets: SetsCategory) -> None:
         self._sets = sets
+        self._finite_sets_by_members: dict[
+            frozenset[MathematicalObject],
+            FiniteSetObject,
+        ] = {}
         super().__init__(
             sets.Countable(),
             self._is_finite,
             name="Finite sets",
+            object_type=FiniteSetObject,
+            element_type=FiniteSetElement,
         )
+
+    def __call__(self, members: frozenset[MathematicalObject]) -> FiniteSetObject:
+        cached = self._finite_sets_by_members.get(members)
+        if cached is None:
+            cached = self.ObjectType(category=self, values=members)
+            self._finite_sets_by_members[members] = cached
+        return cached
 
     def _is_finite(self, value: MathematicalObject) -> bool:
         assert Sets().contains_set(value)

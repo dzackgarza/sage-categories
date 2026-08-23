@@ -259,3 +259,15 @@ def test_finite_equalizers_coequalizers_pullbacks_and_pushouts() -> None:
     assert coequalizer.colimit_cocone().diagram().codomain() is Sets()
     assert pullback.limit_cone().diagram().codomain() is Sets()
     assert pushout.colimit_cocone().diagram().codomain() is Sets()
+
+
+def test_finite_set_construction_refines_to_finite_sets() -> None:
+    finite_set = FiniteSet((ZZ(int(0)), ZZ(int(1))))
+    enumeration = finite_set.enumeration_injection()
+
+    assert finite_set.category() is FiniteSets()
+    assert finite_set in FiniteSets()
+    assert finite_set in CountableSets()
+    assert finite_set in Sets()
+    assert enumeration.domain() is finite_set
+    assert enumeration.codomain() is NaturalNumbers()

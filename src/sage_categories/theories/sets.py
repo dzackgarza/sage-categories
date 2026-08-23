@@ -11,7 +11,7 @@ from collections.abc import Callable, Iterable, Iterator, Mapping
 from itertools import combinations, count
 from itertools import product as cartesian_product
 from math import comb
-from typing import TYPE_CHECKING, Any, Protocol, TypeIs
+from typing import TYPE_CHECKING, Any, TypeIs
 
 from sage_categories.abstract_categories.category_constructions import (
     FullSubcategory,
@@ -92,15 +92,6 @@ type SetMorphismDefinition = Callable[[SetElement], SetElement] | Mapping[SetEle
 type SetElementFamily = Callable[[SetElement], SetElement]
 type MembershipPredicate = Callable[[SetElement], Decision]
 type SetIterator = Callable[[], Iterator[SetElement]]
-type MembershipProposition = bool | MathematicalObject
-
-
-class SymbolicSetRepresentation(Protocol):
-    """The private symbolic operations required by an owned set."""
-
-    def contains(self, member: SetElement) -> MembershipProposition: ...
-
-    def __iter__(self) -> Iterator[SetElement]: ...
 
 
 type SetMorphismFamily = Callable[[DiscreteObject], SetMorphism]
@@ -216,6 +207,17 @@ class SetObject(MathematicalObject):
 
     def finite_subsets(self) -> SetObject:
         return FiniteSubsets(self)
+
+    def subset_from(
+        self,
+        predicate: MembershipPredicate,
+        *,
+        cardinality: Cardinal | None = None,
+    ) -> SetSubset:
+        return PowerSet(self).from_predicate(
+            predicate,
+            cardinality=cardinality,
+        )
 
     def cartesian_product(self, *others: SetObject) -> SetObject:
         return CartesianProductOfSets((self, *others))
@@ -396,57 +398,6 @@ class AlephIndexing:
 Aleph = AlephIndexing()
 
 
-class PredicateSet(SetObject):
-    """A set given by a membership predicate and optional enumeration."""
-
-    def __init__(
-        self,
-        *,
-        category: Category,
-        predicate: MembershipPredicate,
-        cardinality: Cardinal,
-        iterator: SetIterator | None = None,
-        representation: SymbolicSetRepresentation | None = None,
-        name: str = "Predicate-defined set",
-    ) -> None:
-        self._predicate = predicate
-        self._iterator = iterator
-        self._representation = representation
-        self._name = name
-        super().__init__(category=category, cardinality=cardinality)
-
-    def _membership(self, member: SetElement) -> Decision:
-        return self._predicate(member)
-
-    def __iter__(self) -> Iterator[SetElement]:
-        assert self._iterator is not None, f"{self} has no chosen enumeration"
-        return self._iterator()
-
-    def __getitem__(self, position: int) -> SetElement:
-        assert position >= 0
-        for index, member in enumerate(self):
-            if index == position:
-                return member
-        assert False, f"{position} is outside {self}"
-
-    def position(self, member: SetElement) -> int:
-        assert self._membership(member) is True
-        for position, candidate in enumerate(self):
-            if candidate == member:
-                return position
-        assert False, f"{member} has no position in the chosen enumeration"
-
-    def enumeration_injection(self) -> Arrow:
-        return EnumerationInjection(self, self.position)
-
-    def symbolic_representation(self) -> SymbolicSetRepresentation:
-        assert self._representation is not None
-        return self._representation
-
-    def __repr__(self) -> str:
-        return self._name
-
-
 class SubsetElement(SetElement):
     """An element of a represented set subobject."""
 
@@ -509,41 +460,6 @@ class SubsetSetObject(SetObject):
         return f"Subset of {self._base_set}"
 
 
-class SympySetObject(SetObject):
-    """An owned set with a private SymPy set representation."""
-
-    def __init__(
-        self,
-        *,
-        representation: SymbolicSetRepresentation,
-        cardinality: Cardinal | None = None,
-        name: str = "Symbolic set",
-    ) -> None:
-        self._representation = representation
-        self._name = name
-        super().__init__(category=Sets(), cardinality=cardinality)
-
-    def symbolic_representation(self) -> SymbolicSetRepresentation:
-        return self._representation
-
-    def membership_proposition(self, member: SetElement) -> MembershipProposition:
-        return self._representation.contains(member)
-
-    def _membership(self, member: SetElement) -> Decision:
-        proposition = self.membership_proposition(member)
-        if proposition is True:
-            return True
-        if proposition is False:
-            return False
-        return UNKNOWN
-
-    def __iter__(self) -> Iterator[SetElement]:
-        return iter(self._representation)
-
-    def __repr__(self) -> str:
-        return self._name
-
-
 class SetMorphism(Arrow, SetElement):
     """An arbitrary morphism of sets."""
 
@@ -585,6 +501,9 @@ class SetMorphism(Arrow, SetElement):
 
     def is_bijective(self) -> Decision:
         return _decision_and(self._injective, self._surjective)
+
+    def image(self, *, cardinality: Cardinal | None = None) -> SetSubset:
+        return _image_subobject(self, cardinality=cardinality)
 
     def inverse(self) -> SetMorphism:
         assert self.is_bijective() is True
@@ -867,6 +786,8 @@ class SetHomCategory(HomCategory, SetObject):
         hom_category: HomCategoryFamily,
     ) -> None:
         self._evaluation: SetMorphism | None = None
+        self._top_subset: SetSubset | None = None
+        self._bottom_subset: SetSubset | None = None
         super().__init__(
             domain=domain,
             codomain=codomain,
@@ -1048,15 +969,19 @@ class SetHomCategory(HomCategory, SetObject):
 
     def top(self) -> SetSubset:
         assert self.is_power_set()
-        return self.from_predicate(
-            lambda member: self.exponent()._membership(member),
-            cardinality=self.exponent().cardinality(),
-            iterator=lambda: iter(self.exponent()),
-        )
+        if self._top_subset is None:
+            self._top_subset = self.from_predicate(
+                lambda member: self.exponent()._membership(member),
+                cardinality=self.exponent().cardinality(),
+                iterator=lambda: iter(self.exponent()),
+            )
+        return self._top_subset
 
     def bottom(self) -> SetSubset:
         assert self.is_power_set()
-        return self.from_members(frozenset())
+        if self._bottom_subset is None:
+            self._bottom_subset = self.from_members(frozenset())
+        return self._bottom_subset
 
     def inverse_image_morphism(self, function: SetMorphism) -> SetMorphism:
         assert self.is_power_set()
@@ -1090,7 +1015,7 @@ class SetHomCategory(HomCategory, SetObject):
             assert Sets().contains_set_morphism(inclusion)
             restricted = Sets().compose(function, inclusion)
             assert Sets().contains_set_morphism(restricted)
-            return ImageSet(restricted)
+            return restricted.image()
 
         return _set_morphism(
             self,
@@ -1664,38 +1589,6 @@ def Set(source: SetObject | Iterable[MathematicalObject]) -> SetObject:
     if value is not None and Sets().contains_set(value):
         return value
     return FiniteSet(source)
-
-
-def ConditionSet(
-    predicate: MembershipPredicate,
-    *,
-    cardinality: Cardinal | None = None,
-    iterator: SetIterator | None = None,
-    representation: SymbolicSetRepresentation | None = None,
-    name: str = "Predicate-defined set",
-) -> PredicateSet:
-    size = UnknownCardinality() if cardinality is None else cardinality
-    return PredicateSet(
-        category=Sets(),
-        predicate=predicate,
-        cardinality=size,
-        iterator=iterator,
-        representation=representation,
-        name=name,
-    )
-
-
-def SetFromSympy(
-    representation: SymbolicSetRepresentation,
-    *,
-    cardinality: Cardinal | None = None,
-    name: str = "Symbolic set",
-) -> SympySetObject:
-    return SympySetObject(
-        representation=representation,
-        cardinality=cardinality,
-        name=name,
-    )
 
 
 def _set_morphism(
@@ -2941,7 +2834,7 @@ def FinitelySupportedFunctions(
     return cached
 
 
-def ImageSet(
+def _image_subobject(
     function: SetMorphism,
     *,
     cardinality: Cardinal | None = None,

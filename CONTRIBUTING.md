@@ -274,6 +274,12 @@ Grounding examples:
 | `POL-LEAF-015` | Let a leaf author work from the new mathematics and the contracts of nearby categories. Do not require knowledge of distant subtrees or the complete category graph. |
 | `POL-LEAF-016` | After the selected functors are declared, automatically supply the complete applicable object, element, arrow, and construction interfaces from their target categories. |
 | `POL-LEAF-017` | Give a full replete subcategory the inherited categorical interface without extra wiring. Descend a limit, colimit, or other functorial construction when closure of its results in the subcategory is declared or derived. |
+| `POL-LEAF-018` | Do not implement an inherited protocol in a leaf object. A local `__iter__`, `__contains__`, or `cardinality()` on a poset object duplicates the set interface instead of receiving it through the selected functor to `Sets()`. |
+| `POL-LEAF-019` | Do not create a free-standing category to hold the elements of another category. Poset elements belong to `Posets().ElementType`; a separate `PosetElements()` category disconnects their type and inheritance from `Posets()`. |
+| `POL-LEAF-020` | Give every refinement and construction its own compiled object, element, and arrow types. `FinitePosets().ElementType` is distinct from `Posets().ElementType`, and `Posets().Products().ElementType` is distinct from both, even when the new type declares no local methods. |
+| `POL-LEAF-021` | Lift a construction through functors, natural transformations, and the new mathematical structure only. A poset product supplies the componentwise order and its action on arrows; its implementation types do not subclass generic product types or reconstruct the underlying set product interface. |
+| `POL-LEAF-022` | Do not require data that defines a stronger structure than the named leaf category. A total order requires a partial order with total comparison; indexing, ranking, unranking, and enumeration belong to separate enumerable or well-ordered refinements. |
+| `POL-LEAF-023` | Do not copy inherited storage, caches, or constructor arguments into a refinement implementation. A finite poset adds finite-poset operations and its inclusion to posets; it recovers the underlying set, relation, elements, and inherited caches through that structural route. |
 
 For example, an object of `Modules(R)` can be defined by an action morphism \(\rho:R\to\operatorname{End}(X)\). Its selected functor to `Sets()` recovers \(X\) from \(\rho\) and applies `Sets(X)`. The module category does not implement set operations independently.
 
@@ -300,6 +306,18 @@ For a toy leaf, `FiniteSubsetsOfNN()` declares its research-specific constructor
 Its elements automatically receive the `Sets.ElementType` interface through `FiniteSubsetsOfNN.ElementType`, even when the leaf adds no element methods.
 Products, coproducts, filtered limits, and other set constructions require no leaf implementations.
 Their results use the category that owns each construction and return to the leaf when closure is declared or derived.
+
+For `Posets()`, the minimal new object data is an object of `Sets()` together with a partial-order relation.
+The selected functor to `Sets()` supplies membership, iteration, cardinality, elements, and set maps through the compiled interface.
+`FinitePosets()` declares its inclusion to `Posets()` and its compatible route to `FiniteSets()`.
+It does not copy the poset representation or reuse the poset element type.
+
+`Posets().Products()` is the formal product-construction subcategory obtained from the product functor.
+Its lift equips the inherited product apex with componentwise order and maps product arrows accordingly.
+It does not subclass the generic product implementation or construct a second set product API.
+
+`TotallyOrderedSets()` refines partial orders by the totality property alone.
+An enumeration is additional mathematical structure and therefore belongs to a separate category with its own structural functor to `TotallyOrderedSets()`.
 
 ## Mathematical encapsulation and repository layout
 

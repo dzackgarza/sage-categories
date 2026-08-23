@@ -206,6 +206,7 @@ class Isomorphism(Arrow):
         self._forward = forward
         self._backward = backward
         super().__init__(hom_category=hom_category)
+        _record_declared_isomorphism(self.domain(), self.codomain())
 
     def forward(self) -> Arrow:
         """Return the forward arrow."""
@@ -245,6 +246,39 @@ class Automorphism(Isomorphism):
 
     def is_endomorphism(self) -> bool:
         return True
+
+
+_DECLARED_ISOMORPHISM_CLASSES: dict[
+    int,
+    dict[int, MathematicalObject],
+] = {}
+
+
+def _record_declared_isomorphism(
+    domain: MathematicalObject,
+    codomain: MathematicalObject,
+) -> None:
+    component = {
+        id(domain): domain,
+        id(codomain): codomain,
+    }
+    domain_component = _DECLARED_ISOMORPHISM_CLASSES.get(id(domain))
+    if domain_component is not None:
+        component.update(domain_component)
+    codomain_component = _DECLARED_ISOMORPHISM_CLASSES.get(id(codomain))
+    if codomain_component is not None:
+        component.update(codomain_component)
+    for value in component.values():
+        _DECLARED_ISOMORPHISM_CLASSES[id(value)] = component
+
+
+def _declared_isomorphic_objects(
+    value: MathematicalObject,
+) -> tuple[MathematicalObject, ...]:
+    component = _DECLARED_ISOMORPHISM_CLASSES.get(id(value))
+    if component is None:
+        return (value,)
+    return tuple(component.values())
 
 
 class RestrictedHomCategory(HomCategory):

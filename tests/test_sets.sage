@@ -280,6 +280,29 @@ def test_sets_use_their_strongest_known_categories() -> None:
     assert enumeration.codomain() is NaturalNumbers()
 
 
+def test_full_subcategories_are_replete_under_declared_isomorphisms() -> None:
+    finite_set = FiniteSet((ZZ(int(0)), ZZ(int(1))))
+    represented_copy = PowerSet(finite_set).from_predicate(
+        lambda member: True,
+        iterator=lambda: iter(finite_set),
+    )
+    copied_set = represented_copy.object()
+
+    def copy_member(member: SetElement) -> SetElement:
+        return next(
+            candidate
+            for candidate in copied_set
+            if represented_copy.inclusion()(candidate) is member
+        )
+
+    inverse = Sets().Hom(finite_set, copied_set)(copy_member)
+    isomorphism = declare_isomorphism(represented_copy.inclusion(), inverse)
+
+    assert isomorphism in Sets().IsomorphismArrowCategory()
+    assert copied_set in FiniteSets()
+    assert copied_set in CountableSets()
+
+
 def test_finite_sets_inherit_closed_products_and_coproducts() -> None:
     labels = FiniteSet((ZZ(int(0)), ZZ(int(1))))
     index_category = DiscreteCategory(labels)

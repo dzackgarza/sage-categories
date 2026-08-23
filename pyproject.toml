@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Owned Sage categories."
 requires-python = ">=3.14"
 dependencies = [
+    "sage-mypy-category-plugin @ git+https://github.com/dzackgarza/sagemath-mypy-plugin@main",
     "sagemath @ git+https://github.com/dzackgarza/sage@develop",
     "sympy",
     "tree-sitter-sage @ git+https://github.com/dzackgarza/tree-sitter-sage",

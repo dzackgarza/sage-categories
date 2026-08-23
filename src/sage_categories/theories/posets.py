@@ -118,7 +118,7 @@ class PosetElementsCategory(Category):
     ObjectType = PosetElement
 
     def __init__(self) -> None:
-        super().__init__(object_type=PosetElement)
+        super().__init__()
 
     def contains_poset_element(
         self,
@@ -808,11 +808,7 @@ class ProductsOfPosetsCategory(ProductsOfCategory):
         self._forgetful_functor: ForgetPosetProductFunctor | None = None
         self._structural_coherence: Isomorphism | None = None
         self._lift_comparison: Isomorphism | None = None
-        super().__init__(
-            functor,
-            object_type=PosetProductObject,
-            element_type=PosetElement,
-        )
+        super().__init__(functor)
 
     def __call__(self, preimage: MathematicalObject) -> PosetProductObject:
         assert is_functor(preimage)
@@ -1049,8 +1045,6 @@ class FinitePosetsCategory(FullSubcategory):
             posets,
             self._is_finite,
             name="Finite partially ordered sets",
-            object_type=FinitePosetObject,
-            element_type=PosetElement,
         )
 
     def __call__(
@@ -1129,10 +1123,7 @@ class PartiallyOrderedSetsCategory(Category):
     def __init__(self) -> None:
         self._forgetful_functor: ForgetPosetFunctor | None = None
         self._finite_posets: FinitePosetsCategory | None = None
-        super().__init__(
-            object_type=PosetObject,
-            element_type=PosetElement,
-        )
+        super().__init__()
 
     def __call__(
         self,
@@ -1251,7 +1242,7 @@ class TotallyOrderedSetElementsCategory(Category):
     ObjectType = TotallyOrderedSetElement
 
     def __init__(self) -> None:
-        super().__init__(object_type=TotallyOrderedSetElement)
+        super().__init__()
 
     def contains_total_order_element(
         self,
@@ -1549,8 +1540,6 @@ class FiniteTotallyOrderedSetsCategory(FullSubcategory):
             total_orders,
             self._is_finite,
             name="Finite totally ordered sets",
-            object_type=FiniteTotallyOrderedSetObject,
-            element_type=TotallyOrderedSetElement,
         )
 
     def __call__(
@@ -1632,10 +1621,7 @@ class TotallyOrderedSetsCategory(Category):
     def __init__(self) -> None:
         self._inclusion: TotalOrderInclusionFunctor | None = None
         self._finite_orders: FiniteTotallyOrderedSetsCategory | None = None
-        super().__init__(
-            object_type=TotallyOrderedSetObject,
-            element_type=TotallyOrderedSetElement,
-        )
+        super().__init__()
 
     def __call__(
         self,

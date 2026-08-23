@@ -122,13 +122,14 @@ class LimitsOfCategory(ImageOfFunctor):
     """Chosen limits constructed by one limit functor."""
 
     ObjectType: type[LimitObject] = LimitObject
+    ElementType: type[MathematicalElement] = CategoryElement
 
     def __init__(
         self,
         functor: Functor,
         *,
-        object_type: type[LimitObject] = LimitObject,
-        element_type: type[MathematicalElement] = CategoryElement,
+        object_type: type[LimitObject] | None = None,
+        element_type: type[MathematicalElement] | None = None,
     ) -> None:
         self._limits: dict[int, LimitObject] = {}
         super().__init__(
@@ -188,13 +189,14 @@ class ColimitsOfCategory(ImageOfFunctor):
     """Chosen colimits constructed by one colimit functor."""
 
     ObjectType: type[ColimitObject] = ColimitObject
+    ElementType: type[MathematicalElement] = CategoryElement
 
     def __init__(
         self,
         functor: Functor,
         *,
-        object_type: type[ColimitObject] = ColimitObject,
-        element_type: type[MathematicalElement] = CategoryElement,
+        object_type: type[ColimitObject] | None = None,
+        element_type: type[MathematicalElement] | None = None,
     ) -> None:
         self._colimits: dict[int, ColimitObject] = {}
         super().__init__(
@@ -257,8 +259,8 @@ class ProductsOfCategory(LimitsOfCategory):
         self,
         functor: Functor,
         *,
-        object_type: type[ProductObject] = ProductObject,
-        element_type: type[MathematicalElement] = CategoryElement,
+        object_type: type[ProductObject] | None = None,
+        element_type: type[MathematicalElement] | None = None,
     ) -> None:
         super().__init__(
             functor,
@@ -288,8 +290,8 @@ class CoproductsOfCategory(ColimitsOfCategory):
         self,
         functor: Functor,
         *,
-        object_type: type[CoproductObject] = CoproductObject,
-        element_type: type[MathematicalElement] = CategoryElement,
+        object_type: type[CoproductObject] | None = None,
+        element_type: type[MathematicalElement] | None = None,
     ) -> None:
         super().__init__(
             functor,

@@ -138,14 +138,15 @@ class ImageInclusionFunctor(StructuralFunctor):
 class ImageOfFunctor(Category):
     """Outputs of one functor, each with a chosen preimage."""
 
-    ObjectType = FunctorImageObject
+    ObjectType: type[FunctorImageObject] = FunctorImageObject
+    ElementType: type[MathematicalElement] = CategoryElement
 
     def __init__(
         self,
         functor: Functor,
         *,
-        object_type: type[FunctorImageObject] = FunctorImageObject,
-        element_type: type[MathematicalElement] = CategoryElement,
+        object_type: type[FunctorImageObject] | None = None,
+        element_type: type[MathematicalElement] | None = None,
     ) -> None:
         self._functor = functor
         self._inclusion: ImageInclusionFunctor | None = None

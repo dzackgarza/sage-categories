@@ -136,7 +136,7 @@ class SetElementsCategory(Category):
     ObjectType = SetElement
 
     def __init__(self) -> None:
-        super().__init__(object_type=SetElement)
+        super().__init__()
 
     def contains_set_element(
         self,
@@ -1484,10 +1484,7 @@ class SetsCategory(Category):
         self._inverse_image_power_set_functor: InverseImagePowerSetFunctor | None = None
         self._partially_ordered_sets: PartiallyOrderedSetsCategory | None = None
         self._totally_ordered_sets: TotallyOrderedSetsCategory | None = None
-        super().__init__(
-            object_type=SetObject,
-            element_type=SetElement,
-        )
+        super().__init__()
 
     def _hom_category_type(self) -> type[HomCategory]:
         return SetHomCategory
@@ -1672,8 +1669,6 @@ class FiniteSetsCategory(FullSubcategory):
             sets.Countable(),
             self._is_finite,
             name="Finite sets",
-            object_type=FiniteSetObject,
-            element_type=FiniteSetElement,
         )
 
     def __call__(self, members: frozenset[MathematicalObject]) -> FiniteSetObject:
@@ -2117,11 +2112,7 @@ class ProductsOfSetsCategory(ProductsOfCategory):
     ElementType: type[ProductElement] = ProductElement
 
     def __init__(self, functor: Functor) -> None:
-        super().__init__(
-            functor,
-            object_type=SetProductObject,
-            element_type=ProductElement,
-        )
+        super().__init__(functor)
         _PRODUCTS_OF_SETS[id(self)] = self
 
     def __call__(
@@ -2332,11 +2323,7 @@ class CoproductsOfSetsCategory(CoproductsOfCategory):
     ElementType: type[CoproductElement] = CoproductElement
 
     def __init__(self, functor: Functor) -> None:
-        super().__init__(
-            functor,
-            object_type=SetCoproductObject,
-            element_type=CoproductElement,
-        )
+        super().__init__(functor)
         _COPRODUCTS_OF_SETS[id(self)] = self
 
     def __call__(
@@ -2490,11 +2477,7 @@ class LimitsOfSetsCategory(LimitsOfCategory):
     ElementType: type[ProductElement] = ProductElement
 
     def __init__(self, functor: Functor) -> None:
-        super().__init__(
-            functor,
-            object_type=SetLimitObject,
-            element_type=ProductElement,
-        )
+        super().__init__(functor)
         _LIMITS_OF_SETS[id(self)] = self
 
     def __call__(
@@ -2753,11 +2736,7 @@ class ColimitsOfSetsCategory(ColimitsOfCategory):
     ElementType: type[ColimitElement] = ColimitElement
 
     def __init__(self, functor: Functor) -> None:
-        super().__init__(
-            functor,
-            object_type=SetColimitObject,
-            element_type=ColimitElement,
-        )
+        super().__init__(functor)
         _COLIMITS_OF_SETS[id(self)] = self
 
     def __call__(

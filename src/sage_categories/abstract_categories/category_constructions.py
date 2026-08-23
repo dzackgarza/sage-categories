@@ -564,8 +564,8 @@ class PullbackCategory(Category):
         first: Functor,
         second: Functor,
         *,
-        object_type: type[PullbackObject] = PullbackObject,
-        element_type: type[PullbackElement] = PullbackElement,
+        object_type: type[PullbackObject] | None = None,
+        element_type: type[PullbackElement] | None = None,
     ) -> None:
         assert first.codomain() is second.codomain()
         self._first_functor = first
@@ -766,14 +766,17 @@ class FullSubcategoryHomCategory(HomCategory):
 class FullSubcategory(Category):
     """The full subcategory on objects satisfying one predicate."""
 
+    ObjectType: type[MathematicalObject] = FullSubcategoryObject
+    ElementType: type[MathematicalElement] = FullSubcategoryElement
+
     def __init__(
         self,
         ambient_category: Category,
         predicate: ObjectPredicate,
         *,
         name: str,
-        object_type: type[MathematicalObject] = FullSubcategoryObject,
-        element_type: type[MathematicalElement] = FullSubcategoryElement,
+        object_type: type[MathematicalObject] | None = None,
+        element_type: type[MathematicalElement] | None = None,
     ) -> None:
         self._ambient_category = ambient_category
         self._predicate = predicate

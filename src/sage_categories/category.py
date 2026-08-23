@@ -53,16 +53,20 @@ if TYPE_CHECKING:
 class Category(MathematicalObject):
     """A category with category-owned object and element implementations."""
 
-    ObjectType: type[MathematicalObject]
-    ElementType: type[MathematicalElement]
+    ObjectType: type[MathematicalObject] = MathematicalObject
+    ElementType: type[MathematicalElement] = CategoryElement
 
     def __init__(
         self,
         *,
-        object_type: type[MathematicalObject] = MathematicalObject,
-        element_type: type[MathematicalElement] = CategoryElement,
+        object_type: type[MathematicalObject] | None = None,
+        element_type: type[MathematicalElement] | None = None,
         category: Category | None = None,
     ) -> None:
+        if object_type is None:
+            object_type = type(self).ObjectType
+        if element_type is None:
+            element_type = type(self).ElementType
         if category is None:
             from sage_categories.abstract_categories.cat import Cat
 

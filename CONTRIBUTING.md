@@ -103,6 +103,7 @@ The package must absorb the elliptic-curve construction before claiming that wor
 | `POL-ENGINE-008` | Write tests, notebooks, and downstream packages against the owned semantic API. Do not import, inspect, or assert engine implementation types or constructors. |
 | `POL-ENGINE-009` | Do not re-export an engine API, imitate its naming scheme, or let its available operations determine the owned public method surface. |
 | `POL-ENGINE-010` | Translate engine-specific partial results into the owned result type, including `Unknown` for unresolved semantic predicates. |
+| `POL-ENGINE-011` | Treat a timeout, crash, incomplete computation, or indeterminate engine verdict as establishing no mathematical result. It cannot justify category refinement or a Boolean answer. |
 
 ## Algebraic generality
 
@@ -388,6 +389,7 @@ The products category does not define a second set interface or an independent c
 | `POL-SET-029` | Before enumerating a set, determine how the operation behaves for an infinite set and for a very large finite set. Keep unbounded enumeration out of the normal path. |
 | `POL-SET-030` | Enumerate to compute cardinality only when a concrete cardinality is required, finiteness is established, and no construction formula or structural relation supplies it. |
 | `POL-SET-031` | A constructor that knows a set's cardinality or structural property records it. Functors and related objects derive and transport that information. |
+| `POL-SET-032` | Use `NN` for the positive integers. Zero is not an element of `NN`; use `ZZ_{>=0}` for the nonnegative integers. |
 
 Grounding examples: the even positive integers are infinite, and \(\{1,2,\ldots,10^{10}\}\) is finite but unsuitable for materialization.
 The set \(\{n\in\mathbb N\mid n\leq100\}\) is finite from its defining bound.
@@ -582,6 +584,7 @@ Use the natural protocol syntax directly.
 | `POL-TEST-024` | Test repository-owned behavior. Do not spend assertions re-proving Sage, Python, or a cited theorem in isolation. |
 | `POL-TEST-025` | Keep an assertion only if a plausible mathematically wrong implementation can fail it. |
 | `POL-TEST-026` | Let a citation establish the oracle. Assert the resulting mathematical fact rather than the citation text or source layout. |
+| `POL-TEST-027` | Make each mathematical test failure state the failed proposition and the expected mathematical behavior. A user must not need implementation context to understand the failure. |
 | `POL-PERF-001` | Measure performance with wall time as a function of input size. |
 | `POL-PERF-002` | Use call counts only to locate repeated work. Do not use them as efficiency evidence. |
 | `POL-PERF-003` | Preserve code that displays the mathematical sequence when a faster form hides it. |

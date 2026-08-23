@@ -72,7 +72,7 @@ X.covered_objects()
 
 X.exponential(Y)
 X ** Y
-X.power_set()
+X.powerset()
 X.subsets_of_size(k)
 X.finite_subsets()
 ```
@@ -219,7 +219,7 @@ It carries:
 A.inclusion()
 A.underlying_set()
 A.characteristic_morphism()
-A.power_set()
+A.powerset()
 A.cardinality()
 ```
 
@@ -268,6 +268,45 @@ Every set arrow also induces a direct-image arrow.
 
 Direct image constructs the semantic image subobject without enumerating its source.
 Its membership evaluator can return `Unknown`.
+
+## Powersets, subset posets, and thin categories
+
+Every set supplies:
+
+```python
+X.powerset()
+X.subset_poset()
+```
+
+`X.powerset()` is the set of subobjects of \(X\).
+`X.subset_poset()` has the same subsets as its elements and orders them by containment:
+
+\[
+A\leq B \quad\Longleftrightarrow\quad A\hookrightarrow X
+\text{ factors through } B\hookrightarrow X.
+\]
+
+Every poset \(P\) determines its thin category `P.thin_category()`.
+The elements of \(P\) become objects, and
+
+\[
+\operatorname{Hom}(p,q)=
+\begin{cases}
+\{p\leq q\},&p\leq q,\\
+\varnothing,&\text{otherwise.}
+\end{cases}
+\]
+
+For a set \(X\), the following constructions are canonically equivalent:
+
+- the thin category of `X.subset_poset()`;
+
+- the thin category of the Boolean-lattice order on `X.powerset()`;
+
+- the category of subobjects of \(X\) in `Sets()`.
+
+If \(X\) later receives the discrete topology, the topology layer identifies this category with \(\operatorname{Open}(X)\).
+Topology remains owned by its own category; `Sets()` supplies only the powerset, the containment order, and their categorical compatibility.
 
 ## Finite and fixed-cardinality subsets
 

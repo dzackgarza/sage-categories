@@ -162,11 +162,7 @@ class PosetObject(MathematicalObject):
 
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
-        return (
-            value is not None
-            and PosetElements().contains_poset_element(value)
-            and value.ambient_poset() is self
-        )
+        return value is not None and PosetElements().contains_poset_element(value) and value.ambient_poset() is self
 
     def __iter__(self) -> Iterator[PosetElement]:
         return iter(self.element(member) for member in self._underlying_set)
@@ -391,10 +387,7 @@ class ThinCategory(Category):
         self,
         candidate: MathematicalObject,
     ) -> TypeIs[PosetElement]:
-        return (
-            PosetElements().contains_poset_element(candidate)
-            and candidate.ambient_poset() is self._poset
-        )
+        return PosetElements().contains_poset_element(candidate) and candidate.ambient_poset() is self._poset
 
     def objects(self) -> ThinCategoryObjectSet:
         if self._objects is None:
@@ -530,9 +523,7 @@ class PosetHomCategory(HomCategory):
 
     def __call__(
         self,
-        action: Callable[[PosetElement], PosetElement]
-        | Mapping[PosetElement, PosetElement]
-        | PosetMorphism,
+        action: Callable[[PosetElement], PosetElement] | Mapping[PosetElement, PosetElement] | PosetMorphism,
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
@@ -1048,11 +1039,7 @@ class TotallyOrderedSetObject(MathematicalObject):
 
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
-        return (
-            value is not None
-            and TotallyOrderedSetElements().contains_total_order_element(value)
-            and value.ambient_total_order() is self
-        )
+        return value is not None and TotallyOrderedSetElements().contains_total_order_element(value) and value.ambient_total_order() is self
 
     def __iter__(self) -> Iterator[TotallyOrderedSetElement]:
         if self._finite_enumeration is not None:
@@ -1094,9 +1081,7 @@ class TotallyOrderedSetObject(MathematicalObject):
 
     def __repr__(self) -> str:
         if self._finite_enumeration is None:
-            return (
-                f"Totally ordered {PartiallyOrderedSets().underlying_set(self._poset)}"
-            )
+            return f"Totally ordered {PartiallyOrderedSets().underlying_set(self._poset)}"
         return "[" + ", ".join(map(repr, self._finite_enumeration)) + "]"
 
 
@@ -1141,9 +1126,7 @@ class TotallyOrderedSetHomCategory(HomCategory):
 
     def __call__(
         self,
-        action: Callable[[TotallyOrderedSetElement], TotallyOrderedSetElement]
-        | Mapping[TotallyOrderedSetElement, TotallyOrderedSetElement]
-        | TotallyOrderedSetMorphism,
+        action: Callable[[TotallyOrderedSetElement], TotallyOrderedSetElement] | Mapping[TotallyOrderedSetElement, TotallyOrderedSetElement] | TotallyOrderedSetMorphism,
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
@@ -1392,10 +1375,7 @@ class TotallyOrderedSetsCategory(Category):
         finite_enumeration: tuple[PosetElement, ...] | None = None,
     ) -> TotallyOrderedSetObject:
         if finite_enumeration is not None:
-            assert (
-                len(finite_enumeration)
-                == PartiallyOrderedSets().underlying_set(poset).cardinality()
-            )
+            assert len(finite_enumeration) == PartiallyOrderedSets().underlying_set(poset).cardinality()
         if poset in FinitePosets():
             return self.Finite()(
                 poset,
@@ -1523,12 +1503,8 @@ def ordered_set_owned_by(
     cached = _ORDERED_FINITE_SETS.get(enumeration)
     if cached is None:
         underlying_set = FiniteSet(enumeration)
-        owned_enumeration = tuple(
-            underlying_set.element(element) for element in enumeration
-        )
-        positions: dict[SetElement, int] = {
-            element: index for index, element in enumerate(owned_enumeration)
-        }
+        owned_enumeration = tuple(underlying_set.element(element) for element in enumeration)
+        positions: dict[SetElement, int] = {element: index for index, element in enumerate(owned_enumeration)}
 
         def ordered_relation(left: PosetElement, right: PosetElement) -> bool:
             forgetful_functor = PartiallyOrderedSets().forgetful_functor()
@@ -1542,9 +1518,7 @@ def ordered_set_owned_by(
             underlying_set,
             ordered_relation,
         )
-        poset_enumeration = tuple(
-            poset.element(element) for element in owned_enumeration
-        )
+        poset_enumeration = tuple(poset.element(element) for element in owned_enumeration)
 
         def position_of(member: PosetElement) -> int:
             forgetful_functor = PartiallyOrderedSets().forgetful_functor()
@@ -1593,12 +1567,8 @@ class SimplexOrderIndexing:
                         right: PosetElement,
                     ) -> bool:
                         forgetful_functor = PartiallyOrderedSets().forgetful_functor()
-                        left_element = forgetful_functor.on_element(
-                            left.ambient_poset(), left
-                        )
-                        right_element = forgetful_functor.on_element(
-                            right.ambient_poset(), right
-                        )
+                        left_element = forgetful_functor.on_element(left.ambient_poset(), left)
+                        right_element = forgetful_functor.on_element(right.ambient_poset(), right)
                         assert SetElements().contains_set_element(left_element)
                         assert SetElements().contains_set_element(right_element)
                         left_ordinal = left_element.value()
@@ -1616,9 +1586,7 @@ class SimplexOrderIndexing:
 
                     def natural_position(member: PosetElement) -> int:
                         forgetful_functor = PartiallyOrderedSets().forgetful_functor()
-                        set_member = forgetful_functor.on_element(
-                            member.ambient_poset(), member
-                        )
+                        set_member = forgetful_functor.on_element(member.ambient_poset(), member)
                         assert SetElements().contains_set_element(set_member)
                         return naturals.position(set_member)
 
@@ -1632,9 +1600,7 @@ class SimplexOrderIndexing:
             maximum = index
         assert maximum >= -1
         naturals = NaturalNumbers()
-        return finite_ordered_set(
-            naturals.element(ordinal(position)) for position in range(maximum + 1)
-        )
+        return finite_ordered_set(naturals.element(ordinal(position)) for position in range(maximum + 1))
 
     def __repr__(self) -> str:
         return "Delta"
@@ -1662,16 +1628,10 @@ def is_totally_ordered_sets_category(
 def is_poset_hom_category(
     category: HomCategory,
 ) -> TypeIs[PosetHomCategory]:
-    return (
-        category.base_category() is PartiallyOrderedSets()
-        and category in PartiallyOrderedSets().HomCategory()
-    )
+    return category.base_category() is PartiallyOrderedSets() and category in PartiallyOrderedSets().HomCategory()
 
 
 def is_total_order_hom_category(
     category: HomCategory,
 ) -> TypeIs[TotallyOrderedSetHomCategory]:
-    return (
-        category.base_category() is TotallyOrderedSets()
-        and category in TotallyOrderedSets().HomCategory()
-    )
+    return category.base_category() is TotallyOrderedSets() and category in TotallyOrderedSets().HomCategory()

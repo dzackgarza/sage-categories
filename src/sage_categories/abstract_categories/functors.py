@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator
+from itertools import pairwise
 from typing import TYPE_CHECKING, Any, TypeIs
 
 from sage_categories.abstract_categories.hom_categories import (
@@ -35,13 +36,22 @@ class Functor(Arrow, ABC):
         codomain: Category,
         *,
         hom_category: HomCategory | None = None,
+        object_map: Callable[[MathematicalObject], MathematicalObject] | None = None,
+        morphism_map: Callable[[Arrow], Arrow] | None = None,
     ) -> None:
+        assert (object_map is None) is (morphism_map is None)
         from sage_categories.abstract_categories.cat import category_universe
 
         self._cached_image_category: Category | None = None
         self._functor_domain = domain
         self._functor_codomain = codomain
-        functor_hom_category = category_universe(domain, codomain).Hom(domain, codomain) if hom_category is None else hom_category
+        self._object_map = object_map
+        self._morphism_map = morphism_map
+        functor_hom_category = (
+            category_universe(domain, codomain).Hom(domain, codomain)
+            if hom_category is None
+            else hom_category
+        )
         assert functor_hom_category.domain() is domain
         assert functor_hom_category.codomain() is codomain
         super().__init__(hom_category=functor_hom_category)
@@ -54,13 +64,15 @@ class Functor(Arrow, ABC):
         """Return the codomain category."""
         return self._functor_codomain
 
-    @abstractmethod
     def on_object(self, source: MathematicalObject) -> MathematicalObject:
         """Construct the object image."""
+        assert self._object_map is not None
+        return self._object_map(source)
 
-    @abstractmethod
     def on_morphism(self, morphism: Arrow) -> Arrow:
         """Construct the arrow image."""
+        assert self._morphism_map is not None
+        return self._morphism_map(morphism)
 
     def __call__(self, value: MathematicalObject) -> MathematicalObject:
         """Apply this functor to an object or arrow by categorical membership."""
@@ -70,7 +82,9 @@ class Functor(Arrow, ABC):
         if arrow_category.contains_arrow(value):
             source_arrow = value
             source_category = source_arrow.base_category()
-            if source_category is not self.domain() and source_category.is_subcategory(self.domain()):
+            if source_category is not self.domain() and source_category.is_subcategory(
+                self.domain()
+            ):
                 route = category_compiler().implementation_route(
                     source_category,
                     self.domain(),
@@ -82,7 +96,9 @@ class Functor(Arrow, ABC):
         assert value in self.domain()
         source_object = value
         source_category = source_object.category()
-        if source_category is not self.domain() and source_category.is_subcategory(self.domain()):
+        if source_category is not self.domain() and source_category.is_subcategory(
+            self.domain()
+        ):
             route = category_compiler().implementation_route(
                 source_category,
                 self.domain(),
@@ -232,7 +248,7 @@ class ComposedFunctor(Functor):
         hom_category: HomCategory | None = None,
     ) -> None:
         assert factors
-        for early, late in zip(factors, factors[1:], strict=False):
+        for early, late in pairwise(factors):
             assert early.codomain() is late.domain()
         self._factors = factors
         super().__init__(
@@ -758,9 +774,15 @@ class NaturalTransformationHomCategory(HomCategory):
         return self(lambda value: source.codomain().identity(source(value)))
 
     def compose(self, second: Arrow, first: Arrow) -> _NaturalTransformation:
-        assert self.contains_transformation(second)
-        assert self.contains_transformation(first)
+        second_hom = second.hom_category()
+        first_hom = first.hom_category()
+        assert is_natural_transformation_hom_category(second_hom)
+        assert is_natural_transformation_hom_category(first_hom)
+        assert second_hom.contains_transformation(second)
+        assert first_hom.contains_transformation(first)
+        assert first.domain() is self.domain()
         assert first.codomain() is second.domain()
+        assert second.codomain() is self.codomain()
         return self(lambda value: second.component(value) * first.component(value))
 
     def contains_transformation(
@@ -775,6 +797,19 @@ class FunctorCategory(HomCategory):
 
     ObjectType = Functor
     ElementType = Functor
+
+    def __call__(
+        self,
+        object_map: Callable[[MathematicalObject], MathematicalObject],
+        morphism_map: Callable[[Arrow], Arrow],
+    ) -> Functor:
+        return self.ObjectType(
+            self.domain(),
+            self.codomain(),
+            hom_category=self,
+            object_map=object_map,
+            morphism_map=morphism_map,
+        )
 
     def _hom_category_type(self) -> type[HomCategory]:
         return NaturalTransformationHomCategory
@@ -804,9 +839,11 @@ class FunctorCategory(HomCategory):
         return IdentityFunctor(self.domain(), hom_category=self)
 
     def compose(self, second: Arrow, first: Arrow) -> Functor:
-        assert self.contains_functor(second)
-        assert self.contains_functor(first)
+        assert is_functor(second)
+        assert is_functor(first)
+        assert first.domain() is self.domain()
         assert first.codomain() is second.domain()
+        assert second.codomain() is self.codomain()
         return compose_functors(second, first, hom_category=self)
 
     def contains_functor(self, arrow: Arrow) -> TypeIs[Functor]:
@@ -817,7 +854,9 @@ def is_functor(candidate: MathematicalObject) -> TypeIs[Functor]:
     """Narrow an owned value by membership in ``Ar(Cat)``."""
     from sage_categories.abstract_categories.cat import category_universes
 
-    return any(candidate in universe.ArrowCategory() for universe in category_universes())
+    return any(
+        candidate in universe.ArrowCategory() for universe in category_universes()
+    )
 
 
 def NaturalTransformations(
@@ -863,4 +902,7 @@ def is_natural_transformation_hom_category(
     from sage_categories.abstract_categories.cat import category_universes
 
     base = category.base_category()
-    return any(base in universe.HomCategory() for universe in category_universes()) and category in base.HomCategory()
+    return (
+        any(base in universe.HomCategory() for universe in category_universes())
+        and category in base.HomCategory()
+    )

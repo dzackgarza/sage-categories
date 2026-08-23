@@ -128,7 +128,11 @@ def test_arrow_hom_end_iso_slice_and_coslice_categories() -> None:
     assert superobject in sets.Superobjects(finite_set)
     assert covering_object in sets.CoveringObjects(finite_set)
     assert covered_object in sets.CoveredObjects(finite_set)
-    assert finite_set.covering_objects() is sets.CoveringObjects(finite_set)
+    finite_epimorphism = FiniteSets().Epi(finite_set, finite_set).identity()
+    finite_coverings = FiniteSets().CoveringObjects(finite_set)
+    assert finite_set.covering_objects() is finite_coverings
+    finite_covering_object = finite_coverings(finite_epimorphism)
+    assert finite_covering_object in finite_coverings
 
 
 def test_opposites_products_functor_images_and_constant_diagrams() -> None:

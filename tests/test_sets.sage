@@ -150,9 +150,10 @@ def test_infinite_products_and_coproducts_use_direct_indexing() -> None:
 
     product_cardinalities = product.factor_cardinalities()
     coproduct_cardinalities = coproduct.cofactor_cardinalities()
-    index = product.index_category().object(high_index)
-    assert product_cardinalities(index) == aleph0
-    assert coproduct_cardinalities(index) == aleph0
+    product_index = product.index_category().object(high_index)
+    coproduct_index = coproduct.index_category().object(high_index)
+    assert product_cardinalities(product_index) == aleph0
+    assert coproduct_cardinalities(coproduct_index) == aleph0
 
 
 def test_infinite_product_and_coproduct_functors_act_on_maps() -> None:

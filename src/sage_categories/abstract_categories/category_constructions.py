@@ -369,6 +369,7 @@ class PullbackObject(MathematicalObject):
     def _second_implementation(self) -> MathematicalObject:
         return self._second
 
+
 class PullbackElement(MathematicalElement):
     """A compatible pair of elements in a pullback object."""
 

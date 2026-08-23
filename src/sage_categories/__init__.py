@@ -47,6 +47,20 @@ from sage_categories.theories.cardinals import (
     cardinal,
     continuum,
 )
+from sage_categories.theories.number_sets import (
+    QQ,
+    RR,
+    ZZ,
+    IntegerElement,
+    Integers,
+    IntegerSet,
+    RationalElement,
+    Rationals,
+    RationalSet,
+    RealElement,
+    RealNumbers,
+    RealSet,
+)
 from sage_categories.theories.ordinals import (
     Ordinal,
     Ordinals,
@@ -106,8 +120,14 @@ from sage_categories.values import (
     Unknown,
 )
 
+NN = NaturalNumbers()
+
 __all__ = [
+    "NN",
+    "QQ",
+    "RR",
     "UNKNOWN",
+    "ZZ",
     "Aleph",
     "Aleph0",
     "Arrow",
@@ -148,6 +168,9 @@ __all__ = [
     "FullSubcategory",
     "Functor",
     "IdentityFunctor",
+    "IntegerElement",
+    "IntegerSet",
+    "Integers",
     "LimitOfSets",
     "MathematicalElement",
     "MathematicalObject",
@@ -165,6 +188,12 @@ __all__ = [
     "PowerSet",
     "Product",
     "ProductOfSets",
+    "RationalElement",
+    "RationalSet",
+    "Rationals",
+    "RealElement",
+    "RealNumbers",
+    "RealSet",
     "Set",
     "SetElement",
     "SetFamily",

@@ -216,19 +216,24 @@ class MathematicalElement(MathematicalObject):
         self,
         route: tuple[StructuralFunctor, ...],
     ) -> MathematicalElement:
-        source = self._ambient_object
+        ambient = self._ambient_object
+        source = ambient
         element = self
+        prefix: tuple[StructuralFunctor, ...] = ()
         for functor in route:
+            prefix = (*prefix, functor)
             codomain = functor.codomain()
             key = id(codomain)
+            target = ambient._object_image_along(prefix)
             cached = self._element_structural_images.get(key)
             if cached is not None:
-                source = functor.on_object(source)
+                assert cached.ambient_object() is target
+                source = target
                 element = cached
                 continue
             element = functor.on_element(source, element)
-            source = functor.on_object(source)
-            assert source in codomain
+            assert element.ambient_object() is target
+            source = target
             self._element_structural_images[key] = element
         return element
 
@@ -293,15 +298,23 @@ class Arrow(MathematicalElement):
         route: tuple[StructuralFunctor, ...],
     ) -> Arrow:
         value = self
+        prefix: tuple[StructuralFunctor, ...] = ()
         for functor in route:
+            prefix = (*prefix, functor)
             codomain = functor.codomain()
             key = id(codomain)
+            domain = self.domain()._object_image_along(prefix)
+            codomain_object = self.codomain()._object_image_along(prefix)
             cached = self._morphism_structural_images.get(key)
             if cached is not None:
+                assert cached.domain() is domain
+                assert cached.codomain() is codomain_object
                 value = cached
                 continue
             image = functor.on_morphism(value)
             assert codomain.contains_arrow(image)
+            assert image.domain() is domain
+            assert image.codomain() is codomain_object
             self._morphism_structural_images[key] = image
             value = image
         return value

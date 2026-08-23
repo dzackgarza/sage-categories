@@ -974,15 +974,15 @@ class ProductApexFunctor(StructuralFunctor):
         self._presentations = domain
         super().__init__(domain, domain.ambient_category())
 
-    def on_object(self, source: MathematicalObject) -> MathematicalObject:
+    def _object_image(self, source: MathematicalObject) -> MathematicalObject:
         assert self._presentations.contains_product(source)
         return source.apex()
 
-    def on_morphism(self, morphism: Arrow) -> Arrow:
+    def _morphism_image(self, morphism: Arrow) -> Arrow:
         assert self._presentations.contains_presentation_arrow(morphism)
         return morphism.apex_arrow()
 
-    def on_element(
+    def _element_image(
         self,
         source: MathematicalObject,
         element: MathematicalElement,
@@ -997,15 +997,15 @@ class CoproductApexFunctor(StructuralFunctor):
         self._presentations = domain
         super().__init__(domain, domain.ambient_category())
 
-    def on_object(self, source: MathematicalObject) -> MathematicalObject:
+    def _object_image(self, source: MathematicalObject) -> MathematicalObject:
         assert self._presentations.contains_coproduct(source)
         return source.apex()
 
-    def on_morphism(self, morphism: Arrow) -> Arrow:
+    def _morphism_image(self, morphism: Arrow) -> Arrow:
         assert self._presentations.contains_presentation_arrow(morphism)
         return morphism.apex_arrow()
 
-    def on_element(
+    def _element_image(
         self,
         source: MathematicalObject,
         element: MathematicalElement,
@@ -1020,15 +1020,15 @@ class BiproductApexFunctor(StructuralFunctor):
         self._presentations = domain
         super().__init__(domain, domain.ambient_category())
 
-    def on_object(self, source: MathematicalObject) -> MathematicalObject:
+    def _object_image(self, source: MathematicalObject) -> MathematicalObject:
         assert self._presentations.contains_biproduct(source)
         return source.apex()
 
-    def on_morphism(self, morphism: Arrow) -> Arrow:
+    def _morphism_image(self, morphism: Arrow) -> Arrow:
         assert self._presentations.contains_presentation_arrow(morphism)
         return morphism.apex_arrow()
 
-    def on_element(
+    def _element_image(
         self,
         source: MathematicalObject,
         element: MathematicalElement,

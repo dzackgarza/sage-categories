@@ -1388,12 +1388,12 @@ class CardinalityFunctor(Functor):
         self._sets = sets
         super().__init__(sets.core(), Cardinals())
 
-    def on_object(self, source: MathematicalObject) -> Cardinal:
+    def _object_image(self, source: MathematicalObject) -> Cardinal:
         assert source in self.domain()
         assert self._sets.contains_set(source)
         return source.cardinality()
 
-    def on_morphism(self, morphism: Arrow) -> Arrow:
+    def _morphism_image(self, morphism: Arrow) -> Arrow:
         assert morphism in self.domain().ArrowCategory()
         source = morphism.domain()
         target = morphism.codomain()
@@ -1413,7 +1413,7 @@ class ExponentialFunctor(Functor):
     def __init__(self) -> None:
         super().__init__(Sets().OppositeCategory().ProductCategory(Sets()), Sets())
 
-    def on_object(self, source: MathematicalObject) -> SetHomCategory:
+    def _object_image(self, source: MathematicalObject) -> SetHomCategory:
         domain = self.domain()
         assert is_product_category(domain)
         assert domain.contains_pair(source)
@@ -1423,7 +1423,7 @@ class ExponentialFunctor(Functor):
         assert Sets().contains_set(base)
         return ExponentialOfSets(base, exponent)
 
-    def on_morphism(self, morphism: Arrow) -> SetMorphism:
+    def _morphism_image(self, morphism: Arrow) -> SetMorphism:
         assert is_product_arrow(morphism)
         first = morphism.first()
         second = morphism.second()
@@ -1449,11 +1449,11 @@ class InverseImagePowerSetFunctor(Functor):
     def __init__(self) -> None:
         super().__init__(Sets().OppositeCategory(), Sets())
 
-    def on_object(self, source: MathematicalObject) -> SetHomCategory:
+    def _object_image(self, source: MathematicalObject) -> SetHomCategory:
         assert Sets().contains_set(source)
         return PowerSet(source)
 
-    def on_morphism(self, morphism: Arrow) -> SetMorphism:
+    def _morphism_image(self, morphism: Arrow) -> SetMorphism:
         assert is_opposite_arrow(morphism)
         underlying = morphism.underlying_arrow()
         assert Sets().contains_set_morphism(underlying)

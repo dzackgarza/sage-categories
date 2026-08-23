@@ -47,6 +47,8 @@ class Functor(Arrow, ABC):
         self._functor_codomain = codomain
         self._object_map = object_map
         self._morphism_map = morphism_map
+        self._object_images: dict[int, MathematicalObject] = {}
+        self._morphism_images: dict[int, Arrow] = {}
         functor_hom_category = category_universe(domain, codomain).Hom(domain, codomain) if hom_category is None else hom_category
         assert functor_hom_category.domain() is domain
         assert functor_hom_category.codomain() is codomain
@@ -60,15 +62,41 @@ class Functor(Arrow, ABC):
         """Return the codomain category."""
         return self._functor_codomain
 
-    def on_object(self, source: MathematicalObject) -> MathematicalObject:
+    def _object_image(self, source: MathematicalObject) -> MathematicalObject:
         """Construct the object image."""
         assert self._object_map is not None
         return self._object_map(source)
 
-    def on_morphism(self, morphism: Arrow) -> Arrow:
+    def _morphism_image(self, morphism: Arrow) -> Arrow:
         """Construct the arrow image."""
         assert self._morphism_map is not None
         return self._morphism_map(morphism)
+
+    def on_object(self, source: MathematicalObject) -> MathematicalObject:
+        """Return the canonical image of one object."""
+        assert source in self.domain()
+        key = id(source)
+        image = self._object_images.get(key)
+        if image is None:
+            image = self._object_image(source)
+            assert image in self.codomain()
+            self._object_images[key] = image
+        return image
+
+    def on_morphism(self, morphism: Arrow) -> Arrow:
+        """Return the canonical image of one arrow."""
+        assert self.domain().contains_arrow(morphism)
+        key = id(morphism)
+        image = self._morphism_images.get(key)
+        if image is None:
+            domain = self.on_object(morphism.domain())
+            codomain = self.on_object(morphism.codomain())
+            image = self._morphism_image(morphism)
+            assert self.codomain().contains_arrow(image)
+            assert image.domain() is domain
+            assert image.codomain() is codomain
+            self._morphism_images[key] = image
+        return image
 
     def __call__(self, value: MathematicalObject) -> MathematicalObject:
         """Apply this functor to an object or arrow by categorical membership."""
@@ -134,16 +162,34 @@ class StructuralFunctor(Functor, ABC):
         *,
         hom_category: HomCategory | None = None,
     ) -> None:
+        self._element_images: dict[int, MathematicalElement] = {}
         super().__init__(domain, codomain, hom_category=hom_category)
         _STRUCTURAL_FUNCTORS[id(self)] = self
 
     @abstractmethod
-    def on_element(
+    def _element_image(
         self,
         source: MathematicalObject,
         element: MathematicalElement,
     ) -> MathematicalElement:
         """Construct the element image."""
+
+    def on_element(
+        self,
+        source: MathematicalObject,
+        element: MathematicalElement,
+    ) -> MathematicalElement:
+        """Return the canonical image of an element of ``source``."""
+        assert source in self.domain()
+        assert element.ambient_object() is source
+        target = self.on_object(source)
+        key = id(element)
+        image = self._element_images.get(key)
+        if image is None:
+            image = self._element_image(source, element)
+            assert image.ambient_object() is target
+            self._element_images[key] = image
+        return image
 
 
 _STRUCTURAL_FUNCTORS: dict[int, StructuralFunctor] = {}
@@ -167,13 +213,13 @@ class IdentityFunctor(StructuralFunctor):
     ) -> None:
         super().__init__(category, category, hom_category=hom_category)
 
-    def on_object(self, source: MathematicalObject) -> MathematicalObject:
+    def _object_image(self, source: MathematicalObject) -> MathematicalObject:
         return source
 
-    def on_morphism(self, morphism: Arrow) -> Arrow:
+    def _morphism_image(self, morphism: Arrow) -> Arrow:
         return morphism
 
-    def on_element(
+    def _element_image(
         self,
         source: MathematicalObject,
         element: MathematicalElement,
@@ -197,17 +243,17 @@ class InclusionFunctor(StructuralFunctor):
         self._included_domain = domain
         super().__init__(domain, codomain)
 
-    def on_object(self, source: MathematicalObject) -> MathematicalObject:
+    def _object_image(self, source: MathematicalObject) -> MathematicalObject:
         assert source in self._included_domain
         assert source in self.codomain()
         return source
 
-    def on_morphism(self, morphism: Arrow) -> Arrow:
+    def _morphism_image(self, morphism: Arrow) -> Arrow:
         assert morphism in self._included_domain.ArrowCategory()
         assert morphism in self.codomain().ArrowCategory()
         return morphism
 
-    def on_element(
+    def _element_image(
         self,
         source: MathematicalObject,
         element: MathematicalElement,
@@ -230,16 +276,16 @@ class HomCategoryFamilyInclusionFunctor(StructuralFunctor):
         self._codomain_family = codomain
         super().__init__(domain, codomain)
 
-    def on_object(self, source: MathematicalObject) -> HomCategory:
+    def _object_image(self, source: MathematicalObject) -> HomCategory:
         assert self._domain_family.contains_hom_category(source)
         return self._codomain_family.Of(source.domain(), source.codomain())
 
-    def on_morphism(self, morphism: Arrow) -> Arrow:
+    def _morphism_image(self, morphism: Arrow) -> Arrow:
         assert morphism in self._domain_family.ArrowCategory()
         assert morphism in self._codomain_family.ArrowCategory()
         return morphism
 
-    def on_element(
+    def _element_image(
         self,
         source: MathematicalObject,
         element: MathematicalElement,
@@ -272,13 +318,13 @@ class ComposedFunctor(Functor):
     def factors(self) -> tuple[Functor, ...]:
         return self._factors
 
-    def on_object(self, source: MathematicalObject) -> MathematicalObject:
+    def _object_image(self, source: MathematicalObject) -> MathematicalObject:
         value = source
         for factor in self._factors:
             value = factor(value)
         return value
 
-    def on_morphism(self, morphism: Arrow) -> Arrow:
+    def _morphism_image(self, morphism: Arrow) -> Arrow:
         value = morphism
         for factor in self._factors:
             image = factor(value)
@@ -313,11 +359,11 @@ class DomainFunctor(Functor):
         self._arrow_domain = category.ArrowCategory()
         super().__init__(self._arrow_domain, category)
 
-    def on_object(self, source: MathematicalObject) -> MathematicalObject:
+    def _object_image(self, source: MathematicalObject) -> MathematicalObject:
         assert self._arrow_domain.contains_object(source)
         return source.domain()
 
-    def on_morphism(self, morphism: Arrow) -> Arrow:
+    def _morphism_image(self, morphism: Arrow) -> Arrow:
         assert self._arrow_domain.contains_square(morphism)
         return morphism.left()
 
@@ -329,11 +375,11 @@ class CodomainFunctor(Functor):
         self._arrow_domain = category.ArrowCategory()
         super().__init__(self._arrow_domain, category)
 
-    def on_object(self, source: MathematicalObject) -> MathematicalObject:
+    def _object_image(self, source: MathematicalObject) -> MathematicalObject:
         assert self._arrow_domain.contains_object(source)
         return source.codomain()
 
-    def on_morphism(self, morphism: Arrow) -> Arrow:
+    def _morphism_image(self, morphism: Arrow) -> Arrow:
         assert self._arrow_domain.contains_square(morphism)
         return morphism.right()
 
@@ -473,11 +519,11 @@ class ObjectSetFunctor(StructuralFunctor):
         self._discrete_categories = domain
         super().__init__(domain, Sets())
 
-    def on_object(self, source: MathematicalObject) -> MathematicalObject:
+    def _object_image(self, source: MathematicalObject) -> MathematicalObject:
         assert self._discrete_categories.contains_discrete_category(source)
         return source.objects()
 
-    def on_morphism(self, morphism: Arrow) -> Arrow:
+    def _morphism_image(self, morphism: Arrow) -> Arrow:
         from sage_categories.theories.sets import Sets, is_set_hom_category
 
         assert is_functor(morphism)
@@ -501,7 +547,7 @@ class ObjectSetFunctor(StructuralFunctor):
         assert is_set_hom_category(hom_category)
         return hom_category(map_object)
 
-    def on_element(
+    def _element_image(
         self,
         source: MathematicalObject,
         element: MathematicalElement,
@@ -560,13 +606,13 @@ class DiscreteDiagram(Functor):
     def domain(self) -> DiscreteCategory:
         return self._index_category
 
-    def on_object(self, source: MathematicalObject) -> MathematicalObject:
+    def _object_image(self, source: MathematicalObject) -> MathematicalObject:
         assert self.domain().contains_object(source)
         image = self._values(source)
         assert image in self.codomain()
         return image
 
-    def on_morphism(self, morphism: Arrow) -> Arrow:
+    def _morphism_image(self, morphism: Arrow) -> Arrow:
         return self.codomain().identity(self.on_object(morphism.domain()))
 
 
@@ -586,11 +632,11 @@ class ConstantDiagram(Functor):
     def constant_value(self) -> MathematicalObject:
         return self._value
 
-    def on_object(self, source: MathematicalObject) -> MathematicalObject:
+    def _object_image(self, source: MathematicalObject) -> MathematicalObject:
         assert source in self.domain()
         return self._value
 
-    def on_morphism(self, morphism: Arrow) -> Arrow:
+    def _morphism_image(self, morphism: Arrow) -> Arrow:
         assert morphism in self.domain().ArrowCategory()
         return self.codomain().identity(self._value)
 
@@ -602,12 +648,14 @@ class DiagonalFunctor(Functor):
         self._index_category = index_category
         super().__init__(category, category.Diagram(index_category))
 
-    def on_object(self, source: MathematicalObject) -> ConstantDiagram:
+    def _object_image(self, source: MathematicalObject) -> ConstantDiagram:
         return ConstantDiagram(self._index_category, self.domain(), source)
 
-    def on_morphism(self, morphism: Arrow) -> Arrow:
+    def _morphism_image(self, morphism: Arrow) -> Arrow:
         source = self.on_object(morphism.domain())
         target = self.on_object(morphism.codomain())
+        assert is_functor(source)
+        assert is_functor(target)
         return NaturalTransformation(source, target, lambda index: morphism)
 
 
@@ -624,7 +672,7 @@ class LimitFunctor(Functor):
     def _construct_image_category(self) -> Category:
         return self.codomain()._limits_of_category(self)
 
-    def on_object(self, source: MathematicalObject) -> MathematicalObject:
+    def _object_image(self, source: MathematicalObject) -> MathematicalObject:
         assert is_functor(source)
         assert source in self.domain()
         from sage_categories.abstract_categories.products import (
@@ -635,7 +683,7 @@ class LimitFunctor(Functor):
         assert is_limits_of_category(image)
         return image.limit_of(source)
 
-    def on_morphism(self, morphism: Arrow) -> Arrow:
+    def _morphism_image(self, morphism: Arrow) -> Arrow:
         hom_category = morphism.hom_category()
         assert is_natural_transformation_hom_category(hom_category)
         assert hom_category.contains_transformation(morphism)
@@ -677,7 +725,7 @@ class ColimitFunctor(Functor):
     def _construct_image_category(self) -> Category:
         return self.codomain()._colimits_of_category(self)
 
-    def on_object(self, source: MathematicalObject) -> MathematicalObject:
+    def _object_image(self, source: MathematicalObject) -> MathematicalObject:
         assert is_functor(source)
         assert source in self.domain()
         from sage_categories.abstract_categories.products import (
@@ -688,7 +736,7 @@ class ColimitFunctor(Functor):
         assert is_colimits_of_category(image)
         return image.colimit_of(source)
 
-    def on_morphism(self, morphism: Arrow) -> Arrow:
+    def _morphism_image(self, morphism: Arrow) -> Arrow:
         hom_category = morphism.hom_category()
         assert is_natural_transformation_hom_category(hom_category)
         assert hom_category.contains_transformation(morphism)

@@ -71,15 +71,15 @@ class SliceForgetfulFunctor(StructuralFunctor):
         self._slice_category = domain
         super().__init__(domain, domain.ambient_category())
 
-    def on_object(self, source: MathematicalObject) -> MathematicalObject:
+    def _object_image(self, source: MathematicalObject) -> MathematicalObject:
         assert self._slice_category.contains_slice_object(source)
         return source.object()
 
-    def on_morphism(self, morphism: Arrow) -> Arrow:
+    def _morphism_image(self, morphism: Arrow) -> Arrow:
         assert self._slice_category.contains_slice_arrow(morphism)
         return morphism.varying_arrow()
 
-    def on_element(
+    def _element_image(
         self,
         source: MathematicalObject,
         element: MathematicalElement,

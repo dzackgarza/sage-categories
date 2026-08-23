@@ -3,6 +3,11 @@
 from sage_categories.all import *
 from sage_categories.abstract_categories.functors import is_functor
 from sage_categories.abstract_categories.hom_categories import is_isomorphism
+from sage_categories.theories.posets import PosetElement
+
+
+def is_equal(left: PosetElement, right: PosetElement) -> bool:
+    return left == right
 
 
 def test_cat_owns_functors_and_natural_transformations() -> None:
@@ -105,3 +110,19 @@ def test_structural_coherence_identifies_parallel_forgetful_functors() -> None:
     assert is_functor(first)
     assert is_functor(second)
     assert first(ordered_set) is second(ordered_set)
+
+
+def test_structural_functor_images_have_exact_ambient_objects_and_endpoints() -> None:
+    poset = PartiallyOrderedSets()(ZZ, is_equal)
+    element = poset.element(ZZ(int(0)))
+    identity = PartiallyOrderedSets().identity(poset)
+    forgetful = PartiallyOrderedSets().forgetful_functor()
+
+    set_image = forgetful.on_object(poset)
+    element_image = forgetful.on_element(poset, element)
+    arrow_image = forgetful.on_morphism(identity)
+
+    assert set_image is ZZ
+    assert element_image.ambient_object() is set_image
+    assert arrow_image.domain() is set_image
+    assert arrow_image.codomain() is set_image

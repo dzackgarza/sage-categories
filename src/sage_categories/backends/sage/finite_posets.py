@@ -368,27 +368,19 @@ class SageFinitePosetRealizationFunctor(Functor):
     """Realize finite posets with Sage without supplying inheritance."""
 
     def __init__(self) -> None:
-        self._object_images: dict[int, SageFinitePosetObject] = {}
-        self._arrow_images: dict[int, SageFinitePosetMorphism] = {}
         super().__init__(FinitePosets(), SageFinitePosets())
 
-    def on_object(self, source: MathematicalObject) -> SageFinitePosetObject:
-        cached = self._object_images.get(id(source))
-        if cached is None:
-            cached = SageFinitePosets()(source)
-            self._object_images[id(source)] = cached
-        return cached
+    def _object_image(self, source: MathematicalObject) -> SageFinitePosetObject:
+        return SageFinitePosets()(source)
 
-    def on_morphism(self, morphism: Arrow) -> SageFinitePosetMorphism:
-        cached = self._arrow_images.get(id(morphism))
-        if cached is None:
-            source = self.on_object(morphism.domain())
-            target = self.on_object(morphism.codomain())
-            hom_category = SageFinitePosets().Hom(source, target)
-            assert is_sage_finite_poset_hom_category(hom_category)
-            cached = hom_category(morphism)
-            self._arrow_images[id(morphism)] = cached
-        return cached
+    def _morphism_image(self, morphism: Arrow) -> SageFinitePosetMorphism:
+        source = self.on_object(morphism.domain())
+        target = self.on_object(morphism.codomain())
+        assert SageFinitePosets().contains_realization(source)
+        assert SageFinitePosets().contains_realization(target)
+        hom_category = SageFinitePosets().Hom(source, target)
+        assert is_sage_finite_poset_hom_category(hom_category)
+        return hom_category(morphism)
 
 
 _SAGE_FINITE_POSETS: SageFinitePosetsCategory | None = None

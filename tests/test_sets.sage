@@ -4,7 +4,7 @@ from sage.rings.integer import Integer as SageInteger
 
 from sage_categories.abstract_categories.functors import is_functor
 from sage_categories.all import *
-from sage_categories.theories.posets import PosetElement
+from sage_categories.theories.posets import PosetElement, PosetElements
 from sage_categories.theories.sets import (
     CoproductElements,
     ProductElements,
@@ -202,6 +202,7 @@ def test_general_infinite_limits_and_colimits_have_universal_maps() -> None:
         countable_order,
         high_index,
     )
+    assert PosetElements().contains_poset_element(poset_index)
     index_member = index_category.objects().element(poset_index)
     limit_member = into_limit(ZZ(int(5)))
     assert ProductElements().contains_product_element(limit_member)

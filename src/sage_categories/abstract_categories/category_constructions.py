@@ -297,11 +297,11 @@ class ProductProjectionFunctor(Functor):
         codomain = product.first_category() if first else product.second_category()
         super().__init__(product, codomain)
 
-    def on_object(self, source: MathematicalObject) -> MathematicalObject:
+    def _object_image(self, source: MathematicalObject) -> MathematicalObject:
         assert self._product.contains_pair(source)
         return source.first() if self._first else source.second()
 
-    def on_morphism(self, morphism: Arrow) -> Arrow:
+    def _morphism_image(self, morphism: Arrow) -> Arrow:
         assert is_product_arrow(morphism)
         return morphism.first() if self._first else morphism.second()
 
@@ -323,10 +323,10 @@ class PairFunctor(Functor):
         self._second = second
         super().__init__(first.domain(), product)
 
-    def on_object(self, source: MathematicalObject) -> CategoryPair:
+    def _object_image(self, source: MathematicalObject) -> CategoryPair:
         return self._product(self._first(source), self._second(source))
 
-    def on_morphism(self, morphism: Arrow) -> ProductArrow:
+    def _morphism_image(self, morphism: Arrow) -> ProductArrow:
         source = self.on_object(morphism.domain())
         target = self.on_object(morphism.codomain())
         hom_category = self._product.Hom(source, target)
@@ -489,19 +489,19 @@ class PullbackProjectionFunctor(StructuralFunctor):
         codomain = pullback.first_category() if first else pullback.second_category()
         super().__init__(pullback, codomain)
 
-    def on_object(self, source: MathematicalObject) -> MathematicalObject:
+    def _object_image(self, source: MathematicalObject) -> MathematicalObject:
         assert self._pullback.contains_pullback_object(source)
         if self._first:
             return source._first_implementation()
         return source._second_implementation()
 
-    def on_morphism(self, morphism: Arrow) -> Arrow:
+    def _morphism_image(self, morphism: Arrow) -> Arrow:
         assert self._pullback.contains_pullback_arrow(morphism)
         if self._first:
             return morphism._first_implementation()
         return morphism._second_implementation()
 
-    def on_element(
+    def _element_image(
         self,
         source: MathematicalObject,
         element: MathematicalElement,
@@ -530,10 +530,10 @@ class PullbackMediatingFunctor(Functor):
         self._second = second
         super().__init__(first.domain(), pullback)
 
-    def on_object(self, source: MathematicalObject) -> PullbackObject:
+    def _object_image(self, source: MathematicalObject) -> PullbackObject:
         return self._pullback(self._first(source), self._second(source))
 
-    def on_morphism(self, morphism: Arrow) -> PullbackArrow:
+    def _morphism_image(self, morphism: Arrow) -> PullbackArrow:
         source = self.on_object(morphism.domain())
         target = self.on_object(morphism.codomain())
         hom_category = self._pullback.Hom(source, target)

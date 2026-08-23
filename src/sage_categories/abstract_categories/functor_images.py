@@ -116,15 +116,15 @@ class ImageInclusionFunctor(StructuralFunctor):
         self._image = image_category
         super().__init__(image_category, image_category.functor().codomain())
 
-    def on_object(self, source: MathematicalObject) -> MathematicalObject:
+    def _object_image(self, source: MathematicalObject) -> MathematicalObject:
         assert self._image.contains_image(source)
         return source.image()
 
-    def on_morphism(self, morphism: Arrow) -> Arrow:
+    def _morphism_image(self, morphism: Arrow) -> Arrow:
         assert self._image.contains_image_arrow(morphism)
         return morphism.underlying_arrow()
 
-    def on_element(
+    def _element_image(
         self,
         source: MathematicalObject,
         element: MathematicalElement,

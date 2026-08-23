@@ -455,6 +455,7 @@ class PosetMorphism(Arrow):
         assert member in source
         forgetful_functor = category.forgetful_functor()
         set_member = forgetful_functor.on_element(source, member)
+        assert SetElements().contains_set_element(set_member)
         image = self._underlying_function(set_member)
         return target.element(image)
 
@@ -544,7 +545,9 @@ class PosetHomCategory(HomCategory):
                 image = action[source_member]
             assert PosetElements().contains_poset_element(image)
             assert image in target
-            return category.forgetful_functor().on_element(target, image)
+            set_image = category.forgetful_functor().on_element(target, image)
+            assert SetElements().contains_set_element(set_image)
+            return set_image
 
         underlying = set_hom(
             underlying_action,
@@ -607,17 +610,17 @@ class ForgetPosetFunctor(StructuralFunctor):
         self._posets = posets
         super().__init__(posets, Sets())
 
-    def on_object(self, source: MathematicalObject) -> SetObject:
+    def _object_image(self, source: MathematicalObject) -> SetObject:
         assert self._posets.contains_poset(source)
         return source._set_implementation()
 
-    def on_morphism(self, morphism: Arrow) -> SetMorphism:
+    def _morphism_image(self, morphism: Arrow) -> SetMorphism:
         hom_category = morphism.hom_category()
         assert is_poset_hom_category(hom_category)
         assert hom_category.contains_poset_morphism(morphism)
         return morphism._set_implementation()
 
-    def on_element(
+    def _element_image(
         self,
         source: MathematicalObject,
         element: MathematicalElement,
@@ -889,13 +892,17 @@ class TotallyOrderedSetElement(MathematicalElement):
 
     def __le__(self, other: TotallyOrderedSetElement) -> bool:
         inclusion = TotallyOrderedSets().inclusion()
-        comparison = self._poset_element <= inclusion.on_element(other.ambient_total_order(), other)
+        other_poset_element = inclusion.on_element(other.ambient_total_order(), other)
+        assert PosetElements().contains_poset_element(other_poset_element)
+        comparison = self._poset_element <= other_poset_element
         assert comparison is not UNKNOWN
         return comparison
 
     def __lt__(self, other: TotallyOrderedSetElement) -> bool:
         inclusion = TotallyOrderedSets().inclusion()
-        comparison = self._poset_element < inclusion.on_element(other.ambient_total_order(), other)
+        other_poset_element = inclusion.on_element(other.ambient_total_order(), other)
+        assert PosetElements().contains_poset_element(other_poset_element)
+        comparison = self._poset_element < other_poset_element
         assert comparison is not UNKNOWN
         return comparison
 
@@ -983,7 +990,9 @@ class TotallyOrderedSetObject(MathematicalObject):
 
     def position(self, member: TotallyOrderedSetElement) -> int:
         assert member in self
-        position = self._position_of(TotallyOrderedSets().inclusion().on_element(self, member))
+        poset_member = TotallyOrderedSets().inclusion().on_element(self, member)
+        assert PosetElements().contains_poset_element(poset_member)
+        position = self._position_of(poset_member)
         assert position >= 0
         assert self[position] == member
         return position
@@ -1037,6 +1046,7 @@ class TotallyOrderedSetMorphism(Arrow):
         assert member in source
         inclusion = category.inclusion()
         poset_member = inclusion.on_element(source, member)
+        assert PosetElements().contains_poset_element(poset_member)
         image = self._poset_morphism(poset_member)
         return target.element(image)
 
@@ -1078,7 +1088,9 @@ class TotallyOrderedSetHomCategory(HomCategory):
                 image = action[source_member]
             assert TotallyOrderedSetElements().contains_total_order_element(image)
             assert image in codomain
-            return category.inclusion().on_element(codomain, image)
+            poset_image = category.inclusion().on_element(codomain, image)
+            assert PosetElements().contains_poset_element(poset_image)
+            return poset_image
 
         underlying = poset_hom(
             poset_action,
@@ -1153,17 +1165,17 @@ class TotalOrderInclusionFunctor(StructuralFunctor):
         self._total_orders = total_orders
         super().__init__(total_orders, PartiallyOrderedSets())
 
-    def on_object(self, source: MathematicalObject) -> PosetObject:
+    def _object_image(self, source: MathematicalObject) -> PosetObject:
         assert self._total_orders.contains_total_order(source)
         return source._poset_implementation()
 
-    def on_morphism(self, morphism: Arrow) -> PosetMorphism:
+    def _morphism_image(self, morphism: Arrow) -> PosetMorphism:
         hom_category = morphism.hom_category()
         assert is_total_order_hom_category(hom_category)
         assert hom_category.contains_total_order_morphism(morphism)
         return morphism._poset_implementation()
 
-    def on_element(
+    def _element_image(
         self,
         source: MathematicalObject,
         element: MathematicalElement,
@@ -1333,8 +1345,12 @@ def Poset(
 
     def transported_relation(left: PosetElement, right: PosetElement) -> Decision:
         forgetful_functor = PartiallyOrderedSets().forgetful_functor()
-        left_value = forgetful_functor.on_element(left.ambient_poset(), left).value()
-        right_value = forgetful_functor.on_element(right.ambient_poset(), right).value()
+        left_element = forgetful_functor.on_element(left.ambient_poset(), left)
+        right_element = forgetful_functor.on_element(right.ambient_poset(), right)
+        assert SetElements().contains_set_element(left_element)
+        assert SetElements().contains_set_element(right_element)
+        left_value = left_element.value()
+        right_value = right_element.value()
         assert SetElements().contains_set_element(left_value)
         assert SetElements().contains_set_element(right_value)
         return relation(left_value, right_value)
@@ -1357,6 +1373,8 @@ def ordered_set_owned_by(
             forgetful_functor = PartiallyOrderedSets().forgetful_functor()
             left_element = forgetful_functor.on_element(left.ambient_poset(), left)
             right_element = forgetful_functor.on_element(right.ambient_poset(), right)
+            assert SetElements().contains_set_element(left_element)
+            assert SetElements().contains_set_element(right_element)
             return positions[left_element] <= positions[right_element]
 
         poset = PartiallyOrderedSets()(
@@ -1367,7 +1385,9 @@ def ordered_set_owned_by(
 
         def position_of(member: PosetElement) -> int:
             forgetful_functor = PartiallyOrderedSets().forgetful_functor()
-            return positions[forgetful_functor.on_element(member.ambient_poset(), member)]
+            set_member = forgetful_functor.on_element(member.ambient_poset(), member)
+            assert SetElements().contains_set_element(set_member)
+            return positions[set_member]
 
         total_order = TotallyOrderedSets()(
             poset,
@@ -1412,6 +1432,8 @@ class SimplexOrderIndexing:
                         forgetful_functor = PartiallyOrderedSets().forgetful_functor()
                         left_element = forgetful_functor.on_element(left.ambient_poset(), left)
                         right_element = forgetful_functor.on_element(right.ambient_poset(), right)
+                        assert SetElements().contains_set_element(left_element)
+                        assert SetElements().contains_set_element(right_element)
                         left_ordinal = left_element.value()
                         right_ordinal = right_element.value()
                         assert Ordinals().contains_ordinal(left_ordinal)
@@ -1427,7 +1449,9 @@ class SimplexOrderIndexing:
 
                     def natural_position(member: PosetElement) -> int:
                         forgetful_functor = PartiallyOrderedSets().forgetful_functor()
-                        return naturals.position(forgetful_functor.on_element(member.ambient_poset(), member))
+                        set_member = forgetful_functor.on_element(member.ambient_poset(), member)
+                        assert SetElements().contains_set_element(set_member)
+                        return naturals.position(set_member)
 
                     self._countable_simplex = TotallyOrderedSets()(
                         poset,

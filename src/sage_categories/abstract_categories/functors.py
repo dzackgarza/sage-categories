@@ -47,11 +47,7 @@ class Functor(Arrow, ABC):
         self._functor_codomain = codomain
         self._object_map = object_map
         self._morphism_map = morphism_map
-        functor_hom_category = (
-            category_universe(domain, codomain).Hom(domain, codomain)
-            if hom_category is None
-            else hom_category
-        )
+        functor_hom_category = category_universe(domain, codomain).Hom(domain, codomain) if hom_category is None else hom_category
         assert functor_hom_category.domain() is domain
         assert functor_hom_category.codomain() is codomain
         super().__init__(hom_category=functor_hom_category)
@@ -82,9 +78,7 @@ class Functor(Arrow, ABC):
         if arrow_category.contains_arrow(value):
             source_arrow = value
             source_category = source_arrow.base_category()
-            if source_category is not self.domain() and source_category.is_subcategory(
-                self.domain()
-            ):
+            if source_category is not self.domain() and source_category.is_subcategory(self.domain()):
                 route = category_compiler().implementation_route(
                     source_category,
                     self.domain(),
@@ -96,9 +90,7 @@ class Functor(Arrow, ABC):
         assert value in self.domain()
         source_object = value
         source_category = source_object.category()
-        if source_category is not self.domain() and source_category.is_subcategory(
-            self.domain()
-        ):
+        if source_category is not self.domain() and source_category.is_subcategory(self.domain()):
             route = category_compiler().implementation_route(
                 source_category,
                 self.domain(),
@@ -854,9 +846,7 @@ def is_functor(candidate: MathematicalObject) -> TypeIs[Functor]:
     """Narrow an owned value by membership in ``Ar(Cat)``."""
     from sage_categories.abstract_categories.cat import category_universes
 
-    return any(
-        candidate in universe.ArrowCategory() for universe in category_universes()
-    )
+    return any(candidate in universe.ArrowCategory() for universe in category_universes())
 
 
 def NaturalTransformations(
@@ -902,7 +892,4 @@ def is_natural_transformation_hom_category(
     from sage_categories.abstract_categories.cat import category_universes
 
     base = category.base_category()
-    return (
-        any(base in universe.HomCategory() for universe in category_universes())
-        and category in base.HomCategory()
-    )
+    return any(base in universe.HomCategory() for universe in category_universes()) and category in base.HomCategory()

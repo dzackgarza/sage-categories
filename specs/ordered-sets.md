@@ -249,12 +249,18 @@ It has no termination promise for a nonmember.
 
 ### 7. Order-relation API
 
-Finite poset objects expose semantic relation queries such as:
+Poset elements expose the order through the standard comparison operations:
 
 ```sage
-P.is_lequal(x, y)
-P.is_less_than(x, y)
-P.compare_elements(x, y)
+x <= y
+x < y
+x >= y
+x > y
+```
+
+Finite poset objects expose cover queries:
+
+```sage
 P.covers(x, y)
 
 P.lower_covers(x)

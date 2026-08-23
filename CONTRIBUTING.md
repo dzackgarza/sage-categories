@@ -435,7 +435,7 @@ For example, `SomeMathematicalObjectInput` names a constructor role rather than 
 If the parameter denotes an element of a set, its type is `SetElement`.
 
 The protocol signatures are `__eq__(self, candidate: Any)` and `__contains__(self, candidate: Any)`.
-Do not replace `Any` there with `object`, `MembershipInput`, or an indirect alias.
+Use raw `Any` at those two protocol boundaries.
 
 Likewise, do not define `MathematicalObject = Any` and then type `SetMapRule` as a callable on that alias.
 A `SetMorphism` acts from `SetElement` to `SetElement`, with its specific domain and codomain stored on the morphism.

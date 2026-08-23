@@ -43,7 +43,7 @@ The intended remedy is to absorb the required construction, use Sage privately a
 
 ## Why this project exists
 
-Sage has powerful mathematical implementations.
+Sage implements many mathematical structures.
 Its category framework also binds mathematical structure to dynamic Python inheritance and implementation-specific parent classes.
 These mechanisms can obscure three different facts:
 

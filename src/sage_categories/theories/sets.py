@@ -130,6 +130,17 @@ class SetElement(MathematicalElement):
         return self
 
 
+# The base of an element type whose category declares an inclusion into
+# SetElements(). The compiler supplies the set-element surface along that
+# inclusion, so at runtime the type introduces no implementation of its own and
+# POL-CAT-053 keeps it clear of SetElement. Static analysis cannot follow a
+# declared functor, so it is told the relation the inclusion already states.
+if TYPE_CHECKING:
+    IncludedSetElement = SetElement
+else:
+    IncludedSetElement = MathematicalElement
+
+
 class SetElementsCategory(Category):
     """The total category of elements of owned sets."""
 
@@ -1975,10 +1986,12 @@ def ObjectSet(discrete_category: DiscreteCategoryObject) -> SetObject:
     return objects
 
 
-class ProductElement(SetElement):
+class ProductElement(IncludedSetElement):
     """A point of a set-indexed cartesian product."""
 
     def __init__(self, product: ProductSet, components: SetElementFamily) -> None:
+        # The element surface arrives through the inclusion its category
+        # declares into SetElements, not by inheriting the set element type.
         self._product = product
         self._components = components
         super().__init__(
@@ -2011,6 +2024,8 @@ class ProductElement(SetElement):
 
 
 class ProductElementsCategory(Category):
+    ObjectType: type[ProductElement] = ProductElement
+
     def __init__(self) -> None:
         self._inclusion: InclusionFunctor | None = None
         super().__init__(object_type=ProductElement)
@@ -2082,7 +2097,9 @@ class ProductSet(SetObject):
         )
 
     def element(self, components: SetElementFamily) -> ProductElement:
-        return ProductElement(self, components)
+        # The category owns the constructor: its compiled type carries the
+        # element surface inherited along the declared inclusion.
+        return ProductElements().ObjectType(self, components)
 
     def membership(self, member: SetElement) -> Decision:
         value = registered_value(member)
@@ -2203,7 +2220,7 @@ def is_products_of_sets_category(
     return _PRODUCTS_OF_SETS.get(id(category)) is category
 
 
-class CoproductElement(SetElement):
+class CoproductElement(IncludedSetElement):
     """A tagged element of a set-indexed disjoint union."""
 
     def __init__(
@@ -2233,6 +2250,8 @@ class CoproductElement(SetElement):
 
 
 class CoproductElementsCategory(Category):
+    ObjectType: type[CoproductElement] = CoproductElement
+
     def __init__(self) -> None:
         self._inclusion: InclusionFunctor | None = None
         super().__init__(object_type=CoproductElement)
@@ -2304,7 +2323,7 @@ class CoproductSet(SetObject):
         )
 
     def element(self, index: SetElement, value: SetElement) -> CoproductElement:
-        return CoproductElement(self, index, value)
+        return CoproductElements().ObjectType(self, index, value)
 
     def membership(self, member: SetElement) -> Decision:
         value = registered_value(member)
@@ -2583,7 +2602,7 @@ def is_limits_of_sets_category(
     return _LIMITS_OF_SETS.get(id(category)) is category
 
 
-class ColimitElement(SetElement):
+class ColimitElement(IncludedSetElement):
     """An element of a Set colimit, represented by one coproduct term."""
 
     def __init__(self, colimit: ColimitSet, representative: CoproductElement) -> None:
@@ -2618,6 +2637,8 @@ class ColimitElement(SetElement):
 
 
 class ColimitElementsCategory(Category):
+    ObjectType: type[ColimitElement] = ColimitElement
+
     def __init__(self) -> None:
         self._inclusion: InclusionFunctor | None = None
         super().__init__(object_type=ColimitElement)
@@ -2676,7 +2697,7 @@ class ColimitSet(SetObject):
         return self._coproduct
 
     def element(self, index: SetElement, value: SetElement) -> ColimitElement:
-        return ColimitElement(self, self._coproduct.element(index, value))
+        return ColimitElements().ObjectType(self, self._coproduct.element(index, value))
 
     def membership(self, member: SetElement) -> Decision:
         value = registered_value(member)

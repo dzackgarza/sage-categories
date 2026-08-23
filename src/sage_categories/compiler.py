@@ -8,15 +8,35 @@ from types import FunctionType, new_class
 from typing import TYPE_CHECKING, TypeVar, assert_never
 
 from sage_categories.descriptors import ForwardedMethod, ImplementationRole
-from sage_categories.values import Arrow, MathematicalElement, MathematicalObject
+from sage_categories.values import Arrow, CategoryElement, MathematicalElement, MathematicalObject
 
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.functors import StructuralFunctor
     from sage_categories.category import Category
 
 
+# A category that declares no implementation for a role falls back to one of
+# these. Such a fallback states nothing about the category graph, so it is not
+# reported as a declared relation.
+_KERNEL_IMPLEMENTATIONS = frozenset(
+    {MathematicalObject, MathematicalElement, CategoryElement, Arrow}
+)
+
+
+# Names the source class a generated one completes. A generated class exists
+# only at runtime, so a reader of the report resolves it back to the class its
+# module actually declares.
+_COMPILED_FROM = "_compiled_from"
+
+
+def _source_implementation(implementation: type) -> type:
+    declared = vars(implementation).get(_COMPILED_FROM)
+    return declared if isinstance(declared, type) else implementation
+
+
 def _implementation_name(implementation: type) -> str:
-    return f"{implementation.__module__}.{implementation.__qualname__}"
+    source = _source_implementation(implementation)
+    return f"{source.__module__}.{source.__qualname__}"
 
 
 def _local_type(category: Category, role: ImplementationRole) -> type:
@@ -56,7 +76,9 @@ _ARROW_PROTOCOL_METHODS = frozenset(
 )
 
 type ImplementationType = type[MathematicalObject | MathematicalElement]
-type CompiledClassMember = ForwardedMethod | str
+# A compiled namespace holds forwarding descriptors, the module it belongs to,
+# and the source class it completes.
+type CompiledClassMember = ForwardedMethod | str | type
 
 Implementation = TypeVar("Implementation", bound=MathematicalObject)
 
@@ -109,15 +131,19 @@ class CategoryCompiler:
         for role in ImplementationRole:
             relations: dict[str, tuple[str, ...]] = {}
             for category in self.compiled_categories():
-                local_type = _local_type(category, role)
+                local_type = _source_implementation(_local_type(category, role))
+                if local_type in _KERNEL_IMPLEMENTATIONS:
+                    continue
                 reached: tuple[str, ...] = ()
                 for functor in category.super_functors():
                     codomain = functor.codomain()
                     if codomain is category:
                         continue
-                    inherited_type = _local_type(codomain, role)
+                    inherited_type = _source_implementation(_local_type(codomain, role))
                     name = _implementation_name(inherited_type)
                     if inherited_type is local_type or name in reached:
+                        continue
+                    if inherited_type in _KERNEL_IMPLEMENTATIONS:
                         continue
                     reached = (*reached, name)
                 if not reached:
@@ -502,6 +528,7 @@ class CategoryCompiler:
         def install(namespace: dict[str, CompiledClassMember]) -> None:
             namespace.update(inherited)
             namespace["__module__"] = local_type.__module__
+            namespace[_COMPILED_FROM] = local_type
 
         name = f"Complete{type(category).__name__}{local_type.__name__}"
         return new_class(name, (local_type,), exec_body=install)

@@ -130,21 +130,6 @@ class SetElement(MathematicalElement):
         return self
 
 
-# The base of an element type whose category declares an inclusion into
-# SetElements(). The compiler supplies the set-element surface along that
-# inclusion, so at runtime the type introduces no implementation of its own and
-# POL-CAT-053 keeps it clear of SetElement.
-#
-# Stating the relation here is interim. POL-TYPE-025 wants it projected from the
-# declarations by a checker plugin; dzackgarza/sagemath-mypy-plugin already does
-# that for Sage's own named-class machinery and is the intended home once it
-# reads this framework's structural functors.
-if TYPE_CHECKING:
-    IncludedSetElement = SetElement
-else:
-    IncludedSetElement = MathematicalElement
-
-
 class SetElementsCategory(Category):
     """The total category of elements of owned sets."""
 
@@ -1990,7 +1975,7 @@ def ObjectSet(discrete_category: DiscreteCategoryObject) -> SetObject:
     return objects
 
 
-class ProductElement(IncludedSetElement):
+class ProductElement(MathematicalElement):
     """A point of a set-indexed cartesian product."""
 
     def __init__(self, product: ProductSet, components: SetElementFamily) -> None:
@@ -2224,7 +2209,7 @@ def is_products_of_sets_category(
     return _PRODUCTS_OF_SETS.get(id(category)) is category
 
 
-class CoproductElement(IncludedSetElement):
+class CoproductElement(MathematicalElement):
     """A tagged element of a set-indexed disjoint union."""
 
     def __init__(
@@ -2606,7 +2591,7 @@ def is_limits_of_sets_category(
     return _LIMITS_OF_SETS.get(id(category)) is category
 
 
-class ColimitElement(IncludedSetElement):
+class ColimitElement(MathematicalElement):
     """An element of a Set colimit, represented by one coproduct term."""
 
     def __init__(self, colimit: ColimitSet, representative: CoproductElement) -> None:

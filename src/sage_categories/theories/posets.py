@@ -763,6 +763,21 @@ class FinitePosetsCategory(PullbackCategory):
     def __init__(self, first: Functor, second: Functor) -> None:
         super().__init__(first, second, object_type=FinitePosetObject)
 
+    def __call__(
+        self,
+        first: MathematicalObject,
+        second: MathematicalObject,
+    ) -> FinitePosetObject:
+        value = super().__call__(first, second)
+        assert self.contains_finite_poset(value)
+        return value
+
+    def contains_finite_poset(
+        self,
+        candidate: MathematicalObject,
+    ) -> TypeIs[FinitePosetObject]:
+        return candidate in self
+
     def __repr__(self) -> str:
         return "Finite partially ordered sets"
 
@@ -794,6 +809,16 @@ class PartiallyOrderedSetsCategory(Category):
 
     def _hom_category_type(self) -> type[HomCategory]:
         return PosetHomCategory
+
+    def Hom(
+        self,
+        domain: MathematicalObject,
+        codomain: MathematicalObject | None = None,
+    ) -> PosetHomCategory:
+        assert codomain is not None
+        category = Category.Hom(self, domain, codomain)
+        assert is_poset_hom_category(category)
+        return category
 
     def forgetful_functor(self) -> ForgetPosetFunctor:
         if self._forgetful_functor is None:
@@ -1175,6 +1200,21 @@ class FiniteTotallyOrderedSetsCategory(PullbackCategory):
     def __init__(self, first: Functor, second: Functor) -> None:
         super().__init__(first, second, object_type=FiniteTotallyOrderedSetObject)
 
+    def __call__(
+        self,
+        first: MathematicalObject,
+        second: MathematicalObject,
+    ) -> FiniteTotallyOrderedSetObject:
+        value = super().__call__(first, second)
+        assert self.contains_finite_total_order(value)
+        return value
+
+    def contains_finite_total_order(
+        self,
+        candidate: MathematicalObject,
+    ) -> TypeIs[FiniteTotallyOrderedSetObject]:
+        return candidate in self
+
     def __repr__(self) -> str:
         return "Finite totally ordered sets"
 
@@ -1214,6 +1254,16 @@ class TotallyOrderedSetsCategory(Category):
     def _hom_category_type(self) -> type[HomCategory]:
         return TotallyOrderedSetHomCategory
 
+    def Hom(
+        self,
+        domain: MathematicalObject,
+        codomain: MathematicalObject | None = None,
+    ) -> TotallyOrderedSetHomCategory:
+        assert codomain is not None
+        category = Category.Hom(self, domain, codomain)
+        assert is_total_order_hom_category(category)
+        return category
+
     def inclusion(self) -> TotalOrderInclusionFunctor:
         if self._inclusion is None:
             self._inclusion = TotalOrderInclusionFunctor(self)
@@ -1250,7 +1300,7 @@ _PARTIALLY_ORDERED_SETS: PartiallyOrderedSetsCategory | None = None
 _TOTALLY_ORDERED_SETS: TotallyOrderedSetsCategory | None = None
 _ORDERED_FINITE_SETS: dict[
     tuple[SetElement, ...],
-    PullbackObject,
+    FiniteTotallyOrderedSetObject,
 ] = {}
 
 
@@ -1283,7 +1333,7 @@ def Poset(
         Iterable[SetElement],
         Callable[[SetElement, SetElement], Decision],
     ],
-) -> PullbackObject:
+) -> FinitePosetObject:
     """Construct the finite poset defined by ``(members, leq)``."""
     members, relation = members_and_relation
     values = tuple(dict.fromkeys(members))
@@ -1303,7 +1353,7 @@ def Poset(
 
 def ordered_set_owned_by(
     elements: Iterable[SetElement],
-) -> PullbackObject:
+) -> FiniteTotallyOrderedSetObject:
     enumeration = tuple(dict.fromkeys(elements))
     cached = _ORDERED_FINITE_SETS.get(enumeration)
     if cached is None:
@@ -1341,7 +1391,7 @@ def ordered_set_owned_by(
 
 def finite_ordered_set(
     elements: Iterable[SetElement],
-) -> PullbackObject:
+) -> FiniteTotallyOrderedSetObject:
     return ordered_set_owned_by(elements)
 
 

@@ -187,6 +187,15 @@ class SetObject(MathematicalObject):
     def cardinality(self) -> Cardinal:
         return self._cardinality
 
+    def Hom(
+        self,
+        domain: MathematicalObject,
+        codomain: MathematicalObject | None = None,
+    ) -> SetHomCategory:
+        assert codomain is None
+        assert Sets().contains_set(domain)
+        return Sets().Hom(self, domain)
+
     def is_finite(self) -> Decision:
         return self.cardinality().is_finite()
 
@@ -249,10 +258,10 @@ class SetObject(MathematicalObject):
             cardinality=cardinality,
         )
 
-    def cartesian_product(self, *others: SetObject) -> SetObject:
+    def cartesian_product(self, *others: SetObject) -> SetProductObject:
         return CartesianProductOfSets((self, *others))
 
-    def disjoint_union(self, *others: SetObject) -> SetObject:
+    def disjoint_union(self, *others: SetObject) -> SetCoproductObject:
         return DisjointUnionOfSets((self, *others))
 
     def __eq__(self, candidate: Any) -> bool:
@@ -520,6 +529,16 @@ class SetMorphism(Arrow, SetElement):
         assert image in codomain
         return image
 
+    def domain(self) -> SetObject:
+        source = Arrow.domain(self)
+        assert Sets().contains_set(source)
+        return source
+
+    def codomain(self) -> SetObject:
+        target = Arrow.codomain(self)
+        assert Sets().contains_set(target)
+        return target
+
     def _belongs_to(self, category: Category) -> bool:
         return category is SetElements() or super()._belongs_to(category)
 
@@ -562,7 +581,7 @@ class SetSubset(SetMorphism):
         hom_category: SetHomCategory,
         predicate: MembershipPredicate,
         underlying_set: SetObject,
-        inclusion: Arrow,
+        inclusion: SetMonomorphism,
         members: frozenset[SetElement] | None,
     ) -> None:
         assert hom_category.codomain() is TruthValues()
@@ -601,7 +620,7 @@ class SetSubset(SetMorphism):
     def fixed_object(self) -> SetObject:
         return self.base_set()
 
-    def structure_morphism(self) -> Arrow:
+    def structure_morphism(self) -> SetMonomorphism:
         return self._inclusion
 
     def base_set(self) -> SetObject:
@@ -612,7 +631,7 @@ class SetSubset(SetMorphism):
     def characteristic_morphism(self) -> SetMorphism:
         return self
 
-    def inclusion(self) -> Arrow:
+    def inclusion(self) -> SetMonomorphism:
         return self._inclusion
 
     def members(self) -> frozenset[SetElement] | None:
@@ -796,6 +815,8 @@ class SubsetsOfSetCategory(Category):
         intersection = subobjects(monomorphisms(structure_morphism))
         underlying_set = intersection.object()
         assert Sets().contains_set(underlying_set)
+        inclusion = intersection.structure_morphism()
+        assert is_set_monomorphism(inclusion)
         return self.ObjectType(
             category=self,
             hom_category=PowerSet(self._base_set),
@@ -804,7 +825,7 @@ class SubsetsOfSetCategory(Category):
                 second._membership(member),
             ),
             underlying_set=underlying_set,
-            inclusion=intersection.structure_morphism(),
+            inclusion=inclusion,
             members=members,
         )
 
@@ -894,6 +915,15 @@ class SetHomCategory(HomCategory, SetObject):
             injective=injective,
             surjective=surjective,
         )
+
+    def Hom(
+        self,
+        domain: MathematicalObject,
+        codomain: MathematicalObject | None = None,
+    ) -> SetHomCategory:
+        assert codomain is None
+        assert Sets().contains_set(domain)
+        return Sets().Hom(self, domain)
 
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
@@ -1504,11 +1534,20 @@ class SetsCategory(Category):
         self,
         domain: MathematicalObject,
         codomain: MathematicalObject | None = None,
-    ) -> HomCategory:
+    ) -> SetHomCategory:
         category = Category.Hom(self, domain, codomain)
-        if codomain is None:
-            return category
+        assert codomain is not None
         assert is_set_hom_category(category)
+        return category
+
+    def Mono(
+        self,
+        domain: MathematicalObject,
+        codomain: MathematicalObject | None = None,
+    ) -> SetMonomorphismHomCategory:
+        assert codomain is not None
+        category = Category.Mono(self, domain, codomain)
+        assert is_set_monomorphism_hom_category(category)
         return category
 
     def contains_set(self, candidate: MathematicalObject) -> TypeIs[SetObject]:
@@ -1703,6 +1742,18 @@ def cardinality_functor() -> CardinalityFunctor:
 
 def is_set_hom_category(category: MathematicalObject) -> TypeIs[SetHomCategory]:
     return category in Sets().HomCategory()
+
+
+def is_set_monomorphism_hom_category(
+    category: MathematicalObject,
+) -> TypeIs[SetMonomorphismHomCategory]:
+    return category in Sets().MonoCategory()
+
+
+def is_set_monomorphism(
+    candidate: MathematicalObject,
+) -> TypeIs[SetMonomorphism]:
+    return candidate in Sets().MonomorphismArrowCategory()
 
 
 def FiniteSet(members: Iterable[MathematicalObject]) -> FiniteSetObject:
@@ -2415,6 +2466,11 @@ class SetLimitObject(LimitObject, LimitSet):
         self._image = self
         self._limit_presentation = _limit_presentation(diagram, self)
 
+    def universal_morphism(self, cone: ConeObject) -> SetMorphism:
+        morphism = LimitObject.universal_morphism(self, cone)
+        assert Sets().contains_set_morphism(morphism)
+        return morphism
+
 
 class LimitsOfSetsCategory(LimitsOfCategory):
     """Limits in ``Sets()``, with each limit equal to its apex set."""
@@ -2672,6 +2728,11 @@ class SetColimitObject(ColimitObject, ColimitSet):
         self._preimage = diagram
         self._image = self
         self._colimit_presentation = _colimit_presentation(diagram, self)
+
+    def universal_morphism(self, cocone: CoconeObject) -> SetMorphism:
+        morphism = ColimitObject.universal_morphism(self, cocone)
+        assert Sets().contains_set_morphism(morphism)
+        return morphism
 
 
 class ColimitsOfSetsCategory(ColimitsOfCategory):
@@ -2986,7 +3047,9 @@ def _colimit_presentation(
     return Coproduct(cocone, mediate)
 
 
-def CartesianProductOfSets(factors: tuple[SetObject, ...]) -> SetObject:
+def CartesianProductOfSets(
+    factors: tuple[SetObject, ...],
+) -> SetProductObject:
     labels = _finite_ordinal(len(factors))
     index = DiscreteCategory(labels)
 
@@ -3006,7 +3069,6 @@ def CartesianProductOfSets(factors: tuple[SetObject, ...]) -> SetObject:
         diagram,
         cardinality=size,
     )
-    assert Sets().contains_set(image)
     return image
 
 
@@ -3015,7 +3077,7 @@ def CartesianProductOfFamily(
     factors: Callable[[SetElement], SetObject],
     *,
     cardinality: Cardinal | None = None,
-) -> SetObject:
+) -> SetProductObject:
     index_category = DiscreteCategory(index_set)
     diagram = SetFamily(
         index_category,
@@ -3024,7 +3086,6 @@ def CartesianProductOfFamily(
     products = Sets().Products(index_category)
     assert is_products_of_sets_category(products)
     image = products(diagram, cardinality=cardinality)
-    assert Sets().contains_set(image)
     return image
 
 
@@ -3105,7 +3166,9 @@ def cartesian_product_morphism(*functions: SetMorphism) -> SetMorphism:
     )
 
 
-def DisjointUnionOfSets(cofactors: tuple[SetObject, ...]) -> SetObject:
+def DisjointUnionOfSets(
+    cofactors: tuple[SetObject, ...],
+) -> SetCoproductObject:
     labels = _finite_ordinal(len(cofactors))
     index = DiscreteCategory(labels)
 
@@ -3124,11 +3187,12 @@ def DisjointUnionOfSets(cofactors: tuple[SetObject, ...]) -> SetObject:
         diagram,
         cardinality=Cardinals().sum(*(cofactor.cardinality() for cofactor in cofactors)),
     )
-    assert Sets().contains_set(image)
     return image
 
 
-def CoproductOfSets(cofactors: tuple[SetObject, ...]) -> SetObject:
+def CoproductOfSets(
+    cofactors: tuple[SetObject, ...],
+) -> SetCoproductObject:
     return DisjointUnionOfSets(cofactors)
 
 
@@ -3137,7 +3201,7 @@ def CoproductOfFamily(
     cofactors: Callable[[SetElement], SetObject],
     *,
     cardinality: Cardinal | None = None,
-) -> SetObject:
+) -> SetCoproductObject:
     index_category = DiscreteCategory(index_set)
     diagram = SetFamily(
         index_category,
@@ -3146,7 +3210,6 @@ def CoproductOfFamily(
     coproducts = Sets().Coproducts(index_category)
     assert is_coproducts_of_sets_category(coproducts)
     image = coproducts(diagram, cardinality=cardinality)
-    assert Sets().contains_set(image)
     return image
 
 

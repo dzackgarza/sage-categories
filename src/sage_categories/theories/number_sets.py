@@ -10,10 +10,11 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from fractions import Fraction
+from typing import TypeIs
 
 from sage_categories.theories.cardinals import aleph0, continuum
 from sage_categories.theories.sets import SetElement, SetElements, SetObject, Sets
-from sage_categories.values import Decision
+from sage_categories.values import Decision, MathematicalObject
 
 
 class IntegerElement(SetElement):
@@ -53,6 +54,12 @@ class IntegerSet(SetObject):
 
     def _membership(self, member: SetElement) -> Decision:
         return member.ambient_set() is self
+
+    def contains_integer(
+        self,
+        candidate: MathematicalObject,
+    ) -> TypeIs[IntegerElement]:
+        return candidate in self
 
     def __iter__(self) -> Iterator[SetElement]:
         yield self(0)
@@ -124,6 +131,12 @@ class RationalSet(SetObject):
     def _membership(self, member: SetElement) -> Decision:
         return member.ambient_set() is self
 
+    def contains_rational(
+        self,
+        candidate: MathematicalObject,
+    ) -> TypeIs[RationalElement]:
+        return candidate in self
+
     def __repr__(self) -> str:
         return "Rational numbers"
 
@@ -176,6 +189,12 @@ class RealSet(SetObject):
 
     def _membership(self, member: SetElement) -> Decision:
         return member.ambient_set() is self
+
+    def contains_real(
+        self,
+        candidate: MathematicalObject,
+    ) -> TypeIs[RealElement]:
+        return candidate in self
 
     def __repr__(self) -> str:
         return "Real numbers"

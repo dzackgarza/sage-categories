@@ -170,8 +170,8 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-015` | Keep functor images inspectable when their mathematical role matters. |
 | `POL-CAT-016` | Derive supercategory information from the selected structural functors. Do not maintain a second inheritance registry. |
 | `POL-CAT-017` | Put an axiom at the highest category that can state it. |
-| `POL-CAT-018` | Distinguish a property subcategory from a category whose objects contain chosen data. |
-| `POL-CAT-019` | Require chosen data during construction. Do not infer its existence from a property name. |
+| `POL-CAT-018` | Distinguish a property subcategory from a category whose objects contain chosen data. Membership in a property subcategory records a proposition, not a selected witness. |
+| `POL-CAT-019` | Require chosen data only when it is part of the mathematical structure. Do not require or store a witness merely because an object belongs to a property subcategory. |
 | `POL-CAT-020` | Enforce genuine category obligations when an object is constructed. |
 | `POL-CAT-021` | Make `Ar(C)`, `EndAr(C)`, `AutAr(C)`, `Fun(C, D)`, and `Hom_C(x, y)` categories and therefore objects of `Cat`. |
 | `POL-CAT-022` | Use `HomCatType` at the `Cat` level. A hom category can contain natural transformations and becomes a function set only in `Sets()`. |
@@ -198,7 +198,7 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-043` | Prefer containment in a named property subcategory over a direct predicate call or an invariant comparison. The containment expression states the mathematical property and its owner. |
 | `POL-CAT-044` | Localize the computation that decides a property in the subcategory's `__contains__` method. A retained convenience predicate delegates to that containment check. |
 | `POL-CAT-045` | Present every derived object through the complete public interface of the category in which it lives. Its construction can add methods but never replace or duplicate the inherited interface. |
-| `POL-CAT-046` | Make a construction subcategory define only the additional structure, canonical arrows, and operations introduced by that construction. Obtain the remaining interface through selected structural functors. |
+| `POL-CAT-046` | Make a construction subcategory a formal property subcategory of objects known to have that construction. Obtain the object's ordinary interface through selected structural functors. |
 | `POL-CAT-047` | Decide inheritance functors case by case. Select one only when standard mathematical practice treats the source object as an object of the target category with additional structure. |
 | `POL-CAT-048` | Treat structure that an object has, rather than structure that it is, as attached mathematical data. Expose that object by its exact mathematical name without grafting its full method surface. |
 | `POL-CAT-049` | Scrutinize every public `underlying_*()` accessor. When the source is canonically a target-category object with additional structure, expose the target interface directly through inheritance instead of requiring accessor indirection. |
@@ -311,19 +311,23 @@ A functor is an object of `Fun(C, D)`. None enters `Sets()` without a specified 
 | `POL-FUN-005` | Represent forgetting, scalar change, and realization as functors, not object methods. |
 | `POL-FUN-006` | Use functor composition to propagate structure. Do not add a separate propagation registry. |
 | `POL-FUN-007` | A categorical construction must define its action on objects and arrows. |
-| `POL-FUN-008` | Preserve the diagram and universal arrows that define a limit or colimit. |
-| `POL-FUN-009` | A product retains its projections and mediating arrow. |
-| `POL-FUN-010` | A coproduct retains its injections and mediating arrow. |
+| `POL-FUN-008` | When constructing a limit or colimit, preserve its diagram and universal arrows as an available witness. Do not make that selected witness part of property-subcategory membership. |
+| `POL-FUN-009` | A product constructor retains its factors, projections, and mediating arrow as an available witness. |
+| `POL-FUN-010` | A coproduct constructor retains its factors, injections, and mediating arrow as an available witness. |
 | `POL-FUN-011` | Let the apex of a universal construction inherit operations from the category in which it lives. |
 | `POL-FUN-012` | Implement arbitrary small diagrams. Do not encode finiteness into the general construction. |
 | `POL-FUN-013` | Represent a subobject by an object together with its monomorphism. |
 | `POL-FUN-014` | Obtain the containing object of a subobject from the monomorphism's codomain. |
-| `POL-FUN-015` | For `F: D -> C`, put every `F(X)` in `C.ImagesOfFunctor(F)` and make `C` its immediate structural supercategory. A named construction category can refine this general image category. |
+| `POL-FUN-015` | For `F: D -> C`, define `C.ImagesOfFunctor(F)` as the full replete subcategory on objects `Y` for which there exist `X in D` and an isomorphism `F(X) -> Y`. Make `C` its immediate structural supercategory. |
 | `POL-FUN-016` | Implement products, coproducts, limits, and colimits as functors on diagrams, including their action on diagram arrows. |
 | `POL-FUN-017` | Represent a functor as an object of `Fun(C, D)` with object and arrow actions. Do not reduce it to a callable or set of assignments. |
+| `POL-FUN-018` | Treat membership in `C.ImagesOfFunctor(F)` as the existential image property. A preimage can be selected when an operation needs one, but no selected preimage belongs to the membership data. |
+| `POL-FUN-019` | Define `C.Products()`, `C.Coproducts()`, `C.TensorProducts()`, and analogous named constructions as formal refinements of functor-image subcategories, analogous to categories formed by `with_axiom`. |
 
-For the product functor `Products`, an apex \(\prod_i X_i\) lies in `C.Products()` and, more generally, in `C.ImagesOfFunctor(Products)`.
-It presents as an ordinary object of `C` with additional access to its factors, projections, and mediating morphism.
+For the product functor `Products: Diag(C) -> C`, an object `Y` lies in `C.ImagesOfFunctor(Products)` when there is a diagram `D` and an isomorphism `Products(D) -> Y`.
+The named category `C.Products()` refines this essential image and states that `Y` is a product.
+The axiom of choice permits a preimage diagram to be selected when needed, but the selection is not part of the subcategory definition.
+A constructor that builds `Products(D)` can retain `D`, its projections, and its mediating morphism as a convenient selected witness.
 For `C = Sets()`, cardinality is the inherited set operation applied to the product object and satisfies \(\#(\prod_i X_i)=\prod_i\#X_i\).
 The products category does not define a second set interface or an independent cardinality operation.
 

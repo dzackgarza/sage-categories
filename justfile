@@ -76,9 +76,9 @@ ci-provision-sage:
         'set -euo pipefail' \
         'if [ "$#" -gt 0 ] && [ "$1" = "/usr/local/sage-env/sage-preparse" ]; then' \
         '    shift' \
-        '    exec docker exec -i -w "$(pwd -P)" sage-env /sage/.venv/bin/python /sage/.venv/bin/sage-preparse "$@"' \
+        '    exec docker exec -i -e "MYPYPATH=${MYPYPATH:-}" -w "$(pwd -P)" sage-env /sage/.venv/bin/python /sage/.venv/bin/sage-preparse "$@"' \
         'fi' \
-        'exec docker exec -i -w "$(pwd -P)" sage-env /sage/.venv/bin/python "$@"' \
+        'exec docker exec -i -e "MYPYPATH=${MYPYPATH:-}" -w "$(pwd -P)" sage-env /sage/.venv/bin/python "$@"' \
         | sudo tee "${sage_dir}/python" >/dev/null
     sudo chmod +x "${sage_dir}/python"
     sage_bin="${sage_dir}/sage"

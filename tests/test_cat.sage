@@ -2,10 +2,13 @@
 
 from sage_categories.all import *
 from sage_categories.abstract_categories.functors import (
+    InclusionFunctor,
+    compose_functors,
     is_functor,
     is_natural_transformation_hom_category,
 )
 from sage_categories.abstract_categories.hom_categories import is_isomorphism
+from sage_categories.abstract_categories.products import DiagramCategory
 from sage_categories.theories.posets import PosetElement, TotallyOrderedSetElements
 from sage_categories.theories.sets import is_products_of_sets_category
 
@@ -171,6 +174,32 @@ def test_postcomposition_maps_diagrams_and_natural_transformations() -> None:
     assert component.domain() is ZZ
     assert component.codomain() is ZZ
     assert component(ZZ(int(7))) is ZZ(int(7))
+
+
+def test_generic_limit_functors_return_arrows_between_their_limit_objects() -> None:
+    finite_sets = FiniteSets()
+    posets = PartiallyOrderedSets()
+    sets = Sets()
+    index_category = DiagramCategory(
+        Cat(),
+        (finite_sets, posets, sets),
+        (
+            compose_functors(
+                CountableSets().inclusion(),
+                finite_sets.inclusion(),
+            ),
+            posets.forgetful_functor(),
+        ),
+    )
+    diagram = InclusionFunctor(index_category, Cat())
+    transformation = NaturalTransformations(diagram, diagram).identity()
+    limit_functor = Cat().LimitFunctor(index_category)
+    limit = limit_functor(diagram)
+    image = limit_functor(transformation)
+
+    assert Cat().contains_arrow(image)
+    assert image.domain() is limit
+    assert image.codomain() is limit
 
 
 def test_poset_products_lift_products_of_underlying_sets() -> None:

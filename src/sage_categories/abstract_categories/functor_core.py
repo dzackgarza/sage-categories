@@ -9,20 +9,14 @@ from typing import TYPE_CHECKING, TypeIs
 
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.product_images import ProductObject
-    from sage_categories.abstract_categories.product_presentations import (
-        ProductPresentation,
-    )
+    from sage_categories.abstract_categories.product_presentations import ProductPresentation
 
 from sage_categories.abstract_categories.hom_categories import (
     HomCategory,
     HomCategoryFamily,
 )
 from sage_categories.category import Category
-from sage_categories.values import (
-    Arrow,
-    MathematicalElement,
-    MathematicalObject,
-)
+from sage_categories.values import Arrow, MathematicalElement, MathematicalObject
 
 
 class Functor(Arrow, ABC):

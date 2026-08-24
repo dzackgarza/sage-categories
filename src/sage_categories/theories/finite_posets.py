@@ -26,6 +26,7 @@ from sage_categories.theories.sets import (
 )
 from sage_categories.values import (
     Arrow,
+    Decision,
     MathematicalElement,
     MathematicalObject,
 )

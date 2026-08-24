@@ -229,4 +229,3 @@ class ForwardedArrowMethod:
 
 
 type ForwardedDescriptor = ForwardedObjectMethod | ForwardedElementMethod | ForwardedArrowMethod
-type ForwardedMethod = ForwardedDescriptor

@@ -535,9 +535,3 @@ def is_total_order_element_type(
 ) -> TypeIs[type[TotallyOrderedSetElement]]:
     source = vars(candidate).get("_compiled_from")
     return candidate is TotallyOrderedSetElement or source is TotallyOrderedSetElement
-
-
-def is_finite_total_order_element_type(
-    candidate: type[MathematicalElement],
-) -> TypeIs[type[TotallyOrderedSetElement]]:
-    return is_total_order_element_type(candidate)

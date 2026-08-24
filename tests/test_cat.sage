@@ -257,6 +257,10 @@ def test_compiler_exposes_object_element_and_arrow_routes() -> None:
     assert finite_poset.height() == 2
     assert ordered_set.category() is FiniteTotallyOrderedSets()
     assert member.ambient_total_order() is ordered_set
+    assert "__iter__" in category.declared_object_methods()
+    assert "__le__" in category.declared_element_methods()
+    assert "is_order_preserving" in PartiallyOrderedSets().declared_arrow_methods()
+    assert category_compiler().declared_inheritance()
 
 
 def test_structural_coherence_identifies_parallel_forgetful_functors() -> None:

@@ -105,9 +105,12 @@ class SimplexOrderIndexing:
                     poset = PartiallyOrderedSets()(
                         naturals,
                         natural_order,
+                        is_reflexive=True,
+                        is_antisymmetric=True,
+                        is_transitive=True,
                     )
 
-                    self._countable_simplex = TotallyOrderedSets()(poset)
+                    self._countable_simplex = TotallyOrderedSets()(poset, is_total=True)
                 return self._countable_simplex
         else:
             maximum = index

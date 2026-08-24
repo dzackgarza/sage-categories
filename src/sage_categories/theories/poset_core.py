@@ -152,6 +152,9 @@ class PosetObject(MathematicalObject):
         category: PartiallyOrderedSetsCategory,
         underlying_set: SetObject,
         relation: OrderRelation,
+        is_reflexive: bool | None = None,
+        is_antisymmetric: bool | None = None,
+        is_transitive: bool | None = None,
     ) -> None:
         assert underlying_set in Sets()
         self._underlying_set = underlying_set
@@ -161,6 +164,11 @@ class PosetObject(MathematicalObject):
         super().__init__(category=category)
         if underlying_set.is_finite() is True:
             validate_finite_partial_order(self, underlying_set, relation)
+        else:
+            assert is_reflexive is True, "Reflexivity must be established for nonfinite poset"
+            assert is_antisymmetric is True, "Antisymmetry must be established for nonfinite poset"
+            assert is_transitive is True, "Transitivity must be established for nonfinite poset"
+
 
     def _set_implementation(self) -> SetObject:
         return self._underlying_set
@@ -343,6 +351,7 @@ class PosetHomCategory(HomCategory):
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
+        is_order_preserving: bool | None = None,
     ) -> PosetMorphism:
         existing = registered_value(action)
         if existing is not None:
@@ -383,8 +392,9 @@ class PosetHomCategory(HomCategory):
             assert SetElements().contains_set_element(set_member)
             return target.element(underlying(set_member))
 
-        order_preserving = check_order_preserving(source, target, candidate_map)
-        assert order_preserving is not False, f"candidate map from {source} to {target} is not order preserving (decision={order_preserving})"
+        if is_order_preserving is not True:
+            order_preserving = check_order_preserving(source, target, candidate_map)
+            assert order_preserving is True, f"candidate map from {source} to {target} is not order preserving (decision={order_preserving})"
 
         return self.ObjectType(
             hom_category=self,
@@ -505,7 +515,7 @@ class ForgetPosetFunctor(StructuralFunctor):
             assert SetElements().contains_set_element(set_member)
             return target.element(image(set_member))
 
-        return PartiallyOrderedSets().Hom(source, target)(mapping)
+        return PartiallyOrderedSets().Hom(source, target)(mapping, is_order_preserving=True)
 
     def is_faithful(self) -> bool:
         return True
@@ -526,13 +536,23 @@ class PartiallyOrderedSetsCategory(Category):
         self,
         underlying_set: SetObject,
         relation: OrderRelation,
+        *,
+        is_reflexive: bool | None = None,
+        is_antisymmetric: bool | None = None,
+        is_transitive: bool | None = None,
     ) -> PosetObject:
         if underlying_set in FiniteSets():
             return self.Finite()(underlying_set, relation)
+        assert is_reflexive is True, "Reflexivity must be established for nonfinite poset"
+        assert is_antisymmetric is True, "Antisymmetry must be established for nonfinite poset"
+        assert is_transitive is True, "Transitivity must be established for nonfinite poset"
         return self.ObjectType(
             category=self,
             underlying_set=underlying_set,
             relation=relation,
+            is_reflexive=is_reflexive,
+            is_antisymmetric=is_antisymmetric,
+            is_transitive=is_transitive,
         )
 
     def _hom_category_type(self) -> type[HomCategory]:
@@ -609,6 +629,9 @@ class PartiallyOrderedSetsCategory(Category):
         apex = self(
             underlying_product,
             componentwise,
+            is_reflexive=True,
+            is_antisymmetric=True,
+            is_transitive=True,
         )
         return forgetful.lift_product(diagram, apex, inherited_product)
 

@@ -150,6 +150,7 @@ class TotallyOrderedSetHomCategory(HomCategory):
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
+        is_order_preserving: bool | None = None,
     ) -> TotallyOrderedSetMorphism:
         category = self.base_category()
         assert is_totally_ordered_sets_category(category)
@@ -184,6 +185,7 @@ class TotallyOrderedSetHomCategory(HomCategory):
             poset_action,
             injective=injective,
             surjective=surjective,
+            is_order_preserving=is_order_preserving,
         )
         return self.ObjectType(
             hom_category=self,
@@ -405,6 +407,8 @@ class TotallyOrderedSetsCategory(Category):
     def __call__(
         self,
         poset: PosetObject | FinitePosetObject | TotallyOrderedSetObject,
+        *,
+        is_total: bool | None = None,
     ) -> TotallyOrderedSetObject:
         if self.contains_total_order(poset):
             return poset
@@ -413,6 +417,7 @@ class TotallyOrderedSetsCategory(Category):
             assert totality is True, f"{poset} is not a total order (totality={totality})"
             return self.Finite()(poset)
         assert poset in PartiallyOrderedSets(), f"{poset} is not in PartiallyOrderedSets()"
+        assert is_total is True, "Totality must be established for infinite poset"
         return self.ObjectType(
             category=self,
             poset=poset,

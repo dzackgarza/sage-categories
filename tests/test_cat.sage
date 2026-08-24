@@ -277,7 +277,7 @@ def test_structural_coherence_identifies_parallel_forgetful_functors() -> None:
 
 
 def test_structural_functor_images_have_exact_ambient_objects_and_endpoints() -> None:
-    poset = PartiallyOrderedSets()(ZZ, operator.eq)
+    poset = PartiallyOrderedSets()(ZZ, operator.eq, is_reflexive=True, is_antisymmetric=True, is_transitive=True)
     element = poset.element(ZZ(int(0)))
     identity = PartiallyOrderedSets().identity(poset)
     forgetful = PartiallyOrderedSets().forgetful_functor()
@@ -295,7 +295,7 @@ def test_structural_functor_images_have_exact_ambient_objects_and_endpoints() ->
 def test_postcomposition_maps_diagrams_and_natural_transformations() -> None:
     labels = FiniteSet((ZZ(int(3)), ZZ(int(5))))
     index_category = DiscreteCategory(labels)
-    poset = PartiallyOrderedSets()(ZZ, operator.eq)
+    poset = PartiallyOrderedSets()(ZZ, operator.eq, is_reflexive=True, is_antisymmetric=True, is_transitive=True)
     diagram = PartiallyOrderedSets().DiagonalFunctor(index_category)(poset)
     assert is_functor(diagram)
     identity = PartiallyOrderedSets().identity(poset)

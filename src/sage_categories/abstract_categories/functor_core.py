@@ -825,9 +825,7 @@ class NaturalTransformationHomCategory(HomCategory):
 
     def identity(
         self,
-        value: MathematicalObject | None = None,
     ) -> _NaturalTransformation:
-        assert value is None
         source = self.domain()
         assert source is self.codomain()
         assert is_functor(source)
@@ -892,9 +890,7 @@ class FunctorCategory(HomCategory):
         assert universe.contains_category(target)
         return target
 
-    def identity(self, value: MathematicalObject | None = None) -> Arrow:
-        if value is not None:
-            return Category.identity(self, value)
+    def identity(self) -> Arrow:
         assert self.domain() is self.codomain()
         return IdentityFunctor(self.domain(), hom_category=self)
 

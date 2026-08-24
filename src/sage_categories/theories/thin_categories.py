@@ -139,9 +139,7 @@ class ThinCategoryHom(HomCategory):
 
     def identity(
         self,
-        value: MathematicalObject | None = None,
     ) -> ThinCategoryArrow:
-        assert value is None
         assert self.domain() is self.codomain()
         return self.unique_morphism()
 
@@ -256,9 +254,8 @@ class ThinCategory(Category):
     def Hom(
         self,
         domain: MathematicalObject,
-        codomain: MathematicalObject | None = None,
+        codomain: MathematicalObject,
     ) -> ThinCategoryHom:
-        assert codomain is not None
         category = Category.Hom(self, domain, codomain)
         assert is_thin_category_hom(category)
         return category

@@ -124,9 +124,7 @@ class SliceHomCategory(HomCategory):
 
     def identity(
         self,
-        value: MathematicalObject | None = None,
     ) -> SliceArrow:
-        assert value is None
         assert self.domain() is self.codomain()
         category = self.base_category()
         assert is_slice_over(category)
@@ -171,9 +169,7 @@ class CosliceHomCategory(HomCategory):
 
     def identity(
         self,
-        value: MathematicalObject | None = None,
     ) -> SliceArrow:
-        assert value is None
         assert self.domain() is self.codomain()
         category = self.base_category()
         assert is_coslice_under(category)

@@ -167,9 +167,7 @@ class PresentationHomCategory(HomCategory):
 
     def identity(
         self,
-        value: MathematicalObject | None = None,
     ) -> PresentationArrow:
-        assert value is None
         category = self.base_category()
         assert is_presentation_category(category)
         domain = self.domain()

@@ -66,9 +66,7 @@ class OppositeHomCategory(HomCategory):
 
     def identity(
         self,
-        value: MathematicalObject | None = None,
     ) -> OppositeArrow:
-        assert value is None
         assert self.domain() is self.codomain()
         opposite = self.base_category()
         assert is_opposite_category(opposite)

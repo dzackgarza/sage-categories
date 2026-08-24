@@ -85,8 +85,7 @@ class CardinalHomCategory(HomCategory):
             members = frozenset({self.unique_morphism()})
         return FiniteSet(members)
 
-    def identity(self, value: MathematicalObject | None = None) -> CardinalMorphism:
-        assert value is None
+    def identity(self) -> CardinalMorphism:
         assert self.domain() == self.codomain()
         return self.unique_morphism()
 

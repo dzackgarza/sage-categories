@@ -330,8 +330,7 @@ class RestrictedHomCategory(HomCategory):
             underlying_arrow=underlying_arrow,
         )
 
-    def identity(self, value: MathematicalObject | None = None) -> RestrictedArrow:
-        assert value is None
+    def identity(self) -> RestrictedArrow:
         assert self.domain() is self.codomain()
         return self(self.base_category().Hom(self.domain(), self.codomain()).identity())
 
@@ -398,8 +397,7 @@ class IsomorphismHomCategory(HomCategory):
         self._isomorphisms[key] = result
         return result
 
-    def identity(self, value: MathematicalObject | None = None) -> Isomorphism:
-        assert value is None
+    def identity(self) -> Isomorphism:
         assert self.domain() is self.codomain()
         identity = self.base_category().Hom(self.domain(), self.codomain()).identity()
         return self(identity, identity)

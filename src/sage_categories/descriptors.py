@@ -93,9 +93,17 @@ def _annotation_role(
         return ParameterRole.VALUE
     origin = typing.get_origin(annotation)
     assert origin is not typing.Annotated
-    assert origin not in (typing.Union, types.UnionType), (
-        f"{annotation!r} is not a total mathematical signature"
-    )
+    if origin in (typing.Union, types.UnionType):
+        arguments = typing.get_args(annotation)
+        assert types.NoneType not in arguments, (
+            f"{annotation!r} is not a total mathematical signature"
+        )
+        roles = {
+            _annotation_role(argument, receiver, method_name)
+            for argument in arguments
+        }
+        assert len(roles) == 1, f"{annotation!r} combines transport roles"
+        return roles.pop()
     if origin is Iterator:
         assert method_name == "__iter__", (
             f"{annotation!r} is traversal output, not a mathematical collection"

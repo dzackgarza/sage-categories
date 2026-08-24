@@ -62,9 +62,7 @@ class DiscreteHomCategory(HomCategory):
 
     def identity(
         self,
-        value: MathematicalObject | None = None,
     ) -> DiscreteIdentity:
-        assert value is None
         assert self.domain() is self.codomain()
         return self.ObjectType(hom_category=self)
 

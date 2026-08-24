@@ -91,9 +91,7 @@ class ProductHomCategory(HomCategory):
 
     def identity(
         self,
-        value: MathematicalObject | None = None,
     ) -> ProductArrow:
-        assert value is None
         assert self.domain() is self.codomain()
         product = self.base_category()
         assert is_product_category(product)

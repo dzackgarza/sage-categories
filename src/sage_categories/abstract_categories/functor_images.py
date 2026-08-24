@@ -109,9 +109,7 @@ class FunctorImageHomCategory(HomCategory):
 
     def identity(
         self,
-        value: MathematicalObject | None = None,
     ) -> FunctorImageArrow:
-        assert value is None
         assert self.domain() is self.codomain()
         image_category = self.base_category()
         assert is_functor_image_category(image_category)
@@ -228,9 +226,8 @@ class ImageOfFunctor(Category):
     def Hom(
         self,
         domain: MathematicalObject,
-        codomain: MathematicalObject | None = None,
+        codomain: MathematicalObject,
     ) -> FunctorImageHomCategory:
-        assert codomain is not None
         category = Category.Hom(self, domain, codomain)
         assert is_functor_image_hom_category(category)
         return category

@@ -53,8 +53,7 @@ class DiagramHomCategory(HomCategory):
         assert arrow in self
         return arrow
 
-    def identity(self, value: MathematicalObject | None = None) -> Arrow:
-        assert value is None
+    def identity(self) -> Arrow:
         assert self.domain() is self.codomain()
         diagram = self.diagram_category()
         identity = diagram.ambient_category().Hom(self.domain(), self.domain()).identity()
@@ -395,9 +394,7 @@ class ConeHomCategory(HomCategory):
 
     def identity(
         self,
-        value: MathematicalObject | None = None,
     ) -> ConeArrow:
-        assert value is None
         category = self.base_category()
         assert is_cone_category(category)
         domain = self.domain()
@@ -434,9 +431,7 @@ class CoconeHomCategory(HomCategory):
 
     def identity(
         self,
-        value: MathematicalObject | None = None,
     ) -> CoconeArrow:
-        assert value is None
         category = self.base_category()
         assert is_cocone_category(category)
         domain = self.domain()

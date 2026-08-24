@@ -177,19 +177,17 @@ class SetsCategory(Category):
     def Hom(
         self,
         domain: MathematicalObject,
-        codomain: MathematicalObject | None = None,
+        codomain: MathematicalObject,
     ) -> SetHomCategory:
         category = Category.Hom(self, domain, codomain)
-        assert codomain is not None
         assert is_set_hom_category(category)
         return category
 
     def Mono(
         self,
         domain: MathematicalObject,
-        codomain: MathematicalObject | None = None,
+        codomain: MathematicalObject,
     ) -> SetMonomorphismHomCategory:
-        assert codomain is not None
         category = Category.Mono(self, domain, codomain)
         assert is_set_monomorphism_hom_category(category)
         return category

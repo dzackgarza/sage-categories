@@ -117,14 +117,12 @@ class SetHomCategory(HomCategory, SetObject):
 
     def Hom(
         self,
-        domain: MathematicalObject,
-        codomain: MathematicalObject | None = None,
+        target: MathematicalObject,
     ) -> SetHomCategory:
         from sage_categories.theories.set_category import Sets
 
-        assert codomain is None
-        assert Sets().contains_set(domain)
-        return Sets().Hom(self, domain)
+        assert Sets().contains_set(target)
+        return Sets().Hom(self, target)
 
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
@@ -166,13 +164,7 @@ class SetHomCategory(HomCategory, SetObject):
     def _hom_category_type(self) -> type[HomCategory]:
         return DiscreteHomCategory
 
-    def identity(self, value: MathematicalObject | None = None) -> SetMorphism:
-        from sage_categories.theories.set_category import Sets
-
-        if value is not None:
-            identity = Category.identity(self, value)
-            assert Sets().contains_set_morphism(identity)
-            return identity
+    def identity(self) -> SetMorphism:
         assert self.domain() is self.codomain()
         return self(
             lambda member: member,

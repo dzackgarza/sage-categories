@@ -128,8 +128,7 @@ class PullbackHomCategory(HomCategory):
             second=second,
         )
 
-    def identity(self, value: MathematicalObject | None = None) -> PullbackArrow:
-        assert value is None
+    def identity(self) -> PullbackArrow:
         assert self.domain() is self.codomain()
         pullback = self.base_category()
         assert is_pullback_category(pullback)

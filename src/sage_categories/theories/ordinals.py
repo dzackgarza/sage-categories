@@ -181,8 +181,7 @@ class OrdinalHomCategory(HomCategory):
         assert Ordinals()._is_lequal(source, target) is True
         return self.ObjectType(hom_category=self)
 
-    def identity(self, value: MathematicalObject | None = None) -> OrdinalMorphism:
-        assert value is None
+    def identity(self) -> OrdinalMorphism:
         assert self.domain() is self.codomain()
         return self()
 

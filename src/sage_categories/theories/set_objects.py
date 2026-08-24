@@ -95,14 +95,12 @@ class SetObject(MathematicalObject):
 
     def Hom(
         self,
-        domain: MathematicalObject,
-        codomain: MathematicalObject | None = None,
+        target: MathematicalObject,
     ) -> SetHomCategory:
         from sage_categories.theories.set_category import Sets
 
-        assert codomain is None
-        assert Sets().contains_set(domain)
-        return Sets().Hom(self, domain)
+        assert Sets().contains_set(target)
+        return Sets().Hom(self, target)
 
     def is_finite(self) -> Decision:
         return self.cardinality().is_finite()

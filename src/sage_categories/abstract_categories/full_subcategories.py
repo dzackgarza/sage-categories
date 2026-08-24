@@ -129,8 +129,7 @@ class FullSubcategoryHomCategory(HomCategory):
             ambient_arrow = arrow._morphism_image_along(route)
         return self.full_subcategory()._refine_arrow(self, ambient_arrow)
 
-    def identity(self, value: MathematicalObject | None = None) -> Arrow:
-        assert value is None
+    def identity(self) -> Arrow:
         assert self.domain() is self.codomain()
         inclusion = self.full_subcategory().inclusion()
         ambient_domain = inclusion.on_object(self.domain())
@@ -314,9 +313,8 @@ class FullSubcategory(Category):
     def Hom(
         self,
         domain: MathematicalObject,
-        codomain: MathematicalObject | None = None,
+        codomain: MathematicalObject,
     ) -> FullSubcategoryHomCategory:
-        assert codomain is not None
         return self.HomCategory().Of(domain, codomain)
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:

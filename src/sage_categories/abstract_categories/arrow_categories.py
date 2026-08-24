@@ -111,9 +111,7 @@ class SquareHomCategory(HomCategory):
 
     def identity(
         self,
-        value: MathematicalObject | None = None,
     ) -> CommutingSquare:
-        assert value is None
         source = self.domain()
         assert source is self.codomain()
         assert self.base_category().contains_object(source)
@@ -426,8 +424,7 @@ class WideHomCategory(HomCategory):
         assert arrow in self
         return arrow
 
-    def identity(self, value: MathematicalObject | None = None) -> Arrow:
-        assert value is None
+    def identity(self) -> Arrow:
         assert self.domain() is self.codomain()
         wide = self.wide_subcategory()
         identity = wide.identity_arrow(self.domain())

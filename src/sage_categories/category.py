@@ -335,61 +335,47 @@ class Category(MathematicalObject):
     def Hom(
         self,
         domain: MathematicalObject,
-        codomain: MathematicalObject | None = None,
+        codomain: MathematicalObject,
     ) -> HomCategoryObject:
         """Return ``Hom_C(domain, codomain)``."""
-        if codomain is None:
-            return MathematicalObject.Hom(self, domain)
         assert domain in self and codomain in self
         return self.HomCategory().Of(domain, codomain)
 
-    def End(self, value: MathematicalObject | None = None) -> HomCategoryObject:
+    def End(self, value: MathematicalObject) -> HomCategoryObject:
         """Return ``End_C(value)``."""
-        if value is None:
-            return MathematicalObject.End(self)
         assert value in self
         return self.EndCategory().Of(value, value)
 
     def Mono(
         self,
         domain: MathematicalObject,
-        codomain: MathematicalObject | None = None,
+        codomain: MathematicalObject,
     ) -> HomCategoryObject:
         """Return the monomorphisms from domain to codomain."""
-        if codomain is None:
-            return MathematicalObject.Mono(self, domain)
         return self.MonoCategory().Of(domain, codomain)
 
     def Epi(
         self,
         domain: MathematicalObject,
-        codomain: MathematicalObject | None = None,
+        codomain: MathematicalObject,
     ) -> HomCategoryObject:
         """Return the epimorphisms from domain to codomain."""
-        if codomain is None:
-            return MathematicalObject.Epi(self, domain)
         return self.EpiCategory().Of(domain, codomain)
 
     def Iso(
         self,
         domain: MathematicalObject,
-        codomain: MathematicalObject | None = None,
+        codomain: MathematicalObject,
     ) -> HomCategoryObject:
         """Return the isomorphisms from domain to codomain."""
-        if codomain is None:
-            return MathematicalObject.Iso(self, domain)
         return self.IsoCategory().Of(domain, codomain)
 
-    def Aut(self, value: MathematicalObject | None = None) -> HomCategoryObject:
+    def Aut(self, value: MathematicalObject) -> HomCategoryObject:
         """Return the automorphisms of ``value``."""
-        if value is None:
-            return MathematicalObject.Aut(self)
         return self.AutCategory().Of(value, value)
 
-    def identity(self, value: MathematicalObject | None = None) -> Arrow:
+    def identity(self, value: MathematicalObject) -> Arrow:
         """Return the identity arrow of ``value``."""
-        if value is None:
-            return MathematicalObject.identity(self)
         assert value in self
         key = id(value)
         cached = self._identity_arrows.get(key)

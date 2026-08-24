@@ -58,6 +58,21 @@ def _pull_back_element_along(
 def _role_from_type(typ: object) -> ParameterRole:
     if typ is inspect.Parameter.empty or typ is None:
         return ParameterRole.VALUE
+    if isinstance(typ, str):
+        typ_str = typ.strip()
+        if typ_str.startswith(("Iterator[", "collections.abc.Iterator[")):
+            inner = typ_str[typ_str.index("[") + 1 : typ_str.rindex("]")].strip()
+            if _role_from_type(inner) == ParameterRole.ELEMENT:
+                return ParameterRole.ITERATOR_ELEMENT
+            return ParameterRole.VALUE
+        if typ_str.endswith("Element") or "Element" in typ_str:
+            return ParameterRole.ELEMENT
+        if typ_str.endswith("Arrow") or typ_str.endswith("Morphism"):
+            return ParameterRole.ARROW
+        if typ_str.endswith("Object") or typ_str.endswith("Poset") or typ_str.endswith("Set"):
+            return ParameterRole.OBJECT
+        return ParameterRole.VALUE
+
     origin = get_origin(typ)
     if origin is not None:
         if isinstance(origin, type) and issubclass(origin, (Iterator,)):
@@ -85,27 +100,19 @@ def _inspect_method_roles(
     method: Callable[..., object],
 ) -> tuple[tuple[tuple[str, ParameterRole], ...], ParameterRole | None, ParameterRole | None, ParameterRole]:
     sig = inspect.signature(method)
-    try:
-        import typing
-
-        hints = typing.get_type_hints(method)
-    except Exception:
-        hints = {}
     params = list(sig.parameters.values())[1:]
     roles_accumulator: list[tuple[str, ParameterRole]] = []
     var_pos_role: ParameterRole | None = None
     var_kw_role: ParameterRole | None = None
     for p in params:
-        hint = hints[p.name] if p.name in hints else p.annotation
-        role = _role_from_type(hint)
+        role = _role_from_type(p.annotation)
         if p.kind == inspect.Parameter.VAR_POSITIONAL:
             var_pos_role = role
         elif p.kind == inspect.Parameter.VAR_KEYWORD:
             var_kw_role = role
         else:
             roles_accumulator.append((p.name, role))
-    return_hint = hints["return"] if "return" in hints else sig.return_annotation
-    return_role = _role_from_type(return_hint)
+    return_role = _role_from_type(sig.return_annotation)
     return tuple(roles_accumulator), var_pos_role, var_kw_role, return_role
 
 
@@ -131,6 +138,12 @@ def _forward_arg_by_role(
                 return arg._morphism_image_along(route)
             return arg
         case _:
+            if isinstance(arg, MathematicalElement) and arg.ambient_object() in source_cat:
+                return arg._element_image_along(route)
+            if isinstance(arg, MathematicalObject) and arg in source_cat:
+                return arg._object_image_along(route)
+            if isinstance(arg, Arrow) and arg.domain() in source_cat and arg.codomain() in source_cat:
+                return arg._morphism_image_along(route)
             return arg
 
 

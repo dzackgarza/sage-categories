@@ -162,9 +162,9 @@ from sage_categories.theories.set_products import (
 from sage_categories.theories.set_subobjects import (
     SetMorphism,
     SetSubset,
+    SubsetsOfSet,
     SubsetElement,
     SubsetSetObject,
-    SubsetsOfSet,
     SubsetsOfSetCategory,
     _decision_and,
     _decision_not,

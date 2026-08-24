@@ -207,11 +207,7 @@ class FinitePosetsCategory(FullSubcategory):
         relation: OrderRelation,
     ) -> FinitePosetObject:
         assert underlying_set in FiniteSets()
-        poset = PartiallyOrderedSets().ObjectType(
-            category=PartiallyOrderedSets(),
-            underlying_set=underlying_set,
-            relation=relation,
-        )
+        poset = PartiallyOrderedSets()(underlying_set, relation)
         value = self.refine_from_theorem(poset)
         assert self.contains_finite_poset(value)
         return value

@@ -77,35 +77,41 @@ class PosetElement(TransportedElement):
         return repr(self._set_implementation())
 
 
-def validate_finite_partial_order(
+def check_partial_order(
     poset: PosetObject,
     underlying_set: SetObject,
-) -> None:
-    """Establish reflexivity, antisymmetry, and transitivity for finite posets."""
+) -> Decision:
+    """Return the exact result of the available partial-order check."""
+    if underlying_set.is_finite() is not True:
+        return UNKNOWN
     members = tuple(poset.element(s) for s in underlying_set)
+    decision: Decision = True
     for x in members:
-        rx = x <= x
-        assert rx is True, f"reflexivity failed for {x}: got {rx}"
+        reflexive = x <= x
+        if reflexive is False:
+            return False
+        if reflexive is UNKNOWN:
+            decision = UNKNOWN
     for i, x in enumerate(members):
         for y in members[i + 1 :]:
             r_xy = x <= y
             r_yx = y <= x
-            if r_xy is False or r_yx is False:
-                continue
-            assert not (r_xy is True and r_yx is True), f"antisymmetry failed: {x} and {y} mutually <= "
-            assert False, f"antisymmetry unknown for {x} and {y}"
+            if r_xy is True and r_yx is True:
+                return False
+            if r_xy is UNKNOWN or r_yx is UNKNOWN:
+                decision = UNKNOWN
     for x in members:
         for y in members:
             r_xy = x <= y
             for z in members:
                 r_yz = y <= z
-                if r_xy is False or r_yz is False:
-                    continue
-                r_xz = x <= z
                 if r_xy is True and r_yz is True:
-                    assert r_xz is True, f"transitivity failed for {x} <= {y} <= {z}"
-                    continue
-                assert False, f"transitivity unknown for {x}, {y}, {z}"
+                    r_xz = x <= z
+                    if r_xz is False:
+                        return False
+                    if r_xz is UNKNOWN:
+                        decision = UNKNOWN
+    return decision
 
 
 class PosetObject(MathematicalObject):
@@ -123,8 +129,6 @@ class PosetObject(MathematicalObject):
         self._relation = relation
         self._thin_category: ThinCategory | None = None
         super().__init__(category=category)
-        if underlying_set.is_finite() is True:
-            validate_finite_partial_order(self, underlying_set)
 
     def _set_implementation(self) -> SetObject:
         return self._underlying_set
@@ -243,20 +247,25 @@ class PosetMorphism(Arrow):
 def check_order_preserving(
     source: PosetObject,
     target: PosetObject,
-    morphism: Callable[[PosetElement], PosetElement],
+    morphism: SetMorphism,
 ) -> Decision:
     underlying_set = PartiallyOrderedSets().underlying_set(source)
     if underlying_set.is_finite() is not True:
         return UNKNOWN
     decision: Decision = True
+    forgetful = PartiallyOrderedSets().forgetful_functor()
     for left in source:
         assert is_poset_element(left)
-        f_left = morphism(left)
+        set_left = forgetful.on_element(source, left)
+        assert SetElements().contains_set_element(set_left)
+        f_left = target.element(morphism(set_left))
         assert is_poset_element(f_left)
         assert f_left in target
         for right in source:
             assert is_poset_element(right)
-            f_right = morphism(right)
+            set_right = forgetful.on_element(source, right)
+            assert SetElements().contains_set_element(set_right)
+            f_right = target.element(morphism(set_right))
             assert is_poset_element(f_right)
             assert f_right in target
             left_le = left <= right
@@ -302,16 +311,16 @@ class PosetHomCategory(HomCategory):
         assert action.codomain() is set_hom.codomain()
         underlying = action
 
-        def candidate_map(member: PosetElement) -> PosetElement:
-            set_member = PartiallyOrderedSets().forgetful_functor().on_element(source, member)
-            assert SetElements().contains_set_element(set_member)
-            return target.element(underlying(set_member))
-
-        underlying_source = PartiallyOrderedSets().underlying_set(source)
-        assert underlying_source.is_finite() is True, f"Candidate map from nonfinite {source} cannot enter PosetHomCategory without an established theorem"
-        order_preserving = check_order_preserving(source, target, candidate_map)
+        order_preserving = check_order_preserving(source, target, underlying)
         assert order_preserving is True, f"candidate map from {source} to {target} is not order preserving (decision={order_preserving})"
 
+        return self.from_theorem(underlying)
+
+    def from_theorem(self, underlying: SetMorphism) -> PosetMorphism:
+        """Construct a morphism established by the owning construction."""
+        assert Sets().contains_set_morphism(underlying)
+        assert underlying.domain() is PartiallyOrderedSets().underlying_set(self.domain())
+        assert underlying.codomain() is PartiallyOrderedSets().underlying_set(self.codomain())
         return self.ObjectType(
             hom_category=self,
             underlying_function=underlying,
@@ -325,10 +334,7 @@ class PosetHomCategory(HomCategory):
         assert PartiallyOrderedSets().contains_poset(source)
         underlying = Sets().identity(PartiallyOrderedSets().underlying_set(source))
         assert Sets().contains_set_morphism(underlying)
-        return self.ObjectType(
-            hom_category=self,
-            underlying_function=underlying,
-        )
+        return self.from_theorem(underlying)
 
     def compose(self, second: Arrow, first: Arrow) -> PosetMorphism:
         second_hom = second.hom_category()
@@ -348,10 +354,7 @@ class PosetHomCategory(HomCategory):
             forgetful_functor.on_morphism(first),
         )
         assert Sets().contains_set_morphism(underlying)
-        return self.ObjectType(
-            hom_category=self,
-            underlying_function=underlying,
-        )
+        return self.from_theorem(underlying)
 
     def contains_poset_morphism(
         self,
@@ -412,9 +415,16 @@ class PartiallyOrderedSetsCategory(Category):
         underlying_set: SetObject,
         relation: OrderRelation,
     ) -> PosetObject:
+        candidate = self.ObjectType(
+            category=self,
+            underlying_set=underlying_set,
+            relation=relation,
+        )
+        decision = check_partial_order(candidate, underlying_set)
+        assert decision is True, f"relation on {underlying_set} is not established as a partial order (decision={decision})"
         if underlying_set in FiniteSets():
-            return self.Finite()(underlying_set, relation)
-        assert False, f"Arbitrary infinite relation on {underlying_set} cannot enter PartiallyOrderedSets() without an established construction theorem"
+            return self.Finite().refine_from_theorem(candidate)
+        return candidate
 
     def discrete_order(self, underlying_set: SetObject) -> PosetObject:
         """Return the discrete poset on ``underlying_set`` with equality order."""
@@ -548,11 +558,7 @@ class PartiallyOrderedSetsCategory(Category):
         backed entry path that bypasses finite exhaustive validation.
         """
         # Davey & Priestley, Introduction to Lattices and Order, §1.28.
-        return self.ObjectType(
-            category=self,
-            underlying_set=underlying_set,
-            relation=relation,
-        )
+        return self.from_theorem(underlying_set, relation)
 
     def _monotone_product_arrow(
         self,
@@ -568,10 +574,7 @@ class PartiallyOrderedSetsCategory(Category):
         """
         hom = self.Hom(source, target)
         assert Sets().contains_set_morphism(set_arrow)
-        return hom.ObjectType(
-            hom_category=hom,
-            underlying_function=set_arrow,
-        )
+        return hom.from_theorem(set_arrow)
 
     def __repr__(self) -> str:
         return "Partially ordered sets"

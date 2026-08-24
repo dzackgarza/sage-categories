@@ -47,9 +47,12 @@ class Functor(Arrow, ABC):
         self._functor_codomain = codomain
         self._object_map = object_map
         self._morphism_map = morphism_map
-        self._object_images: dict[int, MathematicalObject] = {}
-        self._morphism_images: dict[int, Arrow] = {}
-        self._object_preimages: dict[tuple[int, int], MathematicalObject] = {}
+        self._object_images: dict[tuple[int, int, int], MathematicalObject] = {}
+        self._morphism_images: dict[tuple[int, int, int], Arrow] = {}
+        self._object_preimages: dict[
+            tuple[int, int, int], MathematicalObject
+        ] = {}
+        self._morphism_preimages: dict[tuple[int, int, int], Arrow] = {}
         self._postcomposition_functors: dict[int, PostcompositionFunctor] = {}
         functor_hom_category = category_universe(domain, codomain).Hom(domain, codomain) if hom_category is None else hom_category
         assert functor_hom_category.domain() is domain
@@ -108,20 +111,25 @@ class Functor(Arrow, ABC):
         """Return the canonical image of one object."""
         original = source
         source = self._canonical_object_source(source)
-        key = id(source)
+        key = id(source), id(source), id(self.codomain())
         image = self._object_images.get(key)
         if image is None:
             image = self._object_image(source)
             assert image in self.codomain()
             self._object_images[key] = image
-            self._object_preimages[(id(source), id(image))] = source
-        self._object_preimages[(id(original), id(image))] = original
+            self._object_preimages[
+                (id(source), id(image), id(self.domain()))
+            ] = source
+        self._object_preimages[
+            (id(original), id(image), id(self.domain()))
+        ] = original
         return image
 
     def on_morphism(self, morphism: Arrow) -> Arrow:
         """Return the canonical image of one arrow."""
+        original = morphism
         morphism = self._canonical_morphism_source(morphism)
-        key = id(morphism)
+        key = id(morphism.hom_category()), id(morphism), id(self.codomain())
         image = self._morphism_images.get(key)
         if image is None:
             domain = self.on_object(morphism.domain())
@@ -131,6 +139,12 @@ class Functor(Arrow, ABC):
             assert image.domain() is domain
             assert image.codomain() is codomain
             self._morphism_images[key] = image
+            self._morphism_preimages[
+                (id(morphism.hom_category()), id(image), id(self.domain()))
+            ] = morphism
+        self._morphism_preimages[
+            (id(original.hom_category()), id(image), id(self.domain()))
+        ] = original
         return image
 
     def __call__(self, value: MathematicalObject) -> MathematicalObject:
@@ -188,8 +202,12 @@ class StructuralFunctor(Functor, ABC):
         *,
         hom_category: HomCategory | None = None,
     ) -> None:
-        self._element_images: dict[tuple[int, int], MathematicalElement] = {}
-        self._element_preimages: dict[tuple[int, int], MathematicalElement] = {}
+        self._element_images: dict[
+            tuple[int, int, int], MathematicalElement
+        ] = {}
+        self._element_preimages: dict[
+            tuple[int, int, int], MathematicalElement
+        ] = {}
         super().__init__(domain, codomain, hom_category=hom_category)
         _STRUCTURAL_FUNCTORS[id(self)] = self
 
@@ -220,14 +238,18 @@ class StructuralFunctor(Functor, ABC):
             source = self._canonical_object_source(source)
             element = element._element_image_along(route)
         target = self.on_object(source)
-        key = (id(source), id(element))
+        key = id(source), id(element), id(self.codomain())
         image = self._element_images.get(key)
         if image is None:
             image = self._element_image(source, element)
             assert image.ambient_object() is target
             self._element_images[key] = image
-            self._element_preimages[(id(source), id(image))] = element
-        self._element_preimages[(id(original_source), id(image))] = original_element
+            self._element_preimages[
+                (id(source), id(image), id(self.domain()))
+            ] = element
+        self._element_preimages[
+            (id(original_source), id(image), id(self.domain()))
+        ] = original_element
         return image
 
     def preimage_element(
@@ -249,14 +271,16 @@ class StructuralFunctor(Functor, ABC):
             source = self._canonical_object_source(source)
         target = self.on_object(source)
         assert element.ambient_object() is target
-        key = (id(source), id(element))
+        key = id(source), id(element), id(self.domain())
         preimage = self._element_preimages.get(key)
         if preimage is None:
             preimage = self._element_preimage(source, element)
             assert preimage.ambient_object() is source
             self._element_preimages[key] = preimage
         assert preimage.ambient_object() is source
-        self._element_images[(id(source), id(preimage))] = element
+        self._element_images[
+            (id(source), id(preimage), id(self.codomain()))
+        ] = element
         if normalization_route:
             route_sources: list[MathematicalObject] = [original_source]
             prefix: tuple[StructuralFunctor, ...] = ()
@@ -268,8 +292,12 @@ class StructuralFunctor(Functor, ABC):
             ):
                 preimage = functor.preimage_element(route_source, preimage)
         assert preimage.ambient_object() is original_source
-        self._element_images[(id(original_source), id(preimage))] = element
-        self._element_preimages[(id(original_source), id(element))] = preimage
+        self._element_images[
+            (id(original_source), id(preimage), id(self.codomain()))
+        ] = element
+        self._element_preimages[
+            (id(original_source), id(element), id(self.domain()))
+        ] = preimage
         return preimage
 
     def preimage_object(
@@ -282,18 +310,24 @@ class StructuralFunctor(Functor, ABC):
         assert source in self.domain()
         source = self._canonical_object_source(source)
         assert image is self.on_object(source)
-        preimage = self._object_preimages.get((id(original_source), id(image)))
+        preimage = self._object_preimages.get(
+            (id(original_source), id(image), id(self.domain()))
+        )
         if preimage is None:
-            preimage = self._object_preimages[(id(source), id(image))]
+            preimage = self._object_preimages[
+                (id(source), id(image), id(self.domain()))
+            ]
         assert preimage is original_source or preimage is source
         return preimage
 
     def preimage_morphism(self, source: Arrow, image: Arrow) -> Arrow:
-        """Return ``source`` after verifying its canonical arrow image."""
+        """Return the exact source implementation of a canonical arrow image."""
         assert self.domain().contains_arrow(source)
         assert self.codomain().contains_arrow(image)
         assert self.on_morphism(source) is image
-        return source
+        return self._morphism_preimages[
+            (id(source.hom_category()), id(image), id(self.domain()))
+        ]
 
     def _element_preimage(
         self,
@@ -478,8 +512,12 @@ class InclusionFunctor(StructuralFunctor):
     ) -> None:
         assert source in self.domain()
         assert image in self.codomain()
-        self._object_images[id(source)] = image
-        self._object_preimages[(id(source), id(image))] = source
+        self._object_images[
+            (id(source), id(source), id(self.codomain()))
+        ] = image
+        self._object_preimages[
+            (id(source), id(image), id(self.domain()))
+        ] = source
         source._object_structural_images[
             (id(source), id(source), id(self.codomain()))
         ] = image
@@ -492,8 +530,12 @@ class InclusionFunctor(StructuralFunctor):
     ) -> None:
         assert element.ambient_object() is source
         assert image.ambient_object() is self.on_object(source)
-        self._element_images[(id(source), id(element))] = image
-        self._element_preimages[(id(source), id(image))] = element
+        self._element_images[
+            (id(source), id(element), id(self.codomain()))
+        ] = image
+        self._element_preimages[
+            (id(source), id(image), id(self.domain()))
+        ] = element
         element._element_structural_images[
             (id(source), id(element), id(self.codomain()))
         ] = image
@@ -503,7 +545,12 @@ class InclusionFunctor(StructuralFunctor):
         assert self.codomain().contains_arrow(image)
         assert image.domain() is self.on_object(source.domain())
         assert image.codomain() is self.on_object(source.codomain())
-        self._morphism_images[id(source)] = image
+        self._morphism_images[
+            (id(source.hom_category()), id(source), id(self.codomain()))
+        ] = image
+        self._morphism_preimages[
+            (id(source.hom_category()), id(image), id(self.domain()))
+        ] = source
         source._morphism_structural_images[
             (id(source.hom_category()), id(source), id(self.codomain()))
         ] = image

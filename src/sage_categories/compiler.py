@@ -164,7 +164,7 @@ class CategoryCompiler:
         ambient: MathematicalObject,
     ) -> MathematicalObject:
         """Return the canonical category-specific refinement of ``ambient``."""
-        key = id(category), id(ambient)
+        key = id(ambient), id(ambient), id(category)
         refined = self._refined_objects.get(key)
         if refined is None:
             refined = category.ObjectType._refined_from_ambient(
@@ -182,7 +182,7 @@ class CategoryCompiler:
         ambient: MathematicalElement,
     ) -> MathematicalElement:
         """Return the canonical category-specific refinement of ``ambient``."""
-        key = id(category), id(source), id(ambient)
+        key = id(source), id(ambient), id(category)
         refined = self._refined_elements.get(key)
         if refined is None:
             refined = category.ElementType._refined_element_from_ambient(
@@ -205,7 +205,7 @@ class CategoryCompiler:
         ambient: Arrow,
     ) -> Arrow:
         """Return the canonical category-specific refinement of ``ambient``."""
-        key = id(category), id(hom_category), id(ambient)
+        key = id(hom_category), id(ambient), id(category)
         refined = self._refined_arrows.get(key)
         if refined is None:
             refined = category.ArrowType._refined_arrow_from_ambient(

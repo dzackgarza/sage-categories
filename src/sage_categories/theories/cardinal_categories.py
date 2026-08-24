@@ -134,7 +134,7 @@ class CardinalsCategory(Category):
     def one(self) -> Cardinal:
         return self(1)
 
-    def aleph(self, index: int | Ordinal = 0) -> Cardinal:
+    def aleph(self, index: int | Ordinal) -> Cardinal:
         from sage_categories.theories.ordinals import ordinal
 
         ordinal_index = ordinal(index)

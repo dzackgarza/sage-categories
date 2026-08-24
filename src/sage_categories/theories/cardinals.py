@@ -36,12 +36,12 @@ def cardinal(value: int | Cardinal) -> Cardinal:
     return Cardinals()(value)
 
 
-def aleph(index: int | Ordinal = 0) -> Cardinal:
+def aleph(index: int | Ordinal) -> Cardinal:
     return Cardinals().aleph(index)
 
 
 def Aleph0() -> Cardinal:
-    return aleph(0)
+    return Cardinals().aleph(0)
 
 
 def Continuum() -> Cardinal:

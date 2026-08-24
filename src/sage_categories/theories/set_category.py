@@ -354,7 +354,7 @@ class CountableSetsCategory(FullSubcategory):
     def _is_countable(self, value: MathematicalObject) -> bool:
         assert Sets().contains_set(value)
         finite = value.cardinality().is_finite()
-        return finite is True or value.cardinality() == Cardinals().aleph()
+        return finite is True or value.cardinality() == Cardinals().aleph(0)
 
 
 class FiniteSetsCategory(FullSubcategory):
@@ -409,7 +409,7 @@ class UncountableSetsCategory(FullSubcategory):
     def _is_uncountable(self, value: MathematicalObject) -> bool:
         assert Sets().contains_set(value)
         size = value.cardinality()
-        return size.is_infinite() is True and size != Cardinals().aleph()
+        return size.is_infinite() is True and size != Cardinals().aleph(0)
 
 
 _SETS: SetsCategory | None = None

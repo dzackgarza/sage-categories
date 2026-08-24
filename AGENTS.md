@@ -113,6 +113,28 @@ This is the main form of implementation compression in this repository:
 - one universal construction retains its defining arrows;
 - the compiler turns those declarations into a direct public surface.
 
+At every design, implementation, and review step, answer this question:
+
+> What generic categorical mechanism makes every leaf state only its new mathematics?
+
+Use the answer to determine code ownership, theorem ownership, call paths, and public methods.
+Do not derive the architecture from the nearest failing method or current Python layout.
+
+Trace the complete implementation path before editing any part of it.
+For a product, trace all of these parts:
+
+- the kernel definition of products and their universal data;
+- the construction and presentation categories;
+- the apex, projections, and universal maps;
+- propagation through structural functors;
+- method compilation and inherited public operations;
+- the leaf theorem or structure that adds the new mathematical delta.
+
+Perform the same trace for objects, elements, arrows, arguments, and results.
+The trace must explain the final public call without leaf-level engineering wiring.
+A missing step is a kernel, construction, functor, or compiler defect.
+Repair that owner instead of adding a leaf workaround.
+
 Prefer a foundational correction when it removes an entire family of apparent method tasks.
 Do not preserve a mistaken architecture with a cheaper local implementation.
 

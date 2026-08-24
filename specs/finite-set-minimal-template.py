@@ -16,7 +16,10 @@ class SetsCategory(Category):
         """The full replete subcategory of finite sets."""
 
         def structure_functors(self) -> tuple[Functor, ...]:
-            """Return the selected functors from finite sets."""
+            """Select the inclusion that supplies the inherited set catalogue.
+
+            This tuple is not a list of all functors from finite sets.
+            """
             iota = FullSubcategoryInclusionFunctor(self, Sets())
             return (iota,)
 

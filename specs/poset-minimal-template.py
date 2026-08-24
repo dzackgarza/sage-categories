@@ -74,5 +74,10 @@ class PartiallyOrderedSetsCategory(Category):
 
     def structure_functors(self) -> tuple[Functor, ...]:
         """Select the carrier projection used for inheritance."""
+        # This tuple selects inheritance routes. It is not a list of all functors
+        # from this category. Do not add the second product projection here.
+        # A poset ``(X, R)`` receives its inherited public methods from ``X``.
+        # Projection to ``R`` would expose subset and product methods on posets.
+        # Selecting only ``X`` mirrors Sage listing only ``Sets()`` as a supercategory.
         carrier = ProductProjectionFunctor(0, self, Sets())
         return (carrier,)

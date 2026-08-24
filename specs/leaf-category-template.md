@@ -34,9 +34,19 @@ class LeafCategory(Category):
         return candidate in self
 ```
 
-`structure_functors()` contains the complete tuple of immediate functors selected for
-inheritance. See [functor.md](functor.md) for inclusion, forgetting, projection, and
-induced-functor declarations.
+`structure_functors()` selects inheritance routes. It is not a catalogue of all functors
+from the leaf. Include only immediate functors whose target catalogue should become part
+of the leaf's public surface. The leaf must also meet each functor's construction
+obligations for objects, elements, and arrows. Keep all other mathematical functors
+outside this tuple.
+
+For a structured object with several defining components, select only the component used
+as its inherited public structure. The existence of another projection does not make that
+projection a structure functor. This selection has the same purpose as Sage's
+`super_categories()` declaration.
+
+See [functor.md](functor.md) for inclusion, forgetting, projection, and induced-functor
+declarations.
 
 See [finite-set-minimal-template.py](finite-set-minimal-template.py) for a property
 subcategory. See [poset-minimal-template.py](poset-minimal-template.py) for objects with

@@ -76,6 +76,7 @@ def _annotation_role(
     if annotation is None or annotation is types.NoneType:
         return ParameterRole.VALUE
     if annotation is typing.Any:
+        assert method_name in ("__contains__", "__eq__")
         return ParameterRole.VALUE
     if isinstance(annotation, type):
         if issubclass(annotation, Arrow):
@@ -84,6 +85,11 @@ def _annotation_role(
             return ParameterRole.ELEMENT
         if issubclass(annotation, MathematicalObject):
             return ParameterRole.OBJECT
+        if issubclass(annotation, Enum):
+            return ParameterRole.VALUE
+        assert annotation in (bool, int, float, str, bytes) or (
+            annotation is object and method_name == "__eq__"
+        ), f"{annotation!r} has no exact mathematical transport role"
         return ParameterRole.VALUE
     origin = typing.get_origin(annotation)
     assert origin is not typing.Annotated
@@ -91,7 +97,10 @@ def _annotation_role(
         roles = {
             _annotation_role(argument, receiver, method_name)
             for argument in typing.get_args(annotation)
+            if argument is not types.NoneType
         }
+        if not roles:
+            return ParameterRole.VALUE
         assert len(roles) == 1, f"{annotation!r} combines transport roles"
         return roles.pop()
     if origin is Iterator:
@@ -105,7 +114,9 @@ def _annotation_role(
             is ParameterRole.ELEMENT
         )
         return ParameterRole.ELEMENT_ITERATOR
-    return ParameterRole.VALUE
+    if origin in (Callable, typing.Literal):
+        return ParameterRole.VALUE
+    assert False, f"{annotation!r} has no exact mathematical transport role"
 
 
 def method_signature(
@@ -214,7 +225,7 @@ def _forward_value(
     role: ParameterRole,
     route: tuple[StructuralFunctor, ...],
 ) -> Value:
-    if not route or role is ParameterRole.VALUE:
+    if value is None or not route or role is ParameterRole.VALUE:
         return value
     source_category = route[0].domain()
     if role is ParameterRole.OBJECT:
@@ -300,7 +311,7 @@ def _transport_result(
     instance: MathematicalObject | MathematicalElement | Arrow,
     image: MathematicalObject | MathematicalElement | Arrow,
 ) -> R:
-    if role is ParameterRole.VALUE:
+    if result is None or role is ParameterRole.VALUE:
         return result
     if role is ParameterRole.OBJECT:
         value = cast(MathematicalObject, result)

@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, TypeIs
 
 from sage_categories.abstract_categories.hom_categories import HomCategory
 from sage_categories.category import Category
-from sage_categories.descriptors import ParameterRole, transport_roles
+from sage_categories.descriptors import ParameterRole
 from sage_categories.values import (
     UNKNOWN,
     Arrow,
@@ -80,7 +80,6 @@ class Ordinal(MathematicalObject):
         assert self._index is not None
         return self._index
 
-    @transport_roles(result=ParameterRole.VALUE)
     def cardinality(self) -> Cardinal:
         from sage_categories.theories.cardinals import Cardinals, aleph, cardinal
 

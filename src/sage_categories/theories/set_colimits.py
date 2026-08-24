@@ -22,7 +22,7 @@ from sage_categories.abstract_categories.products import (
     ColimitsOfCategory,
 )
 from sage_categories.category import Category
-from sage_categories.descriptors import ParameterRole, transport_roles
+from sage_categories.descriptors import ParameterRole
 from sage_categories.theories.cardinals import (
     Cardinal,
     Cardinals,
@@ -76,7 +76,6 @@ class ColimitElement(MathematicalElement):
             ambient_object=colimit,
         )
 
-    @transport_roles(result=ParameterRole.VALUE)
     def colimit(self) -> ColimitSet | SetColimitObject:
         return self._colimit
 
@@ -242,7 +241,6 @@ class ColimitSet(SetObject):
             chosen = (*chosen, candidate)
             yield candidate
 
-    @transport_roles(result=ParameterRole.ARROW)
     def _injection(self, index: SetElement) -> SetMorphism:
 
         return _set_morphism(
@@ -366,12 +364,10 @@ class SetColimitObject(ColimitObject):
             chosen = (*chosen, candidate)
             yield candidate
 
-    @transport_roles(result=ParameterRole.ARROW)
     def injection(self, index: MathematicalObject) -> SetMorphism:
 
         return self._injection(_object_set_element(self.diagram().domain(), index))
 
-    @transport_roles(result=ParameterRole.ARROW)
     def _injection(self, index: SetElement) -> SetMorphism:
 
         return _set_morphism(
@@ -383,7 +379,6 @@ class SetColimitObject(ColimitObject):
     def apex(self) -> SetObject:
         return self
 
-    @transport_roles(result=ParameterRole.ARROW)
     def universal_morphism(self, cocone: CoconeObject) -> SetMorphism:
 
         target = cocone.apex()

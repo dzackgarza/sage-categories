@@ -16,7 +16,7 @@ from sage_categories.abstract_categories.hom_categories import (
     HomCategoryFamily,
 )
 from sage_categories.category import Category
-from sage_categories.descriptors import ParameterRole, transport_roles
+from sage_categories.descriptors import ParameterRole
 from sage_categories.values import (
     Arrow,
     Decision,
@@ -329,50 +329,30 @@ class FullSubcategory(Category):
             self._inclusion = InclusionFunctor(self, self._ambient_category)
         return self._inclusion
 
-    @transport_roles(
-        positional=(("functor", ParameterRole.VALUE),),
-        result=ParameterRole.VALUE,
-    )
     def _products_of_category(
         self,
         functor: Annotated[Functor, ParameterRole.VALUE],
     ) -> Category:
         return self._ambient_category._products_of_category(functor)
 
-    @transport_roles(
-        positional=(("functor", ParameterRole.VALUE),),
-        result=ParameterRole.VALUE,
-    )
     def _coproducts_of_category(
         self,
         functor: Annotated[Functor, ParameterRole.VALUE],
     ) -> Category:
         return self._ambient_category._coproducts_of_category(functor)
 
-    @transport_roles(
-        positional=(("functor", ParameterRole.VALUE),),
-        result=ParameterRole.VALUE,
-    )
     def _limits_of_category(
         self,
         functor: Annotated[Functor, ParameterRole.VALUE],
     ) -> Category:
         return self._ambient_category._limits_of_category(functor)
 
-    @transport_roles(
-        positional=(("functor", ParameterRole.VALUE),),
-        result=ParameterRole.VALUE,
-    )
     def _colimits_of_category(
         self,
         functor: Annotated[Functor, ParameterRole.VALUE],
     ) -> Category:
         return self._ambient_category._colimits_of_category(functor)
 
-    @transport_roles(
-        positional=(("diagram", ParameterRole.VALUE),),
-        result=ParameterRole.VALUE,
-    )
     def chosen_limit(
         self,
         diagram: Annotated[Functor, ParameterRole.VALUE],
@@ -412,10 +392,6 @@ class FullSubcategory(Category):
 
         return Product(cone, mediate)
 
-    @transport_roles(
-        positional=(("diagram", ParameterRole.VALUE),),
-        result=ParameterRole.VALUE,
-    )
     def chosen_colimit(
         self,
         diagram: Annotated[Functor, ParameterRole.VALUE],

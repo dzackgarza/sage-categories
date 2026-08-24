@@ -77,6 +77,9 @@ The package must absorb the elliptic-curve construction before claiming that wor
 | `POL-MATH-028` | A theorem-backed method constructs its result directly in the established property category. That category placement is the typed mathematical conclusion. The citation remains documentation. Runtime stores no proof text or fabricated `Decision`. |
 | `POL-MATH-029` | For a `Decision`-valued proposition, only the value `True` establishes the proposition. Tests such as `decision is not False`, truthiness, fallthrough, and absence of rejection never turn `Unknown` into evidence. An explicit hypothesis or construction theorem is a separate source of knowledge. |
 | `POL-MATH-030` | Prefer a defining construction or theorem over exhaustive verification, even when verification terminates. Finiteness alone does not justify enumeration when the construction already establishes the property. |
+| `POL-MATH-031` | Make a mathematical fact explicit through the semantic value that states it: category placement, an exact type, a defining arrow, a functor, a universal construction, a named constructor route, an exact predicate result, or a scoped hypothesis. Never create runtime metadata merely to repeat that fact. |
+| `POL-MATH-032` | Treat construction authority as the category, functor, universal construction, or named method whose definition establishes the result. This authority is static mathematical ownership, not runtime data. Never pass, store, register, or inspect an authority token, authority object, marker, or callback to authorize category refinement. |
+| `POL-MATH-033` | Treat ordinary category theory and the stated mathematical definitions as the source model. A missing, unclear, or failing Python representation does not make the mathematics unresolved. Derive the representation from the definition, or report the missing foundational category, functor, arrow, construction, or type. |
 
 For example, an owned constructor for `RR` records its cardinality as $2^{\aleph_0}$.
 The implementation cites the supporting theorem in source documentation.
@@ -291,6 +294,7 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-075` | Treat the ordinary typed signature and executable body on the owning implementation class as the sole authoritative declaration of a method. Derive every descriptor and generated typing artifact from that declaration. Never maintain a second description of its receiver, parameters, call shape, result, or mathematical roles. |
 | `POL-CAT-076` | Keep mathematical type, Python call shape, and structural transport provenance distinct. Exact types state mathematical roles. The Python signature states positional, keyword, and variadic shape. Canonical image and preimage relations state transport provenance. No one of these facts can replace another. |
 | `POL-CAT-077` | Determine method ownership from its definition on the category-owned implementation class and the selected structural functors. No decorator, marker, annotation payload, registry entry, or descriptor argument can create mathematical ownership or repair a missing category declaration. |
+| `POL-CAT-078` | The owner of a mathematical fact is the category, object, arrow, functor, or universal construction whose definition states it. A metadata holder, descriptor, registry, adapter, backend, compiler component, or generated type is never its mathematical owner. |
 
 Grounding examples:
 
@@ -660,7 +664,7 @@ When an established finite algorithm requires a primitive loop bound, lower the 
 | `POL-TYPE-020` | Preserve category-specific types even when a category adds no new runtime fields or methods. Reusing an implementation does not erase the mathematical refinement. |
 | `POL-TYPE-021` | Admit raw Python container types only inside the implementation kernel, a backend adapter, or a dedicated interoperation module. Convert them immediately into the required mathematical collection before theory code receives them. A theory constructor or helper is not such a boundary. |
 | `POL-TYPE-022` | Use `Iterator[T]` only for the Python traversal protocol or a private lazy-enumeration result. It never replaces a named mathematical collection in a theory-layer input or result. |
-| `POL-TYPE-023` | Treat type-checker output as a diagnostic signal. The mathematical architecture, category ownership, and functor declarations determine correctness. Never change them only to reduce or silence diagnostics. |
+| `POL-TYPE-023` | Treat type-checker and import output as diagnostic signals. An error can falsify the current implementation, but it cannot establish a new architecture, mathematical owner, or runtime carrier. The mathematical definitions, category ownership, and functor declarations determine correctness. |
 | `POL-TYPE-024` | Make the category compiler expose functorial construction and dynamic object, element, and arrow inheritance to static type checkers. A checker's default inability to infer that structure does not justify weakening it. |
 | `POL-TYPE-025` | When a checker cannot infer the declared dynamic structure, use a type-checker plugin or generate static manifests, types, or stubs from the authoritative category and functor declarations. Do not maintain a second type graph by hand. |
 | `POL-TYPE-026` | Treat generated static typing artifacts as projections of repository-owned declarations. Regenerate them through the applicable commit, test, push, and release workflows whenever their source declarations change. |
@@ -739,7 +743,7 @@ The caller can materialize a finite result when its application requires one.
 | `POL-CODE-022` | Use assertions for mathematical preconditions, functionality gates, and type narrowing. |
 | `POL-CODE-023` | Make each assertion state a mathematical fact that remains true when the Python implementation class or field layout changes. |
 | `POL-CODE-024` | Use an assertion for a violated mathematical precondition. Do not add `try`/`except`, fallback values, or recovery branches. |
-| `POL-CODE-025` | When ownership is wrong, stop runtime debugging and repair `Cat`, arrow categories, method inheritance, and `Sets()` in dependency order. |
+| `POL-CODE-025` | When code assigns mathematical ownership wrongly or cannot express the fixed owner, stop runtime debugging and local mechanism design. Reapply the standard definition, identify the owner it already determines, and repair `Cat`, arrow categories, method inheritance, and `Sets()` in dependency order. |
 | `POL-CODE-026` | During a foundational migration, move each required behavior to its new owner before deleting its old implementation. |
 | `POL-CODE-027` | Do not use `hasattr` to guess mathematical capabilities. Ask category membership or call the required category-owned operation. |
 | `POL-CODE-028` | Prefer a named primitive that states the mathematical construction over a generic Python composition that merely reproduces it. |
@@ -756,6 +760,8 @@ The caller can materialize a finite result when its application requires one.
 | `POL-CODE-039` | Never write `try`/`except` outside the implementation kernel. Let errors propagate from theory, leaf, functor, construction, backend-adapter, and public API code. |
 | `POL-CODE-040` | Never use exceptions to select a route, discover a capability, handle optional data, retry, choose an implementation, substitute a value, or continue computation. |
 | `POL-CODE-041` | Never catch an exception to return `False`, `Unknown`, `None`, `NotImplemented`, or a default. An unknown mathematical result is explicit data, not a converted runtime failure. |
+| `POL-CODE-042` | Compare mechanisms by their semantic role and information flow, not by syntax or location. Moving the same carrier among a decorator, `Annotated` payload, marker type, wrapper, callback, registry, generated class, or helper module leaves the architecture unchanged and does not satisfy a policy that rejects that carrier. |
+| `POL-CODE-043` | Before adding a carrier for a proposition, construction obligation, method role, or ownership fact, locate its existing mathematical owner. If its software representation is unclear, stop the edit and derive that representation from the standard definition. Never let implementation momentum or a type, import, or runtime error choose the carrier. |
 
 For adjacent elements, use `itertools.pairwise(xs)` instead of `zip(xs, xs[1:])`.
 The named primitive states adjacency, remains lazy, and does not require slicing.

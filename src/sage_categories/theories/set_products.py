@@ -36,7 +36,7 @@ from sage_categories.abstract_categories.products import (
     ProductsOfCategory,
 )
 from sage_categories.category import Category
-from sage_categories.descriptors import ParameterRole, transport_roles
+from sage_categories.descriptors import ParameterRole
 from sage_categories.theories.cardinals import (
     Cardinal,
     Cardinals,
@@ -85,7 +85,6 @@ class ProductElement(MathematicalElement):
             ambient_object=product,
         )
 
-    @transport_roles(result=ParameterRole.VALUE)
     def product(self) -> ProductSet | SetProductObject | SetLimitObject:
 
         return self._product
@@ -202,7 +201,6 @@ class ProductSet(SetObject):
 
             yield self.element(component)
 
-    @transport_roles(result=ParameterRole.ARROW)
     def _projection(self, index: SetElement) -> SetMorphism:
 
         factor = self.factor(index)
@@ -284,13 +282,11 @@ class SetProductObject(ProductObject):
 
             yield self.element(component)
 
-    @transport_roles(result=ParameterRole.ARROW)
     def projection(self, index: MathematicalObject) -> SetMorphism:
 
         assert self.index_category().contains_object(index)
         return self._projection(index.label())
 
-    @transport_roles(result=ParameterRole.ARROW)
     def _projection(self, index: SetElement) -> SetMorphism:
 
         factor = self.factor(index)
@@ -304,7 +300,6 @@ class SetProductObject(ProductObject):
 
         return _set_morphism(self, factor, project)
 
-    @transport_roles(result=ParameterRole.ARROW)
     def universal_morphism(self, cone: ConeObject) -> SetMorphism:
         from sage_categories.theories.set_constructions import _cone_component_value
 

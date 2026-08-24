@@ -9,7 +9,7 @@ from sage_categories.abstract_categories.hom_categories import (
     HomCategory,
 )
 from sage_categories.category import Category
-from sage_categories.descriptors import ParameterRole, transport_roles
+from sage_categories.descriptors import ParameterRole
 from sage_categories.values import (
     Arrow,
     MathematicalElement,
@@ -41,7 +41,6 @@ class DiscreteObject(MathematicalObject):
         self._label = label
         super().__init__(category=category)
 
-    @transport_roles(result=ParameterRole.VALUE)
     def label(self) -> SetElement:
         return self._label
 
@@ -105,10 +104,6 @@ class DiscreteCategory(Category):
     def label_set(self) -> MathematicalObject:
         return self._label_set
 
-    @transport_roles(
-        positional=(("label", ParameterRole.VALUE),),
-        result=ParameterRole.VALUE,
-    )
     def object(self, label: SetElement) -> DiscreteObject:
         from sage_categories.theories.sets import Sets
 
@@ -122,7 +117,6 @@ class DiscreteCategory(Category):
         self._objects_by_label.append((label, value))
         return value
 
-    @transport_roles(result=ParameterRole.VALUE)
     def objects(self) -> DiscreteObjectSet:
         from sage_categories.theories.sets import DiscreteObjectSet, Sets
 
@@ -131,10 +125,6 @@ class DiscreteCategory(Category):
             self._object_set = DiscreteObjectSet(self, self._label_set)
         return self._object_set
 
-    @transport_roles(
-        positional=(("value", ParameterRole.VALUE),),
-        result=ParameterRole.VALUE,
-    )
     def object_element(self, value: MathematicalObject) -> SetElement:
         return self.objects().element(value)
 

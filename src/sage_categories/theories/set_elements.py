@@ -8,13 +8,13 @@ categorical foundation. Sage is not part of this category graph.
 from __future__ import annotations
 
 from collections.abc import Callable, Iterator
-from typing import TYPE_CHECKING, TypeIs
+from typing import TYPE_CHECKING, Annotated, Self, TypeIs
 
 from sage_categories.abstract_categories.functors import (
     DiscreteObject,
 )
 from sage_categories.category import Category
-from sage_categories.descriptors import ParameterRole, transport_roles
+from sage_categories.descriptors import ParameterRole
 from sage_categories.values import (
     Decision,
     MathematicalElement,
@@ -51,8 +51,9 @@ class SetElement(MathematicalElement):
             ambient_object=ambient_object,
         )
 
-    @transport_roles(result=ParameterRole.OBJECT)
-    def ambient_set(self) -> SetObject:
+    def ambient_set(
+        self: Annotated[Self, ParameterRole.ELEMENT],
+    ) -> Annotated[SetObject, ParameterRole.OBJECT]:
         from sage_categories.theories.set_category import Sets
 
         ambient = self.ambient_object()

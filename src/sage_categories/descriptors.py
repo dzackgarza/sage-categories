@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import ast
 import inspect
+import typing
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from enum import Enum
@@ -58,50 +60,34 @@ class MethodSignature:
         return self.keywords
 
 
-@dataclass(frozen=True)
-class DeclaredTransportRoles:
-    """Complete transport roles for one mathematical method declaration."""
-
-    receiver: ParameterRole
-    positional: tuple[tuple[str, ParameterRole], ...]
-    keyword: tuple[tuple[str, ParameterRole], ...]
-    variadic: ParameterRole | None
-    keywords: ParameterRole | None
-    result: ParameterRole
-
-
-_DECLARED_TRANSPORT_ROLES: dict[int, DeclaredTransportRoles] = {}
 P = ParamSpec("P")
 R = TypeVar("R")
-
-
-def transport_roles(
-    *,
-    receiver: ParameterRole,
-    positional: tuple[tuple[str, ParameterRole], ...],
-    keyword: tuple[tuple[str, ParameterRole], ...],
-    variadic: ParameterRole | None,
-    keywords: ParameterRole | None,
-    result: ParameterRole,
-) -> Callable[[Callable[P, R]], Callable[P, R]]:
-    """Attach complete transport roles to one method declaration."""
-    declaration = DeclaredTransportRoles(
-        receiver,
-        positional,
-        keyword,
-        variadic,
-        keywords,
-        result,
-    )
-
-    def declare(method: Callable[P, R]) -> Callable[P, R]:
-        _DECLARED_TRANSPORT_ROLES[id(method)] = declaration
-        return method
-
-    return declare
-
-
 Value = TypeVar("Value")
+
+
+def _role_name(annotation: ast.expr) -> str:
+    assert isinstance(annotation, ast.Attribute)
+    assert isinstance(annotation.value, ast.Name)
+    assert annotation.value.id == "ParameterRole"
+    return annotation.attr
+
+
+def _declared_role(annotation: object, location: str) -> ParameterRole:
+    if isinstance(annotation, str):
+        expression = ast.parse(annotation, mode="eval").body
+        assert isinstance(expression, ast.Subscript), location
+        assert isinstance(expression.value, ast.Name), location
+        assert expression.value.id == "Annotated", location
+        arguments = expression.slice
+        assert isinstance(arguments, ast.Tuple), location
+        assert len(arguments.elts) == 2, location
+        return ParameterRole[_role_name(arguments.elts[1])]
+    assert typing.get_origin(annotation) is typing.Annotated, location
+    arguments = typing.get_args(annotation)
+    assert len(arguments) == 2
+    role = arguments[1]
+    assert isinstance(role, ParameterRole)
+    return role
 
 
 def method_signature(
@@ -109,50 +95,48 @@ def method_signature(
     implementation_role: ImplementationRole,
 ) -> MethodSignature:
     """Return the method's complete declared transport roles."""
-    declared = _DECLARED_TRANSPORT_ROLES.get(id(method))
-    assert declared is not None, (
-        f"{method.__qualname__} must declare complete transport roles"
-    )
-    declared_positional = dict(declared.positional)
-    declared_keyword = dict(declared.keyword)
-    parameters = tuple(inspect.signature(method).parameters.values())[1:]
-    positional: list[ParameterRole] = []
-    keyword: list[tuple[str, ParameterRole]] = []
-    variadic: ParameterRole | None = None
-    keywords: ParameterRole | None = None
-    for parameter in parameters:
-        if parameter.kind is inspect.Parameter.VAR_POSITIONAL:
-            assert declared.variadic is not None
-            variadic = declared.variadic
-        elif parameter.kind is inspect.Parameter.VAR_KEYWORD:
-            assert declared.keywords is not None
-            keywords = declared.keywords
-        elif parameter.kind in (
-            inspect.Parameter.POSITIONAL_ONLY,
-            inspect.Parameter.POSITIONAL_OR_KEYWORD,
-        ):
-            assert parameter.name in declared_positional
-            positional.append(declared_positional.pop(parameter.name))
-        else:
-            assert parameter.name in declared_keyword
-            keyword.append((parameter.name, declared_keyword.pop(parameter.name)))
-    assert not declared_positional
-    assert not declared_keyword
-    assert (variadic is None) is (declared.variadic is None)
-    assert (keywords is None) is (declared.keywords is None)
+    signature = inspect.signature(method)
+    parameters = tuple(signature.parameters.values())
+    assert parameters
     receiver = {
         ImplementationRole.OBJECT: ParameterRole.OBJECT,
         ImplementationRole.ELEMENT: ParameterRole.ELEMENT,
         ImplementationRole.ARROW: ParameterRole.ARROW,
     }[implementation_role]
-    assert declared.receiver is receiver
+    assert _declared_role(
+        parameters[0].annotation,
+        f"{method.__qualname__} receiver",
+    ) is receiver, f"{method.__qualname__} receiver role"
+    positional: list[ParameterRole] = []
+    keyword: list[tuple[str, ParameterRole]] = []
+    variadic: ParameterRole | None = None
+    keywords: ParameterRole | None = None
+    for parameter in parameters[1:]:
+        role = _declared_role(
+            parameter.annotation,
+            f"{method.__qualname__} parameter {parameter.name}",
+        )
+        if parameter.kind is inspect.Parameter.VAR_POSITIONAL:
+            variadic = role
+        elif parameter.kind is inspect.Parameter.VAR_KEYWORD:
+            keywords = role
+        elif parameter.kind in (
+            inspect.Parameter.POSITIONAL_ONLY,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        ):
+            positional.append(role)
+        else:
+            keyword.append((parameter.name, role))
     return MethodSignature(
         receiver,
         tuple(positional),
         tuple(keyword),
         variadic,
         keywords,
-        declared.result,
+        _declared_role(
+            signature.return_annotation,
+            f"{method.__qualname__} result",
+        ),
     )
 
 

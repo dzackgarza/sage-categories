@@ -23,7 +23,7 @@ from sage_categories.theories.sets import (
 )
 from sage_categories.theories.cardinals import Cardinal, cardinal
 from sage_categories.abstract_categories.functors import DiscreteDiagram
-from sage_categories.descriptors import ParameterRole, transport_roles
+from sage_categories.descriptors import ParameterRole
 from sage_categories.values import (
     MathematicalObject,
     TransportedArrow,
@@ -260,7 +260,6 @@ class FinitePosetObject(TransportedObject):
     def is_antichain_of_poset(self, members: SetSubset) -> bool:
         return self._sage_poset().is_antichain_of_poset(self._sage_members(members))
 
-    @transport_roles(result=ParameterRole.VALUE)
     def linear_extension(self) -> FiniteTotalOrderObject:
         from sage_categories.theories.ordered_set_constructors import (
             ordered_set_owned_by,
@@ -308,6 +307,16 @@ class FinitePosetsCategory(FullSubcategory):
         poset = PartiallyOrderedSets()(underlying_set, relation)
         assert self.contains_finite_poset(poset)
         return poset
+
+    def from_finite_underlying_poset(
+        self,
+        poset: PosetObject,
+    ) -> FinitePosetObject:
+        underlying_set = PartiallyOrderedSets().underlying_set(poset)
+        assert underlying_set in FiniteSets()
+        result = self._refine_object(poset)
+        assert self.contains_finite_poset(result)
+        return result
 
     def _is_finite(self, value: MathematicalObject) -> bool:
         assert PartiallyOrderedSets().contains_poset(value)

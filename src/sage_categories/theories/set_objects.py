@@ -15,7 +15,7 @@ from sage_categories.abstract_categories.hom_categories import (
     is_restricted_hom_category,
 )
 from sage_categories.category import Category
-from sage_categories.descriptors import ParameterRole, transport_roles
+from sage_categories.descriptors import ParameterRole
 from sage_categories.theories.cardinals import (
     Aleph0,
     Cardinal,
@@ -94,7 +94,6 @@ class SetObject(MathematicalObject):
     def cardinality(self) -> Cardinal:
         return self._cardinality
 
-    @transport_roles(result=ParameterRole.VALUE)
     def Hom(
         self,
         domain: MathematicalObject,
@@ -121,24 +120,20 @@ class SetObject(MathematicalObject):
     def __iter__(self) -> Iterator[SetElement]:
         assert False, f"{self} has no chosen enumeration"
 
-    @transport_roles(result=ParameterRole.VALUE)
     def exponential(self, exponent: SetObject) -> SetHomCategory:
         from sage_categories.theories.set_constructions import ExponentialOfSets
 
         return ExponentialOfSets(self, exponent)
 
-    @transport_roles(result=ParameterRole.VALUE)
     def __pow__(self, exponent: SetObject) -> SetHomCategory:
 
         return self.exponential(exponent)
 
-    @transport_roles(result=ParameterRole.VALUE)
     def powerset(self) -> SetHomCategory:
         from sage_categories.theories.set_constructions import PowerSet
 
         return PowerSet(self)
 
-    @transport_roles(result=ParameterRole.VALUE)
     def subset_poset(self) -> PosetObject:
         from sage_categories.theories.set_subobjects import SubsetsOfSet
 
@@ -173,7 +168,6 @@ class SetObject(MathematicalObject):
 
         return FiniteSubsets(self)
 
-    @transport_roles(result=ParameterRole.VALUE)
     def subset_from(
         self,
         predicate: MembershipPredicate,
@@ -187,13 +181,11 @@ class SetObject(MathematicalObject):
             cardinality=cardinality,
         )
 
-    @transport_roles(result=ParameterRole.VALUE)
     def cartesian_product(self, *others: SetObject) -> SetProductObject:
         from sage_categories.theories.set_constructions import CartesianProductOfSets
 
         return CartesianProductOfSets((self, *others))
 
-    @transport_roles(result=ParameterRole.VALUE)
     def disjoint_union(self, *others: SetObject) -> SetCoproductObject:
         from sage_categories.theories.set_constructions import DisjointUnionOfSets
 

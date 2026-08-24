@@ -20,7 +20,7 @@ from sage_categories.abstract_categories.product_presentations import (
     ConstructionLiftFunctor,
 )
 from sage_categories.category import Category
-from sage_categories.descriptors import ParameterRole, transport_roles
+from sage_categories.descriptors import ParameterRole
 from sage_categories.theories.sets import (
     FiniteSet,
     FiniteSets,
@@ -187,7 +187,6 @@ class PosetObject(MathematicalObject):
         assert ProductElements().contains_product_element(pair)
         return self._relation.membership(pair)
 
-    @transport_roles(result=ParameterRole.VALUE)
     def thin_category(self) -> ThinCategory:
         from sage_categories.theories.thin_categories import ThinCategory
 
@@ -356,15 +355,6 @@ class PosetHomCategory(HomCategory):
             underlying_function=underlying,
         )
 
-    def from_theorem(
-        self,
-        underlying: SetMorphism,
-        owner: MathematicalObject,
-    ) -> PosetMorphism:
-        """Construct a morphism established by the owning construction."""
-        assert registered_value(owner) is owner
-        return self._construct(underlying)
-
     def from_hypothesis(
         self,
         underlying: SetMorphism,
@@ -385,7 +375,7 @@ class PosetHomCategory(HomCategory):
         assert PartiallyOrderedSets().contains_poset(source)
         underlying = Sets().identity(PartiallyOrderedSets().underlying_set(source))
         assert Sets().contains_set_morphism(underlying)
-        return self.from_theorem(underlying, self)
+        return self._construct(underlying)
 
     def compose(self, second: Arrow, first: Arrow) -> PosetMorphism:
         second_hom = second.hom_category()
@@ -405,7 +395,7 @@ class PosetHomCategory(HomCategory):
             forgetful_functor.on_morphism(first),
         )
         assert Sets().contains_set_morphism(underlying)
-        return self.from_theorem(underlying, self)
+        return self._construct(underlying)
 
     def contains_poset_morphism(
         self,
@@ -507,34 +497,25 @@ class PartiallyOrderedSetsCategory(Category):
         underlying_set: SetObject,
     ) -> PosetObject:
         if underlying_set in FiniteSets():
-            return self.Finite().refine_from_theorem(candidate, self)
+            return self.Finite().from_finite_underlying_poset(candidate)
         return candidate
 
     def discrete_order(self, underlying_set: SetObject) -> PosetObject:
         """Return the discrete poset on ``underlying_set`` with equality order."""
         assert underlying_set in Sets()
-        return self.from_theorem(
-            underlying_set,
-            Sets().relation(
+        return self._strongest_result(
+            self._construct(
                 underlying_set,
-                Sets().binary_predicate(
+                Sets().relation(
                     underlying_set,
-                    lambda left, right: left == right,
+                    Sets().binary_predicate(
+                        underlying_set,
+                        lambda left, right: left == right,
+                    ),
                 ),
             ),
-            self,
+            underlying_set,
         )
-
-    def from_theorem(
-        self,
-        underlying_set: SetObject,
-        relation: OrderRelation,
-        owner: MathematicalObject,
-    ) -> PosetObject:
-        """Construct a poset whose order laws follow from its owner."""
-        assert registered_value(owner) is owner
-        candidate = self._construct(underlying_set, relation)
-        return self._strongest_result(candidate, underlying_set)
 
     def from_hypothesis(
         self,
@@ -561,7 +542,10 @@ class PartiallyOrderedSetsCategory(Category):
         by the well-ordering of ordinals (Sierpiński §II.7).  This is a
         theorem-backed entry path for infinite ordinal-valued sets.
         """
-        return self.from_theorem(underlying_set, relation, self)
+        return self._strongest_result(
+            self._construct(underlying_set, relation),
+            underlying_set,
+        )
 
     def _hom_category_type(self) -> type[HomCategory]:
         return PosetHomCategory
@@ -656,7 +640,10 @@ class PartiallyOrderedSetsCategory(Category):
         backed entry path that bypasses finite exhaustive validation.
         """
         # Davey & Priestley, Introduction to Lattices and Order, §1.28.
-        return self.from_theorem(underlying_set, relation, self)
+        return self._strongest_result(
+            self._construct(underlying_set, relation),
+            underlying_set,
+        )
 
     def __repr__(self) -> str:
         return "Partially ordered sets"

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import TYPE_CHECKING, TypeIs
 
@@ -67,42 +68,19 @@ class ProductPresentation(MathematicalObject):
         return result
 
 
-class ConstructionLiftFunctor(Functor):
-    """Lift registered structural images on objects and arrows."""
+class ConstructionLiftFunctor(Functor, ABC):
+    """A construction theorem acting totally on objects and arrows."""
 
-    def __init__(self, structural_functor: StructuralFunctor) -> None:
-        self._structural_functor = structural_functor
-        self._objects: dict[int, MathematicalObject] = {}
-        super().__init__(
-            structural_functor.codomain(),
-            structural_functor.domain(),
-        )
+    def __init__(self, domain: Category, codomain: Category) -> None:
+        super().__init__(domain, codomain)
 
-    def register_object(self, source: MathematicalObject) -> None:
-        assert source in self.codomain()
-        image = self._structural_functor.on_object(source)
-        self._objects[id(image)] = source
-
+    @abstractmethod
     def _object_image(self, image: MathematicalObject) -> MathematicalObject:
-        source = self._objects.get(id(image))
-        assert source is not None
-        assert self._structural_functor.on_object(source) is image
-        return source
+        """Construct the theorem-backed object image."""
 
+    @abstractmethod
     def _morphism_image(self, image: Arrow) -> Arrow:
-        source = self.on_object(image.domain())
-        target = self.on_object(image.codomain())
-        lifted = self._lifted_morphism(source, target, image)
-        assert self._structural_functor.on_morphism(lifted) is image
-        return lifted
-
-    def _lifted_morphism(
-        self,
-        source: MathematicalObject,
-        target: MathematicalObject,
-        image: Arrow,
-    ) -> Arrow:
-        assert False, f"{self} has no construction arrow lift"
+        """Construct the theorem-backed arrow image."""
 
 
 class ProductLift:
@@ -131,7 +109,6 @@ class ProductLift:
         self._apex = apex
         self._comparison = comparison
         self._lift = lift
-        self._lift.register_object(apex)
 
     @staticmethod
     def _inherited_apex(

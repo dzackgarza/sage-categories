@@ -11,7 +11,7 @@ from collections.abc import Callable
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
-from sage_categories.descriptors import ParameterRole, transport_roles
+from sage_categories.descriptors import ParameterRole
 from sage_categories.values import (
     UNKNOWN,
     Decision,
@@ -98,12 +98,10 @@ class Cardinal(MathematicalObject):
     def terms(self) -> tuple[Cardinal, ...]:
         return self._terms
 
-    @transport_roles(result=ParameterRole.VALUE)
     def index_set(self) -> SetObject:
         assert self._index_set is not None
         return self._index_set
 
-    @transport_roles(result=ParameterRole.VALUE)
     def family(self) -> CardinalFamily:
         assert self._family is not None
         return self._family
@@ -117,13 +115,11 @@ class Cardinal(MathematicalObject):
     def is_countably_infinite(self) -> bool:
         return self._kind is CardinalKind.ALEPH and self.aleph_index() == 0
 
-    @transport_roles(result=ParameterRole.VALUE)
     def aleph_index(self) -> Ordinal:
         assert self._kind is CardinalKind.ALEPH
         assert self._index is not None
         return self._index
 
-    @transport_roles(result=ParameterRole.VALUE)
     def initial_ordinal(self) -> Ordinal:
         from sage_categories.theories.ordinals import omega, ordinal
 

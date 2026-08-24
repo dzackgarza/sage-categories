@@ -122,9 +122,15 @@ class DeclaredMethod:
         self.implementation_owner = implementation_owner
         self.method = method
         self.role = role
-        self.signature: MethodSignature = method_signature(method, role)
+        self._signature: MethodSignature | None = None
         self.route = route
         self.implementation_route = implementation_route
+
+    @property
+    def signature(self) -> MethodSignature:
+        if self._signature is None:
+            self._signature = method_signature(self.method, self.role)
+        return self._signature
 
 
 class CategoryCompiler:

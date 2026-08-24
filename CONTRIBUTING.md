@@ -290,6 +290,7 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-074` | Preserve the strongest established category of every object. Do not replace it with an ancestor implementation merely to call an inherited operation. |
 | `POL-CAT-075` | Treat the ordinary typed signature and executable body on the owning implementation class as the sole authoritative declaration of a method. Derive every descriptor and generated typing artifact from that declaration. Never maintain a second description of its receiver, parameters, call shape, result, or mathematical roles. |
 | `POL-CAT-076` | Keep mathematical type, Python call shape, and structural transport provenance distinct. Exact types state mathematical roles. The Python signature states positional, keyword, and variadic shape. Canonical image and preimage relations state transport provenance. No one of these facts can replace another. |
+| `POL-CAT-077` | Determine method ownership from its definition on the category-owned implementation class and the selected structural functors. No decorator, marker, annotation payload, registry entry, or descriptor argument can create mathematical ownership or repair a missing category declaration. |
 
 Grounding examples:
 
@@ -385,6 +386,9 @@ Grounding examples:
 | `POL-LEAF-050` | Quarantine substantial Python, foreign-function, process, conversion, caching, and engine-adaptation code in private helpers. Keep mathematical ownership, public methods, semantic inputs, and semantic reconstruction on the sole category implementation class. |
 | `POL-LEAF-051` | Write a leaf method as one ordinary typed Python method. Never attach or place beside it transport metadata, compiler annotations, descriptor arguments, role tables, signature mirrors, or another record of facts already present in its declaration. This rule applies by function, regardless of mechanism name or syntax. |
 | `POL-LEAF-052` | Stop a change that repeats the same non-mathematical declaration across leaf methods or categories. Such repetition identifies missing kernel derivation. Repair the kernel once, or reject the unsupported semantic signature during compilation. |
+| `POL-LEAF-053` | Require no framework-specific decorator on a mathematical leaf method. Never use a decorator to establish ownership, compilation, inheritance, transport, dispatch, engine selection, result reconstruction, or type repair. An ordinary typed method on the owning implementation class is complete. |
+| `POL-LEAF-054` | Keep kernel concerns out of every leaf import, decorator, annotation, signature, class attribute, and method body. Leaves never mention compiler descriptors, transport roles, structural routes, canonical images or preimages, refinement caches, generated types, or dispatch machinery. |
+| `POL-LEAF-055` | Use only ordinary Python call syntax and exact mathematical types in a leaf method signature. Never require `Annotated` payloads, marker types, empty metadata fields, sentinel fields, parameter-role inventories, result-role labels, or declarations of absent positional, keyword, variadic, or result cases. |
 
 See [Leaf category implementations](specs/leaves.md) for the complete ownership model,
 the allowed private computation sequence, and the rejected decorator and mirrored-class
@@ -420,6 +424,8 @@ It does not reimplement composition, structural transport, domain checks, codoma
 | `POL-KERNEL-020` | Compile and transport inherited operations only. Never route a locally owned operation into Sage or another engine, replace its executable method, match it to an engine method by name, or interpret a decorator, descriptor, annotation, registry entry, or marker as a computation route. |
 | `POL-KERNEL-021` | Derive a method receiver's role from its owning `ObjectType`, `ElementType`, or `ArrowType`. Derive parameter and result roles from their exact mathematical types. Derive call shape from the Python signature. Fail compilation when any required role is not exact. Never require a leaf to restate these facts. |
 | `POL-KERNEL-022` | Use mathematical roles to type transport and canonical image or preimage relations to decide whether transport applies. Never relabel a category, object, element, arrow, or mathematical collection as a plain value to suppress transport. |
+| `POL-KERNEL-023` | Compile every supported ordinary typed leaf method without any kernel import or framework annotation in the leaf. A required decorator, role marker, signature mirror, or transport record is a kernel API defect. |
+| `POL-KERNEL-024` | Inspect standard Python signatures and exact mathematical type annotations inside the kernel. Never require a theory module to use a signature DSL, encode standard call mechanics, describe absent parameters, or issue transport commands. |
 
 See [Leaf category implementations](specs/leaves.md) for the exact boundary between
 kernel-owned inheritance and leaf-owned computation.
@@ -432,6 +438,8 @@ For example, `exponential(self, exponent: SetObject) -> SetHomCategory` already 
 its receiver, argument, call shape, and result type.
 The leaf does not repeat those facts in a transport decorator.
 The result remains a `SetHomCategory`; it is not a plain value used to evade reverse transport.
+The same rule excludes mandatory `@transport_roles(...)`, `receiver=...`, empty
+`keyword=()`, and `variadic=None` declarations from every theory module.
 
 For example, an object of `Modules(R)` can be defined by an action morphism \(\rho:R\to\operatorname{End}(X)\). Its selected functor to `Sets()` recovers \(X\) from \(\rho\) and applies `Sets(X)`. The module category does not implement set operations independently.
 

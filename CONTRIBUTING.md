@@ -299,6 +299,10 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-078` | The owner of a mathematical fact is the category, object, arrow, functor, or universal construction whose definition states it. A metadata holder, descriptor, registry, adapter, backend, compiler component, or generated type is never its mathematical owner. |
 | `POL-CAT-079` | Place every operation forced by category placement at the highest category that first guarantees it. The isomorphism category owns inversion; a product presentation owns its projections and universal map. Descendants receive these operations through inheritance and never reconstruct them locally. |
 | `POL-CAT-080` | Before placing code in a leaf, trace the complete public call from its mathematical owner through construction or presentation categories, selected structural functors, method compilation, and transport of receivers, arguments, and results. Perform this trace for objects, elements, and arrows. A missing step is a foundational defect, not permission for a leaf implementation. |
+| `POL-CAT-081` | Construct every owned value in the strongest property-based subcategory established by its defining construction, exact computation, or trusted programmer assertion. Never construct it weakly and recompute a property already known at construction time. |
+| `POL-CAT-082` | Permit a category-owned implementation to return `True` from a defining property predicate when its construction or definition asserts that property for every value it builds. That exact result invokes the same property-subcategory constructor; it is not a proof object, metadata field, or separate admission route. |
+| `POL-CAT-083` | Represent a distinguished named mathematical object by its parameterized one-object category. Let that category own the object-specific declarations and selected structural functors that place its sole object in all established ambient and property categories. |
+| `POL-CAT-084` | If `C.P()` is a property subcategory and `D` has a selected structural inclusion into `C`, derive `D.P()` automatically as the corresponding narrowing of `D`. Define the property constructor once. Never require a descendant category to repeat its class, predicate, constructor, or transport wiring. |
 
 Grounding examples:
 
@@ -399,6 +403,7 @@ Grounding examples:
 | `POL-LEAF-054` | Keep kernel concerns out of every leaf import, decorator, annotation, signature, class attribute, and method body. Leaves never mention compiler descriptors, transport roles, structural routes, canonical images or preimages, refinement caches, generated types, or dispatch machinery. |
 | `POL-LEAF-055` | Use only ordinary Python call syntax and exact mathematical types in a leaf method signature. Never require `Annotated` payloads, marker types, empty metadata fields, sentinel fields, parameter-role inventories, result-role labels, or declarations of absent positional, keyword, variadic, or result cases. |
 | `POL-LEAF-056` | Never implement an operation supplied by an inherited arrow category, arrow-property category, or universal construction. This includes inversion of isomorphisms and every other operation implied by established categorical placement. If the operation is absent from a descendant arrow, repair the generic owner, structural functor, or compiler. |
+| `POL-LEAF-057` | A named-object leaf states its known properties by its strongest category placement or by ordinary defining predicates that return `True`. Never enumerate the object, query an engine, or run a general decision procedure to rediscover a property supplied by its definition. |
 
 See [Leaf category implementations](specs/leaves.md) for the complete ownership model,
 the allowed private computation sequence, and the rejected decorator and mirrored-class
@@ -437,6 +442,7 @@ It does not reimplement composition, structural transport, domain checks, codoma
 | `POL-KERNEL-023` | Compile every supported ordinary typed leaf method without any kernel import or framework annotation in the leaf. A required decorator, role marker, signature mirror, or transport record is a kernel API defect. |
 | `POL-KERNEL-024` | Inspect standard Python signatures and exact mathematical type annotations inside the kernel. Never require a theory module to use a signature DSL, encode standard call mechanics, describe absent parameters, or issue transport commands. |
 | `POL-KERNEL-025` | Compile operations from inherited categories, arrow-property categories, and construction categories onto every descendant `ObjectType`, `ElementType`, and `ArrowType`. A missing inherited inverse, universal arrow, or other placement-forced operation is a kernel defect. It never licenses leaf wiring. |
+| `POL-KERNEL-026` | Propagate each property-subcategory constructor through selected structural inclusions, following Sage's `with_axiom` model. Build the descendant refinement, role MRO, constructor, and inherited predicate behavior generically. A leaf supplies no propagation machinery. |
 
 See [Leaf category implementations](specs/leaves.md) for the exact boundary between
 kernel-owned inheritance and leaf-owned computation.

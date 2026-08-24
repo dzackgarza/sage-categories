@@ -240,3 +240,50 @@ These kernel policies require correction:
 The durable rule should be:
 
 > A property subcategory owns the constructor that trusts its defining property. Direct construction, global assumption, exact computation, and construction-owned mathematics all converge on that constructor and refine the same owned value.
+
+### Strongest property placement and one-object categories
+
+Construct each owned value in the strongest property-based subcategory established by
+its construction. A programmer can establish a property by selecting that trusted
+subcategory constructor. This is a mathematical assertion in the implementation. It
+does not require the general decision procedure to recompute the property.
+
+The category-owned implementation of a named object can also override a defining
+predicate to return `True`. This states that every value built by that implementation
+has the property. The ordinary predicate rule then invokes the same property-category
+constructor and self-refines the value. The override is not a proof object, metadata,
+or a second admission path.
+
+Property refinements must propagate through the category graph. If a category `C`
+defines a property subcategory `C.P()` and `D` is structurally a subcategory of `C`,
+the kernel must derive `D.P()` as the corresponding narrowing of `D`. A leaf must not
+define another property class, constructor, predicate, or transport route. Sage's
+`with_axiom` mechanism is the design precedent: a property constructor defined once
+becomes available on descendant categories.
+
+Thus an expression such as
+
+```python
+Fields().Countable().PartiallyOrdered()
+```
+
+denotes the strongest combined category stated by those refinements. Its construction
+must receive any mathematical data introduced by a structure and must retain every
+property already established. The expression must not cause repeated property checks.
+
+A distinguished named object is represented by its parameterized one-object category.
+For example, the category `{QQ}` has `QQ` as its sole object. It declares the structural
+functors that place `QQ` in countable sets, partially ordered sets, and fields. The field
+route then supplies its ring structure. Construction of `QQ` places the sole object in
+the strongest combined category declared by these functors.
+
+Likewise, `{FF_p}` is a one-object category parameterized by the prime `p`. Its defining
+construction declares finiteness. It never proves finiteness by enumeration, cardinality
+computation, or backend inspection. It constructs `FF_p` in the finite property
+subcategory, or its category-owned finite predicate returns `True` and triggers the same
+refinement.
+
+For an interactive claim not owned by a construction, the user can apply the sanctioned
+global assumption operation, such as `assume(finite(X))`. That operation also invokes
+the same property-category constructor. Backend and theory code still construct directly
+in the category they establish; they do not call `assume()`.

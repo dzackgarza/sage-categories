@@ -356,20 +356,101 @@ applicable cardinal formula without enumerating an infinite function set.
 
 ## SymPy computation boundary
 
-SymPy can supply private symbolic representations and exact simplification algorithms.
-The owned `Sets()` API remains the public boundary.
+Use SymPy as the first private computation engine for supported symbolic set operations.
+Do not reimplement its set algebra, predicate reduction, image normalization, or standard
+infinite sets. The owned `Sets()` API remains the public boundary.
+
+The primary SymPy representations are:
+
+| Mathematical input | SymPy representation or algorithm |
+| --- | --- |
+| Explicit finite set | `FiniteSet` |
+| Finite or infinite arithmetic progression | `Range` |
+| Standard number set | `Naturals`, `Integers`, `Rationals`, or `Reals` |
+| Predicate subobject | `ConditionSet(symbol, condition, base_set)` |
+| Membership proposition | `Contains(element, set)` |
+| Image of a symbolic map | `imageset(lambda, domain)` or unevaluated `ImageSet` |
+| Union, intersection, or complement | `Union`, `Intersection`, or `Complement` |
+| Cartesian product | `ProductSet` |
+| Power object | `PowerSet` |
+
+Use SymPy constructors and simplifiers before writing a local symbolic algorithm. For
+example, the Sage-runtime SymPy 1.14 computations are:
+
+```python
+Intersection(S.Naturals, FiniteSet(1, 2, 3))
+# FiniteSet(1, 2, 3)
+
+ConditionSet(n, Contains(n, FiniteSet(1, 2, 3)), S.Naturals)
+# FiniteSet(1, 2, 3)
+
+imageset(Lambda(n, sympy.Integer(2) * n), S.Naturals)
+# Range(2, oo, 2)
+```
+
+The first two results reconstruct an owned finite subset with cardinality `3`. The last
+result reconstructs an owned countably infinite subset with cardinality `aleph0`.
+
+SymPy can also leave a construction unresolved:
+
+```python
+ImageSet(Lambda(n, sympy.Integer(2) * n), S.Naturals).is_finite_set
+# None
+
+imageset(Lambda(n, n ** sympy.Integer(2)), S.Naturals).is_finite_set
+# None
+
+ConditionSet(n, Eq(p(n), 0), S.Naturals).is_finite_set
+# None
+```
+
+An unevaluated `ImageSet` or `ConditionSet` remains a valid private representation. Its
+owned cardinality is `UnknownCardinality()` unless defining data or a construction
+theorem supplies a stronger result.
+
+SymPy sets do not supply one general `cardinality()` operation. Reconstruct the owned
+cardinal from the normalized result:
+
+- `FiniteSet` contributes its exact finite size.
+- A finite `Range` contributes its exact finite size.
+- An infinite `Range` contributes `aleph0`.
+- A standard number set contributes its established cardinal.
+- An unresolved symbolic set contributes `UnknownCardinality()`.
+
+Never use `None` for an unknown cardinality. Never assign the domain cardinality to an
+image unless injectivity or another theorem establishes that equality.
+
+The Sage-to-SymPy conversion is an exact private boundary. Convert Sage integers to
+`sympy.Integer`, Sage rationals to `sympy.Rational`, and owned elements to their exact
+SymPy values before constructing symbolic expressions. Mixing a Sage integer into a
+SymPy lambda can select an incorrect SymPy simplification path.
+
+Select a SymPy algorithm from the exact private representation. Do not call operations
+until one succeeds, catch an engine exception, or use another representation as a
+fallback. If a SymPy operation does not support the representation, retain the owned
+symbolic construction and return the typed unknown result.
+
+Construction-owned mathematics remains authoritative. For example, the image of an
+established monomorphism has the domain cardinality even when SymPy leaves its
+`ImageSet` unevaluated. SymPy computes consequences; it does not replace category
+placement or theorem-backed constructors.
 
 | Owned operation | SymPy value | Required reconstruction |
 | --- | --- | --- |
 | Membership | `Contains(x, X)` | Return `True`, `False`, or Sage `Unknown`. |
 | Predicate subset | `ConditionSet(x, P(x), X)` | Return the owned subset with its inclusion. |
-| Image | `ImageSet(f, X)` | Return the owned image subobject. |
+| Image | `imageset(f, X)` or `ImageSet(f, X)` | Return the owned image subobject. Preserve an unevaluated image. |
+| Finite normalization | `FiniteSet` | Return an owned finite set and exact finite cardinal. |
+| Progression normalization | `Range` | Return an owned enumerated set and its finite cardinal or `aleph0`. |
+| Set algebra | `Union`, `Intersection`, `Complement`, `ProductSet` | Return the corresponding owned construction. |
 | Set equality or inclusion | symbolic set relations | Return an exact decision or `Unknown`. |
-| Cardinal calculation | symbolic expressions | Return an owned cardinal value. |
+| Cardinal calculation | normalized set type and symbolic properties | Return an owned cardinal value, never `None`. |
 | Universal constructions | symbolic set expressions | Retain all defining arrows and universal maps. |
 
 SymPy methods never enter the public API automatically. The owning set method lowers
-inputs and reconstructs the owned mathematical result.
+inputs and reconstructs the owned mathematical result. See the [SymPy sets
+documentation](https://docs.sympy.org/latest/modules/sets.html) for the supported
+representations and simplifications.
 
 ## Unknown and partial algorithms
 
@@ -404,6 +485,11 @@ facts:
 - power-object operations return owned subsets and arrows;
 - countability does not create a chosen enumeration;
 - cardinal methods return cardinal objects;
+- supported symbolic set operations use SymPy instead of duplicate local algorithms;
+- every SymPy input crosses an exact Sage-to-SymPy conversion boundary;
+- normalized `FiniteSet` and `Range` results reconstruct their exact owned cardinalities;
+- unevaluated `ConditionSet` and `ImageSet` results reconstruct valid owned sets with
+  `UnknownCardinality()` when no theorem decides more;
 - exact failures remain `False` or `Unknown`;
 - private engine values never cross the public boundary.
 

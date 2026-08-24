@@ -113,21 +113,13 @@ def _forward_arg_by_role(
 ) -> Any:
     if arg is None:
         return arg
-    match role:
-        case "element":
-            assert isinstance(arg, MathematicalElement)
-            image_elem = arg._element_image_along(route)
-            return image_elem
-        case "object":
-            assert isinstance(arg, MathematicalObject)
-            image_obj = arg._object_image_along(route)
-            return image_obj
-        case "arrow":
-            assert isinstance(arg, Arrow)
-            image_arrow = arg._morphism_image_along(route)
-            return image_arrow
-        case _:
-            return arg
+    if isinstance(arg, Arrow):
+        return arg._morphism_image_along(route)
+    if isinstance(arg, MathematicalElement):
+        return arg._element_image_along(route)
+    if isinstance(arg, MathematicalObject):
+        return arg._object_image_along(route)
+    return arg
 
 
 def _forward_args(
@@ -180,39 +172,20 @@ def _transport_result(
     if target_ambient is not None and result is target_ambient:
         return source_ambient
 
-    match return_role:
-        case "element":
-            assert isinstance(result, MathematicalElement)
-            return _pull_back_element_along(result, route, source_ambient)
-        case "iterator_element":
-            assert isinstance(result, Iterator)
-
-            def lazy_elements() -> Iterator[MathematicalElement]:
+    if return_role == "iterator_element" or isinstance(result, Iterator):
+        if isinstance(result, Iterator):
+            def lazy_elements() -> Iterator[Any]:
                 for item in result:
-                    assert isinstance(item, MathematicalElement)
-                    yield _pull_back_element_along(item, route, source_ambient)
-
+                    if isinstance(item, MathematicalElement):
+                        yield _pull_back_element_along(item, route, source_ambient)
+                    else:
+                        yield item
             return lazy_elements()
-        case "iterator_object":
-            assert isinstance(result, Iterator)
 
-            def lazy_objects() -> Iterator[MathematicalObject]:
-                for item in result:
-                    assert isinstance(item, MathematicalObject)
-                    yield item
+    if isinstance(result, MathematicalElement):
+        return _pull_back_element_along(result, route, source_ambient)
 
-            return lazy_objects()
-        case "iterator_arrow":
-            assert isinstance(result, Iterator)
-
-            def lazy_arrows() -> Iterator[Arrow]:
-                for item in result:
-                    assert isinstance(item, Arrow)
-                    yield item
-
-            return lazy_arrows()
-        case _:
-            return result
+    return result
 
 
 class ForwardedObjectMethod[Receiver: MathematicalObject, **P, R]:

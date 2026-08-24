@@ -169,7 +169,6 @@ class PosetObject(MathematicalObject):
             assert is_antisymmetric is True, "Antisymmetry must be established for nonfinite poset"
             assert is_transitive is True, "Transitivity must be established for nonfinite poset"
 
-
     def _set_implementation(self) -> SetObject:
         return self._underlying_set
 

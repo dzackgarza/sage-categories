@@ -33,6 +33,7 @@ type Decision = bool | Unknown
 
 
 _VALUES: dict[int, MathematicalObject] = {}
+_ELEMENTS: dict[int, MathematicalElement] = {}
 
 
 def registered_value[Candidate](candidate: Candidate) -> MathematicalObject | None:
@@ -41,6 +42,15 @@ def registered_value[Candidate](candidate: Candidate) -> MathematicalObject | No
     value = _VALUES.get(candidate_id)
     if value is not None and id(value) == candidate_id:
         return value
+    return None
+
+
+def registered_element[Candidate](candidate: Candidate) -> MathematicalElement | None:
+    """Return the owned mathematical element represented by ``candidate``."""
+    candidate_id = id(candidate)
+    element = _ELEMENTS.get(candidate_id)
+    if element is not None and id(element) == candidate_id:
+        return element
     return None
 
 
@@ -206,6 +216,7 @@ class MathematicalElement(MathematicalObject):
     ) -> None:
         self._ambient_object = ambient_object
         super().__init__(category=category)
+        _ELEMENTS[id(self)] = self
         self._element_structural_images[id(ambient_object.category())] = self
 
     def ambient_object(self) -> MathematicalObject:
@@ -286,7 +297,9 @@ class Arrow(MathematicalElement):
         return own_hom_category is hom_category or (
             own_hom_category.domain() is hom_category.domain()
             and own_hom_category.codomain() is hom_category.codomain()
-            and own_hom_category.hom_category().is_subcategory(hom_category.hom_category())
+            and own_hom_category.hom_category().is_subcategory(
+                hom_category.hom_category()
+            )
         )
 
     def _is_arrow_in(self, category: Category) -> bool:

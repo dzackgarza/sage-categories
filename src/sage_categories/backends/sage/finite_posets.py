@@ -18,7 +18,7 @@ from sage_categories.theories.posets import (
     FinitePosets,
     PartiallyOrderedSets,
     PosetElement,
-    PosetObject,
+    is_poset_element,
 )
 from sage_categories.values import UNKNOWN, Arrow, MathematicalObject
 
@@ -42,11 +42,14 @@ class SageFinitePosetObject(MathematicalObject):
         source: MathematicalObject,
     ) -> None:
         assert source in FinitePosets()
-        poset = FinitePosets().inclusion()(source)
-        assert PartiallyOrderedSets().contains_poset(poset)
-        underlying_set = PartiallyOrderedSets().underlying_set(poset)
+        assert PartiallyOrderedSets().contains_poset(source)
+        underlying_set = PartiallyOrderedSets().underlying_set(source)
         assert underlying_set.is_finite() is True
-        members = tuple(poset)
+        represented_members: list[PosetElement] = []
+        for member in source:
+            assert is_poset_element(member)
+            represented_members.append(member)
+        members = tuple(represented_members)
 
         def relation(left: PosetElement, right: PosetElement) -> bool:
             comparison = left <= right
@@ -54,7 +57,7 @@ class SageFinitePosetObject(MathematicalObject):
             return comparison
 
         self._source = source
-        self._poset = poset
+        self._poset = source
         self._value = _sage_poset_constructor(
             (members, relation),
             facade=True,
@@ -64,7 +67,7 @@ class SageFinitePosetObject(MathematicalObject):
     def source(self) -> MathematicalObject:
         return self._source
 
-    def poset(self) -> PosetObject:
+    def poset(self) -> MathematicalObject:
         return self._poset
 
     def covers(
@@ -179,6 +182,9 @@ class SageFinitePosetObject(MathematicalObject):
 
     def is_antichain_of_poset(self, members: Iterable[PosetElement]) -> bool:
         return self._value.is_antichain_of_poset(tuple(members))
+
+    def linear_extension(self) -> Iterator[PosetElement]:
+        return iter(self._value.linear_extension())
 
 
 class SageFinitePosetMorphism(Arrow):

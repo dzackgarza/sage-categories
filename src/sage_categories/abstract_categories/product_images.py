@@ -9,6 +9,7 @@ from sage_categories.abstract_categories.diagram_shapes import (
     ConeObject,
 )
 from sage_categories.abstract_categories.functor_images import (
+    FunctorImageElement,
     FunctorImageObject,
     ImageOfFunctor,
 )
@@ -126,7 +127,7 @@ class LimitsOfCategory(ImageOfFunctor):
     """Chosen limits constructed by one limit functor."""
 
     ObjectType: type[LimitObject] = LimitObject
-    ElementType: type[MathematicalElement] = CategoryElement
+    ElementType: type[MathematicalElement] = FunctorImageElement
 
     def __init__(
         self,

@@ -2,28 +2,40 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Iterator, Mapping
-from typing import TYPE_CHECKING, Any, TypeIs
+from collections.abc import Callable, Iterable, Mapping
+from typing import TYPE_CHECKING, TypeIs
 
+from sage_categories.abstract_categories.arrow_categories import declare_isomorphism
 from sage_categories.abstract_categories.functors import (
+    DiscreteCategories,
     Functor,
     StructuralFunctor,
+    is_functor,
 )
 from sage_categories.abstract_categories.hom_categories import (
     HomCategory,
+    is_isomorphism,
+)
+from sage_categories.abstract_categories.products import (
+    ProductLift,
+    ProductPresentation,
 )
 from sage_categories.category import Category
 from sage_categories.theories.sets import (
     FiniteSet,
     FiniteSets,
     FiniteSetsCategory,
+    ProductElements,
+    ProductsOfSetsCategory,
     SetElement,
     SetElements,
     SetMorphism,
     SetObject,
+    SetProductObject,
     Sets,
     SetsCategory,
     is_set_hom_category,
+    is_products_of_sets_category,
 )
 from sage_categories.values import (
     UNKNOWN,
@@ -31,6 +43,7 @@ from sage_categories.values import (
     Decision,
     MathematicalElement,
     MathematicalObject,
+    registered_element,
     registered_value,
 )
 
@@ -38,10 +51,6 @@ if TYPE_CHECKING:
     from sage_categories.theories.finite_posets import (
         FinitePosetObject,
         FinitePosetsCategory,
-    )
-    from sage_categories.theories.poset_products import (
-        PosetProductObject,
-        ProductsOfPosetsCategory,
     )
     from sage_categories.theories.thin_categories import ThinCategory
 
@@ -54,7 +63,7 @@ class PosetElement(MathematicalElement):
     def __init__(
         self,
         *,
-        ambient_object: PosetObject | PosetProductObject,
+        ambient_object: PosetObject | FinitePosetObject,
         set_element: SetElement,
     ) -> None:
         assert ambient_object in PartiallyOrderedSets()
@@ -63,14 +72,14 @@ class PosetElement(MathematicalElement):
         assert set_element in underlying_set
         self._set_element = set_element
         super().__init__(
-            category=PosetElements(),
+            category=ambient_object.category(),
             ambient_object=ambient_object,
         )
 
     def _set_implementation(self) -> SetElement:
         return self._set_element
 
-    def ambient_poset(self) -> PosetObject | PosetProductObject:
+    def ambient_poset(self) -> PosetObject:
         ambient = self.ambient_object()
         assert PartiallyOrderedSets().contains_poset(ambient)
         return ambient
@@ -88,42 +97,13 @@ class PosetElement(MathematicalElement):
         return repr(self._set_element)
 
 
-class PosetElementsCategory(Category):
-    """The total category of elements of partially ordered sets."""
-
-    ObjectType = PosetElement
-
-    def __init__(self) -> None:
-        super().__init__()
-
-    def contains_poset_element(
-        self,
-        candidate: MathematicalObject,
-    ) -> TypeIs[PosetElement]:
-        return candidate in self
-
-    def __repr__(self) -> str:
-        return "Elements of partially ordered sets"
-
-
-_POSET_ELEMENTS: PosetElementsCategory | None = None
-
-
-def PosetElements() -> PosetElementsCategory:
-    global _POSET_ELEMENTS
-
-    if _POSET_ELEMENTS is None:
-        _POSET_ELEMENTS = PosetElementsCategory()
-    return _POSET_ELEMENTS
-
-
 class PosetObject(MathematicalObject):
     """A set equipped with one chosen partial order."""
 
     def __init__(
         self,
         *,
-        category: (PartiallyOrderedSetsCategory | FinitePosetsCategory | ProductsOfPosetsCategory),
+        category: PartiallyOrderedSetsCategory,
         underlying_set: SetObject,
         relation: OrderRelation,
     ) -> None:
@@ -143,19 +123,14 @@ class PosetObject(MathematicalObject):
         key = id(set_element)
         cached = self._elements.get(key)
         if cached is None:
-            cached = PartiallyOrderedSets().ElementType(
+            element_type = self.category().ElementType
+            assert is_poset_element_type(element_type)
+            cached = element_type(
                 ambient_object=self,
                 set_element=set_element,
             )
             self._elements[key] = cached
         return cached
-
-    def __contains__(self, candidate: Any) -> bool:
-        value = registered_value(candidate)
-        return value is not None and PosetElements().contains_poset_element(value) and value.ambient_poset() is self
-
-    def __iter__(self) -> Iterator[PosetElement]:
-        return iter(self.element(member) for member in self._underlying_set)
 
     def _is_lequal(self, left: PosetElement, right: PosetElement) -> Decision:
         assert left in self
@@ -205,6 +180,18 @@ class PosetMorphism(Arrow):
         assert is_partially_ordered_sets_category(category)
         assert category.contains_poset(source)
         assert category.contains_poset(target)
+        if member.ambient_object() is not source:
+            route = (
+                member.ambient_object()
+                .category()
+                .structural_route_to(
+                    source.category(),
+                )
+            )
+            image_member = member._element_image_along(route)
+            assert is_poset_element(image_member)
+            assert image_member.ambient_object() is source
+            member = image_member
         assert member in source
         forgetful_functor = category.forgetful_functor()
         set_member = forgetful_functor.on_element(source, member)
@@ -227,7 +214,9 @@ class PosetMorphism(Arrow):
             return UNKNOWN
         answer: Decision = True
         for left in source:
+            assert is_poset_element(left)
             for right in source:
+                assert is_poset_element(right)
                 image_comparison = self(left) <= self(right)
                 source_comparison = left <= right
                 if image_comparison is True and source_comparison is False:
@@ -269,7 +258,9 @@ class PosetHomCategory(HomCategory):
 
     def __call__(
         self,
-        action: Callable[[PosetElement], PosetElement] | Mapping[PosetElement, PosetElement] | PosetMorphism,
+        action: Callable[[PosetElement], PosetElement]
+        | Mapping[PosetElement, PosetElement]
+        | PosetMorphism,
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
@@ -296,7 +287,7 @@ class PosetHomCategory(HomCategory):
                 image = action(source_member)
             else:
                 image = action[source_member]
-            assert PosetElements().contains_poset_element(image)
+            assert is_poset_element(image)
             assert image in target
             set_image = category.forgetful_functor().on_element(target, image)
             assert SetElements().contains_set_element(set_image)
@@ -368,6 +359,10 @@ class ForgetPosetFunctor(StructuralFunctor):
 
     def _object_image(self, source: MathematicalObject) -> SetObject:
         assert PartiallyOrderedSets().contains_poset(source)
+        if source.category() is not self.domain():
+            route = source.category().structural_route_to(self.domain())
+            source = source._object_image_along(route)
+            assert PartiallyOrderedSets().contains_poset(source)
         image = source._set_implementation()
         assert image in self.codomain()
         return image
@@ -384,9 +379,23 @@ class ForgetPosetFunctor(StructuralFunctor):
         element: MathematicalElement,
     ) -> SetElement:
         assert PartiallyOrderedSets().contains_poset(source)
-        assert PosetElements().contains_poset_element(element)
-        assert element in source
+        assert is_poset_element(element)
+        if source.category() is not self.domain():
+            route = source.category().structural_route_to(self.domain())
+            source = source._object_image_along(route)
+            element = element._element_image_along(route)
+            assert PartiallyOrderedSets().contains_poset(source)
+            assert is_poset_element(element)
         return element._set_implementation()
+
+    def _element_preimage(
+        self,
+        source: MathematicalObject,
+        element: MathematicalElement,
+    ) -> PosetElement:
+        assert PartiallyOrderedSets().contains_poset(source)
+        assert SetElements().contains_set_element(element)
+        return source.element(element)
 
     def is_faithful(self) -> bool:
         return True
@@ -454,17 +463,74 @@ class PartiallyOrderedSetsCategory(Category):
         return self._finite_posets
 
     def _products_of_category(self, functor: Functor) -> Category:
-        from sage_categories.theories.poset_products import ProductsOfPosetsCategory
+        return super()._products_of_category(functor)
 
-        return ProductsOfPosetsCategory(functor)
+    def chosen_limit(self, diagram: Functor) -> ProductPresentation:
+        assert diagram.codomain() is self
+        assert diagram.domain() in DiscreteCategories()
+        forgetful = self.forgetful_functor()
+        set_diagram = forgetful.postcomposition(diagram.domain())(diagram)
+        assert is_functor(set_diagram)
+        set_products = Sets().Products(diagram.domain())
+        assert is_products_of_sets_category(set_products)
+        inherited = set_products(set_diagram)
+        underlying_product: SetProductObject = inherited
+
+        def componentwise(left: PosetElement, right: PosetElement) -> Decision:
+            left_components = left._set_implementation()
+            right_components = right._set_implementation()
+            assert ProductElements().contains_product_element(left_components)
+            assert ProductElements().contains_product_element(right_components)
+            indices = underlying_product.index_set()
+            if indices.is_finite() is not True:
+                return UNKNOWN
+            answer: Decision = True
+            for index in indices:
+                factor = diagram(underlying_product.index_category().object(index))
+                assert self.contains_poset(factor)
+                comparison = factor.element(left_components[index]) <= factor.element(
+                    right_components[index],
+                )
+                if comparison is False:
+                    return False
+                if comparison is UNKNOWN:
+                    answer = UNKNOWN
+            return answer
+
+        apex = self(underlying_product, componentwise)
+        comparison = declare_isomorphism(
+            Sets().identity(underlying_product),
+            Sets().identity(underlying_product),
+        )
+        assert is_isomorphism(comparison)
+
+        def lift_morphism(
+            source: MathematicalObject,
+            target: MathematicalObject,
+            underlying: Arrow,
+        ) -> Arrow:
+            assert self.contains_poset(source)
+            assert self.contains_poset(target)
+            assert Sets().contains_set_morphism(underlying)
+
+            def mapping(member: PosetElement) -> PosetElement:
+                set_member = forgetful.on_element(source, member)
+                assert SetElements().contains_set_element(set_member)
+                return target.element(underlying(set_member))
+
+            return self.Hom(source, target)(mapping)
+
+        return ProductLift(
+            diagram=diagram,
+            structural_functor=forgetful,
+            inherited_product=underlying_product,
+            apex=apex,
+            comparison=comparison,
+            lift_morphism=lift_morphism,
+        ).presentation()
 
     def __repr__(self) -> str:
         return "Partially ordered sets"
-
-
-type PosetEnumeration = Callable[[int], PosetElement]
-
-type PosetPosition = Callable[[PosetElement], int]
 
 
 _PARTIALLY_ORDERED_SETS: PartiallyOrderedSetsCategory | None = None
@@ -516,4 +582,21 @@ def is_partially_ordered_sets_category(
 def is_poset_hom_category(
     category: HomCategory,
 ) -> TypeIs[PosetHomCategory]:
-    return category.base_category() is PartiallyOrderedSets() and category in PartiallyOrderedSets().HomCategory()
+    return (
+        category.base_category() is PartiallyOrderedSets()
+        and category in PartiallyOrderedSets().HomCategory()
+    )
+
+
+def is_poset_element(candidate: MathematicalObject) -> TypeIs[PosetElement]:
+    element = registered_element(candidate)
+    return element is candidate and element.ambient_object() in PartiallyOrderedSets()
+
+
+def is_poset_element_type(
+    candidate: type[MathematicalElement],
+) -> TypeIs[type[PosetElement]]:
+    return (
+        candidate is PosetElement
+        or vars(candidate).get("_compiled_from") is PosetElement
+    )

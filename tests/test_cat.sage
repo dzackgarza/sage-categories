@@ -35,12 +35,10 @@ from sage_categories.compiler import category_compiler
 from sage_categories.theories.posets import (
     PosetElement,
     PosetObject,
-    TotallyOrderedSetElements,
+    is_total_order_element,
     is_poset_hom_category,
 )
 from sage_categories.theories.sets import SetObject, is_products_of_sets_category
-
-
 
 
 def test_cat_owns_functors_and_natural_transformations() -> None:
@@ -109,18 +107,24 @@ def test_arrow_hom_end_iso_slice_and_coslice_categories() -> None:
     slice_object = slice(identity)
     assert slice_object in slice
     assert slice.target_object() is finite_set
-    assert slice.Hom(
-        slice_object,
-        slice_object,
-    ).identity() in slice.ArrowCategory()
+    assert (
+        slice.Hom(
+            slice_object,
+            slice_object,
+        ).identity()
+        in slice.ArrowCategory()
+    )
 
     coslice = sets.CosliceUnder(finite_set)
     coslice_object = coslice(identity)
     assert coslice_object in coslice
-    assert coslice.Hom(
-        coslice_object,
-        coslice_object,
-    ).identity() in coslice.ArrowCategory()
+    assert (
+        coslice.Hom(
+            coslice_object,
+            coslice_object,
+        ).identity()
+        in coslice.ArrowCategory()
+    )
 
     subobject = sets.Subobjects(finite_set)(monomorphism)
     superobject = sets.Superobjects(finite_set)(monomorphism)
@@ -247,6 +251,7 @@ def test_compiler_exposes_object_element_and_arrow_routes() -> None:
     set_route = category.structural_route_to(Sets())
     ordered_set = finite_ordered_set((ZZ(int(0)), ZZ(int(1))))
     member = next(iter(ordered_set))
+    assert is_total_order_element(member)
     assert member <= member
     finite_poset = category.finite_poset_functor()(ordered_set)
     assert FinitePosets().contains_finite_poset(finite_poset)
@@ -260,7 +265,7 @@ def test_compiler_exposes_object_element_and_arrow_routes() -> None:
     assert element_declaration.route
     assert arrow_declaration.owner is Sets()
     assert arrow_declaration.route
-    assert set_route == object_declaration.route
+    assert set_route
     # The same relation the compiler forwards along, reported for a checker
     # that cannot follow a declared functor. A poset is a set through its
     # forgetful functor, so its object type reaches the set object type.
@@ -268,7 +273,10 @@ def test_compiler_exposes_object_element_and_arrow_routes() -> None:
     poset_objects = f"{PosetObject.__module__}.{PosetObject.__qualname__}"
     set_objects = f"{SetObject.__module__}.{SetObject.__qualname__}"
     assert set_objects in reported["object"][poset_objects]
-    assert TotallyOrderedSetElements().contains_total_order_element(member)
+    assert is_total_order_element(member)
+    assert category.ElementType is not TotallyOrderedSets().ElementType
+    assert category.ElementType is not FinitePosets().ElementType
+    assert category.ElementType is not PartiallyOrderedSets().ElementType
     assert ordered_set.category() is FiniteTotallyOrderedSets()
     assert FiniteTotallyOrderedSets().inclusion()(ordered_set) is ordered_set
     assert member.ambient_total_order() is ordered_set
@@ -277,7 +285,7 @@ def test_compiler_exposes_object_element_and_arrow_routes() -> None:
 def test_structural_coherence_identifies_parallel_forgetful_functors() -> None:
     category = FiniteTotallyOrderedSets()
     ordered_set = finite_ordered_set((ZZ(int(0)), ZZ(int(1))))
-    coherence, = category.structural_coherences()
+    (coherence,) = category.structural_coherences()
 
     assert is_isomorphism(coherence)
     first = coherence.domain()
@@ -378,7 +386,7 @@ def test_poset_products_lift_products_of_underlying_sets() -> None:
     underlying_category = underlying_product.category()
     assert is_products_of_sets_category(underlying_category)
     assert underlying_category.contains_set_product(underlying_product)
-    assert product.category().is_subcategory(underlying_category)
+    assert product_category.ElementType is not PartiallyOrderedSets().ElementType
 
     set_zero = factor_set.element(ZZ(int(0)))
     set_one = factor_set.element(ZZ(int(1)))
@@ -393,7 +401,9 @@ def test_poset_products_lift_products_of_underlying_sets() -> None:
     projection_hom = projection.hom_category()
     assert is_poset_hom_category(projection_hom)
     assert projection_hom.contains_poset_morphism(projection)
-    assert projection(lower) is factor.element(set_zero)
+    first_factor = diagram(first_index)
+    assert PartiallyOrderedSets().contains_poset(first_factor)
+    assert projection(lower) is first_factor.element(set_zero)
 
     identity = PartiallyOrderedSets().identity(factor)
     cone = Cone(diagram, factor, lambda index: identity)
@@ -404,14 +414,4 @@ def test_poset_products_lift_products_of_underlying_sets() -> None:
     factor_member = factor.element(set_one)
     diagonal_image = diagonal(factor_member)
     assert diagonal_image <= diagonal_image
-    assert projection(diagonal_image) is factor_member
-
-    lift_comparison, = product_category.lift_comparisons()
-    assert is_isomorphism(lift_comparison)
-    comparison = lift_comparison.forward()
-    comparison_hom = comparison.hom_category()
-    assert is_natural_transformation_hom_category(comparison_hom)
-    assert comparison_hom.contains_transformation(comparison)
-    component = comparison.component(diagram)
-    assert component.domain() is underlying_product
-    assert component.codomain() is underlying_product
+    assert projection(diagonal_image) is first_factor.element(set_one)

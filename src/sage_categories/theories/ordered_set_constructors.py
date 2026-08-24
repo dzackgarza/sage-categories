@@ -39,8 +39,12 @@ def ordered_set_owned_by(
     cached = _ORDERED_FINITE_SETS.get(enumeration)
     if cached is None:
         underlying_set = FiniteSet(enumeration)
-        owned_enumeration = tuple(underlying_set.element(element) for element in enumeration)
-        positions: dict[SetElement, int] = {element: index for index, element in enumerate(owned_enumeration)}
+        owned_enumeration = tuple(
+            underlying_set.element(element) for element in enumeration
+        )
+        positions: dict[SetElement, int] = {
+            element: index for index, element in enumerate(owned_enumeration)
+        }
 
         def ordered_relation(left: PosetElement, right: PosetElement) -> bool:
             forgetful_functor = PartiallyOrderedSets().forgetful_functor()
@@ -54,20 +58,7 @@ def ordered_set_owned_by(
             underlying_set,
             ordered_relation,
         )
-        poset_enumeration = tuple(poset.element(element) for element in owned_enumeration)
-
-        def position_of(member: PosetElement) -> int:
-            forgetful_functor = PartiallyOrderedSets().forgetful_functor()
-            set_member = forgetful_functor.on_element(member.ambient_poset(), member)
-            assert SetElements().contains_set_element(set_member)
-            return positions[set_member]
-
-        total_order = TotallyOrderedSets()(
-            poset,
-            poset_enumeration.__getitem__,
-            position_of,
-            finite_enumeration=poset_enumeration,
-        )
+        total_order = TotallyOrderedSets()(poset)
         assert FiniteTotallyOrderedSets().contains_finite_total_order(total_order)
         cached = total_order
         _ORDERED_FINITE_SETS[enumeration] = cached
@@ -103,8 +94,12 @@ class SimplexOrderIndexing:
                         right: PosetElement,
                     ) -> bool:
                         forgetful_functor = PartiallyOrderedSets().forgetful_functor()
-                        left_element = forgetful_functor.on_element(left.ambient_poset(), left)
-                        right_element = forgetful_functor.on_element(right.ambient_poset(), right)
+                        left_element = forgetful_functor.on_element(
+                            left.ambient_poset(), left
+                        )
+                        right_element = forgetful_functor.on_element(
+                            right.ambient_poset(), right
+                        )
                         assert SetElements().contains_set_element(left_element)
                         assert SetElements().contains_set_element(right_element)
                         left_ordinal = left_element.value()
@@ -117,26 +112,15 @@ class SimplexOrderIndexing:
 
                     poset = PartiallyOrderedSets()(naturals, natural_order)
 
-                    def natural_element(position: int) -> PosetElement:
-                        return poset.element(naturals[position])
-
-                    def natural_position(member: PosetElement) -> int:
-                        forgetful_functor = PartiallyOrderedSets().forgetful_functor()
-                        set_member = forgetful_functor.on_element(member.ambient_poset(), member)
-                        assert SetElements().contains_set_element(set_member)
-                        return naturals.position(set_member)
-
-                    self._countable_simplex = TotallyOrderedSets()(
-                        poset,
-                        natural_element,
-                        natural_position,
-                    )
+                    self._countable_simplex = TotallyOrderedSets()(poset)
                 return self._countable_simplex
         else:
             maximum = index
         assert maximum >= -1
         naturals = NaturalNumbers()
-        return finite_ordered_set(naturals.element(ordinal(position)) for position in range(maximum + 1))
+        return finite_ordered_set(
+            naturals.element(ordinal(position)) for position in range(maximum + 1)
+        )
 
     def __repr__(self) -> str:
         return "Delta"

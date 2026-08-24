@@ -13,8 +13,8 @@ from sage_categories.category import Category
 from sage_categories.theories.poset_core import (
     PartiallyOrderedSets,
     PosetElement,
-    PosetElements,
     PosetObject,
+    is_poset_element,
 )
 from sage_categories.theories.sets import (
     FiniteSet,
@@ -79,7 +79,9 @@ class ThinCategoryObjectSet(SetObject):
         return member.ambient_set() is self
 
     def __iter__(self) -> Iterator[SetElement]:
-        return iter(self.element(value) for value in self._thin_category.poset())
+        for value in self._thin_category.poset():
+            assert is_poset_element(value)
+            yield self.element(value)
 
 
 class ThinCategoryArrow(Arrow):
@@ -206,7 +208,9 @@ class ThinCategoryArrowSet(SetObject):
         underlying_set = PartiallyOrderedSets().underlying_set(poset)
         assert underlying_set.is_finite() is True
         for source in poset:
+            assert is_poset_element(source)
             for target in poset:
+                assert is_poset_element(target)
                 comparison = source <= target
                 assert comparison is not UNKNOWN
                 if comparison:
@@ -238,7 +242,7 @@ class ThinCategory(Category):
         self,
         candidate: MathematicalObject,
     ) -> TypeIs[PosetElement]:
-        return PosetElements().contains_poset_element(candidate) and candidate.ambient_poset() is self._poset
+        return is_poset_element(candidate) and candidate.ambient_poset() is self._poset
 
     def objects(self) -> ThinCategoryObjectSet:
         if self._objects is None:
@@ -246,7 +250,7 @@ class ThinCategory(Category):
         return self._objects
 
     def object_element(self, value: MathematicalObject) -> SetElement:
-        assert PosetElements().contains_poset_element(value)
+        assert is_poset_element(value)
         return self.objects().element(value)
 
     def Hom(

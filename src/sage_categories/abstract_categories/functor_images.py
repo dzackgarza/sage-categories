@@ -9,7 +9,6 @@ from sage_categories.abstract_categories.hom_categories import HomCategory, Isom
 from sage_categories.category import Category
 from sage_categories.values import (
     Arrow,
-    CategoryElement,
     MathematicalElement,
     MathematicalObject,
 )
@@ -42,6 +41,40 @@ class FunctorImageObject(MathematicalObject):
         category = self.category()
         assert is_functor_image_category(category)
         return category.functor()
+
+
+class FunctorImageElement(MathematicalElement):
+    """An element of an object represented in a functor image."""
+
+    def __init__(
+        self,
+        *,
+        category: ImageOfFunctor,
+        ambient_object: FunctorImageObject,
+        image_element: MathematicalElement,
+    ) -> None:
+        assert image_element.ambient_object() is ambient_object._image
+        self._image_element = image_element
+        super().__init__(category=category, ambient_object=ambient_object)
+        _FUNCTOR_IMAGE_ELEMENTS[id(self)] = self
+
+
+_FUNCTOR_IMAGE_ELEMENTS: dict[int, FunctorImageElement] = {}
+
+
+def is_functor_image_element(
+    candidate: MathematicalElement,
+) -> TypeIs[FunctorImageElement]:
+    return _FUNCTOR_IMAGE_ELEMENTS.get(id(candidate)) is candidate
+
+
+def is_functor_image_element_type(
+    candidate: type[MathematicalElement],
+) -> TypeIs[type[FunctorImageElement]]:
+    return (
+        candidate is FunctorImageElement
+        or vars(candidate).get("_compiled_from") is FunctorImageElement
+    )
 
 
 class FunctorImageArrow(Arrow):
@@ -130,7 +163,26 @@ class ImageInclusionFunctor(StructuralFunctor):
         source: MathematicalObject,
         element: MathematicalElement,
     ) -> MathematicalElement:
-        return element
+        assert is_functor_image_element(element)
+        assert element.ambient_object() is source
+        return element._image_element
+
+    def _element_preimage(
+        self,
+        source: MathematicalObject,
+        element: MathematicalElement,
+    ) -> FunctorImageElement:
+        assert self._image.contains_image(source)
+        assert element.ambient_object() is source._image
+        element_type = self._image.ElementType
+        assert is_functor_image_element_type(element_type)
+        preimage = element_type(
+            category=self._image,
+            ambient_object=source,
+            image_element=element,
+        )
+        assert is_functor_image_element(preimage)
+        return preimage
 
     def is_faithful(self) -> bool:
         return True
@@ -143,7 +195,7 @@ class ImageOfFunctor(Category):
     """Outputs of one functor, each with a chosen preimage."""
 
     ObjectType: type[FunctorImageObject] = FunctorImageObject
-    ElementType: type[MathematicalElement] = CategoryElement
+    ElementType: type[MathematicalElement] = FunctorImageElement
 
     def __init__(
         self,
@@ -234,4 +286,7 @@ def is_functor_image_hom_category(
     category: HomCategory,
 ) -> TypeIs[FunctorImageHomCategory]:
     image_category = category.base_category()
-    return is_functor_image_category(image_category) and category in image_category.HomCategory()
+    return (
+        is_functor_image_category(image_category)
+        and category in image_category.HomCategory()
+    )

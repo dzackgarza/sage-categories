@@ -9,6 +9,7 @@ from sage_categories.abstract_categories.category_constructions import (
     FullSubcategory,
 )
 from sage_categories.abstract_categories.functors import (
+    InclusionFunctor,
     NaturalIsomorphism,
     StructuralFunctor,
     compose_functors,
@@ -19,12 +20,13 @@ from sage_categories.abstract_categories.hom_categories import (
 )
 from sage_categories.theories.sets import (
     FiniteSets,
+    SetElement,
     SetObject,
     Sets,
 )
 from sage_categories.values import (
     Arrow,
-    Decision,
+    MathematicalElement,
     MathematicalObject,
 )
 
@@ -39,10 +41,30 @@ from sage_categories.theories.poset_core import (
     PartiallyOrderedSets,
     PartiallyOrderedSetsCategory,
     PosetElement,
+    PosetMorphism,
+    PosetObject,
+    is_poset_element,
+    is_poset_hom_category,
 )
-from sage_categories.theories.thin_categories import (
-    ThinCategory,
-)
+
+
+class FinitePosetElement(MathematicalElement):
+    """An element of one finite poset."""
+
+    def __init__(
+        self,
+        *,
+        ambient_object: FinitePosetObject,
+        set_element: SetElement,
+    ) -> None:
+        self._set_element = set_element
+        super().__init__(
+            category=ambient_object.category(),
+            ambient_object=ambient_object,
+        )
+
+    def _set_implementation(self) -> SetElement:
+        return self._set_element
 
 
 class FinitePosetObject(MathematicalObject):
@@ -52,23 +74,18 @@ class FinitePosetObject(MathematicalObject):
         self,
         *,
         category: FinitePosetsCategory,
-        underlying_set: SetObject,
-        relation: OrderRelation,
+        poset: PosetObject,
     ) -> None:
-        assert underlying_set in FiniteSets()
-        self._underlying_set = underlying_set
-        self._relation = relation
-        self._elements: dict[int, PosetElement] = {}
-        self._thin_category: ThinCategory | None = None
+        assert poset in PartiallyOrderedSets()
+        assert PartiallyOrderedSets().underlying_set(poset) in FiniteSets()
+        self._poset = poset
         super().__init__(category=category)
 
-    def _set_implementation(self) -> SetObject:
-        return self._underlying_set
+    def _poset_implementation(self) -> PosetObject:
+        return self._poset
 
-    def _is_lequal(self, left: PosetElement, right: PosetElement) -> Decision:
-        assert left in self
-        assert right in self
-        return self._relation(left, right)
+    def _set_implementation(self) -> SetObject:
+        return PartiallyOrderedSets().underlying_set(self._poset)
 
     def _realization(self) -> SageFinitePosetObject:
         from sage_categories.backends.sage.finite_posets import (
@@ -188,15 +205,66 @@ class FinitePosetObject(MathematicalObject):
     def is_antichain_of_poset(self, members: Iterable[PosetElement]) -> bool:
         return self._realization().is_antichain_of_poset(members)
 
+    def linear_extension(self) -> Iterator[PosetElement]:
+        return self._realization().linear_extension()
+
+
+class FinitePosetInclusionFunctor(InclusionFunctor):
+    """Include finite posets in all partially ordered sets."""
+
+    def __init__(self, finite_posets: FinitePosetsCategory) -> None:
+        self._finite_posets = finite_posets
+        super().__init__(finite_posets, PartiallyOrderedSets())
+
+    def _object_image(self, source: MathematicalObject) -> PosetObject:
+        assert self._finite_posets.contains_finite_poset(source)
+        return source._poset_implementation()
+
+    def _morphism_image(self, morphism: Arrow) -> PosetMorphism:
+        hom_category = morphism.hom_category()
+        assert is_poset_hom_category(hom_category)
+        assert hom_category.contains_poset_morphism(morphism)
+        domain = self.on_object(morphism.domain())
+        codomain = self.on_object(morphism.codomain())
+        target_hom = PartiallyOrderedSets().Hom(domain, codomain)
+        return target_hom.ObjectType(
+            hom_category=target_hom,
+            underlying_function=morphism._set_implementation(),
+        )
+
+    def _element_image(
+        self,
+        source: MathematicalObject,
+        element: MathematicalElement,
+    ) -> PosetElement:
+        assert self._finite_posets.contains_finite_poset(source)
+        assert is_poset_element(element)
+        target = self.on_object(source)
+        assert PartiallyOrderedSets().contains_poset(target)
+        return target.element(element._set_implementation())
+
+    def _element_preimage(
+        self,
+        source: MathematicalObject,
+        element: MathematicalElement,
+    ) -> FinitePosetElement:
+        assert self._finite_posets.contains_finite_poset(source)
+        assert is_poset_element(element)
+        return self._finite_posets.ElementType(
+            ambient_object=source,
+            set_element=element._set_implementation(),
+        )
+
 
 class FinitePosetsCategory(FullSubcategory):
     """The full subcategory of finite partially ordered sets."""
 
     ObjectType: type[FinitePosetObject] = FinitePosetObject
-    ElementType: type[PosetElement] = PosetElement
+    ElementType: type[FinitePosetElement] = FinitePosetElement
 
     def __init__(self, posets: PartiallyOrderedSetsCategory) -> None:
         self._forgetful_functor: ForgetPosetFunctor | None = None
+        self._poset_inclusion: FinitePosetInclusionFunctor | None = None
         self._structural_coherence: Isomorphism | None = None
         super().__init__(
             posets,
@@ -210,17 +278,26 @@ class FinitePosetsCategory(FullSubcategory):
         relation: OrderRelation,
     ) -> FinitePosetObject:
         assert underlying_set in FiniteSets()
-        value = self.ObjectType(
-            category=self,
+        poset = PartiallyOrderedSets().ObjectType(
+            category=PartiallyOrderedSets(),
             underlying_set=underlying_set,
             relation=relation,
+        )
+        value = self.ObjectType(
+            category=self,
+            poset=poset,
         )
         assert self.contains_finite_poset(value)
         return value
 
     def _is_finite(self, value: MathematicalObject) -> bool:
         assert PartiallyOrderedSets().contains_poset(value)
-        return value._set_implementation() in FiniteSets()
+        return PartiallyOrderedSets().underlying_set(value) in FiniteSets()
+
+    def inclusion(self) -> FinitePosetInclusionFunctor:
+        if self._poset_inclusion is None:
+            self._poset_inclusion = FinitePosetInclusionFunctor(self)
+        return self._poset_inclusion
 
     def forgetful_functor(self) -> ForgetPosetFunctor:
         if self._forgetful_functor is None:
@@ -252,8 +329,8 @@ class FinitePosetsCategory(FullSubcategory):
                 return Sets().identity(image)
 
             coherence = NaturalIsomorphism(
-                first,
                 second,
+                first,
                 component,
                 component,
             )

@@ -1,13 +1,12 @@
 """Arbitrary maps and universal constructions in the owned Sets category."""
 
-
 from sage_categories.abstract_categories.functors import is_functor
 from sage_categories.all import *
 from sage_categories.theories.cardinals import (
     SymbolicCardinal,
     is_cardinal_hom_category,
 )
-from sage_categories.theories.posets import PosetElement, PosetElements
+from sage_categories.theories.posets import PosetElement, is_poset_element
 from sage_categories.theories.sets import (
     CoproductElements,
     ProductElements,
@@ -47,10 +46,6 @@ def is_prime(integer: SetElement) -> bool:
 def is_undecided(integer: SetElement) -> Decision:
     assert ZZ.contains_integer(integer)
     return UNKNOWN
-
-
-
-
 
 
 def test_arbitrary_set_maps_have_exact_endpoints() -> None:
@@ -211,12 +206,8 @@ def test_general_infinite_limits_and_colimits_have_universal_maps() -> None:
     into_limit = limit.universal_morphism(cone)
     from_colimit = colimit.universal_morphism(cocone)
 
-    high_index = countable_order[int(10**4)]
-    poset_index = TotallyOrderedSets().inclusion().on_element(
-        countable_order,
-        high_index,
-    )
-    assert PosetElements().contains_poset_element(poset_index)
+    poset_index = poset.element(NaturalNumbers()[int(10**4)])
+    assert is_poset_element(poset_index)
     index_member = index_category.objects().element(poset_index)
     limit_member = into_limit(ZZ(int(5)))
     assert ProductElements().contains_product_element(limit_member)
@@ -440,9 +431,9 @@ def test_finite_poset_realization_returns_owned_elements() -> None:
     lower = inclusion.on_element(order, order[int(0)])
     middle = inclusion.on_element(order, order[int(1)])
     upper = inclusion.on_element(order, order[int(2)])
-    assert PosetElements().contains_poset_element(lower)
-    assert PosetElements().contains_poset_element(middle)
-    assert PosetElements().contains_poset_element(upper)
+    assert is_poset_element(lower)
+    assert is_poset_element(middle)
+    assert is_poset_element(upper)
 
     assert poset.covers(lower, middle)
     assert tuple(poset.lower_covers(middle)) == (lower,)

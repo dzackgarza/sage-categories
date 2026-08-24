@@ -55,6 +55,7 @@ class ExternalFinitePoset(Protocol):
         self,
         members: Iterable[PosetElement],
     ) -> bool: ...
+    def linear_extension(self) -> Iterable[PosetElement]: ...
 
 
 class ExternalPosetConstructor(Protocol):

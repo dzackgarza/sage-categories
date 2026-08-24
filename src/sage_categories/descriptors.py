@@ -93,16 +93,9 @@ def _annotation_role(
         return ParameterRole.VALUE
     origin = typing.get_origin(annotation)
     assert origin is not typing.Annotated
-    if origin in (typing.Union, types.UnionType):
-        roles = {
-            _annotation_role(argument, receiver, method_name)
-            for argument in typing.get_args(annotation)
-            if argument is not types.NoneType
-        }
-        if not roles:
-            return ParameterRole.VALUE
-        assert len(roles) == 1, f"{annotation!r} combines transport roles"
-        return roles.pop()
+    assert origin not in (typing.Union, types.UnionType), (
+        f"{annotation!r} is not a total mathematical signature"
+    )
     if origin is Iterator:
         assert method_name == "__iter__", (
             f"{annotation!r} is traversal output, not a mathematical collection"
@@ -225,7 +218,7 @@ def _forward_value(
     role: ParameterRole,
     route: tuple[StructuralFunctor, ...],
 ) -> Value:
-    if value is None or not route or role is ParameterRole.VALUE:
+    if not route or role is ParameterRole.VALUE:
         return value
     source_category = route[0].domain()
     if role is ParameterRole.OBJECT:
@@ -311,7 +304,7 @@ def _transport_result(
     instance: MathematicalObject | MathematicalElement | Arrow,
     image: MathematicalObject | MathematicalElement | Arrow,
 ) -> R:
-    if result is None or role is ParameterRole.VALUE:
+    if role is ParameterRole.VALUE:
         return result
     if role is ParameterRole.OBJECT:
         value = cast(MathematicalObject, result)

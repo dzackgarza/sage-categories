@@ -62,57 +62,63 @@ class HomCategory(Category):
         value = registered_value(candidate)
         return value is not None and value._belongs_to_hom(self)
 
-    def identity(self, value: MathematicalObject | None = None) -> Arrow:
+    def identity(self) -> Arrow:
         """Construct the identity when this is an endomorphism category."""
-        if value is not None:
-            return Category.identity(self, value)
         assert self.domain() is self.codomain()
-        structural_functor = self._arrow_construction_functor()
-        image = structural_functor.codomain().identity(
-            structural_functor.on_object(self.domain()),
-        )
-        return structural_functor._lift_morphism(
-            self.domain(),
-            self.codomain(),
-            image,
-        )
+        target = self.domain()._ambient_implementation().category()
+        route = self._declared_arrow_route(target)
+        image_domain = self.domain()._object_image_along(route)
+        image = route[-1].codomain().identity(image_domain)
+        return self._lift_along_declared_route(image, route)
 
     def compose(self, second: Arrow, first: Arrow) -> Arrow:
         """Construct ``second`` after ``first``."""
         assert first.domain() is self.domain()
         assert first.codomain() is second.domain()
         assert second.codomain() is self.codomain()
-        structural_functor = self._arrow_construction_functor()
-        image = structural_functor.codomain().compose(
-            structural_functor.on_morphism(second),
-            structural_functor.on_morphism(first),
+        target = first._ambient_implementation().base_category()
+        route = self._declared_arrow_route(target)
+        image = route[-1].codomain().compose(
+            second._morphism_image_along(route),
+            first._morphism_image_along(route),
         )
-        return structural_functor._lift_morphism(
-            self.domain(),
-            self.codomain(),
-            image,
-        )
+        return self._lift_along_declared_route(image, route)
 
-    def _arrow_construction_functor(self) -> StructuralFunctor:
-        functors = tuple(
-            functor
-            for functor in self.base_category().super_functors()
-            if functor.is_faithful()
+    def _declared_arrow_route(
+        self,
+        target: Category,
+    ) -> tuple[StructuralFunctor, ...]:
+        route = self.base_category().structural_route_to(target)
+        assert route, f"{self.base_category()} declares no arrow construction route"
+        assert all(functor.is_faithful() for functor in route), (
+            f"the declared route from {self.base_category()} to {target} is not faithful"
         )
-        assert functors, f"{self.base_category()} has no faithful structural functor"
-        return functors[0]
+        return route
+
+    def _lift_along_declared_route(
+        self,
+        image: Arrow,
+        route: tuple[StructuralFunctor, ...],
+    ) -> Arrow:
+        sources = [self.domain()]
+        targets = [self.codomain()]
+        for functor in route[:-1]:
+            sources.append(functor.on_object(sources[-1]))
+            targets.append(functor.on_object(targets[-1]))
+        lifted = image
+        for functor, source, target in reversed(
+            tuple(zip(route, sources, targets, strict=True))
+        ):
+            lifted = functor._lift_morphism(source, target, lifted)
+        return lifted
 
     def _from_structural_image(self, image: Arrow) -> Arrow:
-        structural_functor = self._arrow_construction_functor()
-        assert image in structural_functor.codomain().Hom(
-            structural_functor.on_object(self.domain()),
-            structural_functor.on_object(self.codomain()),
+        route = self._declared_arrow_route(image.base_category())
+        assert image in route[-1].codomain().Hom(
+            self.domain()._object_image_along(route),
+            self.codomain()._object_image_along(route),
         )
-        return structural_functor._lift_morphism(
-            self.domain(),
-            self.codomain(),
-            image,
-        )
+        return self._lift_along_declared_route(image, route)
 
     def __repr__(self) -> str:
         return f"Hom({self._domain}, {self._codomain}) in {self.base_category()}"

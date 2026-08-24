@@ -100,9 +100,9 @@ repository cannot state that definition, the missing category, functor, arrow,
 construction, or exact type is the foundational defect.
 
 The governing policies are `POL-MATH-001`, `POL-MATH-031` through `POL-MATH-033`,
-`POL-CAT-075` through `POL-CAT-078`, `POL-LEAF-053` through `POL-LEAF-055`,
-`POL-KERNEL-021` through `POL-KERNEL-024`, and `POL-CODE-042` through
-`POL-CODE-043`.
+`POL-CAT-075` through `POL-CAT-080`, `POL-LEAF-053` through `POL-LEAF-056`,
+`POL-KERNEL-021` through `POL-KERNEL-025`, `POL-FUN-023`, `POL-API-023`, and
+`POL-CODE-042` through `POL-CODE-043`.
 
 ## Two different forms of reuse
 

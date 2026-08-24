@@ -134,6 +134,8 @@ Perform the same trace for objects, elements, arrows, arguments, and results.
 The trace must explain the final public call without leaf-level engineering wiring.
 A missing step is a kernel, construction, functor, or compiler defect.
 Repair that owner instead of adding a leaf workaround.
+Use `POL-CAT-079` through `POL-CAT-080`, `POL-LEAF-056`, `POL-KERNEL-025`,
+`POL-FUN-023`, and `POL-API-023` as the stable review references.
 
 Prefer a foundational correction when it removes an entire family of apparent method tasks.
 Do not preserve a mistaken architecture with a cheaper local implementation.

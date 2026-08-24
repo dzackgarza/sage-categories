@@ -299,6 +299,37 @@ class MathematicalElement(MathematicalObject):
         return element
 
 
+class TransportedElement(MathematicalElement):
+    """An element transported from one selected structural image."""
+
+    def __init__(
+        self,
+        *,
+        category: Category,
+        ambient_object: MathematicalObject,
+        ambient_implementation: MathematicalElement,
+    ) -> None:
+        self._ambient_implementation_value = ambient_implementation
+        super().__init__(category=category, ambient_object=ambient_object)
+
+    def _ambient_implementation(self) -> MathematicalElement:
+        return self._ambient_implementation_value
+
+    @classmethod
+    def _transported_from_ambient(
+        cls,
+        *,
+        category: Category,
+        ambient_object: MathematicalObject,
+        ambient_implementation: MathematicalElement,
+    ) -> Self:
+        return cls(
+            category=category,
+            ambient_object=ambient_object,
+            ambient_implementation=ambient_implementation,
+        )
+
+
 class CategoryElement(MathematicalElement):
     """The local element type when a category adds no element operations."""
 

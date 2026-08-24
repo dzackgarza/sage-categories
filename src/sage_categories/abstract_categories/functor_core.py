@@ -288,7 +288,15 @@ class StructuralFunctor(Functor, ABC):
         source: MathematicalObject,
         element: MathematicalElement,
     ) -> MathematicalElement:
-        assert False, f"{self} does not lift elements from its codomain"
+        from sage_categories.values import TransportedElement
+
+        element_type = self.domain().ElementType
+        assert issubclass(element_type, TransportedElement)
+        return element_type._transported_from_ambient(
+            category=self.domain(),
+            ambient_object=source,
+            ambient_implementation=element,
+        )
 
     def is_inclusion(self) -> bool:
         """Return whether this functor includes a subcategory."""

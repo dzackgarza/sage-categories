@@ -36,6 +36,7 @@ from sage_categories.values import (
     Decision,
     MathematicalElement,
     MathematicalObject,
+    TransportedElement,
     registered_element,
     registered_value,
 )
@@ -50,43 +51,13 @@ if TYPE_CHECKING:
 type OrderRelation = SetSubset
 
 
-class PosetElement(MathematicalElement):
+class PosetElement(TransportedElement):
     """An element of one partially ordered set."""
 
-    def __init__(
-        self,
-        *,
-        ambient_object: PosetObject | FinitePosetObject,
-        set_element: SetElement,
-    ) -> None:
-        assert ambient_object in PartiallyOrderedSets()
-        underlying_set = ambient_object._set_implementation()
-        assert set_element.ambient_set() is underlying_set
-        assert set_element in underlying_set
-        self._set_element = set_element
-        super().__init__(
-            category=ambient_object.category(),
-            ambient_object=ambient_object,
-        )
-
     def _set_implementation(self) -> SetElement:
-        return self._set_element
-
-    @classmethod
-    def _refined_element_from_ambient(
-        cls,
-        *,
-        category: Category,
-        ambient_object: MathematicalObject,
-        ambient_implementation: MathematicalElement,
-    ) -> Self:
-        assert is_partially_ordered_sets_category(category)
-        assert PartiallyOrderedSets().contains_poset(ambient_object)
-        assert SetElements().contains_set_element(ambient_implementation)
-        return cls(
-            ambient_object=ambient_object,
-            set_element=ambient_implementation,
-        )
+        value = self._ambient_implementation()
+        assert SetElements().contains_set_element(value)
+        return value
 
     def ambient_poset(self) -> PosetObject:
         ambient = self.ambient_object()
@@ -103,7 +74,7 @@ class PosetElement(MathematicalElement):
         return comparison and self != other
 
     def __repr__(self) -> str:
-        return repr(self._set_element)
+        return repr(self._set_implementation())
 
 
 def validate_finite_partial_order(
@@ -150,7 +121,6 @@ class PosetObject(MathematicalObject):
         assert underlying_set in Sets()
         self._underlying_set = underlying_set
         self._relation = relation
-        self._elements: dict[int, PosetElement] = {}
         self._thin_category: ThinCategory | None = None
         super().__init__(category=category)
         if underlying_set.is_finite() is True:
@@ -166,22 +136,6 @@ class PosetObject(MathematicalObject):
     def __contains__(self, candidate: Any) -> bool:
         element = registered_element(candidate)
         return element is not None and element.ambient_object() is self
-
-    def element(self, set_element: SetElement) -> PosetElement:
-        underlying_set = self._set_implementation()
-        assert set_element.ambient_set() is underlying_set
-        assert set_element in underlying_set
-        key = id(set_element)
-        cached = self._elements.get(key)
-        if cached is None:
-            element_type = self.category().ElementType
-            cached = element_type._refined_element_from_ambient(
-                category=self.category(),
-                ambient_object=self,
-                ambient_implementation=set_element,
-            )
-            self._elements[key] = cached
-        return cached
 
     def _is_lequal(self, left: PosetElement, right: PosetElement) -> Decision:
         assert left in self
@@ -436,15 +390,6 @@ class ForgetPosetFunctor(StructuralFunctor):
         assert PartiallyOrderedSets().contains_poset(source)
         assert is_poset_element(element)
         return element._set_implementation()
-
-    def _element_preimage(
-        self,
-        source: MathematicalObject,
-        element: MathematicalElement,
-    ) -> PosetElement:
-        assert PartiallyOrderedSets().contains_poset(source)
-        assert SetElements().contains_set_element(element)
-        return source.element(element)
 
     def is_faithful(self) -> bool:
         return True

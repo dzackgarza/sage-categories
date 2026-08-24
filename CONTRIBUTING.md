@@ -505,7 +505,7 @@ When an established finite algorithm requires a primitive loop bound, lower the 
 | `POL-TYPE-008` | Use category membership as type information. Do not inspect fields or method names for capabilities. |
 | `POL-TYPE-009` | Do not invent wrapper types whose only purpose is to satisfy the type checker. |
 | `POL-TYPE-010` | Return `Self`, `None`, or the exact mathematical result type. Use the element type of `NN`, `ZZ`, or `RR` for natural numbers, integers, or real numbers. |
-| `POL-TYPE-011` | Use a set, ordered set, multiset, indexed family, or another named mathematical collection instead of `Iterable`, `Sequence`, `Collection`, `list`, or `tuple`. Use `float` only at an explicit numerical boundary. |
+| `POL-TYPE-011` | Use a set, ordered set, multiset, indexed family, or another named mathematical collection in every theory-layer signature. Never use `Iterable`, `Sequence`, `Collection`, `list`, or `tuple` there. Use `float` only at an explicit numerical boundary. |
 | `POL-TYPE-012` | Primitive signatures can occur inside a private method only when every consumer remains inside that private boundary. |
 | `POL-TYPE-013` | Create a type for a genuine mathematical object. Do not wrap invalid constructor inputs in an engineering type to satisfy the checker. |
 | `POL-TYPE-014` | Never alias `Any`, directly or as part of a wider alias. Such an alias erases type information while giving the erasure a misleading semantic name. |
@@ -515,8 +515,8 @@ When an established finite algorithm requires a primitive loop bound, lower the 
 | `POL-TYPE-018` | Give every category its own semantic object, element, and arrow types through `ObjectType`, `ElementType`, and `ArrowType`. Use those types throughout that category's API. |
 | `POL-TYPE-019` | Type each method parameter and result by the most specific category that supplies the required structure. Do not widen it to an element or object type from a supercategory. |
 | `POL-TYPE-020` | Preserve category-specific types even when a category adds no new runtime fields or methods. Reusing an implementation does not erase the mathematical refinement. |
-| `POL-TYPE-021` | Admit raw Python containers only at an explicit construction or coercion boundary. Convert them immediately into the required mathematical collection before category-owned code receives them. |
-| `POL-TYPE-022` | Use `Iterator[T]` for a lazy enumeration result. This output type describes traversal and does not replace a named mathematical collection type at an input boundary. |
+| `POL-TYPE-021` | Admit raw Python container types only inside the implementation kernel, a backend adapter, or a dedicated interoperation module. Convert them immediately into the required mathematical collection before theory code receives them. A theory constructor or helper is not such a boundary. |
+| `POL-TYPE-022` | Use `Iterator[T]` only for the Python traversal protocol or a private lazy-enumeration result. It never replaces a named mathematical collection in a theory-layer input or result. |
 | `POL-TYPE-023` | Treat type-checker output as a diagnostic signal. The mathematical architecture, category ownership, and functor declarations determine correctness. Never change them only to reduce or silence diagnostics. |
 | `POL-TYPE-024` | Make the category compiler expose functorial construction and dynamic object, element, and arrow inheritance to static type checkers. A checker's default inability to infer that structure does not justify weakening it. |
 | `POL-TYPE-025` | When a checker cannot infer the declared dynamic structure, use a type-checker plugin or generate static manifests, types, or stubs from the authoritative category and functor declarations. Do not maintain a second type graph by hand. |

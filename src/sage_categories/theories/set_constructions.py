@@ -294,7 +294,7 @@ def CartesianProductOfSets(
     size = Cardinals().product(*(factor.cardinality() for factor in factors))
     products = Sets().Products(index)
     assert is_products_of_sets_category(products)
-    image = products(diagram)
+    image = products.with_cardinality(diagram, size)
     return image
 
 

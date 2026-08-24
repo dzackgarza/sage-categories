@@ -220,7 +220,7 @@ class FiniteSetElement(SetElement):
             ambient_object=ambient_object,
         )
 
-    def value(self) -> MathematicalObject:
+    def _value_(self) -> MathematicalObject:
         return self._value
 
     def __repr__(self) -> str:
@@ -293,7 +293,7 @@ class NaturalNumberElement(SetElement):
             ambient_object=ambient_object,
         )
 
-    def value(self) -> MathematicalObject:
+    def _value_(self) -> MathematicalObject:
         return self._ordinal
 
     def __repr__(self) -> str:

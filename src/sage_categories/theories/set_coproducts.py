@@ -82,13 +82,30 @@ class CoproductElement(MathematicalElement):
             ambient_object=coproduct,
         )
 
+    @classmethod
+    def _refined_element_from_ambient(
+        cls,
+        *,
+        category: Category,
+        ambient_object: MathematicalObject,
+        ambient_implementation: MathematicalElement,
+    ) -> CoproductElement:
+        assert is_coproducts_of_sets_category(category)
+        assert category.contains_set_coproduct(ambient_object)
+        assert CoproductElements().contains_coproduct_element(ambient_implementation)
+        return cls(
+            ambient_object,
+            ambient_implementation.index(),
+            ambient_implementation.value(),
+        )
+
     def coproduct(self) -> CoproductSet | SetCoproductObject:
         return self._coproduct
 
     def index(self) -> SetElement:
         return self._index
 
-    def value(self) -> SetElement:
+    def _value_(self) -> SetElement:
         return self._value
 
 
@@ -164,19 +181,19 @@ class CoproductSet(SetObject):
             lambda index: self.cofactor(index.label()).cardinality(),
         )
 
-    def element(self, index: SetElement, value: SetElement) -> CoproductElement:
+    def _element_(self, index: SetElement, value: SetElement) -> CoproductElement:
         return CoproductElements().ObjectType(self, index, value)
 
-    def membership(self, member: SetElement) -> Decision:
+    def _membership_(self, member: SetElement) -> Decision:
         value = registered_value(member)
         return value is not None and CoproductElements().contains_coproduct_element(value) and value.coproduct() is self
 
-    def __iter__(self) -> Iterator[SetElement]:
+    def _set_iterator_(self) -> Iterator[SetElement]:
         assert self.index_set().is_finite() is True
         for index in self.index_set():
             cofactor = self.cofactor(index)
             for value in cofactor:
-                yield self.element(index, value)
+                yield self._element_(index, value)
 
     def _injection(self, index: SetElement) -> SetMorphism:
 
@@ -185,7 +202,7 @@ class CoproductSet(SetObject):
         return _set_morphism_with_properties(
             self.cofactor(index),
             self,
-            lambda value: self.element(index, value),
+            lambda value: self._element_(index, value),
             True,
             UNKNOWN,
         )
@@ -234,19 +251,9 @@ class SetCoproductObject(CoproductObject):
     def element(self, index: SetElement, value: SetElement) -> CoproductElement:
         return CoproductElements().ObjectType(self, index, value)
 
-    def membership(self, member: SetElement) -> Decision:
-        value = registered_value(member)
-        return value is not None and CoproductElements().contains_coproduct_element(value) and value.coproduct() is self
-
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
         return value is not None and CoproductElements().contains_coproduct_element(value) and value.coproduct() is self
-
-    def __iter__(self) -> Iterator[SetElement]:
-        assert self.index_set().is_finite() is True
-        for index in self.index_set():
-            for value in self.cofactor(index):
-                yield self.element(index, value)
 
     def injection(self, index: MathematicalObject) -> SetMorphism:
 
@@ -296,7 +303,7 @@ class SetCoproductInclusionFunctor(ImageInclusionFunctor):
         assert is_coproducts_of_sets_category(category)
         assert category.contains_set_coproduct(source)
         assert CoproductElements().contains_coproduct_element(element)
-        return source.apex().element(element.index(), element.value())
+        return source.apex()._element_(element.index(), element.value())
 
 
 class SetCoproductHomCategory(FunctorImageHomCategory):

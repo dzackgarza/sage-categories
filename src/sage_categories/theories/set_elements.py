@@ -60,6 +60,9 @@ class SetElement(MathematicalElement):
         return ambient
 
     def value(self) -> MathematicalObject:
+        return self._value_()
+
+    def _value_(self) -> MathematicalObject:
         return self
 
 

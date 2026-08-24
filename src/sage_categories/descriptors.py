@@ -32,7 +32,9 @@ class ParameterRole(Enum):
     OBJECT = "object"
     ELEMENT = "element"
     ARROW = "arrow"
+    OBJECT_ITERATOR = "object_iterator"
     ELEMENT_ITERATOR = "element_iterator"
+    ARROW_ITERATOR = "arrow_iterator"
 
 
 @dataclass(frozen=True)
@@ -112,12 +114,13 @@ def _annotation_role(
         )
         arguments = typing.get_args(annotation)
         assert len(arguments) == 1
-        assert (
-            _annotation_role(arguments[0], receiver, method_name)
-            is ParameterRole.ELEMENT
-        )
-        return ParameterRole.ELEMENT_ITERATOR
-    if origin in (Callable, typing.Literal):
+        item_role = _annotation_role(arguments[0], receiver, method_name)
+        return {
+            ParameterRole.OBJECT: ParameterRole.OBJECT_ITERATOR,
+            ParameterRole.ELEMENT: ParameterRole.ELEMENT_ITERATOR,
+            ParameterRole.ARROW: ParameterRole.ARROW_ITERATOR,
+        }[item_role]
+    if origin in (Callable, typing.Literal, typing.TypeIs):
         return ParameterRole.VALUE
     assert False, f"{annotation!r} has no exact mathematical transport role"
 
@@ -318,7 +321,7 @@ def _transport_result(
         return result
     if role is ParameterRole.OBJECT:
         value = cast(MathematicalObject, result)
-        if value is image or value is target_ambient:
+        if value is target_ambient:
             return cast(R, source_ambient)
         if value not in route[-1].codomain():
             return result
@@ -338,14 +341,31 @@ def _transport_result(
             return result
         source_arrow = cast(Arrow, instance)
         return cast(R, _pull_back_arrow_along(value, route, source_arrow))
-    if role is ParameterRole.ELEMENT_ITERATOR:
-        iterator = cast(Iterator[MathematicalElement], result)
+    if role in (
+        ParameterRole.OBJECT_ITERATOR,
+        ParameterRole.ELEMENT_ITERATOR,
+        ParameterRole.ARROW_ITERATOR,
+    ):
+        iterator = cast(Iterator[MathematicalObject], result)
+        item_role = {
+            ParameterRole.OBJECT_ITERATOR: ParameterRole.OBJECT,
+            ParameterRole.ELEMENT_ITERATOR: ParameterRole.ELEMENT,
+            ParameterRole.ARROW_ITERATOR: ParameterRole.ARROW,
+        }[role]
 
-        def pull_back_elements() -> Iterator[MathematicalElement]:
-            for element in iterator:
-                yield _pull_back_element_along(element, route, source_ambient)
+        def pull_back_values() -> Iterator[MathematicalObject]:
+            for value in iterator:
+                yield _transport_result(
+                    value,
+                    item_role,
+                    route,
+                    source_ambient,
+                    target_ambient,
+                    instance,
+                    image,
+                )
 
-        return cast(R, pull_back_elements())
+        return cast(R, pull_back_values())
     assert_never(role)
 
 

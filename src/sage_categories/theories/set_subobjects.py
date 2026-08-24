@@ -57,7 +57,7 @@ class SubsetElement(SetElement):
             ambient_object=ambient_object,
         )
 
-    def value(self) -> MathematicalObject:
+    def _value_(self) -> MathematicalObject:
         from sage_categories.theories.set_category import Sets
 
         ambient = self.ambient_set()

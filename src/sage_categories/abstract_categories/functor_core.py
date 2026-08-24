@@ -78,12 +78,20 @@ class Functor(Arrow, ABC):
         self,
         source: MathematicalObject,
     ) -> MathematicalObject:
-        assert source in self.domain()
         if source.category() is self.domain():
             return source
+        if source.category().is_subcategory(self.domain()):
+            from sage_categories.compiler import category_compiler
+
+            route = category_compiler().implementation_route(
+                source.category(),
+                self.domain(),
+            )
+            return source._object_image_along(route)
         source_element = registered_element(source)
         if source_element is not None and source_element.ambient_object() is self.domain():
             return source
+        assert source in self.domain()
         from sage_categories.compiler import category_compiler
 
         route = category_compiler().implementation_route(
@@ -93,9 +101,17 @@ class Functor(Arrow, ABC):
         return source._object_image_along(route)
 
     def _canonical_morphism_source(self, morphism: Arrow) -> Arrow:
-        assert self.domain().contains_arrow(morphism)
         if morphism.base_category() is self.domain():
             return morphism
+        if morphism.base_category().is_subcategory(self.domain()):
+            from sage_categories.compiler import category_compiler
+
+            route = category_compiler().implementation_route(
+                morphism.base_category(),
+                self.domain(),
+            )
+            return morphism._morphism_image_along(route)
+        assert self.domain().contains_arrow(morphism)
         from sage_categories.compiler import category_compiler
 
         route = category_compiler().implementation_route(

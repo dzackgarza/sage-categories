@@ -133,7 +133,7 @@ class SetHomCategory(HomCategory, SetObject):
         value = registered_value(candidate)
         return value is not None and value._belongs_to_hom(self)
 
-    def membership(self, candidate: SetElement) -> Decision:
+    def _membership_(self, candidate: SetElement) -> Decision:
         return candidate in self
 
     def _cardinality_(self) -> Cardinal:
@@ -175,7 +175,7 @@ class SetHomCategory(HomCategory, SetObject):
             surjective=_decision_and(first.is_surjective(), second.is_surjective()),
         )
 
-    def __iter__(self) -> Iterator[SetElement]:
+    def _set_iterator_(self) -> Iterator[SetElement]:
         from sage_categories.theories.set_category import Sets
 
         domain = self.domain()

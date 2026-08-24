@@ -84,6 +84,19 @@ class ProductElement(MathematicalElement):
             ambient_object=product,
         )
 
+    @classmethod
+    def _refined_element_from_ambient(
+        cls,
+        *,
+        category: Category,
+        ambient_object: MathematicalObject,
+        ambient_implementation: MathematicalElement,
+    ) -> ProductElement:
+        assert is_products_of_sets_category(category)
+        assert category.contains_set_product(ambient_object)
+        assert ProductElements().contains_product_element(ambient_implementation)
+        return cls(ambient_object, ambient_implementation.components())
+
     def product(self) -> ProductSet | SetProductObject | SetLimitObject:
 
         return self._product
@@ -175,16 +188,16 @@ class ProductSet(SetObject):
             lambda index: self.factor(index.label()).cardinality(),
         )
 
-    def element(self, components: SetElementFamily) -> ProductElement:
+    def _element_(self, components: SetElementFamily) -> ProductElement:
         # The category owns the constructor: its compiled type carries the
         # element surface inherited along the declared inclusion.
         return ProductElements().ObjectType(self, components)
 
-    def membership(self, member: SetElement) -> Decision:
+    def _membership_(self, member: SetElement) -> Decision:
         value = registered_value(member)
         return value is not None and ProductElements().contains_product_element(value) and value.product() is self
 
-    def __iter__(self) -> Iterator[SetElement]:
+    def _set_iterator_(self) -> Iterator[SetElement]:
         assert self.index_set().is_finite() is True
         indices = tuple(self.index_set())
         factors = tuple(self.factor(index) for index in indices)
@@ -198,7 +211,7 @@ class ProductSet(SetObject):
             ) -> SetElement:
                 return next(value for key, value in table if key is index)
 
-            yield self.element(component)
+            yield self._element_(component)
 
     def _projection(self, index: SetElement) -> SetMorphism:
 
@@ -257,29 +270,9 @@ class SetProductObject(ProductObject):
     def element(self, components: SetElementFamily) -> ProductElement:
         return ProductElements().ObjectType(self, components)
 
-    def membership(self, member: SetElement) -> Decision:
-        value = registered_value(member)
-        return value is not None and ProductElements().contains_product_element(value) and value.product() is self
-
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
         return value is not None and ProductElements().contains_product_element(value) and value.product() is self
-
-    def __iter__(self) -> Iterator[SetElement]:
-        assert self.index_set().is_finite() is True
-        indices = tuple(self.index_set())
-        factors = tuple(self.factor(index) for index in indices)
-        assert all(factor.is_finite() is True for factor in factors)
-        for values in cartesian_product(*(tuple(factor) for factor in factors)):
-            table = tuple(zip(indices, values, strict=True))
-
-            def component(
-                index: SetElement,
-                table: tuple[tuple[SetElement, SetElement], ...] = table,
-            ) -> SetElement:
-                return next(value for key, value in table if key is index)
-
-            yield self.element(component)
 
     def projection(self, index: MathematicalObject) -> SetMorphism:
 
@@ -383,16 +376,24 @@ class ProductsOfSetsCategory(ProductsOfCategory):
         diagram: Functor,
     ) -> SetProductObject:
         assert diagram in self.functor().domain()
+        from sage_categories.theories.set_colimits import _indexed_product_cardinality
+
+        cardinality = _indexed_product_cardinality(
+            diagram.domain().label_set(),
+            lambda index: diagram(diagram.domain().object(index)),
+            factor_finiteness=(True if diagram.codomain().is_subcategory(FiniteSets()) else UNKNOWN),
+        )
+        return self.with_cardinality(diagram, cardinality)
+
+    def with_cardinality(
+        self,
+        diagram: Functor,
+        cardinality: Cardinal,
+    ) -> SetProductObject:
+        assert diagram in self.functor().domain()
         key = id(diagram)
         cached = self._limits.get(key)
         if cached is None:
-            from sage_categories.theories.set_colimits import _indexed_product_cardinality
-
-            cardinality = _indexed_product_cardinality(
-                diagram.domain().label_set(),
-                lambda index: diagram(diagram.domain().object(index)),
-                factor_finiteness=(True if diagram.codomain().is_subcategory(FiniteSets()) else UNKNOWN),
-            )
             candidate = self.ObjectType(
                 category=self,
                 diagram=diagram,
@@ -401,6 +402,7 @@ class ProductsOfSetsCategory(ProductsOfCategory):
             assert self.contains_set_product(candidate)
             cached = candidate
             self._limits[key] = cached
+        assert cached.cardinality() == cardinality
         assert self.contains_set_product(cached)
         return cached
 

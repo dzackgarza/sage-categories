@@ -71,12 +71,12 @@ class FixedCardinalitySubsetSet(SetObject):
     def subset_cardinality(self) -> int:
         return self._subset_cardinality
 
-    def membership(self, candidate: SetElement) -> Decision:
+    def _membership_(self, candidate: SetElement) -> Decision:
         if not SubsetsOfSet(self._source).contains_subset(candidate):
             return False
         return candidate.underlying_set().cardinality() == self._subset_cardinality
 
-    def __iter__(self) -> Iterator[SetElement]:
+    def _set_iterator_(self) -> Iterator[SetElement]:
         size = self._subset_cardinality
         if size == 0:
             yield self.powerset().bottom()
@@ -120,12 +120,12 @@ class FiniteSubsetSet(SetObject):
     def powerset(self) -> SetHomCategory:
         return PowerSet(self._source)
 
-    def membership(self, candidate: SetElement) -> Decision:
+    def _membership_(self, candidate: SetElement) -> Decision:
         if not SubsetsOfSet(self._source).contains_subset(candidate):
             return False
         return candidate.underlying_set().cardinality().is_finite()
 
-    def __iter__(self) -> Iterator[SetElement]:
+    def _set_iterator_(self) -> Iterator[SetElement]:
         powerset = self.powerset()
         yield powerset.bottom()
         preceding: list[SetElement] = []
@@ -257,7 +257,7 @@ class FinitelySupportedFunctionSet(SetObject):
         assert support is not None
         return support
 
-    def membership(self, candidate: SetElement) -> Decision:
+    def _membership_(self, candidate: SetElement) -> Decision:
         if candidate not in Sets().Hom(self._index_set, self._value_set):
             return False
         support = _FUNCTION_SUPPORTS.get(id(candidate))

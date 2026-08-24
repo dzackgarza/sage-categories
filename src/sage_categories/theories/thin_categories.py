@@ -47,7 +47,7 @@ class ThinCategoryObjectElement(SetElement):
             ambient_object=ambient_object,
         )
 
-    def value(self) -> PosetElement:
+    def _value_(self) -> PosetElement:
         return self._value
 
 
@@ -63,7 +63,7 @@ class ThinCategoryObjectSet(SetObject):
             cardinality=underlying_set.cardinality(),
         )
 
-    def element(self, value: PosetElement) -> ThinCategoryObjectElement:
+    def _element_(self, value: PosetElement) -> ThinCategoryObjectElement:
         assert self._thin_category.contains_object(value)
         key = id(value)
         cached = self._elements.get(key)
@@ -75,10 +75,10 @@ class ThinCategoryObjectSet(SetObject):
             self._elements[key] = cached
         return cached
 
-    def membership(self, member: SetElement) -> Decision:
+    def _membership_(self, member: SetElement) -> Decision:
         return member.ambient_set() is self
 
-    def __iter__(self) -> Iterator[SetElement]:
+    def _set_iterator_(self) -> Iterator[SetElement]:
         for value in self._thin_category.poset():
             assert is_poset_element(value)
             yield self.element(value)
@@ -174,7 +174,7 @@ class ThinCategoryArrowElement(SetElement):
             ambient_object=ambient_object,
         )
 
-    def value(self) -> ThinCategoryArrow:
+    def _value_(self) -> ThinCategoryArrow:
         return self._value
 
 
@@ -188,7 +188,7 @@ class ThinCategoryArrowSet(SetObject):
 
         super().__init__(category=Sets(), cardinality=UnknownCardinality())
 
-    def element(self, value: ThinCategoryArrow) -> ThinCategoryArrowElement:
+    def _element_(self, value: ThinCategoryArrow) -> ThinCategoryArrowElement:
         assert value in self._thin_category.ArrowCategory()
         key = id(value)
         cached = self._elements.get(key)
@@ -200,10 +200,10 @@ class ThinCategoryArrowSet(SetObject):
             self._elements[key] = cached
         return cached
 
-    def membership(self, member: SetElement) -> Decision:
+    def _membership_(self, member: SetElement) -> Decision:
         return member.ambient_set() is self
 
-    def __iter__(self) -> Iterator[SetElement]:
+    def _set_iterator_(self) -> Iterator[SetElement]:
         poset = self._thin_category.poset()
         underlying_set = PartiallyOrderedSets().underlying_set(poset)
         assert underlying_set.is_finite() is True

@@ -166,18 +166,15 @@ class ImageInclusionFunctor(StructuralFunctor):
         self,
         source: MathematicalObject,
         element: MathematicalElement,
-    ) -> FunctorImageElement:
+    ) -> MathematicalElement:
         assert self._image.contains_image(source)
         assert element.ambient_object() is source._image
         element_type = self._image.ElementType
-        assert is_functor_image_element_type(element_type)
-        preimage = element_type(
+        return element_type._refined_element_from_ambient(
             category=self._image,
             ambient_object=source,
-            image_element=element,
+            ambient_implementation=element,
         )
-        assert is_functor_image_element(preimage)
-        return preimage
 
     def is_faithful(self) -> bool:
         return True
@@ -195,15 +192,12 @@ class ImageOfFunctor(Category):
     def __init__(
         self,
         functor: Functor,
-        *,
-        object_type: type[FunctorImageObject] | None = None,
-        element_type: type[MathematicalElement] | None = None,
     ) -> None:
         self._functor = functor
         self._inclusion: ImageInclusionFunctor | None = None
         super().__init__(
-            object_type=object_type,
-            element_type=element_type,
+            object_type=self.ObjectType,
+            element_type=self.ElementType,
             category=FunctorImageCategoryObjects(),
         )
 

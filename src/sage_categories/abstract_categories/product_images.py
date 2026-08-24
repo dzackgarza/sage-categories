@@ -132,16 +132,9 @@ class LimitsOfCategory(ImageOfFunctor):
     def __init__(
         self,
         functor: Functor,
-        *,
-        object_type: type[LimitObject] | None = None,
-        element_type: type[MathematicalElement] | None = None,
     ) -> None:
         self._limits: dict[int, LimitObject] = {}
-        super().__init__(
-            functor,
-            object_type=object_type,
-            element_type=element_type,
-        )
+        super().__init__(functor)
         _LIMIT_IMAGE_CATEGORIES[id(self)] = self
 
     def __call__(self, preimage: MathematicalObject) -> LimitObject:
@@ -199,16 +192,9 @@ class ColimitsOfCategory(ImageOfFunctor):
     def __init__(
         self,
         functor: Functor,
-        *,
-        object_type: type[ColimitObject] | None = None,
-        element_type: type[MathematicalElement] | None = None,
     ) -> None:
         self._colimits: dict[int, ColimitObject] = {}
-        super().__init__(
-            functor,
-            object_type=object_type,
-            element_type=element_type,
-        )
+        super().__init__(functor)
         _COLIMIT_IMAGE_CATEGORIES[id(self)] = self
 
     def __call__(self, preimage: MathematicalObject) -> ColimitObject:
@@ -263,15 +249,8 @@ class ProductsOfCategory(LimitsOfCategory):
     def __init__(
         self,
         functor: Functor,
-        *,
-        object_type: type[ProductObject] | None = None,
-        element_type: type[MathematicalElement] | None = None,
     ) -> None:
-        super().__init__(
-            functor,
-            object_type=object_type,
-            element_type=element_type,
-        )
+        super().__init__(functor)
         _PRODUCT_IMAGE_CATEGORIES[id(self)] = self
 
     def __call__(self, preimage: MathematicalObject) -> ProductObject:
@@ -294,15 +273,8 @@ class CoproductsOfCategory(ColimitsOfCategory):
     def __init__(
         self,
         functor: Functor,
-        *,
-        object_type: type[CoproductObject] | None = None,
-        element_type: type[MathematicalElement] | None = None,
     ) -> None:
-        super().__init__(
-            functor,
-            object_type=object_type,
-            element_type=element_type,
-        )
+        super().__init__(functor)
         _COPRODUCT_IMAGE_CATEGORIES[id(self)] = self
 
     def __call__(self, preimage: MathematicalObject) -> CoproductObject:

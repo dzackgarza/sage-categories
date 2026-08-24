@@ -65,7 +65,7 @@ class IntegerSet(SetObject):
             self._integers[value] = cached
         return cached
 
-    def membership(self, member: SetElement) -> Decision:
+    def _membership_(self, member: SetElement) -> Decision:
         return member.ambient_set() is self
 
     def contains_integer(
@@ -74,7 +74,7 @@ class IntegerSet(SetObject):
     ) -> TypeIs[IntegerElement]:
         return candidate in self
 
-    def __iter__(self) -> Iterator[SetElement]:
+    def _set_iterator_(self) -> Iterator[SetElement]:
         yield self(0)
         magnitude = 1
         while True:
@@ -145,7 +145,7 @@ class RationalSet(SetObject):
             self._rationals[rational] = cached
         return cached
 
-    def membership(self, member: SetElement) -> Decision:
+    def _membership_(self, member: SetElement) -> Decision:
         return member.ambient_set() is self
 
     def contains_rational(
@@ -208,7 +208,7 @@ class RealSet(SetObject):
             self._rationals[rational] = cached
         return cached
 
-    def membership(self, member: SetElement) -> Decision:
+    def _membership_(self, member: SetElement) -> Decision:
         return member.ambient_set() is self
 
     def contains_real(

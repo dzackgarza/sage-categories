@@ -158,10 +158,10 @@ class ColimitSet(SetObject):
     def coproduct(self) -> CoproductSet:
         return self._coproduct
 
-    def element(self, index: SetElement, value: SetElement) -> ColimitElement:
+    def _element_(self, index: SetElement, value: SetElement) -> ColimitElement:
         return ColimitElements().ObjectType(self, self._coproduct.element(index, value))
 
-    def membership(self, member: SetElement) -> Decision:
+    def _membership_(self, member: SetElement) -> Decision:
         value = registered_value(member)
         return value is not None and ColimitElements().contains_colimit_element(value) and value.colimit() is self
 
@@ -230,7 +230,7 @@ class ColimitSet(SetObject):
                 return reached
             reached = (*reached, *enlarged)
 
-    def __iter__(self) -> Iterator[SetElement]:
+    def _set_iterator_(self) -> Iterator[SetElement]:
         chosen: tuple[ColimitElement, ...] = ()
         for representative in self._coproduct:
             value = registered_value(representative)
@@ -246,7 +246,7 @@ class ColimitSet(SetObject):
         return _set_morphism(
             self._coproduct.cofactor(index),
             self,
-            lambda value: self.element(index, value),
+            lambda value: self._element_(index, value),
         )
 
 
@@ -280,12 +280,8 @@ class SetColimitObject(ColimitObject):
     def element(self, index: SetElement, value: SetElement) -> ColimitElement:
         return ColimitElements().ObjectType(
             self,
-            self._coproduct.element(index, value),
+            self._coproduct._element_(index, value),
         )
-
-    def membership(self, member: SetElement) -> Decision:
-        value = registered_value(member)
-        return value is not None and ColimitElements().contains_colimit_element(value) and value.colimit() is self
 
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
@@ -352,17 +348,6 @@ class SetColimitObject(ColimitObject):
             if not enlarged:
                 return reached
             reached = (*reached, *enlarged)
-
-    def __iter__(self) -> Iterator[SetElement]:
-        chosen: tuple[ColimitElement, ...] = ()
-        for representative in self._coproduct:
-            value = registered_value(representative)
-            assert value is not None and CoproductElements().contains_coproduct_element(value)
-            candidate = ColimitElements().ObjectType(self, value)
-            if any(self.equivalent(candidate, known) is True for known in chosen):
-                continue
-            chosen = (*chosen, candidate)
-            yield candidate
 
     def injection(self, index: MathematicalObject) -> SetMorphism:
 

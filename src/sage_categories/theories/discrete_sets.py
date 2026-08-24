@@ -47,7 +47,7 @@ class DiscreteObjectSet(SetObject):
         self._elements: dict[int, SetElement] = {}
         super().__init__(category=Sets(), cardinality=labels.cardinality())
 
-    def element(self, value: MathematicalObject) -> SetElement:
+    def _element_(self, value: MathematicalObject) -> SetElement:
         assert value in self._discrete_category
         key = id(value)
         element = self._elements.get(key)
@@ -59,10 +59,10 @@ class DiscreteObjectSet(SetObject):
             self._elements[key] = element
         return element
 
-    def membership(self, member: SetElement) -> Decision:
+    def _membership_(self, member: SetElement) -> Decision:
         return member.ambient_set() is self
 
-    def __iter__(self) -> Iterator[SetElement]:
+    def _set_iterator_(self) -> Iterator[SetElement]:
         return iter(tuple(self.element(self._discrete_category.object(label)) for label in self._labels))
 
 
@@ -81,7 +81,7 @@ class DiscreteObjectElement(SetElement):
             ambient_object=ambient_object,
         )
 
-    def value(self) -> MathematicalObject:
+    def _value_(self) -> MathematicalObject:
         return self._discrete_object
 
 
@@ -95,7 +95,7 @@ class DiscreteArrowSet(SetObject):
         assert Sets().contains_set(objects)
         super().__init__(category=Sets(), cardinality=objects.cardinality())
 
-    def element(self, value: MathematicalObject) -> SetElement:
+    def _element_(self, value: MathematicalObject) -> SetElement:
         assert self._discrete_category.contains_arrow(value)
         assert value.domain() is value.codomain()
         key = id(value)
@@ -108,10 +108,10 @@ class DiscreteArrowSet(SetObject):
             self._elements[key] = element
         return element
 
-    def membership(self, member: SetElement) -> Decision:
+    def _membership_(self, member: SetElement) -> Decision:
         return member.ambient_set() is self
 
-    def __iter__(self) -> Iterator[SetElement]:
+    def _set_iterator_(self) -> Iterator[SetElement]:
         return iter(tuple(self.element(self._discrete_category.Hom(value, value).identity()) for value in self._discrete_category))
 
 
@@ -130,7 +130,7 @@ class DiscreteArrowElement(SetElement):
             ambient_object=ambient_object,
         )
 
-    def value(self) -> MathematicalObject:
+    def _value_(self) -> MathematicalObject:
         return self._discrete_arrow
 
 

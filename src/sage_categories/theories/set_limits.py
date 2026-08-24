@@ -8,7 +8,6 @@ categorical foundation. Sage is not part of this category graph.
 from __future__ import annotations
 
 from collections.abc import Iterator
-from itertools import product as cartesian_product
 from typing import TYPE_CHECKING, Any, TypeIs
 
 from sage_categories.abstract_categories.functors import (
@@ -16,7 +15,6 @@ from sage_categories.abstract_categories.functors import (
     is_functor,
 )
 from sage_categories.abstract_categories.products import (
-    ConeObject,
     LimitObject,
     LimitsOfCategory,
 )
@@ -28,7 +26,6 @@ from sage_categories.theories.cardinals import (
 )
 from sage_categories.theories.set_category import (
     Sets,
-    _set_morphism,
 )
 from sage_categories.theories.set_elements import (
     SetElement,
@@ -106,13 +103,13 @@ class LimitSet(ProductSet):
             return declared
         return Cardinals()(sum(1 for _ in self))
 
-    def membership(self, member: SetElement) -> Decision:
+    def _membership_(self, member: SetElement) -> Decision:
         from sage_categories.theories.set_colimits import (
             _object_set_element,
             index_arrows,
         )
 
-        product_membership = super().membership(member)
+        product_membership = super()._membership_(member)
         if product_membership is not True:
             return product_membership
         if id(member) in self._compatible_elements:
@@ -133,8 +130,8 @@ class LimitSet(ProductSet):
                 return False
         return True
 
-    def __iter__(self) -> Iterator[SetElement]:
-        for member in super().__iter__():
+    def _set_iterator_(self) -> Iterator[SetElement]:
+        for member in super()._set_iterator_():
             if self.membership(member) is True:
                 yield member
 
@@ -157,7 +154,6 @@ class SetLimitObject(LimitObject):
             cardinality=cardinality,
         )
         self._limit_set = limit_set
-        self._compatible_elements: set[int] = set()
         super().__init__(
             category=category,
             diagram=diagram,
@@ -170,53 +166,6 @@ class SetLimitObject(LimitObject):
     def factor(self, index: SetElement) -> SetObject:
         return self._limit_set.factor(index)
 
-    def element(self, components: SetElementFamily) -> ProductElement:
-        return ProductElements().ObjectType(self, components)
-
-    def _compatible_element(
-        self,
-        components: SetElementFamily,
-    ) -> ProductElement:
-        member = self.element(components)
-        self._compatible_elements.add(id(member))
-        return member
-
-    def _cardinality_(self) -> Cardinal:
-        declared = self._limit_set.cardinality()
-        if declared != UnknownCardinality():
-            return declared
-        index_set = self.index_set()
-        if index_set.is_finite() is not True:
-            return declared
-        if any(self.factor(index).is_finite() is not True for index in index_set):
-            return declared
-        return Cardinals()(sum(1 for _ in self))
-
-    def membership(self, member: SetElement) -> Decision:
-        from sage_categories.theories.set_colimits import (
-            _object_set_element,
-            index_arrows,
-        )
-
-        value = registered_value(member)
-        if value is None or not ProductElements().contains_product_element(value) or value.product() is not self:
-            return False
-        if id(member) in self._compatible_elements:
-            return True
-        arrows = index_arrows(self.diagram().domain())
-        if arrows.is_finite() is not True:
-            return UNKNOWN
-        for candidate in arrows:
-            arrow = candidate.value()
-            assert self.diagram().domain().contains_arrow(arrow)
-            image = self.diagram()(arrow)
-            assert Sets().contains_set_morphism(image)
-            source_index = _object_set_element(self.diagram().domain(), arrow.domain())
-            target_index = _object_set_element(self.diagram().domain(), arrow.codomain())
-            if image(value.component(source_index)) != value.component(target_index):
-                return False
-        return True
-
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
         if value is None or not ProductElements().contains_product_element(value):
@@ -224,61 +173,6 @@ class SetLimitObject(LimitObject):
         answer = self.membership(value)
         assert answer is not UNKNOWN, f"membership in {self} is unknown"
         return answer
-
-    def __iter__(self) -> Iterator[SetElement]:
-        indices = tuple(self.index_set())
-        factors = tuple(self.factor(index) for index in indices)
-        assert all(factor.is_finite() is True for factor in factors)
-        for values in cartesian_product(*(tuple(factor) for factor in factors)):
-            table = tuple(zip(indices, values, strict=True))
-
-            def component(
-                index: SetElement,
-                table: tuple[tuple[SetElement, SetElement], ...] = table,
-            ) -> SetElement:
-                return next(value for key, value in table if key is index)
-
-            member = self.element(component)
-            if self.membership(member) is True:
-                yield member
-
-    def projection(self, index: MathematicalObject) -> SetMorphism:
-        from sage_categories.theories.set_colimits import _object_set_element
-
-        return self._projection(_object_set_element(self.diagram().domain(), index))
-
-    def _projection(self, index: SetElement) -> SetMorphism:
-
-        factor = self.factor(index)
-
-        def project(member: SetElement) -> SetElement:
-            value = registered_value(member)
-            assert value is not None
-            assert ProductElements().contains_product_element(value)
-            assert value.product() is self
-            return value.component(index)
-
-        return _set_morphism(self, factor, project)
-
-    def apex(self) -> SetObject:
-        return self
-
-    def universal_morphism(self, cone: ConeObject) -> SetMorphism:
-        from sage_categories.theories.set_constructions import _cone_component_value
-
-        source = cone.apex()
-        assert Sets().contains_set(source)
-        return _set_morphism(
-            source,
-            self,
-            lambda member: self._compatible_element(
-                lambda index: _cone_component_value(
-                    cone,
-                    index.value(),
-                    member,
-                )
-            ),
-        )
 
 
 class LimitsOfSetsCategory(LimitsOfCategory):

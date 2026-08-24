@@ -14,6 +14,7 @@ method catalogues that a compiler matches against backend method names.
 ## Contents
 
 - [Intended architecture](#intended-architecture)
+- [Standard mathematics determines the software roles](#standard-mathematics-determines-the-software-roles)
 - [Two different forms of reuse](#two-different-forms-of-reuse)
 - [The implementation classes](#the-implementation-classes)
 - [The leaf is the implementation firewall](#the-leaf-is-the-implementation-firewall)
@@ -55,6 +56,53 @@ The phrase “a leaf should read like mathematics” constrains semantic ownersh
 public data. It does not require the leaf to contain no computation code.
 
 Leaf purity is semantic purity. It is not implementation abstinence.
+
+## Standard mathematics determines the software roles
+
+This repository uses the ordinary mathematical meanings of category, object, element,
+arrow, functor, construction, and theorem. The Python implementation does not define
+new meanings for these terms.
+
+The standard definitions already determine the software roles:
+
+- a category determines what its objects and arrows are;
+- `C.ObjectType` and `C.ArrowType` implement those roles;
+- `C.ElementType` implements the elements of represented objects when the theory has them;
+- an operation's mathematical signature determines its receiver, parameter, and result roles;
+- a selected functor determines structural transport through its declared maps;
+- an element's ambient mathematical object determines its element role;
+- a named construction owns the theorem used by that construction;
+- the result category states the conclusion established by that theorem.
+
+None of these facts requires a second runtime declaration. An element does not carry a
+marker that declares it to be an element. A method does not carry metadata that repeats
+its mathematical domain. A functor does not become transport through a mutable object
+registry. A theorem does not become applicable through an authority token.
+
+Use the following meanings throughout this specification:
+
+- **explicit** means present in the semantic API as an exact type, category placement,
+  defining arrow, selected functor, named construction, predicate result, or hypothesis;
+- **owner** means the category, object, arrow, functor, or universal construction whose
+  mathematical definition states the operation or fact;
+- **declaration** means the ordinary typed category, class, method, functor, or
+  constructor definition at that owner;
+- **construction authority** means that the named construction establishes its typed
+  result by its defining theorem.
+
+These words never request another metadata carrier, decorator, annotation payload,
+registry, marker type, wrapper, or authority object.
+
+A compiler error, import error, or type error can show that the current Python encoding
+is wrong. It cannot select a new mathematical model. When the code lacks an obvious
+encoding, derive the encoding from the standard mathematical definition. If the
+repository cannot state that definition, the missing category, functor, arrow,
+construction, or exact type is the foundational defect.
+
+The governing policies are `POL-MATH-001`, `POL-MATH-031` through `POL-MATH-033`,
+`POL-CAT-075` through `POL-CAT-078`, `POL-LEAF-053` through `POL-LEAF-055`,
+`POL-KERNEL-021` through `POL-KERNEL-024`, and `POL-CODE-042` through
+`POL-CODE-043`.
 
 ## Two different forms of reuse
 
@@ -731,6 +779,10 @@ A leaf implementation satisfies this specification when all these facts hold:
 
 - the category declaration defines or links one `ObjectType`, one `ElementType`, and one
   `ArrowType`;
+- object, element, arrow, parameter, result, and transport roles follow from the
+  category, operation, and functor definitions without another runtime carrier;
+- a theorem-backed named construction states its conclusion through the exact result
+  category without an authority value, proof token, or metadata record;
 - those types contain the executable bodies of every locally owned public operation;
 - local methods are ordinary methods without computation-routing decorators;
 - no local method is an `assert False` declaration stub;

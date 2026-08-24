@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable
 from typing import TYPE_CHECKING, TypeIs
 
 from sage_categories.abstract_categories.category_constructions import (
@@ -16,9 +16,16 @@ from sage_categories.abstract_categories.functors import (
     StructuralFunctor,
 )
 from sage_categories.theories.sets import (
+    DiscreteCategory,
+    FiniteSet,
     FiniteSets,
+    PowerSet,
     SetObject,
+    SetSubset,
+    SubsetsOfSet,
 )
+from sage_categories.theories.cardinals import Cardinal, cardinal
+from sage_categories.abstract_categories.functors import DiscreteDiagram
 from sage_categories.values import (
     MathematicalObject,
 )
@@ -36,6 +43,7 @@ if TYPE_CHECKING:
         ExternalFinitePoset,
         ExternalPosetConstructor,
     )
+    from sage_categories.theories.total_orders import FiniteTotalOrderObject
 
     _sage_poset_constructor: ExternalPosetConstructor
 else:
@@ -53,7 +61,7 @@ class FinitePosetObject(FullSubcategoryObject):
 
             def relation(left: PosetElement, right: PosetElement) -> bool:
                 comparison = left <= right
-                assert isinstance(comparison, bool)
+                assert comparison is True or comparison is False
                 return comparison
 
             self._sage_value = _sage_poset_constructor(
@@ -62,103 +70,171 @@ class FinitePosetObject(FullSubcategoryObject):
             )
         return self._sage_value
 
+    def _underlying_set(self) -> SetObject:
+        return PartiallyOrderedSets().underlying_set(self)
+
+    def _sage_element(self, member: PosetElement) -> PosetElement:
+        assert member in self
+        return member
+
+    def _owned_element(self, member: PosetElement) -> PosetElement:
+        assert member in self
+        return self.element(member._set_implementation())
+
+    def _owned_subset(self, members: Iterable[PosetElement]) -> SetSubset:
+        owned = frozenset(
+            self._owned_element(member)._set_implementation()
+            for member in members
+        )
+        return PowerSet(self._underlying_set()).from_members(owned)
+
+    def _sage_members(self, members: SetSubset) -> tuple[PosetElement, ...]:
+        assert members.base_set() is self._underlying_set()
+        represented = members.members()
+        assert represented is not None
+        return tuple(self.element(member) for member in represented)
+
     def covers(
         self,
         lower: PosetElement,
         upper: PosetElement,
     ) -> bool:
-        return self._sage_poset().covers(lower, upper)
+        return self._sage_poset().covers(
+            self._sage_element(lower),
+            self._sage_element(upper),
+        )
 
-    def lower_covers(self, member: PosetElement) -> Iterator[PosetElement]:
-        return iter(self._sage_poset().lower_covers(member))
+    def lower_covers(self, member: PosetElement) -> SetSubset:
+        return self._owned_subset(
+            self._sage_poset().lower_covers(self._sage_element(member)),
+        )
 
-    def upper_covers(self, member: PosetElement) -> Iterator[PosetElement]:
-        return iter(self._sage_poset().upper_covers(member))
+    def upper_covers(self, member: PosetElement) -> SetSubset:
+        return self._owned_subset(
+            self._sage_poset().upper_covers(self._sage_element(member)),
+        )
 
     def common_lower_covers(
         self,
-        members: Iterable[PosetElement],
-    ) -> Iterator[PosetElement]:
-        return iter(self._sage_poset().common_lower_covers(tuple(members)))
+        members: SetSubset,
+    ) -> SetSubset:
+        return self._owned_subset(
+            self._sage_poset().common_lower_covers(self._sage_members(members)),
+        )
 
     def common_upper_covers(
         self,
-        members: Iterable[PosetElement],
-    ) -> Iterator[PosetElement]:
-        return iter(self._sage_poset().common_upper_covers(tuple(members)))
+        members: SetSubset,
+    ) -> SetSubset:
+        return self._owned_subset(
+            self._sage_poset().common_upper_covers(self._sage_members(members)),
+        )
 
     def open_interval(
         self,
         lower: PosetElement,
         upper: PosetElement,
-    ) -> Iterator[PosetElement]:
-        return iter(self._sage_poset().open_interval(lower, upper))
+    ) -> SetSubset:
+        return self._owned_subset(
+            self._sage_poset().open_interval(
+                self._sage_element(lower),
+                self._sage_element(upper),
+            ),
+        )
 
     def closed_interval(
         self,
         lower: PosetElement,
         upper: PosetElement,
-    ) -> Iterator[PosetElement]:
-        return iter(self._sage_poset().closed_interval(lower, upper))
+    ) -> SetSubset:
+        return self._owned_subset(
+            self._sage_poset().closed_interval(
+                self._sage_element(lower),
+                self._sage_element(upper),
+            ),
+        )
 
     def principal_order_ideal(
         self,
         member: PosetElement,
-    ) -> Iterator[PosetElement]:
-        return self.order_ideal((member,))
+    ) -> SetSubset:
+        singleton = PowerSet(self._underlying_set()).from_members(
+            frozenset({member._set_implementation()}),
+        )
+        return self.order_ideal(singleton)
 
     def principal_order_filter(
         self,
         member: PosetElement,
-    ) -> Iterator[PosetElement]:
-        return self.order_filter((member,))
+    ) -> SetSubset:
+        singleton = PowerSet(self._underlying_set()).from_members(
+            frozenset({member._set_implementation()}),
+        )
+        return self.order_filter(singleton)
 
     def order_ideal(
         self,
-        members: Iterable[PosetElement],
-    ) -> Iterator[PosetElement]:
-        return iter(self._sage_poset().order_ideal(tuple(members)))
+        members: SetSubset,
+    ) -> SetSubset:
+        return self._owned_subset(
+            self._sage_poset().order_ideal(self._sage_members(members)),
+        )
 
     def order_filter(
         self,
-        members: Iterable[PosetElement],
-    ) -> Iterator[PosetElement]:
-        return iter(self._sage_poset().order_filter(tuple(members)))
+        members: SetSubset,
+    ) -> SetSubset:
+        return self._owned_subset(
+            self._sage_poset().order_filter(self._sage_members(members)),
+        )
 
-    def minimal_elements(self) -> Iterator[PosetElement]:
-        return iter(self._sage_poset().minimal_elements())
+    def minimal_elements(self) -> SetSubset:
+        return self._owned_subset(self._sage_poset().minimal_elements())
 
-    def maximal_elements(self) -> Iterator[PosetElement]:
-        return iter(self._sage_poset().maximal_elements())
+    def maximal_elements(self) -> SetSubset:
+        return self._owned_subset(self._sage_poset().maximal_elements())
 
     def has_bottom(self) -> bool:
         return self._sage_poset().has_bottom()
 
     def bottom(self) -> PosetElement:
         assert self.has_bottom()
-        return self._sage_poset().bottom()
+        return self._owned_element(self._sage_poset().bottom())
 
     def has_top(self) -> bool:
         return self._sage_poset().has_top()
 
     def top(self) -> PosetElement:
         assert self.has_top()
-        return self._sage_poset().top()
+        return self._owned_element(self._sage_poset().top())
 
     def is_bounded(self) -> bool:
         return self._sage_poset().is_bounded()
 
-    def height(self) -> int:
-        return int(self._sage_poset().height())
+    def height(self) -> Cardinal:
+        return cardinal(int(self._sage_poset().height()))
 
-    def width(self) -> int:
-        return int(self._sage_poset().width())
+    def width(self) -> Cardinal:
+        return cardinal(int(self._sage_poset().width()))
 
-    def rank(self, member: PosetElement | None = None) -> int:
-        return int(self._sage_poset().rank(member))
+    def rank(self) -> Cardinal:
+        return cardinal(int(self._sage_poset().rank()))
 
-    def level_sets(self) -> Iterator[Iterator[PosetElement]]:
-        return iter(iter(level) for level in self._sage_poset().level_sets())
+    def rank_of_element(self, member: PosetElement) -> Cardinal:
+        return cardinal(int(self._sage_poset().rank(self._sage_element(member))))
+
+    def level_sets(self) -> DiscreteDiagram:
+        levels = tuple(
+            self._owned_subset(level)
+            for level in self._sage_poset().level_sets()
+        )
+        labels = FiniteSet(levels)
+        index = DiscreteCategory(labels)
+        return DiscreteDiagram(
+            index,
+            SubsetsOfSet(self._underlying_set()),
+            lambda source: source.label().value(),
+        )
 
     def is_ranked(self) -> bool:
         return self._sage_poset().is_ranked()
@@ -169,14 +245,26 @@ class FinitePosetObject(FullSubcategoryObject):
     def is_chain(self) -> bool:
         return self._sage_poset().is_chain()
 
-    def is_chain_of_poset(self, members: Iterable[PosetElement]) -> bool:
-        return self._sage_poset().is_chain_of_poset(tuple(members))
+    def is_chain_of_poset(self, members: SetSubset) -> bool:
+        return self._sage_poset().is_chain_of_poset(self._sage_members(members))
 
-    def is_antichain_of_poset(self, members: Iterable[PosetElement]) -> bool:
-        return self._sage_poset().is_antichain_of_poset(tuple(members))
+    def is_antichain_of_poset(self, members: SetSubset) -> bool:
+        return self._sage_poset().is_antichain_of_poset(self._sage_members(members))
 
-    def linear_extension(self) -> Iterator[PosetElement]:
-        return iter(self._sage_poset().linear_extension())
+    def linear_extension(self) -> FiniteTotalOrderObject:
+        from sage_categories.theories.ordered_set_constructors import (
+            ordered_set_owned_by,
+        )
+
+        elements = tuple(
+            self._owned_element(member)._set_implementation()
+            for member in self._sage_poset().linear_extension()
+        )
+        result = ordered_set_owned_by(elements)
+        from sage_categories.theories.total_orders import FiniteTotallyOrderedSets
+
+        assert FiniteTotallyOrderedSets().contains_finite_total_order(result)
+        return result
 
 
 class FinitePosetElement(FullSubcategoryElement):

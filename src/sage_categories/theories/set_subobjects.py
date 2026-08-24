@@ -493,6 +493,28 @@ def SubsetsOfSet(base_set: SetObject) -> SubsetsOfSetCategory:
     return cached
 
 
+def _predicate_relation(
+    base_set: SetObject,
+    predicate: Callable[[SetElement, SetElement], Decision],
+) -> SetSubset:
+    """Construct a predicate subobject of ``base_set × base_set``."""
+    from sage_categories.theories.set_constructions import CartesianProductOfSets
+    from sage_categories.theories.set_products import ProductElements
+
+    product = CartesianProductOfSets((base_set, base_set))
+    indices = tuple(product.index_set())
+    assert len(indices) == 2
+
+    def contains_pair(pair: SetElement) -> Decision:
+        assert ProductElements().contains_product_element(pair)
+        return predicate(
+            pair.component(indices[0]),
+            pair.component(indices[1]),
+        )
+
+    return product.subset_from(contains_pair)
+
+
 def _decision_and(left: Decision, right: Decision) -> Decision:
     if left is False or right is False:
         return False

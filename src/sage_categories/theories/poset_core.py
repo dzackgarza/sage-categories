@@ -498,11 +498,16 @@ class PartiallyOrderedSetsCategory(Category):
 
     def discrete_order(self, underlying_set: SetObject) -> PosetObject:
         """Return the discrete poset on ``underlying_set`` with equality order."""
+        from sage_categories.theories.set_subobjects import _predicate_relation
+
         assert underlying_set in Sets()
         return self.ObjectType(
             category=self,
             underlying_set=underlying_set,
-            relation=lambda left, right: left == right,
+            relation=_predicate_relation(
+                underlying_set,
+                lambda left, right: left == right,
+            ),
         )
 
     def _ordinal_order(
@@ -666,19 +671,15 @@ def Poset(
     values = tuple(dict.fromkeys(members))
     underlying_set = FiniteSet(values)
 
-    def transported_relation(left: PosetElement, right: PosetElement) -> Decision:
-        forgetful_functor = PartiallyOrderedSets().forgetful_functor()
-        left_element = forgetful_functor.on_element(left.ambient_poset(), left)
-        right_element = forgetful_functor.on_element(right.ambient_poset(), right)
-        assert SetElements().contains_set_element(left_element)
-        assert SetElements().contains_set_element(right_element)
-        left_value = left_element.value()
-        right_value = right_element.value()
-        assert SetElements().contains_set_element(left_value)
-        assert SetElements().contains_set_element(right_value)
-        return relation(left_value, right_value)
+    def transported_relation(left: SetElement, right: SetElement) -> Decision:
+        return relation(left.value(), right.value())
 
-    poset = PartiallyOrderedSets()(underlying_set, transported_relation)
+    from sage_categories.theories.set_subobjects import _predicate_relation
+
+    poset = PartiallyOrderedSets()(
+        underlying_set,
+        _predicate_relation(underlying_set, transported_relation),
+    )
     finite_posets = PartiallyOrderedSets().Finite()
     assert finite_posets.contains_finite_poset(poset)
     return poset

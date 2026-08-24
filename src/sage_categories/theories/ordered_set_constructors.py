@@ -10,10 +10,8 @@ from sage_categories.theories.poset_core import (
     PosetElement,
 )
 from sage_categories.theories.sets import (
-    CartesianProductOfSets,
     FiniteSet,
     NaturalNumbers,
-    ProductElements,
     SetElement,
     SetElements,
 )
@@ -38,17 +36,15 @@ def ordered_set_owned_by(
     underlying_set = FiniteSet(enumeration)
     owned_enumeration = tuple(underlying_set.element(element) for element in enumeration)
     positions: dict[SetElement, int] = {element: index for index, element in enumerate(owned_enumeration)}
-    product = CartesianProductOfSets((underlying_set, underlying_set))
-    indices = tuple(product.index_set())
-    assert len(indices) == 2
 
-    def ordered_relation(pair: SetElement) -> bool:
-        assert ProductElements().contains_product_element(pair)
-        return positions[pair.component(indices[0])] <= positions[pair.component(indices[1])]
+    def ordered_relation(left: SetElement, right: SetElement) -> bool:
+        return positions[left] <= positions[right]
+
+    from sage_categories.theories.set_subobjects import _predicate_relation
 
     poset = PartiallyOrderedSets()(
         underlying_set,
-        product.subset_from(ordered_relation),
+        _predicate_relation(underlying_set, ordered_relation),
     )
     total_order = TotallyOrderedSets().refine_from_theorem(poset)
     finite_total_order = FiniteTotallyOrderedSets().refine_from_theorem(total_order)

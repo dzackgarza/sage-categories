@@ -10,6 +10,8 @@ from __future__ import annotations
 from collections.abc import Callable, Iterator
 from typing import TYPE_CHECKING, Self, TypeIs
 
+import sage_categories
+
 from sage_categories.abstract_categories.functors import (
     DiscreteObject,
 )
@@ -39,7 +41,7 @@ class SetElement(MathematicalElement):
         self,
         *,
         category: Category,
-        ambient_object: SetObject,
+        ambient_object: sage_categories.theories.set_objects.SetObject,
     ) -> None:
         from sage_categories.theories.set_category import Sets
 
@@ -50,7 +52,7 @@ class SetElement(MathematicalElement):
             ambient_object=ambient_object,
         )
 
-    def ambient_set(self) -> SetObject:
+    def ambient_set(self) -> sage_categories.theories.set_objects.SetObject:
         from sage_categories.theories.set_category import Sets
 
         ambient = self.ambient_object()

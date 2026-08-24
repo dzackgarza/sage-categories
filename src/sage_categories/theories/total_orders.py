@@ -6,9 +6,6 @@ from typing import TYPE_CHECKING, Any, TypeIs
 
 from sage_categories.abstract_categories.category_constructions import (
     FullSubcategory,
-    FullSubcategoryArrow,
-    FullSubcategoryElement,
-    FullSubcategoryObject,
 )
 from sage_categories.abstract_categories.functors import (
     InclusionFunctor,
@@ -27,7 +24,16 @@ from sage_categories.theories.poset_core import (
     is_poset_element,
 )
 from sage_categories.theories.sets import SetObject
-from sage_categories.values import Arrow, Decision, MathematicalElement, MathematicalObject, registered_element
+from sage_categories.values import (
+    Arrow,
+    Decision,
+    MathematicalElement,
+    MathematicalObject,
+    TransportedArrow,
+    TransportedElement,
+    TransportedObject,
+    registered_element,
+)
 
 if TYPE_CHECKING:
     from sage_categories.theories.finite_posets import FinitePosetsCategory
@@ -44,15 +50,15 @@ class FiniteTotalToFinitePosetFunctor(RestrictedStructuralFunctor):
         )
 
 
-class FiniteTotalOrderObject(FullSubcategoryObject):
+class FiniteTotalOrderObject(TransportedObject):
     """One finite total order."""
 
 
-class FiniteTotalOrderElement(FullSubcategoryElement):
+class FiniteTotalOrderElement(TransportedElement):
     """An element of one finite total order."""
 
 
-class FiniteTotalOrderMorphism(FullSubcategoryArrow):
+class FiniteTotalOrderMorphism(TransportedArrow):
     """An order-preserving map between finite total orders."""
 
 
@@ -134,13 +140,13 @@ class FiniteTotallyOrderedSetsCategory(FullSubcategory):
 class TotallyOrderedSetsCategory(FullSubcategory):
     """Sets equipped with a proved total order."""
 
-    class ObjectType(FullSubcategoryObject):
+    class ObjectType(TransportedObject):
         """One total order."""
 
-    class ElementType(FullSubcategoryElement):
+    class ElementType(TransportedElement):
         """An element of one total order."""
 
-    class ArrowType(FullSubcategoryArrow):
+    class ArrowType(TransportedArrow):
         """An order-preserving map between total orders."""
 
     def __init__(self) -> None:

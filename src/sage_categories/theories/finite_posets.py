@@ -7,9 +7,6 @@ from typing import TYPE_CHECKING, TypeIs
 
 from sage_categories.abstract_categories.category_constructions import (
     FullSubcategory,
-    FullSubcategoryArrow,
-    FullSubcategoryElement,
-    FullSubcategoryObject,
 )
 from sage_categories.abstract_categories.functors import (
     InclusionFunctor,
@@ -28,6 +25,9 @@ from sage_categories.theories.cardinals import Cardinal, cardinal
 from sage_categories.abstract_categories.functors import DiscreteDiagram
 from sage_categories.values import (
     MathematicalObject,
+    TransportedArrow,
+    TransportedElement,
+    TransportedObject,
 )
 
 from sage_categories.theories.poset_core import (
@@ -50,7 +50,7 @@ else:
     from sage.combinat.posets.posets import Poset as _sage_poset_constructor
 
 
-class FinitePosetObject(FullSubcategoryObject):
+class FinitePosetObject(TransportedObject):
     """A finite poset with finite order algorithms."""
 
     _sage_value: ExternalFinitePoset | None = None
@@ -267,11 +267,11 @@ class FinitePosetObject(FullSubcategoryObject):
         return result
 
 
-class FinitePosetElement(FullSubcategoryElement):
+class FinitePosetElement(TransportedElement):
     """An element of one finite poset."""
 
 
-class FinitePosetMorphism(FullSubcategoryArrow):
+class FinitePosetMorphism(TransportedArrow):
     """An order-preserving map between finite posets."""
 
 

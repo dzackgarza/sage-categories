@@ -4,15 +4,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sage_categories.theories.poset_core import (
-    PartiallyOrderedSets,
-)
 from sage_categories.theories.sets import (
     EnumerationInjection,
     FiniteSet,
     NaturalNumbers,
-    SetElement,
-    Sets,
 )
 from sage_categories.values import MathematicalObject
 
@@ -33,7 +28,7 @@ class SimplexOrderIndexing:
 
     def __getitem__(self, index: int | Cardinal) -> MathematicalObject:
         from sage_categories.theories.cardinals import is_cardinal
-        from sage_categories.theories.ordinals import Ordinals, ordinal
+        from sage_categories.theories.ordinals import ordinal
 
         if is_cardinal(index):
             if index.is_finite() is True:
@@ -41,31 +36,9 @@ class SimplexOrderIndexing:
             else:
                 assert index.is_countably_infinite()
                 if self._countable_simplex is None:
-                    naturals = NaturalNumbers()
-
-                    def natural_order(
-                        left: SetElement,
-                        right: SetElement,
-                    ) -> bool:
-                        left_ordinal = left.value()
-                        right_ordinal = right.value()
-                        assert Ordinals().contains_ordinal(left_ordinal)
-                        assert Ordinals().contains_ordinal(right_ordinal)
-                        decision = Ordinals()._is_lequal(left_ordinal, right_ordinal)
-                        assert decision is True or decision is False
-                        return decision
-
-                    # Theorem: the natural order on ordinals is a total order
-                    # (well-ordering of ordinals, Sierpiński §II.7).
-                    poset = PartiallyOrderedSets()._ordinal_order(
-                        naturals,
-                        Sets().relation(
-                            naturals,
-                            Sets().binary_predicate(naturals, natural_order),
-                        ),
+                    self._countable_simplex = (
+                        TotallyOrderedSets().natural_numbers_order()
                     )
-
-                    self._countable_simplex = TotallyOrderedSets()._refine_object(poset)
                 return self._countable_simplex
         else:
             maximum = index

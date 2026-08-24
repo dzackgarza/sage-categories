@@ -448,21 +448,25 @@ class PartiallyOrderedSetsCategory(Category):
         candidate = self._construct(underlying_set, relation)
         return self._strongest_result(candidate, underlying_set)
 
-    def _ordinal_order(
-        self,
-        underlying_set: SetObject,
-        relation: OrderRelation,
-    ) -> PosetObject:
-        """Construct a poset from the ordinal well-ordering theorem.
+    def natural_numbers_order(self) -> PosetObject:
+        """Construct the usual partial order on the positive natural numbers."""
+        from sage_categories.theories.ordinals import Ordinals
+        from sage_categories.theories.sets import NaturalNumbers
 
-        The order on ordinals is reflexive, antisymmetric, and transitive
-        by the well-ordering of ordinals (Sierpiński §II.7).  This is a
-        theorem-backed entry path for infinite ordinal-valued sets.
-        """
-        return self._strongest_result(
-            self._construct(underlying_set, relation),
-            underlying_set,
+        naturals = NaturalNumbers()
+
+        def ordered(left: SetElement, right: SetElement) -> Decision:
+            left_ordinal = left.value()
+            right_ordinal = right.value()
+            assert Ordinals().contains_ordinal(left_ordinal)
+            assert Ordinals().contains_ordinal(right_ordinal)
+            return Ordinals()._is_lequal(left_ordinal, right_ordinal)
+
+        relation = Sets().relation(
+            naturals,
+            Sets().binary_predicate(naturals, ordered),
         )
+        return self._construct(naturals, relation)
 
     def _hom_category_type(self) -> type[HomCategory]:
         return PosetHomCategory

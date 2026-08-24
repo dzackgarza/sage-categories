@@ -177,6 +177,11 @@ class TotallyOrderedSetsCategory(FullSubcategory):
     def contains_total_order(self, candidate: MathematicalObject) -> Decision:
         return self.__contains__(candidate)
 
+    def natural_numbers_order(self) -> TotallyOrderedSetsCategory.ObjectType:
+        """Construct the usual total order on the positive natural numbers."""
+        poset = PartiallyOrderedSets().natural_numbers_order()
+        return self._refine_object(poset)
+
     def Finite(self) -> FiniteTotallyOrderedSetsCategory:
         if self._finite_orders is None:
             self._finite_orders = FiniteTotallyOrderedSetsCategory(self)

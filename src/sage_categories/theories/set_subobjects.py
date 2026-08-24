@@ -122,8 +122,8 @@ class SetMorphism(Arrow, SetElement):
         *,
         hom_category: SetHomCategory,
         action: Callable[[SetElement], SetElement],
-        injective: Decision = UNKNOWN,
-        surjective: Decision = UNKNOWN,
+        injective: Decision,
+        surjective: Decision,
     ) -> None:
 
         self._action = action
@@ -222,6 +222,8 @@ class SetSubset(SetMorphism):
         super().__init__(
             hom_category=hom_category,
             action=characteristic_value,
+            injective=UNKNOWN,
+            surjective=UNKNOWN,
         )
 
     def category(self) -> Category:
@@ -390,7 +392,7 @@ class SubsetsOfSetCategory(Category):
     ) -> SetSubset:
         from sage_categories.theories.set_category import (
             Sets,
-            _set_morphism,
+            _set_morphism_with_properties,
         )
 
         underlying_set = SubsetSetObject(
@@ -399,11 +401,12 @@ class SubsetsOfSetCategory(Category):
             cardinality=cardinality,
             iterator=iterator,
         )
-        forward = _set_morphism(
+        forward = _set_morphism_with_properties(
             underlying_set,
             self._base_set,
             underlying_set.base_element,
-            injective=True,
+            True,
+            UNKNOWN,
         )
         monomorphisms = Sets().Mono(underlying_set, self._base_set)
         assert is_restricted_hom_category(monomorphisms)

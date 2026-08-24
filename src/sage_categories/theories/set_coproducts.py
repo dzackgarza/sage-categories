@@ -180,11 +180,14 @@ class CoproductSet(SetObject):
 
     def _injection(self, index: SetElement) -> SetMorphism:
 
-        return _set_morphism(
+        from sage_categories.theories.set_category import _set_morphism_with_properties
+
+        return _set_morphism_with_properties(
             self.cofactor(index),
             self,
             lambda value: self.element(index, value),
-            injective=True,
+            True,
+            UNKNOWN,
         )
 
     def __repr__(self) -> str:
@@ -252,11 +255,14 @@ class SetCoproductObject(CoproductObject):
 
     def _injection(self, index: SetElement) -> SetMorphism:
 
-        return _set_morphism(
+        from sage_categories.theories.set_category import _set_morphism_with_properties
+
+        return _set_morphism_with_properties(
             self.cofactor(index),
             self,
             lambda value: self.element(index, value),
-            injective=True,
+            True,
+            UNKNOWN,
         )
 
     def universal_morphism(self, cocone: CoconeObject) -> SetMorphism:

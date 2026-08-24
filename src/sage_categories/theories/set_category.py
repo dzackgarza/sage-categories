@@ -503,14 +503,19 @@ def _set_morphism(
     domain: SetObject,
     codomain: SetObject,
     action: SetElementFamily,
-    *,
-    injective: Decision = UNKNOWN,
-    surjective: Decision = UNKNOWN,
 ) -> SetMorphism:
     hom_category = Sets().Hom(domain, codomain)
     assert is_set_hom_category(hom_category)
-    return hom_category(
-        action,
-        injective=injective,
-        surjective=surjective,
-    )
+    return hom_category.from_callable(action)
+
+
+def _set_morphism_with_properties(
+    domain: SetObject,
+    codomain: SetObject,
+    action: SetElementFamily,
+    injective: Decision,
+    surjective: Decision,
+) -> SetMorphism:
+    hom_category = Sets().Hom(domain, codomain)
+    assert is_set_hom_category(hom_category)
+    return hom_category._construct(action, injective, surjective)

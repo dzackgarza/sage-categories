@@ -7,7 +7,7 @@ categorical foundation. Sage is not part of this category graph.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterator, Mapping
+from collections.abc import Callable, Iterator
 from itertools import product as cartesian_product
 from typing import Any
 
@@ -93,24 +93,29 @@ class SetHomCategory(HomCategory, SetObject):
 
     def __call__(
         self,
-        action: Callable[[SetElement], SetElement]
-        | Mapping[SetElement, SetElement]
-        | SetMorphism,
-        *,
-        injective: Decision = UNKNOWN,
-        surjective: Decision = UNKNOWN,
+        morphism: SetMorphism,
     ) -> SetMorphism:
         from sage_categories.theories.set_category import Sets
 
-        existing = registered_value(action)
-        if existing is not None:
-            assert existing in self
-            assert Sets().contains_set_morphism(existing)
-            return existing
-        set_action = self._set_action(action)
+        assert morphism in self
+        assert Sets().contains_set_morphism(morphism)
+        return morphism
+
+    def from_callable(
+        self,
+        action: Callable[[SetElement], SetElement],
+    ) -> SetMorphism:
+        return self._construct(action, UNKNOWN, UNKNOWN)
+
+    def _construct(
+        self,
+        action: Callable[[SetElement], SetElement],
+        injective: Decision,
+        surjective: Decision,
+    ) -> SetMorphism:
         return self.ObjectType(
             hom_category=self,
-            action=set_action,
+            action=action,
             injective=injective,
             surjective=surjective,
         )
@@ -127,24 +132,6 @@ class SetHomCategory(HomCategory, SetObject):
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
         return value is not None and value._belongs_to_hom(self)
-
-    def _set_action(
-        self,
-        action: Callable[[SetElement], SetElement] | Mapping[SetElement, SetElement],
-    ) -> Callable[[SetElement], SetElement]:
-        from sage_categories.theories.set_category import Sets
-
-        if callable(action):
-            return action
-        domain = self.domain()
-        codomain = self.codomain()
-        assert Sets().contains_set(domain)
-        assert Sets().contains_set(codomain)
-        assert domain.is_finite() is True
-        assert all(key in domain for key in action)
-        assert all(member in action for member in domain)
-        assert all(value in codomain for value in action.values())
-        return action.__getitem__
 
     def membership(self, candidate: SetElement) -> Decision:
         return candidate in self
@@ -166,7 +153,7 @@ class SetHomCategory(HomCategory, SetObject):
 
     def identity(self) -> SetMorphism:
         assert self.domain() is self.codomain()
-        return self(
+        return self._construct(
             lambda member: member,
             injective=True,
             surjective=True,
@@ -182,7 +169,7 @@ class SetHomCategory(HomCategory, SetObject):
         assert first.domain() is self.domain()
         assert first.codomain() is second.domain()
         assert second.codomain() is self.codomain()
-        return self(
+        return self._construct(
             lambda member: second(first(member)),
             injective=_decision_and(first.is_injective(), second.is_injective()),
             surjective=_decision_and(first.is_surjective(), second.is_surjective()),
@@ -347,7 +334,7 @@ class SetHomCategory(HomCategory, SetObject):
     def inverse_image_morphism(self, function: SetMorphism) -> SetMorphism:
         from sage_categories.theories.set_category import (
             Sets,
-            _set_morphism,
+            _set_morphism_with_properties,
         )
         from sage_categories.theories.set_constructions import PowerSet
 
@@ -361,18 +348,18 @@ class SetHomCategory(HomCategory, SetObject):
             subset = self._represented_subset(candidate)
             return target_power_set.from_predicate(lambda member: subset.membership(function(member)))
 
-        return _set_morphism(
+        return _set_morphism_with_properties(
             self,
             target_power_set,
             inverse_image,
-            injective=function.is_surjective(),
-            surjective=function.is_injective(),
+            function.is_surjective(),
+            function.is_injective(),
         )
 
     def direct_image_morphism(self, function: SetMorphism) -> SetMorphism:
         from sage_categories.theories.set_category import (
             Sets,
-            _set_morphism,
+            _set_morphism_with_properties,
         )
         from sage_categories.theories.set_constructions import PowerSet
 
@@ -397,12 +384,12 @@ class SetHomCategory(HomCategory, SetObject):
             assert Sets().contains_set_morphism(restricted)
             return restricted.image()
 
-        return _set_morphism(
+        return _set_morphism_with_properties(
             self,
             target_power_set,
             direct_image,
-            injective=function.is_injective(),
-            surjective=function.is_surjective(),
+            function.is_injective(),
+            function.is_surjective(),
         )
 
     def _represented_subset(self, candidate: MathematicalObject) -> SetSubset:

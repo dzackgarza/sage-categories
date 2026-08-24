@@ -366,14 +366,15 @@ def EnumerationInjection(
     from sage_categories.theories.ordinals import ordinal
     from sage_categories.theories.set_category import (
         Sets,
-        _set_morphism,
+        _set_morphism_with_properties,
     )
 
-    function = _set_morphism(
+    function = _set_morphism_with_properties(
         source,
         NaturalNumbers(),
         lambda member: NaturalNumbers().element(ordinal(position(member))),
-        injective=True,
+        True,
+        UNKNOWN,
     )
     monomorphisms = Sets().Mono(source, NaturalNumbers())
     assert is_restricted_hom_category(monomorphisms)

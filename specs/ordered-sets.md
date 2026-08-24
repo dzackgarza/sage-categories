@@ -1,10 +1,85 @@
-## Posets and totally ordered sets: specification
+# Posets and totally ordered sets
 
-This package models order as mathematical structure on a set.
+This specification uses the ordinary mathematics of binary relations, partial orders,
+total orders, and monotone maps. The mathematical definitions determine the category
+graph, implementation roles, construction obligations, and inherited operations.
 
-### 1. Category hierarchy
+## Contents
 
-The category constructors are:
+- [Mathematical foundation](#mathematical-foundation)
+- [Categories and structural functors](#categories-and-structural-functors)
+- [Construction and admission](#construction-and-admission)
+- [Total-order refinement](#total-order-refinement)
+- [Canonical simplex orders](#canonical-simplex-orders)
+- [Monotone maps](#monotone-maps)
+- [Products](#products)
+- [Finite-poset mathematics](#finite-poset-mathematics)
+- [Thin categories](#thin-categories)
+- [Implementation ownership](#implementation-ownership)
+- [Acceptance conditions](#acceptance-conditions)
+
+## Mathematical foundation
+
+*Definition.* A binary relation on a set \(X\) is a subset
+
+\[
+R\subseteq X\times X.
+\]
+
+Equivalently, it is a subobject \(R\hookrightarrow X\times X\) in
+\(\mathbf{Set}\). Write \(x\leq_R y\) when \((x,y)\in R\).
+
+*Definition.* A partially ordered set is a pair \(P=(X,\leq_P)\) such that
+
+\[
+\begin{aligned}
+&\forall x\in X, &&x\leq_P x,\\
+&\forall x,y\in X, &&x\leq_P y\land y\leq_P x\Longrightarrow x=y,\\
+&\forall x,y,z\in X, &&x\leq_P y\land y\leq_P z\Longrightarrow x\leq_P z.
+\end{aligned}
+\]
+
+These are reflexivity, antisymmetry, and transitivity. They are defining laws, not
+optional properties supplied by an implementation.
+
+The relations \(\leq_P\) and \(<_P\) have domain \(X\times X\). Thus comparison takes
+two elements of the same ambient poset. Elements of different posets require a stated
+map or coercion before comparison. The mathematical signature already determines both
+argument roles.
+
+*Definition.* A total order is a partial order \(P=(X,\leq_P)\) satisfying
+
+\[
+\forall x,y\in X,\qquad x\leq_P y\lor y\leq_P x.
+\]
+
+Totality adds one proposition. It does not add another underlying set, relation,
+element notion, or comparison operation.
+
+*Definition.* For posets \(P=(X,\leq_P)\) and \(Q=(Y,\leq_Q)\), a monotone map
+\(f:P\to Q\) is a function \(f:X\to Y\) satisfying
+
+\[
+\forall x,y\in X,\qquad
+x\leq_P y\Longrightarrow f(x)\leq_Q f(y).
+\]
+
+Identity functions are monotone. Composites of monotone functions are monotone.
+Therefore posets and monotone maps form the category \(\mathbf{Pos}\).
+
+The forgetful functor
+
+\[
+U:\mathbf{Pos}\longrightarrow\mathbf{Set}
+\]
+
+sends \((X,\leq_P)\) to \(X\) and a monotone map to its underlying function. It is
+faithful. It is not full because an arbitrary function between underlying sets need not
+preserve order.
+
+## Categories and structural functors
+
+The owned category constructors are:
 
 ```sage
 PartiallyOrderedSets()
@@ -13,154 +88,396 @@ FinitePosets()
 FiniteTotallyOrderedSets()
 ```
 
-The categorical inclusions and forgetful functors form the commutative graph:
+Their inclusions and forgetful functors form the commutative diagram
 
 \[
 \begin{array}{ccc}
 \mathbf{FinTotOrd} & \hookrightarrow & \mathbf{TotOrd} \\
 \downarrow & & \downarrow \\
-\mathbf{FinPoset} & \hookrightarrow & \mathbf{Poset} \\
+\mathbf{FinPos} & \hookrightarrow & \mathbf{Pos} \\
 \downarrow & & \downarrow \\
-\mathbf{FinSet} & \hookrightarrow & \mathbf{Set}
+\mathbf{FinSet} & \hookrightarrow & \mathbf{Set}.
 \end{array}
 \]
 
-Every totally ordered set inherits partial-order operations through its structural inclusion.
-Every partially ordered set inherits set operations through its forgetful functor.
+Each horizontal or upper vertical inclusion is a full property-subcategory inclusion.
+The lower vertical maps forget order. Both routes from
+\(\mathbf{FinTotOrd}\) to \(\mathbf{Set}\) produce the same underlying set and the same
+underlying functions.
 
-Order and cardinality remain independent properties.
+Order and cardinality are independent properties. Finiteness does not establish
+totality. Totality does not supply an enumeration, rank function, or well-order.
 
-### 2. Partial-order construction and validation
+The category-owned implementation roles follow directly:
 
-A partially ordered set is a set \(X\) equipped with a relation \(\le\) that satisfies:
+- a poset object implements \((X,\leq_P)\);
+- a poset element implements an element \(x\in X\) with ambient object \(P\);
+- a poset arrow implements a monotone set map;
+- a total-order object is a poset object whose relation satisfies totality.
 
-- Reflexivity: \(x \le x\) for all \(x \in X\).
+No role requires a decorator, marker, authority object, or parallel metadata record.
 
-- Antisymmetry: \(x \le y \land y \le x \implies x = y\).
+## Construction and admission
 
-- Transitivity: \(x \le y \land y \le z \implies x \le z\).
+An owned relation is a subobject of \(X\times X\). A private callable can evaluate that
+relation, but the callable is not the mathematical relation or its proof obligations.
 
-Construct a finite poset with:
+There are three construction routes.
 
-```sage
-Poset((members, leq))
-PartiallyOrderedSets()(finite_set, relation)
-```
+### Checked construction
 
-For finite sets, construction evaluates the relation on all pairs and triples:
+The checked route evaluates reflexivity, antisymmetry, and transitivity with an exact
+decision procedure. It admits the pair \((X,\leq)\) only when all three decisions are
+`True`.
 
-- The constructor rejects non-reflexive relations.
+For a represented finite set, exhaustive evaluation of all required elements, pairs,
+and triples is one exact algorithm. `False` rejects the relation. `Unknown` establishes
+no poset.
 
-- The constructor rejects non-antisymmetric relations.
+Finiteness is not the definition of this route. Any exact algorithm that decides all
+three laws can supply checked admission.
 
-- The constructor rejects non-transitive relations.
+### Hypothesis-backed construction
 
-- The constructor rejects relations that return `Unknown`.
+The hypothesis-backed route receives an explicit scoped assumption context containing
+the three applied predicates for the owned relation. It constructs the poset under those
+hypotheses. The context is semantic hypothesis data; it is not theorem prose or an
+authority token.
 
-For infinite sets, raw unverified relations cannot enter `PartiallyOrderedSets()`. Only named theorem-backed category constructors create infinite posets:
+### Theorem-backed named construction
 
-- Discrete order: `PartiallyOrderedSets().discrete_order(set)` constructs the discrete order with equality relation.
+A named construction whose defining theorem supplies the three laws constructs its
+result directly in `PartiallyOrderedSets()`. Examples include:
 
-- Categorical limits: `PartiallyOrderedSets().chosen_limit(diagram)` constructs the componentwise product order.
+- the equality relation on any set;
+- the usual order on a natural interval;
+- the usual order on `NN`;
+- an ordinal order;
+- the componentwise order on a product of posets.
 
-- Simplex order: `SimplexOrders()[Aleph0]` constructs the standard ordinal order on natural numbers.
+The construction owns this conclusion through its definition and return category. It
+does not pass proof text, a Boolean flag, or an authority object.
 
-### 3. Totality and category refinement
-
-A total order is a partial order whose elements are pairwise comparable:
+This distinction matters for scale. Let
 
 \[
-\forall x, y \in X, \quad x \le y \lor y \le x.
+X=\{1,\ldots,10^{10}\}
 \]
 
-Construct a total order with:
+with its usual order. The natural-interval constructor establishes the order laws by
+the standard theorem. It does not enumerate pairs or triples.
 
-```sage
-finite_ordered_set(elements)
-TotallyOrderedSets()(finite_poset)
-FiniteTotallyOrderedSets()(finite_poset)
-```
+## Total-order refinement
 
-The totality query `is_total_order(poset)` returns:
+Totality is the proposition
 
-- `True` when every pair of elements in a finite poset is comparable.
+\[
+\operatorname{Total}(P)
+\;:\Longleftrightarrow\;
+\forall x,y\in P,\quad x\leq_P y\lor y\leq_P x.
+\]
 
-- `False` when an incomparable pair exists.
+The same three admission forms apply:
 
-- `Unknown` when totality cannot be determined algorithmically.
+- a checked route requires an exact `True` result;
+- a hypothesis-backed route requires the applied totality hypothesis;
+- a theorem-backed named construction returns the object directly in
+  `TotallyOrderedSets()`.
 
-Category refinement requires totality to be `True`. The constructor rejects non-total posets and unknown comparisons.
-Infinite posets enter `TotallyOrderedSets()` solely through named theorem-backed constructors such as `SimplexOrders()[Aleph0]`.
+An exact `False` or `Unknown` checked result does not refine the poset. The object
+remains in the strongest category already established.
 
-### 4. Canonical simplex orders
+The equality order on a set with two distinct elements is a poset but not a total
+order. Finiteness supplies no missing comparability.
 
-Canonical simplex orders are provided by `SimplexOrders()`:
+`FiniteTotallyOrderedSets()` accepts an established finite total order. Its two
+structural routes preserve the same poset and set images.
+
+## Canonical simplex orders
+
+For \(n\in\mathbb Z_{\geq0}\), define
+
+\[
+[n]=\{0,1,\ldots,n\}
+\]
+
+with the usual order. It has order type \(n+1\) and cardinality \(n+1\). The constructor
+is:
 
 ```sage
 SimplexOrders()[n]
+```
+
+The countably infinite simplex order has underlying set \(\mathbb Z_{\geq0}\) and order
+type \(\omega\):
+
+```sage
 SimplexOrders()[Aleph0]
 ```
 
-- `SimplexOrders()[n]` is the finite total order \(\{0 < 1 < \cdots < n\}\).
+This object has cardinality \(\aleph_0\). It is not named `NN` because this repository
+uses `NN` for the positive integers.
 
-- `SimplexOrders()[Aleph0]` is the countably infinite total order of natural numbers with standard ordinal comparison.
+## Monotone maps
 
-### 5. Morphisms and monotonicity
+A candidate poset morphism starts as an owned set morphism \(f:U(P)\to U(Q)\). A bare
+Python callable is only a private representation of such a rule.
 
-Poset morphisms are order-preserving set maps:
+The checked route decides
 
 \[
-x \le_P y \implies f(x) \le_Q f(y).
+\forall x,y\in P,\qquad
+x\leq_P y\Longrightarrow f(x)\leq_Q f(y).
 \]
 
-Construct a morphism with:
+For a represented finite source, exhaustive evaluation of all ordered pairs is one
+exact algorithm. A witnessed violation gives `False`. An unresolved implication gives
+`Unknown`. Only `True` admits the arrow to the poset Hom object.
 
-```sage
-Hom = PartiallyOrderedSets().Hom(P, Q)
-f = Hom(mapping)
-```
+A hypothesis-backed route accepts a scoped `order_preserving(f)` hypothesis. A named
+theorem-backed route constructs a monotone arrow directly. The standard theorem-backed
+routes include:
 
-Admission rules:
+- identity arrows;
+- composites of monotone arrows;
+- product projections;
+- product mediating arrows;
+- the map \(n\mapsto n^2\) from `NN` to `NN` with the usual order.
 
-- For finite domains, the constructor verifies monotonicity on all pairs \(x \le_P y\).
+The last map is admitted by its elementary monotonicity theorem. It is not checked by
+enumerating `NN`.
 
-- It rejects candidate maps where \(f(x) \le_Q f(y)\) is `False` or `Unknown`.
+If monotonicity is `False` or `Unknown` and no hypothesis or construction theorem
+applies, the candidate remains a set morphism. It does not enter the poset Hom object.
 
-- For infinite domains, arbitrary callable maps without a proving theorem are rejected from `PosetHomCategory`. Morphisms arise through category-owned constructions (identities, compositions, product projections, universal cone maps).
+Order-reflecting maps, order embeddings, and order isomorphisms are arrow property
+subcategories:
 
-- The forgetful functor to `Sets()` is faithful, not full; it does not lift arbitrary set maps.
+\[
+\begin{aligned}
+f\text{ reflects order}
+&\Longleftrightarrow
+\forall x,y,\ f(x)\leq_Q f(y)\Longrightarrow x\leq_P y,\\
+f\text{ is an order embedding}
+&\Longleftrightarrow
+f\text{ is monotone and order-reflecting},\\
+f\text{ is an order isomorphism}
+&\Longleftrightarrow
+f\text{ is a bijective order embedding}.
+\end{aligned}
+\]
 
-Arrow properties:
+Category membership states these properties. Poset arrows do not fabricate Boolean
+answers for unestablished properties.
 
-- `f.is_order_preserving()` returns `True` as a consequence of category membership.
+## Products
 
-- `f.is_order_reflecting()` checks whether \(f(x) \le_Q f(y) \implies x \le_P y\).
+For a family of posets \(P_i=(X_i,\leq_i)\) indexed by a set \(I\), define
 
-- `f.is_order_embedding()` returns whether \(f\) preserves and reflects order.
+\[
+\prod_{i\in I}P_i
+=\left(\prod_{i\in I}X_i,\leq\right),
+\qquad
+x\leq y\Longleftrightarrow\forall i\in I,\ x_i\leq_i y_i.
+\]
 
-- `f.is_order_isomorphism()` returns whether \(f\) is a bijective order embedding.
+Reflexivity, antisymmetry, and transitivity follow coordinatewise. The set projections
 
-### 6. Categorical limits and products
+\[
+\pi_i:\prod_jX_j\longrightarrow X_i
+\]
 
-Categorical products in `PartiallyOrderedSets()` lift products in `Sets()`:
+are monotone. For every poset \(C\) and family of monotone maps \(f_i:C\to P_i\), the
+set-product mediating map
 
-- Apex: The set product \(X = \prod_i X_i\) equipped with the componentwise order:
-  \[
-  x \le y \iff \forall i, \; \pi_i(x) \le_i \pi_i(y).
-  \]
+\[
+\langle f_i\rangle:C\longrightarrow\prod_iP_i
+\]
 
-- Projections: Each projection \(\pi_i: X \to X_i\) is an order-preserving morphism in `PartiallyOrderedSets()`.
+is monotone and is the unique arrow satisfying
 
-- Universal map: For any cone \(C \to X_i\), the mediating arrow \(\langle f_i \rangle: C \to X\) is order-preserving.
+\[
+\pi_i\circ\langle f_j\rangle=f_i
+\]
 
-### 7. Method compilation and full-route transport
+for every \(i\in I\). Thus this is the categorical product in \(\mathbf{Pos}\), and the
+forgetful functor creates it:
 
-Structural method forwarding follows the compiled route:
+\[
+U\!\left(\prod_iP_i\right)=\prod_iU(P_i).
+\]
 
-- Receivers, elements, objects, and arrows transport to the declaring category along the route.
+The componentwise product of total orders need not be total. If \(P\) and \(Q\) each
+contain \(0<1\), then \((0,1)\) and \((1,0)\) are incomparable in \(P\times Q\).
+Therefore the poset product does not refine to `TotallyOrderedSets()` in this case.
 
-- Stored methods invoke on their target category implementation.
+The product constructor uses the coordinatewise theorem. It does not validate the order
+or projection maps by exhaustive enumeration.
 
-- Return values (elements, element iterators, self-references, ambient objects) reverse-transport to the caller's category.
+## Finite-poset mathematics
 
-- Canonical image caching ensures coherent representations across parallel routes.
+Let \(P=(X,\leq)\) be a finite poset.
+
+For \(x,y\in X\), write \(x<y\) when \(x\leq y\) and \(x\neq y\). The element \(y\)
+*covers* \(x\) when
+
+\[
+x<y
+\quad\text{and}\quad
+\nexists z\in X,\ x<z<y.
+\]
+
+The lower covers of \(y\) are the elements covered by \(y\). The upper covers of
+\(x\) are the elements that cover \(x\). Common lower or upper covers are intersections
+of these cover sets over the stated finite subset.
+
+For \(x\leq y\), the open and closed intervals are
+
+\[
+(x,y)=\{z\in X\mid x<z<y\},
+\qquad
+[x,y]=\{z\in X\mid x\leq z\leq y\}.
+\]
+
+For a subset \(A\subseteq X\), its generated order ideal and order filter are
+
+\[
+\downarrow A=\{x\in X\mid \exists a\in A,\ x\leq a\},
+\qquad
+\uparrow A=\{x\in X\mid \exists a\in A,\ a\leq x\}.
+\]
+
+The principal cases are \(\downarrow x=\downarrow\{x\}\) and
+\(\uparrow x=\uparrow\{x\}\). An order ideal is a subset \(I\subseteq X\) satisfying
+\(\downarrow I=I\). An order filter satisfies \(\uparrow I=I\).
+
+An element \(m\in X\) is minimal when no \(x<m\) exists. It is maximal when no
+\(x>m\) exists. A bottom element \(\bot\) satisfies \(\bot\leq x\) for every \(x\in X\).
+A top element \(\top\) satisfies \(x\leq\top\) for every \(x\in X\). Bottom and top,
+when they exist, are unique.
+
+The operations `bottom()` and `top()` therefore belong to the property subcategories of
+posets with bottom and with top. They are not partial methods on every finite poset. The
+subcategory of bounded posets is their intersection.
+
+A chain is a subset whose induced order is total. An antichain is a subset whose
+distinct elements are pairwise incomparable. The height and width are
+
+\[
+\operatorname{height}(P)=\max\{|C|\mid C\subseteq X\text{ is a chain}\},
+\]
+
+\[
+\operatorname{width}(P)=\max\{|A|\mid A\subseteq X\text{ is an antichain}\}.
+\]
+
+Both are cardinal values. The empty subset is a chain and an antichain, so the empty
+poset has height and width \(0\). This convention counts elements, so a one-element
+poset has height \(1\).
+
+A rank function is a map
+
+\[
+\rho:X\to\mathbb Z_{\geq0}
+\]
+
+such that every minimal element has rank \(0\), and \(\rho(y)=\rho(x)+1\) whenever
+\(y\) covers \(x\). A finite poset is ranked when such a function exists. Its level
+sets are \(\rho^{-1}(k)\). For a nonempty ranked poset, its rank is
+\(\max_{x\in X}\rho(x)\).
+
+A finite ranked poset is graded when all maximal elements have the same rank. Element
+rank and level sets belong to the ranked-poset property subcategory. The poset rank
+belongs to its nonempty part. None is a total operation on an arbitrary finite poset.
+
+A linear extension of \(P\) is a total order \(L\) on the same set \(X\) satisfying
+
+\[
+x\leq_P y\Longrightarrow x\leq_L y.
+\]
+
+Every finite poset has a linear extension. A chosen linear-extension constructor returns
+a finite total-order object with the same underlying set. The theorem supplies totality
+and order preservation; the constructor does not recheck them exhaustively.
+
+Cover sets, intervals, ideals, filters, extrema, chains, antichains, and level sets are
+owned finite subobjects of \(X\), not Python iterators or built-in containers.
+
+## Thin categories
+
+Every poset \(P\) determines a thin category \(\mathcal T(P)\). Its objects are the
+elements of \(P\), and
+
+\[
+\operatorname{Hom}_{\mathcal T(P)}(x,y)=
+\begin{cases}
+\{*\},&x\leq_P y,\\
+\varnothing,&x\nleq_P y.
+\end{cases}
+\]
+
+Reflexivity supplies identities. Transitivity supplies composition. Antisymmetry makes
+the thin category skeletal. A monotone map \(P\to Q\) induces a functor
+\(\mathcal T(P)\to\mathcal T(Q)\).
+
+Hence posets are the same mathematical data as skeletal thin categories, up to the
+usual equivalence between a poset and its thin category.
+
+## Implementation ownership
+
+`PartiallyOrderedSets()` introduces the relation, order-specific object operations,
+order-specific element operations, monotone arrows, and constructions such as the thin
+category and componentwise products.
+
+Its selected forgetful functor to `Sets()` supplies elements, membership, iteration,
+cardinality, set maps, and set universal constructions. Poset theory does not reimplement
+that surface.
+
+`TotallyOrderedSets()` introduces totality and the named construction routes whose
+theorems establish it. It does not implement another comparison method, element cache,
+set wrapper, or poset constructor.
+
+`FinitePosets()` introduces only mathematics that requires finiteness, including exact
+finite-poset algorithms and finite mathematical result collections. It inherits the
+poset and finite-set surfaces through its two inclusions.
+
+The ordinary method signatures on the category-owned implementation types determine
+receivers, arguments, results, and mathematical roles. The kernel alone compiles
+inherited methods and transports canonical images. See [Leaf category
+implementations](leaves.md) and [Structural resolution](resolution.md).
+
+The governing policies include `POL-MATH-001`, `POL-MATH-016` through `POL-MATH-033`,
+`POL-CAT-020`, `POL-CAT-061` through `POL-CAT-078`, `POL-LEAF-018` through
+`POL-LEAF-055`, and `POL-KERNEL-001` through `POL-KERNEL-024`.
+
+## Acceptance conditions
+
+The implementation satisfies this specification only when these mathematical facts hold:
+
+- every admitted poset relation satisfies reflexivity, antisymmetry, and transitivity;
+- every admitted total order also satisfies pairwise comparability;
+- every admitted poset arrow is monotone;
+- checked `False` and `Unknown` results cause no property refinement;
+- named theorem-backed constructors admit large finite and infinite examples without
+  exhaustive verification;
+- the two-element equality order remains a poset and does not become a total order;
+- the reversing function on the two-element chain remains a set map and does not become
+  a poset morphism;
+- identities, composites, product projections, product mediating maps, and
+  \(n\mapsto n^2\) on `NN` enter through their defining theorems;
+- the underlying set of a poset product is the chosen set product;
+- product projections and mediating arrows satisfy the universal equations;
+- crossed elements in the product of two nontrivial chains are incomparable;
+- height counts elements in a largest chain, and width counts elements in a largest
+  antichain;
+- `bottom()` and `top()` occur only on their property subcategories;
+- element rank and level sets occur only on ranked finite posets, and poset rank also
+  requires nonemptiness;
+- every chosen linear extension uses the same underlying set and extends the original
+  partial order;
+- finite-poset collection results are owned finite subobjects or indexed families;
+- every inherited set operation works on posets through the selected forgetful functor;
+- every returned element has the original structured ambient object;
+- total-order classes contain no second comparison implementation or element cache;
+- leaf method declarations contain no compiler decorators, transport roles, signature
+  mirrors, or authority values.

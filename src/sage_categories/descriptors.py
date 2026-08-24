@@ -5,7 +5,6 @@ from __future__ import annotations
 import inspect
 from collections.abc import Callable, Iterator
 from enum import Enum
-from types import UnionType
 from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, TypeVar, get_args, get_origin
 
 from sage_categories.values import (
@@ -111,14 +110,21 @@ def _forward_arg_by_role(
     role: str,
     route: tuple[StructuralFunctor, ...],
 ) -> Any:
-    if arg is None:
+    if arg is None or not route:
         return arg
+    source_cat = route[0].domain()
     if isinstance(arg, Arrow):
-        return arg._morphism_image_along(route)
+        if arg.domain() in source_cat and arg.codomain() in source_cat:
+            return arg._morphism_image_along(route)
+        return arg
     if isinstance(arg, MathematicalElement):
-        return arg._element_image_along(route)
+        if arg.ambient_object() in source_cat:
+            return arg._element_image_along(route)
+        return arg
     if isinstance(arg, MathematicalObject):
-        return arg._object_image_along(route)
+        if arg in source_cat:
+            return arg._object_image_along(route)
+        return arg
     return arg
 
 
@@ -174,12 +180,14 @@ def _transport_result(
 
     if return_role == "iterator_element" or isinstance(result, Iterator):
         if isinstance(result, Iterator):
+
             def lazy_elements() -> Iterator[Any]:
                 for item in result:
                     if isinstance(item, MathematicalElement):
                         yield _pull_back_element_along(item, route, source_ambient)
                     else:
                         yield item
+
             return lazy_elements()
 
     if isinstance(result, MathematicalElement):
@@ -292,7 +300,5 @@ class ForwardedArrowMethod[Receiver: Arrow, **P, R]:
 
 
 type ForwardedDescriptor = (
-    ForwardedObjectMethod[MathematicalObject, ..., object]
-    | ForwardedElementMethod[MathematicalElement, ..., object]
-    | ForwardedArrowMethod[Arrow, ..., object]
+    ForwardedObjectMethod[MathematicalObject, ..., object] | ForwardedElementMethod[MathematicalElement, ..., object] | ForwardedArrowMethod[Arrow, ..., object]
 )

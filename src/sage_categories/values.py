@@ -232,6 +232,34 @@ class MathematicalObject:
         assert False, f"{self} is not represented as a morphism"
 
 
+class TransportedObject(MathematicalObject):
+    """An object transported from one selected structural image."""
+
+    def __init__(
+        self,
+        *,
+        category: Category,
+        ambient_implementation: MathematicalObject,
+    ) -> None:
+        self._ambient_implementation_value = ambient_implementation
+        super().__init__(category=category)
+
+    def _ambient_implementation(self) -> MathematicalObject:
+        return self._ambient_implementation_value
+
+    @classmethod
+    def _refined_from_ambient(
+        cls,
+        *,
+        category: Category,
+        ambient_implementation: MathematicalObject,
+    ) -> Self:
+        return cls(
+            category=category,
+            ambient_implementation=ambient_implementation,
+        )
+
+
 class MathematicalElement(MathematicalObject):
     """An element of a mathematical object."""
 
@@ -324,6 +352,20 @@ class TransportedElement(MathematicalElement):
         ambient_implementation: MathematicalElement,
     ) -> Self:
         return cls(
+            category=category,
+            ambient_object=ambient_object,
+            ambient_implementation=ambient_implementation,
+        )
+
+    @classmethod
+    def _refined_element_from_ambient(
+        cls,
+        *,
+        category: Category,
+        ambient_object: MathematicalObject,
+        ambient_implementation: MathematicalElement,
+    ) -> Self:
+        return cls._transported_from_ambient(
             category=category,
             ambient_object=ambient_object,
             ambient_implementation=ambient_implementation,
@@ -434,3 +476,31 @@ class Arrow(MathematicalElement):
     def __mul__(self, first: Arrow) -> Arrow:
         """Return this arrow after ``first``."""
         return self.base_category().compose(self, first)
+
+
+class TransportedArrow(Arrow):
+    """An arrow transported from one selected structural image."""
+
+    def __init__(
+        self,
+        *,
+        hom_category: HomCategory,
+        ambient_implementation: Arrow,
+    ) -> None:
+        self._ambient_implementation_value = ambient_implementation
+        super().__init__(hom_category=hom_category)
+
+    def _ambient_implementation(self) -> Arrow:
+        return self._ambient_implementation_value
+
+    @classmethod
+    def _refined_arrow_from_ambient(
+        cls,
+        *,
+        hom_category: HomCategory,
+        ambient_implementation: Arrow,
+    ) -> Self:
+        return cls(
+            hom_category=hom_category,
+            ambient_implementation=ambient_implementation,
+        )

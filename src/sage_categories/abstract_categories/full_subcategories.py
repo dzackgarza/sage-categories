@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Self, TypeIs
+from typing import TYPE_CHECKING, Any, TypeIs
 
 from sage_categories.abstract_categories.functors import (
     Functor,
@@ -20,6 +20,9 @@ from sage_categories.values import (
     Decision,
     MathematicalElement,
     MathematicalObject,
+    TransportedArrow,
+    TransportedElement,
+    TransportedObject,
     UNKNOWN,
     registered_element,
     registered_value,
@@ -36,104 +39,24 @@ if TYPE_CHECKING:
 type ObjectPredicate = Callable[[MathematicalObject], bool]
 
 
-class FullSubcategoryObject(MathematicalObject):
+class FullSubcategoryObject(TransportedObject):
     """The local object implementation of a full subcategory."""
-
-    def __init__(
-        self,
-        *,
-        category: FullSubcategory,
-        ambient_implementation: MathematicalObject,
-    ) -> None:
-        self._ambient_implementation_value = ambient_implementation
-        super().__init__(category=category)
-
-    def _ambient_implementation(self) -> MathematicalObject:
-        return self._ambient_implementation_value
-
-    @classmethod
-    def _refined_from_ambient(
-        cls,
-        *,
-        category: Category,
-        ambient_implementation: MathematicalObject,
-    ) -> Self:
-        assert is_full_subcategory(category)
-        return cls(
-            category=category,
-            ambient_implementation=ambient_implementation,
-        )
 
     def __contains__(self, candidate: Any) -> bool:
         element = registered_element(candidate)
         return element is not None and element.ambient_object() is self
 
 
-class FullSubcategoryElement(MathematicalElement):
+class FullSubcategoryElement(TransportedElement):
     """The local element implementation of a full subcategory."""
 
-    def __init__(
-        self,
-        *,
-        category: FullSubcategory,
-        ambient_object: FullSubcategoryObject,
-        ambient_implementation: MathematicalElement,
-    ) -> None:
-        assert ambient_object in category
-        self._ambient_implementation_value = ambient_implementation
-        super().__init__(
-            category=category,
-            ambient_object=ambient_object,
-        )
 
-    def _ambient_implementation(self) -> MathematicalElement:
-        return self._ambient_implementation_value
-
-    @classmethod
-    def _refined_element_from_ambient(
-        cls,
-        *,
-        category: Category,
-        ambient_object: MathematicalObject,
-        ambient_implementation: MathematicalElement,
-    ) -> Self:
-        assert is_full_subcategory(category)
-        return cls(
-            category=category,
-            ambient_object=ambient_object,
-            ambient_implementation=ambient_implementation,
-        )
-
-
-class FullSubcategoryArrow(Arrow):
+class FullSubcategoryArrow(TransportedArrow):
     """The local arrow implementation of a full subcategory."""
-
-    def __init__(
-        self,
-        *,
-        hom_category: FullSubcategoryHomCategory,
-        ambient_implementation: Arrow,
-    ) -> None:
-        self._ambient_implementation_value = ambient_implementation
-        super().__init__(hom_category=hom_category)
-
-    def _ambient_implementation(self) -> Arrow:
-        return self._ambient_implementation_value
 
     def ambient_implementation(self) -> Arrow:
         return self._ambient_implementation_value
 
-    @classmethod
-    def _refined_arrow_from_ambient(
-        cls,
-        *,
-        hom_category: HomCategory,
-        ambient_implementation: Arrow,
-    ) -> Self:
-        return cls(
-            hom_category=hom_category,
-            ambient_implementation=ambient_implementation,
-        )
 
 class FullSubcategoryHomCategory(HomCategory):
     """The ambient arrows between two objects of a full subcategory."""

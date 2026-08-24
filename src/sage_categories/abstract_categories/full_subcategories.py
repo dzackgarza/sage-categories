@@ -5,7 +5,6 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any, TypeIs
 
-from sage_categories.assumptions import Hypothesis, HypothesisContext
 from sage_categories.abstract_categories.functors import (
     Functor,
     InclusionFunctor,
@@ -21,9 +20,6 @@ from sage_categories.values import (
     Decision,
     MathematicalElement,
     MathematicalObject,
-    TransportedArrow,
-    TransportedElement,
-    TransportedObject,
     UNKNOWN,
     registered_element,
     registered_value,
@@ -32,7 +28,7 @@ from sage_categories.values import (
 type ObjectPredicate = Callable[[MathematicalObject], Decision]
 
 
-class FullSubcategoryObject(TransportedObject):
+class FullSubcategoryObject(MathematicalObject):
     """The local object implementation of a full subcategory."""
 
     def __contains__(self, candidate: Any) -> bool:
@@ -40,16 +36,12 @@ class FullSubcategoryObject(TransportedObject):
         return element is not None and element.ambient_object() is self
 
 
-class FullSubcategoryElement(TransportedElement):
+class FullSubcategoryElement(MathematicalElement):
     """The local element implementation of a full subcategory."""
 
 
-class FullSubcategoryArrow(TransportedArrow):
+class FullSubcategoryArrow(Arrow):
     """The local arrow implementation of a full subcategory."""
-
-    def ambient_implementation(self) -> Arrow:
-        return self._ambient_implementation_value
-
 
 class FullSubcategoryHomCategory(HomCategory):
     """The ambient arrows between two objects of a full subcategory."""
@@ -235,29 +227,9 @@ class FullSubcategory(Category):
         assert self._predicate(ambient) is True
         return self._refine_object(ambient)
 
-    def refine_with_hypothesis(
-        self,
-        ambient: MathematicalObject,
-        hypothesis: Hypothesis,
-        assumptions: HypothesisContext,
-    ) -> MathematicalObject:
-        assert hypothesis.category() is self
-        assert hypothesis.candidate() is ambient
-        assert assumptions.establishes(hypothesis) is True
-        ambient = self._canonical_ambient(ambient)
-        return self._refine_object(ambient)
-
     def _canonical_ambient(self, ambient: MathematicalObject) -> MathematicalObject:
-        from sage_categories.compiler import category_compiler
-
         assert ambient in self._ambient_category
-        if ambient.category() is self._ambient_category:
-            return ambient
-        route = category_compiler().implementation_route(
-            ambient.category(),
-            self._ambient_category,
-        )
-        return ambient._object_image_along(route)
+        return ambient
 
     def _refine_object(self, ambient: MathematicalObject) -> MathematicalObject:
         from sage_categories.compiler import category_compiler

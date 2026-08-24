@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Self, TypeIs
 
-from sage_categories.assumptions import Hypothesis, HypothesisContext
-
 from sage_categories.abstract_categories.functors import (
     DiscreteCategories,
     Functor,
@@ -322,18 +320,6 @@ class PosetHomCategory(HomCategory):
         assert self.contains_poset_morphism(result)
         return result
 
-    def from_hypothesis(
-        self,
-        underlying: SetMorphism,
-        hypothesis: Hypothesis,
-        assumptions: HypothesisContext,
-    ) -> PosetMorphism:
-        """Construct a morphism under an active monotonicity hypothesis."""
-        assert hypothesis.category() is self
-        assert hypothesis.candidate() is underlying
-        assert assumptions.establishes(hypothesis) is True
-        return self._construct(underlying)
-
     def contains_poset_morphism(
         self,
         arrow: MathematicalObject,
@@ -439,20 +425,6 @@ class PartiallyOrderedSetsCategory(Category):
             ),
             underlying_set,
         )
-
-    def from_hypothesis(
-        self,
-        underlying_set: SetObject,
-        relation: OrderRelation,
-        hypothesis: Hypothesis,
-        assumptions: HypothesisContext,
-    ) -> PosetObject:
-        """Construct a poset under active partial-order hypotheses."""
-        assert hypothesis.category() is self
-        assert hypothesis.candidate() is relation
-        assert assumptions.establishes(hypothesis) is True
-        candidate = self._construct(underlying_set, relation)
-        return self._strongest_result(candidate, underlying_set)
 
     def natural_numbers_order(self) -> PosetObject:
         """Construct the usual partial order on the positive natural numbers."""

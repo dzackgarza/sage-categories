@@ -163,15 +163,6 @@ class MathematicalObject:
         """Return the canonical implementation used by an inclusion."""
         return self
 
-    @classmethod
-    def _refined_from_ambient(
-        cls,
-        *,
-        category: Category,
-        ambient_implementation: MathematicalObject,
-    ) -> Self:
-        assert False, f"{cls.__qualname__} has no object refinement operation"
-
     def _object_image_along(
         self,
         route: tuple[StructuralFunctor, ...],
@@ -225,19 +216,6 @@ class TransportedObject(MathematicalObject):
     def _ambient_implementation(self) -> MathematicalObject:
         return self._ambient_implementation_value
 
-    @classmethod
-    def _refined_from_ambient(
-        cls,
-        *,
-        category: Category,
-        ambient_implementation: MathematicalObject,
-    ) -> Self:
-        return cls(
-            category=category,
-            ambient_implementation=ambient_implementation,
-        )
-
-
 class MathematicalElement(MathematicalObject):
     """An element of a mathematical object."""
 
@@ -261,16 +239,6 @@ class MathematicalElement(MathematicalObject):
     def _ambient_implementation(self) -> MathematicalElement:
         """Return the canonical ambient element used by an inclusion."""
         return self
-
-    @classmethod
-    def _refined_element_from_ambient(
-        cls,
-        *,
-        category: Category,
-        ambient_object: MathematicalObject,
-        ambient_implementation: MathematicalElement,
-    ) -> Self:
-        assert False, f"{cls.__qualname__} has no element refinement operation"
 
     def _element_image_along(
         self,
@@ -335,21 +303,6 @@ class TransportedElement(MathematicalElement):
             ambient_implementation=ambient_implementation,
         )
 
-    @classmethod
-    def _refined_element_from_ambient(
-        cls,
-        *,
-        category: Category,
-        ambient_object: MathematicalObject,
-        ambient_implementation: MathematicalElement,
-    ) -> Self:
-        return cls._transported_from_ambient(
-            category=category,
-            ambient_object=ambient_object,
-            ambient_implementation=ambient_implementation,
-        )
-
-
 class CategoryElement(MathematicalElement):
     """The local element type when a category adds no element operations."""
 
@@ -396,15 +349,6 @@ class Arrow(MathematicalElement):
     def _ambient_implementation(self) -> Arrow:
         """Return the canonical ambient arrow used by an inclusion."""
         return self
-
-    @classmethod
-    def _refined_arrow_from_ambient(
-        cls,
-        *,
-        hom_category: HomCategory,
-        ambient_implementation: Arrow,
-    ) -> Self:
-        assert False, f"{cls.__qualname__} has no arrow refinement operation"
 
     def _belongs_to_hom(self, hom_category: HomCategory) -> bool:
         own_hom_category = self._hom_category
@@ -472,7 +416,7 @@ class TransportedArrow(Arrow):
         return self._ambient_implementation_value
 
     @classmethod
-    def _refined_arrow_from_ambient(
+    def _transported_from_ambient(
         cls,
         *,
         hom_category: HomCategory,

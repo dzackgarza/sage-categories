@@ -26,10 +26,9 @@ from sage_categories.theories.sets import (
 from sage_categories.theories.cardinals import Cardinal, cardinal
 from sage_categories.abstract_categories.functors import DiscreteDiagram
 from sage_categories.values import (
+    Arrow,
+    MathematicalElement,
     MathematicalObject,
-    TransportedArrow,
-    TransportedElement,
-    TransportedObject,
 )
 
 from sage_categories.theories.poset_core import (
@@ -101,7 +100,7 @@ class _FinitePosetSageBoundary:
         )
 
 
-class FinitePosetObject(_FinitePosetSageBoundary, TransportedObject):
+class FinitePosetObject(_FinitePosetSageBoundary, MathematicalObject):
     """A finite poset with finite order algorithms."""
 
     def covers(
@@ -236,29 +235,29 @@ class FinitePosetObject(_FinitePosetSageBoundary, TransportedObject):
         return result
 
 
-class FinitePosetElement(TransportedElement):
+class FinitePosetElement(MathematicalElement):
     """An element of one finite poset."""
 
 
-class FinitePosetMorphism(TransportedArrow):
+class FinitePosetMorphism(Arrow):
     """An order-preserving map between finite posets."""
 
 
-class FinitePosetWithBottomObject(_FinitePosetSageBoundary, TransportedObject):
+class FinitePosetWithBottomObject(_FinitePosetSageBoundary, MathematicalObject):
     """A finite poset with a least element."""
 
     def bottom(self) -> PosetElement:
         return self._owned_element(self._sage_poset().bottom())
 
 
-class FinitePosetWithTopObject(_FinitePosetSageBoundary, TransportedObject):
+class FinitePosetWithTopObject(_FinitePosetSageBoundary, MathematicalObject):
     """A finite poset with a greatest element."""
 
     def top(self) -> PosetElement:
         return self._owned_element(self._sage_poset().top())
 
 
-class RankedFinitePosetObject(_FinitePosetSageBoundary, TransportedObject):
+class RankedFinitePosetObject(_FinitePosetSageBoundary, MathematicalObject):
     """A ranked finite poset."""
 
     def rank(self) -> Cardinal:
@@ -287,39 +286,39 @@ class RankedFinitePosetObject(_FinitePosetSageBoundary, TransportedObject):
         )
 
 
-class GradedFinitePosetObject(_FinitePosetSageBoundary, TransportedObject):
+class GradedFinitePosetObject(_FinitePosetSageBoundary, MathematicalObject):
     """A graded finite poset."""
 
 
-class FinitePosetWithBottomElement(TransportedElement):
+class FinitePosetWithBottomElement(MathematicalElement):
     """An element of a finite poset with a least element."""
 
 
-class FinitePosetWithTopElement(TransportedElement):
+class FinitePosetWithTopElement(MathematicalElement):
     """An element of a finite poset with a greatest element."""
 
 
-class RankedFinitePosetElement(TransportedElement):
+class RankedFinitePosetElement(MathematicalElement):
     """An element of a ranked finite poset."""
 
 
-class GradedFinitePosetElement(TransportedElement):
+class GradedFinitePosetElement(MathematicalElement):
     """An element of a graded finite poset."""
 
 
-class FinitePosetWithBottomMorphism(TransportedArrow):
+class FinitePosetWithBottomMorphism(Arrow):
     """A morphism between finite posets with least elements."""
 
 
-class FinitePosetWithTopMorphism(TransportedArrow):
+class FinitePosetWithTopMorphism(Arrow):
     """A morphism between finite posets with greatest elements."""
 
 
-class RankedFinitePosetMorphism(TransportedArrow):
+class RankedFinitePosetMorphism(Arrow):
     """A morphism between ranked finite posets."""
 
 
-class GradedFinitePosetMorphism(TransportedArrow):
+class GradedFinitePosetMorphism(Arrow):
     """A morphism between graded finite posets."""
 
 

@@ -383,7 +383,7 @@ class StructuralFunctor(Functor, ABC):
             return cached
         arrow_type = hom_category.ObjectType
         assert issubclass(arrow_type, TransportedArrow)
-        lifted = arrow_type._refined_arrow_from_ambient(
+        lifted = arrow_type._transported_from_ambient(
             hom_category=hom_category,
             ambient_implementation=image,
         )
@@ -551,56 +551,6 @@ class InclusionFunctor(StructuralFunctor):
     def __init__(self, domain: Category, codomain: Category) -> None:
         self._included_domain = domain
         super().__init__(domain, codomain)
-
-    def _seed_object_refinement(
-        self,
-        source: MathematicalObject,
-        image: MathematicalObject,
-    ) -> None:
-        assert source in self.domain()
-        assert image in self.codomain()
-        self._object_images[
-            (id(source), id(source), id(self.codomain()))
-        ] = image
-        self._object_preimages[
-            (id(source), id(image), id(self.domain()))
-        ] = source
-        source._object_structural_images[
-            (id(source), id(source), id(self.codomain()))
-        ] = image
-
-    def _seed_element_refinement(
-        self,
-        source: MathematicalObject,
-        element: MathematicalElement,
-        image: MathematicalElement,
-    ) -> None:
-        assert element.ambient_object() is source
-        assert image.ambient_object() is self.on_object(source)
-        self._element_images[
-            (id(source), id(element), id(self.codomain()))
-        ] = image
-        self._element_preimages[
-            (id(source), id(image), id(self.domain()))
-        ] = element
-        element._element_structural_images[
-            (id(source), id(element), id(self.codomain()))
-        ] = image
-
-    def _seed_arrow_refinement(self, source: Arrow, image: Arrow) -> None:
-        assert self.domain().contains_arrow(source)
-        assert self.codomain().contains_arrow(image)
-        assert image.domain() is self.on_object(source.domain())
-        assert image.codomain() is self.on_object(source.codomain())
-        self._morphism_images[
-            (id(source.hom_category()), id(source), id(self.codomain()))
-        ] = image
-        self._morphism_preimages[
-            (id(source.hom_category()), id(image), id(self.domain()))
-        ] = source
-        source._morphism_structural_images[
-            (id(source.hom_category()), id(source), id(self.codomain()))
-        ] = image
 
     def _object_image(self, source: MathematicalObject) -> MathematicalObject:
         assert source in self._included_domain

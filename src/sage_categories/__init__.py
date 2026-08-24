@@ -35,7 +35,6 @@ from sage_categories.abstract_categories.slice_categories import (
     Superobject,
 )
 from sage_categories.category import Category
-from sage_categories.assumptions import Hypothesis, HypothesisContext
 from sage_categories.theories.cardinals import (
     Aleph0,
     Cardinal,
@@ -172,8 +171,6 @@ __all__ = [
     "FullSubcategory",
     "Functor",
     "IdentityFunctor",
-    "Hypothesis",
-    "HypothesisContext",
     "IntegerElement",
     "IntegerSet",
     "Integers",

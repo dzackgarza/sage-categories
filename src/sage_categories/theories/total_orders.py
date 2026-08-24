@@ -23,11 +23,10 @@ from sage_categories.theories.sets import (
     SetObject,
 )
 from sage_categories.values import (
+    Arrow,
     Decision,
+    MathematicalElement,
     MathematicalObject,
-    TransportedArrow,
-    TransportedElement,
-    TransportedObject,
     registered_element,
 )
 
@@ -46,15 +45,27 @@ class FiniteTotalToFinitePosetFunctor(RestrictedStructuralFunctor):
         )
 
 
-class FiniteTotalOrderObject(TransportedObject):
+class TotalOrderObject(MathematicalObject):
+    """One total order."""
+
+
+class TotalOrderElement(MathematicalElement):
+    """An element of one total order."""
+
+
+class TotalOrderMorphism(Arrow):
+    """An order-preserving map between total orders."""
+
+
+class FiniteTotalOrderObject(MathematicalObject):
     """One finite total order."""
 
 
-class FiniteTotalOrderElement(TransportedElement):
+class FiniteTotalOrderElement(MathematicalElement):
     """An element of one finite total order."""
 
 
-class FiniteTotalOrderMorphism(TransportedArrow):
+class FiniteTotalOrderMorphism(Arrow):
     """An order-preserving map between finite total orders."""
 
 
@@ -107,14 +118,9 @@ class FiniteTotallyOrderedSetsCategory(FullSubcategory):
 class TotallyOrderedSetsCategory(FullSubcategory):
     """Sets equipped with a proved total order."""
 
-    class ObjectType(TransportedObject):
-        """One total order."""
-
-    class ElementType(TransportedElement):
-        """An element of one total order."""
-
-    class ArrowType(TransportedArrow):
-        """An order-preserving map between total orders."""
+    ObjectType = TotalOrderObject
+    ElementType = TotalOrderElement
+    ArrowType = TotalOrderMorphism
 
     def __init__(self) -> None:
         self._finite_orders: FiniteTotallyOrderedSetsCategory | None = None

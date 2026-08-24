@@ -36,10 +36,8 @@ from sage_categories.values import (
     UNKNOWN,
     Arrow,
     Decision,
+    MathematicalElement,
     MathematicalObject,
-    TransportedArrow,
-    TransportedElement,
-    TransportedObject,
     registered_value,
 )
 
@@ -367,15 +365,15 @@ class SetsCategory(Category):
         return "Sets"
 
 
-class CountableSetObject(TransportedObject):
+class CountableSetObject(MathematicalObject):
     """A countable set."""
 
 
-class CountableSetElement(TransportedElement):
+class CountableSetElement(MathematicalElement):
     """An element of a countable set."""
 
 
-class CountableSetMorphism(TransportedArrow):
+class CountableSetMorphism(Arrow):
     """A function between countable sets."""
 
 
@@ -394,15 +392,15 @@ class CountableSetsCategory(FullSubcategory):
         return finite is True or value.cardinality() == Cardinals().aleph(0)
 
 
-class FiniteSetObject(TransportedObject):
+class FiniteSetObject(MathematicalObject):
     """A finite set."""
 
 
-class FiniteSetElement(TransportedElement):
+class FiniteSetElement(MathematicalElement):
     """An element of a finite set."""
 
 
-class FiniteSetMorphism(TransportedArrow):
+class FiniteSetMorphism(Arrow):
     """A function between finite sets."""
 
 
@@ -442,15 +440,15 @@ class FiniteSetsCategory(FullSubcategory):
         return candidate in self
 
 
-class InfiniteSetObject(TransportedObject):
+class InfiniteSetObject(MathematicalObject):
     """An infinite set."""
 
 
-class InfiniteSetElement(TransportedElement):
+class InfiniteSetElement(MathematicalElement):
     """An element of an infinite set."""
 
 
-class InfiniteSetMorphism(TransportedArrow):
+class InfiniteSetMorphism(Arrow):
     """A function between infinite sets."""
 
 
@@ -468,15 +466,15 @@ class InfiniteSetsCategory(FullSubcategory):
         return value.cardinality().is_infinite() is True
 
 
-class UncountableSetObject(TransportedObject):
+class UncountableSetObject(MathematicalObject):
     """An uncountable set."""
 
 
-class UncountableSetElement(TransportedElement):
+class UncountableSetElement(MathematicalElement):
     """An element of an uncountable set."""
 
 
-class UncountableSetMorphism(TransportedArrow):
+class UncountableSetMorphism(Arrow):
     """A function between uncountable sets."""
 
 

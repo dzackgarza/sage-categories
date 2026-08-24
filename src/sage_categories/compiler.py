@@ -7,6 +7,8 @@ from collections.abc import Callable, Mapping
 from types import FunctionType
 from typing import TYPE_CHECKING, TypeVar, assert_never
 
+from sage.structure.dynamic_class import dynamic_class
+
 from sage_categories.descriptors import (
     ForwardedArrowMethod,
     ForwardedDescriptor,
@@ -129,54 +131,74 @@ class CategoryCompiler:
         self._arrow_catalogues: dict[int, dict[str, DeclaredMethod]] = {}
         self._routes: dict[tuple[int, int], tuple[StructuralFunctor, ...]] = {}
         self._compiled_categories: dict[int, Category] = {}
-        self._refined_objects: dict[
-            tuple[int, int, int],
-            MathematicalObject,
-        ] = {}
-        self._refined_elements: dict[
-            tuple[int, int, int],
-            MathematicalElement,
-        ] = {}
-        self._refined_arrows: dict[
-            tuple[int, int, int],
-            Arrow,
-        ] = {}
+
+    def _refined_type(
+        self,
+        implementation: type[Implementation],
+        property_implementation: type[Implementation],
+    ) -> type[Implementation]:
+        if issubclass(implementation, property_implementation):
+            return implementation
+        if issubclass(property_implementation, implementation):
+            return property_implementation
+        name = f"{implementation.__name__}_with_{property_implementation.__name__}"
+        return dynamic_class(
+            name,
+            (property_implementation, implementation),
+            reduction=None,
+        )
+
+    def _property_refinement_category(
+        self,
+        current: Category,
+        property_category: FullSubcategory,
+    ) -> Category:
+        if current.is_subcategory(property_category):
+            return current
+        if property_category.is_subcategory(current):
+            return property_category
+        lower_bounds = tuple(
+            category
+            for category in self._compiled_categories.values()
+            if category.is_subcategory(current)
+            and category.is_subcategory(property_category)
+        )
+        joins = tuple(
+            category
+            for category in lower_bounds
+            if not any(
+                category is not other
+                and category.is_subcategory(other)
+                and not other.is_subcategory(category)
+                for other in lower_bounds
+            )
+        )
+        assert len(joins) == 1, (
+            f"the category graph declares no unique property join of "
+            f"{current} and {property_category}"
+        )
+        return joins[0]
 
     def refine_object(
         self,
         category: FullSubcategory,
         ambient: MathematicalObject,
     ) -> MathematicalObject:
-        """Return the canonical category-specific refinement of ``ambient``."""
-        if ambient.category() is category:
+        """Refine ``ambient`` into ``category`` without changing its identity."""
+        current = ambient.category()
+        if current is category or current.is_subcategory(category):
             return ambient
-        immediate = category.ambient_category()
-        if ambient.category() is not immediate:
-            if ambient.category().is_subcategory(immediate):
-                route = self.implementation_route(
-                    ambient.category(),
-                    immediate,
-                )
-                ambient = ambient._object_image_along(route)
-            else:
-                from sage_categories.abstract_categories.full_subcategories import (
-                    is_full_subcategory,
-                )
-
-                assert immediate.is_subcategory(ambient.category())
-                assert is_full_subcategory(immediate)
-                ambient = self.refine_object(immediate, ambient)
-        assert ambient.category() is immediate
-        key = id(ambient), id(ambient), id(category)
-        refined = self._refined_objects.get(key)
-        if refined is None:
-            refined = category.ObjectType._refined_from_ambient(
-                category=category,
-                ambient_implementation=ambient,
-            )
-            self._refined_objects[key] = refined
-            category.inclusion()._seed_object_refinement(refined, ambient)
-        return refined
+        assert ambient in category.ambient_category()
+        refined_category = self._property_refinement_category(current, category)
+        ambient.__class__ = self._refined_type(
+            type(ambient),
+            refined_category.ObjectType,
+        )
+        ambient._category = refined_category
+        ambient._object_structural_images[
+            (id(ambient), id(ambient), id(refined_category))
+        ] = ambient
+        return ambient
 
     def refine_element(
         self,
@@ -184,22 +206,16 @@ class CategoryCompiler:
         source: MathematicalObject,
         ambient: MathematicalElement,
     ) -> MathematicalElement:
-        """Return the canonical category-specific refinement of ``ambient``."""
-        key = id(source), id(ambient), id(category)
-        refined = self._refined_elements.get(key)
-        if refined is None:
-            refined = category.ElementType._refined_element_from_ambient(
-                category=category,
-                ambient_object=source,
-                ambient_implementation=ambient,
-            )
-            self._refined_elements[key] = refined
-            category.inclusion()._seed_element_refinement(
-                source,
-                refined,
-                ambient,
-            )
-        return refined
+        """Refine ``ambient`` into ``category`` without changing its identity."""
+        assert ambient.ambient_object() is source
+        refined_category = source.category()
+        assert refined_category.is_subcategory(category)
+        ambient.__class__ = self._refined_type(
+            type(ambient),
+            refined_category.ElementType,
+        )
+        ambient._category = refined_category
+        return ambient
 
     def refine_arrow(
         self,
@@ -207,17 +223,13 @@ class CategoryCompiler:
         hom_category: HomCategory,
         ambient: Arrow,
     ) -> Arrow:
-        """Return the canonical category-specific refinement of ``ambient``."""
-        key = id(hom_category), id(ambient), id(category)
-        refined = self._refined_arrows.get(key)
-        if refined is None:
-            refined = category.ArrowType._refined_arrow_from_ambient(
-                hom_category=hom_category,
-                ambient_implementation=ambient,
-            )
-            self._refined_arrows[key] = refined
-            category.inclusion()._seed_arrow_refinement(refined, ambient)
-        return refined
+        """Refine ``ambient`` into ``category`` without changing its identity."""
+        assert ambient.domain() is hom_category.domain()
+        assert ambient.codomain() is hom_category.codomain()
+        ambient.__class__ = self._refined_type(type(ambient), category.ArrowType)
+        ambient._hom_category = hom_category
+        ambient._category = category.ArrowCategory()
+        return ambient
 
     def compiled_categories(self) -> tuple[Category, ...]:
         """Return every category whose implementation types this has compiled."""

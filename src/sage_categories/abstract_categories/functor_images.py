@@ -145,7 +145,7 @@ class ImageInclusionFunctor(StructuralFunctor):
         assert self._image.contains_image(source)
         assert element.ambient_object() is source._image
         element_type = self._image.ElementType
-        return element_type._refined_element_from_ambient(
+        return element_type._transported_from_ambient(
             category=self._image,
             ambient_object=source,
             ambient_implementation=element,

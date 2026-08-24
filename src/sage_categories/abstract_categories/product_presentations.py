@@ -67,52 +67,42 @@ class ProductPresentation(MathematicalObject):
         return result
 
 
-class ConstructionLiftFunctor:
+class ConstructionLiftFunctor(Functor):
     """Lift registered structural images on objects and arrows."""
 
     def __init__(self, structural_functor: StructuralFunctor) -> None:
         self._structural_functor = structural_functor
         self._objects: dict[int, MathematicalObject] = {}
-        self._arrows: dict[int, Arrow] = {}
-
-    def domain(self) -> Category:
-        return self._structural_functor.codomain()
-
-    def codomain(self) -> Category:
-        return self._structural_functor.domain()
+        super().__init__(
+            structural_functor.codomain(),
+            structural_functor.domain(),
+        )
 
     def register_object(self, source: MathematicalObject) -> None:
         assert source in self.codomain()
         image = self._structural_functor.on_object(source)
         self._objects[id(image)] = source
 
-    def on_object(self, image: MathematicalObject) -> MathematicalObject:
-        assert image in self.domain()
+    def _object_image(self, image: MathematicalObject) -> MathematicalObject:
         source = self._objects.get(id(image))
         assert source is not None
         assert self._structural_functor.on_object(source) is image
         return source
 
-    def on_morphism(self, image: Arrow) -> Arrow:
-        assert self.domain().contains_arrow(image)
-        cached = self._arrows.get(id(image))
-        if cached is not None:
-            return cached
+    def _morphism_image(self, image: Arrow) -> Arrow:
         source = self.on_object(image.domain())
         target = self.on_object(image.codomain())
-        lifted = self._morphism_image(source, target, image)
-        assert lifted in self.codomain().Hom(source, target)
+        lifted = self._lifted_morphism(source, target, image)
         assert self._structural_functor.on_morphism(lifted) is image
-        self._arrows[id(image)] = lifted
         return lifted
 
-    def _morphism_image(
+    def _lifted_morphism(
         self,
         source: MathematicalObject,
         target: MathematicalObject,
         image: Arrow,
     ) -> Arrow:
-        assert False, f"{self} has no arrow lift"
+        assert False, f"{self} has no construction arrow lift"
 
 
 class ProductLift:

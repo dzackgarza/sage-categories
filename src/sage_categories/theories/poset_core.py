@@ -450,7 +450,7 @@ class ForgetPosetFunctor(StructuralFunctor):
 class PosetProductLiftFunctor(ConstructionLiftFunctor):
     """Lift product-cone set arrows by the componentwise-order theorem."""
 
-    def _morphism_image(
+    def _lifted_morphism(
         self,
         source: MathematicalObject,
         target: MathematicalObject,

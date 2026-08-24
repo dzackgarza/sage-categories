@@ -15,6 +15,7 @@ from sage_categories.values import Arrow, MathematicalElement, MathematicalObjec
 
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.functors import StructuralFunctor
+    from sage_categories.category import Category
 
 
 class ImplementationRole(Enum):
@@ -337,15 +338,34 @@ class ForwardedObjectMethod[Receiver: MathematicalObject, **P, R]:
 
     def __init__(
         self,
+        category: Category,
+        route: tuple[StructuralFunctor, ...],
+        method: Callable[Concatenate[MathematicalObject, P], R],
+        signature: MethodSignature,
+    ) -> None:
+        self._declarations: dict[
+            int,
+            tuple[
+                tuple[StructuralFunctor, ...],
+                FunctionType,
+                MethodSignature,
+            ],
+        ] = {}
+        self.register(category, route, method, signature)
+
+    def register(
+        self,
+        category: Category,
         route: tuple[StructuralFunctor, ...],
         method: Callable[Concatenate[MathematicalObject, P], R],
         signature: MethodSignature,
     ) -> None:
         assert route, method.__qualname__
-        self._route = route
-        self._method: FunctionType = cast(FunctionType, method)
         assert signature.receiver is ParameterRole.OBJECT
-        self._signature = signature
+        declaration = route, cast(FunctionType, method), signature
+        previous = self._declarations.get(id(category))
+        assert previous is None or previous == declaration
+        self._declarations[id(category)] = declaration
 
     def __get__(
         self,
@@ -354,10 +374,8 @@ class ForwardedObjectMethod[Receiver: MathematicalObject, **P, R]:
     ) -> ForwardedObjectMethod[Receiver, P, R] | Callable[P, R]:
         if instance is None:
             return self
-        image = instance._object_image_along(self._route)
-        route = self._route
-        method = self._method
-        signature = self._signature
+        route, method, signature = self._declarations[id(instance.category())]
+        image = instance._object_image_along(route)
 
         def call(*args: P.args, **kwargs: P.kwargs) -> R:
             forwarded_args, forwarded_kwargs = _forward_arguments(
@@ -377,15 +395,34 @@ class ForwardedElementMethod[Receiver: MathematicalElement, **P, R]:
 
     def __init__(
         self,
+        category: Category,
+        route: tuple[StructuralFunctor, ...],
+        method: Callable[Concatenate[MathematicalElement, P], R],
+        signature: MethodSignature,
+    ) -> None:
+        self._declarations: dict[
+            int,
+            tuple[
+                tuple[StructuralFunctor, ...],
+                FunctionType,
+                MethodSignature,
+            ],
+        ] = {}
+        self.register(category, route, method, signature)
+
+    def register(
+        self,
+        category: Category,
         route: tuple[StructuralFunctor, ...],
         method: Callable[Concatenate[MathematicalElement, P], R],
         signature: MethodSignature,
     ) -> None:
         assert route, method.__qualname__
-        self._route = route
-        self._method: FunctionType = cast(FunctionType, method)
         assert signature.receiver is ParameterRole.ELEMENT
-        self._signature = signature
+        declaration = route, cast(FunctionType, method), signature
+        previous = self._declarations.get(id(category))
+        assert previous is None or previous == declaration
+        self._declarations[id(category)] = declaration
 
     def __get__(
         self,
@@ -394,11 +431,9 @@ class ForwardedElementMethod[Receiver: MathematicalElement, **P, R]:
     ) -> ForwardedElementMethod[Receiver, P, R] | Callable[P, R]:
         if instance is None:
             return self
-        image = instance._element_image_along(self._route)
+        route, method, signature = self._declarations[id(instance.category())]
+        image = instance._element_image_along(route)
         source_ambient = instance.ambient_object()
-        route = self._route
-        method = self._method
-        signature = self._signature
 
         def call(*args: P.args, **kwargs: P.kwargs) -> R:
             forwarded_args, forwarded_kwargs = _forward_arguments(
@@ -418,15 +453,34 @@ class ForwardedArrowMethod[Receiver: Arrow, **P, R]:
 
     def __init__(
         self,
+        category: Category,
+        route: tuple[StructuralFunctor, ...],
+        method: Callable[Concatenate[Arrow, P], R],
+        signature: MethodSignature,
+    ) -> None:
+        self._declarations: dict[
+            int,
+            tuple[
+                tuple[StructuralFunctor, ...],
+                FunctionType,
+                MethodSignature,
+            ],
+        ] = {}
+        self.register(category, route, method, signature)
+
+    def register(
+        self,
+        category: Category,
         route: tuple[StructuralFunctor, ...],
         method: Callable[Concatenate[Arrow, P], R],
         signature: MethodSignature,
     ) -> None:
         assert route, method.__qualname__
-        self._route = route
-        self._method: FunctionType = cast(FunctionType, method)
         assert signature.receiver is ParameterRole.ARROW
-        self._signature = signature
+        declaration = route, cast(FunctionType, method), signature
+        previous = self._declarations.get(id(category))
+        assert previous is None or previous == declaration
+        self._declarations[id(category)] = declaration
 
     def __get__(
         self,
@@ -435,10 +489,8 @@ class ForwardedArrowMethod[Receiver: Arrow, **P, R]:
     ) -> ForwardedArrowMethod[Receiver, P, R] | Callable[P, R]:
         if instance is None:
             return self
-        image = instance._morphism_image_along(self._route)
-        route = self._route
-        method = self._method
-        signature = self._signature
+        route, method, signature = self._declarations[id(instance.base_category())]
+        image = instance._morphism_image_along(route)
 
         def call(*args: P.args, **kwargs: P.kwargs) -> R:
             forwarded_args, forwarded_kwargs = _forward_arguments(

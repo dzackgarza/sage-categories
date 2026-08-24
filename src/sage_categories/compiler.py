@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Callable, Mapping
-from types import FunctionType, new_class
+from types import FunctionType
 from typing import TYPE_CHECKING, TypeVar, assert_never
 
 from sage_categories.descriptors import (
@@ -36,20 +36,8 @@ if TYPE_CHECKING:
 _KERNEL_IMPLEMENTATIONS = frozenset({MathematicalObject, MathematicalElement, CategoryElement, Arrow})
 
 
-# Names the source class a generated one completes. A generated class exists
-# only at runtime, so a reader of the report resolves it back to the class its
-# module actually declares.
-_COMPILED_FROM = "_compiled_from"
-
-
-def _source_implementation(implementation: type) -> type:
-    declared = vars(implementation).get(_COMPILED_FROM)
-    return declared if isinstance(declared, type) else implementation
-
-
 def _implementation_name(implementation: type) -> str:
-    source = _source_implementation(implementation)
-    return f"{source.__module__}.{source.__qualname__}"
+    return f"{implementation.__module__}.{implementation.__qualname__}"
 
 
 def _local_type(category: Category, role: ImplementationRole) -> type:
@@ -99,10 +87,6 @@ _ARROW_PROTOCOL_METHODS = frozenset(
 )
 
 type ImplementationType = type[MathematicalObject | MathematicalElement]
-# A compiled namespace holds forwarding descriptors, the module it belongs to,
-# and the source class it completes.
-type CompiledClassMember = ForwardedDescriptor | str | type
-
 Implementation = TypeVar("Implementation", bound=MathematicalObject)
 
 
@@ -265,7 +249,7 @@ class CategoryCompiler:
         for role in ImplementationRole:
             relations: dict[str, tuple[str, ...]] = {}
             for category in self.compiled_categories():
-                local_type = _source_implementation(_local_type(category, role))
+                local_type = _local_type(category, role)
                 if local_type in _KERNEL_IMPLEMENTATIONS:
                     continue
                 reached: tuple[str, ...] = ()
@@ -275,7 +259,7 @@ class CategoryCompiler:
                     codomain = functor.codomain()
                     if codomain is category:
                         continue
-                    inherited_type = _source_implementation(_local_type(codomain, role))
+                    inherited_type = _local_type(codomain, role)
                     name = _implementation_name(inherited_type)
                     if inherited_type is local_type or name in reached:
                         continue
@@ -692,6 +676,7 @@ class CategoryCompiler:
             case ImplementationRole.OBJECT:
                 inherited = {
                     name: ForwardedObjectMethod(
+                        category,
                         declaration.implementation_route,
                         declaration.method,
                         declaration.signature,
@@ -702,6 +687,7 @@ class CategoryCompiler:
             case ImplementationRole.ELEMENT:
                 inherited = {
                     name: ForwardedElementMethod(
+                        category,
                         declaration.implementation_route,
                         declaration.method,
                         declaration.signature,
@@ -713,6 +699,7 @@ class CategoryCompiler:
                 available.update(_ARROW_PROTOCOL_METHODS & catalogue.keys())
                 inherited = {
                     name: ForwardedArrowMethod(
+                        category,
                         declaration.implementation_route,
                         declaration.method,
                         declaration.signature,
@@ -722,13 +709,41 @@ class CategoryCompiler:
                 }
             case _:
                 assert_never(role)
-        def install(namespace: dict[str, CompiledClassMember]) -> None:
-            namespace.update(inherited)
-            namespace["__module__"] = local_type.__module__
-            namespace[_COMPILED_FROM] = local_type
-
-        name = f"Complete{type(category).__name__}{role.value.title()}{local_type.__name__}"
-        return new_class(name, (local_type,), exec_body=install)
+        for name, descriptor in inherited.items():
+            installed = vars(local_type).get(name)
+            if isinstance(installed, ForwardedObjectMethod):
+                assert isinstance(descriptor, ForwardedObjectMethod)
+                declaration = catalogue[name]
+                installed.register(
+                    category,
+                    declaration.implementation_route,
+                    declaration.method,
+                    declaration.signature,
+                )
+                continue
+            if isinstance(installed, ForwardedElementMethod):
+                assert isinstance(descriptor, ForwardedElementMethod)
+                declaration = catalogue[name]
+                installed.register(
+                    category,
+                    declaration.implementation_route,
+                    declaration.method,
+                    declaration.signature,
+                )
+                continue
+            if isinstance(installed, ForwardedArrowMethod):
+                assert isinstance(descriptor, ForwardedArrowMethod)
+                declaration = catalogue[name]
+                installed.register(
+                    category,
+                    declaration.implementation_route,
+                    declaration.method,
+                    declaration.signature,
+                )
+                continue
+            assert installed is None
+            type.__setattr__(local_type, name, descriptor)
+        return local_type
 
     def _local_methods(
         self,

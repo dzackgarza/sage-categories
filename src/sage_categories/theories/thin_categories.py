@@ -184,7 +184,9 @@ class ThinCategoryArrowSet(SetObject):
     def __init__(self, category: ThinCategory) -> None:
         self._thin_category = category
         self._elements: dict[int, ThinCategoryArrowElement] = {}
-        super().__init__(category=Sets())
+        from sage_categories.theories.cardinals import UnknownCardinality
+
+        super().__init__(category=Sets(), cardinality=UnknownCardinality())
 
     def element(self, value: ThinCategoryArrow) -> ThinCategoryArrowElement:
         assert value in self._thin_category.ArrowCategory()

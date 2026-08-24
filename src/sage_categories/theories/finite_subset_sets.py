@@ -14,6 +14,7 @@ from math import comb
 from sage_categories.theories.cardinals import (
     Cardinal,
     Cardinals,
+    UnknownCardinality,
     cardinal,
 )
 from sage_categories.theories.set_category import (
@@ -53,14 +54,14 @@ class FixedCardinalitySubsetSet(SetObject):
         assert subset_cardinality >= 0
         self._source = source
         self._subset_cardinality = subset_cardinality
-        size: Cardinal | None = None
+        size = UnknownCardinality()
         if subset_cardinality == 0:
             size = cardinal(1)
         elif source.is_finite() is True:
             size = cardinal(comb(int(source.cardinality()), subset_cardinality))
         elif source.is_infinite() is True:
             size = source.cardinality()
-        super().__init__(cardinality=size)
+        super().__init__(category=Sets(), cardinality=size)
 
     def source(self) -> SetObject:
         return self._source
@@ -107,12 +108,12 @@ class FiniteSubsetSet(SetObject):
 
     def __init__(self, source: SetObject) -> None:
         self._source = source
-        size: Cardinal | None = None
+        size = UnknownCardinality()
         if source.is_finite() is True:
             size = cardinal(2) ** source.cardinality()
         elif source.is_infinite() is True:
             size = source.cardinality()
-        super().__init__(cardinality=size)
+        super().__init__(category=Sets(), cardinality=size)
 
     def source(self) -> SetObject:
         return self._source
@@ -201,6 +202,7 @@ class FinitelySupportedFunctionSet(SetObject):
         self._value_set = value_set
         self._basepoint = basepoint
         super().__init__(
+            category=Sets(),
             cardinality=self._construction_cardinality(),
         )
 
@@ -213,7 +215,7 @@ class FinitelySupportedFunctionSet(SetObject):
     def basepoint(self) -> SetElement:
         return self._basepoint
 
-    def _construction_cardinality(self) -> Cardinal | None:
+    def _construction_cardinality(self) -> Cardinal:
         value_cardinality = self._value_set.cardinality()
         index_cardinality = self._index_set.cardinality()
         if value_cardinality == 1 or index_cardinality == 0:
@@ -222,7 +224,7 @@ class FinitelySupportedFunctionSet(SetObject):
             return Cardinals().power(value_cardinality, index_cardinality)
         if index_cardinality.is_infinite() is True:
             return Cardinals().supremum(value_cardinality, index_cardinality)
-        return None
+        return UnknownCardinality()
 
     def __call__(
         self,

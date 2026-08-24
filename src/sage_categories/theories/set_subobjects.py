@@ -81,7 +81,7 @@ class SubsetSetObject(SetObject):
         self._iterator = iterator
         self._elements: dict[int, SubsetElement] = {}
         self._base_elements: dict[int, SetElement] = {}
-        super().__init__(cardinality=cardinality)
+        super().__init__(category=Sets(), cardinality=cardinality)
 
     def element(self, base_element: SetElement) -> SubsetElement:
         assert base_element.ambient_set() is self._base_set

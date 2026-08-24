@@ -45,7 +45,7 @@ class DiscreteObjectSet(SetObject):
         self._discrete_category = category
         self._labels = labels
         self._elements: dict[int, SetElement] = {}
-        super().__init__(cardinality=labels.cardinality())
+        super().__init__(category=Sets(), cardinality=labels.cardinality())
 
     def element(self, value: MathematicalObject) -> SetElement:
         assert value in self._discrete_category
@@ -93,7 +93,7 @@ class DiscreteArrowSet(SetObject):
         self._elements: dict[int, SetElement] = {}
         objects = category.objects()
         assert Sets().contains_set(objects)
-        super().__init__(cardinality=objects.cardinality())
+        super().__init__(category=Sets(), cardinality=objects.cardinality())
 
     def element(self, value: MathematicalObject) -> SetElement:
         assert self._discrete_category.contains_arrow(value)

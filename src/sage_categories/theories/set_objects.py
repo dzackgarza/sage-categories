@@ -19,7 +19,6 @@ from sage_categories.theories.cardinals import (
     Aleph0,
     Cardinal,
     Cardinals,
-    UnknownCardinality,
     aleph,
 )
 from sage_categories.values import (
@@ -61,15 +60,12 @@ class SetObject(MathematicalObject):
     def __init__(
         self,
         *,
-        category: Category | None = None,
-        cardinality: Cardinal | None = None,
+        category: Category,
+        cardinality: Cardinal,
     ) -> None:
-        from sage_categories.theories.set_category import _category_for_cardinality
-
-        self._cardinality = UnknownCardinality() if cardinality is None else cardinality
+        self._cardinality = cardinality
         self._subset_poset: PosetObject | None = None
-        owner = _category_for_cardinality(self._cardinality) if category is None else category
-        super().__init__(category=owner)
+        super().__init__(category=category)
 
     def membership(self, member: SetElement) -> Decision:
         """Return the represented membership decision for ``member``."""

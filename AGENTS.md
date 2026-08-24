@@ -10,6 +10,34 @@ These files govern substantive work. Read the relevant sections for the active t
 - `README.md` defines the goal and mathematical philosophy.
 - `CONTRIBUTING.md` is the coding-policy index. Its `POL-*` identifiers are stable review references.
 
+## Policy and specification traceability
+
+Cross-reference every review and every work unit against the governing policies and
+specifications. This rule has no exceptions.
+
+Before any edit, implementation decision, diagnosis, or review verdict:
+
+- identify the exact applicable `POL-*` identifiers in `CONTRIBUTING.md`;
+- identify the exact applicable specification files and sections;
+- read those sources together before interpreting code, plans, reports, or runtime
+  behavior.
+
+During work, map every material design choice and implementation boundary to those
+references. During review, map every finding, acceptance statement, rejection, and
+trajectory judgment to them. An uncited architectural judgment is incomplete.
+
+Do not evaluate code from generic software practice, a commit subject, an agent report,
+a local test result, or one TODO item in isolation. These can supply evidence. They do
+not replace the governing policy and specification model.
+
+When a TODO, plan, report, or implementation appears to conflict with a policy or
+specification, resolve the meaning from the governing sources before acting. Preserve
+all stated distinctions, examples, exceptions, construction boundaries, and proof
+boundaries. Do not compress a specific rule into a nearby general slogan.
+
+If no policy or specification governs a material decision, surface that documentation
+gap. Do not invent a local convention and present it as repository architecture.
+
 The package owns its mathematical category graph and public API.
 Sage supplies computation objects, algorithms, coercion, and selected runtime machinery.
 

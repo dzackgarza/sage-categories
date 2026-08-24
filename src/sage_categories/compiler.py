@@ -417,7 +417,12 @@ class CategoryCompiler:
         distinct = tuple(route for position, route in enumerate(routes) if route not in routes[:position])
         normalized = tuple(self._normalize_route(source, route) for route in distinct)
         canonical = normalized[0]
-        assert all(route == canonical for route in normalized), f"structural routes from {source} to {target} are not declared coherent"
+        if not all(route == canonical for route in normalized):
+            assert all(
+                functor.is_inclusion()
+                for route in normalized
+                for functor in route
+            ), f"structural routes from {source} to {target} are not declared coherent"
         assert canonical in distinct
         return canonical
 

@@ -522,6 +522,12 @@ class RestrictedStructuralFunctor(StructuralFunctor):
             ambient_element,
         )
 
+    def is_faithful(self) -> bool:
+        return self._ambient_functor.is_faithful()
+
+    def is_inclusion(self) -> bool:
+        return self._ambient_functor.is_inclusion()
+
 
 class InclusionFunctor(StructuralFunctor):
     """The identity-on-values inclusion of a subcategory."""

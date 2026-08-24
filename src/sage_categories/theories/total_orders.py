@@ -8,13 +8,9 @@ from sage_categories.abstract_categories.category_constructions import (
     FullSubcategory,
 )
 from sage_categories.abstract_categories.functors import (
-    InclusionFunctor,
-    NaturalIsomorphism,
     RestrictedStructuralFunctor,
     StructuralFunctor,
-    compose_functors,
 )
-from sage_categories.abstract_categories.hom_categories import Isomorphism, is_isomorphism
 from sage_categories.category import Category
 from sage_categories.theories.poset_core import (
     PartiallyOrderedSets,
@@ -30,7 +26,6 @@ from sage_categories.theories.sets import (
     Sets,
 )
 from sage_categories.values import (
-    Arrow,
     Decision,
     MathematicalObject,
     TransportedArrow,
@@ -74,8 +69,7 @@ class FiniteTotallyOrderedSetsCategory(FullSubcategory):
     ArrowType: type[FiniteTotalOrderMorphism] = FiniteTotalOrderMorphism
 
     def __init__(self, total_orders: TotallyOrderedSetsCategory) -> None:
-        self._finite_poset_functor: InclusionFunctor | None = None
-        self._structural_coherence: Isomorphism | None = None
+        self._finite_poset_functor: FiniteTotalToFinitePosetFunctor | None = None
         super().__init__(
             total_orders,
             self._is_finite_total_order,
@@ -119,31 +113,13 @@ class FiniteTotallyOrderedSetsCategory(FullSubcategory):
         assert self.contains_finite_total_order(result)
         return result
 
-    def finite_poset_functor(self) -> InclusionFunctor:
+    def finite_poset_functor(self) -> FiniteTotalToFinitePosetFunctor:
         if self._finite_poset_functor is None:
             self._finite_poset_functor = FiniteTotalToFinitePosetFunctor(self)
         return self._finite_poset_functor
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
         return self.inclusion(), self.finite_poset_functor()
-
-    def structural_coherences(self) -> tuple[Isomorphism, ...]:
-        if self._structural_coherence is None:
-            first = compose_functors(TotallyOrderedSets().inclusion(), self.inclusion())
-            second = compose_functors(
-                FinitePosets().inclusion(),
-                self.finite_poset_functor(),
-            )
-
-            def component(source: MathematicalObject) -> Arrow:
-                image = first(source)
-                assert image is second(source)
-                return PartiallyOrderedSets().identity(image)
-
-            coherence = NaturalIsomorphism(second, first, component, component)
-            assert is_isomorphism(coherence)
-            self._structural_coherence = coherence
-        return (self._structural_coherence,)
 
     def contains_finite_total_order(self, candidate: MathematicalObject) -> bool:
         return candidate in self

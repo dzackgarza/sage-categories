@@ -55,8 +55,10 @@ ci-provision-sage:
     set -euo pipefail
     workspace="$(pwd -P)"
     qc_infra="${HOME}/ai-review-ci"
+    qc_cache="${HOME}/.cache/quality-control"
     test -d "${qc_infra}"
-    mounts=(-v "${workspace}:${workspace}" -v "${qc_infra}:${qc_infra}" -v /tmp:/tmp)
+    install -d "${qc_cache}"
+    mounts=(-v "${workspace}:${workspace}" -v "${qc_infra}:${qc_infra}" -v "${qc_cache}:${qc_cache}" -v /tmp:/tmp)
     if [ -n "${RUNNER_TEMP:-}" ] && [ "${RUNNER_TEMP#/tmp/}" = "${RUNNER_TEMP}" ]; then
         mounts+=(-v "${RUNNER_TEMP}:${RUNNER_TEMP}")
     fi

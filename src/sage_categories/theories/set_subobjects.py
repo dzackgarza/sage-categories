@@ -445,7 +445,7 @@ class SubsetsOfSetCategory(Category):
             members = first_members & second_members
             cardinality = cardinal(len(members))
         subobjects = Sets().Subobjects(self._base_set)
-        if cardinality is UnknownCardinality():
+        if members is None:
             pullback = Sets().pullback(
                 first.structure_morphism(),
                 second.structure_morphism(),

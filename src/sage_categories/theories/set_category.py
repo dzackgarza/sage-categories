@@ -303,7 +303,12 @@ class SetsCategory(Category):
         first: Arrow,
         second: Arrow,
     ) -> SetLimitObject:
-        return self._pullback(first, second, UnknownCardinality())
+        from sage_categories.theories.set_limits import is_limits_of_sets_category
+
+        diagram = self._pullback_diagram(first, second)
+        limits = self.Limits(diagram.domain())
+        assert is_limits_of_sets_category(limits)
+        return limits(diagram)
 
     def pullback_with_cardinality(
         self,
@@ -311,18 +316,19 @@ class SetsCategory(Category):
         second: Arrow,
         cardinality: Cardinal,
     ) -> SetLimitObject:
-        return self._pullback(first, second, cardinality)
+        from sage_categories.theories.set_limits import is_limits_of_sets_category
 
-    def _pullback(
+        diagram = self._pullback_diagram(first, second)
+        limits = self.Limits(diagram.domain())
+        assert is_limits_of_sets_category(limits)
+        return limits.with_cardinality(diagram, cardinality)
+
+    def _pullback_diagram(
         self,
         first: Arrow,
         second: Arrow,
-        cardinality: Cardinal,
-    ) -> SetLimitObject:
+    ) -> Functor:
         from sage_categories.abstract_categories.products import DiagramCategory
-        from sage_categories.theories.set_limits import (
-            is_limits_of_sets_category,
-        )
 
         assert self.contains_set_morphism(first)
         assert self.contains_set_morphism(second)
@@ -333,11 +339,7 @@ class SetsCategory(Category):
             (first, second),
         )
         diagram = InclusionFunctor(index, self)
-        limits = self.Limits(index)
-        assert is_limits_of_sets_category(limits)
-        if cardinality is UnknownCardinality():
-            return limits(diagram)
-        return limits.with_cardinality(diagram, cardinality)
+        return diagram
 
     def _products_of_category(self, functor: Functor) -> Category:
         from sage_categories.theories.set_products import ProductsOfSetsCategory

@@ -197,7 +197,9 @@ class LimitsOfSetsCategory(LimitsOfCategory):
         diagram: Functor,
         cardinality: Cardinal,
     ) -> SetLimitObject:
-        return self._limit(diagram, cardinality)
+        result = self._limit(diagram, cardinality)
+        assert result.cardinality() == cardinality
+        return result
 
     def limit_of(self, diagram: Functor) -> SetLimitObject:
         return self._limit(diagram, UnknownCardinality())
@@ -220,8 +222,6 @@ class LimitsOfSetsCategory(LimitsOfCategory):
             cached = candidate
             self._limits[key] = cached
         assert self.contains_set_limit(cached)
-        if cardinality is not UnknownCardinality():
-            assert cached.cardinality() == cardinality
         return cached
 
     def contains_set_limit(

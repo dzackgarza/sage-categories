@@ -401,7 +401,9 @@ class ColimitsOfSetsCategory(ColimitsOfCategory):
         diagram: Functor,
         cardinality: Cardinal,
     ) -> SetColimitObject:
-        return self._colimit(diagram, cardinality)
+        result = self._colimit(diagram, cardinality)
+        assert result.cardinality() == cardinality
+        return result
 
     def colimit_of(self, diagram: Functor) -> SetColimitObject:
         return self._colimit(diagram, UnknownCardinality())
@@ -424,8 +426,6 @@ class ColimitsOfSetsCategory(ColimitsOfCategory):
             cached = candidate
             self._colimits[key] = cached
         assert self.contains_set_colimit(cached)
-        if cardinality is not UnknownCardinality():
-            assert cached.cardinality() == cardinality
         return cached
 
     def contains_set_colimit(

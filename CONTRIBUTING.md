@@ -278,6 +278,8 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-070` | Treat direct implementation construction, private constructors, inclusions, lifts, and internal helpers as category-entry paths. Each path accounts for the same obligations through typed theorem conclusions, explicit hypotheses, or exact computations. It need not prove a theorem at runtime. Internal access is not an exemption. |
 | `POL-CAT-071` | Reject a compiled method when its declared argument or result role lacks a structural transport rule. Never return an unmatched codomain object, element, arrow, or collection through a raw pass-through fallback. |
 | `POL-CAT-072` | Transport a collection from its declared mathematical collection type and item role. Do not infer collection semantics from `Iterable` checks or assume that every lazy result contains elements. |
+| `POL-CAT-073` | Treat `X in C` as the mathematical admissibility fact. Exact identity such as `X.category() is C` is an implementation fact and never triggers structural normalization. |
+| `POL-CAT-074` | Preserve the strongest established category of every object. Do not replace it with an ancestor implementation merely to call an inherited operation. |
 
 Grounding examples:
 
@@ -357,6 +359,10 @@ Grounding examples:
 | `POL-LEAF-034` | Never give a leaf an ambient-to-refined cache, an identity-keyed refinement table, an ambient wrapper field, or a local refinement constructor. |
 | `POL-LEAF-035` | After an entry route establishes its property, delegate to the generic kernel refinement operation. Perform no leaf-local allocation, cache mutation, narrowing, or repeated membership assertion. |
 | `POL-LEAF-036` | Treat a type error in leaf refinement machinery as evidence that the kernel lacks a typed refinement contract. Repair that contract and delete the leaf machinery. |
+| `POL-LEAF-037` | Never discover, inspect, compose, or traverse structural routes in a leaf. Declare immediate structural functors and use the resulting public inherited surface. |
+| `POL-LEAF-038` | Never call private image or preimage transport from a leaf for an object, element, or arrow. All such transport belongs to the kernel. |
+| `POL-LEAF-039` | Call an inherited operation directly on the original structured value. If that call fails, stop the leaf edit and repair structural compilation. |
+| `POL-LEAF-040` | Never normalize a leaf input to an ancestor implementation, add an exact-category branch, or repeat membership after transport. Store and pass the established mathematical object. |
 
 For example, a free-module morphism inherits categorical composition.
 A leaf refinement can attach a private matrix realization to the inherited composite when bases are chosen.
@@ -382,6 +388,13 @@ It does not reimplement composition, structural transport, domain checks, codoma
 | `POL-KERNEL-014` | Compile each property subcategory's distinct object, element, and arrow types from its declarations. A leaf never hand-writes a wrapper solely to store an ambient implementation. |
 | `POL-KERNEL-015` | A kernel `try`/`except` can only add exact context, translate to a more precise kernel exception while preserving the cause, or perform mandatory cleanup before re-raising. |
 | `POL-KERNEL-016` | Every kernel catch terminates the current operation. It never selects another implementation, retries, suppresses a diagnostic, continues computation, or returns an ordinary value. |
+| `POL-KERNEL-017` | The kernel alone discovers, composes, and traverses structural routes and invokes image or preimage transport. Theory code never sees these operations. |
+| `POL-KERNEL-018` | Make each inherited method callable directly on every structural descendant. Its descriptor hides receiver, argument, result, and collection transport. |
+| `POL-KERNEL-019` | Let a constructor requiring an object of `C` accept every `X` with `X in C`. Resolve any required canonical implementation inside the generic kernel boundary. |
+
+Selected structural functors are executable inheritance declarations.
+A leaf states its immediate mathematics and then uses inherited operations as native methods.
+If a leaf must inspect a route or recover an ancestor implementation, the kernel abstraction has failed.
 
 For example, an object of `Modules(R)` can be defined by an action morphism \(\rho:R\to\operatorname{End}(X)\). Its selected functor to `Sets()` recovers \(X\) from \(\rho\) and applies `Sets(X)`. The module category does not implement set operations independently.
 

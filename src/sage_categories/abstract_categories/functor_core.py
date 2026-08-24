@@ -42,7 +42,6 @@ class Functor(Arrow, ABC):
         self._object_images: dict[int, MathematicalObject] = {}
         self._morphism_images: dict[int, Arrow] = {}
         self._object_preimages: dict[tuple[int, int], MathematicalObject] = {}
-        self._morphism_preimages: dict[tuple[int, int], Arrow] = {}
         self._postcomposition_functors: dict[int, PostcompositionFunctor] = {}
         functor_hom_category = category_universe(domain, codomain).Hom(domain, codomain) if hom_category is None else hom_category
         assert functor_hom_category.domain() is domain
@@ -110,7 +109,6 @@ class Functor(Arrow, ABC):
             assert image.domain() is domain
             assert image.codomain() is codomain
             self._morphism_images[key] = image
-            self._morphism_preimages[(id(image.hom_category()), id(image))] = morphism
         return image
 
     def __call__(self, value: MathematicalObject) -> MathematicalObject:
@@ -276,12 +274,12 @@ class StructuralFunctor(Functor, ABC):
         assert preimage is original_source or preimage is source
         return preimage
 
-    def preimage_morphism(self, image: Arrow) -> Arrow:
-        """Return the source represented by one canonical arrow image."""
-        preimage = self._morphism_preimages.get((id(image.hom_category()), id(image)))
-        assert preimage is not None
-        assert self.on_morphism(preimage) is image
-        return preimage
+    def preimage_morphism(self, source: Arrow, image: Arrow) -> Arrow:
+        """Return ``source`` after verifying its canonical arrow image."""
+        assert self.domain().contains_arrow(source)
+        assert self.codomain().contains_arrow(image)
+        assert self.on_morphism(source) is image
+        return source
 
     def _element_preimage(
         self,
@@ -505,7 +503,6 @@ class InclusionFunctor(StructuralFunctor):
         assert image.domain() is self.on_object(source.domain())
         assert image.codomain() is self.on_object(source.codomain())
         self._morphism_images[id(source)] = image
-        self._morphism_preimages[(id(image.hom_category()), id(image))] = source
         source._morphism_structural_images[
             (id(source.hom_category()), id(source), id(self.codomain()))
         ] = image

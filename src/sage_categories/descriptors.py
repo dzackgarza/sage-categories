@@ -239,10 +239,19 @@ def _pull_back_object_along(
     return current
 
 
-def _pull_back_arrow_along(value: Arrow, route: tuple[StructuralFunctor, ...]) -> Arrow:
+def _pull_back_arrow_along(
+    value: Arrow,
+    route: tuple[StructuralFunctor, ...],
+    source: Arrow,
+) -> Arrow:
+    sources: list[Arrow] = [source]
+    prefix: tuple[StructuralFunctor, ...] = ()
+    for functor in route[:-1]:
+        prefix = (*prefix, functor)
+        sources.append(source._morphism_image_along(prefix))
     current = value
-    for functor in reversed(route):
-        current = functor.preimage_morphism(current)
+    for functor, source_arrow in reversed(tuple(zip(route, sources, strict=True))):
+        current = functor.preimage_morphism(source_arrow, current)
     return current
 
 
@@ -371,7 +380,8 @@ def _transport_result(
             return cast(R, instance)
         if not value._is_arrow_in(route[-1].codomain()):
             return result
-        return cast(R, _pull_back_arrow_along(value, route))
+        source_arrow = cast(Arrow, instance)
+        return cast(R, _pull_back_arrow_along(value, route, source_arrow))
     if role is ParameterRole.ELEMENT_ITERATOR:
         iterator = cast(Iterator[MathematicalElement], result)
 

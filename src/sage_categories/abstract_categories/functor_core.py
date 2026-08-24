@@ -9,10 +9,7 @@ from typing import TYPE_CHECKING, TypeIs
 
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.product_images import ProductObject
-    from sage_categories.abstract_categories.product_presentations import (
-        ConstructionLiftFunctor,
-        ProductPresentation,
-    )
+    from sage_categories.abstract_categories.product_presentations import ProductPresentation
 
 from sage_categories.abstract_categories.hom_categories import (
     HomCategory,
@@ -347,24 +344,6 @@ class StructuralFunctor(Functor, ABC):
     def is_inclusion(self) -> bool:
         """Return whether this functor includes a subcategory."""
         return False
-
-    def lift_product(
-        self,
-        diagram: Functor,
-        apex: MathematicalObject,
-        inherited_product: ProductPresentation | ProductObject,
-        lift: ConstructionLiftFunctor,
-    ) -> ProductPresentation:
-        """Lift the product inherited through this structural functor."""
-        from sage_categories.abstract_categories.structural_products import lift_product
-
-        return lift_product(
-            self,
-            diagram,
-            apex,
-            inherited_product,
-            lift,
-        )
 
     def inherited_product(self, diagram: Functor) -> ProductObject:
         """Return the product of the diagram after structural transport."""

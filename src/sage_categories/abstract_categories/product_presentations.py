@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 from collections.abc import Callable
-from typing import TYPE_CHECKING, TypeIs
+from typing import TypeIs
 
 from sage_categories.abstract_categories.diagram_shapes import (
     CoconeCategory,
@@ -27,10 +26,6 @@ from sage_categories.values import (
     MathematicalElement,
     MathematicalObject,
 )
-
-if TYPE_CHECKING:
-    from sage_categories.abstract_categories.product_images import ProductObject
-
 
 class ProductPresentation(MathematicalObject):
     """A chosen product cone with its universal factorization."""
@@ -66,110 +61,6 @@ class ProductPresentation(MathematicalObject):
         result = self._mediate(cone)
         assert result in self.diagram().codomain().Hom(cone.apex(), self.apex())
         return result
-
-
-class ConstructionLiftFunctor(Functor, ABC):
-    """A construction theorem acting totally on objects and arrows."""
-
-    def __init__(self, domain: Category, codomain: Category) -> None:
-        super().__init__(domain, codomain)
-
-    @abstractmethod
-    def _object_image(self, image: MathematicalObject) -> MathematicalObject:
-        """Construct the theorem-backed object image."""
-
-    @abstractmethod
-    def _morphism_image(self, image: Arrow) -> Arrow:
-        """Construct the theorem-backed arrow image."""
-
-
-class ProductLift:
-    """Transport a chosen product through one structural functor."""
-
-    def __init__(
-        self,
-        *,
-        diagram: Functor,
-        structural_functor: StructuralFunctor,
-        inherited_product: ProductPresentation | ProductObject,
-        apex: MathematicalObject,
-        comparison: Isomorphism,
-        lift: ConstructionLiftFunctor,
-    ) -> None:
-        assert diagram.codomain() is structural_functor.domain()
-        assert apex in diagram.codomain()
-        assert is_isomorphism(comparison)
-        assert comparison in structural_functor.codomain().Iso(
-            structural_functor.on_object(apex),
-            self._inherited_apex(inherited_product),
-        )
-        self._diagram = diagram
-        self._structural_functor = structural_functor
-        self._inherited_product = inherited_product
-        self._apex = apex
-        self._comparison = comparison
-        self._lift = lift
-
-    @staticmethod
-    def _inherited_apex(
-        product: ProductPresentation | ProductObject,
-    ) -> MathematicalObject:
-        from sage_categories.abstract_categories.product_images import (
-            is_products_of_category,
-        )
-
-        category = product.category()
-        if is_product_presentations(category):
-            assert category.contains_product(product)
-            return product.apex()
-        assert is_products_of_category(category)
-        assert category.contains_product(product)
-        return product
-
-    def presentation(self) -> ProductPresentation:
-        # This is transport of a limiting cone across an isomorphism, as in
-        # Mathlib's ``CategoryTheory.Limits.IsLimit.postcomposeHomEquiv``.
-        target_category = self._structural_functor.codomain()
-        comparison = self._comparison.forward()
-
-        def projection(index: MathematicalObject) -> Arrow:
-            target = self._diagram(index)
-            self._lift.register_object(target)
-            inherited_projection = self._inherited_product.projection(index)
-            transported = target_category.compose(
-                inherited_projection,
-                comparison,
-            )
-            lifted = self._lift.on_morphism(transported)
-            assert lifted in self._diagram.codomain().Hom(self._apex, target)
-            return lifted
-
-        cone = Cone(self._diagram, self._apex, projection)
-
-        def mediate(other: ConeObject) -> Arrow:
-            assert other.diagram() is self._diagram
-            source = other.apex()
-            assert source in self._diagram.codomain()
-            self._lift.register_object(source)
-            inherited_cone = Cone(
-                self._inherited_product.diagram(),
-                self._structural_functor.on_object(source),
-                lambda index: self._structural_functor.on_morphism(
-                    other.structure_morphism(index),
-                ),
-            )
-            inherited_morphism = self._inherited_product.universal_morphism(
-                inherited_cone,
-            )
-            transported = target_category.compose(
-                self._comparison.inverse().forward(),
-                inherited_morphism,
-            )
-            lifted = self._lift.on_morphism(transported)
-            assert lifted in self._diagram.codomain().Hom(source, self._apex)
-            return lifted
-
-        return Product(cone, mediate)
 
 
 class CoproductPresentation(MathematicalObject):

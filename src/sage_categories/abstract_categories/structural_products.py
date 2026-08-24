@@ -2,49 +2,12 @@
 
 from __future__ import annotations
 
-from sage_categories.abstract_categories.arrow_categories import declare_isomorphism
 from sage_categories.abstract_categories.functor_core import Functor, StructuralFunctor
-from sage_categories.abstract_categories.hom_categories import is_isomorphism
 from sage_categories.abstract_categories.product_images import (
     ProductObject,
     is_products_of_category,
 )
-from sage_categories.abstract_categories.product_presentations import (
-    ProductLift,
-    ConstructionLiftFunctor,
-    ProductPresentation,
-    is_product_presentations,
-)
 from sage_categories.values import MathematicalObject
-
-
-def lift_product(
-    structural_functor: StructuralFunctor,
-    diagram: Functor,
-    apex: MathematicalObject,
-    inherited_product: ProductPresentation | ProductObject,
-    lift: ConstructionLiftFunctor,
-) -> ProductPresentation:
-    """Lift the product inherited through one structural functor."""
-    assert diagram.codomain() is structural_functor.domain()
-    image_apex = structural_functor.on_object(apex)
-    inherited_category = inherited_product.category()
-    if is_product_presentations(inherited_category):
-        inherited_apex = inherited_product.apex()
-    else:
-        inherited_apex = inherited_product
-    assert image_apex is inherited_apex
-    identity = structural_functor.codomain().identity(image_apex)
-    comparison = declare_isomorphism(identity, identity)
-    assert is_isomorphism(comparison)
-    return ProductLift(
-        diagram=diagram,
-        structural_functor=structural_functor,
-        inherited_product=inherited_product,
-        apex=apex,
-        comparison=comparison,
-        lift=lift,
-    ).presentation()
 
 
 def inherited_product(

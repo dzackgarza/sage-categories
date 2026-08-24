@@ -347,6 +347,16 @@ Grounding examples:
 | `POL-LEAF-024` | A finished leaf contains its category, minimal defining data, new operations, immediate structural functors, and named constructors. It can also state leaf-specific lifts. |
 | `POL-LEAF-025` | Stop leaf work when it requires route traversal, reverse transport, canonical-image caches, registries, compiler metadata, type reconstruction, or backend selection. Repair the owning foundation first. |
 | `POL-LEAF-026` | Use the first leaf that exposes missing generic infrastructure as an acceptance specimen. Repair the foundation, then delete the leaf workaround. |
+| `POL-LEAF-027` | Identity arrows and arrow composition are fundamental categorical operations. Every leaf arrow receives its domain, codomain, and composition surface automatically from the owning categories through compiled structural inheritance. |
+| `POL-LEAF-028` | Never define `compose()` in a leaf merely to expose, forward, route, coerce, inspect generic caches, or reconstruct the inherited operation. A missing inherited composition method is a kernel defect. |
+| `POL-LEAF-029` | Refine an inherited method in a leaf only when the leaf's additional mathematical structure or owned realization requires a new step. Form the inherited semantic result first. |
+| `POL-LEAF-030` | A leaf refinement adds only its leaf-specific structure or private realization. It preserves the inherited method's name, laws, domain, codomain, and mathematical owner. |
+| `POL-LEAF-031` | Delete any leaf method that adds no leaf-specific mathematical or realization step. Generic algorithms, structural transport, wrappers, and public-surface installation belong to their existing owners. |
+| `POL-LEAF-032` | Treat selected structural functors as the complete inheritance program. A finished leaf contains no forwarding, descriptor, route, cache, wrapper, or type-repair boilerplate. |
+
+For example, a free-module morphism inherits categorical composition.
+A leaf refinement can attach a private matrix realization to the inherited composite when bases are chosen.
+It does not reimplement composition, structural transport, domain checks, codomain checks, or public method installation.
 
 ## Leaf and kernel boundary
 

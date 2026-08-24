@@ -163,11 +163,7 @@ class TotallyOrderedSetHomCategory(HomCategory):
 
     def __call__(
         self,
-        action: (
-            Callable[[TotallyOrderedSetElement], TotallyOrderedSetElement]
-            | Mapping[TotallyOrderedSetElement, TotallyOrderedSetElement]
-            | TotallyOrderedSetMorphism
-        ),
+        action: (Callable[[TotallyOrderedSetElement], TotallyOrderedSetElement] | Mapping[TotallyOrderedSetElement, TotallyOrderedSetElement] | TotallyOrderedSetMorphism),
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
@@ -545,4 +541,3 @@ def is_finite_total_order_element_type(
     candidate: type[MathematicalElement],
 ) -> TypeIs[type[TotallyOrderedSetElement]]:
     return is_total_order_element_type(candidate)
-

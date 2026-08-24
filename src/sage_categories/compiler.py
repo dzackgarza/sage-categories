@@ -553,11 +553,7 @@ class CategoryCompiler:
         *,
         role: ImplementationRole,
     ) -> type[Implementation]:
-        available = {
-            name
-            for name, declaration in catalogue.items()
-            if inspect.getattr_static(local_type, name, None) is declaration.method
-        }
+        available = {name for name, declaration in catalogue.items() if inspect.getattr_static(local_type, name, None) is declaration.method}
         inherited: dict[str, ForwardedDescriptor]
         match role:
             case ImplementationRole.OBJECT:

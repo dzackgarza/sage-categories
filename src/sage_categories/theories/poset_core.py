@@ -106,11 +106,7 @@ def validate_finite_partial_order(
             r_yx = relation(y, x)
             if r_xy is True and r_yx is True:
                 assert False, f"antisymmetry failed: distinct elements {x} and {y} are mutually less-than-or-equal"
-            if (
-                (r_xy is True and r_yx is UNKNOWN)
-                or (r_yx is True and r_xy is UNKNOWN)
-                or (r_xy is UNKNOWN and r_yx is UNKNOWN)
-            ):
+            if (r_xy is True and r_yx is UNKNOWN) or (r_yx is True and r_xy is UNKNOWN) or (r_xy is UNKNOWN and r_yx is UNKNOWN):
                 assert False, f"antisymmetry is unknown for {x} and {y}"
 
     for x in members:

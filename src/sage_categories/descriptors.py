@@ -91,11 +91,7 @@ class ForwardedObjectMethod:
                     forwarded_args.append(element._element_image_along(self._route))
                 elif (val := registered_value(argument)) is not None and val.category() is instance.category():
                     forwarded_args.append(val._object_image_along(self._route))
-                elif (
-                    (arr := registered_value(argument)) is not None
-                    and isinstance(arr, Arrow)
-                    and arr.base_category() is instance.category()
-                ):
+                elif (arr := registered_value(argument)) is not None and isinstance(arr, Arrow) and arr.base_category() is instance.category():
                     forwarded_args.append(arr._morphism_image_along(self._route))
                 else:
                     forwarded_args.append(argument)
@@ -156,11 +152,7 @@ class ForwardedElementMethod:
                     forwarded_args.append(element._element_image_along(self._route))
                 elif (val := registered_value(argument)) is not None and val.category() is source_ambient.category():
                     forwarded_args.append(val._object_image_along(self._route))
-                elif (
-                    (arr := registered_value(argument)) is not None
-                    and isinstance(arr, Arrow)
-                    and arr.base_category() is source_ambient.category()
-                ):
+                elif (arr := registered_value(argument)) is not None and isinstance(arr, Arrow) and arr.base_category() is source_ambient.category():
                     forwarded_args.append(arr._morphism_image_along(self._route))
                 else:
                     forwarded_args.append(argument)
@@ -218,11 +210,7 @@ class ForwardedArrowMethod:
 
             forwarded_args: list[object] = []
             for argument in args:
-                if (
-                    (arr := registered_value(argument)) is not None
-                    and isinstance(arr, Arrow)
-                    and arr.base_category() is source_category
-                ):
+                if (arr := registered_value(argument)) is not None and isinstance(arr, Arrow) and arr.base_category() is source_category:
                     forwarded_args.append(arr._morphism_image_along(self._route))
                 elif (element := registered_element(argument)) is not None and element.ambient_object() is instance.domain():
                     forwarded_args.append(element._element_image_along(self._route))
@@ -240,10 +228,5 @@ class ForwardedArrowMethod:
         return call_arrow
 
 
-type ForwardedDescriptor = (
-    ForwardedObjectMethod
-    | ForwardedElementMethod
-    | ForwardedArrowMethod
-)
+type ForwardedDescriptor = ForwardedObjectMethod | ForwardedElementMethod | ForwardedArrowMethod
 type ForwardedMethod = ForwardedDescriptor
-

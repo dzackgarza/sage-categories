@@ -63,12 +63,13 @@ The package must absorb the elliptic-curve construction before claiming that wor
 | `POL-MATH-021` | Preserve the base category and structure morphism in every parent, type, and arrow that depends on them. |
 | `POL-MATH-022` | State the weakest algebraic hypotheses that make a definition or algorithm valid. |
 | `POL-MATH-023` | Open and inspect a mathematical source before adding a definition or citation. Record the exact theorem, section, table, or page that supports it. |
-| `POL-MATH-024` | Treat definitionally known and theorem-established values as exact knowledge. When no runtime algorithm can derive the value, the owning construction declares the typed mathematical conclusion by fiat. The inspected theorem justifies that declaration in source documentation; Python does not prove it. |
+| `POL-MATH-024` | Treat definitionally known and theorem-established values as exact knowledge. When no runtime algorithm can derive the value, the owning construction supplies the typed mathematical conclusion directly. The inspected theorem justifies that implementation in source documentation; Python does not prove it. |
 | `POL-MATH-025` | Return `Unknown` only when defining data, explicit hypotheses, construction theorems, inspected sources, and available exact algorithms do not decide the proposition. The absence of a Python derivation does not make a theorem-established fact unknown. Never convert `Unknown` to a Boolean through an unrelated proxy. |
 | `POL-MATH-026` | A runtime API never accepts, stores, inspects, or branches on prose that purports to establish a mathematical proposition. This ban includes arguments or fields named `theorem`, `proof`, `certificate`, `citation`, `justification`, `evidence`, `trusted_reason`, and every renamed equivalent. |
 | `POL-MATH-027` | Renaming theorem prose as metadata, an opaque token, a marker type, a record, or a callback that returns the same text does not make it mathematical evidence. Runtime evidence must be typed mathematical data, an exact predicate result, an explicit hypothesis, or a construction rule. |
-| `POL-MATH-028` | A theorem-backed implementation records the theorem's typed mathematical conclusion at its owning constructor or construction. The citation remains documentation and never crosses the runtime API boundary. |
+| `POL-MATH-028` | A theorem-backed method constructs its result directly in the established property category. That category placement is the typed mathematical conclusion. The citation remains documentation. Runtime stores no proof text or fabricated `Decision`. |
 | `POL-MATH-029` | For a `Decision`-valued proposition, only the value `True` establishes the proposition. Tests such as `decision is not False`, truthiness, fallthrough, and absence of rejection never turn `Unknown` into evidence. An explicit hypothesis or construction theorem is a separate source of knowledge. |
+| `POL-MATH-030` | Prefer a defining construction or theorem over exhaustive verification, even when verification terminates. Finiteness alone does not justify enumeration when the construction already establishes the property. |
 
 For example, an owned constructor for `RR` records its cardinality as $2^{\aleph_0}$.
 The implementation cites the supporting theorem in source documentation.
@@ -233,7 +234,7 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-066` | Key structural images and preimages by both the source ambient object and the source value. Values from different ambient objects must never share a cached image. |
 | `POL-CAT-067` | Apply the same obligation rule to arrow categories. Establish an arrow property by construction, exact computation, explicit hypothesis, or inspected theorem before placing the arrow in that property category. |
 | `POL-CAT-068` | Return a property as `True` from category membership only when every path into that category satisfies `POL-CAT-020` or `POL-CAT-067`. |
-| `POL-CAT-069` | A constructor over arbitrary input data cannot borrow a theorem from one special construction. Validate its obligations, receive explicit hypotheses, or return the strongest category established by its inputs. Put theorem-backed special cases in construction-owned paths. |
+| `POL-CAT-069` | A constructor over arbitrary input data cannot borrow a theorem from one special construction. Its named checking route validates the obligations. A separate named hypothesis route can trust its required mathematical precondition. Put theorem-backed special cases in construction-owned paths. |
 | `POL-CAT-070` | Treat direct implementation construction, private constructors, inclusions, lifts, and internal helpers as category-entry paths. Each path accounts for the same obligations through typed theorem conclusions, explicit hypotheses, or exact computations. It need not prove a theorem at runtime. Internal access is not an exemption. |
 | `POL-CAT-071` | Reject a compiled method when its declared argument or result role lacks a structural transport rule. Never return an unmatched codomain object, element, arrow, or collection through a raw pass-through fallback. |
 | `POL-CAT-072` | Transport a collection from its declared mathematical collection type and item role. Do not infer collection semantics from `Iterable` checks or assume that every lazy result contains elements. |
@@ -495,6 +496,7 @@ When an established finite algorithm requires a primitive loop bound, lower the 
 | `POL-API-019` | When an operation requires a capability, place it on the category that supplies that capability and let the method compiler expose it there. Do not install a failing placeholder on objects outside that category. |
 | `POL-API-020` | When a mathematical operation exists but available algorithms cannot determine its result, return its typed unknown value, such as `Decision` or `bool \| Unknown`. Do not replace missing knowledge with a runtime failure. |
 | `POL-API-021` | Make every method and constructor total on its declared domain. Require every argument. Never use optional parameters, default values, `None` sentinels, or fallback behavior. Give each distinct construction or computation route a separate explicit method name. Each route establishes and supplies every input to the total operation. |
+| `POL-API-022` | Separate checked, hypothesis-backed, and theorem-backed admission into named total methods. A checked method computes and requires `True`. A hypothesis-backed method trusts its stated mathematical precondition. A theorem-backed method constructs the result directly in the property category established by its theorem. Never select these routes with a Boolean, `Decision`, default, proof object, or prose. |
 | `POL-TYPE-001` | Give every value the type that names its mathematical role. |
 | `POL-TYPE-002` | Distinguish categories, objects, elements, arrows, functors, rings, sets, domains, and codomains in types. |
 | `POL-TYPE-003` | Never use `object` in a type annotation. There are no exceptions. |
@@ -556,6 +558,12 @@ A method available only under an additional mathematical hypothesis belongs to t
 
 For example, a total set constructor requires a typed cardinality.
 Named routes such as `construct_finite_set`, `construct_countably_infinite_set`, and `construct_uncountable_set` establish and supply that cardinality before they call it.
+
+Likewise, a natural interval constructor constructs its result directly in the total-order category.
+The identity constructor constructs its result directly in the poset Hom category.
+A named squaring builder on `NN` constructs its result directly in the same Hom category.
+These methods rely on their defining theorems and do not run exhaustive decision procedures.
+Reserve an exhaustive checking route for arbitrary relations and maps whose properties are not already established.
 
 Replace a nondescript name with the exact entity, such as `tensor_coefficients`, `ordered_set`, or `set_morphism`.
 

@@ -58,6 +58,8 @@ from sage_categories.values import (
     Decision,
     MathematicalElement,
     MathematicalObject,
+    TransportedElement,
+    registered_element,
     registered_value,
 )
 
@@ -66,40 +68,13 @@ if TYPE_CHECKING:
     from sage_categories.theories.set_subobjects import SetMorphism
 
 
-class ProductElement(MathematicalElement):
-    """A point of a set-indexed cartesian product."""
+class ProductSetElement(SetElement):
+    """The private set representation of a product element."""
 
-    def __init__(
-        self,
-        product: ProductSet | SetProductObject | SetLimitObject,
-        components: SetElementFamily,
-    ) -> None:
-        # The element surface arrives through the inclusion its category
-        # declares into SetElements, not by inheriting the set element type.
-
+    def __init__(self, product: ProductSet, components: SetElementFamily) -> None:
         self._product = product
         self._components = components
-        super().__init__(
-            category=ProductElements(),
-            ambient_object=product,
-        )
-
-    @classmethod
-    def _refined_element_from_ambient(
-        cls,
-        *,
-        category: Category,
-        ambient_object: MathematicalObject,
-        ambient_implementation: MathematicalElement,
-    ) -> ProductElement:
-        assert is_products_of_sets_category(category)
-        assert category.contains_set_product(ambient_object)
-        assert ProductElements().contains_product_element(ambient_implementation)
-        return cls(ambient_object, ambient_implementation.components())
-
-    def product(self) -> ProductSet | SetProductObject | SetLimitObject:
-
-        return self._product
+        super().__init__(category=SetElements(), ambient_object=product)
 
     def component(self, index: SetElement) -> SetElement:
         assert index in self._product.index_set()
@@ -107,19 +82,39 @@ class ProductElement(MathematicalElement):
         assert value in self._product.factor(index)
         return value
 
+    def components(self) -> SetElementFamily:
+        return self._components
+
+
+class ProductElement(TransportedElement):
+    """A point of a set-indexed cartesian product."""
+
+    def _set_implementation(self) -> ProductSetElement:
+        value = self._ambient_implementation()
+        assert is_product_set_element(value)
+        return value
+
+    def product(self) -> SetProductObject | SetLimitObject:
+        product = self.ambient_object()
+        assert is_set_product_object(product)
+        return product
+
+    def component(self, index: SetElement) -> SetElement:
+        return self._set_implementation().component(index)
+
     def __getitem__(self, index: SetElement) -> SetElement:
         return self.component(index)
 
     def components(self) -> SetElementFamily:
-        return self._components
+        return self._set_implementation().components()
 
     def __iter__(self) -> Iterator[SetElement]:
-        index_set = self._product.index_set()
+        index_set = self.product().index_set()
         assert index_set.is_finite() is True
         return iter(self.component(index) for index in index_set)
 
     def __repr__(self) -> str:
-        return f"Point of {self._product}"
+        return f"Point of {self.product()}"
 
 
 class ProductElementsCategory(Category):
@@ -134,6 +129,13 @@ class ProductElementsCategory(Category):
             self._inclusion = InclusionFunctor(self, SetElements())
         return (self._inclusion,)
 
+    def __contains__(self, candidate: Any) -> bool:
+        element = registered_element(candidate)
+        return (
+            element is not None
+            and is_set_product_object(element.ambient_object())
+        )
+
     def contains_product_element(
         self,
         candidate: MathematicalObject,
@@ -143,9 +145,28 @@ class ProductElementsCategory(Category):
 
 _PRODUCT_ELEMENTS = ProductElementsCategory()
 
+_PRODUCT_SET_ELEMENTS: dict[int, ProductSetElement] = {}
+
 
 def ProductElements() -> ProductElementsCategory:
     return _PRODUCT_ELEMENTS
+
+
+def is_product_set_element(
+    candidate: MathematicalObject,
+) -> TypeIs[ProductSetElement]:
+    return _PRODUCT_SET_ELEMENTS.get(id(candidate)) is candidate
+
+
+def is_set_product_object(
+    candidate: MathematicalObject,
+) -> TypeIs[SetProductObject | SetLimitObject]:
+    category = candidate.category()
+    if is_products_of_sets_category(category):
+        return category.contains_set_product(candidate)
+    from sage_categories.theories.set_limits import is_limits_of_sets_category
+
+    return is_limits_of_sets_category(category) and category.contains_set_limit(candidate)
 
 
 class ProductSet(SetObject):
@@ -188,14 +209,14 @@ class ProductSet(SetObject):
             lambda index: self.factor(index.label()).cardinality(),
         )
 
-    def _element_(self, components: SetElementFamily) -> ProductElement:
-        # The category owns the constructor: its compiled type carries the
-        # element surface inherited along the declared inclusion.
-        return ProductElements().ObjectType(self, components)
+    def _element_(self, components: SetElementFamily) -> ProductSetElement:
+        element = ProductSetElement(self, components)
+        _PRODUCT_SET_ELEMENTS[id(element)] = element
+        return element
 
     def _membership_(self, member: SetElement) -> Decision:
         value = registered_value(member)
-        return value is not None and ProductElements().contains_product_element(value) and value.product() is self
+        return value is not None and is_product_set_element(value) and value.ambient_set() is self
 
     def _set_iterator_(self) -> Iterator[SetElement]:
         assert self.index_set().is_finite() is True
@@ -218,8 +239,7 @@ class ProductSet(SetObject):
         factor = self.factor(index)
 
         def project(member: SetElement) -> SetElement:
-            assert ProductElements().contains_product_element(member)
-            assert member.product() is self
+            assert is_product_set_element(member)
             return member.component(index)
 
         return _set_morphism(self, factor, project)
@@ -266,9 +286,6 @@ class SetProductObject(ProductObject):
 
     def apex(self) -> ProductSet:
         return self._set_product
-
-    def element(self, components: SetElementFamily) -> ProductElement:
-        return ProductElements().ObjectType(self, components)
 
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)

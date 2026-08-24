@@ -17,6 +17,7 @@ from sage_categories.theories.sets import (
     FiniteSet,
     FiniteSets,
     PowerSet,
+    SetElement,
     SetObject,
     SetSubset,
     SubsetsOfSet,
@@ -57,10 +58,10 @@ class FinitePosetObject(TransportedObject):
 
     def _sage_poset(self) -> ExternalFinitePoset:
         if self._sage_value is None:
-            members = tuple(self)
+            members = tuple(self._underlying_set())
 
-            def relation(left: PosetElement, right: PosetElement) -> bool:
-                comparison = left <= right
+            def relation(left: SetElement, right: SetElement) -> bool:
+                comparison = self.element(left) <= self.element(right)
                 assert comparison is True or comparison is False
                 return comparison
 
@@ -73,26 +74,28 @@ class FinitePosetObject(TransportedObject):
     def _underlying_set(self) -> SetObject:
         return PartiallyOrderedSets().underlying_set(self)
 
-    def _sage_element(self, member: PosetElement) -> PosetElement:
+    def _sage_element(self, member: PosetElement) -> SetElement:
         assert member in self
-        return member
+        image = member._set_implementation()
+        assert image.ambient_set() is self._underlying_set()
+        return image
 
-    def _owned_element(self, member: PosetElement) -> PosetElement:
-        assert member in self
-        return self.element(member._set_implementation())
+    def _owned_element(self, member: SetElement) -> PosetElement:
+        assert member.ambient_set() is self._underlying_set()
+        return self.element(member)
 
-    def _owned_subset(self, members: Iterable[PosetElement]) -> SetSubset:
+    def _owned_subset(self, members: Iterable[SetElement]) -> SetSubset:
         owned = frozenset(
             self._owned_element(member)._set_implementation()
             for member in members
         )
         return PowerSet(self._underlying_set()).from_finite_set(FiniteSet(owned))
 
-    def _sage_members(self, members: SetSubset) -> tuple[PosetElement, ...]:
+    def _sage_members(self, members: SetSubset) -> tuple[SetElement, ...]:
         assert members.base_set() is self._underlying_set()
         inclusion = members.inclusion()
         return tuple(
-            self.element(inclusion(member))
+            inclusion(member)
             for member in members.underlying_set()
         )
 

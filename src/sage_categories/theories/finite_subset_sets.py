@@ -17,6 +17,7 @@ from sage_categories.theories.cardinals import (
     cardinal,
 )
 from sage_categories.theories.set_category import (
+    FiniteSet,
     Sets,
     _set_morphism,
 )
@@ -288,8 +289,6 @@ def FinitelySupportedFunctions(
 
 def _image_subobject(
     function: SetMorphism,
-    *,
-    cardinality: Cardinal | None = None,
 ) -> SetSubset:
     domain = function.domain()
     codomain = function.codomain()
@@ -297,15 +296,16 @@ def _image_subobject(
     assert Sets().contains_set(codomain)
     if function.is_surjective() is True:
         return PowerSet(codomain).top()
-    if domain.cardinality() == 0:
-        return PowerSet(codomain).bottom()
-    size = cardinality
-    if size is None and function.is_injective() is True:
-        size = domain.cardinality()
+    if domain.is_finite() is True:
+        image = FiniteSet(frozenset(function(member) for member in domain))
+        return PowerSet(codomain).from_finite_set(image)
     predicate = lambda member: _imagemembership(function, member)
-    if size is None:
-        return PowerSet(codomain).from_predicate(predicate)
-    return PowerSet(codomain).from_predicate_with_cardinality(predicate, size)
+    if function.is_injective() is True:
+        return PowerSet(codomain).from_predicate_with_cardinality(
+            predicate,
+            domain.cardinality(),
+        )
+    return PowerSet(codomain).from_predicate(predicate)
 
 
 def _imagemembership(

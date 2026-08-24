@@ -159,12 +159,7 @@ class SetMorphism(Arrow, SetElement):
     def image(self) -> SetSubset:
         from sage_categories.theories.finite_subset_sets import _image_subobject
 
-        return _image_subobject(self, cardinality=None)
-
-    def image_with_cardinality(self, cardinality: Cardinal) -> SetSubset:
-        from sage_categories.theories.finite_subset_sets import _image_subobject
-
-        return _image_subobject(self, cardinality=cardinality)
+        return _image_subobject(self)
 
     def inverse(self) -> SetMorphism:
         from sage_categories.theories.set_category import (

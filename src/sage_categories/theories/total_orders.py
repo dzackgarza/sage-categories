@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeIs
+from typing import TYPE_CHECKING, Any, TypeIs
 
 from sage_categories.abstract_categories.category_constructions import (
     FullSubcategory,
@@ -20,39 +20,17 @@ from sage_categories.abstract_categories.functors import (
 from sage_categories.abstract_categories.hom_categories import Isomorphism, is_isomorphism
 from sage_categories.category import Category
 from sage_categories.theories.poset_core import (
+    OrderRelation,
     PartiallyOrderedSets,
     PartiallyOrderedSetsCategory,
     PosetElement,
-    PosetObject,
     is_poset_element,
 )
+from sage_categories.theories.sets import SetObject
 from sage_categories.values import Arrow, Decision, MathematicalElement, MathematicalObject, registered_element
 
 if TYPE_CHECKING:
-    from sage_categories.theories.finite_posets import FinitePosetObject, FinitePosetsCategory
-
-
-def is_total_order(poset: PosetObject | FinitePosetObject) -> Decision:
-    """Return whether every pair of elements in ``poset`` is comparable."""
-    underlying_set = PartiallyOrderedSets().underlying_set(poset)
-    if underlying_set.is_finite() is not True:
-        from sage_categories.values import UNKNOWN
-
-        return UNKNOWN
-    members = tuple(poset)
-    answer: Decision = True
-    for position, left in enumerate(members):
-        assert is_poset_element(left)
-        for right in members[position + 1 :]:
-            assert is_poset_element(right)
-            left_le = left <= right
-            right_le = right <= left
-            if left_le is True or right_le is True:
-                continue
-            if left_le is False and right_le is False:
-                return False
-            answer = UNKNOWN
-    return answer
+    from sage_categories.theories.finite_posets import FinitePosetsCategory
 
 
 class FiniteTotalToFinitePosetFunctor(RestrictedStructuralFunctor):
@@ -94,8 +72,27 @@ class FiniteTotallyOrderedSetsCategory(FullSubcategory):
             name="Finite totally ordered sets",
         )
 
-    def _is_finite_total_order(self, value: MathematicalObject) -> bool:
-        return value in TotallyOrderedSets() and PartiallyOrderedSets().underlying_set(value).is_finite() is True
+    def _is_finite_total_order(self, value: MathematicalObject) -> Decision:
+        total = TotallyOrderedSets().__contains__(value)
+        if total is not True:
+            return total
+        return PartiallyOrderedSets().underlying_set(value).is_finite()
+
+    def ordered_set(
+        self,
+        underlying_set: SetObject,
+        relation: OrderRelation,
+    ) -> FiniteTotalOrderObject:
+        """Construct the finite total order established by an enumeration."""
+        assert underlying_set.is_finite() is True
+        poset = PartiallyOrderedSets().from_theorem(underlying_set, relation)
+        total_order = TotallyOrderedSets().refine_from_theorem(
+            poset,
+            PartiallyOrderedSets(),
+        )
+        result = self.refine_from_theorem(total_order, TotallyOrderedSets())
+        assert self.contains_finite_total_order(result)
+        return result
 
     def finite_poset_functor(self) -> InclusionFunctor:
         if self._finite_poset_functor is None:
@@ -146,17 +143,39 @@ class TotallyOrderedSetsCategory(FullSubcategory):
         self._finite_orders: FiniteTotallyOrderedSetsCategory | None = None
         super().__init__(
             PartiallyOrderedSets(),
-            self._is_total_order,
+            self.__contains__,
             name="Totally ordered sets",
         )
 
-    def _is_total_order(self, value: MathematicalObject) -> bool:
-        if not PartiallyOrderedSets().contains_poset(value):
+    def __contains__(self, candidate: Any) -> Decision:
+        value = registered_value(candidate)
+        if value is None or not PartiallyOrderedSets().contains_poset(value):
             return False
-        return is_total_order(value) is True
+        category = value.category()
+        if category is self or category.is_subcategory(self):
+            return True
+        underlying_set = PartiallyOrderedSets().underlying_set(value)
+        if underlying_set.is_finite() is not True:
+            from sage_categories.values import UNKNOWN
 
-    def contains_total_order(self, candidate: MathematicalObject) -> bool:
-        return candidate in self
+            return UNKNOWN
+        members = tuple(value)
+        answer: Decision = True
+        for position, left in enumerate(members):
+            assert is_poset_element(left)
+            for right in members[position + 1 :]:
+                assert is_poset_element(right)
+                left_le = left <= right
+                right_le = right <= left
+                if left_le is True or right_le is True:
+                    continue
+                if left_le is False and right_le is False:
+                    return False
+                answer = UNKNOWN
+        return answer
+
+    def contains_total_order(self, candidate: MathematicalObject) -> Decision:
+        return self.__contains__(candidate)
 
     def Finite(self) -> FiniteTotallyOrderedSetsCategory:
         if self._finite_orders is None:

@@ -40,7 +40,7 @@ if TYPE_CHECKING:
         ProductPresentation,
     )
 
-type ObjectPredicate = Callable[[MathematicalObject], bool]
+type ObjectPredicate = Callable[[MathematicalObject], Decision]
 
 
 class FullSubcategoryObject(TransportedObject):

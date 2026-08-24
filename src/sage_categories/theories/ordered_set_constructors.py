@@ -36,19 +36,10 @@ def ordered_set_owned_by(
     def ordered_relation(left: SetElement, right: SetElement) -> bool:
         return positions[left] <= positions[right]
 
-    poset = PartiallyOrderedSets()(
+    finite_total_order = FiniteTotallyOrderedSets().ordered_set(
         underlying_set,
         _predicate_relation(underlying_set, ordered_relation),
     )
-    total_order = TotallyOrderedSets().refine_from_theorem(
-        poset,
-        PartiallyOrderedSets(),
-    )
-    finite_total_order = FiniteTotallyOrderedSets().refine_from_theorem(
-        total_order,
-        TotallyOrderedSets(),
-    )
-    assert FiniteTotallyOrderedSets().contains_finite_total_order(finite_total_order)
     return finite_total_order
 
 

@@ -16,6 +16,7 @@ from sage_categories.theories.sets import (
     SetElements,
 )
 from sage_categories.values import (
+    MathematicalObject,
     UNKNOWN,
 )
 
@@ -23,16 +24,14 @@ if TYPE_CHECKING:
     from sage_categories.theories.cardinals import Cardinal
 
 from sage_categories.theories.total_orders import (
-    FiniteTotallyOrderedSetObject,
     FiniteTotallyOrderedSets,
-    TotallyOrderedSetObject,
     TotallyOrderedSets,
 )
 
 
 def ordered_set_owned_by(
     elements: Iterable[SetElement],
-) -> FiniteTotallyOrderedSetObject:
+) -> MathematicalObject:
     enumeration = tuple(dict.fromkeys(elements))
     underlying_set = FiniteSet(enumeration)
     owned_enumeration = tuple(underlying_set.element(element) for element in enumeration)
@@ -50,14 +49,15 @@ def ordered_set_owned_by(
         underlying_set,
         ordered_relation,
     )
-    total_order = TotallyOrderedSets()(poset)
-    assert FiniteTotallyOrderedSets().contains_finite_total_order(total_order)
-    return total_order
+    total_order = TotallyOrderedSets().refine_from_theorem(poset)
+    finite_total_order = FiniteTotallyOrderedSets().refine_from_theorem(total_order)
+    assert FiniteTotallyOrderedSets().contains_finite_total_order(finite_total_order)
+    return finite_total_order
 
 
 def finite_ordered_set(
     elements: Iterable[SetElement],
-) -> FiniteTotallyOrderedSetObject:
+) -> MathematicalObject:
     return ordered_set_owned_by(elements)
 
 
@@ -65,9 +65,9 @@ class SimplexOrderIndexing:
     """The canonical total orders ``Delta[n]`` and ``Delta[aleph0]``."""
 
     def __init__(self) -> None:
-        self._countable_simplex: TotallyOrderedSetObject | None = None
+        self._countable_simplex: MathematicalObject | None = None
 
-    def __getitem__(self, index: int | Cardinal) -> TotallyOrderedSetObject:
+    def __getitem__(self, index: int | Cardinal) -> MathematicalObject:
         from sage_categories.theories.cardinals import is_cardinal
         from sage_categories.theories.ordinals import Ordinals, ordinal
 
@@ -103,7 +103,7 @@ class SimplexOrderIndexing:
                         natural_order,
                     )
 
-                    self._countable_simplex = TotallyOrderedSets()._ordinal_total_order(
+                    self._countable_simplex = TotallyOrderedSets().refine_from_theorem(
                         poset,
                     )
                 return self._countable_simplex

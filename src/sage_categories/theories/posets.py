@@ -37,19 +37,11 @@ from sage_categories.theories.thin_categories import (
 )
 from sage_categories.theories.total_orders import (
     FinitePosets,
-    FiniteTotallyOrderedSetElement,
-    FiniteTotallyOrderedSetObject,
     FiniteTotallyOrderedSets,
     FiniteTotallyOrderedSetsCategory,
-    TotallyOrderedSetElement,
-    TotallyOrderedSetHomCategory,
-    TotallyOrderedSetMorphism,
-    TotallyOrderedSetObject,
     TotallyOrderedSets,
     TotallyOrderedSetsCategory,
-    TotalOrderInclusionFunctor,
     is_total_order_element,
-    is_total_order_hom_category,
     is_totally_ordered_sets_category,
 )
 
@@ -57,8 +49,6 @@ __all__ = (
     "FinitePosetObject",
     "FinitePosets",
     "FinitePosetsCategory",
-    "FiniteTotallyOrderedSetElement",
-    "FiniteTotallyOrderedSetObject",
     "FiniteTotallyOrderedSets",
     "FiniteTotallyOrderedSetsCategory",
     "ForgetPosetFunctor",
@@ -79,11 +69,6 @@ __all__ = (
     "ThinCategoryHom",
     "ThinCategoryObjectElement",
     "ThinCategoryObjectSet",
-    "TotalOrderInclusionFunctor",
-    "TotallyOrderedSetElement",
-    "TotallyOrderedSetHomCategory",
-    "TotallyOrderedSetMorphism",
-    "TotallyOrderedSetObject",
     "TotallyOrderedSets",
     "TotallyOrderedSetsCategory",
     "finite_ordered_set",
@@ -93,7 +78,6 @@ __all__ = (
     "is_thin_category",
     "is_thin_category_hom",
     "is_total_order_element",
-    "is_total_order_hom_category",
     "is_totally_ordered_sets_category",
     "ordered_set_owned_by",
 )

@@ -8,7 +8,7 @@ independent of Sage's category classes.
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.functors import StructuralFunctor
@@ -179,6 +179,15 @@ class MathematicalObject:
         """Return the canonical implementation used by an inclusion."""
         return self
 
+    @classmethod
+    def _refined_from_ambient(
+        cls,
+        *,
+        category: Category,
+        ambient_implementation: MathematicalObject,
+    ) -> Self:
+        assert False, f"{cls.__qualname__} has no object refinement operation"
+
     def _object_image_along(
         self,
         route: tuple[StructuralFunctor, ...],
@@ -237,6 +246,16 @@ class MathematicalElement(MathematicalObject):
     def _ambient_implementation(self) -> MathematicalElement:
         """Return the canonical ambient element used by an inclusion."""
         return self
+
+    @classmethod
+    def _refined_element_from_ambient(
+        cls,
+        *,
+        category: Category,
+        ambient_object: MathematicalObject,
+        ambient_implementation: MathematicalElement,
+    ) -> Self:
+        assert False, f"{cls.__qualname__} has no element refinement operation"
 
     def _element_image_along(
         self,
@@ -317,6 +336,15 @@ class Arrow(MathematicalElement):
     def _ambient_implementation(self) -> Arrow:
         """Return the canonical ambient arrow used by an inclusion."""
         return self
+
+    @classmethod
+    def _refined_arrow_from_ambient(
+        cls,
+        *,
+        hom_category: HomCategory,
+        ambient_implementation: Arrow,
+    ) -> Self:
+        assert False, f"{cls.__qualname__} has no arrow refinement operation"
 
     def _belongs_to_hom(self, hom_category: HomCategory) -> bool:
         own_hom_category = self._hom_category

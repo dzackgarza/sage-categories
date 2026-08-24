@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Mapping
-from typing import TYPE_CHECKING, TypeIs
+from collections.abc import Callable, Iterable
+from typing import TYPE_CHECKING, Any, Self, TypeIs
 
 from sage_categories.abstract_categories.functors import (
     DiscreteCategories,
@@ -70,6 +70,22 @@ class PosetElement(MathematicalElement):
 
     def _set_implementation(self) -> SetElement:
         return self._set_element
+
+    @classmethod
+    def _refined_element_from_ambient(
+        cls,
+        *,
+        category: Category,
+        ambient_object: MathematicalObject,
+        ambient_implementation: MathematicalElement,
+    ) -> Self:
+        assert is_partially_ordered_sets_category(category)
+        assert PartiallyOrderedSets().contains_poset(ambient_object)
+        assert SetElements().contains_set_element(ambient_implementation)
+        return cls(
+            ambient_object=ambient_object,
+            set_element=ambient_implementation,
+        )
 
     def ambient_poset(self) -> PosetObject:
         ambient = self.ambient_object()
@@ -143,25 +159,31 @@ class PosetObject(MathematicalObject):
     def _set_implementation(self) -> SetObject:
         return self._underlying_set
 
+    def category(self) -> PartiallyOrderedSetsCategory:
+        category = super().category()
+        assert category is PartiallyOrderedSets()
+        return PartiallyOrderedSets()
+
     def relation(self) -> OrderRelation:
         """Return the chosen order relation."""
         return self._relation
 
-    def __contains__(self, candidate: MathematicalObject) -> bool:
+    def __contains__(self, candidate: Any) -> bool:
         element = registered_element(candidate)
         return element is not None and element.ambient_object() is self
 
     def element(self, set_element: SetElement) -> PosetElement:
-        assert set_element.ambient_set() is self._underlying_set
-        assert set_element in self._underlying_set
+        underlying_set = self._set_implementation()
+        assert set_element.ambient_set() is underlying_set
+        assert set_element in underlying_set
         key = id(set_element)
         cached = self._elements.get(key)
         if cached is None:
             element_type = self.category().ElementType
-            assert is_poset_element_type(element_type)
-            cached = element_type(
+            cached = element_type._refined_element_from_ambient(
+                category=self.category(),
                 ambient_object=self,
-                set_element=set_element,
+                ambient_implementation=set_element,
             )
             self._elements[key] = cached
         return cached
@@ -325,14 +347,10 @@ class PosetHomCategory(HomCategory):
 
     def __call__(
         self,
-        action: Callable[[PosetElement], PosetElement] | Mapping[PosetElement, PosetElement] | PosetMorphism,
-        *,
-        injective: Decision,
-        surjective: Decision,
+        action: SetMorphism | PosetMorphism,
     ) -> PosetMorphism:
         existing = registered_value(action)
-        if existing is not None:
-            assert self.contains_poset_morphism(existing)
+        if existing is not None and self.contains_poset_morphism(existing):
             return existing
         source = self.domain()
         target = self.codomain()
@@ -345,24 +363,10 @@ class PosetHomCategory(HomCategory):
             PartiallyOrderedSets().underlying_set(target),
         )
         assert is_set_hom_category(set_hom)
-
-        def underlying_action(member: SetElement) -> SetElement:
-            source_member = source.element(member)
-            if callable(action):
-                image = action(source_member)
-            else:
-                image = action[source_member]
-            assert is_poset_element(image)
-            assert image in target
-            set_image = PartiallyOrderedSets().forgetful_functor().on_element(target, image)
-            assert SetElements().contains_set_element(set_image)
-            return set_image
-
-        underlying = set_hom(
-            underlying_action,
-            injective=injective,
-            surjective=surjective,
-        )
+        assert Sets().contains_set_morphism(action)
+        assert action.domain() is set_hom.domain()
+        assert action.codomain() is set_hom.codomain()
+        underlying = action
 
         def candidate_map(member: PosetElement) -> PosetElement:
             set_member = PartiallyOrderedSets().forgetful_functor().on_element(source, member)
@@ -470,12 +474,7 @@ class ForgetPosetFunctor(StructuralFunctor):
     ) -> PosetElement:
         assert PartiallyOrderedSets().contains_poset(source)
         assert SetElements().contains_set_element(element)
-        element_type = source.category().ElementType
-        assert is_poset_element_type(element_type)
-        return element_type(
-            ambient_object=source,
-            set_element=element,
-        )
+        return source.element(element)
 
     def is_faithful(self) -> bool:
         return True
@@ -705,12 +704,3 @@ def is_poset_hom_category(
 def is_poset_element(candidate: MathematicalObject) -> TypeIs[PosetElement]:
     element = registered_element(candidate)
     return element is candidate and element.ambient_object() in PartiallyOrderedSets()
-
-
-def is_poset_element_type(
-    candidate: type[MathematicalElement],
-) -> TypeIs[type[PosetElement]]:
-    from sage_categories.theories.finite_posets import FinitePosetElement
-
-    source = vars(candidate).get("_compiled_from")
-    return candidate is PosetElement or candidate is FinitePosetElement or source is PosetElement or source is FinitePosetElement

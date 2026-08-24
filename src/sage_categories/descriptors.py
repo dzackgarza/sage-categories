@@ -259,7 +259,7 @@ def _forward_value(
     assert role is ParameterRole.ELEMENT_COLLECTION
     collection = cast(Iterable[MathematicalElement], value)
     transported = tuple(
-        cast(MathematicalElement, _forward_value(element, ParameterRole.ELEMENT, route))
+        _forward_value(element, ParameterRole.ELEMENT, route)
         for element in collection
     )
     if isinstance(value, tuple):
@@ -290,8 +290,8 @@ def _forward_arguments(
     return forwarded_args, forwarded_kwargs
 
 
-def _invoke_declared[R](
-    method: FunctionType,
+def _invoke_declared(
+    method: Callable[Concatenate[MathematicalObject, P], R],
     receiver: MathematicalObject,
     args: tuple[Value, ...],
     kwargs: dict[str, Value],
@@ -299,8 +299,9 @@ def _invoke_declared[R](
     """Invoke the concrete implementation at a transported receiver."""
     implementation = inspect.getattr_static(type(receiver), method.__name__, None)
     if inspect.isfunction(implementation) and implementation is not method:
-        return cast(R, implementation(receiver, *args, **kwargs))
-    return cast(R, method(receiver, *args, **kwargs))
+        concrete = cast(Callable[Concatenate[MathematicalObject, P], R], implementation)
+        return concrete(receiver, *args, **kwargs)
+    return method(receiver, *args, **kwargs)
 
 
 def _transport_result(

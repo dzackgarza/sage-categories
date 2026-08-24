@@ -250,7 +250,7 @@ def test_compiler_exposes_object_element_and_arrow_routes() -> None:
     category = FiniteTotallyOrderedSets()
     ordered_set = finite_ordered_set((ZZ(int(0)), ZZ(int(1))))
     member = next(iter(ordered_set))
-    assert is_total_order_element(member)
+    assert member.ambient_object() is ordered_set
     assert member in ordered_set
     assert member <= member
     assert (ordered_set.cardinality() == 2) is True
@@ -258,7 +258,7 @@ def test_compiler_exposes_object_element_and_arrow_routes() -> None:
     assert FinitePosets().contains_finite_poset(finite_poset)
     assert finite_poset.height() == 2
     assert ordered_set.category() is FiniteTotallyOrderedSets()
-    assert member.ambient_total_order() is ordered_set
+    assert member.ambient_object() is ordered_set
     assert "__iter__" in category.declared_object_methods()
     assert "__le__" in category.declared_element_methods()
     assert "is_order_preserving" in PartiallyOrderedSets().declared_arrow_methods()
@@ -491,14 +491,14 @@ def test_totality_verification_and_rejection() -> None:
 
     refinement_failed = False
     try:
-        TotallyOrderedSets()(discrete_poset)
+        TotallyOrderedSets().refine(discrete_poset)
     except AssertionError:
         refinement_failed = True
     assert refinement_failed
 
     chain = Poset(((ZZ(int(0)), ZZ(int(1))), chain_leq))
     assert is_total_order(chain) is True
-    total_order = TotallyOrderedSets()(chain)
+    total_order = TotallyOrderedSets().refine(chain)
     assert total_order in TotallyOrderedSets()
     assert total_order in FiniteTotallyOrderedSets()
 
@@ -518,20 +518,23 @@ def test_poset_hom_monotonicity_admission_and_rejection() -> None:
     one_elem = elem_map[int(1)]
     hom = PartiallyOrderedSets().Hom(chain, chain)
 
-    def reverse_chain(member: PosetElement) -> PosetElement:
+    underlying = PartiallyOrderedSets().underlying_set(chain)
+
+    def reverse_chain(member: SetElement) -> SetElement:
         val = _element_int(member)
-        target = elem_map[int(1 - val)]
-        assert is_poset_element(target)
-        return target
+        return underlying.element(ZZ(int(1 - val)))
+
+    reverse_set_map = Sets().Hom(underlying, underlying)(reverse_chain)
 
     reversing_rejected = False
     try:
-        hom(reverse_chain)
+        hom(reverse_set_map)
     except AssertionError:
         reversing_rejected = True
     assert reversing_rejected
 
-    constant_map = hom(lambda member: zero_elem)
+    constant_set_map = Sets().Hom(underlying, underlying)(lambda member: underlying.element(ZZ(int(0))))
+    constant_map = hom(constant_set_map)
     assert constant_map.is_order_preserving()
     assert constant_map in hom
     assert constant_map(zero_elem) == zero_elem
@@ -540,21 +543,15 @@ def test_poset_hom_monotonicity_admission_and_rejection() -> None:
 
 def test_finite_total_order_routes_coherence() -> None:
     ordered = finite_ordered_set((ZZ(int(1)), ZZ(int(2))))
-    route1 = (
-        FiniteTotallyOrderedSets().inclusion(),
-        TotallyOrderedSets().inclusion(),
-    )
-    route2 = (
-        FiniteTotallyOrderedSets().finite_poset_functor(),
-        FinitePosets().inclusion(),
-    )
-    img1 = ordered._object_image_along(route1)
-    img2 = ordered._object_image_along(route2)
-    assert img1 is img2
+    total_image = FiniteTotallyOrderedSets().inclusion().on_object(ordered)
+    poset_via_total = TotallyOrderedSets().inclusion().on_object(total_image)
+    finite_image = FiniteTotallyOrderedSets().finite_poset_functor().on_object(ordered)
+    poset_via_finite = FinitePosets().inclusion().on_object(finite_image)
+    assert poset_via_total is poset_via_finite
 
-    set_img1 = img1._object_image_along((PartiallyOrderedSets().forgetful_functor(),))
-    set_img2 = img2._object_image_along((PartiallyOrderedSets().forgetful_functor(),))
-    assert set_img1 is set_img2
+    set_via_total = PartiallyOrderedSets().forgetful_functor().on_object(poset_via_total)
+    set_via_finite = PartiallyOrderedSets().forgetful_functor().on_object(poset_via_finite)
+    assert set_via_total is set_via_finite
 
 
 def test_property_refinements_have_distinct_roles_and_canonical_images() -> None:
@@ -567,12 +564,14 @@ def test_property_refinements_have_distinct_roles_and_canonical_images() -> None
     )
     underlying_set = PartiallyOrderedSets().underlying_set(poset)
     finite = FinitePosets()(underlying_set, poset.relation())
-    total = TotallyOrderedSets()(poset)
+    total = TotallyOrderedSets().refine(poset)
 
     assert FinitePosets().ObjectType is not PartiallyOrderedSets().ObjectType
     assert FinitePosets().ElementType is not PartiallyOrderedSets().ElementType
+    assert FinitePosets().ArrowType is not PartiallyOrderedSets().ArrowType
     assert TotallyOrderedSets().ObjectType is not PartiallyOrderedSets().ObjectType
     assert TotallyOrderedSets().ElementType is not PartiallyOrderedSets().ElementType
+    assert TotallyOrderedSets().ArrowType is not PartiallyOrderedSets().ArrowType
     assert finite is not poset
     assert total is not poset
 
@@ -593,14 +592,30 @@ def test_property_refinements_have_distinct_roles_and_canonical_images() -> None
 def test_totally_ordered_set_morphism_evaluation_inherited_from_poset_morphism() -> None:
     ordered = finite_ordered_set((ZZ(int(1)), ZZ(int(2))))
     hom = TotallyOrderedSets().Hom(ordered, ordered)
-    first_elem = next(iter(ordered))
-    assert is_total_order_element(first_elem)
-    constant_map = hom(lambda member: first_elem)
-    assert constant_map.is_order_preserving()
+    underlying = TotallyOrderedSets().inclusion().on_object(ordered)
+    underlying_set = PartiallyOrderedSets().underlying_set(underlying)
+    first_elem = ordered.element(underlying_set.element(ZZ(int(1))))
+    assert first_elem.ambient_object() is ordered
+    constant_set_map = Sets().Hom(underlying_set, underlying_set)(
+        lambda member: underlying_set.element(ZZ(int(1))),
+    )
+    ambient_map = PartiallyOrderedSets().Hom(underlying, underlying)(constant_set_map)
+    constant_map = hom(ambient_map)
     assert constant_map in hom
+    assert constant_map.domain() is ordered
+    assert constant_map.codomain() is ordered
+    assert TotallyOrderedSets().inclusion().on_morphism(constant_map) is ambient_map
     for member in ordered:
-        assert is_total_order_element(member)
+        assert member.ambient_object() is ordered
         assert constant_map(member) == first_elem
+
+    identity = hom.identity()
+    composite = hom.compose(identity, constant_map)
+    assert identity in hom
+    assert composite in hom
+    assert composite.domain() is ordered
+    assert composite.codomain() is ordered
+    assert composite(first_elem) == first_elem
 
 
 def test_infinite_structures_theorem_admission_and_raw_rejection() -> None:
@@ -617,7 +632,7 @@ def test_infinite_structures_theorem_admission_and_raw_rejection() -> None:
 
     raw_infinite_total_failed = False
     try:
-        TotallyOrderedSets()(discrete_poset)
+        TotallyOrderedSets().refine(discrete_poset)
     except AssertionError:
         raw_infinite_total_failed = True
     assert raw_infinite_total_failed
@@ -625,4 +640,3 @@ def test_infinite_structures_theorem_admission_and_raw_rejection() -> None:
     infinite_simplex = SimplexOrders()[aleph0]
     assert infinite_simplex in TotallyOrderedSets()
     assert (infinite_simplex.cardinality() == aleph0) is True
-

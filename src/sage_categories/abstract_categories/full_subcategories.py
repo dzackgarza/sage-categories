@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, TypeIs
+from typing import TYPE_CHECKING, Any, Self, TypeIs
 
 from sage_categories.abstract_categories.functors import (
     Functor,
@@ -17,8 +17,11 @@ from sage_categories.abstract_categories.hom_categories import (
 from sage_categories.category import Category
 from sage_categories.values import (
     Arrow,
+    Decision,
     MathematicalElement,
     MathematicalObject,
+    UNKNOWN,
+    registered_element,
     registered_value,
 )
 
@@ -36,14 +39,97 @@ type ObjectPredicate = Callable[[MathematicalObject], bool]
 class FullSubcategoryObject(MathematicalObject):
     """The local object implementation of a full subcategory."""
 
+    def __init__(
+        self,
+        *,
+        category: FullSubcategory,
+        ambient_implementation: MathematicalObject,
+    ) -> None:
+        self._ambient_implementation_value = ambient_implementation
+        super().__init__(category=category)
+
+    def _ambient_implementation(self) -> MathematicalObject:
+        return self._ambient_implementation_value
+
+    @classmethod
+    def _refined_from_ambient(
+        cls,
+        *,
+        category: Category,
+        ambient_implementation: MathematicalObject,
+    ) -> Self:
+        assert is_full_subcategory(category)
+        return cls(
+            category=category,
+            ambient_implementation=ambient_implementation,
+        )
+
+    def __contains__(self, candidate: Any) -> bool:
+        element = registered_element(candidate)
+        return element is not None and element.ambient_object() is self
+
 
 class FullSubcategoryElement(MathematicalElement):
     """The local element implementation of a full subcategory."""
+
+    def __init__(
+        self,
+        *,
+        category: FullSubcategory,
+        ambient_object: FullSubcategoryObject,
+        ambient_implementation: MathematicalElement,
+    ) -> None:
+        self._ambient_implementation_value = ambient_implementation
+        super().__init__(category=category, ambient_object=ambient_object)
+
+    def _ambient_implementation(self) -> MathematicalElement:
+        return self._ambient_implementation_value
+
+    @classmethod
+    def _refined_element_from_ambient(
+        cls,
+        *,
+        category: Category,
+        ambient_object: MathematicalObject,
+        ambient_implementation: MathematicalElement,
+    ) -> Self:
+        assert is_full_subcategory(category)
+        return cls(
+            category=category,
+            ambient_object=ambient_object,
+            ambient_implementation=ambient_implementation,
+        )
 
 
 class FullSubcategoryArrow(Arrow):
     """The local arrow implementation of a full subcategory."""
 
+    def __init__(
+        self,
+        *,
+        hom_category: FullSubcategoryHomCategory,
+        ambient_implementation: Arrow,
+    ) -> None:
+        self._ambient_implementation_value = ambient_implementation
+        super().__init__(hom_category=hom_category)
+
+    def _ambient_implementation(self) -> Arrow:
+        return self._ambient_implementation_value
+
+    def ambient_implementation(self) -> Arrow:
+        return self._ambient_implementation_value
+
+    @classmethod
+    def _refined_arrow_from_ambient(
+        cls,
+        *,
+        hom_category: HomCategory,
+        ambient_implementation: Arrow,
+    ) -> Self:
+        return cls(
+            hom_category=hom_category,
+            ambient_implementation=ambient_implementation,
+        )
 
 class FullSubcategoryHomCategory(HomCategory):
     """The ambient arrows between two objects of a full subcategory."""
@@ -72,24 +158,40 @@ class FullSubcategoryHomCategory(HomCategory):
 
     def ambient_hom_category(self) -> HomCategory:
         category = self.full_subcategory()
-        return category.ambient_category().Hom(self.domain(), self.codomain())
+        inclusion = category.inclusion()
+        return category.ambient_category().Hom(
+            inclusion.on_object(self.domain()),
+            inclusion.on_object(self.codomain()),
+        )
 
     def __contains__(self, candidate: Any) -> bool:
-        return candidate in self.ambient_hom_category()
+        value = registered_value(candidate)
+        if value is None:
+            return False
+        ambient_candidate = value._ambient_implementation()
+        return ambient_candidate in self.ambient_hom_category()
 
     def __call__(self, arrow: Arrow) -> Arrow:
         assert arrow in self
-        return arrow
+        return self.full_subcategory()._refine_arrow(self, arrow._ambient_implementation())
 
     def identity(self, value: MathematicalObject | None = None) -> Arrow:
         assert value is None
         assert self.domain() is self.codomain()
-        return self.full_subcategory().ambient_category().identity(self.domain())
+        inclusion = self.full_subcategory().inclusion()
+        ambient_domain = inclusion.on_object(self.domain())
+        return self(inclusion.codomain().identity(ambient_domain))
 
     def compose(self, second: Arrow, first: Arrow) -> Arrow:
-        assert first in self.full_subcategory().ArrowCategory()
-        assert second in self.full_subcategory().ArrowCategory()
-        return self.full_subcategory().ambient_category().compose(second, first)
+        assert first in self
+        assert second in self
+        ambient_category = self.full_subcategory().ambient_category()
+        return self(
+            ambient_category.compose(
+                second._ambient_implementation(),
+                first._ambient_implementation(),
+            )
+        )
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
         if self._ambient_inclusion is None:
@@ -98,6 +200,41 @@ class FullSubcategoryHomCategory(HomCategory):
                 self.ambient_hom_category(),
             )
         return (self._ambient_inclusion,)
+
+
+class FullSubcategoryHomCategoryFamily(HomCategoryFamily):
+    """The hom categories of one full property subcategory."""
+
+    ObjectType: type[FullSubcategoryHomCategory] = FullSubcategoryHomCategory
+
+    def __init__(self, base_category: FullSubcategory) -> None:
+        self._full_hom_categories: dict[
+            tuple[int, int],
+            FullSubcategoryHomCategory,
+        ] = {}
+        super().__init__(
+            base_category,
+            hom_category_type=FullSubcategoryHomCategory,
+        )
+
+    def Of(
+        self,
+        domain: MathematicalObject,
+        codomain: MathematicalObject,
+    ) -> FullSubcategoryHomCategory:
+        base = self.base_category()
+        assert domain in base
+        assert codomain in base
+        key = id(domain), id(codomain)
+        cached = self._full_hom_categories.get(key)
+        if cached is None:
+            cached = self.ObjectType(
+                domain=domain,
+                codomain=codomain,
+                hom_category=self,
+            )
+            self._full_hom_categories[key] = cached
+        return cached
 
 
 class FullSubcategory(Category):
@@ -119,6 +256,10 @@ class FullSubcategory(Category):
         self._predicate = predicate
         self._name = name
         self._inclusion: InclusionFunctor | None = None
+        self._full_hom_category_family: FullSubcategoryHomCategoryFamily | None = None
+        self._refined_objects: dict[int, MathematicalObject] = {}
+        self._refined_elements: dict[tuple[int, int], MathematicalElement] = {}
+        self._refined_arrows: dict[tuple[int, int], Arrow] = {}
         super().__init__(
             object_type=object_type,
             element_type=element_type,
@@ -141,7 +282,86 @@ class FullSubcategory(Category):
             return True
         if value not in self._ambient_category:
             return False
-        return any(isomorphic in self._ambient_category and self._predicate(isomorphic) for isomorphic in _declared_isomorphic_objects(value))
+        return any(
+            isomorphic in self._ambient_category
+            and self._predicate(isomorphic) is True
+            for isomorphic in _declared_isomorphic_objects(value)
+        ) or self._predicate(value) is True
+
+    def refine(self, ambient: MathematicalObject) -> MathematicalObject:
+        ambient = self._canonical_ambient(ambient)
+        assert self._predicate(ambient) is True
+        return self._refine_object(ambient)
+
+    def refine_with_hypothesis(self, ambient: MathematicalObject) -> MathematicalObject:
+        ambient = self._canonical_ambient(ambient)
+        return self._refine_object(ambient)
+
+    def refine_from_theorem(self, ambient: MathematicalObject) -> MathematicalObject:
+        ambient = self._canonical_ambient(ambient)
+        return self._refine_object(ambient)
+
+    def _canonical_ambient(self, ambient: MathematicalObject) -> MathematicalObject:
+        from sage_categories.compiler import category_compiler
+
+        assert ambient in self._ambient_category
+        if ambient.category() is self._ambient_category:
+            return ambient
+        route = category_compiler().implementation_route(
+            ambient.category(),
+            self._ambient_category,
+        )
+        return ambient._object_image_along(route)
+
+    def _refine_object(self, ambient: MathematicalObject) -> MathematicalObject:
+        if ambient.category() is self:
+            assert ambient in self
+            return ambient
+        ambient = self._canonical_ambient(ambient)
+        key = id(ambient)
+        refined = self._refined_objects.get(key)
+        if refined is None:
+            refined = self.ObjectType._refined_from_ambient(
+                category=self,
+                ambient_implementation=ambient,
+            )
+            self._refined_objects[key] = refined
+            self.inclusion()._seed_object_refinement(refined, ambient)
+        assert refined in self
+        return refined
+
+    def _refine_element(
+        self,
+        source: MathematicalObject,
+        ambient: MathematicalElement,
+    ) -> MathematicalElement:
+        assert source in self
+        inclusion = self.inclusion()
+        ambient_source = inclusion.on_object(source)
+        assert ambient.ambient_object() is ambient_source
+        key = id(source), id(ambient)
+        refined = self._refined_elements.get(key)
+        if refined is None:
+            refined = self.ElementType._refined_element_from_ambient(
+                category=self,
+                ambient_object=source,
+                ambient_implementation=ambient,
+            )
+            self._refined_elements[key] = refined
+            inclusion._seed_element_refinement(source, refined, ambient)
+        return refined
+
+    def _refine_arrow(self, hom_category: HomCategory, ambient: Arrow) -> Arrow:
+        key = id(hom_category), id(ambient)
+        refined = self._refined_arrows.get(key)
+        if refined is None:
+            refined = self.ArrowType._refined_arrow_from_ambient(
+                hom_category=hom_category,
+                ambient_implementation=ambient,
+            )
+            self._refined_arrows[key] = refined
+            self.inclusion()._seed_arrow_refinement(refined, ambient)
+        return refined
 
     def contains_arrow(self, candidate: MathematicalObject) -> TypeIs[Arrow]:
         if not self._ambient_category.contains_arrow(candidate):
@@ -150,6 +370,20 @@ class FullSubcategory(Category):
 
     def _hom_category_type(self) -> type[HomCategory]:
         return FullSubcategoryHomCategory
+
+    def HomCategory(self) -> FullSubcategoryHomCategoryFamily:
+        if self._full_hom_category_family is None:
+            self._full_hom_category_family = FullSubcategoryHomCategoryFamily(self)
+            self._full_hom_category_family.ElementType = self._compiled_arrow_type
+        return self._full_hom_category_family
+
+    def Hom(
+        self,
+        domain: MathematicalObject,
+        codomain: MathematicalObject | None = None,
+    ) -> FullSubcategoryHomCategory:
+        assert codomain is not None
+        return self.HomCategory().Of(domain, codomain)
 
     def super_functors(self) -> tuple[StructuralFunctor, ...]:
         return (self.inclusion(),)

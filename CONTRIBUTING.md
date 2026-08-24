@@ -275,8 +275,8 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-059` | Let each category add local methods to its `ElementType` while inheriting the complete applicable element interface through structural functors. Preserve the category-specific element type even when it adds no local methods. |
 | `POL-CAT-060` | Do not expose `is_X()` methods for properties represented by categories. Let the category own the decision and write `Y in X`; for example, write `f in C.Isomorphisms()`, `S in Sets().Finite()`, and `P in Posets().Products()` instead of `f.is_isomorphism()`, `S.is_finite()`, or `P.is_product()`. |
 | `POL-CAT-061` | Transport an inherited method through the complete selected-functor route to its declaring implementation. Never stop after the first nonidentity image. |
-| `POL-CAT-062` | Transport the receiver and every mathematical argument, including keyword arguments, through the same complete route. Reverse-transport every mathematical result to the source category. |
-| `POL-CAT-063` | Preserve object, element, arrow, iterator, and mathematical collection roles in compiled method signatures. Do not infer these roles from runtime registries, `isinstance`, or method names. |
+| `POL-CAT-062` | Transport the receiver and every mathematical argument, including keyword arguments, through the same complete route. Reverse-transport a returned value only through its established canonical preimage. Keep every newly constructed result in its exact declared mathematical category. |
+| `POL-CAT-063` | Preserve object, element, arrow, iterator, and mathematical collection roles in compiled method signatures. Derive these roles from the owning implementation role and exact declared types. Do not infer them from runtime registries, `isinstance`, method names, or duplicate per-method metadata. |
 | `POL-CAT-064` | Compile special methods and ordinary methods through the same role-driven mechanism. Do not add per-method branches to compensate for incomplete transport. |
 | `POL-CAT-065` | Reverse-transport a lazy result one value at a time. Preserve the source ambient object of every returned element. |
 | `POL-CAT-066` | Key structural images and preimages by both the source ambient object and the source value. Values from different ambient objects must never share a cached image. |
@@ -284,10 +284,12 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-068` | Return a property as `True` from category membership only when every path into that category satisfies `POL-CAT-020` or `POL-CAT-067`. |
 | `POL-CAT-069` | A constructor over arbitrary input data cannot borrow a theorem from one special construction. Its named checking route validates the obligations. A separate named hypothesis route can trust its required mathematical precondition. Put theorem-backed special cases in construction-owned paths. |
 | `POL-CAT-070` | Treat direct implementation construction, private constructors, inclusions, lifts, and internal helpers as category-entry paths. Each path accounts for the same obligations through typed theorem conclusions, explicit hypotheses, or exact computations. It need not prove a theorem at runtime. Internal access is not an exemption. |
-| `POL-CAT-071` | Reject a compiled method when its declared argument or result role lacks a structural transport rule. Never return an unmatched codomain object, element, arrow, or collection through a raw pass-through fallback. |
+| `POL-CAT-071` | Reject a compiled method when a declared argument requires structural transport and no exact rule exists. Reject a returned canonical image when its required preimage is absent. Preserve a newly constructed result in its declared category. Never use raw pass-through as a fallback. |
 | `POL-CAT-072` | Transport a collection from its declared mathematical collection type and item role. Do not infer collection semantics from `Iterable` checks or assume that every lazy result contains elements. |
 | `POL-CAT-073` | Treat `X in C` as the mathematical admissibility fact. Exact identity such as `X.category() is C` is an implementation fact and never triggers structural normalization. |
 | `POL-CAT-074` | Preserve the strongest established category of every object. Do not replace it with an ancestor implementation merely to call an inherited operation. |
+| `POL-CAT-075` | Treat the ordinary typed signature and executable body on the owning implementation class as the sole authoritative declaration of a method. Derive every descriptor and generated typing artifact from that declaration. Never maintain a second description of its receiver, parameters, call shape, result, or mathematical roles. |
+| `POL-CAT-076` | Keep mathematical type, Python call shape, and structural transport provenance distinct. Exact types state mathematical roles. The Python signature states positional, keyword, and variadic shape. Canonical image and preimage relations state transport provenance. No one of these facts can replace another. |
 
 Grounding examples:
 
@@ -381,6 +383,8 @@ Grounding examples:
 | `POL-LEAF-048` | Make the public operation surface depend only on categorical placement. Every object of the category receives the same owned operations, regardless of which private dependency or representation computes them. |
 | `POL-LEAF-049` | Define each immediate structural functor in the category layer. Its object map uses the public constructor routes of the target category to construct the exact mathematical image. Its arrow and element maps do the same for their roles. |
 | `POL-LEAF-050` | Quarantine substantial Python, foreign-function, process, conversion, caching, and engine-adaptation code in private helpers. Keep mathematical ownership, public methods, semantic inputs, and semantic reconstruction on the sole category implementation class. |
+| `POL-LEAF-051` | Write a leaf method as one ordinary typed Python method. Never attach or place beside it transport metadata, compiler annotations, descriptor arguments, role tables, signature mirrors, or another record of facts already present in its declaration. This rule applies by function, regardless of mechanism name or syntax. |
+| `POL-LEAF-052` | Stop a change that repeats the same non-mathematical declaration across leaf methods or categories. Such repetition identifies missing kernel derivation. Repair the kernel once, or reject the unsupported semantic signature during compilation. |
 
 See [Leaf category implementations](specs/leaves.md) for the complete ownership model,
 the allowed private computation sequence, and the rejected decorator and mirrored-class
@@ -414,6 +418,8 @@ It does not reimplement composition, structural transport, domain checks, codoma
 | `POL-KERNEL-018` | Make each inherited method callable directly on every structural descendant. Its descriptor hides receiver, argument, result, and collection transport. |
 | `POL-KERNEL-019` | Let a constructor requiring an object of `C` accept every `X` with `X in C`. Resolve any required canonical implementation inside the generic kernel boundary. |
 | `POL-KERNEL-020` | Compile and transport inherited operations only. Never route a locally owned operation into Sage or another engine, replace its executable method, match it to an engine method by name, or interpret a decorator, descriptor, annotation, registry entry, or marker as a computation route. |
+| `POL-KERNEL-021` | Derive a method receiver's role from its owning `ObjectType`, `ElementType`, or `ArrowType`. Derive parameter and result roles from their exact mathematical types. Derive call shape from the Python signature. Fail compilation when any required role is not exact. Never require a leaf to restate these facts. |
+| `POL-KERNEL-022` | Use mathematical roles to type transport and canonical image or preimage relations to decide whether transport applies. Never relabel a category, object, element, arrow, or mathematical collection as a plain value to suppress transport. |
 
 See [Leaf category implementations](specs/leaves.md) for the exact boundary between
 kernel-owned inheritance and leaf-owned computation.
@@ -421,6 +427,11 @@ kernel-owned inheritance and leaf-owned computation.
 Selected structural functors are executable inheritance declarations.
 A leaf states its immediate mathematics and then uses inherited operations as native methods.
 If a leaf must inspect a route or recover an ancestor implementation, the kernel abstraction has failed.
+
+For example, `exponential(self, exponent: SetObject) -> SetHomCategory` already states
+its receiver, argument, call shape, and result type.
+The leaf does not repeat those facts in a transport decorator.
+The result remains a `SetHomCategory`; it is not a plain value used to evade reverse transport.
 
 For example, an object of `Modules(R)` can be defined by an action morphism \(\rho:R\to\operatorname{End}(X)\). Its selected functor to `Sets()` recovers \(X\) from \(\rho\) and applies `Sets(X)`. The module category does not implement set operations independently.
 

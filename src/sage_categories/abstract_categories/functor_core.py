@@ -345,6 +345,52 @@ class StructuralFunctor(Functor, ABC):
         """Return whether this functor includes a subcategory."""
         return False
 
+    def _lift_morphism(
+        self,
+        source: MathematicalObject,
+        target: MathematicalObject,
+        image: Arrow,
+    ) -> Arrow:
+        """Construct the canonical source arrow represented by ``image``."""
+        from sage_categories.values import TransportedArrow
+
+        assert source in self.domain()
+        assert target in self.domain()
+        assert image in self.codomain().Hom(
+            self.on_object(source),
+            self.on_object(target),
+        )
+        hom_category = self.domain().Hom(source, target)
+        preimage_key = id(hom_category), id(image), id(self.domain())
+        cached = self._morphism_preimages.get(preimage_key)
+        if cached is not None:
+            return cached
+        arrow_type = hom_category.ObjectType
+        assert issubclass(arrow_type, TransportedArrow)
+        lifted = arrow_type._refined_arrow_from_ambient(
+            hom_category=hom_category,
+            ambient_implementation=image,
+        )
+        self._morphism_images[
+            (id(lifted.hom_category()), id(lifted), id(self.codomain()))
+        ] = image
+        self._morphism_preimages[preimage_key] = lifted
+        lifted._morphism_structural_images[
+            (id(lifted.hom_category()), id(lifted), id(self.codomain()))
+        ] = image
+        return lifted
+
+    def lift_product(
+        self,
+        diagram: Functor,
+        apex: MathematicalObject,
+        inherited_product: ProductPresentation | ProductObject,
+    ) -> ProductPresentation:
+        """Transport a complete product presentation to ``apex``."""
+        from sage_categories.abstract_categories.structural_products import lift_product
+
+        return lift_product(self, diagram, apex, inherited_product)
+
     def inherited_product(self, diagram: Functor) -> ProductObject:
         """Return the product of the diagram after structural transport."""
         from sage_categories.abstract_categories.structural_products import inherited_product

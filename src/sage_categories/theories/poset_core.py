@@ -12,11 +12,8 @@ from sage_categories.abstract_categories.functors import (
     Functor,
     StructuralFunctor,
 )
-from sage_categories.abstract_categories.diagram_shapes import ConeObject
 from sage_categories.abstract_categories.hom_categories import HomCategory
 from sage_categories.abstract_categories.products import (
-    Cone,
-    Product,
     ProductPresentation,
 )
 from sage_categories.category import Category
@@ -606,31 +603,7 @@ class PartiallyOrderedSetsCategory(Category):
         # order (Davey & Priestley, Introduction to Lattices and Order, §1.28).
         apex = self._componentwise_product_order(underlying_product, componentwise)
 
-        def projection(index: MathematicalObject) -> Arrow:
-            target = diagram(index)
-            assert self.contains_poset(target)
-            underlying = inherited_product.projection(index)
-            assert Sets().contains_set_morphism(underlying)
-            return self.Hom(apex, target)._construct(underlying)
-
-        cone = Cone(diagram, apex, projection)
-
-        def mediate(other: ConeObject) -> Arrow:
-            assert other.diagram() is diagram
-            source = other.apex()
-            assert self.contains_poset(source)
-            inherited_cone = Cone(
-                inherited_product.diagram(),
-                forgetful.on_object(source),
-                lambda index: forgetful.on_morphism(
-                    other.structure_morphism(index),
-                ),
-            )
-            underlying = inherited_product.universal_morphism(inherited_cone)
-            assert Sets().contains_set_morphism(underlying)
-            return self.Hom(source, apex)._construct(underlying)
-
-        return Product(cone, mediate)
+        return forgetful.lift_product(diagram, apex, inherited_product)
 
     def _componentwise_product_order(
         self,

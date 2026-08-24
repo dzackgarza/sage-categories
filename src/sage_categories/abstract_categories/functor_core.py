@@ -400,6 +400,80 @@ class IdentityFunctor(StructuralFunctor):
         return f"Id({self.domain()})"
 
 
+class RestrictedStructuralFunctor(StructuralFunctor):
+    """The restriction of a structural functor to full subcategories."""
+
+    def __init__(
+        self,
+        domain: Category,
+        codomain: Category,
+        ambient_functor: StructuralFunctor,
+    ) -> None:
+        from sage_categories.abstract_categories.full_subcategories import (
+            is_full_subcategory,
+        )
+
+        assert is_full_subcategory(domain)
+        assert is_full_subcategory(codomain)
+        assert ambient_functor.domain() is domain.ambient_category()
+        assert ambient_functor.codomain() is codomain.ambient_category()
+        self._source_property = domain
+        self._target_property = codomain
+        self._ambient_functor = ambient_functor
+        super().__init__(domain, codomain)
+
+    def _object_image(self, source: MathematicalObject) -> MathematicalObject:
+        ambient_source = self._source_property.inclusion().on_object(source)
+        ambient_image = self._ambient_functor.on_object(ambient_source)
+        return self._target_property.refine_from_theorem(ambient_image)
+
+    def _morphism_image(self, morphism: Arrow) -> Arrow:
+        source = self.on_object(morphism.domain())
+        target = self.on_object(morphism.codomain())
+        ambient_morphism = self._source_property.inclusion().on_morphism(morphism)
+        image = self._ambient_functor.on_morphism(ambient_morphism)
+        return self._target_property.Hom(source, target)(image)
+
+    def _element_image(
+        self,
+        source: MathematicalObject,
+        element: MathematicalElement,
+    ) -> MathematicalElement:
+        ambient_source = self._source_property.inclusion().on_object(source)
+        ambient_element = self._source_property.inclusion().on_element(
+            source,
+            element,
+        )
+        image = self._ambient_functor.on_element(
+            ambient_source,
+            ambient_element,
+        )
+        return self._target_property.inclusion().preimage_element(
+            self.on_object(source),
+            image,
+        )
+
+    def _element_preimage(
+        self,
+        source: MathematicalObject,
+        element: MathematicalElement,
+    ) -> MathematicalElement:
+        target = self.on_object(source)
+        ambient_image = self._target_property.inclusion().on_element(
+            target,
+            element,
+        )
+        ambient_source = self._source_property.inclusion().on_object(source)
+        ambient_element = self._ambient_functor.preimage_element(
+            ambient_source,
+            ambient_image,
+        )
+        return self._source_property.inclusion().preimage_element(
+            source,
+            ambient_element,
+        )
+
+
 class InclusionFunctor(StructuralFunctor):
     """The identity-on-values inclusion of a subcategory."""
 

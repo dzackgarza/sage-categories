@@ -7,18 +7,14 @@ from typing import TYPE_CHECKING
 
 from sage_categories.theories.poset_core import (
     PartiallyOrderedSets,
-    PosetElement,
 )
 from sage_categories.theories.sets import (
     FiniteSet,
     NaturalNumbers,
     SetElement,
-    SetElements,
 )
-from sage_categories.values import (
-    MathematicalObject,
-    UNKNOWN,
-)
+from sage_categories.theories.set_subobjects import _predicate_relation
+from sage_categories.values import MathematicalObject
 
 if TYPE_CHECKING:
     from sage_categories.theories.cardinals import Cardinal
@@ -39,8 +35,6 @@ def ordered_set_owned_by(
 
     def ordered_relation(left: SetElement, right: SetElement) -> bool:
         return positions[left] <= positions[right]
-
-    from sage_categories.theories.set_subobjects import _predicate_relation
 
     poset = PartiallyOrderedSets()(
         underlying_set,
@@ -77,27 +71,22 @@ class SimplexOrderIndexing:
                     naturals = NaturalNumbers()
 
                     def natural_order(
-                        left: PosetElement,
-                        right: PosetElement,
+                        left: SetElement,
+                        right: SetElement,
                     ) -> bool:
-                        forgetful_functor = PartiallyOrderedSets().forgetful_functor()
-                        left_element = forgetful_functor.on_element(left.ambient_poset(), left)
-                        right_element = forgetful_functor.on_element(right.ambient_poset(), right)
-                        assert SetElements().contains_set_element(left_element)
-                        assert SetElements().contains_set_element(right_element)
-                        left_ordinal = left_element.value()
-                        right_ordinal = right_element.value()
+                        left_ordinal = left.value()
+                        right_ordinal = right.value()
                         assert Ordinals().contains_ordinal(left_ordinal)
                         assert Ordinals().contains_ordinal(right_ordinal)
                         decision = Ordinals()._is_lequal(left_ordinal, right_ordinal)
-                        assert decision is not UNKNOWN
+                        assert decision is True or decision is False
                         return decision
 
                     # Theorem: the natural order on ordinals is a total order
                     # (well-ordering of ordinals, Sierpiński §II.7).
                     poset = PartiallyOrderedSets()._ordinal_order(
                         naturals,
-                        natural_order,
+                        _predicate_relation(naturals, natural_order),
                     )
 
                     self._countable_simplex = TotallyOrderedSets().refine_from_theorem(

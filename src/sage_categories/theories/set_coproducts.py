@@ -298,33 +298,11 @@ class SetCoproductInclusionFunctor(ImageInclusionFunctor):
         return source.apex().element(element.index(), element.value())
 
 
-class SetCoproductMorphism(FunctorImageArrow):
-    """A map between refined set coproducts."""
-
-    def __call__(self, member: SetElement) -> CoproductElement:
-        category = self.base_category()
-        assert is_coproducts_of_sets_category(category)
-        domain = self.domain()
-        codomain = self.codomain()
-        assert category.contains_set_coproduct(domain)
-        assert category.contains_set_coproduct(codomain)
-        value = registered_value(member)
-        assert value is not None
-        assert CoproductElements().contains_coproduct_element(value)
-        underlying_member = category.inclusion().on_element(domain, value)
-        assert SetElements().contains_set_element(underlying_member)
-        underlying = self.underlying_arrow()
-        assert Sets().contains_set_morphism(underlying)
-        image = underlying(underlying_member)
-        assert CoproductElements().contains_coproduct_element(image)
-        return codomain.element(image.index(), image.value())
-
-
 class SetCoproductHomCategory(FunctorImageHomCategory):
     """Maps between refined set coproducts."""
 
-    ObjectType = SetCoproductMorphism
-    ElementType = SetCoproductMorphism
+    ObjectType = FunctorImageArrow
+    ElementType = FunctorImageArrow
 
 
 class CoproductsOfSetsCategory(CoproductsOfCategory):

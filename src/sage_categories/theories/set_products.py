@@ -336,33 +336,11 @@ class SetProductInclusionFunctor(ImageInclusionFunctor):
         return image.element(element.components())
 
 
-class SetProductMorphism(FunctorImageArrow):
-    """A map between refined set products."""
-
-    def __call__(self, member: SetElement) -> ProductElement:
-        category = self.base_category()
-        assert is_products_of_sets_category(category)
-        domain = self.domain()
-        codomain = self.codomain()
-        assert category.contains_set_product(domain)
-        assert category.contains_set_product(codomain)
-        value = registered_value(member)
-        assert value is not None
-        assert ProductElements().contains_product_element(value)
-        underlying_member = category.inclusion().on_element(domain, value)
-        assert SetElements().contains_set_element(underlying_member)
-        underlying = self.underlying_arrow()
-        assert Sets().contains_set_morphism(underlying)
-        image = underlying(underlying_member)
-        assert ProductElements().contains_product_element(image)
-        return codomain.element(image.components())
-
-
 class SetProductHomCategory(FunctorImageHomCategory):
     """Maps between refined set products."""
 
-    ObjectType = SetProductMorphism
-    ElementType = SetProductMorphism
+    ObjectType = FunctorImageArrow
+    ElementType = FunctorImageArrow
 
 
 class ProductsOfSetsCategory(ProductsOfCategory):

@@ -10,6 +10,7 @@ from sage_categories.abstract_categories.category_constructions import (
 from sage_categories.abstract_categories.functors import (
     InclusionFunctor,
     NaturalIsomorphism,
+    RestrictedStructuralFunctor,
     StructuralFunctor,
     compose_functors,
 )
@@ -51,65 +52,14 @@ def is_total_order(poset: PosetObject | FinitePosetObject) -> Decision:
     return answer
 
 
-class FiniteTotalToFinitePosetFunctor(InclusionFunctor):
+class FiniteTotalToFinitePosetFunctor(RestrictedStructuralFunctor):
     """Restrict a finite total-order refinement to its finite poset image."""
 
     def __init__(self, finite_total_orders: FiniteTotallyOrderedSetsCategory) -> None:
-        self._finite_total_orders = finite_total_orders
-        super().__init__(finite_total_orders, FinitePosets())
-
-    def _object_image(self, source: MathematicalObject) -> MathematicalObject:
-        assert source in self._finite_total_orders
-        total = source._ambient_implementation()
-        poset = TotallyOrderedSets().inclusion().on_object(total)
-        return FinitePosets().refine_from_theorem(poset)
-
-    def _morphism_image(self, morphism: Arrow) -> Arrow:
-        source = self.on_object(morphism.domain())
-        target = self.on_object(morphism.codomain())
-        total_arrow = FiniteTotallyOrderedSets().inclusion().on_morphism(morphism)
-        ambient_arrow = TotallyOrderedSets().inclusion().on_morphism(
-            total_arrow,
-        )
-        return FinitePosets().Hom(source, target)(ambient_arrow)
-
-    def _element_image(
-        self,
-        source: MathematicalObject,
-        element: MathematicalElement,
-    ) -> MathematicalElement:
-        target = self.on_object(source)
-        total_source = FiniteTotallyOrderedSets().inclusion().on_object(source)
-        total_element = FiniteTotallyOrderedSets().inclusion().on_element(
-            source,
-            element,
-        )
-        ambient_source = TotallyOrderedSets().inclusion().on_object(total_source)
-        ambient_element = TotallyOrderedSets().inclusion().on_element(
-            total_source,
-            total_element,
-        )
-        assert ambient_element.ambient_object() is FinitePosets().inclusion().on_object(target)
-        return FinitePosets().inclusion().preimage_element(target, ambient_element)
-
-    def _element_preimage(
-        self,
-        source: MathematicalObject,
-        element: MathematicalElement,
-    ) -> MathematicalElement:
-        finite_poset = self.on_object(source)
-        ambient_element = FinitePosets().inclusion().on_element(
-            finite_poset,
-            element,
-        )
-        total_source = FiniteTotallyOrderedSets().inclusion().on_object(source)
-        total_element = TotallyOrderedSets().inclusion().preimage_element(
-            total_source,
-            ambient_element,
-        )
-        return FiniteTotallyOrderedSets().inclusion().preimage_element(
-            source,
-            total_element,
+        super().__init__(
+            finite_total_orders,
+            FinitePosets(),
+            TotallyOrderedSets().inclusion(),
         )
 
 

@@ -447,7 +447,14 @@ class ForwardedObjectMethod[Receiver: MathematicalObject, **P, R]:
             )
             result = cast(
                 R,
-                _invoke_declared(method, image, forwarded_args, forwarded_kwargs),
+                method(image, *forwarded_args, **forwarded_kwargs)
+                if image is instance
+                else _invoke_declared(
+                    method,
+                    image,
+                    forwarded_args,
+                    forwarded_kwargs,
+                ),
             )
             return _transport_result(result, signature.result, route, instance, image, instance, image)
 
@@ -491,7 +498,14 @@ class ForwardedElementMethod[Receiver: MathematicalElement, **P, R]:
             )
             result = cast(
                 R,
-                _invoke_declared(method, image, forwarded_args, forwarded_kwargs),
+                method(image, *forwarded_args, **forwarded_kwargs)
+                if image is instance
+                else _invoke_declared(
+                    method,
+                    image,
+                    forwarded_args,
+                    forwarded_kwargs,
+                ),
             )
             return _transport_result(result, signature.result, route, source_ambient, image.ambient_object(), instance, image)
 
@@ -534,7 +548,14 @@ class ForwardedArrowMethod[Receiver: Arrow, **P, R]:
             )
             result = cast(
                 R,
-                _invoke_declared(method, image, forwarded_args, forwarded_kwargs),
+                method(image, *forwarded_args, **forwarded_kwargs)
+                if image is instance
+                else _invoke_declared(
+                    method,
+                    image,
+                    forwarded_args,
+                    forwarded_kwargs,
+                ),
             )
             return _transport_result(result, signature.result, route, instance.codomain(), image.codomain(), instance, image)
 

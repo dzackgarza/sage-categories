@@ -242,18 +242,6 @@ class PosetMorphism(Arrow):
         assert is_partially_ordered_sets_category(category)
         assert PartiallyOrderedSets().contains_poset(source)
         assert PartiallyOrderedSets().contains_poset(target)
-        if member.ambient_object() is not source:
-            route = (
-                member.ambient_object()
-                .category()
-                .structural_route_to(
-                    source.category(),
-                )
-            )
-            image_member = member._element_image_along(route)
-            assert is_poset_element(image_member)
-            assert image_member.ambient_object() is source
-            member = image_member
         assert member.ambient_object() is source
         forgetful_functor = PartiallyOrderedSets().forgetful_functor()
         set_member = forgetful_functor.on_element(source, member)

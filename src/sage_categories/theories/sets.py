@@ -92,7 +92,6 @@ from sage_categories.theories.set_coproducts import (
     CoproductsOfSetsCategory,
     SetCoproductHomCategory,
     SetCoproductInclusionFunctor,
-    SetCoproductMorphism,
     SetCoproductObject,
     is_coproducts_of_sets_category,
 )
@@ -155,7 +154,6 @@ from sage_categories.theories.set_products import (
     ProductsOfSetsCategory,
     SetProductHomCategory,
     SetProductInclusionFunctor,
-    SetProductMorphism,
     SetProductObject,
     is_products_of_sets_category,
 )
@@ -241,7 +239,6 @@ __all__ = (
     "SetColimitObject",
     "SetCoproductHomCategory",
     "SetCoproductInclusionFunctor",
-    "SetCoproductMorphism",
     "SetCoproductObject",
     "SetElement",
     "SetElementFamily",
@@ -269,7 +266,6 @@ __all__ = (
     "SetObject",
     "SetProductHomCategory",
     "SetProductInclusionFunctor",
-    "SetProductMorphism",
     "SetProductObject",
     "SetSubset",
     "Sets",

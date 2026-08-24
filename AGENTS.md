@@ -609,6 +609,19 @@ If the category graph or method owner is wrong, stop runtime debugging.
 Fix `Cat`, the arrow categories, the method compiler, and `Sets()` in dependency order.
 During that migration, move each required behavior to its new owner before deleting its old implementation.
 
+For a sweeping architectural refactor, make the final ownership graph and dependency direction correct first.
+Do not chase type errors that exist only because the refactor is incomplete.
+Complete the category, functor, compiler, and constructor transition before resolving remaining diagnostics.
+
+If the incomplete architecture needs a checkpoint, use the sanctioned red-commit pathway:
+
+```bash
+ai-review-ci red-commit --issue <owning-issue> -m "<message>"
+```
+
+The red commit skips verification for the incomplete state.
+Never weaken the architecture or add temporary repairs merely to make an intermediate state pass.
+
 Continue while the next in-scope action is clear and safe.
 Do not stop at an administrative artifact when implementation remains.
 

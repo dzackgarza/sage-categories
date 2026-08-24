@@ -235,20 +235,6 @@ class PosetMorphism(Arrow):
     def _set_implementation(self) -> SetMorphism:
         return self._underlying_function
 
-    def __call__(self, member: PosetElement) -> PosetElement:
-        source = self.domain()
-        target = self.codomain()
-        category = self.base_category()
-        assert is_partially_ordered_sets_category(category)
-        assert PartiallyOrderedSets().contains_poset(source)
-        assert PartiallyOrderedSets().contains_poset(target)
-        assert member.ambient_object() is source
-        forgetful_functor = PartiallyOrderedSets().forgetful_functor()
-        set_member = forgetful_functor.on_element(source, member)
-        assert SetElements().contains_set_element(set_member)
-        image = self._underlying_function(set_member)
-        return target.element(image)
-
     def is_order_preserving(self) -> bool:
         return True
 
@@ -489,13 +475,25 @@ class PartiallyOrderedSetsCategory(Category):
         from sage_categories.theories.set_subobjects import _predicate_relation
 
         assert underlying_set in Sets()
-        return self.ObjectType(
-            category=self,
-            underlying_set=underlying_set,
-            relation=_predicate_relation(
+        return self.from_theorem(
+            underlying_set,
+            _predicate_relation(
                 underlying_set,
                 lambda left, right: left == right,
             ),
+        )
+
+    def from_theorem(
+        self,
+        underlying_set: SetObject,
+        relation: OrderRelation,
+    ) -> PosetObject:
+        """Construct a poset whose order laws follow from its owner."""
+        assert underlying_set in Sets()
+        return self.ObjectType(
+            category=self,
+            underlying_set=underlying_set,
+            relation=relation,
         )
 
     def _ordinal_order(
@@ -509,11 +507,7 @@ class PartiallyOrderedSetsCategory(Category):
         by the well-ordering of ordinals (Sierpiński §II.7).  This is a
         theorem-backed entry path for infinite ordinal-valued sets.
         """
-        return self.ObjectType(
-            category=self,
-            underlying_set=underlying_set,
-            relation=relation,
-        )
+        return self.from_theorem(underlying_set, relation)
 
     def _hom_category_type(self) -> type[HomCategory]:
         return PosetHomCategory

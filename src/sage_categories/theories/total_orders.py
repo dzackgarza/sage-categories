@@ -130,12 +130,6 @@ class TotallyOrderedSetsCategory(FullSubcategory):
     def contains_total_order(self, candidate: MathematicalObject) -> bool:
         return candidate in self
 
-    def underlying_poset(self, source: MathematicalObject) -> PosetObject:
-        assert source in self
-        image = self.inclusion()(source)
-        assert PartiallyOrderedSets().contains_poset(image)
-        return image
-
     def Finite(self) -> FiniteTotallyOrderedSetsCategory:
         if self._finite_orders is None:
             self._finite_orders = FiniteTotallyOrderedSetsCategory(self)

@@ -425,7 +425,7 @@ def test_poset_structural_membership_and_iteration() -> None:
     assert (c < a) is False
     assert a <= a
 
-    poset = TotallyOrderedSets().underlying_poset(ordered)
+    poset = TotallyOrderedSets().inclusion()(ordered)
     poset_members = list(poset)
     assert len(poset_members) == 3
     for p_elem in poset_members:

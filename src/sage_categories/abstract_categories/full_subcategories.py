@@ -168,12 +168,38 @@ class FullSubcategoryHomCategory(HomCategory):
         value = registered_value(candidate)
         if value is None:
             return False
-        ambient_candidate = value._ambient_implementation()
+        category = self.full_subcategory()
+        if not category.contains_arrow(value):
+            return False
+        ambient = category.ambient_category()
+        if value.base_category() is ambient:
+            ambient_candidate = value
+        elif value.base_category().is_subcategory(ambient):
+            from sage_categories.compiler import category_compiler
+
+            route = category_compiler().implementation_route(
+                value.base_category(),
+                ambient,
+            )
+            ambient_candidate = value._morphism_image_along(route)
+        else:
+            return False
         return ambient_candidate in self.ambient_hom_category()
 
     def __call__(self, arrow: Arrow) -> Arrow:
         assert arrow in self
-        return self.full_subcategory()._refine_arrow(self, arrow._ambient_implementation())
+        ambient = self.full_subcategory().ambient_category()
+        if arrow.base_category() is ambient:
+            ambient_arrow = arrow
+        else:
+            from sage_categories.compiler import category_compiler
+
+            route = category_compiler().implementation_route(
+                arrow.base_category(),
+                ambient,
+            )
+            ambient_arrow = arrow._morphism_image_along(route)
+        return self.full_subcategory()._refine_arrow(self, ambient_arrow)
 
     def identity(self, value: MathematicalObject | None = None) -> Arrow:
         assert value is None

@@ -85,8 +85,8 @@ ci-provision-sage:
     # The checkout under test, not whatever version the image happened to carry.
     # This Sage's CLI takes only -c and a file; the environment's pip is reached
     # through its Python, which is the spelling the QC profile uses too.
-    printf 'sagemath\n' | docker exec -i -w "${workspace}" sage-env \
-        /sage/.venv/bin/uv pip install --exclude /dev/stdin \
+    docker exec -i -w "${workspace}" sage-env \
+        /sage/.venv/bin/uv pip install --exclude .github/uv-excludes.txt \
         --python /sage/.venv/bin/python -e .
     # The CI tier measures coverage with the Sage interpreter's own Python, so
     # the tool has to live in that environment rather than on the runner.

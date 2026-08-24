@@ -36,7 +36,11 @@ class SetsCategory(Category):
             )
 
         class ObjectType(Implementation):
-            """Implement the operations introduced by known finiteness."""
+            """Implement only the operations introduced by known finiteness.
+
+            No initializer repeats set construction. The kernel-owned inclusion
+            supplies the canonical ``Sets().ObjectType`` image.
+            """
 
             def cardinality_parity(self) -> Proposition:
                 """Return the proposition that the cardinality is even."""

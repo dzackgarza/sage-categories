@@ -14,6 +14,10 @@ its subset-of-a-product catalogue is not a public poset surface.
 The kernel-owned projection supplies its object, arrow, and element maps from the
 standard defining-data contract. The leaf does not repeat those maps.
 
+In particular, component zero is already an owned object of ``Sets()``. The projection
+extracts that component and uses its canonical set image. No poset method delegates to
+the component by hand.
+
 Elements add no constructor data. The kernel constructs the exact
 ``PartiallyOrderedSets().ElementType`` with its ambient poset and retains its
 canonical image in the projected set.

@@ -124,6 +124,116 @@ Selection therefore has two independent tests:
 
 A functor can satisfy the second test and fail the first. It remains an ordinary functor.
 
+### The construction obligation
+
+A selected functor \(F:C\to D\) connects the category-owned implementation roles:
+
+\[
+C.\mathrm{ObjectType}\longrightarrow D.\mathrm{ObjectType},
+\]
+
+\[
+C.\mathrm{ElementType}(X)\longrightarrow D.\mathrm{ElementType}(F(X)),
+\]
+
+and
+
+\[
+C.\mathrm{ArrowType}(X,Y)
+\longrightarrow
+D.\mathrm{ArrowType}(F(X),F(Y)).
+\]
+
+The element map is required only when the mathematical functor acts on elements. Each
+map produces the category-owned implementation in the codomain. It never produces a
+backend value or an unnamed Python wrapper.
+
+The object map can use any valid public constructor route owned by \(D\). The arrow and
+element maps use the corresponding category-owned constructors. The functor fixes these
+maps when it is defined. The runtime does not search among constructors.
+
+The conceptual constructor contract is:
+
+| Source role | Required image | Constructor responsibility |
+| --- | --- | --- |
+| `X: C.ObjectType` | `F(X): D.ObjectType` | Construct from `X` or the semantic data selected by \(F\) |
+| `x: C.ElementType` over `X` | `F(x): D.ElementType` over `F(X)` | Use the target ambient object's element construction |
+| `f: C.ArrowType` from `X` to `Y` | `F(f): D.ArrowType` from `F(X)` to `F(Y)` | Use the target Hom constructor with image data defined by \(F\) |
+
+This table states mathematical inputs and outputs. It does not prescribe exact Python
+call syntax. Schematically, the object case can look like `D(X)`. The arrow case can look
+like `Hom_D(F(X), F(Y))(F_data(f))`.
+
+This is the construction obligation behind inherited methods. The compiler transports a
+receiver from `C.ObjectType` to its canonical `D.ObjectType` image. It transports each
+mathematical argument through the same functor. It then calls the method owned by \(D\).
+It reconstructs a source-owned result when the method's result role requires that step.
+
+This process is not equivalent to assigning forwarding methods in the leaf. A leaf never
+writes code with the following conceptual repetition:
+
+```python
+def inherited_operation(self, argument):
+    return F(self).inherited_operation(F(argument))
+```
+
+The selected functor and compiler already contain that general mechanism.
+
+### Standard functors discharge standard obligations
+
+An inclusion functor states that each source object, arrow, and applicable element already
+has the codomain structure. Conceptually, its object map is the canonical result of
+regarding `X: C.ObjectType` as an object of \(D\). This can be written schematically as
+`D(X)`.
+
+That notation does not require the same Python instance in both categories. The kernel
+can retain a distinct canonical `D.ObjectType` image. It can also reuse one instance when
+the category-owned representation permits this. The public functor remains the inclusion
+in both cases.
+
+The kernel implements the role maps for `SubcategoryInclusionFunctor`,
+`FullSubcategoryInclusionFunctor`, and `WideSubcategoryInclusionFunctor`. Their leaves do
+not define forwarding constructors, element conversions, or arrow conversions.
+
+Selecting one of these inclusion functors asserts the standard inclusion contract. The
+kernel can regard each category-owned source role as the corresponding codomain role. If
+that contract does not hold, the declaration is not an inclusion. Leaf adapters cannot
+make it one.
+
+For example, `Sets().Finite()` introduces no new underlying set data. Its `ObjectType`
+does not need an initializer that repeats set construction. Construction into the finite
+subcategory creates the strongest finite-set implementation. The inclusion gives that
+object its canonical image in `Sets()` through the existing set construction contract.
+
+A product projection uses the standard tuple-presentation contract. If
+`C.ObjectType.defining_data[i]` is an object of \(D\), then
+`ProductProjectionFunctor(i, C, D)` selects that object. The kernel can normalize it
+through the category-owned constructor for \(D\). The leaf does not write an accessor
+functor, copy methods from that component, or define role-by-role forwarding.
+
+Selecting this projection asserts the same contract for every source object. Component
+`i` supplies the codomain object. The declared presentation supplies the corresponding
+element and arrow images when those roles are used. If the presentation lacks these
+maps, the projection cannot supply the affected inherited catalogue.
+
+Thus the projection does not mean this leaf-level assignment:
+
+```python
+X.d_method = X.defining_data[i].d_method
+```
+
+It means that inherited calls use the canonical codomain image selected by the projection.
+
+If no standard functor expresses the mathematics, the category can define a new functor
+\(F:C\to D\). Its object map can choose any public constructor owned by \(D\). Its arrow
+and element maps can use the corresponding public constructors. These maps define one
+bespoke mathematical functor. They do not form a backend registry or automatic dispatch
+system.
+
+Most Sage `super_categories()` edges require no bespoke functor implementation here. A
+leaf selects the correct kernel-owned inclusion, projection, or forgetting functor. The
+more precise functor name records the mathematical distinction that Sage leaves implicit.
+
 ## Kernel-owned standard functors
 
 The kernel implements standard categorical functors once. Leaves instantiate and select

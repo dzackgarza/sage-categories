@@ -42,8 +42,17 @@ outside this tuple.
 
 For each inherited operation, the selected functor must construct every receiver and
 argument image that the operation needs. It must also support any required result
-reconstruction. The compiler does not invent missing maps. See the selection contract in
-[functor.md](functor.md#selection-is-an-inheritance-declaration).
+reconstruction. The compiler does not invent missing maps. See
+[the construction obligation](functor.md#the-construction-obligation).
+
+The functor connects the category-owned implementation roles. Its object map constructs
+the canonical target `ObjectType`. Its arrow and element maps do the same for their roles.
+A bespoke functor can use any public constructor route owned by its codomain. The functor
+fixes that route; the runtime does not search for one.
+
+Standard inclusions and projections already implement this contract in the kernel. The
+leaf only selects them. It does not add forwarding initializers, conversion methods, or
+delegating copies of inherited operations.
 
 For a structured object with several defining components, select only the component used
 as its inherited public structure. The existence of another projection does not make that

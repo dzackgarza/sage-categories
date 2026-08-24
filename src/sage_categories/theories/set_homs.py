@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterator, Mapping
 from itertools import product as cartesian_product
-from typing import Annotated, Any
+from typing import Any
 
 from sage_categories.abstract_categories.functors import (
     DiscreteHomCategory,
@@ -35,7 +35,6 @@ from sage_categories.abstract_categories.hom_categories import (
     MonomorphismHomCategory,
 )
 from sage_categories.category import Category
-from sage_categories.descriptors import ParameterRole
 from sage_categories.theories.cardinals import (
     Cardinal,
     Cardinals,
@@ -94,12 +93,9 @@ class SetHomCategory(HomCategory, SetObject):
 
     def __call__(
         self,
-        action: Annotated[
-            Callable[[SetElement], SetElement]
-            | Mapping[SetElement, SetElement]
-            | SetMorphism,
-            ParameterRole.VALUE,
-        ],
+        action: Callable[[SetElement], SetElement]
+        | Mapping[SetElement, SetElement]
+        | SetMorphism,
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,

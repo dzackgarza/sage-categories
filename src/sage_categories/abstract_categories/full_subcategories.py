@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Annotated, Any, TypeIs
+from typing import TYPE_CHECKING, Any, TypeIs
 
 from sage_categories.assumptions import Hypothesis, HypothesisContext
 from sage_categories.abstract_categories.functors import (
@@ -16,7 +16,6 @@ from sage_categories.abstract_categories.hom_categories import (
     HomCategoryFamily,
 )
 from sage_categories.category import Category
-from sage_categories.descriptors import ParameterRole
 from sage_categories.values import (
     Arrow,
     Decision,
@@ -249,8 +248,8 @@ class FullSubcategory(Category):
     def refine_with_hypothesis(
         self,
         ambient: MathematicalObject,
-        hypothesis: Annotated[Hypothesis, ParameterRole.VALUE],
-        assumptions: Annotated[HypothesisContext, ParameterRole.VALUE],
+        hypothesis: Hypothesis,
+        assumptions: HypothesisContext,
     ) -> MathematicalObject:
         assert hypothesis.category() is self
         assert hypothesis.candidate() is ambient
@@ -331,31 +330,31 @@ class FullSubcategory(Category):
 
     def _products_of_category(
         self,
-        functor: Annotated[Functor, ParameterRole.VALUE],
+        functor: Functor,
     ) -> Category:
         return self._ambient_category._products_of_category(functor)
 
     def _coproducts_of_category(
         self,
-        functor: Annotated[Functor, ParameterRole.VALUE],
+        functor: Functor,
     ) -> Category:
         return self._ambient_category._coproducts_of_category(functor)
 
     def _limits_of_category(
         self,
-        functor: Annotated[Functor, ParameterRole.VALUE],
+        functor: Functor,
     ) -> Category:
         return self._ambient_category._limits_of_category(functor)
 
     def _colimits_of_category(
         self,
-        functor: Annotated[Functor, ParameterRole.VALUE],
+        functor: Functor,
     ) -> Category:
         return self._ambient_category._colimits_of_category(functor)
 
     def chosen_limit(
         self,
-        diagram: Annotated[Functor, ParameterRole.VALUE],
+        diagram: Functor,
     ) -> ProductPresentation:
         from sage_categories.abstract_categories.functors import is_functor
         from sage_categories.abstract_categories.products import Cone, Product
@@ -394,7 +393,7 @@ class FullSubcategory(Category):
 
     def chosen_colimit(
         self,
-        diagram: Annotated[Functor, ParameterRole.VALUE],
+        diagram: Functor,
     ) -> CoproductPresentation:
         from sage_categories.abstract_categories.functors import is_functor
         from sage_categories.abstract_categories.products import Cocone, Coproduct

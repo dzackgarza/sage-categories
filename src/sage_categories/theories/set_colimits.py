@@ -22,7 +22,6 @@ from sage_categories.abstract_categories.products import (
     ColimitsOfCategory,
 )
 from sage_categories.category import Category
-from sage_categories.descriptors import ParameterRole
 from sage_categories.theories.cardinals import (
     Cardinal,
     Cardinals,

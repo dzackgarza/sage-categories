@@ -11,7 +11,6 @@ from collections.abc import Callable
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
-from sage_categories.descriptors import ParameterRole
 from sage_categories.values import (
     UNKNOWN,
     Decision,

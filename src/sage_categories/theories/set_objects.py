@@ -9,13 +9,12 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterator
 from itertools import count
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import TYPE_CHECKING, Any
 
 from sage_categories.abstract_categories.hom_categories import (
     is_restricted_hom_category,
 )
 from sage_categories.category import Category
-from sage_categories.descriptors import ParameterRole
 from sage_categories.theories.cardinals import (
     Aleph0,
     Cardinal,
@@ -78,7 +77,7 @@ class SetObject(MathematicalObject):
 
     def element(
         self,
-        value: Annotated[MathematicalObject, ParameterRole.VALUE],
+        value: MathematicalObject,
     ) -> SetElement:
         """Return the represented element with semantic value ``value``."""
         assert False, f"{self} has no represented element constructor for {value}"
@@ -213,7 +212,7 @@ class FiniteSetElement(SetElement):
             ambient_object=ambient_object,
         )
 
-    def value(self) -> Annotated[MathematicalObject, ParameterRole.VALUE]:
+    def value(self) -> MathematicalObject:
         return self._value
 
     def __repr__(self) -> str:
@@ -251,7 +250,7 @@ class FiniteSetObject(SetObject):
 
     def element(
         self,
-        value: Annotated[MathematicalObject, ParameterRole.VALUE],
+        value: MathematicalObject,
     ) -> FiniteSetElement:
         assert value in self._values
         return next(member for member in self._members if member.value() == value)

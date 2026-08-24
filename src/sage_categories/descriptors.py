@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import ast
 import inspect
+import types
 import typing
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
@@ -26,7 +26,7 @@ class ImplementationRole(Enum):
 
 
 class ParameterRole(Enum):
-    """The declared transport role of one method parameter or result."""
+    """A compiler-owned transport role."""
 
     VALUE = "value"
     OBJECT = "object"
@@ -65,29 +65,47 @@ R = TypeVar("R")
 Value = TypeVar("Value")
 
 
-def _role_name(annotation: ast.expr) -> str:
-    assert isinstance(annotation, ast.Attribute)
-    assert isinstance(annotation.value, ast.Name)
-    assert annotation.value.id == "ParameterRole"
-    return annotation.attr
-
-
-def _declared_role(annotation: object, location: str) -> ParameterRole:
-    if isinstance(annotation, str):
-        expression = ast.parse(annotation, mode="eval").body
-        assert isinstance(expression, ast.Subscript), location
-        assert isinstance(expression.value, ast.Name), location
-        assert expression.value.id == "Annotated", location
-        arguments = expression.slice
-        assert isinstance(arguments, ast.Tuple), location
-        assert len(arguments.elts) == 2, location
-        return ParameterRole[_role_name(arguments.elts[1])]
-    assert typing.get_origin(annotation) is typing.Annotated, location
-    arguments = typing.get_args(annotation)
-    assert len(arguments) == 2
-    role = arguments[1]
-    assert isinstance(role, ParameterRole)
-    return role
+def _annotation_role(
+    annotation: object,
+    receiver: ParameterRole,
+    method_name: str,
+) -> ParameterRole:
+    """Resolve one exact mathematical type inside the compiler."""
+    if annotation is typing.Self:
+        return receiver
+    if annotation is None or annotation is types.NoneType:
+        return ParameterRole.VALUE
+    if annotation is typing.Any:
+        return ParameterRole.VALUE
+    if isinstance(annotation, type):
+        if issubclass(annotation, Arrow):
+            return ParameterRole.ARROW
+        if issubclass(annotation, MathematicalElement):
+            return ParameterRole.ELEMENT
+        if issubclass(annotation, MathematicalObject):
+            return ParameterRole.OBJECT
+        return ParameterRole.VALUE
+    origin = typing.get_origin(annotation)
+    assert origin is not typing.Annotated
+    if origin in (typing.Union, types.UnionType):
+        roles = {
+            _annotation_role(argument, receiver, method_name)
+            for argument in typing.get_args(annotation)
+        }
+        assert len(roles) == 1, f"{annotation!r} combines transport roles"
+        return roles.pop()
+    if origin is Iterator:
+        assert method_name == "__iter__", (
+            f"{annotation!r} is traversal output, not a mathematical collection"
+        )
+        arguments = typing.get_args(annotation)
+        assert len(arguments) == 1
+        assert (
+            _annotation_role(arguments[0], receiver, method_name)
+            is ParameterRole.ELEMENT
+        )
+        return ParameterRole.ELEMENT_ITERATOR
+    return ParameterRole.VALUE
 
 
 def method_signature(
@@ -96,6 +114,8 @@ def method_signature(
 ) -> MethodSignature:
     """Return the method's complete declared transport roles."""
     signature = inspect.signature(method)
+    annotations = typing.get_type_hints(method, include_extras=True)
+    assert "return" in annotations, f"{method.__qualname__} has no mathematical result type"
     parameters = tuple(signature.parameters.values())
     assert parameters
     receiver = {
@@ -103,18 +123,18 @@ def method_signature(
         ImplementationRole.ELEMENT: ParameterRole.ELEMENT,
         ImplementationRole.ARROW: ParameterRole.ARROW,
     }[implementation_role]
-    assert _declared_role(
-        parameters[0].annotation,
-        f"{method.__qualname__} receiver",
-    ) is receiver, f"{method.__qualname__} receiver role"
     positional: list[ParameterRole] = []
     keyword: list[tuple[str, ParameterRole]] = []
     variadic: ParameterRole | None = None
     keywords: ParameterRole | None = None
     for parameter in parameters[1:]:
-        role = _declared_role(
-            parameter.annotation,
-            f"{method.__qualname__} parameter {parameter.name}",
+        assert parameter.name in annotations, (
+            f"{method.__qualname__} parameter {parameter.name} has no mathematical type"
+        )
+        role = _annotation_role(
+            annotations[parameter.name],
+            receiver,
+            method.__name__,
         )
         if parameter.kind is inspect.Parameter.VAR_POSITIONAL:
             variadic = role
@@ -133,9 +153,10 @@ def method_signature(
         tuple(keyword),
         variadic,
         keywords,
-        _declared_role(
-            signature.return_annotation,
-            f"{method.__qualname__} result",
+        _annotation_role(
+            annotations["return"],
+            receiver,
+            method.__name__,
         ),
     )
 
@@ -199,6 +220,8 @@ def _forward_value(
     if role is ParameterRole.OBJECT:
         mathematical_object = cast(MathematicalObject, value)
         value_category = mathematical_object.category()
+        if not value_category.is_subcategory(source_category):
+            return value
         if value_category is source_category:
             value_route = route
         else:

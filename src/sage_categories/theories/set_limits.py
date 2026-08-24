@@ -92,11 +92,11 @@ class LimitSet(ProductSet):
 
         return self._projection(_object_set_element(self.diagram().domain(), index))
 
-    def cardinality(self) -> Cardinal:
+    def _cardinality_(self) -> Cardinal:
         # A limit is the compatible part of its product. When that product is
         # finite the limit is finite too, and membership decides each candidate,
         # so counting supplies the cardinality no construction formula gives.
-        declared = super().cardinality()
+        declared = super()._cardinality_()
         if declared != UnknownCardinality():
             return declared
         index_set = self.index_set()
@@ -181,7 +181,7 @@ class SetLimitObject(LimitObject):
         self._compatible_elements.add(id(member))
         return member
 
-    def cardinality(self) -> Cardinal:
+    def _cardinality_(self) -> Cardinal:
         declared = self._limit_set.cardinality()
         if declared != UnknownCardinality():
             return declared

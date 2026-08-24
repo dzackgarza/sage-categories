@@ -9,7 +9,9 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterator
 from itertools import count
-from typing import TYPE_CHECKING, Any
+from typing import Any
+
+import sage_categories
 
 from sage_categories.abstract_categories.hom_categories import (
     is_restricted_hom_category,
@@ -30,29 +32,11 @@ from sage_categories.values import (
     registered_value,
 )
 
-if TYPE_CHECKING:
-    from sage_categories.theories.posets import (
-        PosetObject,
-    )
-
-
 from sage_categories.theories.set_elements import (
     MembershipPredicate,
     SetElement,
     SetElements,
 )
-
-if TYPE_CHECKING:
-    from sage_categories.theories.set_category import (
-        FiniteSetsCategory,
-    )
-    from sage_categories.theories.set_coproducts import SetCoproductObject
-    from sage_categories.theories.set_homs import SetHomCategory
-    from sage_categories.theories.set_products import SetProductObject
-    from sage_categories.theories.set_subobjects import (
-        SetSubset,
-    )
-
 
 class SetObject(MathematicalObject):
     """The implementation shared by arbitrary owned sets."""
@@ -64,11 +48,14 @@ class SetObject(MathematicalObject):
         cardinality: Cardinal,
     ) -> None:
         self._cardinality = cardinality
-        self._subset_poset: PosetObject | None = None
+        self._subset_poset: sage_categories.theories.posets.PosetObject | None = None
         super().__init__(category=category)
 
     def membership(self, member: SetElement) -> Decision:
         """Return the represented membership decision for ``member``."""
+        return self._membership_(member)
+
+    def _membership_(self, member: SetElement) -> Decision:
         assert False, f"{self} has no represented membership predicate"
 
     def element(
@@ -76,6 +63,9 @@ class SetObject(MathematicalObject):
         value: MathematicalObject,
     ) -> SetElement:
         """Return the represented element with semantic value ``value``."""
+        return self._element_(value)
+
+    def _element_(self, value: MathematicalObject) -> SetElement:
         assert False, f"{self} has no represented element constructor for {value}"
 
     def __contains__(self, candidate: Any) -> bool:
@@ -87,12 +77,15 @@ class SetObject(MathematicalObject):
         return answer
 
     def cardinality(self) -> Cardinal:
+        return self._cardinality_()
+
+    def _cardinality_(self) -> Cardinal:
         return self._cardinality
 
     def Hom(
         self,
         target: MathematicalObject,
-    ) -> SetHomCategory:
+    ) -> sage_categories.theories.set_homs.SetHomCategory:
         from sage_categories.theories.set_category import Sets
 
         assert Sets().contains_set(target)
@@ -111,23 +104,32 @@ class SetObject(MathematicalObject):
         return self.cardinality().is_uncountable()
 
     def __iter__(self) -> Iterator[SetElement]:
+        return self._set_iterator_()
+
+    def _set_iterator_(self) -> Iterator[SetElement]:
         assert False, f"{self} has no chosen enumeration"
 
-    def exponential(self, exponent: SetObject) -> SetHomCategory:
+    def exponential(
+        self,
+        exponent: SetObject,
+    ) -> sage_categories.theories.set_homs.SetHomCategory:
         from sage_categories.theories.set_constructions import ExponentialOfSets
 
         return ExponentialOfSets(self, exponent)
 
-    def __pow__(self, exponent: SetObject) -> SetHomCategory:
+    def __pow__(
+        self,
+        exponent: SetObject,
+    ) -> sage_categories.theories.set_homs.SetHomCategory:
 
         return self.exponential(exponent)
 
-    def powerset(self) -> SetHomCategory:
+    def powerset(self) -> sage_categories.theories.set_homs.SetHomCategory:
         from sage_categories.theories.set_constructions import PowerSet
 
         return PowerSet(self)
 
-    def subset_poset(self) -> PosetObject:
+    def subset_poset(self) -> sage_categories.theories.posets.PosetObject:
         from sage_categories.theories.set_subobjects import SubsetsOfSet
 
         if self._subset_poset is None:
@@ -163,7 +165,7 @@ class SetObject(MathematicalObject):
     def subset_from(
         self,
         predicate: MembershipPredicate,
-    ) -> SetSubset:
+    ) -> sage_categories.theories.set_subobjects.SetSubset:
         from sage_categories.theories.set_constructions import PowerSet
 
         return PowerSet(self).from_predicate(predicate)
@@ -172,7 +174,7 @@ class SetObject(MathematicalObject):
         self,
         predicate: MembershipPredicate,
         cardinality: Cardinal,
-    ) -> SetSubset:
+    ) -> sage_categories.theories.set_subobjects.SetSubset:
         from sage_categories.theories.set_constructions import PowerSet
 
         return PowerSet(self).from_predicate_with_cardinality(
@@ -180,12 +182,18 @@ class SetObject(MathematicalObject):
             cardinality,
         )
 
-    def cartesian_product(self, *others: SetObject) -> SetProductObject:
+    def cartesian_product(
+        self,
+        *others: SetObject,
+    ) -> sage_categories.theories.set_products.SetProductObject:
         from sage_categories.theories.set_constructions import CartesianProductOfSets
 
         return CartesianProductOfSets((self, *others))
 
-    def disjoint_union(self, *others: SetObject) -> SetCoproductObject:
+    def disjoint_union(
+        self,
+        *others: SetObject,
+    ) -> sage_categories.theories.set_coproducts.SetCoproductObject:
         from sage_categories.theories.set_constructions import DisjointUnionOfSets
 
         return DisjointUnionOfSets((self, *others))
@@ -239,16 +247,16 @@ class FiniteSetObject(SetObject):
             for value in values
         )
 
-    def membership(self, member: SetElement) -> Decision:
+    def _membership_(self, member: SetElement) -> Decision:
         return member.ambient_set() is self
 
-    def __iter__(self) -> Iterator[SetElement]:
+    def _set_iterator_(self) -> Iterator[SetElement]:
         return iter(self._members)
 
     def _represented_members(self) -> frozenset[SetElement]:
         return self._members
 
-    def element(
+    def _element_(
         self,
         value: MathematicalObject,
     ) -> FiniteSetElement:
@@ -301,10 +309,10 @@ class NaturalNumbersSet(SetObject):
         self._members: dict[int, NaturalNumberElement] = {}
         super().__init__(category=Sets(), cardinality=Aleph0())
 
-    def membership(self, member: SetElement) -> Decision:
+    def _membership_(self, member: SetElement) -> Decision:
         return member.ambient_set() is self
 
-    def element(self, ordinal_value: MathematicalObject) -> NaturalNumberElement:
+    def _element_(self, ordinal_value: MathematicalObject) -> NaturalNumberElement:
         from sage_categories.theories.ordinals import OrdinalKind, Ordinals
 
         assert Ordinals().contains_ordinal(ordinal_value)
@@ -319,7 +327,7 @@ class NaturalNumbersSet(SetObject):
             self._members[position] = member
         return member
 
-    def __iter__(self) -> Iterator[SetElement]:
+    def _set_iterator_(self) -> Iterator[SetElement]:
         from sage_categories.theories.ordinals import ordinal
 
         return iter(self.element(ordinal(index)) for index in count())

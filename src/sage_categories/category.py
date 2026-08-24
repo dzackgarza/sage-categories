@@ -77,7 +77,7 @@ class Category(MathematicalObject):
             from sage_categories.abstract_categories.cat import Cat
 
             category = Cat()
-        super().__init__(category=category)
+        MathematicalObject.__init__(self, category=category)
         self._initialize_category(object_type, element_type, arrow_type)
 
     def _initialize_category(

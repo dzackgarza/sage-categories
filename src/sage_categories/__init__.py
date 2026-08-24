@@ -48,6 +48,14 @@ from sage_categories.theories.cardinals import (
     cardinal,
     continuum,
 )
+from sage_categories.theories.posets import (
+    FinitePosets,
+    FiniteTotallyOrderedSets,
+    PartiallyOrderedSets,
+    PosetMorphism,
+    PosetObject,
+    TotallyOrderedSets,
+)
 from sage_categories.theories.number_sets import (
     QQ,
     RR,
@@ -68,14 +76,6 @@ from sage_categories.theories.ordinals import (
     omega,
     omega0,
     ordinal,
-)
-from sage_categories.theories.posets import (
-    FinitePosets,
-    FiniteTotallyOrderedSets,
-    PartiallyOrderedSets,
-    PosetMorphism,
-    PosetObject,
-    TotallyOrderedSets,
 )
 from sage_categories.theories.sets import (
     Aleph,

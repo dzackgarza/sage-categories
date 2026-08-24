@@ -71,6 +71,8 @@ def _annotation_role(
     method_name: str,
 ) -> ParameterRole:
     """Resolve one exact mathematical type inside the compiler."""
+    if isinstance(annotation, typing.TypeAliasType):
+        return _annotation_role(annotation.__value__, receiver, method_name)
     if annotation is typing.Self:
         return receiver
     if annotation is None or annotation is types.NoneType:

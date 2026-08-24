@@ -149,7 +149,7 @@ class SetHomCategory(HomCategory, SetObject):
     def membership(self, candidate: SetElement) -> Decision:
         return candidate in self
 
-    def cardinality(self) -> Cardinal:
+    def _cardinality_(self) -> Cardinal:
         from sage_categories.theories.set_category import Sets
 
         domain = self.domain()
@@ -286,6 +286,13 @@ class SetHomCategory(HomCategory, SetObject):
             assert SetElements().contains_set_element(value)
             represented.add(value)
         return self._from_members(frozenset(represented))
+
+    def from_enumerated_image(self, function: SetMorphism) -> SetSubset:
+        assert self.is_power_set()
+        assert function.codomain() is self.exponent()
+        return self._from_members(
+            frozenset(function(member) for member in function.domain()),
+        )
 
     def _from_members(self, members: frozenset[SetElement]) -> SetSubset:
         assert self.is_power_set()

@@ -77,6 +77,8 @@ class SubsetSetObject(SetObject):
         cardinality: Cardinal,
         iterator: SetIterator | None,
     ) -> None:
+        from sage_categories.theories.set_category import Sets
+
         self._base_set = base_set
         self._predicate = predicate
         self._iterator = iterator
@@ -84,7 +86,7 @@ class SubsetSetObject(SetObject):
         self._base_elements: dict[int, SetElement] = {}
         super().__init__(category=Sets(), cardinality=cardinality)
 
-    def element(self, base_element: SetElement) -> SubsetElement:
+    def _element_(self, base_element: SetElement) -> SubsetElement:
         assert base_element.ambient_set() is self._base_set
         assert self._predicate(base_element) is True
         key = id(base_element)
@@ -101,10 +103,10 @@ class SubsetSetObject(SetObject):
         assert base_element is not None
         return base_element
 
-    def membership(self, member: SetElement) -> Decision:
+    def _membership_(self, member: SetElement) -> Decision:
         return member.ambient_set() is self
 
-    def __iter__(self) -> Iterator[SetElement]:
+    def _set_iterator_(self) -> Iterator[SetElement]:
         assert self._iterator is not None, f"{self} has no chosen enumeration"
         return iter(self.element(member) for member in self._iterator())
 

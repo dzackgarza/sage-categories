@@ -18,7 +18,6 @@ from sage_categories.theories.cardinals import (
     cardinal,
 )
 from sage_categories.theories.set_category import (
-    FiniteSet,
     Sets,
     _set_morphism,
 )
@@ -299,8 +298,7 @@ def _image_subobject(
     if function.is_surjective() is True:
         return PowerSet(codomain).top()
     if domain.is_finite() is True:
-        image = FiniteSet(frozenset(function(member) for member in domain))
-        return PowerSet(codomain).from_finite_set(image)
+        return PowerSet(codomain).from_enumerated_image(function)
     predicate = lambda member: _imagemembership(function, member)
     if function.is_injective() is True:
         return PowerSet(codomain).from_predicate_with_cardinality(

@@ -34,6 +34,7 @@ from sage_categories.values import (
     Decision,
     MathematicalElement,
     MathematicalObject,
+    TransportedArrow,
     TransportedElement,
     registered_element,
     registered_value,

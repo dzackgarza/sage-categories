@@ -1,6 +1,6 @@
 Yes. My earlier “do not change the category” statement was wrong.
 
-An exact positive result should self-refine the owned object. Its mathematical identity remains unchanged. Its category and Sage dynamic class become more specific.
+An established positive property should self-refine the owned object. Direct property construction, an active assumption, and an exact computation all establish the same refinement. The object's mathematical identity remains unchanged. Its category and Sage dynamic class become more specific.
 
 ### Predicate resolution
 
@@ -9,9 +9,9 @@ For a property \(P\) with property subcategory \(C_P\), use this order:
 | Current knowledge | Result | Action |
 |---|---|---|
 | \(f\) already lies in \(C_P\) | `True` | The \(C_P\) implementation wins through the MRO |
-| Exact result was cached | Cached result | Reuse it |
-| The active session assumes \(P(f)\) | `True` | Skip computation |
+| The active session assumes \(P(f)\) | `True` | Refine \(f\) into \(C_P\) without computation |
 | The active session assumes \(\neg P(f)\) | `False` | Skip computation |
+| Exact result was cached | Cached result | Reuse it |
 | An exact algorithm proves \(P(f)\) | `True` | Refine \(f\) into \(C_P\) |
 | An exact algorithm disproves \(P(f)\) | `False` | Cache the negative result |
 | Available algorithms cannot decide | `Unknown` | Keep the current category |
@@ -35,7 +35,18 @@ f = Hom(Sets)(A, B)(rule)
 f.is_injective()
 ```
 
-If the computation returns exact `True`, the kernel uses Sage’s category-refinement machinery:
+If the computation returns exact `True`, the kernel uses Sage’s category-refinement machinery. The same refinement also occurs when the user assumes injectivity or constructs the morphism directly in the property category:
+
+```python
+f = Hom(Sets)(A, B)(rule)
+assume(injective(f))
+```
+
+```python
+f = MonoArrows(Sets)(A, B)(rule)
+```
+
+All three routes establish:
 
 \[
 \operatorname{Hom}_{\mathbf{Set}}(A,B)
@@ -59,29 +70,32 @@ It changes the strongest known category and the resulting public method surface.
 
 If surjectivity is later proved, the kernel refines again. It uses the categorical join of the established property categories. In `Sets()`, established injectivity and surjectivity can place the map in the isomorphism category.
 
-### Assumptions versus computations
+### Equivalent refinement routes
 
-A temporary session assumption should short-circuit the query. It should not cause an irreversible refinement by itself.
+An active assumption triggers property refinement without running the decision procedure.
 
 ```python
+f = Hom(Sets)(A, B)(rule)
 assume(injective(f))
-f.is_injective()  # True without computation
 ```
 
-Sage permits assumptions to be forgotten or temporarily scoped. Permanent self-refinement would survive `forget()`. It would then retain category placement whose only support had disappeared.
-
-There are two ways to make the placement durable:
-
-- An exact computation proves the property.
-- The user explicitly constructs or promotes the map into the property category.
-
-Thus:
+This is a shortcut for constructing the same rule in the property category:
 
 ```python
-MonoArrows(Sets)(A, B)(rule)
+f = MonoArrows(Sets)(A, B)(rule)
 ```
 
-trusts injectivity permanently because the user selected that category. This is different from a temporary active assumption about an existing ordinary map.
+The kernel reuses the existing domain, codomain, rule, private engine representation, and structural images. It does not recompute injectivity. It changes the owned morphism's category and dynamic class.
+
+There are three routes to the same placement:
+
+- The user constructs the rule directly in the property category.
+- The active mathematical session assumes the property of an existing morphism.
+- An exact computation establishes the property.
+
+The routes differ only in how the property becomes established. They must use the same kernel refinement operation and produce the same canonical owned morphism.
+
+The active Sage or SymPy session remains the mathematical context. A consumer does not maintain a separate assumption-context object. After refinement, the property-category implementation supplies `True` through the MRO.
 
 ### Negative and unknown results
 
@@ -95,6 +109,6 @@ For expensive alternative procedures, use separate named total methods. Do not a
 
 The corrected invariant is:
 
-> Exact positive knowledge monotonically refines the owned object’s category. Category placement then supplies the predicate through inheritance.
+> Established positive knowledge monotonically refines the owned object’s category. Category placement then supplies the predicate through inheritance.
 
 The private SymPy, Sage, GAP, or other engine value never self-refines. The category-owned public morphism does.

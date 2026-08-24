@@ -5,6 +5,7 @@
 - [Foundational rule](#foundational-rule)
 - [Why Sage supercategories are insufficient](#why-sage-supercategories-are-insufficient)
 - [Selected functors and ordinary functors](#selected-functors-and-ordinary-functors)
+- [Kernel-owned standard functors](#kernel-owned-standard-functors)
 - [Classifying an edge](#classifying-an-edge)
 - [Functor taxonomy](#functor-taxonomy)
 - [Naming rules](#naming-rules)
@@ -56,11 +57,11 @@ hide several different mathematical relations:
 
 | Sage hierarchy use | Required explicit relation |
 | --- | --- |
-| Objects and arrows form a genuine subcategory | `SubcategoryInclusion` |
-| All ambient arrows between selected objects remain | `FullSubcategoryInclusion` |
-| All objects remain and only arrows are restricted | `WideSubcategoryInclusion` |
-| Operations, topology, grading, or chosen data are discarded | A category-owned `forget` functor |
-| One component of a structured object is selected | A construction-owned projection |
+| Objects and arrows form a genuine subcategory | `SubcategoryInclusionFunctor` |
+| All ambient arrows between selected objects remain | `FullSubcategoryInclusionFunctor` |
+| All objects remain and only arrows are restricted | `WideSubcategoryInclusionFunctor` |
+| Operations, topology, grading, or chosen data are discarded | A kernel-owned standard forgetful functor |
+| One component of a structured object is selected | A kernel-owned standard projection |
 | A functorial construction is applied to an existing edge | The induced functor |
 | Objects are selected up to isomorphism | A full-subcategory inclusion for an isomorphism-closed object property |
 | Object properties are intersected inside one category | One inclusion induced by each property implication |
@@ -91,6 +92,34 @@ structure.
 Each category lists only immediate functors. The kernel obtains longer routes by functor
 composition. Diamond resolution follows [resolution.md](resolution.md).
 
+## Kernel-owned standard functors
+
+The kernel implements standard categorical functors once. Leaves instantiate and select
+them. They do not repeat object, element, or arrow maps.
+
+Kernel-owned constructors include:
+
+- `IdentityFunctor`;
+- `SubcategoryInclusionFunctor`;
+- `FullSubcategoryInclusionFunctor`;
+- `WideSubcategoryInclusionFunctor`;
+- `ProductProjectionFunctor`;
+- arrow, comma, slice, and structured-arrow projections;
+- standard forgetful functors determined by a declared structure presentation;
+- restrictions, inverse images, and lifts induced from an existing functor.
+
+For an object presented as a tuple, `ProductProjectionFunctor(i, D, C)` selects component
+`i` of each object and the corresponding component of each arrow. It also acts on
+elements when that component has a mathematical element map.
+
+The tuple returned by `structure_functors()` is not the category's complete functor
+catalogue. It contains only the immediate functors selected to supply inherited public
+structure.
+
+For a poset `(X, R)`, the carrier projection to `X` is selected. A projection to `R`
+does not supply the set surface and is not selected. Sage expresses the same inheritance
+choice by listing only `Sets()` as a supercategory.
+
 ## Classifying an edge
 
 Classify an edge from its mathematical action. Do not classify it from Python identity,
@@ -105,8 +134,8 @@ or arrow predicates.
 | Selected ambient objects | Every ambient arrow between them | Full-subcategory inclusion |
 | Every ambient object | Selected ambient arrows | Wide-subcategory inclusion |
 | Selected ambient objects | Selected ambient arrows | General subcategory inclusion |
-| Objects with extra mathematical structure | Arrows preserving that structure | Named forgetful functor |
-| Tuples, arrows, diagrams, or structured objects | Componentwise arrows | Construction-owned projection |
+| Objects presented as tuples with selected components | Corresponding component arrows | Kernel-owned projection |
+| Objects with an underlying structure not presented as a component | Structure-preserving arrows | Kernel-owned forgetful functor |
 | A second presentation of the same theory | Corresponding arrows | Equivalence or realization functor |
 
 Then ask whether the edge is induced from another functor. Arrow maps, diagram
@@ -129,24 +158,25 @@ only when that direction is the intended public change of structure.
 
 ### Subcategory inclusions
 
-For a genuine subcategory `D` of `C`, use:
+For a genuine subcategory `D` of `C`, use the kernel constructor:
 
 ```python
-iota = SubcategoryInclusion(D, C)
+iota = SubcategoryInclusionFunctor(D, C)
 ```
 
 The functor is faithful. It need not be full. Its object and arrow maps are the stated
 inclusions.
 
 Use this form only when the source objects and arrows are literally a subcategory of the
-target. A faithful forgetful functor is not thereby a `SubcategoryInclusion`.
+target. A faithful forgetful functor is not thereby a
+`SubcategoryInclusionFunctor`.
 
 ### Full-subcategory inclusions
 
-For a full subcategory `D` of `C`, use:
+For a full subcategory `D` of `C`, use the kernel constructor:
 
 ```python
-iota = FullSubcategoryInclusion(D, C)
+iota = FullSubcategoryInclusionFunctor(D, C)
 ```
 
 This inclusion is fully faithful.
@@ -161,10 +191,11 @@ Mathlib models an object property `P` by `P.FullSubcategory`. Its inclusion is
 
 ### Wide-subcategory inclusions
 
-For a subcategory with every ambient object and selected arrows, use:
+For a subcategory with every ambient object and selected arrows, use the kernel
+constructor:
 
 ```python
-iota = WideSubcategoryInclusion(D, C)
+iota = WideSubcategoryInclusionFunctor(D, C)
 ```
 
 The arrow property must contain identities and be closed under composition. Mathlib uses
@@ -175,17 +206,18 @@ The core of `C` is the wide subcategory whose arrows are the isomorphisms of `C`
 
 ### Forgetful functors
 
-Use a forgetful functor when an object carries structure or chosen data that is absent
-from its image. Mirror Mathlib's public names `forget` and `forget₂`:
+Use a standard forgetful functor when the declared structure presentation determines an
+underlying object that is not a tuple component. Mirror Mathlib's public names `forget`
+and `forget₂`.
 
 ```python
-forget = source.forget()
-forget_to_base = source.forget_to_base()
+forget = ForgetfulFunctor(source, target)
 ```
 
-The source category owns each named forgetful functor. The category pair does not
-determine its object and arrow maps. For example, a bimodule can have distinct left and
-right forgetful functors to modules over different rings.
+The kernel owns the standard implementation. The source category selects the exact
+instance. When several underlying structures exist, the declared structure presentation
+selects the route. A category pair alone does not select left or right module structure
+on a bimodule.
 
 Examples include:
 
@@ -207,8 +239,14 @@ a forgetful functor between concrete categories. See
 
 ### Projection functors
 
-Structured categories own projections to their components. Use the construction's name
-instead of one generic projection class.
+The kernel owns standard projections. The source category selects the required instance.
+Use the construction's standard public name.
+
+For a tuple presentation, instantiate:
+
+```python
+carrier = ProductProjectionFunctor(0, source, target)
+```
 
 Mathlib uses:
 
@@ -239,8 +277,9 @@ Examples include:
 - diagram postcomposition by `F`;
 - restrictions and lifts through property subcategories.
 
-The construction owner defines the induced object and arrow maps. It also states the
-natural transformations or isomorphisms that compare composites.
+The kernel derives standard induced object and arrow maps from the supplied functor. The
+construction owner states any new natural transformations or isomorphisms that compare
+composites.
 
 ### Image and realization functors
 
@@ -274,10 +313,10 @@ Use a longer category-qualified name when the short name is ambiguous. Do not en
 fullness, faithfulness, repleteness, or equivalence in the functor's public name unless
 the name denotes the corresponding standard inclusion constructor.
 
-The reusable kernel constructors can use the Python names
-`SubcategoryInclusion`, `FullSubcategoryInclusion`, and
-`WideSubcategoryInclusion`. Category APIs should expose the resulting functors under the
-standard names above.
+The reusable kernel constructors use the Python names
+`SubcategoryInclusionFunctor`, `FullSubcategoryInclusionFunctor`, and
+`WideSubcategoryInclusionFunctor`. Category APIs can expose the resulting functors under
+the standard names above.
 
 ## Functor properties
 
@@ -326,7 +365,7 @@ the inclusion's object or arrow map.
 Therefore, finite sets use:
 
 ```python
-iota = FullSubcategoryInclusion(Sets().Finite(), Sets())
+iota = FullSubcategoryInclusionFunctor(Sets().Finite(), Sets())
 ```
 
 The `Finite` property states closure under isomorphism. A separate
@@ -338,7 +377,7 @@ inclusion. It uses `ObjectProperty.IsClosedUnderIsomorphisms` for repleteness. S
 [Mathlib's object-property API](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/CompleteLattice.html).
 
 A property refinement can also restrict arrows. In that case, use
-`SubcategoryInclusion`, not `FullSubcategoryInclusion`.
+`SubcategoryInclusionFunctor`, not `FullSubcategoryInclusionFunctor`.
 
 ## Derived functors
 
@@ -372,7 +411,7 @@ Finite sets form a full replete property subcategory of sets:
 ```python
 class Finite(FullRepletePropertySubcategory):
     def structure_functors(self) -> tuple[Functor, ...]:
-        iota = FullSubcategoryInclusion(self, Sets())
+        iota = FullSubcategoryInclusionFunctor(self, Sets())
         return (iota,)
 ```
 
@@ -387,8 +426,8 @@ edges discard different parts of the monoid structure:
 ```python
 class MonoidsCategory(Category):
     def structure_functors(self) -> tuple[Functor, ...]:
-        semigroup = self.forget_to_semigroups()
-        unital_magma = self.forget_to_unital_magmas()
+        semigroup = ForgetfulFunctor(self, Semigroups())
+        unital_magma = ForgetfulFunctor(self, UnitalMagmas())
         return (semigroup, unital_magma)
 ```
 
@@ -405,11 +444,16 @@ sets with the same underlying set. The structural edge is forgetful:
 ```python
 class PointedSetsCategory(Category):
     def structure_functors(self) -> tuple[Functor, ...]:
-        forget = ForgetPointFunctor(self, Sets())
-        return (forget,)
+        carrier = ProductProjectionFunctor(0, self, Sets())
+        return (carrier,)
 ```
 
-`ForgetPointFunctor` implements both maps. It is not an inclusion constructor.
+The selected projection supplies the underlying set surface. The point remains defining
+data. No leaf-defined functor class or map methods are required.
+
+See [poset-minimal-template.py](poset-minimal-template.py) for the complete minimal
+shape of a structured category with a selected kernel-owned carrier projection to
+`Sets()`.
 
 ### Product and arrow categories
 
@@ -454,11 +498,11 @@ construction that owns a projection. This repository follows that division.
 | --- | --- |
 | `Functor` | `Functor` |
 | `Functor.id` | `IdentityFunctor` or the category-owned identity |
-| `ObjectProperty.ι` | `FullSubcategoryInclusion` |
+| `ObjectProperty.ι` | `FullSubcategoryInclusionFunctor` |
 | `ObjectProperty.ιOfLE` | `inclusion_of_le` |
 | `ObjectProperty.lift` | `lift` through a property subcategory |
-| `wideSubcategoryInclusion` | `WideSubcategoryInclusion` |
-| `forget`, `forget₂` | Category-owned `forget` and `forget_to_<category>` |
+| `wideSubcategoryInclusion` | `WideSubcategoryInclusionFunctor` |
+| `forget`, `forget₂` | Kernel-owned `ForgetfulFunctor`, exposed through the source category |
 | `Prod.fst`, `Prod.snd` | Product-category `fst`, `snd` |
 | `Comma.fst`, `Comma.snd` | Comma-category `fst`, `snd` |
 | `Arrow.leftFunc`, `Arrow.rightFunc` | Arrow-category `left`, `right` |
@@ -480,5 +524,6 @@ typeclass implementation.
 - Functor properties remain propositions about a functor.
 - Ordinary functors do not contribute methods unless selected.
 - Leaves do not own structural-functor caches or registries.
+- Leaves do not implement standard functor object, element, or arrow maps.
 - The compiler derives paths only by functor composition.
 - Finite sets declare one full-subcategory inclusion into sets.

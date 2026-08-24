@@ -17,7 +17,7 @@ class SetsCategory(Category):
 
         def structure_functors(self) -> tuple[Functor, ...]:
             """Return the selected functors from finite sets."""
-            iota = FullSubcategoryInclusion(self, Sets())
+            iota = FullSubcategoryInclusionFunctor(self, Sets())
             return (iota,)
 
         def membership_proposition(

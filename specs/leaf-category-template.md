@@ -19,28 +19,6 @@ class LeafObject(MathematicalObject):
         ...
 
 
-class ForgetLeafFunctor(Functor):
-    def __init__(self, source: LeafCategory, target: BaseCategory) -> None:
-        super().__init__(source, target)
-
-    def _object_image(self, source: MathematicalObject) -> BaseObject:
-        assert LeafObjects().contains_leaf(source)
-        return BaseObjects()(source._defining_data)
-
-    def _morphism_image(self, morphism: Arrow) -> Arrow:
-        assert self.domain().contains_arrow(morphism)
-        ...
-
-    def _element_image(
-        self,
-        source: MathematicalObject,
-        element: MathematicalElement,
-    ) -> BaseElement:
-        assert LeafObjects().contains_leaf(source)
-        assert element in source
-        ...
-
-
 class LeafCategory(Category):
     ObjectType = LeafObject
     ElementType = LeafElement
@@ -49,8 +27,8 @@ class LeafCategory(Category):
         return self.ObjectType(category=self, defining_data=defining_data)
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        forget = ForgetLeafFunctor(self, BaseObjects())
-        return (forget,)
+        """Return the selected immediate structural functors."""
+        ...
 
     def contains_leaf(self, candidate: MathematicalObject) -> TypeIs[LeafObject]:
         return candidate in self
@@ -59,3 +37,7 @@ class LeafCategory(Category):
 `structure_functors()` contains the complete tuple of immediate functors selected for
 inheritance. See [functor.md](functor.md) for inclusion, forgetting, projection, and
 induced-functor declarations.
+
+See [finite-set-minimal-template.py](finite-set-minimal-template.py) for a property
+subcategory. See [poset-minimal-template.py](poset-minimal-template.py) for objects with
+additional structure and a kernel-owned carrier projection.

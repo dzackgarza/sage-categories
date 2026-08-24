@@ -192,7 +192,7 @@ class SetObject(MathematicalObject):
         return id(self)
 
 
-class FiniteSetElement(MathematicalElement):
+class FiniteSetElement(SetElement):
     """An element of a finite set."""
 
     def __init__(
@@ -202,8 +202,7 @@ class FiniteSetElement(MathematicalElement):
         value: MathematicalObject,
     ) -> None:
         self._value = value
-        MathematicalElement.__init__(
-            self,
+        super().__init__(
             category=SetElements(),
             ambient_object=ambient_object,
         )
@@ -215,21 +214,25 @@ class FiniteSetElement(MathematicalElement):
         return repr(self._value)
 
 
-class FiniteSetObject(MathematicalObject):
+class FiniteSetObject(SetObject):
     """A set given by its complete finite member set."""
 
     def __init__(
         self,
         *,
-        category: FiniteSetsCategory,
+        category: Category,
         values: frozenset[MathematicalObject],
     ) -> None:
 
         self._values = values
-        self._cardinality = Cardinals()(len(values))
-        self._subset_poset: PosetObject | None = None
-        super().__init__(category=category)
-        self._members = frozenset(category.ElementType(ambient_object=self, value=value) for value in values)
+        super().__init__(
+            category=category,
+            cardinality=Cardinals()(len(values)),
+        )
+        self._members = frozenset(
+            FiniteSetElement(ambient_object=self, value=value)
+            for value in values
+        )
 
     def membership(self, member: SetElement) -> Decision:
         return member.ambient_set() is self

@@ -324,14 +324,11 @@ class CountableSetsCategory(FullSubcategory):
 
 
 class FiniteSetsCategory(FullSubcategory):
-    ObjectType: type[FiniteSetObject] = FiniteSetObject
-    ElementType: type[FiniteSetElement] = FiniteSetElement
-
     def __init__(self, sets: SetsCategory) -> None:
         self._sets = sets
         self._finite_sets_by_members: dict[
             frozenset[MathematicalObject],
-            FiniteSetObject,
+            MathematicalObject,
         ] = {}
         super().__init__(
             sets.Countable(),
@@ -339,10 +336,12 @@ class FiniteSetsCategory(FullSubcategory):
             name="Finite sets",
         )
 
-    def __call__(self, members: frozenset[MathematicalObject]) -> FiniteSetObject:
+    def __call__(self, members: frozenset[MathematicalObject]) -> MathematicalObject:
         cached = self._finite_sets_by_members.get(members)
         if cached is None:
-            cached = self.ObjectType(category=self, values=members)
+            ambient = FiniteSetObject(category=Sets(), values=members)
+            countable = CountableSets().refine_from_theorem(ambient)
+            cached = self.refine_from_theorem(countable)
             self._finite_sets_by_members[members] = cached
         return cached
 
@@ -438,7 +437,7 @@ def is_set_monomorphism(
     return candidate in Sets().MonomorphismArrowCategory()
 
 
-def FiniteSet(members: Iterable[MathematicalObject]) -> FiniteSetObject:
+def FiniteSet(members: Iterable[MathematicalObject]) -> MathematicalObject:
     return Sets().finite(frozenset(members))
 
 

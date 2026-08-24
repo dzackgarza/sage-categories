@@ -61,11 +61,10 @@ class LimitSet(ProductSet):
         diagram: Functor,
         *,
         category: Category,
-        cardinality: Cardinal | None = None,
+        cardinality: Cardinal,
     ) -> None:
         self._compatible_elements: set[int] = set()
-        size = UnknownCardinality() if cardinality is None else cardinality
-        super().__init__(diagram, category=category, cardinality=size)
+        super().__init__(diagram, category=category, cardinality=cardinality)
 
     def _compatible_element(
         self,
@@ -148,7 +147,7 @@ class SetLimitObject(LimitObject):
         *,
         category: LimitsOfSetsCategory,
         diagram: Functor,
-        cardinality: Cardinal | None = None,
+        cardinality: Cardinal,
     ) -> None:
         from sage_categories.theories.set_constructions import _limit_presentation
 
@@ -295,20 +294,24 @@ class LimitsOfSetsCategory(LimitsOfCategory):
     def __call__(
         self,
         preimage: MathematicalObject,
-        *,
-        cardinality: Cardinal | None = None,
     ) -> SetLimitObject:
         assert is_functor(preimage)
-        return self._limit(preimage, cardinality=cardinality)
+        return self._limit(preimage, UnknownCardinality())
+
+    def with_cardinality(
+        self,
+        diagram: Functor,
+        cardinality: Cardinal,
+    ) -> SetLimitObject:
+        return self._limit(diagram, cardinality)
 
     def limit_of(self, diagram: Functor) -> SetLimitObject:
-        return self._limit(diagram)
+        return self._limit(diagram, UnknownCardinality())
 
     def _limit(
         self,
         diagram: Functor,
-        *,
-        cardinality: Cardinal | None = None,
+        cardinality: Cardinal,
     ) -> SetLimitObject:
         assert diagram in self.functor().domain()
         key = id(diagram)
@@ -323,7 +326,7 @@ class LimitsOfSetsCategory(LimitsOfCategory):
             cached = candidate
             self._limits[key] = cached
         assert self.contains_set_limit(cached)
-        if cardinality is not None:
+        if cardinality is not UnknownCardinality():
             assert cached.cardinality() == cardinality
         return cached
 

@@ -31,6 +31,7 @@ from sage_categories.abstract_categories.products import (
 from sage_categories.theories.cardinals import (
     Cardinal,
     Cardinals,
+    UnknownCardinality,
 )
 from sage_categories.theories.discrete_sets import (
     DiscreteCategory,
@@ -186,8 +187,13 @@ def _coproduct_presentation(
 
 def LimitOfSets(
     diagram: Functor,
-    *,
-    cardinality: Cardinal | None = None,
+) -> ProductPresentation:
+    return LimitOfSetsWithCardinality(diagram, UnknownCardinality())
+
+
+def LimitOfSetsWithCardinality(
+    diagram: Functor,
+    cardinality: Cardinal,
 ) -> ProductPresentation:
     assert diagram.codomain() is Sets()
     apex = LimitSet(
@@ -229,8 +235,13 @@ def _limit_presentation(
 
 def ColimitOfSets(
     diagram: Functor,
-    *,
-    cardinality: Cardinal | None = None,
+) -> CoproductPresentation:
+    return ColimitOfSetsWithCardinality(diagram, UnknownCardinality())
+
+
+def ColimitOfSetsWithCardinality(
+    diagram: Functor,
+    cardinality: Cardinal,
 ) -> CoproductPresentation:
     assert diagram.codomain() is Sets()
     apex = ColimitSet(

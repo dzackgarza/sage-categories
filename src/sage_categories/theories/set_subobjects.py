@@ -444,10 +444,10 @@ class SubsetsOfSetCategory(Category):
             members = first_members & second_members
             cardinality = cardinal(len(members))
         subobjects = Sets().Subobjects(self._base_set)
-        pullback = Sets().pullback(
+        pullback = Sets().pullback_with_cardinality(
             first.structure_morphism(),
             second.structure_morphism(),
-            cardinality=cardinality,
+            cardinality,
         )
         apex = pullback.apex()
         assert Sets().contains_set(apex)

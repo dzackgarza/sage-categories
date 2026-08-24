@@ -301,8 +301,22 @@ class SetsCategory(Category):
         self,
         first: Arrow,
         second: Arrow,
-        *,
-        cardinality: Cardinal | None = None,
+    ) -> SetLimitObject:
+        return self._pullback(first, second, None)
+
+    def pullback_with_cardinality(
+        self,
+        first: Arrow,
+        second: Arrow,
+        cardinality: Cardinal,
+    ) -> SetLimitObject:
+        return self._pullback(first, second, cardinality)
+
+    def _pullback(
+        self,
+        first: Arrow,
+        second: Arrow,
+        cardinality: Cardinal | None,
     ) -> SetLimitObject:
         from sage_categories.abstract_categories.products import DiagramCategory
         from sage_categories.theories.set_limits import (
@@ -320,7 +334,9 @@ class SetsCategory(Category):
         diagram = InclusionFunctor(index, self)
         limits = self.Limits(index)
         assert is_limits_of_sets_category(limits)
-        return limits(diagram, cardinality=cardinality)
+        if cardinality is None:
+            return limits(diagram)
+        return limits.with_cardinality(diagram, cardinality)
 
     def _products_of_category(self, functor: Functor) -> Category:
         from sage_categories.theories.set_products import ProductsOfSetsCategory

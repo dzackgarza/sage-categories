@@ -25,6 +25,7 @@ from sage_categories.category import Category
 from sage_categories.theories.cardinals import (
     Cardinal,
     Cardinals,
+    UnknownCardinality,
 )
 from sage_categories.theories.discrete_sets import (
     DiscreteCategory,
@@ -131,7 +132,7 @@ class ColimitSet(SetObject):
         diagram: Functor,
         *,
         category: Category,
-        cardinality: Cardinal | None = None,
+        cardinality: Cardinal,
     ) -> None:
         self._diagram = diagram
         objects = index_objects(diagram.domain())
@@ -257,7 +258,7 @@ class SetColimitObject(ColimitObject):
         *,
         category: ColimitsOfSetsCategory,
         diagram: Functor,
-        cardinality: Cardinal | None = None,
+        cardinality: Cardinal,
     ) -> None:
         from sage_categories.theories.set_constructions import _colimit_presentation
 
@@ -406,20 +407,24 @@ class ColimitsOfSetsCategory(ColimitsOfCategory):
     def __call__(
         self,
         preimage: MathematicalObject,
-        *,
-        cardinality: Cardinal | None = None,
     ) -> SetColimitObject:
         assert is_functor(preimage)
-        return self._colimit(preimage, cardinality=cardinality)
+        return self._colimit(preimage, UnknownCardinality())
+
+    def with_cardinality(
+        self,
+        diagram: Functor,
+        cardinality: Cardinal,
+    ) -> SetColimitObject:
+        return self._colimit(diagram, cardinality)
 
     def colimit_of(self, diagram: Functor) -> SetColimitObject:
-        return self._colimit(diagram)
+        return self._colimit(diagram, UnknownCardinality())
 
     def _colimit(
         self,
         diagram: Functor,
-        *,
-        cardinality: Cardinal | None = None,
+        cardinality: Cardinal,
     ) -> SetColimitObject:
         assert diagram in self.functor().domain()
         key = id(diagram)
@@ -434,7 +439,7 @@ class ColimitsOfSetsCategory(ColimitsOfCategory):
             cached = candidate
             self._colimits[key] = cached
         assert self.contains_set_colimit(cached)
-        if cardinality is not None:
+        if cardinality is not UnknownCardinality():
             assert cached.cardinality() == cardinality
         return cached
 

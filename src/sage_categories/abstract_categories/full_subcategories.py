@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, TypeIs
+from typing import Any, TypeIs
 
 from sage_categories.assumptions import Hypothesis, HypothesisContext
 from sage_categories.abstract_categories.functors import (
@@ -28,14 +28,6 @@ from sage_categories.values import (
     registered_element,
     registered_value,
 )
-
-if TYPE_CHECKING:
-    from sage_categories.abstract_categories.products import (
-        CoconeObject,
-        ConeObject,
-        CoproductPresentation,
-        ProductPresentation,
-    )
 
 type ObjectPredicate = Callable[[MathematicalObject], Decision]
 
@@ -347,86 +339,6 @@ class FullSubcategory(Category):
         functor: Functor,
     ) -> Category:
         return self._ambient_category._colimits_of_category(functor)
-
-    def chosen_limit(
-        self,
-        diagram: Functor,
-    ) -> ProductPresentation:
-        from sage_categories.abstract_categories.functors import is_functor
-        from sage_categories.abstract_categories.products import Cone, Product
-
-        assert diagram.codomain() is self
-        ambient_diagram = self.inclusion().postcomposition(diagram.domain())(
-            diagram,
-        )
-        assert is_functor(ambient_diagram)
-        ambient_product = self._ambient_category.chosen_limit(ambient_diagram)
-        apex = ambient_product.apex()
-        assert apex in self
-
-        def projection(index: MathematicalObject) -> Arrow:
-            arrow = ambient_product.projection(index)
-            assert arrow in self.Hom(apex, diagram(index))
-            return arrow
-
-        cone = Cone(diagram, apex, projection)
-
-        def mediate(other: ConeObject) -> Arrow:
-            from sage_categories.abstract_categories.products import Cones
-
-            cones = Cones(diagram)
-            assert cones.contains_cone(other)
-            ambient_cone = Cone(
-                ambient_diagram,
-                other.apex(),
-                other.structure_morphism,
-            )
-            arrow = ambient_product.universal_morphism(ambient_cone)
-            assert arrow in self.Hom(other.apex(), apex)
-            return arrow
-
-        return Product(cone, mediate)
-
-    def chosen_colimit(
-        self,
-        diagram: Functor,
-    ) -> CoproductPresentation:
-        from sage_categories.abstract_categories.functors import is_functor
-        from sage_categories.abstract_categories.products import Cocone, Coproduct
-
-        assert diagram.codomain() is self
-        ambient_diagram = self.inclusion().postcomposition(diagram.domain())(
-            diagram,
-        )
-        assert is_functor(ambient_diagram)
-        ambient_coproduct = self._ambient_category.chosen_colimit(
-            ambient_diagram,
-        )
-        apex = ambient_coproduct.apex()
-        assert apex in self
-
-        def injection(index: MathematicalObject) -> Arrow:
-            arrow = ambient_coproduct.injection(index)
-            assert arrow in self.Hom(diagram(index), apex)
-            return arrow
-
-        cocone = Cocone(diagram, apex, injection)
-
-        def mediate(other: CoconeObject) -> Arrow:
-            from sage_categories.abstract_categories.products import Cocones
-
-            cocones = Cocones(diagram)
-            assert cocones.contains_cocone(other)
-            ambient_cocone = Cocone(
-                ambient_diagram,
-                other.apex(),
-                other.costructure_morphism,
-            )
-            arrow = ambient_coproduct.universal_morphism(ambient_cocone)
-            assert arrow in self.Hom(apex, other.apex())
-            return arrow
-
-        return Coproduct(cocone, mediate)
 
     def __repr__(self) -> str:
         return self._name

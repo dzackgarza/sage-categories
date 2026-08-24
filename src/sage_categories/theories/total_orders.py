@@ -6,6 +6,9 @@ from typing import TYPE_CHECKING, TypeIs
 
 from sage_categories.abstract_categories.category_constructions import (
     FullSubcategory,
+    FullSubcategoryArrow,
+    FullSubcategoryElement,
+    FullSubcategoryObject,
 )
 from sage_categories.abstract_categories.functors import (
     InclusionFunctor,
@@ -63,8 +66,24 @@ class FiniteTotalToFinitePosetFunctor(RestrictedStructuralFunctor):
         )
 
 
+class FiniteTotalOrderObject(FullSubcategoryObject):
+    """One finite total order."""
+
+
+class FiniteTotalOrderElement(FullSubcategoryElement):
+    """An element of one finite total order."""
+
+
+class FiniteTotalOrderMorphism(FullSubcategoryArrow):
+    """An order-preserving map between finite total orders."""
+
+
 class FiniteTotallyOrderedSetsCategory(FullSubcategory):
     """The full subcategory of finite total orders."""
+
+    ObjectType: type[FiniteTotalOrderObject] = FiniteTotalOrderObject
+    ElementType: type[FiniteTotalOrderElement] = FiniteTotalOrderElement
+    ArrowType: type[FiniteTotalOrderMorphism] = FiniteTotalOrderMorphism
 
     def __init__(self, total_orders: TotallyOrderedSetsCategory) -> None:
         self._finite_poset_functor: InclusionFunctor | None = None
@@ -113,6 +132,15 @@ class FiniteTotallyOrderedSetsCategory(FullSubcategory):
 
 class TotallyOrderedSetsCategory(FullSubcategory):
     """Sets equipped with a proved total order."""
+
+    class ObjectType(FullSubcategoryObject):
+        """One total order."""
+
+    class ElementType(FullSubcategoryElement):
+        """An element of one total order."""
+
+    class ArrowType(FullSubcategoryArrow):
+        """An order-preserving map between total orders."""
 
     def __init__(self) -> None:
         self._finite_orders: FiniteTotallyOrderedSetsCategory | None = None

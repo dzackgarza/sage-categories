@@ -82,7 +82,7 @@ class FullSubcategoryElement(MathematicalElement):
         assert ambient_object in category
         self._ambient_implementation_value = ambient_implementation
         super().__init__(
-            category=ambient_implementation.category(),
+            category=category,
             ambient_object=ambient_object,
         )
 
@@ -272,6 +272,7 @@ class FullSubcategory(Category):
 
     ObjectType: type[MathematicalObject] = FullSubcategoryObject
     ElementType: type[MathematicalElement] = FullSubcategoryElement
+    ArrowType: type[Arrow] = FullSubcategoryArrow
 
     def __init__(
         self,

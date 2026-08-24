@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, TypeIs
 
 from sage_categories.abstract_categories.category_constructions import (
     FullSubcategory,
+    FullSubcategoryArrow,
+    FullSubcategoryElement,
     FullSubcategoryObject,
 )
 from sage_categories.abstract_categories.functors import (
@@ -177,10 +179,20 @@ class FinitePosetObject(FullSubcategoryObject):
         return iter(self._sage_poset().linear_extension())
 
 
+class FinitePosetElement(FullSubcategoryElement):
+    """An element of one finite poset."""
+
+
+class FinitePosetMorphism(FullSubcategoryArrow):
+    """An order-preserving map between finite posets."""
+
+
 class FinitePosetsCategory(FullSubcategory):
     """The full subcategory of finite partially ordered sets."""
 
     ObjectType: type[FinitePosetObject] = FinitePosetObject
+    ElementType: type[FinitePosetElement] = FinitePosetElement
+    ArrowType: type[FinitePosetMorphism] = FinitePosetMorphism
 
     def __init__(self, posets: PartiallyOrderedSetsCategory) -> None:
         super().__init__(

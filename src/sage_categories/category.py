@@ -51,33 +51,43 @@ class Category(MathematicalObject):
 
     ObjectType: type[MathematicalObject] = MathematicalObject
     ElementType: type[MathematicalElement] = CategoryElement
+    ArrowType: type[Arrow] = Arrow
 
     def __init__(
         self,
         *,
         object_type: type[MathematicalObject] | None = None,
         element_type: type[MathematicalElement] | None = None,
+        arrow_type: type[Arrow] | None = None,
         category: Category | None = None,
     ) -> None:
         if object_type is None:
             object_type = type(self).ObjectType
         if element_type is None:
             element_type = type(self).ElementType
+        if arrow_type is None:
+            declared_arrow_type = vars(type(self)).get("ArrowType")
+            arrow_type = (
+                self._hom_category_type().ElementType
+                if declared_arrow_type is None
+                else declared_arrow_type
+            )
         if category is None:
             from sage_categories.abstract_categories.cat import Cat
 
             category = Cat()
         super().__init__(category=category)
-        self._initialize_category(object_type, element_type)
+        self._initialize_category(object_type, element_type, arrow_type)
 
     def _initialize_category(
         self,
         object_type: type[MathematicalObject],
         element_type: type[MathematicalElement],
+        arrow_type: type[Arrow],
     ) -> None:
         self._local_object_type = object_type
         self._local_element_type = element_type
-        self._local_arrow_type = self._hom_category_type().ElementType
+        self._local_arrow_type = arrow_type
         self._hom_category_family: HomCategoryFamily | None = None
         self._identity_arrows: dict[int, Arrow] = {}
         self._arrow_category: ArrowCategoryObject | None = None
@@ -111,6 +121,7 @@ class Category(MathematicalObject):
             self,
             self._local_arrow_type,
         )
+        self.ArrowType = self._compiled_arrow_type
 
     def local_object_type(self) -> type[MathematicalObject]:
         """Return the object implementation declared at this category."""

@@ -455,6 +455,7 @@ class PartiallyOrderedSetsCategory(Category):
 
     ObjectType = PosetObject
     ElementType = PosetElement
+    ArrowType = PosetMorphism
 
     def __init__(self) -> None:
         self._forgetful_functor: ForgetPosetFunctor | None = None

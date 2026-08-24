@@ -19,6 +19,13 @@ Do not reuse a retired identifier.
 | `POL-SCOPE-007` | Judge the project by categorical uniformity, explicit mathematical ownership, functorial reuse, and legibility. Successful computation or compilation alone does not satisfy its purpose. |
 | `POL-SCOPE-008` | Make every theory subtree outside the implementation kernel auditable by a mathematician with little programming experience. Keep inheritance, dispatch, backend, and representation machinery behind the kernel boundary. |
 | `POL-SCOPE-009` | Judge an architectural claim from the live method owners, structural functors, compiler transport, constructor obligations, and universal data. Agent reports, passing tests, route metadata, generated type identities, and runtime output cannot replace that inspection. |
+| `POL-SCOPE-010` | Theory code declares categories and implements their objects, elements, arrows, functors, constructions, and mathematical operations. |
+| `POL-SCOPE-011` | Leaf code is theory code for one category. It states only that category's new data, operations, structural functors, constructors, and lifts. |
+| `POL-SCOPE-012` | Kernel code implements category-independent compilation, descriptors, structural routes, dynamic types, dispatch, transport, and canonical images. It contains no category-specific mathematics. |
+| `POL-SCOPE-013` | Backend-adapter code converts owned mathematical values to and from a computation engine. It does not define the public mathematical interface. |
+| `POL-SCOPE-014` | Interpret a primitive ban by its named role and layer. A ban on mathematical classification does not ban implementation-only use inside the kernel. |
+| `POL-SCOPE-015` | Apply a bare primitive ban to every layer. Only an explicit layer-specific policy can permit a narrower use. |
+| `POL-SCOPE-016` | Keep kernel and backend primitives private. Return typed semantic values or declarations before theory code receives control. |
 
 ## Shadowed package universe
 
@@ -351,6 +358,11 @@ Grounding examples:
 | `POL-KERNEL-004` | The kernel lifts inherited universal constructions and their arrows. A leaf supplies only its additional structure and its typed closure or preservation conclusion. |
 | `POL-KERNEL-005` | Add a kernel abstraction only when one mathematical declaration replaces the same infrastructure in every applicable leaf. Keep category-specific branches out of the kernel. |
 | `POL-KERNEL-006` | Kernel complexity is valid only when it removes that complexity from theory code. Expose each kernel capability through a mathematical declaration. |
+| `POL-KERNEL-007` | Kernel code can use `isinstance`, `issubclass`, `getattr`, `setattr`, `inspect`, descriptor protocols, and Python collection protocols to implement declared runtime mechanics. |
+| `POL-KERNEL-008` | Each kernel primitive must inspect a Python implementation role. It must not establish category membership, a mathematical property, method ownership, or functorial structure. |
+| `POL-KERNEL-009` | Derive mathematical roles from typed category and functor declarations. Use Python inspection only to realize those declarations in the runtime. |
+| `POL-KERNEL-010` | Keep reflective installation and dispatch inside the kernel. Expose the resulting typed mathematical surface without wrappers or repeated reflection in theory code. |
+| `POL-KERNEL-011` | Kernel permissions do not permit `Any`, `object`, casts, ignored diagnostics, fallbacks, or fabricated mathematical evidence. |
 
 For example, an object of `Modules(R)` can be defined by an action morphism \(\rho:R\to\operatorname{End}(X)\). Its selected functor to `Sets()` recovers \(X\) from \(\rho\) and applies `Sets(X)`. The module category does not implement set operations independently.
 

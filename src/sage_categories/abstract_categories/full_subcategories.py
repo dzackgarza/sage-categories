@@ -79,8 +79,12 @@ class FullSubcategoryElement(MathematicalElement):
         ambient_object: FullSubcategoryObject,
         ambient_implementation: MathematicalElement,
     ) -> None:
+        assert ambient_object in category
         self._ambient_implementation_value = ambient_implementation
-        super().__init__(category=category, ambient_object=ambient_object)
+        super().__init__(
+            category=ambient_implementation.category(),
+            ambient_object=ambient_object,
+        )
 
     def _ambient_implementation(self) -> MathematicalElement:
         return self._ambient_implementation_value

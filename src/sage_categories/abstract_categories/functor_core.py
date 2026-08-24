@@ -84,6 +84,12 @@ class Functor(Arrow, ABC):
         if image is None:
             image = self._object_image(source)
             assert image in self.codomain()
+            if image.category() is not self.codomain():
+                route = category_compiler().implementation_route(
+                    image.category(),
+                    self.codomain(),
+                )
+                image = image._object_image_along(route)
             self._object_images[key] = image
             self._object_preimages[(id(source), id(image))] = source
         self._object_preimages[(id(original), id(image))] = original
@@ -108,6 +114,12 @@ class Functor(Arrow, ABC):
             codomain = self.on_object(morphism.codomain())
             image = self._morphism_image(morphism)
             assert self.codomain().contains_arrow(image)
+            if image.base_category() is not self.codomain():
+                route = category_compiler().implementation_route(
+                    image.base_category(),
+                    self.codomain(),
+                )
+                image = image._morphism_image_along(route)
             assert image.domain() is domain
             assert image.codomain() is codomain
             self._morphism_images[key] = image

@@ -159,11 +159,6 @@ class PosetObject(MathematicalObject):
     def _set_implementation(self) -> SetObject:
         return self._underlying_set
 
-    def category(self) -> PartiallyOrderedSetsCategory:
-        category = super().category()
-        assert category is PartiallyOrderedSets()
-        return PartiallyOrderedSets()
-
     def relation(self) -> OrderRelation:
         """Return the chosen order relation."""
         return self._relation

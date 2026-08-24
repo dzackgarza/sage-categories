@@ -59,6 +59,32 @@ class MethodSignature:
         return self.keywords
 
 
+@dataclass(frozen=True)
+class DeclaredTransportRoles:
+    """Explicit role overrides for one mathematical method declaration."""
+
+    positional: tuple[tuple[str, ParameterRole], ...] = ()
+    result: ParameterRole | None = None
+
+
+_DECLARED_TRANSPORT_ROLES: dict[int, DeclaredTransportRoles] = {}
+
+
+def transport_roles(
+    *,
+    positional: tuple[tuple[str, ParameterRole], ...] = (),
+    result: ParameterRole | None = None,
+) -> Callable[[FunctionType], FunctionType]:
+    """Attach explicit transport roles to one method declaration."""
+    declaration = DeclaredTransportRoles(positional, result)
+
+    def declare(method: FunctionType) -> FunctionType:
+        _DECLARED_TRANSPORT_ROLES[id(method)] = declaration
+        return method
+
+    return declare
+
+
 P = ParamSpec("P")
 R = TypeVar("R")
 Value = TypeVar("Value")
@@ -72,6 +98,11 @@ def _annotation_role(annotation: Annotation) -> ParameterRole:
     if annotation is type(None):
         return ParameterRole.VALUE
     origin = typing.get_origin(annotation)
+    if origin is typing.Annotated:
+        declared_type, *metadata = typing.get_args(annotation)
+        roles = tuple(value for value in metadata if isinstance(value, ParameterRole))
+        assert len(roles) == 1, f"{annotation!r} must declare one transport role"
+        return roles[0]
     if origin is typing.Union or origin is types.UnionType:
         roles = tuple(
             _annotation_role(argument)
@@ -123,9 +154,16 @@ def method_signature(
     """Return role metadata from the method's declared type annotations."""
     namespace = dict(method.__globals__)
     try:
-        annotations = typing.get_type_hints(method, globalns=namespace, localns=namespace)
+        annotations = typing.get_type_hints(
+            method,
+            globalns=namespace,
+            localns=namespace,
+            include_extras=True,
+        )
     except NameError:
         annotations = inspect.get_annotations(method, eval_str=False)
+    declared = _DECLARED_TRANSPORT_ROLES.get(id(method))
+    declared_positional = dict(declared.positional) if declared is not None else {}
     parameters = tuple(inspect.signature(method).parameters.values())[1:]
     positional: list[ParameterRole] = []
     keyword: list[tuple[str, ParameterRole]] = []
@@ -136,7 +174,7 @@ def method_signature(
             f"{method.__qualname__} must annotate parameter {parameter.name}"
         )
         annotation = annotations[parameter.name] if parameter.name in annotations else parameter.annotation
-        role = _annotation_role(annotation)
+        role = declared_positional.get(parameter.name, _annotation_role(annotation))
         if parameter.kind is inspect.Parameter.VAR_POSITIONAL:
             variadic = role
         elif parameter.kind is inspect.Parameter.VAR_KEYWORD:
@@ -163,7 +201,9 @@ def method_signature(
         tuple(keyword),
         variadic,
         keywords,
-        _annotation_role(result_annotation),
+        declared.result
+        if declared is not None and declared.result is not None
+        else _annotation_role(result_annotation),
     )
 
 

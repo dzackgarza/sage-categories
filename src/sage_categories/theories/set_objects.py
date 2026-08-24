@@ -9,12 +9,13 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterator
 from itertools import count
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Annotated, Any
 
 from sage_categories.abstract_categories.hom_categories import (
     is_restricted_hom_category,
 )
 from sage_categories.category import Category
+from sage_categories.descriptors import ParameterRole
 from sage_categories.theories.cardinals import (
     Aleph0,
     Cardinal,
@@ -74,6 +75,13 @@ class SetObject(MathematicalObject):
     def membership(self, member: SetElement) -> Decision:
         """Return the represented membership decision for ``member``."""
         assert False, f"{self} has no represented membership predicate"
+
+    def element(
+        self,
+        value: Annotated[MathematicalObject, ParameterRole.VALUE],
+    ) -> SetElement:
+        """Return the represented element with semantic value ``value``."""
+        assert False, f"{self} has no represented element constructor for {value}"
 
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
@@ -207,7 +215,7 @@ class FiniteSetElement(SetElement):
             ambient_object=ambient_object,
         )
 
-    def value(self) -> MathematicalObject:
+    def value(self) -> Annotated[MathematicalObject, ParameterRole.VALUE]:
         return self._value
 
     def __repr__(self) -> str:
@@ -243,7 +251,10 @@ class FiniteSetObject(SetObject):
     def members(self) -> frozenset[SetElement]:
         return self._members
 
-    def element(self, value: MathematicalObject) -> FiniteSetElement:
+    def element(
+        self,
+        value: Annotated[MathematicalObject, ParameterRole.VALUE],
+    ) -> FiniteSetElement:
         assert value in self._values
         return next(member for member in self._members if member.value() == value)
 
@@ -288,8 +299,10 @@ class NaturalNumbersSet(SetObject):
     """The set of finite ordinals."""
 
     def __init__(self) -> None:
+        from sage_categories.theories.set_category import Sets
+
         self._members: dict[int, NaturalNumberElement] = {}
-        super().__init__(cardinality=Aleph0())
+        super().__init__(category=Sets(), cardinality=Aleph0())
 
     def membership(self, member: SetElement) -> Decision:
         return member.ambient_set() is self
@@ -328,14 +341,18 @@ class NaturalNumbersSet(SetObject):
         return "Natural numbers"
 
 
-_NATURAL_NUMBERS: NaturalNumbersSet | None = None
+_NATURAL_NUMBERS: MathematicalObject | None = None
 
 
-def NaturalNumbers() -> NaturalNumbersSet:
+def NaturalNumbers() -> MathematicalObject:
     global _NATURAL_NUMBERS
 
     if _NATURAL_NUMBERS is None:
-        _NATURAL_NUMBERS = NaturalNumbersSet()
+        from sage_categories.theories.set_category import CountableSets
+
+        _NATURAL_NUMBERS = CountableSets().refine_from_theorem(
+            NaturalNumbersSet(),
+        )
     return _NATURAL_NUMBERS
 
 

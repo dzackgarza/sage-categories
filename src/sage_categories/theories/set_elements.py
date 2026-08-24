@@ -14,6 +14,7 @@ from sage_categories.abstract_categories.functors import (
     DiscreteObject,
 )
 from sage_categories.category import Category
+from sage_categories.descriptors import ParameterRole, transport_roles
 from sage_categories.values import (
     Decision,
     MathematicalElement,
@@ -50,6 +51,7 @@ class SetElement(MathematicalElement):
             ambient_object=ambient_object,
         )
 
+    @transport_roles(result=ParameterRole.OBJECT)
     def ambient_set(self) -> SetObject:
         from sage_categories.theories.set_category import Sets
 

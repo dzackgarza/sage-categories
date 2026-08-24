@@ -24,11 +24,11 @@ from sage_categories.values import Decision, MathematicalObject
 class IntegerElement(SetElement):
     """An integer as an element of the owned integer set."""
 
-    def __init__(self, integer: int) -> None:
+    def __init__(self, ambient_set: IntegerSet, integer: int) -> None:
         self._integer = integer
         super().__init__(
             category=SetElements(),
-            ambient_object=Integers(),
+            ambient_object=ambient_set,
         )
 
     def __int__(self) -> int:
@@ -51,14 +51,16 @@ class IntegerSet(SetObject):
     """The set of integers."""
 
     def __init__(self) -> None:
+        from sage_categories.theories.sets import Sets
+
         self._integers: dict[int, IntegerElement] = {}
-        super().__init__(cardinality=aleph0)
+        super().__init__(category=Sets(), cardinality=aleph0)
 
     def __call__(self, integer: int | IntegerElement) -> IntegerElement:
         value = int(integer)
         cached = self._integers.get(value)
         if cached is None:
-            cached = IntegerElement(value)
+            cached = IntegerElement(self, value)
             self._integers[value] = cached
         return cached
 
@@ -83,25 +85,27 @@ class IntegerSet(SetObject):
         return "Integers"
 
 
-_INTEGERS: IntegerSet | None = None
+_INTEGERS: MathematicalObject | None = None
 
 
-def Integers() -> IntegerSet:
+def Integers() -> MathematicalObject:
     global _INTEGERS
 
     if _INTEGERS is None:
-        _INTEGERS = IntegerSet()
+        from sage_categories.theories.sets import CountableSets
+
+        _INTEGERS = CountableSets().refine_from_theorem(IntegerSet())
     return _INTEGERS
 
 
 class RationalElement(SetElement):
     """A rational number as an element of the owned rational set."""
 
-    def __init__(self, rational: Fraction) -> None:
+    def __init__(self, ambient_set: RationalSet, rational: Fraction) -> None:
         self._rational = rational
         super().__init__(
             category=SetElements(),
-            ambient_object=Rationals(),
+            ambient_object=ambient_set,
         )
 
     def numerator(self) -> IntegerElement:
@@ -123,8 +127,10 @@ class RationalSet(SetObject):
     """The set of rational numbers."""
 
     def __init__(self) -> None:
+        from sage_categories.theories.sets import Sets
+
         self._rationals: dict[Fraction, RationalElement] = {}
-        super().__init__(cardinality=aleph0)
+        super().__init__(category=Sets(), cardinality=aleph0)
 
     def __call__(
         self,
@@ -134,7 +140,7 @@ class RationalSet(SetObject):
         rational = Fraction(int(numerator), int(denominator))
         cached = self._rationals.get(rational)
         if cached is None:
-            cached = RationalElement(rational)
+            cached = RationalElement(self, rational)
             self._rationals[rational] = cached
         return cached
 
@@ -151,25 +157,27 @@ class RationalSet(SetObject):
         return "Rational numbers"
 
 
-_RATIONALS: RationalSet | None = None
+_RATIONALS: MathematicalObject | None = None
 
 
-def Rationals() -> RationalSet:
+def Rationals() -> MathematicalObject:
     global _RATIONALS
 
     if _RATIONALS is None:
-        _RATIONALS = RationalSet()
+        from sage_categories.theories.sets import CountableSets
+
+        _RATIONALS = CountableSets().refine_from_theorem(RationalSet())
     return _RATIONALS
 
 
 class RealElement(SetElement):
     """A represented real number in the owned real set."""
 
-    def __init__(self, rational: RationalElement) -> None:
+    def __init__(self, ambient_set: RealSet, rational: RationalElement) -> None:
         self._rational = rational
         super().__init__(
             category=SetElements(),
-            ambient_object=RealNumbers(),
+            ambient_object=ambient_set,
         )
 
     def rational(self) -> RationalElement:
@@ -183,8 +191,10 @@ class RealSet(SetObject):
     """The set of real numbers with exact rational representatives available."""
 
     def __init__(self) -> None:
+        from sage_categories.theories.sets import Sets
+
         self._rationals: dict[RationalElement, RealElement] = {}
-        super().__init__(cardinality=continuum)
+        super().__init__(category=Sets(), cardinality=continuum)
 
     def __call__(self, integer: int | IntegerElement) -> RealElement:
         return self.rational(Rationals()(integer))
@@ -193,7 +203,7 @@ class RealSet(SetObject):
         assert rational.ambient_set() is Rationals()
         cached = self._rationals.get(rational)
         if cached is None:
-            cached = RealElement(rational)
+            cached = RealElement(self, rational)
             self._rationals[rational] = cached
         return cached
 
@@ -210,14 +220,17 @@ class RealSet(SetObject):
         return "Real numbers"
 
 
-_REAL_NUMBERS: RealSet | None = None
+_REAL_NUMBERS: MathematicalObject | None = None
 
 
-def RealNumbers() -> RealSet:
+def RealNumbers() -> MathematicalObject:
     global _REAL_NUMBERS
 
     if _REAL_NUMBERS is None:
-        _REAL_NUMBERS = RealSet()
+        from sage_categories.theories.sets import InfiniteSets, UncountableSets
+
+        infinite = InfiniteSets().refine_from_theorem(RealSet())
+        _REAL_NUMBERS = UncountableSets().refine_from_theorem(infinite)
     return _REAL_NUMBERS
 
 

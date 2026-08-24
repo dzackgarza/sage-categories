@@ -4,6 +4,10 @@ It implements ordinals as elements of a commutative semiring.
 The design is symbolic and supports several nontrivial normalization rules.
 It is not yet a complete cardinal or ordinal calculus.
 
+All cardinal and ordinal properties and relations follow the proposition interface in
+[Property refinement](property-refinement.md). They return propositions. Only `ask()`
+returns `True`, `False`, or `Unknown`.
+
 This specification describes the current working tree.
 The two core files are committed and clean.
 Their set-integration files contain current uncommitted changes.
@@ -244,6 +248,9 @@ kappa.initial_ordinal()
 kappa.finite_value()
 ```
 
+Every `is_*()` call in this surface returns an applied proposition. Equality and order
+operations also return propositions. Use `ask()` when a decision is required.
+
 It also supports:
 
 ```python
@@ -315,7 +322,9 @@ The evaluator knows:
 
 - Componentwise rules for finite formal suprema.
 
-Unknown comparisons currently return `False` from `le()` and `lt()`.
+The current implementation returns `False` from `le()` and `lt()` when it cannot decide
+a comparison. This violates the proposition interface. The methods must return order
+propositions, and `ask()` must return `Unknown` when no exact handler decides them.
 
 Therefore, `INCOMPARABLE` currently means “neither direction was proved.”
 It does not prove mathematical incomparability.
@@ -463,6 +472,9 @@ The installation mechanism also exports imported non-underscore helper names.
 Neither module defines `__all__`.
 
 ## Current capability limits
+
+The following Boolean and exception behaviors are implementation defects relative to
+the normative proposition interface above:
 
 - Indexed cardinal expressions preserve the index set and callable family.
 

@@ -1,3 +1,8 @@
+> **Normative precedence.** The final section, [Normative proposition
+> interface](#normative-proposition-interface), supersedes earlier Boolean and
+> `Decision` return signatures. The earlier discussion is retained because its
+> ownership, refinement, construction, and assumption conclusions remain required.
+
 Yes. My earlier “do not change the category” statement was wrong.
 
 An established positive property should self-refine the owned object. Direct property construction, an active assumption, and an exact computation all establish the same refinement. The object's mathematical identity remains unchanged. Its category and Sage dynamic class become more specific.
@@ -287,3 +292,217 @@ For an interactive claim not owned by a construction, the user can apply the san
 global assumption operation, such as `assume(finite(X))`. That operation also invokes
 the same property-category constructor. Backend and theory code still construct directly
 in the category they establish; they do not call `assume()`.
+
+## Normative proposition interface
+
+This section supersedes every earlier predicate signature in this document that returns
+`bool`, `Decision`, or `Unknown`. It also supersedes every earlier example in which a
+property-category implementation replaces a predicate method with a Boolean constant.
+The earlier discussion remains relevant for property ownership, strongest category
+placement, same-object refinement, named constructions, and the global mathematical
+context.
+
+### Propositional methods return propositions
+
+Every public mathematical method whose result is a proposition returns an unevaluated
+proposition. It never returns `True`, `False`, `Decision`, or `Unknown` directly.
+
+This rule applies to:
+
+- object properties such as finiteness, countability, totality, and connectedness;
+- arrow properties such as injectivity, surjectivity, monotonicity, and invertibility;
+- equality, order, inclusion, and incidence propositions;
+- relation laws and construction obligations;
+- category-membership propositions;
+- every other method whose mathematical codomain is truth values.
+
+For example:
+
+```python
+finite_proposition = X.is_finite()
+injective_proposition = f.is_injective()
+monotone_proposition = f.is_order_preserving()
+total_proposition = P.is_total()
+```
+
+Each result retains its predicate, semantic arguments, and mathematical owner. In
+SymPy terminology, the predicate is the function and the returned proposition is an
+`AppliedPredicate`. A Sage symbolic relation such as `x < 2` plays the same role.
+
+`Unknown` is not a proposition. It is one possible result of asking for the truth value
+of a proposition:
+
+```python
+proposition = X.is_finite()
+decision = ask(proposition)
+```
+
+The result of `ask(proposition)` is exactly one of:
+
+- `True`, when the active mathematics establishes the proposition;
+- `False`, when the active mathematics establishes its negation;
+- `Unknown`, when neither conclusion is established.
+
+The kernel translates an engine-specific indeterminate result, such as SymPy `None`,
+to the owned `Unknown`. No public propositional method returns that value itself.
+
+### Assumption and decision use one proposition
+
+The same proposition supports assumption and decision:
+
+```python
+proposition = X.is_finite()
+assume(proposition)
+ask(proposition)
+proposition.assume()
+```
+
+`assume(proposition)` and `proposition.assume()` use the active Sage or SymPy session.
+They do not evaluate a Boolean-returning method first. They record the proposition with
+its semantic argument intact.
+
+If the proposition defines a property subcategory, a positive assumption invokes that
+subcategory's trusted constructor and self-refines the same owned value. An exact
+`True` result from `ask()` invokes the same constructor. Direct construction and named
+mathematical construction already enter through that constructor.
+
+Thus these routes still converge:
+
+```python
+assume(f.is_injective())
+ask(f.is_injective())
+MonoArrows(Sets)(A, B)(rule)
+```
+
+Backend and theory code do not call `assume()` for facts they own. They construct the
+result directly in the strongest established category. Interactive users call
+`assume()` when they want the active mathematical context to supply the proposition.
+
+### Property categories supply evaluation rules
+
+A property subcategory does not override its propositional method with Boolean `True`.
+The method always returns the same kind of proposition:
+
+```python
+f.is_injective()
+# Applied proposition: injective(f)
+```
+
+Category placement contributes an exact evaluation rule:
+
+```python
+ask(f.is_injective())
+# True when f is already in MonoArrows(Sets)
+```
+
+The evaluation order is:
+
+1. Return `True` when category placement establishes the proposition.
+2. Return the active positive or negative assumption when one exists.
+3. Reuse an exact cached decision when one exists.
+4. Run the owned exact handlers and engine algorithms.
+5. On exact `True`, invoke the property-category constructor and return `True`.
+6. On exact `False`, retain the negative decision and return `False`.
+7. Otherwise, return `Unknown` without changing category placement.
+
+This order belongs to `ask()`, its predicate handlers, and the generic refinement
+kernel. A leaf method only constructs the proposition.
+
+### Comparisons and membership use different Python protocols
+
+Python permits a rich comparison such as `x < 2` to return a symbolic relation. Sage
+therefore passes that unevaluated relation to `assume()`.
+
+Python forces the `in` operator to return a Boolean. Even if `__contains__()` returns a
+proposition when called directly, `X in C` converts it to `True` or `False`. Therefore,
+`assume(X in C)` can never preserve category membership as a proposition.
+
+The explicit proposition remains available through the category definition:
+
+```python
+membership_proposition = C.membership_proposition(X)
+assume(membership_proposition)
+```
+
+An owned property method can provide the standard user syntax:
+
+```python
+assume(X.is_finite())
+```
+
+### Category membership is proposition-backed Boolean admission
+
+Every category declares one membership proposition as part of its mathematical
+definition. A property category declares the predicate that defines the property. A
+category formed from several properties declares the conjunction of the relevant
+propositions. The declaration occurs once; `__contains__()` never reimplements the
+mathematics.
+
+For example, the kernel can expose the finite-set category as `Sets().Finite()` and
+associate it with the proposition returned by `X.is_finite()`. Conceptually:
+
+```python
+class FiniteSetsCategory:
+    def membership_proposition(self, X: SetObject) -> Proposition:
+        return Sets().membership_proposition(X) & X.is_finite()
+```
+
+The kernel supplies the Boolean protocol:
+
+```python
+def __contains__(self, candidate: Any) -> bool:
+    proposition = self.membership_proposition(candidate)
+    decision = ask(proposition)
+    if decision is Unknown:
+        logger.info(
+            "Category membership is not established. Returning False."
+        )
+        return False
+    return decision
+```
+
+This collapse is permitted only inside a Python containment boundary. It occurs because
+Python requires set and category containment to be Boolean. The proposition remains
+unknown. The kernel does not cache a negative decision, infer the negated property, or
+construct a complementary category from this boundary result.
+
+Consequently:
+
+```python
+X.is_finite()           # proposition
+ask(X.is_finite())      # True, False, or Unknown
+X in Sets().Finite()    # Boolean admission query
+```
+
+When the decision is `Unknown`, the last expression is `False` because membership is
+not established. It does not assert that `X` is mathematically infinite. Likewise,
+`X not in Sets().Finite()` means that current knowledge does not place `X` in that
+category; it is not a proof of the negated property.
+
+Compound property categories use the same rule. For example, membership in
+`Fields().Countable().PartiallyOrdered()` asks one conjunction built from the defining
+propositions. Exact positive knowledge places the object in the strongest combined
+category without repeated checks.
+
+### Sage and SymPy own the assumption model
+
+Use the existing Sage and SymPy mechanisms:
+
+- Sage symbolic relations retain propositions and implement `.assume()`;
+- Sage generic declarations support standard and user-defined symbolic features;
+- SymPy `Predicate` defines a predicate function;
+- SymPy `AppliedPredicate` retains the applied proposition;
+- SymPy `ask()` evaluates under registered handlers and active assumptions;
+- the standard global assumption state records interactive hypotheses.
+
+The repository supplies the semantic bridge from its owned objects and categories to
+these standard proposition mechanisms. It does not create another assumption context,
+string registry, proof token, predicate metadata system, or Boolean fallback system.
+Engine conversion remains private. The public proposition retains the owned
+mathematical arguments and never exposes an engine representation choice.
+
+The external contracts are [Python comparison and membership
+semantics](https://docs.python.org/3/reference/expressions.html#comparisons), [Sage
+symbolic assumptions](https://doc.sagemath.org/html/en/reference/calculus/sage/symbolic/assumptions.html),
+and [SymPy predicates, applied predicates, and
+assumptions](https://docs.sympy.org/latest/modules/assumptions/assume.html).

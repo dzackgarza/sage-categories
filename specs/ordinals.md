@@ -2,6 +2,10 @@
 
 This document specifies the ordinal model used by the cardinality framework.
 
+All ordinal properties and relations follow the proposition interface in
+[Property refinement](property-refinement.md). They return propositions. Only `ask()`
+returns `True`, `False`, or `Unknown`.
+
 ## Ordinal model
 
 `Ordinals()` is one parent representing the commutative semiring of ordinals under Hessenberg operations.
@@ -172,7 +176,7 @@ alpha.initial_index()
 alpha.cardinality()
 ```
 
-It supports structural hashing and comparisons:
+It supports structural hashing and proposition-valued comparisons:
 
 ```python
 alpha == beta
@@ -185,7 +189,7 @@ alpha >= beta
 
 ### Ordinal order support
 
-`proves_le(alpha, beta)` recognizes:
+The exact handler for `ask(alpha <= beta)` recognizes:
 
 - Structural equality.
 
@@ -195,9 +199,10 @@ alpha >= beta
 
 - Order between initial ordinals through recursive index comparison.
 
-Other represented comparisons return `False`.
+When no exact handler decides a represented comparison, `ask()` returns `Unknown`.
 
-Thus ordinal comparison operators also express proved order, not complete mathematical order.
+Thus ordinal comparison operators state order propositions. They do not replace an
+unresolved proposition with Boolean `False`.
 
 ### Ordinal representations
 
@@ -253,4 +258,3 @@ Ordinary ordinal powers map to cardinal powers:
 \]
 
 This bridge is implemented in [Ordinal.cardinality()](/home/dzack/research/src/dzack_research/preamble/categories/sets/ordinals.py:316).
-

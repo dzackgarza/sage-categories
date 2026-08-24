@@ -3,6 +3,10 @@
 This specification defines the public order algorithms and their result categories.
 Standard order theory and category theory are assumed.
 
+All order laws and property queries follow the proposition interface in
+[Property refinement](property-refinement.md). A propositional method returns a
+proposition. Only `ask()` returns `True`, `False`, or `Unknown`.
+
 ## Category and role surface
 
 The owned category constructors are:
@@ -41,18 +45,13 @@ algorithms and constructions that require finiteness.
 The selected forgetful functor to `Sets()` supplies membership, iteration, cardinality,
 set maps, and set constructions.
 
-## Poset construction routes
+## Poset construction and its proposition
 
 A relation input is an owned subobject of `X × X`. A callable can be its private
 evaluator. The callable is not the public relation.
 
-The checked constructor accepts an underlying set and relation:
-
-```python
-PartiallyOrderedSets()(underlying_set, relation)
-```
-
-It admits the result only after exact algorithms return `True` for:
+An underlying set and relation first determine an owned relation object. Its
+partial-order proposition is the conjunction of:
 
 \[
 x\leq x,
@@ -62,14 +61,20 @@ x\leq y\land y\leq x\Rightarrow x=y,
 x\leq y\land y\leq z\Rightarrow x\leq z.
 \]
 
-For an explicitly represented finite set, exhaustive checking is one available
-algorithm. Another exact algorithm can serve the same checked route.
+The owned method returns this proposition without deciding it. `ask()` can use an
+exhaustive finite algorithm or another exact handler. Exact `True` invokes the trusted
+`PartiallyOrderedSets()` constructor. `False` disproves admission. `Unknown` leaves the
+relation in its ambient category.
 
-`False` rejects construction. `Unknown` does not establish a poset.
+Selecting the property-category constructor directly asserts the laws:
 
-The hypothesis-backed constructor accepts a scoped hypothesis about the applied
-relation. The named theorem-backed constructors return directly in the established
-category.
+```python
+PartiallyOrderedSets()(underlying_set, relation)
+```
+
+An interactive user can instead call `assume(relation.is_partial_order())`. A named
+mathematical construction returns through the same property-category constructor.
+There are no checked, hypothesis-backed, or theorem-backed constructor families.
 
 Named constructors include:
 
@@ -83,25 +88,21 @@ theorem-backed routes. They do not repeat exhaustive checks.
 For example, the usual order on `{1, ..., 10^10}` must use its construction theorem.
 Its constructor must not enumerate all pairs or triples.
 
-An infinite relation can enter `PartiallyOrderedSets()` through an exact algorithm,
-scoped hypothesis, or named theorem-backed construction.
+An infinite relation can enter `PartiallyOrderedSets()` through its trusted constructor,
+an active assumption, exact positive evaluation, or a named mathematical construction.
 
 ## Total-order refinement
 
-The totality query has result type `Decision`. It decides:
+The method `P.is_total()` returns the proposition:
 
 \[
 \forall x,y,\qquad x\leq y\lor y\leq x.
 \]
 
-The public refinement routes are:
-
-- exact checked refinement;
-- scoped hypothesis-backed refinement;
-- named theorem-backed construction.
-
-Only exact `True` refines a checked candidate. `False` and `Unknown` keep the object in
-its previously established category.
+`ask(P.is_total())` returns the decision. Exact `True` invokes the trusted total-order
+constructor. An active assumption and a named mathematical construction invoke the same
+constructor without exhaustive checking. `False` and `Unknown` keep the object in its
+previously established category.
 
 Finite totality can use exhaustive pair checks. Finiteness itself supplies no evidence
 of totality.
@@ -132,21 +133,17 @@ established total-order category.
 A candidate poset morphism starts as an owned set arrow between the underlying sets.
 A bare callable can only be the private rule of that set arrow.
 
-The checked Hom constructor decides:
+The owned method `f.is_order_preserving()` returns the proposition:
 
 \[
 x\leq_P y\Rightarrow f(x)\leq_Q f(y).
 \]
 
-For a represented finite source, exhaustive pair checking is one exact algorithm.
-A witnessed violation returns `False`. An unresolved result returns `Unknown`.
-
-Only exact `True` admits the checked candidate to the poset Hom category.
-
-The other routes are:
-
-- a scoped hypothesis about the owned set arrow;
-- a named constructor whose theorem establishes monotonicity.
+For a represented finite source, exhaustive pair checking is one exact handler for
+`ask(f.is_order_preserving())`. A witnessed violation makes `ask()` return `False`. An
+unresolved evaluation makes it return `Unknown`. Exact `True` invokes the poset Hom
+constructor. Direct property construction, an active assumption, and a named
+mathematical construction use that same constructor.
 
 Named theorem-backed routes include identities, composites, product projections, and
 product mediating arrows.
@@ -166,8 +163,9 @@ f.is_order_embedding()
 f.is_order_isomorphism()
 ```
 
-The first result is `True` because Hom admission established it. Other property queries
-return `Decision` unless a property subcategory already established the answer.
+Every call returns an applied proposition. Hom admission makes
+`ask(f.is_order_preserving())` return `True`. The other propositions remain available
+for assumption or exact evaluation.
 
 Identity and composition arrive through inherited arrow operations. Poset theory adds
 only the theorem-backed admission needed to preserve monotonicity.
@@ -280,16 +278,17 @@ roles or route metadata.
 See [Leaf category implementations](leaves.md) and [Structural resolution](resolution.md).
 
 The governing policies include `POL-MATH-001`, `POL-MATH-016` through `POL-MATH-033`,
-`POL-CAT-020`, `POL-CAT-061` through `POL-CAT-078`, `POL-LEAF-018` through
-`POL-LEAF-055`, and `POL-KERNEL-001` through `POL-KERNEL-024`.
+`POL-CAT-020`, `POL-CAT-061` through `POL-CAT-084`, `POL-LEAF-018` through
+`POL-LEAF-057`, and `POL-KERNEL-001` through `POL-KERNEL-026`.
 
 ## Acceptance conditions
 
 The implementation satisfies this specification when the public API establishes these
 facts:
 
-- invalid relations fail checked poset construction;
-- `Unknown` never establishes a partial-order, totality, or monotonicity property;
+- invalid relations make their partial-order proposition evaluate to `False`;
+- `Unknown` is returned only by `ask()` and never establishes partial order, totality,
+  or monotonicity;
 - theorem-backed constructors handle large finite and infinite objects without
   exhaustive checks;
 - the two-element equality order remains outside total-order categories;

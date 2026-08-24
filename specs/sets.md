@@ -6,6 +6,10 @@ Categories with a selected structural functor to `Sets()` inherit this API.
 Standard set theory and category theory are assumed. This specification fixes API
 ownership, constructors, algorithms, result categories, and exact failure states.
 
+Every proposition-valued set operation follows the interface in
+[Property refinement](property-refinement.md). The operation returns a proposition.
+Only `ask()` returns `True`, `False`, or `Unknown`.
+
 ## Owned API roles
 
 `Sets()` owns three implementation types:
@@ -72,14 +76,12 @@ expression when no exact algorithm normalizes it.
 A map constructor can use a callable or explicit mapping as its private rule. The
 constructor must establish that the rule is total and lands in `Y`.
 
-The public construction routes are distinct:
-
-- a checked route requires an exact `True` result;
-- a hypothesis route uses a scoped assumption about the applied map;
-- a named construction uses its defining theorem.
-
-`False` rejects checked admission. `Unknown` does not admit the rule as a set arrow.
-A callable does not establish totality by itself.
+A raw rule determines propositions stating totality and codomain closure. `ask()` can
+evaluate those propositions. Exact `True` invokes the owned Hom constructor. Exact
+`False` rejects admission. `Unknown` leaves the rule outside the set-arrow category.
+The trusted Hom constructor, an active assumption, exact positive evaluation, and a
+named mathematical construction all use the same category constructor. A callable does
+not establish totality by itself.
 
 After admission, a set arrow supplies:
 
@@ -218,7 +220,8 @@ and colimit interfaces.
 ## Subobjects, images, and power objects
 
 `X.subset_from(predicate)` constructs a chosen subset with its inclusion into `X`.
-The predicate is a private membership evaluator. It can return `Unknown`.
+The predicate returns the membership proposition for a candidate element. `ask()` can
+evaluate that proposition as `True`, `False`, or `Unknown`.
 
 A chosen subset supplies:
 
@@ -234,7 +237,7 @@ An abstract subobject is represented by a monomorphism. Its image supplies the c
 chosen subset representative. The chosen monomorphism remains part of the subobject data.
 
 `f.image()` constructs an owned subobject of `f.codomain()`. It does not require source
-enumeration. Membership in the image can remain `Unknown`.
+enumeration. Image membership remains a proposition when no handler can decide it.
 
 `PowerSet(X)` and `X.powerset()` construct the owned set of subsets of `X`. The same
 object is the function set from `X` to the owned two-element set.
@@ -319,8 +322,10 @@ Sets().Countable()
 Sets().Uncountable()
 ```
 
-Their checked membership procedures can return `Unknown`. Named theorem-backed
-constructors can place a set directly in one of these categories.
+Each category declares its membership proposition once. The kernel implements
+`__contains__()` by calling `ask()` on that proposition. An `Unknown` decision means
+that Boolean category admission is not established. A trusted category constructor or
+named mathematical construction places a set directly in the property category.
 
 ### Symbolic cardinalities, not unknown cardinal values
 
@@ -379,8 +384,9 @@ Keep these responsibilities separate:
 - `Cardinal` represents exact finite, infinite, or symbolic cardinal values.
 - Cardinal addition, multiplication, and exponentiation return `Cardinal`.
 - Normalization uses construction theorems and private computation engines.
-- Cardinal equality, order, finiteness, and countability queries return `Decision`.
-- `Unknown` occurs only when such a proposition cannot be decided.
+- Cardinal equality, order, finiteness, and countability methods return propositions.
+- `Unknown` occurs only as the result of `ask()` when such a proposition cannot be
+  decided.
 
 Examples include:
 
@@ -551,13 +557,13 @@ cardinality to an image unless injectivity or another theorem establishes that e
 
 | Owned operation | SymPy value | Required reconstruction |
 | --- | --- | --- |
-| Membership | `Contains(x, X)` | Return `True`, `False`, or Sage `Unknown`. |
+| Membership | `Contains(x, X)` | Return the owned membership proposition. |
 | Predicate subset | `ConditionSet(x, P(x), X)` | Return the owned subset with its inclusion. |
 | Image | `imageset(f, X)` or `ImageSet(f, X)` | Return the owned image subobject. Preserve an unevaluated image. |
 | Finite normalization | `FiniteSet` | Return an owned finite set and exact finite cardinal. |
 | Progression normalization | `Range` | Return an owned enumerated set and its finite cardinal or `aleph0`. |
 | Set algebra | `Union`, `Intersection`, `Complement`, `ProductSet` | Return the corresponding owned construction. |
-| Set equality or inclusion | symbolic set relations | Return an exact decision or `Unknown`. |
+| Set equality or inclusion | symbolic set relations | Return the owned proposition; use `ask()` for its decision. |
 | Cardinal calculation | normalized set type and symbolic properties | Return an owned cardinal value, never `None`. |
 | Universal constructions | symbolic set expressions | Retain all defining arrows and universal maps. |
 
@@ -567,16 +573,21 @@ representations and simplifications.
 
 ## Unknown and partial algorithms
 
-Exact queries can return `bool | Unknown`. This includes membership, subset order,
-set equality, cardinal comparisons, and cardinal property queries.
+Membership, subset order, set equality, cardinal comparisons, and cardinal property
+methods return propositions. Their handlers can be exact, partial, or unavailable.
 
-The algorithm contract is:
+The `ask()` contract is:
 
-- return `True` after an exact proof;
-- return `False` after an exact disproof;
-- return `Unknown` when available exact algorithms establish neither result;
+- return `True` after an exact positive result;
+- return `False` after an exact negative result;
+- return `Unknown` when available exact handlers establish neither result;
 - preserve `Unknown` under three-valued Boolean operations;
 - refine a property category only after exact evidence or a construction theorem.
+
+No public propositional method returns any of these decisions. Python `in` is the
+Boolean boundary. Set and category `__contains__()` methods ask their declared
+membership proposition. They log and return `False` when the decision is `Unknown`,
+without changing the proposition or recording a negative mathematical result.
 
 `Unknown` does not block construction of an honest predicate subobject, symbolic image,
 universal construction, or cardinal expression.
@@ -607,11 +618,13 @@ facts:
   distinct symbolic `CardinalityOf(owned_set)` values when no theorem decides more;
 - cardinal arithmetic retains symbolic expressions instead of propagating a shared
   unknown value;
-- only cardinal propositions and comparisons return `Unknown`;
-- exact failures remain `False` or `Unknown`;
+- every propositional method returns a proposition;
+- only `ask()` returns `True`, `False`, or `Unknown`;
+- every category declares one potentially compound membership proposition;
+- Python containment asks that proposition and treats `Unknown` as unproved admission;
 - private engine values never cross the public boundary.
 
 The governing policies include `POL-MATH-001` through `POL-MATH-033`,
 `POL-CAT-020`, `POL-CAT-027` through `POL-CAT-032`, `POL-CAT-040` through
 `POL-CAT-045`, `POL-SET-001` through `POL-SET-034`, and `POL-KERNEL-001` through
-`POL-KERNEL-024`.
+`POL-KERNEL-026`.

@@ -508,7 +508,7 @@ def _set_morphism(
 ) -> SetMorphism:
     hom_category = Sets().Hom(domain, codomain)
     assert is_set_hom_category(hom_category)
-    return hom_category.from_callable(action)
+    return hom_category._construct(action, UNKNOWN, UNKNOWN)
 
 
 def _set_morphism_with_properties(

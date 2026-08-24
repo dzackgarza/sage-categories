@@ -101,10 +101,17 @@ class SetHomCategory(HomCategory, SetObject):
         assert Sets().contains_set_morphism(morphism)
         return morphism
 
-    def from_callable(
+    def from_callable_checked(
         self,
         action: Callable[[SetElement], SetElement],
     ) -> SetMorphism:
+        domain = self.domain()
+        codomain = self.codomain()
+        assert domain.is_finite() is True
+        for member in domain:
+            image = action(member)
+            assert image.ambient_set() is codomain
+            assert codomain.membership(image) is True
         return self._construct(action, UNKNOWN, UNKNOWN)
 
     def _construct(

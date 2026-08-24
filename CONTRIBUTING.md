@@ -380,6 +380,8 @@ It does not reimplement composition, structural transport, domain checks, codoma
 | `POL-KERNEL-012` | Provide one typed canonical refinement operation for objects, elements, and arrows of every full property subcategory. |
 | `POL-KERNEL-013` | Generic refinement constructs the target implementation, retains its ambient image, caches the canonical image, and establishes coherence once. Leaves never repeat these steps. |
 | `POL-KERNEL-014` | Compile each property subcategory's distinct object, element, and arrow types from its declarations. A leaf never hand-writes a wrapper solely to store an ambient implementation. |
+| `POL-KERNEL-015` | A kernel `try`/`except` can only add exact context, translate to a more precise kernel exception while preserving the cause, or perform mandatory cleanup before re-raising. |
+| `POL-KERNEL-016` | Every kernel catch terminates the current operation. It never selects another implementation, retries, suppresses a diagnostic, continues computation, or returns an ordinary value. |
 
 For example, an object of `Modules(R)` can be defined by an action morphism \(\rho:R\to\operatorname{End}(X)\). Its selected functor to `Sets()` recovers \(X\) from \(\rho\) and applies `Sets(X)`. The module category does not implement set operations independently.
 
@@ -688,6 +690,9 @@ The caller can materialize a finite result when its application requires one.
 | `POL-CODE-036` | Prefer immutable transformations, explicit case analysis, and local equations in the style of Haskell and Lean over C-style mutable state and control flow. |
 | `POL-CODE-037` | Do not rewrap a value when the new wrapper does not change its required type or semantics. Calls such as `int(0)`, `Integer(0)`, and `ZZ(0)` require a local comment that proves why the conversion is necessary. |
 | `POL-CODE-038` | Do not add a function or method whose body only forwards to another function, method, operator, or special method. Treat an extremely short function as a review signal and remove it unless it owns distinct mathematical behavior. |
+| `POL-CODE-039` | Never write `try`/`except` outside the implementation kernel. Let errors propagate from theory, leaf, functor, construction, backend-adapter, and public API code. |
+| `POL-CODE-040` | Never use exceptions to select a route, discover a capability, handle optional data, retry, choose an implementation, substitute a value, or continue computation. |
+| `POL-CODE-041` | Never catch an exception to return `False`, `Unknown`, `None`, `NotImplemented`, or a default. An unknown mathematical result is explicit data, not a converted runtime failure. |
 
 For adjacent elements, use `itertools.pairwise(xs)` instead of `zip(xs, xs[1:])`.
 The named primitive states adjacency, remains lazy, and does not require slicing.

@@ -424,13 +424,16 @@ def test_standard_set_subcategories_and_order_categories() -> None:
 
 
 def test_finite_poset_realization_returns_owned_elements() -> None:
-    order = finite_ordered_set((ZZ(int(0)), ZZ(int(1)), ZZ(int(2))))
+    values = (ZZ(int(0)), ZZ(int(1)), ZZ(int(2)))
+    finite_underlying_set = FiniteSet(values)
+    order = finite_ordered_set(values)
     poset = FiniteTotallyOrderedSets().finite_poset_functor()(order)
     assert FinitePosets().contains_finite_poset(poset)
-    inclusion = TotallyOrderedSets().inclusion()
-    lower = inclusion.on_element(order, order[int(0)])
-    middle = inclusion.on_element(order, order[int(1)])
-    upper = inclusion.on_element(order, order[int(2)])
+    underlying_set = FinitePosets().forgetful_functor()(poset)
+    assert underlying_set is finite_underlying_set
+    lower = poset.element(finite_underlying_set.element(ZZ(int(0))))
+    middle = poset.element(finite_underlying_set.element(ZZ(int(1))))
+    upper = poset.element(finite_underlying_set.element(ZZ(int(2))))
     assert is_poset_element(lower)
     assert is_poset_element(middle)
     assert is_poset_element(upper)

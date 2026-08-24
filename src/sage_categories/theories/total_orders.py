@@ -32,10 +32,7 @@ from sage_categories.theories.poset_core import (
     is_poset_element,
     is_poset_hom_category,
 )
-from sage_categories.theories.sets import (
-    EnumerationInjection,
-    SetElement,
-)
+from sage_categories.theories.sets import SetElement
 from sage_categories.values import (
     UNKNOWN,
     Arrow,
@@ -370,29 +367,6 @@ class FiniteTotallyOrderedSetObject(MathematicalObject):
             )
             self._elements[key] = cached
         return cached
-
-    def __getitem__(self, position: int) -> FiniteTotallyOrderedSetElement:
-        assert position >= 0
-        members = tuple(self._poset.linear_extension())
-        return self.element(members[position])
-
-    def position(self, member: FiniteTotallyOrderedSetElement) -> int:
-        assert member in self
-        return tuple(self._poset.linear_extension()).index(member._poset_implementation())
-
-    def rank(self, member: FiniteTotallyOrderedSetElement) -> int:
-        return self.position(member)
-
-    def unrank(self, position: int) -> FiniteTotallyOrderedSetElement:
-        return self[position]
-
-    def enumeration_injection(self) -> Arrow:
-        underlying_set = PartiallyOrderedSets().underlying_set(self._poset)
-
-        def position_of_set_element(member: SetElement) -> int:
-            return tuple(self._poset.linear_extension()).index(self._poset.element(member))
-
-        return EnumerationInjection(underlying_set, position_of_set_element)
 
 
 class FiniteTotallyOrderedSetsCategory(FullSubcategory):

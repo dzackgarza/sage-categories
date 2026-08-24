@@ -5,19 +5,13 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable, Mapping
 from typing import TYPE_CHECKING, TypeIs
 
-from sage_categories.abstract_categories.arrow_categories import declare_isomorphism
 from sage_categories.abstract_categories.functors import (
     DiscreteCategories,
     Functor,
     StructuralFunctor,
-    is_functor,
 )
-from sage_categories.abstract_categories.hom_categories import (
-    HomCategory,
-    is_isomorphism,
-)
+from sage_categories.abstract_categories.hom_categories import HomCategory
 from sage_categories.abstract_categories.products import (
-    ProductLift,
     ProductPresentation,
 )
 from sage_categories.category import Category
@@ -30,7 +24,6 @@ from sage_categories.theories.sets import (
     SetElements,
     SetMorphism,
     SetObject,
-    SetProductObject,
     Sets,
     SetsCategory,
     is_products_of_sets_category,
@@ -394,6 +387,25 @@ class ForgetPosetFunctor(StructuralFunctor):
         assert SetElements().contains_set_element(element)
         return source.element(element)
 
+    def _lift_morphism(
+        self,
+        source: MathematicalObject,
+        target: MathematicalObject,
+        image: Arrow,
+    ) -> PosetMorphism:
+        assert PartiallyOrderedSets().contains_poset(source)
+        assert PartiallyOrderedSets().contains_poset(target)
+        assert Sets().contains_set_morphism(image)
+
+        def mapping(member: PosetElement) -> PosetElement:
+            set_member = self.on_element(source, member)
+            assert SetElements().contains_set_element(set_member)
+            return target.element(image(set_member))
+
+        category = source.category()
+        assert is_partially_ordered_sets_category(category)
+        return category.Hom(source, target)(mapping)
+
     def is_faithful(self) -> bool:
         return True
 
@@ -466,12 +478,12 @@ class PartiallyOrderedSetsCategory(Category):
         assert diagram.codomain() is self
         assert diagram.domain() in DiscreteCategories()
         forgetful = self.forgetful_functor()
-        set_diagram = forgetful.postcomposition(diagram.domain())(diagram)
-        assert is_functor(set_diagram)
-        set_products = Sets().Products(diagram.domain())
-        assert is_products_of_sets_category(set_products)
-        inherited = set_products(set_diagram)
-        underlying_product: SetProductObject = inherited
+        inherited_product = forgetful.inherited_product(diagram)
+        underlying_product = inherited_product.apex()
+        assert Sets().contains_set(underlying_product)
+        product_category = underlying_product.category()
+        assert is_products_of_sets_category(product_category)
+        assert product_category.contains_set_product(underlying_product)
 
         def componentwise(left: PosetElement, right: PosetElement) -> Decision:
             left_components = left._set_implementation()
@@ -495,36 +507,7 @@ class PartiallyOrderedSetsCategory(Category):
             return answer
 
         apex = self(underlying_product, componentwise)
-        comparison = declare_isomorphism(
-            Sets().identity(underlying_product),
-            Sets().identity(underlying_product),
-        )
-        assert is_isomorphism(comparison)
-
-        def lift_morphism(
-            source: MathematicalObject,
-            target: MathematicalObject,
-            underlying: Arrow,
-        ) -> Arrow:
-            assert self.contains_poset(source)
-            assert self.contains_poset(target)
-            assert Sets().contains_set_morphism(underlying)
-
-            def mapping(member: PosetElement) -> PosetElement:
-                set_member = forgetful.on_element(source, member)
-                assert SetElements().contains_set_element(set_member)
-                return target.element(underlying(set_member))
-
-            return self.Hom(source, target)(mapping)
-
-        return ProductLift(
-            diagram=diagram,
-            structural_functor=forgetful,
-            inherited_product=underlying_product,
-            apex=apex,
-            comparison=comparison,
-            lift_morphism=lift_morphism,
-        ).presentation()
+        return forgetful.lift_product(diagram, apex, inherited_product)
 
     def __repr__(self) -> str:
         return "Partially ordered sets"

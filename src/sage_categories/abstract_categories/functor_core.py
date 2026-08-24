@@ -5,7 +5,12 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from itertools import pairwise
-from typing import TypeIs
+from typing import TYPE_CHECKING, TypeIs
+
+if TYPE_CHECKING:
+    from sage_categories.abstract_categories.product_presentations import (
+        ProductPresentation,
+    )
 
 from sage_categories.abstract_categories.hom_categories import (
     HomCategory,
@@ -221,6 +226,59 @@ class StructuralFunctor(Functor, ABC):
     def is_inclusion(self) -> bool:
         """Return whether this functor includes a subcategory."""
         return False
+
+    def _lift_morphism(
+        self,
+        source: MathematicalObject,
+        target: MathematicalObject,
+        image: Arrow,
+    ) -> Arrow:
+        """Lift one arrow between structural images."""
+        assert False, f"{self} does not lift morphisms from its codomain"
+
+    def lift_product(
+        self,
+        diagram: Functor,
+        apex: MathematicalObject,
+        inherited_product: ProductPresentation,
+    ) -> ProductPresentation:
+        """Lift the product inherited through this structural functor."""
+        from sage_categories.abstract_categories.arrow_categories import (
+            declare_isomorphism,
+        )
+        from sage_categories.abstract_categories.hom_categories import (
+            is_isomorphism,
+        )
+        from sage_categories.abstract_categories.product_presentations import (
+            ProductLift,
+        )
+
+        assert diagram.codomain() is self.domain()
+        image_apex = self.on_object(apex)
+        assert image_apex is inherited_product.apex()
+        identity = self.codomain().identity(image_apex)
+        comparison = declare_isomorphism(
+            identity,
+            identity,
+        )
+        assert is_isomorphism(comparison)
+        return ProductLift(
+            diagram=diagram,
+            structural_functor=self,
+            inherited_product=inherited_product,
+            apex=apex,
+            comparison=comparison,
+            lift_morphism=self._lift_morphism,
+        ).presentation()
+
+    def inherited_product(self, diagram: Functor) -> ProductPresentation:
+        """Return the product of the diagram after structural transport."""
+        from sage_categories.abstract_categories.functors import is_functor
+
+        assert diagram.codomain() is self.domain()
+        inherited_diagram = self.postcomposition(diagram.domain())(diagram)
+        assert is_functor(inherited_diagram)
+        return self.codomain().chosen_limit(inherited_diagram)
 
 
 _STRUCTURAL_FUNCTORS: dict[int, StructuralFunctor] = {}

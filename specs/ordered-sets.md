@@ -89,7 +89,8 @@ The totality query `is_total_order(poset)` returns:
 
 - `Unknown` when totality cannot be determined algorithmically.
 
-Category refinement requires totality to be `True`. The constructor rejects non-total posets and unknown comparisons. Infinite posets enter `TotallyOrderedSets()` solely through named theorem-backed constructors such as `SimplexOrders()[Aleph0]`.
+Category refinement requires totality to be `True`. The constructor rejects non-total posets and unknown comparisons.
+Infinite posets enter `TotallyOrderedSets()` solely through named theorem-backed constructors such as `SimplexOrders()[Aleph0]`.
 
 ### 4. Canonical simplex orders
 

@@ -28,7 +28,6 @@ from sage_categories.theories.poset_core import (
     is_poset_element,
     is_poset_hom_category,
 )
-from sage_categories.theories.sets import SetElement
 from sage_categories.values import (
     UNKNOWN,
     Arrow,
@@ -413,10 +412,7 @@ class TotallyOrderedSetsCategory(Category):
             totality = is_total_order(poset)
             assert totality is True, f"{poset} is not a total order (totality={totality})"
             return self.Finite()(poset)
-        assert False, (
-            f"Nonfinite poset {poset} cannot enter TotallyOrderedSets() "
-            "without an established construction theorem"
-        )
+        assert False, f"Nonfinite poset {poset} cannot enter TotallyOrderedSets() without an established construction theorem"
 
     def _hom_category_type(self) -> type[HomCategory]:
         return TotallyOrderedSetHomCategory

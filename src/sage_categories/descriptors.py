@@ -358,7 +358,7 @@ class ForwardedObjectMethod[Receiver: MathematicalObject, **P, R]:
         method: Callable[Concatenate[MathematicalObject, P], R],
         signature: MethodSignature,
     ) -> None:
-        assert route
+        assert route, method.__qualname__
         self._route = route
         self._method: FunctionType = cast(FunctionType, method)
         assert signature.receiver is ParameterRole.OBJECT
@@ -398,7 +398,7 @@ class ForwardedElementMethod[Receiver: MathematicalElement, **P, R]:
         method: Callable[Concatenate[MathematicalElement, P], R],
         signature: MethodSignature,
     ) -> None:
-        assert route
+        assert route, method.__qualname__
         self._route = route
         self._method: FunctionType = cast(FunctionType, method)
         assert signature.receiver is ParameterRole.ELEMENT
@@ -439,7 +439,7 @@ class ForwardedArrowMethod[Receiver: Arrow, **P, R]:
         method: Callable[Concatenate[Arrow, P], R],
         signature: MethodSignature,
     ) -> None:
-        assert route
+        assert route, method.__qualname__
         self._route = route
         self._method: FunctionType = cast(FunctionType, method)
         assert signature.receiver is ParameterRole.ARROW

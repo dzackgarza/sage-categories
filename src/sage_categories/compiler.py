@@ -685,7 +685,8 @@ class CategoryCompiler:
         available = {
             name
             for name, declaration in catalogue.items()
-            if inspect.getattr_static(local_type, name, None) is declaration.method
+            if not declaration.implementation_route
+            and inspect.getattr_static(local_type, name, None) is declaration.method
         }
         inherited: dict[str, ForwardedDescriptor]
         match role:

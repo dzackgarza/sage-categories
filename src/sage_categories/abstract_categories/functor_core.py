@@ -42,7 +42,7 @@ class Functor(Arrow, ABC):
         self._object_images: dict[int, MathematicalObject] = {}
         self._morphism_images: dict[int, Arrow] = {}
         self._object_preimages: dict[tuple[int, int], MathematicalObject] = {}
-        self._morphism_preimages: dict[int, Arrow] = {}
+        self._morphism_preimages: dict[tuple[int, int], Arrow] = {}
         self._postcomposition_functors: dict[int, PostcompositionFunctor] = {}
         functor_hom_category = category_universe(domain, codomain).Hom(domain, codomain) if hom_category is None else hom_category
         assert functor_hom_category.domain() is domain
@@ -69,7 +69,16 @@ class Functor(Arrow, ABC):
 
     def on_object(self, source: MathematicalObject) -> MathematicalObject:
         """Return the canonical image of one object."""
+        from sage_categories.compiler import category_compiler
+
+        original = source
         assert source in self.domain()
+        if source.category() is not self.domain() and source.category().is_subcategory(self.domain()):
+            route = category_compiler().implementation_route(
+                source.category(),
+                self.domain(),
+            )
+            source = source._object_image_along(route)
         key = id(source)
         image = self._object_images.get(key)
         if image is None:
@@ -77,11 +86,21 @@ class Functor(Arrow, ABC):
             assert image in self.codomain()
             self._object_images[key] = image
             self._object_preimages[(id(source), id(image))] = source
+        self._object_preimages[(id(original), id(image))] = original
         return image
 
     def on_morphism(self, morphism: Arrow) -> Arrow:
         """Return the canonical image of one arrow."""
+        from sage_categories.compiler import category_compiler
+
+        original = morphism
         assert self.domain().contains_arrow(morphism)
+        if morphism.base_category() is not self.domain() and morphism.base_category().is_subcategory(self.domain()):
+            route = category_compiler().implementation_route(
+                morphism.base_category(),
+                self.domain(),
+            )
+            morphism = morphism._morphism_image_along(route)
         key = id(morphism)
         image = self._morphism_images.get(key)
         if image is None:
@@ -92,7 +111,8 @@ class Functor(Arrow, ABC):
             assert image.domain() is domain
             assert image.codomain() is codomain
             self._morphism_images[key] = image
-            self._morphism_preimages[id(image)] = morphism
+            self._morphism_preimages[(id(image.hom_category()), id(image))] = morphism
+        self._morphism_preimages[(id(image.hom_category()), id(image))] = original
         return image
 
     def __call__(self, value: MathematicalObject) -> MathematicalObject:
@@ -187,8 +207,19 @@ class StructuralFunctor(Functor, ABC):
         element: MathematicalElement,
     ) -> MathematicalElement:
         """Return the canonical image of an element of ``source``."""
+        from sage_categories.compiler import category_compiler
+
+        original_source = source
+        original_element = element
         assert source in self.domain()
         assert element.ambient_object() is source
+        if source.category() is not self.domain() and source.category().is_subcategory(self.domain()):
+            route = category_compiler().implementation_route(
+                source.category(),
+                self.domain(),
+            )
+            source = source._object_image_along(route)
+            element = element._element_image_along(route)
         target = self.on_object(source)
         key = (id(source), id(element))
         image = self._element_images.get(key)
@@ -197,6 +228,7 @@ class StructuralFunctor(Functor, ABC):
             assert image.ambient_object() is target
             self._element_images[key] = image
             self._element_preimages[(id(source), id(image))] = element
+        self._element_preimages[(id(original_source), id(image))] = original_element
         return image
 
     def preimage_element(
@@ -205,7 +237,17 @@ class StructuralFunctor(Functor, ABC):
         element: MathematicalElement,
     ) -> MathematicalElement:
         """Return the canonical source element represented by ``element``."""
+        from sage_categories.compiler import category_compiler
+
+        original_source = source
+        normalization_route: tuple[StructuralFunctor, ...] = ()
         assert source in self.domain()
+        if source.category() is not self.domain() and source.category().is_subcategory(self.domain()):
+            normalization_route = category_compiler().implementation_route(
+                source.category(),
+                self.domain(),
+            )
+            source = source._object_image_along(normalization_route)
         target = self.on_object(source)
         assert element.ambient_object() is target
         key = (id(source), id(element))
@@ -216,6 +258,19 @@ class StructuralFunctor(Functor, ABC):
             self._element_preimages[key] = preimage
         assert preimage.ambient_object() is source
         self._element_images[(id(source), id(preimage))] = element
+        if normalization_route:
+            route_sources: list[MathematicalObject] = [original_source]
+            prefix: tuple[StructuralFunctor, ...] = ()
+            for functor in normalization_route[:-1]:
+                prefix = (*prefix, functor)
+                route_sources.append(original_source._object_image_along(prefix))
+            for functor, route_source in reversed(
+                tuple(zip(normalization_route, route_sources, strict=True)),
+            ):
+                preimage = functor.preimage_element(route_source, preimage)
+        assert preimage.ambient_object() is original_source
+        self._element_images[(id(original_source), id(preimage))] = element
+        self._element_preimages[(id(original_source), id(element))] = preimage
         return preimage
 
     def preimage_object(
@@ -224,14 +279,26 @@ class StructuralFunctor(Functor, ABC):
         image: MathematicalObject,
     ) -> MathematicalObject:
         """Return the source represented by one canonical object image."""
+        from sage_categories.compiler import category_compiler
+
+        original_source = source
         assert source in self.domain()
+        if source.category() is not self.domain() and source.category().is_subcategory(self.domain()):
+            route = category_compiler().implementation_route(
+                source.category(),
+                self.domain(),
+            )
+            source = source._object_image_along(route)
         assert image is self.on_object(source)
-        assert self._object_preimages[(id(source), id(image))] is source
-        return source
+        preimage = self._object_preimages.get((id(original_source), id(image)))
+        if preimage is None:
+            preimage = self._object_preimages[(id(source), id(image))]
+        assert preimage is original_source or preimage is source
+        return preimage
 
     def preimage_morphism(self, image: Arrow) -> Arrow:
         """Return the source represented by one canonical arrow image."""
-        preimage = self._morphism_preimages.get(id(image))
+        preimage = self._morphism_preimages.get((id(image.hom_category()), id(image)))
         assert preimage is not None
         assert self.on_morphism(preimage) is image
         return preimage
@@ -342,27 +409,31 @@ class InclusionFunctor(StructuralFunctor):
 
     def _object_image(self, source: MathematicalObject) -> MathematicalObject:
         assert source in self._included_domain
-        assert source in self.codomain()
-        return source
+        image = source._ambient_implementation()
+        assert image in self.codomain()
+        return image
 
     def _morphism_image(self, morphism: Arrow) -> Arrow:
         assert morphism in self._included_domain.ArrowCategory()
-        assert morphism in self.codomain().ArrowCategory()
-        return morphism
+        image = morphism._ambient_implementation()
+        assert image in self.codomain().ArrowCategory()
+        return image
 
     def _element_image(
         self,
         source: MathematicalObject,
         element: MathematicalElement,
     ) -> MathematicalElement:
-        return element
+        image = element._ambient_implementation()
+        assert image.ambient_object() is self.on_object(source)
+        return image
 
     def _element_preimage(
         self,
         source: MathematicalObject,
         element: MathematicalElement,
     ) -> MathematicalElement:
-        return element
+        return self._included_domain._refine_element(source, element)
 
     def is_faithful(self) -> bool:
         return True

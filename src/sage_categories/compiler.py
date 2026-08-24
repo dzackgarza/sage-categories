@@ -13,6 +13,8 @@ from sage_categories.descriptors import (
     ForwardedElementMethod,
     ForwardedObjectMethod,
     ImplementationRole,
+    MethodSignature,
+    method_signature,
 )
 from sage_categories.values import (
     Arrow,
@@ -108,12 +110,15 @@ class DeclaredMethod:
         owner: Category,
         implementation_owner: Category,
         method: FunctionType,
+        role: ImplementationRole,
         route: tuple[StructuralFunctor, ...] = (),
         implementation_route: tuple[StructuralFunctor, ...] = (),
     ) -> None:
         self.owner = owner
         self.implementation_owner = implementation_owner
         self.method = method
+        self.role = role
+        self.signature: MethodSignature = method_signature(method)
         self.route = route
         self.implementation_route = implementation_route
 
@@ -263,6 +268,7 @@ class CategoryCompiler:
             category,
             category.local_object_type(),
             self.object_method_catalogue,
+            ImplementationRole.OBJECT,
         )
         self._object_catalogues[key] = catalogue
         return catalogue
@@ -280,6 +286,7 @@ class CategoryCompiler:
             category,
             category.local_element_type(),
             self.element_method_catalogue,
+            ImplementationRole.ELEMENT,
         )
         self._element_catalogues[key] = catalogue
         return catalogue
@@ -297,6 +304,7 @@ class CategoryCompiler:
             category,
             category.local_arrow_type(),
             self.arrow_method_catalogue,
+            ImplementationRole.ARROW,
         )
         self._arrow_catalogues[key] = catalogue
         return catalogue
@@ -407,6 +415,7 @@ class CategoryCompiler:
         category: Category,
         local_type: ImplementationType,
         inherited_catalogue: Callable[[Category], Mapping[str, DeclaredMethod]],
+        role: ImplementationRole,
     ) -> dict[str, DeclaredMethod]:
         local = self._local_methods(local_type)
         catalogue: dict[str, DeclaredMethod] = {}
@@ -417,6 +426,7 @@ class CategoryCompiler:
                     declaration.owner,
                     declaration.implementation_owner,
                     declaration.method,
+                    role,
                     (functor, *declaration.route),
                     (functor, *declaration.implementation_route),
                 )
@@ -430,12 +440,14 @@ class CategoryCompiler:
                     previous,
                     candidate,
                     local.get(name),
+                    role,
                 )
         for name, method in local.items():
             catalogue[name] = self._local_declaration(
                 category,
                 method,
                 catalogue.get(name),
+                role,
             )
         return catalogue
 
@@ -446,6 +458,7 @@ class CategoryCompiler:
         previous: DeclaredMethod,
         candidate: DeclaredMethod,
         local_method: FunctionType | None,
+        role: ImplementationRole,
     ) -> DeclaredMethod:
         if previous.owner is candidate.owner:
             return self._preferred_implementation_route(category, previous, candidate)
@@ -454,7 +467,7 @@ class CategoryCompiler:
         if candidate.owner.is_subcategory(previous.owner):
             return candidate
         if local_method is not None:
-            return DeclaredMethod(category, category, local_method)
+            return DeclaredMethod(category, category, local_method, role)
         coherent = self._coherent_declaration(category, previous, candidate)
         assert coherent is not None, f"{category} inherits {name} from unrelated categories {previous.owner} and {candidate.owner}"
         return coherent
@@ -480,15 +493,17 @@ class CategoryCompiler:
         category: Category,
         method: FunctionType,
         inherited: DeclaredMethod | None,
+        role: ImplementationRole,
     ) -> DeclaredMethod:
         if inherited is not None and method is inherited.method:
             return inherited
         if inherited is None or inherited.owner is category:
-            return DeclaredMethod(category, category, method)
+            return DeclaredMethod(category, category, method, role)
         return DeclaredMethod(
             inherited.owner,
             category,
             method,
+            role,
             self.implementation_route(category, inherited.owner),
         )
 
@@ -596,15 +611,12 @@ class CategoryCompiler:
                 }
             case _:
                 assert_never(role)
-        if not inherited:
-            return local_type
-
         def install(namespace: dict[str, CompiledClassMember]) -> None:
             namespace.update(inherited)
             namespace["__module__"] = local_type.__module__
             namespace[_COMPILED_FROM] = local_type
 
-        name = f"Complete{type(category).__name__}{local_type.__name__}"
+        name = f"Complete{type(category).__name__}{role.value.title()}{local_type.__name__}"
         return new_class(name, (local_type,), exec_body=install)
 
     def _local_methods(

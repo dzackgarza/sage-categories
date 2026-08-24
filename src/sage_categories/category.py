@@ -158,6 +158,15 @@ class Category(MathematicalObject):
         """Return whether ``candidate`` is an arrow of this category."""
         return candidate._is_arrow_in(self)
 
+    def _refine_element(
+        self,
+        source: MathematicalObject,
+        ambient: MathematicalElement,
+    ) -> MathematicalElement:
+        """Construct the source element represented by an ambient element."""
+        assert ambient.ambient_object() is source
+        return ambient
+
     def objects(self) -> MathematicalObject:
         """Return the object set when this category is represented as small."""
         assert False, f"{self} has no represented object set"

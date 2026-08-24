@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 import types
 import typing
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass
 from enum import Enum
 from types import FunctionType
@@ -33,6 +33,7 @@ class ParameterRole(Enum):
     ELEMENT = "element"
     ARROW = "arrow"
     ELEMENT_ITERATOR = "element_iterator"
+    ELEMENT_COLLECTION = "element_collection"
 
 
 @dataclass(frozen=True)
@@ -77,8 +78,7 @@ def _annotation_role(annotation: Annotation) -> ParameterRole:
             if argument is not type(None)
         )
         assert roles
-        assert len(set(roles)) == 1
-        return roles[0]
+        return roles[0] if len(set(roles)) == 1 else ParameterRole.VALUE
     if origin is not None:
         if origin is Iterator:
             arguments = typing.get_args(annotation)
@@ -87,11 +87,22 @@ def _annotation_role(annotation: Annotation) -> ParameterRole:
             if item_role is ParameterRole.ELEMENT:
                 return ParameterRole.ELEMENT_ITERATOR
             return ParameterRole.VALUE
+        if origin is Iterable:
+            arguments = typing.get_args(annotation)
+            assert len(arguments) == 1
+            item_role = _annotation_role(arguments[0])
+            if item_role is ParameterRole.ELEMENT:
+                return ParameterRole.ELEMENT_COLLECTION
+            return ParameterRole.VALUE
         arguments = typing.get_args(annotation)
         if arguments:
-            item_roles = tuple(_annotation_role(argument) for argument in arguments)
+            item_roles = tuple(
+                _annotation_role(argument)
+                for argument in arguments
+                if argument is not Ellipsis
+            )
             if all(role is ParameterRole.ELEMENT for role in item_roles):
-                return ParameterRole.ELEMENT_ITERATOR
+                return ParameterRole.ELEMENT_COLLECTION
         return ParameterRole.VALUE
     if type(annotation) is type:
         annotation_type = cast(type, annotation)
@@ -117,6 +128,9 @@ def method_signature(method: FunctionType) -> MethodSignature:
     variadic = ParameterRole.VALUE
     keywords = ParameterRole.VALUE
     for parameter in parameters:
+        assert parameter.annotation is not inspect.Parameter.empty, (
+            f"{method.__qualname__} must annotate parameter {parameter.name}"
+        )
         annotation = annotations[parameter.name] if parameter.name in annotations else parameter.annotation
         role = _annotation_role(annotation)
         if parameter.kind is inspect.Parameter.VAR_POSITIONAL:
@@ -131,6 +145,9 @@ def method_signature(method: FunctionType) -> MethodSignature:
         else:
             keyword.append((parameter.name, role))
     result_annotation = annotations["return"] if "return" in annotations else inspect.signature(method).return_annotation
+    assert result_annotation is not inspect.Parameter.empty, (
+        f"{method.__qualname__} must annotate its result"
+    )
     return MethodSignature(
         tuple(positional),
         tuple(keyword),
@@ -189,25 +206,71 @@ def _forward_value(
     source_category = route[0].domain()
     if role is ParameterRole.OBJECT:
         mathematical_object = cast(MathematicalObject, value)
-        assert mathematical_object in source_category
-        return cast(Value, mathematical_object._object_image_along(route))
+        value_category = mathematical_object.category()
+        if value_category is source_category:
+            value_route = route
+        else:
+            assert value_category.is_subcategory(source_category)
+            from sage_categories.compiler import category_compiler
+
+            value_route = category_compiler().implementation_route(
+                value_category,
+                route[-1].codomain(),
+            )
+        return cast(Value, mathematical_object._object_image_along(value_route))
     if role is ParameterRole.ELEMENT:
         element = cast(MathematicalElement, value)
-        assert element.ambient_object() in source_category
-        return cast(Value, element._element_image_along(route))
+        value_category = element.ambient_object().category()
+        if not value_category.is_subcategory(source_category):
+            return value
+        if value_category is source_category:
+            value_route = route
+        else:
+            from sage_categories.compiler import category_compiler
+
+            value_route = category_compiler().implementation_route(
+                value_category,
+                route[-1].codomain(),
+            )
+        return cast(Value, element._element_image_along(value_route))
     if role is ParameterRole.ARROW:
         arrow = cast(Arrow, value)
-        assert arrow.domain() in source_category
-        assert arrow.codomain() in source_category
-        return cast(Value, arrow._morphism_image_along(route))
-    assert role is ParameterRole.ELEMENT_ITERATOR
-    iterator = cast(Iterator[MathematicalElement], value)
+        value_category = arrow.base_category()
+        if not value_category.is_subcategory(source_category):
+            return value
+        if value_category is source_category:
+            value_route = route
+        else:
+            from sage_categories.compiler import category_compiler
 
-    def forward_elements() -> Iterator[MathematicalElement]:
-        for element in iterator:
-            yield _forward_value(element, ParameterRole.ELEMENT, route)
+            value_route = category_compiler().implementation_route(
+                value_category,
+                route[-1].codomain(),
+            )
+        return cast(Value, arrow._morphism_image_along(value_route))
+    if role is ParameterRole.ELEMENT_ITERATOR:
+        iterator = cast(Iterator[MathematicalElement], value)
 
-    return cast(Value, forward_elements())
+        def forward_elements() -> Iterator[MathematicalElement]:
+            for element in iterator:
+                yield _forward_value(element, ParameterRole.ELEMENT, route)
+
+        return cast(Value, forward_elements())
+    assert role is ParameterRole.ELEMENT_COLLECTION
+    collection = cast(Iterable[MathematicalElement], value)
+    transported = tuple(
+        cast(MathematicalElement, _forward_value(element, ParameterRole.ELEMENT, route))
+        for element in collection
+    )
+    if isinstance(value, tuple):
+        return cast(Value, transported)
+    if isinstance(value, frozenset):
+        return cast(Value, frozenset(transported))
+    if isinstance(value, set):
+        return cast(Value, set(transported))
+    if isinstance(value, list):
+        return cast(Value, list(transported))
+    return cast(Value, transported)
 
 
 def _forward_arguments(
@@ -225,6 +288,19 @@ def _forward_arguments(
         for name, value in kwargs.items()
     }
     return forwarded_args, forwarded_kwargs
+
+
+def _invoke_declared[R](
+    method: FunctionType,
+    receiver: MathematicalObject,
+    args: tuple[Value, ...],
+    kwargs: dict[str, Value],
+) -> R:
+    """Invoke the concrete implementation at a transported receiver."""
+    implementation = inspect.getattr_static(type(receiver), method.__name__, None)
+    if inspect.isfunction(implementation) and implementation is not method:
+        return cast(R, implementation(receiver, *args, **kwargs))
+    return cast(R, method(receiver, *args, **kwargs))
 
 
 def _transport_result(
@@ -259,14 +335,29 @@ def _transport_result(
         if not value._is_arrow_in(route[-1].codomain()):
             return result
         return cast(R, _pull_back_arrow_along(value, route))
-    assert role is ParameterRole.ELEMENT_ITERATOR
-    iterator = cast(Iterator[MathematicalElement], result)
+    if role is ParameterRole.ELEMENT_ITERATOR:
+        iterator = cast(Iterator[MathematicalElement], result)
 
-    def pull_back_elements() -> Iterator[MathematicalElement]:
-        for element in iterator:
-            yield _pull_back_element_along(element, route, source_ambient)
+        def pull_back_elements() -> Iterator[MathematicalElement]:
+            for element in iterator:
+                yield _pull_back_element_along(element, route, source_ambient)
 
-    return cast(R, pull_back_elements())
+        return cast(R, pull_back_elements())
+    assert role is ParameterRole.ELEMENT_COLLECTION
+    collection = cast(Iterable[MathematicalElement], result)
+    transported = tuple(
+        _pull_back_element_along(element, route, source_ambient)
+        for element in collection
+    )
+    if isinstance(result, tuple):
+        return cast(R, transported)
+    if isinstance(result, frozenset):
+        return cast(R, frozenset(transported))
+    if isinstance(result, set):
+        return cast(R, set(transported))
+    if isinstance(result, list):
+        return cast(R, list(transported))
+    return cast(R, transported)
 
 
 class ForwardedObjectMethod[Receiver: MathematicalObject, **P, R]:
@@ -301,7 +392,10 @@ class ForwardedObjectMethod[Receiver: MathematicalObject, **P, R]:
                 signature,
                 route,
             )
-            result = cast(R, method(image, *forwarded_args, **forwarded_kwargs))
+            result = cast(
+                R,
+                _invoke_declared(method, image, forwarded_args, forwarded_kwargs),
+            )
             return _transport_result(result, signature.result, route, instance, image, instance, image)
 
         return call
@@ -340,7 +434,10 @@ class ForwardedElementMethod[Receiver: MathematicalElement, **P, R]:
                 signature,
                 route,
             )
-            result = cast(R, method(image, *forwarded_args, **forwarded_kwargs))
+            result = cast(
+                R,
+                _invoke_declared(method, image, forwarded_args, forwarded_kwargs),
+            )
             return _transport_result(result, signature.result, route, source_ambient, image.ambient_object(), instance, image)
 
         return call
@@ -378,7 +475,10 @@ class ForwardedArrowMethod[Receiver: Arrow, **P, R]:
                 signature,
                 route,
             )
-            result = cast(R, method(image, *forwarded_args, **forwarded_kwargs))
+            result = cast(
+                R,
+                _invoke_declared(method, image, forwarded_args, forwarded_kwargs),
+            )
             return _transport_result(result, signature.result, route, instance.codomain(), image.codomain(), instance, image)
 
         return call

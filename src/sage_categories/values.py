@@ -175,10 +175,21 @@ class MathematicalObject:
     def _is_arrow_in(self, category: Category) -> bool:
         return False
 
+    def _ambient_implementation(self) -> MathematicalObject:
+        """Return the canonical implementation used by an inclusion."""
+        return self
+
     def _object_image_along(
         self,
         route: tuple[StructuralFunctor, ...],
     ) -> MathematicalObject:
+        from sage_categories.compiler import category_compiler
+
+        if route:
+            route = category_compiler().implementation_route(
+                route[0].domain(),
+                route[-1].codomain(),
+            )
         value = self
         for functor in route:
             codomain = functor.codomain()
@@ -223,10 +234,21 @@ class MathematicalElement(MathematicalObject):
         """Return the mathematical object which contains this element."""
         return self._ambient_object
 
+    def _ambient_implementation(self) -> MathematicalElement:
+        """Return the canonical ambient element used by an inclusion."""
+        return self
+
     def _element_image_along(
         self,
         route: tuple[StructuralFunctor, ...],
     ) -> MathematicalElement:
+        from sage_categories.compiler import category_compiler
+
+        if route:
+            route = category_compiler().implementation_route(
+                route[0].domain(),
+                route[-1].codomain(),
+            )
         ambient = self._ambient_object
         source = ambient
         element = self
@@ -292,6 +314,10 @@ class Arrow(MathematicalElement):
         """Return the represented ordinary arrow."""
         return self
 
+    def _ambient_implementation(self) -> Arrow:
+        """Return the canonical ambient arrow used by an inclusion."""
+        return self
+
     def _belongs_to_hom(self, hom_category: HomCategory) -> bool:
         own_hom_category = self._hom_category
         return own_hom_category is hom_category or (
@@ -308,6 +334,13 @@ class Arrow(MathematicalElement):
         self,
         route: tuple[StructuralFunctor, ...],
     ) -> Arrow:
+        from sage_categories.compiler import category_compiler
+
+        if route:
+            route = category_compiler().implementation_route(
+                route[0].domain(),
+                route[-1].codomain(),
+            )
         value = self
         prefix: tuple[StructuralFunctor, ...] = ()
         for functor in route:

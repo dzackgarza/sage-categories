@@ -353,6 +353,10 @@ Grounding examples:
 | `POL-LEAF-030` | A leaf refinement adds only its leaf-specific structure or private realization. It preserves the inherited method's name, laws, domain, codomain, and mathematical owner. |
 | `POL-LEAF-031` | Delete any leaf method that adds no leaf-specific mathematical or realization step. Generic algorithms, structural transport, wrappers, and public-surface installation belong to their existing owners. |
 | `POL-LEAF-032` | Treat selected structural functors as the complete inheritance program. A finished leaf contains no forwarding, descriptor, route, cache, wrapper, or type-repair boilerplate. |
+| `POL-LEAF-033` | A property-subcategory leaf declares its predicate, inclusion, and named checked, hypothesis-backed, and theorem-backed entry routes. It implements no generic refinement mechanics. |
+| `POL-LEAF-034` | Never give a leaf an ambient-to-refined cache, an identity-keyed refinement table, an ambient wrapper field, or a local refinement constructor. |
+| `POL-LEAF-035` | After an entry route establishes its property, delegate to the generic kernel refinement operation. Perform no leaf-local allocation, cache mutation, narrowing, or repeated membership assertion. |
+| `POL-LEAF-036` | Treat a type error in leaf refinement machinery as evidence that the kernel lacks a typed refinement contract. Repair that contract and delete the leaf machinery. |
 
 For example, a free-module morphism inherits categorical composition.
 A leaf refinement can attach a private matrix realization to the inherited composite when bases are chosen.
@@ -373,6 +377,9 @@ It does not reimplement composition, structural transport, domain checks, codoma
 | `POL-KERNEL-009` | Derive mathematical roles from typed category and functor declarations. Use Python inspection only to realize those declarations in the runtime. |
 | `POL-KERNEL-010` | Keep reflective installation and dispatch inside the kernel. Expose the resulting typed mathematical surface without wrappers or repeated reflection in theory code. |
 | `POL-KERNEL-011` | Kernel permissions do not permit `Any`, `object`, casts, ignored diagnostics, fallbacks, or fabricated mathematical evidence. |
+| `POL-KERNEL-012` | Provide one typed canonical refinement operation for objects, elements, and arrows of every full property subcategory. |
+| `POL-KERNEL-013` | Generic refinement constructs the target implementation, retains its ambient image, caches the canonical image, and establishes coherence once. Leaves never repeat these steps. |
+| `POL-KERNEL-014` | Compile each property subcategory's distinct object, element, and arrow types from its declarations. A leaf never hand-writes a wrapper solely to store an ambient implementation. |
 
 For example, an object of `Modules(R)` can be defined by an action morphism \(\rho:R\to\operatorname{End}(X)\). Its selected functor to `Sets()` recovers \(X\) from \(\rho\) and applies `Sets(X)`. The module category does not implement set operations independently.
 

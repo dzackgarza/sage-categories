@@ -170,8 +170,8 @@ class StructuralFunctor(Functor, ABC):
         *,
         hom_category: HomCategory | None = None,
     ) -> None:
-        self._element_images: dict[int, MathematicalElement] = {}
-        self._element_preimages: dict[int, MathematicalElement] = {}
+        self._element_images: dict[tuple[int, int], MathematicalElement] = {}
+        self._element_preimages: dict[tuple[int, int], MathematicalElement] = {}
         super().__init__(domain, codomain, hom_category=hom_category)
         _STRUCTURAL_FUNCTORS[id(self)] = self
 
@@ -192,12 +192,13 @@ class StructuralFunctor(Functor, ABC):
         assert source in self.domain()
         assert element.ambient_object() is source
         target = self.on_object(source)
-        key = id(element)
+        key = (id(source), id(element))
         image = self._element_images.get(key)
         if image is None:
             image = self._element_image(source, element)
             assert image.ambient_object() is target
             self._element_images[key] = image
+            self._element_preimages[(id(source), id(image))] = element
         return image
 
     def preimage_element(
@@ -209,12 +210,14 @@ class StructuralFunctor(Functor, ABC):
         assert source in self.domain()
         target = self.on_object(source)
         assert element.ambient_object() is target
-        preimage = self._element_preimages.get(id(element))
+        key = (id(source), id(element))
+        preimage = self._element_preimages.get(key)
         if preimage is None:
             preimage = self._element_preimage(source, element)
-            self._element_preimages[id(element)] = preimage
+            assert preimage.ambient_object() is source
+            self._element_preimages[key] = preimage
         assert preimage.ambient_object() is source
-        self._element_images[id(preimage)] = element
+        self._element_images[(id(source), id(preimage))] = element
         return preimage
 
     def _element_preimage(

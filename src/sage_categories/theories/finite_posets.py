@@ -87,6 +87,11 @@ class FinitePosetObject(MathematicalObject):
     def _set_implementation(self) -> SetObject:
         return PartiallyOrderedSets().underlying_set(self._poset)
 
+    def _is_lequal(self, left: PosetElement, right: PosetElement) -> Decision:
+        poset_left = self._poset.element(left._set_implementation())
+        poset_right = self._poset.element(right._set_implementation())
+        return self._poset._is_lequal(poset_left, poset_right)
+
     def _realization(self) -> SageFinitePosetObject:
         from sage_categories.backends.sage.finite_posets import (
             realize_finite_poset,

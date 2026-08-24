@@ -35,9 +35,11 @@ from sage_categories.compiler import category_compiler
 from sage_categories.theories.posets import (
     PosetElement,
     PosetObject,
-    is_total_order_element,
+    is_poset_element,
     is_poset_hom_category,
+    is_total_order_element,
 )
+from sage_categories.theories.total_orders import is_total_order
 from sage_categories.theories.sets import SetObject, is_products_of_sets_category
 
 
@@ -391,6 +393,10 @@ def test_poset_products_lift_products_of_underlying_sets() -> None:
     assert projection(diagonal_image) is first_factor.element(set_one)
 
 
+def _element_int(element: MathematicalElement) -> int:
+    return int(str(element))
+
+
 def test_poset_structural_membership_and_iteration() -> None:
     ordered = finite_ordered_set((ZZ(int(10)), ZZ(int(20)), ZZ(int(30))))
     members = list(ordered)
@@ -399,7 +405,10 @@ def test_poset_structural_membership_and_iteration() -> None:
         assert is_total_order_element(member)
         assert member in ordered
         assert member.ambient_object() is ordered
-    a, b, c = members
+    elem_by_val = {_element_int(m): m for m in members}
+    a = elem_by_val[int(10)]
+    b = elem_by_val[int(20)]
+    c = elem_by_val[int(30)]
     assert is_total_order_element(a)
     assert is_total_order_element(b)
     assert is_total_order_element(c)
@@ -434,11 +443,9 @@ def test_rejection_of_invalid_partial_orders() -> None:
     assert non_antisymmetric_failed
 
     def non_trans_leq(left: SetElement, right: SetElement) -> bool:
-        assert ZZ.contains_integer(left)
-        assert ZZ.contains_integer(right)
-        l_val = int(left)
-        r_val = int(right)
-        return (l_val == r_val) or (l_val == 1 and r_val == 2) or (l_val == 2 and r_val == 3)
+        l_val = _element_int(left)
+        r_val = _element_int(right)
+        return bool((l_val == r_val) or (l_val == 1 and r_val == 2) or (l_val == 2 and r_val == 3))
 
     non_transitive_failed = False
     try:
@@ -448,9 +455,9 @@ def test_rejection_of_invalid_partial_orders() -> None:
     assert non_transitive_failed
 
     def unknown_leq(left: SetElement, right: SetElement) -> Decision:
-        assert ZZ.contains_integer(left)
-        assert ZZ.contains_integer(right)
-        return True if int(left) == int(right) else UNKNOWN
+        l_val = _element_int(left)
+        r_val = _element_int(right)
+        return True if l_val == r_val else UNKNOWN
 
     unknown_failed = False
     try:
@@ -462,14 +469,14 @@ def test_rejection_of_invalid_partial_orders() -> None:
 
 def test_totality_verification_and_rejection() -> None:
     def discrete_leq(left: SetElement, right: SetElement) -> bool:
-        assert ZZ.contains_integer(left)
-        assert ZZ.contains_integer(right)
-        return int(left) == int(right)
+        l_val = _element_int(left)
+        r_val = _element_int(right)
+        return bool(l_val == r_val)
 
     def chain_leq(left: SetElement, right: SetElement) -> bool:
-        assert ZZ.contains_integer(left)
-        assert ZZ.contains_integer(right)
-        return int(left) <= int(right)
+        l_val = _element_int(left)
+        r_val = _element_int(right)
+        return bool(l_val <= r_val)
 
     discrete_poset = Poset(((ZZ(int(0)), ZZ(int(1))), discrete_leq))
     assert is_total_order(discrete_poset) is False
@@ -492,17 +499,24 @@ def test_totality_verification_and_rejection() -> None:
 
 def test_poset_hom_monotonicity_admission_and_rejection() -> None:
     def chain_leq(left: SetElement, right: SetElement) -> bool:
-        assert ZZ.contains_integer(left)
-        assert ZZ.contains_integer(right)
-        return int(left) <= int(right)
+        l_val = _element_int(left)
+        r_val = _element_int(right)
+        return bool(l_val <= r_val)
 
     chain = Poset(((ZZ(int(0)), ZZ(int(1))), chain_leq))
+    elem_map: dict[int, PosetElement] = {}
+    for m in chain:
+        assert is_poset_element(m)
+        elem_map[_element_int(m)] = m
+    zero_elem = elem_map[int(0)]
+    one_elem = elem_map[int(1)]
     hom = PartiallyOrderedSets().Hom(chain, chain)
 
     def reverse_chain(member: PosetElement) -> PosetElement:
-        set_elem = PartiallyOrderedSets().forgetful_functor().on_element(chain, member)
-        assert ZZ.contains_integer(set_elem)
-        return chain.element(ZZ(int(1) - int(set_elem)))
+        val = _element_int(member)
+        target = elem_map[int(1 - val)]
+        assert is_poset_element(target)
+        return target
 
     reversing_rejected = False
     try:
@@ -511,11 +525,9 @@ def test_poset_hom_monotonicity_admission_and_rejection() -> None:
         reversing_rejected = True
     assert reversing_rejected
 
-    constant_map = hom(lambda member: chain.element(ZZ(int(0))))
+    constant_map = hom(lambda member: zero_elem)
     assert constant_map.is_order_preserving()
     assert constant_map in hom
-    zero_elem = chain.element(ZZ(int(0)))
-    one_elem = chain.element(ZZ(int(1)))
     assert constant_map(zero_elem) == zero_elem
     assert constant_map(one_elem) == zero_elem
 

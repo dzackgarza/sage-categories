@@ -470,7 +470,12 @@ class ForgetPosetFunctor(StructuralFunctor):
     ) -> PosetElement:
         assert PartiallyOrderedSets().contains_poset(source)
         assert SetElements().contains_set_element(element)
-        return source.element(element)
+        element_type = source.category().ElementType
+        assert is_poset_element_type(element_type)
+        return element_type(
+            ambient_object=source,
+            set_element=element,
+        )
 
     def _lift_morphism(
         self,
@@ -665,4 +670,7 @@ def is_poset_element(candidate: MathematicalObject) -> TypeIs[PosetElement]:
 def is_poset_element_type(
     candidate: type[MathematicalElement],
 ) -> TypeIs[type[PosetElement]]:
-    return candidate is PosetElement or vars(candidate).get("_compiled_from") is PosetElement
+    from sage_categories.theories.finite_posets import FinitePosetElement
+
+    source = vars(candidate).get("_compiled_from")
+    return candidate is PosetElement or candidate is FinitePosetElement or source is PosetElement or source is FinitePosetElement

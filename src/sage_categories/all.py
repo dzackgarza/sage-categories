@@ -101,10 +101,8 @@ from sage_categories import (
     continuum,
     coproduct_morphism,
     declare_isomorphism,
-    finite_ordered_set,
     omega,
     omega0,
-    ordered_set_owned_by,
     ordinal,
     version,
 )
@@ -210,10 +208,8 @@ __all__ = [
     "continuum",
     "coproduct_morphism",
     "declare_isomorphism",
-    "finite_ordered_set",
     "omega",
     "omega0",
-    "ordered_set_owned_by",
     "ordinal",
     "version",
 ]

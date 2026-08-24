@@ -17,17 +17,21 @@ from sage_categories.abstract_categories.functors import (
 from sage_categories.abstract_categories.hom_categories import Isomorphism, is_isomorphism
 from sage_categories.category import Category
 from sage_categories.theories.poset_core import (
-    OrderRelation,
     PartiallyOrderedSets,
     PartiallyOrderedSetsCategory,
     PosetElement,
     is_poset_element,
 )
-from sage_categories.theories.sets import SetObject
+from sage_categories.theories.sets import (
+    NaturalNumbers,
+    SetElement,
+    SetMorphism,
+    SetObject,
+    Sets,
+)
 from sage_categories.values import (
     Arrow,
     Decision,
-    MathematicalElement,
     MathematicalObject,
     TransportedArrow,
     TransportedElement,
@@ -84,13 +88,31 @@ class FiniteTotallyOrderedSetsCategory(FullSubcategory):
             return total
         return PartiallyOrderedSets().underlying_set(value).is_finite()
 
-    def _from_enumerated_relation(
+    def from_enumeration(
         self,
-        underlying_set: SetObject,
-        relation: OrderRelation,
+        enumeration: SetMorphism,
     ) -> FiniteTotalOrderObject:
         """Construct the finite total order established by an enumeration."""
+        from sage_categories.theories.ordinals import Ordinals
+
+        underlying_set = enumeration.domain()
+        assert Sets().contains_set(underlying_set)
         assert underlying_set.is_finite() is True
+        assert enumeration in Sets().Mono(underlying_set, NaturalNumbers())
+
+        def ordered(left: SetElement, right: SetElement) -> Decision:
+            assert left.ambient_object() is underlying_set
+            assert right.ambient_object() is underlying_set
+            left_position = enumeration(left).value()
+            right_position = enumeration(right).value()
+            assert Ordinals().contains_ordinal(left_position)
+            assert Ordinals().contains_ordinal(right_position)
+            return Ordinals()._is_lequal(left_position, right_position)
+
+        relation = Sets().relation(
+            underlying_set,
+            Sets().binary_predicate(underlying_set, ordered),
+        )
         poset = PartiallyOrderedSets()._construct(underlying_set, relation)
         total_order = TotallyOrderedSets()._refine_object(poset)
         result = self._refine_object(total_order)

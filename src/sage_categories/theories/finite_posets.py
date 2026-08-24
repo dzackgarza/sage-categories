@@ -14,6 +14,7 @@ from sage_categories.abstract_categories.functors import (
 )
 from sage_categories.theories.sets import (
     DiscreteCategory,
+    EnumerationInjection,
     FiniteSet,
     FiniteSets,
     PowerSet,
@@ -263,17 +264,18 @@ class FinitePosetObject(TransportedObject):
         return self._sage_poset().is_antichain_of_poset(self._sage_members(members))
 
     def linear_extension(self) -> FiniteTotalOrderObject:
-        from sage_categories.theories.ordered_set_constructors import (
-            ordered_set_owned_by,
+        elements = tuple(self._sage_poset().linear_extension())
+        positions = {
+            member: position
+            for position, member in enumerate(elements)
+        }
+        enumeration = EnumerationInjection(
+            self._underlying_set(),
+            lambda member: positions[member],
         )
-
-        elements = tuple(
-            self._owned_element(member)._set_implementation()
-            for member in self._sage_poset().linear_extension()
-        )
-        result = ordered_set_owned_by(elements)
         from sage_categories.theories.total_orders import FiniteTotallyOrderedSets
 
+        result = FiniteTotallyOrderedSets().from_enumeration(enumeration)
         assert FiniteTotallyOrderedSets().contains_finite_total_order(result)
         return result
 

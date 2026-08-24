@@ -7,8 +7,6 @@ from sage_categories.theories.finite_posets import (
 from sage_categories.theories.ordered_set_constructors import (
     SimplexOrderIndexing,
     SimplexOrders,
-    finite_ordered_set,
-    ordered_set_owned_by,
 )
 from sage_categories.theories.poset_core import (
     ForgetPosetFunctor,
@@ -71,7 +69,6 @@ __all__ = (
     "ThinCategoryObjectSet",
     "TotallyOrderedSets",
     "TotallyOrderedSetsCategory",
-    "finite_ordered_set",
     "is_partially_ordered_sets_category",
     "is_poset_element",
     "is_poset_hom_category",
@@ -79,5 +76,4 @@ __all__ = (
     "is_thin_category_hom",
     "is_total_order_element",
     "is_totally_ordered_sets_category",
-    "ordered_set_owned_by",
 )

@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
 from sage_categories.theories.poset_core import (
     PartiallyOrderedSets,
 )
 from sage_categories.theories.sets import (
+    EnumerationInjection,
     FiniteSet,
     NaturalNumbers,
     SetElement,
@@ -23,33 +23,6 @@ from sage_categories.theories.total_orders import (
     FiniteTotallyOrderedSets,
     TotallyOrderedSets,
 )
-
-
-def ordered_set_owned_by(
-    elements: Iterable[SetElement],
-) -> MathematicalObject:
-    enumeration = tuple(dict.fromkeys(elements))
-    underlying_set = FiniteSet(enumeration)
-    owned_enumeration = tuple(underlying_set.element(element) for element in enumeration)
-    positions: dict[SetElement, int] = {element: index for index, element in enumerate(owned_enumeration)}
-
-    def ordered_relation(left: SetElement, right: SetElement) -> bool:
-        return positions[left] <= positions[right]
-
-    finite_total_order = FiniteTotallyOrderedSets()._from_enumerated_relation(
-        underlying_set,
-        Sets().relation(
-            underlying_set,
-            Sets().binary_predicate(underlying_set, ordered_relation),
-        ),
-    )
-    return finite_total_order
-
-
-def finite_ordered_set(
-    elements: Iterable[SetElement],
-) -> MathematicalObject:
-    return ordered_set_owned_by(elements)
 
 
 class SimplexOrderIndexing:
@@ -98,7 +71,17 @@ class SimplexOrderIndexing:
             maximum = index
         assert maximum >= -1
         naturals = NaturalNumbers()
-        return finite_ordered_set(naturals.element(ordinal(position)) for position in range(maximum + 1))
+        values = tuple(
+            naturals.element(ordinal(position))
+            for position in range(maximum + 1)
+        )
+        underlying_set = FiniteSet(values)
+        positions = {value: position for position, value in enumerate(values)}
+        enumeration = EnumerationInjection(
+            underlying_set,
+            lambda member: positions[member.value()],
+        )
+        return FiniteTotallyOrderedSets().from_enumeration(enumeration)
 
     def __repr__(self) -> str:
         return "Delta"

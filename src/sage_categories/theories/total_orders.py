@@ -19,11 +19,8 @@ from sage_categories.theories.poset_core import (
     is_poset_element,
 )
 from sage_categories.theories.sets import (
-    NaturalNumbers,
-    SetElement,
     SetMorphism,
     SetObject,
-    Sets,
 )
 from sage_categories.values import (
     Decision,
@@ -87,27 +84,7 @@ class FiniteTotallyOrderedSetsCategory(FullSubcategory):
         enumeration: SetMorphism,
     ) -> FiniteTotalOrderObject:
         """Construct the finite total order established by an enumeration."""
-        from sage_categories.theories.ordinals import Ordinals
-
-        underlying_set = enumeration.domain()
-        assert Sets().contains_set(underlying_set)
-        assert underlying_set.is_finite() is True
-        assert enumeration in Sets().Mono(underlying_set, NaturalNumbers())
-
-        def ordered(left: SetElement, right: SetElement) -> Decision:
-            assert left.ambient_object() is underlying_set
-            assert right.ambient_object() is underlying_set
-            left_position = enumeration(left).value()
-            right_position = enumeration(right).value()
-            assert Ordinals().contains_ordinal(left_position)
-            assert Ordinals().contains_ordinal(right_position)
-            return Ordinals()._is_lequal(left_position, right_position)
-
-        relation = Sets().relation(
-            underlying_set,
-            Sets().binary_predicate(underlying_set, ordered),
-        )
-        poset = PartiallyOrderedSets()._construct(underlying_set, relation)
+        poset = PartiallyOrderedSets().order_from_enumeration(enumeration)
         result = self._refine_object(poset)
         assert self.contains_finite_total_order(result)
         return result

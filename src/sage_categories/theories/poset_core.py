@@ -468,6 +468,31 @@ class PartiallyOrderedSetsCategory(Category):
         )
         return self._construct(naturals, relation)
 
+    def order_from_enumeration(self, enumeration: SetMorphism) -> PosetObject:
+        """Construct the partial order induced by a finite enumeration."""
+        from sage_categories.theories.ordinals import Ordinals
+        from sage_categories.theories.sets import NaturalNumbers
+
+        underlying_set = enumeration.domain()
+        assert underlying_set in FiniteSets()
+        assert enumeration in Sets().Mono(underlying_set, NaturalNumbers())
+
+        def ordered(left: SetElement, right: SetElement) -> Decision:
+            left_position = enumeration(left).value()
+            right_position = enumeration(right).value()
+            assert Ordinals().contains_ordinal(left_position)
+            assert Ordinals().contains_ordinal(right_position)
+            return Ordinals()._is_lequal(left_position, right_position)
+
+        relation = Sets().relation(
+            underlying_set,
+            Sets().binary_predicate(underlying_set, ordered),
+        )
+        return self._strongest_result(
+            self._construct(underlying_set, relation),
+            underlying_set,
+        )
+
     def _hom_category_type(self) -> type[HomCategory]:
         return PosetHomCategory
 

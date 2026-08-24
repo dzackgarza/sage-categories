@@ -1,520 +1,157 @@
-## Posets and totally ordered sets: API and capability specification
+## Posets and totally ordered sets: specification
 
-The implementation treats order as structure on a set.
-It does not treat order as a Python sorting convention.
+This package models order as mathematical structure on a set.
 
-The main source surfaces are [owned_sets.py](/home/dzack/research/src/dzack_research/preamble/categories/sets/owned_sets.py:1591) and [sets.sage](/home/dzack/research/src/dzack_research/preamble/categories/sets/sets.sage:1065).
+### 1. Category hierarchy
 
-### 1. Category structure
-
-The public category constructors are:
+The category constructors are:
 
 ```sage
-Sets().PartiallyOrdered()
-Sets().TotallyOrdered()
+PartiallyOrderedSets()
+TotallyOrderedSets()
+FinitePosets()
+FiniteTotallyOrderedSets()
 ```
 
-An object of `Sets().PartiallyOrdered()` is a set \(X\) equipped with a partial order \(\le_X\).
-
-An object of `Sets().TotallyOrdered()` is a set \(X\) equipped with a total order.
-The implementation declares:
+The categorical inclusions and forgetful functors form the commutative graph:
 
 \[
-\operatorname{TotOrdSets}\subseteq \operatorname{Posets}\subseteq \operatorname{Sets}.
+\begin{array}{ccc}
+\mathbf{FinTotOrd} & \hookrightarrow & \mathbf{TotOrd} \\
+\downarrow & & \downarrow \\
+\mathbf{FinPoset} & \hookrightarrow & \mathbf{Poset} \\
+\downarrow & & \downarrow \\
+\mathbf{FinSet} & \hookrightarrow & \mathbf{Set}
+\end{array}
 \]
 
-Thus every totally ordered set inherits the capabilities of partially ordered sets and sets.
+Every totally ordered set inherits partial-order operations through its structural inclusion.
+Every partially ordered set inherits set operations through its forgetful functor.
 
-Order and cardinality are independent properties.
-Valid intersections include:
+Order and cardinality remain independent properties.
 
-```sage
-Sets().Finite().PartiallyOrdered()
-Sets().Finite().TotallyOrdered()
-Sets().Countable().TotallyOrdered()
-Sets().Countable().Infinite().TotallyOrdered()
-Sets().Uncountable().TotallyOrdered()
-```
+### 2. Partial-order validation
 
-The category does not infer finiteness from order.
+A partially ordered set is a set \(X\) equipped with a relation \(\le\) that satisfies:
 
-### Implementation ownership
+- Reflexivity: \(x \le x\) for all \(x \in X\).
 
-[Category ownership](../CONTRIBUTING.md#category-ownership-and-inheritance) and [leaf-category encapsulation](../CONTRIBUTING.md#leaf-category-encapsulation) govern the general inheritance rules.
+- Antisymmetry: \(x \le y \land y \le x \implies x = y\).
 
-The poset subtree owns the order relation, monotone arrows, order constructions and invariants, and finite Hasse diagrams.
-Its selected forgetful functor is
+- Transitivity: \(x \le y \land y \le z \implies x \le z\).
 
-\[
-U:\mathbf{Posets}\longrightarrow\mathbf{Sets},
-\qquad U(X,\leq_X)=X,
-\qquad U(f)=f.
-\]
-
-This functor supplies the complete set surface.
-The totally ordered set subtree owns totality and positional access.
-Its inclusion
-
-\[
-i:\mathbf{TotOrdSets}\hookrightarrow\mathbf{Posets}
-\]
-
-supplies the poset surface, while \(U\circ i\) supplies the set surface.
-
-### 2. Construction of partially ordered sets
-
-Finite posets can be constructed from:
+Construct a poset with:
 
 ```sage
 Poset((members, leq))
+PartiallyOrderedSets()(underlying_set, relation, theorem=...)
 ```
 
-Here:
+For finite sets, construction evaluates the relation on all pairs and triples:
 
-- `members` specifies the underlying finite set.
+- The constructor rejects non-reflexive relations.
 
-- `leq(x, y)` specifies whether \(x\le y\).
+- The constructor rejects non-antisymmetric relations.
 
-- The relation determines the order.
+- The constructor rejects non-transitive relations.
 
-- The order need not arise from the native comparisons of the elements.
+- The constructor rejects relations that return `Unknown`.
 
-Typical constructions include inclusion posets:
+For infinite sets, raw relation input requires an exact construction theorem.
 
-```sage
-Poset((subobjects, lambda A, B: A <= B))
-```
+### 3. Totality and category refinement
 
-and application-specific orders:
-
-```sage
-Poset((orbits, orbit_below))
-```
-
-A constructed finite poset enters `Sets().PartiallyOrdered()` automatically.
-This gives it the category-owned arrow and display operations.
-
-### 3. Construction of finite totally ordered sets
-
-The principal constructor is:
-
-```sage
-finite_ordered_set(source)
-```
-
-Its mathematical action is:
+A total order is a partial order whose elements are pairwise comparable:
 
 \[
-(x_0,x_1,\ldots,x_n)\longmapsto
-\bigl(\{x_0,x_1,\ldots,x_n\},x_0<x_1<\cdots <x_n\bigr).
+\forall x, y \in X, \quad x \le y \lor y \le x.
 \]
 
-The displayed enumeration supplies the order.
-The constructor does not sort the elements.
-
-Supported inputs include:
-
-- an ordered enumeration;
-
-- an existing finite set;
-
-- an existing totally ordered finite set.
-
-Its behavior is:
-
-- It preserves the input order.
-
-- It removes repeated elements.
-
-- It retains the first occurrence of each element.
-
-- It converts an unordered finite set using that set’s chosen iteration.
-
-- It returns an existing totally ordered object unchanged.
-
-- It rejects a set not known to be finite.
-
-- Equivalent enumerations produce the same canonical object.
-
-For example:
+Construct a total order with:
 
 ```sage
-finite_ordered_set([a, b, a, c])
+finite_ordered_set(elements)
+TotallyOrderedSets()(poset, theorem=...)
+FiniteTotallyOrderedSets()(poset)
 ```
 
-represents the totally ordered set
+The totality query `is_total_order(poset)` returns:
 
-\[
-a<b<c.
-\]
+- `True` when every pair of elements in a finite poset is comparable.
 
-The constructor also normalizes integer members into the mathematical integer objects used by the preamble.
-Thus equivalent integer spellings give the same set.
+- `False` when an incomparable pair exists.
 
-A second constructor is:
+- `Unknown` when totality cannot be determined algorithmically.
 
-```sage
-ordered_set_owned_by(elements)
-```
-
-This constructor is for elements already in the mathematical vocabulary.
-It preserves them without raw-input normalization.
-See [sets.sage](/home/dzack/research/src/dzack_research/preamble/categories/sets/sets.sage:1120).
-
-The semantic result type is `OrderedSet[E]`. It means a set with a distinguished total order, not a list or sequence.
-See [foundations.py](/home/dzack/research/src/dzack_research/preamble/lexicon/foundations.py:45).
+Category refinement requires totality to be `True`. The constructor rejects non-total posets and unknown comparisons.
 
 ### 4. Canonical simplex orders
 
-The preamble supplies canonical ordered sets through:
+Canonical simplex orders are provided by `SimplexOrders()`:
 
 ```sage
-Sets.Δ[n]
+SimplexOrders()[n]
+SimplexOrders()[Aleph0]
 ```
 
-For an integer \(n\ge -1\),
+- `SimplexOrders()[n]` is the finite total order \(\{0 < 1 < \cdots < n\}\).
+
+- `SimplexOrders()[Aleph0]` is the countably infinite total order of natural numbers with standard ordinal comparison.
+
+### 5. Morphisms and monotonicity
+
+Poset morphisms are order-preserving set maps:
 
 \[
-\Delta[n]=\{0<1<\cdots<n\}.
+x \le_P y \implies f(x) \le_Q f(y).
 \]
 
-Consequently:
-
-- `Sets.Δ[-1]` is the empty ordered set.
-
-- `Sets.Δ[0]` is the singleton ordered set.
-
-- `Sets.Δ[n]` has cardinality \(n+1\).
-
-It also supports:
+Construct a morphism with:
 
 ```sage
-Sets.Δ[Sets.ℵ[0]]
+Hom = PartiallyOrderedSets().Hom(P, Q)
+f = Hom(mapping, theorem=...)
 ```
 
-This is the countably infinite ordered set of nonnegative integers.
-It belongs to:
+Admission rules:
 
-```sage
-Sets().Countable().Infinite().TotallyOrdered()
-```
+- For finite domains, the constructor verifies monotonicity on all pairs \(x \le_P y\).
 
-See [sets.sage](/home/dzack/research/src/dzack_research/preamble/categories/sets/sets.sage:1152).
+- It rejects candidate maps where \(f(x) \le_Q f(y)\) is `False` or `Unknown`.
 
-### 5. Underlying set capabilities
+- For infinite domains, admission requires an explicit `theorem`.
 
-Every ordered set receives the complete [`Sets()` API](sets.md) through \(U\).
+Arrow properties:
 
-A finite ordered set also supplies:
+- `f.is_order_preserving()` returns `True`.
 
-```sage
-X.symmetric_group()
-```
+- `f.is_order_reflecting()` checks whether \(f(x) \le_Q f(y) \implies x \le_P y\).
 
-This is the automorphism group of the underlying set in `Sets()`. It is not the order-automorphism group.
+- `f.is_order_embedding()` returns whether \(f\) preserves and reflects order.
 
-For a finite total order, every order automorphism fixes each element.
-Its order-automorphism group is therefore trivial.
+- `f.is_order_isomorphism()` returns whether \(f\) is a bijective order embedding.
 
-### 6. Enumeration and positional access
+### 6. Categorical limits and products
 
-When an ordered set has a chosen enumeration, it supports:
+Categorical products in `PartiallyOrderedSets()` lift products in `Sets()`:
 
-```sage
-X[n]
-X.position(x)
-X.enumeration_injection()
-```
+- Apex: The set product \(X = \prod_i X_i\) equipped with the componentwise order:
+  \[
+  x \le y \iff \forall i, \; \pi_i(x) \le_i \pi_i(y).
+  \]
 
-The contracts are:
+- Projections: Each projection \(\pi_i: X \to X_i\) is an order-preserving morphism in `PartiallyOrderedSets()`.
 
-```sage
-X[n]                  # element at position n
-X.position(x)         # position of x
-X[X.position(x)] == x
-```
+- Universal map: For any cone \(C \to X_i\), the mediating arrow \(\langle f_i \rangle: C \to X\) is order-preserving.
 
-The enumeration injection is the monomorphism
+### 7. Method compilation and full-route transport
 
-\[
-X\hookrightarrow \mathbb Z_{\ge 0},
-\qquad
-x\longmapsto \operatorname{position}(x).
-\]
+Structural method forwarding follows the compiled route:
 
-For a finite total order, the chosen enumeration is also the order data.
+- Receivers and arguments transport to the declaring category.
 
-For an infinite enumeration, `position(x)` terminates for members.
-It has no termination promise for a nonmember.
+- Stored methods invoke on their target category implementation.
 
-### 7. Order-relation API
+- Return values and iterator elements reverse-transport to the caller's category.
 
-Poset elements expose the order through the standard comparison operations:
-
-```sage
-x <= y
-x < y
-x >= y
-x > y
-```
-
-Finite poset objects expose cover queries:
-
-```sage
-P.covers(x, y)
-
-P.lower_covers(x)
-P.upper_covers(x)
-P.common_lower_covers(elements)
-P.common_upper_covers(elements)
-```
-
-They also expose interval and closure operations:
-
-```sage
-P.open_interval(x, y)
-P.closed_interval(x, y)
-P.principal_order_ideal(x)
-P.principal_order_filter(x)
-P.order_ideal(elements)
-P.order_filter(elements)
-```
-
-A finite totally ordered set exposes its relation through:
-
-```sage
-T.le(x, y)
-```
-
-Its enumeration also gives:
-
-```sage
-T.rank(x)
-T.unrank(n)
-T[n]
-T.position(x)
-```
-
-### 8. Extrema, rank, and decomposition
-
-Finite posets support:
-
-```sage
-P.minimal_elements()
-P.maximal_elements()
-P.has_bottom()
-P.bottom()
-P.has_top()
-P.top()
-P.is_bounded()
-
-P.height()
-P.width()
-P.rank()
-P.rank_function()
-P.level_sets()
-P.is_ranked()
-P.is_graded()
-```
-
-The API supports connected components and ordinal decompositions:
-
-```sage
-P.connected_components()
-P.ordinal_summands()
-```
-
-### 9. Chains and antichains
-
-The finite-poset surface includes:
-
-```sage
-P.chains()
-P.maximal_chains()
-P.maximal_chains_iterator()
-P.is_chain()
-P.is_chain_of_poset(elements)
-
-P.antichains()
-P.antichains_iterator()
-P.maximal_antichains()
-P.is_antichain_of_poset(elements)
-
-P.dilworth_decomposition()
-P.greene_shape()
-P.is_sperner()
-```
-
-It can also construct and enumerate linear extensions:
-
-```sage
-P.linear_extension()
-P.linear_extensions()
-P.is_linear_extension(order)
-P.random_linear_extension()
-```
-
-### 10. Subposets and standard constructions
-
-Finite posets support:
-
-```sage
-P.subposet(members)
-P.relabel(mapping)
-P.with_bounds()
-P.without_bounds()
-P.completion_by_cuts()
-P.intervals_poset()
-```
-
-They also support categorical and order-theoretic combinations:
-
-```sage
-P.product(Q)
-P.disjoint_union(Q)
-P.ordinal_sum(Q)
-P.ordinal_product(Q)
-P.lexicographic_sum(...)
-```
-
-The source uses induced subposets to represent classes such as elliptic, parabolic, or hyperbolic subdiagrams.
-
-### 11. Lattice-theoretic capabilities
-
-A finite poset can answer:
-
-```sage
-P.is_lattice()
-P.is_meet_semilattice()
-P.is_join_semilattice()
-P.meet(x, y)
-P.join(x, y)
-```
-
-These operations belong only where the required meets or joins exist.
-
-### 12. Enumerative and algebraic invariants
-
-Finite posets expose:
-
-```sage
-P.moebius_function(x, y)
-P.moebius_function_matrix()
-P.zeta_polynomial()
-P.order_polynomial()
-P.chain_polynomial()
-P.characteristic_polynomial()
-
-P.incidence_algebra(R)
-P.order_complex()
-P.order_polytope()
-P.chain_polytope()
-P.comparability_graph()
-P.incomparability_graph()
-```
-
-The implementation also retains finite-poset dynamics such as promotion, evacuation, rowmotion, toggles, and Panyushev complementation.
-
-### 13. Morphisms of posets
-
-For posets \(P\) and \(Q\), construct a morphism with:
-
-```sage
-C = Sets().PartiallyOrdered()
-f = C.Hom(P, Q)(definition)
-```
-
-The definition can be:
-
-- a callable `lambda x: ...`;
-
-- an explicit mapping when the domain is finite;
-
-- an existing arrow in the same Hom category.
-
-The resulting arrow supports:
-
-```sage
-f.domain()
-f.codomain()
-f(x)
-f.is_order_preserving()
-f.is_order_reflecting()
-f.is_order_embedding()
-f.is_order_isomorphism()
-f.inverse()
-```
-
-Through \(U\), each arrow also receives the ordinary set-map API specified in [sets.md](sets.md).
-
-The semantic meanings are:
-
-\[
-\begin{aligned}
-f\text{ preserves order}
-&\iff x\le_P y\Longrightarrow f(x)\le_Q f(y),\\
-f\text{ reflects order}
-&\iff f(x)\le_Q f(y)\Longrightarrow x\le_P y,\\
-f\text{ is an order embedding}
-&\iff f\text{ preserves and reflects order},\\
-f\text{ is an order isomorphism}
-&\iff f\text{ is a bijective order embedding}.
-\end{aligned}
-\]
-
-`is_order_reflecting()` currently computes over all pairs in a represented finite domain.
-Therefore `is_order_embedding()`, `is_order_isomorphism()`, and `inverse()` have the same effective finite-domain scope.
-
-Order preservation is trusted when the arrow enters the poset Hom category.
-The constructor does not attempt to prove monotonicity for an arbitrary callable.
-
-### 14. Hasse diagrams and notebook display
-
-Finite posets support:
-
-```sage
-P.hasse_layout()
-P.hasse_tikz()
-P.hasse_tikz(label_map=labels, scale=1.5)
-P.tikz()
-```
-
-The display surface provides:
-
-- coordinates arranged by order level;
-
-- edges for cover relations;
-
-- custom labels;
-
-- adjustable scale;
-
-- TikZ output;
-
-- inline SVG notebook output;
-
-- LaTeX output;
-
-- rich MIME output;
-
-- light and dark notebook themes.
-
-The installation hook places constructed finite posets into the owned category.
-They then receive these display methods through category inheritance.
-See [owned_sets.py](/home/dzack/research/src/dzack_research/preamble/categories/sets/owned_sets.py:1314).
-
-### 15. Effective scope
-
-The category model itself permits finite and infinite partial or total orders.
-
-The concrete constructors provide:
-
-- general represented finite posets;
-
-- canonical finite total orders from enumerations;
-
-- the countably infinite order `Sets.Δ[Sets.ℵ[0]]`.
-
-The Hasse-diagram surface is for finite represented posets.
-Exhaustive order-reflection checks also require finite represented domains.
-Infinite ordered sets retain the categorical structure, set operations, cardinality properties, and declared morphisms without forced enumeration.
+- Canonical image caching ensures coherent representations across parallel routes.

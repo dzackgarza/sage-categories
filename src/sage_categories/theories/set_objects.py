@@ -146,7 +146,11 @@ class SetObject(MathematicalObject):
                 assert subsets.contains_subset(right_subset)
                 return left_subset <= right_subset
 
-            self._subset_poset = PartiallyOrderedSets()(powerset, contained)
+            self._subset_poset = PartiallyOrderedSets()(
+                powerset,
+                contained,
+                theorem="Subset inclusion is a partial order on the power set",
+            )
         return self._subset_poset
 
     def subsets_of_size(self, size: int) -> SetObject:

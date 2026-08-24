@@ -7,7 +7,13 @@ from collections.abc import Callable, Mapping
 from types import FunctionType, new_class
 from typing import TYPE_CHECKING, TypeVar, assert_never
 
-from sage_categories.descriptors import ForwardedMethod, ImplementationRole
+from sage_categories.descriptors import (
+    ForwardedArrowMethod,
+    ForwardedDescriptor,
+    ForwardedElementMethod,
+    ForwardedObjectMethod,
+    ImplementationRole,
+)
 from sage_categories.values import (
     Arrow,
     CategoryElement,
@@ -89,7 +95,7 @@ _ARROW_PROTOCOL_METHODS = frozenset(
 type ImplementationType = type[MathematicalObject | MathematicalElement]
 # A compiled namespace holds forwarding descriptors, the module it belongs to,
 # and the source class it completes.
-type CompiledClassMember = ForwardedMethod | str | type
+type CompiledClassMember = ForwardedDescriptor | str | type
 
 Implementation = TypeVar("Implementation", bound=MathematicalObject)
 
@@ -547,23 +553,43 @@ class CategoryCompiler:
         *,
         role: ImplementationRole,
     ) -> type[Implementation]:
-        available = {name for name, declaration in catalogue.items() if inspect.getattr_static(local_type, name, None) is declaration.method}
+        available = {
+            name
+            for name, declaration in catalogue.items()
+            if inspect.getattr_static(local_type, name, None) is declaration.method
+        }
+        inherited: dict[str, ForwardedDescriptor]
         match role:
-            case ImplementationRole.OBJECT | ImplementationRole.ELEMENT:
-                pass
+            case ImplementationRole.OBJECT:
+                inherited = {
+                    name: ForwardedObjectMethod(
+                        declaration.implementation_route,
+                        declaration.method,
+                    )
+                    for name, declaration in catalogue.items()
+                    if name not in available
+                }
+            case ImplementationRole.ELEMENT:
+                inherited = {
+                    name: ForwardedElementMethod(
+                        declaration.implementation_route,
+                        declaration.method,
+                    )
+                    for name, declaration in catalogue.items()
+                    if name not in available
+                }
             case ImplementationRole.ARROW:
                 available.update(_ARROW_PROTOCOL_METHODS & catalogue.keys())
+                inherited = {
+                    name: ForwardedArrowMethod(
+                        declaration.implementation_route,
+                        declaration.method,
+                    )
+                    for name, declaration in catalogue.items()
+                    if name not in available
+                }
             case _:
                 assert_never(role)
-        inherited = {
-            name: ForwardedMethod(
-                declaration.implementation_route,
-                declaration.method,
-                role=role,
-            )
-            for name, declaration in catalogue.items()
-            if name not in available
-        }
         if not inherited:
             return local_type
 

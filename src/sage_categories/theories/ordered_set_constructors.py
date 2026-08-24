@@ -102,9 +102,16 @@ class SimplexOrderIndexing:
                         assert decision is not UNKNOWN
                         return decision
 
-                    poset = PartiallyOrderedSets()(naturals, natural_order)
+                    poset = PartiallyOrderedSets()(
+                        naturals,
+                        natural_order,
+                        theorem="Ordinal order on NaturalNumbers is a partial order",
+                    )
 
-                    self._countable_simplex = TotallyOrderedSets()(poset)
+                    self._countable_simplex = TotallyOrderedSets()(
+                        poset,
+                        theorem="Ordinal order on NaturalNumbers is total",
+                    )
                 return self._countable_simplex
         else:
             maximum = index

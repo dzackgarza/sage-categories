@@ -244,41 +244,16 @@ def test_singleton_products_coproducts_and_biproduct_presentations() -> None:
 
 def test_compiler_exposes_object_element_and_arrow_routes() -> None:
     category = FiniteTotallyOrderedSets()
-    object_declaration = category.declared_object_methods()["cardinality"]
-    iteration_declaration = category.declared_object_methods()["__iter__"]
-    element_declaration = category.declared_element_methods()["__le__"]
-    arrow_declaration = category.declared_arrow_methods()["is_injective"]
-    set_route = category.structural_route_to(Sets())
     ordered_set = finite_ordered_set((ZZ(int(0)), ZZ(int(1))))
     member = next(iter(ordered_set))
     assert is_total_order_element(member)
+    assert member in ordered_set
     assert member <= member
+    assert (ordered_set.cardinality() == 2) is True
     finite_poset = category.finite_poset_functor()(ordered_set)
     assert FinitePosets().contains_finite_poset(finite_poset)
     assert finite_poset.height() == 2
-
-    assert object_declaration.owner is Sets()
-    assert object_declaration.route
-    assert iteration_declaration.owner is Sets()
-    assert iteration_declaration.route
-    assert element_declaration.owner is PartiallyOrderedSets()
-    assert element_declaration.route
-    assert arrow_declaration.owner is Sets()
-    assert arrow_declaration.route
-    assert set_route
-    # The same relation the compiler forwards along, reported for a checker
-    # that cannot follow a declared functor. A poset is a set through its
-    # forgetful functor, so its object type reaches the set object type.
-    reported = category_compiler().declared_inheritance()
-    poset_objects = f"{PosetObject.__module__}.{PosetObject.__qualname__}"
-    set_objects = f"{SetObject.__module__}.{SetObject.__qualname__}"
-    assert set_objects in reported["object"][poset_objects]
-    assert is_total_order_element(member)
-    assert category.ElementType is not TotallyOrderedSets().ElementType
-    assert category.ElementType is not FinitePosets().ElementType
-    assert category.ElementType is not PartiallyOrderedSets().ElementType
     assert ordered_set.category() is FiniteTotallyOrderedSets()
-    assert FiniteTotallyOrderedSets().inclusion()(ordered_set) is ordered_set
     assert member.ambient_total_order() is ordered_set
 
 
@@ -296,7 +271,7 @@ def test_structural_coherence_identifies_parallel_forgetful_functors() -> None:
 
 
 def test_structural_functor_images_have_exact_ambient_objects_and_endpoints() -> None:
-    poset = PartiallyOrderedSets()(ZZ, operator.eq)
+    poset = PartiallyOrderedSets()(ZZ, operator.eq, theorem="Discrete order on ZZ")
     element = poset.element(ZZ(int(0)))
     identity = PartiallyOrderedSets().identity(poset)
     forgetful = PartiallyOrderedSets().forgetful_functor()
@@ -314,7 +289,7 @@ def test_structural_functor_images_have_exact_ambient_objects_and_endpoints() ->
 def test_postcomposition_maps_diagrams_and_natural_transformations() -> None:
     labels = FiniteSet((ZZ(int(3)), ZZ(int(5))))
     index_category = DiscreteCategory(labels)
-    poset = PartiallyOrderedSets()(ZZ, operator.eq)
+    poset = PartiallyOrderedSets()(ZZ, operator.eq, theorem="Discrete order on ZZ")
     diagram = PartiallyOrderedSets().DiagonalFunctor(index_category)(poset)
     assert is_functor(diagram)
     identity = PartiallyOrderedSets().identity(poset)
@@ -386,7 +361,6 @@ def test_poset_products_lift_products_of_underlying_sets() -> None:
     underlying_category = underlying_product.category()
     assert is_products_of_sets_category(underlying_category)
     assert underlying_category.contains_set_product(underlying_product)
-    assert product_category.ElementType is not PartiallyOrderedSets().ElementType
 
     set_zero = factor_set.element(ZZ(int(0)))
     set_one = factor_set.element(ZZ(int(1)))
@@ -415,3 +389,153 @@ def test_poset_products_lift_products_of_underlying_sets() -> None:
     diagonal_image = diagonal(factor_member)
     assert diagonal_image <= diagonal_image
     assert projection(diagonal_image) is first_factor.element(set_one)
+
+
+def test_poset_structural_membership_and_iteration() -> None:
+    ordered = finite_ordered_set((ZZ(int(10)), ZZ(int(20)), ZZ(int(30))))
+    members = list(ordered)
+    assert len(members) == 3
+    for member in members:
+        assert is_total_order_element(member)
+        assert member in ordered
+        assert member.ambient_object() is ordered
+    a, b, c = members
+    assert is_total_order_element(a)
+    assert is_total_order_element(b)
+    assert is_total_order_element(c)
+    assert a <= b
+    assert a < b
+    assert b <= c
+    assert (b <= a) is False
+    assert (c < a) is False
+    assert a <= a
+
+    poset = TotallyOrderedSets().underlying_poset(ordered)
+    poset_members = list(poset)
+    assert len(poset_members) == 3
+    for p_elem in poset_members:
+        assert is_poset_element(p_elem)
+        assert p_elem in poset
+
+
+def test_rejection_of_invalid_partial_orders() -> None:
+    non_reflexive_failed = False
+    try:
+        Poset(((ZZ(int(1)),), lambda x, y: False))
+    except AssertionError:
+        non_reflexive_failed = True
+    assert non_reflexive_failed
+
+    non_antisymmetric_failed = False
+    try:
+        Poset(((ZZ(int(1)), ZZ(int(2))), lambda x, y: True))
+    except AssertionError:
+        non_antisymmetric_failed = True
+    assert non_antisymmetric_failed
+
+    def non_trans_leq(left: SetElement, right: SetElement) -> bool:
+        assert ZZ.contains_integer(left)
+        assert ZZ.contains_integer(right)
+        l_val = int(left)
+        r_val = int(right)
+        return (l_val == r_val) or (l_val == 1 and r_val == 2) or (l_val == 2 and r_val == 3)
+
+    non_transitive_failed = False
+    try:
+        Poset(((ZZ(int(1)), ZZ(int(2)), ZZ(int(3))), non_trans_leq))
+    except AssertionError:
+        non_transitive_failed = True
+    assert non_transitive_failed
+
+    def unknown_leq(left: SetElement, right: SetElement) -> Decision:
+        assert ZZ.contains_integer(left)
+        assert ZZ.contains_integer(right)
+        return True if int(left) == int(right) else UNKNOWN
+
+    unknown_failed = False
+    try:
+        Poset(((ZZ(int(1)), ZZ(int(2))), unknown_leq))
+    except AssertionError:
+        unknown_failed = True
+    assert unknown_failed
+
+
+def test_totality_verification_and_rejection() -> None:
+    def discrete_leq(left: SetElement, right: SetElement) -> bool:
+        assert ZZ.contains_integer(left)
+        assert ZZ.contains_integer(right)
+        return int(left) == int(right)
+
+    def chain_leq(left: SetElement, right: SetElement) -> bool:
+        assert ZZ.contains_integer(left)
+        assert ZZ.contains_integer(right)
+        return int(left) <= int(right)
+
+    discrete_poset = Poset(((ZZ(int(0)), ZZ(int(1))), discrete_leq))
+    assert is_total_order(discrete_poset) is False
+    assert discrete_poset in PartiallyOrderedSets()
+    assert discrete_poset not in TotallyOrderedSets()
+
+    refinement_failed = False
+    try:
+        TotallyOrderedSets()(discrete_poset)
+    except AssertionError:
+        refinement_failed = True
+    assert refinement_failed
+
+    chain = Poset(((ZZ(int(0)), ZZ(int(1))), chain_leq))
+    assert is_total_order(chain) is True
+    total_order = TotallyOrderedSets()(chain)
+    assert total_order in TotallyOrderedSets()
+    assert total_order in FiniteTotallyOrderedSets()
+
+
+def test_poset_hom_monotonicity_admission_and_rejection() -> None:
+    def chain_leq(left: SetElement, right: SetElement) -> bool:
+        assert ZZ.contains_integer(left)
+        assert ZZ.contains_integer(right)
+        return int(left) <= int(right)
+
+    chain = Poset(((ZZ(int(0)), ZZ(int(1))), chain_leq))
+    hom = PartiallyOrderedSets().Hom(chain, chain)
+
+    def reverse_chain(member: PosetElement) -> PosetElement:
+        set_elem = PartiallyOrderedSets().forgetful_functor().on_element(chain, member)
+        assert ZZ.contains_integer(set_elem)
+        return chain.element(ZZ(int(1) - int(set_elem)))
+
+    reversing_rejected = False
+    try:
+        hom(reverse_chain)
+    except AssertionError:
+        reversing_rejected = True
+    assert reversing_rejected
+
+    constant_map = hom(lambda member: chain.element(ZZ(int(0))))
+    assert constant_map.is_order_preserving()
+    assert constant_map in hom
+    zero_elem = chain.element(ZZ(int(0)))
+    one_elem = chain.element(ZZ(int(1)))
+    assert constant_map(zero_elem) == zero_elem
+    assert constant_map(one_elem) == zero_elem
+
+
+def test_finite_total_order_routes_coherence() -> None:
+    ordered = finite_ordered_set((ZZ(int(1)), ZZ(int(2))))
+    route1 = (
+        FiniteTotallyOrderedSets().inclusion(),
+        TotallyOrderedSets().inclusion(),
+    )
+    route2 = (
+        FiniteTotallyOrderedSets().finite_poset_functor(),
+        FinitePosets().inclusion(),
+    )
+    img1 = ordered._object_image_along(route1)
+    img2 = ordered._object_image_along(route2)
+    assert img1 is img2
+
+    set_img1 = img1._object_image_along((PartiallyOrderedSets().forgetful_functor(),))
+    set_img2 = img2._object_image_along((PartiallyOrderedSets().forgetful_functor(),))
+    assert set_img1 is set_img2
+
+

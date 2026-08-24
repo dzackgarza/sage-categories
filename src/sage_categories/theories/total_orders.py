@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
-from typing import TypeIs
+from typing import TYPE_CHECKING, TypeIs
 
 from sage_categories.abstract_categories.category_constructions import (
     FullSubcategory,
@@ -19,10 +19,6 @@ from sage_categories.abstract_categories.hom_categories import (
     is_isomorphism,
 )
 from sage_categories.category import Category
-from sage_categories.theories.finite_posets import (
-    FinitePosetObject,
-    FinitePosetsCategory,
-)
 from sage_categories.theories.poset_core import (
     PartiallyOrderedSets,
     PartiallyOrderedSetsCategory,
@@ -42,6 +38,34 @@ from sage_categories.values import (
     registered_element,
     registered_value,
 )
+
+if TYPE_CHECKING:
+    from sage_categories.theories.finite_posets import (
+        FinitePosetObject,
+        FinitePosetsCategory,
+    )
+
+
+def is_total_order(poset: PosetObject | FinitePosetObject) -> Decision:
+    """Return whether every pair of elements in ``poset`` is comparable."""
+    underlying_set = PartiallyOrderedSets().underlying_set(poset)
+    if underlying_set.is_finite() is not True:
+        return UNKNOWN
+    members = tuple(poset)
+    decision: Decision = True
+    for i, left in enumerate(members):
+        assert is_poset_element(left)
+        for right in members[i + 1 :]:
+            assert is_poset_element(right)
+            left_le = left <= right
+            right_le = right <= left
+            if left_le is True or right_le is True:
+                continue
+            if left_le is False and right_le is False:
+                return False
+            if left_le is UNKNOWN or right_le is UNKNOWN:
+                decision = UNKNOWN
+    return decision
 
 
 class TotallyOrderedSetElement(MathematicalElement):
@@ -70,22 +94,6 @@ class TotallyOrderedSetElement(MathematicalElement):
         assert TotallyOrderedSets().contains_total_order(ambient)
         return ambient
 
-    def __le__(self, other: TotallyOrderedSetElement) -> bool:
-        inclusion = TotallyOrderedSets().inclusion()
-        other_poset_element = inclusion.on_element(other.ambient_total_order(), other)
-        assert is_poset_element(other_poset_element)
-        comparison = self._poset_element <= other_poset_element
-        assert comparison is not UNKNOWN
-        return comparison
-
-    def __lt__(self, other: TotallyOrderedSetElement) -> bool:
-        inclusion = TotallyOrderedSets().inclusion()
-        other_poset_element = inclusion.on_element(other.ambient_total_order(), other)
-        assert is_poset_element(other_poset_element)
-        comparison = self._poset_element < other_poset_element
-        assert comparison is not UNKNOWN
-        return comparison
-
     def __repr__(self) -> str:
         return repr(self._poset_element)
 
@@ -96,32 +104,22 @@ class TotallyOrderedSetObject(MathematicalObject):
     def __init__(
         self,
         *,
-        category: TotallyOrderedSetsCategory,
-        poset: PosetObject,
+        category: TotallyOrderedSetsCategory | FiniteTotallyOrderedSetsCategory,
+        poset: PosetObject | FinitePosetObject,
     ) -> None:
+        assert poset in PartiallyOrderedSets()
         self._poset = poset
-        self._elements: dict[int, TotallyOrderedSetElement] = {}
         super().__init__(category=category)
 
-    def _poset_implementation(self) -> PosetObject:
+    def _poset_implementation(self) -> PosetObject | FinitePosetObject:
         return self._poset
-
-    def element(self, poset_element: PosetElement) -> TotallyOrderedSetElement:
-        assert poset_element.ambient_object() is self._poset
-        key = id(poset_element)
-        cached = self._elements.get(key)
-        if cached is None:
-            element_type = self.category().ElementType
-            assert is_total_order_element_type(element_type)
-            cached = element_type(
-                ambient_object=self,
-                poset_element=poset_element,
-            )
-            self._elements[key] = cached
-        return cached
 
     def __repr__(self) -> str:
         return f"Totally ordered {PartiallyOrderedSets().underlying_set(self._poset)}"
+
+
+type FiniteTotallyOrderedSetElement = TotallyOrderedSetElement
+type FiniteTotallyOrderedSetObject = TotallyOrderedSetObject
 
 
 class TotallyOrderedSetMorphism(Arrow):
@@ -154,7 +152,7 @@ class TotallyOrderedSetMorphism(Arrow):
         poset_member = inclusion.on_element(source, member)
         assert is_poset_element(poset_member)
         image = self._poset_morphism(poset_member)
-        return target.element(image)
+        return inclusion.preimage_element(target, image)
 
 
 class TotallyOrderedSetHomCategory(HomCategory):
@@ -165,10 +163,15 @@ class TotallyOrderedSetHomCategory(HomCategory):
 
     def __call__(
         self,
-        action: Callable[[TotallyOrderedSetElement], TotallyOrderedSetElement] | Mapping[TotallyOrderedSetElement, TotallyOrderedSetElement] | TotallyOrderedSetMorphism,
+        action: (
+            Callable[[TotallyOrderedSetElement], TotallyOrderedSetElement]
+            | Mapping[TotallyOrderedSetElement, TotallyOrderedSetElement]
+            | TotallyOrderedSetMorphism
+        ),
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
+        theorem: str | None = None,
     ) -> TotallyOrderedSetMorphism:
         category = self.base_category()
         assert is_totally_ordered_sets_category(category)
@@ -187,7 +190,8 @@ class TotallyOrderedSetHomCategory(HomCategory):
             return existing
 
         def poset_action(member: PosetElement) -> PosetElement:
-            source_member = domain.element(member)
+            source_member = category.inclusion().preimage_element(domain, member)
+            assert is_total_order_element(source_member)
             if callable(action):
                 image = action(source_member)
             else:
@@ -202,6 +206,7 @@ class TotallyOrderedSetHomCategory(HomCategory):
             poset_action,
             injective=injective,
             surjective=surjective,
+            theorem=theorem,
         )
         return self.ObjectType(
             hom_category=self,
@@ -318,62 +323,11 @@ class TotalOrderInclusionFunctor(StructuralFunctor):
         return True
 
 
-class FiniteTotallyOrderedSetElement(MathematicalElement):
-    """An element of one finite totally ordered set."""
-
-    def __init__(
-        self,
-        *,
-        ambient_object: FiniteTotallyOrderedSetObject,
-        poset_element: PosetElement,
-    ) -> None:
-        self._poset_element = poset_element
-        super().__init__(
-            category=ambient_object.category(),
-            ambient_object=ambient_object,
-        )
-
-    def _poset_implementation(self) -> PosetElement:
-        return self._poset_element
-
-
-class FiniteTotallyOrderedSetObject(MathematicalObject):
-    """A finite totally ordered set."""
-
-    def __init__(
-        self,
-        *,
-        category: FiniteTotallyOrderedSetsCategory,
-        poset: FinitePosetObject,
-    ) -> None:
-        assert FinitePosets().contains_finite_poset(poset)
-        self._poset = poset
-        self._elements: dict[int, FiniteTotallyOrderedSetElement] = {}
-        super().__init__(category=category)
-
-    def _poset_implementation(self) -> FinitePosetObject:
-        return self._poset
-
-    def element(self, poset_element: PosetElement) -> FiniteTotallyOrderedSetElement:
-        assert poset_element.ambient_object() is self._poset
-        key = id(poset_element)
-        cached = self._elements.get(key)
-        if cached is None:
-            element_type = self.category().ElementType
-            assert is_finite_total_order_element_type(element_type)
-            cached = element_type(
-                ambient_object=self,
-                poset_element=poset_element,
-            )
-            self._elements[key] = cached
-        return cached
-
-
 class FiniteTotallyOrderedSetsCategory(FullSubcategory):
     """The full subcategory of finite totally ordered sets."""
 
-    ObjectType: type[FiniteTotallyOrderedSetObject] = FiniteTotallyOrderedSetObject
-    ElementType: type[FiniteTotallyOrderedSetElement] = FiniteTotallyOrderedSetElement
+    ObjectType: type[TotallyOrderedSetObject] = TotallyOrderedSetObject
+    ElementType: type[TotallyOrderedSetElement] = TotallyOrderedSetElement
 
     def __init__(self, total_orders: TotallyOrderedSetsCategory) -> None:
         self._finite_poset_functor: TotalOrderInclusionFunctor | None = None
@@ -386,9 +340,24 @@ class FiniteTotallyOrderedSetsCategory(FullSubcategory):
 
     def __call__(
         self,
-        poset: PosetObject,
-    ) -> FiniteTotallyOrderedSetObject:
-        assert FinitePosets().contains_finite_poset(poset)
+        poset: PosetObject | TotallyOrderedSetObject,
+        *,
+        theorem: str | None = None,
+    ) -> TotallyOrderedSetObject:
+        if self.contains_finite_total_order(poset):
+            return poset
+        if TotallyOrderedSets().contains_total_order(poset):
+            underlying = poset._poset_implementation()
+            assert underlying in FinitePosets(), f"{poset} is not a finite total order"
+            value = self.ObjectType(
+                category=self,
+                poset=underlying,
+            )
+            assert self.contains_finite_total_order(value)
+            return value
+        assert poset in FinitePosets(), f"{poset} is not in FinitePosets()"
+        totality = is_total_order(poset)
+        assert totality is True, f"{poset} is not a total order (totality={totality})"
         value = self.ObjectType(
             category=self,
             poset=poset,
@@ -440,7 +409,7 @@ class FiniteTotallyOrderedSetsCategory(FullSubcategory):
     def contains_finite_total_order(
         self,
         candidate: MathematicalObject,
-    ) -> TypeIs[FiniteTotallyOrderedSetObject]:
+    ) -> TypeIs[TotallyOrderedSetObject]:
         return candidate in self
 
     def __repr__(self) -> str:
@@ -460,11 +429,18 @@ class TotallyOrderedSetsCategory(Category):
 
     def __call__(
         self,
-        poset: PosetObject,
+        poset: PosetObject | FinitePosetObject | TotallyOrderedSetObject,
+        *,
+        theorem: str | None = None,
     ) -> TotallyOrderedSetObject:
+        if self.contains_total_order(poset):
+            return poset
         if poset in FinitePosets():
-            assert FinitePosets().contains_finite_poset(poset)
+            totality = is_total_order(poset)
+            assert totality is True, f"{poset} is not a total order (totality={totality})"
             return self.Finite()(poset)
+        assert poset in PartiallyOrderedSets(), f"{poset} is not in PartiallyOrderedSets()"
+        assert theorem is not None, f"{poset} requires an exact theorem establishing totality"
         return self.ObjectType(
             category=self,
             poset=poset,
@@ -500,7 +476,7 @@ class TotallyOrderedSetsCategory(Category):
     ) -> TypeIs[TotallyOrderedSetObject]:
         return candidate in self
 
-    def underlying_poset(self, source: MathematicalObject) -> PosetObject:
+    def underlying_poset(self, source: MathematicalObject) -> PosetObject | FinitePosetObject:
         assert source in self
         image = self.inclusion()(source)
         assert PartiallyOrderedSets().contains_poset(image)
@@ -519,7 +495,7 @@ _TOTALLY_ORDERED_SETS: TotallyOrderedSetsCategory | None = None
 
 _ORDERED_FINITE_SETS: dict[
     tuple[SetElement, ...],
-    FiniteTotallyOrderedSetObject,
+    TotallyOrderedSetObject,
 ] = {}
 
 
@@ -562,16 +538,11 @@ def is_total_order_element_type(
     candidate: type[MathematicalElement],
 ) -> TypeIs[type[TotallyOrderedSetElement]]:
     source = vars(candidate).get("_compiled_from")
-    return candidate in (
-        TotallyOrderedSetElement,
-        FiniteTotallyOrderedSetElement,
-    ) or source in (
-        TotallyOrderedSetElement,
-        FiniteTotallyOrderedSetElement,
-    )
+    return candidate is TotallyOrderedSetElement or source is TotallyOrderedSetElement
 
 
 def is_finite_total_order_element_type(
     candidate: type[MathematicalElement],
-) -> TypeIs[type[FiniteTotallyOrderedSetElement]]:
-    return candidate is FiniteTotallyOrderedSetElement or vars(candidate).get("_compiled_from") is FiniteTotallyOrderedSetElement
+) -> TypeIs[type[TotallyOrderedSetElement]]:
+    return is_total_order_element_type(candidate)
+

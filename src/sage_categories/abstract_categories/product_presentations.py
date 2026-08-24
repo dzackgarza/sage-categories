@@ -67,6 +67,54 @@ class ProductPresentation(MathematicalObject):
         return result
 
 
+class ConstructionLiftFunctor:
+    """Lift registered structural images on objects and arrows."""
+
+    def __init__(self, structural_functor: StructuralFunctor) -> None:
+        self._structural_functor = structural_functor
+        self._objects: dict[int, MathematicalObject] = {}
+        self._arrows: dict[int, Arrow] = {}
+
+    def domain(self) -> Category:
+        return self._structural_functor.codomain()
+
+    def codomain(self) -> Category:
+        return self._structural_functor.domain()
+
+    def register_object(self, source: MathematicalObject) -> None:
+        assert source in self.codomain()
+        image = self._structural_functor.on_object(source)
+        self._objects[id(image)] = source
+
+    def on_object(self, image: MathematicalObject) -> MathematicalObject:
+        assert image in self.domain()
+        source = self._objects.get(id(image))
+        assert source is not None
+        assert self._structural_functor.on_object(source) is image
+        return source
+
+    def on_morphism(self, image: Arrow) -> Arrow:
+        assert self.domain().contains_arrow(image)
+        cached = self._arrows.get(id(image))
+        if cached is not None:
+            return cached
+        source = self.on_object(image.domain())
+        target = self.on_object(image.codomain())
+        lifted = self._morphism_image(source, target, image)
+        assert lifted in self.codomain().Hom(source, target)
+        assert self._structural_functor.on_morphism(lifted) is image
+        self._arrows[id(image)] = lifted
+        return lifted
+
+    def _morphism_image(
+        self,
+        source: MathematicalObject,
+        target: MathematicalObject,
+        image: Arrow,
+    ) -> Arrow:
+        assert False, f"{self} has no arrow lift"
+
+
 class ProductLift:
     """Transport a chosen product through one structural functor."""
 
@@ -78,10 +126,7 @@ class ProductLift:
         inherited_product: ProductPresentation | ProductObject,
         apex: MathematicalObject,
         comparison: Isomorphism,
-        lift_morphism: Callable[
-            [MathematicalObject, MathematicalObject, Arrow],
-            Arrow,
-        ],
+        lift: ConstructionLiftFunctor,
     ) -> None:
         assert diagram.codomain() is structural_functor.domain()
         assert apex in diagram.codomain()
@@ -95,7 +140,8 @@ class ProductLift:
         self._inherited_product = inherited_product
         self._apex = apex
         self._comparison = comparison
-        self._lift_morphism = lift_morphism
+        self._lift = lift
+        self._lift.register_object(apex)
 
     @staticmethod
     def _inherited_apex(
@@ -121,12 +167,13 @@ class ProductLift:
 
         def projection(index: MathematicalObject) -> Arrow:
             target = self._diagram(index)
+            self._lift.register_object(target)
             inherited_projection = self._inherited_product.projection(index)
             transported = target_category.compose(
                 inherited_projection,
                 comparison,
             )
-            lifted = self._lift_morphism(self._apex, target, transported)
+            lifted = self._lift.on_morphism(transported)
             assert lifted in self._diagram.codomain().Hom(self._apex, target)
             return lifted
 
@@ -136,6 +183,7 @@ class ProductLift:
             assert other.diagram() is self._diagram
             source = other.apex()
             assert source in self._diagram.codomain()
+            self._lift.register_object(source)
             inherited_cone = Cone(
                 self._inherited_product.diagram(),
                 self._structural_functor.on_object(source),
@@ -150,7 +198,7 @@ class ProductLift:
                 self._comparison.inverse().forward(),
                 inherited_morphism,
             )
-            lifted = self._lift_morphism(source, self._apex, transported)
+            lifted = self._lift.on_morphism(transported)
             assert lifted in self._diagram.codomain().Hom(source, self._apex)
             return lifted
 

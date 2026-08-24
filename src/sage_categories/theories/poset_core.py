@@ -16,6 +16,9 @@ from sage_categories.abstract_categories.hom_categories import HomCategory
 from sage_categories.abstract_categories.products import (
     ProductPresentation,
 )
+from sage_categories.abstract_categories.product_presentations import (
+    ConstructionLiftFunctor,
+)
 from sage_categories.category import Category
 from sage_categories.theories.sets import (
     FiniteSet,
@@ -444,6 +447,20 @@ class ForgetPosetFunctor(StructuralFunctor):
         return True
 
 
+class PosetProductLiftFunctor(ConstructionLiftFunctor):
+    """Lift product-cone set arrows by the componentwise-order theorem."""
+
+    def _morphism_image(
+        self,
+        source: MathematicalObject,
+        target: MathematicalObject,
+        image: Arrow,
+    ) -> PosetMorphism:
+        assert Sets().contains_set_morphism(image)
+        hom = PartiallyOrderedSets().Hom(source, target)
+        return hom.from_theorem(image, PartiallyOrderedSets())
+
+
 class PartiallyOrderedSetsCategory(Category):
     """Sets equipped with a chosen partial order."""
 
@@ -619,7 +636,7 @@ class PartiallyOrderedSetsCategory(Category):
             diagram,
             apex,
             inherited_product,
-            lift_morphism=self._monotone_product_arrow,
+            PosetProductLiftFunctor(forgetful),
         )
 
     def _componentwise_product_order(
@@ -635,22 +652,6 @@ class PartiallyOrderedSetsCategory(Category):
         """
         # Davey & Priestley, Introduction to Lattices and Order, §1.28.
         return self.from_theorem(underlying_set, relation, self)
-
-    def _monotone_product_arrow(
-        self,
-        source: MathematicalObject,
-        target: MathematicalObject,
-        set_arrow: Arrow,
-    ) -> PosetMorphism:
-        """Construct a monotone map from a product-projection or mediating arrow.
-
-        Product projections and mediating arrows are monotone by the product-
-        order theorem.  This is a theorem-backed entry path that bypasses
-        finite monotonicity verification.
-        """
-        hom = self.Hom(source, target)
-        assert Sets().contains_set_morphism(set_arrow)
-        return hom.from_theorem(set_arrow, self)
 
     def __repr__(self) -> str:
         return "Partially ordered sets"

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
-
 from sage_categories.abstract_categories.arrow_categories import declare_isomorphism
 from sage_categories.abstract_categories.functor_core import Functor, StructuralFunctor
 from sage_categories.abstract_categories.hom_categories import is_isomorphism
@@ -13,10 +11,11 @@ from sage_categories.abstract_categories.product_images import (
 )
 from sage_categories.abstract_categories.product_presentations import (
     ProductLift,
+    ConstructionLiftFunctor,
     ProductPresentation,
     is_product_presentations,
 )
-from sage_categories.values import Arrow, MathematicalObject
+from sage_categories.values import MathematicalObject
 
 
 def lift_product(
@@ -24,7 +23,7 @@ def lift_product(
     diagram: Functor,
     apex: MathematicalObject,
     inherited_product: ProductPresentation | ProductObject,
-    lift_morphism: Callable[[MathematicalObject, MathematicalObject, Arrow], Arrow],
+    lift: ConstructionLiftFunctor,
 ) -> ProductPresentation:
     """Lift the product inherited through one structural functor."""
     assert diagram.codomain() is structural_functor.domain()
@@ -44,7 +43,7 @@ def lift_product(
         inherited_product=inherited_product,
         apex=apex,
         comparison=comparison,
-        lift_morphism=lift_morphism,
+        lift=lift,
     ).presentation()
 
 

@@ -9,7 +9,10 @@ from typing import TYPE_CHECKING, TypeIs
 
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.product_images import ProductObject
-    from sage_categories.abstract_categories.product_presentations import ProductPresentation
+    from sage_categories.abstract_categories.product_presentations import (
+        ConstructionLiftFunctor,
+        ProductPresentation,
+    )
 
 from sage_categories.abstract_categories.hom_categories import (
     HomCategory,
@@ -300,32 +303,22 @@ class StructuralFunctor(Functor, ABC):
         """Return whether this functor includes a subcategory."""
         return False
 
-    def _lift_morphism(
-        self,
-        source: MathematicalObject,
-        target: MathematicalObject,
-        image: Arrow,
-    ) -> Arrow:
-        """Lift one arrow between structural images."""
-        assert False, f"{self} does not lift morphisms from its codomain"
-
     def lift_product(
         self,
         diagram: Functor,
         apex: MathematicalObject,
         inherited_product: ProductPresentation | ProductObject,
-        lift_morphism: Callable[[MathematicalObject, MathematicalObject, Arrow], Arrow] | None = None,
+        lift: ConstructionLiftFunctor,
     ) -> ProductPresentation:
         """Lift the product inherited through this structural functor."""
         from sage_categories.abstract_categories.structural_products import lift_product
 
-        lift_fn = lift_morphism if lift_morphism is not None else self._lift_morphism
         return lift_product(
             self,
             diagram,
             apex,
             inherited_product,
-            lift_fn,
+            lift,
         )
 
     def inherited_product(self, diagram: Functor) -> ProductObject:

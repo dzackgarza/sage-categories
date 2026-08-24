@@ -343,7 +343,7 @@ class SubobjectCategory(FullSubcategory):
         assert structure_morphism in self._base_category.MonomorphismArrowCategory()
         assert structure_morphism.codomain() is self._target
         slice_object = self.ambient_category()(structure_morphism)
-        refined = self.refine_from_theorem(slice_object)
+        refined = self.refine_from_theorem(slice_object, self.ambient_category())
         assert self.contains_subobject(refined)
         return refined
 
@@ -397,7 +397,7 @@ class SuperobjectCategory(FullSubcategory):
         assert structure_morphism in self._base_category.MonomorphismArrowCategory()
         assert structure_morphism.domain() is self._source
         coslice_object = self.ambient_category()(structure_morphism)
-        return self.refine_from_theorem(coslice_object)
+        return self.refine_from_theorem(coslice_object, self.ambient_category())
 
 
 class CoveringObjectCategory(FullSubcategory):
@@ -422,7 +422,7 @@ class CoveringObjectCategory(FullSubcategory):
         assert structure_morphism in self._base_category.EpimorphismArrowCategory()
         assert structure_morphism.codomain() is self._target
         slice_object = self.ambient_category()(structure_morphism)
-        return self.refine_from_theorem(slice_object)
+        return self.refine_from_theorem(slice_object, self.ambient_category())
 
 
 class CoveredObjectCategory(FullSubcategory):
@@ -447,7 +447,7 @@ class CoveredObjectCategory(FullSubcategory):
         assert structure_morphism in self._base_category.EpimorphismArrowCategory()
         assert structure_morphism.domain() is self._source
         coslice_object = self.ambient_category()(structure_morphism)
-        return self.refine_from_theorem(coslice_object)
+        return self.refine_from_theorem(coslice_object, self.ambient_category())
 
 
 class SliceOverCategoryObjects(Category):

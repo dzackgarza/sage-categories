@@ -423,7 +423,7 @@ class PartiallyOrderedSetsCategory(Category):
         decision = check_partial_order(candidate, underlying_set)
         assert decision is True, f"relation on {underlying_set} is not established as a partial order (decision={decision})"
         if underlying_set in FiniteSets():
-            return self.Finite().refine_from_theorem(candidate)
+            return self.Finite().refine_from_theorem(candidate, self)
         return candidate
 
     def discrete_order(self, underlying_set: SetObject) -> PosetObject:

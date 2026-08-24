@@ -349,6 +349,7 @@ def NaturalNumbers() -> MathematicalObject:
 
         _NATURAL_NUMBERS = CountableSets().refine_from_theorem(
             NaturalNumbersSet(),
+            Sets(),
         )
     return _NATURAL_NUMBERS
 

@@ -10,6 +10,7 @@ from sage_categories.theories.poset_core import (
     PosetElement,
 )
 from sage_categories.theories.sets import (
+    CartesianProductOfSets,
     FiniteSet,
     NaturalNumbers,
     ProductElements,
@@ -37,7 +38,7 @@ def ordered_set_owned_by(
     underlying_set = FiniteSet(enumeration)
     owned_enumeration = tuple(underlying_set.element(element) for element in enumeration)
     positions: dict[SetElement, int] = {element: index for index, element in enumerate(owned_enumeration)}
-    product = underlying_set.cartesian_product(underlying_set)
+    product = CartesianProductOfSets((underlying_set, underlying_set))
     indices = tuple(product.index_set())
     assert len(indices) == 2
 

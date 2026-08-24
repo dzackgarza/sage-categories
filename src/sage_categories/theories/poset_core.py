@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING, Any, Self, TypeIs
 
 from sage_categories.assumptions import Hypothesis, HypothesisContext
@@ -16,7 +15,6 @@ from sage_categories.abstract_categories.hom_categories import HomCategory
 from sage_categories.abstract_categories.products import ProductObject
 from sage_categories.category import Category
 from sage_categories.theories.sets import (
-    FiniteSet,
     FiniteSets,
     FiniteSetsCategory,
     ProductElements,
@@ -43,7 +41,6 @@ from sage_categories.values import (
 
 if TYPE_CHECKING:
     from sage_categories.theories.finite_posets import (
-        FinitePosetObject,
         FinitePosetsCategory,
     )
     from sage_categories.theories.thin_categories import ThinCategory
@@ -632,32 +629,6 @@ def PartiallyOrderedSets() -> PartiallyOrderedSetsCategory:
     if _PARTIALLY_ORDERED_SETS is None:
         _PARTIALLY_ORDERED_SETS = PartiallyOrderedSetsCategory()
     return _PARTIALLY_ORDERED_SETS
-
-
-def Poset(
-    members_and_relation: tuple[
-        Iterable[SetElement],
-        Callable[[SetElement, SetElement], Decision],
-    ],
-) -> FinitePosetObject:
-    """Construct the finite poset defined by ``(members, leq)``."""
-    members, relation = members_and_relation
-    values = tuple(dict.fromkeys(members))
-    underlying_set = FiniteSet(values)
-
-    def transported_relation(left: SetElement, right: SetElement) -> Decision:
-        return relation(left.value(), right.value())
-
-    poset = PartiallyOrderedSets()(
-        underlying_set,
-        Sets().relation(
-            underlying_set,
-            Sets().binary_predicate(underlying_set, transported_relation),
-        ),
-    )
-    finite_posets = PartiallyOrderedSets().Finite()
-    assert finite_posets.contains_finite_poset(poset)
-    return poset
 
 
 def is_partially_ordered_sets_category(

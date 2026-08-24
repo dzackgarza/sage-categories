@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
+import inspect
+import types
+import typing
 from collections.abc import Callable, Iterator
+from dataclasses import dataclass
 from enum import Enum
+from types import FunctionType
 from typing import TYPE_CHECKING, Concatenate, ParamSpec, TypeVar, cast
 
-from sage_categories.values import (
-    Arrow,
-    MathematicalElement,
-    MathematicalObject,
-)
+from sage_categories.values import Arrow, MathematicalElement, MathematicalObject
 
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.functors import StructuralFunctor
@@ -24,8 +25,119 @@ class ImplementationRole(Enum):
     ARROW = "arrow"
 
 
+class ParameterRole(Enum):
+    """The declared transport role of one method parameter or result."""
+
+    VALUE = "value"
+    OBJECT = "object"
+    ELEMENT = "element"
+    ARROW = "arrow"
+    ELEMENT_ITERATOR = "element_iterator"
+
+
+@dataclass(frozen=True)
+class MethodSignature:
+    """Role metadata copied from one method declaration."""
+
+    positional: tuple[ParameterRole, ...]
+    keyword: tuple[tuple[str, ParameterRole], ...]
+    variadic: ParameterRole
+    keywords: ParameterRole
+    result: ParameterRole
+
+    def role_for_positional(self, position: int) -> ParameterRole:
+        if position < len(self.positional):
+            return self.positional[position]
+        return self.variadic
+
+    def role_for_keyword(self, name: str) -> ParameterRole:
+        for declared_name, role in self.keyword:
+            if declared_name == name:
+                return role
+        return self.keywords
+
+
 P = ParamSpec("P")
 R = TypeVar("R")
+Value = TypeVar("Value")
+Annotation = TypeVar("Annotation")
+
+
+def _annotation_role(annotation: Annotation) -> ParameterRole:
+    """Read a role from a resolved declaration annotation."""
+    if annotation is inspect.Parameter.empty:
+        return ParameterRole.VALUE
+    if annotation is type(None):
+        return ParameterRole.VALUE
+    origin = typing.get_origin(annotation)
+    if origin is typing.Union or origin is types.UnionType:
+        roles = tuple(
+            _annotation_role(argument)
+            for argument in typing.get_args(annotation)
+            if argument is not type(None)
+        )
+        assert roles
+        assert len(set(roles)) == 1
+        return roles[0]
+    if origin is not None:
+        if origin is Iterator:
+            arguments = typing.get_args(annotation)
+            assert len(arguments) == 1
+            item_role = _annotation_role(arguments[0])
+            if item_role is ParameterRole.ELEMENT:
+                return ParameterRole.ELEMENT_ITERATOR
+            return ParameterRole.VALUE
+        arguments = typing.get_args(annotation)
+        if arguments:
+            item_roles = tuple(_annotation_role(argument) for argument in arguments)
+            if all(role is ParameterRole.ELEMENT for role in item_roles):
+                return ParameterRole.ELEMENT_ITERATOR
+        return ParameterRole.VALUE
+    if type(annotation) is type:
+        annotation_type = cast(type, annotation)
+        if issubclass(annotation_type, Arrow):
+            return ParameterRole.ARROW
+        if issubclass(annotation_type, MathematicalElement):
+            return ParameterRole.ELEMENT
+        if issubclass(annotation_type, MathematicalObject):
+            return ParameterRole.OBJECT
+    return ParameterRole.VALUE
+
+
+def method_signature(method: FunctionType) -> MethodSignature:
+    """Return role metadata from the method's declared type annotations."""
+    namespace = dict(method.__globals__)
+    try:
+        annotations = typing.get_type_hints(method, globalns=namespace, localns=namespace)
+    except NameError:
+        annotations = inspect.get_annotations(method, eval_str=False)
+    parameters = tuple(inspect.signature(method).parameters.values())[1:]
+    positional: list[ParameterRole] = []
+    keyword: list[tuple[str, ParameterRole]] = []
+    variadic = ParameterRole.VALUE
+    keywords = ParameterRole.VALUE
+    for parameter in parameters:
+        annotation = annotations[parameter.name] if parameter.name in annotations else parameter.annotation
+        role = _annotation_role(annotation)
+        if parameter.kind is inspect.Parameter.VAR_POSITIONAL:
+            variadic = role
+        elif parameter.kind is inspect.Parameter.VAR_KEYWORD:
+            keywords = role
+        elif parameter.kind in (
+            inspect.Parameter.POSITIONAL_ONLY,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        ):
+            positional.append(role)
+        else:
+            keyword.append((parameter.name, role))
+    result_annotation = annotations["return"] if "return" in annotations else inspect.signature(method).return_annotation
+    return MethodSignature(
+        tuple(positional),
+        tuple(keyword),
+        variadic,
+        keywords,
+        _annotation_role(result_annotation),
+    )
 
 
 def _pull_back_element_along(
@@ -39,86 +151,122 @@ def _pull_back_element_along(
         prefix = (*prefix, functor)
         objects.append(source_ambient._object_image_along(prefix))
     current = element
-    for functor, src in reversed(tuple(zip(route, objects, strict=True))):
-        current = functor.preimage_element(src, current)
+    for functor, source in reversed(tuple(zip(route, objects, strict=True))):
+        current = functor.preimage_element(source, current)
     return current
 
 
-def _forward_arg(
-    arg: object,
+def _pull_back_object_along(
+    value: MathematicalObject,
     route: tuple[StructuralFunctor, ...],
-) -> object:
-    if not route:
-        return arg
-    source_cat = route[0].domain()
-    if isinstance(arg, MathematicalElement):
-        ambient = arg.ambient_object()
-        if ambient in source_cat or ambient.category() is source_cat:
-            return arg._element_image_along(route)
-        return arg
-    if isinstance(arg, MathematicalObject):
-        if arg in source_cat or arg.category() is source_cat:
-            return arg._object_image_along(route)
-        return arg
-    if isinstance(arg, Arrow):
-        if arg.domain() in source_cat and arg.codomain() in source_cat:
-            return arg._morphism_image_along(route)
-        return arg
-    return arg
+    source: MathematicalObject,
+) -> MathematicalObject:
+    current = value
+    sources: list[MathematicalObject] = [source]
+    prefix: tuple[StructuralFunctor, ...] = ()
+    for functor in route[:-1]:
+        prefix = (*prefix, functor)
+        sources.append(source._object_image_along(prefix))
+    for functor, source_object in reversed(tuple(zip(route, sources, strict=True))):
+        current = functor.preimage_object(source_object, current)
+    return current
 
 
-def _forward_args(
-    args: tuple[object, ...],
+def _pull_back_arrow_along(value: Arrow, route: tuple[StructuralFunctor, ...]) -> Arrow:
+    current = value
+    for functor in reversed(route):
+        current = functor.preimage_morphism(current)
+    return current
+
+
+def _forward_value(
+    value: Value,
+    role: ParameterRole,
     route: tuple[StructuralFunctor, ...],
-) -> tuple[object, ...]:
-    return tuple(_forward_arg(arg, route) for arg in args)
+) -> Value:
+    if not route or role is ParameterRole.VALUE:
+        return value
+    source_category = route[0].domain()
+    if role is ParameterRole.OBJECT:
+        mathematical_object = cast(MathematicalObject, value)
+        assert mathematical_object in source_category
+        return cast(Value, mathematical_object._object_image_along(route))
+    if role is ParameterRole.ELEMENT:
+        element = cast(MathematicalElement, value)
+        assert element.ambient_object() in source_category
+        return cast(Value, element._element_image_along(route))
+    if role is ParameterRole.ARROW:
+        arrow = cast(Arrow, value)
+        assert arrow.domain() in source_category
+        assert arrow.codomain() in source_category
+        return cast(Value, arrow._morphism_image_along(route))
+    assert role is ParameterRole.ELEMENT_ITERATOR
+    iterator = cast(Iterator[MathematicalElement], value)
+
+    def forward_elements() -> Iterator[MathematicalElement]:
+        for element in iterator:
+            yield _forward_value(element, ParameterRole.ELEMENT, route)
+
+    return cast(Value, forward_elements())
 
 
-def _forward_kwargs(
-    kwargs: dict[str, object],
+def _forward_arguments(
+    args: tuple[Value, ...],
+    kwargs: dict[str, Value],
+    signature: MethodSignature,
     route: tuple[StructuralFunctor, ...],
-) -> dict[str, object]:
-    return {name: _forward_arg(val, route) for name, val in kwargs.items()}
+) -> tuple[tuple[Value, ...], dict[str, Value]]:
+    forwarded_args = tuple(
+        _forward_value(value, signature.role_for_positional(position), route)
+        for position, value in enumerate(args)
+    )
+    forwarded_kwargs = {
+        name: _forward_value(value, signature.role_for_keyword(name), route)
+        for name, value in kwargs.items()
+    }
+    return forwarded_args, forwarded_kwargs
 
 
-def _transport_result[ResultType](
-    result: ResultType,
+def _transport_result(
+    result: R,
+    role: ParameterRole,
     route: tuple[StructuralFunctor, ...],
     source_ambient: MathematicalObject,
-    target_ambient: MathematicalObject | None = None,
-    instance: MathematicalObject | MathematicalElement | Arrow | None = None,
-    image: MathematicalObject | MathematicalElement | Arrow | None = None,
-) -> ResultType:
-    if result is None:
+    target_ambient: MathematicalObject,
+    instance: MathematicalObject | MathematicalElement | Arrow,
+    image: MathematicalObject | MathematicalElement | Arrow,
+) -> R:
+    if role is ParameterRole.VALUE:
         return result
-    if image is not None and result is image:
-        assert instance is not None
-        return cast(ResultType, instance)
-    if target_ambient is not None and result is target_ambient:
-        return cast(ResultType, source_ambient)
+    if role is ParameterRole.OBJECT:
+        value = cast(MathematicalObject, result)
+        if value is image or value is target_ambient:
+            return cast(R, source_ambient)
+        if value not in route[-1].codomain():
+            return result
+        return cast(R, _pull_back_object_along(value, route, source_ambient))
+    if role is ParameterRole.ELEMENT:
+        value = cast(MathematicalElement, result)
+        if value is image:
+            return cast(R, instance)
+        if value.ambient_object() not in route[-1].codomain():
+            return result
+        return cast(R, _pull_back_element_along(value, route, source_ambient))
+    if role is ParameterRole.ARROW:
+        value = cast(Arrow, result)
+        if value is image:
+            return cast(R, instance)
+        if not value._is_arrow_in(route[-1].codomain()):
+            return result
+        return cast(R, _pull_back_arrow_along(value, route))
+    assert role is ParameterRole.ELEMENT_ITERATOR
+    iterator = cast(Iterator[MathematicalElement], result)
 
-    if isinstance(result, Iterator):
+    def pull_back_elements() -> Iterator[MathematicalElement]:
+        for element in iterator:
+            yield _pull_back_element_along(element, route, source_ambient)
 
-        def lazy_elements() -> Iterator[object]:
-            for item in result:
-                if isinstance(item, MathematicalElement):
-                    yield _pull_back_element_along(item, route, source_ambient)
-                else:
-                    yield item
-
-        return cast(ResultType, lazy_elements())
-
-    if isinstance(result, MathematicalElement):
-        if target_ambient is not None and result.ambient_object() is target_ambient:
-            return cast(ResultType, _pull_back_element_along(result, route, source_ambient))
-        return result
-
-    if isinstance(result, MathematicalObject):
-        if target_ambient is not None and result is target_ambient:
-            return cast(ResultType, source_ambient)
-        return result
-
-    return result
+    return cast(R, pull_back_elements())
 
 
 class ForwardedObjectMethod[Receiver: MathematicalObject, **P, R]:
@@ -131,7 +279,8 @@ class ForwardedObjectMethod[Receiver: MathematicalObject, **P, R]:
     ) -> None:
         assert route
         self._route = route
-        self._method = method
+        self._method: FunctionType = cast(FunctionType, method)
+        self._signature = method_signature(cast(FunctionType, method))
 
     def __get__(
         self,
@@ -140,22 +289,20 @@ class ForwardedObjectMethod[Receiver: MathematicalObject, **P, R]:
     ) -> ForwardedObjectMethod[Receiver, P, R] | Callable[P, R]:
         if instance is None:
             return self
-
         image = instance._object_image_along(self._route)
+        route = self._route
+        method = self._method
+        signature = self._signature
 
         def call(*args: P.args, **kwargs: P.kwargs) -> R:
-            forwarded_args = _forward_args(args, self._route)
-            forwarded_kwargs = _forward_kwargs(kwargs, self._route)
-            raw_method = cast(Callable[..., R], self._method)
-            result = raw_method(image, *forwarded_args, **forwarded_kwargs)
-            return _transport_result(
-                result,
-                self._route,
-                source_ambient=instance,
-                target_ambient=image,
-                instance=instance,
-                image=image,
+            forwarded_args, forwarded_kwargs = _forward_arguments(
+                tuple(args),
+                dict(kwargs),
+                signature,
+                route,
             )
+            result = cast(R, method(image, *forwarded_args, **forwarded_kwargs))
+            return _transport_result(result, signature.result, route, instance, image, instance, image)
 
         return call
 
@@ -170,7 +317,8 @@ class ForwardedElementMethod[Receiver: MathematicalElement, **P, R]:
     ) -> None:
         assert route
         self._route = route
-        self._method = method
+        self._method: FunctionType = cast(FunctionType, method)
+        self._signature = method_signature(cast(FunctionType, method))
 
     def __get__(
         self,
@@ -179,25 +327,23 @@ class ForwardedElementMethod[Receiver: MathematicalElement, **P, R]:
     ) -> ForwardedElementMethod[Receiver, P, R] | Callable[P, R]:
         if instance is None:
             return self
-
         image = instance._element_image_along(self._route)
         source_ambient = instance.ambient_object()
+        route = self._route
+        method = self._method
+        signature = self._signature
 
-        def call_element(*args: P.args, **kwargs: P.kwargs) -> R:
-            forwarded_args = _forward_args(args, self._route)
-            forwarded_kwargs = _forward_kwargs(kwargs, self._route)
-            raw_method = cast(Callable[..., R], self._method)
-            result = raw_method(image, *forwarded_args, **forwarded_kwargs)
-            return _transport_result(
-                result,
-                self._route,
-                source_ambient=source_ambient,
-                target_ambient=image.ambient_object(),
-                instance=instance,
-                image=image,
+        def call(*args: P.args, **kwargs: P.kwargs) -> R:
+            forwarded_args, forwarded_kwargs = _forward_arguments(
+                tuple(args),
+                dict(kwargs),
+                signature,
+                route,
             )
+            result = cast(R, method(image, *forwarded_args, **forwarded_kwargs))
+            return _transport_result(result, signature.result, route, source_ambient, image.ambient_object(), instance, image)
 
-        return call_element
+        return call
 
 
 class ForwardedArrowMethod[Receiver: Arrow, **P, R]:
@@ -210,7 +356,8 @@ class ForwardedArrowMethod[Receiver: Arrow, **P, R]:
     ) -> None:
         assert route
         self._route = route
-        self._method = method
+        self._method: FunctionType = cast(FunctionType, method)
+        self._signature = method_signature(cast(FunctionType, method))
 
     def __get__(
         self,
@@ -219,26 +366,22 @@ class ForwardedArrowMethod[Receiver: Arrow, **P, R]:
     ) -> ForwardedArrowMethod[Receiver, P, R] | Callable[P, R]:
         if instance is None:
             return self
-
         image = instance._morphism_image_along(self._route)
+        route = self._route
+        method = self._method
+        signature = self._signature
 
-        def call_arrow(*args: P.args, **kwargs: P.kwargs) -> R:
-            forwarded_args = _forward_args(args, self._route)
-            forwarded_kwargs = _forward_kwargs(kwargs, self._route)
-            raw_method = cast(Callable[..., R], self._method)
-            result = raw_method(image, *forwarded_args, **forwarded_kwargs)
-            return _transport_result(
-                result,
-                self._route,
-                source_ambient=instance.codomain(),
-                target_ambient=image.codomain(),
-                instance=instance,
-                image=image,
+        def call(*args: P.args, **kwargs: P.kwargs) -> R:
+            forwarded_args, forwarded_kwargs = _forward_arguments(
+                tuple(args),
+                dict(kwargs),
+                signature,
+                route,
             )
+            result = cast(R, method(image, *forwarded_args, **forwarded_kwargs))
+            return _transport_result(result, signature.result, route, instance.codomain(), image.codomain(), instance, image)
 
-        return call_arrow
+        return call
 
 
-type ForwardedDescriptor = (
-    ForwardedObjectMethod[MathematicalObject, ..., object] | ForwardedElementMethod[MathematicalElement, ..., object] | ForwardedArrowMethod[Arrow, ..., object]
-)
+type ForwardedDescriptor = ForwardedObjectMethod | ForwardedElementMethod | ForwardedArrowMethod

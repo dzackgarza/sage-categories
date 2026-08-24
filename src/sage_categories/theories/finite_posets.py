@@ -29,6 +29,7 @@ from sage_categories.values import (
     Decision,
     MathematicalElement,
     MathematicalObject,
+    registered_element,
 )
 
 if TYPE_CHECKING:
@@ -87,6 +88,10 @@ class FinitePosetObject(MathematicalObject):
 
     def _set_implementation(self) -> SetObject:
         return PartiallyOrderedSets().underlying_set(self._poset)
+
+    def __contains__(self, candidate: MathematicalObject) -> bool:
+        element = registered_element(candidate)
+        return element is not None and element.ambient_object() is self
 
     def _is_lequal(self, left: PosetElement, right: PosetElement) -> Decision:
         poset_left = self._poset.element(left._set_implementation())
@@ -224,7 +229,9 @@ class FinitePosetInclusionFunctor(InclusionFunctor):
 
     def _object_image(self, source: MathematicalObject) -> PosetObject:
         assert self._finite_posets.contains_finite_poset(source)
-        return source._poset_implementation()
+        if source.category() is self._finite_posets:
+            return source._poset_implementation()
+        return source
 
     def _morphism_image(self, morphism: Arrow) -> PosetMorphism:
         hom_category = morphism.hom_category()
@@ -247,6 +254,8 @@ class FinitePosetInclusionFunctor(InclusionFunctor):
         assert is_poset_element(element)
         target = self.on_object(source)
         assert PartiallyOrderedSets().contains_poset(target)
+        if target is source:
+            return element
         return target.element(element._set_implementation())
 
     def _element_preimage(

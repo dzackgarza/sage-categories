@@ -96,15 +96,15 @@ class SimplexOrderIndexing:
                         assert decision is not UNKNOWN
                         return decision
 
-                    poset = PartiallyOrderedSets().ObjectType(
-                        category=PartiallyOrderedSets(),
-                        underlying_set=naturals,
-                        relation=natural_order,
+                    # Theorem: the natural order on ordinals is a total order
+                    # (well-ordering of ordinals, Sierpiński §II.7).
+                    poset = PartiallyOrderedSets()._ordinal_order(
+                        naturals,
+                        natural_order,
                     )
 
-                    self._countable_simplex = TotallyOrderedSets().ObjectType(
-                        category=TotallyOrderedSets(),
-                        poset=poset,
+                    self._countable_simplex = TotallyOrderedSets()._ordinal_total_order(
+                        poset,
                     )
                 return self._countable_simplex
         else:

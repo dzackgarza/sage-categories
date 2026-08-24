@@ -83,10 +83,14 @@ from sage_categories.values import (
 
 def ProductOfSets(
     diagram: Functor,
-    *,
-    cardinality: Cardinal | None = None,
 ) -> ProductPresentation:
+    from sage_categories.theories.set_colimits import _indexed_product_cardinality
+
     assert diagram.codomain() is Sets()
+    cardinality = _indexed_product_cardinality(
+        diagram.domain().label_set(),
+        lambda index: diagram(diagram.domain().object(index)),
+    )
     apex = ProductSet(
         diagram,
         category=Sets(),
@@ -282,18 +286,13 @@ def CartesianProductOfSets(
     size = Cardinals().product(*(factor.cardinality() for factor in factors))
     products = Sets().Products(index)
     assert is_products_of_sets_category(products)
-    image = products(
-        diagram,
-        cardinality=size,
-    )
+    image = products(diagram)
     return image
 
 
 def CartesianProductOfFamily(
     index_set: SetObject,
     factors: Callable[[SetElement], SetObject],
-    *,
-    cardinality: Cardinal | None = None,
 ) -> SetProductObject:
     index_category = DiscreteCategory(index_set)
     diagram = SetFamily(
@@ -302,16 +301,13 @@ def CartesianProductOfFamily(
     )
     products = Sets().Products(index_category)
     assert is_products_of_sets_category(products)
-    image = products(diagram, cardinality=cardinality)
+    image = products(diagram)
     return image
 
 
 def CartesianProductMorphismOfFamily(
     index_category: DiscreteCategoryObject,
     functions: SetMorphismFamily,
-    *,
-    domain_cardinality: Cardinal | None = None,
-    codomain_cardinality: Cardinal | None = None,
 ) -> SetMorphism:
     def function(index: DiscreteObject) -> SetMorphism:
         value = functions(index)
@@ -342,8 +338,8 @@ def CartesianProductMorphismOfFamily(
     )
     products = Sets().Products(index_category)
     assert is_products_of_sets_category(products)
-    products(source, cardinality=domain_cardinality)
-    products(target, cardinality=codomain_cardinality)
+    products(source)
+    products(target)
     image = Sets().ProductFunctor(index_category)(transformation)
     assert Sets().contains_set_morphism(image)
     return image
@@ -378,8 +374,6 @@ def cartesian_product_morphism(*functions: SetMorphism) -> SetMorphism:
     return CartesianProductMorphismOfFamily(
         index_category,
         function,
-        domain_cardinality=Cardinals().product(*(_domain_cardinality(morphism) for morphism in functions)),
-        codomain_cardinality=Cardinals().product(*(_codomain_cardinality(morphism) for morphism in functions)),
     )
 
 

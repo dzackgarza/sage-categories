@@ -41,6 +41,8 @@ class Functor(Arrow, ABC):
         self._morphism_map = morphism_map
         self._object_images: dict[int, MathematicalObject] = {}
         self._morphism_images: dict[int, Arrow] = {}
+        self._object_preimages: dict[tuple[int, int], MathematicalObject] = {}
+        self._morphism_preimages: dict[int, Arrow] = {}
         self._postcomposition_functors: dict[int, PostcompositionFunctor] = {}
         functor_hom_category = category_universe(domain, codomain).Hom(domain, codomain) if hom_category is None else hom_category
         assert functor_hom_category.domain() is domain
@@ -74,6 +76,7 @@ class Functor(Arrow, ABC):
             image = self._object_image(source)
             assert image in self.codomain()
             self._object_images[key] = image
+            self._object_preimages[(id(source), id(image))] = source
         return image
 
     def on_morphism(self, morphism: Arrow) -> Arrow:
@@ -89,6 +92,7 @@ class Functor(Arrow, ABC):
             assert image.domain() is domain
             assert image.codomain() is codomain
             self._morphism_images[key] = image
+            self._morphism_preimages[id(image)] = morphism
         return image
 
     def __call__(self, value: MathematicalObject) -> MathematicalObject:
@@ -212,6 +216,24 @@ class StructuralFunctor(Functor, ABC):
             self._element_preimages[key] = preimage
         assert preimage.ambient_object() is source
         self._element_images[(id(source), id(preimage))] = element
+        return preimage
+
+    def preimage_object(
+        self,
+        source: MathematicalObject,
+        image: MathematicalObject,
+    ) -> MathematicalObject:
+        """Return the source represented by one canonical object image."""
+        assert source in self.domain()
+        assert image is self.on_object(source)
+        assert self._object_preimages[(id(source), id(image))] is source
+        return source
+
+    def preimage_morphism(self, image: Arrow) -> Arrow:
+        """Return the source represented by one canonical arrow image."""
+        preimage = self._morphism_preimages.get(id(image))
+        assert preimage is not None
+        assert self.on_morphism(preimage) is image
         return preimage
 
     def _element_preimage(

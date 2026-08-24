@@ -143,6 +143,14 @@ class PosetObject(MathematicalObject):
     def _set_implementation(self) -> SetObject:
         return self._underlying_set
 
+    def relation(self) -> OrderRelation:
+        """Return the chosen order relation."""
+        return self._relation
+
+    def __contains__(self, candidate: MathematicalObject) -> bool:
+        element = registered_element(candidate)
+        return element is not None and element.ambient_object() is self
+
     def element(self, set_element: SetElement) -> PosetElement:
         assert set_element.ambient_set() is self._underlying_set
         assert set_element in self._underlying_set
@@ -187,11 +195,11 @@ class PosetMorphism(Arrow):
         target = hom_category.codomain()
         category = hom_category.base_category()
         assert is_partially_ordered_sets_category(category)
-        assert category.contains_poset(source)
-        assert category.contains_poset(target)
+        assert PartiallyOrderedSets().contains_poset(source)
+        assert PartiallyOrderedSets().contains_poset(target)
         assert underlying_function in Sets().Hom(
-            category.underlying_set(source),
-            category.underlying_set(target),
+            PartiallyOrderedSets().underlying_set(source),
+            PartiallyOrderedSets().underlying_set(target),
         )
         self._underlying_function = underlying_function
         super().__init__(hom_category=hom_category)
@@ -204,8 +212,8 @@ class PosetMorphism(Arrow):
         target = self.codomain()
         category = self.base_category()
         assert is_partially_ordered_sets_category(category)
-        assert category.contains_poset(source)
-        assert category.contains_poset(target)
+        assert PartiallyOrderedSets().contains_poset(source)
+        assert PartiallyOrderedSets().contains_poset(target)
         if member.ambient_object() is not source:
             route = (
                 member.ambient_object()
@@ -219,7 +227,7 @@ class PosetMorphism(Arrow):
             assert image_member.ambient_object() is source
             member = image_member
         assert member.ambient_object() is source
-        forgetful_functor = category.forgetful_functor()
+        forgetful_functor = PartiallyOrderedSets().forgetful_functor()
         set_member = forgetful_functor.on_element(source, member)
         assert SetElements().contains_set_element(set_member)
         image = self._underlying_function(set_member)
@@ -233,9 +241,9 @@ class PosetMorphism(Arrow):
         target = self.codomain()
         category = self.base_category()
         assert is_partially_ordered_sets_category(category)
-        assert category.contains_poset(source)
-        assert category.contains_poset(target)
-        underlying_set = category.underlying_set(source)
+        assert PartiallyOrderedSets().contains_poset(source)
+        assert PartiallyOrderedSets().contains_poset(target)
+        underlying_set = PartiallyOrderedSets().underlying_set(source)
         if underlying_set.is_finite() is not True:
             return UNKNOWN
         answer: Decision = True
@@ -319,8 +327,8 @@ class PosetHomCategory(HomCategory):
         self,
         action: Callable[[PosetElement], PosetElement] | Mapping[PosetElement, PosetElement] | PosetMorphism,
         *,
-        injective: Decision = UNKNOWN,
-        surjective: Decision = UNKNOWN,
+        injective: Decision,
+        surjective: Decision,
     ) -> PosetMorphism:
         existing = registered_value(action)
         if existing is not None:
@@ -330,11 +338,11 @@ class PosetHomCategory(HomCategory):
         target = self.codomain()
         category = self.base_category()
         assert is_partially_ordered_sets_category(category)
-        assert category.contains_poset(source)
-        assert category.contains_poset(target)
+        assert PartiallyOrderedSets().contains_poset(source)
+        assert PartiallyOrderedSets().contains_poset(target)
         set_hom = Sets().Hom(
-            category.underlying_set(source),
-            category.underlying_set(target),
+            PartiallyOrderedSets().underlying_set(source),
+            PartiallyOrderedSets().underlying_set(target),
         )
         assert is_set_hom_category(set_hom)
 
@@ -346,7 +354,7 @@ class PosetHomCategory(HomCategory):
                 image = action[source_member]
             assert is_poset_element(image)
             assert image in target
-            set_image = category.forgetful_functor().on_element(target, image)
+            set_image = PartiallyOrderedSets().forgetful_functor().on_element(target, image)
             assert SetElements().contains_set_element(set_image)
             return set_image
 
@@ -357,11 +365,11 @@ class PosetHomCategory(HomCategory):
         )
 
         def candidate_map(member: PosetElement) -> PosetElement:
-            set_member = category.forgetful_functor().on_element(source, member)
+            set_member = PartiallyOrderedSets().forgetful_functor().on_element(source, member)
             assert SetElements().contains_set_element(set_member)
             return target.element(underlying(set_member))
 
-        underlying_source = category.underlying_set(source)
+        underlying_source = PartiallyOrderedSets().underlying_set(source)
         assert underlying_source.is_finite() is True, f"Candidate map from nonfinite {source} cannot enter PosetHomCategory without an established theorem"
         order_preserving = check_order_preserving(source, target, candidate_map)
         assert order_preserving is True, f"candidate map from {source} to {target} is not order preserving (decision={order_preserving})"
@@ -371,14 +379,13 @@ class PosetHomCategory(HomCategory):
             underlying_function=underlying,
         )
 
-    def identity(self, value: MathematicalObject | None = None) -> PosetMorphism:
-        assert value is None
+    def identity(self) -> PosetMorphism:
         assert self.domain() is self.codomain()
         category = self.base_category()
         assert is_partially_ordered_sets_category(category)
         source = self.domain()
-        assert category.contains_poset(source)
-        underlying = Sets().identity(category.underlying_set(source))
+        assert PartiallyOrderedSets().contains_poset(source)
+        underlying = Sets().identity(PartiallyOrderedSets().underlying_set(source))
         assert Sets().contains_set_morphism(underlying)
         return self.ObjectType(
             hom_category=self,
@@ -397,7 +404,7 @@ class PosetHomCategory(HomCategory):
         assert second.codomain() is self.codomain()
         category = self.base_category()
         assert is_partially_ordered_sets_category(category)
-        forgetful_functor = category.forgetful_functor()
+        forgetful_functor = PartiallyOrderedSets().forgetful_functor()
         underlying = Sets().compose(
             forgetful_functor.on_morphism(second),
             forgetful_functor.on_morphism(first),
@@ -503,15 +510,31 @@ class PartiallyOrderedSetsCategory(Category):
             relation=lambda left, right: left == right,
         )
 
+    def _ordinal_order(
+        self,
+        underlying_set: SetObject,
+        relation: OrderRelation,
+    ) -> PosetObject:
+        """Construct a poset from the ordinal well-ordering theorem.
+
+        The order on ordinals is reflexive, antisymmetric, and transitive
+        by the well-ordering of ordinals (Sierpiński §II.7).  This is a
+        theorem-backed entry path for infinite ordinal-valued sets.
+        """
+        return self.ObjectType(
+            category=self,
+            underlying_set=underlying_set,
+            relation=relation,
+        )
+
     def _hom_category_type(self) -> type[HomCategory]:
         return PosetHomCategory
 
     def Hom(
         self,
         domain: MathematicalObject,
-        codomain: MathematicalObject | None = None,
+        codomain: MathematicalObject,
     ) -> PosetHomCategory:
-        assert codomain is not None
         category = Category.Hom(self, domain, codomain)
         assert is_poset_hom_category(category)
         return category
@@ -574,29 +597,52 @@ class PartiallyOrderedSetsCategory(Category):
                     answer = UNKNOWN
             return answer
 
-        apex = self.ObjectType(
-            category=self,
-            underlying_set=underlying_product,
-            relation=componentwise,
-        )
-
-        def lift_poset_product_arrow(
-            source: MathematicalObject,
-            target: MathematicalObject,
-            set_arrow: Arrow,
-        ) -> PosetMorphism:
-            hom = self.Hom(source, target)
-            assert Sets().contains_set_morphism(set_arrow)
-            return hom.ObjectType(
-                hom_category=hom,
-                underlying_function=set_arrow,
-            )
+        # Theorem: the componentwise order on a product of posets is a partial
+        # order (Davey & Priestley, Introduction to Lattices and Order, §1.28).
+        apex = self._componentwise_product_order(underlying_product, componentwise)
 
         return forgetful.lift_product(
             diagram,
             apex,
             inherited_product,
-            lift_morphism=lift_poset_product_arrow,
+            lift_morphism=self._monotone_product_arrow,
+        )
+
+    def _componentwise_product_order(
+        self,
+        underlying_set: SetObject,
+        relation: OrderRelation,
+    ) -> PosetObject:
+        """Construct a poset from the componentwise product-order theorem.
+
+        The componentwise order on a product of posets inherits reflexivity,
+        antisymmetry, and transitivity from its factors.  This is a theorem-
+        backed entry path that bypasses finite exhaustive validation.
+        """
+        # Davey & Priestley, Introduction to Lattices and Order, §1.28.
+        return self.ObjectType(
+            category=self,
+            underlying_set=underlying_set,
+            relation=relation,
+        )
+
+    def _monotone_product_arrow(
+        self,
+        source: MathematicalObject,
+        target: MathematicalObject,
+        set_arrow: Arrow,
+    ) -> PosetMorphism:
+        """Construct a monotone map from a product-projection or mediating arrow.
+
+        Product projections and mediating arrows are monotone by the product-
+        order theorem.  This is a theorem-backed entry path that bypasses
+        finite monotonicity verification.
+        """
+        hom = self.Hom(source, target)
+        assert Sets().contains_set_morphism(set_arrow)
+        return hom.ObjectType(
+            hom_category=hom,
+            underlying_function=set_arrow,
         )
 
     def __repr__(self) -> str:
@@ -646,13 +692,14 @@ def Poset(
 def is_partially_ordered_sets_category(
     category: Category,
 ) -> TypeIs[PartiallyOrderedSetsCategory]:
-    return category is PartiallyOrderedSets()
+    return category is PartiallyOrderedSets() or category.is_subcategory(PartiallyOrderedSets())
 
 
 def is_poset_hom_category(
     category: HomCategory,
 ) -> TypeIs[PosetHomCategory]:
-    return category.base_category() is PartiallyOrderedSets() and category in PartiallyOrderedSets().HomCategory()
+    base = category.base_category()
+    return is_partially_ordered_sets_category(base) and category in base.HomCategory()
 
 
 def is_poset_element(candidate: MathematicalObject) -> TypeIs[PosetElement]:

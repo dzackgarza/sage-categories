@@ -143,19 +143,10 @@ class ProductSet(SetObject):
         diagram: Functor,
         *,
         category: Category,
-        cardinality: Cardinal | None = None,
+        cardinality: Cardinal,
     ) -> None:
-        from sage_categories.theories.set_colimits import _indexed_product_cardinality
-
         self._diagram = diagram
-        size = cardinality
-        if size is None:
-            size = _indexed_product_cardinality(
-                self.index_set(),
-                self.factor,
-                factor_finiteness=(True if diagram.codomain().is_subcategory(FiniteSets()) else UNKNOWN),
-            )
-        super().__init__(category=category, cardinality=size)
+        super().__init__(category=category, cardinality=cardinality)
 
     def diagram(self) -> Functor:
         return self._diagram
@@ -232,7 +223,7 @@ class SetProductObject(ProductObject):
         *,
         category: ProductsOfSetsCategory,
         diagram: Functor,
-        cardinality: Cardinal | None = None,
+        cardinality: Cardinal,
     ) -> None:
         from sage_categories.theories.set_constructions import _product_presentation
 
@@ -399,11 +390,9 @@ class ProductsOfSetsCategory(ProductsOfCategory):
     def __call__(
         self,
         preimage: MathematicalObject,
-        *,
-        cardinality: Cardinal | None = None,
     ) -> SetProductObject:
         assert is_functor(preimage)
-        return self._product(preimage, cardinality=cardinality)
+        return self._product(preimage)
 
     def limit_of(self, diagram: Functor) -> SetProductObject:
         return self._product(diagram)
@@ -414,13 +403,18 @@ class ProductsOfSetsCategory(ProductsOfCategory):
     def _product(
         self,
         diagram: Functor,
-        *,
-        cardinality: Cardinal | None = None,
     ) -> SetProductObject:
         assert diagram in self.functor().domain()
         key = id(diagram)
         cached = self._limits.get(key)
         if cached is None:
+            from sage_categories.theories.set_colimits import _indexed_product_cardinality
+
+            cardinality = _indexed_product_cardinality(
+                diagram.domain().label_set(),
+                lambda index: diagram(diagram.domain().object(index)),
+                factor_finiteness=(True if diagram.codomain().is_subcategory(FiniteSets()) else UNKNOWN),
+            )
             candidate = self.ObjectType(
                 category=self,
                 diagram=diagram,
@@ -430,8 +424,6 @@ class ProductsOfSetsCategory(ProductsOfCategory):
             cached = candidate
             self._limits[key] = cached
         assert self.contains_set_product(cached)
-        if cardinality is not None:
-            assert cached.cardinality() == cardinality
         return cached
 
     def contains_set_product(

@@ -198,12 +198,12 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-031` | Treat an unjustified reduction to `Sets()` as a foundational error. Rebuild every dependent definition, type, arrow, and conclusion in the correct category. |
 | `POL-CAT-032` | Put an operation at the most general category where its mathematical result can be declared. Partial knowledge or the absence of one general algorithm does not justify moving the operation to a narrower category. |
 | `POL-CAT-033` | Define a subcategory only for a genuine mathematical property or structure. Never define one only to select, store, or expose an implementation. |
-| `POL-CAT-034` | Let objects supply optional construction data to a general operation. Select applicable algorithms by case analysis on that data while preserving one public mathematical operation and result type. |
+| `POL-CAT-034` | Retired. Use `POL-API-021`. |
 | `POL-CAT-035` | Treat an implementation-shaped category or object name as evidence that an established mathematical owner or construction has been missed. Resolve the object, arrows, and construction before adding terminology. |
-| `POL-CAT-036` | Use a small set of general, mathematically standard category constructors as the primary construction interface. Do not require callers to know a specialized implementation constructor. |
-| `POL-CAT-037` | Route a general construction to every justified property subcategory from established input properties, construction data, and explicit hypotheses. Use case analysis or pattern matching for this refinement. |
-| `POL-CAT-038` | Keep direct subcategory constructors available as optional expert entry points. Correct construction and category placement must not require knowledge of the category graph. |
-| `POL-CAT-039` | Make construction discoverable through standard categories such as `Sets()`, `Monoids()`, `Groups()`, `Rings()`, `Modules(R)`, and `Algebras(R)`. Let the implementation absorb the routing complexity. |
+| `POL-CAT-036` | Use mathematically standard, total category constructors. Give each construction route its own explicit name and required inputs. |
+| `POL-CAT-037` | Place each constructed result in every property subcategory established by that named route and its required inputs. |
+| `POL-CAT-038` | Keep direct subcategory constructors available as named expert entry points. Correct construction and category placement must not require knowledge of the category graph. |
+| `POL-CAT-039` | Make each named construction route discoverable through standard categories such as `Sets()`, `Monoids()`, `Groups()`, `Rings()`, `Modules(R)`, and `Algebras(R)`. Keep route selection explicit at the call site. |
 | `POL-CAT-040` | For \(f:X\to Y\), evaluate `f` only on elements of `X` and return elements of `Y`. A morphism never accepts or returns an unowned Python value. |
 | `POL-CAT-041` | Construct or coerce raw representations into elements of the appropriate category objects before morphism evaluation. Keep this conversion outside the morphism. |
 | `POL-CAT-042` | Make Hom-category operations verify that each element's owning object lies in the base category and that evaluation respects the declared domain and codomain. |
@@ -265,10 +265,9 @@ Grounding examples:
   `PropertySet` or `Sets.PropertyCategory()` does not name a mathematical class: every set can be characterized by a property.
   Such a name mistakes the construction of an ordinary subset for a new kind of set.
 
-- `Sets({1, 2, 3})` constructs a finite set and routes it into the finite-set subcategory.
-  A caller need not know or call a specialized `FiniteSet` constructor.
-  Exact data such as `cardinality=3` or an explicit hypothesis such as `is_projective=True` can guide refinement when direct verification is unavailable.
-  These inputs state mathematical facts at the construction boundary.
+- `Sets().construct_finite_set(members, cardinality)` requires the members and finite cardinality.
+  It routes the result into the finite-set subcategory.
+  Other named routes require the exact hypotheses that establish their results.
 
 - Prefer `X in Sets().Finite()` to `X.is_finite()` or `X.cardinality() < infinity`.
   The finite-set category owns the decision procedure through `Sets().Finite().__contains__`.
@@ -495,6 +494,7 @@ When an established finite algorithm requires a primitive loop bound, lower the 
 | `POL-API-018` | Use an abstract method when every concrete object must supply an implementation. Prevent construction of an incomplete concrete object instead of deferring the failure to a method call. |
 | `POL-API-019` | When an operation requires a capability, place it on the category that supplies that capability and let the method compiler expose it there. Do not install a failing placeholder on objects outside that category. |
 | `POL-API-020` | When a mathematical operation exists but available algorithms cannot determine its result, return its typed unknown value, such as `Decision` or `bool \| Unknown`. Do not replace missing knowledge with a runtime failure. |
+| `POL-API-021` | Make every method and constructor total on its declared domain. Require every argument. Never use optional parameters, default values, `None` sentinels, or fallback behavior. Give each distinct construction or computation route a separate explicit method name. Each route establishes and supplies every input to the total operation. |
 | `POL-TYPE-001` | Give every value the type that names its mathematical role. |
 | `POL-TYPE-002` | Distinguish categories, objects, elements, arrows, functors, rings, sets, domains, and codomains in types. |
 | `POL-TYPE-003` | Never use `object` in a type annotation. There are no exceptions. |
@@ -553,6 +553,9 @@ Use `x <= y`, `x in X`, `X[i]`, and `x == y` instead of public methods such as `
 Every object of `Sets()` has `cardinality()`.
 When its cardinality is not determined, the method returns the unknown cardinality value instead of raising an error.
 A method available only under an additional mathematical hypothesis belongs to the corresponding property category.
+
+For example, a total set constructor requires a typed cardinality.
+Named routes such as `construct_finite_set`, `construct_countably_infinite_set`, and `construct_uncountable_set` establish and supply that cardinality before they call it.
 
 Replace a nondescript name with the exact entity, such as `tensor_coefficients`, `ordered_set`, or `set_morphism`.
 

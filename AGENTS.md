@@ -534,6 +534,15 @@ A targeted Python test needed during implementation is the only routine manual e
 Read `justfile` before running it.
 Use the Sage-aware route defined there instead of guessing a plain Python command.
 
+Do not test or type-check an incomplete or known-broken architecture.
+This restriction includes targeted tests, lints, formatters, and diagnostic sweeps.
+These checks measure a transient local state and give false confidence in small patches.
+They encourage greedy local repairs that move the code away from the required architecture.
+Compare each issue directly with the governing specifications and inspect the code itself.
+First make ownership, category paths, dependency direction, and public semantics converge to those specifications.
+Run real tests and type checks only after the architecture is coherent and complete.
+Until then, checkpoint necessary intermediate states through the red-commit pathway.
+
 Every assertion must state a mathematical proposition or an essential type invariant.
 Test the real category compiler and public API.
 

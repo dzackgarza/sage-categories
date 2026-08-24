@@ -130,9 +130,9 @@ class PosetObject(MathematicalObject):
         category: PartiallyOrderedSetsCategory,
         underlying_set: SetObject,
         relation: OrderRelation,
-        is_reflexive: bool | None = None,
-        is_antisymmetric: bool | None = None,
-        is_transitive: bool | None = None,
+        is_reflexive: Decision = UNKNOWN,
+        is_antisymmetric: Decision = UNKNOWN,
+        is_transitive: Decision = UNKNOWN,
     ) -> None:
         assert underlying_set in Sets()
         self._underlying_set = underlying_set
@@ -328,7 +328,7 @@ class PosetHomCategory(HomCategory):
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
-        is_order_preserving: bool | None = None,
+        is_order_preserving: Decision = UNKNOWN,
     ) -> PosetMorphism:
         existing = registered_value(action)
         if existing is not None:
@@ -514,9 +514,9 @@ class PartiallyOrderedSetsCategory(Category):
         underlying_set: SetObject,
         relation: OrderRelation,
         *,
-        is_reflexive: bool | None = None,
-        is_antisymmetric: bool | None = None,
-        is_transitive: bool | None = None,
+        is_reflexive: Decision = UNKNOWN,
+        is_antisymmetric: Decision = UNKNOWN,
+        is_transitive: Decision = UNKNOWN,
     ) -> PosetObject:
         if underlying_set in FiniteSets():
             return self.Finite()(underlying_set, relation)

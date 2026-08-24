@@ -150,7 +150,7 @@ class TotallyOrderedSetHomCategory(HomCategory):
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
-        is_order_preserving: bool | None = None,
+        is_order_preserving: Decision = UNKNOWN,
     ) -> TotallyOrderedSetMorphism:
         category = self.base_category()
         assert is_totally_ordered_sets_category(category)
@@ -408,7 +408,7 @@ class TotallyOrderedSetsCategory(Category):
         self,
         poset: PosetObject | FinitePosetObject | TotallyOrderedSetObject,
         *,
-        is_total: bool | None = None,
+        is_total: Decision = UNKNOWN,
     ) -> TotallyOrderedSetObject:
         if self.contains_total_order(poset):
             return poset

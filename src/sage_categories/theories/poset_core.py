@@ -130,9 +130,9 @@ class PosetObject(MathematicalObject):
         category: PartiallyOrderedSetsCategory,
         underlying_set: SetObject,
         relation: OrderRelation,
-        is_reflexive: Decision = UNKNOWN,
-        is_antisymmetric: Decision = UNKNOWN,
-        is_transitive: Decision = UNKNOWN,
+        is_reflexive: bool = False,
+        is_antisymmetric: bool = False,
+        is_transitive: bool = False,
     ) -> None:
         assert underlying_set in Sets()
         self._underlying_set = underlying_set
@@ -143,9 +143,7 @@ class PosetObject(MathematicalObject):
         if underlying_set.is_finite() is True:
             validate_finite_partial_order(self, underlying_set, relation)
         else:
-            assert is_reflexive is True, "Reflexivity must be established for nonfinite poset"
-            assert is_antisymmetric is True, "Antisymmetry must be established for nonfinite poset"
-            assert is_transitive is True, "Transitivity must be established for nonfinite poset"
+            assert is_reflexive and is_antisymmetric and is_transitive, "Infinite poset requires proved mathematical laws"
 
     def _set_implementation(self) -> SetObject:
         return self._underlying_set
@@ -328,7 +326,6 @@ class PosetHomCategory(HomCategory):
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
-        is_order_preserving: Decision = UNKNOWN,
     ) -> PosetMorphism:
         existing = registered_value(action)
         if existing is not None:
@@ -369,9 +366,12 @@ class PosetHomCategory(HomCategory):
             assert SetElements().contains_set_element(set_member)
             return target.element(underlying(set_member))
 
-        if is_order_preserving is not True:
-            order_preserving = check_order_preserving(source, target, candidate_map)
-            assert order_preserving is True, f"candidate map from {source} to {target} is not order preserving (decision={order_preserving})"
+        underlying_source = category.underlying_set(source)
+        assert underlying_source.is_finite() is True, (
+            f"Candidate map from nonfinite {source} cannot enter PosetHomCategory without an established theorem"
+        )
+        order_preserving = check_order_preserving(source, target, candidate_map)
+        assert order_preserving is True, f"candidate map from {source} to {target} is not order preserving (decision={order_preserving})"
 
         return self.ObjectType(
             hom_category=self,
@@ -477,23 +477,6 @@ class ForgetPosetFunctor(StructuralFunctor):
             set_element=element,
         )
 
-    def _lift_morphism(
-        self,
-        source: MathematicalObject,
-        target: MathematicalObject,
-        image: Arrow,
-    ) -> PosetMorphism:
-        assert PartiallyOrderedSets().contains_poset(source)
-        assert PartiallyOrderedSets().contains_poset(target)
-        assert Sets().contains_set_morphism(image)
-
-        def mapping(member: PosetElement) -> PosetElement:
-            set_member = self.on_element(source, member)
-            assert SetElements().contains_set_element(set_member)
-            return target.element(image(set_member))
-
-        return PartiallyOrderedSets().Hom(source, target)(mapping, is_order_preserving=True)
-
     def is_faithful(self) -> bool:
         return True
 
@@ -513,23 +496,24 @@ class PartiallyOrderedSetsCategory(Category):
         self,
         underlying_set: SetObject,
         relation: OrderRelation,
-        *,
-        is_reflexive: Decision = UNKNOWN,
-        is_antisymmetric: Decision = UNKNOWN,
-        is_transitive: Decision = UNKNOWN,
     ) -> PosetObject:
         if underlying_set in FiniteSets():
             return self.Finite()(underlying_set, relation)
-        assert is_reflexive is True, "Reflexivity must be established for nonfinite poset"
-        assert is_antisymmetric is True, "Antisymmetry must be established for nonfinite poset"
-        assert is_transitive is True, "Transitivity must be established for nonfinite poset"
+        assert False, (
+            f"Arbitrary infinite relation on {underlying_set} cannot enter "
+            "PartiallyOrderedSets() without an established construction theorem"
+        )
+
+    def discrete_order(self, underlying_set: SetObject) -> PosetObject:
+        """Return the discrete poset on ``underlying_set`` with equality order."""
+        assert underlying_set in Sets()
         return self.ObjectType(
             category=self,
             underlying_set=underlying_set,
-            relation=relation,
-            is_reflexive=is_reflexive,
-            is_antisymmetric=is_antisymmetric,
-            is_transitive=is_transitive,
+            relation=lambda left, right: left == right,
+            is_reflexive=True,
+            is_antisymmetric=True,
+            is_transitive=True,
         )
 
     def _hom_category_type(self) -> type[HomCategory]:
@@ -603,14 +587,33 @@ class PartiallyOrderedSetsCategory(Category):
                     answer = UNKNOWN
             return answer
 
-        apex = self(
-            underlying_product,
-            componentwise,
+        apex = self.ObjectType(
+            category=self,
+            underlying_set=underlying_product,
+            relation=componentwise,
             is_reflexive=True,
             is_antisymmetric=True,
             is_transitive=True,
         )
-        return forgetful.lift_product(diagram, apex, inherited_product)
+
+        def lift_poset_product_arrow(
+            source: MathematicalObject,
+            target: MathematicalObject,
+            set_arrow: Arrow,
+        ) -> PosetMorphism:
+            hom = self.Hom(source, target)
+            assert Sets().contains_set_morphism(set_arrow)
+            return hom.ObjectType(
+                hom_category=hom,
+                underlying_function=set_arrow,
+            )
+
+        return forgetful.lift_product(
+            diagram,
+            apex,
+            inherited_product,
+            lift_morphism=lift_poset_product_arrow,
+        )
 
     def __repr__(self) -> str:
         return "Partially ordered sets"

@@ -24,7 +24,6 @@ if TYPE_CHECKING:
     from sage_categories.theories.cardinals import Cardinal
 
 from sage_categories.theories.total_orders import (
-    _ORDERED_FINITE_SETS,
     FiniteTotallyOrderedSetObject,
     FiniteTotallyOrderedSets,
     TotallyOrderedSetObject,
@@ -36,29 +35,25 @@ def ordered_set_owned_by(
     elements: Iterable[SetElement],
 ) -> FiniteTotallyOrderedSetObject:
     enumeration = tuple(dict.fromkeys(elements))
-    cached = _ORDERED_FINITE_SETS.get(enumeration)
-    if cached is None:
-        underlying_set = FiniteSet(enumeration)
-        owned_enumeration = tuple(underlying_set.element(element) for element in enumeration)
-        positions: dict[SetElement, int] = {element: index for index, element in enumerate(owned_enumeration)}
+    underlying_set = FiniteSet(enumeration)
+    owned_enumeration = tuple(underlying_set.element(element) for element in enumeration)
+    positions: dict[SetElement, int] = {element: index for index, element in enumerate(owned_enumeration)}
 
-        def ordered_relation(left: PosetElement, right: PosetElement) -> bool:
-            forgetful_functor = PartiallyOrderedSets().forgetful_functor()
-            left_element = forgetful_functor.on_element(left.ambient_poset(), left)
-            right_element = forgetful_functor.on_element(right.ambient_poset(), right)
-            assert SetElements().contains_set_element(left_element)
-            assert SetElements().contains_set_element(right_element)
-            return positions[left_element] <= positions[right_element]
+    def ordered_relation(left: PosetElement, right: PosetElement) -> bool:
+        forgetful_functor = PartiallyOrderedSets().forgetful_functor()
+        left_element = forgetful_functor.on_element(left.ambient_poset(), left)
+        right_element = forgetful_functor.on_element(right.ambient_poset(), right)
+        assert SetElements().contains_set_element(left_element)
+        assert SetElements().contains_set_element(right_element)
+        return positions[left_element] <= positions[right_element]
 
-        poset = PartiallyOrderedSets()(
-            underlying_set,
-            ordered_relation,
-        )
-        total_order = TotallyOrderedSets()(poset)
-        assert FiniteTotallyOrderedSets().contains_finite_total_order(total_order)
-        cached = total_order
-        _ORDERED_FINITE_SETS[enumeration] = cached
-    return cached
+    poset = PartiallyOrderedSets()(
+        underlying_set,
+        ordered_relation,
+    )
+    total_order = TotallyOrderedSets()(poset)
+    assert FiniteTotallyOrderedSets().contains_finite_total_order(total_order)
+    return total_order
 
 
 def finite_ordered_set(
@@ -73,7 +68,7 @@ class SimplexOrderIndexing:
     def __init__(self) -> None:
         self._countable_simplex: TotallyOrderedSetObject | None = None
 
-    def __getitem__(self, index: int | Cardinal) -> MathematicalObject:
+    def __getitem__(self, index: int | Cardinal) -> TotallyOrderedSetObject:
         from sage_categories.theories.cardinals import is_cardinal
         from sage_categories.theories.ordinals import Ordinals, ordinal
 
@@ -102,15 +97,19 @@ class SimplexOrderIndexing:
                         assert decision is not UNKNOWN
                         return decision
 
-                    poset = PartiallyOrderedSets()(
-                        naturals,
-                        natural_order,
+                    poset = PartiallyOrderedSets().ObjectType(
+                        category=PartiallyOrderedSets(),
+                        underlying_set=naturals,
+                        relation=natural_order,
                         is_reflexive=True,
                         is_antisymmetric=True,
                         is_transitive=True,
                     )
 
-                    self._countable_simplex = TotallyOrderedSets()(poset, is_total=True)
+                    self._countable_simplex = TotallyOrderedSets().ObjectType(
+                        category=TotallyOrderedSets(),
+                        poset=poset,
+                    )
                 return self._countable_simplex
         else:
             maximum = index

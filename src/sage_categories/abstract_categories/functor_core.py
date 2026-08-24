@@ -239,16 +239,18 @@ class StructuralFunctor(Functor, ABC):
         diagram: Functor,
         apex: MathematicalObject,
         inherited_product: ProductPresentation | ProductObject,
+        lift_morphism: Callable[[MathematicalObject, MathematicalObject, Arrow], Arrow] | None = None,
     ) -> ProductPresentation:
         """Lift the product inherited through this structural functor."""
         from sage_categories.abstract_categories.structural_products import lift_product
 
+        lift_fn = lift_morphism if lift_morphism is not None else self._lift_morphism
         return lift_product(
             self,
             diagram,
             apex,
             inherited_product,
-            self._lift_morphism,
+            lift_fn,
         )
 
     def inherited_product(self, diagram: Functor) -> ProductObject:

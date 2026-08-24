@@ -30,7 +30,7 @@ Every partially ordered set inherits set operations through its forgetful functo
 
 Order and cardinality remain independent properties.
 
-### 2. Partial-order validation
+### 2. Partial-order construction and validation
 
 A partially ordered set is a set \(X\) equipped with a relation \(\le\) that satisfies:
 
@@ -40,11 +40,11 @@ A partially ordered set is a set \(X\) equipped with a relation \(\le\) that sat
 
 - Transitivity: \(x \le y \land y \le z \implies x \le z\).
 
-Construct a poset with:
+Construct a finite poset with:
 
 ```sage
 Poset((members, leq))
-PartiallyOrderedSets()(underlying_set, relation)
+PartiallyOrderedSets()(finite_set, relation)
 ```
 
 For finite sets, construction evaluates the relation on all pairs and triples:
@@ -56,6 +56,14 @@ For finite sets, construction evaluates the relation on all pairs and triples:
 - The constructor rejects non-transitive relations.
 
 - The constructor rejects relations that return `Unknown`.
+
+For infinite sets, raw unverified relations cannot enter `PartiallyOrderedSets()`. Only named theorem-backed category constructors create infinite posets:
+
+- Discrete order: `PartiallyOrderedSets().discrete_order(set)` constructs the discrete order with equality relation.
+
+- Categorical limits: `PartiallyOrderedSets().chosen_limit(diagram)` constructs the componentwise product order.
+
+- Simplex order: `SimplexOrders()[Aleph0]` constructs the standard ordinal order on natural numbers.
 
 ### 3. Totality and category refinement
 
@@ -69,8 +77,8 @@ Construct a total order with:
 
 ```sage
 finite_ordered_set(elements)
-TotallyOrderedSets()(poset)
-FiniteTotallyOrderedSets()(poset)
+TotallyOrderedSets()(finite_poset)
+FiniteTotallyOrderedSets()(finite_poset)
 ```
 
 The totality query `is_total_order(poset)` returns:
@@ -81,7 +89,7 @@ The totality query `is_total_order(poset)` returns:
 
 - `Unknown` when totality cannot be determined algorithmically.
 
-Category refinement requires totality to be `True`. The constructor rejects non-total posets and unknown comparisons.
+Category refinement requires totality to be `True`. The constructor rejects non-total posets and unknown comparisons. Infinite posets enter `TotallyOrderedSets()` solely through named theorem-backed constructors such as `SimplexOrders()[Aleph0]`.
 
 ### 4. Canonical simplex orders
 
@@ -117,9 +125,13 @@ Admission rules:
 
 - It rejects candidate maps where \(f(x) \le_Q f(y)\) is `False` or `Unknown`.
 
+- For infinite domains, arbitrary callable maps without a proving theorem are rejected from `PosetHomCategory`. Morphisms arise through category-owned constructions (identities, compositions, product projections, universal cone maps).
+
+- The forgetful functor to `Sets()` is faithful, not full; it does not lift arbitrary set maps.
+
 Arrow properties:
 
-- `f.is_order_preserving()` returns `True`.
+- `f.is_order_preserving()` returns `True` as a consequence of category membership.
 
 - `f.is_order_reflecting()` checks whether \(f(x) \le_Q f(y) \implies x \le_P y\).
 
@@ -144,10 +156,10 @@ Categorical products in `PartiallyOrderedSets()` lift products in `Sets()`:
 
 Structural method forwarding follows the compiled route:
 
-- Receivers and arguments transport to the declaring category.
+- Receivers, elements, objects, and arrows transport to the declaring category along the route.
 
 - Stored methods invoke on their target category implementation.
 
-- Return values and iterator elements reverse-transport to the caller's category.
+- Return values (elements, element iterators, self-references, ambient objects) reverse-transport to the caller's category.
 
 - Canonical image caching ensures coherent representations across parallel routes.

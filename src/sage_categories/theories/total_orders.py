@@ -185,7 +185,6 @@ class TotallyOrderedSetHomCategory(HomCategory):
             poset_action,
             injective=injective,
             surjective=surjective,
-            is_order_preserving=is_order_preserving,
         )
         return self.ObjectType(
             hom_category=self,
@@ -407,8 +406,6 @@ class TotallyOrderedSetsCategory(Category):
     def __call__(
         self,
         poset: PosetObject | FinitePosetObject | TotallyOrderedSetObject,
-        *,
-        is_total: Decision = UNKNOWN,
     ) -> TotallyOrderedSetObject:
         if self.contains_total_order(poset):
             return poset
@@ -416,11 +413,9 @@ class TotallyOrderedSetsCategory(Category):
             totality = is_total_order(poset)
             assert totality is True, f"{poset} is not a total order (totality={totality})"
             return self.Finite()(poset)
-        assert poset in PartiallyOrderedSets(), f"{poset} is not in PartiallyOrderedSets()"
-        assert is_total is True, "Totality must be established for infinite poset"
-        return self.ObjectType(
-            category=self,
-            poset=poset,
+        assert False, (
+            f"Nonfinite poset {poset} cannot enter TotallyOrderedSets() "
+            "without an established construction theorem"
         )
 
     def _hom_category_type(self) -> type[HomCategory]:
@@ -469,11 +464,6 @@ class TotallyOrderedSetsCategory(Category):
 
 
 _TOTALLY_ORDERED_SETS: TotallyOrderedSetsCategory | None = None
-
-_ORDERED_FINITE_SETS: dict[
-    tuple[SetElement, ...],
-    TotallyOrderedSetObject,
-] = {}
 
 
 def TotallyOrderedSets() -> TotallyOrderedSetsCategory:

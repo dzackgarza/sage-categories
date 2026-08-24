@@ -35,10 +35,12 @@ from sage_categories.compiler import category_compiler
 from sage_categories.theories.posets import (
     PosetElement,
     PosetObject,
+    SimplexOrders,
     is_poset_element,
     is_poset_hom_category,
     is_total_order_element,
 )
+from sage_categories.theories.cardinals import aleph0
 from sage_categories.theories.total_orders import is_total_order
 from sage_categories.theories.sets import SetObject, is_products_of_sets_category
 
@@ -277,7 +279,7 @@ def test_structural_coherence_identifies_parallel_forgetful_functors() -> None:
 
 
 def test_structural_functor_images_have_exact_ambient_objects_and_endpoints() -> None:
-    poset = PartiallyOrderedSets()(ZZ, operator.eq, is_reflexive=True, is_antisymmetric=True, is_transitive=True)
+    poset = PartiallyOrderedSets().discrete_order(ZZ)
     element = poset.element(ZZ(int(0)))
     identity = PartiallyOrderedSets().identity(poset)
     forgetful = PartiallyOrderedSets().forgetful_functor()
@@ -295,7 +297,7 @@ def test_structural_functor_images_have_exact_ambient_objects_and_endpoints() ->
 def test_postcomposition_maps_diagrams_and_natural_transformations() -> None:
     labels = FiniteSet((ZZ(int(3)), ZZ(int(5))))
     index_category = DiscreteCategory(labels)
-    poset = PartiallyOrderedSets()(ZZ, operator.eq, is_reflexive=True, is_antisymmetric=True, is_transitive=True)
+    poset = PartiallyOrderedSets().discrete_order(ZZ)
     diagram = PartiallyOrderedSets().DiagonalFunctor(index_category)(poset)
     assert is_functor(diagram)
     identity = PartiallyOrderedSets().identity(poset)
@@ -566,5 +568,30 @@ def test_totally_ordered_set_morphism_evaluation_inherited_from_poset_morphism()
     for member in ordered:
         assert is_total_order_element(member)
         assert constant_map(member) == first_elem
+
+
+def test_infinite_structures_theorem_admission_and_raw_rejection() -> None:
+    raw_infinite_failed = False
+    try:
+        PartiallyOrderedSets()(ZZ, operator.eq)
+    except AssertionError:
+        raw_infinite_failed = True
+    assert raw_infinite_failed
+
+    discrete_poset = PartiallyOrderedSets().discrete_order(ZZ)
+    assert discrete_poset in PartiallyOrderedSets()
+    assert (discrete_poset.cardinality() == aleph0) is True
+
+    raw_infinite_total_failed = False
+    try:
+        TotallyOrderedSets()(discrete_poset)
+    except AssertionError:
+        raw_infinite_total_failed = True
+    assert raw_infinite_total_failed
+
+    infinite_simplex = SimplexOrders()[aleph0]
+    assert infinite_simplex in TotallyOrderedSets()
+    assert (infinite_simplex.cardinality() == aleph0) is True
+
 
 

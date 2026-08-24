@@ -228,10 +228,9 @@ def RealNumbers() -> MathematicalObject:
     global _REAL_NUMBERS
 
     if _REAL_NUMBERS is None:
-        from sage_categories.theories.sets import InfiniteSets, UncountableSets
+        from sage_categories.theories.sets import UncountableSets
 
-        infinite = InfiniteSets()._refine_object(RealSet())
-        _REAL_NUMBERS = UncountableSets()._refine_object(infinite)
+        _REAL_NUMBERS = UncountableSets()._refine_object(RealSet())
     return _REAL_NUMBERS
 
 

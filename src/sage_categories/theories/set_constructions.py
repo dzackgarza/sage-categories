@@ -39,6 +39,7 @@ from sage_categories.theories.discrete_sets import (
 )
 from sage_categories.theories.set_category import (
     FiniteSet,
+    FiniteSetObject,
     Sets,
     _set_morphism,
     is_set_hom_category,
@@ -64,10 +65,7 @@ from sage_categories.theories.set_homs import (
 from sage_categories.theories.set_limits import (
     LimitSet,
 )
-from sage_categories.theories.set_objects import (
-    FiniteSetObject,
-    SetObject,
-)
+from sage_categories.theories.set_objects import SetObject
 from sage_categories.theories.set_products import (
     ProductSet,
     SetProductObject,

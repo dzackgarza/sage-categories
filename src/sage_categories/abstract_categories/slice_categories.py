@@ -6,6 +6,8 @@ from typing import Any, TypeIs
 
 from sage_categories.abstract_categories.category_constructions import (
     FullSubcategory,
+    FullSubcategoryArrow,
+    FullSubcategoryElement,
     FullSubcategoryObject,
 )
 from sage_categories.abstract_categories.functors import (
@@ -60,6 +62,50 @@ class SubobjectObject(FullSubcategoryObject):
         assert category.contains_subobject(other)
         assert self.fixed_object() is other.fixed_object()
         return category.intersection(self, other)
+
+
+class SubobjectElement(FullSubcategoryElement):
+    """An element of a subobject presentation."""
+
+
+class SubobjectArrow(FullSubcategoryArrow):
+    """A morphism between subobject presentations."""
+
+
+class SuperobjectObject(FullSubcategoryObject):
+    """An object equipped with a monomorphism from one fixed object."""
+
+
+class SuperobjectElement(FullSubcategoryElement):
+    """An element of a superobject presentation."""
+
+
+class SuperobjectArrow(FullSubcategoryArrow):
+    """A morphism between superobject presentations."""
+
+
+class CoveringObject(FullSubcategoryObject):
+    """An object equipped with an epimorphism to one fixed object."""
+
+
+class CoveringObjectElement(FullSubcategoryElement):
+    """An element of a covering-object presentation."""
+
+
+class CoveringObjectArrow(FullSubcategoryArrow):
+    """A morphism between covering-object presentations."""
+
+
+class CoveredObject(FullSubcategoryObject):
+    """An object equipped with an epimorphism from one fixed object."""
+
+
+class CoveredObjectElement(FullSubcategoryElement):
+    """An element of a covered-object presentation."""
+
+
+class CoveredObjectArrow(FullSubcategoryArrow):
+    """A morphism between covered-object presentations."""
 
 
 class SliceForgetfulFunctor(StructuralFunctor):
@@ -318,6 +364,8 @@ class SubobjectCategory(FullSubcategory):
     """Monomorphisms into one fixed object."""
 
     ObjectType: type[SubobjectObject] = SubobjectObject
+    ElementType = SubobjectElement
+    ArrowType = SubobjectArrow
 
     def __init__(self, ambient_category: Category, target: MathematicalObject) -> None:
         self._base_category = ambient_category
@@ -326,7 +374,6 @@ class SubobjectCategory(FullSubcategory):
             ambient_category.SliceOver(target),
             self._is_subobject,
             name=f"Subobjects of {target}",
-            object_type=SubobjectObject,
         )
 
     def _is_subobject(self, candidate: MathematicalObject) -> bool:
@@ -374,6 +421,10 @@ class SubobjectCategory(FullSubcategory):
 class SuperobjectCategory(FullSubcategory):
     """Monomorphisms from one fixed object."""
 
+    ObjectType = SuperobjectObject
+    ElementType = SuperobjectElement
+    ArrowType = SuperobjectArrow
+
     def __init__(self, ambient_category: Category, source: MathematicalObject) -> None:
         self._base_category = ambient_category
         self._source = source
@@ -399,6 +450,10 @@ class SuperobjectCategory(FullSubcategory):
 class CoveringObjectCategory(FullSubcategory):
     """Epimorphisms into one fixed object."""
 
+    ObjectType = CoveringObject
+    ElementType = CoveringObjectElement
+    ArrowType = CoveringObjectArrow
+
     def __init__(self, ambient_category: Category, target: MathematicalObject) -> None:
         self._base_category = ambient_category
         self._target = target
@@ -423,6 +478,10 @@ class CoveringObjectCategory(FullSubcategory):
 
 class CoveredObjectCategory(FullSubcategory):
     """Epimorphisms from one fixed object."""
+
+    ObjectType = CoveredObject
+    ElementType = CoveredObjectElement
+    ArrowType = CoveredObjectArrow
 
     def __init__(self, ambient_category: Category, source: MathematicalObject) -> None:
         self._base_category = ambient_category

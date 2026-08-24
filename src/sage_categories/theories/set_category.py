@@ -37,6 +37,9 @@ from sage_categories.values import (
     Arrow,
     Decision,
     MathematicalObject,
+    TransportedArrow,
+    TransportedElement,
+    TransportedObject,
     registered_value,
 )
 
@@ -70,8 +73,7 @@ from sage_categories.theories.set_homs import (
 )
 from sage_categories.theories.set_objects import (
     Aleph,
-    FiniteSetElement,
-    FiniteSetObject,
+    EnumeratedFiniteSetObject,
     SetObject,
 )
 from sage_categories.theories.set_subobjects import (
@@ -365,7 +367,23 @@ class SetsCategory(Category):
         return "Sets"
 
 
+class CountableSetObject(TransportedObject):
+    """A countable set."""
+
+
+class CountableSetElement(TransportedElement):
+    """An element of a countable set."""
+
+
+class CountableSetMorphism(TransportedArrow):
+    """A function between countable sets."""
+
+
 class CountableSetsCategory(FullSubcategory):
+    ObjectType = CountableSetObject
+    ElementType = CountableSetElement
+    ArrowType = CountableSetMorphism
+
     def __init__(self, sets: SetsCategory) -> None:
         self._sets = sets
         super().__init__(sets, self._is_countable, name="Countable sets")
@@ -376,12 +394,28 @@ class CountableSetsCategory(FullSubcategory):
         return finite is True or value.cardinality() == Cardinals().aleph(0)
 
 
+class FiniteSetObject(TransportedObject):
+    """A finite set."""
+
+
+class FiniteSetElement(TransportedElement):
+    """An element of a finite set."""
+
+
+class FiniteSetMorphism(TransportedArrow):
+    """A function between finite sets."""
+
+
 class FiniteSetsCategory(FullSubcategory):
+    ObjectType = FiniteSetObject
+    ElementType = FiniteSetElement
+    ArrowType = FiniteSetMorphism
+
     def __init__(self, sets: SetsCategory) -> None:
         self._sets = sets
         self._finite_sets_by_members: dict[
             frozenset[MathematicalObject],
-            MathematicalObject,
+            FiniteSetObject,
         ] = {}
         super().__init__(
             sets.Countable(),
@@ -389,12 +423,11 @@ class FiniteSetsCategory(FullSubcategory):
             name="Finite sets",
         )
 
-    def __call__(self, members: frozenset[MathematicalObject]) -> MathematicalObject:
+    def __call__(self, members: frozenset[MathematicalObject]) -> FiniteSetObject:
         cached = self._finite_sets_by_members.get(members)
         if cached is None:
-            ambient = FiniteSetObject(category=Sets(), values=members)
-            countable = CountableSets()._refine_object(ambient)
-            cached = self._refine_object(countable)
+            ambient = EnumeratedFiniteSetObject(category=Sets(), values=members)
+            cached = self._refine_object(ambient)
             self._finite_sets_by_members[members] = cached
         return cached
 
@@ -402,11 +435,30 @@ class FiniteSetsCategory(FullSubcategory):
         assert Sets().contains_set(value)
         return value.cardinality().is_finite() is True
 
-    def contains_finite_set(self, candidate: MathematicalObject) -> TypeIs[SetObject]:
+    def contains_finite_set(
+        self,
+        candidate: MathematicalObject,
+    ) -> TypeIs[FiniteSetObject]:
         return candidate in self
 
 
+class InfiniteSetObject(TransportedObject):
+    """An infinite set."""
+
+
+class InfiniteSetElement(TransportedElement):
+    """An element of an infinite set."""
+
+
+class InfiniteSetMorphism(TransportedArrow):
+    """A function between infinite sets."""
+
+
 class InfiniteSetsCategory(FullSubcategory):
+    ObjectType = InfiniteSetObject
+    ElementType = InfiniteSetElement
+    ArrowType = InfiniteSetMorphism
+
     def __init__(self, sets: SetsCategory) -> None:
         self._sets = sets
         super().__init__(sets, self._is_infinite, name="Infinite sets")
@@ -416,7 +468,23 @@ class InfiniteSetsCategory(FullSubcategory):
         return value.cardinality().is_infinite() is True
 
 
+class UncountableSetObject(TransportedObject):
+    """An uncountable set."""
+
+
+class UncountableSetElement(TransportedElement):
+    """An element of an uncountable set."""
+
+
+class UncountableSetMorphism(TransportedArrow):
+    """A function between uncountable sets."""
+
+
 class UncountableSetsCategory(FullSubcategory):
+    ObjectType = UncountableSetObject
+    ElementType = UncountableSetElement
+    ArrowType = UncountableSetMorphism
+
     def __init__(self, sets: SetsCategory) -> None:
         self._sets = sets
         super().__init__(

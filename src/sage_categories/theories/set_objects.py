@@ -205,13 +205,13 @@ class SetObject(MathematicalObject):
         return id(self)
 
 
-class FiniteSetElement(SetElement):
+class EnumeratedFiniteSetElement(SetElement):
     """An element of a finite set."""
 
     def __init__(
         self,
         *,
-        ambient_object: FiniteSetObject,
+        ambient_object: EnumeratedFiniteSetObject,
         value: MathematicalObject,
     ) -> None:
         self._value = value
@@ -227,7 +227,7 @@ class FiniteSetElement(SetElement):
         return repr(self._value)
 
 
-class FiniteSetObject(SetObject):
+class EnumeratedFiniteSetObject(SetObject):
     """A set given by its complete finite member set."""
 
     def __init__(
@@ -243,7 +243,7 @@ class FiniteSetObject(SetObject):
             cardinality=Cardinals()(len(values)),
         )
         self._members = frozenset(
-            FiniteSetElement(ambient_object=self, value=value)
+            EnumeratedFiniteSetElement(ambient_object=self, value=value)
             for value in values
         )
 
@@ -259,7 +259,7 @@ class FiniteSetObject(SetObject):
     def _element_(
         self,
         value: MathematicalObject,
-    ) -> FiniteSetElement:
+    ) -> EnumeratedFiniteSetElement:
         assert value in self._values
         return next(member for member in self._members if member.value() == value)
 

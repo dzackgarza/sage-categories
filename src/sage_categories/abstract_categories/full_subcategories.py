@@ -203,8 +203,6 @@ class FullSubcategory(Category):
         predicate: ObjectPredicate,
         *,
         name: str,
-        object_type: type[MathematicalObject] | None = None,
-        element_type: type[MathematicalElement] | None = None,
     ) -> None:
         self._ambient_category = ambient_category
         self._predicate = predicate
@@ -212,8 +210,9 @@ class FullSubcategory(Category):
         self._inclusion: InclusionFunctor | None = None
         self._full_hom_category_family: FullSubcategoryHomCategoryFamily | None = None
         super().__init__(
-            object_type=object_type,
-            element_type=element_type,
+            object_type=self.ObjectType,
+            element_type=self.ElementType,
+            arrow_type=self.ArrowType,
             category=FullSubcategoryCategoryObjects(),
         )
 

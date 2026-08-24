@@ -19,7 +19,12 @@ from sage_categories.abstract_categories.hom_categories import (
     HomCategoryFamily,
 )
 from sage_categories.category import Category
-from sage_categories.values import Arrow, MathematicalElement, MathematicalObject
+from sage_categories.values import (
+    Arrow,
+    MathematicalElement,
+    MathematicalObject,
+    registered_element,
+)
 
 
 class Functor(Arrow, ABC):
@@ -75,6 +80,9 @@ class Functor(Arrow, ABC):
     ) -> MathematicalObject:
         assert source in self.domain()
         if source.category() is self.domain():
+            return source
+        source_element = registered_element(source)
+        if source_element is not None and source_element.ambient_object() is self.domain():
             return source
         from sage_categories.compiler import category_compiler
 

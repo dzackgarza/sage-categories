@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, TypeIs
+from typing import TYPE_CHECKING, Annotated, Any, TypeIs
 
 from sage_categories.assumptions import Hypothesis, HypothesisContext
 from sage_categories.abstract_categories.functors import (
@@ -16,6 +16,7 @@ from sage_categories.abstract_categories.hom_categories import (
     HomCategoryFamily,
 )
 from sage_categories.category import Category
+from sage_categories.descriptors import ParameterRole, transport_roles
 from sage_categories.values import (
     Arrow,
     Decision,
@@ -248,8 +249,8 @@ class FullSubcategory(Category):
     def refine_with_hypothesis(
         self,
         ambient: MathematicalObject,
-        hypothesis: Hypothesis,
-        assumptions: HypothesisContext,
+        hypothesis: Annotated[Hypothesis, ParameterRole.VALUE],
+        assumptions: Annotated[HypothesisContext, ParameterRole.VALUE],
     ) -> MathematicalObject:
         assert hypothesis.category() is self
         assert hypothesis.candidate() is ambient
@@ -337,19 +338,54 @@ class FullSubcategory(Category):
             self._inclusion = InclusionFunctor(self, self._ambient_category)
         return self._inclusion
 
-    def _products_of_category(self, functor: Functor) -> Category:
+    @transport_roles(
+        positional=(("functor", ParameterRole.VALUE),),
+        result=ParameterRole.VALUE,
+    )
+    def _products_of_category(
+        self,
+        functor: Annotated[Functor, ParameterRole.VALUE],
+    ) -> Category:
         return self._ambient_category._products_of_category(functor)
 
-    def _coproducts_of_category(self, functor: Functor) -> Category:
+    @transport_roles(
+        positional=(("functor", ParameterRole.VALUE),),
+        result=ParameterRole.VALUE,
+    )
+    def _coproducts_of_category(
+        self,
+        functor: Annotated[Functor, ParameterRole.VALUE],
+    ) -> Category:
         return self._ambient_category._coproducts_of_category(functor)
 
-    def _limits_of_category(self, functor: Functor) -> Category:
+    @transport_roles(
+        positional=(("functor", ParameterRole.VALUE),),
+        result=ParameterRole.VALUE,
+    )
+    def _limits_of_category(
+        self,
+        functor: Annotated[Functor, ParameterRole.VALUE],
+    ) -> Category:
         return self._ambient_category._limits_of_category(functor)
 
-    def _colimits_of_category(self, functor: Functor) -> Category:
+    @transport_roles(
+        positional=(("functor", ParameterRole.VALUE),),
+        result=ParameterRole.VALUE,
+    )
+    def _colimits_of_category(
+        self,
+        functor: Annotated[Functor, ParameterRole.VALUE],
+    ) -> Category:
         return self._ambient_category._colimits_of_category(functor)
 
-    def chosen_limit(self, diagram: Functor) -> ProductPresentation:
+    @transport_roles(
+        positional=(("diagram", ParameterRole.VALUE),),
+        result=ParameterRole.VALUE,
+    )
+    def chosen_limit(
+        self,
+        diagram: Annotated[Functor, ParameterRole.VALUE],
+    ) -> ProductPresentation:
         from sage_categories.abstract_categories.functors import is_functor
         from sage_categories.abstract_categories.products import Cone, Product
 
@@ -385,7 +421,14 @@ class FullSubcategory(Category):
 
         return Product(cone, mediate)
 
-    def chosen_colimit(self, diagram: Functor) -> CoproductPresentation:
+    @transport_roles(
+        positional=(("diagram", ParameterRole.VALUE),),
+        result=ParameterRole.VALUE,
+    )
+    def chosen_colimit(
+        self,
+        diagram: Annotated[Functor, ParameterRole.VALUE],
+    ) -> CoproductPresentation:
         from sage_categories.abstract_categories.functors import is_functor
         from sage_categories.abstract_categories.products import Cocone, Coproduct
 

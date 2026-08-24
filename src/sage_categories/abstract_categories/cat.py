@@ -32,7 +32,7 @@ class CategoryOfCategories(Category):
     ) -> None:
         self._name = name
         MathematicalObject.__init__(self, category=category)
-        self._initialize_category(Category, CategoryElement)
+        self._initialize_category(Category, CategoryElement, Arrow)
 
     def _hom_category_type(self) -> type[HomCategory]:
         from sage_categories.abstract_categories.functors import FunctorCategory

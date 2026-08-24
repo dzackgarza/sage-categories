@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
-from typing import TYPE_CHECKING, Any, Self, TypeIs
+from typing import TYPE_CHECKING, Annotated, Any, Self, TypeIs
 
 from sage_categories.assumptions import Hypothesis, HypothesisContext
 
@@ -20,6 +20,7 @@ from sage_categories.abstract_categories.product_presentations import (
     ConstructionLiftFunctor,
 )
 from sage_categories.category import Category
+from sage_categories.descriptors import ParameterRole, transport_roles
 from sage_categories.theories.sets import (
     FiniteSet,
     FiniteSets,
@@ -186,6 +187,7 @@ class PosetObject(MathematicalObject):
         assert ProductElements().contains_product_element(pair)
         return self._relation.membership(pair)
 
+    @transport_roles(result=ParameterRole.VALUE)
     def thin_category(self) -> ThinCategory:
         from sage_categories.theories.thin_categories import ThinCategory
 
@@ -366,8 +368,8 @@ class PosetHomCategory(HomCategory):
     def from_hypothesis(
         self,
         underlying: SetMorphism,
-        hypothesis: Hypothesis,
-        assumptions: HypothesisContext,
+        hypothesis: Annotated[Hypothesis, ParameterRole.VALUE],
+        assumptions: Annotated[HypothesisContext, ParameterRole.VALUE],
     ) -> PosetMorphism:
         """Construct a morphism under an active monotonicity hypothesis."""
         assert hypothesis.category() is self
@@ -538,8 +540,8 @@ class PartiallyOrderedSetsCategory(Category):
         self,
         underlying_set: SetObject,
         relation: OrderRelation,
-        hypothesis: Hypothesis,
-        assumptions: HypothesisContext,
+        hypothesis: Annotated[Hypothesis, ParameterRole.VALUE],
+        assumptions: Annotated[HypothesisContext, ParameterRole.VALUE],
     ) -> PosetObject:
         """Construct a poset under active partial-order hypotheses."""
         assert hypothesis.category() is self

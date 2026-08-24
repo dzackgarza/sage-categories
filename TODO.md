@@ -3,6 +3,99 @@
 The architecture is not fixed. The current code violates every major boundary in the
 remediation plan.
 
+## Governing admission model
+
+In this document, “establish” does not mean “compute at runtime.” A mathematical
+property can enter the type and category system through three distinct routes. These
+routes must never be merged.
+
+### Checked admission
+
+A checked constructor accepts arbitrary semantic input. It runs an exact implemented
+decision procedure and admits the result only when the answer is `True`.
+
+For example, a checked finite-poset constructor can enumerate all required pairs and
+triples. It rejects a relation when reflexivity, antisymmetry, or transitivity is
+`False` or `Unknown`.
+
+The checked route is for input whose property is not already known from its
+construction. It can return `Unknown` when no represented algorithm decides the
+property. It must not treat `Unknown` as theorem-backed knowledge.
+
+### Hypothesis-backed admission
+
+A hypothesis-backed constructor accepts an owned applied predicate and an explicit
+owned assumption context. For a set morphism \(f:P\to Q\), the applied predicate can be
+`order_preserving(f)`.
+
+The constructor verifies that the context contains that exact applied predicate. It
+does not prove the predicate. The explicit hypothesis supplies the mathematical
+precondition for this route.
+
+### Theorem-backed construction
+
+A theorem-backed constructor owns a mathematical construction whose result is known to
+have the property. It constructs the result directly in the established property
+category. It does not run an exhaustive decision procedure.
+
+The specific construction is the authority. Python receives no theorem string, proof
+record, certificate, opaque token, or general “trusted owner” value. The supporting
+theorem and citation remain source documentation. The returned category placement is
+the typed mathematical conclusion.
+
+This is the trusted-builder boundary. Trust attaches to the definition and ownership of
+the named constructor, not to data supplied by its caller. In Python, the constructor
+“declares” the property by constructing the category-owned result type through its
+controlled implementation path. It does not call a general prover or pass a Boolean
+claim to a generic constructor.
+
+Theorem-backed construction is required for properties that cannot be obtained by
+finite enumeration. It is also preferred when exhaustive checking terminates but would
+repeat knowledge already supplied by the construction.
+
+Canonical examples include:
+
+- the owned real-number constructor records that `RR` is uncountable;
+- a named squaring constructor builds \(n\mapsto n^2:\mathbb N\to\mathbb N\) directly
+  as a poset morphism;
+- identity and composition constructors build poset morphisms without checking every
+  ordered pair;
+- the componentwise-product construction builds a poset and its monotone projections
+  from the product theorem;
+- a finite-total-order constructor accepts an enumeration, builds its induced relation,
+  and returns the finite total order without a pairwise totality check;
+- `SimplexOrders()[Aleph0]` builds the standard total order on the natural numbers from
+  its defining ordinal construction.
+
+None of these constructors proves its theorem in Python. None should attempt exhaustive
+verification as a substitute.
+
+### What remains forbidden
+
+A constructor over arbitrary input cannot borrow a theorem that applies only to one
+special construction. For example:
+
+- a method accepting an arbitrary relation cannot declare it total because enumeration
+  relations are total;
+- a method accepting an arbitrary set morphism cannot declare it monotone because
+  squaring on the natural numbers is monotone;
+- a method accepting `owner: MathematicalObject` cannot treat object registration as
+  theorem authority.
+
+A public generic call such as `refine_from_theorem(value, owner)` does not identify the
+construction theorem. The `owner` argument is an authority token, not mathematical
+evidence. Adding a runtime check to that method would make the opposite mistake. The
+correct repair is to remove permissive general theorem admission and place each theorem
+in its specific construction-owned route.
+
+The kernel can provide private allocation, canonical-image, and refinement mechanics.
+Those mechanics supply no mathematical authority. A construction-owned method invokes
+them only after its own defining data makes the theorem applicable.
+
+The governing policies are `POL-MATH-016`, `POL-MATH-024`, `POL-MATH-028`,
+`POL-MATH-030`, `POL-CAT-069`, `POL-CAT-070`, `POL-FUN-021`, `POL-FUN-022`, and
+`POL-API-022`. See `CONTRIBUTING.md` and `specs/ordered-sets.md`.
+
 ## 1. Category types are not the canonical implementations
 
 The compiler creates extra refinement classes for each ambient Python type.
@@ -187,16 +280,35 @@ image remains a separate element.
 
 The current constructor mixes those roles.
 
-## 12. Refinement authority is unrestricted
+## 12. Generic theorem refinement mistakes a value for construction authority
 
-`refine_with_hypothesis()` accepts no `AssumptionsContext`.
+The current hypothesis-backed route receives an owned `Hypothesis` and
+`HypothesisContext`. That is the correct kind of boundary for an explicit hypothesis.
+The applied predicate and candidate must remain exact.
 
-`refine_from_theorem()` accepts no construction owner or theorem authority.
+The theorem-backed route has a different defect. `refine_from_theorem()` accepts
+`owner: MathematicalObject` and checks only that the owner is registered.
 
-See `src/sage_categories/abstract_categories/full_subcategories.py:318`.
+See `src/sage_categories/abstract_categories/full_subcategories.py:261`.
 
-Any caller can claim theorem-backed admission. The API does not encode who owns the
-theorem.
+Object registration establishes no theorem. Any registered object can be supplied with
+an arbitrary ambient candidate. The parameter therefore acts as an opaque authority
+token.
+
+The repair must not add runtime theorem validation. A theorem-backed fact can be
+uncomputable, undecidable by available algorithms, or too expensive to verify. The
+repair is structural:
+
+- remove public generic theorem admission;
+- put each theorem-backed path on the construction that owns the theorem;
+- make that constructor accept only the semantic data to which its theorem applies;
+- construct the result directly in the established property category;
+- let private kernel refinement seed canonical ambient images without claiming
+  mathematical authority.
+
+For example, a componentwise-product constructor can declare its projections monotone.
+A squaring constructor on `NN` can declare its map monotone. Neither fact licenses a
+general method that accepts an arbitrary set morphism.
 
 ## 13. Leaf constructors perform refinement sequences
 
@@ -210,8 +322,16 @@ This leaf knows the implementation sequence:
 \text{Poset}\to\text{TotalOrder}\to\text{FiniteTotalOrder}.
 \]
 
-The construction owner must create the strongest established result. Generic refinement
-must seed every ambient image.
+The named construction owner must accept the data that makes its theorem applicable and
+create the strongest established result. For a finite order derived from an enumeration,
+the constructor accepts the enumeration and builds the induced relation itself.
+
+It does not accept an arbitrary relation and then attach totality by assertion. It also
+does not need an exhaustive totality check, because the enumeration construction already
+establishes totality.
+
+Generic kernel refinement must seed every ambient image after the construction-owned
+route establishes the category placement.
 
 ## 14. Poset construction mixes checked and theorem-backed entry
 
@@ -230,6 +350,19 @@ Therefore:
 - hypothesis-backed construction has no distinct route;
 - construction authority is not represented.
 
+The target separation is exact:
+
+- `checked_poset(...)` accepts an arbitrary owned relation and requires exact `True` for
+  all three laws;
+- `poset_from_hypothesis(...)` accepts the relation, its applied partial-order predicate,
+  and the explicit hypothesis context;
+- named constructors such as `discrete_order(...)` and
+  `componentwise_product_order(...)` build their result directly from their defining
+  construction theorem.
+
+The theorem-backed routes must bypass exhaustive validation. Their names and controlled
+inputs identify the construction. They do not accept proof text or an authority token.
+
 ## 15. Checked poset construction handles only finite sets
 
 `PartiallyOrderedSets().__call__()` admits finite sets and rejects all other inputs.
@@ -239,6 +372,10 @@ See `src/sage_categories/theories/poset_core.py:464`.
 This does not implement checked relation admission. It implements a finite-set branch.
 
 The correct checked route asks whether all three laws evaluate to exact `True`.
+
+This finite implementation does not restrict the theorem-backed routes. Infinite
+discrete orders, ordinal orders, and componentwise product orders enter through their
+named constructions without enumeration.
 
 ## 16. Poset morphism admission is finite-only
 
@@ -254,6 +391,22 @@ There are no distinct:
 - theorem-backed
 
 morphism construction routes.
+
+The checked route accepts an arbitrary owned set morphism and requires exact `True` from
+the available monotonicity decision procedure. It can return `Unknown` for an infinite
+source.
+
+The other routes do not convert that `Unknown` into `True`:
+
+- a hypothesis-backed route requires the exact applied predicate
+  `order_preserving(f)` in its context;
+- the identity constructor declares the identity monotone from the identity theorem;
+- composition declares the composite monotone from the composition theorem;
+- a named squaring constructor on `NN` declares \(n\mapsto n^2\) monotone;
+- a componentwise-product lift declares its projections and mediating arrows monotone.
+
+These construction-owned declarations need no finite enumeration. They also do not
+justify a public `from_theorem(f, arbitrary_owner)` route.
 
 ## 17. Morphism checking uses a raw callable
 
@@ -347,6 +500,15 @@ See `src/sage_categories/theories/total_orders.py:125`.
 
 That loses the distinction between rejection and unavailable computation.
 
+This containment decision governs checked refinement of an arbitrary represented
+poset. It does not govern named infinite constructions. A constructor such as
+`SimplexOrders()[Aleph0]` places its result directly in total orders because its defining
+ordinal construction establishes totality.
+
+Do not force such a constructor through `__contains__()`. Do not change its theorem into
+a fabricated `True` decision. Preserve the checked and theorem-backed routes as separate
+total methods.
+
 ## 24. The finite-total-order diamond is handwritten
 
 `FiniteTotallyOrderedSetsCategory` manually defines:
@@ -376,6 +538,14 @@ See `src/sage_categories/abstract_categories/functor_core.py:326`.
 
 A construction lift must have object and arrow maps. It must act functorially.
 
+Making the lift a subclass of `Functor` is insufficient when its object map works only
+after mutable `register_object()` calls. A functor has a total object map on its declared
+domain and a total arrow map on the corresponding arrows.
+
+The lift can declare closure and arrow properties supplied by the construction theorem.
+It does not need runtime monotonicity checks. Its defect is partial engineering state,
+not theorem-backed declaration.
+
 ## 26. Poset product lifting performs leaf wiring
 
 `PartiallyOrderedSets().chosen_limit()`:
@@ -390,6 +560,19 @@ See `src/sage_categories/theories/poset_core.py:551`.
 
 The componentwise relation belongs here. Generic product-lift plumbing does not.
 
+The componentwise-product theorem establishes that the apex is a poset and that the
+projections and mediating arrows are monotone. The poset construction must record those
+typed conclusions directly. It must not enumerate product elements to re-prove them.
+
+The leaf therefore supplies only its new mathematics:
+
+- the componentwise order;
+- the construction-owned poset apex;
+- the typed conclusion that the lifted arrows are poset morphisms.
+
+The kernel supplies total functorial lifting, comparison transport, cone plumbing, and
+canonical images.
+
 ## 27. Product arrows bypass the owned Hom constructor
 
 `_monotone_product_arrow()` directly invokes `hom.ObjectType`.
@@ -397,6 +580,15 @@ The componentwise relation belongs here. Generic product-lift plumbing does not.
 See `src/sage_categories/theories/poset_core.py:611`.
 
 This bypasses normal morphism construction and its explicit theorem-backed route.
+
+The required theorem-backed route is specific to the componentwise-product lift. It can
+construct the poset morphism without checking all pairs because the product theorem
+establishes monotonicity.
+
+Do not replace the direct `ObjectType` call with a permissive
+`hom.from_theorem(image, owner)` call. That only moves the unrestricted entry point. The
+construction-owned lift must produce the owned morphism through a route unavailable to
+arbitrary set maps.
 
 ## 28. Relation construction has no public set-owned operation
 
@@ -438,10 +630,16 @@ The dependency order is strict:
 2. Make compiled role types category-owned and statically visible.
 3. Replace dynamic ambient-type refinement with generic property refinement.
 4. Remove refinement logic from poset elements and objects.
-5. Separate checked, hypothesis-backed, and theorem-backed admission.
+5. Separate checked, hypothesis-backed, and construction-owned theorem-backed
+   admission. Never add exhaustive checks to theorem-backed paths or encode theorem
+   authority as an owner token.
 6. Replace Python collection signatures with owned mathematical types.
 7. Make product lifting an object-and-arrow functor.
 8. Complete finite Sage lowering and semantic reconstruction.
 9. Reduce poset and total-order theory to their mathematical owners.
 
 Work below an unfinished earlier item preserves the broken architecture.
+
+This order does not mean that theorem-backed paths wait for stronger runtime decision
+procedures. Their mathematical conclusions are already known. It means the generic
+kernel entry and canonical transport must exist before leaves rely on them.

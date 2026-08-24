@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import inspect
 import types
 import typing
@@ -70,6 +71,8 @@ class DeclaredTransportRoles:
 
 
 _DECLARED_TRANSPORT_ROLES: dict[int, DeclaredTransportRoles] = {}
+P = ParamSpec("P")
+R = TypeVar("R")
 
 
 def transport_roles(
@@ -79,7 +82,7 @@ def transport_roles(
     variadic: ParameterRole | None = None,
     keywords: ParameterRole | None = None,
     result: ParameterRole | None = None,
-) -> Callable[[FunctionType], FunctionType]:
+) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """Attach explicit transport roles to one method declaration."""
     declaration = DeclaredTransportRoles(
         receiver,
@@ -89,21 +92,36 @@ def transport_roles(
         result,
     )
 
-    def declare(method: FunctionType) -> FunctionType:
+    def declare(method: Callable[P, R]) -> Callable[P, R]:
         _DECLARED_TRANSPORT_ROLES[id(method)] = declaration
         return method
 
     return declare
 
 
-P = ParamSpec("P")
-R = TypeVar("R")
 Value = TypeVar("Value")
 Annotation = TypeVar("Annotation")
 
 
+def _resolve_annotation(
+    annotation: str,
+    namespace: dict[str, object],
+) -> object:
+    expression = ast.parse(annotation, mode="eval")
+    names = {
+        node.id
+        for node in ast.walk(expression)
+        if isinstance(node, ast.Name)
+    }
+    if not names.issubset(namespace):
+        return annotation
+    return eval(compile(expression, "<annotation>", "eval"), namespace)
+
+
 def _annotation_role(annotation: Annotation) -> ParameterRole:
     """Read a role from a resolved declaration annotation."""
+    if isinstance(annotation, typing.TypeAliasType):
+        return _annotation_role(annotation.__value__)
     if annotation is inspect.Parameter.empty:
         return ParameterRole.VALUE
     if annotation is type(None):
@@ -130,6 +148,8 @@ def _annotation_role(annotation: Annotation) -> ParameterRole:
             if item_role is ParameterRole.ELEMENT:
                 return ParameterRole.ELEMENT_ITERATOR
             return ParameterRole.VALUE
+        if origin in (Callable, typing.Literal, typing.TypeIs):
+            return ParameterRole.VALUE
         arguments = typing.get_args(annotation)
         if arguments:
             item_roles = tuple(
@@ -140,10 +160,8 @@ def _annotation_role(annotation: Annotation) -> ParameterRole:
             assert not all(role is ParameterRole.ELEMENT for role in item_roles), (
                 f"{annotation!r} must be an owned mathematical collection"
             )
-        if origin in (Callable, typing.Literal, typing.TypeIs):
-            return ParameterRole.VALUE
-        assert False, f"{annotation!r} must declare an explicit transport role"
-    if type(annotation) is type:
+        return ParameterRole.VALUE
+    if isinstance(annotation, type):
         annotation_type = cast(type, annotation)
         if issubclass(annotation_type, Arrow):
             return ParameterRole.ARROW
@@ -166,15 +184,10 @@ def method_signature(
 ) -> MethodSignature:
     """Return role metadata from the method's declared type annotations."""
     namespace = dict(method.__globals__)
-    try:
-        annotations = typing.get_type_hints(
-            method,
-            globalns=namespace,
-            localns=namespace,
-            include_extras=True,
-        )
-    except NameError:
-        annotations = inspect.get_annotations(method, eval_str=False)
+    annotations = inspect.get_annotations(method, eval_str=False)
+    for name, annotation in annotations.items():
+        if isinstance(annotation, str):
+            annotations[name] = _resolve_annotation(annotation, namespace)
     declared = _DECLARED_TRANSPORT_ROLES.get(id(method))
     declared_positional = dict(declared.positional) if declared is not None else {}
     parameters = tuple(inspect.signature(method).parameters.values())[1:]
@@ -187,7 +200,11 @@ def method_signature(
             f"{method.__qualname__} must annotate parameter {parameter.name}"
         )
         annotation = annotations[parameter.name] if parameter.name in annotations else parameter.annotation
-        role = declared_positional.get(parameter.name, _annotation_role(annotation))
+        role = (
+            declared_positional[parameter.name]
+            if parameter.name in declared_positional
+            else _annotation_role(annotation)
+        )
         if parameter.kind is inspect.Parameter.VAR_POSITIONAL:
             variadic = declared.variadic if declared is not None and declared.variadic is not None else role
         elif parameter.kind is inspect.Parameter.VAR_KEYWORD:

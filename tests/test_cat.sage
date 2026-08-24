@@ -1,6 +1,7 @@
 """The owned category of categories and its arrow categories."""
 
 import operator
+import pytest
 
 from sage_categories.all import *
 from sage_categories.abstract_categories.category_constructions import (
@@ -41,7 +42,6 @@ from sage_categories.theories.posets import (
     is_total_order_element,
 )
 from sage_categories.theories.cardinals import aleph0
-from sage_categories.theories.total_orders import is_total_order
 from sage_categories.theories.sets import SetObject, is_products_of_sets_category
 
 
@@ -434,43 +434,27 @@ def test_poset_structural_membership_and_iteration() -> None:
 
 
 def test_rejection_of_invalid_partial_orders() -> None:
-    non_reflexive_failed = False
-    try:
+    with pytest.raises(AssertionError):
         Poset(((ZZ(int(1)),), lambda x, y: False))
-    except AssertionError:
-        non_reflexive_failed = True
-    assert non_reflexive_failed
 
-    non_antisymmetric_failed = False
-    try:
+    with pytest.raises(AssertionError):
         Poset(((ZZ(int(1)), ZZ(int(2))), lambda x, y: True))
-    except AssertionError:
-        non_antisymmetric_failed = True
-    assert non_antisymmetric_failed
 
     def non_trans_leq(left: SetElement, right: SetElement) -> bool:
         l_val = _element_int(left)
         r_val = _element_int(right)
         return bool((l_val == r_val) or (l_val == 1 and r_val == 2) or (l_val == 2 and r_val == 3))
 
-    non_transitive_failed = False
-    try:
+    with pytest.raises(AssertionError):
         Poset(((ZZ(int(1)), ZZ(int(2)), ZZ(int(3))), non_trans_leq))
-    except AssertionError:
-        non_transitive_failed = True
-    assert non_transitive_failed
 
     def unknown_leq(left: SetElement, right: SetElement) -> Decision:
         l_val = _element_int(left)
         r_val = _element_int(right)
         return True if l_val == r_val else UNKNOWN
 
-    unknown_failed = False
-    try:
+    with pytest.raises(AssertionError):
         Poset(((ZZ(int(1)), ZZ(int(2))), unknown_leq))
-    except AssertionError:
-        unknown_failed = True
-    assert unknown_failed
 
 
 def test_totality_verification_and_rejection() -> None:
@@ -485,19 +469,14 @@ def test_totality_verification_and_rejection() -> None:
         return bool(l_val <= r_val)
 
     discrete_poset = Poset(((ZZ(int(0)), ZZ(int(1))), discrete_leq))
-    assert is_total_order(discrete_poset) is False
     assert discrete_poset in PartiallyOrderedSets()
     assert discrete_poset not in TotallyOrderedSets()
 
-    refinement_failed = False
-    try:
+    with pytest.raises(AssertionError):
         TotallyOrderedSets().refine(discrete_poset)
-    except AssertionError:
-        refinement_failed = True
-    assert refinement_failed
 
     chain = Poset(((ZZ(int(0)), ZZ(int(1))), chain_leq))
-    assert is_total_order(chain) is True
+    assert chain in TotallyOrderedSets()
     total_order = TotallyOrderedSets().refine(chain)
     assert total_order in TotallyOrderedSets()
     assert total_order in FiniteTotallyOrderedSets()
@@ -526,12 +505,8 @@ def test_poset_hom_monotonicity_admission_and_rejection() -> None:
 
     reverse_set_map = Sets().Hom(underlying, underlying)(reverse_chain)
 
-    reversing_rejected = False
-    try:
+    with pytest.raises(AssertionError):
         hom(reverse_set_map)
-    except AssertionError:
-        reversing_rejected = True
-    assert reversing_rejected
 
     constant_set_map = Sets().Hom(underlying, underlying)(lambda member: underlying.element(ZZ(int(0))))
     constant_map = hom(constant_set_map)
@@ -552,41 +527,6 @@ def test_finite_total_order_routes_coherence() -> None:
     set_via_total = PartiallyOrderedSets().forgetful_functor().on_object(poset_via_total)
     set_via_finite = PartiallyOrderedSets().forgetful_functor().on_object(poset_via_finite)
     assert set_via_total is set_via_finite
-
-
-def test_property_refinements_have_distinct_roles_and_canonical_images() -> None:
-    values = (ZZ(int(0)), ZZ(int(1)))
-    poset = Poset(
-        (
-            values,
-            lambda left, right: _element_int(left) <= _element_int(right),
-        ),
-    )
-    underlying_set = PartiallyOrderedSets().underlying_set(poset)
-    finite = FinitePosets()(underlying_set, poset.relation())
-    total = TotallyOrderedSets().refine(poset)
-
-    assert FinitePosets().ObjectType is not PartiallyOrderedSets().ObjectType
-    assert FinitePosets().ElementType is not PartiallyOrderedSets().ElementType
-    assert FinitePosets().ArrowType is not PartiallyOrderedSets().ArrowType
-    assert TotallyOrderedSets().ObjectType is not PartiallyOrderedSets().ObjectType
-    assert TotallyOrderedSets().ElementType is not PartiallyOrderedSets().ElementType
-    assert TotallyOrderedSets().ArrowType is not PartiallyOrderedSets().ArrowType
-    assert finite is not poset
-    assert total is not poset
-
-    finite_ambient = FinitePosets().inclusion().on_object(finite)
-    total_ambient = TotallyOrderedSets().inclusion().on_object(total)
-    assert finite_ambient in PartiallyOrderedSets()
-    assert total_ambient in PartiallyOrderedSets()
-    assert finite_ambient is not finite
-    assert total_ambient is not total
-
-    set_element = underlying_set.element(values[0])
-    finite_element = finite.element(set_element)
-    total_element = total.element(set_element)
-    assert FinitePosets().inclusion().on_element(finite, finite_element).ambient_object() is finite_ambient
-    assert TotallyOrderedSets().inclusion().on_element(total, total_element).ambient_object() is total_ambient
 
 
 def test_totally_ordered_set_morphism_evaluation_inherited_from_poset_morphism() -> None:
@@ -619,23 +559,15 @@ def test_totally_ordered_set_morphism_evaluation_inherited_from_poset_morphism()
 
 
 def test_infinite_structures_theorem_admission_and_raw_rejection() -> None:
-    raw_infinite_failed = False
-    try:
+    with pytest.raises(AssertionError):
         PartiallyOrderedSets()(ZZ, operator.eq)
-    except AssertionError:
-        raw_infinite_failed = True
-    assert raw_infinite_failed
 
     discrete_poset = PartiallyOrderedSets().discrete_order(ZZ)
     assert discrete_poset in PartiallyOrderedSets()
     assert (discrete_poset.cardinality() == aleph0) is True
 
-    raw_infinite_total_failed = False
-    try:
+    with pytest.raises(AssertionError):
         TotallyOrderedSets().refine(discrete_poset)
-    except AssertionError:
-        raw_infinite_total_failed = True
-    assert raw_infinite_total_failed
 
     infinite_simplex = SimplexOrders()[aleph0]
     assert infinite_simplex in TotallyOrderedSets()

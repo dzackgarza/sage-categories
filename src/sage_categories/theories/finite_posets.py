@@ -23,6 +23,7 @@ from sage_categories.theories.sets import (
 )
 from sage_categories.theories.cardinals import Cardinal, cardinal
 from sage_categories.abstract_categories.functors import DiscreteDiagram
+from sage_categories.descriptors import ParameterRole, transport_roles
 from sage_categories.values import (
     MathematicalObject,
     TransportedArrow,
@@ -226,16 +227,22 @@ class FinitePosetObject(TransportedObject):
         return cardinal(int(self._sage_poset().rank(self._sage_element(member))))
 
     def level_sets(self) -> DiscreteDiagram:
+        from sage_categories.theories.ordinals import Ordinal, ordinal
+
         levels = tuple(
             self._owned_subset(level)
             for level in self._sage_poset().level_sets()
         )
-        labels = FiniteSet(levels)
+        labels = FiniteSet(ordinal(index) for index in range(len(levels)))
         index = DiscreteCategory(labels)
+        level_by_index: dict[Ordinal, SetSubset] = {
+            ordinal(position): level
+            for position, level in enumerate(levels)
+        }
         return DiscreteDiagram(
             index,
             SubsetsOfSet(self._underlying_set()),
-            lambda source: source.label().value(),
+            lambda source: level_by_index[source.label().value()],
         )
 
     def is_ranked(self) -> bool:
@@ -253,6 +260,7 @@ class FinitePosetObject(TransportedObject):
     def is_antichain_of_poset(self, members: SetSubset) -> bool:
         return self._sage_poset().is_antichain_of_poset(self._sage_members(members))
 
+    @transport_roles(result=ParameterRole.VALUE)
     def linear_extension(self) -> FiniteTotalOrderObject:
         from sage_categories.theories.ordered_set_constructors import (
             ordered_set_owned_by,

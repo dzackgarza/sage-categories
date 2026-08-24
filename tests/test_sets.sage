@@ -434,23 +434,33 @@ def test_finite_poset_realization_returns_owned_elements() -> None:
     lower = poset.element(finite_underlying_set.element(ZZ(int(0))))
     middle = poset.element(finite_underlying_set.element(ZZ(int(1))))
     upper = poset.element(finite_underlying_set.element(ZZ(int(2))))
+    set_lower = finite_underlying_set.element(ZZ(int(0)))
+    set_middle = finite_underlying_set.element(ZZ(int(1)))
+    set_upper = finite_underlying_set.element(ZZ(int(2)))
+    middle_subset = PowerSet(finite_underlying_set).from_finite_set(
+        FiniteSet((set_middle,)),
+    )
+    endpoints_subset = PowerSet(finite_underlying_set).from_finite_set(
+        FiniteSet((set_lower, set_upper)),
+    )
     assert is_poset_element(lower)
     assert is_poset_element(middle)
     assert is_poset_element(upper)
 
     assert poset.covers(lower, middle)
-    assert tuple(poset.lower_covers(middle)) == (lower,)
-    assert tuple(poset.upper_covers(middle)) == (upper,)
-    assert tuple(poset.common_lower_covers((middle,))) == (lower,)
-    assert tuple(poset.common_upper_covers((middle,))) == (upper,)
-    assert tuple(poset.open_interval(lower, upper)) == (middle,)
-    assert tuple(poset.closed_interval(lower, upper)) == (lower, middle, upper)
-    assert tuple(poset.principal_order_ideal(middle)) == (lower, middle)
-    assert tuple(poset.principal_order_filter(middle)) == (middle, upper)
-    assert tuple(poset.order_ideal((middle,))) == (lower, middle)
-    assert tuple(poset.order_filter((middle,))) == (middle, upper)
-    assert tuple(poset.minimal_elements()) == (lower,)
-    assert tuple(poset.maximal_elements()) == (upper,)
+    assert poset.lower_covers(middle).membership(set_lower) is True
+    assert poset.lower_covers(middle).membership(set_middle) is False
+    assert poset.upper_covers(middle).membership(set_upper) is True
+    assert poset.common_lower_covers(middle_subset).membership(set_lower) is True
+    assert poset.common_upper_covers(middle_subset).membership(set_upper) is True
+    assert poset.open_interval(lower, upper).membership(set_middle) is True
+    assert poset.closed_interval(lower, upper).cardinality() == 3
+    assert poset.principal_order_ideal(middle).membership(set_lower) is True
+    assert poset.principal_order_filter(middle).membership(set_upper) is True
+    assert poset.order_ideal(middle_subset).membership(set_lower) is True
+    assert poset.order_filter(middle_subset).membership(set_upper) is True
+    assert poset.minimal_elements().membership(set_lower) is True
+    assert poset.maximal_elements().membership(set_upper) is True
     assert poset.has_bottom()
     assert poset.bottom() is lower
     assert poset.has_top()
@@ -458,17 +468,27 @@ def test_finite_poset_realization_returns_owned_elements() -> None:
     assert poset.is_bounded()
     assert poset.height() == 3
     assert poset.width() == 1
-    assert poset.rank(upper) == 2
-    assert tuple(tuple(level) for level in poset.level_sets()) == (
-        (lower,),
-        (middle,),
-        (upper,),
-    )
+    assert poset.rank() == 2
+    assert poset.rank_of_element(upper) == 2
+    levels = poset.level_sets()
+    level_by_rank = {}
+    for index in levels.domain():
+        rank = index.label().value()
+        assert Ordinals().contains_ordinal(rank)
+        level_by_rank[rank.finite_value()] = levels(index)
+    assert level_by_rank[0].membership(set_lower) is True
+    assert level_by_rank[1].membership(set_middle) is True
+    assert level_by_rank[2].membership(set_upper) is True
     assert poset.is_ranked()
     assert poset.is_graded()
     assert poset.is_chain()
-    assert poset.is_chain_of_poset((lower, upper))
-    assert poset.is_antichain_of_poset((middle,))
+    assert poset.is_chain_of_poset(endpoints_subset)
+    assert poset.is_antichain_of_poset(middle_subset)
+    extension = poset.linear_extension()
+    assert extension in FiniteTotallyOrderedSets()
+    extension_members = list(extension)
+    assert extension_members[0] < extension_members[1]
+    assert extension_members[1] < extension_members[2]
 
     identity = PartiallyOrderedSets().Hom(poset, poset).identity()
     assert identity.is_order_preserving()

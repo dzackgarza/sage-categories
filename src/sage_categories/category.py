@@ -312,11 +312,6 @@ class Category(MathematicalObject):
         return self.AutCategory().ObjectType
 
     @property
-    def ArrowType(self) -> type[Arrow]:
-        """Return the arrow type as ``HomCatType.ElementType``."""
-        return self._compiled_arrow_type
-
-    @property
     def EndArrowType(self) -> type[Arrow]:
         return self.EndCategory().ElementType
 

@@ -35,6 +35,7 @@ from sage_categories.abstract_categories.products import (
     CoproductsOfCategory,
 )
 from sage_categories.category import Category
+from sage_categories.descriptors import ParameterRole, transport_roles
 from sage_categories.theories.cardinals import (
     Cardinal,
     Cardinals,
@@ -82,6 +83,7 @@ class CoproductElement(MathematicalElement):
             ambient_object=coproduct,
         )
 
+    @transport_roles(result=ParameterRole.VALUE)
     def coproduct(self) -> CoproductSet | SetCoproductObject:
         return self._coproduct
 
@@ -181,6 +183,7 @@ class CoproductSet(SetObject):
             for value in cofactor:
                 yield self.element(index, value)
 
+    @transport_roles(result=ParameterRole.ARROW)
     def _injection(self, index: SetElement) -> SetMorphism:
 
         return _set_morphism(
@@ -250,11 +253,13 @@ class SetCoproductObject(CoproductObject):
             for value in self.cofactor(index):
                 yield self.element(index, value)
 
+    @transport_roles(result=ParameterRole.ARROW)
     def injection(self, index: MathematicalObject) -> SetMorphism:
 
         assert self.index_category().contains_object(index)
         return self._injection(index.label())
 
+    @transport_roles(result=ParameterRole.ARROW)
     def _injection(self, index: SetElement) -> SetMorphism:
 
         return _set_morphism(
@@ -264,6 +269,7 @@ class SetCoproductObject(CoproductObject):
             injective=True,
         )
 
+    @transport_roles(result=ParameterRole.ARROW)
     def universal_morphism(self, cocone: CoconeObject) -> SetMorphism:
 
         target = cocone.apex()

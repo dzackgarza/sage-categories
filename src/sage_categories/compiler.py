@@ -80,6 +80,8 @@ _IGNORED_METHODS = frozenset(
         "__init__",
         "__module__",
         "__weakref__",
+        "structural_coherences",
+        "super_functors",
     }
 )
 

@@ -21,6 +21,7 @@ from sage_categories.abstract_categories.products import (
     LimitsOfCategory,
 )
 from sage_categories.category import Category
+from sage_categories.descriptors import ParameterRole, transport_roles
 from sage_categories.theories.cardinals import (
     Cardinal,
     Cardinals,
@@ -88,6 +89,7 @@ class LimitSet(ProductSet):
         assert Sets().contains_set(value)
         return value
 
+    @transport_roles(result=ParameterRole.ARROW)
     def _limit_projection(self, index: MathematicalObject) -> SetMorphism:
         from sage_categories.theories.set_colimits import _object_set_element
 
@@ -243,11 +245,13 @@ class SetLimitObject(LimitObject):
             if self.membership(member) is True:
                 yield member
 
+    @transport_roles(result=ParameterRole.ARROW)
     def projection(self, index: MathematicalObject) -> SetMorphism:
         from sage_categories.theories.set_colimits import _object_set_element
 
         return self._projection(_object_set_element(self.diagram().domain(), index))
 
+    @transport_roles(result=ParameterRole.ARROW)
     def _projection(self, index: SetElement) -> SetMorphism:
 
         factor = self.factor(index)
@@ -264,6 +268,7 @@ class SetLimitObject(LimitObject):
     def apex(self) -> SetObject:
         return self
 
+    @transport_roles(result=ParameterRole.ARROW)
     def universal_morphism(self, cone: ConeObject) -> SetMorphism:
         from sage_categories.theories.set_constructions import _cone_component_value
 

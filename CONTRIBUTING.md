@@ -17,7 +17,7 @@ Do not reuse a retired identifier.
 | `POL-SCOPE-005` | Treat the full owned `Sets()` category as foundational work, not as a finite-set helper library. |
 | `POL-SCOPE-006` | Use algebra cardinality and the path from lattice isometries through module homs to set homs only as vertical acceptance examples. Do not implement those higher categories yet. |
 | `POL-SCOPE-007` | Judge the project by categorical uniformity, explicit mathematical ownership, functorial reuse, and legibility. Successful computation or compilation alone does not satisfy its purpose. |
-| `POL-SCOPE-008` | Make every theory subtree outside the implementation kernel auditable by a mathematician with little programming experience. Keep inheritance, dispatch, backend, and representation machinery behind the kernel boundary. |
+| `POL-SCOPE-008` | Make every theory subtree outside the implementation kernel auditable by a mathematician with little programming experience. Keep structural inheritance and reflective dispatch in the kernel. Keep engine representations behind private computation boundaries while permitting category-owned methods to invoke a fixed engine directly. |
 | `POL-SCOPE-009` | Judge an architectural claim from the live method owners, structural functors, compiler transport, constructor obligations, and universal data. Agent reports, passing tests, route metadata, generated type identities, and runtime output cannot replace that inspection. |
 | `POL-SCOPE-010` | Theory code declares categories and implements their objects, elements, arrows, functors, constructions, and mathematical operations. |
 | `POL-SCOPE-011` | Leaf code is theory code for one category. It states only that category's new data, operations, structural functors, constructors, and lifts. |
@@ -150,12 +150,20 @@ See the official documentation for [SymPy predicates and assumption contexts](ht
 | `POL-ENGINE-003` | Return owned categories, objects, elements, arrows, and functors from every public operation. Reconstruct the semantic result before it crosses the computation boundary. |
 | `POL-ENGINE-004` | Expose a set-theoretic image as `f.image()` and a predicate subobject as `X.subset_from(predicate)`. Keep constructors such as Sage or SymPy `ImageSet` and `ConditionSet` private. |
 | `POL-ENGINE-005` | Let categorical construction data select refinements and additional methods. An image subobject can retain its defining arrow and inherit operations owned by the corresponding image-subobject category. |
-| `POL-ENGINE-006` | Keep engine selection and dispatch private. Public signatures, return types, representations, documentation examples, and exceptions use only owned mathematical notions. |
-| `POL-ENGINE-007` | Make computation engines replaceable behind the realization boundary. Replacing Sage, SymPy, or another engine must preserve every downstream public call and mathematical result. |
+| `POL-ENGINE-006` | Expose no engine selection or dispatch. The category-owned method chooses and uses its private computation directly. Public signatures, return types, representations, documentation examples, and exceptions use only owned mathematical notions. |
+| `POL-ENGINE-007` | Keep public semantics independent of computation technology. Never add an engine interface, registry, selectable backend, replaceability layer, or competing implementation class. |
 | `POL-ENGINE-008` | Write tests, notebooks, and downstream packages against the owned semantic API. Do not import, inspect, or assert engine implementation types or constructors. |
 | `POL-ENGINE-009` | Do not re-export an engine API, imitate its naming scheme, or let its available operations determine the owned public method surface. |
 | `POL-ENGINE-010` | Translate engine-specific partial results into the owned result type, including `Unknown` for unresolved semantic predicates. |
 | `POL-ENGINE-011` | Treat a timeout, crash, incomplete computation, or indeterminate engine verdict as establishing no mathematical result. It cannot justify category refinement or a Boolean answer. |
+| `POL-ENGINE-012` | Treat an engine as a private source of representations and algorithms. It never owns a parallel `ObjectType`, `ElementType`, `ArrowType`, public method catalogue, or semantic implementation surface. |
+| `POL-ENGINE-013` | Distinguish a modeled mathematical realization functor from a private computation representation. A private Sage value, cache, or algorithm call requires no functor, category, compiler binding, or natural transformation. |
+| `POL-ENGINE-014` | A category-owned method can call a fixed engine through its private computation boundary. This is dependency use, not runtime backend selection or public engine dispatch. |
+| `POL-ENGINE-015` | Permit any suitable private computation technology. An implementation can use Sage, SymPy, NumPy, a maintained domain package, custom research code, Cython, a shell program, or another language system. None of these choices changes the owned public class or API. |
+| `POL-ENGINE-016` | Select private algorithms inside the owning method from established mathematical hypotheses and available representations. Algorithm selection does not create multiple implementations of the mathematical object. |
+
+See [Leaf category implementations](specs/leaves.md) for the complete engine boundary,
+the rejected mirrored-surface design, and the required reconstruction of owned results.
 
 ## Algebraic generality
 
@@ -331,7 +339,7 @@ Grounding examples:
 | `POL-LEAF-006` | Treat a leaf implementation of an inherited operation as evidence of a missing structural functor, an incorrect functor image, or an operation placed at the wrong owner. |
 | `POL-LEAF-007` | Permit a structural functor to land in an arrow category when the defining arrow determines the required inherited object data through its domain or codomain. |
 | `POL-LEAF-008` | Confine private-field access to constructors and functor maps that cannot recover their required defining data through owned semantic interfaces. Use the smallest such access and reconstruct an owned target object immediately. |
-| `POL-LEAF-009` | Keep private representation access out of leaf methods, inherited methods, callers, tests, and downstream packages. |
+| `POL-LEAF-009` | Keep private representations out of inherited methods, public signatures, callers, tests, and downstream packages. A leaf-owned executable method can access a private representation inside its computation boundary. |
 | `POL-LEAF-010` | Validate a leaf integration by calling inherited mathematical operations directly on its objects, elements, and arrows through the compiled public surface. |
 | `POL-LEAF-011` | Lift an inherited construction to a leaf category by specifying only how the leaf's additional structure acts on the inherited result and arrows. Make this lift compatible with the selected structural functors. |
 | `POL-LEAF-012` | Do not redefine the inherited construction's objects, elements, universal property, or general methods in a leaf subtree. Those remain owned by the category where the construction was introduced. |
@@ -347,7 +355,7 @@ Grounding examples:
 | `POL-LEAF-022` | Do not require data that defines a stronger structure than the named leaf category. A total order requires a partial order with total comparison; indexing, ranking, unranking, and enumeration belong to separate enumerable or well-ordered refinements. |
 | `POL-LEAF-023` | Do not copy inherited storage, caches, or constructor arguments into a refinement implementation. A finite poset adds finite-poset operations and its inclusion to posets; it recovers the underlying set, relation, elements, and inherited caches through that structural route. |
 | `POL-LEAF-024` | A finished leaf contains its category, minimal defining data, new operations, immediate structural functors, and named constructors. It can also state leaf-specific lifts. |
-| `POL-LEAF-025` | Stop leaf work when it requires route traversal, reverse transport, canonical-image caches, registries, compiler metadata, type reconstruction, or backend selection. Repair the owning foundation first. |
+| `POL-LEAF-025` | Stop leaf work when it requires route traversal, reverse transport, canonical-image caches, registries, compiler metadata, type reconstruction, or runtime backend selection. A fixed private computation dependency is not backend selection. |
 | `POL-LEAF-026` | Use the first leaf that exposes missing generic infrastructure as an acceptance specimen. Repair the foundation, then delete the leaf workaround. |
 | `POL-LEAF-027` | Identity arrows and arrow composition are fundamental categorical operations. Every leaf arrow receives its domain, codomain, and composition surface automatically from the owning categories through compiled structural inheritance. |
 | `POL-LEAF-028` | Never define `compose()` in a leaf merely to expose, forward, route, coerce, inspect generic caches, or reconstruct the inherited operation. A missing inherited composition method is a kernel defect. |
@@ -363,6 +371,20 @@ Grounding examples:
 | `POL-LEAF-038` | Never call private image or preimage transport from a leaf for an object, element, or arrow. All such transport belongs to the kernel. |
 | `POL-LEAF-039` | Call an inherited operation directly on the original structured value. If that call fails, stop the leaf edit and repair structural compilation. |
 | `POL-LEAF-040` | Never normalize a leaf input to an ancestor implementation, add an exact-category branch, or repeat membership after transport. Store and pass the established mathematical object. |
+| `POL-LEAF-041` | Make `C.ObjectType`, `C.ElementType`, and `C.ArrowType` the sole executable implementation classes for operations owned by `C`. Each class is the public firewall that hides every supported representation, dependency, and algorithm for that mathematical role. |
+| `POL-LEAF-042` | Let the category declaration define or link exactly one implementation class for each mathematical role. Never offer competing implementation classes, backend choices, realization variants, or parallel public surfaces for one mathematical notion. |
+| `POL-LEAF-043` | Implement every leaf-local public operation as an ordinary executable method on its owning implementation class. Never replace its body with `assert False`, `@realized_method`, `@realized_operation`, another computation-routing decorator, a descriptor marker, or a backend-name mapping. |
+| `POL-LEAF-044` | Let a leaf-owned method lower semantic inputs to a fixed private engine, invoke a mature exact algorithm, and reconstruct the owned mathematical result. This computation is part of the leaf implementation, not structural wiring. |
+| `POL-LEAF-045` | Treat a short category-owned method that invokes a dependency as a valid implementation when it owns the public contract and semantic reconstruction. Repetition of private realization access alone does not justify a dispatcher or parallel hierarchy. |
+| `POL-LEAF-046` | Permit a private neighboring engine helper only for a substantial shared computation boundary. It exposes no public method surface, category roles, runtime registry, compiler binding, or mirror of the leaf operations. |
+| `POL-LEAF-047` | Give the sole implementation class constructor routes that accept the general semantic data required by the category. Hide all internal representation choices behind those routes. |
+| `POL-LEAF-048` | Make the public operation surface depend only on categorical placement. Every object of the category receives the same owned operations, regardless of which private dependency or representation computes them. |
+| `POL-LEAF-049` | Define each immediate structural functor in the category layer. Its object map uses the public constructor routes of the target category to construct the exact mathematical image. Its arrow and element maps do the same for their roles. |
+| `POL-LEAF-050` | Quarantine substantial Python, foreign-function, process, conversion, caching, and engine-adaptation code in private helpers. Keep mathematical ownership, public methods, semantic inputs, and semantic reconstruction on the sole category implementation class. |
+
+See [Leaf category implementations](specs/leaves.md) for the complete ownership model,
+the allowed private computation sequence, and the rejected decorator and mirrored-class
+designs.
 
 For example, a free-module morphism inherits categorical composition.
 A leaf refinement can attach a private matrix realization to the inherited composite when bases are chosen.
@@ -381,7 +403,7 @@ It does not reimplement composition, structural transport, domain checks, codoma
 | `POL-KERNEL-007` | Kernel code can use `isinstance`, `issubclass`, `getattr`, `setattr`, `inspect`, descriptor protocols, and Python collection protocols to implement declared runtime mechanics. |
 | `POL-KERNEL-008` | Each kernel primitive must inspect a Python implementation role. It must not establish category membership, a mathematical property, method ownership, or functorial structure. |
 | `POL-KERNEL-009` | Derive mathematical roles from typed category and functor declarations. Use Python inspection only to realize those declarations in the runtime. |
-| `POL-KERNEL-010` | Keep reflective installation and dispatch inside the kernel. Expose the resulting typed mathematical surface without wrappers or repeated reflection in theory code. |
+| `POL-KERNEL-010` | Keep reflective installation and structural dispatch for inherited methods inside the kernel. Expose the resulting typed mathematical surface without wrappers or repeated reflection in theory code. |
 | `POL-KERNEL-011` | Kernel permissions do not permit `Any`, `object`, casts, ignored diagnostics, fallbacks, or fabricated mathematical evidence. |
 | `POL-KERNEL-012` | Provide one typed canonical refinement operation for objects, elements, and arrows of every full property subcategory. |
 | `POL-KERNEL-013` | Generic refinement constructs the target implementation, retains its ambient image, caches the canonical image, and establishes coherence once. Leaves never repeat these steps. |
@@ -391,6 +413,10 @@ It does not reimplement composition, structural transport, domain checks, codoma
 | `POL-KERNEL-017` | The kernel alone discovers, composes, and traverses structural routes and invokes image or preimage transport. Theory code never sees these operations. |
 | `POL-KERNEL-018` | Make each inherited method callable directly on every structural descendant. Its descriptor hides receiver, argument, result, and collection transport. |
 | `POL-KERNEL-019` | Let a constructor requiring an object of `C` accept every `X` with `X in C`. Resolve any required canonical implementation inside the generic kernel boundary. |
+| `POL-KERNEL-020` | Compile and transport inherited operations only. Never route a locally owned operation into Sage or another engine, replace its executable method, match it to an engine method by name, or interpret a decorator, descriptor, annotation, registry entry, or marker as a computation route. |
+
+See [Leaf category implementations](specs/leaves.md) for the exact boundary between
+kernel-owned inheritance and leaf-owned computation.
 
 Selected structural functors are executable inheritance declarations.
 A leaf states its immediate mathematics and then uses inherited operations as native methods.
@@ -445,17 +471,22 @@ An enumeration is additional mathematical structure and therefore belongs to a s
 | `POL-LAYOUT-005` | Mirror each source subtree in the test layout. Quarantine all implementation-kernel tests in a dedicated kernel testing subtree and keep each category's tests with that category's proof obligations. |
 | `POL-LAYOUT-006` | Split `Cat`, `Sets()`, modules, formed modules, algebras, and other substantial mathematical owners into separate subtrees when one-file or shared-subtree organization impedes a complete local audit. |
 | `POL-LAYOUT-007` | Give a frequently used property subcategory its own nested subtree when its constructors, arrows, algorithms, and tests form a substantial unit. Examples include finite or countable sets and free modules or algebras under stated ring hypotheses. |
-| `POL-LAYOUT-008` | Keep mathematical subtrees free of engine types, storage vocabulary, generic container types, and non-mathematical dispatch. Use owned categories, sets, ordered sets, arrows, and tensors in those subtrees. |
-| `POL-LAYOUT-009` | Put Sage, SymPy, and other engine adapters in dedicated backend subtrees separate from the mathematical category definitions they realize. |
-| `POL-LAYOUT-010` | Confine necessary engine imports, engine classes, conversion code, and engine-specific exceptions to backend subtrees. Translate inputs and results at that boundary. |
-| `POL-LAYOUT-011` | Define the public mathematical interface in the category subtree. Implement each engine realization against that interface in its backend subtree. |
+| `POL-LAYOUT-008` | Keep public mathematical signatures and results free of engine types, storage vocabulary, generic container types, and non-mathematical dispatch. Permit private engine use inside an executable category-owned computation boundary. |
+| `POL-LAYOUT-009` | Put category-independent Sage, SymPy, and other engine adapters in dedicated backend subtrees. A category-specific private engine helper can remain beside its mathematical owner under `POL-LAYOUT-020`. |
+| `POL-LAYOUT-010` | Confine engine imports, engine classes, conversion code, and engine-specific exceptions to private computation boundaries. Translate inputs before the engine call and reconstruct owned results before return. |
+| `POL-LAYOUT-011` | Define and implement the public mathematical operation on its category-owned implementation class. A backend module supplies private representations, conversions, or raw computations rather than another implementation of that interface. |
 | `POL-LAYOUT-012` | Keep a mathematical leaf change outside the kernel code and kernel-test subtrees. If the kernel boundary cannot support the leaf, treat that fact as a separate foundational defect instead of modifying the kernel as part of the leaf. |
-| `POL-LAYOUT-013` | Make dependency direction visible in the layout: mathematical categories depend on the implementation kernel and immediate mathematical owners; backend adapters depend on their public mathematical interfaces. |
-| `POL-LAYOUT-014` | Audit mathematical purity by subtree. Engine names, primitive container semantics, coordinate representations, and unrelated invariants in a mathematical subtree each indicate a misplaced responsibility. |
-| `POL-LAYOUT-015` | Permit a backend subtree to use engine-specific types and required Python representations. Keep every such use inside the boundary and return owned semantic objects. |
+| `POL-LAYOUT-013` | Make dependency direction visible in the layout: category implementations depend on the kernel, immediate mathematical owners, and any fixed private computation helper. Engine helpers never depend on compiler dispatch or define public category roles. |
+| `POL-LAYOUT-014` | Audit mathematical purity by public semantic surface. Engine types in signatures or results, primitive collection semantics, coordinate representations, and unrelated invariants indicate misplaced responsibility. A private exact engine call does not. |
+| `POL-LAYOUT-015` | Permit a private engine boundary to use engine-specific types and required Python representations. Keep those values private and return them only to the category-owned method that reconstructs the semantic result. |
 | `POL-LAYOUT-016` | Split a large mathematical module by coherent mathematical owners, properties, or constructions, not by line count, implementation technique, or an arbitrary group of helpers. Keep the owning category visible in each module name. For `Sets()`, suitable modules include `setsubsets.py`, `setproducts.py`, `setcoproducts.py`, and `setlimitscolimits.py` when each forms a substantive mathematical unit. |
-| `POL-LAYOUT-017` | Move non-mathematical wiring into relatively private infrastructure modules whenever it can be separated from the definitions. Keep caches, registration, compiler hooks, dispatch support, and representation plumbing out of modules that state mathematical objects, arrows, functors, and laws. |
+| `POL-LAYOUT-017` | Move generic non-mathematical wiring into relatively private infrastructure modules whenever it can be separated from the definitions. Keep registration, compiler hooks, structural dispatch, and route caches out of mathematical modules. A local private computation call is not generic wiring. |
 | `POL-LAYOUT-018` | Preserve separate audit surfaces for mathematics and engineering. A mathematical module must be reviewable against definitions and theorems without following private runtime wiring; an infrastructure module must be reviewable for implementation correctness without deciding new mathematics. |
+| `POL-LAYOUT-019` | When one implementation class becomes a substantial audit unit, place that sole class in a neighboring module named for its mathematical role and link it from the category declaration. Do not duplicate declarations in the category module. |
+| `POL-LAYOUT-020` | Create a neighboring engine-specific module only for substantial shared lowering, conversion, caching, foreign-function or process integration, or raw computation. Use the concrete engine name, keep the module private, and do not create one by default for every category. |
+
+See [Leaf category implementations](specs/leaves.md) for the permitted file layouts and
+the single-source-of-truth rule.
 
 Grounding examples: a sheaf is an object of a sheaf category, and an internal Hom of sheaves is again a sheaf.
 A functor is an object of `Fun(C, D)`. None enters `Sets()` without a specified functor.
@@ -472,7 +503,7 @@ Place method compilation, descriptor installation, caches, registration, and bac
 | `POL-FUN-002` | Add an element map only when the mathematical functor has a meaningful action on elements. |
 | `POL-FUN-003` | Only selected structural functors contribute inherited public methods. |
 | `POL-FUN-004` | Use ordinary functors for mathematical transport that does not define public inheritance. |
-| `POL-FUN-005` | Represent forgetting, scalar change, and realization as functors, not object methods. |
+| `POL-FUN-005` | Represent forgetting, scalar change, and a modeled mathematical realization as functors, not object methods. Do not treat a private engine representation, cache, or algorithm call as a realization functor. |
 | `POL-FUN-006` | Use functor composition to propagate structure. Do not add a separate propagation registry. |
 | `POL-FUN-007` | A categorical construction must define its action on objects and arrows. |
 | `POL-FUN-008` | When constructing a limit or colimit, preserve its diagram and universal arrows as an available witness. Do not make that selected witness part of property-subcategory membership. |
@@ -702,7 +733,7 @@ The caller can materialize a finite result when its application requires one.
 | `POL-CODE-035` | Handle trivial or decisive cases with early returns. Then assert the stronger invariants established by their exclusion before implementing the remaining case. |
 | `POL-CODE-036` | Prefer immutable transformations, explicit case analysis, and local equations in the style of Haskell and Lean over C-style mutable state and control flow. |
 | `POL-CODE-037` | Do not rewrap a value when the new wrapper does not change its required type or semantics. Calls such as `int(0)`, `Integer(0)`, and `ZZ(0)` require a local comment that proves why the conversion is necessary. |
-| `POL-CODE-038` | Do not add a function or method whose body only forwards to another function, method, operator, or special method. Treat an extremely short function as a review signal and remove it unless it owns distinct mathematical behavior. |
+| `POL-CODE-038` | Do not add a function or method whose body only forwards to another function, method, operator, or special method. A category-owned semantic method that lowers inputs, invokes a mature algorithm, or reconstructs an owned result is an implementation rather than a forwarding wrapper. |
 | `POL-CODE-039` | Never write `try`/`except` outside the implementation kernel. Let errors propagate from theory, leaf, functor, construction, backend-adapter, and public API code. |
 | `POL-CODE-040` | Never use exceptions to select a route, discover a capability, handle optional data, retry, choose an implementation, substitute a value, or continue computation. |
 | `POL-CODE-041` | Never catch an exception to return `False`, `Unknown`, `None`, `NotImplemented`, or a default. An unknown mathematical result is explicit data, not a converted runtime failure. |

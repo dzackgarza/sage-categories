@@ -16,6 +16,7 @@ method catalogues that a compiler matches against backend method names.
 - [Intended architecture](#intended-architecture)
 - [Two different forms of reuse](#two-different-forms-of-reuse)
 - [The implementation classes](#the-implementation-classes)
+- [The leaf is the implementation firewall](#the-leaf-is-the-implementation-firewall)
 - [Category declarations define or link implementations](#category-declarations-define-or-link-implementations)
 - [Local methods are ordinary executable methods](#local-methods-are-ordinary-executable-methods)
 - [Inherited methods remain kernel-owned transport](#inherited-methods-remain-kernel-owned-transport)
@@ -115,6 +116,55 @@ and arrows.
 
 The implementation class can call dependencies. Calling a dependency does not transfer
 ownership to that dependency.
+
+## The leaf is the implementation firewall
+
+The repository exists in part to repair a defect in the Sage implementation model.
+Mathematically, there is one notion of a free module over a ring and one expected
+operation surface for that notion. Sage has three different free-module
+implementations with different public operations. Even an inherited operation such as
+cardinality is not available consistently across them.
+
+This repository must not reproduce that split behind another abstraction. A category
+never offers a menu of competing object implementations. Its `ObjectType` is the one
+public class for objects of that category. The same rule applies to `ElementType` and
+`ArrowType`.
+
+The sole class is a firewall. It collects the complete owned public operation surface
+and hides all possible computation choices. A caller works with a free module, finite
+poset, or hyperbolic lattice. The caller never chooses a Sage parent class, engine
+adapter, storage variant, or algorithm provider.
+
+The firewall does not restrict private implementation technology. A method can use:
+
+- a Sage, SymPy, or NumPy value;
+- an imported domain package such as VinAL;
+- a bespoke class containing new research algorithms;
+- compiled Cython code;
+- a shell program;
+- Julia, GAP, Singular, or Macaulay2;
+- different exact algorithms selected from established mathematical hypotheses.
+
+These are internal computations, not alternative implementations of the mathematical
+object. They do not add public classes, backend selectors, realization variants, or
+automatic method routing. The category-owned method calls the selected private
+computation explicitly and reconstructs the owned result.
+
+The implementation class supplies constructor routes from the general semantic data
+that defines the category. Those constructors can choose any suitable private
+representation. Public code does not construct engine values to select an
+implementation.
+
+The category layer also defines the immediate structural functors. Each object map
+uses a public constructor route of the target category to construct the required
+mathematical image. For example, a functor from a leaf to its immediate supercategory
+must understand that supercategory's constructors. It must not expose a private engine
+conversion as the structural map.
+
+If this implementation becomes sufficiently large or dominated by Python, foreign
+interfaces, conversions, process calls, or caches, move that complexity into private
+helper modules. The category implementation class remains the sole public owner. The
+helpers remain computation details and never become another method surface.
 
 ## Category declarations define or link implementations
 

@@ -150,7 +150,10 @@ class SetObject(MathematicalObject):
 
             self._subset_poset = PartiallyOrderedSets().from_theorem(
                 powerset,
-                Sets().relation(powerset, contained),
+                Sets().relation(
+                    powerset,
+                    Sets().binary_predicate(powerset, contained),
+                ),
                 self,
             )
         return self._subset_poset

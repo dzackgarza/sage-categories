@@ -117,20 +117,32 @@ class SetsCategory(Category):
     def relation(
         self,
         base_set: SetObject,
-        predicate: Callable[[SetElement, SetElement], Decision],
+        relation: SetSubset,
     ) -> SetSubset:
-        """Construct the binary relation selected by ``predicate``."""
+        """Return an owned subobject of ``base_set`` squared as a relation."""
+        from sage_categories.theories.set_constructions import CartesianProductOfSets
+
+        assert base_set in self
+        product = CartesianProductOfSets((base_set, base_set))
+        assert relation.base_set() is product
+        return relation
+
+    def binary_predicate(
+        self,
+        base_set: SetObject,
+        rule: Callable[[SetElement, SetElement], Decision],
+    ) -> SetSubset:
+        """Construct an owned predicate subobject of ``base_set`` squared."""
         from sage_categories.theories.set_constructions import CartesianProductOfSets
         from sage_categories.theories.set_products import ProductElements
 
-        assert base_set in self
         product = CartesianProductOfSets((base_set, base_set))
         indices = tuple(product.index_set())
         assert len(indices) == 2
 
         def contains_pair(pair: SetElement) -> Decision:
             assert ProductElements().contains_product_element(pair)
-            return predicate(
+            return rule(
                 pair.component(indices[0]),
                 pair.component(indices[1]),
             )

@@ -515,7 +515,10 @@ class PartiallyOrderedSetsCategory(Category):
             underlying_set,
             Sets().relation(
                 underlying_set,
-                lambda left, right: left == right,
+                Sets().binary_predicate(
+                    underlying_set,
+                    lambda left, right: left == right,
+                ),
             ),
             self,
         )
@@ -684,7 +687,10 @@ def Poset(
 
     poset = PartiallyOrderedSets()(
         underlying_set,
-        Sets().relation(underlying_set, transported_relation),
+        Sets().relation(
+            underlying_set,
+            Sets().binary_predicate(underlying_set, transported_relation),
+        ),
     )
     finite_posets = PartiallyOrderedSets().Finite()
     assert finite_posets.contains_finite_poset(poset)

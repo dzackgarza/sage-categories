@@ -38,7 +38,10 @@ def ordered_set_owned_by(
 
     finite_total_order = FiniteTotallyOrderedSets().ordered_set(
         underlying_set,
-        Sets().relation(underlying_set, ordered_relation),
+        Sets().relation(
+            underlying_set,
+            Sets().binary_predicate(underlying_set, ordered_relation),
+        ),
     )
     return finite_total_order
 
@@ -83,7 +86,10 @@ class SimplexOrderIndexing:
                     # (well-ordering of ordinals, Sierpiński §II.7).
                     poset = PartiallyOrderedSets()._ordinal_order(
                         naturals,
-                        Sets().relation(naturals, natural_order),
+                        Sets().relation(
+                            naturals,
+                            Sets().binary_predicate(naturals, natural_order),
+                        ),
                     )
 
                     self._countable_simplex = TotallyOrderedSets().refine_from_theorem(

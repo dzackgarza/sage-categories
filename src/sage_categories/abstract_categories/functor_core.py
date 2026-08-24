@@ -244,55 +244,21 @@ class StructuralFunctor(Functor, ABC):
         inherited_product: ProductPresentation | ProductObject,
     ) -> ProductPresentation:
         """Lift the product inherited through this structural functor."""
-        from sage_categories.abstract_categories.arrow_categories import (
-            declare_isomorphism,
-        )
-        from sage_categories.abstract_categories.hom_categories import (
-            is_isomorphism,
-        )
-        from sage_categories.abstract_categories.product_presentations import (
-            ProductLift,
-            is_product_presentations,
-        )
+        from sage_categories.abstract_categories.structural_products import lift_product
 
-        assert diagram.codomain() is self.domain()
-        image_apex = self.on_object(apex)
-        inherited_category = inherited_product.category()
-        if is_product_presentations(inherited_category):
-            inherited_apex = inherited_product.apex()
-        else:
-            inherited_apex = inherited_product
-        assert image_apex is inherited_apex
-        identity = self.codomain().identity(image_apex)
-        comparison = declare_isomorphism(
-            identity,
-            identity,
+        return lift_product(
+            self,
+            diagram,
+            apex,
+            inherited_product,
+            self._lift_morphism,
         )
-        assert is_isomorphism(comparison)
-        return ProductLift(
-            diagram=diagram,
-            structural_functor=self,
-            inherited_product=inherited_product,
-            apex=apex,
-            comparison=comparison,
-            lift_morphism=self._lift_morphism,
-        ).presentation()
 
     def inherited_product(self, diagram: Functor) -> ProductObject:
         """Return the product of the diagram after structural transport."""
-        from sage_categories.abstract_categories.product_images import (
-            is_products_of_category,
-        )
+        from sage_categories.abstract_categories.structural_products import inherited_product
 
-        assert diagram.codomain() is self.domain()
-        inherited_diagram = self.postcomposition(diagram.domain())(diagram)
-        product = self.codomain().ProductFunctor(diagram.domain())(
-            inherited_diagram,
-        )
-        products = self.codomain().Products(diagram.domain())
-        assert is_products_of_category(products)
-        assert products.contains_product(product)
-        return product
+        return inherited_product(self, diagram)
 
 
 _STRUCTURAL_FUNCTORS: dict[int, StructuralFunctor] = {}

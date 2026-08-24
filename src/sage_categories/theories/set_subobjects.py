@@ -164,28 +164,6 @@ class SetMorphism(Arrow, SetElement):
 
         return _image_subobject(self)
 
-    def inverse(self) -> SetMorphism:
-        from sage_categories.theories.set_category import (
-            Sets,
-            is_set_hom_category,
-        )
-
-        assert self.is_bijective() is True
-        domain = self.domain()
-        codomain = self.codomain()
-        assert Sets().contains_set(domain)
-        assert Sets().contains_set(codomain)
-        assert domain.is_finite() is True
-        inverse_values = {self(member): member for member in domain}
-        inverse_hom = Sets().Hom(codomain, domain)
-        assert is_set_hom_category(inverse_hom)
-        return inverse_hom(
-            inverse_values,
-            injective=True,
-            surjective=True,
-        )
-
-
 class SetSubset(SetMorphism):
     """A subset, its characteristic function, and its inclusion arrow."""
 

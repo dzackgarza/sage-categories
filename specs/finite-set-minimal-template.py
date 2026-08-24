@@ -19,6 +19,8 @@ class SetsCategory(Category):
             """Select the inclusion that supplies the inherited set catalogue.
 
             This tuple is not a list of all functors from finite sets.
+            The kernel-owned inclusion supplies its required maps. Other functors
+            from finite sets remain ordinary callable functors.
             """
             iota = FullSubcategoryInclusionFunctor(self, Sets())
             return (iota,)

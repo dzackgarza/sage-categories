@@ -40,6 +40,11 @@ of the leaf's public surface. The leaf must also meet each functor's constructio
 obligations for objects, elements, and arrows. Keep all other mathematical functors
 outside this tuple.
 
+For each inherited operation, the selected functor must construct every receiver and
+argument image that the operation needs. It must also support any required result
+reconstruction. The compiler does not invent missing maps. See the selection contract in
+[functor.md](functor.md#selection-is-an-inheritance-declaration).
+
 For a structured object with several defining components, select only the component used
 as its inherited public structure. The existence of another projection does not make that
 projection a structure functor. This selection has the same purpose as Sage's

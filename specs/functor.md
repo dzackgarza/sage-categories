@@ -92,6 +92,38 @@ structure.
 Each category lists only immediate functors. The kernel obtains longer routes by functor
 composition. Diamond resolution follows [resolution.md](resolution.md).
 
+### Selection is an inheritance declaration
+
+`structure_functors()` answers one question. It selects the functors whose codomain
+catalogues form the inherited public surface of the source category.
+
+It does not list every functor whose domain is the source category. Such functors remain
+ordinary mathematical functors. Omitting one from `structure_functors()` does not remove
+it. The omission only prevents its codomain catalogue from becoming source methods.
+
+For a selected functor `F: D -> C`, each inherited operation creates a construction
+obligation. The functor must construct every image required by that operation:
+
+- `F(X)` for a receiver or object argument;
+- `F(f)` for an arrow argument;
+- `F(x)` when the mathematical functor acts on elements;
+- the canonical source-owned result when the result role requires reverse transport.
+
+The compiler inherits an operation only when the selected functor meets its required
+role obligations. It does not infer missing maps from annotations, storage, method names,
+or Python types.
+
+Kernel-owned standard functors meet these obligations once for every leaf. A leaf only
+selects the appropriate instance. A custom structural functor must define genuine
+mathematical maps for the roles it supports.
+
+Selection therefore has two independent tests:
+
+1. The codomain catalogue is the intended public structure of the source object.
+2. The functor can construct the images required to transport that catalogue.
+
+A functor can satisfy the second test and fail the first. It remains an ordinary functor.
+
 ## Kernel-owned standard functors
 
 The kernel implements standard categorical functors once. Leaves instantiate and select
@@ -124,9 +156,17 @@ The tuple returned by `structure_functors()` is not the category's complete func
 catalogue. It contains only the immediate functors selected to supply inherited public
 structure.
 
-For a poset `(X, R)`, the carrier projection to `X` is selected. A projection to `R`
-does not supply the set surface and is not selected. Sage expresses the same inheritance
-choice by listing only `Sets()` as a supercategory.
+For a poset \(P=(X,R)\), the carrier projection \(P\mapsto X\) is selected. It
+supplies the set catalogue used when working with \(P\) as a set.
+
+The relation projection \(P\mapsto R\) can still exist as an ordinary functor. It is not
+selected for inheritance. Selecting it would expose the catalogue of a subset of
+\(X\times X\) as methods on \(P\). Those methods describe the relation object, not the
+poset as an object with elements.
+
+The relation remains available through the poset's `order_relation()` operation and the
+ordinary projection functor. Sage expresses the same inheritance choice by listing only
+`Sets()` as a supercategory of posets.
 
 ## Classifying an edge
 

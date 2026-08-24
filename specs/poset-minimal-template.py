@@ -7,6 +7,13 @@ The private defining data is ``(X, R)``. The kernel-owned carrier projection
 selects component zero and supplies the inherited set surface. Component one
 remains the order data.
 
+Both component projections are mathematical functors. Only the carrier projection
+is a structure functor. The relation projection remains an ordinary functor because
+its subset-of-a-product catalogue is not a public poset surface.
+
+The kernel-owned projection supplies its object, arrow, and element maps from the
+standard defining-data contract. The leaf does not repeat those maps.
+
 Elements add no constructor data. The kernel constructs the exact
 ``PartiallyOrderedSets().ElementType`` with its ambient poset and retains its
 canonical image in the projected set.
@@ -78,6 +85,7 @@ class PartiallyOrderedSetsCategory(Category):
         # from this category. Do not add the second product projection here.
         # A poset ``(X, R)`` receives its inherited public methods from ``X``.
         # Projection to ``R`` would expose subset and product methods on posets.
+        # That projection can still exist and be called as an ordinary functor.
         # Selecting only ``X`` mirrors Sage listing only ``Sets()`` as a supercategory.
         carrier = ProductProjectionFunctor(0, self, Sets())
         return (carrier,)

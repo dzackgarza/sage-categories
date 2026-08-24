@@ -194,38 +194,6 @@ def _pull_back_element_along(
     return current
 
 
-def _pull_back_object_along(
-    value: MathematicalObject,
-    route: tuple[StructuralFunctor, ...],
-    source: MathematicalObject,
-) -> MathematicalObject:
-    current = value
-    sources: list[MathematicalObject] = [source]
-    prefix: tuple[StructuralFunctor, ...] = ()
-    for functor in route[:-1]:
-        prefix = (*prefix, functor)
-        sources.append(source._object_image_along(prefix))
-    for functor, source_object in reversed(tuple(zip(route, sources, strict=True))):
-        current = functor.preimage_object(source_object, current)
-    return current
-
-
-def _pull_back_arrow_along(
-    value: Arrow,
-    route: tuple[StructuralFunctor, ...],
-    source: Arrow,
-) -> Arrow:
-    sources: list[Arrow] = [source]
-    prefix: tuple[StructuralFunctor, ...] = ()
-    for functor in route[:-1]:
-        prefix = (*prefix, functor)
-        sources.append(source._morphism_image_along(prefix))
-    current = value
-    for functor, source_arrow in reversed(tuple(zip(route, sources, strict=True))):
-        current = functor.preimage_morphism(source_arrow, current)
-    return current
-
-
 def _forward_value(
     value: Value,
     role: ParameterRole,
@@ -323,24 +291,19 @@ def _transport_result(
         value = cast(MathematicalObject, result)
         if value is target_ambient:
             return cast(R, source_ambient)
-        if value not in route[-1].codomain():
-            return result
-        return cast(R, _pull_back_object_along(value, route, source_ambient))
+        return result
     if role is ParameterRole.ELEMENT:
         value = cast(MathematicalElement, result)
         if value is image:
             return cast(R, instance)
-        if value.ambient_object() not in route[-1].codomain():
+        if value.ambient_object() is not target_ambient:
             return result
         return cast(R, _pull_back_element_along(value, route, source_ambient))
     if role is ParameterRole.ARROW:
         value = cast(Arrow, result)
         if value is image:
             return cast(R, instance)
-        if not value._is_arrow_in(route[-1].codomain()):
-            return result
-        source_arrow = cast(Arrow, instance)
-        return cast(R, _pull_back_arrow_along(value, route, source_arrow))
+        return result
     if role in (
         ParameterRole.OBJECT_ITERATOR,
         ParameterRole.ELEMENT_ITERATOR,

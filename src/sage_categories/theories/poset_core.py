@@ -26,7 +26,6 @@ from sage_categories.theories.sets import (
     FiniteSets,
     FiniteSetsCategory,
     ProductElements,
-    ProductsOfSetsCategory,
     SetElement,
     SetElements,
     SetMorphism,
@@ -34,8 +33,8 @@ from sage_categories.theories.sets import (
     SetProductObject,
     Sets,
     SetsCategory,
-    is_set_hom_category,
     is_products_of_sets_category,
+    is_set_hom_category,
 )
 from sage_categories.values import (
     UNKNOWN,
@@ -192,7 +191,7 @@ class PosetMorphism(Arrow):
             assert is_poset_element(image_member)
             assert image_member.ambient_object() is source
             member = image_member
-        assert member in source
+        assert member.ambient_object() is source
         forgetful_functor = category.forgetful_functor()
         set_member = forgetful_functor.on_element(source, member)
         assert SetElements().contains_set_element(set_member)
@@ -258,9 +257,7 @@ class PosetHomCategory(HomCategory):
 
     def __call__(
         self,
-        action: Callable[[PosetElement], PosetElement]
-        | Mapping[PosetElement, PosetElement]
-        | PosetMorphism,
+        action: Callable[[PosetElement], PosetElement] | Mapping[PosetElement, PosetElement] | PosetMorphism,
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
@@ -582,10 +579,7 @@ def is_partially_ordered_sets_category(
 def is_poset_hom_category(
     category: HomCategory,
 ) -> TypeIs[PosetHomCategory]:
-    return (
-        category.base_category() is PartiallyOrderedSets()
-        and category in PartiallyOrderedSets().HomCategory()
-    )
+    return category.base_category() is PartiallyOrderedSets() and category in PartiallyOrderedSets().HomCategory()
 
 
 def is_poset_element(candidate: MathematicalObject) -> TypeIs[PosetElement]:
@@ -596,7 +590,4 @@ def is_poset_element(candidate: MathematicalObject) -> TypeIs[PosetElement]:
 def is_poset_element_type(
     candidate: type[MathematicalElement],
 ) -> TypeIs[type[PosetElement]]:
-    return (
-        candidate is PosetElement
-        or vars(candidate).get("_compiled_from") is PosetElement
-    )
+    return candidate is PosetElement or vars(candidate).get("_compiled_from") is PosetElement

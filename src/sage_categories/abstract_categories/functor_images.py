@@ -71,10 +71,7 @@ def is_functor_image_element(
 def is_functor_image_element_type(
     candidate: type[MathematicalElement],
 ) -> TypeIs[type[FunctorImageElement]]:
-    return (
-        candidate is FunctorImageElement
-        or vars(candidate).get("_compiled_from") is FunctorImageElement
-    )
+    return candidate is FunctorImageElement or vars(candidate).get("_compiled_from") is FunctorImageElement
 
 
 class FunctorImageArrow(Arrow):
@@ -286,7 +283,4 @@ def is_functor_image_hom_category(
     category: HomCategory,
 ) -> TypeIs[FunctorImageHomCategory]:
     image_category = category.base_category()
-    return (
-        is_functor_image_category(image_category)
-        and category in image_category.HomCategory()
-    )
+    return is_functor_image_category(image_category) and category in image_category.HomCategory()

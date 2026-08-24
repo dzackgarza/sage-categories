@@ -65,19 +65,13 @@ class ForwardedMethod:
                     image = instance._morphism_image_along(step)
                 case _:
                     assert_never(self._role)
-        if (
-            self._role is ImplementationRole.OBJECT
-            and self._method.__name__ == "__contains__"
-        ):
+        if self._role is ImplementationRole.OBJECT and self._method.__name__ == "__contains__":
 
             def contains(candidate: Any) -> bool:
                 from sage_categories.values import registered_element
 
                 source_element = registered_element(candidate)
-                if (
-                    source_element is None
-                    or source_element.ambient_object() is not instance
-                ):
+                if source_element is None or source_element.ambient_object() is not instance:
                     return False
                 target = source_element._element_image_along(step)
                 if image is instance:
@@ -85,18 +79,13 @@ class ForwardedMethod:
                 return bool(self._method(image, target))
 
             return contains
-        if (
-            self._role is ImplementationRole.OBJECT
-            and self._method.__name__ == "__iter__"
-        ):
+        if self._role is ImplementationRole.OBJECT and self._method.__name__ == "__iter__":
 
             def iterate() -> Iterator[MathematicalObject]:
                 if image is instance:
                     targets: Iterator[MathematicalObject] = self._method(image)
                 else:
-                    declaration = inspect.getattr_static(
-                        type(image), self._method.__name__
-                    )
+                    declaration = inspect.getattr_static(type(image), self._method.__name__)
                     target_method = declaration.__get__(image, type(image))
                     targets = target_method()
                 for target in targets:
@@ -110,9 +99,7 @@ class ForwardedMethod:
                         source = functor.on_object(source)
                         objects.append(source)
                     element = target_element
-                    for functor, source_object in reversed(
-                        tuple(zip(step, objects, strict=True))
-                    ):
+                    for functor, source_object in reversed(tuple(zip(step, objects, strict=True))):
                         element = functor.preimage_element(source_object, element)
                     yield element
 
@@ -125,24 +112,16 @@ class ForwardedMethod:
                 if image is instance:
                     target_method = MethodType(self._method, image)
                 else:
-                    declaration = inspect.getattr_static(
-                        type(image), self._method.__name__
-                    )
+                    declaration = inspect.getattr_static(type(image), self._method.__name__)
                     target_method = declaration.__get__(image, type(image))
 
                 forwarded_args = tuple(
-                    argument._element_image_along(step)
-                    if (element := registered_element(argument)) is not None
-                    and element.ambient_object() is instance
-                    else argument
+                    argument._element_image_along(step) if (element := registered_element(argument)) is not None and element.ambient_object() is instance else argument
                     for argument in args
                 )
                 result = target_method(*forwarded_args, **kwargs)
                 target_element = registered_element(result)
-                if (
-                    target_element is None
-                    or target_element.ambient_object() is not image
-                ):
+                if target_element is None or target_element.ambient_object() is not image:
                     return result
                 source = instance
                 objects: list[MathematicalObject] = [source]
@@ -150,9 +129,7 @@ class ForwardedMethod:
                     source = functor.on_object(source)
                     objects.append(source)
                 element = target_element
-                for functor, source_object in reversed(
-                    tuple(zip(step, objects, strict=True))
-                ):
+                for functor, source_object in reversed(tuple(zip(step, objects, strict=True))):
                     element = functor.preimage_element(source_object, element)
                 return element
 
@@ -165,9 +142,7 @@ class ForwardedMethod:
                 if image is instance:
                     target_method = MethodType(self._method, image)
                 else:
-                    declaration = inspect.getattr_static(
-                        type(image), self._method.__name__
-                    )
+                    declaration = inspect.getattr_static(type(image), self._method.__name__)
                     target_method = declaration.__get__(image, type(image))
 
                 source_element = registered_element(instance)
@@ -176,10 +151,7 @@ class ForwardedMethod:
                 assert target_element is image
                 source_ambient = source_element.ambient_object()
                 forwarded_args = tuple(
-                    argument._element_image_along(step)
-                    if (element := registered_element(argument)) is not None
-                    and element.ambient_object() is source_ambient
-                    else argument
+                    argument._element_image_along(step) if (element := registered_element(argument)) is not None and element.ambient_object() is source_ambient else argument
                     for argument in args
                 )
                 result = target_method(*forwarded_args, **kwargs)

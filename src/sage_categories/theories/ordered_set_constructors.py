@@ -39,12 +39,8 @@ def ordered_set_owned_by(
     cached = _ORDERED_FINITE_SETS.get(enumeration)
     if cached is None:
         underlying_set = FiniteSet(enumeration)
-        owned_enumeration = tuple(
-            underlying_set.element(element) for element in enumeration
-        )
-        positions: dict[SetElement, int] = {
-            element: index for index, element in enumerate(owned_enumeration)
-        }
+        owned_enumeration = tuple(underlying_set.element(element) for element in enumeration)
+        positions: dict[SetElement, int] = {element: index for index, element in enumerate(owned_enumeration)}
 
         def ordered_relation(left: PosetElement, right: PosetElement) -> bool:
             forgetful_functor = PartiallyOrderedSets().forgetful_functor()
@@ -94,12 +90,8 @@ class SimplexOrderIndexing:
                         right: PosetElement,
                     ) -> bool:
                         forgetful_functor = PartiallyOrderedSets().forgetful_functor()
-                        left_element = forgetful_functor.on_element(
-                            left.ambient_poset(), left
-                        )
-                        right_element = forgetful_functor.on_element(
-                            right.ambient_poset(), right
-                        )
+                        left_element = forgetful_functor.on_element(left.ambient_poset(), left)
+                        right_element = forgetful_functor.on_element(right.ambient_poset(), right)
                         assert SetElements().contains_set_element(left_element)
                         assert SetElements().contains_set_element(right_element)
                         left_ordinal = left_element.value()
@@ -118,9 +110,7 @@ class SimplexOrderIndexing:
             maximum = index
         assert maximum >= -1
         naturals = NaturalNumbers()
-        return finite_ordered_set(
-            naturals.element(ordinal(position)) for position in range(maximum + 1)
-        )
+        return finite_ordered_set(naturals.element(ordinal(position)) for position in range(maximum + 1))
 
     def __repr__(self) -> str:
         return "Delta"

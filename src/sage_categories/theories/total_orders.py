@@ -168,9 +168,7 @@ class TotallyOrderedSetHomCategory(HomCategory):
 
     def __call__(
         self,
-        action: Callable[[TotallyOrderedSetElement], TotallyOrderedSetElement]
-        | Mapping[TotallyOrderedSetElement, TotallyOrderedSetElement]
-        | TotallyOrderedSetMorphism,
+        action: Callable[[TotallyOrderedSetElement], TotallyOrderedSetElement] | Mapping[TotallyOrderedSetElement, TotallyOrderedSetElement] | TotallyOrderedSetMorphism,
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
@@ -380,9 +378,7 @@ class FiniteTotallyOrderedSetObject(MathematicalObject):
 
     def position(self, member: FiniteTotallyOrderedSetElement) -> int:
         assert member in self
-        return tuple(self._poset.linear_extension()).index(
-            member._poset_implementation()
-        )
+        return tuple(self._poset.linear_extension()).index(member._poset_implementation())
 
     def rank(self, member: FiniteTotallyOrderedSetElement) -> int:
         return self.position(member)
@@ -394,9 +390,7 @@ class FiniteTotallyOrderedSetObject(MathematicalObject):
         underlying_set = PartiallyOrderedSets().underlying_set(self._poset)
 
         def position_of_set_element(member: SetElement) -> int:
-            return tuple(self._poset.linear_extension()).index(
-                self._poset.element(member)
-            )
+            return tuple(self._poset.linear_extension()).index(self._poset.element(member))
 
         return EnumerationInjection(underlying_set, position_of_set_element)
 
@@ -580,10 +574,7 @@ def is_totally_ordered_sets_category(
 def is_total_order_hom_category(
     category: HomCategory,
 ) -> TypeIs[TotallyOrderedSetHomCategory]:
-    return (
-        category.base_category() is TotallyOrderedSets()
-        and category in TotallyOrderedSets().HomCategory()
-    )
+    return category.base_category() is TotallyOrderedSets() and category in TotallyOrderedSets().HomCategory()
 
 
 def is_total_order_element(
@@ -609,7 +600,4 @@ def is_total_order_element_type(
 def is_finite_total_order_element_type(
     candidate: type[MathematicalElement],
 ) -> TypeIs[type[FiniteTotallyOrderedSetElement]]:
-    return (
-        candidate is FiniteTotallyOrderedSetElement
-        or vars(candidate).get("_compiled_from") is FiniteTotallyOrderedSetElement
-    )
+    return candidate is FiniteTotallyOrderedSetElement or vars(candidate).get("_compiled_from") is FiniteTotallyOrderedSetElement

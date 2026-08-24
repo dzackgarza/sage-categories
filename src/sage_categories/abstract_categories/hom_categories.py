@@ -191,6 +191,7 @@ class Isomorphism(Arrow):
         )
         self._forward = forward
         self._backward = backward
+        self._inverse_isomorphism: Isomorphism | None = None
         super().__init__(hom_category=hom_category)
         _record_declared_isomorphism(self.domain(), self.codomain())
 
@@ -200,15 +201,17 @@ class Isomorphism(Arrow):
 
     def inverse(self) -> Isomorphism:
         """Return the inverse isomorphism."""
-        from sage_categories.abstract_categories.arrow_categories import (
-            declare_isomorphism,
-        )
-
-        inverse = declare_isomorphism(
-            self._backward,
-            self._forward,
-        )
-        assert is_isomorphism(inverse)
+        inverse = self._inverse_isomorphism
+        if inverse is None:
+            category = self.base_category()
+            if self.domain() is self.codomain():
+                inverse_hom = category.Aut(self.domain())
+            else:
+                inverse_hom = category.Iso(self.codomain(), self.domain())
+            assert is_isomorphism_hom_category(inverse_hom)
+            inverse = inverse_hom(self._backward, self._forward)
+            inverse._inverse_isomorphism = self
+            self._inverse_isomorphism = inverse
         return inverse
 
     def is_isomorphism(self) -> bool:
@@ -320,12 +323,32 @@ class IsomorphismHomCategory(HomCategory):
     ObjectType = Isomorphism
     ElementType = Isomorphism
 
+    def __init__(
+        self,
+        *,
+        domain: MathematicalObject,
+        codomain: MathematicalObject,
+        hom_category: HomCategoryFamily,
+    ) -> None:
+        self._isomorphisms: dict[tuple[int, int], Isomorphism] = {}
+        super().__init__(
+            domain=domain,
+            codomain=codomain,
+            hom_category=hom_category,
+        )
+
     def __call__(self, forward: Arrow, backward: Arrow) -> Isomorphism:
-        return self.ObjectType(
+        key = id(forward), id(backward)
+        cached = self._isomorphisms.get(key)
+        if cached is not None:
+            return cached
+        result = self.ObjectType(
             hom_category=self,
             forward=forward,
             backward=backward,
         )
+        self._isomorphisms[key] = result
+        return result
 
     def identity(self, value: MathematicalObject | None = None) -> Isomorphism:
         assert value is None

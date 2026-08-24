@@ -564,32 +564,10 @@ class SetIsomorphismHomCategory(IsomorphismHomCategory):
     ObjectType = SetIsomorphism
     ElementType = SetIsomorphism
 
-    def __call__(self, forward: Arrow, backward: Arrow) -> SetIsomorphism:
-        from sage_categories.theories.set_category import Sets
-
-        assert Sets().contains_set_morphism(forward)
-        assert Sets().contains_set_morphism(backward)
-        return self.ObjectType(
-            hom_category=self,
-            forward=forward,
-            backward=backward,
-        )
-
 
 class SetAutomorphismHomCategory(IsomorphismHomCategory):
     ObjectType = SetAutomorphism
     ElementType = SetAutomorphism
-
-    def __call__(self, forward: Arrow, backward: Arrow) -> SetAutomorphism:
-        from sage_categories.theories.set_category import Sets
-
-        assert Sets().contains_set_morphism(forward)
-        assert Sets().contains_set_morphism(backward)
-        return self.ObjectType(
-            hom_category=self,
-            forward=forward,
-            backward=backward,
-        )
 
 
 class SetEndomorphismCategoryFamily(EndCategoryFamily):

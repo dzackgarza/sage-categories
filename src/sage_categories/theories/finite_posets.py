@@ -52,8 +52,8 @@ else:
     from sage.combinat.posets.posets import Poset as _sage_poset_constructor
 
 
-class FinitePosetObject(TransportedObject):
-    """A finite poset with finite order algorithms."""
+class _FinitePosetSageBoundary:
+    """Private lowering and reconstruction for Sage finite-poset algorithms."""
 
     _sage_value: ExternalFinitePoset | None = None
 
@@ -99,6 +99,10 @@ class FinitePosetObject(TransportedObject):
             inclusion(member)
             for member in members.underlying_set()
         )
+
+
+class FinitePosetObject(_FinitePosetSageBoundary, TransportedObject):
+    """A finite poset with finite order algorithms."""
 
     def covers(
         self,
@@ -200,59 +204,11 @@ class FinitePosetObject(TransportedObject):
     def maximal_elements(self) -> SetSubset:
         return self._owned_subset(self._sage_poset().maximal_elements())
 
-    def has_bottom(self) -> bool:
-        return self._sage_poset().has_bottom()
-
-    def bottom(self) -> PosetElement:
-        assert self.has_bottom()
-        return self._owned_element(self._sage_poset().bottom())
-
-    def has_top(self) -> bool:
-        return self._sage_poset().has_top()
-
-    def top(self) -> PosetElement:
-        assert self.has_top()
-        return self._owned_element(self._sage_poset().top())
-
-    def is_bounded(self) -> bool:
-        return self._sage_poset().is_bounded()
-
     def height(self) -> Cardinal:
         return cardinal(int(self._sage_poset().height()))
 
     def width(self) -> Cardinal:
         return cardinal(int(self._sage_poset().width()))
-
-    def rank(self) -> Cardinal:
-        return cardinal(int(self._sage_poset().rank()))
-
-    def rank_of_element(self, member: PosetElement) -> Cardinal:
-        return cardinal(int(self._sage_poset().rank(self._sage_element(member))))
-
-    def level_sets(self) -> DiscreteDiagram:
-        from sage_categories.theories.ordinals import Ordinal, ordinal
-
-        levels = tuple(
-            self._owned_subset(level)
-            for level in self._sage_poset().level_sets()
-        )
-        labels = FiniteSet(ordinal(index) for index in range(len(levels)))
-        index = DiscreteCategory(labels)
-        level_by_index: dict[Ordinal, SetSubset] = {
-            ordinal(position): level
-            for position, level in enumerate(levels)
-        }
-        return DiscreteDiagram(
-            index,
-            SubsetsOfSet(self._underlying_set()),
-            lambda source: level_by_index[source.label().value()],
-        )
-
-    def is_ranked(self) -> bool:
-        return self._sage_poset().is_ranked()
-
-    def is_graded(self) -> bool:
-        return self._sage_poset().is_graded()
 
     def is_chain(self) -> bool:
         return self._sage_poset().is_chain()
@@ -288,6 +244,85 @@ class FinitePosetMorphism(TransportedArrow):
     """An order-preserving map between finite posets."""
 
 
+class FinitePosetWithBottomObject(_FinitePosetSageBoundary, TransportedObject):
+    """A finite poset with a least element."""
+
+    def bottom(self) -> PosetElement:
+        return self._owned_element(self._sage_poset().bottom())
+
+
+class FinitePosetWithTopObject(_FinitePosetSageBoundary, TransportedObject):
+    """A finite poset with a greatest element."""
+
+    def top(self) -> PosetElement:
+        return self._owned_element(self._sage_poset().top())
+
+
+class RankedFinitePosetObject(_FinitePosetSageBoundary, TransportedObject):
+    """A ranked finite poset."""
+
+    def rank(self) -> Cardinal:
+        return cardinal(int(self._sage_poset().rank()))
+
+    def rank_of_element(self, member: PosetElement) -> Cardinal:
+        return cardinal(int(self._sage_poset().rank(self._sage_element(member))))
+
+    def level_sets(self) -> DiscreteDiagram:
+        from sage_categories.theories.ordinals import Ordinal, ordinal
+
+        levels = tuple(
+            self._owned_subset(level)
+            for level in self._sage_poset().level_sets()
+        )
+        labels = FiniteSet(ordinal(index) for index in range(len(levels)))
+        index = DiscreteCategory(labels)
+        level_by_index: dict[Ordinal, SetSubset] = {
+            ordinal(position): level
+            for position, level in enumerate(levels)
+        }
+        return DiscreteDiagram(
+            index,
+            SubsetsOfSet(self._underlying_set()),
+            lambda source: level_by_index[source.label().value()],
+        )
+
+
+class GradedFinitePosetObject(_FinitePosetSageBoundary, TransportedObject):
+    """A graded finite poset."""
+
+
+class FinitePosetWithBottomElement(TransportedElement):
+    """An element of a finite poset with a least element."""
+
+
+class FinitePosetWithTopElement(TransportedElement):
+    """An element of a finite poset with a greatest element."""
+
+
+class RankedFinitePosetElement(TransportedElement):
+    """An element of a ranked finite poset."""
+
+
+class GradedFinitePosetElement(TransportedElement):
+    """An element of a graded finite poset."""
+
+
+class FinitePosetWithBottomMorphism(TransportedArrow):
+    """A morphism between finite posets with least elements."""
+
+
+class FinitePosetWithTopMorphism(TransportedArrow):
+    """A morphism between finite posets with greatest elements."""
+
+
+class RankedFinitePosetMorphism(TransportedArrow):
+    """A morphism between ranked finite posets."""
+
+
+class GradedFinitePosetMorphism(TransportedArrow):
+    """A morphism between graded finite posets."""
+
+
 class FinitePosetsCategory(FullSubcategory):
     """The full subcategory of finite partially ordered sets."""
 
@@ -296,6 +331,10 @@ class FinitePosetsCategory(FullSubcategory):
     ArrowType: type[FinitePosetMorphism] = FinitePosetMorphism
 
     def __init__(self, posets: PartiallyOrderedSetsCategory) -> None:
+        self._with_bottom: FinitePosetsWithBottomCategory | None = None
+        self._with_top: FinitePosetsWithTopCategory | None = None
+        self._ranked: RankedFinitePosetsCategory | None = None
+        self._graded: GradedFinitePosetsCategory | None = None
         super().__init__(
             posets,
             self._is_finite,
@@ -332,5 +371,125 @@ class FinitePosetsCategory(FullSubcategory):
     ) -> TypeIs[FinitePosetObject]:
         return candidate in self
 
+    def WithBottom(self) -> FinitePosetsWithBottomCategory:
+        if self._with_bottom is None:
+            self._with_bottom = FinitePosetsWithBottomCategory(self)
+        return self._with_bottom
+
+    def WithTop(self) -> FinitePosetsWithTopCategory:
+        if self._with_top is None:
+            self._with_top = FinitePosetsWithTopCategory(self)
+        return self._with_top
+
+    def Ranked(self) -> RankedFinitePosetsCategory:
+        if self._ranked is None:
+            self._ranked = RankedFinitePosetsCategory(self)
+        return self._ranked
+
+    def Graded(self) -> GradedFinitePosetsCategory:
+        if self._graded is None:
+            self._graded = GradedFinitePosetsCategory(self.Ranked())
+        return self._graded
+
     def __repr__(self) -> str:
         return "Finite partially ordered sets"
+
+
+class FinitePosetsWithBottomCategory(FullSubcategory):
+    """Finite posets with a least element."""
+
+    ObjectType = FinitePosetWithBottomObject
+    ElementType = FinitePosetWithBottomElement
+    ArrowType = FinitePosetWithBottomMorphism
+
+    def __init__(self, finite_posets: FinitePosetsCategory) -> None:
+        super().__init__(
+            finite_posets,
+            self._has_bottom,
+            name="Finite posets with a least element",
+        )
+
+    def _has_bottom(self, value: MathematicalObject) -> bool:
+        assert PartiallyOrderedSets().Finite().contains_finite_poset(value)
+        return value._sage_poset().has_bottom()
+
+    def contains_poset_with_bottom(
+        self,
+        candidate: MathematicalObject,
+    ) -> TypeIs[FinitePosetWithBottomObject]:
+        return candidate in self
+
+
+class FinitePosetsWithTopCategory(FullSubcategory):
+    """Finite posets with a greatest element."""
+
+    ObjectType = FinitePosetWithTopObject
+    ElementType = FinitePosetWithTopElement
+    ArrowType = FinitePosetWithTopMorphism
+
+    def __init__(self, finite_posets: FinitePosetsCategory) -> None:
+        super().__init__(
+            finite_posets,
+            self._has_top,
+            name="Finite posets with a greatest element",
+        )
+
+    def _has_top(self, value: MathematicalObject) -> bool:
+        assert PartiallyOrderedSets().Finite().contains_finite_poset(value)
+        return value._sage_poset().has_top()
+
+    def contains_poset_with_top(
+        self,
+        candidate: MathematicalObject,
+    ) -> TypeIs[FinitePosetWithTopObject]:
+        return candidate in self
+
+
+class RankedFinitePosetsCategory(FullSubcategory):
+    """Ranked finite posets."""
+
+    ObjectType = RankedFinitePosetObject
+    ElementType = RankedFinitePosetElement
+    ArrowType = RankedFinitePosetMorphism
+
+    def __init__(self, finite_posets: FinitePosetsCategory) -> None:
+        super().__init__(
+            finite_posets,
+            self._is_ranked,
+            name="Ranked finite posets",
+        )
+
+    def _is_ranked(self, value: MathematicalObject) -> bool:
+        assert PartiallyOrderedSets().Finite().contains_finite_poset(value)
+        return value._sage_poset().is_ranked()
+
+    def contains_ranked_poset(
+        self,
+        candidate: MathematicalObject,
+    ) -> TypeIs[RankedFinitePosetObject]:
+        return candidate in self
+
+
+class GradedFinitePosetsCategory(FullSubcategory):
+    """Graded finite posets."""
+
+    ObjectType = GradedFinitePosetObject
+    ElementType = GradedFinitePosetElement
+    ArrowType = GradedFinitePosetMorphism
+
+    def __init__(self, ranked_posets: RankedFinitePosetsCategory) -> None:
+        super().__init__(
+            ranked_posets,
+            self._is_graded,
+            name="Graded finite posets",
+        )
+
+    def _is_graded(self, value: MathematicalObject) -> bool:
+        assert PartiallyOrderedSets().Finite().Ranked().contains_ranked_poset(value)
+        return value._sage_poset().is_graded()
+
+    def contains_graded_poset(
+        self,
+        candidate: MathematicalObject,
+    ) -> TypeIs[GradedFinitePosetObject]:
+        return candidate in self

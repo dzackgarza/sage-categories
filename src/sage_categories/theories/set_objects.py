@@ -147,13 +147,12 @@ class SetObject(MathematicalObject):
                 assert subsets.contains_subset(right)
                 return left <= right
 
-            self._subset_poset = PartiallyOrderedSets().from_theorem(
+            self._subset_poset = PartiallyOrderedSets()._construct(
                 powerset,
                 Sets().relation(
                     powerset,
                     Sets().binary_predicate(powerset, contained),
                 ),
-                self,
             )
         return self._subset_poset
 
@@ -345,12 +344,9 @@ def NaturalNumbers() -> MathematicalObject:
     global _NATURAL_NUMBERS
 
     if _NATURAL_NUMBERS is None:
-        from sage_categories.theories.set_category import CountableSets, Sets
+        from sage_categories.theories.set_category import CountableSets
 
-        _NATURAL_NUMBERS = CountableSets().refine_from_theorem(
-            NaturalNumbersSet(),
-            Sets(),
-        )
+        _NATURAL_NUMBERS = CountableSets()._refine_object(NaturalNumbersSet())
     return _NATURAL_NUMBERS
 
 

@@ -376,8 +376,8 @@ class FiniteSetsCategory(FullSubcategory):
         cached = self._finite_sets_by_members.get(members)
         if cached is None:
             ambient = FiniteSetObject(category=Sets(), values=members)
-            countable = CountableSets().refine_from_theorem(ambient, Sets())
-            cached = self.refine_from_theorem(countable, CountableSets())
+            countable = CountableSets()._refine_object(ambient)
+            cached = self._refine_object(countable)
             self._finite_sets_by_members[members] = cached
         return cached
 

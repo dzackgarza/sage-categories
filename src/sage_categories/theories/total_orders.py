@@ -84,23 +84,16 @@ class FiniteTotallyOrderedSetsCategory(FullSubcategory):
             return total
         return PartiallyOrderedSets().underlying_set(value).is_finite()
 
-    def ordered_set(
+    def _from_enumerated_relation(
         self,
         underlying_set: SetObject,
         relation: OrderRelation,
     ) -> FiniteTotalOrderObject:
         """Construct the finite total order established by an enumeration."""
         assert underlying_set.is_finite() is True
-        poset = PartiallyOrderedSets().from_theorem(
-            underlying_set,
-            relation,
-            self,
-        )
-        total_order = TotallyOrderedSets().refine_from_theorem(
-            poset,
-            PartiallyOrderedSets(),
-        )
-        result = self.refine_from_theorem(total_order, TotallyOrderedSets())
+        poset = PartiallyOrderedSets()._construct(underlying_set, relation)
+        total_order = TotallyOrderedSets()._refine_object(poset)
+        result = self._refine_object(total_order)
         assert self.contains_finite_total_order(result)
         return result
 

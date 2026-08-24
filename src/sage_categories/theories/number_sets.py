@@ -95,7 +95,7 @@ def Integers() -> MathematicalObject:
     if _INTEGERS is None:
         from sage_categories.theories.sets import CountableSets
 
-        _INTEGERS = CountableSets().refine_from_theorem(IntegerSet(), Sets())
+        _INTEGERS = CountableSets()._refine_object(IntegerSet())
     return _INTEGERS
 
 
@@ -167,7 +167,7 @@ def Rationals() -> MathematicalObject:
     if _RATIONALS is None:
         from sage_categories.theories.sets import CountableSets
 
-        _RATIONALS = CountableSets().refine_from_theorem(RationalSet(), Sets())
+        _RATIONALS = CountableSets()._refine_object(RationalSet())
     return _RATIONALS
 
 
@@ -230,11 +230,8 @@ def RealNumbers() -> MathematicalObject:
     if _REAL_NUMBERS is None:
         from sage_categories.theories.sets import InfiniteSets, UncountableSets
 
-        infinite = InfiniteSets().refine_from_theorem(RealSet(), Sets())
-        _REAL_NUMBERS = UncountableSets().refine_from_theorem(
-            infinite,
-            InfiniteSets(),
-        )
+        infinite = InfiniteSets()._refine_object(RealSet())
+        _REAL_NUMBERS = UncountableSets()._refine_object(infinite)
     return _REAL_NUMBERS
 
 

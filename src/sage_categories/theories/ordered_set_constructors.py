@@ -36,7 +36,7 @@ def ordered_set_owned_by(
     def ordered_relation(left: SetElement, right: SetElement) -> bool:
         return positions[left] <= positions[right]
 
-    finite_total_order = FiniteTotallyOrderedSets().ordered_set(
+    finite_total_order = FiniteTotallyOrderedSets()._from_enumerated_relation(
         underlying_set,
         Sets().relation(
             underlying_set,
@@ -92,10 +92,7 @@ class SimplexOrderIndexing:
                         ),
                     )
 
-                    self._countable_simplex = TotallyOrderedSets().refine_from_theorem(
-                        poset,
-                        PartiallyOrderedSets(),
-                    )
+                    self._countable_simplex = TotallyOrderedSets()._refine_object(poset)
                 return self._countable_simplex
         else:
             maximum = index

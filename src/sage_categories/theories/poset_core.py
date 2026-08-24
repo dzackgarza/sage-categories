@@ -449,7 +449,7 @@ class PosetProductLiftFunctor(ConstructionLiftFunctor):
     ) -> PosetMorphism:
         assert Sets().contains_set_morphism(image)
         hom = PartiallyOrderedSets().Hom(source, target)
-        return hom.from_theorem(image, PartiallyOrderedSets())
+        return hom._construct(image)
 
 
 class PartiallyOrderedSetsCategory(Category):

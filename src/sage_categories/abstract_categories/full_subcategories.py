@@ -257,9 +257,6 @@ class FullSubcategory(Category):
         self._name = name
         self._inclusion: InclusionFunctor | None = None
         self._full_hom_category_family: FullSubcategoryHomCategoryFamily | None = None
-        self._refined_objects: dict[int, MathematicalObject] = {}
-        self._refined_elements: dict[tuple[int, int], MathematicalElement] = {}
-        self._refined_arrows: dict[tuple[int, int], Arrow] = {}
         super().__init__(
             object_type=object_type,
             element_type=element_type,
@@ -314,19 +311,13 @@ class FullSubcategory(Category):
         return ambient._object_image_along(route)
 
     def _refine_object(self, ambient: MathematicalObject) -> MathematicalObject:
+        from sage_categories.compiler import category_compiler
+
         if ambient.category() is self:
             assert ambient in self
             return ambient
         ambient = self._canonical_ambient(ambient)
-        key = id(ambient)
-        refined = self._refined_objects.get(key)
-        if refined is None:
-            refined = self.ObjectType._refined_from_ambient(
-                category=self,
-                ambient_implementation=ambient,
-            )
-            self._refined_objects[key] = refined
-            self.inclusion()._seed_object_refinement(refined, ambient)
+        refined = category_compiler().refine_object(self, ambient)
         assert refined in self
         return refined
 
@@ -335,33 +326,18 @@ class FullSubcategory(Category):
         source: MathematicalObject,
         ambient: MathematicalElement,
     ) -> MathematicalElement:
+        from sage_categories.compiler import category_compiler
+
         assert source in self
         inclusion = self.inclusion()
         ambient_source = inclusion.on_object(source)
         assert ambient.ambient_object() is ambient_source
-        key = id(source), id(ambient)
-        refined = self._refined_elements.get(key)
-        if refined is None:
-            refined = self.ElementType._refined_element_from_ambient(
-                category=self,
-                ambient_object=source,
-                ambient_implementation=ambient,
-            )
-            self._refined_elements[key] = refined
-            inclusion._seed_element_refinement(source, refined, ambient)
-        return refined
+        return category_compiler().refine_element(self, source, ambient)
 
     def _refine_arrow(self, hom_category: HomCategory, ambient: Arrow) -> Arrow:
-        key = id(hom_category), id(ambient)
-        refined = self._refined_arrows.get(key)
-        if refined is None:
-            refined = self.ArrowType._refined_arrow_from_ambient(
-                hom_category=hom_category,
-                ambient_implementation=ambient,
-            )
-            self._refined_arrows[key] = refined
-            self.inclusion()._seed_arrow_refinement(refined, ambient)
-        return refined
+        from sage_categories.compiler import category_compiler
+
+        return category_compiler().refine_arrow(self, hom_category, ambient)
 
     def contains_arrow(self, candidate: MathematicalObject) -> TypeIs[Arrow]:
         if not self._ambient_category.contains_arrow(candidate):

@@ -24,7 +24,9 @@ from sage_categories.values import (
 )
 
 if TYPE_CHECKING:
+    from sage_categories.abstract_categories.full_subcategories import FullSubcategory
     from sage_categories.abstract_categories.functors import StructuralFunctor
+    from sage_categories.abstract_categories.hom_categories import HomCategory
     from sage_categories.category import Category
 
 
@@ -135,6 +137,76 @@ class CategoryCompiler:
         self._arrow_catalogues: dict[int, dict[str, DeclaredMethod]] = {}
         self._routes: dict[tuple[int, int], tuple[StructuralFunctor, ...]] = {}
         self._compiled_categories: dict[int, Category] = {}
+        self._refined_objects: dict[
+            tuple[int, int],
+            MathematicalObject,
+        ] = {}
+        self._refined_elements: dict[
+            tuple[int, int, int],
+            MathematicalElement,
+        ] = {}
+        self._refined_arrows: dict[
+            tuple[int, int, int],
+            Arrow,
+        ] = {}
+
+    def refine_object(
+        self,
+        category: FullSubcategory,
+        ambient: MathematicalObject,
+    ) -> MathematicalObject:
+        """Return the canonical category-specific refinement of ``ambient``."""
+        key = id(category), id(ambient)
+        refined = self._refined_objects.get(key)
+        if refined is None:
+            refined = category.ObjectType._refined_from_ambient(
+                category=category,
+                ambient_implementation=ambient,
+            )
+            self._refined_objects[key] = refined
+            category.inclusion()._seed_object_refinement(refined, ambient)
+        return refined
+
+    def refine_element(
+        self,
+        category: FullSubcategory,
+        source: MathematicalObject,
+        ambient: MathematicalElement,
+    ) -> MathematicalElement:
+        """Return the canonical category-specific refinement of ``ambient``."""
+        key = id(category), id(source), id(ambient)
+        refined = self._refined_elements.get(key)
+        if refined is None:
+            refined = category.ElementType._refined_element_from_ambient(
+                category=category,
+                ambient_object=source,
+                ambient_implementation=ambient,
+            )
+            self._refined_elements[key] = refined
+            category.inclusion()._seed_element_refinement(
+                source,
+                refined,
+                ambient,
+            )
+        return refined
+
+    def refine_arrow(
+        self,
+        category: FullSubcategory,
+        hom_category: HomCategory,
+        ambient: Arrow,
+    ) -> Arrow:
+        """Return the canonical category-specific refinement of ``ambient``."""
+        key = id(category), id(hom_category), id(ambient)
+        refined = self._refined_arrows.get(key)
+        if refined is None:
+            refined = category.ArrowType._refined_arrow_from_ambient(
+                hom_category=hom_category,
+                ambient_implementation=ambient,
+            )
+            self._refined_arrows[key] = refined
+            category.inclusion()._seed_arrow_refinement(refined, ambient)
+        return refined
 
     def compiled_categories(self) -> tuple[Category, ...]:
         """Return every category whose implementation types this has compiled."""

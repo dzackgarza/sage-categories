@@ -557,6 +557,39 @@ def test_finite_total_order_routes_coherence() -> None:
     assert set_img1 is set_img2
 
 
+def test_property_refinements_have_distinct_roles_and_canonical_images() -> None:
+    values = (ZZ(int(0)), ZZ(int(1)))
+    poset = Poset(
+        (
+            values,
+            lambda left, right: _element_int(left) <= _element_int(right),
+        ),
+    )
+    underlying_set = PartiallyOrderedSets().underlying_set(poset)
+    finite = FinitePosets()(underlying_set, poset.relation())
+    total = TotallyOrderedSets()(poset)
+
+    assert FinitePosets().ObjectType is not PartiallyOrderedSets().ObjectType
+    assert FinitePosets().ElementType is not PartiallyOrderedSets().ElementType
+    assert TotallyOrderedSets().ObjectType is not PartiallyOrderedSets().ObjectType
+    assert TotallyOrderedSets().ElementType is not PartiallyOrderedSets().ElementType
+    assert finite is not poset
+    assert total is not poset
+
+    finite_ambient = FinitePosets().inclusion().on_object(finite)
+    total_ambient = TotallyOrderedSets().inclusion().on_object(total)
+    assert finite_ambient in PartiallyOrderedSets()
+    assert total_ambient in PartiallyOrderedSets()
+    assert finite_ambient is not finite
+    assert total_ambient is not total
+
+    set_element = underlying_set.element(values[0])
+    finite_element = finite.element(set_element)
+    total_element = total.element(set_element)
+    assert FinitePosets().inclusion().on_element(finite, finite_element).ambient_object() is finite_ambient
+    assert TotallyOrderedSets().inclusion().on_element(total, total_element).ambient_object() is total_ambient
+
+
 def test_totally_ordered_set_morphism_evaluation_inherited_from_poset_morphism() -> None:
     ordered = finite_ordered_set((ZZ(int(1)), ZZ(int(2))))
     hom = TotallyOrderedSets().Hom(ordered, ordered)
@@ -592,6 +625,4 @@ def test_infinite_structures_theorem_admission_and_raw_rejection() -> None:
     infinite_simplex = SimplexOrders()[aleph0]
     assert infinite_simplex in TotallyOrderedSets()
     assert (infinite_simplex.cardinality() == aleph0) is True
-
-
 

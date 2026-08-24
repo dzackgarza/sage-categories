@@ -261,9 +261,9 @@ class FullSubcategory(Category):
     def refine_from_theorem(
         self,
         ambient: MathematicalObject,
-        owner: Category,
+        owner: MathematicalObject,
     ) -> MathematicalObject:
-        assert ambient in owner
+        assert registered_value(owner) is owner
         ambient = self._canonical_ambient(ambient)
         return self._refine_object(ambient)
 

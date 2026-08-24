@@ -33,6 +33,7 @@ if TYPE_CHECKING:
         ColimitObject,
         CoproductPresentation,
         LimitObject,
+        ProductObject,
         ProductPresentation,
     )
     from sage_categories.abstract_categories.slice_categories import (
@@ -596,7 +597,27 @@ class Category(MathematicalObject):
 
     def chosen_limit(self, diagram: Functor) -> ProductPresentation:
         assert diagram.codomain() is self
-        assert False, f"{self} does not define chosen limits"
+        from sage_categories.abstract_categories.functors import DiscreteCategories
+
+        assert diagram.domain() in DiscreteCategories()
+        structural_functors = self.super_functors()
+        assert len(structural_functors) == 1
+        structural_functor = structural_functors[0]
+        inherited_product = structural_functor.inherited_product(diagram)
+        apex = self._product_apex(diagram, inherited_product)
+        return structural_functor.lift_product(
+            diagram,
+            apex,
+            inherited_product,
+        )
+
+    def _product_apex(
+        self,
+        diagram: Functor,
+        inherited_product: ProductObject,
+    ) -> MathematicalObject:
+        assert diagram.codomain() is self
+        assert False, f"{self} does not define a lifted product apex"
 
     def chosen_colimit(self, diagram: Functor) -> CoproductPresentation:
         assert diagram.codomain() is self

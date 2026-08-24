@@ -13,9 +13,7 @@ from sage_categories.abstract_categories.functors import (
     StructuralFunctor,
 )
 from sage_categories.abstract_categories.hom_categories import HomCategory
-from sage_categories.abstract_categories.products import (
-    ProductPresentation,
-)
+from sage_categories.abstract_categories.products import ProductObject
 from sage_categories.category import Category
 from sage_categories.theories.sets import (
     FiniteSet,
@@ -568,27 +566,28 @@ class PartiallyOrderedSetsCategory(Category):
     def _products_of_category(self, functor: Functor) -> Category:
         return super()._products_of_category(functor)
 
-    def chosen_limit(self, diagram: Functor) -> ProductPresentation:
+    def _product_apex(
+        self,
+        diagram: Functor,
+        inherited_product: ProductObject,
+    ) -> PosetObject:
         assert diagram.codomain() is self
         assert diagram.domain() in DiscreteCategories()
-        forgetful = self.forgetful_functor()
-        inherited_product = forgetful.inherited_product(diagram)
-        underlying_product = inherited_product
-        product_category = underlying_product.category()
+        product_category = inherited_product.category()
         assert is_products_of_sets_category(product_category)
-        assert product_category.contains_set_product(underlying_product)
+        assert product_category.contains_set_product(inherited_product)
 
         def componentwise(left: PosetElement, right: PosetElement) -> Decision:
             left_components = left._set_implementation()
             right_components = right._set_implementation()
             assert ProductElements().contains_product_element(left_components)
             assert ProductElements().contains_product_element(right_components)
-            indices = underlying_product.index_set()
+            indices = inherited_product.index_set()
             if indices.is_finite() is not True:
                 return UNKNOWN
             answer: Decision = True
             for index in indices:
-                factor = diagram(underlying_product.index_category().object(index))
+                factor = diagram(inherited_product.index_category().object(index))
                 assert self.contains_poset(factor)
                 comparison = factor.element(left_components[index]) <= factor.element(
                     right_components[index],
@@ -601,9 +600,7 @@ class PartiallyOrderedSetsCategory(Category):
 
         # Theorem: the componentwise order on a product of posets is a partial
         # order (Davey & Priestley, Introduction to Lattices and Order, §1.28).
-        apex = self._componentwise_product_order(underlying_product, componentwise)
-
-        return forgetful.lift_product(diagram, apex, inherited_product)
+        return self._componentwise_product_order(inherited_product, componentwise)
 
     def _componentwise_product_order(
         self,

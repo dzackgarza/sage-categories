@@ -85,7 +85,11 @@ class FiniteTotallyOrderedSetsCategory(FullSubcategory):
     ) -> FiniteTotalOrderObject:
         """Construct the finite total order established by an enumeration."""
         assert underlying_set.is_finite() is True
-        poset = PartiallyOrderedSets().from_theorem(underlying_set, relation)
+        poset = PartiallyOrderedSets().from_theorem(
+            underlying_set,
+            relation,
+            self,
+        )
         total_order = TotallyOrderedSets().refine_from_theorem(
             poset,
             PartiallyOrderedSets(),

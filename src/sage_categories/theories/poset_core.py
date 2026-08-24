@@ -5,6 +5,10 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING, Any, Self, TypeIs
 
+from sympy.assumptions import AppliedPredicate
+from sympy.assumptions.assume import AssumptionsContext
+from sympy.assumptions.ask import ask
+
 from sage_categories.abstract_categories.functors import (
     DiscreteCategories,
     Functor,
@@ -77,11 +81,11 @@ class PosetElement(TransportedElement):
         return repr(self._set_implementation())
 
 
-def check_partial_order(
+def check_reflexive(
     poset: PosetObject,
     underlying_set: SetObject,
 ) -> Decision:
-    """Return the exact result of the available partial-order check."""
+    """Return the exact result of the available reflexivity check."""
     if underlying_set.is_finite() is not True:
         return UNKNOWN
     members = tuple(poset.element(s) for s in underlying_set)
@@ -92,6 +96,18 @@ def check_partial_order(
             return False
         if reflexive is UNKNOWN:
             decision = UNKNOWN
+    return decision
+
+
+def check_antisymmetric(
+    poset: PosetObject,
+    underlying_set: SetObject,
+) -> Decision:
+    """Return the exact result of the available antisymmetry check."""
+    if underlying_set.is_finite() is not True:
+        return UNKNOWN
+    members = tuple(poset.element(s) for s in underlying_set)
+    decision: Decision = True
     for i, x in enumerate(members):
         for y in members[i + 1 :]:
             r_xy = x <= y
@@ -100,6 +116,18 @@ def check_partial_order(
                 return False
             if r_xy is UNKNOWN or r_yx is UNKNOWN:
                 decision = UNKNOWN
+    return decision
+
+
+def check_transitive(
+    poset: PosetObject,
+    underlying_set: SetObject,
+) -> Decision:
+    """Return the exact result of the available transitivity check."""
+    if underlying_set.is_finite() is not True:
+        return UNKNOWN
+    members = tuple(poset.element(s) for s in underlying_set)
+    decision: Decision = True
     for x in members:
         for y in members:
             r_xy = x <= y
@@ -314,10 +342,9 @@ class PosetHomCategory(HomCategory):
         order_preserving = check_order_preserving(source, target, underlying)
         assert order_preserving is True, f"candidate map from {source} to {target} is not order preserving (decision={order_preserving})"
 
-        return self.from_theorem(underlying)
+        return self._construct(underlying)
 
-    def from_theorem(self, underlying: SetMorphism) -> PosetMorphism:
-        """Construct a morphism established by the owning construction."""
+    def _construct(self, underlying: SetMorphism) -> PosetMorphism:
         assert Sets().contains_set_morphism(underlying)
         assert underlying.domain() is PartiallyOrderedSets().underlying_set(self.domain())
         assert underlying.codomain() is PartiallyOrderedSets().underlying_set(self.codomain())
@@ -325,6 +352,25 @@ class PosetHomCategory(HomCategory):
             hom_category=self,
             underlying_function=underlying,
         )
+
+    def from_theorem(
+        self,
+        underlying: SetMorphism,
+        owner: MathematicalObject,
+    ) -> PosetMorphism:
+        """Construct a morphism established by the owning construction."""
+        assert registered_value(owner) is owner
+        return self._construct(underlying)
+
+    def from_hypothesis(
+        self,
+        underlying: SetMorphism,
+        hypothesis: AppliedPredicate,
+        assumptions: AssumptionsContext,
+    ) -> PosetMorphism:
+        """Construct a morphism under an active monotonicity hypothesis."""
+        assert ask(hypothesis, context=assumptions) is True
+        return self._construct(underlying)
 
     def identity(self) -> PosetMorphism:
         assert self.domain() is self.codomain()
@@ -334,7 +380,7 @@ class PosetHomCategory(HomCategory):
         assert PartiallyOrderedSets().contains_poset(source)
         underlying = Sets().identity(PartiallyOrderedSets().underlying_set(source))
         assert Sets().contains_set_morphism(underlying)
-        return self.from_theorem(underlying)
+        return self.from_theorem(underlying, self)
 
     def compose(self, second: Arrow, first: Arrow) -> PosetMorphism:
         second_hom = second.hom_category()
@@ -354,7 +400,7 @@ class PosetHomCategory(HomCategory):
             forgetful_functor.on_morphism(first),
         )
         assert Sets().contains_set_morphism(underlying)
-        return self.from_theorem(underlying)
+        return self.from_theorem(underlying, self)
 
     def contains_poset_morphism(
         self,
@@ -415,13 +461,32 @@ class PartiallyOrderedSetsCategory(Category):
         underlying_set: SetObject,
         relation: OrderRelation,
     ) -> PosetObject:
-        candidate = self.ObjectType(
+        candidate = self._construct(underlying_set, relation)
+        reflexive = check_reflexive(candidate, underlying_set)
+        antisymmetric = check_antisymmetric(candidate, underlying_set)
+        transitive = check_transitive(candidate, underlying_set)
+        assert reflexive is True, f"relation on {underlying_set} is not established as reflexive (decision={reflexive})"
+        assert antisymmetric is True, f"relation on {underlying_set} is not established as antisymmetric (decision={antisymmetric})"
+        assert transitive is True, f"relation on {underlying_set} is not established as transitive (decision={transitive})"
+        return self._strongest_result(candidate, underlying_set)
+
+    def _construct(
+        self,
+        underlying_set: SetObject,
+        relation: OrderRelation,
+    ) -> PosetObject:
+        assert underlying_set in Sets()
+        return self.ObjectType(
             category=self,
             underlying_set=underlying_set,
             relation=relation,
         )
-        decision = check_partial_order(candidate, underlying_set)
-        assert decision is True, f"relation on {underlying_set} is not established as a partial order (decision={decision})"
+
+    def _strongest_result(
+        self,
+        candidate: PosetObject,
+        underlying_set: SetObject,
+    ) -> PosetObject:
         if underlying_set in FiniteSets():
             return self.Finite().refine_from_theorem(candidate, self)
         return candidate
@@ -435,20 +500,31 @@ class PartiallyOrderedSetsCategory(Category):
                 underlying_set,
                 lambda left, right: left == right,
             ),
+            self,
         )
 
     def from_theorem(
         self,
         underlying_set: SetObject,
         relation: OrderRelation,
+        owner: MathematicalObject,
     ) -> PosetObject:
         """Construct a poset whose order laws follow from its owner."""
-        assert underlying_set in Sets()
-        return self.ObjectType(
-            category=self,
-            underlying_set=underlying_set,
-            relation=relation,
-        )
+        assert registered_value(owner) is owner
+        candidate = self._construct(underlying_set, relation)
+        return self._strongest_result(candidate, underlying_set)
+
+    def from_hypothesis(
+        self,
+        underlying_set: SetObject,
+        relation: OrderRelation,
+        hypothesis: AppliedPredicate,
+        assumptions: AssumptionsContext,
+    ) -> PosetObject:
+        """Construct a poset under active partial-order hypotheses."""
+        assert ask(hypothesis, context=assumptions) is True
+        candidate = self._construct(underlying_set, relation)
+        return self._strongest_result(candidate, underlying_set)
 
     def _ordinal_order(
         self,
@@ -461,7 +537,7 @@ class PartiallyOrderedSetsCategory(Category):
         by the well-ordering of ordinals (Sierpiński §II.7).  This is a
         theorem-backed entry path for infinite ordinal-valued sets.
         """
-        return self.from_theorem(underlying_set, relation)
+        return self.from_theorem(underlying_set, relation, self)
 
     def _hom_category_type(self) -> type[HomCategory]:
         return PosetHomCategory
@@ -556,7 +632,7 @@ class PartiallyOrderedSetsCategory(Category):
         backed entry path that bypasses finite exhaustive validation.
         """
         # Davey & Priestley, Introduction to Lattices and Order, §1.28.
-        return self.from_theorem(underlying_set, relation)
+        return self.from_theorem(underlying_set, relation, self)
 
     def _monotone_product_arrow(
         self,
@@ -572,7 +648,7 @@ class PartiallyOrderedSetsCategory(Category):
         """
         hom = self.Hom(source, target)
         assert Sets().contains_set_morphism(set_arrow)
-        return hom.from_theorem(set_arrow)
+        return hom.from_theorem(set_arrow, self)
 
     def __repr__(self) -> str:
         return "Partially ordered sets"

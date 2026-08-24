@@ -303,6 +303,7 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-082` | Permit a category-owned implementation to return `True` from a defining property predicate when its construction or definition asserts that property for every value it builds. That exact result invokes the same property-subcategory constructor; it is not a proof object, metadata field, or separate admission route. |
 | `POL-CAT-083` | Represent a distinguished named mathematical object by its parameterized one-object category. Let that category own the object-specific declarations and selected structural functors that place its sole object in all established ambient and property categories. |
 | `POL-CAT-084` | If `C.P()` is a property subcategory and `D` has a selected structural inclusion into `C`, derive `D.P()` automatically as the corresponding narrowing of `D`. Define the property constructor once. Never require a descendant category to repeat its class, predicate, constructor, or transport wiring. |
+| `POL-CAT-085` | Replace Sage's category-only `super_categories()` edges with `structure_functors()`. Return the complete tuple of immediate functors. Each entry has an explicit domain, codomain, object map, and arrow map. Use an inclusion for a subcategory, a forgetful functor for discarded structure, and a projection for a selected component. Do not infer one relation from another or maintain a parallel category graph. |
 
 Grounding examples:
 
@@ -843,7 +844,7 @@ It remains a replaceable algorithm, not the representation or default structural
 | `POL-DOC-002` | Add a specific observed antipattern to `CONTRIBUTING.md` only when its recurrence or severity makes a dedicated indexed warning useful. Keep its governing general principle explicit. |
 | `POL-DOC-003` | Make each specification a forward-facing inventory of the desired mathematical capabilities and public API. |
 | `POL-DOC-004` | A specification can describe a private implementation strategy when it constrains feasibility or architecture. Keep backend types, names, and decisions outside the public contract. |
-| `POL-DOC-005` | Make each category specification declare its selected structural functors. These functors replace an independent `super_categories` declaration and determine inherited structure. |
+| `POL-DOC-005` | Make each category specification declare its complete `structure_functors()` tuple. Each entry is an actual functor, not a target category. These functors replace `super_categories()` and determine inherited structure. |
 | `POL-DOC-006` | State which capabilities the specified category owns. State inherited capabilities by naming their owning category and the functor path that supplies them. |
 | `POL-DOC-007` | Keep one authoritative catalogue for each public method surface. Reference that catalogue from dependent specifications instead of copying it. |
 | `POL-DOC-008` | Mention a small number of inherited methods only when they clarify a category-specific example. Do not reproduce the inherited API inventory. |

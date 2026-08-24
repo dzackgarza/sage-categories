@@ -1,13 +1,12 @@
 """Normative minimal leaf for the property category ``Sets().Finite()``.
 
-The nested property declaration determines the full replete inclusion
+The property category explicitly selects its full-subcategory inclusion
 
-    Sets().Finite() -> Sets().
+    Sets().Finite() -> Sets()
 
-The kernel takes the source from the nested category. It takes the target from
-the enclosing category. It supplies the identity action on objects, elements,
-and arrows. It also supplies containment, construction, assumptions,
-refinement, and propagation to structural subcategories.
+in ``structure_functors()``. The inclusion constructor receives its source and
+target. It supplies the canonical action on objects, elements, and arrows.
+The kernel uses the selected functor for inheritance and property propagation.
 
 ``FiniteSets()`` and ``Sets().Finite()`` denote the same category.
 """
@@ -23,6 +22,11 @@ class SetsCategory(Category):
 
     class Finite(FullRepletePropertySubcategory):
         """The full replete subcategory of finite sets."""
+
+        def structure_functors(self) -> tuple[Functor, ...]:
+            """Return the selected functors from finite sets."""
+            iota = FullSubcategoryInclusion(self, Sets())
+            return (iota,)
 
         def membership_proposition(
             self,
@@ -45,12 +49,13 @@ class SetsCategory(Category):
 FiniteSets = SetsCategory.Finite
 
 
-# Kernel-derived public behavior:
+# Public behavior:
 #
-# Sets().Finite().inclusion().domain()   is Sets().Finite()
-# Sets().Finite().inclusion().codomain() is Sets()
-# Sets().Finite().inclusion().on_object(X)   is X
-# Sets().Finite().inclusion().on_morphism(f) is f
+# iota = Sets().Finite().structure_functors()[0]
+# iota.domain() is Sets().Finite()
+# iota.codomain() is Sets()
+# iota.on_object(X) is X
+# iota.on_morphism(f) is f
 #
 # X.cardinality() is inherited from Sets.ObjectType.
 # X.is_finite() constructs a proposition.

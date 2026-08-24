@@ -302,10 +302,10 @@ def _image_subobject(
     size = cardinality
     if size is None and function.is_injective() is True:
         size = domain.cardinality()
-    return PowerSet(codomain).from_predicate(
-        lambda member: _imagemembership(function, member),
-        cardinality=size,
-    )
+    predicate = lambda member: _imagemembership(function, member)
+    if size is None:
+        return PowerSet(codomain).from_predicate(predicate)
+    return PowerSet(codomain).from_predicate_with_cardinality(predicate, size)
 
 
 def _imagemembership(

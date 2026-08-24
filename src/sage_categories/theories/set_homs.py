@@ -249,19 +249,34 @@ class SetHomCategory(HomCategory, SetObject):
     def from_predicate(
         self,
         predicate: MembershipPredicate,
-        *,
-        cardinality: Cardinal | None = None,
-        iterator: SetIterator | None = None,
+    ) -> SetSubset:
+        return self._from_predicate(
+            predicate,
+            UnknownCardinality(),
+            None,
+        )
+
+    def _from_predicate(
+        self,
+        predicate: MembershipPredicate,
+        cardinality: Cardinal,
+        iterator: SetIterator | None,
     ) -> SetSubset:
         assert self.is_power_set()
-        size = UnknownCardinality() if cardinality is None else cardinality
         return SubsetsOfSet(self.exponent())(
             self,
             predicate=predicate,
-            cardinality=size,
+            cardinality=cardinality,
             iterator=iterator,
             members=None,
         )
+
+    def from_predicate_with_cardinality(
+        self,
+        predicate: MembershipPredicate,
+        cardinality: Cardinal,
+    ) -> SetSubset:
+        return self._from_predicate(predicate, cardinality, None)
 
     def from_finite_set(self, members: SetObject) -> SetSubset:
         assert members.is_finite() is True
@@ -309,10 +324,10 @@ class SetHomCategory(HomCategory, SetObject):
     def top(self) -> SetSubset:
         assert self.is_power_set()
         if self._top_subset is None:
-            self._top_subset = self.from_predicate(
+            self._top_subset = self._from_predicate(
                 lambda member: self.exponent().membership(member),
-                cardinality=self.exponent().cardinality(),
-                iterator=lambda: iter(self.exponent()),
+                self.exponent().cardinality(),
+                lambda: iter(self.exponent()),
             )
         return self._top_subset
 

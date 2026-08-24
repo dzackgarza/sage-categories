@@ -156,7 +156,12 @@ class SetMorphism(Arrow, SetElement):
     def is_bijective(self) -> Decision:
         return _decision_and(self._injective, self._surjective)
 
-    def image(self, *, cardinality: Cardinal | None = None) -> SetSubset:
+    def image(self) -> SetSubset:
+        from sage_categories.theories.finite_subset_sets import _image_subobject
+
+        return _image_subobject(self, cardinality=None)
+
+    def image_with_cardinality(self, cardinality: Cardinal) -> SetSubset:
         from sage_categories.theories.finite_subset_sets import _image_subobject
 
         return _image_subobject(self, cardinality=cardinality)

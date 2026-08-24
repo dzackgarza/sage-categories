@@ -167,14 +167,21 @@ class SetObject(MathematicalObject):
     def subset_from(
         self,
         predicate: MembershipPredicate,
-        *,
-        cardinality: Cardinal | None = None,
     ) -> SetSubset:
         from sage_categories.theories.set_constructions import PowerSet
 
-        return PowerSet(self).from_predicate(
+        return PowerSet(self).from_predicate(predicate)
+
+    def subset_from_with_cardinality(
+        self,
+        predicate: MembershipPredicate,
+        cardinality: Cardinal,
+    ) -> SetSubset:
+        from sage_categories.theories.set_constructions import PowerSet
+
+        return PowerSet(self).from_predicate_with_cardinality(
             predicate,
-            cardinality=cardinality,
+            cardinality,
         )
 
     def cartesian_product(self, *others: SetObject) -> SetProductObject:

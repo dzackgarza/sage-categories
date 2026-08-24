@@ -53,10 +53,10 @@ The package must absorb the elliptic-curve construction before claiming that wor
 | `POL-MATH-011` | Use established mathematical terminology. Name each operation by the structure that owns it. |
 | `POL-MATH-012` | Treat a missing general construction as a foundational gap. Do not patch only one existing example. |
 | `POL-MATH-013` | Keep axiomatic truths distinct from runtime algorithms. |
-| `POL-MATH-014` | Cite a standard theorem or reference implementation instead of reproducing its proof as runtime validation. |
+| `POL-MATH-014` | Use an inspected theorem to justify the owning implementation. Cite it in source documentation and encode only its mathematical consequence. Never use the citation or theorem prose as runtime validation. |
 | `POL-MATH-015` | Treat a form as a callable element of its hom object. A matrix can represent a form but cannot define the general notion. |
 | `POL-MATH-016` | Refine a result into a property subcategory when its defining construction, an exact computation, an explicit hypothesis, or an inspected theorem establishes the property. Runtime derivation is not required for a theorem-backed fact. |
-| `POL-MATH-017` | Return an object in the strongest category established by available mathematics. Do not add certificate classes, proof records, or prose fields. |
+| `POL-MATH-017` | Return an object in the strongest category established by available mathematics. Never represent mathematical evidence with certificate classes, proof records, prose fields, opaque proof tokens, marker objects, or justification wrappers. |
 | `POL-MATH-018` | Prefer kernels, cokernels, exact sequences, fibers, cofibers, pullbacks, limits, and colimits over element-wise definitions. |
 | `POL-MATH-019` | State each public definition so it remains meaningful in a category without elements. Treat element-wise formulas as implementations or consequences. |
 | `POL-MATH-020` | Treat one Python realization in different categories as different mathematical objects when their structure maps differ. |
@@ -65,6 +65,9 @@ The package must absorb the elliptic-curve construction before claiming that wor
 | `POL-MATH-023` | Open and inspect a mathematical source before adding a definition or citation. Record the exact theorem, section, table, or page that supports it. |
 | `POL-MATH-024` | Treat definitionally known and theorem-established values as exact knowledge. Record the mathematical result, such as a cardinality, on the owning construction without requiring an algorithm to derive it. |
 | `POL-MATH-025` | Return `Unknown` only when defining data, explicit hypotheses, construction theorems, inspected sources, and available exact algorithms do not decide the proposition. Never convert `Unknown` to a Boolean through an unrelated proxy. |
+| `POL-MATH-026` | A runtime API never accepts, stores, inspects, or branches on prose that purports to establish a mathematical proposition. This ban includes arguments or fields named `theorem`, `proof`, `certificate`, `citation`, `justification`, `evidence`, `trusted_reason`, and every renamed equivalent. |
+| `POL-MATH-027` | Renaming theorem prose as metadata, an opaque token, a marker type, a record, or a callback that returns the same text does not make it mathematical evidence. Runtime evidence must be typed mathematical data, an exact predicate result, an explicit hypothesis, or a construction rule. |
+| `POL-MATH-028` | A theorem-backed implementation records the theorem's typed mathematical conclusion at its owning constructor or construction. The citation remains documentation and never crosses the runtime API boundary. |
 
 ## Semantic representations
 

@@ -254,7 +254,7 @@ class SetSubset(SetMorphism):
 
         return self._inclusion
 
-    def members(self) -> frozenset[SetElement] | None:
+    def _represented_members(self) -> frozenset[SetElement] | None:
         return self._members
 
     def membership(self, member: SetElement) -> Decision:
@@ -305,7 +305,7 @@ class SetSubset(SetMorphism):
 
         assert self.base_set() is other.base_set()
         if self._members is not None and other._members is not None:
-            return PowerSet(self.base_set()).from_members(self._members | other._members)
+            return PowerSet(self.base_set())._from_members(self._members | other._members)
         return PowerSet(self.base_set()).from_predicate(
             lambda member: _decision_or(
                 self.membership(member),
@@ -322,7 +322,7 @@ class SetSubset(SetMorphism):
 
         assert self.base_set() is other.base_set()
         if self._members is not None and other._members is not None:
-            return PowerSet(self.base_set()).from_members(self._members - other._members)
+            return PowerSet(self.base_set())._from_members(self._members - other._members)
         return PowerSet(self.base_set()).from_predicate(
             lambda member: _decision_and(
                 self.membership(member),
@@ -335,7 +335,7 @@ class SetSubset(SetMorphism):
 
         assert self.base_set() is other.base_set()
         if self._members is not None and other._members is not None:
-            return PowerSet(self.base_set()).from_members(self._members ^ other._members)
+            return PowerSet(self.base_set())._from_members(self._members ^ other._members)
         return PowerSet(self.base_set()).from_predicate(
             lambda member: _decision_or(
                 _decision_and(
@@ -433,8 +433,8 @@ class SubsetsOfSetCategory(Category):
         assert first in self and second in self
         members: frozenset[SetElement] | None = None
         cardinality: Cardinal | None = None
-        first_members = first.members()
-        second_members = second.members()
+        first_members = first._represented_members()
+        second_members = second._represented_members()
         if first_members is not None and second_members is not None:
             members = first_members & second_members
             cardinality = cardinal(len(members))

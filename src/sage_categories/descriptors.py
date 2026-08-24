@@ -5,11 +5,11 @@ from __future__ import annotations
 import inspect
 import types
 import typing
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from enum import Enum
 from types import FunctionType
-from typing import TYPE_CHECKING, Concatenate, ParamSpec, TypeVar, cast
+from typing import TYPE_CHECKING, Concatenate, ParamSpec, TypeVar, assert_never, cast
 
 from sage_categories.values import Arrow, MathematicalElement, MathematicalObject
 
@@ -33,7 +33,6 @@ class ParameterRole(Enum):
     ELEMENT = "element"
     ARROW = "arrow"
     ELEMENT_ITERATOR = "element_iterator"
-    ELEMENT_COLLECTION = "element_collection"
 
 
 @dataclass(frozen=True)
@@ -119,13 +118,6 @@ def _annotation_role(annotation: Annotation) -> ParameterRole:
             if item_role is ParameterRole.ELEMENT:
                 return ParameterRole.ELEMENT_ITERATOR
             return ParameterRole.VALUE
-        if origin is Iterable:
-            arguments = typing.get_args(annotation)
-            assert len(arguments) == 1
-            item_role = _annotation_role(arguments[0])
-            if item_role is ParameterRole.ELEMENT:
-                return ParameterRole.ELEMENT_COLLECTION
-            return ParameterRole.VALUE
         arguments = typing.get_args(annotation)
         if arguments:
             item_roles = tuple(
@@ -133,8 +125,9 @@ def _annotation_role(annotation: Annotation) -> ParameterRole:
                 for argument in arguments
                 if argument is not Ellipsis
             )
-            if all(role is ParameterRole.ELEMENT for role in item_roles):
-                return ParameterRole.ELEMENT_COLLECTION
+            assert not all(role is ParameterRole.ELEMENT for role in item_roles), (
+                f"{annotation!r} must be an owned mathematical collection"
+            )
         return ParameterRole.VALUE
     if type(annotation) is type:
         annotation_type = cast(type, annotation)
@@ -315,21 +308,7 @@ def _forward_value(
                 yield _forward_value(element, ParameterRole.ELEMENT, route)
 
         return cast(Value, forward_elements())
-    assert role is ParameterRole.ELEMENT_COLLECTION
-    collection = cast(Iterable[MathematicalElement], value)
-    transported = tuple(
-        _forward_value(element, ParameterRole.ELEMENT, route)
-        for element in collection
-    )
-    if isinstance(value, tuple):
-        return cast(Value, transported)
-    if isinstance(value, frozenset):
-        return cast(Value, frozenset(transported))
-    if isinstance(value, set):
-        return cast(Value, set(transported))
-    if isinstance(value, list):
-        return cast(Value, list(transported))
-    return cast(Value, transported)
+    assert_never(role)
 
 
 def _forward_arguments(
@@ -390,21 +369,7 @@ def _transport_result(
                 yield _pull_back_element_along(element, route, source_ambient)
 
         return cast(R, pull_back_elements())
-    assert role is ParameterRole.ELEMENT_COLLECTION
-    collection = cast(Iterable[MathematicalElement], result)
-    transported = tuple(
-        _pull_back_element_along(element, route, source_ambient)
-        for element in collection
-    )
-    if isinstance(result, tuple):
-        return cast(R, transported)
-    if isinstance(result, frozenset):
-        return cast(R, frozenset(transported))
-    if isinstance(result, set):
-        return cast(R, set(transported))
-    if isinstance(result, list):
-        return cast(R, list(transported))
-    return cast(R, transported)
+    assert_never(role)
 
 
 class ForwardedObjectMethod[Receiver: MathematicalObject, **P, R]:

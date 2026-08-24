@@ -84,7 +84,7 @@ class FixedCardinalitySubsetSet(SetObject):
         for maximum in self._source:
             if len(preceding) >= size - 1:
                 for initial in combinations(preceding, size - 1):
-                    yield self.powerset().from_members(frozenset((*initial, maximum)))
+                    yield self.powerset()._from_members(frozenset((*initial, maximum)))
             preceding.append(maximum)
 
     def __getitem__(self, position: int) -> SetSubset:
@@ -131,7 +131,7 @@ class FiniteSubsetSet(SetObject):
         for maximum in self._source:
             for size in range(len(preceding) + 1):
                 for initial in combinations(preceding, size):
-                    yield powerset.from_members(frozenset((*initial, maximum)))
+                    yield powerset._from_members(frozenset((*initial, maximum)))
             preceding.append(maximum)
 
     def position(self, subset: SetSubset) -> int:

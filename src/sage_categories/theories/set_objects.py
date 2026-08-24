@@ -243,7 +243,7 @@ class FiniteSetObject(SetObject):
     def __iter__(self) -> Iterator[SetElement]:
         return iter(self._members)
 
-    def members(self) -> frozenset[SetElement]:
+    def _represented_members(self) -> frozenset[SetElement]:
         return self._members
 
     def element(

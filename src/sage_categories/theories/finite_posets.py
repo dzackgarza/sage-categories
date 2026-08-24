@@ -86,13 +86,15 @@ class FinitePosetObject(TransportedObject):
             self._owned_element(member)._set_implementation()
             for member in members
         )
-        return PowerSet(self._underlying_set()).from_members(owned)
+        return PowerSet(self._underlying_set()).from_finite_set(FiniteSet(owned))
 
     def _sage_members(self, members: SetSubset) -> tuple[PosetElement, ...]:
         assert members.base_set() is self._underlying_set()
-        represented = members.members()
-        assert represented is not None
-        return tuple(self.element(member) for member in represented)
+        inclusion = members.inclusion()
+        return tuple(
+            self.element(inclusion(member))
+            for member in members.underlying_set()
+        )
 
     def covers(
         self,
@@ -158,8 +160,8 @@ class FinitePosetObject(TransportedObject):
         self,
         member: PosetElement,
     ) -> SetSubset:
-        singleton = PowerSet(self._underlying_set()).from_members(
-            frozenset({member._set_implementation()}),
+        singleton = PowerSet(self._underlying_set()).from_finite_set(
+            FiniteSet((member._set_implementation(),)),
         )
         return self.order_ideal(singleton)
 
@@ -167,8 +169,8 @@ class FinitePosetObject(TransportedObject):
         self,
         member: PosetElement,
     ) -> SetSubset:
-        singleton = PowerSet(self._underlying_set()).from_members(
-            frozenset({member._set_implementation()}),
+        singleton = PowerSet(self._underlying_set()).from_finite_set(
+            FiniteSet((member._set_implementation(),)),
         )
         return self.order_filter(singleton)
 

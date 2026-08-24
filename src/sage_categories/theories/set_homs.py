@@ -44,6 +44,7 @@ from sage_categories.theories.cardinals import (
 from sage_categories.theories.set_elements import (
     MembershipPredicate,
     SetElement,
+    SetElements,
     SetIterator,
 )
 from sage_categories.theories.set_objects import (
@@ -204,7 +205,7 @@ class SetHomCategory(HomCategory, SetObject):
         domain_members = tuple(domain)
         if self.is_power_set():
             for choices in cartesian_product((False, True), repeat=len(domain_members)):
-                yield self.from_members(
+                yield self._from_members(
                     frozenset(
                         member
                         for member, selected in zip(
@@ -268,7 +269,16 @@ class SetHomCategory(HomCategory, SetObject):
             members=None,
         )
 
-    def from_members(self, members: frozenset[SetElement]) -> SetSubset:
+    def from_finite_set(self, members: SetObject) -> SetSubset:
+        assert members.is_finite() is True
+        represented: set[SetElement] = set()
+        for member in members:
+            value = member.value()
+            assert SetElements().contains_set_element(value)
+            represented.add(value)
+        return self._from_members(frozenset(represented))
+
+    def _from_members(self, members: frozenset[SetElement]) -> SetSubset:
         assert self.is_power_set()
         assert all(member in self.exponent() for member in members)
         return SubsetsOfSet(self.exponent())(
@@ -315,7 +325,7 @@ class SetHomCategory(HomCategory, SetObject):
     def bottom(self) -> SetSubset:
         assert self.is_power_set()
         if self._bottom_subset is None:
-            self._bottom_subset = self.from_members(frozenset())
+            self._bottom_subset = self._from_members(frozenset())
         return self._bottom_subset
 
     def inverse_image_morphism(self, function: SetMorphism) -> SetMorphism:
@@ -360,9 +370,9 @@ class SetHomCategory(HomCategory, SetObject):
             from sage_categories.theories.set_category import Sets
 
             subset = self._represented_subset(candidate)
-            members = subset.members()
+            members = subset._represented_members()
             if members is not None:
-                return target_power_set.from_members(
+                return target_power_set._from_members(
                     frozenset(function(member) for member in members),
                 )
             inclusion = subset.inclusion().forward()

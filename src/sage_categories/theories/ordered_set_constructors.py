@@ -17,7 +17,6 @@ from sage_categories.theories.sets import (
 )
 from sage_categories.values import (
     UNKNOWN,
-    MathematicalObject,
 )
 
 if TYPE_CHECKING:
@@ -101,9 +100,6 @@ class SimplexOrderIndexing:
                         category=PartiallyOrderedSets(),
                         underlying_set=naturals,
                         relation=natural_order,
-                        is_reflexive=True,
-                        is_antisymmetric=True,
-                        is_transitive=True,
                     )
 
                     self._countable_simplex = TotallyOrderedSets().ObjectType(

@@ -130,9 +130,6 @@ class PosetObject(MathematicalObject):
         category: PartiallyOrderedSetsCategory,
         underlying_set: SetObject,
         relation: OrderRelation,
-        is_reflexive: bool = False,
-        is_antisymmetric: bool = False,
-        is_transitive: bool = False,
     ) -> None:
         assert underlying_set in Sets()
         self._underlying_set = underlying_set
@@ -142,8 +139,6 @@ class PosetObject(MathematicalObject):
         super().__init__(category=category)
         if underlying_set.is_finite() is True:
             validate_finite_partial_order(self, underlying_set, relation)
-        else:
-            assert is_reflexive and is_antisymmetric and is_transitive, "Infinite poset requires proved mathematical laws"
 
     def _set_implementation(self) -> SetObject:
         return self._underlying_set
@@ -367,9 +362,7 @@ class PosetHomCategory(HomCategory):
             return target.element(underlying(set_member))
 
         underlying_source = category.underlying_set(source)
-        assert underlying_source.is_finite() is True, (
-            f"Candidate map from nonfinite {source} cannot enter PosetHomCategory without an established theorem"
-        )
+        assert underlying_source.is_finite() is True, f"Candidate map from nonfinite {source} cannot enter PosetHomCategory without an established theorem"
         order_preserving = check_order_preserving(source, target, candidate_map)
         assert order_preserving is True, f"candidate map from {source} to {target} is not order preserving (decision={order_preserving})"
 
@@ -499,10 +492,7 @@ class PartiallyOrderedSetsCategory(Category):
     ) -> PosetObject:
         if underlying_set in FiniteSets():
             return self.Finite()(underlying_set, relation)
-        assert False, (
-            f"Arbitrary infinite relation on {underlying_set} cannot enter "
-            "PartiallyOrderedSets() without an established construction theorem"
-        )
+        assert False, f"Arbitrary infinite relation on {underlying_set} cannot enter PartiallyOrderedSets() without an established construction theorem"
 
     def discrete_order(self, underlying_set: SetObject) -> PosetObject:
         """Return the discrete poset on ``underlying_set`` with equality order."""
@@ -511,9 +501,6 @@ class PartiallyOrderedSetsCategory(Category):
             category=self,
             underlying_set=underlying_set,
             relation=lambda left, right: left == right,
-            is_reflexive=True,
-            is_antisymmetric=True,
-            is_transitive=True,
         )
 
     def _hom_category_type(self) -> type[HomCategory]:
@@ -591,9 +578,6 @@ class PartiallyOrderedSetsCategory(Category):
             category=self,
             underlying_set=underlying_product,
             relation=componentwise,
-            is_reflexive=True,
-            is_antisymmetric=True,
-            is_transitive=True,
         )
 
         def lift_poset_product_arrow(

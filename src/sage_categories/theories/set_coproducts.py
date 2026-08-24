@@ -126,18 +126,15 @@ class CoproductSet(SetObject):
         diagram: Functor,
         *,
         category: Category,
-        cardinality: Cardinal | None = None,
     ) -> None:
         from sage_categories.theories.set_colimits import _indexed_sum_cardinality
 
         self._diagram = diagram
-        size = cardinality
-        if size is None:
-            size = _indexed_sum_cardinality(
-                self.index_set(),
-                self.cofactor,
-                summand_finiteness=(True if diagram.codomain().is_subcategory(FiniteSets()) else UNKNOWN),
-            )
+        size = _indexed_sum_cardinality(
+            self.index_set(),
+            self.cofactor,
+            summand_finiteness=(True if diagram.codomain().is_subcategory(FiniteSets()) else UNKNOWN),
+        )
         super().__init__(category=category, cardinality=size)
 
     def diagram(self) -> Functor:
@@ -202,14 +199,12 @@ class SetCoproductObject(CoproductObject):
         *,
         category: CoproductsOfSetsCategory,
         diagram: Functor,
-        cardinality: Cardinal | None = None,
     ) -> None:
         from sage_categories.theories.set_constructions import _coproduct_presentation
 
         set_coproduct = CoproductSet(
             diagram,
             category=Sets(),
-            cardinality=cardinality,
         )
         self._set_coproduct = set_coproduct
         super().__init__(
@@ -330,11 +325,9 @@ class CoproductsOfSetsCategory(CoproductsOfCategory):
     def __call__(
         self,
         preimage: MathematicalObject,
-        *,
-        cardinality: Cardinal | None = None,
     ) -> SetCoproductObject:
         assert is_functor(preimage)
-        return self._coproduct(preimage, cardinality=cardinality)
+        return self._coproduct(preimage)
 
     def colimit_of(self, diagram: Functor) -> SetCoproductObject:
         return self._coproduct(diagram)
@@ -345,8 +338,6 @@ class CoproductsOfSetsCategory(CoproductsOfCategory):
     def _coproduct(
         self,
         diagram: Functor,
-        *,
-        cardinality: Cardinal | None = None,
     ) -> SetCoproductObject:
         assert diagram in self.functor().domain()
         key = id(diagram)
@@ -355,14 +346,11 @@ class CoproductsOfSetsCategory(CoproductsOfCategory):
             candidate = self.ObjectType(
                 category=self,
                 diagram=diagram,
-                cardinality=cardinality,
             )
             assert self.contains_set_coproduct(candidate)
             cached = candidate
             self._colimits[key] = cached
         assert self.contains_set_coproduct(cached)
-        if cardinality is not None:
-            assert cached.cardinality() == cardinality
         return cached
 
     def contains_set_coproduct(

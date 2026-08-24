@@ -144,14 +144,11 @@ def _cone_component_value(
 
 def _CoproductPresentationOfSets(
     diagram: Functor,
-    *,
-    cardinality: Cardinal | None = None,
 ) -> CoproductPresentation:
     assert diagram.codomain() is Sets()
     apex = CoproductSet(
         diagram,
         category=Sets(),
-        cardinality=cardinality,
     )
     return _coproduct_presentation(diagram, apex)
 
@@ -356,18 +353,6 @@ def CartesianProductMorphismOfFamily(
     return image
 
 
-def _domain_cardinality(morphism: SetMorphism) -> Cardinal:
-    domain = morphism.domain()
-    assert Sets().contains_set(domain)
-    return domain.cardinality()
-
-
-def _codomain_cardinality(morphism: SetMorphism) -> Cardinal:
-    codomain = morphism.codomain()
-    assert Sets().contains_set(codomain)
-    return codomain.cardinality()
-
-
 def cartesian_product_morphism(*functions: SetMorphism) -> SetMorphism:
     labels = _finite_ordinal(len(functions))
     index_category = DiscreteCategory(labels)
@@ -405,10 +390,7 @@ def DisjointUnionOfSets(
     diagram = SetFamily(index, cofactor)
     coproducts = Sets().Coproducts(index)
     assert is_coproducts_of_sets_category(coproducts)
-    image = coproducts(
-        diagram,
-        cardinality=Cardinals().sum(*(cofactor.cardinality() for cofactor in cofactors)),
-    )
+    image = coproducts(diagram)
     return image
 
 
@@ -421,8 +403,6 @@ def CoproductOfSets(
 def CoproductOfFamily(
     index_set: SetObject,
     cofactors: Callable[[SetElement], SetObject],
-    *,
-    cardinality: Cardinal | None = None,
 ) -> SetCoproductObject:
     index_category = DiscreteCategory(index_set)
     diagram = SetFamily(
@@ -431,16 +411,13 @@ def CoproductOfFamily(
     )
     coproducts = Sets().Coproducts(index_category)
     assert is_coproducts_of_sets_category(coproducts)
-    image = coproducts(diagram, cardinality=cardinality)
+    image = coproducts(diagram)
     return image
 
 
 def CoproductMorphismOfFamily(
     index_category: DiscreteCategoryObject,
     functions: SetMorphismFamily,
-    *,
-    domain_cardinality: Cardinal | None = None,
-    codomain_cardinality: Cardinal | None = None,
 ) -> SetMorphism:
     def function(index: DiscreteObject) -> SetMorphism:
         value = functions(index)
@@ -471,8 +448,8 @@ def CoproductMorphismOfFamily(
     )
     coproducts = Sets().Coproducts(index_category)
     assert is_coproducts_of_sets_category(coproducts)
-    coproducts(source, cardinality=domain_cardinality)
-    coproducts(target, cardinality=codomain_cardinality)
+    coproducts(source)
+    coproducts(target)
     image = Sets().CoproductFunctor(index_category)(transformation)
     assert Sets().contains_set_morphism(image)
     return image
@@ -495,8 +472,6 @@ def coproduct_morphism(*functions: SetMorphism) -> SetMorphism:
     return CoproductMorphismOfFamily(
         index_category,
         function,
-        domain_cardinality=Cardinals().sum(*(_domain_cardinality(morphism) for morphism in functions)),
-        codomain_cardinality=Cardinals().sum(*(_codomain_cardinality(morphism) for morphism in functions)),
     )
 
 

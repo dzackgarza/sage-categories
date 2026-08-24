@@ -18,6 +18,7 @@ Do not reuse a retired identifier.
 | `POL-SCOPE-006` | Use algebra cardinality and the path from lattice isometries through module homs to set homs only as vertical acceptance examples. Do not implement those higher categories yet. |
 | `POL-SCOPE-007` | Judge the project by categorical uniformity, explicit mathematical ownership, functorial reuse, and legibility. Successful computation or compilation alone does not satisfy its purpose. |
 | `POL-SCOPE-008` | Make every theory subtree outside the implementation kernel auditable by a mathematician with little programming experience. Keep inheritance, dispatch, backend, and representation machinery behind the kernel boundary. |
+| `POL-SCOPE-009` | Judge an architectural claim from the live method owners, structural functors, compiler transport, constructor obligations, and universal data. Agent reports, passing tests, route metadata, generated type identities, and runtime output cannot replace that inspection. |
 
 ## Shadowed package universe
 
@@ -54,7 +55,7 @@ The package must absorb the elliptic-curve construction before claiming that wor
 | `POL-MATH-013` | Keep axiomatic truths distinct from runtime algorithms. |
 | `POL-MATH-014` | Cite a standard theorem or reference implementation instead of reproducing its proof as runtime validation. |
 | `POL-MATH-015` | Treat a form as a callable element of its hom object. A matrix can represent a form but cannot define the general notion. |
-| `POL-MATH-016` | Refine a result into a property subcategory only when an exact computation or inspected theorem establishes the property. |
+| `POL-MATH-016` | Refine a result into a property subcategory only when an exact computation or an inspected theorem encoded by the owning construction establishes the property. A caller assertion, Boolean flag, or prose theorem does not establish it. |
 | `POL-MATH-017` | Return an object in the strongest category established by available mathematics. Do not add certificate classes, proof records, or prose fields. |
 | `POL-MATH-018` | Prefer kernels, cokernels, exact sequences, fibers, cofibers, pullbacks, limits, and colimits over element-wise definitions. |
 | `POL-MATH-019` | State each public definition so it remains meaningful in a category without elements. Treat element-wise formulas as implementations or consequences. |
@@ -190,7 +191,7 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-034` | Let objects supply optional construction data to a general operation. Select applicable algorithms by case analysis on that data while preserving one public mathematical operation and result type. |
 | `POL-CAT-035` | Treat an implementation-shaped category or object name as evidence that an established mathematical owner or construction has been missed. Resolve the object, arrows, and construction before adding terminology. |
 | `POL-CAT-036` | Use a small set of general, mathematically standard category constructors as the primary construction interface. Do not require callers to know a specialized implementation constructor. |
-| `POL-CAT-037` | Route a general construction to every justified property subcategory from its input, construction data, and explicit optional claims. Use case analysis or pattern matching for this refinement. |
+| `POL-CAT-037` | Route a general construction to every justified property subcategory from established input properties and construction data. Use case analysis or pattern matching for this refinement. |
 | `POL-CAT-038` | Keep direct subcategory constructors available as optional expert entry points. Correct construction and category placement must not require knowledge of the category graph. |
 | `POL-CAT-039` | Make construction discoverable through standard categories such as `Sets()`, `Monoids()`, `Groups()`, `Rings()`, `Modules(R)`, and `Algebras(R)`. Let the implementation absorb the routing complexity. |
 | `POL-CAT-040` | For \(f:X\to Y\), evaluate `f` only on elements of `X` and return elements of `Y`. A morphism never accepts or returns an unowned Python value. |
@@ -214,6 +215,12 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-058` | Compile `ElementType` inheritance from selected structural functors by the same mechanism used for `ObjectType` and `ArrowType`. A subcategory never reuses another category's element implementation type. |
 | `POL-CAT-059` | Let each category add local methods to its `ElementType` while inheriting the complete applicable element interface through structural functors. Preserve the category-specific element type even when it adds no local methods. |
 | `POL-CAT-060` | Do not expose `is_X()` methods for properties represented by categories. Let the category own the decision and write `Y in X`; for example, write `f in C.Isomorphisms()`, `S in Sets().Finite()`, and `P in Posets().Products()` instead of `f.is_isomorphism()`, `S.is_finite()`, or `P.is_product()`. |
+| `POL-CAT-061` | Transport an inherited method through the complete selected-functor route to its declaring implementation. Never stop after the first nonidentity image. |
+| `POL-CAT-062` | Transport the receiver and every mathematical argument, including keyword arguments, through the same complete route. Reverse-transport every mathematical result to the source category. |
+| `POL-CAT-063` | Preserve object, element, arrow, iterator, and mathematical collection roles in compiled method signatures. Do not infer these roles from runtime registries, `isinstance`, or method names. |
+| `POL-CAT-064` | Compile special methods and ordinary methods through the same role-driven mechanism. Do not add method-name branches for `__contains__`, `__iter__`, or another inherited operation. |
+| `POL-CAT-065` | Reverse-transport a lazy result one value at a time. Preserve the source ambient object of every returned element. |
+| `POL-CAT-066` | Key structural images and preimages by both the source ambient object and the source value. Values from different ambient objects must never share a cached image. |
 
 Grounding examples:
 
@@ -244,8 +251,7 @@ Grounding examples:
 
 - `Sets({1, 2, 3})` constructs a finite set and routes it into the finite-set subcategory.
   A caller need not know or call a specialized `FiniteSet` constructor.
-  Optional data such as `cardinality=3` or a claim such as `is_projective=True` can guide refinement when direct verification is difficult.
-  A caller who already knows the relevant subcategory can use its constructor directly.
+  Construction data such as an explicit three-element presentation establishes its finite cardinality and can guide refinement.
 
 - Prefer `X in Sets().Finite()` to `X.is_finite()` or `X.cardinality() < infinity`.
   The finite-set category owns the decision procedure through `Sets().Finite().__contains__`.
@@ -253,6 +259,18 @@ Grounding examples:
 - Every `C in Cat` can form `C.Products()`.
   This subcategory can be empty, and its existence does not assert that `C` has all products.
   Thus `Modules(R).Products()` requires no module-specific reconstruction of the generic product category.
+
+## Ordered structures
+
+| ID | Policy |
+| --- | --- |
+| `POL-ORDER-001` | Admit a supplied relation to `Posets()` only after reflexivity, antisymmetry, and transitivity are established. Reject the construction when any law is false or unknown. |
+| `POL-ORDER-002` | Admit a poset to `TotallyOrderedSets()` only after every pair is established as comparable. Finiteness alone does not establish totality, and `Unknown` does not imply `True`. |
+| `POL-ORDER-003` | Admit a set map to a poset Hom category only after order preservation is established. Keep an undecided map in its established set-map category. |
+| `POL-ORDER-004` | Do not accept a theorem string, certificate string, caller Boolean, or unchecked assertion as evidence for a partial order, total order, monotone map, or other property. Encode theorem-backed facts in the category-owned construction that proves them. |
+| `POL-ORDER-005` | Construct a poset product by lifting the chosen set product. Retain its apex, componentwise order, monotone projections, mediating arrow, and structural comparison. Do not construct a second set product. |
+| `POL-ORDER-006` | Let finite and total orders inherit comparison, membership, iteration, and morphism evaluation through structural routes. Do not add local adapters, forwarding methods, or duplicate element caches for inherited behavior. |
+| `POL-ORDER-007` | Return `True` for an arrow property from category membership only when every constructor for that arrow category establishes the property. No constructor can bypass that obligation. |
 
 ## Leaf-category encapsulation
 
@@ -496,6 +514,7 @@ When an established finite algorithm requires a primitive loop bound, lower the 
 | `POL-TYPE-025` | When a checker cannot infer the declared dynamic structure, use a type-checker plugin or generate static manifests, types, or stubs from the authoritative category and functor declarations. Do not maintain a second type graph by hand. |
 | `POL-TYPE-026` | Treat generated static typing artifacts as projections of repository-owned declarations. Regenerate them through the applicable commit, test, push, and release workflows whenever their source declarations change. |
 | `POL-TYPE-027` | Do not define or use `typing.Protocol` or another structural duck type. Type mathematical values through the exact category-owned `ObjectType`, `ElementType`, or `ArrowType`, and express capabilities through category membership and structural functors. |
+| `POL-TYPE-028` | Give every compiled method descriptor the exact receiver, positional-parameter, keyword-parameter, and result roles of its declaration. `Callable[..., Any]` and `Callable[..., object]` are forbidden. |
 
 The runtime compiler constructs category relations dynamically, but one repository revision contains a finite declaration graph.
 A generator can project that graph into static typing artifacts without changing its mathematical owner.
@@ -597,7 +616,7 @@ Use the standard syntax directly.
 | `POL-TEST-003` | Test the intended end-to-end behavior, not implementation layout or past defects. |
 | `POL-TEST-004` | Assert the correct category, parent, domain, codomain, images, composition, and mathematical equality as applicable. |
 | `POL-TEST-005` | Use the smallest specimen that distinguishes correct behavior from a plausible failure. |
-| `POL-TEST-006` | Test object, element, and arrow inheritance through the real category compiler. |
+| `POL-TEST-006` | Test object, element, and arrow inheritance by calling inherited public operations through the real category compiler. Route records, descriptors, generated type identities, and caches do not prove that public surface. |
 | `POL-TEST-007` | Test universal constructions through their universal arrows, not only their apex objects. |
 | `POL-TEST-008` | Use a real Sage process for Sage behavior. |
 | `POL-TEST-009` | Do not add a test that only asserts the absence of a previous mistake. |

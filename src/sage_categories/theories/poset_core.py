@@ -259,10 +259,7 @@ class PosetMorphism(Arrow):
         inverse = self._underlying_function.inverse()
         hom_category = category.Hom(self.codomain(), self.domain())
         assert is_poset_hom_category(hom_category)
-        return hom_category.ObjectType(
-            hom_category=hom_category,
-            underlying_function=inverse,
-        )
+        return hom_category.inverse_of(self, inverse)
 
 
 def check_order_preserving(
@@ -387,6 +384,16 @@ class PosetHomCategory(HomCategory):
         )
         assert Sets().contains_set_morphism(underlying)
         return self._construct(underlying)
+
+    def inverse_of(
+        self,
+        morphism: PosetMorphism,
+        inverse: SetMorphism,
+    ) -> PosetMorphism:
+        """Construct the monotone inverse of an order isomorphism."""
+        assert morphism.domain() is self.codomain()
+        assert morphism.codomain() is self.domain()
+        return self._construct(inverse)
 
     def contains_poset_morphism(
         self,

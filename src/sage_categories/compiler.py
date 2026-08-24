@@ -146,7 +146,7 @@ class CategoryCompiler:
         self._routes: dict[tuple[int, int], tuple[StructuralFunctor, ...]] = {}
         self._compiled_categories: dict[int, Category] = {}
         self._refined_objects: dict[
-            tuple[int, int],
+            tuple[int, int, int],
             MathematicalObject,
         ] = {}
         self._refined_elements: dict[

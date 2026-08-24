@@ -429,6 +429,17 @@ class ProductFunctor(LimitFunctor):
     def _construct_image_category(self) -> Category:
         return self.codomain()._products_of_category(self)
 
+    def _object_image(self, source: MathematicalObject) -> MathematicalObject:
+        assert is_functor(source)
+        assert source in self.domain()
+        from sage_categories.abstract_categories.products import (
+            is_products_of_category,
+        )
+
+        image = self.Image()
+        assert is_products_of_category(image)
+        return image.product_of(source)
+
 
 class CoproductFunctor(ColimitFunctor):
     """The chosen colimit functor on diagrams with discrete domain."""

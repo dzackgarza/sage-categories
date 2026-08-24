@@ -340,20 +340,6 @@ def _forward_arguments(
     return forwarded_args, forwarded_kwargs
 
 
-def _invoke_declared(
-    method: Callable[Concatenate[MathematicalObject, P], R],
-    receiver: MathematicalObject,
-    args: tuple[Value, ...],
-    kwargs: dict[str, Value],
-) -> R:
-    """Invoke the concrete implementation at a transported receiver."""
-    implementation = inspect.getattr_static(type(receiver), method.__name__, None)
-    if implementation is not None and implementation is not method:
-        concrete = implementation.__get__(receiver, type(receiver))
-        return concrete(*args, **kwargs)
-    return method(receiver, *args, **kwargs)
-
-
 def _transport_result(
     result: R,
     role: ParameterRole,
@@ -445,17 +431,7 @@ class ForwardedObjectMethod[Receiver: MathematicalObject, **P, R]:
                 signature,
                 route,
             )
-            result = cast(
-                R,
-                method(image, *forwarded_args, **forwarded_kwargs)
-                if image is instance
-                else _invoke_declared(
-                    method,
-                    image,
-                    forwarded_args,
-                    forwarded_kwargs,
-                ),
-            )
+            result = cast(R, method(image, *forwarded_args, **forwarded_kwargs))
             return _transport_result(result, signature.result, route, instance, image, instance, image)
 
         return call
@@ -496,17 +472,7 @@ class ForwardedElementMethod[Receiver: MathematicalElement, **P, R]:
                 signature,
                 route,
             )
-            result = cast(
-                R,
-                method(image, *forwarded_args, **forwarded_kwargs)
-                if image is instance
-                else _invoke_declared(
-                    method,
-                    image,
-                    forwarded_args,
-                    forwarded_kwargs,
-                ),
-            )
+            result = cast(R, method(image, *forwarded_args, **forwarded_kwargs))
             return _transport_result(result, signature.result, route, source_ambient, image.ambient_object(), instance, image)
 
         return call
@@ -546,17 +512,7 @@ class ForwardedArrowMethod[Receiver: Arrow, **P, R]:
                 signature,
                 route,
             )
-            result = cast(
-                R,
-                method(image, *forwarded_args, **forwarded_kwargs)
-                if image is instance
-                else _invoke_declared(
-                    method,
-                    image,
-                    forwarded_args,
-                    forwarded_kwargs,
-                ),
-            )
+            result = cast(R, method(image, *forwarded_args, **forwarded_kwargs))
             return _transport_result(result, signature.result, route, instance.codomain(), image.codomain(), instance, image)
 
         return call

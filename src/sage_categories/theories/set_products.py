@@ -14,7 +14,6 @@ from typing import TYPE_CHECKING, Any, TypeIs
 from sage_categories.abstract_categories.functor_images import (
     FunctorImageArrow,
     FunctorImageHomCategory,
-    ImageInclusionFunctor,
 )
 from sage_categories.abstract_categories.functors import (
     DiscreteCategories,
@@ -56,7 +55,6 @@ from sage_categories.theories.set_objects import (
 from sage_categories.values import (
     UNKNOWN,
     Decision,
-    MathematicalElement,
     MathematicalObject,
     TransportedElement,
     registered_element,
@@ -330,22 +328,6 @@ class SetProductObject(ProductObject):
         return f"Product of {self.diagram()}"
 
 
-class SetProductInclusionFunctor(ImageInclusionFunctor):
-    """Include a refined set product and its elements into ``Sets()``."""
-
-    def _element_image(
-        self,
-        source: MathematicalObject,
-        element: MathematicalElement,
-    ) -> SetElement:
-        category = self.domain()
-        assert is_products_of_sets_category(category)
-        assert category.contains_set_product(source)
-        assert ProductElements().contains_product_element(element)
-        image = source.apex()
-        return image.element(element.components())
-
-
 class SetProductHomCategory(FunctorImageHomCategory):
     """Maps between refined set products."""
 
@@ -360,20 +342,11 @@ class ProductsOfSetsCategory(ProductsOfCategory):
     ElementType: type[ProductElement] = ProductElement
 
     def __init__(self, functor: Functor) -> None:
-        self._set_inclusion: SetProductInclusionFunctor | None = None
         super().__init__(functor)
         _PRODUCTS_OF_SETS[id(self)] = self
 
     def _hom_category_type(self) -> type[HomCategory]:
         return SetProductHomCategory
-
-    def inclusion(self) -> SetProductInclusionFunctor:
-        if self._set_inclusion is None:
-            self._set_inclusion = SetProductInclusionFunctor(self)
-        return self._set_inclusion
-
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
-        return (self.inclusion(),)
 
     def __call__(
         self,

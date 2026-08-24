@@ -14,7 +14,6 @@ from sage_categories.abstract_categories.functors import (
     Functor,
     is_functor,
 )
-from sage_categories.abstract_categories.functor_images import ImageInclusionFunctor
 from sage_categories.abstract_categories.products import (
     LimitObject,
     LimitsOfCategory,
@@ -39,11 +38,12 @@ from sage_categories.theories.set_products import (
     ProductElement,
     ProductElements,
     ProductSet,
+    ProductSetElement,
+    is_product_set_element,
 )
 from sage_categories.values import (
     UNKNOWN,
     Decision,
-    MathematicalElement,
     MathematicalObject,
     registered_value,
 )
@@ -68,8 +68,9 @@ class LimitSet(ProductSet):
     def _compatible_element(
         self,
         components: SetElementFamily,
-    ) -> ProductElement:
+    ) -> ProductSetElement:
         member = self.element(components)
+        assert is_product_set_element(member)
         self._compatible_elements.add(id(member))
         return member
 
@@ -120,7 +121,7 @@ class LimitSet(ProductSet):
         if arrows.is_finite() is not True:
             return UNKNOWN
         value = registered_value(member)
-        assert value is not None and ProductElements().contains_product_element(value)
+        assert value is not None and is_product_set_element(value)
         for candidate in arrows:
             arrow = candidate.value()
             assert self.diagram().domain().contains_arrow(arrow)
@@ -177,23 +178,6 @@ class SetLimitObject(LimitObject):
         return answer
 
 
-class SetLimitInclusionFunctor(ImageInclusionFunctor):
-    """Include a set limit and its compatible families into ``Sets()``."""
-
-    def _element_image(
-        self,
-        source: MathematicalObject,
-        element: MathematicalElement,
-    ) -> SetElement:
-        category = self.domain()
-        assert is_limits_of_sets_category(category)
-        assert category.contains_set_limit(source)
-        assert ProductElements().contains_product_element(element)
-        apex = source.apex()
-        assert Sets().contains_set(apex)
-        return apex.element(element.components())
-
-
 class LimitsOfSetsCategory(LimitsOfCategory):
     """Limits in ``Sets()``, with each limit equal to its apex set."""
 
@@ -201,17 +185,8 @@ class LimitsOfSetsCategory(LimitsOfCategory):
     ElementType: type[ProductElement] = ProductElement
 
     def __init__(self, functor: Functor) -> None:
-        self._set_inclusion: SetLimitInclusionFunctor | None = None
         super().__init__(functor)
         _LIMITS_OF_SETS[id(self)] = self
-
-    def inclusion(self) -> SetLimitInclusionFunctor:
-        if self._set_inclusion is None:
-            self._set_inclusion = SetLimitInclusionFunctor(self)
-        return self._set_inclusion
-
-    def super_functors(self) -> tuple[SetLimitInclusionFunctor, ...]:
-        return (self.inclusion(),)
 
     def __call__(
         self,

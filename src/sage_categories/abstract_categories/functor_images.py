@@ -11,6 +11,7 @@ from sage_categories.values import (
     Arrow,
     MathematicalElement,
     MathematicalObject,
+    TransportedElement,
 )
 
 
@@ -43,35 +44,8 @@ class FunctorImageObject(MathematicalObject):
         return category.functor()
 
 
-class FunctorImageElement(MathematicalElement):
+class FunctorImageElement(TransportedElement):
     """An element of an object represented in a functor image."""
-
-    def __init__(
-        self,
-        *,
-        category: ImageOfFunctor,
-        ambient_object: FunctorImageObject,
-        image_element: MathematicalElement,
-    ) -> None:
-        assert image_element.ambient_object() is ambient_object._image
-        self._image_element = image_element
-        super().__init__(category=category, ambient_object=ambient_object)
-        _FUNCTOR_IMAGE_ELEMENTS[id(self)] = self
-
-
-_FUNCTOR_IMAGE_ELEMENTS: dict[int, FunctorImageElement] = {}
-
-
-def is_functor_image_element(
-    candidate: MathematicalElement,
-) -> TypeIs[FunctorImageElement]:
-    return _FUNCTOR_IMAGE_ELEMENTS.get(id(candidate)) is candidate
-
-
-def is_functor_image_element_type(
-    candidate: type[MathematicalElement],
-) -> TypeIs[type[FunctorImageElement]]:
-    return candidate is FunctorImageElement or vars(candidate).get("_compiled_from") is FunctorImageElement
 
 
 class FunctorImageArrow(Arrow):
@@ -158,9 +132,10 @@ class ImageInclusionFunctor(StructuralFunctor):
         source: MathematicalObject,
         element: MathematicalElement,
     ) -> MathematicalElement:
-        assert is_functor_image_element(element)
         assert element.ambient_object() is source
-        return element._image_element
+        image_element = element._ambient_implementation()
+        assert image_element.ambient_object() is source._image
+        return image_element
 
     def _element_preimage(
         self,

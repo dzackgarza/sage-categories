@@ -63,12 +63,16 @@ The package must absorb the elliptic-curve construction before claiming that wor
 | `POL-MATH-021` | Preserve the base category and structure morphism in every parent, type, and arrow that depends on them. |
 | `POL-MATH-022` | State the weakest algebraic hypotheses that make a definition or algorithm valid. |
 | `POL-MATH-023` | Open and inspect a mathematical source before adding a definition or citation. Record the exact theorem, section, table, or page that supports it. |
-| `POL-MATH-024` | Treat definitionally known and theorem-established values as exact knowledge. Record the mathematical result, such as a cardinality, on the owning construction without requiring an algorithm to derive it. |
-| `POL-MATH-025` | Return `Unknown` only when defining data, explicit hypotheses, construction theorems, inspected sources, and available exact algorithms do not decide the proposition. Never convert `Unknown` to a Boolean through an unrelated proxy. |
+| `POL-MATH-024` | Treat definitionally known and theorem-established values as exact knowledge. When no runtime algorithm can derive the value, the owning construction declares the typed mathematical conclusion by fiat. The inspected theorem justifies that declaration in source documentation; Python does not prove it. |
+| `POL-MATH-025` | Return `Unknown` only when defining data, explicit hypotheses, construction theorems, inspected sources, and available exact algorithms do not decide the proposition. The absence of a Python derivation does not make a theorem-established fact unknown. Never convert `Unknown` to a Boolean through an unrelated proxy. |
 | `POL-MATH-026` | A runtime API never accepts, stores, inspects, or branches on prose that purports to establish a mathematical proposition. This ban includes arguments or fields named `theorem`, `proof`, `certificate`, `citation`, `justification`, `evidence`, `trusted_reason`, and every renamed equivalent. |
 | `POL-MATH-027` | Renaming theorem prose as metadata, an opaque token, a marker type, a record, or a callback that returns the same text does not make it mathematical evidence. Runtime evidence must be typed mathematical data, an exact predicate result, an explicit hypothesis, or a construction rule. |
 | `POL-MATH-028` | A theorem-backed implementation records the theorem's typed mathematical conclusion at its owning constructor or construction. The citation remains documentation and never crosses the runtime API boundary. |
 | `POL-MATH-029` | For a `Decision`-valued proposition, only the value `True` establishes the proposition. Tests such as `decision is not False`, truthiness, fallthrough, and absence of rejection never turn `Unknown` into evidence. An explicit hypothesis or construction theorem is a separate source of knowledge. |
+
+For example, an owned constructor for `RR` records its cardinality as $2^{\aleph_0}$.
+The implementation cites the supporting theorem in source documentation.
+Runtime stores the typed cardinality; it does not derive uncountability or carry theorem prose.
 
 ## Semantic representations
 
@@ -180,7 +184,7 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-017` | Put an axiom at the highest category that can state it. |
 | `POL-CAT-018` | Distinguish a property subcategory from a category whose objects contain chosen data. Membership in a property subcategory records a proposition, not a selected witness. |
 | `POL-CAT-019` | Require chosen data only when it is part of the mathematical structure. Do not require or store a witness merely because an object belongs to a property subcategory. |
-| `POL-CAT-020` | Make every construction path account for the defining obligations of its result category. Establish them from the construction, compute them exactly, or accept them as explicit hypotheses. Never infer them from unrelated properties. |
+| `POL-CAT-020` | Make every construction path account for the defining obligations of its result category. Declare the typed conclusion of its construction theorem, compute the obligation exactly, or accept it as an explicit hypothesis. Runtime proof is not required. Never infer an obligation from an unrelated property. |
 | `POL-CAT-021` | Make `Ar(C)`, `EndAr(C)`, `AutAr(C)`, `Fun(C, D)`, and `Hom_C(x, y)` categories and therefore objects of `Cat`. |
 | `POL-CAT-022` | Use `HomCatType` at the `Cat` level. A hom category can contain natural transformations and becomes a function set only in `Sets()`. |
 | `POL-CAT-023` | Supply `C.HomCategory()`, `C.EndCategory()`, `C.AutCategory()`, `C.ArrowCategory()`, `C.EndArrowCategory()`, and `C.AutArrowCategory()` at the `Cat` level. |
@@ -230,7 +234,7 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-067` | Apply the same obligation rule to arrow categories. Establish an arrow property by construction, exact computation, explicit hypothesis, or inspected theorem before placing the arrow in that property category. |
 | `POL-CAT-068` | Return a property as `True` from category membership only when every path into that category satisfies `POL-CAT-020` or `POL-CAT-067`. |
 | `POL-CAT-069` | A constructor over arbitrary input data cannot borrow a theorem from one special construction. Validate its obligations, receive explicit hypotheses, or return the strongest category established by its inputs. Put theorem-backed special cases in construction-owned paths. |
-| `POL-CAT-070` | Treat direct implementation construction, private constructors, inclusions, lifts, and internal helpers as category-entry paths. Each path enforces the same mathematical obligations as the public category constructor. Internal access is not an exemption. |
+| `POL-CAT-070` | Treat direct implementation construction, private constructors, inclusions, lifts, and internal helpers as category-entry paths. Each path accounts for the same obligations through typed theorem conclusions, explicit hypotheses, or exact computations. It need not prove a theorem at runtime. Internal access is not an exemption. |
 | `POL-CAT-071` | Reject a compiled method when its declared argument or result role lacks a structural transport rule. Never return an unmatched codomain object, element, arrow, or collection through a raw pass-through fallback. |
 | `POL-CAT-072` | Transport a collection from its declared mathematical collection type and item role. Do not infer collection semantics from `Iterable` checks or assume that every lazy result contains elements. |
 
@@ -394,7 +398,7 @@ Place method compilation, descriptor installation, caches, registration, and bac
 | `POL-FUN-019` | Define `C.Products()`, `C.Coproducts()`, `C.TensorProducts()`, and analogous named constructions as formal refinements of functor-image subcategories, analogous to categories formed by `with_axiom`. |
 | `POL-FUN-020` | Lift an inherited universal construction through the selected structural functor. Retain its chosen presentation, apex, universal arrows, and comparison map instead of reconstructing a parallel result. |
 | `POL-FUN-021` | Establish properties of lifted objects and arrows from the theorem of the construction. Record those facts at the construction owner instead of replacing that theorem with a presentation-specific check. |
-| `POL-FUN-022` | Discharge closure and arrow-property obligations through the construction-owned lift. Do not rely on a permissive general constructor that would admit the same property for arbitrary inputs. |
+| `POL-FUN-022` | Discharge closure and arrow-property obligations through the construction-owned lift. The lift can declare the typed conclusion of its construction theorem without runtime proof. Do not rely on a permissive general constructor that would admit the same property for arbitrary inputs. |
 
 For the product functor `Products: Diag(C) -> C`, an object `Y` lies in `C.ImagesOfFunctor(Products)` when there is a diagram `D` and an isomorphism `Products(D) -> Y`.
 The named category `C.Products()` refines this essential image and states that `Y` is a product.

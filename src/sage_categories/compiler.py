@@ -132,6 +132,18 @@ class CategoryCompiler:
         self._object_types: dict[int, type[MathematicalObject]] = {}
         self._element_types: dict[int, type[MathematicalElement]] = {}
         self._arrow_types: dict[int, type[Arrow]] = {}
+        self._refined_object_types: dict[
+            tuple[int, type[MathematicalObject]],
+            type[MathematicalObject],
+        ] = {}
+        self._refined_element_types: dict[
+            tuple[int, type[MathematicalElement]],
+            type[MathematicalElement],
+        ] = {}
+        self._refined_arrow_types: dict[
+            tuple[int, type[Arrow]],
+            type[Arrow],
+        ] = {}
         self._object_catalogues: dict[int, dict[str, DeclaredMethod]] = {}
         self._element_catalogues: dict[int, dict[str, DeclaredMethod]] = {}
         self._arrow_catalogues: dict[int, dict[str, DeclaredMethod]] = {}
@@ -159,7 +171,12 @@ class CategoryCompiler:
         key = id(category), id(ambient)
         refined = self._refined_objects.get(key)
         if refined is None:
-            refined = category.ObjectType._refined_from_ambient(
+            refined_type = self._refinement_type(
+                category,
+                ambient,
+                ImplementationRole.OBJECT,
+            )
+            refined = refined_type._refined_from_ambient(
                 category=category,
                 ambient_implementation=ambient,
             )
@@ -177,7 +194,12 @@ class CategoryCompiler:
         key = id(category), id(source), id(ambient)
         refined = self._refined_elements.get(key)
         if refined is None:
-            refined = category.ElementType._refined_element_from_ambient(
+            refined_type = self._refinement_type(
+                category,
+                ambient,
+                ImplementationRole.ELEMENT,
+            )
+            refined = refined_type._refined_element_from_ambient(
                 category=category,
                 ambient_object=source,
                 ambient_implementation=ambient,
@@ -200,13 +222,76 @@ class CategoryCompiler:
         key = id(category), id(hom_category), id(ambient)
         refined = self._refined_arrows.get(key)
         if refined is None:
-            refined = category.ArrowType._refined_arrow_from_ambient(
+            refined_type = self._refinement_type(
+                category,
+                ambient,
+                ImplementationRole.ARROW,
+            )
+            refined = refined_type._refined_arrow_from_ambient(
                 hom_category=hom_category,
                 ambient_implementation=ambient,
             )
             self._refined_arrows[key] = refined
             category.inclusion()._seed_arrow_refinement(refined, ambient)
         return refined
+
+    def _refinement_type(
+        self,
+        category: FullSubcategory,
+        ambient: Implementation,
+        role: ImplementationRole,
+    ) -> type[Implementation]:
+        """Compile the property implementation for one ambient role."""
+        implementation = ambient
+        while implementation._ambient_implementation() is not implementation:
+            implementation = implementation._ambient_implementation()
+        ambient_type = _source_implementation(type(implementation))
+        match role:
+            case ImplementationRole.OBJECT:
+                cache = self._refined_object_types
+                base = category.ObjectType
+                descriptor_type = ForwardedObjectMethod
+                implementation_category = implementation.category()
+            case ImplementationRole.ELEMENT:
+                cache = self._refined_element_types
+                base = category.ElementType
+                descriptor_type = ForwardedElementMethod
+                implementation_category = implementation.ambient_object().category()
+            case ImplementationRole.ARROW:
+                cache = self._refined_arrow_types
+                base = category.ArrowType
+                descriptor_type = ForwardedArrowMethod
+                implementation_category = implementation.base_category()
+            case _:
+                assert_never(role)
+        key = id(category), ambient_type
+        cached = cache.get(key)
+        if cached is not None:
+            return cached
+        route = self.implementation_route(category, implementation_category)
+        refinement_methods = self._local_methods(base)
+        inherited = {
+            name: descriptor_type(
+                route,
+                method,
+                method_signature(method, role),
+            )
+            for name, method in self._local_methods(ambient_type).items()
+            if name not in refinement_methods
+        }
+
+        def install(namespace: dict[str, CompiledClassMember]) -> None:
+            namespace.update(inherited)
+            namespace["__module__"] = ambient_type.__module__
+            namespace[_COMPILED_FROM] = ambient_type
+
+        name = (
+            f"Complete{type(category).__name__}{role.value.title()}"
+            f"{ambient_type.__name__}Refinement"
+        )
+        compiled = new_class(name, (base,), exec_body=install)
+        cache[key] = compiled
+        return compiled
 
     def compiled_categories(self) -> tuple[Category, ...]:
         """Return every category whose implementation types this has compiled."""

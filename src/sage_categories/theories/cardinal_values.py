@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sage_categories.values import (
     UNKNOWN,
@@ -203,7 +203,7 @@ class Cardinal(MathematicalObject):
     def __index__(self) -> int:
         return self.finite_value()
 
-    def __eq__(self, candidate: object) -> bool:
+    def __eq__(self, candidate: Any) -> bool:
         if candidate is self:
             return True
         if self._kind is CardinalKind.FINITE and self._finite_value == candidate:

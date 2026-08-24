@@ -149,7 +149,6 @@ class SetObject(MathematicalObject):
             self._subset_poset = PartiallyOrderedSets()(
                 powerset,
                 contained,
-                theorem="Subset inclusion is a partial order on the power set",
             )
         return self._subset_poset
 
@@ -186,7 +185,7 @@ class SetObject(MathematicalObject):
 
         return DisjointUnionOfSets((self, *others))
 
-    def __eq__(self, candidate: object) -> bool:
+    def __eq__(self, candidate: Any) -> bool:
         return candidate is self
 
     def __hash__(self) -> int:

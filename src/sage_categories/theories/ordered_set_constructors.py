@@ -105,13 +105,9 @@ class SimplexOrderIndexing:
                     poset = PartiallyOrderedSets()(
                         naturals,
                         natural_order,
-                        theorem="Ordinal order on NaturalNumbers is a partial order",
                     )
 
-                    self._countable_simplex = TotallyOrderedSets()(
-                        poset,
-                        theorem="Ordinal order on NaturalNumbers is total",
-                    )
+                    self._countable_simplex = TotallyOrderedSets()(poset)
                 return self._countable_simplex
         else:
             maximum = index

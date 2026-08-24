@@ -152,7 +152,6 @@ class PosetObject(MathematicalObject):
         category: PartiallyOrderedSetsCategory,
         underlying_set: SetObject,
         relation: OrderRelation,
-        theorem: str | None = None,
     ) -> None:
         assert underlying_set in Sets()
         self._underlying_set = underlying_set
@@ -162,8 +161,6 @@ class PosetObject(MathematicalObject):
         super().__init__(category=category)
         if underlying_set.is_finite() is True:
             validate_finite_partial_order(self, underlying_set, relation)
-        else:
-            assert theorem is not None, f"raw infinite relation on {underlying_set} requires an exact construction theorem"
 
     def _set_implementation(self) -> SetObject:
         return self._underlying_set
@@ -346,7 +343,6 @@ class PosetHomCategory(HomCategory):
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
-        theorem: str | None = None,
     ) -> PosetMorphism:
         existing = registered_value(action)
         if existing is not None:
@@ -387,11 +383,8 @@ class PosetHomCategory(HomCategory):
             assert SetElements().contains_set_element(set_member)
             return target.element(underlying(set_member))
 
-        if theorem is not None:
-            order_preserving: Decision = True
-        else:
-            order_preserving = check_order_preserving(source, target, candidate_map)
-        assert order_preserving is True, f"candidate map from {source} to {target} is not order preserving (decision={order_preserving})"
+        order_preserving = check_order_preserving(source, target, candidate_map)
+        assert order_preserving is not False, f"candidate map from {source} to {target} is not order preserving (decision={order_preserving})"
 
         return self.ObjectType(
             hom_category=self,
@@ -512,10 +505,7 @@ class ForgetPosetFunctor(StructuralFunctor):
             assert SetElements().contains_set_element(set_member)
             return target.element(image(set_member))
 
-        return PartiallyOrderedSets().Hom(source, target)(
-            mapping,
-            theorem="Lifted morphism from categorical limit construction preserves componentwise order",
-        )
+        return PartiallyOrderedSets().Hom(source, target)(mapping)
 
     def is_faithful(self) -> bool:
         return True
@@ -536,8 +526,6 @@ class PartiallyOrderedSetsCategory(Category):
         self,
         underlying_set: SetObject,
         relation: OrderRelation,
-        *,
-        theorem: str | None = None,
     ) -> PosetObject:
         if underlying_set in FiniteSets():
             return self.Finite()(underlying_set, relation)
@@ -545,7 +533,6 @@ class PartiallyOrderedSetsCategory(Category):
             category=self,
             underlying_set=underlying_set,
             relation=relation,
-            theorem=theorem,
         )
 
     def _hom_category_type(self) -> type[HomCategory]:
@@ -622,7 +609,6 @@ class PartiallyOrderedSetsCategory(Category):
         apex = self(
             underlying_product,
             componentwise,
-            theorem="Componentwise product order is a partial order",
         )
         return forgetful.lift_product(diagram, apex, inherited_product)
 

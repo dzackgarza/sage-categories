@@ -277,7 +277,7 @@ def test_structural_coherence_identifies_parallel_forgetful_functors() -> None:
 
 
 def test_structural_functor_images_have_exact_ambient_objects_and_endpoints() -> None:
-    poset = PartiallyOrderedSets()(ZZ, operator.eq, theorem="Discrete order on ZZ")
+    poset = PartiallyOrderedSets()(ZZ, operator.eq)
     element = poset.element(ZZ(int(0)))
     identity = PartiallyOrderedSets().identity(poset)
     forgetful = PartiallyOrderedSets().forgetful_functor()
@@ -295,7 +295,7 @@ def test_structural_functor_images_have_exact_ambient_objects_and_endpoints() ->
 def test_postcomposition_maps_diagrams_and_natural_transformations() -> None:
     labels = FiniteSet((ZZ(int(3)), ZZ(int(5))))
     index_category = DiscreteCategory(labels)
-    poset = PartiallyOrderedSets()(ZZ, operator.eq, theorem="Discrete order on ZZ")
+    poset = PartiallyOrderedSets()(ZZ, operator.eq)
     diagram = PartiallyOrderedSets().DiagonalFunctor(index_category)(poset)
     assert is_functor(diagram)
     identity = PartiallyOrderedSets().identity(poset)
@@ -553,5 +553,16 @@ def test_finite_total_order_routes_coherence() -> None:
     set_img1 = img1._object_image_along((PartiallyOrderedSets().forgetful_functor(),))
     set_img2 = img2._object_image_along((PartiallyOrderedSets().forgetful_functor(),))
     assert set_img1 is set_img2
+
+
+def test_totally_ordered_set_morphism_evaluation_inherited_from_poset_morphism() -> None:
+    ordered = finite_ordered_set((ZZ(int(1)), ZZ(int(2))))
+    hom = TotallyOrderedSets().Hom(ordered, ordered)
+    first_elem = next(iter(ordered))
+    constant_map = hom(lambda member: first_elem)
+    assert constant_map.is_order_preserving()
+    assert constant_map in hom
+    for member in ordered:
+        assert constant_map(member) == first_elem
 
 

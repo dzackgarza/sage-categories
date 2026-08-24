@@ -44,7 +44,7 @@ Construct a poset with:
 
 ```sage
 Poset((members, leq))
-PartiallyOrderedSets()(underlying_set, relation, theorem=...)
+PartiallyOrderedSets()(underlying_set, relation)
 ```
 
 For finite sets, construction evaluates the relation on all pairs and triples:
@@ -56,8 +56,6 @@ For finite sets, construction evaluates the relation on all pairs and triples:
 - The constructor rejects non-transitive relations.
 
 - The constructor rejects relations that return `Unknown`.
-
-For infinite sets, raw relation input requires an exact construction theorem.
 
 ### 3. Totality and category refinement
 
@@ -71,7 +69,7 @@ Construct a total order with:
 
 ```sage
 finite_ordered_set(elements)
-TotallyOrderedSets()(poset, theorem=...)
+TotallyOrderedSets()(poset)
 FiniteTotallyOrderedSets()(poset)
 ```
 
@@ -110,7 +108,7 @@ Construct a morphism with:
 
 ```sage
 Hom = PartiallyOrderedSets().Hom(P, Q)
-f = Hom(mapping, theorem=...)
+f = Hom(mapping)
 ```
 
 Admission rules:
@@ -118,8 +116,6 @@ Admission rules:
 - For finite domains, the constructor verifies monotonicity on all pairs \(x \le_P y\).
 
 - It rejects candidate maps where \(f(x) \le_Q f(y)\) is `False` or `Unknown`.
-
-- For infinite domains, admission requires an explicit `theorem`.
 
 Arrow properties:
 

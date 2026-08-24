@@ -1,5 +1,5 @@
 from collections.abc import Callable, Iterable
-from typing import Protocol
+from typing import Literal, Protocol
 
 from sage_categories.theories.posets import PosetElement
 
@@ -63,5 +63,5 @@ class ExternalPosetConstructor(Protocol):
         self,
         presentation: tuple[tuple[PosetElement, ...], PartialOrder],
         *,
-        facade: bool,
+        facade: Literal[True],
     ) -> ExternalFinitePoset: ...

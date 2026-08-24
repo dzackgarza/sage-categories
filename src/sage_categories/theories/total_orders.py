@@ -137,23 +137,6 @@ class TotallyOrderedSetMorphism(Arrow):
     def _poset_implementation(self) -> PosetMorphism:
         return self._poset_morphism
 
-    def __call__(
-        self,
-        member: TotallyOrderedSetElement,
-    ) -> MathematicalElement:
-        category = self.base_category()
-        assert is_totally_ordered_sets_category(category)
-        source = self.domain()
-        target = self.codomain()
-        assert category.contains_total_order(source)
-        assert category.contains_total_order(target)
-        assert member in source
-        inclusion = category.inclusion()
-        poset_member = inclusion.on_element(source, member)
-        assert is_poset_element(poset_member)
-        image = self._poset_morphism(poset_member)
-        return inclusion.preimage_element(target, image)
-
 
 class TotallyOrderedSetHomCategory(HomCategory):
     """The monotone maps between two totally ordered sets."""
@@ -163,11 +146,14 @@ class TotallyOrderedSetHomCategory(HomCategory):
 
     def __call__(
         self,
-        action: (Callable[[TotallyOrderedSetElement], TotallyOrderedSetElement] | Mapping[TotallyOrderedSetElement, TotallyOrderedSetElement] | TotallyOrderedSetMorphism),
+        action: (
+            Callable[[TotallyOrderedSetElement], TotallyOrderedSetElement]
+            | Mapping[TotallyOrderedSetElement, TotallyOrderedSetElement]
+            | TotallyOrderedSetMorphism
+        ),
         *,
         injective: Decision = UNKNOWN,
         surjective: Decision = UNKNOWN,
-        theorem: str | None = None,
     ) -> TotallyOrderedSetMorphism:
         category = self.base_category()
         assert is_totally_ordered_sets_category(category)
@@ -202,7 +188,6 @@ class TotallyOrderedSetHomCategory(HomCategory):
             poset_action,
             injective=injective,
             surjective=surjective,
-            theorem=theorem,
         )
         return self.ObjectType(
             hom_category=self,
@@ -337,8 +322,6 @@ class FiniteTotallyOrderedSetsCategory(FullSubcategory):
     def __call__(
         self,
         poset: PosetObject | TotallyOrderedSetObject,
-        *,
-        theorem: str | None = None,
     ) -> TotallyOrderedSetObject:
         if self.contains_finite_total_order(poset):
             return poset
@@ -426,8 +409,6 @@ class TotallyOrderedSetsCategory(Category):
     def __call__(
         self,
         poset: PosetObject | FinitePosetObject | TotallyOrderedSetObject,
-        *,
-        theorem: str | None = None,
     ) -> TotallyOrderedSetObject:
         if self.contains_total_order(poset):
             return poset
@@ -436,7 +417,6 @@ class TotallyOrderedSetsCategory(Category):
             assert totality is True, f"{poset} is not a total order (totality={totality})"
             return self.Finite()(poset)
         assert poset in PartiallyOrderedSets(), f"{poset} is not in PartiallyOrderedSets()"
-        assert theorem is not None, f"{poset} requires an exact theorem establishing totality"
         return self.ObjectType(
             category=self,
             poset=poset,

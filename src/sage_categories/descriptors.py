@@ -4,9 +4,15 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Iterator
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from sage_categories.values import Arrow, MathematicalElement, MathematicalObject
+from sage_categories.values import (
+    Arrow,
+    MathematicalElement,
+    MathematicalObject,
+    registered_element,
+    registered_value,
+)
 
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.functors import StructuralFunctor
@@ -20,13 +26,137 @@ class ImplementationRole(Enum):
     ARROW = "arrow"
 
 
+type MethodCallable = Callable[..., Any]
+
+
+def _forward_argument(
+    argument: Any,
+    route: tuple[StructuralFunctor, ...],
+    context: MathematicalObject | MathematicalElement | Arrow,
+) -> Any:
+    """Forward a method argument along a structural-functor route."""
+    if isinstance(context, MathematicalObject):
+        if (element := registered_element(argument)) is not None:
+            if element.ambient_object() is context or element.ambient_object().category() is context.category():
+                return element._element_image_along(route)
+        elif (val := registered_value(argument)) is not None and val.category() is context.category():
+            return val._object_image_along(route)
+        elif (arr := registered_value(argument)) is not None and isinstance(arr, Arrow) and arr.base_category() is context.category():
+            return arr._morphism_image_along(route)
+    elif isinstance(context, MathematicalElement):
+        source_ambient = context.ambient_object()
+        if (element := registered_element(argument)) is not None:
+            if element.ambient_object() is source_ambient or element.ambient_object().category() is source_ambient.category():
+                return element._element_image_along(route)
+        elif (val := registered_value(argument)) is not None and val.category() is source_ambient.category():
+            return val._object_image_along(route)
+        elif (arr := registered_value(argument)) is not None and isinstance(arr, Arrow) and arr.base_category() is source_ambient.category():
+            return arr._morphism_image_along(route)
+    elif isinstance(context, Arrow):
+        source_category = context.base_category()
+        if (arr := registered_value(argument)) is not None and isinstance(arr, Arrow) and arr.base_category() is source_category:
+            return arr._morphism_image_along(route)
+        elif (element := registered_element(argument)) is not None:
+            if element.ambient_object() is context.domain() or element.ambient_object().category() is source_category:
+                return element._element_image_along(route)
+        elif (val := registered_value(argument)) is not None and val.category() is source_category:
+            return val._object_image_along(route)
+    return argument
+
+
+def _transport_args(
+    args: tuple[Any, ...],
+    route: tuple[StructuralFunctor, ...],
+    context: MathematicalObject | MathematicalElement | Arrow,
+) -> tuple[Any, ...]:
+    return tuple(_forward_argument(arg, route, context) for arg in args)
+
+
+def _transport_kwargs(
+    kwargs: dict[str, Any],
+    route: tuple[StructuralFunctor, ...],
+    context: MathematicalObject | MathematicalElement | Arrow,
+) -> dict[str, Any]:
+    return {k: _forward_argument(v, route, context) for k, v in kwargs.items()}
+
+
+def _transport_result(
+    result: Any,
+    route: tuple[StructuralFunctor, ...],
+    context: MathematicalObject | MathematicalElement | Arrow,
+    image_context: MathematicalObject | MathematicalElement | Arrow,
+) -> Any:
+    """Transport a method result value back through the reverse structural route."""
+    if result is image_context:
+        return context
+
+    if isinstance(context, MathematicalObject):
+        target_element = registered_element(result)
+        if target_element is not None and target_element.ambient_object() is image_context:
+            objects: list[MathematicalObject] = [context]
+            prefix: tuple[StructuralFunctor, ...] = ()
+            for functor in route[:-1]:
+                prefix = (*prefix, functor)
+                objects.append(context._object_image_along(prefix))
+            element = target_element
+            for functor, source_object in reversed(tuple(zip(route, objects, strict=True))):
+                element = functor.preimage_element(source_object, element)
+            return element
+    elif isinstance(context, MathematicalElement):
+        source_ambient = context.ambient_object()
+        assert isinstance(image_context, MathematicalElement)
+        target_ambient = image_context.ambient_object()
+        if result is target_ambient:
+            return source_ambient
+        target_element = registered_element(result)
+        if target_element is not None and target_element.ambient_object() is target_ambient:
+            objects = [source_ambient]
+            prefix = ()
+            for functor in route[:-1]:
+                prefix = (*prefix, functor)
+                objects.append(source_ambient._object_image_along(prefix))
+            element = target_element
+            for functor, source_object in reversed(tuple(zip(route, objects, strict=True))):
+                element = functor.preimage_element(source_object, element)
+            return element
+    elif isinstance(context, Arrow):
+        source_codomain = context.codomain()
+        assert isinstance(image_context, Arrow)
+        target_codomain = image_context.codomain()
+        if result is target_codomain:
+            return source_codomain
+        target_element = registered_element(result)
+        if target_element is not None and target_element.ambient_object() is target_codomain:
+            objects = [source_codomain]
+            prefix = ()
+            for functor in route[:-1]:
+                prefix = (*prefix, functor)
+                objects.append(source_codomain._object_image_along(prefix))
+            element = target_element
+            for functor, source_object in reversed(tuple(zip(route, objects, strict=True))):
+                element = functor.preimage_element(source_object, element)
+            return element
+
+    if isinstance(result, Iterator) or (
+        isinstance(result, Iterable) and not isinstance(result, (str, bytes, MathematicalObject, MathematicalElement, Arrow, dict, tuple))
+    ):
+
+        def lazy_results() -> Iterator[Any]:
+            for item in result:
+                yield _transport_result(item, route, context, image_context)
+
+        return lazy_results()
+
+    return result
+
+
 class ForwardedObjectMethod:
     """Forward an object method along a structural-functor route."""
 
     def __init__(
         self,
         route: tuple[StructuralFunctor, ...],
-        method: Callable[..., object],
+        method: MethodCallable,
     ) -> None:
         assert route
         self._route = route
@@ -36,82 +166,17 @@ class ForwardedObjectMethod:
         self,
         instance: MathematicalObject | None,
         owner: type[MathematicalObject] | None = None,
-    ) -> ForwardedObjectMethod | Callable[..., object]:
+    ) -> ForwardedObjectMethod | MethodCallable:
         if instance is None:
             return self
 
         image = instance._object_image_along(self._route)
 
-        if self._method.__name__ == "__contains__":
-
-            def contains(candidate: object) -> bool:
-                from sage_categories.values import registered_element
-
-                source_element = registered_element(candidate)
-                if source_element is None or source_element.ambient_object() is not instance:
-                    return False
-                target = source_element._element_image_along(self._route)
-                return bool(self._method(image, target))
-
-            return contains
-
-        if self._method.__name__ == "__iter__":
-
-            def iterate() -> Iterator[MathematicalElement]:
-                from sage_categories.values import registered_element
-
-                target_raw = self._method(image)
-                assert isinstance(target_raw, Iterable)
-                target_elements: Iterable[object] = target_raw
-                objects: list[MathematicalObject] = [instance]
-                prefix: tuple[StructuralFunctor, ...] = ()
-                for functor in self._route[:-1]:
-                    prefix = (*prefix, functor)
-                    objects.append(instance._object_image_along(prefix))
-                route_and_objects = tuple(zip(self._route, objects, strict=True))
-                for target in target_elements:
-                    target_element = registered_element(target)
-                    assert target_element is not None
-                    element = target_element
-                    for functor, source_object in reversed(route_and_objects):
-                        element = functor.preimage_element(source_object, element)
-                    yield element
-
-            return iterate
-
-        def call(*args: object, **kwargs: object) -> object:
-            from sage_categories.values import (
-                registered_element,
-                registered_value,
-            )
-
-            forwarded_args: list[object] = []
-            for argument in args:
-                if (element := registered_element(argument)) is not None and element.ambient_object() is instance:
-                    forwarded_args.append(element._element_image_along(self._route))
-                elif (val := registered_value(argument)) is not None and val.category() is instance.category():
-                    forwarded_args.append(val._object_image_along(self._route))
-                elif (arr := registered_value(argument)) is not None and isinstance(arr, Arrow) and arr.base_category() is instance.category():
-                    forwarded_args.append(arr._morphism_image_along(self._route))
-                else:
-                    forwarded_args.append(argument)
-
-            result = self._method(image, *forwarded_args, **kwargs)
-
-            if result is image:
-                return instance
-            target_element = registered_element(result)
-            if target_element is not None and target_element.ambient_object() is image:
-                objects: list[MathematicalObject] = [instance]
-                prefix: tuple[StructuralFunctor, ...] = ()
-                for functor in self._route[:-1]:
-                    prefix = (*prefix, functor)
-                    objects.append(instance._object_image_along(prefix))
-                element = target_element
-                for functor, source_object in reversed(tuple(zip(self._route, objects, strict=True))):
-                    element = functor.preimage_element(source_object, element)
-                return element
-            return result
+        def call(*args: Any, **kwargs: Any) -> Any:
+            forwarded_args = _transport_args(args, self._route, instance)
+            forwarded_kwargs = _transport_kwargs(kwargs, self._route, instance)
+            result = self._method(image, *forwarded_args, **forwarded_kwargs)
+            return _transport_result(result, self._route, instance, image)
 
         return call
 
@@ -122,7 +187,7 @@ class ForwardedElementMethod:
     def __init__(
         self,
         route: tuple[StructuralFunctor, ...],
-        method: Callable[..., object],
+        method: MethodCallable,
     ) -> None:
         assert route
         self._route = route
@@ -132,49 +197,17 @@ class ForwardedElementMethod:
         self,
         instance: MathematicalElement | None,
         owner: type[MathematicalElement] | None = None,
-    ) -> ForwardedElementMethod | Callable[..., object]:
+    ) -> ForwardedElementMethod | MethodCallable:
         if instance is None:
             return self
 
-        source_ambient = instance.ambient_object()
         image = instance._element_image_along(self._route)
-        target_ambient = image.ambient_object()
 
-        def call_element(*args: object, **kwargs: object) -> object:
-            from sage_categories.values import (
-                registered_element,
-                registered_value,
-            )
-
-            forwarded_args: list[object] = []
-            for argument in args:
-                if (element := registered_element(argument)) is not None and element.ambient_object() is source_ambient:
-                    forwarded_args.append(element._element_image_along(self._route))
-                elif (val := registered_value(argument)) is not None and val.category() is source_ambient.category():
-                    forwarded_args.append(val._object_image_along(self._route))
-                elif (arr := registered_value(argument)) is not None and isinstance(arr, Arrow) and arr.base_category() is source_ambient.category():
-                    forwarded_args.append(arr._morphism_image_along(self._route))
-                else:
-                    forwarded_args.append(argument)
-
-            result = self._method(image, *forwarded_args, **kwargs)
-
-            if result is target_ambient:
-                return source_ambient
-            if result is image:
-                return instance
-            target_element = registered_element(result)
-            if target_element is not None and target_element.ambient_object() is target_ambient:
-                objects: list[MathematicalObject] = [source_ambient]
-                prefix: tuple[StructuralFunctor, ...] = ()
-                for functor in self._route[:-1]:
-                    prefix = (*prefix, functor)
-                    objects.append(source_ambient._object_image_along(prefix))
-                element = target_element
-                for functor, source_object in reversed(tuple(zip(self._route, objects, strict=True))):
-                    element = functor.preimage_element(source_object, element)
-                return element
-            return result
+        def call_element(*args: Any, **kwargs: Any) -> Any:
+            forwarded_args = _transport_args(args, self._route, instance)
+            forwarded_kwargs = _transport_kwargs(kwargs, self._route, instance)
+            result = self._method(image, *forwarded_args, **forwarded_kwargs)
+            return _transport_result(result, self._route, instance, image)
 
         return call_element
 
@@ -185,7 +218,7 @@ class ForwardedArrowMethod:
     def __init__(
         self,
         route: tuple[StructuralFunctor, ...],
-        method: Callable[..., object],
+        method: MethodCallable,
     ) -> None:
         assert route
         self._route = route
@@ -195,37 +228,23 @@ class ForwardedArrowMethod:
         self,
         instance: Arrow | None,
         owner: type[Arrow] | None = None,
-    ) -> ForwardedArrowMethod | Callable[..., object]:
+    ) -> ForwardedArrowMethod | MethodCallable:
         if instance is None:
             return self
 
         image = instance._morphism_image_along(self._route)
-        source_category = instance.base_category()
 
-        def call_arrow(*args: object, **kwargs: object) -> object:
-            from sage_categories.values import (
-                registered_element,
-                registered_value,
-            )
-
-            forwarded_args: list[object] = []
-            for argument in args:
-                if (arr := registered_value(argument)) is not None and isinstance(arr, Arrow) and arr.base_category() is source_category:
-                    forwarded_args.append(arr._morphism_image_along(self._route))
-                elif (element := registered_element(argument)) is not None and element.ambient_object() is instance.domain():
-                    forwarded_args.append(element._element_image_along(self._route))
-                elif (val := registered_value(argument)) is not None and val.category() is source_category:
-                    forwarded_args.append(val._object_image_along(self._route))
-                else:
-                    forwarded_args.append(argument)
-
-            result = self._method(image, *forwarded_args, **kwargs)
-
-            if result is image:
-                return instance
-            return result
+        def call_arrow(*args: Any, **kwargs: Any) -> Any:
+            forwarded_args = _transport_args(args, self._route, instance)
+            forwarded_kwargs = _transport_kwargs(kwargs, self._route, instance)
+            result = self._method(image, *forwarded_args, **forwarded_kwargs)
+            return _transport_result(result, self._route, instance, image)
 
         return call_arrow
 
 
-type ForwardedDescriptor = ForwardedObjectMethod | ForwardedElementMethod | ForwardedArrowMethod
+type ForwardedDescriptor = (
+    ForwardedObjectMethod
+    | ForwardedElementMethod
+    | ForwardedArrowMethod
+)

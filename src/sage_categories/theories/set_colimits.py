@@ -81,7 +81,7 @@ class ColimitElement(MathematicalElement):
     def representative(self) -> CoproductElement:
         return self._representative
 
-    def __eq__(self, candidate: object) -> bool:
+    def __eq__(self, candidate: Any) -> bool:
         if candidate is self:
             return True
         value = registered_value(candidate)

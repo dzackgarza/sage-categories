@@ -66,11 +66,53 @@ class HomCategory(Category):
         """Construct the identity when this is an endomorphism category."""
         if value is not None:
             return Category.identity(self, value)
-        assert False, f"{self.base_category()} does not define identity arrows"
+        assert self.domain() is self.codomain()
+        structural_functor = self._arrow_construction_functor()
+        image = structural_functor.codomain().identity(
+            structural_functor.on_object(self.domain()),
+        )
+        return structural_functor._lift_morphism(
+            self.domain(),
+            self.codomain(),
+            image,
+        )
 
     def compose(self, second: Arrow, first: Arrow) -> Arrow:
         """Construct ``second`` after ``first``."""
-        assert False, f"{self.base_category()} does not define arrow composition"
+        assert first.domain() is self.domain()
+        assert first.codomain() is second.domain()
+        assert second.codomain() is self.codomain()
+        structural_functor = self._arrow_construction_functor()
+        image = structural_functor.codomain().compose(
+            structural_functor.on_morphism(second),
+            structural_functor.on_morphism(first),
+        )
+        return structural_functor._lift_morphism(
+            self.domain(),
+            self.codomain(),
+            image,
+        )
+
+    def _arrow_construction_functor(self) -> StructuralFunctor:
+        functors = tuple(
+            functor
+            for functor in self.base_category().super_functors()
+            if functor.is_faithful()
+        )
+        assert functors, f"{self.base_category()} has no faithful structural functor"
+        return functors[0]
+
+    def _from_structural_image(self, image: Arrow) -> Arrow:
+        structural_functor = self._arrow_construction_functor()
+        assert image in structural_functor.codomain().Hom(
+            structural_functor.on_object(self.domain()),
+            structural_functor.on_object(self.codomain()),
+        )
+        return structural_functor._lift_morphism(
+            self.domain(),
+            self.codomain(),
+            image,
+        )
 
     def __repr__(self) -> str:
         return f"Hom({self._domain}, {self._codomain}) in {self.base_category()}"

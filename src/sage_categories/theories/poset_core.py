@@ -189,30 +189,13 @@ class PosetObject(MathematicalObject):
         return f"Partially ordered {self._underlying_set}"
 
 
-class PosetMorphism(Arrow):
+class PosetMorphism(TransportedArrow):
     """An order-preserving map with its underlying set function."""
 
-    def __init__(
-        self,
-        *,
-        hom_category: PosetHomCategory,
-        underlying_function: SetMorphism,
-    ) -> None:
-        source = hom_category.domain()
-        target = hom_category.codomain()
-        category = hom_category.base_category()
-        assert is_partially_ordered_sets_category(category)
-        assert PartiallyOrderedSets().contains_poset(source)
-        assert PartiallyOrderedSets().contains_poset(target)
-        assert underlying_function in Sets().Hom(
-            PartiallyOrderedSets().underlying_set(source),
-            PartiallyOrderedSets().underlying_set(target),
-        )
-        self._underlying_function = underlying_function
-        super().__init__(hom_category=hom_category)
-
     def _set_implementation(self) -> SetMorphism:
-        return self._underlying_function
+        image = self._ambient_implementation()
+        assert Sets().contains_set_morphism(image)
+        return image
 
     def is_order_preserving(self) -> bool:
         return True
@@ -244,13 +227,14 @@ class PosetMorphism(Arrow):
         return self.is_order_reflecting()
 
     def is_order_isomorphism(self) -> Decision:
-        bijective = self._underlying_function.is_bijective()
+        bijective = self._set_implementation().is_bijective()
         reflecting = self.is_order_reflecting()
         if bijective is False or reflecting is False:
             return False
         if bijective is UNKNOWN or reflecting is UNKNOWN:
             return UNKNOWN
         return True
+
 
 def check_order_preserving(
     source: PosetObject,
@@ -328,10 +312,9 @@ class PosetHomCategory(HomCategory):
         assert Sets().contains_set_morphism(underlying)
         assert underlying.domain() is PartiallyOrderedSets().underlying_set(self.domain())
         assert underlying.codomain() is PartiallyOrderedSets().underlying_set(self.codomain())
-        return self.ObjectType(
-            hom_category=self,
-            underlying_function=underlying,
-        )
+        result = self._from_structural_image(underlying)
+        assert self.contains_poset_morphism(result)
+        return result
 
     def from_hypothesis(
         self,
@@ -343,36 +326,6 @@ class PosetHomCategory(HomCategory):
         assert hypothesis.category() is self
         assert hypothesis.candidate() is underlying
         assert assumptions.establishes(hypothesis) is True
-        return self._construct(underlying)
-
-    def identity(self) -> PosetMorphism:
-        assert self.domain() is self.codomain()
-        category = self.base_category()
-        assert is_partially_ordered_sets_category(category)
-        source = self.domain()
-        assert PartiallyOrderedSets().contains_poset(source)
-        underlying = Sets().identity(PartiallyOrderedSets().underlying_set(source))
-        assert Sets().contains_set_morphism(underlying)
-        return self._construct(underlying)
-
-    def compose(self, second: Arrow, first: Arrow) -> PosetMorphism:
-        second_hom = second.hom_category()
-        first_hom = first.hom_category()
-        assert is_poset_hom_category(second_hom)
-        assert is_poset_hom_category(first_hom)
-        assert second_hom.contains_poset_morphism(second)
-        assert first_hom.contains_poset_morphism(first)
-        assert first.domain() is self.domain()
-        assert first.codomain() is second.domain()
-        assert second.codomain() is self.codomain()
-        category = self.base_category()
-        assert is_partially_ordered_sets_category(category)
-        forgetful_functor = PartiallyOrderedSets().forgetful_functor()
-        underlying = Sets().compose(
-            forgetful_functor.on_morphism(second),
-            forgetful_functor.on_morphism(first),
-        )
-        assert Sets().contains_set_morphism(underlying)
         return self._construct(underlying)
 
     def contains_poset_morphism(

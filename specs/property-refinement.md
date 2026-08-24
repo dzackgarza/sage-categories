@@ -8,7 +8,7 @@ For an owned predicate \(P\) and its property category \(C_P\):
 |---|---|---|
 | Construct in \(C\) | Assert no property | Ordinary object of \(C\) |
 | Check \(P(x)\) | Run available exact algorithms | `True`, `False`, or `Unknown` |
-| Assume \(P(x)\) | Work under hypothesis \(P(x)\) | Refined object relative to that context |
+| Assume \(P(x)\) | Add \(P(x)\) to the active mathematical session | Refinement available without computation |
 | Construct in \(C_P\) | Trust the explicitly chosen property constructor | Object of \(C_P\) |
 | Named construction theorem | The construction establishes \(P\) | Unconditional object of \(C_P\) |
 
@@ -41,33 +41,30 @@ An assumption API is useful, but strings are the wrong representation. This:
 assume(f, "is_injective")
 ```
 
-should instead use an applied mathematical predicate:
+should instead use an applied mathematical predicate with the standard assumption mechanism:
 
 ```python
-injective(f)
-order_preserving(f)
-total_order(X)
+assume(injective(f))
+assume(order_preserving(f))
+assume(total_order(X))
 ```
 
-A scoped context can then contain these propositions:
-
-```python
-context = AssumptionsContext(injective(f))
-```
+The active Sage REPL or notebook session is the mathematical context. Consumers do not construct, pass, or retain separate context objects. Sage, SymPy, or another selected engine owns assumption storage and scope.
 
 The kernel can use the same proposition for:
 
-- `f.is_injective(context)`;
+- `f.is_injective()`;
 - containment in the monomorphism category;
 - hypothesis-backed refinement;
 - inference through composition;
 - dispatch to SymPy, Sage, GAP, or another internal engine.
 
-The context must remain explicit and scoped. A process-global `assume()` would let hypotheses escape their mathematical context.
+Backend code can use the engine's temporary assumption facilities, closures, or local variables. It must not expose a second assumption-context abstraction to mathematical consumers.
 
-There are also two distinct meanings of “trusted”:
+There are three routes that do not require enumeration:
 
-- A user-supplied hypothesis is true relative to an assumption context.
+- Direct construction in a property category trusts the categorical placement selected by the user.
+- An applied predicate in the active assumption state supplies a hypothesis about an existing value.
 - A named construction theorem gives an unconditional object of the property category.
 
 For example, the identity map is injective by its construction. It needs no assumption. An arbitrary callable placed into `MonoArrows(Sets)` uses a trusted hypothesis unless a checked constructor proves injectivity.
@@ -75,13 +72,12 @@ For example, the identity map is injective by its construction. It needs no assu
 `f.is_injective()` should perform one uniform knowledge query:
 
 1. Category placement can establish `True`.
-2. An explicit hypothesis can establish contextual `True`.
-3. An explicit negative hypothesis can establish contextual `False`.
-4. Exact handlers can compute `True` or `False`.
-5. Inference rules can derive a result.
-6. Otherwise, return `Unknown`.
+2. The active assumption state can establish `True` or `False`.
+3. Exact handlers can compute `True` or `False`.
+4. Inference rules can derive a result.
+5. Otherwise, return `Unknown`.
 
-If an exact computation contradicts an active hypothesis, the context is inconsistent. The kernel must report that conflict. It must not silently prefer either result.
+If an exact computation contradicts an active hypothesis, the assumption state is inconsistent. The engine must report that conflict. It must not silently prefer either result.
 
 This removes fields such as:
 
@@ -98,7 +94,8 @@ The remaining policy gap is important. Existing rules distinguish checked, hypot
 - that its property category and predicate are the same mathematical condition;
 - that direct property-category construction is an explicit trust boundary;
 - that lazy computation creates canonical refined images without mutation;
-- that assumptions remain scoped during composition and transport;
+- that the active Sage or SymPy session is the public mathematical context;
+- that backend temporary assumptions use existing engine facilities, closures, or local variables;
 - that contradictory assumptions fail explicitly;
 - that leaves declare only the new predicate and its mathematical inference rules.
 

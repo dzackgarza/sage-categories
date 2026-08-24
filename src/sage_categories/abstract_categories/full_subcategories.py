@@ -5,10 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, TypeIs
 
-from sympy.assumptions import AppliedPredicate
-from sympy.assumptions.assume import AssumptionsContext
-from sympy.assumptions.ask import ask
-
+from sage_categories.assumptions import Hypothesis, HypothesisContext
 from sage_categories.abstract_categories.functors import (
     Functor,
     InclusionFunctor,
@@ -251,10 +248,12 @@ class FullSubcategory(Category):
     def refine_with_hypothesis(
         self,
         ambient: MathematicalObject,
-        hypothesis: AppliedPredicate,
-        assumptions: AssumptionsContext,
+        hypothesis: Hypothesis,
+        assumptions: HypothesisContext,
     ) -> MathematicalObject:
-        assert ask(hypothesis, context=assumptions) is True
+        assert hypothesis.category() is self
+        assert hypothesis.candidate() is ambient
+        assert assumptions.establishes(hypothesis) is True
         ambient = self._canonical_ambient(ambient)
         return self._refine_object(ambient)
 

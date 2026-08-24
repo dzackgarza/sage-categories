@@ -5,9 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING, Any, Self, TypeIs
 
-from sympy.assumptions import AppliedPredicate
-from sympy.assumptions.assume import AssumptionsContext
-from sympy.assumptions.ask import ask
+from sage_categories.assumptions import Hypothesis, HypothesisContext
 
 from sage_categories.abstract_categories.functors import (
     DiscreteCategories,
@@ -365,11 +363,13 @@ class PosetHomCategory(HomCategory):
     def from_hypothesis(
         self,
         underlying: SetMorphism,
-        hypothesis: AppliedPredicate,
-        assumptions: AssumptionsContext,
+        hypothesis: Hypothesis,
+        assumptions: HypothesisContext,
     ) -> PosetMorphism:
         """Construct a morphism under an active monotonicity hypothesis."""
-        assert ask(hypothesis, context=assumptions) is True
+        assert hypothesis.category() is self
+        assert hypothesis.candidate() is underlying
+        assert assumptions.establishes(hypothesis) is True
         return self._construct(underlying)
 
     def identity(self) -> PosetMorphism:
@@ -518,11 +518,13 @@ class PartiallyOrderedSetsCategory(Category):
         self,
         underlying_set: SetObject,
         relation: OrderRelation,
-        hypothesis: AppliedPredicate,
-        assumptions: AssumptionsContext,
+        hypothesis: Hypothesis,
+        assumptions: HypothesisContext,
     ) -> PosetObject:
         """Construct a poset under active partial-order hypotheses."""
-        assert ask(hypothesis, context=assumptions) is True
+        assert hypothesis.category() is self
+        assert hypothesis.candidate() is relation
+        assert assumptions.establishes(hypothesis) is True
         candidate = self._construct(underlying_set, relation)
         return self._strongest_result(candidate, underlying_set)
 

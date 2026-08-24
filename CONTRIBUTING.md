@@ -337,6 +337,20 @@ Grounding examples:
 | `POL-LEAF-021` | Lift a construction through functors, natural transformations, and the new mathematical structure only. A poset product supplies the componentwise order and its action on arrows; its implementation types do not subclass generic product types or reconstruct the underlying set product interface. |
 | `POL-LEAF-022` | Do not require data that defines a stronger structure than the named leaf category. A total order requires a partial order with total comparison; indexing, ranking, unranking, and enumeration belong to separate enumerable or well-ordered refinements. |
 | `POL-LEAF-023` | Do not copy inherited storage, caches, or constructor arguments into a refinement implementation. A finite poset adds finite-poset operations and its inclusion to posets; it recovers the underlying set, relation, elements, and inherited caches through that structural route. |
+| `POL-LEAF-024` | A finished leaf contains its category, minimal defining data, new operations, immediate structural functors, and named constructors. It can also state leaf-specific lifts. |
+| `POL-LEAF-025` | Stop leaf work when it requires route traversal, reverse transport, canonical-image caches, registries, compiler metadata, type reconstruction, or backend selection. Repair the owning foundation first. |
+| `POL-LEAF-026` | Use the first leaf that exposes missing generic infrastructure as an acceptance specimen. Repair the foundation, then delete the leaf workaround. |
+
+## Leaf and kernel boundary
+
+| ID | Policy |
+| --- | --- |
+| `POL-KERNEL-001` | The kernel owns complete structural transport for objects, elements, and arrows. This includes route composition, arguments, results, preimages, and canonical caches. |
+| `POL-KERNEL-002` | The kernel owns generic property-subcategory refinement. It supplies distinct compiled types, inclusions, canonical ambient images, restricted functors, and induced coherences. |
+| `POL-KERNEL-003` | A leaf functor states only its immediate mathematical action on objects, arrows, and elements. It never implements route normalization, reverse transport, or cache management. |
+| `POL-KERNEL-004` | The kernel lifts inherited universal constructions and their arrows. A leaf supplies only its additional structure and its typed closure or preservation conclusion. |
+| `POL-KERNEL-005` | Add a kernel abstraction only when one mathematical declaration replaces the same infrastructure in every applicable leaf. Keep category-specific branches out of the kernel. |
+| `POL-KERNEL-006` | Kernel complexity is valid only when it removes that complexity from theory code. Expose each kernel capability through a mathematical declaration. |
 
 For example, an object of `Modules(R)` can be defined by an action morphism \(\rho:R\to\operatorname{End}(X)\). Its selected functor to `Sets()` recovers \(X\) from \(\rho\) and applies `Sets(X)`. The module category does not implement set operations independently.
 

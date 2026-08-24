@@ -62,7 +62,10 @@ class MethodSignature:
 class DeclaredTransportRoles:
     """Explicit role overrides for one mathematical method declaration."""
 
+    receiver: ParameterRole | None = None
     positional: tuple[tuple[str, ParameterRole], ...] = ()
+    variadic: ParameterRole | None = None
+    keywords: ParameterRole | None = None
     result: ParameterRole | None = None
 
 
@@ -71,11 +74,20 @@ _DECLARED_TRANSPORT_ROLES: dict[int, DeclaredTransportRoles] = {}
 
 def transport_roles(
     *,
+    receiver: ParameterRole | None = None,
     positional: tuple[tuple[str, ParameterRole], ...] = (),
+    variadic: ParameterRole | None = None,
+    keywords: ParameterRole | None = None,
     result: ParameterRole | None = None,
 ) -> Callable[[FunctionType], FunctionType]:
     """Attach explicit transport roles to one method declaration."""
-    declaration = DeclaredTransportRoles(positional, result)
+    declaration = DeclaredTransportRoles(
+        receiver,
+        positional,
+        variadic,
+        keywords,
+        result,
+    )
 
     def declare(method: FunctionType) -> FunctionType:
         _DECLARED_TRANSPORT_ROLES[id(method)] = declaration
@@ -128,7 +140,9 @@ def _annotation_role(annotation: Annotation) -> ParameterRole:
             assert not all(role is ParameterRole.ELEMENT for role in item_roles), (
                 f"{annotation!r} must be an owned mathematical collection"
             )
-        return ParameterRole.VALUE
+        if origin in (Callable, typing.Literal, typing.TypeIs):
+            return ParameterRole.VALUE
+        assert False, f"{annotation!r} must declare an explicit transport role"
     if type(annotation) is type:
         annotation_type = cast(type, annotation)
         if issubclass(annotation_type, Arrow):
@@ -137,7 +151,13 @@ def _annotation_role(annotation: Annotation) -> ParameterRole:
             return ParameterRole.ELEMENT
         if issubclass(annotation_type, MathematicalObject):
             return ParameterRole.OBJECT
-    return ParameterRole.VALUE
+        if annotation_type in (bool, bytes, float, int, str):
+            return ParameterRole.VALUE
+        if issubclass(annotation_type, Enum):
+            return ParameterRole.VALUE
+    if annotation is typing.Any:
+        return ParameterRole.VALUE
+    assert False, f"{annotation!r} must declare an explicit transport role"
 
 
 def method_signature(
@@ -169,9 +189,9 @@ def method_signature(
         annotation = annotations[parameter.name] if parameter.name in annotations else parameter.annotation
         role = declared_positional.get(parameter.name, _annotation_role(annotation))
         if parameter.kind is inspect.Parameter.VAR_POSITIONAL:
-            variadic = role
+            variadic = declared.variadic if declared is not None and declared.variadic is not None else role
         elif parameter.kind is inspect.Parameter.VAR_KEYWORD:
-            keywords = role
+            keywords = declared.keywords if declared is not None and declared.keywords is not None else role
         elif parameter.kind in (
             inspect.Parameter.POSITIONAL_ONLY,
             inspect.Parameter.POSITIONAL_OR_KEYWORD,
@@ -188,6 +208,8 @@ def method_signature(
         ImplementationRole.ELEMENT: ParameterRole.ELEMENT,
         ImplementationRole.ARROW: ParameterRole.ARROW,
     }[implementation_role]
+    if declared is not None and declared.receiver is not None:
+        assert declared.receiver is receiver
     return MethodSignature(
         receiver,
         tuple(positional),

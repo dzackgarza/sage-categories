@@ -77,7 +77,7 @@ The package must absorb the elliptic-curve construction before claiming that wor
 | `POL-MATH-028` | A theorem-backed method constructs its result directly in the established property category. That category placement is the typed mathematical conclusion. The citation remains documentation. Runtime stores no proof text or fabricated `Decision`. |
 | `POL-MATH-029` | For a `Decision`-valued proposition, only the value `True` establishes the proposition. Tests such as `decision is not False`, truthiness, fallthrough, and absence of rejection never turn `Unknown` into evidence. An explicit hypothesis or construction theorem is a separate source of knowledge. |
 | `POL-MATH-030` | Prefer a defining construction or theorem over exhaustive verification, even when verification terminates. Finiteness alone does not justify enumeration when the construction already establishes the property. |
-| `POL-MATH-031` | Make a mathematical fact explicit through the semantic value that states it: category placement, an exact type, a defining arrow, a functor, a universal construction, a named constructor route, an exact predicate result, or a scoped hypothesis. Never create runtime metadata merely to repeat that fact. |
+| `POL-MATH-031` | Make a mathematical fact explicit through the semantic value that states it: category placement, an exact type, a defining arrow, a functor, a universal construction, a named mathematical construction, an exact predicate result, or an active-session assumption. Never create runtime metadata merely to repeat that fact. |
 | `POL-MATH-032` | Treat construction authority as the category, functor, universal construction, or named method whose definition establishes the result. This authority is static mathematical ownership, not runtime data. Never pass, store, register, or inspect an authority token, authority object, marker, or callback to authorize category refinement. |
 | `POL-MATH-033` | Treat ordinary category theory and the stated mathematical definitions as the source model. A missing, unclear, or failing Python representation does not make the mathematics unresolved. Derive the representation from the definition, or report the missing foundational category, functor, arrow, construction, or type. |
 
@@ -88,7 +88,7 @@ Runtime stores the typed cardinality; it does not derive uncountability or carry
 ## Predicates, hypotheses, and assumptions
 
 An applied predicate is a symbolic proposition with typed mathematical arguments, such as `order_preserving(f)`.
-An assumption context is a scoped collection of applied predicates accepted as hypotheses.
+The active Sage or SymPy session is the mathematical assumption context.
 A predicate handler is an exact computation or inference rule for specified semantic types.
 
 | ID | Policy |
@@ -96,27 +96,29 @@ A predicate handler is an exact computation or inference rule for specified sema
 | `POL-ASSUME-001` | Give every assumable proposition an owned mathematical definition. Represent it by a property category or an owned predicate. |
 | `POL-ASSUME-002` | Use SymPy predicates or Sage and Maxima declarations for bespoke runtime assumptions. Do not implement an ad hoc assumption store. |
 | `POL-ASSUME-003` | In a SymPy backend, subclass `Predicate` and register the bespoke predicate on `Q`. Register typed handlers for exact evaluation. |
-| `POL-ASSUME-004` | Store SymPy hypotheses as applied predicates in an explicit `AssumptionsContext`. Pass that context to `ask()`. Translate `None` to the owned `Unknown`. |
+| `POL-ASSUME-004` | Store interactive hypotheses as applied predicates in the active Sage or SymPy assumption state. Let `ask()` read that standard global state. Translate SymPy `None` to the owned `Unknown`. Never create or pass a repository-owned assumption-context object. |
 | `POL-ASSUME-005` | In a Sage symbolic backend, define a bespoke positive property as a user-defined Maxima feature. Use `GenericDeclaration` for Maxima-representable symbols and functions. |
 | `POL-ASSUME-006` | Maxima `featurep()` returns `false` when a feature is not established. Translate this result to `Unknown` unless an exact rule establishes falsity. |
-| `POL-ASSUME-007` | An assumption supplies a hypothesis. It does not prove the applied predicate. A hypothesis-backed constructor requires the active hypothesis before refinement. |
-| `POL-ASSUME-008` | A predicate handler returns `True` only when its exact rule establishes the proposition. Without a hypothesis or exact rule, return `Unknown`. |
-| `POL-ASSUME-009` | Keep engine predicate and context representations inside the backend. Public APIs use owned categories, predicates, hypothesis contexts, and `Decision`. |
-| `POL-ASSUME-010` | A theorem-backed constructor does not store its theorem as an assumption. It constructs the result under `POL-MATH-028`. |
-| `POL-ASSUME-011` | Require each hypothesis-backed route to receive an explicit owned hypothesis context. Never read process-global mutable assumptions. |
+| `POL-ASSUME-007` | `assume(P(x))` supplies the hypothesis and immediately invokes the constructor of the property subcategory defined by `P`. It refines the same owned value without running the decision procedure. |
+| `POL-ASSUME-008` | A predicate handler returns `True` only when its exact rule establishes the proposition. Category placement and an active-session assumption short-circuit that handler. Without either source or an exact rule, return `Unknown`. |
+| `POL-ASSUME-009` | Keep engine predicate representations inside the backend. Public APIs use owned categories, applied predicates, the standard session-level `assume()` operation, and `Decision`. |
+| `POL-ASSUME-010` | A construction-owned theorem does not enter the assumption state. Its implementation constructs directly in the property subcategory under `POL-MATH-028`. |
+| `POL-ASSUME-011` | Backend and theory code never call `assume()` to justify a result. They construct directly in the property subcategory already established by their computation, definition, or theorem. |
 
 For a semantic arrow $f:P\to Q$, `order_preserving(f)` states that $f$ preserves the two owned orders.
 A bare Python callable cannot state this proposition because it does not own the domain and codomain.
 
 In a SymPy backend, `Q.order_preserving(f)` is an applied bespoke predicate.
-Adding it to a local `AssumptionsContext` supplies the proposition as a scoped hypothesis.
-Pass that context explicitly to `ask()` and to the named hypothesis-backed route.
+Adding it to the active assumption state records the session hypothesis.
+The public `assume(order_preserving(f))` operation then refines the owned arrow through
+the constructor of its order-preserving property category.
 A registered handler can instead establish the proposition for supported semantic arrow types.
+When that handler returns exact `True`, it invokes the same property-category constructor.
 
 In a Sage backend, a user-defined Maxima feature can record the corresponding positive symbolic hypothesis.
 This declaration mechanism does not provide a proof or a general inference rule.
 
-See the official documentation for [SymPy predicates and assumption contexts](https://docs.sympy.org/latest/modules/assumptions/index.html), [Sage symbolic assumptions](https://doc.sagemath.org/html/en/reference/calculus/sage/symbolic/assumptions.html), and [Maxima features](https://maxima.sourceforge.io/docs/manual/maxima_singlepage.html).
+See the official documentation for [SymPy predicates and assumptions](https://docs.sympy.org/latest/modules/assumptions/index.html), [Sage symbolic assumptions](https://doc.sagemath.org/html/en/reference/calculus/sage/symbolic/assumptions.html), and [Maxima features](https://maxima.sourceforge.io/docs/manual/maxima_singlepage.html).
 
 ## Semantic representations
 
@@ -252,15 +254,15 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-033` | Define a subcategory only for a genuine mathematical property or structure. Never define one only to select, store, or expose an implementation. |
 | `POL-CAT-034` | Retired. Use `POL-API-021`. |
 | `POL-CAT-035` | Treat an implementation-shaped category or object name as evidence that an established mathematical owner or construction has been missed. Resolve the object, arrows, and construction before adding terminology. |
-| `POL-CAT-036` | Use mathematically standard, total category constructors. Give each construction route its own explicit name and required inputs. |
+| `POL-CAT-036` | Use mathematically standard, total category constructors. Give genuinely different mathematical input forms their own explicit constructors and required inputs. Do not create constructor families merely to distinguish checked, assumed, or theorem-established evidence for one property. |
 | `POL-CAT-037` | Place each constructed result in every property subcategory established by that named route and its required inputs. |
-| `POL-CAT-038` | Keep direct subcategory constructors available as named expert entry points. Correct construction and category placement must not require knowledge of the category graph. |
+| `POL-CAT-038` | Make each property subcategory's constructor its standard public trust boundary. Choosing that constructor asserts the defining property and constructs or self-refines the same owned value in that subcategory. |
 | `POL-CAT-039` | Make each named construction route discoverable through standard categories such as `Sets()`, `Monoids()`, `Groups()`, `Rings()`, `Modules(R)`, and `Algebras(R)`. Keep route selection explicit at the call site. |
 | `POL-CAT-040` | For \(f:X\to Y\), evaluate `f` only on elements of `X` and return elements of `Y`. A morphism never accepts or returns an unowned Python value. |
 | `POL-CAT-041` | Construct or coerce raw representations into elements of the appropriate category objects before morphism evaluation. Keep this conversion outside the morphism. |
 | `POL-CAT-042` | Make Hom-category operations verify that each element's owning object lies in the base category and that evaluation respects the declared domain and codomain. |
-| `POL-CAT-043` | Prefer containment in a named property subcategory over a direct predicate call or an invariant comparison. The containment expression states the mathematical property and its owner. |
-| `POL-CAT-044` | Localize the computation that decides a property in the subcategory's `__contains__` method. Do not retain a second named predicate for the same property. |
+| `POL-CAT-043` | Let a named property subcategory and its owned predicate state one mathematical condition. Use the predicate to request a decision and self-refinement. Use containment to ask whether the value already has that categorical placement. Never replace either with an unrelated invariant comparison. |
+| `POL-CAT-044` | Put the exact decision procedure in the ambient category's owned predicate. Exact `True` invokes the property-subcategory constructor. The property subcategory overrides that predicate with `True` through the refined MRO. Do not duplicate the computation in `__contains__`. |
 | `POL-CAT-045` | Present every derived object through the complete public interface of the category in which it lives. Its construction can add methods but never replace or duplicate the inherited interface. |
 | `POL-CAT-046` | Make a construction subcategory a formal property subcategory of objects known to have that construction. Obtain the object's ordinary interface through selected structural functors. |
 | `POL-CAT-047` | Decide inheritance functors case by case. Select one only when standard mathematical practice treats the source object as an object of the target category with additional structure. |
@@ -273,20 +275,20 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-054` | Declare every relation between categories by a selected structural functor, including an inclusion, identity, or other trivial functor. A category without these functors is disconnected from the owned category graph. |
 | `POL-CAT-055` | Treat a failed structural functor or method compiler as a foundational defect. Its failure does not permit explicit subclassing or another inheritance path. |
 | `POL-CAT-056` | Apply the structural-functor framework to every functorial, universal, and arrow-based construction. Each construction category declares its correct inclusion, projection, source, target, or forgetful functor instead of subclassing an implementation from its image category. |
-| `POL-CAT-057` | Reject the concept of shared elements between categories. Every category owns a distinct `ElementType`, including property subcategories and dynamically constructed categories such as `C.Products()`. |
+| `POL-CAT-057` | Give every category its own object, element, and arrow role declarations. A full property subcategory self-refines the same owned value and places its category-owned role first in the Sage dynamic MRO. Do not allocate a wrapper or second owned value for that refinement. |
 | `POL-CAT-058` | Compile `ElementType` inheritance from selected structural functors by the same mechanism used for `ObjectType` and `ArrowType`. A subcategory never reuses another category's element implementation type. |
 | `POL-CAT-059` | Let each category add local methods to its `ElementType` while inheriting the complete applicable element interface through structural functors. Preserve the category-specific element type even when it adds no local methods. |
-| `POL-CAT-060` | Do not expose `is_X()` methods for properties represented by categories. Let the category own the decision and write `Y in X`; for example, write `f in C.Isomorphisms()`, `S in Sets().Finite()`, and `P in Posets().Products()` instead of `f.is_isomorphism()`, `S.is_finite()`, or `P.is_product()`. |
+| `POL-CAT-060` | Expose an owned `is_X()` method when it is the `Decision`-valued predicate defining a property subcategory. On an ambient value it can compute and self-refine. In the property subcategory its ordinary implementation returns `True` and wins through the MRO. |
 | `POL-CAT-061` | Transport an inherited method through the complete selected-functor route to its declaring implementation. Never stop after the first nonidentity image. |
 | `POL-CAT-062` | Transport the receiver and every mathematical argument, including keyword arguments, through the same complete route. Reverse-transport a returned value only through its established canonical preimage. Keep every newly constructed result in its exact declared mathematical category. |
 | `POL-CAT-063` | Preserve object, element, arrow, iterator, and mathematical collection roles in compiled method signatures. Derive these roles from the owning implementation role and exact declared types. Do not infer them from runtime registries, `isinstance`, method names, or duplicate per-method metadata. |
 | `POL-CAT-064` | Compile special methods and ordinary methods through the same role-driven mechanism. Do not add per-method branches to compensate for incomplete transport. |
 | `POL-CAT-065` | Reverse-transport a lazy result one value at a time. Preserve the source ambient object of every returned element. |
 | `POL-CAT-066` | Key structural images and preimages by both the source ambient object and the source value. Values from different ambient objects must never share a cached image. |
-| `POL-CAT-067` | Apply the same obligation rule to arrow categories. Establish an arrow property by construction, exact computation, explicit hypothesis, or inspected theorem before placing the arrow in that property category. |
-| `POL-CAT-068` | Return a property as `True` from category membership only when every path into that category satisfies `POL-CAT-020` or `POL-CAT-067`. |
-| `POL-CAT-069` | A constructor over arbitrary input data cannot borrow a theorem from one special construction. Its named checking route validates the obligations. A separate named hypothesis route can trust its required mathematical precondition. Put theorem-backed special cases in construction-owned paths. |
-| `POL-CAT-070` | Treat direct implementation construction, private constructors, inclusions, lifts, and internal helpers as category-entry paths. Each path accounts for the same obligations through typed theorem conclusions, explicit hypotheses, or exact computations. It need not prove a theorem at runtime. Internal access is not an exemption. Call `_construct`, `ObjectType`, or another raw allocator only inside the owning construction boundary after that path has established every obligation for the exact supplied value. |
+| `POL-CAT-067` | Apply the same property-constructor rule to arrow categories. Direct property construction, an active-session assumption, exact computation, and construction-owned mathematics all invoke the same property-arrow constructor and self-refine the same owned arrow. |
+| `POL-CAT-068` | Return a property as `True` through category placement or the refined MRO only when the value entered through its property-subcategory constructor under `POL-CAT-020` or `POL-CAT-067`. |
+| `POL-CAT-069` | Give each property subcategory one constructor that trusts its defining property. Do not add checked, hypothesis-backed, or theorem-backed constructor families. An ambient value's owned predicate performs any check; `assume(P(x))` and exact `True` invoke the same property constructor; a named mathematical construction returns through it directly. |
+| `POL-CAT-070` | Treat direct implementation construction, private constructors, inclusions, lifts, and internal helpers as category-entry paths. Each path selects the exact established property category through direct construction, an active assumption, exact computation, or construction-owned mathematics. Internal access is not an exemption. Call `_construct`, `ObjectType`, or another raw allocator only inside the owning category constructor after that target category has been established for the exact supplied value. |
 | `POL-CAT-071` | Reject a compiled method when a declared argument requires structural transport and no exact rule exists. Reject a returned canonical image when its required preimage is absent. Preserve a newly constructed result in its declared category. Never use raw pass-through as a fallback. |
 | `POL-CAT-072` | Transport a collection from its declared mathematical collection type and item role. Do not infer collection semantics from `Iterable` checks or assume that every lazy result contains elements. |
 | `POL-CAT-073` | Treat `X in C` as the mathematical admissibility fact. Exact identity such as `X.category() is C` is an implementation fact and never triggers structural normalization. |
@@ -325,12 +327,13 @@ Grounding examples:
   `PropertySet` or `Sets.PropertyCategory()` does not name a mathematical class: every set can be characterized by a property.
   Such a name mistakes the construction of an ordinary subset for a new kind of set.
 
-- `Sets().construct_finite_set(members, cardinality)` requires the members and finite cardinality.
-  It routes the result into the finite-set subcategory.
-  Other named routes require the exact hypotheses that establish their results.
+- `Sets().Finite()(members, cardinality)` requires the semantic data needed for a finite
+  set and constructs directly in the finite-set subcategory.
+  The countable and uncountable property subcategories own their corresponding constructors.
 
-- Prefer `X in Sets().Finite()` to `X.is_finite()` or `X.cardinality() < infinity`.
-  The finite-set category owns the decision procedure through `Sets().Finite().__contains__`.
+- Use `X.is_finite()` when asking the owned predicate to decide finiteness and refine
+  `X`. Use `X in Sets().Finite()` when asking whether that placement is already established.
+  After refinement, the finite-set implementation returns `True` through the MRO.
 
 - Every `C in Cat` can form `C.Products()`.
   This subcategory can be empty, and its existence does not assert that `C` has all products.
@@ -359,10 +362,10 @@ Grounding examples:
 | `POL-LEAF-017` | Give a full replete subcategory the inherited categorical interface without extra wiring. Descend a limit, colimit, or other functorial construction when closure of its results in the subcategory is declared or derived. |
 | `POL-LEAF-018` | Do not implement an inherited category-owned mathematical operation in a leaf object. A local `__iter__`, `__contains__`, or `cardinality()` on a poset object duplicates the set interface instead of receiving it through the selected functor to `Sets()`. |
 | `POL-LEAF-019` | Do not create a free-standing category to hold the elements of another category. Poset elements belong to `Posets().ElementType`; a separate `PosetElements()` category disconnects their type and inheritance from `Posets()`. |
-| `POL-LEAF-020` | Give every refinement and construction its own compiled object, element, and arrow types. `FinitePosets().ElementType` is distinct from `Posets().ElementType`, and `Posets().Products().ElementType` is distinct from both, even when the new type declares no local methods. |
+| `POL-LEAF-020` | Give every refinement and construction its own category-owned object, element, and arrow role declarations. Property refinement keeps the same owned value and updates its Sage dynamic class so the refined role precedes inherited roles. It never allocates another value merely to obtain the refined type. |
 | `POL-LEAF-021` | Lift a construction through functors, natural transformations, and the new mathematical structure only. A poset product supplies the componentwise order and its action on arrows; its implementation types do not subclass generic product types or reconstruct the underlying set product interface. |
 | `POL-LEAF-022` | Do not require data that defines a stronger structure than the named leaf category. A total order requires a partial order with total comparison; indexing, ranking, unranking, and enumeration belong to separate enumerable or well-ordered refinements. |
-| `POL-LEAF-023` | Do not copy inherited storage, caches, or constructor arguments into a refinement implementation. A finite poset adds finite-poset operations and its inclusion to posets; it recovers the underlying set, relation, elements, and inherited caches through that structural route. |
+| `POL-LEAF-023` | Do not copy inherited storage, caches, or constructor arguments into a property refinement. A finite poset adds finite-poset operations and declares its categorical inclusions. Same-object refinement preserves its underlying set, relation, elements, private realizations, and existing structural images. The refined dynamic MRO supplies inherited operations; the leaf never traverses an inclusion to recover its own state. |
 | `POL-LEAF-024` | A finished leaf contains its category, minimal defining data, new operations, immediate structural functors, and named constructors. It can also state leaf-specific lifts. |
 | `POL-LEAF-025` | Stop leaf work when it requires route traversal, reverse transport, canonical-image caches, registries, compiler metadata, type reconstruction, or runtime backend selection. A fixed private computation dependency is not backend selection. |
 | `POL-LEAF-026` | Use the first leaf that exposes missing generic infrastructure as an acceptance specimen. Repair the foundation, then delete the leaf workaround. |
@@ -372,9 +375,9 @@ Grounding examples:
 | `POL-LEAF-030` | A leaf refinement adds only its leaf-specific structure or private realization. It preserves the inherited method's name, laws, domain, codomain, and mathematical owner. |
 | `POL-LEAF-031` | Delete any leaf method that adds no leaf-specific mathematical or realization step. Generic algorithms, structural transport, wrappers, and public-surface installation belong to their existing owners. |
 | `POL-LEAF-032` | Treat selected structural functors as the complete inheritance program. A finished leaf contains no forwarding, descriptor, route, cache, wrapper, or type-repair boilerplate. |
-| `POL-LEAF-033` | A property-subcategory leaf declares its predicate, inclusion, and named checked, hypothesis-backed, and theorem-backed entry routes. It implements no generic refinement mechanics. |
+| `POL-LEAF-033` | A property-subcategory leaf declares its predicate, inclusion, trusted property constructor, and the ordinary predicate implementation that returns `True` in that subcategory. It declares no checked, hypothesis-backed, or theorem-backed constructor family. |
 | `POL-LEAF-034` | Never give a leaf an ambient-to-refined cache, an identity-keyed refinement table, an ambient wrapper field, or a local refinement constructor. |
-| `POL-LEAF-035` | After an entry route establishes its property, delegate to the generic kernel refinement operation. Perform no leaf-local allocation, cache mutation, narrowing, or repeated membership assertion. |
+| `POL-LEAF-035` | Direct construction, `assume(P(x))`, exact `True`, and construction-owned mathematics all invoke the same generic self-refinement through the property-subcategory constructor. The leaf performs no allocation, cache mutation, narrowing, or repeated membership assertion. |
 | `POL-LEAF-036` | Treat a type error in leaf refinement machinery as evidence that the kernel lacks a typed refinement contract. Repair that contract and delete the leaf machinery. |
 | `POL-LEAF-037` | Never discover, inspect, compose, or traverse structural routes in a leaf. Declare immediate structural functors and use the resulting public inherited surface. |
 | `POL-LEAF-038` | Never call private image or preimage transport from a leaf for an object, element, or arrow. All such transport belongs to the kernel. |
@@ -410,7 +413,7 @@ It does not reimplement composition, structural transport, domain checks, codoma
 | ID | Policy |
 | --- | --- |
 | `POL-KERNEL-001` | The kernel owns complete structural transport for objects, elements, and arrows. This includes route composition, arguments, results, preimages, and canonical caches. |
-| `POL-KERNEL-002` | The kernel owns generic property-subcategory refinement. It supplies distinct compiled types, inclusions, canonical ambient images, restricted functors, and induced coherences. |
+| `POL-KERNEL-002` | The kernel owns generic same-object property refinement. It strengthens the owned value's category, rebuilds its Sage dynamic MRO from category-owned role declarations, and preserves identity, construction data, private realizations, and existing structural images. Structural functor images remain a separate mechanism. |
 | `POL-KERNEL-003` | A leaf functor states only its immediate mathematical action on objects, arrows, and elements. It never implements route normalization, reverse transport, or cache management. |
 | `POL-KERNEL-004` | The kernel lifts inherited universal constructions and their arrows. A leaf supplies only its additional structure and its typed closure or preservation conclusion. |
 | `POL-KERNEL-005` | Add a kernel abstraction only when one mathematical declaration replaces the same infrastructure in every applicable leaf. Keep category-specific branches out of the kernel. |
@@ -420,9 +423,9 @@ It does not reimplement composition, structural transport, domain checks, codoma
 | `POL-KERNEL-009` | Derive mathematical roles from typed category and functor declarations. Use Python inspection only to realize those declarations in the runtime. |
 | `POL-KERNEL-010` | Keep reflective installation and structural dispatch for inherited methods inside the kernel. Expose the resulting typed mathematical surface without wrappers or repeated reflection in theory code. |
 | `POL-KERNEL-011` | Kernel permissions do not permit `Any`, `object`, casts, ignored diagnostics, fallbacks, or fabricated mathematical evidence. |
-| `POL-KERNEL-012` | Provide one typed canonical refinement operation for objects, elements, and arrows of every full property subcategory. |
-| `POL-KERNEL-013` | Generic refinement constructs the target implementation, retains its ambient image, caches the canonical image, and establishes coherence once. Leaves never repeat these steps. |
-| `POL-KERNEL-014` | Compile each property subcategory's distinct object, element, and arrow types from its declarations. A leaf never hand-writes a wrapper solely to store an ambient implementation. |
+| `POL-KERNEL-012` | Provide one typed same-object self-refinement operation for objects, elements, and arrows of every full property subcategory. Every positive evidence source converges on that operation through the property-subcategory constructor. |
+| `POL-KERNEL-013` | Generic property refinement preserves the same Python and mathematical identity. It joins the current category with the property subcategory and updates the Sage dynamic class and MRO in place. It creates no target implementation, ambient wrapper, canonical refinement image, or refinement cache. |
+| `POL-KERNEL-014` | Compile each property subcategory's category-owned object, element, and arrow role declarations into the refined value's dynamic MRO. The property role contributes its new mathematics before inherited roles. A leaf never constructs a wrapper or second value to obtain that surface. |
 | `POL-KERNEL-015` | A kernel `try`/`except` can only add exact context, translate to a more precise kernel exception while preserving the cause, or perform mandatory cleanup before re-raising. |
 | `POL-KERNEL-016` | Every kernel catch terminates the current operation. It never selects another implementation, retries, suppresses a diagnostic, continues computation, or returns an ordinary value. |
 | `POL-KERNEL-017` | The kernel alone discovers, composes, and traverses structural routes and invokes image or preimage transport. Theory code never sees these operations. |
@@ -645,8 +648,8 @@ When an established finite algorithm requires a primitive loop bound, lower the 
 | `POL-API-018` | Use an abstract method when every concrete object must supply an implementation. Prevent construction of an incomplete concrete object instead of deferring the failure to a method call. |
 | `POL-API-019` | When an operation requires a capability, place it on the category that supplies that capability and let the method compiler expose it there. Do not install a failing placeholder on objects outside that category. |
 | `POL-API-020` | When a mathematical operation exists but available algorithms cannot determine its result, return its typed unknown value, such as `Decision` or `bool \| Unknown`. Do not replace missing knowledge with a runtime failure. |
-| `POL-API-021` | Make every method and constructor total on its declared domain. Require every argument. Never use optional parameters, default values, `None` sentinels, or fallback behavior. Give each distinct construction or computation route a separate explicit method name. Each route establishes and supplies every input to the total operation. |
-| `POL-API-022` | Separate checked, hypothesis-backed, and theorem-backed admission into named total methods. A checked method computes and requires `True`. A hypothesis-backed method trusts its stated mathematical precondition. A theorem-backed method constructs the result directly in the property category established by its theorem. Never select these routes with a Boolean, `Decision`, default, proof object, or prose. |
+| `POL-API-021` | Make every method and constructor total on its declared domain. Require every argument. Never use optional parameters, default values, `None` sentinels, or fallback behavior. Give genuinely different mathematical input forms or computations separate explicit names. An evidence source for one property is not another constructor form. |
+| `POL-API-022` | Let each property subcategory own one trusted constructor for its defining property. Do not add checked, hypothesis-backed, or theorem-backed constructor families. The ambient value's predicate owns exact computation, `assume(P(x))` uses the active session, and named mathematical constructions return directly through the same property constructor. Never select evidence with a Boolean, `Decision`, default, proof object, or prose. |
 | `POL-API-023` | Never require a caller to supply a value uniquely determined by an established mathematical object or its category placement. Obtain that value from its owner. In particular, an isomorphism supplies its inverse; no leaf helper accepts a second candidate inverse. |
 | `POL-TYPE-001` | Give every value the type that names its mathematical role. |
 | `POL-TYPE-002` | Distinguish categories, objects, elements, arrows, functors, rings, sets, domains, and codomains in types. |
@@ -667,7 +670,7 @@ When an established finite algorithm requires a primitive loop bound, lower the 
 | `POL-TYPE-017` | Type every morphism by the element types of its domain and codomain categories. Do not widen either endpoint to a generic mathematical-object type. |
 | `POL-TYPE-018` | Give every category its own semantic object, element, and arrow types through `ObjectType`, `ElementType`, and `ArrowType`. Use those types throughout that category's API. |
 | `POL-TYPE-019` | Type each method parameter and result by the most specific category that supplies the required structure. Do not widen it to an element or object type from a supercategory. |
-| `POL-TYPE-020` | Preserve category-specific types even when a category adds no new runtime fields or methods. Reusing an implementation does not erase the mathematical refinement. |
+| `POL-TYPE-020` | Preserve category-specific role types even when a category adds no new runtime fields or methods. Same-object property refinement updates the Sage dynamic class to include the refined role. It does not erase the refinement or allocate a second semantic value. |
 | `POL-TYPE-021` | Admit raw Python container types only inside the implementation kernel, a backend adapter, or a dedicated interoperation module. Convert them immediately into the required mathematical collection before theory code receives them. A theory constructor or helper is not such a boundary. |
 | `POL-TYPE-022` | Use `Iterator[T]` only for the Python traversal protocol or a private lazy-enumeration result. It never replaces a named mathematical collection in a theory-layer input or result. |
 | `POL-TYPE-023` | Treat type-checker and import output as diagnostic signals. An error can falsify the current implementation, but it cannot establish a new architecture, mathematical owner, or runtime carrier. The mathematical definitions, category ownership, and functor declarations determine correctness. |
@@ -708,13 +711,16 @@ When its cardinality is not determined, the method returns the unknown cardinali
 A method available only under an additional mathematical hypothesis belongs to the corresponding property category.
 
 For example, a total set constructor requires a typed cardinality.
-Named routes such as `construct_finite_set`, `construct_countably_infinite_set`, and `construct_uncountable_set` establish and supply that cardinality before they call it.
+The finite, countably infinite, and uncountable property subcategories each own the
+constructor that requires and supplies the semantic cardinal data for that property.
 
 Likewise, a natural interval constructor constructs its result directly in the total-order category.
 The identity constructor constructs its result directly in the poset Hom category.
 A named squaring builder on `NN` constructs its result directly in the same Hom category.
 These methods rely on their defining theorems and do not run exhaustive decision procedures.
-Reserve an exhaustive checking route for arbitrary relations and maps whose properties are not already established.
+An arbitrary relation or map starts in its ambient category. Its owned predicate performs
+any available exact check. Exact `True` self-refines it through the same property-category
+constructor used by the named constructions.
 
 Replace a nondescript name with the exact entity, such as `tensor_coefficients`, `ordered_set`, or `set_morphism`.
 

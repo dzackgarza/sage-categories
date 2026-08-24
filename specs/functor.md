@@ -112,6 +112,14 @@ For an object presented as a tuple, `ProductProjectionFunctor(i, D, C)` selects 
 `i` of each object and the corresponding component of each arrow. It also acts on
 elements when that component has a mathematical element map.
 
+The standard structured-object contract stores one private `defining_data` tuple.
+Projection `i` maps an object to entry `i`. The kernel derives the corresponding arrow
+and element maps. A leaf does not implement those maps.
+
+The constructor first extracts this tuple from the strongest semantic datum. It does not
+request weaker components that the datum already determines. For example, a relation
+subobject `R` of `X × X` already determines `X` from its ambient product.
+
 The tuple returned by `structure_functors()` is not the category's complete functor
 catalogue. It contains only the immediate functors selected to supply inherited public
 structure.

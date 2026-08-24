@@ -203,11 +203,43 @@ that defines the category. Those constructors can choose any suitable private
 representation. Public code does not construct engine values to select an
 implementation.
 
-The category layer also defines the immediate structural functors. Each object map
-uses a public constructor route of the target category to construct the required
-mathematical image. For example, a functor from a leaf to its immediate supercategory
-must understand that supercategory's constructors. It must not expose a private engine
-conversion as the structural map.
+## Construct from the strongest defining data
+
+A leaf constructor accepts the smallest semantic datum that determines its new
+structure. It recovers immediate ancestor objects from that datum. It does not ask the
+caller to repeat them.
+
+For a poset, an owned relation subobject
+
+\[
+R\hookrightarrow X\times X
+\]
+
+already determines `X`. The constructor extracts the two factors, verifies that they
+are the same set, and stores the defining pair `(X, R)`. Its selected carrier projection
+maps that pair to `X`. The relation projection is not selected for inheritance.
+
+The same rule applies downstream:
+
+- An algebra structure morphism `R -> End(X)` determines both `R` and `X`.
+- A bilinear form `b` in `Hom_R(TL[2], R)` determines its module `L` and base ring `R`.
+- A lattice constructor can accept `b`, or the explicit pair `(L, b)` when that pair is
+  the intended public presentation.
+
+A downstream leaf selects its immediate structural ancestor. It never reconstructs or
+requests an explicit underlying set. Some category on the inherited route already owns
+that construction and its selected route to `Sets()`.
+
+When added structure does not add element data, the leaf `ElementType` declares no
+constructor. The kernel constructs that exact category-owned element type with its
+ambient object. It also retains the canonical element image under each selected
+projection. The element remains a `C.ElementType`, not an ancestor element type.
+
+The category layer selects the immediate structural functors. The kernel supplies every
+standard inclusion, projection, restriction, lift, and forgetful functor. A leaf defines
+object and arrow maps only when its category introduces a genuinely new functor. It
+never repeats standard projection maps or exposes a private engine conversion as a
+structural map.
 
 If this implementation becomes sufficiently large or dominated by Python, foreign
 interfaces, conversions, process calls, or caches, move that complexity into private

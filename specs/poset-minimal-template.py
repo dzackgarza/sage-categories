@@ -1,15 +1,18 @@
 """Minimal structured leaf for ``PartiallyOrderedSets()``.
 
-A poset object is a pair ``(X, R)``. Here ``X`` is an owned set and ``R`` is
-an owned subobject of ``X × X``. Category placement asserts that ``R`` is
-reflexive, antisymmetric, and transitive.
+A poset object is a pair ``(X, R)``. The constructor accepts only the owned
+relation ``R``. Its ambient product determines ``X``.
 
-The carrier projection ``(X, R) -> X`` is the only selected structural
-functor. It supplies the inherited set surface. The relation remains defining
-poset data.
+The private defining data is ``(X, R)``. The kernel-owned carrier projection
+selects component zero and supplies the inherited set surface. Component one
+remains the order data.
 
-The kernel owns ``ProductProjectionFunctor`` and all its object, element, and
-arrow maps. The leaf only selects that standard functor.
+Elements add no constructor data. The kernel constructs the exact
+``PartiallyOrderedSets().ElementType`` with its ambient poset and retains its
+canonical image in the projected set.
+
+This example presents ``R`` as ``<=``. A strict-order presentation would own
+the corresponding ``<`` operation instead.
 """
 
 from __future__ import annotations
@@ -19,50 +22,55 @@ class PartiallyOrderedSetsCategory(Category):
     """The category of partially ordered sets and monotone maps."""
 
     class ObjectType(Implementation):
-        """Implement a set equipped with a partial-order relation."""
+        """Implement the partial order determined by an owned relation."""
 
         def __init__(
             self,
             *,
             category: PartiallyOrderedSetsCategory,
-            underlying_set: SetsCategory.ObjectType,
-            order_relation: SetSubobject,
+            relation: SetSubset,
         ) -> None:
-            product = underlying_set.cartesian_product(underlying_set)
-            assert order_relation.inclusion().codomain() is product
-            self._underlying_set = underlying_set
-            self._order_relation = order_relation
+            assert relation in Sets().Products().Subsets()
+            factors = relation.factors()
+            assert factors.cardinality() == 2
+            underlying_set = factors[0]
+            assert factors[1] is underlying_set
+            self._defining_data = (underlying_set, relation)
             super().__init__(category=category)
 
-        def order_relation(self) -> SetSubobject:
+        def order_relation(self) -> SetSubset:
             """Return the defining subobject of ``X × X``."""
-            return self._order_relation
+            return self._defining_data[1]
+
+        def elements_are_related(
+            self,
+            left: PartiallyOrderedSetsCategory.ElementType,
+            right: PartiallyOrderedSetsCategory.ElementType,
+        ) -> Proposition:
+            """Return the proposition that ``(left, right)`` belongs to ``R``."""
+            assert left.ambient_object() is self
+            assert right.ambient_object() is self
+            return self.order_relation().contains_pair(left, right)
 
     class ElementType(Implementation):
-        """Implement elements with the operation introduced by order."""
+        """Add order comparison to the inherited element implementation."""
 
         def __le__(
             self,
             other: PartiallyOrderedSetsCategory.ElementType,
         ) -> Proposition:
             """Return the proposition that ``self <= other``."""
-            assert self.parent() is other.parent()
-            return self.parent().order_relation().contains_pair(self, other)
+            return self.ambient_object().elements_are_related(self, other)
 
     class ArrowType(Implementation):
         """Implement monotone maps with the inherited arrow surface."""
 
     def __call__(
         self,
-        underlying_set: SetsCategory.ObjectType,
-        order_relation: SetSubobject,
+        relation: SetSubset,
     ) -> PartiallyOrderedSetsCategory.ObjectType:
-        """Construct the asserted partial order ``(X, R)``."""
-        return self.ObjectType(
-            category=self,
-            underlying_set=underlying_set,
-            order_relation=order_relation,
-        )
+        """Construct the asserted partial order determined by ``relation``."""
+        return self.ObjectType(category=self, relation=relation)
 
     def structure_functors(self) -> tuple[Functor, ...]:
         """Select the carrier projection used for inheritance."""

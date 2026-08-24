@@ -39,7 +39,10 @@ If no policy or specification governs a material decision, surface that document
 gap. Do not invent a local convention and present it as repository architecture.
 
 The package owns its mathematical category graph and public API.
-Sage supplies computation objects, algorithms, coercion, and selected runtime machinery.
+Its category-owned implementation classes can combine Sage, SymPy, GAP, Julia packages,
+Singular, Macaulay2, Cython, shell programs, imported research software, and bespoke
+algorithms. These private engines supply computations. They do not own the mathematical
+API or category graph.
 
 ## Repository state and task entry
 
@@ -145,9 +148,19 @@ The theory layer must read like the mathematics it implements.
 A new category should state its new data and immediate structural functors, then inherit the rest.
 
 A leaf category must state its mathematical data, operations, structural functors, constructors, and lifts.
-Stop local work when a leaf contains generic reflection, dispatch, route traversal, transport, cache ownership, wrappers, or backend selection.
+Stop local work when a leaf contains generic reflection, dispatch, route traversal, transport, cache ownership, wrappers, or public backend selection.
 Treat that wiring as a kernel or backend-boundary defect.
 Repair the owning foundation instead of polishing, moving, or preserving the wiring in a leaf workaround.
+
+The category-owned implementation class is a polyglot algorithm firewall.
+Its ordinary method can use one private engine, several engines, or an imported research
+program. It can select an exact algorithm from the semantic construction and combine
+engine results. This is leaf implementation, not categorical routing.
+
+Use a mature engine construction whenever it discharges logic that would otherwise be
+implemented locally. Do not require one engine to represent the whole object or compute
+every operation. Do not expose engine selection, engine objects, or engine method names
+through the public API.
 
 Foundational categories remain valuable before later theories use them.
 Their value is the mathematical structure they make expressible, not their current number of callers.
@@ -429,6 +442,15 @@ Use private implementation hooks such as `_kernel_matrix_` for matrix algorithms
 Reconstruct the semantic result before returning through the public API.
 Tests and downstream code must not call those hooks or repeat the lowering.
 
+One owned object can retain several private computation representations.
+One method can combine algorithms from several engines when each computes part of the
+semantic result. Select those algorithms from the mathematical construction and exact
+input properties. Never create competing public implementation classes for the engines.
+
+The owning method remains the single source of API meaning. Engine adapters only prepare
+inputs, call mature algorithms, and return data for semantic reconstruction. They never
+install methods, select mathematical owners, or refine categories by themselves.
+
 A public constructor for a module or algebra element accepts semantic elements.
 It must not reinterpret a list, tuple, or numerical vector as such an element.
 To form a finite linear combination, obtain the module generators and write `sum(a_i * g_i)`.
@@ -467,10 +489,19 @@ For example, `QQ` in `Algebras(ZZ)` and `QQ` in `Algebras(QQ)` have different st
 A scalar-change functor relates them.
 Do not erase the base category from the type, parent, or arrow data.
 
-## Sage boundary
+## Sage and external computation engines
 
 The owned framework defines the mathematical categories and their inclusions.
 Native Sage categories do not define this package's mathematical supercategory graph.
+
+Sage is one private computation engine and runtime substrate. It is not the required
+representation for every object and is not an intermediate through which every other
+engine must pass.
+
+A category-owned implementation can use any suitable combination of Sage, SymPy, GAP,
+Julia packages, Singular, Macaulay2, external programs, or local research algorithms.
+Choose each engine because its native mathematical construction supplies the needed
+exact computation. Different methods on the same object can use different engines.
 
 Use Sage for:
 
@@ -485,12 +516,22 @@ Cross into Sage through an explicit realization functor or owned computation bou
 A Sage realization is not a structural functor.
 Its Python methods must not enter the public mathematical API by accident.
 
+Apply the same boundary to every external engine. Keep each engine value private.
+Reconstruct the owned mathematical object, element, arrow, cardinal, or decision before
+return. A method can combine several engine values before this reconstruction.
+
+Do not add a public backend selector, engine registry, competing `ObjectType`, automatic
+engine-method routing, or implementation-specific public operation. The sole
+category-owned implementation class hides the full polyglot computation catalogue.
+
 Do not modify Sage category classes.
 Do not add owned methods to Sage classes.
 Do not preserve a Sage method spelling as a second public owner.
 
-Use an established Sage algorithm before writing a local implementation.
-When Sage lacks an algorithm, keep the operation at its correct owned interface and return an appropriate unknown result.
+Use an established exact algorithm from a suitable engine before writing a local
+implementation. If no applicable theorem or mature exact algorithm determines the
+result, keep the operation at its owned interface and return the appropriate unknown
+value.
 
 ## Public API and types
 

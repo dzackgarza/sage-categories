@@ -354,11 +354,48 @@ A.cardinality()
 Its elements are owned functions with finite support. The cardinality method uses the
 applicable cardinal formula without enumerating an infinite function set.
 
-## SymPy computation boundary
+## Private computation engines
 
-Use SymPy as the first private computation engine for supported symbolic set operations.
-Do not reimplement its set algebra, predicate reduction, image normalization, or standard
-infinite sets. The owned `Sets()` API remains the public boundary.
+`Sets.ObjectType` is the sole public implementation of a set. It can use Sage, SymPy,
+GAP, Julia packages, Singular, Macaulay2, or several engines together. These are private
+algorithm providers, not competing set implementations.
+
+Choose an engine from the mathematical construction and the exact algorithm it supplies.
+Use its native construction whenever that discharges logic which the repository would
+otherwise have to implement. A single owned set can use different engines for
+membership, simplification, enumeration, cardinality, images, and other operations.
+
+Typical engine contributions include:
+
+| Construction or query | Suitable private engine contribution |
+| --- | --- |
+| Explicit or enumerated sets | Sage parents, enumerated sets, and exact iterators |
+| Symbolic subsets and set algebra | SymPy `ConditionSet`, `Intersection`, `Union`, and `Complement` |
+| Symbolic images and arithmetic progressions | SymPy `imageset`, `ImageSet`, and `Range` |
+| Finite-group orbits, cosets, and conjugacy classes | GAP or Sage interfaces to GAP |
+| Polynomial solution sets and algebraic loci | Singular, Macaulay2, Sage, or SymPy algorithms appropriate to the coefficient domain |
+| Specialized exact algorithms exposed by a Julia package | The package's native mathematical construction |
+
+An owned operation can compose engine results. For example, SymPy can normalize a
+predicate intersection to a finite symbolic set. Sage can then supply an owned finite
+enumeration. The set implementation reconstructs one owned result from both computations.
+
+Engine choice is private to the owning method or its private helper. The public API has
+no backend argument, backend registry, engine-specific set class, or alternative method
+name. Engine methods never enter the public surface automatically.
+
+Select engines through the known semantic form of the input. Do not probe engines by
+exception or attempt implementations until one succeeds. If no applicable exact
+algorithm or construction theorem decides the result, return the typed unknown value.
+
+Construction-owned mathematics remains authoritative. For example, the image of an
+established monomorphism has the domain cardinality. No engine must rediscover that
+theorem.
+
+### SymPy set constructions
+
+SymPy supplies mature symbolic set representations and simplification algorithms. Use
+them instead of implementing local symbolic set algebra.
 
 The primary SymPy representations are:
 
@@ -374,8 +411,7 @@ The primary SymPy representations are:
 | Cartesian product | `ProductSet` |
 | Power object | `PowerSet` |
 
-Use SymPy constructors and simplifiers before writing a local symbolic algorithm. For
-example, the Sage-runtime SymPy 1.14 computations are:
+For example, SymPy 1.14 performs these computations:
 
 ```python
 Intersection(S.Naturals, FiniteSet(1, 2, 3))
@@ -420,21 +456,6 @@ cardinal from the normalized result:
 Never use `None` for an unknown cardinality. Never assign the domain cardinality to an
 image unless injectivity or another theorem establishes that equality.
 
-The Sage-to-SymPy conversion is an exact private boundary. Convert Sage integers to
-`sympy.Integer`, Sage rationals to `sympy.Rational`, and owned elements to their exact
-SymPy values before constructing symbolic expressions. Mixing a Sage integer into a
-SymPy lambda can select an incorrect SymPy simplification path.
-
-Select a SymPy algorithm from the exact private representation. Do not call operations
-until one succeeds, catch an engine exception, or use another representation as a
-fallback. If a SymPy operation does not support the representation, retain the owned
-symbolic construction and return the typed unknown result.
-
-Construction-owned mathematics remains authoritative. For example, the image of an
-established monomorphism has the domain cardinality even when SymPy leaves its
-`ImageSet` unevaluated. SymPy computes consequences; it does not replace category
-placement or theorem-backed constructors.
-
 | Owned operation | SymPy value | Required reconstruction |
 | --- | --- | --- |
 | Membership | `Contains(x, X)` | Return `True`, `False`, or Sage `Unknown`. |
@@ -447,8 +468,7 @@ placement or theorem-backed constructors.
 | Cardinal calculation | normalized set type and symbolic properties | Return an owned cardinal value, never `None`. |
 | Universal constructions | symbolic set expressions | Retain all defining arrows and universal maps. |
 
-SymPy methods never enter the public API automatically. The owning set method lowers
-inputs and reconstructs the owned mathematical result. See the [SymPy sets
+The owning set method reconstructs the owned mathematical result. See the [SymPy sets
 documentation](https://docs.sympy.org/latest/modules/sets.html) for the supported
 representations and simplifications.
 
@@ -485,8 +505,10 @@ facts:
 - power-object operations return owned subsets and arrows;
 - countability does not create a chosen enumeration;
 - cardinal methods return cardinal objects;
+- every operation uses a mature engine construction when one supplies the required exact
+  mathematics;
+- one owned set can combine several private engines without exposing an engine choice;
 - supported symbolic set operations use SymPy instead of duplicate local algorithms;
-- every SymPy input crosses an exact Sage-to-SymPy conversion boundary;
 - normalized `FiniteSet` and `Range` results reconstruct their exact owned cardinalities;
 - unevaluated `ConditionSet` and `ImageSet` results reconstruct valid owned sets with
   `UnknownCardinality()` when no theorem decides more;

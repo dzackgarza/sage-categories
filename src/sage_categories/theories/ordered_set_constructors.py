@@ -12,6 +12,7 @@ from sage_categories.theories.poset_core import (
 from sage_categories.theories.sets import (
     FiniteSet,
     NaturalNumbers,
+    ProductElements,
     SetElement,
     SetElements,
 )
@@ -36,18 +37,17 @@ def ordered_set_owned_by(
     underlying_set = FiniteSet(enumeration)
     owned_enumeration = tuple(underlying_set.element(element) for element in enumeration)
     positions: dict[SetElement, int] = {element: index for index, element in enumerate(owned_enumeration)}
+    product = underlying_set.cartesian_product(underlying_set)
+    indices = tuple(product.index_set())
+    assert len(indices) == 2
 
-    def ordered_relation(left: PosetElement, right: PosetElement) -> bool:
-        forgetful_functor = PartiallyOrderedSets().forgetful_functor()
-        left_element = forgetful_functor.on_element(left.ambient_poset(), left)
-        right_element = forgetful_functor.on_element(right.ambient_poset(), right)
-        assert SetElements().contains_set_element(left_element)
-        assert SetElements().contains_set_element(right_element)
-        return positions[left_element] <= positions[right_element]
+    def ordered_relation(pair: SetElement) -> bool:
+        assert ProductElements().contains_product_element(pair)
+        return positions[pair.component(indices[0])] <= positions[pair.component(indices[1])]
 
     poset = PartiallyOrderedSets()(
         underlying_set,
-        ordered_relation,
+        product.subset_from(ordered_relation),
     )
     total_order = TotallyOrderedSets().refine_from_theorem(poset)
     finite_total_order = FiniteTotallyOrderedSets().refine_from_theorem(total_order)

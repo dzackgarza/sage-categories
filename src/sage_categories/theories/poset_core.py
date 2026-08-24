@@ -24,6 +24,7 @@ from sage_categories.theories.sets import (
     SetElements,
     SetMorphism,
     SetObject,
+    SetSubset,
     Sets,
     SetsCategory,
     is_products_of_sets_category,
@@ -46,7 +47,7 @@ if TYPE_CHECKING:
     )
     from sage_categories.theories.thin_categories import ThinCategory
 
-type OrderRelation = Callable[[PosetElement, PosetElement], Decision]
+type OrderRelation = SetSubset
 
 
 class PosetElement(MathematicalElement):
@@ -108,29 +109,28 @@ class PosetElement(MathematicalElement):
 def validate_finite_partial_order(
     poset: PosetObject,
     underlying_set: SetObject,
-    relation: OrderRelation,
 ) -> None:
     """Establish reflexivity, antisymmetry, and transitivity for finite posets."""
     members = tuple(poset.element(s) for s in underlying_set)
     for x in members:
-        rx = relation(x, x)
+        rx = x <= x
         assert rx is True, f"reflexivity failed for {x}: got {rx}"
     for i, x in enumerate(members):
         for y in members[i + 1 :]:
-            r_xy = relation(x, y)
-            r_yx = relation(y, x)
+            r_xy = x <= y
+            r_yx = y <= x
             if r_xy is False or r_yx is False:
                 continue
             assert not (r_xy is True and r_yx is True), f"antisymmetry failed: {x} and {y} mutually <= "
             assert False, f"antisymmetry unknown for {x} and {y}"
     for x in members:
         for y in members:
-            r_xy = relation(x, y)
+            r_xy = x <= y
             for z in members:
-                r_yz = relation(y, z)
+                r_yz = y <= z
                 if r_xy is False or r_yz is False:
                     continue
-                r_xz = relation(x, z)
+                r_xz = x <= z
                 if r_xy is True and r_yz is True:
                     assert r_xz is True, f"transitivity failed for {x} <= {y} <= {z}"
                     continue
@@ -154,7 +154,7 @@ class PosetObject(MathematicalObject):
         self._thin_category: ThinCategory | None = None
         super().__init__(category=category)
         if underlying_set.is_finite() is True:
-            validate_finite_partial_order(self, underlying_set, relation)
+            validate_finite_partial_order(self, underlying_set)
 
     def _set_implementation(self) -> SetObject:
         return self._underlying_set
@@ -186,7 +186,18 @@ class PosetObject(MathematicalObject):
     def _is_lequal(self, left: PosetElement, right: PosetElement) -> Decision:
         assert left in self
         assert right in self
-        return self._relation(left, right)
+        product = self._relation.base_set()
+        indices = tuple(product.index_set())
+        assert len(indices) == 2
+        pair = product.element(
+            lambda index: (
+                left._set_implementation()
+                if index is indices[0]
+                else right._set_implementation()
+            ),
+        )
+        assert ProductElements().contains_product_element(pair)
+        return self._relation.membership(pair)
 
     def thin_category(self) -> ThinCategory:
         from sage_categories.theories.thin_categories import ThinCategory

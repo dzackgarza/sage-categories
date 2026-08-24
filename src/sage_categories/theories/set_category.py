@@ -7,7 +7,7 @@ categorical foundation. Sage is not part of this category graph.
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING, TypeIs
 
 from sage_categories.abstract_categories.category_constructions import (
@@ -75,6 +75,7 @@ from sage_categories.theories.set_objects import (
 )
 from sage_categories.theories.set_subobjects import (
     SetMorphism,
+    SetSubset,
 )
 
 if TYPE_CHECKING:
@@ -112,6 +113,29 @@ class SetsCategory(Category):
 
     def _hom_category_type(self) -> type[HomCategory]:
         return SetHomCategory
+
+    def relation(
+        self,
+        base_set: SetObject,
+        predicate: Callable[[SetElement, SetElement], Decision],
+    ) -> SetSubset:
+        """Construct the binary relation selected by ``predicate``."""
+        from sage_categories.theories.set_constructions import CartesianProductOfSets
+        from sage_categories.theories.set_products import ProductElements
+
+        assert base_set in self
+        product = CartesianProductOfSets((base_set, base_set))
+        indices = tuple(product.index_set())
+        assert len(indices) == 2
+
+        def contains_pair(pair: SetElement) -> Decision:
+            assert ProductElements().contains_product_element(pair)
+            return predicate(
+                pair.component(indices[0]),
+                pair.component(indices[1]),
+            )
+
+        return product.subset_from(contains_pair)
 
     def _hom_category_family_type(self) -> type[HomCategoryFamily]:
         return SetHomCategoryFamily

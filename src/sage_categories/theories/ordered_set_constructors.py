@@ -12,8 +12,8 @@ from sage_categories.theories.sets import (
     FiniteSet,
     NaturalNumbers,
     SetElement,
+    Sets,
 )
-from sage_categories.theories.set_subobjects import _predicate_relation
 from sage_categories.values import MathematicalObject
 
 if TYPE_CHECKING:
@@ -38,7 +38,7 @@ def ordered_set_owned_by(
 
     finite_total_order = FiniteTotallyOrderedSets().ordered_set(
         underlying_set,
-        _predicate_relation(underlying_set, ordered_relation),
+        Sets().relation(underlying_set, ordered_relation),
     )
     return finite_total_order
 
@@ -83,7 +83,7 @@ class SimplexOrderIndexing:
                     # (well-ordering of ordinals, Sierpiński §II.7).
                     poset = PartiallyOrderedSets()._ordinal_order(
                         naturals,
-                        _predicate_relation(naturals, natural_order),
+                        Sets().relation(naturals, natural_order),
                     )
 
                     self._countable_simplex = TotallyOrderedSets().refine_from_theorem(

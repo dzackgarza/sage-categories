@@ -139,9 +139,6 @@ class SetObject(MathematicalObject):
 
         if self._subset_poset is None:
             from sage_categories.theories.posets import PartiallyOrderedSets
-            from sage_categories.theories.set_subobjects import (
-                _predicate_relation,
-            )
 
             powerset = self.powerset()
             subsets = SubsetsOfSet(self)
@@ -153,7 +150,7 @@ class SetObject(MathematicalObject):
 
             self._subset_poset = PartiallyOrderedSets().from_theorem(
                 powerset,
-                _predicate_relation(powerset, contained),
+                Sets().relation(powerset, contained),
             )
         return self._subset_poset
 

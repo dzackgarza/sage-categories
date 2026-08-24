@@ -428,12 +428,10 @@ class PartiallyOrderedSetsCategory(Category):
 
     def discrete_order(self, underlying_set: SetObject) -> PosetObject:
         """Return the discrete poset on ``underlying_set`` with equality order."""
-        from sage_categories.theories.set_subobjects import _predicate_relation
-
         assert underlying_set in Sets()
         return self.from_theorem(
             underlying_set,
-            _predicate_relation(
+            Sets().relation(
                 underlying_set,
                 lambda left, right: left == right,
             ),
@@ -605,11 +603,9 @@ def Poset(
     def transported_relation(left: SetElement, right: SetElement) -> Decision:
         return relation(left.value(), right.value())
 
-    from sage_categories.theories.set_subobjects import _predicate_relation
-
     poset = PartiallyOrderedSets()(
         underlying_set,
-        _predicate_relation(underlying_set, transported_relation),
+        Sets().relation(underlying_set, transported_relation),
     )
     finite_posets = PartiallyOrderedSets().Finite()
     assert finite_posets.contains_finite_poset(poset)

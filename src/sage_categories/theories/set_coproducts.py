@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING, Any, TypeIs
 from sage_categories.abstract_categories.functor_images import (
     FunctorImageArrow,
     FunctorImageHomCategory,
-    ImageInclusionFunctor,
 )
 from sage_categories.abstract_categories.functors import (
     DiscreteCategories,
@@ -54,8 +53,9 @@ from sage_categories.theories.set_objects import (
 from sage_categories.values import (
     UNKNOWN,
     Decision,
-    MathematicalElement,
     MathematicalObject,
+    TransportedElement,
+    registered_element,
     registered_value,
 )
 
@@ -63,12 +63,12 @@ if TYPE_CHECKING:
     from sage_categories.theories.set_subobjects import SetMorphism
 
 
-class CoproductElement(MathematicalElement):
-    """A tagged element of a set-indexed disjoint union."""
+class CoproductSetElement(SetElement):
+    """The private set representation of a coproduct element."""
 
     def __init__(
         self,
-        coproduct: CoproductSet | SetCoproductObject,
+        coproduct: CoproductSet,
         index: SetElement,
         value: SetElement,
     ) -> None:
@@ -78,28 +78,11 @@ class CoproductElement(MathematicalElement):
         self._index = index
         self._value = value
         super().__init__(
-            category=CoproductElements(),
+            category=SetElements(),
             ambient_object=coproduct,
         )
 
-    @classmethod
-    def _refined_element_from_ambient(
-        cls,
-        *,
-        category: Category,
-        ambient_object: MathematicalObject,
-        ambient_implementation: MathematicalElement,
-    ) -> CoproductElement:
-        assert is_coproducts_of_sets_category(category)
-        assert category.contains_set_coproduct(ambient_object)
-        assert CoproductElements().contains_coproduct_element(ambient_implementation)
-        return cls(
-            ambient_object,
-            ambient_implementation.index(),
-            ambient_implementation.value(),
-        )
-
-    def coproduct(self) -> CoproductSet | SetCoproductObject:
+    def coproduct(self) -> CoproductSet:
         return self._coproduct
 
     def index(self) -> SetElement:
@@ -107,6 +90,26 @@ class CoproductElement(MathematicalElement):
 
     def _value_(self) -> SetElement:
         return self._value
+
+
+class CoproductElement(TransportedElement):
+    """A tagged element of a set-indexed disjoint union."""
+
+    def _set_implementation(self) -> CoproductSetElement:
+        value = self._ambient_implementation()
+        assert is_coproduct_set_element(value)
+        return value
+
+    def coproduct(self) -> SetCoproductObject:
+        coproduct = self.ambient_object()
+        assert is_set_coproduct_object(coproduct)
+        return coproduct
+
+    def index(self) -> SetElement:
+        return self._set_implementation().index()
+
+    def _value_(self) -> SetElement:
+        return self._set_implementation().value()
 
 
 class CoproductElementsCategory(Category):
@@ -127,12 +130,37 @@ class CoproductElementsCategory(Category):
     ) -> TypeIs[CoproductElement]:
         return candidate in self
 
+    def __contains__(self, candidate: Any) -> bool:
+        element = registered_element(candidate)
+        return (
+            element is not None
+            and is_set_coproduct_object(element.ambient_object())
+        )
+
 
 _COPRODUCT_ELEMENTS = CoproductElementsCategory()
+
+_COPRODUCT_SET_ELEMENTS: dict[int, CoproductSetElement] = {}
 
 
 def CoproductElements() -> CoproductElementsCategory:
     return _COPRODUCT_ELEMENTS
+
+
+def is_coproduct_set_element(
+    candidate: MathematicalObject,
+) -> TypeIs[CoproductSetElement]:
+    return _COPRODUCT_SET_ELEMENTS.get(id(candidate)) is candidate
+
+
+def is_set_coproduct_object(
+    candidate: MathematicalObject,
+) -> TypeIs[SetCoproductObject]:
+    category = candidate.category()
+    return (
+        is_coproducts_of_sets_category(category)
+        and category.contains_set_coproduct(candidate)
+    )
 
 
 class CoproductSet(SetObject):
@@ -181,12 +209,14 @@ class CoproductSet(SetObject):
             lambda index: self.cofactor(index.label()).cardinality(),
         )
 
-    def _element_(self, index: SetElement, value: SetElement) -> CoproductElement:
-        return CoproductElements().ObjectType(self, index, value)
+    def _element_(self, index: SetElement, value: SetElement) -> CoproductSetElement:
+        element = CoproductSetElement(self, index, value)
+        _COPRODUCT_SET_ELEMENTS[id(element)] = element
+        return element
 
     def _membership_(self, member: SetElement) -> Decision:
         value = registered_value(member)
-        return value is not None and CoproductElements().contains_coproduct_element(value) and value.coproduct() is self
+        return value is not None and is_coproduct_set_element(value) and value.coproduct() is self
 
     def _set_iterator_(self) -> Iterator[SetElement]:
         assert self.index_set().is_finite() is True
@@ -249,7 +279,12 @@ class SetCoproductObject(CoproductObject):
         return self._set_coproduct
 
     def element(self, index: SetElement, value: SetElement) -> CoproductElement:
-        return CoproductElements().ObjectType(self, index, value)
+        ambient = self.apex()._element_(index, value)
+        category = self.category()
+        assert is_coproducts_of_sets_category(category)
+        element = category.inclusion().preimage_element(self, ambient)
+        assert CoproductElements().contains_coproduct_element(element)
+        return element
 
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
@@ -291,21 +326,6 @@ class SetCoproductObject(CoproductObject):
         return f"Coproduct of {self.diagram()}"
 
 
-class SetCoproductInclusionFunctor(ImageInclusionFunctor):
-    """Include a refined set coproduct and its elements into ``Sets()``."""
-
-    def _element_image(
-        self,
-        source: MathematicalObject,
-        element: MathematicalElement,
-    ) -> SetElement:
-        category = self.domain()
-        assert is_coproducts_of_sets_category(category)
-        assert category.contains_set_coproduct(source)
-        assert CoproductElements().contains_coproduct_element(element)
-        return source.apex()._element_(element.index(), element.value())
-
-
 class SetCoproductHomCategory(FunctorImageHomCategory):
     """Maps between refined set coproducts."""
 
@@ -320,20 +340,11 @@ class CoproductsOfSetsCategory(CoproductsOfCategory):
     ElementType: type[CoproductElement] = CoproductElement
 
     def __init__(self, functor: Functor) -> None:
-        self._set_inclusion: SetCoproductInclusionFunctor | None = None
         super().__init__(functor)
         _COPRODUCTS_OF_SETS[id(self)] = self
 
     def _hom_category_type(self) -> type[HomCategory]:
         return SetCoproductHomCategory
-
-    def inclusion(self) -> SetCoproductInclusionFunctor:
-        if self._set_inclusion is None:
-            self._set_inclusion = SetCoproductInclusionFunctor(self)
-        return self._set_inclusion
-
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
-        return (self.inclusion(),)
 
     def __call__(
         self,

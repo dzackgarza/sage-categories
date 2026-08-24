@@ -37,9 +37,9 @@ from sage_categories.theories.set_category import (
     _set_morphism,
 )
 from sage_categories.theories.set_coproducts import (
-    CoproductElement,
-    CoproductElements,
     CoproductSet,
+    CoproductSetElement,
+    is_coproduct_set_element,
 )
 from sage_categories.theories.set_elements import (
     SetElement,
@@ -66,7 +66,7 @@ class ColimitElement(MathematicalElement):
     def __init__(
         self,
         colimit: ColimitSet | SetColimitObject,
-        representative: CoproductElement,
+        representative: CoproductSetElement,
     ) -> None:
         assert representative.coproduct() is colimit.coproduct()
         self._colimit = colimit
@@ -79,7 +79,7 @@ class ColimitElement(MathematicalElement):
     def colimit(self) -> ColimitSet | SetColimitObject:
         return self._colimit
 
-    def representative(self) -> CoproductElement:
+    def representative(self) -> CoproductSetElement:
         return self._representative
 
     def __eq__(self, candidate: Any) -> bool:
@@ -202,15 +202,15 @@ class ColimitSet(SetObject):
     def _component_of(
         self,
         arrows: SetObject,
-        start: CoproductElement,
-    ) -> tuple[CoproductElement, ...]:
-        representatives: tuple[CoproductElement, ...] = ()
+        start: CoproductSetElement,
+    ) -> tuple[CoproductSetElement, ...]:
+        representatives: tuple[CoproductSetElement, ...] = ()
         for representative in self._coproduct:
             value = registered_value(representative)
             assert value is not None
-            assert CoproductElements().contains_coproduct_element(value)
+            assert is_coproduct_set_element(value)
             representatives = (*representatives, value)
-        reached: tuple[CoproductElement, ...] = (start,)
+        reached: tuple[CoproductSetElement, ...] = (start,)
         while True:
             enlarged = tuple(
                 candidate
@@ -234,7 +234,7 @@ class ColimitSet(SetObject):
         chosen: tuple[ColimitElement, ...] = ()
         for representative in self._coproduct:
             value = registered_value(representative)
-            assert value is not None and CoproductElements().contains_coproduct_element(value)
+            assert value is not None and is_coproduct_set_element(value)
             candidate = ColimitElement(self, value)
             if any(self.equivalent(candidate, known) is True for known in chosen):
                 continue
@@ -321,15 +321,15 @@ class SetColimitObject(ColimitObject):
     def _component_of(
         self,
         arrows: SetObject,
-        start: CoproductElement,
-    ) -> tuple[CoproductElement, ...]:
-        representatives: tuple[CoproductElement, ...] = ()
+        start: CoproductSetElement,
+    ) -> tuple[CoproductSetElement, ...]:
+        representatives: tuple[CoproductSetElement, ...] = ()
         for representative in self._coproduct:
             value = registered_value(representative)
             assert value is not None
-            assert CoproductElements().contains_coproduct_element(value)
+            assert is_coproduct_set_element(value)
             representatives = (*representatives, value)
-        reached: tuple[CoproductElement, ...] = (start,)
+        reached: tuple[CoproductSetElement, ...] = (start,)
         while True:
             enlarged = tuple(
                 candidate
@@ -445,8 +445,8 @@ def is_colimits_of_sets_category(
 
 
 def _same_coproduct_term(
-    left: CoproductElement,
-    right: CoproductElement,
+    left: CoproductSetElement,
+    right: CoproductSetElement,
 ) -> bool:
     return left.index() is right.index() and left.value() == right.value()
 
@@ -454,8 +454,8 @@ def _same_coproduct_term(
 def _colimit_terms_are_related(
     diagram: Functor,
     arrows: SetObject,
-    left: CoproductElement,
-    right: CoproductElement,
+    left: CoproductSetElement,
+    right: CoproductSetElement,
 ) -> bool:
     for candidate in arrows:
         arrow = candidate.value()

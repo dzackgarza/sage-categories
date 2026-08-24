@@ -93,7 +93,6 @@ class Functor(Arrow, ABC):
         """Return the canonical image of one arrow."""
         from sage_categories.compiler import category_compiler
 
-        original = morphism
         assert self.domain().contains_arrow(morphism)
         if morphism.base_category() is not self.domain() and morphism.base_category().is_subcategory(self.domain()):
             route = category_compiler().implementation_route(
@@ -112,36 +111,17 @@ class Functor(Arrow, ABC):
             assert image.codomain() is codomain
             self._morphism_images[key] = image
             self._morphism_preimages[(id(image.hom_category()), id(image))] = morphism
-        self._morphism_preimages[(id(image.hom_category()), id(image))] = original
         return image
 
     def __call__(self, value: MathematicalObject) -> MathematicalObject:
         """Apply this functor to an object or arrow by categorical membership."""
-        from sage_categories.compiler import category_compiler
-
         arrow_category = self.domain().ArrowCategory()
         if arrow_category.contains_object(value):
-            source_arrow = value
-            source_category = source_arrow.base_category()
-            if source_category is not self.domain() and source_category.is_subcategory(self.domain()):
-                route = category_compiler().implementation_route(
-                    source_category,
-                    self.domain(),
-                )
-                source_arrow = source_arrow._morphism_image_along(route)
-            arrow_image = self.on_morphism(source_arrow)
+            arrow_image = self.on_morphism(value)
             assert arrow_image in self.codomain().ArrowCategory()
             return arrow_image
         assert value in self.domain()
-        source_object = value
-        source_category = source_object.category()
-        if source_category is not self.domain() and source_category.is_subcategory(self.domain()):
-            route = category_compiler().implementation_route(
-                source_category,
-                self.domain(),
-            )
-            source_object = source_object._object_image_along(route)
-        object_image = self.on_object(source_object)
+        object_image = self.on_object(value)
         assert object_image in self.codomain()
         return object_image
 
@@ -490,7 +470,9 @@ class InclusionFunctor(StructuralFunctor):
         assert image in self.codomain()
         self._object_images[id(source)] = image
         self._object_preimages[(id(source), id(image))] = source
-        source._object_structural_images[id(self.codomain())] = image
+        source._object_structural_images[
+            (id(source), id(source), id(self.codomain()))
+        ] = image
 
     def _seed_element_refinement(
         self,
@@ -502,7 +484,9 @@ class InclusionFunctor(StructuralFunctor):
         assert image.ambient_object() is self.on_object(source)
         self._element_images[(id(source), id(element))] = image
         self._element_preimages[(id(source), id(image))] = element
-        element._element_structural_images[id(self.codomain())] = image
+        element._element_structural_images[
+            (id(source), id(element), id(self.codomain()))
+        ] = image
 
     def _seed_arrow_refinement(self, source: Arrow, image: Arrow) -> None:
         assert self.domain().contains_arrow(source)
@@ -511,7 +495,9 @@ class InclusionFunctor(StructuralFunctor):
         assert image.codomain() is self.on_object(source.codomain())
         self._morphism_images[id(source)] = image
         self._morphism_preimages[(id(image.hom_category()), id(image))] = source
-        source._morphism_structural_images[id(self.codomain())] = image
+        source._morphism_structural_images[
+            (id(source.hom_category()), id(source), id(self.codomain()))
+        ] = image
 
     def _object_image(self, source: MathematicalObject) -> MathematicalObject:
         assert source in self._included_domain

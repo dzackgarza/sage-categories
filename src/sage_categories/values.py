@@ -59,11 +59,17 @@ class MathematicalObject:
 
     def __init__(self, *, category: Category | None) -> None:
         self._category = category
-        self._object_structural_images: dict[int, MathematicalObject] = {}
-        self._element_structural_images: dict[int, MathematicalElement] = {}
-        self._morphism_structural_images: dict[int, Arrow] = {}
+        self._object_structural_images: dict[
+            tuple[int, int, int], MathematicalObject
+        ] = {}
+        self._element_structural_images: dict[
+            tuple[int, int, int], MathematicalElement
+        ] = {}
+        self._morphism_structural_images: dict[tuple[int, int, int], Arrow] = {}
         if category is not None:
-            self._object_structural_images[id(category)] = self
+            self._object_structural_images[
+                (id(self), id(self), id(category))
+            ] = self
         _VALUES[id(self)] = self
 
     def category(self) -> Category:
@@ -202,12 +208,13 @@ class MathematicalObject:
         value = self
         for functor in route:
             codomain = functor.codomain()
-            key = id(codomain)
+            source = value
+            key = id(source), id(value), id(codomain)
             cached = self._object_structural_images.get(key)
             if cached is not None:
                 value = cached
                 continue
-            value = functor.on_object(value)
+            value = functor.on_object(source)
             assert value in codomain
             self._object_structural_images[key] = value
         return value
@@ -237,7 +244,9 @@ class MathematicalElement(MathematicalObject):
         self._ambient_object = ambient_object
         super().__init__(category=category)
         _ELEMENTS[id(self)] = self
-        self._element_structural_images[id(ambient_object.category())] = self
+        self._element_structural_images[
+            (id(ambient_object), id(self), id(ambient_object.category()))
+        ] = self
 
     def ambient_object(self) -> MathematicalObject:
         """Return the mathematical object which contains this element."""
@@ -275,7 +284,7 @@ class MathematicalElement(MathematicalObject):
         for functor in route:
             prefix = (*prefix, functor)
             codomain = functor.codomain()
-            key = id(codomain)
+            key = id(source), id(element), id(codomain)
             target = ambient._object_image_along(prefix)
             cached = self._element_structural_images.get(key)
             if cached is not None:
@@ -374,7 +383,7 @@ class Arrow(MathematicalElement):
         for functor in route:
             prefix = (*prefix, functor)
             codomain = functor.codomain()
-            key = id(codomain)
+            key = id(value.hom_category()), id(value), id(codomain)
             domain = self.domain()._object_image_along(prefix)
             codomain_object = self.codomain()._object_image_along(prefix)
             cached = self._morphism_structural_images.get(key)

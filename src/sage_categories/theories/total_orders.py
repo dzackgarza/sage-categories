@@ -108,8 +108,7 @@ class FiniteTotallyOrderedSetsCategory(FullSubcategory):
             Sets().binary_predicate(underlying_set, ordered),
         )
         poset = PartiallyOrderedSets()._construct(underlying_set, relation)
-        total_order = TotallyOrderedSets()._refine_object(poset)
-        result = self._refine_object(total_order)
+        result = self._refine_object(poset)
         assert self.contains_finite_total_order(result)
         return result
 

@@ -164,6 +164,25 @@ class CategoryCompiler:
         ambient: MathematicalObject,
     ) -> MathematicalObject:
         """Return the canonical category-specific refinement of ``ambient``."""
+        if ambient.category() is category:
+            return ambient
+        immediate = category.ambient_category()
+        if ambient.category() is not immediate:
+            if ambient.category().is_subcategory(immediate):
+                route = self.implementation_route(
+                    ambient.category(),
+                    immediate,
+                )
+                ambient = ambient._object_image_along(route)
+            else:
+                from sage_categories.abstract_categories.full_subcategories import (
+                    is_full_subcategory,
+                )
+
+                assert immediate.is_subcategory(ambient.category())
+                assert is_full_subcategory(immediate)
+                ambient = self.refine_object(immediate, ambient)
+        assert ambient.category() is immediate
         key = id(ambient), id(ambient), id(category)
         refined = self._refined_objects.get(key)
         if refined is None:

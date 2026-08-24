@@ -275,7 +275,6 @@ class FullSubcategory(Category):
         if ambient.category() is self:
             assert ambient in self
             return ambient
-        ambient = self._canonical_ambient(ambient)
         refined = category_compiler().refine_object(self, ambient)
         assert refined in self
         return refined

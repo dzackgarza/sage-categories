@@ -120,7 +120,7 @@ class DeclaredMethod:
         self.implementation_owner = implementation_owner
         self.method = method
         self.role = role
-        self.signature: MethodSignature = method_signature(method)
+        self.signature: MethodSignature = method_signature(method, role)
         self.route = route
         self.implementation_route = implementation_route
 
@@ -658,6 +658,7 @@ class CategoryCompiler:
                     name: ForwardedObjectMethod(
                         declaration.implementation_route,
                         declaration.method,
+                        declaration.signature,
                     )
                     for name, declaration in catalogue.items()
                     if name not in available
@@ -667,6 +668,7 @@ class CategoryCompiler:
                     name: ForwardedElementMethod(
                         declaration.implementation_route,
                         declaration.method,
+                        declaration.signature,
                     )
                     for name, declaration in catalogue.items()
                     if name not in available
@@ -677,6 +679,7 @@ class CategoryCompiler:
                     name: ForwardedArrowMethod(
                         declaration.implementation_route,
                         declaration.method,
+                        declaration.signature,
                     )
                     for name, declaration in catalogue.items()
                     if name not in available

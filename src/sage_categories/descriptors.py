@@ -40,6 +40,7 @@ class ParameterRole(Enum):
 class MethodSignature:
     """Role metadata copied from one method declaration."""
 
+    receiver: ParameterRole
     positional: tuple[ParameterRole, ...]
     keyword: tuple[tuple[str, ParameterRole], ...]
     variadic: ParameterRole
@@ -115,7 +116,10 @@ def _annotation_role(annotation: Annotation) -> ParameterRole:
     return ParameterRole.VALUE
 
 
-def method_signature(method: FunctionType) -> MethodSignature:
+def method_signature(
+    method: FunctionType,
+    implementation_role: ImplementationRole,
+) -> MethodSignature:
     """Return role metadata from the method's declared type annotations."""
     namespace = dict(method.__globals__)
     try:
@@ -148,7 +152,13 @@ def method_signature(method: FunctionType) -> MethodSignature:
     assert result_annotation is not inspect.Parameter.empty, (
         f"{method.__qualname__} must annotate its result"
     )
+    receiver = {
+        ImplementationRole.OBJECT: ParameterRole.OBJECT,
+        ImplementationRole.ELEMENT: ParameterRole.ELEMENT,
+        ImplementationRole.ARROW: ParameterRole.ARROW,
+    }[implementation_role]
     return MethodSignature(
+        receiver,
         tuple(positional),
         tuple(keyword),
         variadic,
@@ -368,11 +378,13 @@ class ForwardedObjectMethod[Receiver: MathematicalObject, **P, R]:
         self,
         route: tuple[StructuralFunctor, ...],
         method: Callable[Concatenate[MathematicalObject, P], R],
+        signature: MethodSignature,
     ) -> None:
         assert route
         self._route = route
         self._method: FunctionType = cast(FunctionType, method)
-        self._signature = method_signature(cast(FunctionType, method))
+        assert signature.receiver is ParameterRole.OBJECT
+        self._signature = signature
 
     def __get__(
         self,
@@ -409,11 +421,13 @@ class ForwardedElementMethod[Receiver: MathematicalElement, **P, R]:
         self,
         route: tuple[StructuralFunctor, ...],
         method: Callable[Concatenate[MathematicalElement, P], R],
+        signature: MethodSignature,
     ) -> None:
         assert route
         self._route = route
         self._method: FunctionType = cast(FunctionType, method)
-        self._signature = method_signature(cast(FunctionType, method))
+        assert signature.receiver is ParameterRole.ELEMENT
+        self._signature = signature
 
     def __get__(
         self,
@@ -451,11 +465,13 @@ class ForwardedArrowMethod[Receiver: Arrow, **P, R]:
         self,
         route: tuple[StructuralFunctor, ...],
         method: Callable[Concatenate[Arrow, P], R],
+        signature: MethodSignature,
     ) -> None:
         assert route
         self._route = route
         self._method: FunctionType = cast(FunctionType, method)
-        self._signature = method_signature(cast(FunctionType, method))
+        assert signature.receiver is ParameterRole.ARROW
+        self._signature = signature
 
     def __get__(
         self,

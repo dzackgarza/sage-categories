@@ -258,15 +258,6 @@ class FullSubcategory(Category):
         ambient = self._canonical_ambient(ambient)
         return self._refine_object(ambient)
 
-    def refine_from_theorem(
-        self,
-        ambient: MathematicalObject,
-        owner: MathematicalObject,
-    ) -> MathematicalObject:
-        assert registered_value(owner) is owner
-        ambient = self._canonical_ambient(ambient)
-        return self._refine_object(ambient)
-
     def _canonical_ambient(self, ambient: MathematicalObject) -> MathematicalObject:
         from sage_categories.compiler import category_compiler
 

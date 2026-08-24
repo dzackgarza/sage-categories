@@ -402,9 +402,7 @@ class ForgetPosetFunctor(StructuralFunctor):
             assert SetElements().contains_set_element(set_member)
             return target.element(image(set_member))
 
-        category = source.category()
-        assert is_partially_ordered_sets_category(category)
-        return category.Hom(source, target)(mapping)
+        return PartiallyOrderedSets().Hom(source, target)(mapping)
 
     def is_faithful(self) -> bool:
         return True
@@ -479,8 +477,7 @@ class PartiallyOrderedSetsCategory(Category):
         assert diagram.domain() in DiscreteCategories()
         forgetful = self.forgetful_functor()
         inherited_product = forgetful.inherited_product(diagram)
-        underlying_product = inherited_product.apex()
-        assert Sets().contains_set(underlying_product)
+        underlying_product = inherited_product
         product_category = underlying_product.category()
         assert is_products_of_sets_category(product_category)
         assert product_category.contains_set_product(underlying_product)

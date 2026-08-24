@@ -8,6 +8,7 @@ from itertools import pairwise
 from typing import TYPE_CHECKING, TypeIs
 
 if TYPE_CHECKING:
+    from sage_categories.abstract_categories.product_images import ProductObject
     from sage_categories.abstract_categories.product_presentations import (
         ProductPresentation,
     )
@@ -240,7 +241,7 @@ class StructuralFunctor(Functor, ABC):
         self,
         diagram: Functor,
         apex: MathematicalObject,
-        inherited_product: ProductPresentation,
+        inherited_product: ProductPresentation | ProductObject,
     ) -> ProductPresentation:
         """Lift the product inherited through this structural functor."""
         from sage_categories.abstract_categories.arrow_categories import (
@@ -251,11 +252,17 @@ class StructuralFunctor(Functor, ABC):
         )
         from sage_categories.abstract_categories.product_presentations import (
             ProductLift,
+            is_product_presentations,
         )
 
         assert diagram.codomain() is self.domain()
         image_apex = self.on_object(apex)
-        assert image_apex is inherited_product.apex()
+        inherited_category = inherited_product.category()
+        if is_product_presentations(inherited_category):
+            inherited_apex = inherited_product.apex()
+        else:
+            inherited_apex = inherited_product
+        assert image_apex is inherited_apex
         identity = self.codomain().identity(image_apex)
         comparison = declare_isomorphism(
             identity,
@@ -271,14 +278,21 @@ class StructuralFunctor(Functor, ABC):
             lift_morphism=self._lift_morphism,
         ).presentation()
 
-    def inherited_product(self, diagram: Functor) -> ProductPresentation:
+    def inherited_product(self, diagram: Functor) -> ProductObject:
         """Return the product of the diagram after structural transport."""
-        from sage_categories.abstract_categories.functors import is_functor
+        from sage_categories.abstract_categories.product_images import (
+            is_products_of_category,
+        )
 
         assert diagram.codomain() is self.domain()
         inherited_diagram = self.postcomposition(diagram.domain())(diagram)
-        assert is_functor(inherited_diagram)
-        return self.codomain().chosen_limit(inherited_diagram)
+        product = self.codomain().ProductFunctor(diagram.domain())(
+            inherited_diagram,
+        )
+        products = self.codomain().Products(diagram.domain())
+        assert is_products_of_category(products)
+        assert products.contains_product(product)
+        return product
 
 
 _STRUCTURAL_FUNCTORS: dict[int, StructuralFunctor] = {}
@@ -425,6 +439,14 @@ class ComposedFunctor(Functor):
         return self._factors
 
     def _object_image(self, source: MathematicalObject) -> MathematicalObject:
+        structural_route: list[StructuralFunctor] = []
+        for factor in self._factors:
+            if not is_structural_functor(factor):
+                break
+            structural_route.append(factor)
+        else:
+            return source._object_image_along(tuple(structural_route))
+
         value = source
         for factor in self._factors:
             value = factor(value)

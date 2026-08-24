@@ -503,6 +503,10 @@ class PartiallyOrderedSetsCategory(Category):
     def _products_of_category(self, functor: Functor) -> Category:
         return super()._products_of_category(functor)
 
+    def _product_lift(self) -> ForgetPosetFunctor:
+        """Return the forgetful functor which creates poset products."""
+        return self.forgetful_functor()
+
     def _product_apex(
         self,
         diagram: Functor,

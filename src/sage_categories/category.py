@@ -586,9 +586,8 @@ class Category(MathematicalObject):
         from sage_categories.abstract_categories.functors import DiscreteCategories
 
         assert diagram.domain() in DiscreteCategories()
-        structural_functors = self.super_functors()
-        assert len(structural_functors) == 1
-        structural_functor = structural_functors[0]
+        structural_functor = self._product_lift()
+        assert structural_functor.domain() is self
         inherited_product = structural_functor.inherited_product(diagram)
         apex = self._product_apex(diagram, inherited_product)
         return structural_functor.lift_product(
@@ -596,6 +595,10 @@ class Category(MathematicalObject):
             apex,
             inherited_product,
         )
+
+    def _product_lift(self) -> StructuralFunctor:
+        """Return the declared structural functor which creates products."""
+        assert False, f"{self} does not declare a product lift"
 
     def _product_apex(
         self,

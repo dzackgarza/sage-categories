@@ -486,7 +486,7 @@ When an established finite algorithm requires a primitive loop bound, lower the 
 | `POL-API-017` | Never expose a method whose complete implementation only asserts `False`, returns `NotImplemented`, or raises an error. Such a method advertises a capability that the object does not have. |
 | `POL-API-018` | Use an abstract method when every concrete object must supply an implementation. Prevent construction of an incomplete concrete object instead of deferring the failure to a method call. |
 | `POL-API-019` | When an operation requires a capability, place it on the category that supplies that capability and let the method compiler expose it there. Do not install a failing placeholder on objects outside that category. |
-| `POL-API-020` | When a mathematical operation exists but available algorithms cannot determine its result, return its typed unknown value, such as `Decision` or `bool | Unknown`. Do not replace missing knowledge with a runtime failure. |
+| `POL-API-020` | When a mathematical operation exists but available algorithms cannot determine its result, return its typed unknown value, such as `Decision` or `bool \| Unknown`. Do not replace missing knowledge with a runtime failure. |
 | `POL-TYPE-001` | Give every value the type that names its mathematical role. |
 | `POL-TYPE-002` | Distinguish categories, objects, elements, arrows, functors, rings, sets, domains, and codomains in types. |
 | `POL-TYPE-003` | Never use `object` in a type annotation. There are no exceptions. |

@@ -559,10 +559,12 @@ def test_totally_ordered_set_morphism_evaluation_inherited_from_poset_morphism()
     ordered = finite_ordered_set((ZZ(int(1)), ZZ(int(2))))
     hom = TotallyOrderedSets().Hom(ordered, ordered)
     first_elem = next(iter(ordered))
+    assert is_total_order_element(first_elem)
     constant_map = hom(lambda member: first_elem)
     assert constant_map.is_order_preserving()
     assert constant_map in hom
     for member in ordered:
+        assert is_total_order_element(member)
         assert constant_map(member) == first_elem
 
 

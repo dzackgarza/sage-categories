@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Iterator
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from sage_categories.values import (
     Arrow,
+    Decision,
     MathematicalElement,
     MathematicalObject,
     registered_element,
@@ -26,7 +27,9 @@ class ImplementationRole(Enum):
     ARROW = "arrow"
 
 
-type MethodCallable = Callable[..., Any]
+type MathematicalValue = MathematicalObject | MathematicalElement | Arrow
+
+type TransportableValue = MathematicalValue | Decision | int | str | None | Iterator[MathematicalElement] | Iterator[MathematicalObject] | Iterator[Arrow]
 
 
 def _pull_back_element_along(
@@ -46,10 +49,10 @@ def _pull_back_element_along(
 
 
 def _forward_object_argument(
-    argument: Any,
+    argument: TransportableValue,
     route: tuple[StructuralFunctor, ...],
     instance: MathematicalObject,
-) -> Any:
+) -> TransportableValue:
     if (element := registered_element(argument)) is not None:
         if element.ambient_object() is instance or element.ambient_object().category() is instance.category():
             return element._element_image_along(route)
@@ -61,11 +64,11 @@ def _forward_object_argument(
 
 
 def _transport_object_result(
-    result: Any,
+    result: TransportableValue,
     route: tuple[StructuralFunctor, ...],
     instance: MathematicalObject,
     image: MathematicalObject,
-) -> Any:
+) -> TransportableValue:
     if result is image:
         return instance
     target_element = registered_element(result)
@@ -73,21 +76,23 @@ def _transport_object_result(
         return _pull_back_element_along(target_element, route, instance)
     if isinstance(result, Iterator) or (isinstance(result, Iterable) and not isinstance(result, (str, bytes, MathematicalObject, MathematicalElement, Arrow, dict, tuple))):
 
-        def lazy_results() -> Iterator[Any]:
+        def lazy_results() -> Iterator[MathematicalElement]:
             for item in result:
-                yield _transport_object_result(item, route, instance, image)
+                transported = _transport_object_result(item, route, instance, image)
+                assert isinstance(transported, MathematicalElement)
+                yield transported
 
         return lazy_results()
     return result
 
 
-class ForwardedObjectMethod:
+class ForwardedObjectMethod[Receiver: MathematicalObject]:
     """Forward an object method along a structural-functor route."""
 
     def __init__(
         self,
         route: tuple[StructuralFunctor, ...],
-        method: MethodCallable,
+        method: Callable[..., TransportableValue],
     ) -> None:
         assert route
         self._route = route
@@ -95,15 +100,15 @@ class ForwardedObjectMethod:
 
     def __get__(
         self,
-        instance: MathematicalObject | None,
-        owner: type[MathematicalObject] | None = None,
-    ) -> ForwardedObjectMethod | MethodCallable:
+        instance: Receiver | None,
+        owner: type[Receiver] | None = None,
+    ) -> ForwardedObjectMethod[Receiver] | Callable[..., TransportableValue]:
         if instance is None:
             return self
 
         image = instance._object_image_along(self._route)
 
-        def call(*args: Any, **kwargs: Any) -> Any:
+        def call(*args: TransportableValue, **kwargs: TransportableValue) -> TransportableValue:
             forwarded_args = tuple(_forward_object_argument(arg, self._route, instance) for arg in args)
             forwarded_kwargs = {k: _forward_object_argument(v, self._route, instance) for k, v in kwargs.items()}
             result = self._method(image, *forwarded_args, **forwarded_kwargs)
@@ -113,10 +118,10 @@ class ForwardedObjectMethod:
 
 
 def _forward_element_argument(
-    argument: Any,
+    argument: TransportableValue,
     route: tuple[StructuralFunctor, ...],
     instance: MathematicalElement,
-) -> Any:
+) -> TransportableValue:
     source_ambient = instance.ambient_object()
     if (element := registered_element(argument)) is not None:
         if element.ambient_object() is source_ambient or element.ambient_object().category() is source_ambient.category():
@@ -129,11 +134,11 @@ def _forward_element_argument(
 
 
 def _transport_element_result(
-    result: Any,
+    result: TransportableValue,
     route: tuple[StructuralFunctor, ...],
     instance: MathematicalElement,
     image: MathematicalElement,
-) -> Any:
+) -> TransportableValue:
     source_ambient = instance.ambient_object()
     target_ambient = image.ambient_object()
     if result is target_ambient:
@@ -145,21 +150,23 @@ def _transport_element_result(
         return _pull_back_element_along(target_element, route, source_ambient)
     if isinstance(result, Iterator) or (isinstance(result, Iterable) and not isinstance(result, (str, bytes, MathematicalObject, MathematicalElement, Arrow, dict, tuple))):
 
-        def lazy_results() -> Iterator[Any]:
+        def lazy_results() -> Iterator[MathematicalElement]:
             for item in result:
-                yield _transport_element_result(item, route, instance, image)
+                transported = _transport_element_result(item, route, instance, image)
+                assert isinstance(transported, MathematicalElement)
+                yield transported
 
         return lazy_results()
     return result
 
 
-class ForwardedElementMethod:
+class ForwardedElementMethod[Receiver: MathematicalElement]:
     """Forward an element method along a structural-functor route."""
 
     def __init__(
         self,
         route: tuple[StructuralFunctor, ...],
-        method: MethodCallable,
+        method: Callable[..., TransportableValue],
     ) -> None:
         assert route
         self._route = route
@@ -167,15 +174,15 @@ class ForwardedElementMethod:
 
     def __get__(
         self,
-        instance: MathematicalElement | None,
-        owner: type[MathematicalElement] | None = None,
-    ) -> ForwardedElementMethod | MethodCallable:
+        instance: Receiver | None,
+        owner: type[Receiver] | None = None,
+    ) -> ForwardedElementMethod[Receiver] | Callable[..., TransportableValue]:
         if instance is None:
             return self
 
         image = instance._element_image_along(self._route)
 
-        def call_element(*args: Any, **kwargs: Any) -> Any:
+        def call_element(*args: TransportableValue, **kwargs: TransportableValue) -> TransportableValue:
             forwarded_args = tuple(_forward_element_argument(arg, self._route, instance) for arg in args)
             forwarded_kwargs = {k: _forward_element_argument(v, self._route, instance) for k, v in kwargs.items()}
             result = self._method(image, *forwarded_args, **forwarded_kwargs)
@@ -185,10 +192,10 @@ class ForwardedElementMethod:
 
 
 def _forward_arrow_argument(
-    argument: Any,
+    argument: TransportableValue,
     route: tuple[StructuralFunctor, ...],
     instance: Arrow,
-) -> Any:
+) -> TransportableValue:
     source_category = instance.base_category()
     if (arr := registered_value(argument)) is not None and isinstance(arr, Arrow) and arr.base_category() is source_category:
         return arr._morphism_image_along(route)
@@ -201,11 +208,11 @@ def _forward_arrow_argument(
 
 
 def _transport_arrow_result(
-    result: Any,
+    result: TransportableValue,
     route: tuple[StructuralFunctor, ...],
     instance: Arrow,
     image: Arrow,
-) -> Any:
+) -> TransportableValue:
     source_codomain = instance.codomain()
     target_codomain = image.codomain()
     if result is image:
@@ -217,21 +224,23 @@ def _transport_arrow_result(
         return _pull_back_element_along(target_element, route, source_codomain)
     if isinstance(result, Iterator) or (isinstance(result, Iterable) and not isinstance(result, (str, bytes, MathematicalObject, MathematicalElement, Arrow, dict, tuple))):
 
-        def lazy_results() -> Iterator[Any]:
+        def lazy_results() -> Iterator[MathematicalElement]:
             for item in result:
-                yield _transport_arrow_result(item, route, instance, image)
+                transported = _transport_arrow_result(item, route, instance, image)
+                assert isinstance(transported, MathematicalElement)
+                yield transported
 
         return lazy_results()
     return result
 
 
-class ForwardedArrowMethod:
+class ForwardedArrowMethod[Receiver: Arrow]:
     """Forward an arrow method along a structural-functor route."""
 
     def __init__(
         self,
         route: tuple[StructuralFunctor, ...],
-        method: MethodCallable,
+        method: Callable[..., TransportableValue],
     ) -> None:
         assert route
         self._route = route
@@ -239,15 +248,15 @@ class ForwardedArrowMethod:
 
     def __get__(
         self,
-        instance: Arrow | None,
-        owner: type[Arrow] | None = None,
-    ) -> ForwardedArrowMethod | MethodCallable:
+        instance: Receiver | None,
+        owner: type[Receiver] | None = None,
+    ) -> ForwardedArrowMethod[Receiver] | Callable[..., TransportableValue]:
         if instance is None:
             return self
 
         image = instance._morphism_image_along(self._route)
 
-        def call_arrow(*args: Any, **kwargs: Any) -> Any:
+        def call_arrow(*args: TransportableValue, **kwargs: TransportableValue) -> TransportableValue:
             forwarded_args = tuple(_forward_arrow_argument(arg, self._route, instance) for arg in args)
             forwarded_kwargs = {k: _forward_arrow_argument(v, self._route, instance) for k, v in kwargs.items()}
             result = self._method(image, *forwarded_args, **forwarded_kwargs)
@@ -256,4 +265,4 @@ class ForwardedArrowMethod:
         return call_arrow
 
 
-type ForwardedDescriptor = ForwardedObjectMethod | ForwardedElementMethod | ForwardedArrowMethod
+type ForwardedDescriptor = ForwardedObjectMethod[MathematicalObject] | ForwardedElementMethod[MathematicalElement] | ForwardedArrowMethod[Arrow]

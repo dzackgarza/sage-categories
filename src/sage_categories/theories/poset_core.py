@@ -96,31 +96,51 @@ def validate_finite_partial_order(
 ) -> None:
     """Establish reflexivity, antisymmetry, and transitivity for finite posets."""
     members = tuple(poset.element(s) for s in underlying_set)
+    _validate_reflexivity(members, relation)
+    _validate_antisymmetry(members, relation)
+    _validate_transitivity(members, relation)
+
+
+def _validate_reflexivity(
+    members: tuple[PosetElement, ...],
+    relation: OrderRelation,
+) -> None:
     for x in members:
         rx = relation(x, x)
         assert rx is True, f"reflexivity failed for {x}: got {rx}"
 
+
+def _validate_antisymmetry(
+    members: tuple[PosetElement, ...],
+    relation: OrderRelation,
+) -> None:
     for i, x in enumerate(members):
         for y in members[i + 1 :]:
             r_xy = relation(x, y)
             r_yx = relation(y, x)
+            if r_xy is False or r_yx is False:
+                continue
             if r_xy is True and r_yx is True:
                 assert False, f"antisymmetry failed: distinct elements {x} and {y} are mutually less-than-or-equal"
-            if (r_xy is True and r_yx is UNKNOWN) or (r_yx is True and r_xy is UNKNOWN) or (r_xy is UNKNOWN and r_yx is UNKNOWN):
-                assert False, f"antisymmetry is unknown for {x} and {y}"
+            assert False, f"antisymmetry is unknown for {x} and {y}"
 
+
+def _validate_transitivity(
+    members: tuple[PosetElement, ...],
+    relation: OrderRelation,
+) -> None:
     for x in members:
         for y in members:
             r_xy = relation(x, y)
             for z in members:
                 r_yz = relation(y, z)
+                if r_xy is False or r_yz is False:
+                    continue
+                r_xz = relation(x, z)
                 if r_xy is True and r_yz is True:
-                    r_xz = relation(x, z)
                     assert r_xz is True, f"transitivity failed for {x} <= {y} <= {z}: got {r_xz}"
-                elif (r_xy is True and r_yz is UNKNOWN) or (r_xy is UNKNOWN and r_yz is True):
-                    r_xz = relation(x, z)
-                    if r_xz is not True:
-                        assert False, f"transitivity unknown for {x}, {y}, {z}"
+                    continue
+                assert r_xz is True, f"transitivity unknown for {x}, {y}, {z}"
 
 
 class PosetObject(MathematicalObject):

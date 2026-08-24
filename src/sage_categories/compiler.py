@@ -424,63 +424,73 @@ class CategoryCompiler:
                 if previous is None:
                     catalogue[name] = candidate
                     continue
-                if previous.owner is candidate.owner:
-                    if previous.implementation_owner.is_subcategory(
-                        candidate.implementation_owner,
-                    ):
-                        continue
-                    if candidate.implementation_owner.is_subcategory(
-                        previous.implementation_owner,
-                    ):
-                        catalogue[name] = candidate
-                        continue
-                    canonical = self.implementation_route(category, previous.owner)
-                    if candidate.route == canonical:
-                        catalogue[name] = candidate
-                        continue
-                    assert previous.route == canonical
-                    continue
-                if previous.owner.is_subcategory(candidate.owner):
-                    continue
-                if candidate.owner.is_subcategory(previous.owner):
-                    catalogue[name] = candidate
-                    continue
-                local_method = local.get(name)
-                if local_method is not None:
-                    catalogue[name] = DeclaredMethod(
-                        category,
-                        category,
-                        local_method,
-                    )
-                    continue
-                coherent = self._coherent_declaration(
+                catalogue[name] = self._merge_inherited_declarations(
                     category,
+                    name,
                     previous,
                     candidate,
+                    local.get(name),
                 )
-                assert coherent is not None, f"{category} inherits {name} from unrelated categories {previous.owner} and {declaration.owner}"
-                catalogue[name] = coherent
         for name, method in local.items():
-            inherited_declaration = catalogue.get(name)
-            if inherited_declaration is not None and method is inherited_declaration.method:
-                continue
-            if inherited_declaration is None or inherited_declaration.owner is category:
-                catalogue[name] = DeclaredMethod(
-                    category,
-                    category,
-                    method,
-                )
-                continue
-            catalogue[name] = DeclaredMethod(
-                inherited_declaration.owner,
+            catalogue[name] = self._local_declaration(
                 category,
                 method,
-                self.implementation_route(
-                    category,
-                    inherited_declaration.owner,
-                ),
+                catalogue.get(name),
             )
         return catalogue
+
+    def _merge_inherited_declarations(
+        self,
+        category: Category,
+        name: str,
+        previous: DeclaredMethod,
+        candidate: DeclaredMethod,
+        local_method: FunctionType | None,
+    ) -> DeclaredMethod:
+        if previous.owner is candidate.owner:
+            return self._preferred_implementation_route(category, previous, candidate)
+        if previous.owner.is_subcategory(candidate.owner):
+            return previous
+        if candidate.owner.is_subcategory(previous.owner):
+            return candidate
+        if local_method is not None:
+            return DeclaredMethod(category, category, local_method)
+        coherent = self._coherent_declaration(category, previous, candidate)
+        assert coherent is not None, f"{category} inherits {name} from unrelated categories {previous.owner} and {candidate.owner}"
+        return coherent
+
+    def _preferred_implementation_route(
+        self,
+        category: Category,
+        previous: DeclaredMethod,
+        candidate: DeclaredMethod,
+    ) -> DeclaredMethod:
+        if previous.implementation_owner.is_subcategory(candidate.implementation_owner):
+            return previous
+        if candidate.implementation_owner.is_subcategory(previous.implementation_owner):
+            return candidate
+        canonical = self.implementation_route(category, previous.owner)
+        if candidate.route == canonical:
+            return candidate
+        assert previous.route == canonical
+        return previous
+
+    def _local_declaration(
+        self,
+        category: Category,
+        method: FunctionType,
+        inherited: DeclaredMethod | None,
+    ) -> DeclaredMethod:
+        if inherited is not None and method is inherited.method:
+            return inherited
+        if inherited is None or inherited.owner is category:
+            return DeclaredMethod(category, category, method)
+        return DeclaredMethod(
+            inherited.owner,
+            category,
+            method,
+            self.implementation_route(category, inherited.owner),
+        )
 
     def _coherent_declaration(
         self,

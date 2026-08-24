@@ -62,7 +62,8 @@ X.finite_subsets()
 Generic categorical methods come from the category foundation. `Sets()` does not
 create another implementation of identity, composition, or arrow-category formation.
 
-`X.cardinality()` returns a cardinal object. It can remain symbolic or unknown.
+`X.cardinality()` returns a cardinal object. It can remain a symbolic cardinal
+expression when no exact algorithm normalizes it.
 
 ## Set maps and function sets
 
@@ -321,6 +322,98 @@ Sets().Uncountable()
 Their checked membership procedures can return `Unknown`. Named theorem-backed
 constructors can place a set directly in one of these categories.
 
+### Symbolic cardinalities, not unknown cardinal values
+
+`Unknown` is not a possible cardinality. It is an epistemic result for a proposition
+which the available exact mathematics does not decide.
+
+The cardinality operation is total:
+
+```python
+X.cardinality() -> Cardinal
+```
+
+It always returns an owned cardinal. When no algorithm normalizes the result, return
+the symbolic cardinal `CardinalityOf(X)`, not a shared `UnknownCardinality()`.
+
+A shared unknown cardinal is invalid for several reasons:
+
+- unknown cardinalities of two sets need not be equal;
+- treating them as one value fabricates equality;
+- `Unknown` is not an element of the cardinal semiring;
+- absorbing arithmetic loses useful symbolic expressions.
+
+For example, retain
+
+\[
+3\lvert X\rvert
+\]
+
+as a cardinal expression. Do not reduce it to `Unknown`. The cardinal arithmetic owner
+can apply
+
+\[
+0\kappa=0,
+\qquad
+1\kappa=\kappa,
+\]
+
+and, after establishing that \(\kappa\) is infinite,
+
+\[
+n\kappa=\kappa
+\qquad
+(0<n<\aleph_0).
+\]
+
+Likewise,
+
+\[
+\lvert X\times Y\rvert=\lvert X\rvert\lvert Y\rvert
+\]
+
+returns that symbolic product when neither factor has a normalized cardinal.
+
+Keep these responsibilities separate:
+
+- `Cardinal` represents exact finite, infinite, or symbolic cardinal values.
+- Cardinal addition, multiplication, and exponentiation return `Cardinal`.
+- Normalization uses construction theorems and private computation engines.
+- Cardinal equality, order, finiteness, and countability queries return `Decision`.
+- `Unknown` occurs only when such a proposition cannot be decided.
+
+Examples include:
+
+```python
+arbitrary_subset.cardinality()
+# CardinalityOf(arbitrary_subset)
+
+image.cardinality()
+# CardinalityOf(image)
+
+product.cardinality()
+# left.cardinality() * right.cardinality()
+```
+
+If SymPy normalizes the subset to `FiniteSet(1, 2, 3)`, the same cardinal normalizes to
+`3`.
+
+If the image arrow is monic, the construction theorem normalizes
+
+\[
+\lvert\operatorname{im}(f)\rvert=\lvert\operatorname{dom}(f)\rvert.
+\]
+
+If neither route applies, the symbolic cardinal remains valid.
+
+This places the complexity at its correct owner. Set constructions need no `None` or
+unknown-cardinality branches. The cardinal implementation supplies symbolic ordered
+semiring arithmetic and exact normalization.
+
+If an unresolved-cardinality implementation type exists internally, each value must
+remain tied to its owning set. It must not be one singleton unknown value.
+`CardinalityOf(X)` is the public mathematical model.
+
 Countability does not select an enumeration. A chosen enumeration adds:
 
 ```python
@@ -441,8 +534,8 @@ ConditionSet(n, Eq(p(n), 0), S.Naturals).is_finite_set
 ```
 
 An unevaluated `ImageSet` or `ConditionSet` remains a valid private representation. Its
-owned cardinality is `UnknownCardinality()` unless defining data or a construction
-theorem supplies a stronger result.
+owned cardinality is `CardinalityOf(owned_set)` unless defining data or a construction
+theorem supplies a stronger normalization.
 
 SymPy sets do not supply one general `cardinality()` operation. Reconstruct the owned
 cardinal from the normalized result:
@@ -451,10 +544,10 @@ cardinal from the normalized result:
 - A finite `Range` contributes its exact finite size.
 - An infinite `Range` contributes `aleph0`.
 - A standard number set contributes its established cardinal.
-- An unresolved symbolic set contributes `UnknownCardinality()`.
+- An unresolved symbolic set contributes `CardinalityOf(owned_set)`.
 
-Never use `None` for an unknown cardinality. Never assign the domain cardinality to an
-image unless injectivity or another theorem establishes that equality.
+Never use `None` or a shared unknown value for a cardinality. Never assign the domain
+cardinality to an image unless injectivity or another theorem establishes that equality.
 
 | Owned operation | SymPy value | Required reconstruction |
 | --- | --- | --- |
@@ -511,7 +604,10 @@ facts:
 - supported symbolic set operations use SymPy instead of duplicate local algorithms;
 - normalized `FiniteSet` and `Range` results reconstruct their exact owned cardinalities;
 - unevaluated `ConditionSet` and `ImageSet` results reconstruct valid owned sets with
-  `UnknownCardinality()` when no theorem decides more;
+  distinct symbolic `CardinalityOf(owned_set)` values when no theorem decides more;
+- cardinal arithmetic retains symbolic expressions instead of propagating a shared
+  unknown value;
+- only cardinal propositions and comparisons return `Unknown`;
 - exact failures remain `False` or `Unknown`;
 - private engine values never cross the public boundary.
 

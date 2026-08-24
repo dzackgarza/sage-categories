@@ -348,9 +348,9 @@ def _invoke_declared(
 ) -> R:
     """Invoke the concrete implementation at a transported receiver."""
     implementation = inspect.getattr_static(type(receiver), method.__name__, None)
-    if inspect.isfunction(implementation) and implementation is not method:
-        concrete = cast(Callable[Concatenate[MathematicalObject, P], R], implementation)
-        return concrete(receiver, *args, **kwargs)
+    if implementation is not None and implementation is not method:
+        concrete = implementation.__get__(receiver, type(receiver))
+        return concrete(*args, **kwargs)
     return method(receiver, *args, **kwargs)
 
 

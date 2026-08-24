@@ -59,7 +59,7 @@ class PosetElement(MathematicalElement):
         set_element: SetElement,
     ) -> None:
         assert ambient_object in PartiallyOrderedSets()
-        underlying_set = PartiallyOrderedSets().underlying_set(ambient_object)
+        underlying_set = ambient_object._set_implementation()
         assert set_element.ambient_set() is underlying_set
         assert set_element in underlying_set
         self._set_element = set_element
@@ -433,10 +433,6 @@ class ForgetPosetFunctor(StructuralFunctor):
 
     def _object_image(self, source: MathematicalObject) -> SetObject:
         assert PartiallyOrderedSets().contains_poset(source)
-        if source.category() is not self.domain():
-            route = source.category().structural_route_to(self.domain())
-            source = source._object_image_along(route)
-            assert PartiallyOrderedSets().contains_poset(source)
         image = source._set_implementation()
         assert image in self.codomain()
         return image
@@ -454,12 +450,6 @@ class ForgetPosetFunctor(StructuralFunctor):
     ) -> SetElement:
         assert PartiallyOrderedSets().contains_poset(source)
         assert is_poset_element(element)
-        if source.category() is not self.domain():
-            route = source.category().structural_route_to(self.domain())
-            source = source._object_image_along(route)
-            element = element._element_image_along(route)
-            assert PartiallyOrderedSets().contains_poset(source)
-            assert is_poset_element(element)
         return element._set_implementation()
 
     def _element_preimage(

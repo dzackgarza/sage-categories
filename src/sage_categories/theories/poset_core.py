@@ -169,11 +169,16 @@ class PosetObject(MathematicalObject):
         product = self._relation.base_set()
         indices = tuple(product.index_set())
         assert len(indices) == 2
+        forgetful = PartiallyOrderedSets().forgetful_functor()
+        left_set_element = forgetful.on_element(self, left)
+        right_set_element = forgetful.on_element(self, right)
+        assert SetElements().contains_set_element(left_set_element)
+        assert SetElements().contains_set_element(right_set_element)
         pair = product.element(
             lambda index: (
-                left._set_implementation()
+                left_set_element
                 if index is indices[0]
-                else right._set_implementation()
+                else right_set_element
             ),
         )
         assert ProductElements().contains_product_element(pair)
@@ -549,8 +554,9 @@ class PartiallyOrderedSetsCategory(Category):
         assert product_category.contains_set_product(inherited_product)
 
         def componentwise(left: PosetElement, right: PosetElement) -> Decision:
-            left_components = left._set_implementation()
-            right_components = right._set_implementation()
+            forgetful = self.forgetful_functor()
+            left_components = forgetful.on_element(left.ambient_poset(), left)
+            right_components = forgetful.on_element(right.ambient_poset(), right)
             assert ProductElements().contains_product_element(left_components)
             assert ProductElements().contains_product_element(right_components)
             indices = inherited_product.index_set()

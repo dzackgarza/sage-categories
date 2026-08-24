@@ -31,7 +31,7 @@ type ObjectPredicate = Callable[[MathematicalObject], Decision]
 class FullSubcategoryObject(MathematicalObject):
     """The local object implementation of a full subcategory."""
 
-    def __contains__(self, candidate: Any) -> bool:
+    def __contains__(self, candidate: Any) -> Decision:
         element = registered_element(candidate)
         return element is not None and element.ambient_object() is self
 
@@ -204,23 +204,11 @@ class FullSubcategory(Category):
         return self._ambient_category
 
     def __contains__(self, candidate: Any) -> bool:
-        from sage_categories.abstract_categories.hom_categories import (
-            _declared_isomorphic_objects,
-        )
-
         value = registered_value(candidate)
         if value is None:
             return False
         category = value.category()
-        if category is self or category.is_subcategory(self):
-            return True
-        if value not in self._ambient_category:
-            return False
-        return any(
-            isomorphic in self._ambient_category
-            and self._predicate(isomorphic) is True
-            for isomorphic in _declared_isomorphic_objects(value)
-        ) or self._predicate(value) is True
+        return category is self or category.is_subcategory(self)
 
     def refine(self, ambient: MathematicalObject) -> MathematicalObject:
         ambient = self._canonical_ambient(ambient)

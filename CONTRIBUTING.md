@@ -75,6 +75,39 @@ For example, an owned constructor for `RR` records its cardinality as $2^{\aleph
 The implementation cites the supporting theorem in source documentation.
 Runtime stores the typed cardinality; it does not derive uncountability or carry theorem prose.
 
+## Predicates, hypotheses, and assumptions
+
+An applied predicate is a symbolic proposition with typed mathematical arguments, such as `order_preserving(f)`.
+An assumption context is a scoped collection of applied predicates accepted as hypotheses.
+A predicate handler is an exact computation or inference rule for specified semantic types.
+
+| ID | Policy |
+| --- | --- |
+| `POL-ASSUME-001` | Give every assumable proposition an owned mathematical definition. Represent it by a property category or an owned predicate. |
+| `POL-ASSUME-002` | Use SymPy predicates or Sage and Maxima declarations for bespoke runtime assumptions. Do not implement an ad hoc assumption store. |
+| `POL-ASSUME-003` | In a SymPy backend, subclass `Predicate` and register the bespoke predicate on `Q`. Register typed handlers for exact evaluation. |
+| `POL-ASSUME-004` | Store SymPy hypotheses as applied predicates in an explicit `AssumptionsContext`. Pass that context to `ask()`. Translate `None` to the owned `Unknown`. |
+| `POL-ASSUME-005` | In a Sage symbolic backend, define a bespoke positive property as a user-defined Maxima feature. Use `GenericDeclaration` for Maxima-representable symbols and functions. |
+| `POL-ASSUME-006` | Maxima `featurep()` returns `false` when a feature is not established. Translate this result to `Unknown` unless an exact rule establishes falsity. |
+| `POL-ASSUME-007` | An assumption supplies a hypothesis. It does not prove the applied predicate. A hypothesis-backed constructor requires the active hypothesis before refinement. |
+| `POL-ASSUME-008` | A predicate handler returns `True` only when its exact rule establishes the proposition. Without a hypothesis or exact rule, return `Unknown`. |
+| `POL-ASSUME-009` | Keep engine predicate and context representations inside the backend. Public APIs use owned categories, predicates, hypothesis contexts, and `Decision`. |
+| `POL-ASSUME-010` | A theorem-backed constructor does not store its theorem as an assumption. It constructs the result under `POL-MATH-028`. |
+| `POL-ASSUME-011` | Require each hypothesis-backed route to receive an explicit owned hypothesis context. Never read process-global mutable assumptions. |
+
+For a semantic arrow $f:P\to Q$, `order_preserving(f)` states that $f$ preserves the two owned orders.
+A bare Python callable cannot state this proposition because it does not own the domain and codomain.
+
+In a SymPy backend, `Q.order_preserving(f)` is an applied bespoke predicate.
+Adding it to a local `AssumptionsContext` supplies the proposition as a scoped hypothesis.
+Pass that context explicitly to `ask()` and to the named hypothesis-backed route.
+A registered handler can instead establish the proposition for supported semantic arrow types.
+
+In a Sage backend, a user-defined Maxima feature can record the corresponding positive symbolic hypothesis.
+This declaration mechanism does not provide a proof or a general inference rule.
+
+See the official documentation for [SymPy predicates and assumption contexts](https://docs.sympy.org/latest/modules/assumptions/index.html), [Sage symbolic assumptions](https://doc.sagemath.org/html/en/reference/calculus/sage/symbolic/assumptions.html), and [Maxima features](https://maxima.sourceforge.io/docs/manual/maxima_singlepage.html).
+
 ## Semantic representations
 
 | ID | Policy |

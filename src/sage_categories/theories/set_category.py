@@ -30,6 +30,7 @@ from sage_categories.category import Category
 from sage_categories.theories.cardinals import (
     Cardinal,
     Cardinals,
+    UnknownCardinality,
 )
 from sage_categories.values import (
     UNKNOWN,
@@ -302,7 +303,7 @@ class SetsCategory(Category):
         first: Arrow,
         second: Arrow,
     ) -> SetLimitObject:
-        return self._pullback(first, second, None)
+        return self._pullback(first, second, UnknownCardinality())
 
     def pullback_with_cardinality(
         self,
@@ -316,7 +317,7 @@ class SetsCategory(Category):
         self,
         first: Arrow,
         second: Arrow,
-        cardinality: Cardinal | None,
+        cardinality: Cardinal,
     ) -> SetLimitObject:
         from sage_categories.abstract_categories.products import DiagramCategory
         from sage_categories.theories.set_limits import (
@@ -334,7 +335,7 @@ class SetsCategory(Category):
         diagram = InclusionFunctor(index, self)
         limits = self.Limits(index)
         assert is_limits_of_sets_category(limits)
-        if cardinality is None:
+        if cardinality is UnknownCardinality():
             return limits(diagram)
         return limits.with_cardinality(diagram, cardinality)
 

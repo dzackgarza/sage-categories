@@ -21,6 +21,7 @@ from sage_categories.abstract_categories.hom_categories import (
 from sage_categories.category import Category
 from sage_categories.theories.cardinals import (
     Cardinal,
+    UnknownCardinality,
     cardinal,
 )
 from sage_categories.theories.set_elements import (
@@ -432,18 +433,24 @@ class SubsetsOfSetCategory(Category):
 
         assert first in self and second in self
         members: frozenset[SetElement] | None = None
-        cardinality: Cardinal | None = None
+        cardinality = UnknownCardinality()
         first_members = first._represented_members()
         second_members = second._represented_members()
         if first_members is not None and second_members is not None:
             members = first_members & second_members
             cardinality = cardinal(len(members))
         subobjects = Sets().Subobjects(self._base_set)
-        pullback = Sets().pullback_with_cardinality(
-            first.structure_morphism(),
-            second.structure_morphism(),
-            cardinality,
-        )
+        if cardinality is UnknownCardinality():
+            pullback = Sets().pullback(
+                first.structure_morphism(),
+                second.structure_morphism(),
+            )
+        else:
+            pullback = Sets().pullback_with_cardinality(
+                first.structure_morphism(),
+                second.structure_morphism(),
+                cardinality,
+            )
         apex = pullback.apex()
         assert Sets().contains_set(apex)
         projection = pullback.projection(first.object())

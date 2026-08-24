@@ -5,13 +5,40 @@
 `sage-categories` is a foundational category framework for Sage-based mathematics.
 It is not an application repository or a domain-specific research corpus.
 
-Read these files before substantive work:
+These files govern substantive work. Read the relevant sections for the active task:
 
 - `README.md` defines the goal and mathematical philosophy.
 - `CONTRIBUTING.md` is the coding-policy index. Its `POL-*` identifiers are stable review references.
 
 The package owns its mathematical category graph and public API.
 Sage supplies computation objects, algorithms, coercion, and selected runtime machinery.
+
+## Repository state and task entry
+
+This repository is already initialized.
+The project vault is available through `.agents` and `.hermes`.
+Do not check initialization, rerun initialization, rebuild project records, or probe vault availability.
+Do not load or run `project-initialization` unless the task changes the repository's initialization state.
+
+Treat the current working tree as the source of truth.
+Inspect current files and current runtime behavior.
+Do not use Git history to decide what the repository contains or whether current code is correct.
+
+Read Git history only when the user or active plan asks about past work, past decisions, or provenance.
+Otherwise, do not inspect logs, blame, ancestry, old branches, commit messages, or prior revisions.
+
+Start repository inspection with `tree` at the smallest useful depth.
+Then read the exact target files and focused sections of their immediate owners.
+Use focused `rg` queries.
+Do not dump broad surveys, whole subtrees, generated sources, or large search results into context.
+
+When chat supplies a clear plan, directive, or task report, execute its first concrete task immediately.
+Inspect only the files and dependencies needed for that task.
+Do not re-plan, audit the repository, inspect history, or initialize tooling.
+
+For a clear plan, limit Git use to current-state safety and completed work.
+Check the target file, create a checkpoint when needed, stage exact files, and commit.
+Do not change branches, rebase, stash, cherry-pick, or otherwise manipulate Git unless the task requires it.
 
 ## Current implementation scope
 
@@ -64,6 +91,11 @@ Do not preserve a mistaken architecture with a cheaper local implementation.
 Kernel complexity is justified only when it removes repetition from theory code.
 The theory layer must read like the mathematics it implements.
 A new category should state its new data and immediate structural functors, then inherit the rest.
+
+A leaf category must state its mathematical data, operations, structural functors, constructors, and lifts.
+Stop local work when a leaf contains generic reflection, dispatch, route traversal, transport, cache ownership, wrappers, or backend selection.
+Treat that wiring as a kernel or backend-boundary defect.
+Repair the owning foundation instead of polishing, moving, or preserving the wiring in a leaf workaround.
 
 Foundational categories remain valuable before later theories use them.
 Their value is the mathematical structure they make expressible, not their current number of callers.
@@ -492,6 +524,16 @@ Keep precision parameters at that boundary.
 
 Read the test guidelines before editing a test file.
 
+Never run repository test, lint, type-check, format, or aggregate-check recipes manually.
+Commit and push hooks own these checks and run them automatically.
+Do the work, commit it, and repair a hook failure from its exact output.
+Retry the commit or push after that repair.
+Do not duplicate a hook check before the commit.
+
+A targeted Python test needed during implementation is the only routine manual exception.
+Read `justfile` before running it.
+Use the Sage-aware route defined there instead of guessing a plain Python command.
+
 Every assertion must state a mathematical proposition or an essential type invariant.
 Test the real category compiler and public API.
 
@@ -554,7 +596,7 @@ Use small mathematical specimens unless the claim concerns a large named object.
 
 ## Work discipline
 
-Before editing, inspect the repository tree and the complete target artifact.
+Before editing, inspect a focused repository tree and the complete target artifact.
 Preserve existing and concurrent work.
 
 Work on the requested mathematical object, not a plan, count, checker result, or reviewer verdict.

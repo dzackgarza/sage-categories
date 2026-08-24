@@ -37,9 +37,13 @@ from sage_categories.theories.set_category import (
     _set_morphism,
 )
 from sage_categories.theories.set_coproducts import (
+    CoproductElement,
+    CoproductElements,
     CoproductSet,
     CoproductSetElement,
+    SetCoproductObject,
     is_coproduct_set_element,
+    is_coproducts_of_sets_category,
 )
 from sage_categories.theories.set_elements import (
     SetElement,
@@ -51,8 +55,9 @@ from sage_categories.theories.set_objects import (
 from sage_categories.values import (
     UNKNOWN,
     Decision,
-    MathematicalElement,
     MathematicalObject,
+    TransportedElement,
+    registered_element,
     registered_value,
 )
 
@@ -60,23 +65,23 @@ if TYPE_CHECKING:
     from sage_categories.theories.set_subobjects import SetMorphism
 
 
-class ColimitElement(MathematicalElement):
-    """An element of a Set colimit, represented by one coproduct term."""
+class ColimitSetElement(SetElement):
+    """The private quotient representation of a set-colimit element."""
 
     def __init__(
         self,
-        colimit: ColimitSet | SetColimitObject,
+        colimit: ColimitSet,
         representative: CoproductSetElement,
     ) -> None:
-        assert representative.coproduct() is colimit.coproduct()
+        assert representative.coproduct() is colimit.coproduct_apex()
         self._colimit = colimit
         self._representative = representative
         super().__init__(
-            category=ColimitElements(),
+            category=SetElements(),
             ambient_object=colimit,
         )
 
-    def colimit(self) -> ColimitSet | SetColimitObject:
+    def colimit(self) -> ColimitSet:
         return self._colimit
 
     def representative(self) -> CoproductSetElement:
@@ -86,7 +91,7 @@ class ColimitElement(MathematicalElement):
         if candidate is self:
             return True
         value = registered_value(candidate)
-        if value is None or not ColimitElements().contains_colimit_element(value):
+        if value is None or not is_colimit_set_element(value):
             return False
         if value.colimit() is not self._colimit:
             return False
@@ -96,6 +101,47 @@ class ColimitElement(MathematicalElement):
 
     def __hash__(self) -> int:
         return hash(id(self._colimit))
+
+
+class ColimitElement(TransportedElement):
+    """An element of a set colimit."""
+
+    def _set_implementation(self) -> ColimitSetElement:
+        value = self._ambient_implementation()
+        assert is_colimit_set_element(value)
+        return value
+
+    def colimit(self) -> SetColimitObject:
+        colimit = self.ambient_object()
+        assert is_set_colimit_object(colimit)
+        return colimit
+
+    def representative(self) -> CoproductElement:
+        colimit = self.colimit()
+        coproduct = colimit.coproduct()
+        category = coproduct.category()
+        assert is_coproducts_of_sets_category(category)
+        representative = category.inclusion().preimage_element(
+            coproduct,
+            self._set_implementation().representative(),
+        )
+        assert CoproductElements().contains_coproduct_element(representative)
+        return representative
+
+    def __eq__(self, candidate: Any) -> bool:
+        if candidate is self:
+            return True
+        value = registered_value(candidate)
+        if value is None or not ColimitElements().contains_colimit_element(value):
+            return False
+        if value.colimit() is not self.colimit():
+            return False
+        answer = self.colimit().equivalent(self, value)
+        assert answer is not UNKNOWN, "equality in this colimit is not decidable from its presentation"
+        return answer
+
+    def __hash__(self) -> int:
+        return hash(id(self.colimit()))
 
 
 class ColimitElementsCategory(Category):
@@ -116,12 +162,37 @@ class ColimitElementsCategory(Category):
     ) -> TypeIs[ColimitElement]:
         return candidate in self
 
+    def __contains__(self, candidate: Any) -> bool:
+        element = registered_element(candidate)
+        return (
+            element is not None
+            and is_set_colimit_object(element.ambient_object())
+        )
+
 
 _COLIMIT_ELEMENTS = ColimitElementsCategory()
+
+_COLIMIT_SET_ELEMENTS: dict[int, ColimitSetElement] = {}
 
 
 def ColimitElements() -> ColimitElementsCategory:
     return _COLIMIT_ELEMENTS
+
+
+def is_colimit_set_element(
+    candidate: MathematicalObject,
+) -> TypeIs[ColimitSetElement]:
+    return _COLIMIT_SET_ELEMENTS.get(id(candidate)) is candidate
+
+
+def is_set_colimit_object(
+    candidate: MathematicalObject,
+) -> TypeIs[SetColimitObject]:
+    category = candidate.category()
+    return (
+        is_colimits_of_sets_category(category)
+        and category.contains_set_colimit(candidate)
+    )
 
 
 class ColimitSet(SetObject):
@@ -141,10 +212,9 @@ class ColimitSet(SetObject):
             discrete_objects,
             lambda index: self._object_image(index.label()),
         )
-        self._coproduct = CoproductSet(
-            object_diagram,
-            category=Sets(),
-        )
+        coproducts = Sets().Coproducts(discrete_objects)
+        assert is_coproducts_of_sets_category(coproducts)
+        self._coproduct_object = coproducts(object_diagram)
         super().__init__(category=category, cardinality=cardinality)
 
     def _object_image(self, index: SetElement) -> SetObject:
@@ -155,20 +225,26 @@ class ColimitSet(SetObject):
     def diagram(self) -> Functor:
         return self._diagram
 
-    def coproduct(self) -> CoproductSet:
-        return self._coproduct
+    def coproduct(self) -> SetCoproductObject:
+        return self._coproduct_object
 
-    def _element_(self, index: SetElement, value: SetElement) -> ColimitElement:
-        return ColimitElements().ObjectType(self, self._coproduct.element(index, value))
+    def coproduct_apex(self) -> CoproductSet:
+        return self._coproduct_object.apex()
+
+    def _element_(self, index: SetElement, value: SetElement) -> ColimitSetElement:
+        representative = self.coproduct_apex()._element_(index, value)
+        element = ColimitSetElement(self, representative)
+        _COLIMIT_SET_ELEMENTS[id(element)] = element
+        return element
 
     def _membership_(self, member: SetElement) -> Decision:
         value = registered_value(member)
-        return value is not None and ColimitElements().contains_colimit_element(value) and value.colimit() is self
+        return value is not None and is_colimit_set_element(value) and value.colimit() is self
 
     def equivalent(
         self,
-        left: ColimitElement,
-        right: ColimitElement,
+        left: ColimitSetElement,
+        right: ColimitSetElement,
     ) -> Decision:
         assert left.colimit() is self and right.colimit() is self
         left_representative = left.representative()
@@ -194,10 +270,11 @@ class ColimitSet(SetObject):
         return any(_same_coproduct_term(right_representative, term) for term in component)
 
     def _has_finitely_many_terms(self) -> bool:
-        indices = self._coproduct.index_set()
+        coproduct = self.coproduct_apex()
+        indices = coproduct.index_set()
         if indices.is_finite() is not True:
             return False
-        return all(self._coproduct.cofactor(index).is_finite() is True for index in indices)
+        return all(coproduct.cofactor(index).is_finite() is True for index in indices)
 
     def _component_of(
         self,
@@ -205,7 +282,7 @@ class ColimitSet(SetObject):
         start: CoproductSetElement,
     ) -> tuple[CoproductSetElement, ...]:
         representatives: tuple[CoproductSetElement, ...] = ()
-        for representative in self._coproduct:
+        for representative in self.coproduct_apex():
             value = registered_value(representative)
             assert value is not None
             assert is_coproduct_set_element(value)
@@ -231,11 +308,12 @@ class ColimitSet(SetObject):
             reached = (*reached, *enlarged)
 
     def _set_iterator_(self) -> Iterator[SetElement]:
-        chosen: tuple[ColimitElement, ...] = ()
-        for representative in self._coproduct:
+        chosen: tuple[ColimitSetElement, ...] = ()
+        for representative in self.coproduct_apex():
             value = registered_value(representative)
             assert value is not None and is_coproduct_set_element(value)
-            candidate = ColimitElement(self, value)
+            candidate = ColimitSetElement(self, value)
+            _COLIMIT_SET_ELEMENTS[id(candidate)] = candidate
             if any(self.equivalent(candidate, known) is True for known in chosen):
                 continue
             chosen = (*chosen, candidate)
@@ -244,7 +322,7 @@ class ColimitSet(SetObject):
     def _injection(self, index: SetElement) -> SetMorphism:
 
         return _set_morphism(
-            self._coproduct.cofactor(index),
+            self.coproduct_apex().cofactor(index),
             self,
             lambda value: self._element_(index, value),
         )
@@ -267,21 +345,23 @@ class SetColimitObject(ColimitObject):
             category=Sets(),
             cardinality=cardinality,
         )
-        self._coproduct = colimit_set.coproduct()
+        self._colimit_set = colimit_set
         super().__init__(
             category=category,
             diagram=diagram,
             presentation=_colimit_presentation(diagram, colimit_set),
         )
 
-    def coproduct(self) -> CoproductSet:
-        return self._coproduct
+    def coproduct(self) -> SetCoproductObject:
+        return self._colimit_set.coproduct()
 
     def element(self, index: SetElement, value: SetElement) -> ColimitElement:
-        return ColimitElements().ObjectType(
-            self,
-            self._coproduct._element_(index, value),
-        )
+        ambient = self._colimit_set._element_(index, value)
+        category = self.category()
+        assert is_colimits_of_sets_category(category)
+        element = category.inclusion().preimage_element(self, ambient)
+        assert ColimitElements().contains_colimit_element(element)
+        return element
 
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
@@ -293,61 +373,17 @@ class SetColimitObject(ColimitObject):
         right: ColimitElement,
     ) -> Decision:
         assert left.colimit() is self and right.colimit() is self
-        left_representative = left.representative()
-        right_representative = right.representative()
-        if _same_coproduct_term(left_representative, right_representative):
-            return True
-        arrows = index_arrows(self.diagram().domain())
-        if arrows.is_finite() is not True:
-            return UNKNOWN
-        if _colimit_terms_are_related(
-            self.diagram(),
-            arrows,
-            left_representative,
-            right_representative,
-        ):
-            return True
-        if not self._has_finitely_many_terms():
-            return UNKNOWN
-        component = self._component_of(arrows, left_representative)
-        return any(_same_coproduct_term(right_representative, term) for term in component)
-
-    def _has_finitely_many_terms(self) -> bool:
-        indices = self._coproduct.index_set()
-        if indices.is_finite() is not True:
-            return False
-        return all(self._coproduct.cofactor(index).is_finite() is True for index in indices)
-
-    def _component_of(
-        self,
-        arrows: SetObject,
-        start: CoproductSetElement,
-    ) -> tuple[CoproductSetElement, ...]:
-        representatives: tuple[CoproductSetElement, ...] = ()
-        for representative in self._coproduct:
-            value = registered_value(representative)
-            assert value is not None
-            assert is_coproduct_set_element(value)
-            representatives = (*representatives, value)
-        reached: tuple[CoproductSetElement, ...] = (start,)
-        while True:
-            enlarged = tuple(
-                candidate
-                for candidate in representatives
-                if not any(_same_coproduct_term(candidate, known) for known in reached)
-                and any(
-                    _colimit_terms_are_related(
-                        self.diagram(),
-                        arrows,
-                        candidate,
-                        known,
-                    )
-                    for known in reached
-                )
-            )
-            if not enlarged:
-                return reached
-            reached = (*reached, *enlarged)
+        category = self.category()
+        assert is_colimits_of_sets_category(category)
+        inclusion = category.inclusion()
+        left_ambient = inclusion.on_element(self, left)
+        right_ambient = inclusion.on_element(self, right)
+        assert is_colimit_set_element(left_ambient)
+        assert is_colimit_set_element(right_ambient)
+        return self._colimit_set.equivalent(
+            left_ambient,
+            right_ambient,
+        )
 
     def injection(self, index: MathematicalObject) -> SetMorphism:
 
@@ -356,13 +392,13 @@ class SetColimitObject(ColimitObject):
     def _injection(self, index: SetElement) -> SetMorphism:
 
         return _set_morphism(
-            self._coproduct.cofactor(index),
+            self.coproduct().cofactor(index),
             self,
             lambda value: self.element(index, value),
         )
 
     def apex(self) -> SetObject:
-        return self
+        return self._colimit_set
 
     def universal_morphism(self, cocone: CoconeObject) -> SetMorphism:
 

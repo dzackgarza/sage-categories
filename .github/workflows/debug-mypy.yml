@@ -22,7 +22,7 @@ jobs:
       - name: Install compiler-discovery fix
         run: |
           /usr/local/sage-env/python -m pip install --force-reinstall \
-            'sage-mypy-category-plugin @ git+https://github.com/dzackgarza/sagemath-mypy-plugin@fix/compiler-discovery-first-pass'
+            'sage-mypy-category-plugin @ git+https://github.com/dzackgarza/sagemath-mypy-plugin@307db94c121f6be0cf39b8280d9a8a83aa40a490'
       - name: Run mypy with traceback
         run: |
           export MYPYPATH="$HOME/ai-review-ci/typings"

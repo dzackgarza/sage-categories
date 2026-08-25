@@ -1,6 +1,7 @@
 """The primary import surface for the owned mathematical universe."""
 
 from sage_categories import (
+    AppliedProperty,
     NN,
     QQ,
     RR,
@@ -59,6 +60,7 @@ from sage_categories import (
     NaturalNumbers,
     NaturalTransformation,
     NaturalTransformations,
+    NegatedProperty,
     ObjectSet,
     Ordinal,
     Ordinals,
@@ -101,10 +103,12 @@ from sage_categories import (
     omega,
     omega0,
     ordinal,
+    assume,
     version,
 )
 
 __all__ = [
+    "AppliedProperty",
     "NN",
     "QQ",
     "RR",
@@ -163,6 +167,7 @@ __all__ = [
     "NaturalNumbers",
     "NaturalTransformation",
     "NaturalTransformations",
+    "NegatedProperty",
     "ObjectSet",
     "Ordinal",
     "Ordinals",
@@ -205,5 +210,6 @@ __all__ = [
     "omega",
     "omega0",
     "ordinal",
+    "assume",
     "version",
 ]

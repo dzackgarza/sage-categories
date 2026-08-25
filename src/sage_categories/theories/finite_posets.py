@@ -103,6 +103,21 @@ class _FinitePosetSageBoundary:
 class FinitePosetObject(_FinitePosetSageBoundary, MathematicalObject):
     """A finite poset with finite order algorithms."""
 
+    def is_finite(self) -> Decision:
+        return True
+
+    def has_bottom(self) -> Decision:
+        return self._sage_poset().has_bottom()
+
+    def has_top(self) -> Decision:
+        return self._sage_poset().has_top()
+
+    def is_ranked(self) -> Decision:
+        return self._sage_poset().is_ranked()
+
+    def is_graded(self) -> Decision:
+        return self._sage_poset().is_graded()
+
     def covers(
         self,
         lower: PosetElement,
@@ -230,7 +245,7 @@ class FinitePosetObject(_FinitePosetSageBoundary, MathematicalObject):
         )
         from sage_categories.theories.total_orders import FiniteTotallyOrderedSets
 
-        result = FiniteTotallyOrderedSets().from_enumeration(enumeration)
+        result = FiniteTotallyOrderedSets()(enumeration)
         assert FiniteTotallyOrderedSets().contains_finite_total_order(result)
         return result
 
@@ -249,6 +264,9 @@ class FinitePosetWithBottomObject(_FinitePosetSageBoundary, MathematicalObject):
     def bottom(self) -> PosetElement:
         return self._owned_element(self._sage_poset().bottom())
 
+    def has_bottom(self) -> Decision:
+        return True
+
 
 class FinitePosetWithTopObject(_FinitePosetSageBoundary, MathematicalObject):
     """A finite poset with a greatest element."""
@@ -256,12 +274,18 @@ class FinitePosetWithTopObject(_FinitePosetSageBoundary, MathematicalObject):
     def top(self) -> PosetElement:
         return self._owned_element(self._sage_poset().top())
 
+    def has_top(self) -> Decision:
+        return True
+
 
 class RankedFinitePosetObject(_FinitePosetSageBoundary, MathematicalObject):
     """A ranked finite poset."""
 
     def rank(self) -> Cardinal:
         return cardinal(int(self._sage_poset().rank()))
+
+    def is_ranked(self) -> Decision:
+        return True
 
     def rank_of_element(self, member: PosetElement) -> Cardinal:
         return cardinal(int(self._sage_poset().rank(self._sage_element(member))))
@@ -288,6 +312,9 @@ class RankedFinitePosetObject(_FinitePosetSageBoundary, MathematicalObject):
 
 class GradedFinitePosetObject(_FinitePosetSageBoundary, MathematicalObject):
     """A graded finite poset."""
+
+    def is_graded(self) -> Decision:
+        return True
 
 
 class FinitePosetWithBottomElement(MathematicalElement):
@@ -336,33 +363,19 @@ class FinitePosetsCategory(FullSubcategory):
         self._graded: GradedFinitePosetsCategory | None = None
         super().__init__(
             posets,
-            self._is_finite,
+            SetObject.is_finite,
             name="Finite partially ordered sets",
         )
 
     def __call__(
         self,
-        underlying_set: SetObject,
-        relation: OrderRelation,
-    ) -> FinitePosetObject:
-        assert underlying_set in FiniteSets()
-        poset = PartiallyOrderedSets()(underlying_set, relation)
-        assert self.contains_finite_poset(poset)
-        return poset
-
-    def from_finite_underlying_poset(
-        self,
         poset: PosetObject,
     ) -> FinitePosetObject:
         underlying_set = PartiallyOrderedSets().underlying_set(poset)
         assert underlying_set in FiniteSets()
-        result = self._refine_object(poset)
+        result = super().__call__(poset)
         assert self.contains_finite_poset(result)
         return result
-
-    def _is_finite(self, value: MathematicalObject) -> bool:
-        assert PartiallyOrderedSets().contains_poset(value)
-        return PartiallyOrderedSets().underlying_set(value) in FiniteSets()
 
     def contains_finite_poset(
         self,
@@ -404,13 +417,9 @@ class FinitePosetsWithBottomCategory(FullSubcategory):
     def __init__(self, finite_posets: FinitePosetsCategory) -> None:
         super().__init__(
             finite_posets,
-            self._has_bottom,
+            FinitePosetObject.has_bottom,
             name="Finite posets with a least element",
         )
-
-    def _has_bottom(self, value: MathematicalObject) -> bool:
-        assert PartiallyOrderedSets().Finite().contains_finite_poset(value)
-        return value._sage_poset().has_bottom()
 
     def contains_poset_with_bottom(
         self,
@@ -429,13 +438,9 @@ class FinitePosetsWithTopCategory(FullSubcategory):
     def __init__(self, finite_posets: FinitePosetsCategory) -> None:
         super().__init__(
             finite_posets,
-            self._has_top,
+            FinitePosetObject.has_top,
             name="Finite posets with a greatest element",
         )
-
-    def _has_top(self, value: MathematicalObject) -> bool:
-        assert PartiallyOrderedSets().Finite().contains_finite_poset(value)
-        return value._sage_poset().has_top()
 
     def contains_poset_with_top(
         self,
@@ -454,13 +459,9 @@ class RankedFinitePosetsCategory(FullSubcategory):
     def __init__(self, finite_posets: FinitePosetsCategory) -> None:
         super().__init__(
             finite_posets,
-            self._is_ranked,
+            FinitePosetObject.is_ranked,
             name="Ranked finite posets",
         )
-
-    def _is_ranked(self, value: MathematicalObject) -> bool:
-        assert PartiallyOrderedSets().Finite().contains_finite_poset(value)
-        return value._sage_poset().is_ranked()
 
     def contains_ranked_poset(
         self,
@@ -479,13 +480,9 @@ class GradedFinitePosetsCategory(FullSubcategory):
     def __init__(self, ranked_posets: RankedFinitePosetsCategory) -> None:
         super().__init__(
             ranked_posets,
-            self._is_graded,
+            FinitePosetObject.is_graded,
             name="Graded finite posets",
         )
-
-    def _is_graded(self, value: MathematicalObject) -> bool:
-        assert PartiallyOrderedSets().Finite().Ranked().contains_ranked_poset(value)
-        return value._sage_poset().is_graded()
 
     def contains_graded_poset(
         self,

@@ -16,11 +16,13 @@ from sage_categories.descriptors import (
     ForwardedObjectMethod,
     ImplementationRole,
     MethodSignature,
+    RefiningPropertyMethod,
     method_signature,
 )
 from sage_categories.values import (
     Arrow,
     CategoryElement,
+    Decision,
     MathematicalElement,
     MathematicalObject,
 )
@@ -188,7 +190,9 @@ class CategoryCompiler:
         current = ambient.category()
         if current is category or current.is_subcategory(category):
             return ambient
-        assert ambient in category.ambient_category()
+        assert category.is_subcategory(current) or current.is_subcategory(
+            category.ambient_category()
+        )
         refined_category = self._property_refinement_category(current, category)
         ambient.__class__ = self._refined_type(
             type(ambient),
@@ -234,6 +238,30 @@ class CategoryCompiler:
     def compiled_categories(self) -> tuple[Category, ...]:
         """Return every category whose implementation types this has compiled."""
         return tuple(self._compiled_categories.values())
+
+    def register_object_property(
+        self,
+        ambient_category: Category,
+        property_category: FullSubcategory,
+        predicate: Callable[[MathematicalObject], Decision],
+    ) -> None:
+        """Connect an ambient predicate to its property self-refinement."""
+        implementation = ambient_category.local_object_type()
+        name = predicate.__name__
+        installed = inspect.getattr_static(implementation, name, None)
+        if isinstance(installed, RefiningPropertyMethod):
+            installed.register(ambient_category, property_category, predicate)
+            return
+        assert installed is predicate or isinstance(installed, ForwardedObjectMethod)
+        type.__setattr__(
+            implementation,
+            name,
+            RefiningPropertyMethod(
+                ambient_category,
+                property_category,
+                predicate,
+            ),
+        )
 
     def declared_inheritance(self) -> dict[str, dict[str, tuple[str, ...]]]:
         """Report, per role, the implementation types each category inherits from.
@@ -779,6 +807,13 @@ class CategoryCompiler:
                     name: method
                     for name, method in vars(implementation_type).items()
                     if name not in _IGNORED_METHODS and (not name.startswith("_") or name.startswith("__")) and inspect.isfunction(method)
+                }
+            )
+            methods.update(
+                {
+                    name: descriptor.declaration()
+                    for name, descriptor in vars(implementation_type).items()
+                    if isinstance(descriptor, RefiningPropertyMethod)
                 }
             )
         return methods

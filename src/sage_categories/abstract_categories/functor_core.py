@@ -490,7 +490,7 @@ class RestrictedStructuralFunctor(StructuralFunctor):
     def _object_image(self, source: MathematicalObject) -> MathematicalObject:
         ambient_source = self._source_property.inclusion().on_object(source)
         ambient_image = self._ambient_functor.on_object(ambient_source)
-        return self._target_property._refine_object(ambient_image)
+        return self._target_property(ambient_image)
 
     def _morphism_image(self, morphism: Arrow) -> Arrow:
         source = self.on_object(morphism.domain())

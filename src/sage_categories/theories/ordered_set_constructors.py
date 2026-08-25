@@ -54,7 +54,7 @@ class SimplexOrderIndexing:
             underlying_set,
             lambda member: positions[member.value()],
         )
-        return FiniteTotallyOrderedSets().from_enumeration(enumeration)
+        return FiniteTotallyOrderedSets()(enumeration)
 
     def __repr__(self) -> str:
         return "Delta"

@@ -219,6 +219,12 @@ class SetsCategory(Category):
             self._uncountable_sets = UncountableSetsCategory(self)
         return self._uncountable_sets
 
+    def _initialize_property_categories(self) -> None:
+        self.Countable()
+        self.Finite()
+        self.Infinite()
+        self.Uncountable()
+
     def CardinalityFunctor(self) -> CardinalityFunctor:
         if self._cardinality_functor is None:
             self._cardinality_functor = CardinalityFunctor(self)
@@ -368,6 +374,9 @@ class SetsCategory(Category):
 class CountableSetObject(MathematicalObject):
     """A countable set."""
 
+    def is_countable(self) -> Decision:
+        return True
+
 
 class CountableSetElement(MathematicalElement):
     """An element of a countable set."""
@@ -384,16 +393,14 @@ class CountableSetsCategory(FullSubcategory):
 
     def __init__(self, sets: SetsCategory) -> None:
         self._sets = sets
-        super().__init__(sets, self._is_countable, name="Countable sets")
-
-    def _is_countable(self, value: MathematicalObject) -> bool:
-        assert Sets().contains_set(value)
-        finite = value.cardinality().is_finite()
-        return finite is True or value.cardinality() == Cardinals().aleph(0)
+        super().__init__(sets, SetObject.is_countable, name="Countable sets")
 
 
 class FiniteSetObject(MathematicalObject):
     """A finite set."""
+
+    def is_finite(self) -> Decision:
+        return True
 
 
 class FiniteSetElement(MathematicalElement):
@@ -417,7 +424,7 @@ class FiniteSetsCategory(FullSubcategory):
         ] = {}
         super().__init__(
             sets.Countable(),
-            self._is_finite,
+            SetObject.is_finite,
             name="Finite sets",
         )
 
@@ -425,13 +432,9 @@ class FiniteSetsCategory(FullSubcategory):
         cached = self._finite_sets_by_members.get(members)
         if cached is None:
             ambient = EnumeratedFiniteSetObject(category=Sets(), values=members)
-            cached = self._refine_object(ambient)
+            cached = super().__call__(ambient)
             self._finite_sets_by_members[members] = cached
         return cached
-
-    def _is_finite(self, value: MathematicalObject) -> bool:
-        assert Sets().contains_set(value)
-        return value.cardinality().is_finite() is True
 
     def contains_finite_set(
         self,
@@ -442,6 +445,9 @@ class FiniteSetsCategory(FullSubcategory):
 
 class InfiniteSetObject(MathematicalObject):
     """An infinite set."""
+
+    def is_infinite(self) -> Decision:
+        return True
 
 
 class InfiniteSetElement(MathematicalElement):
@@ -459,15 +465,14 @@ class InfiniteSetsCategory(FullSubcategory):
 
     def __init__(self, sets: SetsCategory) -> None:
         self._sets = sets
-        super().__init__(sets, self._is_infinite, name="Infinite sets")
-
-    def _is_infinite(self, value: MathematicalObject) -> bool:
-        assert Sets().contains_set(value)
-        return value.cardinality().is_infinite() is True
+        super().__init__(sets, SetObject.is_infinite, name="Infinite sets")
 
 
 class UncountableSetObject(MathematicalObject):
     """An uncountable set."""
+
+    def is_uncountable(self) -> Decision:
+        return True
 
 
 class UncountableSetElement(MathematicalElement):
@@ -487,14 +492,9 @@ class UncountableSetsCategory(FullSubcategory):
         self._sets = sets
         super().__init__(
             sets.Infinite(),
-            self._is_uncountable,
+            SetObject.is_uncountable,
             name="Uncountable sets",
         )
-
-    def _is_uncountable(self, value: MathematicalObject) -> bool:
-        assert Sets().contains_set(value)
-        size = value.cardinality()
-        return size.is_infinite() is True and size != Cardinals().aleph(0)
 
 
 _SETS: SetsCategory | None = None
@@ -505,6 +505,7 @@ def Sets() -> SetsCategory:
 
     if _SETS is None:
         _SETS = SetsCategory()
+        _SETS._initialize_property_categories()
     return _SETS
 
 

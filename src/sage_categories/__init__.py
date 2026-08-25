@@ -2,6 +2,7 @@
 
 from importlib.metadata import version as _distribution_version
 
+from sage_categories.assumptions import AppliedProperty, NegatedProperty, assume
 from sage_categories.abstract_categories.arrow_categories import (
     ArrowCategory,
     Core,
@@ -124,6 +125,7 @@ from sage_categories.values import (
 NN = NaturalNumbers()
 
 __all__ = [
+    "AppliedProperty",
     "NN",
     "QQ",
     "RR",
@@ -182,6 +184,7 @@ __all__ = [
     "NaturalNumbers",
     "NaturalTransformation",
     "NaturalTransformations",
+    "NegatedProperty",
     "ObjectSet",
     "Ordinal",
     "Ordinals",
@@ -224,6 +227,7 @@ __all__ = [
     "omega",
     "omega0",
     "ordinal",
+    "assume",
     "version",
 ]
 

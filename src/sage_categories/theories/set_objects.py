@@ -355,7 +355,7 @@ def NaturalNumbers() -> MathematicalObject:
     if _NATURAL_NUMBERS is None:
         from sage_categories.theories.set_category import CountableSets
 
-        _NATURAL_NUMBERS = CountableSets()._refine_object(NaturalNumbersSet())
+        _NATURAL_NUMBERS = CountableSets()(NaturalNumbersSet())
     return _NATURAL_NUMBERS
 
 

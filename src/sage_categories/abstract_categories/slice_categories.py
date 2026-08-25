@@ -51,6 +51,22 @@ class SliceObject(MathematicalObject):
     def structure_morphism(self) -> Arrow:
         return self._structure_morphism
 
+    def is_subobject(self) -> bool:
+        category = self.structure_morphism().base_category()
+        return self.structure_morphism() in category.MonomorphismArrowCategory()
+
+    def is_superobject(self) -> bool:
+        category = self.structure_morphism().base_category()
+        return self.structure_morphism() in category.MonomorphismArrowCategory()
+
+    def is_covering_object(self) -> bool:
+        category = self.structure_morphism().base_category()
+        return self.structure_morphism() in category.EpimorphismArrowCategory()
+
+    def is_covered_object(self) -> bool:
+        category = self.structure_morphism().base_category()
+        return self.structure_morphism() in category.EpimorphismArrowCategory()
+
 
 class SubobjectObject(FullSubcategoryObject):
     """An object equipped with a monomorphism into one fixed object."""
@@ -62,6 +78,9 @@ class SubobjectObject(FullSubcategoryObject):
         assert category.contains_subobject(other)
         assert self.fixed_object() is other.fixed_object()
         return category.intersection(self, other)
+
+    def is_subobject(self) -> bool:
+        return True
 
 
 class SubobjectElement(FullSubcategoryElement):
@@ -75,6 +94,9 @@ class SubobjectArrow(FullSubcategoryArrow):
 class SuperobjectObject(FullSubcategoryObject):
     """An object equipped with a monomorphism from one fixed object."""
 
+    def is_superobject(self) -> bool:
+        return True
+
 
 class SuperobjectElement(FullSubcategoryElement):
     """An element of a superobject presentation."""
@@ -87,6 +109,9 @@ class SuperobjectArrow(FullSubcategoryArrow):
 class CoveringObject(FullSubcategoryObject):
     """An object equipped with an epimorphism to one fixed object."""
 
+    def is_covering_object(self) -> bool:
+        return True
+
 
 class CoveringObjectElement(FullSubcategoryElement):
     """An element of a covering-object presentation."""
@@ -98,6 +123,9 @@ class CoveringObjectArrow(FullSubcategoryArrow):
 
 class CoveredObject(FullSubcategoryObject):
     """An object equipped with an epimorphism from one fixed object."""
+
+    def is_covered_object(self) -> bool:
+        return True
 
 
 class CoveredObjectElement(FullSubcategoryElement):
@@ -372,21 +400,15 @@ class SubobjectCategory(FullSubcategory):
         self._target = target
         super().__init__(
             ambient_category.SliceOver(target),
-            self._is_subobject,
+            SliceObject.is_subobject,
             name=f"Subobjects of {target}",
         )
-
-    def _is_subobject(self, candidate: MathematicalObject) -> bool:
-        slice_category = self.ambient_category()
-        assert is_slice_over(slice_category)
-        assert slice_category.contains_slice_object(candidate)
-        return candidate.structure_morphism() in self._base_category.MonomorphismArrowCategory()
 
     def __call__(self, structure_morphism: Arrow) -> SubobjectObject:
         assert structure_morphism in self._base_category.MonomorphismArrowCategory()
         assert structure_morphism.codomain() is self._target
         slice_object = self.ambient_category()(structure_morphism)
-        refined = self._refine_object(slice_object)
+        refined = super().__call__(slice_object)
         assert self.contains_subobject(refined)
         return refined
 
@@ -430,21 +452,15 @@ class SuperobjectCategory(FullSubcategory):
         self._source = source
         super().__init__(
             ambient_category.CosliceUnder(source),
-            self._is_superobject,
+            SliceObject.is_superobject,
             name=f"Superobjects of {source}",
         )
-
-    def _is_superobject(self, candidate: MathematicalObject) -> bool:
-        coslice_category = self.ambient_category()
-        assert is_coslice_under(coslice_category)
-        assert coslice_category.contains_slice_object(candidate)
-        return candidate.structure_morphism() in self._base_category.MonomorphismArrowCategory()
 
     def __call__(self, structure_morphism: Arrow) -> MathematicalObject:
         assert structure_morphism in self._base_category.MonomorphismArrowCategory()
         assert structure_morphism.domain() is self._source
         coslice_object = self.ambient_category()(structure_morphism)
-        return self._refine_object(coslice_object)
+        return super().__call__(coslice_object)
 
 
 class CoveringObjectCategory(FullSubcategory):
@@ -459,21 +475,15 @@ class CoveringObjectCategory(FullSubcategory):
         self._target = target
         super().__init__(
             ambient_category.SliceOver(target),
-            self._is_covering_object,
+            SliceObject.is_covering_object,
             name=f"Covering objects of {target}",
         )
-
-    def _is_covering_object(self, candidate: MathematicalObject) -> bool:
-        slice_category = self.ambient_category()
-        assert is_slice_over(slice_category)
-        assert slice_category.contains_slice_object(candidate)
-        return candidate.structure_morphism() in self._base_category.EpimorphismArrowCategory()
 
     def __call__(self, structure_morphism: Arrow) -> MathematicalObject:
         assert structure_morphism in self._base_category.EpimorphismArrowCategory()
         assert structure_morphism.codomain() is self._target
         slice_object = self.ambient_category()(structure_morphism)
-        return self._refine_object(slice_object)
+        return super().__call__(slice_object)
 
 
 class CoveredObjectCategory(FullSubcategory):
@@ -488,21 +498,15 @@ class CoveredObjectCategory(FullSubcategory):
         self._source = source
         super().__init__(
             ambient_category.CosliceUnder(source),
-            self._is_covered_object,
+            SliceObject.is_covered_object,
             name=f"Covered objects of {source}",
         )
-
-    def _is_covered_object(self, candidate: MathematicalObject) -> bool:
-        coslice_category = self.ambient_category()
-        assert is_coslice_under(coslice_category)
-        assert coslice_category.contains_slice_object(candidate)
-        return candidate.structure_morphism() in self._base_category.EpimorphismArrowCategory()
 
     def __call__(self, structure_morphism: Arrow) -> MathematicalObject:
         assert structure_morphism in self._base_category.EpimorphismArrowCategory()
         assert structure_morphism.domain() is self._source
         coslice_object = self.ambient_category()(structure_morphism)
-        return self._refine_object(coslice_object)
+        return super().__call__(coslice_object)
 
 
 class SliceOverCategoryObjects(Category):

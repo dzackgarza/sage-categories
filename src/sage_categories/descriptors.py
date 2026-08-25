@@ -11,9 +11,10 @@ from enum import Enum
 from types import FunctionType
 from typing import TYPE_CHECKING, Concatenate, ParamSpec, TypeVar, assert_never, cast
 
-from sage_categories.values import Arrow, MathematicalElement, MathematicalObject
+from sage_categories.values import Arrow, Decision, MathematicalElement, MathematicalObject
 
 if TYPE_CHECKING:
+    from sage_categories.abstract_categories.full_subcategories import FullSubcategory
     from sage_categories.abstract_categories.functors import StructuralFunctor
     from sage_categories.category import Category
 
@@ -386,6 +387,67 @@ class ForwardedObjectMethod[Receiver: MathematicalObject, **P, R]:
             )
             result = cast(R, method(image, *forwarded_args, **forwarded_kwargs))
             return _transport_result(result, signature.result, route, instance, image, instance, image)
+
+        return call
+
+
+class RefiningPropertyMethod[Receiver: MathematicalObject]:
+    """Refine a value after its ambient predicate returns exact ``True``."""
+
+    def __init__(
+        self,
+        ambient_category: Category,
+        property_category: FullSubcategory,
+        method: Callable[[Receiver], Decision],
+    ) -> None:
+        self._declarations: dict[
+            int,
+            tuple[FullSubcategory, Callable[[Receiver], Decision]],
+        ] = {}
+        self.register(ambient_category, property_category, method)
+
+    def register(
+        self,
+        ambient_category: Category,
+        property_category: FullSubcategory,
+        method: Callable[[Receiver], Decision],
+    ) -> None:
+        declaration = property_category, method
+        previous = self._declarations.get(id(ambient_category))
+        assert previous is None or previous == declaration
+        self._declarations[id(ambient_category)] = declaration
+
+    def declaration(self) -> Callable[[Receiver], Decision]:
+        methods = tuple(
+            declaration[1]
+            for declaration in self._declarations.values()
+        )
+        assert methods
+        assert all(method is methods[0] for method in methods)
+        return methods[0]
+
+    def __get__(
+        self,
+        instance: Receiver | None,
+        owner: type[Receiver] | None = None,
+    ) -> RefiningPropertyMethod[Receiver] | Callable[[], Decision]:
+        if instance is None:
+            return self
+        property_category, method = self._declarations[id(instance.category())]
+
+        def call() -> Decision:
+            from sage_categories.assumptions import assumption_decision
+
+            assumed = assumption_decision(property_category.predicate(instance))
+            if assumed is True:
+                property_category(instance)
+                return True
+            if assumed is False:
+                return False
+            decision = method(instance)
+            if decision is True:
+                property_category(instance)
+            return decision
 
         return call
 

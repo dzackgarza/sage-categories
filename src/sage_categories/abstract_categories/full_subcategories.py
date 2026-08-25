@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, TypeIs
+from typing import TYPE_CHECKING, Any, TypeIs
 
 from sage_categories.abstract_categories.functors import (
     Functor,
@@ -24,6 +24,9 @@ from sage_categories.values import (
     registered_element,
     registered_value,
 )
+
+if TYPE_CHECKING:
+    from sage_categories.assumptions import AppliedProperty
 
 type ObjectPredicate = Callable[[MathematicalObject], Decision]
 
@@ -189,7 +192,6 @@ class FullSubcategory(Category):
         name: str,
     ) -> None:
         self._ambient_category = ambient_category
-        self._predicate = predicate
         self._name = name
         self._inclusion: InclusionFunctor | None = None
         self._full_hom_category_family: FullSubcategoryHomCategoryFamily | None = None
@@ -198,6 +200,13 @@ class FullSubcategory(Category):
             element_type=self.ElementType,
             arrow_type=self.ArrowType,
             category=FullSubcategoryCategoryObjects(),
+        )
+        from sage_categories.compiler import category_compiler
+
+        category_compiler().register_object_property(
+            ambient_category,
+            self,
+            predicate,
         )
 
     def ambient_category(self) -> Category:
@@ -210,14 +219,17 @@ class FullSubcategory(Category):
         category = value.category()
         return category is self or category.is_subcategory(self)
 
-    def refine(self, ambient: MathematicalObject) -> MathematicalObject:
-        ambient = self._canonical_ambient(ambient)
-        assert self._predicate(ambient) is True
+    def __call__(self, ambient: MathematicalObject) -> MathematicalObject:
+        """Construct ``ambient`` in this property category."""
+        assert self.is_subcategory(ambient.category()) or ambient in self._ambient_category
         return self._refine_object(ambient)
 
-    def _canonical_ambient(self, ambient: MathematicalObject) -> MathematicalObject:
-        assert ambient in self._ambient_category
-        return ambient
+    def predicate(self, candidate: MathematicalObject) -> AppliedProperty:
+        """Apply this category's defining predicate to ``candidate``."""
+        from sage_categories.assumptions import AppliedProperty
+
+        assert self.is_subcategory(candidate.category()) or candidate in self._ambient_category
+        return AppliedProperty(self, candidate)
 
     def _refine_object(self, ambient: MathematicalObject) -> MathematicalObject:
         from sage_categories.compiler import category_compiler

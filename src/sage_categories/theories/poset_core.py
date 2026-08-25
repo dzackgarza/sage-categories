@@ -182,6 +182,25 @@ class PosetObject(MathematicalObject):
         assert ProductElements().contains_product_element(pair)
         return self._relation.membership(pair)
 
+    def is_total_order(self) -> Decision:
+        underlying_set = PartiallyOrderedSets().underlying_set(self)
+        if underlying_set.is_finite() is not True:
+            return UNKNOWN
+        members = tuple(self)
+        answer: Decision = True
+        for position, left in enumerate(members):
+            assert is_poset_element(left)
+            for right in members[position + 1 :]:
+                assert is_poset_element(right)
+                left_le = left <= right
+                right_le = right <= left
+                if left_le is True or right_le is True:
+                    continue
+                if left_le is False and right_le is False:
+                    return False
+                answer = UNKNOWN
+        return answer
+
     def thin_category(self) -> ThinCategory:
         from sage_categories.theories.thin_categories import ThinCategory
 
@@ -405,8 +424,8 @@ class PartiallyOrderedSetsCategory(Category):
         candidate: PosetObject,
         underlying_set: SetObject,
     ) -> PosetObject:
-        if underlying_set in FiniteSets():
-            return self.Finite().from_finite_underlying_poset(candidate)
+        if underlying_set.is_finite() is True:
+            return self.Finite()(candidate)
         return candidate
 
     def discrete_order(self, underlying_set: SetObject) -> PosetObject:
@@ -507,6 +526,16 @@ class PartiallyOrderedSetsCategory(Category):
             self._finite_posets = FinitePosetsCategory(self)
         return self._finite_posets
 
+    def _initialize_property_categories(self) -> None:
+        finite = self.Finite()
+        finite.WithBottom()
+        finite.WithTop()
+        finite.Ranked()
+        finite.Graded()
+        from sage_categories.theories.total_orders import TotallyOrderedSets
+
+        TotallyOrderedSets()
+
     def _products_of_category(self, functor: Functor) -> Category:
         return super()._products_of_category(functor)
 
@@ -580,6 +609,7 @@ def PartiallyOrderedSets() -> PartiallyOrderedSetsCategory:
 
     if _PARTIALLY_ORDERED_SETS is None:
         _PARTIALLY_ORDERED_SETS = PartiallyOrderedSetsCategory()
+        _PARTIALLY_ORDERED_SETS._initialize_property_categories()
     return _PARTIALLY_ORDERED_SETS
 
 

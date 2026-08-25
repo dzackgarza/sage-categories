@@ -13,6 +13,7 @@ from sage_categories.descriptors import (
     ForwardedArrowMethod,
     ForwardedDescriptor,
     ForwardedElementMethod,
+    ForwardedMethod,
     ForwardedObjectMethod,
     ImplementationRole,
     MethodSignature,
@@ -707,26 +708,7 @@ class CategoryCompiler:
         for name, descriptor in inherited.items():
             installed = vars(local_type).get(name)
             declaration = catalogue[name]
-            if isinstance(installed, ForwardedObjectMethod):
-                assert isinstance(descriptor, ForwardedObjectMethod)
-                installed.register(
-                    category,
-                    declaration.implementation_route,
-                    declaration.method,
-                    declaration.signature,
-                )
-                continue
-            if isinstance(installed, ForwardedElementMethod):
-                assert isinstance(descriptor, ForwardedElementMethod)
-                installed.register(
-                    category,
-                    declaration.implementation_route,
-                    declaration.method,
-                    declaration.signature,
-                )
-                continue
-            if isinstance(installed, ForwardedArrowMethod):
-                assert isinstance(descriptor, ForwardedArrowMethod)
+            if isinstance(installed, ForwardedMethod):
                 installed.register(
                     category,
                     declaration.implementation_route,

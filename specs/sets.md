@@ -150,14 +150,14 @@ A product presentation retains:
 ```python
 P.diagram()
 P.index_category()
-P.projection(i)
+P.product_projection(i)
 P.universal_morphism(cone)
 P.cardinality()
 P.factor_cardinalities()
 ```
 
-`P.projection(i)` and `P.universal_morphism(cone)` are owned set arrows. They satisfy
-the product equations.
+`P.product_projection(i)` and `P.universal_morphism(cone)` are owned set arrows. They
+satisfy the product equations.
 
 A product element is an indexed family:
 
@@ -184,12 +184,12 @@ diagram arrows to the induced coproduct arrows.
 A coproduct presentation retains:
 
 ```python
-C.diagram()
-C.index_category()
-C.injection(i)
-C.universal_morphism(cocone)
-C.cardinality()
-C.cofactor_cardinalities()
+Q.diagram()
+Q.index_category()
+Q.coproduct_injection(i)
+Q.universal_morphism(cocone)
+Q.cardinality()
+Q.cofactor_cardinalities()
 ```
 
 A coproduct element is a tagged element:
@@ -605,8 +605,8 @@ facts:
 - all four function-set entry points return one canonical object;
 - every chosen subset retains its inclusion;
 - every abstract subobject retains its monomorphism and canonical image;
-- products retain projections and universal maps;
-- coproducts retain injections and universal maps;
+- products retain `product_projection(i)` and universal maps;
+- coproducts retain `coproduct_injection(i)` and universal maps;
 - limits and colimits retain their diagrams and universal data;
 - power-object operations return owned subsets and arrows;
 - countability does not create a chosen enumeration;

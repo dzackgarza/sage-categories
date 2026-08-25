@@ -75,8 +75,9 @@ Do not change branches, rebase, stash, cherry-pick, or otherwise manipulate Git 
 
 Work in mathematical dependency order:
 
-1. `Cat`, functor categories, natural transformations, and natural isomorphisms.
-2. The full arrow-category family and its object, element, and arrow surfaces.
+1. `Cat`, functor categories, sequence products and coproducts, natural transformations,
+   and natural isomorphisms.
+2. The full arrow-category family, subobjects of products, and their component functors.
 3. The method compiler for `ObjectType`, `ElementType`, and `ArrowType` inheritance.
 4. The owned category `Sets()` and its universal constructions.
 
@@ -95,6 +96,9 @@ The arrow-category foundation includes:
 - monomorphism, epimorphism, isomorphism, and automorphism categories;
 - cores and wide subcategories;
 - slices, coslices, subobjects, superobjects, covering objects, and covered objects.
+
+Build slices and coslices after sequence products, subobjects, and arrow source and target
+projections. Their structure functors are composites of these general constructions.
 
 ## Mathematical structure as implementation compression
 
@@ -249,6 +253,25 @@ B ** A
 
 All spellings dispatch construction data through that one category.
 
+Define `Fun = Ar(Cat())`. Thus `Fun(C, D)` owns construction of functors from `C` to
+`D`. The endpoints select this Hom category. They do not select one of its objects.
+
+```python
+Fun(C, D)(on_object, on_morphism)
+Fun(S, T).FullyFaithful().inclusion()
+Fun(C, C).Equivalences().identity()
+```
+
+A mathematical construction creates each named functor through this category. It retains
+all defining projections, evaluations, and inclusions. A leaf selects the functors that
+supply its inherited public structure.
+
+The kernel does not inspect fields or tuple positions to choose a structure map. Product,
+pullback, comma, and arrow constructions retain their distinct projection functors.
+
+A leaf selects the strongest functor-property category established by its mathematics.
+The construction trusts that declaration. It does not compute the property.
+
 Use `HomCatType`, not `HomSetType`, at the `Cat` level.
 For example, a hom category between sheaves can have natural transformations as its objects.
 Only `Sets()` identifies its hom objects with sets of functions.
@@ -256,7 +279,27 @@ Only `Sets()` identifies its hom objects with sets of functions.
 The `Cat` level supplies the uniform category constructors:
 
 - `HomCategory()`, `EndCategory()`, and `AutCategory()`;
-- `ArrowCategory()`, `EndArrowCategory()`, and `AutArrowCategory()`.
+- `ArrowCategory()`, `EndArrowCategory()`, and `AutArrowCategory()`;
+- `Products()`, `Coproducts()`, `Subobjects()`, and their standard dual constructions.
+
+Apply products and coproducts to `Cat()` itself. For a sequence of categories:
+
+```python
+P = Cat().Products()((C_0, ..., C_n))
+Q = Cat().Coproducts()((C_0, ..., C_n))
+P.product_projection(i)   # P -> C_i
+Q.coproduct_injection(i)  # C_i -> Q
+```
+
+Each returned arrow is a functor and therefore a `Cat().ArrowType` value.
+
+If `j: S -> P` presents a subcategory of a product category, then `S` belongs to
+`Cat().Products().Subobjects()`. Its `product_projection(i)` is the composite of `j`
+with the corresponding projection of `P`.
+
+Present `C.SliceOver(x)` and `C.CosliceUnder(x)` as subcategories of `C * Ar(C)`.
+Their first product projection selects the varying object. Their second selects the
+defining arrow. Compose it with `Ar(C).source_projection()` or `target_projection()`.
 
 The generic `ArrowType` stores its domain and codomain and exposes `domain()` and `codomain()`.
 If an arrow predicate names a subcategory, implement it as containment in that subcategory.
@@ -312,8 +355,8 @@ A parent-only result does not implement a categorical construction.
 
 Retain the data that states the universal property:
 
-- a product retains its diagram, projections, and mediating arrow;
-- a coproduct retains its diagram, injections, and mediating arrow;
+- a product retains its diagram, `product_projection(i)`, and mediating arrow;
+- a coproduct retains its diagram, `coproduct_injection(i)`, and mediating arrow;
 - a limit retains its cone and universal map;
 - a colimit retains its cocone and universal map.
 

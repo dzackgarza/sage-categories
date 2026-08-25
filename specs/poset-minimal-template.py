@@ -3,16 +3,17 @@
 A poset object is a pair ``(X, R)``. The constructor accepts only the owned
 relation ``R``. Its ambient product determines ``X``.
 
-The private defining data is ``(X, R)``. The kernel-owned carrier projection
-selects component zero and supplies the inherited set surface. Component one
-remains the order data.
+The private defining data is ``(X, R)``. The selected set projection maps this
+pair to ``X`` and supplies the inherited set surface. The other component remains
+the order data.
 
-Both component projections are mathematical functors. Only the carrier projection
+Both component projections are mathematical functors. Only the set projection
 is a structure functor. The relation projection remains an ordinary functor because
 its subset-of-a-product catalogue is not a public poset surface.
 
-The kernel-owned projection supplies its object, arrow, and element maps from the
-standard defining-data contract. The leaf does not repeat those maps.
+The poset category is a subcategory of a product category. The first factor contains
+``X``. The second contains the relation subobject ``R``. The general
+subobject-of-product construction supplies both component functors.
 
 In particular, component zero is already an owned object of ``Sets()``. The projection
 extracts that component and uses its canonical set image. No poset method delegates to
@@ -84,11 +85,11 @@ class PartiallyOrderedSetsCategory(Category):
         return self.ObjectType(category=self, relation=relation)
 
     def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
-        """Select the carrier projection used for inheritance."""
+        """Select the set projection used for inheritance."""
         # This tuple selects inheritance routes. It is not a list of all functors
         # from this category. Do not add the second product projection here.
         # A poset ``(X, R)`` receives its inherited public methods from ``X``.
         # Projection to ``R`` would expose subset and product methods on posets.
         # That projection can still exist and be called as an ordinary functor.
         # Selecting only ``X`` mirrors Sage listing only ``Sets()`` as a supercategory.
-        return (self.carrier(),)
+        return (self.product_projection(0),)

@@ -58,11 +58,11 @@ The complete immediate structural tuple is:
 
 ```python
 def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
-    return (self.inclusion(Semirings()),)
+    return (Fun(self, Semirings()).FullyFaithful().inclusion(),)
 ```
 
-The selected semiring functors supply both monoid structures and the canonical carrier
-in `Sets()`. Sage supplies private runtime support only.
+The selected semiring functors supply both monoid structures and the set image fixed by
+the semiring presentation. Sage supplies private runtime support only.
 
 ### Public ordinal constructors
 

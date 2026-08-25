@@ -19,10 +19,10 @@ class SetsCategory(Category):
             """Select the inclusion that supplies the inherited set catalogue.
 
             This tuple is not a list of all functors from finite sets.
-            The kernel-owned inclusion supplies its required maps. Other functors
-            from finite sets remain ordinary objects of ``Ar(Cat())``.
+            The full-subcategory construction supplies its maps and constructs it in
+            the fixed-endpoint functor category. Other functors remain in ``Fun``.
             """
-            return (self.inclusion(Sets()),)
+            return (Fun(self, Sets()).FullyFaithful().inclusion(),)
 
         def membership_proposition(
             self,

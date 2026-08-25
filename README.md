@@ -58,7 +58,7 @@ Theory code should state the mathematical definition and the immediate functors 
 The kernel should compile that information into a direct method surface.
 
 The separation also preserves mathematical consequences that concrete Sage implementations can lose.
-For example, an integral lattice has an underlying finite-rank `ZZ`-module, hence an underlying set modeled by a finite product of copies of `ZZ`. That functor chain determines cardinality and supports lazy enumeration.
+For example, an integral-lattice presentation has a product projection to finite-rank `ZZ`-modules. The resulting structural path to `Sets()` determines cardinality and supports lazy enumeration.
 A concrete lattice implementation that does not retain those categorical relationships can fail to expose either operation.
 Long-running searches, including bounded enumeration in Vinberg-type algorithms, need those consequences without bespoke lattice-level implementations.
 
@@ -131,6 +131,39 @@ B ** A
 
 Each spelling sends construction data to that category's object constructor.
 
+Define `Fun = Ar(Cat())`. The fixed-endpoint category `Fun(C, D)` owns construction of
+functors from `C` to `D`. The endpoints select the category, not a particular functor.
+
+```python
+Fun(C, D)(on_object, on_morphism)
+Fun(S, T).FullyFaithful().inclusion()
+Fun(C, C).Equivalences().identity()
+```
+
+A category construction creates its named functors there and retains them. Product and
+pullback presentations retain each projection separately. A leaf selects the functors
+that supply inherited operations.
+
+The selected property category records the theorem known by the leaf writer. The
+constructor does not compute that property. The kernel never selects a component by
+inspecting fields or tuple positions.
+
+The same construction system applies to `Cat()` itself:
+
+```python
+P = Cat().Products()((C_0, ..., C_n))
+Q = Cat().Coproducts()((C_0, ..., C_n))
+P.product_projection(i)   # P -> C_i
+Q.coproduct_injection(i)  # C_i -> Q
+```
+
+If `S` is a subcategory of `P`, then `S` is an object of
+`Cat().Products().Subobjects()`. Its `product_projection(i)` is the subcategory inclusion
+followed by the corresponding projection of `P`.
+
+A slice or coslice is a subcategory of `C * Ar(C)`. Its first projection selects the
+varying object. Its second selects the defining arrow.
+
 For `X, Y in C`, the categorical operators are:
 
 ```python
@@ -181,7 +214,8 @@ The implementation order follows the mathematical dependency order.
 The first layer is `Cat`, the category of categories. Its `ObjectType` implements every
 category, and its `ArrowType` implements every functor. The kernel constructs `Ar(C)` for
 all `C`, including `Ar(Cat())`. It also constructs functor categories, natural
-transformations, and natural isomorphisms from the same category and arrow mechanisms.
+transformations, natural isomorphisms, and sequence products and coproducts from the same
+category and arrow mechanisms.
 
 The next layer is the complete family of arrow categories.
 This family includes:
@@ -195,6 +229,9 @@ This family includes:
 - cores and wide subcategories;
 
 - slices, coslices, subobjects, superobjects, covering objects, and covered objects.
+
+Subobjects of product categories receive component functors by composition. Slice and
+coslice projections use this rule with the source and target functors of `Ar(C)`.
 
 These constructions must use the same `ObjectType`, `ElementType`, and `ArrowType` inheritance mechanism.
 
@@ -241,8 +278,8 @@ The same requirement applies to coproducts, limits, colimits, and function sets.
 ## Universal constructions
 
 Universal constructions are categorical data, not container factories.
-A product retains its projections and its mediating arrow.
-A coproduct retains its injections and its mediating arrow.
+A product retains its `product_projection(i)` arrows and its mediating arrow.
+A coproduct retains its `coproduct_injection(i)` arrows and its mediating arrow.
 Limits and colimits retain the diagrams, cones, cocones, and universal maps that define them.
 
 These constructions act on objects and arrows through functors.

@@ -216,8 +216,12 @@ R\hookrightarrow X\times X
 \]
 
 already determines `X`. The constructor extracts the two factors, verifies that they
-are the same set, and stores the defining pair `(X, R)`. Its selected carrier projection
-maps that pair to `X`. The relation projection is not selected for inheritance.
+are the same set, and stores the defining pair `(X, R)`. Its selected set projection maps
+that pair to `X`. The relation projection is not selected for inheritance.
+
+Present this category as a subobject of the product of the set category and the relation
+category. Then `product_projection(0)` is the set functor and
+`product_projection(1)` is the relation functor.
 
 The same rule applies downstream:
 
@@ -235,11 +239,13 @@ constructor. The kernel constructs that exact category-owned element type with i
 ambient object. It also retains the canonical element image under each selected
 projection. The element remains a `C.ElementType`, not an ancestor element type.
 
-The category layer selects the immediate structural functors. The kernel supplies every
-standard inclusion, projection, restriction, lift, and forgetful functor. A leaf defines
-object and arrow maps only when its category introduces a genuinely new functor. It
-never repeats standard projection maps or exposes a private engine conversion as a
-structural map.
+The category layer constructs and selects each immediate structural functor. A leaf that
+is a subobject of a product uses `product_projection(i)`. Otherwise, it reuses the exact
+functors retained by its defining category construction.
+
+A leaf selects the strongest established property subcategory. It does not repeat maps
+already retained by a product, pullback, comma, arrow, or similar construction. It never
+exposes a private engine conversion as a structural map.
 
 If this implementation becomes sufficiently large or dominated by Python, foreign
 interfaces, conversions, process calls, or caches, move that complexity into private

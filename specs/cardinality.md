@@ -366,7 +366,8 @@ Public access is category-owned:
 Sets().CardinalityFunctor()
 ```
 
-For a category \(\mathbf C\) with selected forgetful functor \(U_{\mathbf C}:\mathbf C\to\mathbf{Sets}\), the composite
+For a category \(\mathbf C\) with selected set-valued structural functor
+\(U_{\mathbf C}:\mathbf C\to\mathbf{Sets}\), the composite
 
 \[
 \#\circ\operatorname{core}(U_{\mathbf C})

@@ -43,8 +43,8 @@ Each category owns complete implementation roles:
 `TotallyOrderedSets()` adds only established totality. The finite categories add only
 algorithms and constructions that require finiteness.
 
-The selected forgetful functor to `Sets()` supplies membership, iteration, cardinality,
-set maps, and set constructions.
+The relation presentation's `product_projection(0)` supplies membership, iteration,
+cardinality, set maps, and set constructions.
 
 ## Poset construction and its proposition
 
@@ -192,8 +192,8 @@ The result retains:
 The coordinatewise theorem admits the order and all product arrows. The constructor
 does not enumerate the product.
 
-The forgetful square to the chosen set product commutes. Product elements remain owned
-by the product poset and pass set membership through the forgetful functor.
+The set-projection square to the chosen set product commutes. Product elements remain
+owned by the product poset and pass set membership through that projection.
 
 The product of total orders need not be total. In a product of two nontrivial chains,
 the two crossed elements are incomparable. Such a product remains a poset.

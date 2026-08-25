@@ -31,6 +31,11 @@ An arrow `f : (X, mu_X) -> (Y, mu_Y)` is a set map satisfying
 f(\mu_X(x,y))=\mu_Y(f(x),f(y)).
 \]
 
+The magma category is a subcategory of the product category with factors `Sets()` and
+`Ar(Sets())`. The defining equations identify the source and target of the second
+component with the required powers of the first component. Thus `Magmas()` is an object
+of `Cat().Products().Subobjects()`.
+
 `Magmas()` owns the operation-neutral structure:
 
 ```python
@@ -46,11 +51,11 @@ The complete immediate structural tuple is:
 
 ```python
 def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
-    return (self.forget(Sets()),)
+    return (self.product_projection(0),)
 ```
 
-The forgetful functor maps the magma carrier and every magma homomorphism to their owned
-set images. It supplies set elements, membership, cardinality, and set maps.
+The second product projection maps `(X, mu)` to `mu` in `Ar(Sets())`. It remains an
+ordinary functor. Only the first projection supplies inherited operations.
 
 ## Additive and multiplicative operation roles
 
@@ -78,13 +83,13 @@ Their complete immediate structural tuples are:
 ```python
 # Magmas().Additive()
 def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
-    return (self.inclusion(Magmas()),)
+    return (Fun(self, Magmas()).FullyFaithful().inclusion(),)
 ```
 
 ```python
 # Magmas().Multiplicative()
 def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
-    return (self.inclusion(Magmas()),)
+    return (Fun(self, Magmas()).FullyFaithful().inclusion(),)
 ```
 
 The selected operation role is the only new mathematics in each refinement. A bare
@@ -121,7 +126,7 @@ The complete immediate structural tuple is:
 
 ```python
 def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
-    return (self.inclusion(Magmas()),)
+    return (Fun(self, Magmas()).Faithful().inclusion(),)
 ```
 
 A bare monoid remains notation-neutral. It owns:
@@ -148,8 +153,8 @@ preserve both category branches:
 # Monoids().Additive()
 def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
     return (
-        self.inclusion(Monoids()),
-        self.inclusion(Magmas().Additive()),
+        Fun(self, Monoids()).FullyFaithful().inclusion(),
+        Fun(self, Magmas().Additive()).Faithful().inclusion(),
     )
 ```
 
@@ -157,8 +162,8 @@ def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
 # Monoids().Multiplicative()
 def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
     return (
-        self.inclusion(Monoids()),
-        self.inclusion(Magmas().Multiplicative()),
+        Fun(self, Monoids()).FullyFaithful().inclusion(),
+        Fun(self, Magmas().Multiplicative()).Faithful().inclusion(),
     )
 ```
 
@@ -199,18 +204,22 @@ and
 A semiring arrow preserves both monoid structures. It therefore preserves `0`, `1`,
 addition, and multiplication.
 
+The semiring category is a subcategory of the product of
+`Monoids().Additive().Commutative()` and `Monoids().Multiplicative()`. Its defining
+conditions identify their set images and impose distributivity and zero absorption.
+
 The complete immediate structural tuple is:
 
 ```python
 def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
     return (
-        self.forget(Monoids().Additive().Commutative()),
-        self.forget(Monoids().Multiplicative()),
+        self.product_projection(0),
+        self.product_projection(1),
     )
 ```
 
-Both functors reach one canonical carrier in `Sets()`. The structural diamond must retain
-both operation catalogues and one set image.
+Both functors reach the same set image. The structural diamond must retain both operation
+catalogues and that canonical image.
 
 `Semirings()` fixes the roles of its two monoid structures. Its public object surface
 includes `zero()` and `one()`. Its public element surface includes `+` and `*`.
@@ -221,8 +230,8 @@ Each listed functor acts on objects and arrows. It acts on elements when the cor
 change of structure has an element map.
 
 The additive and multiplicative refinements use inclusions because they retain the magma
-operation. The two semiring functors forget one operation while retaining the other.
-They are not category-only inheritance edges.
+operation. The two semiring component functors come from the generic subobject-of-product
+construction. They are not category-only inheritance edges.
 
 Longer routes to `Sets()` arise only by composition. No algebraic category adds a direct
 set functor for convenience.

@@ -201,7 +201,7 @@ Sets().Finite() ⊆ Sets().Countable()
 
 Thus `ask(X.is_countable())` returns `True` immediately when `X` already belongs to `Sets().Finite()`.
 
-For a category \(C\) with a selected underlying-set functor
+For a category \(C\) with a selected set-valued structural functor
 
 \[
 U:C\to\mathbf{Set},
@@ -321,9 +321,9 @@ F = Ar(Cat()).Full()(F)  # Trusted property-category construction.
 assume(G.is_full())      # Interactive assumption and same-object refinement.
 ```
 
-An inclusion from a full subcategory is constructed directly in
-`Ar(Cat()).FullyFaithful()`. The implication from full faithfulness to fullness and
-faithfulness then follows through property-category inclusions.
+An inclusion from a full subcategory is constructed as
+`Fun(Source, Target).FullyFaithful().inclusion()`. Full faithfulness then implies
+fullness and faithfulness through property-category inclusions.
 
 No exact computational handlers are currently declared for these predicates. For an
 ambient functor with no applicable placement, assumption, cached decision, or
@@ -346,17 +346,18 @@ The poset category is the property subcategory cut out by that proposition.
 Let
 
 \[
-U:\mathbf{Poset}\to\mathbf{Set}
+\pi_X:\mathbf{Poset}\to\mathbf{Set}
 \]
 
-be the forgetful functor. Then:
+be `PartiallyOrderedSets().product_projection(0)` from the product-subobject
+presentation. Then:
 
 \[
 \mathbf{FinitePoset}
 =
 \mathbf{Poset}.\operatorname{Finite}
 =
-\{P\in\mathbf{Poset}\mid \operatorname{Finite}(U(P))\}.
+\{P\in\mathbf{Poset}\mid \operatorname{Finite}(\pi_X(P))\}.
 \]
 
 Its membership proposition is the conjunction:

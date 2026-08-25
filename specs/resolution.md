@@ -203,14 +203,14 @@ contains:
 - componentwise addition and scalar multiplication;
 - its complete product universal property.
 
-The forgetful functor
+Let the module presentation select a structural functor
 
 \[
 U:\operatorname{Modules}(R)\longrightarrow\operatorname{Sets}
 \]
 
-preserves products. The underlying set of the module product is the set product of the
-underlying sets:
+that preserves products. The set image of the module product is the product of the set
+images:
 
 \[
 U\!\left(\prod_i M_i\right)
@@ -256,7 +256,7 @@ For the explicitly chosen product module
 M=\prod_{i=1}^{n}\mathbf F_p,
 \]
 
-the forgetful functor gives
+the selected structural functor gives
 
 \[
 U(M)=\prod_{i=1}^{n}U(\mathbf F_p).
@@ -284,7 +284,7 @@ enumeration. Neither path competes with the other.
 A correctly designed kernel derives this placement. The module leaf contains no route
 selection code. The kernel uses these mathematical facts:
 
-- the forgetful functor from modules to sets preserves products;
+- the selected module-to-set structural functor preserves products;
 - a finite product of finite sets is finite;
 - both routes have one canonical set image;
 - methods from both category placements belong on the public object.
@@ -318,7 +318,7 @@ biproduct:
 M\oplus N.
 \]
 
-After forgetting to sets,
+After applying the selected structural functor to sets,
 
 \[
 U(M\oplus N)=U(M)\times U(N).
@@ -330,7 +330,7 @@ This set is not the set coproduct
 U(M)\sqcup U(N).
 \]
 
-The forgetful functor from modules to sets preserves products. It does not preserve
+The selected module-to-set structural functor preserves products. It does not preserve
 module coproducts as set coproducts.
 
 Therefore, the compiler must not assume that every structural functor preserves every
@@ -410,8 +410,8 @@ Both routes construct the same selected image. The object image, element image, 
 image, ambient objects, domains, and codomains agree exactly. The compiler can
 deduplicate the routes.
 
-Routine forgetful diamonds should normally have this form. The two paths from a finite
-module to sets should reach the same underlying set.
+Routine structural diamonds should normally have this form. The two selected paths from
+a finite module to sets should reach the same set image.
 
 ### Merely isomorphic routes
 
@@ -487,7 +487,7 @@ to that exact apex.
 ### Module coproducts
 
 The underlying set of a module coproduct is not identified with the set coproduct. The
-compiler does not invent preservation of colimits by the forgetful functor.
+compiler does not invent preservation of colimits by the selected structural functor.
 
 ### Algorithm selection
 

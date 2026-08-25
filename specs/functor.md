@@ -9,7 +9,9 @@
 - [Property resolution](#property-resolution)
 - [Inclusion functors](#inclusion-functors)
 - [Structural inheritance](#structural-inheritance)
-- [Standard functor constructions](#standard-functor-constructions)
+- [Functor construction and presentation data](#functor-construction-and-presentation-data)
+- [Products, coproducts, and component functors](#products-coproducts-and-component-functors)
+- [Slices and coslices](#slices-and-coslices)
 - [Examples](#examples)
 - [Compiler contract](#compiler-contract)
 - [Mathlib correspondence](#mathlib-correspondence)
@@ -33,7 +35,7 @@ Thus `Sets()`, `Ar(C)`, and every property subcategory are instances of
 - `Cat().ArrowType` implements functors;
 - `Cat().ElementType` is absent because the theory does not use elements of `Cat`;
 - `Cat()(...)` constructs categories;
-- `Ar(Cat())` constructs the category whose objects are functors.
+- `Fun = Ar(Cat())` constructs the category whose objects are functors.
 
 The kernel also supplies the uniform categorical constructions:
 
@@ -64,12 +66,12 @@ construction.
 
 ## Functors as arrows of `Cat`
 
-A functor is an arrow in `Cat`. Therefore, every functor is an object of
-`Ar(Cat())`:
+A functor is an arrow in `Cat`. Define `Fun = Ar(Cat())`. Therefore, every functor is an
+object of `Fun`:
 
 ```python
-FunctorArrows = Ar(Cat())
-F = FunctorArrows(C, D, on_object, on_morphism)
+Fun = Ar(Cat())
+F = Fun(C, D)(on_object, on_morphism)
 ```
 
 The inherited `Cat().ArrowType` surface supplies:
@@ -137,16 +139,26 @@ computational routes.
 
 ## Functor property subcategories
 
-Functor properties are property subcategories of `Ar(Cat())`:
+Functor properties are property subcategories of `Fun`:
 
 ```python
-FunctorArrows = Ar(Cat())
-FullFunctors = FunctorArrows.Full()
-FaithfulFunctors = FunctorArrows.Faithful()
-FullyFaithfulFunctors = FunctorArrows.FullyFaithful()
-EssentiallySurjectiveFunctors = FunctorArrows.EssentiallySurjective()
-EquivalenceFunctors = FunctorArrows.Equivalences()
+FullFunctors = Fun.Full()
+FaithfulFunctors = Fun.Faithful()
+FullyFaithfulFunctors = Fun.FullyFaithful()
+EssentiallySurjectiveFunctors = Fun.EssentiallySurjective()
+EquivalenceFunctors = Fun.Equivalences()
 ```
+
+Fixed endpoints commute with property refinement. For example:
+
+```python
+Fun(C, D).Full() is Fun.Full()(C, D)
+Fun(C, D).Faithful() is Fun.Faithful()(C, D)
+Fun(C, D).FullyFaithful() is Fun.FullyFaithful()(C, D)
+```
+
+Each identity denotes one cached property subcategory. A constructor called through it
+returns a functor with endpoints `C, D` and the selected trusted property.
 
 Their predicates have the standard public form:
 
@@ -193,8 +205,8 @@ framework. They have no separate evidence or decision system.
 An existing functor can enter a property category by direct construction:
 
 ```python
-F = Ar(Cat())(C, D, on_object, on_morphism)
-F = Ar(Cat()).Full()(F)
+F = Fun(C, D)(on_object, on_morphism)
+F = Fun(C, D).Full()(F)
 ```
 
 This is the property category's trusted constructor. It asserts the defining property
@@ -203,13 +215,13 @@ and refines the same owned functor.
 An interactive assumption uses the same predicate and refinement:
 
 ```python
-F = Ar(Cat())(C, D, on_object, on_morphism)
+F = Fun(C, D)(on_object, on_morphism)
 assume(F.is_full())
 ```
 
 A construction that establishes a property constructs directly in the corresponding
 property category. For example, the inclusion of a full subcategory is constructed in
-`Ar(Cat()).FullyFaithful()`.
+`Fun(C, D).FullyFaithful()`.
 
 The functor-property categories currently register no computational routes. Therefore:
 
@@ -226,25 +238,26 @@ them.
 
 ## Inclusion functors
 
-An inclusion is an arrow of `Cat` owned by its source category. The source and target
-categories determine its object and arrow maps:
+An inclusion `S -> T` is an object of the fixed-endpoint category `Fun(S, T)`. That
+category owns its constructor. A general subcategory inclusion is faithful, so construct
+it in the established property category:
 
 ```python
-iota = D.inclusion(C)
+iota = Fun(S, T).Faithful().inclusion()
 ```
 
-Use this construction only when `D` is already established as a subcategory of `C`.
-The construction does not infer a relation from Python inheritance or shared storage.
+The leaf writer states that `S` is a subcategory of `T` by choosing this constructor.
+The kernel does not compute that relation from Python inheritance or shared storage.
 
 For a full property subcategory `C.P()`, the canonical inclusion is:
 
 ```python
-iota = C.P().inclusion(C)
+iota = Fun(C.P(), C).FullyFaithful().inclusion()
 ```
 
 The defining object predicate selects the objects. The Hom categories, identities, and
-composition are inherited from `C`. The construction therefore places `iota` directly
-in `Ar(Cat()).FullyFaithful()`.
+composition are inherited from `C`. The leaf records this theorem by constructing
+directly in `Fun(C.P(), C).FullyFaithful()`.
 
 Suppose predicates `P` and `Q` on `C` satisfy
 
@@ -255,11 +268,12 @@ P(X)\Longrightarrow Q(X).
 The kernel records the implication as an inclusion of property subcategories:
 
 ```python
-iota = C.P().inclusion(C.Q())
+iota = Fun(C.P(), C.Q()).FullyFaithful().inclusion()
 ```
 
 The source property is stronger. The target property is weaker. The implication belongs
-to the property relation, and the resulting functor belongs to the source category.
+to the property relation. Its fixed-endpoint functor category owns the inclusion
+constructor.
 
 A wide subcategory retains every object and restricts arrows by a multiplicative arrow
 predicate. Its inclusion is faithful by construction. A general subcategory inclusion
@@ -281,59 +295,51 @@ change of structure that supplies inherited operations:
 ```python
 class FiniteSetsCategory(Category):
     def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
-        return (self.inclusion(Sets()),)
+        return (Fun(self, Sets()).FullyFaithful().inclusion(),)
 ```
 
-The tuple does not define the inclusion. It tells the compiler to expose operations
-owned by `Sets()` on finite-set objects through that established inclusion.
+The leaf explicitly constructs the inclusion and records full faithfulness through the
+selected property category. The tuple tells the compiler to expose operations owned by
+`Sets()` through that functor.
 
-A category can own many other functors. Their existence does not affect the compiled
-public surface. Selection changes compiler behavior only. It does not change the
-functor's mathematical definition.
+The categories `Fun(self, D)` can contain many other functors. Their existence does not
+affect the compiled public surface. Selection changes compiler behavior only. It does
+not change a functor's mathematical definition.
 
 Each category lists only immediate selected functors. The kernel obtains longer routes
 by composition and applies [resolution.md](resolution.md) to diamonds.
 
-## Standard functor constructions
+## Functor construction and presentation data
 
-The kernel implements standard arrows of `Cat` once. Category objects expose their
-owned instances through mathematical names.
+`Fun(Source, Target)` owns construction of functors with those endpoints. The endpoint
+pair selects a Hom category. It does not select an object of that category.
+
+Construct a functor from its complete actions:
+
+```python
+F = Fun(Source, Target)(on_object, on_morphism)
+```
+
+When the defining mathematics establishes faithfulness, construct it in that property
+category:
+
+```python
+F = Fun(Source, Target).Faithful()(on_object, on_morphism)
+```
+
+A category presentation can contain several projections or evaluations. Its constructor
+creates each one through the applicable `Fun(Source, Target)` category. The presentation
+then retains those distinct functor objects as defining data.
 
 ### Identity and composition
 
-`C.identity_functor()` constructs the identity arrow on `C`. Functor composition uses
-the arrow composition owned by `Cat`.
+`Fun(C, C).Equivalences().identity()` constructs the identity arrow on `C`. Functor
+composition uses the arrow composition owned by `Cat`.
 
 ### Inclusions
 
-`D.inclusion(C)` constructs the established inclusion of a subcategory. Category
-placement determines whether the result is also full, faithful, or fully faithful.
-
-### Forgetful functors
-
-A category with chosen structure owns its standard forgetful functor:
-
-```python
-forget = Source.forget(Target)
-```
-
-The source category determines which structure is forgotten. A category pair is valid
-only when the declared mathematical presentation selects one canonical functor.
-
-The functor's properties follow from its construction. For example, a forgetful functor
-can be faithful without being full.
-
-### Projections
-
-Product, comma, arrow, slice, and structured-arrow categories own their standard
-projection functors. Use their established names:
-
-- `fst` and `snd` for product-category projections;
-- `left` and `right` for arrow-category projections;
-- `proj` for a structured-arrow projection;
-- `forget` for an over-category projection.
-
-The arrow itself gives a natural transformation from `left` to `right` on `Ar(C)`.
+`Fun(S, T).Faithful().inclusion()` constructs an established subcategory inclusion.
+Use `Fun(S, T).FullyFaithful().inclusion()` when `S` is full in `T`.
 
 ### Induced functors
 
@@ -350,6 +356,81 @@ For `F: C -> D`, `F.essential_image()` is the full property subcategory of `D` o
 objects isomorphic to `F(X)` for some `X in C`. Its inclusion into `D` is fully faithful
 by construction. The original functor factors through this category.
 
+## Products, coproducts, and component functors
+
+The generic product and coproduct constructions apply to `Cat()` itself. For a sequence
+of categories, construct:
+
+```python
+P = Cat().Products()((C_0, ..., C_n))
+Q = Cat().Coproducts()((C_0, ..., C_n))
+```
+
+Their category-owned public arrows are:
+
+```python
+P.product_projection(i)   # an object of Fun(P, C_i)
+Q.coproduct_injection(i)  # an object of Fun(C_i, Q)
+```
+
+The index is an `int` in the supplied sequence. These methods come from
+`Cat().Products().ObjectType` and `Cat().Coproducts().ObjectType`. They return
+`Cat().ArrowType` values.
+
+Let `j: S -> P` present `S` as a subcategory of the product category `P`. Then `S` is an
+object of `Cat().Products().Subobjects()`. Its component functor is
+
+\[
+S.\operatorname{product\_projection}(i)=\pi_i\circ j:S\longrightarrow C_i.
+\]
+
+Thus every subcategory of a sequence product receives all component functors. The
+subobject-of-product construction owns this rule. A leaf supplies its presentation and
+selects the required component functors in `structure_functors()`.
+
+A generic component functor need not be faithful or full. A specialized category
+construction places it in a functor-property subcategory only when its defining theorem
+establishes that property.
+
+Dually, every sequence coproduct category retains all injections. Universal maps out of
+the coproduct use the component functors supplied by its defining cocone.
+
+The binary operators are the two-term cases. For categories `C` and `D`, `C * D` is the
+product category and `C + D` is the coproduct category.
+
+The arrow category retains:
+
+```python
+Ar(C).source_projection()  # Ar(C) -> C
+Ar(C).target_projection()  # Ar(C) -> C
+```
+
+The generic pullback construction is a subobject of a product presentation. Its usual
+legs are component projections. The same rule handles repeated codomains.
+
+## Slices and coslices
+
+Present a slice or coslice as a subcategory of the sequence product `C * Ar(C)`. The
+first component is the varying object. The second component is its defining arrow.
+
+For the coslice under `x`, an object is `(X, f: x -> X)`. Its component functors are:
+
+```python
+C.CosliceUnder(x).product_projection(0)  # (X, f) |-> X in C
+C.CosliceUnder(x).product_projection(1)  # (X, f) |-> f in Ar(C)
+```
+
+Composing the second functor with `Ar(C).source_projection()` gives the constant object
+`x`. Composing it with `Ar(C).target_projection()` gives the first projection.
+
+For the slice over `x`, an object is `(X, f: X -> x)`. The source composite gives the
+first projection. The target composite gives the constant object `x`.
+
+These presentations supply the natural projections to varying objects and defining
+arrows. If `C` has pullbacks, the slice projection has its standard fibration structure.
+If `C` has pushouts, the coslice projection has its standard opfibration structure.
+These properties come from the construction theorems. They are not runtime decisions.
+
 ## Examples
 
 ### Finite sets
@@ -360,10 +441,10 @@ isomorphism.
 ```python
 class FiniteSetsCategory(Category):
     def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
-        return (self.inclusion(Sets()),)
+        return (Fun(self, Sets()).FullyFaithful().inclusion(),)
 ```
 
-The inclusion is constructed directly in `Ar(Cat()).FullyFaithful()`.
+The inclusion is constructed directly in `Fun(self, Sets()).FullyFaithful()`.
 
 ### Monoids
 
@@ -373,32 +454,33 @@ preserve all monoid structure:
 ```python
 class MonoidsCategory(Category):
     def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
-        return (self.inclusion(Magmas()),)
+        return (Fun(self, Magmas()).Faithful().inclusion(),)
 ```
 
 The additive and multiplicative refinements retain their selected operation roles.
 
 ### Pointed sets
 
-A pointed set is a pair `(X, x)` with `x in X`. Its category owns the carrier functor to
-`Sets()`:
+A pointed set is an object of the coslice category under the singleton set:
+
+\[
+\mathbf{PointedSet}=1\!\downarrow\!\mathbf{Set}.
+\]
 
 ```python
-class PointedSetsCategory(Category):
-    def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
-        return (self.carrier(),)
+PointedSets().product_projection(0)  # (X, x) |-> X
 ```
 
-The selected functor supplies the inherited set surface. The chosen point remains part
-of the source object's defining data.
+The selected functor states `(X, x) |-> X`. The second product projection returns the
+arrow `1 -> X` that selects `x`.
 
 ### Product and arrow categories
 
-For categories `C` and `D`, their product category owns `fst: C * D -> C` and
-`snd: C * D -> D`.
+For categories `C` and `D`, `product_projection(0)` and `product_projection(1)` are the
+two functors from `C * D` to its factors.
 
-`Ar(C)` owns `left: Ar(C) -> C` and `right: Ar(C) -> C`. These functors exist without
-being selected for structural inheritance.
+The arrow-category construction creates `source_projection()` and `target_projection()`.
+These functors exist without being selected for structural inheritance.
 
 ## Compiler contract
 
@@ -413,7 +495,8 @@ The compiler uses `structure_functors()` as its sole structural graph. It must:
 7. reject transport when the selected functor lacks a required mathematical map;
 8. resolve diamonds under [resolution.md](resolution.md);
 9. canonicalize repeated construction of the same declared functor;
-10. derive inherited methods from these paths.
+10. derive inherited methods from these paths;
+11. derive subobject-of-product component functors by composition.
 
 The compiler does not infer a functor from a category pair. It does not infer fullness,
 faithfulness, or equivalence from a class name. It does not add computational routes to
@@ -434,16 +517,16 @@ and [arrow-category API](https://leanprover-community.github.io/mathlib4_docs/Ma
 | --- | --- |
 | `CategoryTheory.Functor C D` | `Cat().ArrowType` with domain `C` and codomain `D` |
 | `C ⥤ D` | `Cat().HomCategory(C, D)` or `Fun(C, D)` |
-| `Functor.id C` | `C.identity_functor()` |
+| `Functor.id C` | `Fun(C, C).Equivalences().identity()` |
 | `ObjectProperty.FullSubcategory P` | the property subcategory `C.P()` |
-| `ObjectProperty.ι P` | `C.P().inclusion(C)` |
-| inclusion induced by `P -> Q` | `C.P().inclusion(C.Q())` |
-| `wideSubcategoryInclusion P` | the inclusion owned by the corresponding wide subcategory |
-| `forget`, `forget₂` | `Source.forget(Target)` for the declared forgetful structure |
-| `Prod.fst`, `Prod.snd` | `fst`, `snd` on the product category |
-| `Arrow.leftFunc`, `Arrow.rightFunc` | `left`, `right` on `Ar(C)` |
-| `Over.forget` | `forget` on the over category |
-| `StructuredArrow.proj` | `proj` on the structured-arrow category |
+| `ObjectProperty.ι P` | `Fun(C.P(), C).FullyFaithful().inclusion()` |
+| inclusion induced by `P -> Q` | `Fun(C.P(), C.Q()).FullyFaithful().inclusion()` |
+| `wideSubcategoryInclusion P` | `Fun(Wide, C).Faithful().inclusion()` |
+| `ConcreteCategory.forget`, `HasForget₂.forget₂` | an extra structure containing one chosen functor and its required compatibility |
+| `Prod.fst`, `Prod.snd` | `product_projection(0)` and `product_projection(1)` |
+| `Arrow.leftFunc`, `Arrow.rightFunc` | `source_projection()` and `target_projection()` |
+| `Over.forget` | the projection retained by the over-category construction |
+| `StructuredArrow.proj` | the projection retained by the structured-arrow construction |
 | `F.Full` | `F.is_full()` and `Ar(Cat()).Full()` |
 | `F.Faithful` | `F.is_faithful()` and `Ar(Cat()).Faithful()` |
 | `F.FullyFaithful` | `F.is_fully_faithful()` and `Ar(Cat()).FullyFaithful()` |
@@ -454,6 +537,15 @@ Mathlib uses propositions and typeclasses to carry established facts. This repos
 uses owned predicates, `ask()`, assumptions, direct property construction, and
 same-object refinement. The mathematical definitions and implications remain the same.
 
+Mathlib's `ConcreteCategory` contains a fixed faithful functor to `Type` as extra
+structure. Its `HasForget₂ C D` class also contains a chosen functor `C -> D`; it does
+not derive one from the endpoints. See
+[ConcreteCategory.Forget](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ConcreteCategory/Forget.html).
+
+Mathlib defines `Prod.fst` and `Prod.snd` separately. See
+[Products.Basic](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Products/Basic.html).
+This repository follows that construction-owned pattern for every presentation.
+
 The selection of functors for Python method inheritance has no Mathlib counterpart. It
 is kernel infrastructure over already established mathematical functors.
 
@@ -461,15 +553,23 @@ is kernel infrastructure over already established mathematical functors.
 
 - `Cat().ObjectType` is the implementation type of every category.
 - `Cat().ArrowType` is the implementation type of every functor.
-- `Ar(Cat())` owns functors as its objects.
+- `Fun = Ar(Cat())` owns functors as its objects.
 - `Fun(C, D)` is `Cat().HomCategory(C, D)`.
 - Natural transformations are arrows of `Fun(C, D)`.
-- Functor properties are property subcategories of `Ar(Cat())`.
+- Functor properties are property subcategories of `Fun` and its fixed-endpoint categories.
 - Every functor predicate returns an applied `Predicate`.
 - Direct construction and assumptions use the general same-object refinement path.
 - Functor properties have no computational handlers until an exact route is supplied.
 - Established property implications induce category inclusions.
 - A full-subcategory inclusion is fully faithful by construction.
+- Every functor is constructed through `Fun(Source, Target)` or an established property subcategory.
+- A specialized constructor receives enough mathematical data to select one functor.
+- Endpoint categories and object fields never select a functor.
+- Each category presentation retains all projections and evaluations required by its definition.
+- `Cat().Products()` and `Cat().Coproducts()` accept sequence-indexed category diagrams.
+- Their objects own `product_projection(i)` and `coproduct_injection(i)` respectively.
+- Every object of `Cat().Products().Subobjects()` derives its component functors by composition.
+- Slice and coslice categories use these component functors and arrow source or target projections.
 - Every selected structural functor is an ordinary object of `Ar(Cat())`.
 - `structure_functors()` affects method compilation only.
 - The compiler derives structural paths only through composition in `Cat`.

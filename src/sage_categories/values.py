@@ -1,9 +1,4 @@
-"""Runtime values used by the owned categorical foundation.
-
-The mathematical organization follows the abstract-category layer in
-``dzack_research.preamble.categories.abstract_categories``. The runtime is
-independent of Sage's category classes.
-"""
+"""Owned runtime values for the categorical kernel."""
 
 from __future__ import annotations
 
@@ -11,7 +6,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Self
 
 if TYPE_CHECKING:
-    from sage_categories.abstract_categories.functors import StructuralFunctor
+    from sage_categories.abstract_categories.functors import Functor
     from sage_categories.abstract_categories.hom_categories import HomCategory
     from sage_categories.category import Category
 
@@ -55,7 +50,7 @@ def registered_element[Candidate](candidate: Candidate) -> MathematicalElement |
 
 
 class MathematicalObject:
-    """An object of a category, with cached structural-functor images."""
+    """An object of one owned category."""
 
     def __init__(self, *, category: Category | None) -> None:
         self._category = category
@@ -65,7 +60,9 @@ class MathematicalObject:
         self._element_structural_images: dict[
             tuple[int, int, int], MathematicalElement
         ] = {}
-        self._morphism_structural_images: dict[tuple[int, int, int], Arrow] = {}
+        self._morphism_structural_images: dict[
+            tuple[int, int, int], Arrow
+        ] = {}
         if category is not None:
             self._object_structural_images[
                 (id(self), id(self), id(category))
@@ -77,15 +74,11 @@ class MathematicalObject:
         assert self._category is not None
         return self._category
 
-    def Hom(
-        self,
-        target: MathematicalObject,
-    ) -> HomCategory:
+    def Hom(self, target: MathematicalObject) -> HomCategory:
         """Return the hom category from this object to ``target``."""
         from sage_categories.abstract_categories.arrow_categories import common_category
 
-        category = common_category((self, target))
-        return category.Hom(self, target)
+        return common_category((self, target)).Hom(self, target)
 
     def End(self) -> HomCategory:
         """Return the endomorphism category of this object."""
@@ -95,36 +88,21 @@ class MathematicalObject:
         """Return the automorphism category of this object."""
         return self.category().Aut(self)
 
-    def Iso(
-        self,
-        target: MathematicalObject,
-    ) -> HomCategory:
+    def Iso(self, target: MathematicalObject) -> HomCategory:
         """Return the isomorphisms from this object to ``target``."""
-        from sage_categories.abstract_categories.arrow_categories import (
-            common_category,
-        )
+        from sage_categories.abstract_categories.arrow_categories import common_category
 
         return common_category((self, target)).Iso(self, target)
 
-    def Mono(
-        self,
-        target: MathematicalObject,
-    ) -> HomCategory:
+    def Mono(self, target: MathematicalObject) -> HomCategory:
         """Return the monomorphisms from this object to ``target``."""
-        from sage_categories.abstract_categories.arrow_categories import (
-            common_category,
-        )
+        from sage_categories.abstract_categories.arrow_categories import common_category
 
         return common_category((self, target)).Mono(self, target)
 
-    def Epi(
-        self,
-        target: MathematicalObject,
-    ) -> HomCategory:
+    def Epi(self, target: MathematicalObject) -> HomCategory:
         """Return the epimorphisms from this object to ``target``."""
-        from sage_categories.abstract_categories.arrow_categories import (
-            common_category,
-        )
+        from sage_categories.abstract_categories.arrow_categories import common_category
 
         return common_category((self, target)).Epi(self, target)
 
@@ -160,13 +138,25 @@ class MathematicalObject:
         return False
 
     def _ambient_implementation(self) -> MathematicalObject:
-        """Return the canonical implementation used by an inclusion."""
+        """Return the canonical implementation used by forgetting or inclusion."""
         return self
+
+    def _defining_component(self, index: int) -> MathematicalObject:
+        """Return component ``index`` of the standard defining-data tuple."""
+        defining_data = self._defining_data
+        assert isinstance(defining_data, tuple)
+        assert 0 <= index < len(defining_data)
+        component = registered_value(defining_data[index])
+        assert component is not None, (
+            f"component {index} of {self} is not an owned mathematical value"
+        )
+        return component
 
     def _object_image_along(
         self,
-        route: tuple[StructuralFunctor, ...],
+        route: tuple[Functor, ...],
     ) -> MathematicalObject:
+        """Return the canonical object image along one selected route."""
         from sage_categories.compiler import category_compiler
 
         if route:
@@ -176,33 +166,32 @@ class MathematicalObject:
             )
         value = self
         for functor in route:
-            codomain = functor.codomain()
             source = value
-            key = id(source), id(value), id(codomain)
+            key = id(source), id(value), id(functor.codomain())
             cached = self._object_structural_images.get(key)
             if cached is not None:
                 value = cached
                 continue
             value = functor.on_object(source)
-            assert value in codomain
+            assert value in functor.codomain()
             self._object_structural_images[key] = value
         return value
 
     def _element_image_along(
         self,
-        route: tuple[StructuralFunctor, ...],
-    ) -> MathematicalObject:
+        route: tuple[Functor, ...],
+    ) -> MathematicalElement:
         assert False, f"{self} is not represented as an element"
 
     def _morphism_image_along(
         self,
-        route: tuple[StructuralFunctor, ...],
+        route: tuple[Functor, ...],
     ) -> Arrow:
         assert False, f"{self} is not represented as a morphism"
 
 
 class TransportedObject(MathematicalObject):
-    """An object transported from one selected structural image."""
+    """An object constructed from one canonical ambient image."""
 
     def __init__(
         self,
@@ -215,6 +204,7 @@ class TransportedObject(MathematicalObject):
 
     def _ambient_implementation(self) -> MathematicalObject:
         return self._ambient_implementation_value
+
 
 class MathematicalElement(MathematicalObject):
     """An element of a mathematical object."""
@@ -237,13 +227,19 @@ class MathematicalElement(MathematicalObject):
         return self._ambient_object
 
     def _ambient_implementation(self) -> MathematicalElement:
-        """Return the canonical ambient element used by an inclusion."""
+        """Return the canonical ambient element used by forgetting or inclusion."""
         return self
+
+    def _defining_component(self, index: int) -> MathematicalElement:
+        component = super()._defining_component(index)
+        assert isinstance(component, MathematicalElement)
+        return component
 
     def _element_image_along(
         self,
-        route: tuple[StructuralFunctor, ...],
+        route: tuple[Functor, ...],
     ) -> MathematicalElement:
+        """Return the canonical element image along one selected route."""
         from sage_categories.compiler import category_compiler
 
         if route:
@@ -254,11 +250,13 @@ class MathematicalElement(MathematicalObject):
         ambient = self._ambient_object
         source = ambient
         element = self
-        prefix: tuple[StructuralFunctor, ...] = ()
+        prefix: tuple[Functor, ...] = ()
         for functor in route:
+            assert functor.maps_elements(), (
+                f"selected functor {functor} cannot transport elements"
+            )
             prefix = (*prefix, functor)
-            codomain = functor.codomain()
-            key = id(source), id(element), id(codomain)
+            key = id(source), id(element), id(functor.codomain())
             target = ambient._object_image_along(prefix)
             cached = self._element_structural_images.get(key)
             if cached is not None:
@@ -268,13 +266,13 @@ class MathematicalElement(MathematicalObject):
                 continue
             element = functor.on_element(source, element)
             assert element.ambient_object() is target
-            source = target
             self._element_structural_images[key] = element
+            source = target
         return element
 
 
 class TransportedElement(MathematicalElement):
-    """An element transported from one selected structural image."""
+    """An element constructed from one canonical ambient element."""
 
     def __init__(
         self,
@@ -302,6 +300,7 @@ class TransportedElement(MathematicalElement):
             ambient_object=ambient_object,
             ambient_implementation=ambient_implementation,
         )
+
 
 class CategoryElement(MathematicalElement):
     """The local element type when a category adds no element operations."""
@@ -347,15 +346,22 @@ class Arrow(MathematicalElement):
         return self
 
     def _ambient_implementation(self) -> Arrow:
-        """Return the canonical ambient arrow used by an inclusion."""
+        """Return the canonical ambient arrow used by forgetting or inclusion."""
         return self
+
+    def _defining_component(self, index: int) -> Arrow:
+        component = super()._defining_component(index)
+        assert isinstance(component, Arrow)
+        return component
 
     def _belongs_to_hom(self, hom_category: HomCategory) -> bool:
         own_hom_category = self._hom_category
         return own_hom_category is hom_category or (
             own_hom_category.domain() is hom_category.domain()
             and own_hom_category.codomain() is hom_category.codomain()
-            and own_hom_category.hom_category().is_subcategory(hom_category.hom_category())
+            and own_hom_category.hom_category().is_subcategory(
+                hom_category.hom_category()
+            )
         )
 
     def _is_arrow_in(self, category: Category) -> bool:
@@ -364,8 +370,9 @@ class Arrow(MathematicalElement):
 
     def _morphism_image_along(
         self,
-        route: tuple[StructuralFunctor, ...],
+        route: tuple[Functor, ...],
     ) -> Arrow:
+        """Return the canonical arrow image along one selected route."""
         from sage_categories.compiler import category_compiler
 
         if route:
@@ -374,23 +381,22 @@ class Arrow(MathematicalElement):
                 route[-1].codomain(),
             )
         value = self
-        prefix: tuple[StructuralFunctor, ...] = ()
+        prefix: tuple[Functor, ...] = ()
         for functor in route:
             prefix = (*prefix, functor)
-            codomain = functor.codomain()
-            key = id(value.hom_category()), id(value), id(codomain)
+            key = id(value.hom_category()), id(value), id(functor.codomain())
             domain = self.domain()._object_image_along(prefix)
-            codomain_object = self.codomain()._object_image_along(prefix)
+            codomain = self.codomain()._object_image_along(prefix)
             cached = self._morphism_structural_images.get(key)
             if cached is not None:
                 assert cached.domain() is domain
-                assert cached.codomain() is codomain_object
+                assert cached.codomain() is codomain
                 value = cached
                 continue
             image = functor.on_morphism(value)
-            assert codomain.contains_arrow(image)
+            assert functor.codomain().contains_arrow(image)
             assert image.domain() is domain
-            assert image.codomain() is codomain_object
+            assert image.codomain() is codomain
             self._morphism_structural_images[key] = image
             value = image
         return value
@@ -401,7 +407,7 @@ class Arrow(MathematicalElement):
 
 
 class TransportedArrow(Arrow):
-    """An arrow transported from one selected structural image."""
+    """An arrow constructed from one canonical ambient arrow."""
 
     def __init__(
         self,

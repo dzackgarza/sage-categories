@@ -18,10 +18,7 @@ if TYPE_CHECKING:
     from sage_categories.abstract_categories.arrow_categories import (
         ArrowCategory as ArrowCategoryObject,
     )
-    from sage_categories.abstract_categories.functors import (
-        Functor,
-        StructuralFunctor,
-    )
+    from sage_categories.abstract_categories.functors import Functor
     from sage_categories.abstract_categories.hom_categories import (
         HomCategory as HomCategoryObject,
     )
@@ -136,31 +133,50 @@ class Category(MathematicalObject):
         """Return the arrow implementation declared at this category."""
         return self._local_arrow_type
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
-        """Return functors selected for implicit implementation inheritance."""
+    def structure_functors(self) -> tuple[Functor, ...]:
+        """Declare the ordinary functors selected for implementation inheritance.
+
+        Existing leaves which still override ``super_functors`` are admitted
+        through this temporary kernel bridge. The compiler calls this method
+        exactly once and owns canonicalization; leaves therefore need no cache.
+        """
+        legacy = type(self).super_functors
+        if legacy is not Category.super_functors:
+            return legacy(self)
+        return ()
+
+    def super_functors(self) -> tuple[Functor, ...]:
+        """Compatibility declaration spelling for leaves pending migration."""
         return ()
 
     def super_categories(self) -> tuple[Category, ...]:
-        """Return the category graph derived from structural functors."""
-        return tuple(functor.codomain() for functor in self.super_functors())
+        """Return the category graph derived from selected functors."""
+        return tuple(
+            functor.codomain()
+            for functor in category_compiler().structure_functors(self)
+        )
 
-    def structural_route_to(
-        self,
-        category: Category,
-    ) -> tuple[StructuralFunctor, ...]:
-        """Return the canonical structural-functor route to ``category``."""
+    def structural_route_to(self, category: Category) -> tuple[Functor, ...]:
+        """Return the canonical selected-functor route to ``category``."""
         assert self.is_subcategory(category)
         return category_compiler().implementation_route(self, category)
 
     def structural_coherences(self) -> tuple[Isomorphism, ...]:
-        """Return isomorphisms from canonical to equivalent structural composites."""
+        """Return explicitly represented comparison isomorphisms.
+
+        These do not identify routes in the compiler: an isomorphism is not
+        literal equality. Strict inclusion diamonds are handled by the kernel.
+        """
         return ()
 
     def is_subcategory(self, category: Category) -> bool:
-        """Return whether the structural-functor graph includes ``category``."""
+        """Return whether the selected-functor graph reaches ``category``."""
         if self is category:
             return True
-        return any(codomain is category or codomain.is_subcategory(category) for codomain in self.super_categories())
+        return any(
+            codomain is category or codomain.is_subcategory(category)
+            for codomain in self.super_categories()
+        )
 
     def __contains__(self, candidate: Any) -> bool:
         value = registered_value(candidate)
@@ -206,16 +222,12 @@ class Category(MathematicalObject):
         return HomCategory
 
     def _hom_category_family_type(self) -> type[HomCategoryFamily]:
-        from sage_categories.abstract_categories.hom_categories import (
-            HomCategoryFamily,
-        )
+        from sage_categories.abstract_categories.hom_categories import HomCategoryFamily
 
         return HomCategoryFamily
 
     def _end_category_family_type(self) -> type[HomCategoryFamily]:
-        from sage_categories.abstract_categories.hom_categories import (
-            EndCategoryFamily,
-        )
+        from sage_categories.abstract_categories.hom_categories import EndCategoryFamily
 
         return EndCategoryFamily
 
@@ -394,9 +406,7 @@ class Category(MathematicalObject):
     def ArrowCategory(self) -> ArrowCategoryObject:
         """Return ``Ar(C)``."""
         if self._arrow_category is None:
-            from sage_categories.abstract_categories.arrow_categories import (
-                ArrowCategory,
-            )
+            from sage_categories.abstract_categories.arrow_categories import ArrowCategory
 
             self._arrow_category = ArrowCategory(self)
         return self._arrow_category
@@ -404,9 +414,7 @@ class Category(MathematicalObject):
     def EndArrowCategory(self) -> Category:
         """Return the full subcategory of ``Ar(C)`` on endomorphisms."""
         if self._end_arrow_category is None:
-            from sage_categories.abstract_categories.arrow_categories import (
-                EndArrowCategory,
-            )
+            from sage_categories.abstract_categories.arrow_categories import EndArrowCategory
 
             self._end_arrow_category = EndArrowCategory(self)
         return self._end_arrow_category
@@ -457,9 +465,7 @@ class Category(MathematicalObject):
 
     def WideSubcategory(self, arrows: Category) -> Category:
         """Keep all objects and restrict the arrows to ``arrows``."""
-        from sage_categories.abstract_categories.arrow_categories import (
-            WideSubcategory,
-        )
+        from sage_categories.abstract_categories.arrow_categories import WideSubcategory
 
         key = id(arrows)
         cached = self._wide_subcategories.get(key)
@@ -596,8 +602,8 @@ class Category(MathematicalObject):
             inherited_product,
         )
 
-    def _product_lift(self) -> StructuralFunctor:
-        """Return the declared structural functor which creates products."""
+    def _product_lift(self) -> Functor:
+        """Return the selected functor which creates products."""
         assert False, f"{self} does not declare a product lift"
 
     def _product_apex(

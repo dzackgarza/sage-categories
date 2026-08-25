@@ -463,6 +463,10 @@ The handler:
 - does not implement `__contains__`;
 - reconstructs any semantic data before returning it.
 
+Each handler positively matches the semantic cases it can decide. The final wildcard
+case returns `Unknown`. Add a new supported procedure by adding a new `case`. Do not
+encode applicability as an `if` cascade over unsupported cases.
+
 No handler is required. Without one, `ask(PObjects().membership_proposition(x))` can still succeed from placement, assumptions, implications, or structural images.
 
 ## The main boundary
@@ -1103,7 +1107,22 @@ A SymPy integration can use SymPy’s predicate multipledispatch internally. [Sy
 
 Several procedures can apply to the same property.
 
-They must declare exact applicability. The resolver must not use exceptions to select algorithms.
+They must declare exact applicability. Use a positive `match` with one case for each
+supported semantic construction. The final wildcard case returns `Unknown`:
+
+```python
+def decide_property(x: SemanticObject) -> Decision:
+    match x:
+        case FirstSupportedConstruction(defining_data=data):
+            return decide_first_construction(data)
+        case SecondSupportedConstruction(defining_data=data):
+            return decide_second_construction(data)
+        case _:
+            return Unknown
+```
+
+Extend this function by adding a case. Do not use negative tests, an `if` cascade, or
+exceptions to select algorithms.
 
 For example:
 
@@ -1189,6 +1208,28 @@ It then returns `True`.
 For a symbolic rule whose image cannot be determined, it returns `Unknown`.
 
 The backend result does not escape as a SymPy set. The private boundary reconstructs the owned set or proposition first.
+
+The property category wires this procedure through a positive semantic case:
+
+```python
+def decide_surjective_set_map(f: Sets().ArrowType) -> Decision:
+    match (f.domain(), f.codomain()):
+        case (number_sets.RR, number_sets.RR):
+            return sympy_sets.decide_exact_image_equals_reals(f)
+        case _:
+            return Unknown
+
+
+Ar(Sets()).Epimorphisms().register_exact_handler(
+    Sets().ArrowType,
+    decide_surjective_set_map,
+)
+```
+
+The SymPy procedure returns `True` only when the exact owned image equals `RR`. It returns
+`False` when the exact image differs from `RR`. It returns `Unknown` when no supported
+symbolic-image case determines the result. Add another supported domain, codomain, or
+map construction as another `case`.
 
 ### Refinement timing
 

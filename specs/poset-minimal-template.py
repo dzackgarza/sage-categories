@@ -25,6 +25,16 @@ canonical image in the projected set.
 
 This example presents ``R`` as ``<=``. A strict-order presentation would own
 the corresponding ``<`` operation instead.
+
+Construction in ``PartiallyOrderedSets()`` asserts that ``R`` satisfies the partial-order
+laws. The constructor does not run a law checker. A relation-bearing ambient object can
+instead expose a property proposition and bind exact handlers through the property
+subcategory template.
+
+The ``ask()`` call below decides only the cardinality precondition used by this
+construction. It does not decide the partial-order laws. Theory code constructs known
+posets directly. Interactive code can use ``assume(proposition)`` or
+``proposition.assume()`` for a property supplied by the mathematical context.
 """
 
 from __future__ import annotations

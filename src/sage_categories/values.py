@@ -143,10 +143,8 @@ class MathematicalObject:
 
     def _defining_component(self, index: int) -> MathematicalObject:
         """Return component ``index`` of the standard defining-data tuple."""
-        defining_data = getattr(self, "_defining_data", None)
-        assert isinstance(defining_data, tuple), (
-            f"{self} has no standard tuple presentation"
-        )
+        defining_data = self._defining_data
+        assert isinstance(defining_data, tuple)
         assert 0 <= index < len(defining_data)
         component = registered_value(defining_data[index])
         assert component is not None, (

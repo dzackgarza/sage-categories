@@ -150,7 +150,6 @@ from sage_categories.theories.set_products import (
     ProductSet,
     ProductsOfSetsCategory,
     SetProductHomCategory,
-    SetProductInclusionFunctor,
     SetProductObject,
     is_products_of_sets_category,
 )
@@ -261,7 +260,6 @@ __all__ = (
     "SetMorphismFamily",
     "SetObject",
     "SetProductHomCategory",
-    "SetProductInclusionFunctor",
     "SetProductObject",
     "SetSubset",
     "Sets",

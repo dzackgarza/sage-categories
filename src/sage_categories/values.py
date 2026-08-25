@@ -27,6 +27,14 @@ UNKNOWN = Unknown.VALUE
 type Decision = bool | Unknown
 
 
+class ImplementationRole(Enum):
+    """One category-owned implementation role of a mathematical value."""
+
+    OBJECT = "object"
+    ELEMENT = "element"
+    ARROW = "arrow"
+
+
 _VALUES: dict[int, MathematicalObject] = {}
 _ELEMENTS: dict[int, MathematicalElement] = {}
 
@@ -152,6 +160,29 @@ class MathematicalObject:
         )
         return component
 
+    def _implementation_contexts(
+        self,
+    ) -> tuple[tuple[ImplementationRole, Category], ...]:
+        """Return the exact category-owned roles this value inhabits."""
+        return ((ImplementationRole.OBJECT, self.category()),)
+
+    def _implementation_image(
+        self,
+        role: ImplementationRole,
+        route: tuple[Functor, ...],
+    ) -> MathematicalObject:
+        """Return this receiver's image in one exact implementation role."""
+        assert role is ImplementationRole.OBJECT
+        return self._object_image_along(route)
+
+    def _implementation_ambient(
+        self,
+        role: ImplementationRole,
+    ) -> MathematicalObject:
+        """Return the ambient object used to reverse-transport role results."""
+        assert role is ImplementationRole.OBJECT
+        return self
+
     def _object_image_along(
         self,
         route: tuple[Functor, ...],
@@ -234,6 +265,31 @@ class MathematicalElement(MathematicalObject):
         component = super()._defining_component(index)
         assert isinstance(component, MathematicalElement)
         return component
+
+    def _implementation_contexts(
+        self,
+    ) -> tuple[tuple[ImplementationRole, Category], ...]:
+        return (
+            (ImplementationRole.ELEMENT, self.ambient_object().category()),
+            *super()._implementation_contexts(),
+        )
+
+    def _implementation_image(
+        self,
+        role: ImplementationRole,
+        route: tuple[Functor, ...],
+    ) -> MathematicalObject:
+        if role is ImplementationRole.ELEMENT:
+            return self._element_image_along(route)
+        return super()._implementation_image(role, route)
+
+    def _implementation_ambient(
+        self,
+        role: ImplementationRole,
+    ) -> MathematicalObject:
+        if role is ImplementationRole.ELEMENT:
+            return self.ambient_object()
+        return super()._implementation_ambient(role)
 
     def _element_image_along(
         self,
@@ -353,6 +409,31 @@ class Arrow(MathematicalElement):
         component = super()._defining_component(index)
         assert isinstance(component, Arrow)
         return component
+
+    def _implementation_contexts(
+        self,
+    ) -> tuple[tuple[ImplementationRole, Category], ...]:
+        return (
+            (ImplementationRole.ARROW, self.base_category()),
+            *super()._implementation_contexts(),
+        )
+
+    def _implementation_image(
+        self,
+        role: ImplementationRole,
+        route: tuple[Functor, ...],
+    ) -> MathematicalObject:
+        if role is ImplementationRole.ARROW:
+            return self._morphism_image_along(route)
+        return super()._implementation_image(role, route)
+
+    def _implementation_ambient(
+        self,
+        role: ImplementationRole,
+    ) -> MathematicalObject:
+        if role is ImplementationRole.ARROW:
+            return self.codomain()
+        return super()._implementation_ambient(role)
 
     def _belongs_to_hom(self, hom_category: HomCategory) -> bool:
         own_hom_category = self._hom_category

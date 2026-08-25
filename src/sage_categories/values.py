@@ -7,7 +7,6 @@ independent of Sage's category classes.
 
 from __future__ import annotations
 
-from enum import Enum
 from typing import TYPE_CHECKING, Self
 
 if TYPE_CHECKING:
@@ -16,19 +15,6 @@ if TYPE_CHECKING:
     from sage_categories.category import Category
 
 
-class Unknown(Enum):
-    """The result of a mathematical question with no represented answer."""
-
-    VALUE = "Unknown"
-
-    def __bool__(self) -> bool:
-        assert False, "Unknown is not a Boolean value"
-
-    def __repr__(self) -> str:
-        return "Unknown"
-
-
-UNKNOWN = Unknown.VALUE
 type Decision = bool | Unknown
 
 

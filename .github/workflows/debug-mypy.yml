@@ -1,0 +1,28 @@
+name: Debug mypy plugin
+
+on:
+  pull_request: {}
+
+jobs:
+  traceback:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - uses: astral-sh/setup-uv@v6
+      - uses: extractions/setup-just@v4
+      - name: Clone QC infrastructure
+        run: git clone --depth 1 https://github.com/dzackgarza/ai-review-ci.git "$HOME/ai-review-ci"
+      - name: Provision Sage
+        run: just ci-provision-sage
+      - name: Run mypy with traceback
+        run: |
+          export MYPYPATH="$HOME/ai-review-ci/typings"
+          /usr/local/sage-env/python -m mypy \
+            --show-traceback \
+            --config-file "$HOME/ai-review-ci/tool-configs/mypy-sage.ini" \
+            src/sage_categories/compiler.py

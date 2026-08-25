@@ -11,20 +11,18 @@ from enum import Enum
 from types import FunctionType
 from typing import TYPE_CHECKING, Concatenate, ParamSpec, TypeVar, assert_never, cast
 
-from sage_categories.values import Arrow, Decision, MathematicalElement, MathematicalObject
+from sage_categories.values import (
+    Arrow,
+    Decision,
+    ImplementationRole,
+    MathematicalElement,
+    MathematicalObject,
+)
 
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.full_subcategories import FullSubcategory
     from sage_categories.abstract_categories.functors import Functor
     from sage_categories.category import Category
-
-
-class ImplementationRole(Enum):
-    """The mathematical role of a compiled implementation method."""
-
-    OBJECT = "object"
-    ELEMENT = "element"
-    ARROW = "arrow"
 
 
 class ParameterRole(Enum):
@@ -38,6 +36,18 @@ class ParameterRole(Enum):
     OBJECT_ITERATOR = "object_iterator"
     ELEMENT_ITERATOR = "element_iterator"
     ARROW_ITERATOR = "arrow_iterator"
+
+
+_PARAMETER_ROLE_FOR_IMPLEMENTATION = {
+    ImplementationRole.OBJECT: ParameterRole.OBJECT,
+    ImplementationRole.ELEMENT: ParameterRole.ELEMENT,
+    ImplementationRole.ARROW: ParameterRole.ARROW,
+}
+
+_IMPLEMENTATION_ROLE_FOR_PARAMETER = {
+    parameter_role: implementation_role
+    for implementation_role, parameter_role in _PARAMETER_ROLE_FOR_IMPLEMENTATION.items()
+}
 
 
 @dataclass(frozen=True)
@@ -140,11 +150,7 @@ def method_signature(
     )
     parameters = tuple(signature.parameters.values())
     assert parameters
-    receiver = {
-        ImplementationRole.OBJECT: ParameterRole.OBJECT,
-        ImplementationRole.ELEMENT: ParameterRole.ELEMENT,
-        ImplementationRole.ARROW: ParameterRole.ARROW,
-    }[implementation_role]
+    receiver = _PARAMETER_ROLE_FOR_IMPLEMENTATION[implementation_role]
     positional: list[ParameterRole] = []
     keyword: list[tuple[str, ParameterRole]] = []
     variadic = ParameterRole.ABSENT
@@ -292,8 +298,8 @@ def _transport_result(
     route: tuple[Functor, ...],
     source_ambient: MathematicalObject,
     target_ambient: MathematicalObject,
-    instance: MathematicalObject | MathematicalElement | Arrow,
-    image: MathematicalObject | MathematicalElement | Arrow,
+    instance: MathematicalObject,
+    image: MathematicalObject,
 ) -> R:
     assert role is not ParameterRole.ABSENT
     if role is ParameterRole.VALUE:
@@ -343,12 +349,7 @@ type ForwardedDeclaration = tuple[
 
 
 class ForwardedMethod[Receiver: MathematicalObject, **P, R]:
-    """Forward one spelling across every implementation role.
-
-    One executable class can represent objects in one category, elements of
-    objects in another, and arrows in a third. The descriptor retains each exact
-    role declaration instead of making compilation order select one of them.
-    """
+    """Forward one spelling across every category-owned implementation role."""
 
     def __init__(
         self,
@@ -358,7 +359,7 @@ class ForwardedMethod[Receiver: MathematicalObject, **P, R]:
         signature: MethodSignature,
     ) -> None:
         self._declarations: dict[
-            tuple[int, ParameterRole],
+            tuple[int, ImplementationRole],
             ForwardedDeclaration,
         ] = {}
         self.register(category, route, method, signature)
@@ -371,13 +372,12 @@ class ForwardedMethod[Receiver: MathematicalObject, **P, R]:
         signature: MethodSignature,
     ) -> None:
         assert route, method.__qualname__
-        assert signature.receiver in (
-            ParameterRole.OBJECT,
-            ParameterRole.ELEMENT,
-            ParameterRole.ARROW,
+        implementation_role = _IMPLEMENTATION_ROLE_FOR_PARAMETER.get(
+            signature.receiver
         )
+        assert implementation_role is not None
         declaration = route, cast(FunctionType, method), signature
-        key = id(category), signature.receiver
+        key = id(category), implementation_role
         previous = self._declarations.get(key)
         assert previous is None or previous == declaration
         self._declarations[key] = declaration
@@ -387,23 +387,12 @@ class ForwardedMethod[Receiver: MathematicalObject, **P, R]:
         instance: MathematicalObject,
     ) -> tuple[ForwardedDeclaration, ...]:
         candidates: list[ForwardedDeclaration] = []
-        if isinstance(instance, Arrow):
+        for implementation_role, category in instance._implementation_contexts():
             declaration = self._declarations.get(
-                (id(instance.base_category()), ParameterRole.ARROW)
+                (id(category), implementation_role)
             )
             if declaration is not None:
                 candidates.append(declaration)
-        if isinstance(instance, MathematicalElement):
-            declaration = self._declarations.get(
-                (id(instance.category()), ParameterRole.ELEMENT)
-            )
-            if declaration is not None:
-                candidates.append(declaration)
-        declaration = self._declarations.get(
-            (id(instance.category()), ParameterRole.OBJECT)
-        )
-        if declaration is not None:
-            candidates.append(declaration)
         return tuple(candidates)
 
     def _declaration(
@@ -431,25 +420,13 @@ class ForwardedMethod[Receiver: MathematicalObject, **P, R]:
         if instance is None:
             return self
         route, method, signature = self._declaration(instance)
-        receiver = signature.receiver
-        source_ambient: MathematicalObject
-        target_ambient: MathematicalObject
-        image: MathematicalObject | MathematicalElement | Arrow
-        if receiver is ParameterRole.ARROW:
-            assert isinstance(instance, Arrow)
-            image = instance._morphism_image_along(route)
-            source_ambient = instance.codomain()
-            target_ambient = image.codomain()
-        elif receiver is ParameterRole.ELEMENT:
-            assert isinstance(instance, MathematicalElement)
-            image = instance._element_image_along(route)
-            source_ambient = instance.ambient_object()
-            target_ambient = image.ambient_object()
-        else:
-            assert receiver is ParameterRole.OBJECT
-            image = instance._object_image_along(route)
-            source_ambient = instance
-            target_ambient = image
+        implementation_role = _IMPLEMENTATION_ROLE_FOR_PARAMETER.get(
+            signature.receiver
+        )
+        assert implementation_role is not None
+        image = instance._implementation_image(implementation_role, route)
+        source_ambient = instance._implementation_ambient(implementation_role)
+        target_ambient = image._implementation_ambient(implementation_role)
 
         def call(*args: P.args, **kwargs: P.kwargs) -> R:
             forwarded_args, forwarded_kwargs = _forward_arguments(
@@ -504,14 +481,14 @@ class RefiningPropertyMethod[Receiver: MathematicalObject]:
         assert previous is None or previous == declaration
         self._declarations[id(ambient_category)] = declaration
 
-    def declaration(self) -> Callable[[Receiver], Decision]:
+    def declaration(self) -> FunctionType:
         methods = tuple(
             declaration[1]
             for declaration in self._declarations.values()
         )
         assert methods
         assert all(method is methods[0] for method in methods)
-        return methods[0]
+        return cast(FunctionType, methods[0])
 
     def __get__(
         self,

@@ -15,7 +15,7 @@ from sage_categories.values import Arrow, Decision, MathematicalElement, Mathema
 
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.full_subcategories import FullSubcategory
-    from sage_categories.abstract_categories.functors import StructuralFunctor
+    from sage_categories.abstract_categories.functors import Functor
     from sage_categories.category import Category
 
 
@@ -41,7 +41,7 @@ class ParameterRole(Enum):
 
 @dataclass(frozen=True)
 class MethodSignature:
-    """Role metadata copied from one method declaration."""
+    """Role metadata derived from one exact method declaration."""
 
     receiver: ParameterRole
     positional: tuple[ParameterRole, ...]
@@ -131,10 +131,12 @@ def method_signature(
     method: FunctionType,
     implementation_role: ImplementationRole,
 ) -> MethodSignature:
-    """Return the method's complete declared transport roles."""
+    """Return the method's complete transport roles from its exact types."""
     signature = inspect.signature(method)
     annotations = typing.get_type_hints(method, include_extras=True)
-    assert "return" in annotations, f"{method.__qualname__} has no mathematical result type"
+    assert "return" in annotations, (
+        f"{method.__qualname__} has no mathematical result type"
+    )
     parameters = tuple(signature.parameters.values())
     assert parameters
     receiver = {
@@ -182,11 +184,11 @@ def method_signature(
 
 def _pull_back_element_along(
     element: MathematicalElement,
-    route: tuple[StructuralFunctor, ...],
+    route: tuple[Functor, ...],
     source_ambient: MathematicalObject,
 ) -> MathematicalElement:
     objects: list[MathematicalObject] = [source_ambient]
-    prefix: tuple[StructuralFunctor, ...] = ()
+    prefix: tuple[Functor, ...] = ()
     for functor in route[:-1]:
         prefix = (*prefix, functor)
         objects.append(source_ambient._object_image_along(prefix))
@@ -196,10 +198,26 @@ def _pull_back_element_along(
     return current
 
 
+_ITERATOR_ITEM_ROLES = {
+    ParameterRole.OBJECT_ITERATOR: ParameterRole.OBJECT,
+    ParameterRole.ELEMENT_ITERATOR: ParameterRole.ELEMENT,
+    ParameterRole.ARROW_ITERATOR: ParameterRole.ARROW,
+}
+
+
+def _implementation_route(
+    source: Category,
+    target: Category,
+) -> tuple[Functor, ...]:
+    from sage_categories.compiler import category_compiler
+
+    return category_compiler().implementation_route(source, target)
+
+
 def _forward_value(
     value: Value,
     role: ParameterRole,
-    route: tuple[StructuralFunctor, ...],
+    route: tuple[Functor, ...],
 ) -> Value:
     if not route or role is ParameterRole.VALUE:
         return value
@@ -209,55 +227,43 @@ def _forward_value(
         value_category = mathematical_object.category()
         if not value_category.is_subcategory(source_category):
             return value
-        if value_category is source_category:
-            value_route = route
-        else:
-            assert value_category.is_subcategory(source_category)
-            from sage_categories.compiler import category_compiler
-
-            value_route = category_compiler().implementation_route(
-                value_category,
-                route[-1].codomain(),
-            )
+        value_route = (
+            route
+            if value_category is source_category
+            else _implementation_route(value_category, route[-1].codomain())
+        )
         return cast(Value, mathematical_object._object_image_along(value_route))
     if role is ParameterRole.ELEMENT:
         element = cast(MathematicalElement, value)
         value_category = element.ambient_object().category()
         if not value_category.is_subcategory(source_category):
             return value
-        if value_category is source_category:
-            value_route = route
-        else:
-            from sage_categories.compiler import category_compiler
-
-            value_route = category_compiler().implementation_route(
-                value_category,
-                route[-1].codomain(),
-            )
+        value_route = (
+            route
+            if value_category is source_category
+            else _implementation_route(value_category, route[-1].codomain())
+        )
         return cast(Value, element._element_image_along(value_route))
     if role is ParameterRole.ARROW:
         arrow = cast(Arrow, value)
         value_category = arrow.base_category()
         if not value_category.is_subcategory(source_category):
             return value
-        if value_category is source_category:
-            value_route = route
-        else:
-            from sage_categories.compiler import category_compiler
-
-            value_route = category_compiler().implementation_route(
-                value_category,
-                route[-1].codomain(),
-            )
+        value_route = (
+            route
+            if value_category is source_category
+            else _implementation_route(value_category, route[-1].codomain())
+        )
         return cast(Value, arrow._morphism_image_along(value_route))
-    if role is ParameterRole.ELEMENT_ITERATOR:
-        iterator = cast(Iterator[MathematicalElement], value)
+    item_role = _ITERATOR_ITEM_ROLES.get(role)
+    if item_role is not None:
+        iterator = cast(Iterator[MathematicalObject], value)
 
-        def forward_elements() -> Iterator[MathematicalElement]:
-            for element in iterator:
-                yield _forward_value(element, ParameterRole.ELEMENT, route)
+        def forward_values() -> Iterator[MathematicalObject]:
+            for item in iterator:
+                yield _forward_value(item, item_role, route)
 
-        return cast(Value, forward_elements())
+        return cast(Value, forward_values())
     assert_never(role)
 
 
@@ -265,7 +271,7 @@ def _forward_arguments(
     args: tuple[Value, ...],
     kwargs: dict[str, Value],
     signature: MethodSignature,
-    route: tuple[StructuralFunctor, ...],
+    route: tuple[Functor, ...],
 ) -> tuple[tuple[Value, ...], dict[str, Value]]:
     forwarded_args = tuple(
         _forward_value(value, signature.role_for_positional(position), route)
@@ -281,7 +287,7 @@ def _forward_arguments(
 def _transport_result(
     result: R,
     role: ParameterRole,
-    route: tuple[StructuralFunctor, ...],
+    route: tuple[Functor, ...],
     source_ambient: MathematicalObject,
     target_ambient: MathematicalObject,
     instance: MathematicalObject | MathematicalElement | Arrow,
@@ -306,17 +312,9 @@ def _transport_result(
         if value is image:
             return cast(R, instance)
         return result
-    if role in (
-        ParameterRole.OBJECT_ITERATOR,
-        ParameterRole.ELEMENT_ITERATOR,
-        ParameterRole.ARROW_ITERATOR,
-    ):
+    item_role = _ITERATOR_ITEM_ROLES.get(role)
+    if item_role is not None:
         iterator = cast(Iterator[MathematicalObject], result)
-        item_role = {
-            ParameterRole.OBJECT_ITERATOR: ParameterRole.OBJECT,
-            ParameterRole.ELEMENT_ITERATOR: ParameterRole.ELEMENT,
-            ParameterRole.ARROW_ITERATOR: ParameterRole.ARROW,
-        }[role]
 
         def pull_back_values() -> Iterator[MathematicalObject]:
             for value in iterator:
@@ -334,49 +332,121 @@ def _transport_result(
     assert_never(role)
 
 
-class ForwardedObjectMethod[Receiver: MathematicalObject, **P, R]:
-    """Forward an object method along a structural-functor route."""
+type ForwardedDeclaration = tuple[
+    tuple[Functor, ...],
+    FunctionType,
+    MethodSignature,
+]
+
+
+class ForwardedMethod[Receiver: MathematicalObject, **P, R]:
+    """Forward one spelling across every implementation role.
+
+    One executable class can represent objects in one category, elements of
+    objects in another, and arrows in a third. The descriptor retains each exact
+    role declaration instead of making compilation order select one of them.
+    """
 
     def __init__(
         self,
         category: Category,
-        route: tuple[StructuralFunctor, ...],
+        route: tuple[Functor, ...],
         method: Callable[Concatenate[MathematicalObject, P], R],
         signature: MethodSignature,
     ) -> None:
         self._declarations: dict[
-            int,
-            tuple[
-                tuple[StructuralFunctor, ...],
-                FunctionType,
-                MethodSignature,
-            ],
+            tuple[int, ParameterRole],
+            ForwardedDeclaration,
         ] = {}
         self.register(category, route, method, signature)
 
     def register(
         self,
         category: Category,
-        route: tuple[StructuralFunctor, ...],
+        route: tuple[Functor, ...],
         method: Callable[Concatenate[MathematicalObject, P], R],
         signature: MethodSignature,
     ) -> None:
         assert route, method.__qualname__
-        assert signature.receiver is ParameterRole.OBJECT
+        assert signature.receiver in (
+            ParameterRole.OBJECT,
+            ParameterRole.ELEMENT,
+            ParameterRole.ARROW,
+        )
         declaration = route, cast(FunctionType, method), signature
-        previous = self._declarations.get(id(category))
+        key = id(category), signature.receiver
+        previous = self._declarations.get(key)
         assert previous is None or previous == declaration
-        self._declarations[id(category)] = declaration
+        self._declarations[key] = declaration
+
+    def _applicable(
+        self,
+        instance: MathematicalObject,
+    ) -> tuple[ForwardedDeclaration, ...]:
+        candidates: list[ForwardedDeclaration] = []
+        if isinstance(instance, Arrow):
+            declaration = self._declarations.get(
+                (id(instance.base_category()), ParameterRole.ARROW)
+            )
+            if declaration is not None:
+                candidates.append(declaration)
+        if isinstance(instance, MathematicalElement):
+            declaration = self._declarations.get(
+                (id(instance.category()), ParameterRole.ELEMENT)
+            )
+            if declaration is not None:
+                candidates.append(declaration)
+        declaration = self._declarations.get(
+            (id(instance.category()), ParameterRole.OBJECT)
+        )
+        if declaration is not None:
+            candidates.append(declaration)
+        return tuple(candidates)
+
+    def _declaration(
+        self,
+        instance: MathematicalObject,
+    ) -> ForwardedDeclaration:
+        applicable = self._applicable(instance)
+        assert applicable, (
+            f"{type(instance).__qualname__} has no forwarding declaration "
+            f"for {instance.category()}"
+        )
+        selected = applicable[0]
+        selected_method = selected[1]
+        assert all(declaration[1] is selected_method for declaration in applicable), (
+            f"{type(instance).__qualname__} inherits this spelling with different "
+            "mathematical meanings in overlapping implementation roles"
+        )
+        return selected
 
     def __get__(
         self,
         instance: Receiver | None,
         owner: type[Receiver] | None = None,
-    ) -> ForwardedObjectMethod[Receiver, P, R] | Callable[P, R]:
+    ) -> ForwardedMethod[Receiver, P, R] | Callable[P, R]:
         if instance is None:
             return self
-        route, method, signature = self._declarations[id(instance.category())]
-        image = instance._object_image_along(route)
+        route, method, signature = self._declaration(instance)
+        receiver = signature.receiver
+        source_ambient: MathematicalObject
+        target_ambient: MathematicalObject
+        image: MathematicalObject | MathematicalElement | Arrow
+        if receiver is ParameterRole.ARROW:
+            assert isinstance(instance, Arrow)
+            image = instance._morphism_image_along(route)
+            source_ambient = instance.codomain()
+            target_ambient = image.codomain()
+        elif receiver is ParameterRole.ELEMENT:
+            assert isinstance(instance, MathematicalElement)
+            image = instance._element_image_along(route)
+            source_ambient = instance.ambient_object()
+            target_ambient = image.ambient_object()
+        else:
+            assert receiver is ParameterRole.OBJECT
+            image = instance._object_image_along(route)
+            source_ambient = instance
+            target_ambient = image
 
         def call(*args: P.args, **kwargs: P.kwargs) -> R:
             forwarded_args, forwarded_kwargs = _forward_arguments(
@@ -386,9 +456,23 @@ class ForwardedObjectMethod[Receiver: MathematicalObject, **P, R]:
                 route,
             )
             result = cast(R, method(image, *forwarded_args, **forwarded_kwargs))
-            return _transport_result(result, signature.result, route, instance, image, instance, image)
+            return _transport_result(
+                result,
+                signature.result,
+                route,
+                source_ambient,
+                target_ambient,
+                instance,
+                image,
+            )
 
         return call
+
+
+ForwardedObjectMethod = ForwardedMethod
+ForwardedElementMethod = ForwardedMethod
+ForwardedArrowMethod = ForwardedMethod
+type ForwardedDescriptor = ForwardedMethod
 
 
 class RefiningPropertyMethod[Receiver: MathematicalObject]:
@@ -450,121 +534,3 @@ class RefiningPropertyMethod[Receiver: MathematicalObject]:
             return decision
 
         return call
-
-
-class ForwardedElementMethod[Receiver: MathematicalElement, **P, R]:
-    """Forward an element method along a structural-functor route."""
-
-    def __init__(
-        self,
-        category: Category,
-        route: tuple[StructuralFunctor, ...],
-        method: Callable[Concatenate[MathematicalElement, P], R],
-        signature: MethodSignature,
-    ) -> None:
-        self._declarations: dict[
-            int,
-            tuple[
-                tuple[StructuralFunctor, ...],
-                FunctionType,
-                MethodSignature,
-            ],
-        ] = {}
-        self.register(category, route, method, signature)
-
-    def register(
-        self,
-        category: Category,
-        route: tuple[StructuralFunctor, ...],
-        method: Callable[Concatenate[MathematicalElement, P], R],
-        signature: MethodSignature,
-    ) -> None:
-        assert route, method.__qualname__
-        assert signature.receiver is ParameterRole.ELEMENT
-        declaration = route, cast(FunctionType, method), signature
-        previous = self._declarations.get(id(category))
-        assert previous is None or previous == declaration
-        self._declarations[id(category)] = declaration
-
-    def __get__(
-        self,
-        instance: Receiver | None,
-        owner: type[Receiver] | None = None,
-    ) -> ForwardedElementMethod[Receiver, P, R] | Callable[P, R]:
-        if instance is None:
-            return self
-        route, method, signature = self._declarations[id(instance.category())]
-        image = instance._element_image_along(route)
-        source_ambient = instance.ambient_object()
-
-        def call(*args: P.args, **kwargs: P.kwargs) -> R:
-            forwarded_args, forwarded_kwargs = _forward_arguments(
-                tuple(args),
-                dict(kwargs),
-                signature,
-                route,
-            )
-            result = cast(R, method(image, *forwarded_args, **forwarded_kwargs))
-            return _transport_result(result, signature.result, route, source_ambient, image.ambient_object(), instance, image)
-
-        return call
-
-
-class ForwardedArrowMethod[Receiver: Arrow, **P, R]:
-    """Forward an arrow method along a structural-functor route."""
-
-    def __init__(
-        self,
-        category: Category,
-        route: tuple[StructuralFunctor, ...],
-        method: Callable[Concatenate[Arrow, P], R],
-        signature: MethodSignature,
-    ) -> None:
-        self._declarations: dict[
-            int,
-            tuple[
-                tuple[StructuralFunctor, ...],
-                FunctionType,
-                MethodSignature,
-            ],
-        ] = {}
-        self.register(category, route, method, signature)
-
-    def register(
-        self,
-        category: Category,
-        route: tuple[StructuralFunctor, ...],
-        method: Callable[Concatenate[Arrow, P], R],
-        signature: MethodSignature,
-    ) -> None:
-        assert route, method.__qualname__
-        assert signature.receiver is ParameterRole.ARROW
-        declaration = route, cast(FunctionType, method), signature
-        previous = self._declarations.get(id(category))
-        assert previous is None or previous == declaration
-        self._declarations[id(category)] = declaration
-
-    def __get__(
-        self,
-        instance: Receiver | None,
-        owner: type[Receiver] | None = None,
-    ) -> ForwardedArrowMethod[Receiver, P, R] | Callable[P, R]:
-        if instance is None:
-            return self
-        route, method, signature = self._declarations[id(instance.base_category())]
-        image = instance._morphism_image_along(route)
-
-        def call(*args: P.args, **kwargs: P.kwargs) -> R:
-            forwarded_args, forwarded_kwargs = _forward_arguments(
-                tuple(args),
-                dict(kwargs),
-                signature,
-                route,
-            )
-            result = cast(R, method(image, *forwarded_args, **forwarded_kwargs))
-            return _transport_result(result, signature.result, route, instance.codomain(), image.codomain(), instance, image)
-
-        return call
-
-
-type ForwardedDescriptor = ForwardedObjectMethod | ForwardedElementMethod | ForwardedArrowMethod

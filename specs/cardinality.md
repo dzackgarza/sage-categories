@@ -17,20 +17,20 @@ The governing policies are `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001`,
 
 [Category ownership](../CONTRIBUTING.md#category-ownership-and-inheritance), [leaf-category encapsulation](../CONTRIBUTING.md#leaf-category-encapsulation), and [functor policies](../CONTRIBUTING.md#functors-and-universal-constructions) govern the general inheritance rules.
 
-`Cardinalities()` owns cardinal objects, comparison arrows, arithmetic, and expression normalization.
+`Cardinal()` owns cardinal objects, comparison arrows, arithmetic, and expression normalization.
 `Ordinals()` owns ordinal order and arithmetic.
 `Sets()` owns set cardinality.
 
 ## Cardinal model
 
-`Cardinalities()` is the thin category associated with the represented cardinal order.
+`Cardinal()` is the thin category associated with the represented cardinal order.
 
 A cardinal is an object of this category:
 
 ```python
-Cardinal = Cardinalities().ObjectType
-CardinalityHomCategory = Cardinalities().HomCatType
-CardinalityMorphism = Cardinalities().ArrowType
+CardinalObject = Cardinal().ObjectType
+CardinalityHomCategory = Cardinal().HomCatType
+CardinalityMorphism = Cardinal().ArrowType
 ```
 
 For every pair of represented cardinals, the Hom category exists:
@@ -48,38 +48,38 @@ category remains symbolic. An undecided proposition does not make it empty.
 ### Public cardinal constructors
 
 ```python
-Cardinalities()(value)
-Cardinalities().aleph(index)
+Cardinal()(value)
+Cardinal().aleph(index)
 aleph0
 continuum
 ```
 
-`Cardinalities()(value)` is the category-owned constructor. It follows Sage's
+`Cardinal()(value)` is the category-owned constructor. It follows Sage's
 [`Parent.__call__()` dispatch model](https://doc.sagemath.org/html/en/reference/structure/sage/structure/parent.html):
 the public call selects an exact private constructor route from the semantic input.
 
 Accepted inputs are:
 
-- An existing `Cardinal`.
+- An existing `CardinalObject`.
 
 - A nonnegative Python `int`.
 
 Examples:
 
 ```python
-Cardinalities()(0)
-Cardinalities()(5)
+Cardinal()(0)
+Cardinal()(5)
 
-Cardinalities().aleph(0)
-Cardinalities().aleph(1)
-Cardinalities().aleph(omega(1))
+Cardinal().aleph(0)
+Cardinal().aleph(1)
+Cardinal().aleph(Ordinals().omega(1))
 
 aleph0
-continuum           # Cardinalities()(2) ** aleph0
+continuum           # Cardinal()(2) ** aleph0
 ```
 
-`aleph0` is `Cardinalities().aleph(0)`. `continuum` is
-`Cardinalities()(2) ** aleph0`.
+`aleph0` is `Cardinal().aleph(0)`. `continuum` is
+`Cardinal()(2) ** aleph0`.
 
 Negative integers are rejected.
 Use `aleph0` for countable infinity.
@@ -109,7 +109,7 @@ Conceptually:
 
 ```python
 n
-Cardinalities().aleph(alpha)
+Cardinal().aleph(alpha)
 kappa ** lambda
 sup(kappa_1, ..., kappa_n)
 sum(i in I, kappa_i)
@@ -117,16 +117,16 @@ product(i in I, kappa_i)
 ```
 
 Finite suprema preserve unresolved relationships.
-For example, `Cardinalities().aleph(2) + continuum` can remain a formal supremum.
+For example, `Cardinal().aleph(2) + continuum` can remain a formal supremum.
 
 This avoids assuming the continuum hypothesis.
 
-### `Cardinalities()` API
+### `Cardinal()` API
 
 The category supplies:
 
 ```python
-C = Cardinalities()
+C = Cardinal()
 
 C.zero()
 C.one()
@@ -307,7 +307,7 @@ not establish incomparability.
 For all cardinals `kappa` and `lambda`:
 
 ```python
-H = Cardinalities().HomCategory(kappa, lambda)
+H = Cardinal().HomCategory(kappa, lambda)
 
 H.is_inhabited()
 H.is_empty()
@@ -329,14 +329,14 @@ not use composition inside one Hom category as a substitute.
 Finite cardinal addition and multiplication act on comparison morphisms:
 
 ```python
-Cardinalities().sum_morphism(*arrows)
-Cardinalities().product_morphism(*arrows)
+Cardinal().sum_morphism(*arrows)
+Cardinal().product_morphism(*arrows)
 ```
 
 Exponentiation acts on morphisms when the source base is established as nonzero:
 
 ```python
-Cardinalities().power_morphism(base_arrow, exponent_arrow)
+Cardinal().power_morphism(base_arrow, exponent_arrow)
 ```
 
 
@@ -347,7 +347,7 @@ The ordinal model is specified in [`ordinals.md`](ordinals.md).
 The cardinality functor is:
 
 \[
-\#:\operatorname{core}(\mathbf{Sets})\longrightarrow\mathbf{Cardinalities}.
+\#:\operatorname{core}(\mathbf{Sets})\longrightarrow\mathbf{Cardinal}.
 \]
 
 Its object map calls:
@@ -400,8 +400,8 @@ Set constructions use cardinal expressions directly:
 The mathematical exports are:
 
 ```python
-Cardinalities
 Cardinal
+CardinalObject
 CardinalityHomCategory
 CardinalityMorphism
 aleph0
@@ -410,8 +410,6 @@ continuum
 OrdinalSemirings
 Ordinals
 Ordinal
-ordinal
-omega
 omega0
 
 CardinalityFunctor

@@ -248,7 +248,7 @@ The `Cat` level supplies the uniform category constructors:
 
 The generic `ArrowType` stores its domain and codomain and exposes `domain()` and `codomain()`.
 If an arrow predicate names a subcategory, implement it as containment in that subcategory.
-For example, test `f in C.Monomorphisms()` instead of inspecting the Python class of `f`.
+For example, test `f in Ar(C).Monomorphisms()` instead of inspecting the Python class of `f`.
 Prefer an arrow or functor formulation when the mathematical definition names a relation or transport.
 
 For each functor `F: C -> D`:

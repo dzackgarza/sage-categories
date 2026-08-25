@@ -221,7 +221,7 @@ A named finite construction goes directly into `C.Finite()`. It does not enumera
 
 A generic set may use an exact decision procedure when `ask(X.is_finite())` reaches the computational stage. That procedure can use Sage, SymPy, GAP, Julia, or another engine.
 
-## `Injective`, `Monos`, and `Isos`
+## Injectivity, monomorphisms, and isomorphisms
 
 These properties live on arrows.
 
@@ -238,9 +238,9 @@ For \(D=\operatorname{Ar}(C)\), the generic categorical propositions are:
 They define:
 
 ```python
-D.Monos()
-D.Epis()
-D.Isos()
+D.Monomorphisms()
+D.Epimorphisms()
+D.Isomorphisms()
 ```
 
 For set maps, there is also the concrete proposition:
@@ -284,13 +284,13 @@ Examples:
 f = Hom(Sets())(X, Y, rule)
 ask(f.is_injective())       # May compute or return Unknown.
 
-g = Ar(Sets()).Monos()(X, Y, rule)
+g = Ar(Sets()).Monomorphisms()(X, Y, rule)
 ask(g.is_injective())       # True from category placement.
 
-assume(f.is_injective())    # Refines f through the same Monos constructor.
+assume(f.is_injective())    # Refines f through the same property constructor.
 ```
 
-An identity map constructs directly into `D.Isos()`. It never runs injectivity or surjectivity algorithms.
+An identity map constructs directly into `D.Isomorphisms()`. It never runs injectivity or surjectivity algorithms.
 
 If an assumed isomorphism lacks a computed inverse, `inverse()` can return the owned symbolic inverse arrow. Category placement establishes its equations. A backend may later realize that arrow computationally.
 
@@ -471,7 +471,7 @@ The ownership split is:
 - Named constructions place results directly in established categories.
 - Leaves state only their new predicate and their new mathematics.
 
-That split makes `C.Finite()`, `C.Countable()`, `D.Monos()`, and `D.Isos()` instances of one mechanism. It avoids four separate engineering designs.
+That split makes `C.Finite()`, `C.Countable()`, `D.Monomorphisms()`, and `D.Isomorphisms()` instances of one mechanism. It avoids four separate engineering designs.
 
 The missing rule is this:
 
@@ -1041,7 +1041,7 @@ f:\mathbf{RR}\to\mathbf{RR}.
 The canonical proposition is:
 
 ```python
-Ar(Sets()).Epis().membership_proposition(f)
+Ar(Sets()).Epimorphisms().membership_proposition(f)
 ```
 
 The owned predicate method is:
@@ -1062,7 +1062,7 @@ ask(f.is_surjective())
 
 The resolver first uses non-computational knowledge:
 
-1. Existing placement in `Ar(Sets()).Epis()`.
+1. Existing placement in `Ar(Sets()).Epimorphisms()`.
 2. A global assumption.
 3. A known inverse.
 4. A construction theorem.
@@ -1146,7 +1146,7 @@ cache False or retain Unknown
 ```
 
 Therefore, an exact positive result from any computational route refines `f` into
-`Ar(Sets()).Epis()`.
+`Ar(Sets()).Epimorphisms()`.
 
 The handlers may delegate to private Sage, SymPy, GAP, Julia, or external-program implementations.
 
@@ -1201,7 +1201,7 @@ decision = ask(p)
 If `decision` is `True`, then:
 
 ```python
-f in Ar(Sets()).Epis()
+f in Ar(Sets()).Epimorphisms()
 ```
 
 becomes true through category placement.
@@ -1221,7 +1221,7 @@ assume(f.is_surjective())
 Direct construction also refines without computation:
 
 ```python
-f = Ar(Sets()).Epis()(A, B, rule)
+f = Ar(Sets()).Epimorphisms()(A, B, rule)
 ```
 
 All positive routes invoke the same property-category constructor.

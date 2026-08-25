@@ -245,7 +245,7 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-022` | Use `HomCatType` at the `Cat` level. `Hom_Cat(C, D)` has functors as objects and natural transformations as arrows. A Hom category becomes a function set only through the exact structure supplied by `Sets()`. |
 | `POL-CAT-023` | Supply `C.HomCategory()`, `C.EndCategory()`, `C.AutCategory()`, `C.ArrowCategory()`, `C.EndArrowCategory()`, and `C.AutArrowCategory()` at the `Cat` level. |
 | `POL-CAT-024` | Make the generic `ArrowType` store its endpoints and expose them through `domain()` and `codomain()`. |
-| `POL-CAT-025` | Implement a general arrow predicate as containment in its arrow subcategory, such as `f in C.Monomorphisms()`. |
+| `POL-CAT-025` | Implement a general arrow predicate as containment in its arrow subcategory, such as `f in Ar(C).Monomorphisms()`. |
 | `POL-CAT-026` | Represent a covering object of `Y` as `(X, p: X -> Y)` with `p` an epimorphism. The arrow `p` alone is not the object. |
 | `POL-CAT-027` | Never assume that an arbitrary mathematical entity is a set. Treat it as a category or as an object in its stated category. |
 | `POL-CAT-028` | Keep `Hom_C(X, Y)` category-valued at the general level. Obtain a set of arrows only through an explicit set-valued construction with the required hypotheses. |

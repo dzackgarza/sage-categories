@@ -343,7 +343,7 @@ which the available exact mathematics does not decide.
 The cardinality operation is total:
 
 ```python
-X.cardinality() -> Cardinal
+X.cardinality() -> CardinalObject
 ```
 
 It always returns an owned cardinal. When no algorithm normalizes the result, return
@@ -382,8 +382,8 @@ returns that symbolic product when neither factor has a normalized cardinal.
 
 Keep these responsibilities separate:
 
-- `Cardinal` represents exact finite, infinite, or symbolic cardinal values.
-- Cardinal addition, multiplication, and exponentiation return `Cardinal`.
+- `CardinalObject` represents exact finite, infinite, or symbolic cardinal values.
+- Cardinal addition, multiplication, and exponentiation return `CardinalObject`.
 - Normalization uses construction theorems and private computation engines.
 - Cardinal equality, order, finiteness, and countability methods return propositions.
 - `Unknown` occurs only as the result of `ask()` when such a proposition cannot be

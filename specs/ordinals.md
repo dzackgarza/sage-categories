@@ -22,7 +22,7 @@ Ordinal = OrdinalSemirings().ElementType
 
 This differs from the cardinal model:
 
-- A cardinal is an object of `Cardinalities()`.
+- A cardinal is an object of `Cardinal()`.
 
 - An ordinal is an element of `Ordinals()`.
 
@@ -70,29 +70,29 @@ in `Sets()`. Sage supplies private runtime support only.
 OrdinalSemirings()
 Ordinals()
 
-ordinal(value)
-omega(index)
+Ordinals()(value)
+Ordinals().omega(index)
 
 omega0
 ```
 
-`ordinal(value)` accepts:
+`Ordinals()(value)` accepts:
 
 - An existing `Ordinal`.
 
 - A nonnegative Python `int`.
 
-`omega(index)` constructs the initial ordinal \(\omega_{\text{index}}\).
+`Ordinals().omega(index)` constructs the initial ordinal \(\omega_{\text{index}}\).
 
 Examples:
 
 ```python
-ordinal(0)
-ordinal(5)
+Ordinals()(0)
+Ordinals()(5)
 
-omega(0)       # omega0
-omega(1)
-omega(omega(1))
+Ordinals().omega(0)       # omega0
+Ordinals().omega(1)
+Ordinals().omega(Ordinals().omega(1))
 ```
 
 Negative finite ordinals raise `ValueError`.

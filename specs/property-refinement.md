@@ -29,7 +29,7 @@ For a property \(P\) with property subcategory \(C_P\), use this order:
 
 The defining property category adds real mathematics. Its role implementations can add
 operations valid under the property. They never replace the defining proposition with a
-Boolean method. Membership in `Ar(Sets()).Monos()` makes `ask()` return `True` through
+Boolean method. Membership in `Ar(Sets()).Monomorphisms()` makes `ask()` return `True` through
 category entailment.
 
 ### Durable refinement
@@ -49,7 +49,7 @@ assume(f.is_injective())
 ```
 
 ```python
-f = MonoArrows(Sets)(A, B)(rule)
+f = Ar(Sets()).Monomorphisms()(A, B, rule)
 ```
 
 All three routes establish:
@@ -57,7 +57,7 @@ All three routes establish:
 \[
 \operatorname{Hom}_{\mathbf{Set}}(A,B)
 \longrightarrow
-\operatorname{MonoArrows}(\mathbf{Set})(A,B).
+\operatorname{Monomorphisms}(\operatorname{Ar}(\mathbf{Set}))(A,B).
 \]
 
 The same owned morphism now has the more specific category. Its refined dynamic class places the monomorphism implementation before the general set-morphism implementation.
@@ -88,7 +88,7 @@ assume(f.is_injective())
 This is a shortcut for constructing the same rule in the property category:
 
 ```python
-f = MonoArrows(Sets)(A, B)(rule)
+f = Ar(Sets()).Monomorphisms()(A, B, rule)
 ```
 
 The kernel reuses the existing domain, codomain, rule, private engine representation, and structural images. It does not recompute injectivity. It changes the owned morphism's category and dynamic class.
@@ -105,7 +105,7 @@ The active Sage or SymPy session remains the mathematical context. A consumer do
 
 ### Negative and unknown results
 
-A negative result cannot refine into `MonoArrows(Sets)`. The engine should cache that exact result through standard Sage or SymPy caching facilities.
+A negative result cannot refine into `Ar(Sets()).Monomorphisms()`. The engine should cache that exact result through standard Sage or SymPy caching facilities.
 
 A complementary category should exist only when it has mathematical value. It should not exist merely to cache `False`.
 
@@ -128,7 +128,7 @@ Property refinement is not transport into a second implementation. It is not a f
 For a property \(P\) defining \(C_P\), the property category owns the trusted constructor:
 
 ```python
-f = MonoArrows(Sets)(A, B)(rule)
+f = Ar(Sets()).Monomorphisms()(A, B, rule)
 ```
 
 That constructor accepts the semantic data needed for a monomorphism. Choosing the category asserts injectivity.
@@ -150,17 +150,17 @@ A named mathematical construction can still have its own API because it accepts 
 The Sage or SymPy session owns the global assumption context. A notebook user can write:
 
 ```python
-assume(Ar(Sets()).Monos().membership_proposition(f))
+assume(Ar(Sets()).Monomorphisms().membership_proposition(f))
 ```
 
 The standard spelling `assume(f.is_injective())` applies the same owned predicate. Both
-forms record the standard assumption and refine \(f\) through `Ar(Sets()).Monos()`.
+forms record the standard assumption and refine \(f\) through `Ar(Sets()).Monomorphisms()`.
 
 Internal code does something different:
 
-- An exact computational route that returns `True` refines into `MonoArrows(Sets)`.
-- An identity constructor constructs into `MonoArrows(Sets)`.
-- A theorem-backed construction constructs into `MonoArrows(Sets)`.
+- An exact computational route that returns `True` refines into `Ar(Sets()).Monomorphisms()`.
+- An identity constructor constructs into `Ar(Sets()).Monomorphisms()`.
+- A theorem-backed construction constructs into `Ar(Sets()).Monomorphisms()`.
 - A product lift constructs its projections in the required property category.
 
 Backend code does not create contexts or call `assume()` to justify its own output. It already knows the category in which it must construct the result.
@@ -399,7 +399,7 @@ Thus these routes still converge:
 ```python
 assume(f.is_injective())
 ask(f.is_injective())
-MonoArrows(Sets)(A, B)(rule)
+Ar(Sets()).Monomorphisms()(A, B, rule)
 ```
 
 Backend and theory code do not call `assume()` for facts they own. They construct the
@@ -420,7 +420,7 @@ Category placement contributes an exact evaluation rule:
 
 ```python
 ask(f.is_injective())
-# True when f is already in MonoArrows(Sets)
+# True when f is already in Ar(Sets()).Monomorphisms()
 ```
 
 The evaluation order is:

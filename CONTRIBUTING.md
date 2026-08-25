@@ -82,10 +82,39 @@ The package must absorb the elliptic-curve construction before claiming that wor
 | `POL-MATH-033` | Treat ordinary category theory and the stated mathematical definitions as the source model. A missing, unclear, or failing Python representation does not make the mathematics unresolved. Derive the representation from the definition, or report the missing foundational category, functor, arrow, construction, or type. |
 | `POL-MATH-034` | Represent most mathematical truth-valued operations as owned predicates. Applying a predicate constructs its proposition; `ask()` returns its decision through the predicate's registered computational routes. Predicate application and `ask()` are the complete public predicate surface. A specification can declare a direct decision only for a total exact operation whose public result is itself a decision. |
 | `POL-MATH-035` | An assertion on an applied predicate must use `assert ask(proposition) is True`. An assertion records known truth; it must not use the proposition's Python truth value. A direct exact decision needs no additional `ask()` call. |
+| `POL-MATH-036` | Treat Sage as an implementation and computation system, not as a proof assistant for category theory or homotopy theory. The repository never tries to prove or certify categorical laws, universal properties, coherence, equivalences, or property implications. |
+| `POL-MATH-037` | Trust the code writer to choose the correct category or property subcategory from external mathematics. Constructing a value directly in that category is the repository assertion of the stated theorem. The constructor performs no proof, certification, search, or validation of that theorem. |
+| `POL-MATH-038` | Express every categorical-core requirement through standard category theory or homotopy theory before choosing a Python mechanism. Use named categories, functors, natural transformations, fibrations, Kan extensions, universal constructions, and their compositions. Do not replace a missing mathematical construction with a verifier or certificate system. |
+| `POL-MATH-039` | Make the categorical core independently auditable by mathematicians. Theory code must expose the standard definition, its defining data, and the construction line that asserts each nontrivial categorical property. Keep reflection, dispatch, transport, and computation representations outside that mathematical reading path. |
+| `POL-MATH-040` | Support each nontrivial categorical declaration with an inspected external source. Use an exact theorem, definition, section, page, tag, or stable link from a textbook, a relevant item in the local Zotero library, nLab, the Stacks Project, Kerodon, or a primary paper. Put the citation on the construction line or in its immediate source documentation. |
+| `POL-MATH-041` | Treat citations, tests, runtime checks, and successful computations as aids to human audit. None certifies the categorical mathematics. The typed construction records what the writer asserts; the source lets a mathematician audit that assertion. |
+| `POL-MATH-042` | Register a computational route only for a predicate with an exact algorithm on its declared semantic domain. Never add a route that purports to prove a general category-theoretic property. Keep unsupported decisions `Unknown`. |
 
 For example, an owned constructor for `RR` records its cardinality as $2^{\aleph_0}$.
 The implementation cites the supporting theorem in source documentation.
 Runtime stores the typed cardinality; it does not derive uncountability or carry theorem prose.
+
+### Trust boundary for the categorical core
+
+The categorical core is executable mathematical notation. It is not a formalization in
+a proof assistant. Sage cannot certify that an arbitrary functor is full, that a square
+is a pullback in every model, or that a declared universal construction satisfies its
+universal property.
+
+The code writer determines these facts from external mathematics. The writer then uses
+the constructor of the exact category that states the fact. For example, a known full
+functor is constructed through `Fun(C, D).Full()`. That call asserts fullness. It does
+not run a fullness test or create a proof object.
+
+When the assertion is not immediate from the standard definition, place an exact source
+reference on that construction line or in its immediate documentation. Suitable sources
+include textbooks and papers in the local Zotero library, nLab, the Stacks Project,
+Kerodon, and primary arXiv papers. Inspect the cited statement before using it.
+
+A mathematician audits the core by comparing its categories, arrows, functors, natural
+transformations, universal data, and compositions with those sources. Keep the code in
+that order. Do not insert certification machinery between the mathematical definition
+and its typed construction.
 
 ## Predicates, hypotheses, and assumptions
 
@@ -578,7 +607,7 @@ Place method compilation, descriptor installation, caches, registration, and bac
 | `POL-FUN-023` | Implement the functor laws for every functor. Preserve identities and composition, and map an isomorphism inverse to the inverse of its image: `F(f.inverse()) == F(f).inverse()`. Structural descendants use this generic action and never add leaf-specific inverse transport. |
 | `POL-FUN-024` | Define fullness, faithfulness, full faithfulness, essential surjectivity, and equivalence as properties of objects in `Ar(Cat())`. Give each one its property subcategory and owned predicate. |
 | `POL-FUN-025` | Define `FullyFaithful(F)` as `Full(F) and Faithful(F)`. Treat it as a property without selected Hom preimages. A construction that needs a chosen preimage arrow owns that separate choice. |
-| `POL-FUN-026` | Construct a functor directly in the strongest property subcategory established by its defining construction. Use `assume(F.is_P())` for an interactive hypothesis. Both routes refine the same owned functor through the standard property constructor. |
+| `POL-FUN-026` | Use external mathematics to select the strongest applicable functor-property subcategory. The code writer constructs the functor directly there, and the constructor trusts that assertion. Use `assume(F.is_P())` for an interactive hypothesis. Neither route proves or certifies the property. |
 | `POL-FUN-027` | Let `Fun(C, D)` own construction of every functor `C -> D`. The endpoints determine only this Hom category. A specialized constructor needs mathematical data that selects one functor. Category constructions create their projection and evaluation functors through `Fun(C, D)` and retain them as defining data. |
 | `POL-FUN-028` | Do not define a generic “forgetful functor.” That phrase does not select an object of `Fun(C, D)`. A source, target, object presentation, or collection of Python fields can admit several distinct functors. |
 | `POL-FUN-029` | Name and construct each functor by its mathematical source: a product projection, coproduct injection, subcategory inclusion, source or target functor, evaluation, base change, fibration projection, opfibration projection, Kan extension, or explicit composition. Retain the data that defines it. |
@@ -586,6 +615,7 @@ Place method compilation, descriptor installation, caches, registration, and bac
 | `POL-FUN-031` | Form slice and coslice projections from product projections and the source or target functors of `Ar(C)`. Establish their fibration or opfibration structure from the applicable pullback or pushout theorem. Do not infer it from object fields. |
 | `POL-FUN-032` | Let left and right Kan extension constructions own their resulting functors, units, counits, and universally induced natural transformations. These natural transformations are arrows in the applicable fixed-endpoint functor categories. Build later routes by ordinary composition. |
 | `POL-FUN-033` | Make `structure_functors()` select exact construction-named functors or composites. Selection does not create a preferred projection, an unnamed structure map, or another kind of functor. |
+| `POL-FUN-034` | Never try to prove, certify, or check fullness, faithfulness, full faithfulness, essential surjectivity, equivalence, or another general functor property. Use external mathematics to choose the property subcategory, construct the functor there, and cite any nontrivial theorem beside that construction. |
 
 ### Why “forgetful functor” is not a construction
 

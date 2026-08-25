@@ -27,10 +27,15 @@ Direct construction and `assume` use the same category-refinement operation. The
 
 - `C.P()(x)` is a programmer assertion through the category constructor.
 - `assume(P(x))` is an interactive assertion in the global mathematical context.
-- A named construction knows \(P(x)\) from its defining theorem.
+- A named construction returns `C.P()` because the code writer knows \(P(x)\) from external mathematics.
 - `ask(P(x))` tries to derive \(P(x)\) from available knowledge.
 
 No certificate type, authority object, prose theorem, or separate implementation is needed.
+
+The category constructor trusts the programmer assertion. It does not prove, certify,
+or validate the proposition. When the assertion uses a nontrivial theorem, cite the
+inspected source on the construction line or in its immediate documentation. The
+citation exists for human mathematical audit and never enters runtime state.
 
 ## Propositions and decisions
 

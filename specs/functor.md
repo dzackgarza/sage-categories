@@ -209,8 +209,9 @@ F = Fun(C, D)(on_object, on_morphism)
 F = Fun(C, D).Full()(F)
 ```
 
-This is the property category's trusted constructor. It asserts the defining property
-and refines the same owned functor.
+This is the property category's trusted constructor. The code writer uses external
+mathematics to select `Fun(C, D).Full()`. The constructor records that assertion and
+refines the same owned functor. It does not prove, certify, or check fullness.
 
 An interactive assumption uses the same predicate and refinement:
 
@@ -219,9 +220,13 @@ F = Fun(C, D)(on_object, on_morphism)
 assume(F.is_full())
 ```
 
-A construction that establishes a property constructs directly in the corresponding
-property category. For example, the inclusion of a full subcategory is constructed in
-`Fun(C, D).FullyFaithful()`.
+A code writer who knows a property from the defining construction places the result
+directly in the corresponding property category. For example, the inclusion of a full
+subcategory is constructed in `Fun(C, D).FullyFaithful()`.
+
+Put a citation on the construction line or in its immediate source documentation when
+the property uses a nontrivial external theorem. The citation supports mathematical
+audit. It is not runtime data and the constructor does not inspect it.
 
 The functor-property categories currently register no computational routes. Therefore:
 
@@ -235,6 +240,11 @@ implications. It returns `Unknown` when none establishes the proposition.
 This absence of handlers is local to these predicates. Other owned predicates can
 register exact computational routes when mathematics and available algorithms supply
 them.
+
+No later implementation may add a general fullness or faithfulness checker. A supported
+predicate can receive a computational route only when an exact algorithm exists for its
+declared semantic domain. Such a route computes a decision; it does not certify category
+theory.
 
 ## Inclusion functors
 

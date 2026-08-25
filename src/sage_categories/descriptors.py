@@ -28,8 +28,9 @@ class ImplementationRole(Enum):
 
 
 class ParameterRole(Enum):
-    """A compiler-owned transport role."""
+    """A compiler-owned transport role or explicit absence marker."""
 
+    ABSENT = "absent"
     VALUE = "value"
     OBJECT = "object"
     ELEMENT = "element"
@@ -46,21 +47,21 @@ class MethodSignature:
     receiver: ParameterRole
     positional: tuple[ParameterRole, ...]
     keyword: tuple[tuple[str, ParameterRole], ...]
-    variadic: ParameterRole | None
-    keywords: ParameterRole | None
+    variadic: ParameterRole
+    keywords: ParameterRole
     result: ParameterRole
 
     def role_for_positional(self, position: int) -> ParameterRole:
         if position < len(self.positional):
             return self.positional[position]
-        assert self.variadic is not None
+        assert self.variadic is not ParameterRole.ABSENT
         return self.variadic
 
     def role_for_keyword(self, name: str) -> ParameterRole:
         for declared_name, role in self.keyword:
             if declared_name == name:
                 return role
-        assert self.keywords is not None
+        assert self.keywords is not ParameterRole.ABSENT
         return self.keywords
 
 
@@ -146,8 +147,8 @@ def method_signature(
     }[implementation_role]
     positional: list[ParameterRole] = []
     keyword: list[tuple[str, ParameterRole]] = []
-    variadic: ParameterRole | None = None
-    keywords: ParameterRole | None = None
+    variadic = ParameterRole.ABSENT
+    keywords = ParameterRole.ABSENT
     for parameter in parameters[1:]:
         assert parameter.name in annotations, (
             f"{method.__qualname__} parameter {parameter.name} has no mathematical type"
@@ -219,6 +220,7 @@ def _forward_value(
     role: ParameterRole,
     route: tuple[Functor, ...],
 ) -> Value:
+    assert role is not ParameterRole.ABSENT
     if not route or role is ParameterRole.VALUE:
         return value
     source_category = route[0].domain()
@@ -293,6 +295,7 @@ def _transport_result(
     instance: MathematicalObject | MathematicalElement | Arrow,
     image: MathematicalObject | MathematicalElement | Arrow,
 ) -> R:
+    assert role is not ParameterRole.ABSENT
     if role is ParameterRole.VALUE:
         return result
     if role is ParameterRole.OBJECT:

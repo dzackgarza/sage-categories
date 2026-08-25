@@ -337,11 +337,11 @@ For a full subcategory `D` of `C`, use the kernel constructor:
 iota = FullSubcategoryInclusionFunctor(D, C)
 ```
 
-This inclusion is fully faithful.
+This inclusion is fully faithful by definition.
 
-The source object property supplies the objects. Its homs are the ambient homs. The
-inclusion maps both back to those ambient values. Fullness is the theorem that this map
-on each hom is surjective; it is not a runtime dispatch rule.
+The source object property supplies the objects. Its Hom categories, identities, and
+composition are the ambient ones. The inclusion is the identity on each Hom category.
+No runtime predicate, algorithm, or check establishes fullness.
 
 Mathlib models an object property `P` by `P.FullSubcategory`. Its inclusion is
 `ObjectProperty.ι`, and Mathlib records that this functor is full and faithful. See
@@ -420,7 +420,7 @@ See Mathlib's
 and [arrow-category API](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Comma/Arrow.html).
 
 A projection can lose objects or arrows from other components. Its faithfulness and
-fullness must follow from its definition. The name “projection” alone proves neither.
+fullness must follow from its definition. The name “projection” alone establishes neither.
 
 ### Induced functors
 

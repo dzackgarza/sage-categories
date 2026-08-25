@@ -113,6 +113,20 @@ Each category `C` owns the implementation types relevant to its theory:
 
 - `C(...)` for category-owned construction.
 
+`C(...)` dispatches from semantic input to the exact private constructor route. This
+follows Sage's [`Parent.__call__()` constructor model](https://doc.sagemath.org/html/en/reference/structure/sage/structure/parent.html).
+
+For `X, Y in C`, the categorical operators are:
+
+```python
+Y ** X  # Hom_C(X, Y)
+X * Y   # product
+X + Y   # coproduct
+X @ Y   # biproduct
+```
+
+The category foundation defines these operations once and retains their universal data.
+
 A functor `F: C -> D` owns its domain, codomain, object map, and arrow map.
 It can also own an element map when that notion is part of the theory.
 

@@ -8,7 +8,7 @@ decision-procedure architecture.
 The governing policies are `POL-MATH-016`, `POL-MATH-025`, `POL-MATH-029`,
 `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-018` through `POL-CAT-020`,
 `POL-CAT-043`, `POL-CAT-044`, `POL-CAT-060`, `POL-CAT-067` through `POL-CAT-069`,
-`POL-CAT-082`, and `POL-CAT-086`.
+`POL-CAT-082`, `POL-CAT-086`, and `POL-CAT-087`.
 
 An established positive property should self-refine the owned object. Direct property construction, an active assumption, and an exact computation all establish the same refinement. The object's mathematical identity remains unchanged. Its category and Sage dynamic class become more specific.
 
@@ -22,8 +22,8 @@ For a property \(P\) with property subcategory \(C_P\), use this order:
 | The active session assumes \(P(f)\) | `True` | Refine \(f\) into \(C_P\) without computation |
 | The active session assumes \(\neg P(f)\) | `False` | Skip computation |
 | Exact result was cached | Cached result | Reuse it |
-| An exact algorithm proves \(P(f)\) | `True` | Refine \(f\) into \(C_P\) |
-| An exact algorithm disproves \(P(f)\) | `False` | Cache the negative result |
+| An exact computational route establishes \(P(f)\) | `True` | Refine \(f\) into \(C_P\) |
+| An exact computational route establishes \(\neg P(f)\) | `False` | Cache the negative result |
 | Available algorithms cannot decide | `Unknown` | Keep the current category |
 
 The defining property category adds real mathematics. Its role implementations can add
@@ -73,7 +73,7 @@ The refinement must preserve:
 
 It changes the strongest known category and the resulting public method surface.
 
-If surjectivity is later proved, the kernel refines again. It uses the categorical join of the established property categories. In `Sets()`, established injectivity and surjectivity can place the map in the isomorphism category.
+If surjectivity is later established, the kernel refines again. It uses the categorical join of the established property categories. In `Sets()`, established injectivity and surjectivity can place the map in the isomorphism category.
 
 ### Equivalent refinement routes
 
@@ -110,7 +110,9 @@ A complementary category should exist only when it has mathematical value. It sh
 
 Do not treat `Unknown` as a durable mathematical fact. A later assumption, realization, or algorithm can make the predicate decidable.
 
-For expensive alternative procedures, use separate named total methods. Do not add `check=`, `algorithm=`, or fallback arguments. The property category owns one canonical automatic decision route. A caller can request a specific expensive procedure explicitly.
+Every exact computational route belongs behind the owning predicate. `ask()` selects
+applicable routes from their declared semantic domains. Its call has no route-selection
+parameters. The public API consists of the predicate and `ask()`.
 
 The invariant is:
 
@@ -160,11 +162,12 @@ The Sage or SymPy session owns the global assumption context. A notebook user ca
 assume(Ar(Sets()).Monos().membership_proposition(f))
 ```
 
-The convenience spelling `assume(f.is_injective())` is available when set morphisms expose that foundational alias. Both forms record the standard assumption and refine \(f\) through `Ar(Sets()).Monos()`.
+The standard spelling `assume(f.is_injective())` applies the same owned predicate. Both
+forms record the standard assumption and refine \(f\) through `Ar(Sets()).Monos()`.
 
 Internal code does something different:
 
-- A computation that proves injectivity constructs into `MonoArrows(Sets)`.
+- An exact computational route that returns `True` refines into `MonoArrows(Sets)`.
 - An identity constructor constructs into `MonoArrows(Sets)`.
 - A theorem-backed construction constructs into `MonoArrows(Sets)`.
 - A product lift constructs its projections in the required property category.
@@ -205,7 +208,9 @@ Refinement preserves:
 
 There is no target wrapper. There is no separate ambient implementation. There is no property-refinement image cache.
 
-After refinement, the property category contributes only the operations valid under its defining mathematics. The ambient convenience predicate, when present, still returns the category-owned proposition.
+After refinement, the property category contributes only the operations valid under its
+defining mathematics. The ambient `is_X()` predicate still returns the category-owned
+proposition.
 
 ### Strongest property placement and one-object categories
 
@@ -242,14 +247,14 @@ route then supplies its ring structure. Construction of `QQ` places the sole obj
 the strongest combined category declared by these functors.
 
 Likewise, `{FF_p}` is a one-object category parameterized by the prime `p`. Its defining
-construction declares finiteness. It never proves finiteness by enumeration, cardinality
+construction declares finiteness. It never derives finiteness by enumeration, cardinality
 computation, or backend inspection. It constructs `FF_p` directly in the finite property
 subcategory.
 
 For an interactive claim not owned by a construction, the user can apply the sanctioned
 global assumption operation, such as
-`assume(Sets().Finite().membership_proposition(X))`. A foundational convenience method
-permits `assume(X.is_finite())`. Both forms invoke the same property-category constructor.
+`assume(Sets().Finite().membership_proposition(X))`. The owned predicate method permits
+`assume(X.is_finite())`. Both forms invoke the same property-category constructor.
 Backend and theory code still construct directly in the category they establish; they do
 not call `assume()`.
 
@@ -434,8 +439,8 @@ category formed from several properties declares the conjunction of the relevant
 propositions. The declaration occurs once; `__contains__()` never reimplements the
 mathematics.
 
-For example, the finite-set category owns its membership proposition. The foundational
-`X.is_finite()` method, when present, delegates to that proposition. Conceptually:
+For example, the finite-set category owns its membership proposition. Its
+`X.is_finite()` method applies that predicate. Conceptually:
 
 ```python
 class FiniteSetsCategory:
@@ -479,7 +484,7 @@ X in Sets().Finite()    # Boolean admission query
 When the decision is `Unknown`, the last expression is `False` because membership is
 not established. It does not assert that `X` is mathematically infinite. Likewise,
 `X not in Sets().Finite()` means that current knowledge does not place `X` in that
-category; it is not a proof of the negated property.
+category; it does not establish the negated property.
 
 Compound property categories use the same rule. For example, membership in
 `Fields().Countable().PartiallyOrdered()` asks one conjunction built from the defining

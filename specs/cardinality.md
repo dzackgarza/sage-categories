@@ -8,9 +8,10 @@ Cardinal and ordinal operations specified as predicates follow the proposition i
 in [Property refinement](property-refinement.md). Applying one returns a proposition.
 Only `ask()` decides it as `True`, `False`, or `Unknown`.
 
-The governing policies are `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-021`,
-`POL-CAT-028`, `POL-CAT-086`, `POL-SET-009`, `POL-SET-010`, `POL-SET-025`,
-`POL-SET-026`, and `POL-SET-033` through `POL-SET-035`.
+The governing policies are `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001`,
+`POL-CAT-021`, `POL-CAT-028`, `POL-CAT-086`, `POL-SET-009`, `POL-SET-010`,
+`POL-SET-025`, `POL-SET-026`, `POL-SET-033` through `POL-SET-035`,
+`POL-API-002`, and `POL-API-016`.
 
 ## Implementation ownership
 
@@ -42,20 +43,22 @@ For every pair of represented cardinals, the Hom category exists:
 
 Its `is_inhabited()` predicate is the order proposition `kappa <= lambda`. Its
 `is_empty()` predicate is the negation. If neither proposition is decided, the Hom
-category remains symbolic. Lack of a proof does not make it empty.
+category remains symbolic. An undecided proposition does not make it empty.
 
 ### Public cardinal constructors
 
 ```python
-Cardinalities()
-cardinal(value)
-aleph(index)
-
+Cardinalities()(value)
+Cardinalities().aleph(index)
 aleph0
 continuum
 ```
 
-Accepted `cardinal(value)` inputs are:
+`Cardinalities()(value)` is the category-owned constructor. It follows Sage's
+[`Parent.__call__()` dispatch model](https://doc.sagemath.org/html/en/reference/structure/sage/structure/parent.html):
+the public call selects an exact private constructor route from the semantic input.
+
+Accepted inputs are:
 
 - An existing `Cardinal`.
 
@@ -64,16 +67,19 @@ Accepted `cardinal(value)` inputs are:
 Examples:
 
 ```python
-cardinal(0)
-cardinal(5)
+Cardinalities()(0)
+Cardinalities()(5)
 
-aleph(0)
-aleph(1)
-aleph(omega(1))
+Cardinalities().aleph(0)
+Cardinalities().aleph(1)
+Cardinalities().aleph(omega(1))
 
 aleph0
-continuum           # cardinal(2) ** aleph0
+continuum           # Cardinalities()(2) ** aleph0
 ```
+
+`aleph0` is `Cardinalities().aleph(0)`. `continuum` is
+`Cardinalities()(2) ** aleph0`.
 
 Negative integers are rejected.
 Use `aleph0` for countable infinity.
@@ -103,7 +109,7 @@ Conceptually:
 
 ```python
 n
-aleph(alpha)
+Cardinalities().aleph(alpha)
 kappa ** lambda
 sup(kappa_1, ..., kappa_n)
 sum(i in I, kappa_i)
@@ -111,7 +117,7 @@ product(i in I, kappa_i)
 ```
 
 Finite suprema preserve unresolved relationships.
-For example, `aleph(2) + continuum` can remain a formal supremum.
+For example, `Cardinalities().aleph(2) + continuum` can remain a formal supremum.
 
 This avoids assuming the continuum hypothesis.
 
@@ -293,7 +299,7 @@ predicate. The exact handlers know:
 - Componentwise rules for finite formal suprema.
 
 If no handler decides a comparison, `ask()` returns `Unknown`. Mathematical
-incomparability requires its own exact proposition. Failure to prove either order does
+incomparability requires its own exact proposition. Failure to decide either order does
 not establish incomparability.
 
 ### Cardinal morphisms
@@ -327,7 +333,7 @@ Cardinalities().sum_morphism(*arrows)
 Cardinalities().product_morphism(*arrows)
 ```
 
-Exponentiation acts on morphisms when the source base is proved nonzero:
+Exponentiation acts on morphisms when the source base is established as nonzero:
 
 ```python
 Cardinalities().power_morphism(base_arrow, exponent_arrow)
@@ -354,10 +360,9 @@ Its arrow map accepts a set isomorphism.
 The isomorphism theorem establishes equal cardinalities. The functor returns the unique
 comparison isomorphism without running a separate equality check.
 
-Public access is:
+Public access is category-owned:
 
 ```python
-cardinality_functor()
 Sets().CardinalityFunctor()
 ```
 
@@ -390,16 +395,6 @@ Set constructions use cardinal expressions directly:
 
 - Infinite finitely supported function sets use the supremum of the index and value cardinalities.
 
-The public indexed aliases are:
-
-```python
-Sets.ℵ[n]
-Sets.א[n]
-```
-
-This indexed spelling currently accepts finite integer indices.
-The `aleph(index)` function accepts arbitrary represented ordinal indices.
-
 ## Public export surface
 
 The mathematical exports are:
@@ -409,8 +404,6 @@ Cardinalities
 Cardinal
 CardinalityHomCategory
 CardinalityMorphism
-cardinal
-aleph
 aleph0
 continuum
 
@@ -422,5 +415,4 @@ omega
 omega0
 
 CardinalityFunctor
-cardinality_functor
 ```

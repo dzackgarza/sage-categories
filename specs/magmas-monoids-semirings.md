@@ -3,6 +3,9 @@
 This specification fixes the first algebraic categories after `Sets()`. Standard
 universal algebra and category theory are assumed.
 
+The governing policies are `POL-MATH-034`, `POL-CAT-001`, `POL-CAT-033`,
+`POL-CAT-054`, `POL-CAT-060`, `POL-CAT-085`, and `POL-CAT-087`.
+
 ## Contents
 
 - [Magmas](#magmas)
@@ -66,6 +69,9 @@ one algebraic role and its standard syntax:
 x + y  # Magmas().Additive()
 x * y  # Magmas().Multiplicative()
 ```
+
+Each is the full subcategory defined by its operation-role property. Its Hom categories
+are definitionally the corresponding Hom categories of `Magmas()`.
 
 Their complete immediate structural tuples are:
 
@@ -155,6 +161,10 @@ def structure_functors(self) -> tuple[Functor, ...]:
         SubcategoryInclusionFunctor(self, Magmas().Multiplicative()),
     )
 ```
+
+Each refinement is full in `Monoids()`: its Hom categories are definitionally the
+monoid Hom categories between its objects. Its inclusion in the matching magma role is
+not full because a monoid arrow must preserve the neutral element.
 
 The additive refinement exposes `+` and `zero()`. The multiplicative refinement exposes
 `*` and `one()`. Each named unit is the monoid's neutral element in the selected

@@ -8,14 +8,15 @@ C.P=\{x\in C\mid P(x)\}.
 
 `C.P().membership_proposition(x)`, containment, assumptions, computation, and refinement must all derive from this equation.
 
-An ambient method such as `x.is_P()` is an optional convenience alias. When present, it returns the same applied proposition. It does not evaluate it.
+Every property declaration includes its ambient predicate method, such as `x.is_P()`.
+The method applies the category-owned predicate. It does not evaluate it.
 
 ## Public paths
 
 | Expression | Meaning | Computes? | Refines? |
 |---|---|---:|---:|
 | `C.P().membership_proposition(x)` | Construct \(P(x)\) | No | No |
-| `x.is_P()` | Optional alias for the same proposition | No | No |
+| `x.is_P()` | Apply the category-owned predicate to `x` | No | No |
 | `ask(C.P().membership_proposition(x))` | Determine \(P(x)\) | Only if needed | On exact `True` |
 | `assume(C.P().membership_proposition(x))` | Add \(P(x)\) to the global context | No | Immediately |
 | `C.P()(x)` | Construct or place `x` directly in \(C.P\) | No | Immediately |
@@ -39,7 +40,7 @@ A property category constructs its membership proposition:
 proposition = Sets().Finite().membership_proposition(x)
 ```
 
-The foundational convenience method `x.is_finite()` returns that same proposition.
+The owned predicate method `x.is_finite()` returns that same proposition.
 
 It never returns `True`, `False`, or `Unknown`.
 
@@ -216,7 +217,7 @@ C.\operatorname{Finite}
 
 The same rule defines `C.Countable()`.
 
-A named finite construction goes directly into `C.Finite()`. It does not enumerate itself to prove finiteness.
+A named finite construction goes directly into `C.Finite()`. It does not enumerate itself to derive finiteness.
 
 A generic set may use an exact decision procedure when `ask(X.is_finite())` reaches the computational stage. That procedure can use Sage, SymPy, GAP, Julia, or another engine.
 
@@ -387,18 +388,19 @@ C.P().membership_proposition(x).assume()
 
 That operation uses the global mathematical context and the proposition's category owner.
 
-An ambient convenience method is optional:
+The largest meaningful ambient category owns the predicate method:
 
 ```python
 def is_P(self) -> Proposition:
     return C().P().membership_proposition(self)
 ```
 
-Adding that method deliberately extends `C.ObjectType`. A property leaf does not inject it automatically.
+The property declaration is incomplete without this method. A property leaf does not
+inject it into an unrelated implementation class.
 
 ## Where computation handlers belong
 
-`membership_proposition()` and any convenience `is_P()` method do not contain the algorithm.
+`membership_proposition()` and `is_P()` do not contain the algorithm.
 
 The property category owns the decision surface. Backend-specific procedures may live behind private engine boundaries.
 
@@ -546,7 +548,7 @@ def is_finite(self) -> bool:
 
 The kernel must not inject such an override either.
 
-The optional ambient convenience method has one owner and one return contract:
+The ambient predicate method has one owner and one return contract:
 
 ```python
 def is_finite(self) -> Proposition:
@@ -809,7 +811,8 @@ A property axiom declaration supplies:
 4. Its categorical implication rules.
 5. Exact decision handlers, when available.
 
-An ambient `is_P()` method is an optional API alias. It is not part of the property mechanism.
+The owned ambient `is_P()` method is part of the property declaration. It applies the
+membership predicate and returns its proposition.
 
 The kernel supplies:
 
@@ -828,7 +831,8 @@ The property category's role implementations supply only operations valid becaus
 
 No public standalone `finite(X)` should exist.
 
-The property category should own the predicate. `X.is_finite()` is only an optional convenience spelling.
+The property category owns the predicate. `X.is_finite()` is its required public
+application on set objects.
 
 ### One source of truth
 
@@ -844,7 +848,7 @@ This produces the proposition:
 X\in\mathbf{Sets.Finite}.
 \]
 
-The foundational convenience method delegates to that category:
+The owned predicate method delegates to that category:
 
 ```python
 class SetsObject:
@@ -863,11 +867,11 @@ The assumption engine still needs a predicate object internally. That object bel
 Thus:
 
 - `Sets().Finite()` owns the mathematical property.
-- `membership_proposition(X)` is the canonical interface.
-- `X.is_finite()` is an ambient-category convenience method.
+- `membership_proposition(X)` is the category-owned definition.
+- `X.is_finite()` is its public application on set objects.
 - The private SymPy or Sage predicate does not enter the global namespace.
 
-### A research property needs no ambient method
+### A research property declares its ambient predicate
 
 Consider:
 
@@ -894,10 +898,18 @@ class OfCardinalityExactlyFour(PropertySubcategory):
         )
 ```
 
+The property also declares the exact public method name at the ambient owner:
+
+```python
+class SetsObject:
+    def is_cardinality_exactly_four(self) -> Proposition:
+        return Sets().OfCardinalityExactlyFour().membership_proposition(self)
+```
+
 The user can then write:
 
 ```python
-p = FourSets.membership_proposition(X)
+p = X.is_cardinality_exactly_four()
 
 ask(p)
 assume(p)
@@ -905,61 +917,8 @@ FourSets(X)
 X in FourSets
 ```
 
-No change to `Sets.ObjectType` is required.
-
-In particular, the kernel must not automatically inject:
-
-```python
-X.is_cardinality_exactly_four()
-```
-
-into every set object.
-
-Automatic predicate-name injection would:
-
-- pollute the ambient namespace;
-- make external leaves change existing APIs silently;
-- require name inference;
-- hide the actual property owner;
-- create collisions between research extensions.
-
-### When an ambient convenience method is appropriate
-
-A foundational property can justify a short ambient method:
-
-```python
-X.is_finite()
-X.is_countable()
-```
-
-These operations are central to the public set API. They apply to every set.
-
-Adding such a method is an intentional change to `Sets.ObjectType`. The method must be defined at that owner.
-
-A specialized research property normally uses:
-
-```python
-Sets().OfCardinalityExactlyFour().membership_proposition(X)
-```
-
-If the research API genuinely needs:
-
-```python
-X.is_cardinality_exactly_four()
-```
-
-then the author must add that method deliberately to `Sets.ObjectType`.
-
-That is a real ambient API extension. It should not occur through a hidden leaf-side injection.
-
-The method still delegates to the property category:
-
-```python
-def is_cardinality_exactly_four(self) -> Proposition:
-    return Sets().OfCardinalityExactlyFour().membership_proposition(self)
-```
-
-The category remains the source of truth.
+The author defines this ordinary method at `Sets.ObjectType`. The compiler rejects a
+name collision. The kernel does not infer predicate names from category names.
 
 ### The corrected property template
 
@@ -970,14 +929,13 @@ A property leaf requires:
 3. Its membership proposition.
 4. Its category implications.
 5. Its decision procedures, when available.
+6. Its ambient `is_P()` method at the largest meaningful base category.
 
 It does not require:
 
 - a global predicate function;
-- a method on every ambient object;
 - an override returning `True`;
 - a decorator on ambient mathematical methods;
-- automatic method injection.
 
 Conceptually:
 
@@ -990,6 +948,10 @@ class OfCardinalityExactlyFour(PropertySubcategory):
             X,
             definition=X.cardinality() == 4,
         )
+
+class SetsObject:
+    def is_cardinality_exactly_four(self) -> Proposition:
+        return Sets().OfCardinalityExactlyFour().membership_proposition(self)
 ```
 
 `applied_predicate` here means the category-owned proposition mechanism. It is not a required public spelling.
@@ -1047,7 +1009,7 @@ The canonical proposition is:
 Ar(Sets()).Epis().membership_proposition(f)
 ```
 
-The convenience method is:
+The owned predicate method is:
 
 ```python
 f.is_surjective()
@@ -1088,26 +1050,11 @@ For surjectivity, possible procedures include:
 - decide through quantifier elimination;
 - decide through a backend-specific range algorithm.
 
-The public category leaf states which procedures decide its membership proposition. Private engines perform the work.
+The category declaration binds the typed computational routes for its membership
+predicate. Private engines perform the work.
 
-Conceptually:
-
-```python
-class SurjectiveSetMaps(PropertySubcategory):
-    def membership_proposition(
-        self,
-        f: SetMorphism,
-    ) -> Proposition:
-        ...
-
-    def decide_membership(
-        self,
-        f: SetMorphism,
-    ) -> Decision:
-        ...
-```
-
-The exact engine dispatch remains private.
+The exact engine dispatch remains private. The category binds typed handlers to its
+predicate. `ask()` is their only public decision surface.
 
 A SymPy integration can use SymPy’s predicate multipledispatch internally. [SymPy `ask()` documentation](https://docs.sympy.org/latest/modules/assumptions/ask.html)
 
@@ -1145,44 +1092,28 @@ True | False | Unknown
 
 If several exact procedures return conflicting decisions, the kernel reports an implementation defect.
 
-### Expensive procedures
+### Expensive computational routes
 
-`ask()` has one documented automatic decision route. It does not accept:
-
-```python
-ask(p, algorithm="image")
-ask(p, expensive=True)
-ask(p, fallback="sympy")
-```
-
-Those optional control arguments are forbidden.
-
-A costly alternative receives a separate, explicit name:
-
-```python
-Ar(Sets()).Epis().decide_via_exact_image(f)
-Ar(Sets()).Epis().decide_via_symbolic_elimination(f)
-```
-
-These methods are total on their declared input domains. Each returns a decision.
-
-They pass their result through the same kernel resolution operation:
+`ask()` selects from registered routes by their exact semantic domains. Its public call
+has no route-selection parameters. A costly route remains a private handler. It passes
+its result through the same kernel resolution operation:
 
 ```text
-named decision procedure
+ask(predicate)
+        ↓
+applicable computational route
         ↓
 record exact result
         ↓
 refine on True
         ↓
-cache False
-        ↓
-retain current category on Unknown
+cache False or retain Unknown
 ```
 
-Therefore, an exact positive result from any named route refines `f` into `Ar(Sets()).Epis()`.
+Therefore, an exact positive result from any computational route refines `f` into
+`Ar(Sets()).Epis()`.
 
-The methods may delegate to private Sage, SymPy, GAP, Julia, or external-program implementations.
+The handlers may delegate to private Sage, SymPy, GAP, Julia, or external-program implementations.
 
 ### Example: an exact image computation
 
@@ -1240,10 +1171,10 @@ f in Ar(Sets()).Epis()
 
 becomes true through category placement.
 
-A named expensive procedure can also refine:
+A registered exact-image route can also refine through the same public call:
 
 ```python
-Ar(Sets()).Epis().decide_via_exact_image(f)
+ask(f.is_surjective())
 ```
 
 A global assumption refines without computation:
@@ -1267,11 +1198,11 @@ The final model is:
 - The property category owns its membership proposition.
 - Its private predicate object belongs to that category.
 - No standalone global predicate function is required.
-- Ambient `is_P()` methods are optional convenience API.
-- Foundational convenience methods live at the ambient category owner.
-- Research properties need not modify the ambient object surface.
+- Every property declares its ambient `is_P()` predicate method.
+- The method lives at the largest meaningful ambient category owner.
 - `ask()` invokes the canonical automatic decision route.
-- Named total methods expose costly alternative decision procedures.
+- All computational routes remain behind the owned predicate.
 - Every exact positive decision invokes the same category refinement.
 
-Thus `Sets().OfCardinalityExactlyFour()` can remain fully encapsulated. Surjectivity can still have many powerful decision procedures.
+`Sets().OfCardinalityExactlyFour()` remains the predicate owner. Its ambient method only
+applies that predicate. Surjectivity can still use several private computational routes.

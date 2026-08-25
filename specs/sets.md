@@ -10,6 +10,11 @@ Every set operation specified as a predicate follows the interface in
 [Property refinement](property-refinement.md). Applying it returns a proposition.
 Only `ask()` decides that proposition as `True`, `False`, or `Unknown`.
 
+The governing policies are `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001`,
+`POL-CAT-021`, `POL-CAT-028`, `POL-CAT-086`, `POL-CAT-088`, `POL-SET-001`
+through `POL-SET-036`, and `POL-API-009`, `POL-API-010`, `POL-API-015`, and
+`POL-API-016`.
+
 ## Owned API roles
 
 `Sets()` owns three implementation types:
@@ -56,11 +61,9 @@ X.superobjects()
 X.covering_objects()
 X.covered_objects()
 
-Y.exponential(X)
 Y ** X
-X.powerset()
-X.subsets_of_size(k)
-X.finite_subsets()
+X * Y
+X + Y
 ```
 
 Generic categorical methods come from the category foundation. `Sets()` does not
@@ -99,12 +102,10 @@ f.image()
 Evaluation requires `x in f.domain()`. It returns an owned element of `f.codomain()`.
 Identity and composition arrive through inherited arrow operations.
 
-The following expressions construct that same Hom category and function-set object:
+The generic categorical operation has these equivalent standard notations:
 
 ```python
 X.Hom(Y)
-ExponentialOfSets(Y, X)
-Y.exponential(X)
 Y ** X
 ```
 
@@ -133,14 +134,16 @@ An inverse of an isomorphism is an owned set arrow. It satisfies both inverse eq
 
 ## Products
 
-The product API accepts arbitrary set-indexed families:
+The product construction accepts an arbitrary small diagram through its category-owned
+constructor:
 
 ```python
-CartesianProductOfFamily(I, lambda i: X_i)
-CartesianProductOfSets((X, Y, Z))
-CartesianProductMorphismOfFamily(I, lambda i: f_i)
-cartesian_product_morphism(f, g, h)
+P = Sets().Products()(diagram)
+P2 = X * Y
 ```
+
+The binary operator uses the discrete diagram on `X` and `Y`. The product functor maps
+diagram arrows to the induced product arrows.
 
 A product presentation retains:
 
@@ -168,14 +171,15 @@ The product cardinality is the indexed product of the factor cardinalities.
 
 ## Coproducts
 
-The coproduct API mirrors the product API:
+The coproduct construction uses the dual category-owned interface:
 
 ```python
-CoproductOfFamily(I, lambda i: X_i)
-CoproductOfSets((X, Y, Z))
-CoproductMorphismOfFamily(I, lambda i: f_i)
-coproduct_morphism(f, g, h)
+Q = Sets().Coproducts()(diagram)
+Q2 = X + Y
 ```
+
+The binary operator uses the discrete diagram on `X` and `Y`. The coproduct functor maps
+diagram arrows to the induced coproduct arrows.
 
 A coproduct presentation retains:
 
@@ -234,7 +238,6 @@ A chosen subset supplies:
 A.inclusion()
 A.underlying_set()
 A.characteristic_morphism()
-A.powerset()
 A.cardinality()
 ```
 
@@ -244,8 +247,8 @@ chosen subset representative. The chosen monomorphism remains part of the subobj
 `f.image()` constructs an owned subobject of `f.codomain()`. It does not require source
 enumeration. Image membership remains a proposition when no handler can decide it.
 
-`PowerSet(X)` and `X.powerset()` construct the owned set of subsets of `X`. The same
-object is the function set from `X` to the owned two-element set.
+For the owned two-element set `Two`, `Two ** X` constructs the power object of `X`.
+It is the Hom category and function set from `X` to `Two`.
 
 The power object supplies:
 
@@ -286,8 +289,8 @@ the owned poset category and retains `X` as its base set.
 The public constructors are:
 
 ```python
-FiniteSubsets(X)
-SubsetsOfSize(X, k)
+Sets().FiniteSubsets()(X)
+Sets().SubsetsOfSize(k)(X)
 ```
 
 Their elements are owned finite subobjects of `X`.
@@ -295,7 +298,7 @@ Their elements are owned finite subobjects of `X`.
 If `X` has a chosen enumeration, these constructions can derive a chosen enumeration.
 Countability alone does not select one.
 
-With an induced enumeration, `FiniteSubsets(X)` supplies:
+With an induced enumeration, `Sets().FiniteSubsets()(X)` supplies:
 
 ```python
 S.cardinality()
@@ -303,7 +306,7 @@ S.index(subset)
 S[n]
 ```
 
-With an induced enumeration, `SubsetsOfSize(X, k)` supplies:
+With an induced enumeration, `Sets().SubsetsOfSize(k)(X)` supplies:
 
 ```python
 S.subset_cardinality()

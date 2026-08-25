@@ -7,7 +7,8 @@ Ordinal operations specified as predicates follow the proposition interface in
 `ask()` returns its decision.
 
 The governing policies are `POL-MATH-022` through `POL-MATH-025`, `POL-MATH-034`,
-`POL-MATH-035`, `POL-CAT-054`, `POL-CAT-085`, `POL-SET-025`, and `POL-SET-026`.
+`POL-MATH-035`, `POL-CAT-054`, `POL-CAT-060`, `POL-CAT-085`, `POL-CAT-087`,
+`POL-SET-025`, and `POL-SET-026`.
 
 ## Ordinal model
 
@@ -25,9 +26,35 @@ This differs from the cardinal model:
 
 - An ordinal is an element of `Ordinals()`.
 
-`OrdinalSemirings()` is a full subcategory of the owned `Semirings()` category from
-[Magmas, monoids, and semirings](magmas-monoids-semirings.md). Its multiplication is
-commutative. Its complete immediate structural tuple is:
+An ordinal semiring is a semiring whose carrier consists of ordinals, whose addition is
+Hessenberg natural sum, and whose multiplication is Hessenberg natural product.
+Its multiplication is commutative.
+
+Let `P(S)` be this property of objects `S in Semirings()`. Then
+`OrdinalSemirings()` is the full subcategory defined by `P`. Its objects are the
+semiring objects satisfying `P`. Property refinement retains each same owned semiring.
+Its Hom categories are definitionally those of `Semirings()`:
+
+\[
+\operatorname{Hom}_{\mathbf{OrdinalSemirings}}(A,B)
+=
+\operatorname{Hom}_{\mathbf{Semirings}}(A,B).
+\]
+
+Thus the inclusion is fully faithful by construction. No fullness predicate or runtime
+check exists. This follows mathlib's
+[`CategoryTheory.ObjectProperty.FullSubcategory`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/FullSubcategory.html)
+definition: objects carry an object property, while morphisms ignore that property.
+
+The ambient predicate application is:
+
+```python
+S.is_ordinal_semiring()
+```
+
+It returns `P(S)`. `ask()` uses its computational routes.
+
+The complete immediate structural tuple is:
 
 ```python
 def structure_functors(self) -> tuple[Functor, ...]:
@@ -95,14 +122,11 @@ The parent supplies:
 ```python
 O = Ordinals()
 
-O(value)
 O.zero()
 O.one()
-O.initial(index)
 
 O.natural_sum(*ordinals)
 O.natural_product(*ordinals)
-O.proves_le(alpha, beta)
 ```
 
 `Ordinals()` is cached.

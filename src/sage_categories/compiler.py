@@ -1,4 +1,4 @@
-"""Compile category-owned methods along selected structural functors."""
+"""Compile category-owned methods along selected ordinary functors."""
 
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ from sage_categories.descriptors import (
     ForwardedObjectMethod,
     ImplementationRole,
     MethodSignature,
+    ParameterRole,
     RefiningPropertyMethod,
     method_signature,
 )
@@ -29,15 +30,14 @@ from sage_categories.values import (
 
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.full_subcategories import FullSubcategory
-    from sage_categories.abstract_categories.functors import StructuralFunctor
+    from sage_categories.abstract_categories.functors import Functor
     from sage_categories.abstract_categories.hom_categories import HomCategory
     from sage_categories.category import Category
 
 
-# A category that declares no implementation for a role falls back to one of
-# these. Such a fallback states nothing about the category graph, so it is not
-# reported as a declared relation.
-_KERNEL_IMPLEMENTATIONS = frozenset({MathematicalObject, MathematicalElement, CategoryElement, Arrow})
+_KERNEL_IMPLEMENTATIONS = frozenset(
+    {MathematicalObject, MathematicalElement, CategoryElement, Arrow}
+)
 
 
 def _implementation_name(implementation: type) -> str:
@@ -56,11 +56,11 @@ def _local_type(category: Category, role: ImplementationRole) -> type:
             assert_never(role)
 
 
-def _all_structural_functors(functor: StructuralFunctor) -> bool:
+def _all_functors(functor: Functor) -> bool:
     return True
 
 
-def _inclusion_functors(functor: StructuralFunctor) -> bool:
+def _inclusion_functors(functor: Functor) -> bool:
     return functor.is_inclusion()
 
 
@@ -73,6 +73,7 @@ _IGNORED_METHODS = frozenset(
         "__module__",
         "__weakref__",
         "structural_coherences",
+        "structure_functors",
         "super_functors",
     }
 )
@@ -103,8 +104,8 @@ class DeclaredMethod:
         implementation_owner: Category,
         method: FunctionType,
         role: ImplementationRole,
-        route: tuple[StructuralFunctor, ...] = (),
-        implementation_route: tuple[StructuralFunctor, ...] = (),
+        route: tuple[Functor, ...] = (),
+        implementation_route: tuple[Functor, ...] = (),
     ) -> None:
         self.owner = owner
         self.implementation_owner = implementation_owner
@@ -122,7 +123,7 @@ class DeclaredMethod:
 
 
 class CategoryCompiler:
-    """Compile object and element method surfaces from a functor graph."""
+    """Compile inherited methods from each category's selected functors."""
 
     def __init__(self) -> None:
         self._object_types: dict[int, type[MathematicalObject]] = {}
@@ -131,14 +132,65 @@ class CategoryCompiler:
         self._object_catalogues: dict[int, dict[str, DeclaredMethod]] = {}
         self._element_catalogues: dict[int, dict[str, DeclaredMethod]] = {}
         self._arrow_catalogues: dict[int, dict[str, DeclaredMethod]] = {}
-        self._routes: dict[tuple[int, int], tuple[StructuralFunctor, ...]] = {}
+        self._structure_functors: dict[int, tuple[Functor, ...]] = {}
+        self._selected_functor_ids: set[int] = set()
+        self._selecting_categories: set[int] = set()
+        self._routes: dict[tuple[int, int], tuple[Functor, ...]] = {}
         self._compiled_categories: dict[int, Category] = {}
+
+    def structure_functors(self, category: Category) -> tuple[Functor, ...]:
+        """Return the canonical selected functors declared by ``category``."""
+        key = id(category)
+        cached = self._structure_functors.get(key)
+        if cached is not None:
+            return cached
+        assert key not in self._selecting_categories, (
+            f"constructing the selected functors of {category} is recursive"
+        )
+        self._selecting_categories.add(key)
+        try:
+            declared = category.structure_functors()
+            assert isinstance(declared, tuple), (
+                f"{category}.structure_functors() must return a tuple"
+            )
+            from sage_categories.abstract_categories.functors import is_functor
+
+            selected: list[Functor] = []
+            for functor in declared:
+                assert is_functor(functor), (
+                    f"{category} selected a value which is not an owned functor: "
+                    f"{functor!r}"
+                )
+                assert functor.domain() is category, (
+                    f"selected functor {functor} has domain {functor.domain()}, "
+                    f"not its declaring category {category}"
+                )
+                assert all(functor is not previous for previous in selected), (
+                    f"{category} selected the same functor twice"
+                )
+                selected.append(functor)
+            result = tuple(selected)
+            self._structure_functors[key] = result
+            self._selected_functor_ids.update(id(functor) for functor in result)
+            return result
+        finally:
+            self._selecting_categories.remove(key)
+
+    def is_selected_functor(self, functor: Functor) -> bool:
+        """Return whether the source category selected this exact functor."""
+        if id(functor) in self._selected_functor_ids:
+            return True
+        return any(
+            selected is functor
+            for selected in self.structure_functors(functor.domain())
+        )
 
     def _refined_type(
         self,
         implementation: type[Implementation],
         property_implementation: type[Implementation],
     ) -> type[Implementation]:
+        """Compatibility refinement until property roles are fully migrated."""
         if issubclass(implementation, property_implementation):
             return implementation
         if issubclass(property_implementation, implementation):
@@ -186,7 +238,7 @@ class CategoryCompiler:
         category: FullSubcategory,
         ambient: MathematicalObject,
     ) -> MathematicalObject:
-        """Refine ``ambient`` into ``category`` without changing its identity."""
+        """Compatibility refinement for the existing property-category leaves."""
         current = ambient.category()
         if current is category or current.is_subcategory(category):
             return ambient
@@ -210,7 +262,7 @@ class CategoryCompiler:
         source: MathematicalObject,
         ambient: MathematicalElement,
     ) -> MathematicalElement:
-        """Refine ``ambient`` into ``category`` without changing its identity."""
+        """Compatibility refinement for the existing property-category leaves."""
         assert ambient.ambient_object() is source
         refined_category = source.category()
         assert refined_category.is_subcategory(category)
@@ -227,7 +279,7 @@ class CategoryCompiler:
         hom_category: HomCategory,
         ambient: Arrow,
     ) -> Arrow:
-        """Refine ``ambient`` into ``category`` without changing its identity."""
+        """Compatibility refinement for the existing property-category leaves."""
         assert ambient.domain() is hom_category.domain()
         assert ambient.codomain() is hom_category.codomain()
         ambient.__class__ = self._refined_type(type(ambient), category.ArrowType)
@@ -264,26 +316,23 @@ class CategoryCompiler:
         )
 
     def declared_inheritance(self) -> dict[str, dict[str, tuple[str, ...]]]:
-        """Report, per role, the implementation types each category inherits from.
-
-        The compiled surface follows selected structural functors, so nothing
-        states this relation in source and a static checker cannot infer it.
-        POL-TYPE-024 makes reporting it the compiler's obligation: a checker
-        plugin reads the declarations from their owner here rather than from a
-        second graph kept somewhere else.
-        """
-        inherited = self._declared_relations(_all_structural_functors)
+        """Report implementation inheritance induced by selected functors."""
+        inherited = self._declared_relations(_all_functors)
         subtyping = self.declared_subtyping()
-        assert all(set(parents).issubset(inherited[role][implementation]) for role, relations in subtyping.items() for implementation, parents in relations.items())
+        assert all(
+            set(parents).issubset(inherited[role][implementation])
+            for role, relations in subtyping.items()
+            for implementation, parents in relations.items()
+        )
         return inherited
 
     def declared_subtyping(self) -> dict[str, dict[str, tuple[str, ...]]]:
-        """Report implementation subtyping declared by inclusion functors."""
+        """Report implementation subtyping induced by inclusions."""
         return self._declared_relations(_inclusion_functors)
 
     def _declared_relations(
         self,
-        includes: Callable[[StructuralFunctor], bool],
+        includes: Callable[[Functor], bool],
     ) -> dict[str, dict[str, tuple[str, ...]]]:
         reported: dict[str, dict[str, tuple[str, ...]]] = {}
         for role in ImplementationRole:
@@ -293,7 +342,7 @@ class CategoryCompiler:
                 if local_type in _KERNEL_IMPLEMENTATIONS:
                     continue
                 reached: tuple[str, ...] = ()
-                for functor in category.super_functors():
+                for functor in self.structure_functors(category):
                     if not includes(functor):
                         continue
                     codomain = functor.codomain()
@@ -301,19 +350,21 @@ class CategoryCompiler:
                         continue
                     inherited_type = _local_type(codomain, role)
                     name = _implementation_name(inherited_type)
-                    if inherited_type is local_type or name in reached:
-                        continue
-                    if inherited_type in _KERNEL_IMPLEMENTATIONS:
+                    if (
+                        inherited_type is local_type
+                        or name in reached
+                        or inherited_type in _KERNEL_IMPLEMENTATIONS
+                    ):
                         continue
                     reached = (*reached, name)
                 if not reached:
                     continue
-                # Two categories can share one local type, so the relations
-                # already recorded for it stay and this adds what is new.
                 declaring = _implementation_name(local_type)
                 if declaring in relations:
                     recorded = relations[declaring]
-                    reached = recorded + tuple(name for name in reached if name not in recorded)
+                    reached = recorded + tuple(
+                        name for name in reached if name not in recorded
+                    )
                 relations[declaring] = reached
             reported[role.value] = dict(sorted(relations.items()))
         return reported
@@ -323,7 +374,7 @@ class CategoryCompiler:
         category: Category,
         local_type: type[MathematicalObject],
     ) -> type[MathematicalObject]:
-        """Return the complete implementation type for objects of ``category``."""
+        """Return the complete object implementation for ``category``."""
         key = id(category)
         cached = self._object_types.get(key)
         if cached is not None:
@@ -335,7 +386,7 @@ class CategoryCompiler:
             role=ImplementationRole.OBJECT,
         )
         self._object_types[key] = compiled
-        self._compiled_categories[id(category)] = category
+        self._compiled_categories[key] = category
         return compiled
 
     def compiled_element_type(
@@ -343,7 +394,7 @@ class CategoryCompiler:
         category: Category,
         local_type: type[MathematicalElement],
     ) -> type[MathematicalElement]:
-        """Return the complete implementation type for elements of ``category``."""
+        """Return the complete element implementation for ``category``."""
         key = id(category)
         cached = self._element_types.get(key)
         if cached is not None:
@@ -355,7 +406,7 @@ class CategoryCompiler:
             role=ImplementationRole.ELEMENT,
         )
         self._element_types[key] = compiled
-        self._compiled_categories[id(category)] = category
+        self._compiled_categories[key] = category
         return compiled
 
     def compiled_arrow_type(
@@ -363,7 +414,7 @@ class CategoryCompiler:
         category: Category,
         local_type: type[Arrow],
     ) -> type[Arrow]:
-        """Return the complete implementation type for arrows of ``category``."""
+        """Return the complete arrow implementation for ``category``."""
         key = id(category)
         cached = self._arrow_types.get(key)
         if cached is not None:
@@ -375,14 +426,13 @@ class CategoryCompiler:
             role=ImplementationRole.ARROW,
         )
         self._arrow_types[key] = compiled
-        self._compiled_categories[id(category)] = category
+        self._compiled_categories[key] = category
         return compiled
 
     def object_method_catalogue(
         self,
         category: Category,
     ) -> Mapping[str, DeclaredMethod]:
-        """Return the object methods visible in ``category``."""
         key = id(category)
         cached = self._object_catalogues.get(key)
         if cached is not None:
@@ -400,7 +450,6 @@ class CategoryCompiler:
         self,
         category: Category,
     ) -> Mapping[str, DeclaredMethod]:
-        """Return the element methods visible in ``category``."""
         key = id(category)
         cached = self._element_catalogues.get(key)
         if cached is not None:
@@ -418,7 +467,6 @@ class CategoryCompiler:
         self,
         category: Category,
     ) -> Mapping[str, DeclaredMethod]:
-        """Return the arrow methods visible in ``category``."""
         key = id(category)
         cached = self._arrow_catalogues.get(key)
         if cached is not None:
@@ -436,8 +484,8 @@ class CategoryCompiler:
         self,
         source: Category,
         target: Category,
-    ) -> tuple[StructuralFunctor, ...]:
-        """Return the unique structural-functor route from source to target."""
+    ) -> tuple[Functor, ...]:
+        """Return the canonical selected-functor route to ``target``."""
         if source is target:
             return ()
         key = id(source), id(target)
@@ -445,9 +493,8 @@ class CategoryCompiler:
         if cached is not None:
             return cached
         routes = tuple(self._routes_from(source, target, (id(source),)))
-        assert routes, f"no structural route from {source} to {target}"
+        assert routes, f"no selected functor route from {source} to {target}"
         route = self._canonical_route(source, target, routes)
-        assert route in routes
         self._routes[key] = route
         return route
 
@@ -455,88 +502,24 @@ class CategoryCompiler:
         self,
         source: Category,
         target: Category,
-        routes: tuple[tuple[StructuralFunctor, ...], ...],
-    ) -> tuple[StructuralFunctor, ...]:
-        distinct = tuple(route for position, route in enumerate(routes) if route not in routes[:position])
-        normalized = tuple(self._normalize_route(source, route) for route in distinct)
-        canonical = normalized[0]
-        if not all(route == canonical for route in normalized):
-            assert all(
-                functor.is_inclusion()
-                for route in normalized
-                for functor in route
-            ), f"structural routes from {source} to {target} are not declared coherent"
-        assert canonical in distinct
-        return canonical
-
-    def _normalize_route(
-        self,
-        source: Category,
-        route: tuple[StructuralFunctor, ...],
-    ) -> tuple[StructuralFunctor, ...]:
-        if not route:
-            return ()
-        first = route[0]
-        assert first.domain() is source
-        current = (
-            first,
-            *self._normalize_route(first.codomain(), route[1:]),
+        routes: tuple[tuple[Functor, ...], ...],
+    ) -> tuple[Functor, ...]:
+        distinct = tuple(
+            route
+            for position, route in enumerate(routes)
+            if route not in routes[:position]
         )
-        seen: set[tuple[int, ...]] = set()
-        while True:
-            key = tuple(id(functor) for functor in current)
-            assert key not in seen, f"structural coherences of {source} contain a cycle"
-            seen.add(key)
-            replacement = self._coherent_replacement(source, current)
-            if replacement is None:
-                return current
-            replacement_first = replacement[0]
-            current = (
-                replacement_first,
-                *self._normalize_route(
-                    replacement_first.codomain(),
-                    replacement[1:],
-                ),
-            )
-
-    def _coherent_replacement(
-        self,
-        source: Category,
-        route: tuple[StructuralFunctor, ...],
-    ) -> tuple[StructuralFunctor, ...] | None:
-        # Bundled natural isomorphisms between parallel composites follow
-        # Mathlib's ``CategoryTheory.NatIso`` construction:
-        # https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/CategoryTheory/Grothendieck.lean
-        from sage_categories.abstract_categories.functors import (
-            is_functor,
-            is_structural_functor,
+        if len(distinct) == 1:
+            return distinct[0]
+        # Inclusions are strict in this kernel: every edge returns the exact
+        # canonical ambient implementation. Hence an all-inclusion diamond has
+        # one literal image and declaration order can choose its route.
+        if all(functor.is_inclusion() for route in distinct for functor in route):
+            return distinct[0]
+        raise AssertionError(
+            f"selected routes from {source} to {target} are not strictly coherent; "
+            "a natural isomorphism is not literal equality"
         )
-        from sage_categories.abstract_categories.hom_categories import (
-            is_isomorphism,
-        )
-
-        for coherence in source.structural_coherences():
-            assert is_isomorphism(coherence)
-            canonical_functor = coherence.domain()
-            equivalent_functor = coherence.codomain()
-            assert is_functor(canonical_functor)
-            assert is_functor(equivalent_functor)
-            assert canonical_functor.domain() is source
-            assert equivalent_functor.domain() is source
-            assert canonical_functor.codomain() is equivalent_functor.codomain()
-            canonical: tuple[StructuralFunctor, ...] = ()
-            for factor in canonical_functor.factors():
-                assert is_structural_functor(factor)
-                canonical = (*canonical, factor)
-            equivalent: tuple[StructuralFunctor, ...] = ()
-            for factor in equivalent_functor.factors():
-                assert is_structural_functor(factor)
-                equivalent = (*equivalent, factor)
-            assert canonical
-            assert equivalent
-            if route[: len(equivalent)] == equivalent:
-                return canonical + route[len(equivalent) :]
-        return None
 
     def _method_catalogue(
         self,
@@ -547,7 +530,7 @@ class CategoryCompiler:
     ) -> dict[str, DeclaredMethod]:
         local = self._local_methods(local_type)
         catalogue: dict[str, DeclaredMethod] = {}
-        for functor in category.super_functors():
+        for functor in self.structure_functors(category):
             inherited_methods = inherited_catalogue(functor.codomain())
             for name, declaration in inherited_methods.items():
                 candidate = DeclaredMethod(
@@ -596,9 +579,10 @@ class CategoryCompiler:
             return candidate
         if local_method is not None:
             return DeclaredMethod(category, category, local_method, role)
-        coherent = self._coherent_declaration(category, previous, candidate)
-        assert coherent is not None, f"{category} inherits {name} from unrelated categories {previous.owner} and {candidate.owner}"
-        return coherent
+        raise AssertionError(
+            f"{category} inherits {name} from unrelated mathematical owners "
+            f"{previous.owner} and {candidate.owner}"
+        )
 
     def _preferred_implementation_route(
         self,
@@ -606,9 +590,13 @@ class CategoryCompiler:
         previous: DeclaredMethod,
         candidate: DeclaredMethod,
     ) -> DeclaredMethod:
-        if previous.implementation_owner.is_subcategory(candidate.implementation_owner):
+        if previous.implementation_owner.is_subcategory(
+            candidate.implementation_owner
+        ):
             return previous
-        if candidate.implementation_owner.is_subcategory(previous.implementation_owner):
+        if candidate.implementation_owner.is_subcategory(
+            previous.implementation_owner
+        ):
             return candidate
         canonical = self.implementation_route(category, previous.owner)
         if candidate.route == canonical:
@@ -635,68 +623,32 @@ class CategoryCompiler:
             self.implementation_route(category, inherited.owner),
         )
 
-    def _coherent_declaration(
+    def _validate_transport(
         self,
-        category: Category,
-        first: DeclaredMethod,
-        second: DeclaredMethod,
-    ) -> DeclaredMethod | None:
-        # A natural isomorphism is oriented from its chosen representative to
-        # an equivalent composite, as in Mathlib's ``NatIso`` constructions:
-        # https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/CategoryTheory/Grothendieck.lean
-        from sage_categories.abstract_categories.functors import (
-            is_functor,
-            is_structural_functor,
+        declaration: DeclaredMethod,
+        name: str,
+    ) -> None:
+        route = declaration.implementation_route
+        if not route:
+            return
+        signature = declaration.signature
+        roles = (
+            signature.receiver,
+            *signature.positional,
+            *(role for _, role in signature.keyword),
+            *((signature.variadic,) if signature.variadic is not None else ()),
+            *((signature.keywords,) if signature.keywords is not None else ()),
+            signature.result,
         )
-        from sage_categories.abstract_categories.hom_categories import (
-            is_isomorphism,
-        )
-
-        first_inclusions = sum(functor.is_inclusion() for functor in first.route)
-        second_inclusions = sum(functor.is_inclusion() for functor in second.route)
-        if first_inclusions > second_inclusions:
-            return first
-        if second_inclusions > first_inclusions:
-            return second
-
-        preferred: DeclaredMethod | None = None
-        for coherence in category.structural_coherences():
-            assert is_isomorphism(coherence)
-            canonical_functor = coherence.domain()
-            equivalent_functor = coherence.codomain()
-            assert is_functor(canonical_functor)
-            assert is_functor(equivalent_functor)
-            canonical: tuple[StructuralFunctor, ...] = ()
-            for factor in canonical_functor.factors():
-                assert is_structural_functor(factor)
-                canonical = (*canonical, factor)
-            equivalent: tuple[StructuralFunctor, ...] = ()
-            for factor in equivalent_functor.factors():
-                assert is_structural_functor(factor)
-                equivalent = (*equivalent, factor)
-            divergence = next(
-                (position for position, pair in enumerate(zip(canonical, equivalent, strict=False)) if pair[0] is not pair[1]),
-                None,
+        element_roles = {
+            ParameterRole.ELEMENT,
+            ParameterRole.ELEMENT_ITERATOR,
+        }
+        if any(role in element_roles for role in roles):
+            assert all(functor.maps_elements() for functor in route), (
+                f"cannot inherit {name}: selected route "
+                f"{tuple(map(str, route))} lacks an element map"
             )
-            assert divergence is not None
-
-            def follows(
-                declaration: DeclaredMethod,
-                route: tuple[StructuralFunctor, ...],
-                divergence_position: int = divergence,
-            ) -> bool:
-                return len(declaration.route) > divergence_position and declaration.route[: divergence_position + 1] == route[: divergence_position + 1]
-
-            if follows(first, canonical) and follows(second, equivalent):
-                candidate = first
-            elif follows(second, canonical) and follows(first, equivalent):
-                candidate = second
-            else:
-                continue
-            if preferred is not None:
-                assert candidate is preferred
-            preferred = candidate
-        return preferred
 
     def _compile_type(
         self,
@@ -711,6 +663,9 @@ class CategoryCompiler:
             for name, declaration in catalogue.items()
             if inspect.getattr_static(local_type, name, None) is declaration.method
         }
+        for name, declaration in catalogue.items():
+            if name not in available:
+                self._validate_transport(declaration, name)
         inherited: dict[str, ForwardedDescriptor]
         match role:
             case ImplementationRole.OBJECT:
@@ -751,9 +706,9 @@ class CategoryCompiler:
                 assert_never(role)
         for name, descriptor in inherited.items():
             installed = vars(local_type).get(name)
+            declaration = catalogue[name]
             if isinstance(installed, ForwardedObjectMethod):
                 assert isinstance(descriptor, ForwardedObjectMethod)
-                declaration = catalogue[name]
                 installed.register(
                     category,
                     declaration.implementation_route,
@@ -763,7 +718,6 @@ class CategoryCompiler:
                 continue
             if isinstance(installed, ForwardedElementMethod):
                 assert isinstance(descriptor, ForwardedElementMethod)
-                declaration = catalogue[name]
                 installed.register(
                     category,
                     declaration.implementation_route,
@@ -773,7 +727,6 @@ class CategoryCompiler:
                 continue
             if isinstance(installed, ForwardedArrowMethod):
                 assert isinstance(descriptor, ForwardedArrowMethod)
-                declaration = catalogue[name]
                 installed.register(
                     category,
                     declaration.implementation_route,
@@ -806,7 +759,9 @@ class CategoryCompiler:
                 {
                     name: method
                     for name, method in vars(implementation_type).items()
-                    if name not in _IGNORED_METHODS and (not name.startswith("_") or name.startswith("__")) and inspect.isfunction(method)
+                    if name not in _IGNORED_METHODS
+                    and (not name.startswith("_") or name.startswith("__"))
+                    and inspect.isfunction(method)
                 }
             )
             methods.update(
@@ -823,11 +778,13 @@ class CategoryCompiler:
         source: Category,
         target: Category,
         visited: tuple[int, ...],
-    ) -> list[tuple[StructuralFunctor, ...]]:
-        routes: list[tuple[StructuralFunctor, ...]] = []
-        for functor in source.super_functors():
+    ) -> list[tuple[Functor, ...]]:
+        routes: list[tuple[Functor, ...]] = []
+        for functor in self.structure_functors(source):
             codomain = functor.codomain()
-            assert id(codomain) not in visited, "the structural-functor graph has a cycle"
+            assert id(codomain) not in visited, (
+                "the selected-functor graph has a cycle"
+            )
             if codomain is target:
                 routes.append((functor,))
                 continue

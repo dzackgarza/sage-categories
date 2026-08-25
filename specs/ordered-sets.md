@@ -3,9 +3,10 @@
 This specification defines the public order algorithms and their result categories.
 Standard order theory and category theory are assumed.
 
-All order laws and property queries follow the proposition interface in
-[Property refinement](property-refinement.md). A propositional method returns a
-proposition. Only `ask()` returns `True`, `False`, or `Unknown`.
+Order operations specified as predicates follow the proposition interface in
+[Property refinement](property-refinement.md). Applying one returns a proposition.
+`ask()` returns its decision. Tables mark any total exact operation that returns a
+decision directly.
 
 ## Category and role surface
 
@@ -277,7 +278,7 @@ roles or route metadata.
 
 See [Leaf category implementations](leaves.md) and [Structural resolution](resolution.md).
 
-The governing policies include `POL-MATH-001`, `POL-MATH-016` through `POL-MATH-033`,
+The governing policies include `POL-MATH-001`, `POL-MATH-016` through `POL-MATH-035`,
 `POL-CAT-020`, `POL-CAT-061` through `POL-CAT-084`, `POL-LEAF-018` through
 `POL-LEAF-057`, and `POL-KERNEL-001` through `POL-KERNEL-026`.
 

@@ -5,6 +5,11 @@ decision, global assumption, direct construction, and same-object refinement. Se
 [undecidable-properties.md](undecidable-properties.md) for the complete axiom and
 decision-procedure architecture.
 
+The governing policies are `POL-MATH-016`, `POL-MATH-025`, `POL-MATH-029`,
+`POL-MATH-034`, `POL-MATH-035`, `POL-CAT-018` through `POL-CAT-020`,
+`POL-CAT-043`, `POL-CAT-044`, `POL-CAT-060`, `POL-CAT-067` through `POL-CAT-069`,
+`POL-CAT-082`, and `POL-CAT-086`.
+
 An established positive property should self-refine the owned object. Direct property construction, an active assumption, and an exact computation all establish the same refinement. The object's mathematical identity remains unchanged. Its category and Sage dynamic class become more specific.
 
 ### Predicate resolution
@@ -250,10 +255,14 @@ not call `assume()`.
 
 ## Proposition interface
 
-### Propositional methods return propositions
+### Predicates return propositions
 
-Every public mathematical method whose result is a proposition returns an unevaluated
-proposition. It never returns `True`, `False`, `Decision`, or `Unknown` directly.
+Most mathematical truth-valued operations are owned predicates. Applying one returns an
+unevaluated proposition. It does not return `True`, `False`, `Decision`, or `Unknown`.
+
+A specification can instead declare a direct decision when an exact total algorithm is
+part of that operation's public meaning. This is an explicit exception. It does not
+change the default predicate contract.
 
 This rule applies to:
 
@@ -262,7 +271,7 @@ This rule applies to:
 - equality, order, inclusion, and incidence propositions;
 - relation laws and construction obligations;
 - category-membership propositions;
-- every other method whose mathematical codomain is truth values.
+- every other operation specified as an owned predicate.
 
 For example:
 
@@ -293,6 +302,45 @@ The result of `ask(proposition)` is exactly one of:
 
 The kernel translates an engine-specific indeterminate result, such as SymPy `None`,
 to the owned `Unknown`. No public propositional method returns that value itself.
+
+### Hom-category predicates
+
+For every category `C` and objects `A, B in C`, `Hom_C(A, B)` is a category. Its
+existence does not depend on a decision about its objects.
+
+The Hom category owns these predicates:
+
+```python
+H = C.HomCategory(A, B)
+
+H.is_inhabited()
+H.is_empty()
+```
+
+They state mutually negated propositions. Their evaluations can both remain unresolved:
+
+```python
+ask(H.is_inhabited())  # True, False, or Unknown
+ask(H.is_empty())      # True, False, or Unknown
+```
+
+A constructed object of `H` establishes inhabitation. Exact emptiness establishes that
+no such object exists. `Unknown` preserves the same symbolic Hom category.
+
+An implementation must not replace an unresolved Hom category with an empty category.
+This rule applies to thin categories and to general categories.
+
+### Assertions ask predicates
+
+An assertion states that its condition is known to be true. Therefore, an assertion on
+an applied predicate must ask it:
+
+```python
+assert ask(proposition) is True
+```
+
+Do not rely on the proposition's Python truth value. A direct exact decision can appear
+in an assertion without another `ask()` call.
 
 ### Assumption and decision use one proposition
 

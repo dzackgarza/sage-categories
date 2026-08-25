@@ -2,9 +2,12 @@
 
 This document specifies the ordinal model used by the cardinality framework.
 
-All ordinal properties and relations follow the proposition interface in
-[Property refinement](property-refinement.md). They return propositions. Only `ask()`
-returns `True`, `False`, or `Unknown`.
+Ordinal operations specified as predicates follow the proposition interface in
+[Property refinement](property-refinement.md). Applying one returns a proposition.
+`ask()` returns its decision.
+
+The governing policies are `POL-MATH-022` through `POL-MATH-025`, `POL-MATH-034`,
+`POL-MATH-035`, `POL-CAT-054`, `POL-CAT-085`, `POL-SET-025`, and `POL-SET-026`.
 
 ## Ordinal model
 
@@ -22,7 +25,17 @@ This differs from the cardinal model:
 
 - An ordinal is an element of `Ordinals()`.
 
-`OrdinalSemirings` declares `Sets()` and Sage’s commutative semirings as supercategories.
+`OrdinalSemirings()` is a full subcategory of the owned `Semirings()` category from
+[Magmas, monoids, and semirings](magmas-monoids-semirings.md). Its multiplication is
+commutative. Its complete immediate structural tuple is:
+
+```python
+def structure_functors(self) -> tuple[Functor, ...]:
+    return (FullSubcategoryInclusionFunctor(self, Semirings()),)
+```
+
+The selected semiring functors supply both monoid structures and the canonical carrier
+in `Sets()`. Sage supplies private runtime support only.
 
 ### Public ordinal constructors
 
@@ -41,8 +54,6 @@ omega0
 - An existing `Ordinal`.
 
 - A nonnegative Python `int`.
-
-- A nonnegative Sage `Integer`.
 
 `omega(index)` constructs the initial ordinal \(\omega_{\text{index}}\).
 
@@ -169,8 +180,6 @@ Other cases remain symbolic.
 Every ordinal supplies:
 
 ```python
-alpha.expression()
-
 alpha.is_initial()
 alpha.initial_index()
 alpha.cardinality()
@@ -251,10 +260,19 @@ Both natural and ordinary ordinal products map to cardinal products:
 |\alpha\beta|=|\alpha||\beta|.
 \]
 
-Ordinary ordinal powers map to cardinal powers:
+Ordinary ordinal powers do not map to cardinal exponentiation in general. For example,
 
 \[
-|\alpha^\beta|=|\alpha|^{|\beta|}.
+2^\omega=\omega,
+\qquad
+|2^\omega|=\aleph_0,
+\qquad
+|2|^{|\omega|}=2^{\aleph_0}.
 \]
 
-This bridge is implemented in [Ordinal.cardinality()](/home/dzack/research/src/dzack_research/preamble/categories/sets/ordinals.py:316).
+This follows from the limit-power rule in Enderton,
+[Elements of Set Theory, Chapter 8, Theorem 8L](https://docs.ufpr.br/~hoefel/ensino/CM304_CompleMat_PE3/livros/Enderton_Elements%20of%20set%20theory_%281977%29.pdf).
+
+`alpha.ordinal_power(beta).cardinality()` uses exact ordinal normalization rules. If no
+rule determines the value, it returns a symbolic cardinal expression for the ordinal
+power. It does not replace that expression with cardinal exponentiation.

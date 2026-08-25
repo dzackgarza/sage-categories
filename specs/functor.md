@@ -578,21 +578,18 @@ canonical object and arrow maps.
 
 ### Monoids
 
-Sage lists semigroups and unital magmas together as supercategories of monoids. The two
-edges discard different parts of the monoid structure:
+`Monoids()` is notation-neutral. It is a subcategory of `Magmas()` because its arrows
+also preserve the neutral element:
 
 ```python
 class MonoidsCategory(Category):
     def structure_functors(self) -> tuple[Functor, ...]:
-        semigroup = ForgetfulFunctor(self, Semigroups())
-        unital_magma = ForgetfulFunctor(self, UnitalMagmas())
-        return (semigroup, unital_magma)
+        return (SubcategoryInclusionFunctor(self, Magmas()),)
 ```
 
-A semigroup morphism between monoids need not preserve the unit. Thus the first
-functor is faithful but not full. A unital-magma morphism between monoids preserves
-exactly the operations required of a monoid morphism. Thus the second functor is fully
-faithful. Both remain forgetful functors because their object maps discard structure.
+The additive and multiplicative axiomatic refinements preserve the neutral monoid and
+the selected notation branch. See
+[Magmas, monoids, and semirings](magmas-monoids-semirings.md).
 
 ### Pointed sets
 

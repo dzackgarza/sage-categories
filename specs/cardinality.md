@@ -1,34 +1,16 @@
-The preamble implements cardinals as objects of a thin category.
-It implements ordinals as elements of a commutative semiring.
+# Cardinalities and ordinals
 
-The design is symbolic and supports several nontrivial normalization rules.
-It is not yet a complete cardinal or ordinal calculus.
+Cardinals are objects of a thin category. Ordinals are elements of a commutative
+semiring. Both models retain symbolic expressions when their exact normalization is not
+available.
 
-All cardinal and ordinal properties and relations follow the proposition interface in
-[Property refinement](property-refinement.md). They return propositions. Only `ask()`
-returns `True`, `False`, or `Unknown`.
+Cardinal and ordinal operations specified as predicates follow the proposition interface
+in [Property refinement](property-refinement.md). Applying one returns a proposition.
+Only `ask()` decides it as `True`, `False`, or `Unknown`.
 
-This specification describes the current working tree.
-The two core files are committed and clean.
-Their set-integration files contain current uncommitted changes.
-
-## Source boundary
-
-I read these files completely:
-
-- [cardinals.py](/home/dzack/research/src/dzack_research/preamble/categories/sets/cardinals.py:1), 821 lines.
-
-- [ordinals.py](/home/dzack/research/src/dzack_research/preamble/categories/sets/ordinals.py:1), 391 lines.
-
-- [cardinality.sage](/home/dzack/research/src/dzack_research/preamble/categories/functors/cardinality.sage:1), 56 lines.
-
-I also traced relevant definitions in:
-
-- [owned_sets.py](/home/dzack/research/src/dzack_research/preamble/categories/sets/owned_sets.py:221)
-
-- [sets.sage](/home/dzack/research/src/dzack_research/preamble/categories/sets/sets.sage:231)
-
-- [install.sage](/home/dzack/research/src/dzack_research/preamble/install.sage:99)
+The governing policies are `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-021`,
+`POL-CAT-028`, `POL-CAT-086`, `POL-SET-009`, `POL-SET-010`, `POL-SET-025`,
+`POL-SET-026`, and `POL-SET-033` through `POL-SET-035`.
 
 ## Implementation ownership
 
@@ -50,18 +32,17 @@ CardinalityHomCategory = Cardinalities().HomCatType
 CardinalityMorphism = Cardinalities().ArrowType
 ```
 
-The intended categorical rule is:
+For every pair of represented cardinals, the Hom category exists:
 
 \[
-\operatorname{Hom}(\kappa,\lambda)=
-\begin{cases}
-\{\kappa\leq\lambda\},&\text{when the implementation proves }\kappa\leq\lambda,\\
-\varnothing,&\text{otherwise.}
-\end{cases}
+\operatorname{Hom}(\kappa,\lambda)
+\quad\text{is inhabited exactly when}\quad
+\kappa\leq\lambda.
 \]
 
-This is currently the order proved by the expression evaluator.
-It is not the complete mathematical cardinal order.
+Its `is_inhabited()` predicate is the order proposition `kappa <= lambda`. Its
+`is_empty()` predicate is the negation. If neither proposition is decided, the Hom
+category remains symbolic. Lack of a proof does not make it empty.
 
 ### Public cardinal constructors
 
@@ -80,16 +61,11 @@ Accepted `cardinal(value)` inputs are:
 
 - A nonnegative Python `int`.
 
-- A nonnegative Sage `Integer`.
-
-- Sage `Infinity`, interpreted as `aleph0`.
-
 Examples:
 
 ```python
 cardinal(0)
 cardinal(5)
-cardinal(Infinity)  # aleph0
 
 aleph(0)
 aleph(1)
@@ -100,7 +76,7 @@ continuum           # cardinal(2) ** aleph0
 ```
 
 Negative integers are rejected.
-Other scalar rings are rejected.
+Use `aleph0` for countable infinity.
 
 Construction is cached by expression.
 Reconstructing an equal expression returns the same cardinal object.
@@ -114,6 +90,8 @@ The private expression model supports:
 - Aleph cardinals.
 
 - Cardinal powers.
+
+- Cardinalities of unresolved ordinary ordinal powers.
 
 - Finite suprema.
 
@@ -154,13 +132,6 @@ C.supremum(*cardinals)
 
 C.indexed_sum(index_set, family)
 C.indexed_product(index_set, family)
-
-C.le(kappa, lambda)
-C.lt(kappa, lambda)
-C.ge(kappa, lambda)
-C.gt(kappa, lambda)
-C.compare(kappa, lambda)
-C.are_incomparable(kappa, lambda)
 
 C.sum_morphism(*morphisms)
 C.product_morphism(*morphisms)
@@ -225,14 +196,35 @@ The last rule uses:
 \kappa^\lambda=2^\lambda.
 \]
 
+### Finite cardinal modulus
+
+Modulus belongs to the finite-cardinal property category. For finite `kappa` and
+positive natural cardinal `n`, Python `%` returns the finite cardinal remainder:
+
+```python
+kappa % n
+```
+
+It satisfies the natural-number division theorem:
+
+\[
+\kappa=q n+r,
+\qquad
+0\leq r<n.
+\]
+
+This is the cardinal form of the division algorithm in Barrus and Clark,
+[Elementary Number Theory, Section 1.5, Theorem 1](https://math.libretexts.org/Bookshelves/Combinatorics_and_Discrete_Mathematics/Elementary_Number_Theory_%28Barrus_and_Clark%29/01%3A_Chapters/1.05%3A_The_Division_Algorithm).
+
+The result is the cardinal `r`. Thus a finite-cardinal predicate can state
+`kappa % 2 == 0` without extracting or coercing a stored integer.
+
 ### Cardinal object API
 
 Every cardinal supplies:
 
 ```python
 kappa.cardinality()
-kappa.expression()
-kappa.sort_key()
 
 kappa.is_finite()
 kappa.is_infinite()
@@ -245,7 +237,6 @@ kappa.is_uncountably_infinite()
 
 kappa.aleph_index()
 kappa.initial_ordinal()
-kappa.finite_value()
 ```
 
 Every `is_*()` call in this surface returns an applied proposition. Equality and order
@@ -268,17 +259,6 @@ A cardinal has itself as its cardinality:
 kappa.cardinality() is kappa
 ```
 
-For finite cardinals, these conversions exist:
-
-```python
-int(kappa)
-operator.index(kappa)
-ZZ(kappa)
-QQ(kappa)
-```
-
-Infinite cardinals reject these conversions.
-
 ### Cardinal representations
 
 Representative output is:
@@ -293,20 +273,10 @@ sum_{i in I} kappa_i
 prod_{i in I} kappa_i
 ```
 
-### Cardinal comparisons
+### Cardinal comparison predicates
 
-`CardinalComparison` has these values:
-
-```python
-LESS
-EQUAL
-GREATER
-LESS_OR_EQUAL
-GREATER_OR_EQUAL
-INCOMPARABLE
-```
-
-The evaluator knows:
+Equality and order use standard Python notation. Each expression returns an applied
+predicate. The exact handlers know:
 
 - Exact finite comparisons.
 
@@ -322,40 +292,33 @@ The evaluator knows:
 
 - Componentwise rules for finite formal suprema.
 
-The current implementation returns `False` from `le()` and `lt()` when it cannot decide
-a comparison. This violates the proposition interface. The methods must return order
-propositions, and `ask()` must return `Unknown` when no exact handler decides them.
-
-Therefore, `INCOMPARABLE` currently means “neither direction was proved.”
-It does not prove mathematical incomparability.
+If no handler decides a comparison, `ask()` returns `Unknown`. Mathematical
+incomparability requires its own exact proposition. Failure to prove either order does
+not establish incomparability.
 
 ### Cardinal morphisms
 
-For a proved relation \(\kappa\leq\lambda\):
+For all cardinals `kappa` and `lambda`:
 
 ```python
-H = Cardinalities().Hom(kappa, lambda)
+H = Cardinalities().HomCategory(kappa, lambda)
 
-H.objects()
-H.unique_morphism()
-H()
+H.is_inhabited()
+H.is_empty()
 ```
 
-`H.objects()` is a singleton set containing the unique order arrow.
+After `assert ask(H.is_inhabited()) is True`, the thin Hom category supplies its unique
+order arrow. Exact `True` for `ask(H.is_empty())` establishes emptiness. `Unknown`
+preserves `H` without either conclusion.
 
-For an unproved relation, it is empty.
-
-Endomorphism categories support:
+The base-category identity is an object of the endomorphism category:
 
 ```python
-Cardinalities().Hom(kappa, kappa).identity()
+kappa.identity() in kappa.Hom(kappa)
 ```
 
-Composition returns the unique composite order arrow:
-
-```python
-Hom(kappa, mu).compose(lambda_to_mu, kappa_to_lambda)
-```
+Inherited base-category composition returns the unique composite order arrow. It does
+not use composition inside one Hom category as a substitute.
 
 Finite cardinal addition and multiplication act on comparison morphisms:
 
@@ -388,7 +351,8 @@ X.cardinality()
 ```
 
 Its arrow map accepts a set isomorphism.
-It checks equal cardinalities and returns the unique identity comparison arrow.
+The isomorphism theorem establishes equal cardinalities. The functor returns the unique
+comparison isomorphism without running a separate equality check.
 
 Public access is:
 
@@ -396,8 +360,6 @@ Public access is:
 cardinality_functor()
 Sets().CardinalityFunctor()
 ```
-
-See [CardinalityFunctor](/home/dzack/research/src/dzack_research/preamble/categories/functors/cardinality.sage:22).
 
 For a category \(\mathbf C\) with selected forgetful functor \(U_{\mathbf C}:\mathbf C\to\mathbf{Sets}\), the composite
 
@@ -418,8 +380,6 @@ Set constructions use cardinal expressions directly:
 
 - Power sets use \(2^{|X|}\).
 
-- Finite power sets have size \(2^{|X|}\) for finite \(X\), and \(|X|\) for infinite \(X\).
-
 - Fixed finite-size subsets use binomial coefficients for finite sets.
 
 - Fixed positive finite-size subsets of infinite sets have cardinality \(|X|\).
@@ -430,7 +390,7 @@ Set constructions use cardinal expressions directly:
 
 - Infinite finitely supported function sets use the supremum of the index and value cardinalities.
 
-The session also installs:
+The public indexed aliases are:
 
 ```python
 Sets.ℵ[n]
@@ -440,18 +400,15 @@ Sets.א[n]
 This indexed spelling currently accepts finite integer indices.
 The `aleph(index)` function accepts arbitrary represented ordinal indices.
 
-## Effective export surface
+## Public export surface
 
-`install_preamble()` exports every non-underscore name from both modules.
-
-The intended mathematical exports are:
+The mathematical exports are:
 
 ```python
 Cardinalities
 Cardinal
 CardinalityHomCategory
 CardinalityMorphism
-CardinalComparison
 cardinal
 aleph
 aleph0
@@ -467,58 +424,3 @@ omega0
 CardinalityFunctor
 cardinality_functor
 ```
-
-The installation mechanism also exports imported non-underscore helper names.
-Neither module defines `__all__`.
-
-## Current capability limits
-
-The following Boolean and exception behaviors are implementation defects relative to
-the normative proposition interface above:
-
-- Indexed cardinal expressions preserve the index set and callable family.
-
-- Their equality therefore depends on the stored callable and object identities.
-
-- Finiteness and countability queries on indexed expressions raise `NotImplementedError`.
-
-- Cardinal equality is normalized-expression equality.
-
-- Ordinal equality is normalized-expression equality.
-
-- Cardinal and ordinal order queries return `False` when the evaluator lacks a proof.
-
-- The comparison API has no `Unknown` result.
-
-- Ordinal arithmetic does not compute general Cantor normal forms.
-
-- It has no local implementation of arbitrary ordinal suprema, cofinality, or successor and limit classification.
-
-- `.expression()` exposes the private expression representation publicly.
-
-- Cardinal inputs and conversions expose Sage `Integer`, `Infinity`, `ZZ`, and `QQ`.
-
-- `Cardinalities()` directly declares Sage `Objects()` as its supercategory.
-
-- `OrdinalSemirings` directly declares Sage’s commutative-semiring category.
-
-For the last local-surface claim:
-
-- Searched: all 821 lines of `cardinals.py` and all 391 lines of `ordinals.py`.
-
-- Found: no local methods for cofinality, Cantor normal form, arbitrary ordinal suprema, or successor and limit classification.
-
-- Conclusion: those capabilities are absent from these two implementations.
-
-- Confidence: High for locally defined methods.
-
-- Gaps: inherited Sage or owned-category methods could add unrelated generic operations.
-
-## Runtime status
-
-The live launcher boundary is `sage -c` from the repository root.
-The public import is `sage_categories.all`.
-
-This boundary executes the owned `Cardinals()`, `Ordinals()`, and `Sets()` categories.
-It executes finite cardinal arithmetic and the infinite `aleph0` and `continuum` surfaces.
-It also executes finite and initial ordinals, natural and ordinary ordinal operations, and ordinal cardinality.

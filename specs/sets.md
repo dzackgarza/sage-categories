@@ -6,9 +6,9 @@ Categories with a selected structural functor to `Sets()` inherit this API.
 Standard set theory and category theory are assumed. This specification fixes API
 ownership, constructors, algorithms, result categories, and exact failure states.
 
-Every proposition-valued set operation follows the interface in
-[Property refinement](property-refinement.md). The operation returns a proposition.
-Only `ask()` returns `True`, `False`, or `Unknown`.
+Every set operation specified as a predicate follows the interface in
+[Property refinement](property-refinement.md). Applying it returns a proposition.
+Only `ask()` decides that proposition as `True`, `False`, or `Unknown`.
 
 ## Owned API roles
 
@@ -69,9 +69,13 @@ create another implementation of identity, composition, or arrow-category format
 `X.cardinality()` returns a cardinal object. It can remain a symbolic cardinal
 expression when no exact algorithm normalizes it.
 
-## Set maps and function sets
+## Set maps, Hom categories, and function sets
 
-`X.Hom(Y)` is the owned set of total functions from `X` to `Y`.
+`X.Hom(Y)` is the Hom category of total set maps from `X` to `Y`. It exists for every
+pair `X, Y in Sets()`. Its inhabitation and emptiness are owned predicates.
+
+This Hom category is discrete. The same owned value is the function set and exponential
+from `X` to `Y`. Its elements and its category objects are the total set maps.
 
 A map constructor can use a callable or explicit mapping as its private rule. The
 constructor must establish that the rule is total and lands in `Y`.
@@ -95,7 +99,7 @@ f.image()
 Evaluation requires `x in f.domain()`. It returns an owned element of `f.codomain()`.
 Identity and composition arrive through inherited arrow operations.
 
-The following expressions construct the same owned object:
+The following expressions construct that same Hom category and function-set object:
 
 ```python
 X.Hom(Y)
@@ -121,8 +125,9 @@ In `Sets()`:
 - monomorphisms are injective functions;
 - epimorphisms are surjective functions.
 
-A checked property query returns a decision. A property constructor refines an arrow
-only after an exact result, scoped hypothesis, or named theorem establishes the property.
+An arrow-property predicate returns its applied proposition. `ask()` evaluates it. A
+property constructor refines an arrow only after an exact result, scoped hypothesis, or
+named theorem establishes the property.
 
 An inverse of an isomorphism is an owned set arrow. It satisfies both inverse equations.
 
@@ -270,8 +275,8 @@ A | B
 A & B
 ```
 
-These operations return owned subsets or exact decisions. They do not return Python
-containers.
+These operations return owned subsets or applied propositions. They do not return
+Python containers.
 
 `X.subset_poset()` orders the same subset objects by inclusion. The result belongs to
 the owned poset category and retains `X` as its base set.
@@ -327,7 +332,7 @@ Each category declares its membership proposition once. The kernel implements
 that Boolean category admission is not established. A trusted category constructor or
 named mathematical construction places a set directly in the property category.
 
-### Symbolic cardinalities, not unknown cardinal values
+### Symbolic cardinalities
 
 `Unknown` is not a possible cardinality. It is an epistemic result for a proposition
 which the available exact mathematics does not decide.
@@ -339,14 +344,8 @@ X.cardinality() -> Cardinal
 ```
 
 It always returns an owned cardinal. When no algorithm normalizes the result, return
-the symbolic cardinal `CardinalityOf(X)`, not a shared `UnknownCardinality()`.
-
-A shared unknown cardinal is invalid for several reasons:
-
-- unknown cardinalities of two sets need not be equal;
-- treating them as one value fabricates equality;
-- `Unknown` is not an element of the cardinal semiring;
-- absorbing arithmetic loses useful symbolic expressions.
+the symbolic cardinal `CardinalityOf(X)`. Distinct set objects retain distinct symbolic
+cardinal expressions.
 
 For example, retain
 
@@ -354,8 +353,7 @@ For example, retain
 3\lvert X\rvert
 \]
 
-as a cardinal expression. Do not reduce it to `Unknown`. The cardinal arithmetic owner
-can apply
+as a cardinal expression. The cardinal arithmetic owner can apply
 
 \[
 0\kappa=0,
@@ -552,8 +550,9 @@ cardinal from the normalized result:
 - A standard number set contributes its established cardinal.
 - An unresolved symbolic set contributes `CardinalityOf(owned_set)`.
 
-Never use `None` or a shared unknown value for a cardinality. Never assign the domain
-cardinality to an image unless injectivity or another theorem establishes that equality.
+Each unresolved cardinal reconstructs as its distinct `CardinalityOf(owned_set)`.
+An image receives the domain cardinality when injectivity or another theorem establishes
+that equality.
 
 | Owned operation | SymPy value | Required reconstruction |
 | --- | --- | --- |
@@ -618,13 +617,13 @@ facts:
   distinct symbolic `CardinalityOf(owned_set)` values when no theorem decides more;
 - cardinal arithmetic retains symbolic expressions instead of propagating a shared
   unknown value;
-- every propositional method returns a proposition;
-- only `ask()` returns `True`, `False`, or `Unknown`;
+- every operation specified as a predicate returns an applied proposition;
+- only `ask()` returns `True`, `False`, or `Unknown` for that proposition;
 - every category declares one potentially compound membership proposition;
 - Python containment asks that proposition and treats `Unknown` as unproved admission;
 - private engine values never cross the public boundary.
 
-The governing policies include `POL-MATH-001` through `POL-MATH-033`,
+The governing policies include `POL-MATH-001` through `POL-MATH-035`,
 `POL-CAT-020`, `POL-CAT-027` through `POL-CAT-032`, `POL-CAT-040` through
-`POL-CAT-045`, `POL-SET-001` through `POL-SET-034`, and `POL-KERNEL-001` through
-`POL-KERNEL-026`.
+`POL-CAT-045`, `POL-CAT-086`, `POL-SET-001` through `POL-SET-036`, and
+`POL-KERNEL-001` through `POL-KERNEL-026`.

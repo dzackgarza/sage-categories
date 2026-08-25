@@ -43,7 +43,7 @@ class PartiallyOrderedSetsCategory(Category):
         ) -> None:
             assert relation in Sets().Products().Subsets()
             factors = relation.factors()
-            assert factors.cardinality() == 2
+            assert ask(factors.cardinality() == 2) is True
             underlying_set = factors[0]
             assert factors[1] is underlying_set
             self._defining_data = (underlying_set, relation)

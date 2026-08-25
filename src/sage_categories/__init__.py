@@ -113,7 +113,7 @@ from sage_categories.theories.sets import (
     cartesian_product_morphism,
     coproduct_morphism,
 )
-from sage_categories.values import (
+from sage_categories.types import (
     UNKNOWN,
     Arrow,
     Decision,

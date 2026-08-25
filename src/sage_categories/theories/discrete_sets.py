@@ -31,7 +31,7 @@ from sage_categories.theories.set_elements import (
 from sage_categories.theories.set_objects import (
     SetObject,
 )
-from sage_categories.values import (
+from sage_categories.types import (
     Decision,
     MathematicalObject,
     registered_value,

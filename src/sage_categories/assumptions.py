@@ -9,11 +9,11 @@ from sympy.assumptions import global_assumptions
 from sympy.assumptions.assume import AppliedPredicate
 from sympy.logic.boolalg import Not
 
-from sage_categories.values import Decision, UNKNOWN
+from sage_categories.types import Decision, UNKNOWN
 
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.full_subcategories import FullSubcategory
-    from sage_categories.values import MathematicalObject
+    from sage_categories.types import MathematicalObject
 
 
 class OwnedPropertyPredicate(Predicate):

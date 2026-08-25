@@ -19,7 +19,7 @@ from sage_categories.theories.sets import (
     SetObject,
     Sets,
 )
-from sage_categories.values import Decision, MathematicalObject
+from sage_categories.types import Decision, MathematicalObject
 
 
 class IntegerElement(SetElement):

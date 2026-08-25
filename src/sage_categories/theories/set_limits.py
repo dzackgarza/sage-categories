@@ -41,7 +41,7 @@ from sage_categories.theories.set_products import (
     ProductSetElement,
     is_product_set_element,
 )
-from sage_categories.values import (
+from sage_categories.types import (
     UNKNOWN,
     Decision,
     MathematicalObject,

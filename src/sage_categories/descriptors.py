@@ -11,7 +11,7 @@ from enum import Enum
 from types import FunctionType
 from typing import TYPE_CHECKING, Concatenate, ParamSpec, TypeVar, assert_never, cast
 
-from sage_categories.values import Arrow, Decision, MathematicalElement, MathematicalObject
+from sage_categories.types import Arrow, Decision, MathematicalElement, MathematicalObject
 
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.full_subcategories import FullSubcategory

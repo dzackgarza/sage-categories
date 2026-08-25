@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from sage_categories.values import MathematicalObject
+from sage_categories.types import MathematicalObject
 
 if TYPE_CHECKING:
     from sage_categories.category import Category

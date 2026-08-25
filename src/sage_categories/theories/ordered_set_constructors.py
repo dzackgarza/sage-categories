@@ -9,7 +9,7 @@ from sage_categories.theories.sets import (
     FiniteSet,
     NaturalNumbers,
 )
-from sage_categories.values import MathematicalObject
+from sage_categories.types import MathematicalObject
 
 if TYPE_CHECKING:
     from sage_categories.theories.cardinals import Cardinal

@@ -17,7 +17,7 @@ from sage_categories.theories.cardinal_categories import (
     is_cardinal_hom_category,
 )
 from sage_categories.theories.cardinal_values import Cardinal, CardinalKind
-from sage_categories.values import (
+from sage_categories.types import (
     registered_value,
 )
 

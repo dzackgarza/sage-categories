@@ -74,7 +74,7 @@ from sage_categories.theories.set_products import (
 from sage_categories.theories.set_subobjects import (
     SetMorphism,
 )
-from sage_categories.values import (
+from sage_categories.types import (
     Arrow,
     MathematicalObject,
 )

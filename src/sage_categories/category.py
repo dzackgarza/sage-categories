@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeIs
 
 from sage_categories.compiler import DeclaredMethod, category_compiler
-from sage_categories.values import (
+from sage_categories.types import (
     Arrow,
     CategoryElement,
     MathematicalElement,

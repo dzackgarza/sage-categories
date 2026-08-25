@@ -25,7 +25,7 @@ from sage_categories.theories.sets import (
 )
 from sage_categories.theories.cardinals import Cardinal, cardinal
 from sage_categories.abstract_categories.functors import DiscreteDiagram
-from sage_categories.values import (
+from sage_categories.types import (
     Arrow,
     MathematicalElement,
     MathematicalObject,

@@ -10,7 +10,7 @@ from sage_categories.abstract_categories.products import (
     is_colimits_of_category,
     is_limits_of_category,
 )
-from sage_categories.values import Arrow
+from sage_categories.types import Arrow
 
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.products import ColimitObject, LimitObject

@@ -19,7 +19,7 @@ from sage_categories.descriptors import (
     RefiningPropertyMethod,
     method_signature,
 )
-from sage_categories.values import (
+from sage_categories.types import (
     Arrow,
     CategoryElement,
     Decision,

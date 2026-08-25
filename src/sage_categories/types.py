@@ -1,4 +1,4 @@
-"""Runtime values used by the owned categorical foundation.
+"""Runtime types used by the owned categorical foundation.
 
 The mathematical organization follows the abstract-category layer in
 ``dzack_research.preamble.categories.abstract_categories``. The runtime is

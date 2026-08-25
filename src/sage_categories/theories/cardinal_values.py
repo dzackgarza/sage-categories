@@ -11,7 +11,7 @@ from collections.abc import Callable
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
-from sage_categories.values import (
+from sage_categories.types import (
     UNKNOWN,
     Decision,
     MathematicalObject,

@@ -28,7 +28,7 @@ from sage_categories.theories.set_elements import (
 from sage_categories.theories.set_homs import (
     SetHomCategory,
 )
-from sage_categories.values import (
+from sage_categories.types import (
     Arrow,
     MathematicalObject,
 )

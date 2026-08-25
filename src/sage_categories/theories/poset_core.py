@@ -26,7 +26,7 @@ from sage_categories.theories.sets import (
     is_products_of_sets_category,
     is_set_hom_category,
 )
-from sage_categories.values import (
+from sage_categories.types import (
     UNKNOWN,
     Arrow,
     Decision,

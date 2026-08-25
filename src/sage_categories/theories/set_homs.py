@@ -56,7 +56,7 @@ from sage_categories.theories.set_subobjects import (
     SubsetsOfSet,
     _decision_and,
 )
-from sage_categories.values import (
+from sage_categories.types import (
     UNKNOWN,
     Arrow,
     Decision,

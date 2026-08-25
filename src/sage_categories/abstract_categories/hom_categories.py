@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, TypeIs
 
 from sage_categories.category import Category
-from sage_categories.values import (
+from sage_categories.types import (
     Arrow,
     MathematicalObject,
     registered_value,

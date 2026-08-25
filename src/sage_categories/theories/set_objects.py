@@ -23,7 +23,7 @@ from sage_categories.theories.cardinals import (
     Cardinals,
     aleph,
 )
-from sage_categories.values import (
+from sage_categories.types import (
     UNKNOWN,
     Arrow,
     Decision,

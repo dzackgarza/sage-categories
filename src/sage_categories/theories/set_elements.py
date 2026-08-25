@@ -16,7 +16,7 @@ from sage_categories.abstract_categories.functors import (
     DiscreteObject,
 )
 from sage_categories.category import Category
-from sage_categories.values import (
+from sage_categories.types import (
     Decision,
     MathematicalElement,
     MathematicalObject,

@@ -16,7 +16,7 @@ from sage_categories.abstract_categories.hom_categories import (
     HomCategoryFamily,
 )
 from sage_categories.category import Category
-from sage_categories.values import (
+from sage_categories.types import (
     Arrow,
     MathematicalElement,
     MathematicalObject,
@@ -347,7 +347,7 @@ class StructuralFunctor(Functor, ABC):
         source: MathematicalObject,
         element: MathematicalElement,
     ) -> MathematicalElement:
-        from sage_categories.values import TransportedElement
+        from sage_categories.types import TransportedElement
 
         element_type = self.domain().ElementType
         assert issubclass(element_type, TransportedElement)
@@ -368,7 +368,7 @@ class StructuralFunctor(Functor, ABC):
         image: Arrow,
     ) -> Arrow:
         """Construct the canonical source arrow represented by ``image``."""
-        from sage_categories.values import TransportedArrow
+        from sage_categories.types import TransportedArrow
 
         assert source in self.domain()
         assert target in self.domain()

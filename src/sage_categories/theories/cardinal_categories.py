@@ -14,7 +14,7 @@ from sage_categories.abstract_categories.hom_categories import (
     HomCategoryFamily,
 )
 from sage_categories.category import Category
-from sage_categories.values import (
+from sage_categories.types import (
     UNKNOWN,
     Arrow,
     Decision,

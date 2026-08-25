@@ -23,7 +23,7 @@ from sage_categories.theories.sets import (
     SetMorphism,
     SetObject,
 )
-from sage_categories.values import (
+from sage_categories.types import (
     Arrow,
     Decision,
     MathematicalElement,

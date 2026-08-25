@@ -14,7 +14,7 @@ from sage_categories.abstract_categories.product_images import (
     ProductObject,
     is_products_of_category,
 )
-from sage_categories.values import Arrow, MathematicalObject
+from sage_categories.types import Arrow, MathematicalObject
 
 
 def lift_product(

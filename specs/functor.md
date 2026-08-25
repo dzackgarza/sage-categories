@@ -103,9 +103,10 @@ Fun(C, D) == Cat().HomCategory(C, D)
 Its objects are functors `C -> D`. Its arrows are natural transformations. Natural
 isomorphisms are the objects of its isomorphism-arrow category.
 
-`Fun(C, D)` is the fixed-domain and fixed-codomain part of `Ar(Cat())`. The general
-arrow-category construction supplies the shared functor implementation. The Hom
-category supplies the natural-transformation structure between fixed endpoints.
+`Fun(C, D)` is endpoint application to `Ar(Cat())`. Endpoint application dispatches
+to `Hom_Cat(C, D)` rather than taking a categorical fiber of the ordinary arrow
+category. The arrow-category construction supplies the shared functor implementation.
+The Hom category supplies the natural transformations.
 
 ## The arrow-category construction
 
@@ -116,7 +117,9 @@ Objects of `Ar(C)` are arrows of `C`. An object retains its domain, codomain, an
 underlying arrow. Arrows of `Ar(C)` are commuting squares.
 
 Applying `Ar(C)` to endpoints `A, B` selects the same Hom category as `A.Hom(B)`.
-It does not define a second fixed-endpoint construction.
+This endpoint application is the arrow-category constructor's dispatch to
+`C.HomCategory(A, B)`. It is distinct from forming a Hom category between two arrow
+objects of `Ar(C)`.
 
 The construction is uniform. In particular:
 
@@ -228,23 +231,18 @@ Put a citation on the construction line or in its immediate source documentation
 the property uses a nontrivial external theorem. The citation supports mathematical
 audit. It is not runtime data and the constructor does not inspect it.
 
-The functor-property categories currently register no computational routes. Therefore:
+The functor-property categories register no computational routes. Therefore:
 
 ```python
 ask(F.is_full())
 ```
 
-uses category placement, active assumptions, cached exact decisions, and categorical
-implications. It returns `Unknown` when none establishes the proposition.
+uses category placement, active assumptions, and categorical implications. It returns
+`Unknown` when none establishes the proposition.
 
-This absence of handlers is local to these predicates. Other owned predicates can
-register exact computational routes when mathematics and available algorithms supply
-them.
-
-No later implementation may add a general fullness or faithfulness checker. A supported
-predicate can receive a computational route only when an exact algorithm exists for its
-declared semantic domain. Such a route computes a decision; it does not certify category
-theory.
+This rule is specific to categorical functor properties. Other owned predicates, such
+as injectivity of a set map on a declared semantic domain, can register exact
+computational routes.
 
 ## Inclusion functors
 
@@ -421,6 +419,11 @@ For `F: C -> D`, `F.essential_image()` is the full property subcategory of `D` o
 objects isomorphic to `F(X)` for some `X in C`. Its inclusion into `D` is fully faithful
 by construction. The original functor factors through this category.
 
+A universal-construction presentation category has more data. For example,
+`C.Products()` retains the input diagram, apex, projections, and universal maps. Its
+structural apex functor lands in `C`. The essential image of the product functor records
+only which objects are isomorphic to product apexes.
+
 ## Products, coproducts, and component functors
 
 The generic product and coproduct constructions apply to `Cat()` itself. For a sequence
@@ -578,6 +581,11 @@ The reference definitions are Mathlib's
 [full and faithful functor API](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Functor/FullyFaithful.html),
 and [arrow-category API](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Comma/Arrow.html).
 
+Mathlib's arrow category has arrows and commuting squares. Mathlib's Hom category in
+`Cat` has functors and natural transformations. Repository endpoint application
+`Ar(C)(A, B)` selects the latter Hom-category level without changing the ordinary
+arrows of `Ar(C)`.
+
 | Mathlib | Repository |
 | --- | --- |
 | `CategoryTheory.Functor C D` | `Cat().ArrowType` with domain `C` and codomain `D` |
@@ -624,7 +632,7 @@ is kernel infrastructure over already established mathematical functors.
 - Functor properties are property subcategories of `Fun` and its fixed-endpoint categories.
 - Every functor predicate returns an applied `Predicate`.
 - Direct construction and assumptions use the general same-object refinement path.
-- Functor properties have no computational handlers until an exact route is supplied.
+- Functor properties have no computational handlers.
 - Established property implications induce category inclusions.
 - A full-subcategory inclusion is fully faithful by construction.
 - Every functor is constructed through `Fun(Source, Target)` or an established property subcategory.

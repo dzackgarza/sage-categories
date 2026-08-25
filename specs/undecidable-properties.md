@@ -121,7 +121,7 @@ Python forces `x in category` to produce a Boolean. It cannot preserve an uneval
 The kernel therefore generates this behavior:
 
 ```python
-def __contains__(self, candidate: MembershipCandidate) -> bool:
+def __contains__(self, candidate: Any) -> bool:
     proposition = self.membership_proposition(candidate)
     decision = ask(proposition)
 
@@ -330,9 +330,9 @@ An inclusion from a full subcategory is constructed as
 `Fun(Source, Target).FullyFaithful().inclusion()`. Full faithfulness then implies
 fullness and faithfulness through property-category inclusions.
 
-No exact computational handlers are currently declared for these predicates. For an
-ambient functor with no applicable placement, assumption, cached decision, or
-implication, `ask(F.is_full())` returns `Unknown`.
+No exact computational handlers are declared for these predicates. For an ambient
+functor with no applicable placement, assumption, or implication,
+`ask(F.is_full())` returns `Unknown`.
 
 ## Finite posets
 

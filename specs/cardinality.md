@@ -1,15 +1,15 @@
 # Cardinalities and ordinals
 
-Cardinals are objects of a thin category. Ordinals are elements of a commutative
-semiring. Both models retain symbolic expressions when their exact normalization is not
-available.
+Cardinals are objects of a set-enriched skeletal category of cardinal representatives.
+Ordinals are elements of a commutative semiring. Both models retain symbolic
+expressions when their exact normalization is not available.
 
 Cardinal and ordinal operations specified as predicates follow the proposition interface
 in [Property refinement](property-refinement.md). Applying one returns a proposition.
 Only `ask()` decides it as `True`, `False`, or `Unknown`.
 
 The governing policies are `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001`,
-`POL-CAT-021`, `POL-CAT-028`, `POL-CAT-086`, `POL-SET-009`, `POL-SET-010`,
+`POL-CAT-021`, `POL-CAT-028`, `POL-CAT-086`, `POL-CAT-088`, `POL-SET-009`, `POL-SET-010`,
 `POL-SET-025`, `POL-SET-026`, `POL-SET-033` through `POL-SET-035`,
 `POL-API-002`, and `POL-API-016`.
 
@@ -17,13 +17,20 @@ The governing policies are `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001`,
 
 [Category ownership](../CONTRIBUTING.md#category-ownership-and-inheritance), [leaf-category encapsulation](../CONTRIBUTING.md#leaf-category-encapsulation), and [functor policies](../CONTRIBUTING.md#functors-and-universal-constructions) govern the general inheritance rules.
 
-`Cardinal()` owns cardinal objects, comparison arrows, arithmetic, and expression normalization.
+`Cardinal()` owns cardinal objects, maps between cardinal representatives, order
+predicates, universal arithmetic, and expression normalization.
 `Ordinals()` owns ordinal order and arithmetic.
 `Sets()` owns set cardinality.
 
 ## Cardinal model
 
-`Cardinal()` is the thin category associated with the represented cardinal order.
+`Cardinal()` is a skeletal presentation of `Sets()` at cardinal numbers. Its
+construction selects one representative set \(R_\kappa\) for each cardinal \(\kappa\).
+Mathlib's
+[cardinal definitions](https://leanprover-community.github.io/mathlib4_docs/Mathlib/SetTheory/Cardinal/Defs.html)
+define cardinals as types modulo bijection and define addition, multiplication, and
+exponentiation through sum, product, and function types. This category retains the same
+constructions and their universal arrows.
 
 A cardinal is an object of this category:
 
@@ -33,17 +40,37 @@ CardinalityHomCategory = Cardinal().HomCatType
 CardinalityMorphism = Cardinal().ArrowType
 ```
 
-For every pair of represented cardinals, the Hom category exists:
+Its complete structural tuple selects the skeletal inclusion:
+
+```python
+def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
+    return (Fun(self, Sets()).FullyFaithful().inclusion(),)
+```
+
+The inclusion sends each cardinal to its selected representative and acts identically
+on the corresponding function sets.
+
+For every pair of represented cardinals, the Hom category is the owned function set
+between their representatives:
 
 \[
-\operatorname{Hom}(\kappa,\lambda)
-\quad\text{is inhabited exactly when}\quad
-\kappa\leq\lambda.
+\operatorname{Hom}_{\mathbf{Cardinal}}(\kappa,\lambda)
+=
+\operatorname{Hom}_{\mathbf{Set}}
+  (R_\kappa,R_\lambda).
 \]
 
-Its `is_inhabited()` predicate is the order proposition `kappa <= lambda`. Its
-`is_empty()` predicate is the negation. If neither proposition is decided, the Hom
-category remains symbolic. An undecided proposition does not make it empty.
+Its objects are functions. Cardinal order is the existence of an injective function:
+
+\[
+\kappa\leq\lambda
+\quad\Longleftrightarrow\quad
+\operatorname{Ar}(\mathbf{Cardinal}).\operatorname{Monomorphisms()}
+  (\kappa,\lambda)\text{ is inhabited}.
+\]
+
+Cardinal equality is represented by isomorphism of the selected representatives. Mere
+inhabitation of the unrestricted Hom category does not define cardinal order.
 
 ### Public cardinal constructors
 
@@ -131,30 +158,17 @@ C = Cardinal()
 C.zero()
 C.one()
 
-C.sum(*summands)
-C.product(*factors)
-C.power(base, exponent)
-C.supremum(*cardinals)
+C.supremum(cardinals)
 
-C.indexed_sum(index_set, family)
-C.indexed_product(index_set, family)
-
-C.sum_morphism(*morphisms)
-C.product_morphism(*morphisms)
-C.power_morphism(base_morphism, exponent_morphism)
+C.Coproducts()(diagram)
+C.Products()(diagram)
 ```
 
-`supremum()` requires at least one input.
+`supremum()` accepts a nonempty finite indexed family.
 
-`indexed_sum()` and `indexed_product()` accept:
-
-```python
-index_set: object of Sets()
-family: callable from an index to a cardinal
-```
-
-A finite index set is evaluated by iteration.
-An infinite index set produces a formal indexed expression.
+The indexed coproduct and product constructors accept an owned diagram. A finite
+diagram can normalize by iteration. An infinite diagram produces a formal indexed
+expression when no stronger normalization is available.
 
 ### Cardinal arithmetic
 
@@ -169,6 +183,21 @@ n + kappa
 n * kappa
 n ** kappa
 ```
+
+These are the inherited categorical constructions:
+
+\[
+\kappa+\lambda=\kappa\sqcup\lambda,
+\qquad
+\kappa\lambda=\kappa\times\lambda,
+\qquad
+\lambda^\kappa=
+\operatorname{Hom}_{\mathbf{Cardinal}}(\kappa,\lambda).
+\]
+
+The coproduct and product retain their injections, projections, and universal maps. The
+Hom category retains the representative functions. Their cardinal objects are exactly
+cardinal addition, multiplication, and exponentiation.
 
 The implementation normalizes these cases:
 
@@ -313,9 +342,16 @@ H.is_inhabited()
 H.is_empty()
 ```
 
-After `assert ask(H.is_inhabited()) is True`, the thin Hom category supplies its unique
-order arrow. Exact `True` for `ask(H.is_empty())` establishes emptiness. `Unknown`
-preserves `H` without either conclusion.
+Objects of `H` are functions from the selected representative of `kappa` to the
+selected representative of `lambda`. Exact `True` for `ask(H.is_empty())` establishes
+that no such function exists. `Unknown` preserves `H` without either conclusion.
+
+The order proposition uses the monomorphism endpoint category:
+
+```python
+M = Ar(Cardinal()).Monomorphisms()(kappa, lambda)
+kappa <= lambda  # dispatches to M.is_inhabited()
+```
 
 The base-category identity is an object of the endomorphism category:
 
@@ -323,21 +359,9 @@ The base-category identity is an object of the endomorphism category:
 kappa.identity() in kappa.Hom(kappa)
 ```
 
-Inherited base-category composition returns the unique composite order arrow. It does
-not use composition inside one Hom category as a substitute.
-
-Finite cardinal addition and multiplication act on comparison morphisms:
-
-```python
-Cardinal().sum_morphism(*arrows)
-Cardinal().product_morphism(*arrows)
-```
-
-Exponentiation acts on morphisms when the source base is established as nonzero:
-
-```python
-Cardinal().power_morphism(base_arrow, exponent_arrow)
-```
+Inherited base-category composition is ordinary function composition. Coproduct,
+product, and Hom functoriality act on these arrows through their universal
+constructions. These constructions supply the complete action on arrows.
 
 
 The ordinal model is specified in [`ordinals.md`](ordinals.md).
@@ -356,9 +380,9 @@ Its object map calls:
 X.cardinality()
 ```
 
-Its arrow map accepts a set isomorphism.
-The isomorphism theorem establishes equal cardinalities. The functor returns the unique
-comparison isomorphism without running a separate equality check.
+Its arrow map accepts a set isomorphism. The construction retains a selected bijection
+between each set and its cardinal representative. It conjugates the set isomorphism by
+these selected bijections to construct the corresponding cardinal isomorphism.
 
 Public access is category-owned:
 

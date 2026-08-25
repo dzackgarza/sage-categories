@@ -299,7 +299,8 @@ The result of `ask(proposition)` is exactly one of:
 - `Unknown`, when neither conclusion is established.
 
 The kernel translates an engine-specific indeterminate result, such as SymPy `None`,
-to the owned `Unknown`. No public propositional method returns that value itself.
+to Sage's `sage.misc.unknown.Unknown` singleton. No public propositional method returns
+that value itself.
 
 ### Functor predicates
 
@@ -331,9 +332,9 @@ assume(F.is_full())
 The kernel also applies established implications. Placement in
 `Ar(Cat()).FullyFaithful()` entails both fullness and faithfulness.
 
-These functor predicates currently have no computational routes. In the absence of
-category placement, an active assumption, a cached exact decision, or an applicable
-implication, `ask(F.is_full())` returns `Unknown`.
+These functor predicates have no computational routes. In the absence of category
+placement, an active assumption, or an applicable implication, `ask(F.is_full())`
+returns `Unknown`.
 
 ### Hom-category predicates
 
@@ -484,7 +485,7 @@ class FiniteSetsCategory:
 The kernel supplies the Boolean protocol:
 
 ```python
-def __contains__(self, candidate: MembershipCandidate) -> bool:
+def __contains__(self, candidate: Any) -> bool:
     proposition = self.membership_proposition(candidate)
     decision = ask(proposition)
     if decision is Unknown:

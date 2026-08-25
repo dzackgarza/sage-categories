@@ -29,9 +29,6 @@ class LeafCategory(Category):
     def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
         """Return the selected immediate structural functors."""
         ...
-
-    def contains_leaf(self, candidate: MathematicalObject) -> TypeIs[LeafObject]:
-        return candidate in self
 ```
 
 `Category` is `Cat().ObjectType`. Each entry in `structure_functors()` is an explicitly

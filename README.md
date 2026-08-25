@@ -131,7 +131,11 @@ B ** A
 
 Each spelling sends construction data to that category's object constructor.
 
-Define `Fun = Ar(Cat())`. The fixed-endpoint category `Fun(C, D)` owns construction of
+Endpoint application `Ar(C)(A, B)` dispatches directly to `Hom_C(A, B)`. Separately,
+`Ar(C)` has the arrows of `C` as objects and commuting squares as arrows. For
+`C = Cat()`, the Hom-category arrows are natural transformations.
+
+Define `Fun = Ar(Cat())`. The endpoint Hom category `Fun(C, D)` owns construction of
 functors from `C` to `D`. The endpoints select the category, not a particular functor.
 
 ```python
@@ -190,7 +194,7 @@ Ar(Cat()).FullyFaithful()
 
 Their `is_full()`, `is_faithful()`, and `is_fully_faithful()` methods return applied
 predicates. Direct property construction and assumptions refine the same owned functor.
-These predicates currently have no computational routes.
+These predicates have no computational routes.
 
 Every functor is an explicit mathematical object.
 Only selected structural functors contribute methods to the public surface.
@@ -263,13 +267,17 @@ The framework must therefore represent maps such as
 Here \(\mathbb{N}\) excludes zero.
 The map rule can use any valid mathematical definition.
 
-For a predicate \(P: B \to \{\mathop{\rm True},\mathop{\rm False},\mathop{\rm Unknown}\}\), the subset
+For an owned predicate \(P\) on `B`, applying `P` to `x` constructs a proposition.
+The subset
 
 \[
 A = \{x \in B \mid P(x)\}
 \]
 
-is an object of `Sets()` together with an inclusion arrow \(A \hookrightarrow B\). Examples include the even integers and the prime integers as subobjects of \(\mathbb{Z}\). Membership can return `bool | Unknown`; an unavailable answer is not a false answer.
+is an object of `Sets()` together with an inclusion arrow \(A \hookrightarrow B\).
+Examples include the even integers and the prime integers as subobjects of
+\(\mathbb{Z}\). `ask(P(x))` returns `True`, `False`, or Sage's `Unknown`. Python
+containment converts that decision to a Boolean admission result.
 
 Finite products are only one specimen of the general product construction.
 The final interface must accept arbitrary small diagrams.
@@ -293,14 +301,14 @@ Natural transformations record comparisons between such constructions.
 ## Sage as a computation engine
 
 Sage remains valuable for arithmetic, symbolic computation, and mature algorithms.
-This project places each Sage implementation behind an explicit realization functor.
+A modeled mathematical realization is an explicit functor.
 
-A realization can construct a Sage value and use it to compute a result.
-It is not a structural functor.
-Its Python methods therefore do not enter the public mathematical API by accident.
+A category-owned method can also use a private Sage value directly inside its
+computation boundary. It reconstructs the owned mathematical result before returning.
+A private computation representation supplies no public methods.
 
 This boundary keeps mathematical ownership in this framework.
-It also permits several computation engines to realize the same mathematical object.
+It also permits one owned implementation to use several private computation engines.
 
 ## Design standard
 

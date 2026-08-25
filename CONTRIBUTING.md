@@ -295,7 +295,7 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-043` | Let a named property subcategory and its owned predicate state one mathematical condition. Use the predicate to request a decision and self-refinement. Use containment to ask whether the value already has that categorical placement. Never replace either with an unrelated invariant comparison. |
 | `POL-CAT-044` | Put each exact decision procedure behind the owning mathematical predicate. Applying the predicate returns its proposition. `ask()` evaluates that proposition. Exact `True` invokes the property-subcategory constructor. Category placement then makes later evaluation return `True`. Do not override the predicate with a Boolean method or duplicate the computation in `__contains__`. |
 | `POL-CAT-045` | Present every derived object through the complete public interface of the category in which it lives. Its construction can add methods but never replace or duplicate the inherited interface. |
-| `POL-CAT-046` | Make a construction subcategory a formal property subcategory of objects known to have that construction. Obtain the object's ordinary interface through selected structural functors. |
+| `POL-CAT-046` | Make a universal-construction category a category of chosen apexes with their presentations. Each object is the constructed apex and retains its diagram, defining arrows, and universal maps. Use a separate property subcategory when the mathematics states only existence or closure under that construction. Obtain the apex's ordinary interface through the presentation's selected structural functor. |
 | `POL-CAT-047` | Decide inheritance functors case by case. Select one only when standard mathematical practice treats the source object as an object of the target category with additional structure. |
 | `POL-CAT-048` | Treat structure that an object has, rather than structure that it is, as attached mathematical data. Expose that object by its exact mathematical name without grafting its full method surface. |
 | `POL-CAT-049` | Scrutinize every public `underlying_*()` accessor. When the source is canonically a target-category object with additional structure, expose the target interface directly through inheritance instead of requiring accessor indirection. |
@@ -338,9 +338,9 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-086` | Make `Hom_C(A, B)` a category for every `A, B in C`. Represent its inhabitation and emptiness as owned predicates. An unresolved decision leaves the Hom category symbolic; it never replaces that category with an empty category. |
 | `POL-CAT-087` | Define a full subcategory from an object predicate `P` on `C`. Its objects are the objects of `C` satisfying `P`; its Hom categories, identities, and composition are inherited definitionally from `C`. Construct its inclusion as `Fun(C.P(), C).FullyFaithful().inclusion()`. Follow [mathlib's `CategoryTheory.ObjectProperty.FullSubcategory` definition](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/FullSubcategory.html). |
 | `POL-CAT-088` | Define the universal binary operators once at the categorical level. For `X, Y in C`, `Y ** X` is `Hom_C(X, Y)`, `X * Y` is their product, `X + Y` is their coproduct, and `X @ Y` is their biproduct. Each universal construction retains its defining arrows. Every descendant category uses the inherited operation directly. |
-| `POL-CAT-089` | Define `Ar(C)` once in the kernel for every `C in Cat()`. Its objects are arrows of `C`, and its arrows are commuting squares. Obtain `Ar(Cat())` from this same construction; its objects are functors. |
+| `POL-CAT-089` | Define `Ar(C)` once in the kernel for every `C in Cat()`. Its objects are arrows of `C`, and its arrows are commuting squares. Endpoint application `Ar(C)(A, B)` dispatches to `Hom_C(A, B)`; it is distinct from the Hom category between two objects of `Ar(C)`. Obtain `Ar(Cat())` from the same construction. Its objects are functors, while `Ar(Cat())(C, D) = Hom_Cat(C, D)` has natural transformations as arrows. |
 | `POL-CAT-090` | Define `Ar(Cat()).Full()`, `.Faithful()`, `.FullyFaithful()`, `.EssentiallySurjective()`, and `.Equivalences()` through the ordinary property-subcategory mechanism. Their owned `is_*()` methods return applied predicates. Direct construction, assumptions, category placement, and implications use the standard same-object refinement path. |
-| `POL-CAT-091` | Register no computational handlers for functor fullness, faithfulness, full faithfulness, essential surjectivity, or equivalence until an exact mathematical algorithm exists for a declared semantic domain. `ask()` returns `Unknown` when placement, assumptions, cached exact decisions, and implications do not decide the predicate. |
+| `POL-CAT-091` | Register no computational handlers for functor fullness, faithfulness, full faithfulness, essential surjectivity, or equivalence. `ask()` uses property-category placement, active assumptions, and declared categorical implications. It returns `Unknown` when those sources do not decide the predicate. |
 | `POL-CAT-092` | Define `Products()`, `Coproducts()`, `Subobjects()`, and the standard dual constructions at the `Cat` level. Apply them to every category, including `Cat()` itself. Accept a sequence as the fundamental indexed product or coproduct diagram. |
 | `POL-CAT-093` | Give `C.Products().ObjectType` the method `product_projection(i: int) -> C.ArrowType`. Give `C.Coproducts().ObjectType` the method `coproduct_injection(i: int) -> C.ArrowType`. For `C = Cat()`, these arrows are functors. |
 | `POL-CAT-094` | Let `j: S -> P` present a subobject of a product object `P`. Define `S.product_projection(i)` as `P.product_projection(i) after j`. Thus every object of `Cat().Products().Subobjects()` has all component functors. Do not ask a leaf to repeat their maps. |
@@ -600,7 +600,7 @@ Place method compilation, descriptor installation, caches, registration, and bac
 | `POL-FUN-016` | Implement products, coproducts, limits, and colimits as functors on diagrams, including their action on diagram arrows. |
 | `POL-FUN-017` | Define `Fun = Ar(Cat())`. Represent a functor `F: C -> D` as an object of `Fun(C, D) = Ar(Cat())(C, D) = Hom_Cat(C, D)`. Its object and arrow actions come from `Cat().ArrowType`. Do not reduce it to a callable or set of assignments. |
 | `POL-FUN-018` | Treat membership in `C.ImagesOfFunctor(F)` as the existential image property. A preimage can be selected when an operation needs one, but no selected preimage belongs to the membership data. |
-| `POL-FUN-019` | Define `C.Products()`, `C.Coproducts()`, `C.TensorProducts()`, and analogous named constructions as formal refinements of functor-image subcategories, analogous to categories formed by `with_axiom`. |
+| `POL-FUN-019` | Define `C.Products()`, `C.Coproducts()`, `C.TensorProducts()`, and analogous named constructions as categories of chosen apexes with their presentations. Each object retains its input diagram, defining arrows, and universal maps. Keep these categories distinct from the full replete subcategory `C.ImagesOfFunctor(F)`, which records only the existential image property. |
 | `POL-FUN-020` | Lift an inherited universal construction through the selected structural functor. Retain its chosen presentation, apex, universal arrows, and comparison map instead of reconstructing a parallel result. |
 | `POL-FUN-021` | Establish properties of lifted objects and arrows from the theorem of the construction. Record those facts at the construction owner instead of replacing that theorem with a presentation-specific check. |
 | `POL-FUN-022` | Discharge closure and arrow-property obligations through the construction-owned lift. The lift can declare the typed conclusion of its construction theorem without runtime proof. Do not rely on a permissive general constructor that would admit the same property for arbitrary inputs. |
@@ -650,10 +650,16 @@ as extra structure. They are not derived from their endpoint categories. This re
 models the underlying construction directly and does not add a generic constructor for
 that convention. See [the Mathlib concrete-category definition](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ConcreteCategory/Forget.html).
 
-For the product functor `Products: Diag(C) -> C`, an object `Y` lies in `C.ImagesOfFunctor(Products)` when there is a diagram `D` and an isomorphism `Products(D) -> Y`.
-The named category `C.Products()` refines this essential image and states that `Y` is a product.
-The axiom of choice permits a preimage diagram to be selected when needed, but the selection is not part of the subcategory definition.
-A constructor that builds `Products(D)` can retain `D`, its `product_projection(i)` arrows, and its mediating morphism as a convenient selected witness.
+For the product functor `Products: Diag(C) -> C`, an object `Y` lies in
+`C.ImagesOfFunctor(Products)` when some `Products(D)` is isomorphic to `Y`. This full
+replete subcategory records no selected diagram or projections.
+
+An object of `C.Products()` is instead the chosen product apex carrying its
+presentation. It retains `D`, its `product_projection(i)` arrows, and its universal
+maps. Its selected structural functor to `C` constructs the same apex there. The apex
+also lies in the essential image, but the presentation category owns additional data
+and operations.
+
 For `C = Sets()`, cardinality is the inherited set operation applied to the product object and satisfies \(\#(\prod_i X_i)=\prod_i\#X_i\).
 The products category does not define a second set interface or an independent cardinality operation.
 
@@ -685,7 +691,7 @@ The products category does not define a second set interface or an independent c
 | `POL-SET-022` | Support `X.cardinality() == 3`. Do not require `X.cardinality().value == 3`. |
 | `POL-SET-023` | Give every object of `Sets()` the complete `Sets.ObjectType` method surface, including products, coproducts, subsets, exponentials, and Hom categories. |
 | `POL-SET-024` | Make set products and subsets delegate to the categorical product and subobject constructions instead of defining parallel APIs. |
-| `POL-SET-025` | Make cardinalities an ordered semiring of finite, infinite, and symbolic values, not integer wrappers. `Unknown` is a decision about a proposition, not a cardinal. |
+| `POL-SET-025` | Make `Cardinal()` the set-enriched skeletal category of cardinal representatives. Its Hom categories are function sets between the selected representatives. Cardinal order is the existence of an injective map, not mere Hom inhabitation. Its categorical coproducts, products, and Hom categories give cardinal addition, multiplication, and exponentiation. Cardinal objects form an ordered semiring of finite, infinite, and symbolic values, not integer wrappers. `Unknown` is a decision about a proposition, not a cardinal. |
 | `POL-SET-026` | Let cardinal arithmetic return cardinal values. Let cardinal equality and order return applied propositions. `ask()` returns `Unknown` when available mathematics does not decide one of those propositions. |
 | `POL-SET-027` | Use `len()` only for a finite sequence whose order is part of its meaning. Use `cardinality()` for every mathematical set. |
 | `POL-SET-028` | When `rank()` or `ngens()` counts a mathematical set, return its cardinality rather than a sequence length. |
@@ -760,7 +766,7 @@ When an established finite algorithm requires a primitive loop bound, lower the 
 | `POL-TYPE-008` | Use category membership as type information. Do not inspect fields or method names for capabilities. |
 | `POL-TYPE-009` | Do not invent wrapper types whose only purpose is to satisfy the type checker. |
 | `POL-TYPE-010` | Return `Self`, `None`, or the exact mathematical result type. Use the element type of `NN`, `ZZ`, or `RR` for natural numbers, integers, or real numbers. |
-| `POL-TYPE-011` | Use a set, ordered set, multiset, indexed family, or another named mathematical collection in every theory-layer signature. Never use `Iterable`, `Sequence`, `Collection`, `list`, or `tuple` there. Use `float` only at an explicit numerical boundary. |
+| `POL-TYPE-011` | Use a set, ordered set, multiset, indexed family, or another named mathematical collection in every theory-layer mathematical signature. The compiler-owned `structure_functors()` declaration returns the complete tuple required by `POL-CAT-085`. Never use `Iterable`, `Sequence`, `Collection`, `list`, or `tuple` for a mathematical collection. Use `float` only at an explicit numerical boundary. |
 | `POL-TYPE-012` | Primitive signatures can occur inside a private method only when every consumer remains inside that private boundary. |
 | `POL-TYPE-013` | Create a type for a genuine mathematical object. Do not wrap invalid constructor inputs in an engineering type to satisfy the checker. |
 | `POL-TYPE-014` | Never alias `Any`, directly or as part of a wider alias. Such an alias erases type information while giving the erasure a misleading semantic name. |

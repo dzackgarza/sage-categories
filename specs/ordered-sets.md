@@ -51,7 +51,7 @@ cardinality, set maps, and set constructions.
 A relation input is an owned subobject of `X × X`. A callable can be its private
 evaluator. The callable is not the public relation.
 
-An underlying set and relation first determine an owned relation object. Its
+The inclusion of the relation subobject into `X * X` determines `X`. Its
 partial-order proposition is the conjunction of:
 
 \[
@@ -70,7 +70,7 @@ relation in its ambient category.
 Selecting the property-category constructor directly asserts the laws:
 
 ```python
-PartiallyOrderedSets()(underlying_set, relation)
+PartiallyOrderedSets()(relation)
 ```
 
 An interactive user can instead call `assume(relation.is_partial_order())`. A named

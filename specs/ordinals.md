@@ -57,8 +57,8 @@ It returns `P(S)`. `ask()` uses its computational routes.
 The complete immediate structural tuple is:
 
 ```python
-def structure_functors(self) -> tuple[Functor, ...]:
-    return (FullSubcategoryInclusionFunctor(self, Semirings()),)
+def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
+    return (self.inclusion(Semirings()),)
 ```
 
 The selected semiring functors supply both monoid structures and the canonical carrier

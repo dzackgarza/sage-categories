@@ -103,6 +103,9 @@ The leaf author supplies only the closure or lift that is mathematically specifi
 
 ## Core model
 
+The kernel owns `Cat`, the category of categories. Every category in this repository is
+an object of `Cat`. The public `Category` implementation is `Cat().ObjectType`.
+
 Each category `C` owns the implementation types relevant to its theory:
 
 - `C.ObjectType` for objects;
@@ -127,12 +130,27 @@ X @ Y   # biproduct
 
 The category foundation defines these operations once and retains their universal data.
 
-A functor `F: C -> D` owns its domain, codomain, object map, and arrow map.
-It can also own an element map when that notion is part of the theory.
+A functor `F: C -> D` is an arrow in `Cat` and an object of `Ar(Cat())`.
+It inherits its domain, codomain, object map, and arrow map from `Cat().ArrowType`.
+For fixed endpoints, `Fun(C, D)` is `Cat().HomCategory(C, D)`. Its arrows are natural
+transformations.
+
+Functor properties use property subcategories of `Ar(Cat())`:
+
+```python
+Ar(Cat()).Full()
+Ar(Cat()).Faithful()
+Ar(Cat()).FullyFaithful()
+```
+
+Their `is_full()`, `is_faithful()`, and `is_fully_faithful()` methods return applied
+predicates. Direct property construction and assumptions refine the same owned functor.
+These predicates currently have no computational routes.
 
 Every functor is an explicit mathematical object.
 Only selected structural functors contribute methods to the public surface.
-This distinction prevents an implementation engine from changing the mathematical API.
+The selection is compiler input over an already established mathematical functor. It is
+not an additional kind of functor.
 
 For an object `x` in `C`, the kernel constructs and caches `F(x)` in `D`. It then exposes methods declared by `D.ObjectType` directly on `x`. The same process applies to elements and arrows.
 
@@ -148,8 +166,10 @@ The functor images remain available for inspection when their mathematical role 
 
 The implementation order follows the mathematical dependency order.
 
-The first layer is `Cat`, the category of categories.
-It includes functor categories, natural transformations, and natural isomorphisms.
+The first layer is `Cat`, the category of categories. Its `ObjectType` implements every
+category, and its `ArrowType` implements every functor. The kernel constructs `Ar(C)` for
+all `C`, including `Ar(Cat())`. It also constructs functor categories, natural
+transformations, and natural isomorphisms from the same category and arrow mechanisms.
 
 The next layer is the complete family of arrow categories.
 This family includes:

@@ -83,7 +83,7 @@ class PartiallyOrderedSetsCategory(Category):
         """Construct the asserted partial order determined by ``relation``."""
         return self.ObjectType(category=self, relation=relation)
 
-    def structure_functors(self) -> tuple[Functor, ...]:
+    def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
         """Select the carrier projection used for inheritance."""
         # This tuple selects inheritance routes. It is not a list of all functors
         # from this category. Do not add the second product projection here.
@@ -91,5 +91,4 @@ class PartiallyOrderedSetsCategory(Category):
         # Projection to ``R`` would expose subset and product methods on posets.
         # That projection can still exist and be called as an ordinary functor.
         # Selecting only ``X`` mirrors Sage listing only ``Sets()`` as a supercategory.
-        carrier = ProductProjectionFunctor(0, self, Sets())
-        return (carrier,)
+        return (self.carrier(),)

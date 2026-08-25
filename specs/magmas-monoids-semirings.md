@@ -45,8 +45,8 @@ The homomorphism method returns the owned preservation predicate.
 The complete immediate structural tuple is:
 
 ```python
-def structure_functors(self) -> tuple[Functor, ...]:
-    return (ForgetfulFunctor(self, Sets()),)
+def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
+    return (self.forget(Sets()),)
 ```
 
 The forgetful functor maps the magma carrier and every magma homomorphism to their owned
@@ -77,14 +77,14 @@ Their complete immediate structural tuples are:
 
 ```python
 # Magmas().Additive()
-def structure_functors(self) -> tuple[Functor, ...]:
-    return (FullSubcategoryInclusionFunctor(self, Magmas()),)
+def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
+    return (self.inclusion(Magmas()),)
 ```
 
 ```python
 # Magmas().Multiplicative()
-def structure_functors(self) -> tuple[Functor, ...]:
-    return (FullSubcategoryInclusionFunctor(self, Magmas()),)
+def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
+    return (self.inclusion(Magmas()),)
 ```
 
 The selected operation role is the only new mathematics in each refinement. A bare
@@ -120,8 +120,8 @@ subcategory of `Magmas()`, but this inclusion is not full.
 The complete immediate structural tuple is:
 
 ```python
-def structure_functors(self) -> tuple[Functor, ...]:
-    return (SubcategoryInclusionFunctor(self, Magmas()),)
+def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
+    return (self.inclusion(Magmas()),)
 ```
 
 A bare monoid remains notation-neutral. It owns:
@@ -146,19 +146,19 @@ preserve both category branches:
 
 ```python
 # Monoids().Additive()
-def structure_functors(self) -> tuple[Functor, ...]:
+def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
     return (
-        FullSubcategoryInclusionFunctor(self, Monoids()),
-        SubcategoryInclusionFunctor(self, Magmas().Additive()),
+        self.inclusion(Monoids()),
+        self.inclusion(Magmas().Additive()),
     )
 ```
 
 ```python
 # Monoids().Multiplicative()
-def structure_functors(self) -> tuple[Functor, ...]:
+def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
     return (
-        FullSubcategoryInclusionFunctor(self, Monoids()),
-        SubcategoryInclusionFunctor(self, Magmas().Multiplicative()),
+        self.inclusion(Monoids()),
+        self.inclusion(Magmas().Multiplicative()),
     )
 ```
 
@@ -202,10 +202,10 @@ addition, and multiplication.
 The complete immediate structural tuple is:
 
 ```python
-def structure_functors(self) -> tuple[Functor, ...]:
+def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
     return (
-        ForgetfulFunctor(self, Monoids().Additive().Commutative()),
-        ForgetfulFunctor(self, Monoids().Multiplicative()),
+        self.forget(Monoids().Additive().Commutative()),
+        self.forget(Monoids().Multiplicative()),
     )
 ```
 

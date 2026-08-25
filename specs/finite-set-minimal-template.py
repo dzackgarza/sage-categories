@@ -12,18 +12,17 @@ class SetsCategory(Category):
             """Return the finite-set membership proposition."""
             return Sets().Finite().membership_proposition(self)
 
-    class Finite(FullRepletePropertySubcategory):
-        """The full replete subcategory of finite sets."""
+    class Finite(Category):
+        """The full property subcategory of finite sets."""
 
-        def structure_functors(self) -> tuple[Functor, ...]:
+        def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
             """Select the inclusion that supplies the inherited set catalogue.
 
             This tuple is not a list of all functors from finite sets.
             The kernel-owned inclusion supplies its required maps. Other functors
-            from finite sets remain ordinary callable functors.
+            from finite sets remain ordinary objects of ``Ar(Cat())``.
             """
-            iota = FullSubcategoryInclusionFunctor(self, Sets())
-            return (iota,)
+            return (self.inclusion(Sets()),)
 
         def membership_proposition(
             self,

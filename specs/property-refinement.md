@@ -8,7 +8,8 @@ decision-procedure architecture.
 The governing policies are `POL-MATH-016`, `POL-MATH-025`, `POL-MATH-029`,
 `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-018` through `POL-CAT-020`,
 `POL-CAT-043`, `POL-CAT-044`, `POL-CAT-060`, `POL-CAT-067` through `POL-CAT-069`,
-`POL-CAT-082`, `POL-CAT-086`, and `POL-CAT-087`.
+`POL-CAT-082`, `POL-CAT-086` through `POL-CAT-091`, and `POL-FUN-024` through
+`POL-FUN-027`.
 
 An established positive property should self-refine the owned object. Direct property construction, an active assumption, and an exact computation all establish the same refinement. The object's mathematical identity remains unchanged. Its category and Sage dynamic class become more specific.
 
@@ -131,17 +132,7 @@ f = MonoArrows(Sets)(A, B)(rule)
 ```
 
 That constructor accepts the semantic data needed for a monomorphism. Choosing the category asserts injectivity.
-
-These APIs should not exist:
-
-```python
-monos.checked(...)
-monos.from_hypothesis(...)
-monos.from_theorem(...)
-monos.construct(..., check=True)
-```
-
-The evidence source does not create another constructor family.
+The evidence source does not change the constructor.
 
 The four public routes are:
 
@@ -273,6 +264,8 @@ This rule applies to:
 
 - object properties such as finiteness, countability, totality, and connectedness;
 - arrow properties such as injectivity, surjectivity, monotonicity, and invertibility;
+- functor properties such as fullness, faithfulness, full faithfulness, and essential
+  surjectivity;
 - equality, order, inclusion, and incidence propositions;
 - relation laws and construction obligations;
 - category-membership propositions;
@@ -307,6 +300,40 @@ The result of `ask(proposition)` is exactly one of:
 
 The kernel translates an engine-specific indeterminate result, such as SymPy `None`,
 to the owned `Unknown`. No public propositional method returns that value itself.
+
+### Functor predicates
+
+Every functor is an object of `Ar(Cat())`. Functor properties therefore use the same
+property-subcategory mechanism as object and arrow properties:
+
+```python
+FullFunctors = Ar(Cat()).Full()
+FaithfulFunctors = Ar(Cat()).Faithful()
+FullyFaithfulFunctors = Ar(Cat()).FullyFaithful()
+```
+
+The owning methods return applied predicates:
+
+```python
+F.is_full()
+F.is_faithful()
+F.is_fully_faithful()
+```
+
+Direct construction in one of these categories establishes the property. An interactive
+assumption refines the same owned functor:
+
+```python
+F = Ar(Cat())(C, D, on_object, on_morphism)
+assume(F.is_full())
+```
+
+The kernel also applies established implications. Placement in
+`Ar(Cat()).FullyFaithful()` entails both fullness and faithfulness.
+
+These functor predicates currently have no computational routes. In the absence of
+category placement, an active assumption, a cached exact decision, or an applicable
+implication, `ask(F.is_full())` returns `Unknown`.
 
 ### Hom-category predicates
 

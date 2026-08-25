@@ -213,6 +213,9 @@ For each category `C`:
 - `C.ArrowType` implements arrows of `C`.
 - `C(...)` is the category-owned constructor.
 
+The kernel owns `Cat`. Every category in this repository uses `Cat().ObjectType`.
+Every functor uses `Cat().ArrowType` and is an object of `Ar(Cat())`.
+
 The same architecture applies to objects, elements, and arrows.
 Do not solve one surface with a mechanism that cannot support the other two.
 
@@ -224,13 +227,14 @@ Rebuild every dependent definition, type, arrow, and conclusion in the correct c
 
 A sheaf is an object of a sheaf category.
 An internal Hom of sheaves is again a sheaf.
-A functor is an object of `Fun(C, D)`.
+A functor is an object of `Ar(Cat())` and of `Fun(C, D) = Hom_Cat(C, D)` for its fixed
+domain and codomain.
 None is a set without a specified set-valued functor.
 
 The following are categories and therefore objects of `Cat`:
 
 - `Ar(C)`, `EndAr(C)`, and `AutAr(C)`;
-- `Fun(C, D)`;
+- `Ar(Cat())` and `Fun(C, D) = Hom_Cat(C, D)`;
 - `Hom_C(x, y)`.
 
 Use `HomCatType`, not `HomSetType`, at the `Cat` level.
@@ -253,7 +257,22 @@ For each functor `F: C -> D`:
 - `F.codomain()` is `D`.
 - `F.on_object()` constructs the image of an object.
 - `F.on_morphism()` constructs the image of an arrow.
-- `F.on_element()` exists only when the mathematical functor acts on elements.
+
+An action on elements is additional mathematics of a concrete functor category. It is
+not part of every functor's defining data.
+
+Functor properties are ordinary property subcategories:
+
+- `Ar(Cat()).Full()`;
+- `Ar(Cat()).Faithful()`;
+- `Ar(Cat()).FullyFaithful()`;
+- `Ar(Cat()).EssentiallySurjective()`;
+- `Ar(Cat()).Equivalences()`.
+
+Their `is_*()` methods return applied predicates. Direct property construction and
+`assume()` refine the same owned functor. These properties currently have no
+computational handlers. `ask()` returns `Unknown` unless category placement, an active
+assumption, a cached exact decision, or a categorical implication decides the predicate.
 
 Every functor is explicit.
 Only selected structural functors contribute methods to the public object surface.

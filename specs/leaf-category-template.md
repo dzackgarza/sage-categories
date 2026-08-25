@@ -26,7 +26,7 @@ class LeafCategory(Category):
     def __call__(self, defining_data: LeafDefiningData) -> LeafObject:
         return self.ObjectType(category=self, defining_data=defining_data)
 
-    def structure_functors(self) -> tuple[Functor, ...]:
+    def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
         """Return the selected immediate structural functors."""
         ...
 
@@ -34,25 +34,19 @@ class LeafCategory(Category):
         return candidate in self
 ```
 
-`structure_functors()` selects inheritance routes. It is not a catalogue of all functors
-from the leaf. Include only immediate functors whose target catalogue should become part
-of the leaf's public surface. The leaf must also meet each functor's construction
-obligations for objects, elements, and arrows. Keep all other mathematical functors
-outside this tuple.
+`Category` is `Cat().ObjectType`. Each entry in `structure_functors()` is an already
+established object of `Ar(Cat())`. Include only immediate functors whose target
+catalogue supplies the leaf's inherited public surface.
 
-For each inherited operation, the selected functor must construct every receiver and
-argument image that the operation needs. It must also support any required result
-reconstruction. The compiler does not invent missing maps. See
-[the construction obligation](functor.md#the-construction-obligation).
+For each inherited operation, the selected functor must construct every required object
+and arrow image. The compiler does not invent missing maps.
 
-The functor connects the category-owned implementation roles. Its object map constructs
-the canonical target `ObjectType`. Its arrow and element maps do the same for their roles.
-A bespoke functor can use any public constructor route owned by its codomain. The functor
-fixes that route; the runtime does not search for one.
+The functor connects the category-owned implementation roles. Its object and arrow maps
+construct the corresponding target roles. A concrete functor category can add an element
+action when its mathematics supplies one.
 
-Standard inclusions and projections already implement this contract in the kernel. The
-leaf only selects them. It does not add forwarding initializers, conversion methods, or
-delegating copies of inherited operations.
+The kernel implements standard functor constructions. The leaf calls its category-owned
+`inclusion()`, `forget()`, carrier, or projection construction and selects the result.
 
 For a structured object with several defining components, select only the component used
 as its inherited public structure. The existence of another projection does not make that

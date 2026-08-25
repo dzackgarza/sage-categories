@@ -222,7 +222,7 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | ID | Policy |
 | --- | --- |
 | `POL-CAT-001` | A category owns its constructors, local operations, and implementation types. `C(...)` is the public construction dispatcher for objects of `C`; it delegates to exact private constructor routes selected from the supplied semantic data. |
-| `POL-CAT-002` | Use `ObjectType`, `ElementType`, and `ArrowType` for category-owned implementations. |
+| `POL-CAT-002` | Use `ObjectType`, `ElementType`, and `ArrowType` for category-owned implementations. The kernel owns `Cat`; every repository category uses `Cat().ObjectType`, and every functor uses `Cat().ArrowType`. |
 | `POL-CAT-003` | Apply the same inheritance mechanism to objects, elements, and arrows. |
 | `POL-CAT-004` | A category level defines only the structure and operations introduced at that level. |
 | `POL-CAT-005` | A leaf category knows only itself and its immediate structural functors. |
@@ -241,8 +241,8 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-018` | Distinguish a property subcategory from a category whose objects contain chosen data. Membership in a property subcategory records a proposition, not a selected witness. |
 | `POL-CAT-019` | Require chosen data only when it is part of the mathematical structure. Do not require or store a witness merely because an object belongs to a property subcategory. |
 | `POL-CAT-020` | Make every construction path account for the defining obligations of its result category. Declare the typed conclusion of its construction theorem, compute the obligation exactly, or accept it as an explicit hypothesis. Runtime proof is not required. Never infer an obligation from an unrelated property. |
-| `POL-CAT-021` | Make `Ar(C)`, `EndAr(C)`, `AutAr(C)`, `Fun(C, D)`, and `Hom_C(x, y)` categories and therefore objects of `Cat`. |
-| `POL-CAT-022` | Use `HomCatType` at the `Cat` level. A hom category can contain natural transformations and becomes a function set only in `Sets()`. |
+| `POL-CAT-021` | Make `Ar(C)`, `EndAr(C)`, `AutAr(C)`, and `Hom_C(x, y)` categories and therefore objects of `Cat`. Make every functor an object of `Ar(Cat())`, and identify `Fun(C, D)` with `Hom_Cat(C, D)`. |
+| `POL-CAT-022` | Use `HomCatType` at the `Cat` level. `Hom_Cat(C, D)` has functors as objects and natural transformations as arrows. A Hom category becomes a function set only through the exact structure supplied by `Sets()`. |
 | `POL-CAT-023` | Supply `C.HomCategory()`, `C.EndCategory()`, `C.AutCategory()`, `C.ArrowCategory()`, `C.EndArrowCategory()`, and `C.AutArrowCategory()` at the `Cat` level. |
 | `POL-CAT-024` | Make the generic `ArrowType` store its endpoints and expose them through `domain()` and `codomain()`. |
 | `POL-CAT-025` | Implement a general arrow predicate as containment in its arrow subcategory, such as `f in C.Monomorphisms()`. |
@@ -305,10 +305,13 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-082` | Permit a category-owned predicate handler to return `True` when the construction or definition establishes that property for every value it builds. The public predicate still returns an applied proposition. The exact handler result invokes the same property-subcategory constructor; it is not a proof object, metadata field, or separate admission route. |
 | `POL-CAT-083` | Represent a distinguished named mathematical object by its parameterized one-object category. Let that category own the object-specific declarations and selected structural functors that place its sole object in all established ambient and property categories. |
 | `POL-CAT-084` | If `C.P()` is a property subcategory and `D` has a selected structural inclusion into `C`, derive `D.P()` automatically as the corresponding narrowing of `D`. Define the property constructor once. Never require a descendant category to repeat its class, predicate, constructor, or transport wiring. |
-| `POL-CAT-085` | Replace Sage's category-only `super_categories()` edges with `structure_functors()`. Return the complete tuple of immediate `Functor` values selected for inheritance. The kernel owns standard identity, inclusion, product-projection, construction-projection, forgetful, restriction, inverse-image, and lift functors, including their object, element, and arrow maps. A leaf only instantiates and selects them. Do not add a `StructuralFunctor` subtype, registry, or leaf map boilerplate. Do not list an unselected component projection merely because it exists. See `specs/functor.md`. |
+| `POL-CAT-085` | Replace Sage's category-only `super_categories()` edges with `structure_functors()`. Return the complete tuple of immediate objects of `Ar(Cat())` selected for inheritance. Each entry is an already established mathematical functor; selection is compiler input and does not define another kind of functor. The kernel owns standard identity, inclusion, projection, forgetful, restriction, inverse-image, and lift constructions. A leaf only selects the category-owned instance. Do not add a `StructuralFunctor` subtype, registry, or leaf map boilerplate. See `specs/functor.md`. |
 | `POL-CAT-086` | Make `Hom_C(A, B)` a category for every `A, B in C`. Represent its inhabitation and emptiness as owned predicates. An unresolved decision leaves the Hom category symbolic; it never replaces that category with an empty category. |
-| `POL-CAT-087` | Define a full subcategory from an object predicate `P` on `C`. Its objects are the objects of `C` satisfying `P`; its Hom categories, identities, and composition are inherited definitionally from `C`. Its inclusion is fully faithful by construction. Never add a runtime fullness predicate or check. Follow [mathlib's `CategoryTheory.ObjectProperty.FullSubcategory` definition](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/FullSubcategory.html). |
+| `POL-CAT-087` | Define a full subcategory from an object predicate `P` on `C`. Its objects are the objects of `C` satisfying `P`; its Hom categories, identities, and composition are inherited definitionally from `C`. Construct its inclusion directly in `Ar(Cat()).FullyFaithful()`. Follow [mathlib's `CategoryTheory.ObjectProperty.FullSubcategory` definition](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/FullSubcategory.html). |
 | `POL-CAT-088` | Define the universal binary operators once at the categorical level. For `X, Y in C`, `Y ** X` is `Hom_C(X, Y)`, `X * Y` is their product, `X + Y` is their coproduct, and `X @ Y` is their biproduct. Each universal construction retains its defining arrows. Every descendant category uses the inherited operation directly. |
+| `POL-CAT-089` | Define `Ar(C)` once in the kernel for every `C in Cat()`. Its objects are arrows of `C`, and its arrows are commuting squares. Obtain `Ar(Cat())` from this same construction; its objects are functors. |
+| `POL-CAT-090` | Define `Ar(Cat()).Full()`, `.Faithful()`, `.FullyFaithful()`, `.EssentiallySurjective()`, and `.Equivalences()` through the ordinary property-subcategory mechanism. Their owned `is_*()` methods return applied predicates. Direct construction, assumptions, category placement, and implications use the standard same-object refinement path. |
+| `POL-CAT-091` | Register no computational handlers for functor fullness, faithfulness, full faithfulness, essential surjectivity, or equivalence until an exact mathematical algorithm exists for a declared semantic domain. `ask()` returns `Unknown` when placement, assumptions, cached exact decisions, and implications do not decide the predicate. |
 
 Grounding examples:
 
@@ -385,7 +388,7 @@ Grounding examples:
 | `POL-LEAF-030` | A leaf refinement adds only its leaf-specific structure or private realization. It preserves the inherited method's name, laws, domain, codomain, and mathematical owner. |
 | `POL-LEAF-031` | Delete any leaf method that adds no leaf-specific mathematical or realization step. Generic algorithms, structural transport, wrappers, and public-surface installation belong to their existing owners. |
 | `POL-LEAF-032` | Treat selected structural functors as the complete inheritance program. A finished leaf contains no forwarding, descriptor, route, cache, wrapper, or type-repair boilerplate. |
-| `POL-LEAF-033` | A property-subcategory leaf declares its predicate, inclusion, trusted property constructor, and the ordinary predicate implementation that returns `True` in that subcategory. It declares no checked, hypothesis-backed, or theorem-backed constructor family. |
+| `POL-LEAF-033` | A property-subcategory leaf declares its predicate, inclusion, and trusted property constructor. The public `is_*()` method always returns the applied predicate. Category placement makes `ask()` return `True`. The leaf declares one constructor only. |
 | `POL-LEAF-034` | Never give a leaf an ambient-to-refined cache, an identity-keyed refinement table, an ambient wrapper field, or a local refinement constructor. |
 | `POL-LEAF-035` | Direct construction, `assume(P(x))`, exact `True`, and construction-owned mathematics all invoke the same generic self-refinement through the property-subcategory constructor. The leaf performs no allocation, cache mutation, narrowing, or repeated membership assertion. |
 | `POL-LEAF-036` | Treat a type error in leaf refinement machinery as evidence that the kernel lacks a typed refinement contract. Repair that contract and delete the leaf machinery. |
@@ -401,7 +404,7 @@ Grounding examples:
 | `POL-LEAF-046` | Permit a private neighboring engine helper only for a substantial shared computation boundary. It exposes no public method surface, category roles, runtime registry, compiler binding, or mirror of the leaf operations. |
 | `POL-LEAF-047` | Give the sole implementation class constructor routes that accept the general semantic data required by the category. Hide all internal representation choices behind those routes. |
 | `POL-LEAF-048` | Make the public operation surface depend only on categorical placement. Every object of the category receives the same owned operations, regardless of which private dependency or representation computes them. |
-| `POL-LEAF-049` | Select each immediate structural functor in the category layer. For a standard functor, instantiate the kernel constructor and write no object, arrow, or element maps. For a genuinely new functor, define those maps once at its mathematical owner and construct exact owned images through target-category constructors. |
+| `POL-LEAF-049` | Select each immediate structural functor in the category layer. For a standard functor, call the source category's kernel-owned construction and write no object or arrow maps. For a genuinely new functor, define those maps once at its mathematical owner and construct exact owned images through target-category constructors. Add an element action only in a concrete functor category that defines one. |
 | `POL-LEAF-050` | Quarantine substantial Python, foreign-function, process, conversion, caching, and engine-adaptation code in private helpers. Keep mathematical ownership, public methods, semantic inputs, and semantic reconstruction on the sole category implementation class. |
 | `POL-LEAF-051` | Write a leaf method as one ordinary typed Python method. Never attach or place beside it transport metadata, compiler annotations, descriptor arguments, role tables, signature mirrors, or another record of facts already present in its declaration. This rule applies by function, regardless of mechanism name or syntax. |
 | `POL-LEAF-052` | Stop a change that repeats the same non-mathematical declaration across leaf methods or categories. Such repetition identifies missing kernel derivation. Repair the kernel once, or reject the unsupported semantic signature during compilation. |
@@ -449,7 +452,7 @@ It does not reimplement composition, structural transport, domain checks, codoma
 | `POL-KERNEL-024` | Inspect standard Python signatures and exact mathematical type annotations inside the kernel. Never require a theory module to use a signature DSL, encode standard call mechanics, describe absent parameters, or issue transport commands. |
 | `POL-KERNEL-025` | Compile operations from inherited categories, arrow-property categories, and construction categories onto every descendant `ObjectType`, `ElementType`, and `ArrowType`. A missing inherited inverse, universal arrow, or other placement-forced operation is a kernel defect. It never licenses leaf wiring. |
 | `POL-KERNEL-026` | Propagate each property-subcategory constructor through selected structural inclusions, following Sage's `with_axiom` model. Build the descendant refinement, role MRO, constructor, and inherited predicate behavior generically. A leaf supplies no propagation machinery. |
-| `POL-KERNEL-027` | Own standard identity, inclusion, projection, restriction, lift, and forgetful functor implementations in the kernel. For a structured object's private defining-data tuple, `ProductProjectionFunctor(i, D, C)` derives the object, arrow, and applicable element maps for component `i`. A leaf only extracts the strongest defining tuple and selects the functor. |
+| `POL-KERNEL-027` | Own the standard identity, inclusion, projection, restriction, lift, and forgetful constructions in the kernel. Each construction returns an object of `Ar(Cat())` through the source category's public mathematical API. A leaf only supplies its defining mathematics and selects the resulting functor. |
 
 See [Leaf category implementations](specs/leaves.md) for the exact boundary between
 kernel-owned inheritance and leaf-owned computation.
@@ -532,7 +535,7 @@ See [Leaf category implementations](specs/leaves.md) for the permitted file layo
 the single-source-of-truth rule.
 
 Grounding examples: a sheaf is an object of a sheaf category, and an internal Hom of sheaves is again a sheaf.
-A functor is an object of `Fun(C, D)`. None enters `Sets()` without a specified functor.
+A functor is an object of `Ar(Cat())` and of `Fun(C, D) = Hom_Cat(C, D)` for its fixed endpoints. None enters `Sets()` without a specified functor.
 
 Do not split `sets.py` into `sets_part_1.py`, `sets_helpers.py`, or files chosen only to satisfy a length limit.
 Split it into category-qualified mathematical units such as `setsubsets.py`, `setproducts.py`, `setcoproducts.py`, and `setlimitscolimits.py` when those units have distinct objects, arrows, universal properties, or algorithms.
@@ -542,9 +545,9 @@ Place method compilation, descriptor installation, caches, registration, and bac
 
 | ID | Policy |
 | --- | --- |
-| `POL-FUN-001` | Every functor explicitly owns its domain, codomain, object map, and arrow map. |
-| `POL-FUN-002` | Add an element map only when the mathematical functor has a meaningful action on elements. |
-| `POL-FUN-003` | Only selected structural functors contribute inherited public methods. |
+| `POL-FUN-001` | Every functor is an arrow in `Cat` and uses `Cat().ArrowType`. It owns its domain, codomain, object map, and arrow map through that uniform arrow implementation. |
+| `POL-FUN-002` | Treat an action on elements as additional mathematics of a concrete functor category. Do not make an optional element map part of every functor's defining data. |
+| `POL-FUN-003` | Only functors selected in `structure_functors()` contribute inherited public methods. Selection affects compiler behavior only; it does not change the selected object's mathematical type in `Ar(Cat())`. |
 | `POL-FUN-004` | Use ordinary functors for mathematical transport that does not define public inheritance. |
 | `POL-FUN-005` | Represent forgetting, scalar change, and a modeled mathematical realization as functors, not object methods. Do not treat a private engine representation, cache, or algorithm call as a realization functor. |
 | `POL-FUN-006` | Use functor composition to propagate structure. Do not add a separate propagation registry. |
@@ -558,13 +561,17 @@ Place method compilation, descriptor installation, caches, registration, and bac
 | `POL-FUN-014` | Obtain the containing object of a subobject from the monomorphism's codomain. |
 | `POL-FUN-015` | For `F: D -> C`, define `C.ImagesOfFunctor(F)` as the full replete subcategory on objects `Y` for which there exist `X in D` and an isomorphism `F(X) -> Y`. Make `C` its immediate structural supercategory. |
 | `POL-FUN-016` | Implement products, coproducts, limits, and colimits as functors on diagrams, including their action on diagram arrows. |
-| `POL-FUN-017` | Represent a functor as an object of `Fun(C, D)` with object and arrow actions. Do not reduce it to a callable or set of assignments. |
+| `POL-FUN-017` | Represent a functor `F: C -> D` as an object of `Ar(Cat())` and of `Fun(C, D) = Hom_Cat(C, D)`. Its object and arrow actions come from `Cat().ArrowType`. Do not reduce it to a callable or set of assignments. |
 | `POL-FUN-018` | Treat membership in `C.ImagesOfFunctor(F)` as the existential image property. A preimage can be selected when an operation needs one, but no selected preimage belongs to the membership data. |
 | `POL-FUN-019` | Define `C.Products()`, `C.Coproducts()`, `C.TensorProducts()`, and analogous named constructions as formal refinements of functor-image subcategories, analogous to categories formed by `with_axiom`. |
 | `POL-FUN-020` | Lift an inherited universal construction through the selected structural functor. Retain its chosen presentation, apex, universal arrows, and comparison map instead of reconstructing a parallel result. |
 | `POL-FUN-021` | Establish properties of lifted objects and arrows from the theorem of the construction. Record those facts at the construction owner instead of replacing that theorem with a presentation-specific check. |
 | `POL-FUN-022` | Discharge closure and arrow-property obligations through the construction-owned lift. The lift can declare the typed conclusion of its construction theorem without runtime proof. Do not rely on a permissive general constructor that would admit the same property for arbitrary inputs. |
 | `POL-FUN-023` | Implement the functor laws for every functor. Preserve identities and composition, and map an isomorphism inverse to the inverse of its image: `F(f.inverse()) == F(f).inverse()`. Structural descendants use this generic action and never add leaf-specific inverse transport. |
+| `POL-FUN-024` | Define fullness, faithfulness, full faithfulness, essential surjectivity, and equivalence as properties of objects in `Ar(Cat())`. Give each one its property subcategory and owned predicate. |
+| `POL-FUN-025` | Define `FullyFaithful(F)` as `Full(F) and Faithful(F)`. Treat it as a property without selected Hom preimages. A construction that needs a chosen preimage arrow owns that separate choice. |
+| `POL-FUN-026` | Construct a functor directly in the strongest property subcategory established by its defining construction. Use `assume(F.is_P())` for an interactive hypothesis. Both routes refine the same owned functor through the standard property constructor. |
+| `POL-FUN-027` | Let each category own its established functors. A subcategory owns its inclusion, a structured category owns its forgetful functor, and a universal construction owns its projections. Kernel machinery implements these standard constructions without public implementation-class names. |
 
 For the product functor `Products: Diag(C) -> C`, an object `Y` lies in `C.ImagesOfFunctor(Products)` when there is a diagram `D` and an isomorphism `Products(D) -> Y`.
 The named category `C.Products()` refines this essential image and states that `Y` is a product.
@@ -852,7 +859,7 @@ It remains a replaceable algorithm, not the representation or default structural
 | `POL-DOC-002` | Add a specific observed antipattern to `CONTRIBUTING.md` only when its recurrence or severity makes a dedicated indexed warning useful. Keep its governing general principle explicit. |
 | `POL-DOC-003` | Make each specification a forward-facing inventory of the desired mathematical capabilities and public API. |
 | `POL-DOC-004` | A specification can describe a private implementation strategy when it constrains feasibility or architecture. Keep backend types, names, and decisions outside the public contract. |
-| `POL-DOC-005` | Make each category specification declare its complete `structure_functors()` tuple. Each entry is an actual functor, not a target category. These functors replace `super_categories()` and determine inherited structure. |
+| `POL-DOC-005` | Make each category specification declare its complete `structure_functors()` tuple. Each entry is an already established object of `Ar(Cat())`, not a target category or a special structural-functor type. The tuple replaces `super_categories()` as compiler input and determines inherited structure. |
 | `POL-DOC-006` | State which capabilities the specified category owns. State inherited capabilities by naming their owning category and the functor path that supplies them. |
 | `POL-DOC-007` | Keep one authoritative catalogue for each public method surface. Reference that catalogue from dependent specifications instead of copying it. |
 | `POL-DOC-008` | Mention a small number of inherited methods only when they clarify a category-specific example. Do not reproduce the inherited API inventory. |

@@ -294,6 +294,41 @@ An identity map constructs directly into `D.Isos()`. It never runs injectivity o
 
 If an assumed isomorphism lacks a computed inverse, `inverse()` can return the owned symbolic inverse arrow. Category placement establishes its equations. A backend may later realize that arrow computationally.
 
+## Functor properties
+
+The kernel constructs `Ar(Cat())` from the same arrow-category construction used for
+every category. Its objects are functors. Therefore, functor properties are ordinary
+property subcategories:
+
+```python
+FullFunctors = Ar(Cat()).Full()
+FaithfulFunctors = Ar(Cat()).Faithful()
+FullyFaithfulFunctors = Ar(Cat()).FullyFaithful()
+```
+
+Their membership propositions are applied through the functor:
+
+```python
+F.is_full()
+F.is_faithful()
+F.is_fully_faithful()
+```
+
+The standard positive routes remain uniform:
+
+```python
+F = Ar(Cat()).Full()(F)  # Trusted property-category construction.
+assume(G.is_full())      # Interactive assumption and same-object refinement.
+```
+
+An inclusion from a full subcategory is constructed directly in
+`Ar(Cat()).FullyFaithful()`. The implication from full faithfulness to fullness and
+faithfulness then follows through property-category inclusions.
+
+No exact computational handlers are currently declared for these predicates. For an
+ambient functor with no applicable placement, assumption, cached decision, or
+implication, `ask(F.is_full())` returns `Unknown`.
+
 ## Finite posets
 
 A poset is not merely a property of a bare set. Its relation is part of its data.

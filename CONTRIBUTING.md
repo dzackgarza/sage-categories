@@ -580,6 +580,45 @@ Place method compilation, descriptor installation, caches, registration, and bac
 | `POL-FUN-025` | Define `FullyFaithful(F)` as `Full(F) and Faithful(F)`. Treat it as a property without selected Hom preimages. A construction that needs a chosen preimage arrow owns that separate choice. |
 | `POL-FUN-026` | Construct a functor directly in the strongest property subcategory established by its defining construction. Use `assume(F.is_P())` for an interactive hypothesis. Both routes refine the same owned functor through the standard property constructor. |
 | `POL-FUN-027` | Let `Fun(C, D)` own construction of every functor `C -> D`. The endpoints determine only this Hom category. A specialized constructor needs mathematical data that selects one functor. Category constructions create their projection and evaluation functors through `Fun(C, D)` and retain them as defining data. |
+| `POL-FUN-028` | Do not define a generic “forgetful functor.” That phrase does not select an object of `Fun(C, D)`. A source, target, object presentation, or collection of Python fields can admit several distinct functors. |
+| `POL-FUN-029` | Name and construct each functor by its mathematical source: a product projection, coproduct injection, subcategory inclusion, source or target functor, evaluation, base change, fibration projection, opfibration projection, Kan extension, or explicit composition. Retain the data that defines it. |
+| `POL-FUN-030` | Treat a Grothendieck fibration as a functor with specified cartesian lifts. Treat its dual as an opfibration, also called a cofibered category, with specified cocartesian lifts. Use “cofibration” only when a cited source uses it for this dual notion. Do not confuse it with a class of arrows in topology or a model category. |
+| `POL-FUN-031` | Form slice and coslice projections from product projections and the source or target functors of `Ar(C)`. Establish their fibration or opfibration structure from the applicable pullback or pushout theorem. Do not infer it from object fields. |
+| `POL-FUN-032` | Let left and right Kan extension constructions own their resulting functors, units, counits, and universally induced natural transformations. These natural transformations are arrows in the applicable fixed-endpoint functor categories. Build later routes by ordinary composition. |
+| `POL-FUN-033` | Make `structure_functors()` select exact construction-named functors or composites. Selection does not create a preferred projection, an unnamed structure map, or another kind of functor. |
+
+### Why “forgetful functor” is not a construction
+
+The phrase “the forgetful functor from `C` to `D`” does not determine an object of
+`Fun(C, D)`. Fixed endpoints can have many functors. A presentation can also have
+several projections with different codomains.
+
+For example, a presentation of a lattice as `(M, b)` has a projection to `M` and a
+projection to `b`. Neither projection follows from the word “forget.” A presentation of
+a module by an action morphism has projections and evaluations determined by that
+presentation. An equivalent presentation can expose different immediate projections.
+The kernel must not inspect tuple positions or fields to choose one.
+
+Use the construction that supplies the map:
+
+- a subcategory supplies its inclusion;
+- a product supplies its component projections;
+- a coproduct supplies its component injections;
+- `Ar(C)` supplies its source and target functors;
+- a slice or coslice supplies projections to its varying object and defining arrow;
+- a fibration or opfibration supplies its projection and cartesian or cocartesian lifts;
+- a base-change construction supplies its pullback or pushforward functor;
+- a Kan extension supplies its extended functor and universal natural transformation;
+- ordinary composition combines these maps into longer structural routes.
+
+A category can select one such functor in `structure_functors()`. This selection states
+the exact structural route used for inheritance. It does not make that functor a
+canonical map determined by the category alone.
+
+Mathlib's `ConcreteCategory.forget` and `HasForget₂.forget₂` are chosen functors carried
+as extra structure. They are not derived from their endpoint categories. This repository
+models the underlying construction directly and does not add a generic constructor for
+that convention. See [the Mathlib concrete-category definition](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ConcreteCategory/Forget.html).
 
 For the product functor `Products: Diag(C) -> C`, an object `Y` lies in `C.ImagesOfFunctor(Products)` when there is a diagram `D` and an isomorphism `Products(D) -> Y`.
 The named category `C.Products()` refines this essential image and states that `Y` is a product.

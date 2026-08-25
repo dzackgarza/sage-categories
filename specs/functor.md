@@ -331,6 +331,42 @@ A category presentation can contain several projections or evaluations. Its cons
 creates each one through the applicable `Fun(Source, Target)` category. The presentation
 then retains those distinct functor objects as defining data.
 
+### Construction-named functors
+
+There is no generic functor selected by the instruction to “forget structure.” The
+source and target select only `Fun(Source, Target)`. They do not select one of its
+objects. A category presentation can expose several valid maps, and an equivalent
+presentation can expose different immediate maps.
+
+For example, a lattice presentation `(M, b)` has one projection to `M` and another to
+`b`. A module presentation by an action morphism has the projections and evaluations
+of its chosen action-category construction. The kernel cannot recover a preferred map
+from tuple positions, field names, or a supposed underlying object.
+
+Each public functor must name its construction. The fundamental cases are:
+
+| Construction | Functor or arrow supplied |
+| --- | --- |
+| subcategory or property subcategory | its specified inclusion |
+| product category | each `product_projection(i)` |
+| coproduct category | each `coproduct_injection(i)` |
+| arrow category `Ar(C)` | `source_projection()` and `target_projection()` |
+| slice or coslice presentation | projections to the varying object and defining arrow |
+| Grothendieck fibration | its projection and specified cartesian lifts |
+| Grothendieck opfibration | its projection and specified cocartesian lifts |
+| base change | the functor supplied by pullback, pushforward, or the stated adjunction |
+| left or right Kan extension | the extended functor and its universal natural transformation |
+| composite construction | the ordinary composite of the supplied functors |
+
+The dual of a Grothendieck fibration is an opfibration. It is also called a cofibered
+category. Use “cofibration” only when a cited source uses that synonym. In other
+contexts, a cofibration is a class of arrows and is a different notion.
+
+Mathlib's `ConcreteCategory.forget` is part of a concrete-category structure. Its
+`HasForget₂.forget₂` also carries a chosen functor as extra structure. These definitions
+do not derive a functor from its endpoints. This repository records the exact
+construction instead of defining an unnamed default.
+
 ### Identity and composition
 
 `Fun(C, C).Equivalences().identity()` constructs the identity arrow on `C`. Functor
@@ -349,6 +385,25 @@ maps, diagram postcomposition, restrictions, inverse images, and lifts.
 
 The construction owner supplies the induced object and morphism maps. It also supplies
 any natural transformations or natural isomorphisms that compare composites.
+
+For `K: C -> D` and `F: C -> E`, a left Kan extension supplies a functor
+`Lan_K(F): D -> E` and a unit natural transformation
+
+\[
+F\Longrightarrow Lan_K(F)\circ K.
+\]
+
+A right Kan extension supplies a functor `Ran_K(F): D -> E` and a counit natural
+transformation
+
+\[
+Ran_K(F)\circ K\Longrightarrow F.
+\]
+
+Their universal properties induce further natural transformations. Each such
+transformation is an arrow in a fixed-endpoint functor category. The Kan extension
+construction owns these arrows. A later structural route uses their functor components
+and ordinary composition.
 
 ### Essential images
 
@@ -565,11 +620,15 @@ is kernel infrastructure over already established mathematical functors.
 - Every functor is constructed through `Fun(Source, Target)` or an established property subcategory.
 - A specialized constructor receives enough mathematical data to select one functor.
 - Endpoint categories and object fields never select a functor.
+- The repository has no generic constructor selected by the phrase “forget structure.”
+- Every structural functor is named by its construction or given as an explicit composite.
 - Each category presentation retains all projections and evaluations required by its definition.
 - `Cat().Products()` and `Cat().Coproducts()` accept sequence-indexed category diagrams.
 - Their objects own `product_projection(i)` and `coproduct_injection(i)` respectively.
 - Every object of `Cat().Products().Subobjects()` derives its component functors by composition.
 - Slice and coslice categories use these component functors and arrow source or target projections.
+- Fibration and opfibration structure retains its cartesian or cocartesian lifts.
+- Kan extensions retain their units, counits, and universally induced natural transformations.
 - Every selected structural functor is an ordinary object of `Ar(Cat())`.
 - `structure_functors()` affects method compilation only.
 - The compiler derives structural paths only through composition in `Cat`.

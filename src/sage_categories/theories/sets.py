@@ -91,7 +91,6 @@ from sage_categories.theories.set_coproducts import (
     CoproductSet,
     CoproductsOfSetsCategory,
     SetCoproductHomCategory,
-    SetCoproductInclusionFunctor,
     SetCoproductObject,
     is_coproducts_of_sets_category,
 )
@@ -236,7 +235,6 @@ __all__ = (
     "SetAutomorphismHomCategory",
     "SetColimitObject",
     "SetCoproductHomCategory",
-    "SetCoproductInclusionFunctor",
     "SetCoproductObject",
     "SetElement",
     "SetElementFamily",

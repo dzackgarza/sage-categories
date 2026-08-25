@@ -15,13 +15,11 @@ jobs:
           python-version: "3.14"
       - uses: astral-sh/setup-uv@v6
       - uses: extractions/setup-just@v4
+      - name: Install runner tools
+        run: sudo apt-get update && sudo apt-get install --yes ripgrep
       - name: Clone QC infrastructure
         run: git clone --depth 1 https://github.com/dzackgarza/ai-review-ci.git "$HOME/ai-review-ci"
       - name: Provision Sage
         run: just ci-provision-sage
-      - name: Install compiler-discovery fix
-        run: |
-          /usr/local/sage-env/python -m pip install --force-reinstall \
-            'sage-mypy-category-plugin @ git+https://github.com/dzackgarza/sagemath-mypy-plugin@307db94c121f6be0cf39b8280d9a8a83aa40a490'
       - name: Run full repository acceptance
         run: just test-ci

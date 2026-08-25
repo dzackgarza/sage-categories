@@ -19,6 +19,10 @@ jobs:
         run: git clone --depth 1 https://github.com/dzackgarza/ai-review-ci.git "$HOME/ai-review-ci"
       - name: Provision Sage
         run: just ci-provision-sage
+      - name: Install compiler-discovery fix
+        run: |
+          /usr/local/sage-env/python -m pip install --force-reinstall \
+            'sage-mypy-category-plugin @ git+https://github.com/dzackgarza/sagemath-mypy-plugin@fix/compiler-discovery-first-pass'
       - name: Run mypy with traceback
         run: |
           export MYPYPATH="$HOME/ai-review-ci/typings"

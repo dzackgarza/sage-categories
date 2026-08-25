@@ -119,6 +119,18 @@ Each category `C` owns the implementation types relevant to its theory:
 `C(...)` dispatches from semantic input to the exact private constructor route. This
 follows Sage's [`Parent.__call__()` constructor model](https://doc.sagemath.org/html/en/reference/structure/sage/structure/parent.html).
 
+For `A, B in C`, the following expressions return the same owned Hom category:
+
+```python
+Ar(C)(A, B)
+Hom(C)(A, B)
+C.HomCategory(A, B)
+A.Hom(B)
+B ** A
+```
+
+Each spelling sends construction data to that category's object constructor.
+
 For `X, Y in C`, the categorical operators are:
 
 ```python

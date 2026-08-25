@@ -237,6 +237,18 @@ The following are categories and therefore objects of `Cat`:
 - `Ar(Cat())` and `Fun(C, D) = Hom_Cat(C, D)`;
 - `Hom_C(x, y)`.
 
+For `A, B in C`, these expressions are the same owned Hom category:
+
+```python
+Ar(C)(A, B)
+Hom(C)(A, B)
+C.HomCategory(A, B)
+A.Hom(B)
+B ** A
+```
+
+All spellings dispatch construction data through that one category.
+
 Use `HomCatType`, not `HomSetType`, at the `Cat` level.
 For example, a hom category between sheaves can have natural transformations as its objects.
 Only `Sets()` identifies its hom objects with sets of functions.

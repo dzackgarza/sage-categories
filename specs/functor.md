@@ -47,6 +47,21 @@ C.AutArrowCategory()    # AutAr(C)
 These constructors are methods of the category object because `Cat().ObjectType` owns
 them. Every category inherits them from `Cat`.
 
+For `A, B in C`, endpoint application to the arrow category is the Hom category:
+
+```python
+H = Ar(C)(A, B)
+
+H is Hom(C)(A, B)
+H is C.HomCategory(A, B)
+H is A.Hom(B)
+H is B ** A
+```
+
+These spellings return one cached category. Supplying arrow data through any spelling
+uses that category's object constructor. No spelling owns a parallel Hom or arrow
+construction.
+
 ## Functors as arrows of `Cat`
 
 A functor is an arrow in `Cat`. Therefore, every functor is an object of
@@ -97,6 +112,9 @@ For every category `C`, the kernel constructs `Ar(C)` or, equivalently,
 
 Objects of `Ar(C)` are arrows of `C`. An object retains its domain, codomain, and
 underlying arrow. Arrows of `Ar(C)` are commuting squares.
+
+Applying `Ar(C)` to endpoints `A, B` selects the same Hom category as `A.Hom(B)`.
+It does not define a second fixed-endpoint construction.
 
 The construction is uniform. In particular:
 

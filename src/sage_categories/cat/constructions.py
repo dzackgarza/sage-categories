@@ -36,6 +36,7 @@ from __future__ import annotations
 from collections.abc import Callable, Hashable
 from typing import NamedTuple
 
+from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.cat.category import Category, member
@@ -393,11 +394,10 @@ class ProductsCategory(ApexCategory):
         assert limiting_cone in diagrams.morphism_category(1)(diagrams.constant(apex), diagram)
         return self._retain(apex, UniversalData(diagram, limiting_cone, mediator))
 
+    @cached_method
     def Subobjects(self) -> Category:
         """``C.Products().Subobjects()``: the objects presented by a monomorphism into a chosen product, with their derived component projections (POL-CAT-094)."""
-        if "Subobjects" not in self._constructions:
-            self._constructions["Subobjects"] = ProductSubobjectsCategory(self)
-        return self._constructions["Subobjects"]
+        return ProductSubobjectsCategory(self)
 
     def __repr__(self) -> str:
         return f"{self._apex_category!r}.Products()"

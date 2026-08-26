@@ -156,6 +156,12 @@ class MonotoneMap(MorphismOfCategory):
 
 
 def _is_classical(candidate: Any) -> bool:
+    """Whether a candidate is a classical element of a poset.
+
+    A classifier of the equality candidate, like ``role_of`` and ``is_placed``: it
+    receives exactly the second argument of ``_equal`` and must accept every input
+    (POL-TYPE-004).
+    """
     posets = Posets()
     return role_of(candidate) is Role.ELEMENT and candidate.parent() in posets and candidate.stage() is posets.Terminal()
 

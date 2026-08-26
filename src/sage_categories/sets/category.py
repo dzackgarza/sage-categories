@@ -88,7 +88,6 @@ class SetsCategory(Category[[Rule], []]):
 
     def __init__(self) -> None:
         self._canonical: dict[tuple[str, tuple[int, ...]], SetObject] = {}
-        self._constructions: dict[str, Category] = {}
         self._rule_valued: MonoDict = MonoDict()
         self._classical_points: MonoDict = MonoDict()
         super().__init__()

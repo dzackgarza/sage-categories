@@ -25,6 +25,7 @@ import logging
 from collections.abc import Callable, Hashable
 from typing import TYPE_CHECKING, Any, Literal, overload
 
+from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict
 
 import sage_categories.kernel.compiler as compiler
@@ -77,7 +78,6 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         self._points: MonoDict = MonoDict()
         self._arrows: MonoDict = MonoDict()
         self._catalogues: dict[Role, dict[str, compiler.Entry]] = {}
-        self._constructions: dict[str, Category] = {}
         self._limits: MonoDict = MonoDict()
         self._colimits: MonoDict = MonoDict()
         self._slices: MonoDict = MonoDict()
@@ -406,25 +406,23 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     # category has those limits (POL-CAT-051): constructing an object needs an
     # owned construction or supplied universal data.
 
+    @cached_method
     def Products(self) -> Category:
         """The category of chosen products over every discrete shape."""
         from sage_categories.cat.constructions import ProductsCategory
 
         if self.has_ambient():
             return self.ambient().Products()
-        if "Products" not in self._constructions:
-            self._constructions["Products"] = ProductsCategory(self)
-        return self._constructions["Products"]
+        return ProductsCategory(self)
 
+    @cached_method
     def Coproducts(self) -> Category:
         """The category of chosen coproducts over every discrete shape."""
         from sage_categories.cat.constructions import CoproductsCategory
 
         if self.has_ambient():
             return self.ambient().Coproducts()
-        if "Coproducts" not in self._constructions:
-            self._constructions["Coproducts"] = CoproductsCategory(self)
-        return self._constructions["Coproducts"]
+        return CoproductsCategory(self)
 
     def Limits(self, shape: Category) -> Category:
         """``C.Limits(I)``: chosen limits of diagrams of shape ``I``, one family per shape."""
@@ -494,29 +492,40 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
             self._coslices[member_object] = coslice_under(self, member_object)
         return self._coslices[member_object]
 
+    # Each family is retained by the method that names it (Sage ``cached_method``):
+    # the spelling is the method, not a key in a registry (POL-CAT-083).
+
     def _morphism_property_family(self, name: str, property_of: Callable[[Category], Category], over: bool) -> Category:
         from sage_categories.cat.slices import MorphismPropertyFamily
 
-        if self.has_ambient():
-            return self.ambient()._morphism_property_family(name, property_of, over)
-        if name not in self._constructions:
-            self._constructions[name] = MorphismPropertyFamily(self, name, property_of, over)
-        return self._constructions[name]
+        return MorphismPropertyFamily(self, name, property_of, over)
 
+    @cached_method
     def Subobjects(self) -> Category:
         """The monomorphisms of ``C`` as objects of ``Fun([1], C)``; ``C.Subobjects()(x)`` is the fiber over ``x`` in ``C.SliceOver(x)``."""
+        if self.has_ambient():
+            return self.ambient().Subobjects()
         return self._morphism_property_family("Subobjects", lambda morphisms: morphisms.Monomorphisms(), True)
 
+    @cached_method
     def Superobjects(self) -> Category:
         """The monomorphisms of ``C``; ``C.Superobjects()(x)`` is the fiber under ``x`` in ``C.CosliceUnder(x)``."""
+        if self.has_ambient():
+            return self.ambient().Superobjects()
         return self._morphism_property_family("Superobjects", lambda morphisms: morphisms.Monomorphisms(), False)
 
+    @cached_method
     def CoveringObjects(self) -> Category:
         """The epimorphisms of ``C``; ``C.CoveringObjects()(y)`` is the fiber over ``y``: pairs ``(X, p: X -> y)`` (POL-CAT-026)."""
+        if self.has_ambient():
+            return self.ambient().CoveringObjects()
         return self._morphism_property_family("CoveringObjects", lambda morphisms: morphisms.Epimorphisms(), True)
 
+    @cached_method
     def CoveredObjects(self) -> Category:
         """The epimorphisms of ``C``; ``C.CoveredObjects()(x)`` is the fiber under ``x`` in ``C.CosliceUnder(x)``."""
+        if self.has_ambient():
+            return self.ambient().CoveredObjects()
         return self._morphism_property_family("CoveredObjects", lambda morphisms: morphisms.Epimorphisms(), False)
 
     # -- the chosen sets of objects and morphisms of a small shape (specs/functor.md, "Diagram shapes and universal constructions") -----------------

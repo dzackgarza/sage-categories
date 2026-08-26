@@ -58,6 +58,7 @@ def test_operators_are_the_binary_construction_categories() -> None:
     two, three = Sets().Simplex(int(1)), Sets().Simplex(int(2))
     assert two * three is Sets().Products()((two, three))
     assert two + three is Sets().Coproducts()((two, three))
+    assert (two * three).diagram() is (two + three).diagram()
     assert Sets() * Cat() is Cat().Products()((Sets(), Cat()))
     assert Sets() + Cat() is Cat().Coproducts()((Sets(), Cat()))
     assert Cat() ** Sets() is Fun(Sets(), Cat())

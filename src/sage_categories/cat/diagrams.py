@@ -36,11 +36,12 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from sage.structure.coerce_dict import MonoDict
+from sage.structure.coerce_dict import MonoDict, TripleDict
 
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.shapes import Discrete, DiscreteObject, is_discrete
+from sage_categories.kernel.caches import SequenceTable
 from sage_categories.kernel.decisions import Decision
 from sage_categories.kernel.predicates import ask
 from sage_categories.kernel.roles import ObjectOfCategory
@@ -87,10 +88,23 @@ def constant(functors: FunctorCategory, value: ObjectOfCategory) -> Functor:
     return functors._constants[value]
 
 
+# A diagram constructor called on identical data returns the retained functor
+# (POL-CAT-083): object rules per rule, sequences per sequence and ambient, cospans
+# and spans per pair of legs and base.  Every table keys by identity.
+_object_rule_diagrams: MonoDict = MonoDict()
+_sequence_diagrams: MonoDict = MonoDict()
+_cospan_diagrams: TripleDict = TripleDict(weak_values=False)
+_span_diagrams: TripleDict = TripleDict(weak_values=False)
+
+
 def from_object_rule(functors: FunctorCategory, rule: Callable[[DiscreteObject], ObjectOfCategory]) -> Functor:
-    """A diagram over a discrete shape from its object rule; the morphism rule is forced."""
+    """A diagram over a discrete shape from its object rule, retained per rule; the morphism rule is forced."""
     assert is_discrete(functors.domain()), f"{functors.domain()!r} is not a discrete shape; supply a morphism rule"
-    return functors(rule, lambda identity: rule(identity.domain()).identity())
+    if rule not in _object_rule_diagrams:
+        _object_rule_diagrams[rule] = functors(rule, lambda identity: rule(identity.domain()).identity())
+    diagram = _object_rule_diagrams[rule]
+    assert diagram.codomain() is functors.codomain(), f"{rule!r} already defines a diagram in {diagram.codomain()!r}"
+    return diagram
 
 
 def sequence_position(vertex: DiscreteObject) -> int:
@@ -101,15 +115,14 @@ def sequence_position(vertex: DiscreteObject) -> int:
 
 
 def from_sequence(ambient: Category, sequence: tuple[ObjectOfCategory, ...]) -> Functor:
-    """The diagram ``(X_0, ..., X_n)`` over ``Discrete([n])``; the empty sequence is over ``Discrete({})``."""
-    index_set = Sets().Simplex(len(sequence) - 1) if sequence else Sets().Empty()
-    return from_object_rule(Fun(Discrete(index_set), ambient), lambda vertex: sequence[sequence_position(vertex)])
-
-
-def morphism_from_sequence(ambient: Category, domain: Functor, codomain: Functor, components: tuple[MorphismOfCategory, ...]) -> MorphismOfCategory:
-    """The natural transformation between two sequence diagrams with the given components."""
-    functors = Fun(domain.domain(), ambient)
-    return functors.morphism_category(1)(domain, codomain)(lambda vertex: components[sequence_position(vertex)])
+    """The diagram ``(X_0, ..., X_n)`` over ``Discrete([n])``, retained per sequence and ambient; the empty sequence is over ``Discrete({})``."""
+    if ambient not in _sequence_diagrams:
+        _sequence_diagrams[ambient] = SequenceTable()
+    table = _sequence_diagrams[ambient]
+    if sequence not in table:
+        index_set = Sets().Simplex(len(sequence) - 1) if sequence else Sets().Empty()
+        table[sequence] = from_object_rule(Fun(Discrete(index_set), ambient), lambda vertex: sequence[sequence_position(vertex)])
+    return table[sequence]
 
 
 # -- the commuting squares of ``Fun([1], C)`` as a finite set (specs/functor.md, "Diagram shapes and universal constructions") ---------------------------
@@ -157,21 +170,27 @@ def _fold(images: dict[str, MorphismOfCategory], identities: Callable[[ObjectOfC
 
 
 def cospan_diagram(base: Category, first: MorphismOfCategory, second: MorphismOfCategory) -> Functor:
-    """The diagram ``L(2, 2) -> C`` with legs ``first: 0 -> 2`` and ``second: 1 -> 2``."""
+    """The diagram ``L(2, 2) -> C`` with legs ``first: 0 -> 2`` and ``second: 1 -> 2``, retained per legs and base."""
     assert first.codomain() is second.codomain()
-    cospan = Cat().Horn(2, 2)
-    objects = {0: first.domain(), 1: second.domain(), 2: first.codomain()}
-    images = {"0->2": first, "1->2": second}
-    return Fun(cospan, base)(lambda vertex: objects[cospan.label(vertex)], lambda path: _fold(images, lambda vertex: objects[cospan.label(vertex)].identity(), path))
+    key = (first, second, base)
+    if key not in _cospan_diagrams:
+        cospan = Cat().Horn(2, 2)
+        objects = {0: first.domain(), 1: second.domain(), 2: first.codomain()}
+        images = {"0->2": first, "1->2": second}
+        _cospan_diagrams[key] = Fun(cospan, base)(lambda vertex: objects[cospan.label(vertex)], lambda path: _fold(images, lambda vertex: objects[cospan.label(vertex)].identity(), path))
+    return _cospan_diagrams[key]
 
 
 def span_diagram(base: Category, first: MorphismOfCategory, second: MorphismOfCategory) -> Functor:
-    """The diagram ``L(2, 0) -> C`` with legs ``first: 0 -> 1`` and ``second: 0 -> 2``."""
+    """The diagram ``L(2, 0) -> C`` with legs ``first: 0 -> 1`` and ``second: 0 -> 2``, retained per legs and base."""
     assert first.domain() is second.domain()
-    span = Cat().Horn(2, 0)
-    objects = {0: first.domain(), 1: first.codomain(), 2: second.codomain()}
-    images = {"0->1": first, "0->2": second}
-    return Fun(span, base)(lambda vertex: objects[span.label(vertex)], lambda path: _fold(images, lambda vertex: objects[span.label(vertex)].identity(), path))
+    key = (first, second, base)
+    if key not in _span_diagrams:
+        span = Cat().Horn(2, 0)
+        objects = {0: first.domain(), 1: first.codomain(), 2: second.codomain()}
+        images = {"0->1": first, "0->2": second}
+        _span_diagrams[key] = Fun(span, base)(lambda vertex: objects[span.label(vertex)], lambda path: _fold(images, lambda vertex: objects[span.label(vertex)].identity(), path))
+    return _span_diagrams[key]
 
 
 def codomain_lift(functors: FunctorCategory, morphism: MorphismOfCategory, member_object: MorphismOfCategory) -> NaturalTransformation:

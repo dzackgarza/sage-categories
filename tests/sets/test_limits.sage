@@ -180,6 +180,8 @@ def test_shape_indexed_limit_families_are_distinct_and_retain_their_universal_da
     two, three = Sets().Simplex(int(1)), Sets().Simplex(int(2))
     include = Mor(Sets())(two, three)(lambda datum: datum)
     pullback = Sets().Pullbacks()(cospan_diagram(Sets(), include, include))
+    lift = Fun(Cat().Simplex(int(1)), Sets()).cartesian_lift(include, include)
+    assert lift.domain().domain() is pullback
     assert pullback.cone() in Mor(Fun(cospan, Sets()))
     assert pullback.projection(cospan(int(0))).domain() is pullback
     assert pullback.projection(cospan(int(1))).codomain() is two

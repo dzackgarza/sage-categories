@@ -95,7 +95,7 @@ def function_set(exponent: SetObject, base: SetObject) -> SetObject:
 
         base_cardinality, exponent_cardinality = base.cardinality(), exponent.cardinality()
         cardinality = base_cardinality**exponent_cardinality if base_cardinality is not Unknown and exponent_cardinality is not Unknown else Unknown
-        _function_sets[key] = sets.ObjectType(sets, membership_rule, cardinality)
+        _function_sets[key] = sets.rule_valued(membership_rule, cardinality)
     return _function_sets[key]
 
 

@@ -28,7 +28,8 @@ from sage_categories.kernel.decisions import Decision, Unknown, decision_not
 from sage_categories.kernel.predicates import ask
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import Role
-from sage_categories.sets.cardinals import Cardinal
+from sage_categories.kernel.decisions import UnknownClass
+from sage_categories.sets.cardinals import Cardinal, CardinalObject
 from sage_categories.sets.elements import Datum, SetPoint, points_equal
 from sage_categories.sets.maps import (
     Rule,
@@ -87,6 +88,7 @@ class SetsCategory(Category[[Rule], []]):
     def __init__(self) -> None:
         self._canonical: dict[tuple[str, tuple[int, ...]], SetObject] = {}
         self._constructions: dict[str, Category] = {}
+        self._rule_valued: MonoDict = MonoDict()
         super().__init__()
         self._equality.register_handler(points_equal)
         self._equality.register_handler(maps_equal)
@@ -113,6 +115,21 @@ class SetsCategory(Category[[Rule], []]):
     def __call__(self, membership_rule: MembershipRule) -> SetObject:
         """``Sets()(rule)``: the set defined by a membership rule on data, with no cardinal data."""
         return self.ObjectType(self, membership_rule, Unknown)
+
+    def rule_valued(self, membership_rule: MembershipRule, cardinality: CardinalObject | UnknownClass) -> SetObject:
+        """A set whose data are rules (families, names of maps): its points are retained per datum object.
+
+        The constructions that create such data (products over an unenumerated
+        index, function sets, colimit representatives) construct their apex here, so
+        ``X.point(datum)`` on it is ``X.rule_point(datum)``.
+        """
+        rule_valued = self.ObjectType(self, membership_rule, cardinality)
+        self._rule_valued[rule_valued] = rule_valued
+        return rule_valued
+
+    def points_by_rule(self, member_object: SetObject) -> bool:
+        """Whether ``member_object`` was constructed through ``rule_valued``."""
+        return member_object in self._rule_valued
 
     def Finite(self) -> FiniteSets:
         return self._properties["Finite"]

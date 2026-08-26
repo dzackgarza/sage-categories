@@ -73,12 +73,10 @@ class SetObject(ObjectOfCategory):
         self._cardinality = cardinality
         # One retained point per datum (POL-CAT-083): the datum is private computation
         # data inside the set's boundary (POL-TYPE-012), so these tables never key on
-        # an owned value.  A datum whose engine equality is Boolean-exact keys the
-        # first table by value, so two equal data select one point.  A datum whose
-        # equality can be ``Unknown`` (a rule-defined family, the name of a map with an
-        # unenumerated domain) is retained by identity in the second: two distinct
-        # such data yield two points, which are ``True``-equal and hash-equal exactly
-        # when the engine later decides their data equal.
+        # an owned value.  ``point`` keys the first table by datum value, for data whose
+        # engine equality is Boolean-exact; ``rule_point`` keys the second by datum
+        # identity, for the rule data of a set constructed through
+        # ``Sets().rule_valued`` (a rule-defined family, the name of a map).
         self._points: dict[Datum, SetPoint] = {}
         self._rule_points: MonoDict = MonoDict()
 
@@ -93,14 +91,34 @@ class SetObject(ObjectOfCategory):
         return decision is True
 
     def point(self, datum: Datum) -> SetPoint:
-        """The classical element ``1 -> X`` selecting ``datum``, one point per datum."""
+        """The classical element ``1 -> X`` selecting ``datum``, one point per datum value.
+
+        A set constructed through ``Sets().rule_valued`` routes every point through
+        ``rule_point``, since its data compare three-valued.
+        """
+        if _sets.Sets().points_by_rule(self):
+            return self.rule_point(datum)
         assert self._membership_rule(datum) is not False, f"{datum!r} is not a member of {self!r}"
-        table = self._points if isinstance(datum == datum, bool) else self._rule_points
-        if datum not in table:
-            sets = _sets.Sets()
-            defining_morphism = sets.construct_morphism(sets.Terminal(), self, lambda star: datum)
-            table[datum] = self.category().ElementType(defining_morphism, datum)
-        return table[datum]
+        if datum not in self._points:
+            self._points[datum] = self._construct_point(datum)
+        return self._points[datum]
+
+    def rule_point(self, datum: Datum) -> SetPoint:
+        """The point selecting a rule datum, one point per datum object.
+
+        Two distinct-but-equal rule data yield two points that are ``True``-equal
+        (their data compare equal through the engine) and hash-equal (a point hashes
+        by its datum, and equal rule data hash equal).
+        """
+        assert self._membership_rule(datum) is not False, f"{datum!r} is not a member of {self!r}"
+        if datum not in self._rule_points:
+            self._rule_points[datum] = self._construct_point(datum)
+        return self._rule_points[datum]
+
+    def _construct_point(self, datum: Datum) -> SetPoint:
+        sets = _sets.Sets()
+        defining_morphism = sets.construct_morphism(sets.Terminal(), self, lambda star: datum)
+        return self.category().ElementType(defining_morphism, datum)
 
     def cardinality(self) -> CardinalObject | UnknownClass:
         return self._cardinality

@@ -199,7 +199,7 @@ def product_of_sets(diagram: Functor) -> SetObject:
         choices = itertools.product(*(finite.chosen_enumeration(factor) for factor in factors))
         apex = finite(Family(index_set, dict(zip(enumeration, choice)).__getitem__) for choice in choices)
     else:
-        apex = sets.ObjectType(sets, membership_rule, _product_cardinality(diagram, index_set, factors))
+        apex = sets.rule_valued(membership_rule, _product_cardinality(diagram, index_set, factors))
         for placement in _product_placements(diagram, index_set):
             refine(apex, placement)
 

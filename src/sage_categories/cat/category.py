@@ -853,13 +853,23 @@ class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
 def bootstrap() -> None:
     """Construct the singleton ``Cat()`` once; ``cat/functors.py`` runs this at import.
 
-    The theory of ``Cat()`` is one cluster of modules: ``MorphismCategory`` and
+    ``Cat()`` is self-referential mathematics: ``Cat().ObjectType`` is ``Category``,
+    ``Cat().MorphismType`` is ``Functor``, and ``Functor`` is itself an object of
+    ``Fun = Mor(Cat())``, so ``Category`` and ``Functor`` are mutually defined and
+    do not split into two layers.  ``MorphismCategory`` and
     ``FinitePresentedCategory`` subclass ``Category``, and ``Functor`` and
     ``NaturalTransformation`` are constructed through it, so none can be imported
     here at module level, while ``Category``'s signatures name them.  The kernel
-    evaluates those signatures when it compiles a category that inherits the
-    ``Category`` surface (POL-KERNEL-021), after the cluster is complete; binding
-    the names here, at the end of the cluster's import, is that layering.
+    evaluates those signatures with ``eval_str`` when it compiles a category that
+    inherits the ``Category`` surface (POL-KERNEL-021), so the names must resolve
+    in this module then.
+
+    The theory is therefore one import layer with one entry point:
+    ``cat/__init__.py`` imports ``cat/functors.py``, whose last statement calls
+    this function, so the cluster is complete before any module in it is used.
+    Binding the names here is that layering, not a name registry: each name is
+    bound once, to the class the cluster defines, and nothing looks a class up by
+    string.
     """
     global _CAT, FinitePresentedCategory, Functor, FunctorsCategory, MorphismCategory, NaturalTransformation
     from sage_categories.cat.canonical import FinitePresentedCategory

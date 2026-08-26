@@ -77,6 +77,9 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
     def name(self) -> str:
         return "ChosenSubsets"
 
+    def __repr__(self) -> str:
+        return f"{self.ambient()!r}.{self.name()}()"
+
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
         if role is Role.OBJECT:
             return ChosenSubsetRole
@@ -206,6 +209,9 @@ class ChosenQuotientsCategory(FullSubcategory[[Rule], []]):
 
     def name(self) -> str:
         return "ChosenQuotients"
+
+    def __repr__(self) -> str:
+        return f"{self.ambient()!r}.{self.name()}()"
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
         if role is Role.OBJECT:

@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING, Concatenate, NamedTuple
 from sage.structure.dynamic_class import dynamic_class
 
 import sage_categories.kernel.descriptors as descriptors
+from sage_categories.kernel.caches import MonoDict
 from sage_categories.kernel.roles import CategoryPoint, Role, kernel_base
 
 if TYPE_CHECKING:
@@ -92,6 +93,10 @@ _IGNORED_NAMES = frozenset({"__init__", "__new__", "__repr__", "__init_subclass_
 # role class of every category that declares it, such as the identity 2-cells of
 # every 1-category).
 _class_keys: dict[type[CategoryPoint], int] = {}
+
+# The local role class of each category that declares none of its own, keyed by
+# identity: one declaring owner per node (POL-CAT-016).
+_empty_local_roles: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
 
 
 def node(category: Category, role: Role) -> Node:
@@ -193,12 +198,22 @@ def catalogue[**P, R](current: Node) -> dict[str, Entry[P, R]]:
 
 
 def empty_local_role(category: Category, role: Role) -> type[CategoryPoint]:
-    """A local role class that declares nothing, on the kernel base of the ambient's role."""
-    ambient_node = node(category.ambient(), role)
-    ambient_class = ambient_node.category.role_class(ambient_node.role)
-    kernel_bases = (kernel_base(Role.OBJECT), kernel_base(Role.ELEMENT), kernel_base(Role.MORPHISM), CategoryPoint)
-    base = next(klass for klass in ambient_class.__mro__ if klass in kernel_bases)
-    return type(f"{category!r}.{role.value}", (base,), {})
+    """The local role class that declares nothing, on the kernel base of the ambient's role.
+
+    One class per category and role, retained: the compiled bases of a category list
+    the local class of every reachable node, and ``descriptors._declared`` finds a
+    declaring owner by class identity.  A second class with the same name would be a
+    second declaring owner of one node, and two of them in one base list have no
+    consistent linearization (POL-CAT-016, POL-CAT-011).
+    """
+    table = _empty_local_roles[role]
+    if category not in table:
+        ambient_node = node(category.ambient(), role)
+        ambient_class = ambient_node.category.role_class(ambient_node.role)
+        kernel_bases = (kernel_base(Role.OBJECT), kernel_base(Role.ELEMENT), kernel_base(Role.MORPHISM), CategoryPoint)
+        base = next(klass for klass in ambient_class.__mro__ if klass in kernel_bases)
+        table[category] = type(f"{category!r}.{role.value}", (base,), {})
+    return table[category]
 
 
 def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:

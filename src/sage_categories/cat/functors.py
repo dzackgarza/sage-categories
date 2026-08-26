@@ -22,14 +22,14 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from sage.structure.coerce_dict import MonoDict
+from sage.structure.coerce_dict import MonoDict, TripleDict
 
 from sage_categories.cat import category as _category
 from sage_categories.cat.category import Assignment, Category, CategoryOfCategories, OnMorphism, OnObject
 from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategory
 from sage_categories.cat.properties import FixedEndpointProperty, PropertySubcategory
 from sage_categories.kernel.predicates import AppliedPredicate
-from sage_categories.kernel.refinement import is_placed, place, refine
+from sage_categories.kernel.refinement import is_placed, is_retained_inclusion, refine
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
 
 if TYPE_CHECKING:
@@ -74,16 +74,17 @@ class Functor(MorphismOfCategory):
         return self._on_morphism(morphism)
 
     def on_element(self, element: ElementOfObject) -> ElementOfObject:
-        """The image of a generalized element ``t: T -> X``: the element with defining morphism ``F(t)`` (D05).
+        """The image of a generalized element ``t: T -> X``: the element with defining morphism ``F(t)`` (POL-FUN-002).
 
         A classical element whose stage is not an object of the domain belongs to the
-        subcategory's objects only through its ambient; an inclusion maps it to the
-        same value (D06: a subcategory without the ambient's stage receives classical
-        element operations through the inclusion image).
+        subcategory's objects only through its ambient; the retained inclusion maps
+        it to the same value (``specs/functor.md``, "Inclusion functors": a subcategory
+        without the ambient's stage receives classical element operations through the
+        inclusion image).  No other functor has an action on it.
         """
         defining = element.defining_morphism()
         if element.stage() not in self.domain():
-            assert self._on_object is identity_on_values, f"{element!r} is not a generalized element in {self.domain()!r}"
+            assert is_retained_inclusion(self), f"{element!r} is not a generalized element in {self.domain()!r}"
             return element
         image = self.on_morphism(defining)
         if image is defining:
@@ -229,6 +230,9 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     def __init__(self, base: CategoryOfCategories) -> None:
         self._bootstrapping = False
         self._bootstrapped = False
+        # One inclusion per ``(source, target)``, constructed once and retained by
+        # identity (D08); "``F`` is an inclusion" is decided against this table.
+        self._inclusions: TripleDict = TripleDict(weak_values=False)
         super().__init__(base)
 
     def fixed_endpoint_type(self) -> type[FunctorCategory]:
@@ -285,13 +289,24 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     # -- inclusions (D08) ---------------------------------------------------------
 
     def _inclusion(self, source: Category, target: Category, placement_name: str) -> Functor:
-        """The identity-on-value inclusion ``source -> target`` placed in a functor property."""
+        """The one identity-on-value inclusion ``source -> target``, placed in the declared functor property."""
         if not self._bootstrapped and not self._bootstrapping:
             self._bootstrap()
-        inclusion = self._base.construct_morphism(source, target, identity_on_values, identity_on_values)
+        key = (source, target, self)
+        if key not in self._inclusions:
+            self._inclusions[key] = self._base.construct_morphism(source, target, identity_on_values, identity_on_values)
+        inclusion = self._inclusions[key]
         if self._bootstrapped:
-            place(inclusion, self._properties[placement_name])
+            refine(inclusion, self._properties[placement_name])
         return inclusion
+
+    def retains_inclusion(self, source: Category, target: Category) -> bool:
+        return (source, target, self) in self._inclusions
+
+    def inclusion_of(self, source: Category, target: Category) -> Functor:
+        """The retained inclusion ``source -> target``."""
+        assert (source, target, self) in self._inclusions, f"no inclusion {source!r} -> {target!r} was declared"
+        return self._inclusions[source, target, self]
 
     def full_inclusion(self, source: Category, target: Category) -> Functor:
         """The inclusion of a full subcategory: fully faithful by construction (Mathlib ``ObjectProperty.ι``)."""

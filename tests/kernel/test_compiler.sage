@@ -178,6 +178,46 @@ class BothSizes(Category):
         return "BothSizes"
 
 
+class Carried(Category):
+    """Objects carrying a set, related to ``Sets()`` by an explicit forgetful functor, not an inclusion."""
+
+    class ObjectType(ObjectOfCategory):
+        def __init__(self, category, carrier):
+            ObjectOfCategory.__init__(self, category)
+            self._carrier = carrier
+
+        def carrier(self) -> ObjectOfCategory:
+            return self._carrier
+
+    class ElementType(ElementOfObject):
+        """No local operation."""
+
+    class MorphismType(MorphismOfCategory):
+        def underlying_map(self) -> MorphismOfCategory:
+            return self._underlying
+
+    def structure_functors(self):
+        return (Fun(self, Sets()).Faithful()(lambda member: member.carrier(), lambda morphism: morphism.underlying_map()),)
+
+    def __call__(self, carrier):
+        return self.ObjectType(self, carrier)
+
+    def __repr__(self):
+        return "Carried"
+
+
+def test_a_selected_functor_that_is_not_an_inclusion_places_nothing() -> None:
+    """Placement follows retained inclusions only; the forgetful image still supplies inherited values."""
+    carried = Carried()
+    pair = carried(Sets().Finite()((int(3), int(4))))
+
+    assert pair in carried
+    assert pair not in Sets()
+    assert pair not in Sets().Finite()
+    assert ask(pair.cardinality() == int(2)) is True
+    assert ask(pair.is_finite()) is True
+
+
 def test_dynamic_inheritance_surface_of_one_inclusion() -> None:
     """One selected inclusion exposes the object, element, and morphism surface of ``Sets()``."""
     pairs = PairSets()

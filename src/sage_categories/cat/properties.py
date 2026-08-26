@@ -160,12 +160,13 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
         return root.predicate()
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        functors = _functors()
-        return (
-            functors.full_inclusion(self, self._ambient),
-            *(functors.full_inclusion(self, root) for root in self._roots),
-            *(functors.full_inclusion(self, wider.intersection(self._roots)) for wider in self._ambient.inclusion_ambient()),
-        )
+        """The inclusions into the ambient, into each root, and into the same narrowing of the ambient's ambient, each once."""
+        targets: list[Category] = [self._ambient, *self._roots]
+        for wider in self._ambient.inclusion_ambient():
+            narrowing = wider.intersection(self._roots)
+            if not any(narrowing is target for target in targets):
+                targets.append(narrowing)
+        return tuple(_functors().full_inclusion(self, target) for target in targets)
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         """Membership in the ambient together with established placement in every root."""

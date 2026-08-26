@@ -23,6 +23,7 @@ def test_finite_sets_declare_one_inclusion_and_receive_the_set_surface() -> None
     successor = Mor(Sets().Finite())(triple, triple)(lambda datum: int(4) + (datum - int(3)) % int(3))
 
     assert inclusion in Fun(Sets().Finite(), Sets()).FullyFaithful()
+    assert inclusion is Fun(Sets().Finite(), Sets()).FullyFaithful().inclusion()
     assert inclusion.on_object(triple) is triple
     assert inclusion.on_morphism(successor) is successor
     assert inclusion.on_element(five) is five

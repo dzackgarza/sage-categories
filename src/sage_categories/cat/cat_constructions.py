@@ -117,7 +117,7 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
         return self._diagram.on_object(vertex_of(self.shape(), index))
 
     def classical_stages(self) -> tuple[FamilyObject, ...]:
-        """The stage ``(G_i)_i`` when every factor of an enumerated family chooses one stage (D06)."""
+        """The stage ``(G_i)_i`` when every factor of an enumerated family chooses one stage."""
         index_set, finite = index_set_of(self.shape()), Sets().Finite()
         if not finite.has_chosen_enumeration(index_set):
             return ()

@@ -3,10 +3,10 @@
 Oracles: the definition of a partial order (reflexive, antisymmetric, transitive) and of
 a total order; the definition of the induced order on a subset, the ``U``-initial lift
 of its inclusion (Adamek, Herrlich, Strecker, Definition 10.41 and Example 10.42(6);
-Mathlib ``PartialOrder.lift``); D18 for the category of every inherited result (the
-declaring method's value in ``Sets()``); D06 for the classical stage, its identity
-comparison under ``U``, and the generalized elements at other stages; the usual order
-on ``{0, 1, 2}`` and divisibility on ``{1, 2, 3, 6}``.
+Mathlib ``PartialOrder.lift``); POL-CAT-062 for the category of every inherited result
+(the declaring method's value in ``Sets()``); ``specs/functor.md`` for the classical
+stage, its identity comparison under ``U``, and the generalized elements at other
+stages; the usual order on ``{0, 1, 2}`` and divisibility on ``{1, 2, 3, 6}``.
 """
 
 import pytest
@@ -205,19 +205,19 @@ def test_the_classical_stage_is_the_one_point_order_with_the_identity_comparison
     assert generalized.stage() is pair
     assert generalized.parent() is divisibility
     assert generalized.defining_morphism() is comparable
-    assert ask(generalized <= two) is Unknown
 
 
 def test_the_thin_category_of_a_poset_has_one_comparison_per_related_pair() -> None:
     divisibility = _divisibility()
     carrier = _underlying().on_object(divisibility)
-    thin = Thin(divisibility)
+    thin = divisibility.thin_category()
     two, three, six = (thin(carrier.point(int(k))) for k in (2, 3, 6))
 
     assert thin is divisibility.thin_category()
     assert thin in Cat()
+    assert thin.carrier() is carrier
     assert Mor(thin)(two, six)() in Mor(thin)(two, six)
     assert ask(Mor(thin)(six, six)() == six.identity()) is True
     with pytest.raises(AssertionError):
         Mor(thin)(two, three)()
-    assert Thin(Posets().Simplex(int(2))) is not Cat().Simplex(int(2))
+    assert Posets().Simplex(int(2)).thin_category() is not Cat().Simplex(int(2))

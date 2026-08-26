@@ -268,12 +268,7 @@ class ThinCategory(Category[[], []]):
         return f"Thin({self._carrier!r})"
 
 
-def Thin(*preorder: ObjectOfCategory | Predicate) -> ThinCategory:
-    """``Thin(carrier, order)``: the thin category of the preorder ``(carrier, order)``; ``Thin(P)``: the one retained by an ordered set ``P``."""
-    match preorder:
-        case (ordered_set,):
-            return ordered_set.thin_category()
-        case (carrier, order):
-            assert carrier in Sets()
-            return ThinCategory(carrier, order)
-    raise TypeError("Thin takes an ordered set, or a carrier set and an order predicate")
+def Thin(carrier: SetObject, order: Predicate) -> ThinCategory:
+    """The thin category of the preorder ``(carrier, order)``."""
+    assert carrier in Sets()
+    return ThinCategory(carrier, order)

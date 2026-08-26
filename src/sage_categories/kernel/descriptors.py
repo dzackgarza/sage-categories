@@ -71,8 +71,9 @@ def _is_classical(element: CategoryPoint, category: Category) -> bool:
 def _apply_to_element(functor: Functor, declared: type, element: CategoryPoint) -> CategoryPoint:
     # A classical element ``t: G_C -> X`` reaches the classical stage of the codomain
     # through the stage comparison ``c: G_D -> F(G_C)`` retained by the selected functor:
-    # its image is the element ``F(t) after c`` (D06 classical transport pin, D13).  The
-    # identity comparison, retained when ``F(G_C) is G_D``, changes nothing.
+    # its image is the element ``F(t) after c`` (``specs/functor.md``, "Structural
+    # inheritance"; POL-CAT-062).  The identity comparison, retained when ``F(G_C) is
+    # G_D``, changes nothing.
     if not _is_classical(element, functor.domain()) or not functor.codomain().classical_stages():
         return declared.on_element(functor, element)
     comparison = functor.stage_comparison()

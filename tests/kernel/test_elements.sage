@@ -1,17 +1,17 @@
-"""Generalized elements, stages, stage comparisons, and result transport (D06, D07, D13, D18).
+"""Generalized elements, stages, stage comparisons, and result transport (``specs/functor.md``, "Structural inheritance").
 
-Toy categories live only in this file (D14): abelian groups with the chosen stage ``Z``
+Toy categories live only in this file (POL-TEST-006): abelian groups with the chosen stage ``Z``
 (a classical element of ``A`` is a homomorphism ``Z -> A``, determined by the image of
 ``1``), modules over ``R = Z/2`` with the chosen stage ``R``, and the two-generator free
 modules included into them.  The module-to-group functor retains the stage comparison
 ``Z -> U(R)``, ``1 |-> 1``; the group-to-set functor retains ``1 -> ZZ``, ``* |-> 1``.
 
-Oracles: the definition of a generalized element and of its image under a functor (D06:
-``F`` applied to the defining morphism); the definition of the stage comparison (D06:
-the classical image is ``F(t)`` precomposed with ``G_D -> F(G_C)``); the sum in
-``(Z/2)^2``; D18 for the category of every inherited result; D11 for the
-construction-defect error; the classical stages ``1`` of ``Sets()`` and ``{1, [1]}``
-of ``Cat()`` (D06).
+Oracles: the definition of a generalized element and of its image under a functor
+(``F`` applied to the defining morphism); the definition of the stage comparison (the
+classical image is ``F(t)`` precomposed with ``G_D -> F(G_C)``); the sum in
+``(Z/2)^2``; POL-CAT-062 for the category of every inherited result; POL-CAT-012 for
+the construction-defect error; the classical stages ``1`` of ``Sets()`` and ``{1, [1]}``
+of ``Cat()``.
 """
 
 import itertools
@@ -299,16 +299,16 @@ class Rebuilt(Category):
 
 
 def _thin_functor():
-    """The ordinary, unselected functor ``Posets() -> Cat()``, ``P |-> Thin(P)``."""
+    """The ordinary, unselected functor ``Posets() -> Cat()``, ``P |-> P.thin_category()``."""
 
     def on_morphism(monotone):
-        source, target = Thin(monotone.domain()), Thin(monotone.codomain())
+        source, target = monotone.domain().thin_category(), monotone.codomain().thin_category()
         return Fun(source, target)(
             lambda vertex: target(monotone(vertex.point())),
             lambda comparison: Mor(target)(target(monotone(comparison.domain().point())), target(monotone(comparison.codomain().point())))(),
         )
 
-    return Fun(Posets(), Cat())(Thin, on_morphism)
+    return Fun(Posets(), Cat())(lambda poset: poset.thin_category(), on_morphism)
 
 
 # -- rows -------------------------------------------------------------------------------------
@@ -472,11 +472,11 @@ def test_an_unselected_functor_maps_generalized_points_and_contributes_no_operat
 
     assert thin_functor in Fun(Posets(), Cat())
     assert all(selected is not thin_functor for selected in Posets().structure_functors())
-    assert thin_functor.on_object(chain) is Thin(chain)
+    assert thin_functor.on_object(chain) is chain.thin_category()
     image = thin_functor.on_element(one)
-    assert image.parent() is Thin(chain)
-    assert image.stage() is Thin(Posets().Terminal())
-    assert image.defining_morphism().on_object(Thin(Posets().Terminal())(Sets().Terminal().point(()))) is Thin(chain)(carrier.point(int(1)))
+    assert image.parent() is chain.thin_category()
+    assert image.stage() is Posets().Terminal().thin_category()
+    assert image.defining_morphism().on_object(Posets().Terminal().thin_category()(Sets().Terminal().point(()))) is chain.thin_category()(carrier.point(int(1)))
     with pytest.raises(AttributeError):
         chain.morphism_category
     with pytest.raises(AttributeError):

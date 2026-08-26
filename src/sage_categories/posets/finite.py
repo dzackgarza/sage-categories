@@ -1,10 +1,17 @@
 """``FinitePosets()``: the finite posets and their finite order algorithms (``specs/ordered-sets.md``, "Finite-poset API").
 
 ``FinitePosets()`` is the property subcategory of ``Posets()`` by finiteness of the
-underlying set: its inclusion into ``Posets()`` and the restriction of ``U`` to
-``Sets().Finite()`` are its two selected functors, and both routes to ``Sets()`` return
-the one retained underlying set (D11, ``specs/resolution.md``, "Finite-rank free modules
-over finite fields").  A poset on a finite set enters here at construction.
+underlying set (``specs/ordered-sets.md``, "Category and role surface").  It is not a
+narrowing of ``Posets()`` by ``Sets().Finite()``: a poset is never placed in ``Sets()``
+or a subcategory of it, and POL-CAT-084 derives a narrowing only along a selected
+inclusion.  Its two selected functors are the inclusion into ``Posets()`` and the
+restriction of ``U`` to ``Sets().Finite()``, whose object action returns the very same
+retained underlying set; both routes to ``Sets()`` therefore return one value by
+identity (``specs/resolution.md``, "Finite-rank free modules over finite fields").  Its
+trusted constructor refines the underlying set through ``Sets().Finite()`` and the poset
+through this category (POL-CAT-069); a poset on a finite set enters here at
+construction (POL-CAT-081); its predicate is decided by the inherited ``P.is_finite()``,
+the finiteness proposition of ``U(P)``.
 
 The finite operations lower the poset to a Sage finite poset once
 (``_finite_poset_sage.py``, POL-LAYOUT-020) and reconstruct owned results
@@ -27,6 +34,7 @@ from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import AppliedPredicate, ask
+from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role
 from sage_categories.posets import _finite_poset_sage as engine
 from sage_categories.posets.category import Poset, PosetElement
@@ -107,10 +115,10 @@ class GradedRole(ObjectOfCategory):
 
 
 def _finite_by_underlying_set(poset: CategoryPoint) -> Decision:
-    posets = _posets.Posets()
-    if poset not in posets:
+    """Finiteness of a poset is finiteness of ``U(P)``, asked through the inherited ``is_finite()``."""
+    if poset not in _posets.Posets():
         return Unknown
-    return ask(posets.underlying_set_functor().on_object(poset).is_finite())
+    return ask(poset.is_finite())
 
 
 def _decided_by(query: Callable[[SagePoset], bool]) -> Callable[[CategoryPoint], Decision]:
@@ -147,6 +155,13 @@ class FinitePosetsCategory(PropertySubcategory[[Rule], []]):
             underlying = self._ambient.underlying_set_functor()
             self._functors["underlying_finite_set"] = Fun(self, Sets().Finite()).Faithful()(underlying.on_object, underlying.on_morphism)
         return (*super().structure_functors(), self._functors["underlying_finite_set"])
+
+    def __call__(self, poset: Poset) -> Poset:
+        """The trusted constructor: the underlying set is finite, so it enters ``Sets().Finite()`` with the poset here."""
+        assert poset in self._ambient, f"{poset!r} is not an object of {self._ambient!r}"
+        Sets().Finite()(self._ambient.underlying_set_functor().on_object(poset))
+        refine(poset, self)
+        return poset
 
     def WithBottom(self) -> Category[[Rule], []]:
         return self._properties["WithBottom"]

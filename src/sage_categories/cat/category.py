@@ -87,7 +87,7 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         return ()
 
     def classical_stages(self) -> tuple[ObjectOfCategory, ...]:
-        """The chosen representing objects whose points are the classical elements; none by default (D06)."""
+        """The chosen representing objects whose points are the classical elements; none by default."""
         return ()
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
@@ -637,7 +637,7 @@ class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
         return (self.Terminal(), self.Simplex(1))
 
     def element_from_defining_morphism(self, defining_functor: Functor) -> CategoryPoint:
-        """The point of a category at the stage ``T`` given by a functor ``T -> C`` (D06)."""
+        """The point of a category at the stage ``T`` given by a functor ``T -> C``."""
         assert defining_functor in self.morphism_category(1)
         return self.ElementType(defining_functor)
 

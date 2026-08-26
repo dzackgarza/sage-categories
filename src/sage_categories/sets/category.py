@@ -153,7 +153,7 @@ class SetsCategory(Category[[Rule], []]):
         return (self.Terminal(),)
 
     def element_from_defining_morphism(self, defining_morphism: SetMap) -> SetPoint:
-        """The classical element whose defining morphism is the point ``1 -> X``, one element per point (D15)."""
+        """The classical element whose defining morphism is the point ``1 -> X``, one element per point (POL-CAT-066)."""
         assert defining_morphism.domain() is self.Terminal(), f"{defining_morphism!r} is not a point at the classical stage"
         if defining_morphism not in self._points:
             self._points[defining_morphism] = defining_morphism.codomain().category().ElementType(defining_morphism, defining_morphism._rule(()))

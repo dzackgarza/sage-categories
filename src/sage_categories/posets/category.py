@@ -1,4 +1,4 @@
-"""``Posets()``: partially ordered sets and monotone maps (D06, D10, D18; ``specs/ordered-sets.md``).
+"""``Posets()``: partially ordered sets and monotone maps (``specs/ordered-sets.md``).
 
 A poset is a pair ``(X, R)`` with ``R`` a chosen subset of ``X * X`` (``sets/subobjects.py``).
 ``Posets()(R)`` recovers ``X`` as the factor of the chosen product that ``R`` is a
@@ -10,11 +10,14 @@ transitivity on a finite enumerated carrier (POL-MATH-042).
 The one selected structural functor is the underlying-set functor
 ``U: Posets() -> Sets()``.  It is faithful because ``Pos`` is a construct (Mathlib
 ``PartOrd.instConcreteCategoryOrderHomCarrier``; inspected 2026-08-27).  It returns the
-retained ``X`` of a poset and the retained set map of a monotone map (D11), and it
-supplies the complete set surface: every inherited method returns the declaring
-method's value in ``Sets()`` (D18).  The classical stage is the one-point order
+retained ``X`` of a poset and the retained set map of a monotone map, and it supplies
+the complete set surface: every inherited method returns the declaring method's value
+in ``Sets()`` (POL-CAT-062).  A poset is never placed in ``Sets()``; it reaches every
+set operation through ``U`` alone.  The classical stage is the one-point order
 ``Posets().Terminal()``; ``U`` carries the identity stage comparison because the
-underlying set of the one-point order is ``Sets().Terminal()`` by construction.
+underlying set of the one-point order is ``Sets().Terminal()`` by construction.  For
+classical elements ``x, y`` of ``P``, ``x <= y`` is the membership proposition of the
+pair point ``(x, y): 1 -> X * X`` in ``R``.
 
 A monotone map ``Mor(Posets())(P, Q)(rule)`` retains its underlying set map; identities
 and composites are monotone (Mathlib ``OrderHom.id``, ``OrderHom.comp``; inspected
@@ -22,9 +25,9 @@ and composites are monotone (Mathlib ``OrderHom.id``, ``OrderHom.comp``; inspect
 ``OrderIso.symm``, ``OrderIso.monotone``; inspected 2026-08-27).  ``U`` retains the
 cartesian lift of every monomorphism ``m: Y -> U(P)`` of ``Sets()`` at ``P``: the induced
 order on ``Y`` is the ``U``-initial lift of ``m`` (Adamek, Herrlich, Strecker, *Abstract
-and Concrete Categories*, Definition 10.41 and Example 10.42(6), inspected 2026-08-26 for
-the register; Mathlib ``PartialOrder.lift``, inspected 2026-08-27).  ``P.sub_poset(...)``
-is the leaf override of D18: it calls the inherited subset construction and lifts.
+and Concrete Categories*, Definition 10.41 and Example 10.42(6), inspected 2026-08-26;
+Mathlib ``PartialOrder.lift``, inspected 2026-08-27).  ``P.sub_poset(...)`` is the leaf
+override of POL-LEAF-029/030: it calls the inherited subset construction and lifts.
 """
 
 from __future__ import annotations
@@ -51,8 +54,6 @@ from sage_categories.sets.objects import MembershipRule, SetObject
 
 __all__ = ["FinitePosets", "MonotoneMap", "Poset", "PosetElement", "Posets", "PosetsCategory", "TotallyOrderedSets"]
 
-# ``at_most(x, y)``: ``x <= y`` for two classical elements of one poset.
-at_most = Predicate("poset_at_most", 2, True)
 # ``partial_order(R)``: the relation ``R`` on ``X`` is reflexive, antisymmetric, and transitive.
 partial_order = Predicate("partial_order", 1, True)
 # ``order_preserving(P, Q, f)``: the set map ``f: U(P) -> U(Q)`` is monotone.
@@ -85,17 +86,13 @@ class Poset(ObjectOfCategory):
         return self._elements[point]
 
     def sub_poset(self, predicate: MembershipRule) -> Poset:
-        """The sub-poset ``{x in P : predicate(x)}`` with the induced order (D18 leaf override).
+        """The sub-poset ``{x in P : predicate(x)}`` with the induced order (POL-LEAF-029/030).
 
         The inherited subset construction supplies the subset of ``U(P)``; the
         cartesian lift retained by ``U`` supplies the induced order.
         """
         subset = self.subset_from(predicate)
         return Posets().cartesian_lift(subset.inclusion(), self).domain()
-
-    def is_finite(self) -> AppliedPredicate:
-        """Finiteness of the poset: finiteness of ``U(P)``, refining the poset into ``FinitePosets()``."""
-        return Posets().Finite().predicate()(self)
 
     def is_total(self) -> AppliedPredicate:
         """Totality: any two elements are comparable."""
@@ -124,16 +121,21 @@ class PosetElement(ElementOfObject):
         ElementOfObject.__init__(self, defining_morphism)
 
     def __le__(self, other: PosetElement) -> AppliedPredicate:
-        return at_most(self, other)
+        """``x <= y``: the pair point ``(U(x), U(y))`` is a member of ``R``."""
+        poset = self.parent()
+        assert _is_classical(self) and _is_classical(other), f"{self!r} <= {other!r} compares classical elements"
+        assert other.parent() is poset, f"{other!r} is not an element of {poset!r}"
+        underlying = Posets().underlying_set_functor()
+        return poset.relation().membership_proposition(poset._pair(underlying.on_element(self), underlying.on_element(other)))
 
     def __lt__(self, other: PosetElement) -> Proposition:
-        return at_most(self, other) & (self != other)
+        return (self <= other) & (self != other)
 
     def __ge__(self, other: PosetElement) -> AppliedPredicate:
-        return at_most(other, self)
+        return other <= self
 
     def __gt__(self, other: PosetElement) -> Proposition:
-        return at_most(other, self) & (self != other)
+        return (other <= self) & (self != other)
 
     def __repr__(self) -> str:
         return f"point of {self.parent()!r} at stage {self.stage()!r}"
@@ -189,14 +191,6 @@ def _transitive(relation: Relation, size: int) -> Decision:
 
 def _total(relation: Relation, size: int) -> Decision:
     return decision_and(*(decision_or(relation[i, j], relation[j, i]) for i in range(size) for j in range(i + 1, size)))
-
-
-def _at_most_by_relation(left: CategoryPoint, right: CategoryPoint) -> Decision:
-    """``x <= y`` is membership of the pair ``(U(x), U(y))`` in ``R``."""
-    if not _is_classical(left) or not _is_classical(right) or left.parent() is not right.parent():
-        return Unknown
-    poset, underlying = left.parent(), Posets().underlying_set_functor()
-    return ask(poset.relation().membership_proposition(poset._pair(underlying.on_element(left), underlying.on_element(right))))
 
 
 def _partial_order_on_enumerated(relation: SetObject) -> Decision:
@@ -261,15 +255,11 @@ class PosetsCategory(Category[[Rule], []]):
         self._thin: MonoDict = MonoDict()
         super().__init__()
         self._equality.register_handler(self._equal)
-        at_most.register_handler(_at_most_by_relation)
         partial_order.register_handler(_partial_order_on_enumerated)
         order_preserving.register_handler(_order_preserving_on_enumerated)
         totally_ordered = PropertySubcategory(self, "TotallyOrdered", {}, ())
         totally_ordered.predicate().register_handler(_total_on_enumerated)
         self._properties["TotallyOrdered"] = totally_ordered
-        from sage_categories.posets.finite import FinitePosetRole, FinitePosetsCategory
-
-        self._properties["Finite"] = FinitePosetsCategory(self, "Finite", {Role.OBJECT: FinitePosetRole}, ())
 
     # -- the selected structural functor -------------------------------------------
 
@@ -334,6 +324,11 @@ class PosetsCategory(Category[[Rule], []]):
         return self._canonical["terminal", 0]
 
     def Finite(self) -> Category[[Rule], []]:
+        """``FinitePosets()``: the property subcategory by finiteness of the underlying set (``posets/finite.py``)."""
+        if "Finite" not in self._properties:
+            from sage_categories.posets.finite import FinitePosetRole, FinitePosetsCategory
+
+            self._properties["Finite"] = FinitePosetsCategory(self, "Finite", {Role.OBJECT: FinitePosetRole}, ())
         return self._properties["Finite"]
 
     def TotallyOrdered(self) -> Category[[Rule], []]:
@@ -385,7 +380,8 @@ class PosetsCategory(Category[[Rule], []]):
         """The cartesian lift of ``m: Y -> U(P)`` at ``P``: the sub-poset ``(Y, R restricted to Y)`` with ``m`` monotone.
 
         The induced order is the ``U``-initial lift of the monomorphism (AHS Definition
-        10.41, Example 10.42(6); Mathlib ``PartialOrder.lift``), retained per ``(m, P)`` (D10).
+        10.41, Example 10.42(6); Mathlib ``PartialOrder.lift``), retained per ``(m, P)``
+        (POL-LEAF-024, POL-SCOPE-011).
         """
         key = (monomorphism, target, self)
         if key not in self._lifts:
@@ -402,7 +398,7 @@ class PosetsCategory(Category[[Rule], []]):
             self._lifts[key] = self.MorphismType(self.morphism_category(1), sub_poset, target, monomorphism)
         return self._lifts[key]
 
-    # -- equality (D17) -------------------------------------------------------------------------
+    # -- equality (POL-API-015, POL-SET-026) ----------------------------------------------------------------
 
     def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
         """Classical elements of one poset are equal when their points are; monotone maps when their set maps are."""

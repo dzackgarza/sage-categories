@@ -1,11 +1,11 @@
 """``FinitePosets()``: the structural diamond through finite sets, finiteness, and the finite order algorithms.
 
-Oracles: D11 (both selected routes to ``Sets()`` return one retained value by identity;
-``specs/resolution.md``, "Finite-rank free modules over finite fields"); the definitions
+Oracles: both selected routes to ``Sets()`` return one retained value by identity
+(``specs/resolution.md``, "Finite-rank free modules over finite fields"); the definitions
 of bottom, top, cover, height (the size of a longest chain), width (the size of a
 largest antichain), and a graded poset (ranked with all maximal chains of one length) on
 the divisibility order of ``{1, 2, 3, 6}``, whose Hasse diagram is the square
-``1 < 2, 3 < 6``; D18 for the category of every result.
+``1 < 2, 3 < 6``; POL-CAT-062 for the category of every result.
 """
 
 import pytest
@@ -59,9 +59,12 @@ def test_finiteness_is_decided_from_the_underlying_set() -> None:
     words = Sets()(lambda datum: type(datum) is str)
     prefix = Posets()((words * words).subset_from(lambda pair: pair(int(1)).startswith(pair(int(0)))))
     assert ask(prefix.is_finite()) is Unknown
+    assert ask(FinitePosets().predicate()(prefix)) is Unknown
     assume(prefix.is_finite())
+    assert words in Sets().Finite()
+    assert prefix not in FinitePosets()
+    assert ask(FinitePosets().predicate()(prefix)) is True
     assert prefix in FinitePosets()
-    assert ask(prefix.is_finite()) is True
 
 
 def test_the_finite_order_algorithms_reconstruct_owned_results() -> None:

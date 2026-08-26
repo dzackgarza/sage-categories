@@ -44,7 +44,7 @@ def identity_on_values(value: CategoryPoint) -> CategoryPoint:
 
 
 # The stage comparisons ``G_D -> F(G_C)`` retained by the constructions that own a
-# selected functor exposing classical element methods (D06, D10), keyed by the functor.
+# selected functor exposing classical element methods (POL-LEAF-003), keyed by the functor.
 _stage_comparisons: MonoDict = MonoDict()
 
 
@@ -102,17 +102,17 @@ class Functor(MorphismOfCategory):
         assert value in self.domain().morphism_category(1), f"{value!r} is neither an object nor a morphism of {self.domain()!r}"
         return self.on_morphism(value)
 
-    # -- classical stages (D06 classical transport pin) ---------------------------------
+    # -- classical stages (``specs/functor.md``, "Structural inheritance") ----------------
 
     def retain_stage_comparison(self, comparison: MorphismOfCategory) -> None:
-        """Retain ``c: G_D -> F(G_C)`` as the defining datum of this functor's classical transport (D10)."""
+        """Retain ``c: G_D -> F(G_C)`` as the defining datum of this functor's classical transport (POL-LEAF-003)."""
         (source_stage,) = self.domain().classical_stages()
         (target_stage,) = self.codomain().classical_stages()
         assert comparison in self.codomain().morphism_category(1)(target_stage, self.on_object(source_stage))
         _stage_comparisons[self] = comparison
 
     def stage_comparison(self) -> MorphismOfCategory:
-        """``G_D -> F(G_C)``: the retained comparison, or the identity when ``F(G_C) is G_D`` (D06)."""
+        """``G_D -> F(G_C)``: the retained comparison, or the identity when ``F(G_C) is G_D``."""
         if self in _stage_comparisons:
             return _stage_comparisons[self]
         (source_stage,) = self.domain().classical_stages()

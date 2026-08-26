@@ -18,13 +18,12 @@ inclusion into ``C`` derives ``D.P()`` as the narrowing of ``C.P()`` to ``D``
 
 from __future__ import annotations
 
-import itertools
 from typing import TYPE_CHECKING
 
 from sage_categories.cat.category import Category, member
 from sage_categories.kernel.compiler import empty_local_role
 from sage_categories.kernel.predicates import PropertyPredicate, Proposition
-from sage_categories.kernel.refinement import refine
+from sage_categories.kernel.refinement import is_subcategory, refine
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, Role
 
 if TYPE_CHECKING:
@@ -50,6 +49,13 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
 
     Its morphisms, identities, and composites are those of the ambient between its
     objects; ``Category`` supplies them from the ambient (POL-CAT-087).
+
+    Every full subcategory of ``C`` is a root of the narrowings of ``C``: two of
+    them, a property subcategory and a construction family (a chosen subset that
+    is a chosen limit; a finite set that is a chosen product), meet in the
+    narrowing of ``C`` by both (POL-CAT-084, POL-KERNEL-013).  Membership in a
+    construction family is placement by construction; only a property
+    subcategory owns a predicate.
     """
 
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData]) -> None:
@@ -62,6 +68,12 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
     def ambient(self) -> Category[MorphismData, TwoMorphismData]:
         """The ambient is construction data: this category declares exactly one inclusion."""
         return self._ambient
+
+    def narrowing_base(self) -> Category:
+        return self._ambient.narrowing_base()
+
+    def narrowing_roots(self) -> tuple[Category, ...]:
+        return (*self._ambient.narrowing_roots(), self)
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
         return empty_local_role(self, role)
@@ -78,9 +90,6 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
         return self._ambient.element_from_defining_morphism(defining_morphism)
 
 
-_ordinals = itertools.count()
-
-
 class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):
     """``C.P()``: the full subcategory of ``C`` on the objects satisfying ``P``."""
 
@@ -95,7 +104,6 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
         self._roles = roles
         self._implications = implications
         self._predicate = PropertyPredicate(name, self)
-        self._ordinal = next(_ordinals)
         super().__init__(ambient)
 
     def name(self) -> str:
@@ -103,16 +111,6 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
 
     def predicate(self) -> PropertyPredicate:
         return self._predicate
-
-    def ordinal(self) -> int:
-        """The declaration order of this root property, used to canonicalize narrowings."""
-        return self._ordinal
-
-    def narrowing_base(self) -> Category:
-        return self._ambient
-
-    def narrowing_roots(self) -> tuple[Category, ...]:
-        return (self,)
 
     def implications(self) -> tuple[Category, ...]:
         return self._implications
@@ -149,18 +147,17 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
 
 
 class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):
-    """``D.P().Q()...``: the objects of ``D`` satisfying each of the root properties.
+    """``D.P().Q()...``: the objects of ``D`` in each of the root subcategories.
 
-    It is a full subcategory of ``D``, of each root, and of the same narrowing of
-    ``D``'s ambient when ``D`` is itself a full subcategory (POL-CAT-084).
+    It is a full subcategory of ``D``, of each root, of the narrowing of ``D`` by
+    every subset of its roots (a narrowing by ``{P, Q}`` is a full subcategory of
+    the narrowing by ``{P}``), and of the same narrowing of ``D``'s ambient when
+    ``D`` is itself a full subcategory (POL-CAT-084).
     """
 
-    def __init__(self, ambient: Category[MorphismData, TwoMorphismData], roots: tuple[PropertySubcategory, ...]) -> None:
+    def __init__(self, ambient: Category[MorphismData, TwoMorphismData], roots: tuple[FullSubcategory, ...]) -> None:
         self._roots = roots
         super().__init__(ambient)
-
-    def narrowing_base(self) -> Category:
-        return self._ambient
 
     def narrowing_roots(self) -> tuple[Category, ...]:
         return self._roots
@@ -171,13 +168,19 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
         return root.predicate()
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        """The inclusions into the ambient, into each root, and into the same narrowing of the ambient's ambient, each once."""
+        """The inclusions into the base, into each root, into each narrowing by the roots not below one root, and into the same narrowing of the base's ambient, each once."""
         targets: list[Category] = [self._ambient, *self._roots]
+        for omitted in self._roots:
+            kept = tuple(root for root in self._roots if not is_subcategory(root, omitted))
+            if kept:
+                targets.append(self._ambient.intersection(kept))
         if self._ambient.has_ambient():
-            narrowing = self._ambient.ambient().intersection(self._roots)
-            if not any(narrowing is target for target in targets):
-                targets.append(narrowing)
-        return tuple(_functors().full_inclusion(self, target) for target in targets)
+            targets.append(self._ambient.ambient().intersection(self._roots))
+        distinct: list[Category] = []
+        for target in targets:
+            if target is not self and not any(target is known for known in distinct):
+                distinct.append(target)
+        return tuple(_functors().full_inclusion(self, target) for target in distinct)
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         """Membership in the ambient together with established placement in every root."""

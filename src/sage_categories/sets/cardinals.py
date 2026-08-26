@@ -160,27 +160,26 @@ class CardinalCategory(Category[[], []]):
         self._equality.register_handler(self._equal)
         at_most.register_handler(self._at_most)
         less_than.register_handler(self._less_than)
-        countable = PropertySubcategory(self, "Countable", {}, ())
-        infinite = PropertySubcategory(self, "Infinite", {}, ())
-        finite = PropertySubcategory(self, "Finite", {}, (countable,))
-        uncountable = PropertySubcategory(self, "Uncountable", {}, (infinite,))
-        finite.predicate().register_handler(self._is_finite)
-        infinite.predicate().register_handler(lambda cardinal: decision_not(self._is_finite(cardinal)))
-        countable.predicate().register_handler(self._is_countable)
-        uncountable.predicate().register_handler(lambda cardinal: decision_not(self._is_countable(cardinal)))
-        self._properties.update({"Finite": finite, "Infinite": infinite, "Countable": countable, "Uncountable": uncountable})
+        self._countable_cardinals = PropertySubcategory(self, "Countable", {}, ())
+        self._infinite_cardinals = PropertySubcategory(self, "Infinite", {}, ())
+        self._finite_cardinals = PropertySubcategory(self, "Finite", {}, (self._countable_cardinals,))
+        self._uncountable_cardinals = PropertySubcategory(self, "Uncountable", {}, (self._infinite_cardinals,))
+        self._finite_cardinals.predicate().register_handler(self._is_finite)
+        self._infinite_cardinals.predicate().register_handler(lambda cardinal: decision_not(self._is_finite(cardinal)))
+        self._countable_cardinals.predicate().register_handler(self._is_countable)
+        self._uncountable_cardinals.predicate().register_handler(lambda cardinal: decision_not(self._is_countable(cardinal)))
 
     def Finite(self) -> Category:
-        return self._properties["Finite"]
+        return self._finite_cardinals
 
     def Infinite(self) -> Category:
-        return self._properties["Infinite"]
+        return self._infinite_cardinals
 
     def Countable(self) -> Category:
-        return self._properties["Countable"]
+        return self._countable_cardinals
 
     def Uncountable(self) -> Category:
-        return self._properties["Uncountable"]
+        return self._uncountable_cardinals
 
     # -- construction, cached by expression ---------------------------------------
 

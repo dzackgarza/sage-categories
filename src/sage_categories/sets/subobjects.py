@@ -1,14 +1,16 @@
 """Chosen subsets and chosen quotients: ``X.subset_from(predicate)`` and ``Sets().ChosenQuotients()`` (POL-SET-007/008, POL-ENGINE-004, POL-FUN-013/014).
 
 A chosen subset of ``X`` is a set ``A`` together with its inclusion monomorphism
-``A -> X``.  ``Sets().ChosenSubsets()`` is the narrowing of ``Sets()`` on the chosen
-subsets, declared like ``Sets().Finite()`` so that a chosen subset combines with
-every other placement (a finite set, a chosen limit).  Its constructor
-``ChosenSubsets()(X, predicate)`` builds ``A`` as
-the rule-defined set whose membership rule conjoins the rule of ``X`` with the
-predicate, constructs the inclusion in ``Mor(Sets())(A, X).Monomorphisms()``, and
-retains it by identity; ``A.inclusion()`` reads it back and ``A.underlying_set()``
-is ``A.inclusion().codomain()``.
+``A -> X``.  ``Sets().ChosenSubsets()`` is the construction family of the chosen
+subsets: a full subcategory of ``Sets()`` whose membership is placement by
+construction, and a root of the narrowings of ``Sets()`` like every full
+subcategory, so that a chosen subset combines with every other placement (a
+finite set, a chosen limit).  Its constructor ``ChosenSubsets()(X, predicate)``
+builds ``A`` as the rule-defined set whose membership rule conjoins the rule of
+``X`` with the predicate, constructs the inclusion in
+``Mor(Sets())(A, X).Monomorphisms()``, and retains it by identity;
+``A.inclusion()`` reads it back and ``A.underlying_set()`` is
+``A.inclusion().codomain()``.
 
 The predicate is a datum-level rule ``Callable[[Datum], Decision]``, the form of
 ``Sets()(rule)``.  It is applied only to data that the rule of ``X`` does not
@@ -41,10 +43,10 @@ from sage.structure.coerce_dict import MonoDict
 
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
-from sage_categories.cat.properties import PropertySubcategory
+from sage_categories.cat.properties import FullSubcategory
 from sage_categories.kernel.decisions import Decision, Unknown, decision_and, decision_or
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.roles import ObjectOfCategory, Role
+from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role
 from sage_categories.sets.elements import Datum
 from sage_categories.sets.maps import Rule, SetMap
 from sage_categories.sets.objects import MembershipRule, SetObject
@@ -64,13 +66,21 @@ class ChosenSubsetRole(ObjectOfCategory):
         return self.inclusion().codomain()
 
 
-class ChosenSubsetsCategory(PropertySubcategory[[Rule], []]):
-    """``Sets().ChosenSubsets()``: the chosen subsets, a narrowing of ``Sets()`` like ``Finite()``, so that a chosen subset combines with every other placement (a finite set, a chosen limit); owns their construction and retains each inclusion."""
+class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
+    """``Sets().ChosenSubsets()``: the construction family of the chosen subsets; owns their construction and retains each inclusion."""
 
     def __init__(self, ambient: Category[[Rule], []]) -> None:
         self._inclusions: MonoDict = MonoDict()
         self._images: MonoDict = MonoDict()
-        super().__init__(ambient, "ChosenSubsets", {Role.OBJECT: ChosenSubsetRole}, ())
+        super().__init__(ambient)
+
+    def name(self) -> str:
+        return "ChosenSubsets"
+
+    def local_role_class(self, role: Role) -> type[CategoryPoint]:
+        if role is Role.OBJECT:
+            return ChosenSubsetRole
+        return super().local_role_class(role)
 
     def __call__(self, base_set: SetObject, predicate: MembershipRule) -> SetObject:
         """The chosen subset ``{x in X : predicate(x)}`` with its inclusion into ``X``."""
@@ -177,8 +187,8 @@ class ChosenQuotientRole(ObjectOfCategory):
         return self.quotient_map().domain()
 
 
-class ChosenQuotientsCategory(PropertySubcategory[[Rule], []]):
-    """``Sets().ChosenQuotients()``: the chosen quotients, the dual narrowing to ``ChosenSubsets()``; owns their construction and retains each quotient map.
+class ChosenQuotientsCategory(FullSubcategory[[Rule], []]):
+    """``Sets().ChosenQuotients()``: the construction family of the chosen quotients, dual to ``ChosenSubsets()``; owns their construction and retains each quotient map.
 
     ``ChosenQuotients()(X, class_of, membership_rule)`` builds the quotient ``X/~``
     whose data are the class data ``class_of(x)`` of the data ``x`` of ``X``; the
@@ -192,7 +202,15 @@ class ChosenQuotientsCategory(PropertySubcategory[[Rule], []]):
 
     def __init__(self, ambient: Category[[Rule], []]) -> None:
         self._quotient_maps: MonoDict = MonoDict()
-        super().__init__(ambient, "ChosenQuotients", {Role.OBJECT: ChosenQuotientRole}, ())
+        super().__init__(ambient)
+
+    def name(self) -> str:
+        return "ChosenQuotients"
+
+    def local_role_class(self, role: Role) -> type[CategoryPoint]:
+        if role is Role.OBJECT:
+            return ChosenQuotientRole
+        return super().local_role_class(role)
 
     def __call__(self, base_set: SetObject, class_of: Callable[[Datum], Datum], membership_rule: MembershipRule) -> SetObject:
         sets = _sets.Sets()

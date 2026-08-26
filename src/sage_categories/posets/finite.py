@@ -204,15 +204,14 @@ class FinitePosetsCategory(PropertySubcategory[[Rule], []]):
         self._functors: dict[str, Functor] = {}
         super().__init__(ambient, name, roles, implications)
         self.predicate().register_handler(_finite_by_underlying_set)
-        with_bottom = PropertySubcategory(self, "WithBottom", {Role.OBJECT: WithBottomRole}, ())
-        with_top = PropertySubcategory(self, "WithTop", {Role.OBJECT: WithTopRole}, ())
-        ranked = PropertySubcategory(self, "Ranked", {Role.OBJECT: RankedRole}, ())
-        graded = PropertySubcategory(self, "Graded", {Role.OBJECT: GradedRole}, (ranked,))
-        with_bottom.predicate().register_handler(_decided_by(lambda finite_poset: finite_poset.has_bottom()))
-        with_top.predicate().register_handler(_decided_by(lambda finite_poset: finite_poset.has_top()))
-        ranked.predicate().register_handler(_decided_by(lambda finite_poset: finite_poset.is_ranked()))
-        graded.predicate().register_handler(_decided_by(lambda finite_poset: finite_poset.is_graded()))
-        self._properties.update({"WithBottom": with_bottom, "WithTop": with_top, "Ranked": ranked, "Graded": graded})
+        self._with_bottom = PropertySubcategory(self, "WithBottom", {Role.OBJECT: WithBottomRole}, ())
+        self._with_top = PropertySubcategory(self, "WithTop", {Role.OBJECT: WithTopRole}, ())
+        self._ranked = PropertySubcategory(self, "Ranked", {Role.OBJECT: RankedRole}, ())
+        self._graded = PropertySubcategory(self, "Graded", {Role.OBJECT: GradedRole}, (self._ranked,))
+        self._with_bottom.predicate().register_handler(_decided_by(lambda finite_poset: finite_poset.has_bottom()))
+        self._with_top.predicate().register_handler(_decided_by(lambda finite_poset: finite_poset.has_top()))
+        self._ranked.predicate().register_handler(_decided_by(lambda finite_poset: finite_poset.is_ranked()))
+        self._graded.predicate().register_handler(_decided_by(lambda finite_poset: finite_poset.is_graded()))
 
     def structure_functors(self) -> tuple[Functor, ...]:
         """The inclusion into ``Posets()``, then ``U`` restricted to ``Sets().Finite()``."""
@@ -233,13 +232,13 @@ class FinitePosetsCategory(PropertySubcategory[[Rule], []]):
         return self.property_subcategory(self._ambient.TotallyOrdered())
 
     def WithBottom(self) -> Category[[Rule], []]:
-        return self._properties["WithBottom"]
+        return self._with_bottom
 
     def WithTop(self) -> Category[[Rule], []]:
-        return self._properties["WithTop"]
+        return self._with_top
 
     def Ranked(self) -> Category[[Rule], []]:
-        return self._properties["Ranked"]
+        return self._ranked
 
     def Graded(self) -> Category[[Rule], []]:
-        return self._properties["Graded"]
+        return self._graded

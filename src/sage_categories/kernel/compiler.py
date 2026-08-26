@@ -87,6 +87,12 @@ class Entry[**P, R](NamedTuple):
 
 _IGNORED_NAMES = frozenset({"__init__", "__new__", "__repr__", "__init_subclass__", "__class_getitem__"})
 
+# The position of each role class in the global linearization order: the ordinal of
+# the first category compiled with it (a local class with no inherited surface is the
+# role class of every category that declares it, such as the identity 2-cells of
+# every 1-category).
+_class_keys: dict[type[CategoryPoint], int] = {}
+
 
 def node(category: Category, role: Role) -> Node:
     """The normalized node: ``(Mor(C), object)`` is ``(C, morphism)``."""
@@ -195,9 +201,8 @@ def empty_local_role(category: Category, role: Role) -> type[CategoryPoint]:
     return type(f"{category!r}.{role.value}", (base,), {})
 
 
-def compile_category(category: Category) -> None:
-    """Compile the three role classes of ``category`` from its declarations."""
-    functors = tuple(category.structure_functors())
+def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
+    """Compile the three role classes of ``category`` from its local declarations and its selected functors."""
     for functor in functors:
         functor_category = category.category().morphism_category(1)
         assert functor in functor_category, f"{functor!r} is not an object of {functor_category!r}"
@@ -223,18 +228,16 @@ def compile_category(category: Category) -> None:
             # ``Cat().ObjectType is Category`` and ``Sets().ObjectType is SetObject``.
             setattr(category, role.value, category.local_role_class(role))
             continue
-        codomain_classes: list[type] = []
-        for _, target in successors(current):
-            klass = target.category.role_class(target.role)
-            if not any(klass is known for known in codomain_classes):
-                codomain_classes.append(klass)
-        # A codomain role class that another codomain role class already refines is in
-        # that class's linearization; listing it too would precede its own subclass.
-        bases = [category.local_role_class(role)] + [
-            klass
-            for klass in codomain_classes
-            if not any(other is not klass and issubclass(other, klass) for other in codomain_classes)
-        ]
+        # The bases are the role classes of every reachable node, in one global order:
+        # the class compiled most recently first.  A selected functor's codomain is
+        # compiled before its source, so this is a linear extension of the selected
+        # graph; listing the whole closure in that order makes every compiled
+        # linearization a subsequence of one total order, so the C3 merge never
+        # conflicts (Sage's category framework fixes its linearizations the same way,
+        # through ``_cmp_key`` and ``sage.misc.c3_controlled``).
+        bases: list[type[CategoryPoint]] = [category.local_role_class(role)]
+        for klass in sorted({found.category.role_class(found.role) for found in reachable(current)[1:]}, key=_class_keys.__getitem__, reverse=True):
+            bases.append(klass)
         compiled = dynamic_class(
             f"{category!r}.{role.value}",
             tuple(bases),
@@ -242,3 +245,5 @@ def compile_category(category: Category) -> None:
             prepend_cls_bases=False,
         )
         setattr(category, role.value, compiled)
+    for role in Role:
+        _class_keys.setdefault(category.role_class(role), category.ordinal())

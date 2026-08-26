@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal, overload
 
+from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import TripleDict
 
 from sage_categories.cat.category import Category, member
@@ -120,6 +121,27 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
     def base_category(self) -> Category[MorphismData, TwoMorphismData]:
         return self._base
 
+    # ``Mor(D)`` for ``D`` a declared subcategory of ``C`` is the full subcategory of
+    # ``Mor(C)`` on the morphisms of ``D`` (Mathlib ``InducedCategory.Hom``); its
+    # inclusion is ``D``'s inclusion at the morphism role, which the node
+    # normalization already places in the selected graph (POL-CAT-021, POL-CAT-087).
+
+    def has_ambient(self) -> bool:
+        return self._base.has_ambient()
+
+    def ambient(self) -> Category:
+        return self._base.ambient().morphism_category(1)
+
+    def narrowing_base(self) -> Category:
+        if self._base.has_ambient():
+            return self.ambient().narrowing_base()
+        return self
+
+    def narrowing_roots(self) -> tuple[Category, ...]:
+        if self._base.has_ambient():
+            return (*self.ambient().narrowing_roots(), self)
+        return ()
+
     def role_source(self, role: Role) -> tuple[Category, Role]:
         if role is Role.OBJECT:
             return self._base, Role.MORPHISM
@@ -173,23 +195,23 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
 
     # -- property subcategories, defined once for every ``C`` (POL-FUN-024) -------------
 
-    # ``D`` included in ``C`` derives ``Mor(D).P()`` as the narrowing of ``Mor(C).P()`` (POL-CAT-084).
+    # ``D`` included in ``C`` derives ``Mor(D).P()`` as the narrowing of ``Mor(C).P()``
+    # (POL-CAT-084).  Each root property is constructed once per morphism category
+    # and retained by the method that names it (Sage ``cached_method``).
 
-    def _root_property(self, name: str, roles: dict[Role, type], implications: tuple[Category, ...]) -> PropertySubcategory:
-        if name not in self._properties:
-            self._properties[name] = PropertySubcategory(self, name, roles, implications)
-        return self._properties[name]
-
+    @cached_method
     def Monomorphisms(self) -> Category:
         if self._base.has_ambient():
             return self.property_subcategory(self._base.ambient().morphism_category(1).Monomorphisms())
-        return self._root_property("Monomorphisms", {}, ())
+        return PropertySubcategory(self, "Monomorphisms", {}, ())
 
+    @cached_method
     def Epimorphisms(self) -> Category:
         if self._base.has_ambient():
             return self.property_subcategory(self._base.ambient().morphism_category(1).Epimorphisms())
-        return self._root_property("Epimorphisms", {}, ())
+        return PropertySubcategory(self, "Epimorphisms", {}, ())
 
+    @cached_method
     def Isomorphisms(self) -> Category:
         from sage_categories.cat.properties import IsomorphismRole
 
@@ -197,14 +219,15 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
             return self.property_subcategory(self._base.ambient().morphism_category(1).Isomorphisms())
         # An isomorphism is monic and epic (``specs/undecidable-properties.md``,
         # "How ask() works": Isomorphism implies Monomorphism and Epimorphism).
-        return self._root_property("Isomorphisms", {Role.OBJECT: IsomorphismRole}, (self.Monomorphisms(), self.Epimorphisms()))
+        return PropertySubcategory(self, "Isomorphisms", {Role.OBJECT: IsomorphismRole}, (self.Monomorphisms(), self.Epimorphisms()))
 
+    @cached_method
     def Endomorphisms(self) -> Category:
         if self._base.has_ambient():
             return self.property_subcategory(self._base.ambient().morphism_category(1).Endomorphisms())
-        if "Endomorphisms" not in self._properties:
-            self._root_property("Endomorphisms", {}, ()).predicate().register_handler(_endomorphism_by_equality)
-        return self._properties["Endomorphisms"]
+        endomorphisms = PropertySubcategory(self, "Endomorphisms", {}, ())
+        endomorphisms.predicate().register_handler(_endomorphism_by_equality)
+        return endomorphisms
 
     def Automorphisms(self) -> Category:
         """``Mor(C).Endomorphisms().Isomorphisms()``."""
@@ -227,6 +250,15 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
 
     def codomain(self) -> ObjectOfCategory:
         return self._codomain_object
+
+    # A fixed-endpoint category is its own base for narrowing: ``Mor(C)(A, B).P()`` is a
+    # narrowing of it, of the type it declares, and never a root of ``Mor(C)``.
+
+    def narrowing_base(self) -> Category:
+        return self
+
+    def narrowing_roots(self) -> tuple[Category, ...]:
+        return ()
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         return member(candidate, self.ambient()) & endpoints(candidate, self._domain_object, self._codomain_object)

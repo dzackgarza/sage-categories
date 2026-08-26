@@ -35,6 +35,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
+from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.cat.category import Category
@@ -255,9 +256,8 @@ class PosetsCategory(Category[[Rule], []]):
         self._equality.register_handler(self._equal)
         partial_order.register_handler(_partial_order_on_enumerated)
         order_preserving.register_handler(_order_preserving_on_enumerated)
-        totally_ordered = PropertySubcategory(self, "TotallyOrdered", {}, ())
-        totally_ordered.predicate().register_handler(_total_on_enumerated)
-        self._properties["TotallyOrdered"] = totally_ordered
+        self._totally_ordered = PropertySubcategory(self, "TotallyOrdered", {}, ())
+        self._totally_ordered.predicate().register_handler(_total_on_enumerated)
 
     # -- the selected structural functor -------------------------------------------
 
@@ -322,16 +322,15 @@ class PosetsCategory(Category[[Rule], []]):
             self._canonical["terminal", 0] = self.TotallyOrdered()(self._construct(point, (point * point).subset_from(lambda pair: True)))
         return self._canonical["terminal", 0]
 
+    @cached_method
     def Finite(self) -> Category[[Rule], []]:
-        """``FinitePosets()``: the property subcategory by finiteness of the underlying set (``posets/finite.py``)."""
-        if "Finite" not in self._properties:
-            from sage_categories.posets.finite import FinitePosetRole, FinitePosetsCategory
+        """``FinitePosets()``: the property subcategory by finiteness of the underlying set (``posets/finite.py``), constructed once."""
+        from sage_categories.posets.finite import FinitePosetRole, FinitePosetsCategory
 
-            self._properties["Finite"] = FinitePosetsCategory(self, "Finite", {Role.OBJECT: FinitePosetRole}, ())
-        return self._properties["Finite"]
+        return FinitePosetsCategory(self, "Finite", {Role.OBJECT: FinitePosetRole}, ())
 
     def TotallyOrdered(self) -> Category[[Rule], []]:
-        return self._properties["TotallyOrdered"]
+        return self._totally_ordered
 
     # -- elements ---------------------------------------------------------------------------
 

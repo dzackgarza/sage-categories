@@ -77,6 +77,11 @@ _cocartesian_rules: MonoDict = MonoDict()
 _cartesian_lifts: TripleDict = TripleDict(weak_values=False)
 _cocartesian_lifts: TripleDict = TripleDict(weak_values=False)
 
+# The factors ``(first, second)`` of every composite ``second * first`` constructed by
+# ``Cat()``: an explicit composite names its construction (``specs/functor.md``,
+# "Structural inheritance": a selected composite retains its factor functors).
+_composite_factors: MonoDict = MonoDict()
+
 
 class Functor(MorphismOfCategory):
     """The local ``Cat().MorphismType``: a functor ``C -> D`` from its total actions."""
@@ -150,6 +155,19 @@ class Functor(MorphismOfCategory):
         (target_stage,) = self.codomain().classical_stages()
         assert self.on_object(source_stage) is target_stage, f"{self!r} retains no stage comparison"
         return target_stage.identity()
+
+    # -- composition data ------------------------------------------------------------------
+
+    def retain_factors(self, first: Functor, second: Functor) -> None:
+        """Retain that this functor is the composite ``second * first``."""
+        assert self not in _composite_factors, f"{self!r} already retains its factors"
+        assert first.codomain() is second.domain() and self.domain() is first.domain() and self.codomain() is second.codomain()
+        _composite_factors[self] = (first, second)
+
+    def factors(self) -> tuple[Functor, Functor]:
+        """The retained factors ``(first, second)`` of an explicit composite ``second * first``, in categorical order."""
+        assert self in _composite_factors, f"{self!r} is not a retained composite"
+        return _composite_factors[self]
 
     # -- fibration and opfibration lifts (POL-FUN-029) ------------------------------------
 
@@ -447,54 +465,54 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     # -- the functor property categories (POL-FUN-024) -----------------------------------
 
     def _bootstrap(self) -> None:
-        """Build the five functor property categories and place their inclusions."""
+        """Build the five functor property categories once and place their inclusions.
+
+        Their own inclusions into ``Fun`` are constructed while the properties do not
+        yet exist, so they are placed in ``FullyFaithful()`` afterwards.
+        """
         self._bootstrapping = True
-        full = PropertySubcategory(self, "Full", {}, ())
-        faithful = PropertySubcategory(self, "Faithful", {}, ())
-        essentially_surjective = PropertySubcategory(self, "EssentiallySurjective", {}, ())
+        self._full = PropertySubcategory(self, "Full", {}, ())
+        self._faithful = PropertySubcategory(self, "Faithful", {}, ())
+        self._essentially_surjective = PropertySubcategory(self, "EssentiallySurjective", {}, ())
         # FullyFaithful implies Full and Faithful; Equivalences implies FullyFaithful
         # and EssentiallySurjective (Mathlib ``Functor.FullyFaithful.full``,
         # ``Functor.FullyFaithful.faithful``, ``Functor.IsEquivalence``; inspected 2026-08-26).
-        fully_faithful = PropertySubcategory(self, "FullyFaithful", {}, (full, faithful))
-        equivalences = PropertySubcategory(self, "Equivalences", {}, (fully_faithful, essentially_surjective))
-        self._properties.update(
-            {
-                "Full": full,
-                "Faithful": faithful,
-                "EssentiallySurjective": essentially_surjective,
-                "FullyFaithful": fully_faithful,
-                "Equivalences": equivalences,
-            }
-        )
+        self._fully_faithful = PropertySubcategory(self, "FullyFaithful", {}, (self._full, self._faithful))
+        self._equivalences = PropertySubcategory(self, "Equivalences", {}, (self._fully_faithful, self._essentially_surjective))
         self._bootstrapping = False
         self._bootstrapped = True
-        for property_category in (full, faithful, essentially_surjective, fully_faithful, equivalences):
+        for property_category in (self._full, self._faithful, self._essentially_surjective, self._fully_faithful, self._equivalences):
             for inclusion in property_category.selected_functors():
-                refine(inclusion, fully_faithful)
-
-    def _functor_property(self, name: str) -> Category:
-        if not self._bootstrapped:
-            self._bootstrap()
-        return self._properties[name]
+                refine(inclusion, self._fully_faithful)
 
     def Full(self) -> Category:
-        return self._functor_property("Full")
+        if not self._bootstrapped:
+            self._bootstrap()
+        return self._full
 
     def Faithful(self) -> Category:
-        return self._functor_property("Faithful")
+        if not self._bootstrapped:
+            self._bootstrap()
+        return self._faithful
 
     def FullyFaithful(self) -> Category:
-        return self._functor_property("FullyFaithful")
+        if not self._bootstrapped:
+            self._bootstrap()
+        return self._fully_faithful
 
     def EssentiallySurjective(self) -> Category:
-        return self._functor_property("EssentiallySurjective")
+        if not self._bootstrapped:
+            self._bootstrap()
+        return self._essentially_surjective
 
     def Equivalences(self) -> Category:
-        return self._functor_property("Equivalences")
+        if not self._bootstrapped:
+            self._bootstrap()
+        return self._equivalences
 
     # -- inclusions (POL-FUN-027) ---------------------------------------------------------
 
-    def _inclusion(self, source: Category, target: Category, placement_name: str) -> Functor:
+    def _inclusion(self, source: Category, target: Category, placement: Callable[[], Category]) -> Functor:
         """The one identity-on-value inclusion ``source -> target``, placed in the declared functor property."""
         if not self._bootstrapped and not self._bootstrapping:
             self._bootstrap()
@@ -503,7 +521,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             self._inclusions[key] = self._base.construct_morphism(source, target, identity_on_values, identity_on_values)
         inclusion = self._inclusions[key]
         if self._bootstrapped:
-            refine(inclusion, self._properties[placement_name])
+            refine(inclusion, placement())
         return inclusion
 
     def retains_inclusion(self, source: Category, target: Category) -> bool:
@@ -516,11 +534,11 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
 
     def full_inclusion(self, source: Category, target: Category) -> Functor:
         """The inclusion of a full subcategory: fully faithful by construction (Mathlib ``ObjectProperty.ι``)."""
-        return self._inclusion(source, target, "FullyFaithful")
+        return self._inclusion(source, target, self.FullyFaithful)
 
     def faithful_inclusion(self, source: Category, target: Category) -> Functor:
         """The inclusion of a subcategory: faithful by construction."""
-        return self._inclusion(source, target, "Faithful")
+        return self._inclusion(source, target, self.Faithful)
 
     # -- limits and colimits of functors, pointwise (specs/functor.md, "Diagram shapes and universal constructions"; ``cat/diagrams.py``) -----------
 

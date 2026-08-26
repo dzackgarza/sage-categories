@@ -480,30 +480,30 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
             self._coslices[member_object] = coslice_under(self, member_object)
         return self._coslices[member_object]
 
-    def _morphism_property_family(self, name: str) -> Category:
+    def _morphism_property_family(self, name: str, property_of: Callable[[Category], Category], over: bool) -> Category:
         from sage_categories.cat.slices import MorphismPropertyFamily
 
         if self.has_ambient():
-            return self.ambient()._morphism_property_family(name)
+            return self.ambient()._morphism_property_family(name, property_of, over)
         if name not in self._constructions:
-            self._constructions[name] = MorphismPropertyFamily(self, name)
+            self._constructions[name] = MorphismPropertyFamily(self, name, property_of, over)
         return self._constructions[name]
 
     def Subobjects(self) -> Category:
         """The monomorphisms of ``C`` as objects of ``Fun([1], C)``; ``C.Subobjects()(x)`` is the fiber over ``x`` in ``C.SliceOver(x)``."""
-        return self._morphism_property_family("Subobjects")
+        return self._morphism_property_family("Subobjects", lambda morphisms: morphisms.Monomorphisms(), True)
 
     def Superobjects(self) -> Category:
         """The monomorphisms of ``C``; ``C.Superobjects()(x)`` is the fiber under ``x`` in ``C.CosliceUnder(x)``."""
-        return self._morphism_property_family("Superobjects")
+        return self._morphism_property_family("Superobjects", lambda morphisms: morphisms.Monomorphisms(), False)
 
     def CoveringObjects(self) -> Category:
         """The epimorphisms of ``C``; ``C.CoveringObjects()(y)`` is the fiber over ``y``: pairs ``(X, p: X -> y)`` (POL-CAT-026)."""
-        return self._morphism_property_family("CoveringObjects")
+        return self._morphism_property_family("CoveringObjects", lambda morphisms: morphisms.Epimorphisms(), True)
 
     def CoveredObjects(self) -> Category:
         """The epimorphisms of ``C``; ``C.CoveredObjects()(x)`` is the fiber under ``x`` in ``C.CosliceUnder(x)``."""
-        return self._morphism_property_family("CoveredObjects")
+        return self._morphism_property_family("CoveredObjects", lambda morphisms: morphisms.Epimorphisms(), False)
 
     # -- the chosen sets of objects and morphisms of a small shape (specs/functor.md, "Diagram shapes and universal constructions") -----------------
     #

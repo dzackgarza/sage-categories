@@ -43,7 +43,7 @@ from sage_categories.sets.objects import FiniteSetRole, MembershipRule, SetObjec
 
 if TYPE_CHECKING:
     from sage_categories.cat.functors import Functor
-    from sage_categories.sets.subobjects import ChosenSubsetsCategory
+    from sage_categories.sets.subobjects import ChosenQuotientsCategory, ChosenSubsetsCategory
 
 __all__ = ["Sets", "SetsCategory"]
 
@@ -149,8 +149,16 @@ class SetsCategory(Category[[Rule], []]):
         from sage_categories.sets.subobjects import ChosenSubsetsCategory
 
         if "ChosenSubsets" not in self._constructions:
-            self._constructions["ChosenSubsets"] = ChosenSubsetsCategory()
+            self._constructions["ChosenSubsets"] = ChosenSubsetsCategory(self)
         return self._constructions["ChosenSubsets"]
+
+    def ChosenQuotients(self) -> ChosenQuotientsCategory:
+        """The narrowing of chosen quotients, each retaining its quotient map (``sets/subobjects.py``)."""
+        from sage_categories.sets.subobjects import ChosenQuotientsCategory
+
+        if "ChosenQuotients" not in self._constructions:
+            self._constructions["ChosenQuotients"] = ChosenQuotientsCategory(self)
+        return self._constructions["ChosenQuotients"]
 
     def _canonical_finite(self, name: str, arguments: tuple[int, ...], members: Iterable[Datum]) -> SetObject:
         if (name, arguments) not in self._canonical:

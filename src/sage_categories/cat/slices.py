@@ -40,6 +40,8 @@ covering object of ``y`` is the pair ``(X, p: X -> y)``, not ``p`` alone
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from sage.structure.coerce_dict import MonoDict, TripleDict
 
 from sage_categories.cat.cat_constructions import PairMorphism, PairObject, PullbackCategory, images_agree, strict_pullback
@@ -102,9 +104,9 @@ class SliceLikeCategory(PullbackCategory):
         self._base_of_slice = base
         self._fixed = fixed
         self._fixed_label = fixed_label
-        self._slice_projection: MonoDict = MonoDict()
         squares = Fun(_walking_arrow(), base)
         super().__init__(squares.evaluation(_walking_arrow()(fixed_label)), base.point_functor(fixed))
+        self._fixed_projection = squares.evaluation(_walking_arrow()(1 - fixed_label)) * self.first_projection()
 
     def base_of_slice(self) -> Category:
         return self._base_of_slice
@@ -119,11 +121,8 @@ class SliceLikeCategory(PullbackCategory):
         return morphism.domain()
 
     def fixed_projection(self) -> Functor:
-        """The fixed projection to ``C``: the evaluation at the varying end after the pullback projection to ``Fun([1], C)``."""
-        if self not in self._slice_projection:
-            squares = Fun(_walking_arrow(), self._base_of_slice)
-            self._slice_projection[self] = squares.evaluation(_walking_arrow()(1 - self._fixed_label)) * self.first_projection()
-        return self._slice_projection[self]
+        """The fixed projection to ``C``: the evaluation at the varying end after the pullback projection to ``Fun([1], C)``, retained once."""
+        return self._fixed_projection
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         return slice_member(candidate, self)
@@ -239,20 +238,18 @@ def _has_morphism_property(candidate: CategoryPoint, family: Category) -> Decisi
 
 has_morphism_property.register_handler(_has_morphism_property)
 
-_FAMILIES: dict[str, tuple[str, bool]] = {
-    "Subobjects": ("Monomorphisms", True),
-    "Superobjects": ("Monomorphisms", False),
-    "CoveringObjects": ("Epimorphisms", True),
-    "CoveredObjects": ("Epimorphisms", False),
-}
-
-
 class MorphismPropertyFamily(FullSubcategory[[NaturalTransformation], []]):
-    """``C.Subobjects()`` and its three relatives: the full subcategory of ``Fun([1], C)`` on the morphisms with the selected property."""
+    """``C.Subobjects()`` and its three relatives: the full subcategory of ``Fun([1], C)`` on the morphisms with the selected property.
 
-    def __init__(self, base: Category, name: str) -> None:
+    ``property_of`` selects the property subcategory of ``Mor(C)`` (monomorphisms or
+    epimorphisms); ``over`` says whether the fibers live in slices or in coslices.
+    """
+
+    def __init__(self, base: Category, name: str, property_of: Callable[[Category], Category], over: bool) -> None:
         self._base_of_family = base
         self._name = name
+        self._property_of = property_of
+        self._over = over
         self._fibers: MonoDict = MonoDict()
         super().__init__(Fun(_walking_arrow(), base))
 
@@ -261,11 +258,10 @@ class MorphismPropertyFamily(FullSubcategory[[NaturalTransformation], []]):
 
     def over(self) -> bool:
         """Whether the fibers live in slices (over) rather than coslices (under)."""
-        return _FAMILIES[self._name][1]
+        return self._over
 
     def property_category(self) -> Category:
-        morphisms = self._base_of_family.morphism_category(1)
-        return morphisms.Monomorphisms() if _FAMILIES[self._name][0] == "Monomorphisms" else morphisms.Epimorphisms()
+        return self._property_of(self._base_of_family.morphism_category(1))
 
     def morphism_of(self, candidate: CategoryPoint) -> MorphismOfCategory:
         """The morphism of ``C`` that an object of ``Fun([1], C)`` denotes."""

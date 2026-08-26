@@ -49,8 +49,14 @@ class MarkedSets(Category):
         def underlying(self) -> MorphismOfCategory:
             return self._underlying
 
+    def __init__(self):
+        self._functors = {}
+        super().__init__()
+
     def structure_functors(self):
-        return (Fun(self, Sets()).Faithful()(lambda marked: marked.carrier(), lambda morphism: morphism.underlying()),)
+        if "carrier" not in self._functors:
+            self._functors["carrier"] = Fun(self, Sets()).Faithful()(lambda marked: marked.carrier(), lambda morphism: morphism.underlying())
+        return (self._functors["carrier"],)
 
     def __call__(self, carrier, mark):
         assert mark in carrier
@@ -86,8 +92,14 @@ class SubsetSets(Category):
         def underlying(self) -> MorphismOfCategory:
             return self._underlying
 
+    def __init__(self):
+        self._functors = {}
+        super().__init__()
+
     def structure_functors(self):
-        return (Fun(self, Sets()).Faithful()(lambda subsetted: subsetted.carrier(), lambda morphism: morphism.underlying()),)
+        if "carrier" not in self._functors:
+            self._functors["carrier"] = Fun(self, Sets()).Faithful()(lambda subsetted: subsetted.carrier(), lambda morphism: morphism.underlying())
+        return (self._functors["carrier"],)
 
     def __call__(self, carrier, chosen):
         assert chosen.underlying_set() is carrier

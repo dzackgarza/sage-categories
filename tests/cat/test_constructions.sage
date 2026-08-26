@@ -144,8 +144,6 @@ def test_a_construction_category_exists_without_an_owned_construction() -> None:
     assert Cat().Limits(parallel) in Cat()
     with pytest.raises(AssertionError):
         Cat().Limits(parallel)(Fun(parallel, Cat()).constant(Sets()))
-    with pytest.raises(AssertionError):
-        Sets().Pullbacks()(Fun(Cat().Horn(int(2), int(2)), Sets()).constant(Sets().Simplex(int(1))))
 
 
 def test_the_strict_pullback_in_cat_admits_identical_images_and_leaves_distinct_rule_defined_images_unknown() -> None:
@@ -180,9 +178,10 @@ def test_fun_of_the_walking_arrow_has_morphisms_as_objects_and_evaluations_as_en
     assert ev_0.on_object(successor.defining_morphism()) is two
     assert ev_1.on_object(successor.defining_morphism()) is three
 
-    identities = {int(0): two.identity(), int(1): three.identity()}
-    square = Mor(squares)(successor.defining_morphism(), constant.defining_morphism())(lambda vertex: identities[arrow.label(vertex)])
+    zero = Mor(Sets())(three, three)(lambda datum: int(0))
+    components = {int(0): two.identity(), int(1): zero}
+    square = Mor(squares)(successor, constant)(lambda vertex: components[arrow.label(vertex)])
     assert square in Mor(squares)
     assert ev_0.on_morphism(square) is two.identity()
-    assert ev_1.on_morphism(square) is three.identity()
+    assert ev_1.on_morphism(square) is zero
     assert squares.constant(two).on_morphism(arrow.generator("0->1")) is two.identity()

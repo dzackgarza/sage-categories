@@ -19,6 +19,16 @@ otherwise (D01):
   is constructed with the exact enumeration and count through ``Sets().Finite()``;
 - a subset of a finite set is finite (Mathlib ``Set.Finite.subset``);
 - a subset of a countable set is countable (Mathlib ``Set.Countable.mono``).
+
+The image ``f.image()`` of a set map is the chosen subset of ``f.codomain()`` by
+the rule "some point of the domain maps here" (POL-ENGINE-004): exact when the
+domain has a chosen enumeration and the image data compare exactly, ``Unknown``
+otherwise.  Its placement and cardinality follow the cited cases: the image of
+a finite set is finite (Mathlib ``Set.Finite.image``), the image of a countable
+set is countable (Mathlib ``Set.Countable.image``; both inspected 2026-08-27), and
+the image of a map placed in ``Mor(Sets()).Monomorphisms()`` has the cardinality
+of its domain (``specs/sets.md``, "Subobjects, images, and power objects": the
+image of a monomorphism is the canonical chosen subset it represents).
 """
 
 from __future__ import annotations
@@ -28,7 +38,7 @@ from sage.structure.coerce_dict import MonoDict
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor
-from sage_categories.kernel.decisions import Decision, Unknown, decision_and
+from sage_categories.kernel.decisions import Decision, Unknown, decision_and, decision_or
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.elements import Datum
@@ -63,6 +73,7 @@ class ChosenSubsetsCategory(Category[[Rule], []]):
 
     def __init__(self) -> None:
         self._inclusions: MonoDict = MonoDict()
+        self._images: MonoDict = MonoDict()
         super().__init__()
 
     def structure_functors(self) -> tuple[Functor, ...]:
@@ -97,6 +108,56 @@ class ChosenSubsetsCategory(Category[[Rule], []]):
             # (Mathlib.Data.Set.Countable; inspected 2026-08-26).
             sets.Countable()(subset)
         return self._retain_inclusion(subset, base_set)
+
+    def image_of(self, set_map: SetMap) -> SetObject:
+        """``f.image()``: the chosen subset of the codomain of the points with a preimage, retained per map."""
+        sets = _sets.Sets()
+        finite, countable, monomorphisms = sets.Finite(), sets.Countable(), sets.morphism_category(1).Monomorphisms()
+        assert set_map in sets.morphism_category(1), f"{set_map!r} is not a set map"
+        if set_map in self._images:
+            return self._images[set_map]
+        domain, codomain = set_map.domain(), set_map.codomain()
+        codomain_rule = codomain._membership_rule
+        if finite.has_chosen_enumeration(domain):
+            images = tuple(set_map._rule(datum) for datum in finite.chosen_enumeration(domain))
+            comparisons = tuple(images[i] == images[j] for i in range(len(images)) for j in range(i))
+            if all(decision is not Unknown for decision in comparisons):
+                # The image of a finite set is finite (Mathlib ``Set.Finite.image``): the
+                # distinct image data, each pairwise comparison exact.
+                distinct = tuple(image for position, image in enumerate(images) if not any((image == earlier) is True for earlier in images[:position]))
+                subset = finite(distinct)
+                refine(subset, self)
+                self._images[set_map] = self._retain_inclusion(subset, codomain)
+                return subset
+
+            def has_preimage(datum: Datum) -> Decision:
+                in_codomain = codomain_rule(datum)
+                if in_codomain is False:
+                    return False
+                return decision_and(in_codomain, decision_or(*(image == datum for image in images)))
+
+        else:
+
+            def has_preimage(datum: Datum) -> Decision:
+                in_codomain = codomain_rule(datum)
+                if in_codomain is False:
+                    return False
+                return Unknown
+
+        cardinality = domain.cardinality() if set_map in monomorphisms else Unknown
+        subset = self.ObjectType(self, has_preimage, cardinality)
+        if domain in finite:
+            # Mathlib ``Set.Finite.image`` (Mathlib.Data.Set.Finite.Basic; inspected 2026-08-27).
+            finite(subset)
+        elif domain in countable:
+            # Mathlib ``Set.Countable.image`` (Mathlib.Data.Set.Countable; inspected 2026-08-27).
+            countable(subset)
+        elif codomain in finite:
+            finite(subset)
+        elif codomain in countable:
+            countable(subset)
+        self._images[set_map] = self._retain_inclusion(subset, codomain)
+        return subset
 
     def _retain_inclusion(self, subset: SetObject, base_set: SetObject) -> SetObject:
         # The inclusion of a subset is injective: Mathlib ``Set.inclusion_injective``

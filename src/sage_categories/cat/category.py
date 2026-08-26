@@ -31,12 +31,13 @@ from sage_categories.cat.equality import equality_predicate
 from sage_categories.kernel.decisions import Unknown
 from sage_categories.kernel.predicates import Predicate, Proposition, ask
 from sage_categories.kernel.refinement import is_placed
-from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory, Role
+from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role
 
 if TYPE_CHECKING:
     from sage_categories.cat.canonical import FinitePresentedCategory
     from sage_categories.cat.functors import Functor, FunctorsCategory, NaturalTransformation
     from sage_categories.cat.morphisms import MorphismCategory
+    from sage_categories.kernel.decisions import UnknownClass
 
 __all__ = ["Assignment", "Cat", "Category", "CategoryOfCategories", "OnMorphism", "OnObject", "member"]
 
@@ -77,6 +78,8 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         self._constructions: dict[str, Category] = {}
         self._limits: MonoDict = MonoDict()
         self._colimits: MonoDict = MonoDict()
+        self._slices: MonoDict = MonoDict()
+        self._coslices: MonoDict = MonoDict()
         self._equality = equality_predicate()
         compiler.compile_category(self)
 
@@ -390,6 +393,95 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         """The owned construction of ``I``-colimits, when this category declares one."""
         raise AssertionError(f"{self!r} owns no {shape!r}-colimit construction; supply universal data")
 
+    # -- slices, coslices, and the categories of subobjects (D10, POL-CAT-095, POL-SCOPE-003) --
+
+    def SliceOver(self, member_object: ObjectOfCategory) -> Category:
+        """``C.SliceOver(x)``: the strict pullback of ``ev_1: Fun([1], C) -> C`` along ``x: 1 -> C``."""
+        from sage_categories.cat.slices import slice_over
+
+        for ambient in self._inclusion_ambient:
+            return ambient.SliceOver(member_object)
+        assert member_object in self, f"{member_object!r} is not an object of {self!r}"
+        if member_object not in self._slices:
+            self._slices[member_object] = slice_over(self, member_object)
+        return self._slices[member_object]
+
+    def CosliceUnder(self, member_object: ObjectOfCategory) -> Category:
+        """``C.CosliceUnder(x)``: the strict pullback of ``ev_0: Fun([1], C) -> C`` along ``x: 1 -> C``."""
+        from sage_categories.cat.slices import coslice_under
+
+        for ambient in self._inclusion_ambient:
+            return ambient.CosliceUnder(member_object)
+        assert member_object in self, f"{member_object!r} is not an object of {self!r}"
+        if member_object not in self._coslices:
+            self._coslices[member_object] = coslice_under(self, member_object)
+        return self._coslices[member_object]
+
+    def _morphism_property_family(self, name: str) -> Category:
+        from sage_categories.cat.slices import MorphismPropertyFamily
+
+        for ambient in self._inclusion_ambient:
+            return ambient._morphism_property_family(name)
+        if name not in self._constructions:
+            self._constructions[name] = MorphismPropertyFamily(self, name)
+        return self._constructions[name]
+
+    def Subobjects(self) -> Category:
+        """The monomorphisms of ``C`` as objects of ``Fun([1], C)``; ``C.Subobjects()(x)`` is the fiber over ``x`` in ``C.SliceOver(x)``."""
+        return self._morphism_property_family("Subobjects")
+
+    def Superobjects(self) -> Category:
+        """The monomorphisms of ``C``; ``C.Superobjects()(x)`` is the fiber under ``x`` in ``C.CosliceUnder(x)``."""
+        return self._morphism_property_family("Superobjects")
+
+    def CoveringObjects(self) -> Category:
+        """The epimorphisms of ``C``; ``C.CoveringObjects()(y)`` is the fiber over ``y``: pairs ``(X, p: X -> y)`` (POL-CAT-026)."""
+        return self._morphism_property_family("CoveringObjects")
+
+    def CoveredObjects(self) -> Category:
+        """The epimorphisms of ``C``; ``C.CoveredObjects()(x)`` is the fiber under ``x`` in ``C.CosliceUnder(x)``."""
+        return self._morphism_property_family("CoveredObjects")
+
+    # -- the chosen sets of objects and morphisms of a small shape (D16) -----------------
+    #
+    # A shape used as a diagram index exposes its objects as an object of ``Sets()``
+    # and, when it has finitely many morphisms, its morphisms too; the points of
+    # those sets select objects and morphisms.  A category that declares neither
+    # has all generalized elements and no enumeration; a set limit over it is then
+    # undecided (D16).  The sets are typed by their kernel roles here because the
+    # theory of ``Sets()`` is constructed through this module; each shape declares
+    # the exact ``Sets()`` types.
+
+    def object_set(self) -> ObjectOfCategory:
+        """The set of objects, an object of ``Sets()``, when this category declares one."""
+        raise AssertionError(f"{self!r} declares no set of objects")
+
+    def object_at(self, point: ElementOfObject) -> ObjectOfCategory:
+        """The object selected by a point of ``object_set()``."""
+        raise AssertionError(f"{self!r} declares no set of objects")
+
+    def object_point(self, member_object: ObjectOfCategory) -> ElementOfObject:
+        """The point of ``object_set()`` selecting an object: the one whose object equals it."""
+        return next(point for point in self.object_set() if ask(self.object_at(point) == member_object) is True)
+
+    def morphism_set(self) -> ObjectOfCategory | UnknownClass:
+        """The set of morphisms as a finite enumerated object of ``Sets()``, or ``Unknown`` when none is chosen."""
+        return Unknown
+
+    def morphism_at(self, point: ElementOfObject) -> MorphismOfCategory:
+        """The morphism selected by a point of ``morphism_set()``."""
+        raise AssertionError(f"{self!r} declares no set of morphisms")
+
+    def generating_morphisms(self) -> tuple[MorphismOfCategory, ...] | UnknownClass:
+        """A finite family of morphisms generating this category under composition, or ``Unknown``.
+
+        The default is every morphism when the morphism set is finite and enumerated.
+        """
+        morphisms = self.morphism_set()
+        if morphisms is Unknown:
+            return Unknown
+        return tuple(self.morphism_at(point) for point in morphisms)
+
     def biproduct(self, first: ObjectOfCategory, second: ObjectOfCategory) -> ObjectOfCategory:
         """``X @ Y``, where the category declares biproducts; no category in this unit does."""
         raise AssertionError(f"{self!r} declares no biproduct")
@@ -508,15 +600,25 @@ class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
                 refine(composite, property_category)
         return composite
 
-    def construct_two_morphism(self, source: Functor, target: Functor, assignment: Assignment) -> NaturalTransformation:
-        """``Mor(Fun(C, D))(F, G)(assignment)``: a natural transformation from a rule (D05)."""
-        functors = self.morphism_category(1)
-        assert source in functors and target in functors
-        assert source.domain() is target.domain() and source.codomain() is target.codomain()
-        return functors.MorphismType(functors.morphism_category(1), source, target, assignment)
+    def construct_two_morphism(self, source: CategoryPoint, target: CategoryPoint, assignment: Assignment) -> NaturalTransformation:
+        """``Mor(Fun(C, D))(F, G)(assignment)``: a natural transformation from a rule (D05).
 
-    def identity_two_morphism(self, functor: Functor) -> NaturalTransformation:
-        return self.construct_two_morphism(functor, functor, lambda x: functor.on_object(x).identity())
+        The endpoints are objects of ``Fun(C, D)``: functors, or the points of ``D``
+        at stage ``C`` that denote their defining functors (D03).
+        """
+        from sage_categories.cat.functors import diagram_of
+
+        functors = self.morphism_category(1)
+        source_functor, target_functor = diagram_of(source), diagram_of(target)
+        assert source_functor in functors and target_functor in functors
+        assert source_functor.domain() is target_functor.domain() and source_functor.codomain() is target_functor.codomain()
+        return functors.MorphismType(functors.morphism_category(1), source, target, source_functor, target_functor, assignment)
+
+    def identity_two_morphism(self, member_object: CategoryPoint) -> NaturalTransformation:
+        from sage_categories.cat.functors import diagram_of
+
+        functor = diagram_of(member_object)
+        return self.construct_two_morphism(member_object, member_object, lambda x: functor.on_object(x).identity())
 
     def compose_two_morphisms(self, second: NaturalTransformation, first: NaturalTransformation) -> NaturalTransformation:
         """Vertical composition: components compose in the codomain category."""
@@ -634,10 +736,11 @@ def bootstrap() -> None:
     evaluates the declared signatures when it compiles a category that inherits the
     ``Category`` surface (D13).
     """
-    global _CAT, FinitePresentedCategory, Functor, FunctorsCategory, MorphismCategory, NaturalTransformation
+    global _CAT, FinitePresentedCategory, Functor, FunctorsCategory, MorphismCategory, NaturalTransformation, UnknownClass
     from sage_categories.cat.canonical import FinitePresentedCategory
     from sage_categories.cat.functors import Functor, FunctorsCategory, NaturalTransformation
     from sage_categories.cat.morphisms import MorphismCategory
+    from sage_categories.kernel.decisions import UnknownClass
 
     _CAT = CategoryOfCategories()
 

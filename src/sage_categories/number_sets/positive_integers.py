@@ -15,15 +15,16 @@ from sage.rings.integer_ring import ZZ as _integer_ring
 
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor
-from sage_categories.kernel.decisions import Decision
-from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
+from sage_categories.kernel.decisions import Decision, Unknown
+from sage_categories.kernel.predicates import Predicate
+from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.cardinals import aleph0
 from sage_categories.sets.category import Sets
 from sage_categories.sets.elements import Datum, SetPoint
 from sage_categories.sets.maps import Rule
 from sage_categories.sets.objects import SetObject
 
-__all__ = ["NN", "PositiveIntegers", "PositiveIntegersCategory"]
+__all__ = ["NN", "PositiveIntegers", "PositiveIntegersCategory", "natural_order"]
 
 
 def _is_positive_integer(datum: Datum) -> Decision:
@@ -69,6 +70,19 @@ class PositiveIntegersCategory(Category[[Rule], []]):
 
 
 _POSITIVE_INTEGERS = PositiveIntegersCategory()
+
+# ``natural_order(m, n)``: ``m <= n`` for two points of ``NN``, decided by Sage's exact
+# integer order; ``omega = Thin(NN, natural_order)`` is the sequential shape (D16).
+natural_order = Predicate("natural_order", 2, True)
+
+
+def _natural_order_by_integer_comparison(first: CategoryPoint, second: CategoryPoint) -> Decision:
+    if first not in _POSITIVE_INTEGERS() or second not in _POSITIVE_INTEGERS():
+        return Unknown
+    return bool(first._datum <= second._datum)
+
+
+natural_order.register_handler(_natural_order_by_integer_comparison)
 
 
 def PositiveIntegers() -> PositiveIntegersCategory:

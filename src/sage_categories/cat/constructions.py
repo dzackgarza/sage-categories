@@ -299,6 +299,7 @@ class ApexCategory(Category[[MorphismOfCategory], []]):
     def __init__(self, apex_category: Category) -> None:
         self._apex_category = apex_category
         self._presentations: MonoDict = MonoDict()
+        self._apexes: MonoDict = MonoDict()
         self._lowered: MonoDict = MonoDict()
         super().__init__()
         self._equality.register_handler(self._morphisms_equal)
@@ -375,7 +376,13 @@ class ApexCategory(Category[[MorphismOfCategory], []]):
         diagram = presentation.diagram()
         assert diagram not in self._presentations, f"{self!r} already retains a presentation of {diagram!r}"
         self._presentations[diagram] = presentation
+        self._apexes[presentation.apex()] = presentation
         return presentation
+
+    def presentation_of_apex(self, apex: ObjectOfCategory) -> ObjectOfCategory:
+        """The chosen presentation whose apex is the given object."""
+        assert apex in self._apexes, f"{apex!r} is not the apex of a presentation retained by {self!r}"
+        return self._apexes[apex]
 
     def construct_morphism(self, domain: ObjectOfCategory, codomain: ObjectOfCategory, apex_morphism: MorphismOfCategory) -> PresentationMorphism:
         assert apex_morphism in self._apex_category.morphism_category(1)(domain.apex(), codomain.apex())
@@ -470,8 +477,69 @@ class ProductsCategory(ApexCategory):
         assert limiting_cone in diagrams.morphism_category(1)(diagrams.constant(apex), diagram)
         return self._retain(self.ObjectType(self, diagram, apex, limiting_cone, mediator))
 
+    def Subobjects(self) -> Category:
+        """``C.Products().Subobjects()``: subobjects of product apexes with their derived component projections (POL-CAT-094)."""
+        if "Subobjects" not in self._constructions:
+            self._constructions["Subobjects"] = ProductSubobjectsCategory(self)
+        return self._constructions["Subobjects"]
+
     def __repr__(self) -> str:
         return f"{self._apex_category!r}.Products()"
+
+
+class ProductSubobjectPresentation(ObjectOfCategory):
+    """A subobject ``j: S -> P`` of a product apex: its apex is ``S`` and each ``product_projection(i)`` is ``pi_i * j``."""
+
+    def __init__(self, category: Category, monomorphism: MorphismOfCategory, product: ProductPresentation) -> None:
+        ObjectOfCategory.__init__(self, category)
+        self._monomorphism = monomorphism
+        self._product = product
+
+    def monomorphism(self) -> MorphismOfCategory:
+        """The presenting monomorphism ``j: S -> P`` (POL-FUN-013)."""
+        return self._monomorphism
+
+    def product(self) -> ProductPresentation:
+        """The product presentation whose apex is ``j.codomain()`` (POL-FUN-014)."""
+        return self._product
+
+    def apex(self) -> ObjectOfCategory:
+        return self._monomorphism.domain()
+
+    def diagram(self) -> Functor:
+        return self._product.diagram()
+
+    def index_category(self) -> Category:
+        return self._product.index_category()
+
+    def product_projection(self, index: ObjectOfCategory | Hashable) -> MorphismOfCategory:
+        """``pi_i * j``: the component of the subobject, derived by composition (POL-CAT-094)."""
+        return self._product.subobject_projection(self._monomorphism, index)
+
+    def __repr__(self) -> str:
+        return f"Subobject({self._monomorphism!r})"
+
+
+class ProductSubobjectsCategory(ApexCategory):
+    """``C.Products().Subobjects()``: the subobjects of product apexes, each retaining its monomorphism and its product."""
+
+    ObjectType = ProductSubobjectPresentation
+
+    def __init__(self, products: ProductsCategory) -> None:
+        self._products = products
+        self._subobjects: MonoDict = MonoDict()
+        super().__init__(products.apex_category())
+
+    def __call__(self, monomorphism: MorphismOfCategory) -> ProductSubobjectPresentation:
+        """The subobject presented by ``j: S -> P`` for a retained product apex ``P``; the monomorphism declaration is trusted unless decided false."""
+        assert monomorphism in self._apex_category.morphism_category(1), f"{monomorphism!r} is not a morphism of {self._apex_category!r}"
+        assert ask(monomorphism.is_monomorphism()) is not False, f"{monomorphism!r} is not a monomorphism"
+        if monomorphism not in self._subobjects:
+            self._subobjects[monomorphism] = self.ObjectType(self, monomorphism, self._products.presentation_of_apex(monomorphism.codomain()))
+        return self._subobjects[monomorphism]
+
+    def __repr__(self) -> str:
+        return f"{self._products!r}.Subobjects()"
 
 
 class ColimitsCategory(ApexCategory):

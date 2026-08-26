@@ -53,6 +53,10 @@ class SetMap(MorphismOfCategory):
         assert element in self.domain(), f"{element!r} is not an element of {self.domain()!r}"
         return self.codomain().point(self._rule(element._datum))
 
+    def image(self) -> SetObject:
+        """The chosen subset of the codomain of the points with a preimage, with its inclusion (POL-ENGINE-004; ``sets/subobjects.py``)."""
+        return _sets.Sets().ChosenSubsets().image_of(self)
+
     def __repr__(self) -> str:
         return f"SetMap({self.domain()!r} -> {self.codomain()!r})"
 

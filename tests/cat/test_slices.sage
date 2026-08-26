@@ -1,0 +1,238 @@
+"""``Fun([1], C)`` as morphisms and commuting squares; slices, coslices, and their fibration lifts; the shared-carrier pullback.
+
+Oracles: the definition of the functor category from the walking arrow (an object
+is a morphism, a morphism a commuting square ``g * a == b * f``; D03); the
+definition of ``C.SliceOver(x)`` as the pullback of ``ev_1`` along ``x`` and of its
+membership by ``ask(ev_1(f) == x)`` (D02, D10); the cartesian lift of ``f: y -> x``
+at ``p: z -> x`` for ``ev_1`` as the pullback projection ``z *_x y -> y`` (nLab
+"codomain fibration"); the cartesian lift of ``f: y -> z`` at ``(z, p)`` for the
+slice projection as ``(y, p * f) -> (z, p)`` (nLab "discrete fibration"); the
+slice pin of D06; the shared-carrier identity precondition of D10.  Every equality
+of finite-set maps is decided by the finite set-map handler (D17).  No row proves a
+universal property or a fibration law (D14).
+"""
+
+import pytest
+
+from sage_categories.all import *
+from sage_categories.cat.cat_constructions import shared_carrier_pullback
+from sage_categories.cat.diagrams import cospan_diagram
+from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
+
+
+class MarkedSets(Category):
+    """Sets with a marked point, projecting to ``Sets()`` by the explicit faithful functor ``(X, x) |-> X``."""
+
+    class ObjectType(ObjectOfCategory):
+        def __init__(self, category, carrier, mark):
+            super().__init__(category)
+            self._carrier = carrier
+            self._mark = mark
+
+        def carrier(self) -> ObjectOfCategory:
+            return self._carrier
+
+        def mark(self) -> ElementOfObject:
+            return self._mark
+
+    class ElementType(ElementOfObject):
+        """No local operation."""
+
+    class MorphismType(MorphismOfCategory):
+        def __init__(self, category, domain, codomain, underlying):
+            super().__init__(category, domain, codomain)
+            self._underlying = underlying
+
+        def underlying(self) -> MorphismOfCategory:
+            return self._underlying
+
+    def structure_functors(self):
+        return (Fun(self, Sets()).Faithful()(lambda marked: marked.carrier(), lambda morphism: morphism.underlying()),)
+
+    def __call__(self, carrier, mark):
+        assert mark in carrier
+        return self.ObjectType(self, carrier, mark)
+
+    def __repr__(self):
+        return "MarkedSets"
+
+
+class SubsetSets(Category):
+    """Sets with a chosen subset, projecting to ``Sets()`` by ``(X, A) |-> X``."""
+
+    class ObjectType(ObjectOfCategory):
+        def __init__(self, category, carrier, chosen):
+            super().__init__(category)
+            self._carrier = carrier
+            self._chosen = chosen
+
+        def carrier(self) -> ObjectOfCategory:
+            return self._carrier
+
+        def chosen(self) -> ObjectOfCategory:
+            return self._chosen
+
+    class ElementType(ElementOfObject):
+        """No local operation."""
+
+    class MorphismType(MorphismOfCategory):
+        def __init__(self, category, domain, codomain, underlying):
+            super().__init__(category, domain, codomain)
+            self._underlying = underlying
+
+        def underlying(self) -> MorphismOfCategory:
+            return self._underlying
+
+    def structure_functors(self):
+        return (Fun(self, Sets()).Faithful()(lambda subsetted: subsetted.carrier(), lambda morphism: morphism.underlying()),)
+
+    def __call__(self, carrier, chosen):
+        assert chosen.underlying_set() is carrier
+        return self.ObjectType(self, carrier, chosen)
+
+    def __repr__(self):
+        return "SubsetSets"
+
+
+def test_commuting_squares_are_the_morphisms_of_fun_of_the_walking_arrow() -> None:
+    two, three = Sets().Simplex(int(1)), Sets().Simplex(int(2))
+    successor = Mor(Sets())(two, three)(lambda datum: datum + int(1))
+    swap = Mor(Sets())(two, two)(lambda datum: int(1) - datum)
+    rotate = Mor(Sets())(three, three)(lambda datum: (datum + int(1)) % int(3))
+    arrow = Cat().Simplex(int(1))
+    squares = Fun(arrow, Sets())
+    ev_0, ev_1 = squares.evaluation(arrow(int(0))), squares.evaluation(arrow(int(1)))
+
+    assert successor in squares
+    assert successor in Fun
+    assert ev_0(successor) is two and ev_1(successor) is three
+    rotated = Mor(Sets())(two, three)(lambda datum: (datum + int(2)) % int(3))
+    components = {int(0): swap, int(1): rotate}
+    with pytest.raises(AssertionError):
+        Mor(squares)(successor, successor)(lambda vertex: components[arrow.label(vertex)])
+    twist = Mor(Sets())(two, three)(lambda datum: int(2) - datum)
+    square = Mor(squares)(successor, twist)(lambda vertex: components[arrow.label(vertex)])
+    assert square in Mor(squares)
+    assert square in Mor(squares)(successor, twist)
+    assert square.domain() is successor
+    assert ev_0.on_morphism(square) is swap
+    assert ev_1.on_morphism(square) is rotate
+    assert ask(twist * swap == rotate * successor) is True
+    assert ask(rotated == twist) is True
+
+
+def test_the_slice_is_the_pullback_of_the_codomain_evaluation_along_the_point() -> None:
+    two, three = Sets().Simplex(int(1)), Sets().Simplex(int(2))
+    successor = Mor(Sets())(two, three)(lambda datum: datum + int(1))
+    parity = Mor(Sets())(three, two)(lambda datum: datum % int(2))
+    arrow = Cat().Simplex(int(1))
+    squares = Fun(arrow, Sets())
+    over = Sets().SliceOver(three)
+
+    assert over in Cat()
+    assert Sets().SliceOver(three) is over
+    assert over.first_functor() is squares.evaluation(arrow(int(1)))
+    assert over.second_functor() is Sets().point_functor(three)
+    assert over.first_projection().codomain() is squares
+    assert over.projection().domain() is over and over.projection().codomain() is Sets()
+
+    lifted = over(successor)
+    assert lifted in over
+    assert over.first_projection().on_object(lifted) is successor
+    assert over.projection().on_object(lifted) is two
+    assert successor in over
+    assert ask(over.membership_proposition(parity)) is Unknown
+    assert parity not in over
+    other_three = Sets()(lambda datum: datum in (int(0), int(1), int(2)))
+    unrelated = Mor(Sets())(two, other_three)(lambda datum: datum)
+    assert ask(over.membership_proposition(unrelated)) is Unknown
+    assert ask(lifted.cardinality() == int(2)) is True
+
+    under = Sets().CosliceUnder(two)
+    assert under.first_functor() is squares.evaluation(arrow(int(0)))
+    pointed = under(successor)
+    assert pointed in under
+    assert under.projection().on_object(pointed) is three
+    assert under.first_projection().on_object(pointed) is successor
+
+
+def test_a_generalized_element_is_an_object_of_the_slice_over_its_parent() -> None:
+    three = Sets().Simplex(int(2))
+    point = three.point(int(1))
+    over = Sets().SliceOver(three)
+
+    assert point.category() is over
+    assert point in over
+    assert point.stage() is Sets().Terminal()
+    assert point.parent() is three
+    assert over(point).first() is point.defining_morphism()
+    assert over(point.defining_morphism()) is over(point)
+    assert ask(over(point).cardinality() == int(1)) is True
+
+
+def test_the_codomain_evaluation_lifts_a_map_by_pullback_with_both_projections() -> None:
+    two, three, four = Sets().Simplex(int(1)), Sets().Simplex(int(2)), Sets().Simplex(int(3))
+    include = Mor(Sets())(two, three)(lambda datum: datum)
+    residue = Mor(Sets())(four, three)(lambda datum: datum % int(3))
+    arrow = Cat().Simplex(int(1))
+    squares = Fun(arrow, Sets())
+    cospan = Cat().Horn(int(2), int(2))
+
+    lift = squares.cartesian_lift(include, residue)
+    assert lift in Mor(squares)
+    assert lift.codomain() is residue
+    lifted = lift.domain()
+    assert lifted in Mor(Sets())
+    assert lifted.codomain() is two
+    to_four = lift.component(arrow(int(0)))
+    assert to_four.domain() is lifted.domain() and to_four.codomain() is four
+    assert lift.component(arrow(int(1))) is include
+    assert ask(residue * to_four == include * lifted) is True
+    assert ask(lifted.domain().cardinality() == int(3)) is True
+    pullback = Sets().Pullbacks()(cospan_diagram(Sets(), residue, include))
+    assert lifted is pullback.projection(cospan(int(1)))
+    assert to_four is pullback.projection(cospan(int(0)))
+    assert squares.cartesian_lift(include, residue) is lift
+
+
+def test_the_slice_projection_lifts_a_map_by_precomposition() -> None:
+    two, three, four = Sets().Simplex(int(1)), Sets().Simplex(int(2)), Sets().Simplex(int(3))
+    residue = Mor(Sets())(four, three)(lambda datum: datum % int(3))
+    double = Mor(Sets())(two, four)(lambda datum: int(2) * datum)
+    over = Sets().SliceOver(three)
+    base = over(residue)
+
+    lift = over.cartesian_lift(double, base)
+    assert lift in Mor(over)
+    assert lift.codomain() is base
+    assert over.projection().on_morphism(lift) is double
+    lifted = lift.domain()
+    assert over.projection().on_object(lifted) is two
+    assert ask(lifted.first() == residue * double) is True
+    assert ask(lifted.first()(two.point(int(1))) == three.point(int(2))) is True
+
+    under = Sets().CosliceUnder(two)
+    pointed = under(double)
+    colift = under.cocartesian_lift(residue, pointed)
+    assert colift.domain() is pointed
+    assert under.projection().on_object(colift.codomain()) is three
+    assert ask(colift.codomain().first() == residue * double) is True
+
+
+def test_a_shared_carrier_pullback_accepts_one_carrier_and_rejects_two() -> None:
+    marked, subsetted = MarkedSets(), SubsetSets()
+    three = Sets().Simplex(int(2))
+    other = Sets().Finite()((int(0), int(1), int(2)))
+    diagram = cospan_diagram(Cat(), marked.selected_functors()[int(0)], subsetted.selected_functors()[int(0)])
+    combined = shared_carrier_pullback(diagram)
+    cospan = Cat().Horn(int(2), int(2))
+
+    assert combined in Cat().Pullbacks()
+    assert combined.projection(cospan(int(0))).codomain() is marked
+    assert combined.projection(cospan(int(1))).codomain() is subsetted
+    pair = combined.apex()((marked(three, three.point(int(1))), subsetted(three, three.subset_from(lambda datum: datum > int(0)))))
+    assert pair in combined.apex()
+    assert combined.projection(cospan(int(2))).on_object(pair) is three
+    assert combined.projection(cospan(int(0))).on_object(pair).mark() is three.point(int(1))
+    with pytest.raises(AssertionError):
+        combined.apex()((marked(three, three.point(int(1))), subsetted(other, other.subset_from(lambda datum: datum > int(0)))))

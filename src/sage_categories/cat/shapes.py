@@ -30,7 +30,7 @@ from sage.structure.coerce_dict import MonoDict
 from sage_categories.cat.category import Category, member
 from sage_categories.cat.functors import Cat, Fun, Functor
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.kernel.decisions import Decision, Unknown, decision_and
+from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass, decision_and
 from sage_categories.kernel.predicates import Predicate, Proposition, ask
 from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
@@ -39,7 +39,7 @@ from sage_categories.sets.elements import SetPoint
 from sage_categories.sets.maps import SetMap
 from sage_categories.sets.objects import SetObject
 
-__all__ = ["Discrete", "DiscreteCategory", "Thin", "ThinCategory", "index_set_of", "is_discrete"]
+__all__ = ["Discrete", "DiscreteCategory", "Thin", "ThinCategory", "index_set_of", "is_discrete", "omega"]
 
 
 # -- Discrete(S) ---------------------------------------------------------------------
@@ -84,6 +84,27 @@ class DiscreteCategory(Category[[], []]):
 
     def index_set(self) -> SetObject:
         return self._index_set
+
+    # The objects are the points of ``S`` and the morphisms their identities (D16).
+
+    def object_set(self) -> SetObject:
+        return self._index_set
+
+    def object_at(self, point: SetPoint) -> DiscreteObject:
+        return self(point)
+
+    def object_point(self, member_object: DiscreteObject) -> SetPoint:
+        return member_object.point()
+
+    def morphism_set(self) -> SetObject | UnknownClass:
+        return self._index_set
+
+    def morphism_at(self, point: SetPoint) -> DiscreteIdentity:
+        return self(point).identity()
+
+    def generating_morphisms(self) -> tuple[DiscreteIdentity, ...]:
+        """No morphism beyond the identities: the empty generating family."""
+        return ()
 
     def __call__(self, point: SetPoint) -> DiscreteObject:
         """The object of ``Discrete(S)`` at a point of ``S``, one object per retained point."""
@@ -233,6 +254,17 @@ class ThinCategory(Category[[], []]):
     def morphism_category_type(self) -> type[ThinMorphisms]:
         return ThinMorphisms
 
+    # The objects are the points of ``P``; no finite family of comparisons is chosen.
+
+    def object_set(self) -> SetObject:
+        return self._carrier
+
+    def object_at(self, point: SetPoint) -> ThinObject:
+        return self(point)
+
+    def object_point(self, member_object: ThinObject) -> SetPoint:
+        return member_object.point()
+
     def __call__(self, point: SetPoint) -> ThinObject:
         """The object at a point of ``P``, one object per retained point."""
         assert point in self._carrier, f"{point!r} is not a point of {self._carrier!r}"
@@ -272,3 +304,15 @@ def Thin(carrier: SetObject, order: Predicate) -> ThinCategory:
     """The thin category of the preorder ``(carrier, order)``."""
     assert carrier in Sets()
     return ThinCategory(carrier, order)
+
+
+_omega: MonoDict = MonoDict()
+
+
+def omega() -> ThinCategory:
+    """``omega = Thin(NN)`` with the natural order: the sequential shape, constructed once (D16)."""
+    from sage_categories.number_sets.positive_integers import NN, natural_order
+
+    if NN not in _omega:
+        _omega[NN] = Thin(NN, natural_order)
+    return _omega[NN]

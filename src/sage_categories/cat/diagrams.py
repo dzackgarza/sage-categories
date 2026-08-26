@@ -1,11 +1,12 @@
-"""Diagrams: evaluation functors of ``Fun(I, C)``, constant and discrete diagrams (D10, D16).
+"""Diagrams: evaluation functors of ``Fun(I, C)``, constant and discrete diagrams, pointwise limits, and the lifts of ``Fun([1], C)`` (D10, D16).
 
 A diagram of shape ``I`` in ``C`` is an object of ``Fun(I, C)``.  ``Fun(I, C)``
 retains one evaluation functor ``ev_i: Fun(I, C) -> C`` per object ``i`` of ``I``,
 constructed through ``Fun(Fun(I, C), C)`` (Mathlib ``CategoryTheory.evaluation``;
 inspected 2026-08-26): on a diagram it returns ``D(i)`` and on a natural
 transformation its component at ``i``.  For ``I = [1]`` the evaluations at ``0``
-and ``1`` are ``ev_0`` and ``ev_1``, the domain and codomain of a morphism.
+and ``1`` are ``ev_0`` and ``ev_1``, the domain and codomain of a morphism, since
+the objects of ``Fun([1], C)`` are the morphisms of ``C`` (D03).
 
 The constant diagram at ``X`` sends every object to ``X`` and every morphism to
 its identity (Mathlib ``CategoryTheory.Functor.const``; inspected 2026-08-26); it
@@ -14,6 +15,20 @@ constant diagram.  A diagram over ``Discrete(S)`` is determined by its object ru
 alone, since the only morphisms are identities; the sequence convenience
 ``(X_0, ..., X_n)`` denotes the diagram over ``Discrete([n])`` for
 ``[n] = Sets().Simplex(n)``.
+
+``Fun(I, C)`` has the ``J``-limits and ``J``-colimits that ``C`` has, computed
+pointwise: the apex at ``i`` is the limit of ``ev_i * D``, the cone components and
+the mediator are assembled from the pointwise ones (Mathlib
+``CategoryTheory.Limits.evaluationJointlyReflectsLimits``, ``combinedIsLimit``,
+``functorCategoryHasLimitsOfShape`` and their colimit duals; inspected
+2026-08-27).
+
+The commuting squares of ``Fun([1], C)`` form a finite set when ``C`` chooses a
+finite set of morphisms.  The cartesian lift of ``f: y -> x`` at ``p: z -> x``
+for ``ev_1`` is the square from the pullback projection ``z *_x y -> y`` to ``p``
+(nLab "codomain fibration", inspected 2026-08-27), and the cocartesian lift of
+``f: x -> y`` at ``p: x -> z`` for ``ev_0`` is the square from ``p`` to the
+pushout injection ``y -> z +_x y``, dually.
 """
 
 from __future__ import annotations
@@ -21,17 +36,34 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
+from sage.structure.coerce_dict import MonoDict
+
 from sage_categories.cat.category import Category
-from sage_categories.cat.functors import Fun, Functor
+from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.shapes import Discrete, DiscreteObject, is_discrete
+from sage_categories.kernel.decisions import Decision
 from sage_categories.kernel.predicates import ask
 from sage_categories.kernel.roles import MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.category import Sets
 
 if TYPE_CHECKING:
     from sage_categories.cat.functors import FunctorCategory
+    from sage_categories.sets.elements import Datum, SetPoint
+    from sage_categories.sets.objects import SetObject
 
-__all__ = ["constant", "evaluation", "from_object_rule", "from_sequence", "sequence_position"]
+__all__ = [
+    "codomain_lift",
+    "constant",
+    "domain_lift",
+    "evaluation",
+    "from_object_rule",
+    "from_sequence",
+    "pointwise_colimit",
+    "pointwise_limit",
+    "sequence_position",
+    "square_at",
+    "square_set",
+]
 
 
 def evaluation(functors: FunctorCategory, vertex: ObjectOfCategory) -> Functor:
@@ -39,7 +71,7 @@ def evaluation(functors: FunctorCategory, vertex: ObjectOfCategory) -> Functor:
     assert vertex in functors.domain(), f"{vertex!r} is not an object of {functors.domain()!r}"
     if vertex not in functors._evaluations:
         functors._evaluations[vertex] = Fun(functors, functors.codomain())(
-            lambda diagram: diagram.on_object(vertex),
+            lambda diagram: functors.diagram(diagram).on_object(vertex),
             lambda transformation: transformation.component(vertex),
         )
     return functors._evaluations[vertex]
@@ -78,3 +110,185 @@ def morphism_from_sequence(ambient: Category, domain: Functor, codomain: Functor
     """The natural transformation between two sequence diagrams with the given components."""
     functors = Fun(domain.domain(), ambient)
     return functors.morphism_category(1)(domain, codomain)(lambda vertex: components[sequence_position(vertex)])
+
+
+# -- the commuting squares of ``Fun([1], C)`` as a finite set (D16) ---------------------------
+
+
+def square_set(functors: FunctorCategory) -> SetObject:
+    """The finite set of commuting squares ``(f, g, a, b)`` with ``g * a == b * f`` in ``C``, when ``C`` chooses a finite set of morphisms."""
+    base = functors.codomain()
+    if "squares" not in functors._finite_data:
+        morphisms = base.morphism_set()
+        quadruples = Sets().Products()((morphisms, morphisms, morphisms, morphisms))
+
+        def commutes(datum: Datum) -> Decision:
+            point = quadruples.apex().point(datum)
+            f, g, a, b = (base.morphism_at(quadruples.product_projection(position)(point)) for position in range(4))
+            if not (a.domain() is f.domain() and a.codomain() is g.domain() and b.domain() is f.codomain() and b.codomain() is g.codomain()):
+                return False
+            return ask(g * a == b * f)
+
+        functors._finite_data["quadruples"] = quadruples
+        functors._finite_data["squares"] = quadruples.apex().subset_from(commutes)
+    return functors._finite_data["squares"]
+
+
+def square_at(functors: FunctorCategory, point: SetPoint) -> NaturalTransformation:
+    """The square selected by a point of ``square_set``."""
+    square_set(functors)
+    base, quadruples = functors.codomain(), functors._finite_data["quadruples"]
+    f, g, a, b = (base.morphism_at(quadruples.product_projection(position)(point)) for position in range(4))
+    components = {0: a, 1: b}
+    return functors.morphism_category(1)(f, g)(lambda vertex: components[functors.domain().label(vertex)])
+
+
+# -- the lifts of ``ev_1`` and ``ev_0`` on ``Fun([1], C)`` (D10) ----------------------------------
+
+
+def _fold(images: dict[str, MorphismOfCategory], identities: Callable[[ObjectOfCategory], MorphismOfCategory], path: MorphismOfCategory) -> MorphismOfCategory:
+    if not path.word():
+        return identities(path.domain())
+    first, *rest = path.word()
+    image = images[first]
+    for name in rest:
+        image = images[name] * image
+    return image
+
+
+def cospan_diagram(base: Category, first: MorphismOfCategory, second: MorphismOfCategory) -> Functor:
+    """The diagram ``L(2, 2) -> C`` with legs ``first: 0 -> 2`` and ``second: 1 -> 2``."""
+    assert first.codomain() is second.codomain()
+    cospan = Cat().Horn(2, 2)
+    objects = {0: first.domain(), 1: second.domain(), 2: first.codomain()}
+    images = {"0->2": first, "1->2": second}
+    return Fun(cospan, base)(lambda vertex: objects[cospan.label(vertex)], lambda path: _fold(images, lambda vertex: objects[cospan.label(vertex)].identity(), path))
+
+
+def span_diagram(base: Category, first: MorphismOfCategory, second: MorphismOfCategory) -> Functor:
+    """The diagram ``L(2, 0) -> C`` with legs ``first: 0 -> 1`` and ``second: 0 -> 2``."""
+    assert first.domain() is second.domain()
+    span = Cat().Horn(2, 0)
+    objects = {0: first.domain(), 1: first.codomain(), 2: second.codomain()}
+    images = {"0->1": first, "0->2": second}
+    return Fun(span, base)(lambda vertex: objects[span.label(vertex)], lambda path: _fold(images, lambda vertex: objects[span.label(vertex)].identity(), path))
+
+
+def codomain_lift(functors: FunctorCategory, morphism: MorphismOfCategory, member_object: MorphismOfCategory) -> NaturalTransformation:
+    """The cartesian lift of ``f: y -> x`` at ``p: z -> x``: the square ``(pi_z, f)`` from ``pi_y: z *_x y -> y`` to ``p``."""
+    base, arrow = functors.codomain(), functors.domain()
+    assert arrow is Cat().Simplex(1) and morphism.codomain() is member_object.codomain(), f"{morphism!r} does not end at the codomain of {member_object!r}"
+    key = (morphism, member_object, functors)
+    if key not in functors._lifts:
+        cospan = Cat().Horn(2, 2)
+        pullback = base.Pullbacks()(cospan_diagram(base, member_object, morphism))
+        to_first, to_second = pullback.projection(cospan(0)), pullback.projection(cospan(1))
+        components = {0: to_first, 1: morphism}
+        functors._lifts[key] = functors.morphism_category(1)(to_second, member_object)(lambda vertex: components[arrow.label(vertex)])
+    return functors._lifts[key]
+
+
+def domain_lift(functors: FunctorCategory, morphism: MorphismOfCategory, member_object: MorphismOfCategory) -> NaturalTransformation:
+    """The cocartesian lift of ``f: x -> y`` at ``p: x -> z``: the square ``(f, iota_z)`` from ``p`` to ``iota_y: y -> z +_x y``."""
+    base, arrow = functors.codomain(), functors.domain()
+    assert arrow is Cat().Simplex(1) and morphism.domain() is member_object.domain(), f"{morphism!r} does not start at the domain of {member_object!r}"
+    key = (morphism, member_object, functors)
+    if key not in functors._lifts:
+        span = Cat().Horn(2, 0)
+        pushout = base.Pushouts()(span_diagram(base, member_object, morphism))
+        from_first, from_second = pushout.injection(span(1)), pushout.injection(span(2))
+        components = {0: morphism, 1: from_first}
+        functors._lifts[key] = functors.morphism_category(1)(member_object, from_second)(lambda vertex: components[arrow.label(vertex)])
+    return functors._lifts[key]
+
+
+# -- limits and colimits in ``Fun(I, C)``, pointwise (D16) -----------------------------------------
+
+
+def _leg(presentation: ObjectOfCategory, vertex: ObjectOfCategory) -> MorphismOfCategory:
+    """The cone component at ``vertex``: ``product_projection`` of a product, ``projection`` of a general limit."""
+    if is_discrete(presentation.index_category()):
+        return presentation.product_projection(vertex)
+    return presentation.projection(vertex)
+
+
+def _coleg(presentation: ObjectOfCategory, vertex: ObjectOfCategory) -> MorphismOfCategory:
+    if is_discrete(presentation.index_category()):
+        return presentation.coproduct_injection(vertex)
+    return presentation.injection(vertex)
+
+
+def pointwise_limit(diagram: Functor) -> ObjectOfCategory:
+    """``Fun(I, C).Limits(J)(D)``: the functor ``i |-> lim_J (ev_i * D)`` with the pointwise cone and mediator."""
+    from sage_categories.cat.constructions import cone, cone_apex
+
+    functors, shape = diagram.codomain(), diagram.domain()
+    assert functors is not Fun, f"{diagram!r} is not a diagram in a fixed-endpoint functor category"
+    target = functors.codomain()
+    limits = target.Limits(shape)
+    composites: MonoDict = MonoDict()
+
+    def at(vertex: ObjectOfCategory) -> ObjectOfCategory:
+        if vertex not in composites:
+            composites[vertex] = limits(functors.evaluation(vertex) * diagram)
+        return composites[vertex]
+
+    def on_morphism(morphism: MorphismOfCategory) -> MorphismOfCategory:
+        source, destination = at(morphism.domain()).diagram(), at(morphism.codomain()).diagram()
+        transformation = Fun(shape, target).morphism_category(1)(source, destination)(lambda vertex: functors.diagram(diagram.on_object(vertex)).on_morphism(morphism))
+        return limits.limit_functor().on_morphism(transformation)
+
+    apex = functors(lambda vertex: at(vertex).apex(), on_morphism)
+
+    def projection(vertex: ObjectOfCategory) -> NaturalTransformation:
+        return functors.morphism_category(1)(apex, diagram.on_object(vertex))(lambda index_object: _leg(at(index_object), vertex))
+
+    def mediator(candidate_cone: NaturalTransformation) -> NaturalTransformation:
+        source = cone_apex(candidate_cone)
+        return functors.morphism_category(1)(source, apex)(
+            lambda index_object: at(index_object).universal_morphism(
+                cone(at(index_object).diagram(), source.on_object(index_object), lambda vertex: candidate_cone.component(vertex).component(index_object))
+            )
+        )
+
+    family = Fun.Products() if is_discrete(shape) else Fun.Limits(shape)
+    lowered = family.lowered(diagram)
+    return family.with_universal_data(lowered, apex, cone(lowered, apex, projection), mediator)
+
+
+def pointwise_colimit(diagram: Functor) -> ObjectOfCategory:
+    """``Fun(I, C).Colimits(J)(D)``: the functor ``i |-> colim_J (ev_i * D)`` with the pointwise cocone and mediator."""
+    from sage_categories.cat.constructions import cocone, cocone_apex
+
+    functors, shape = diagram.codomain(), diagram.domain()
+    assert functors is not Fun, f"{diagram!r} is not a diagram in a fixed-endpoint functor category"
+    target = functors.codomain()
+    colimits = target.Colimits(shape)
+    composites: MonoDict = MonoDict()
+
+    def at(vertex: ObjectOfCategory) -> ObjectOfCategory:
+        if vertex not in composites:
+            composites[vertex] = colimits(functors.evaluation(vertex) * diagram)
+        return composites[vertex]
+
+    def on_morphism(morphism: MorphismOfCategory) -> MorphismOfCategory:
+        source, destination = at(morphism.domain()).diagram(), at(morphism.codomain()).diagram()
+        transformation = Fun(shape, target).morphism_category(1)(source, destination)(lambda vertex: functors.diagram(diagram.on_object(vertex)).on_morphism(morphism))
+        return colimits.colimit_functor().on_morphism(transformation)
+
+    apex = functors(lambda vertex: at(vertex).apex(), on_morphism)
+
+    def injection(vertex: ObjectOfCategory) -> NaturalTransformation:
+        return functors.morphism_category(1)(diagram.on_object(vertex), apex)(lambda index_object: _coleg(at(index_object), vertex))
+
+    def mediator(candidate_cocone: NaturalTransformation) -> NaturalTransformation:
+        destination = cocone_apex(candidate_cocone)
+        return functors.morphism_category(1)(apex, destination)(
+            lambda index_object: at(index_object).universal_morphism(
+                cocone(at(index_object).diagram(), destination.on_object(index_object), lambda vertex: candidate_cocone.component(vertex).component(index_object))
+            )
+        )
+
+    family = Fun.Coproducts() if is_discrete(shape) else Fun.Colimits(shape)
+    lowered = family.lowered(diagram)
+    return family.with_universal_data(lowered, apex, cocone(lowered, apex, injection), mediator)

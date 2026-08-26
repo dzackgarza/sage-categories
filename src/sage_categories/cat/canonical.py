@@ -26,17 +26,24 @@ The canonical shapes (nLab "walking structure", Kerodon 1.1; inspected 2026-08-2
 from __future__ import annotations
 
 from collections.abc import Hashable
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.cat.category import Category
-from sage_categories.kernel.decisions import Decision, Unknown
+from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
+
+if TYPE_CHECKING:
+    from sage_categories.sets.elements import SetPoint
+    from sage_categories.sets.objects import SetObject
 
 __all__ = [
     "FinitePresentedCategory",
     "boundary",
     "empty_category",
+    "enumerated_datum",
     "horn",
     "simplex",
     "walking_isomorphism",
@@ -86,11 +93,17 @@ class FinitePresentedCategory(Category[[Word], []]):
 
     def __init__(self, name: str, labels: tuple[Hashable, ...], generators: tuple[Generator, ...], relations: tuple[Relation, ...]) -> None:
         self._name = name
+        self._labels = labels
         self._generator_endpoints = {generator: (source, target) for generator, source, target in generators}
         self._relations = relations
+        # One retained path per (source label, reduced word) (D15): a morphism of a
+        # finitely presented category exists once by identity.
+        self._paths: dict[tuple[Hashable, Word], Path] = {}
+        self._object_set: MonoDict = MonoDict()
+        self._morphism_set: MonoDict = MonoDict()
         super().__init__()
         self._vertices = {label: self.ObjectType(self, label) for label in labels}
-        self._equality.register_handler(self._paths_equal)
+        self._equality.register_handler(self._equal)
 
     def __call__(self, label: Hashable) -> Vertex:
         """The retained vertex with this label."""
@@ -99,9 +112,79 @@ class FinitePresentedCategory(Category[[Word], []]):
     def label(self, vertex: Vertex) -> Hashable:
         return vertex._label
 
+    def labels(self) -> tuple[Hashable, ...]:
+        """The labels of the vertices, in declaration order."""
+        return self._labels
+
+    def generator_names(self) -> tuple[str, ...]:
+        """The names of the generating morphisms, in declaration order."""
+        return tuple(self._generator_endpoints)
+
     def generator(self, name: str) -> Path:
         source, target = self._generator_endpoints[name]
         return self.construct_morphism(self(source), self(target), (name,))
+
+    # -- the finite set of objects and, for an acyclic quiver, of morphisms (D16) -------
+    #
+    # The object set is the finite set of labels.  The morphism set is the finite
+    # set of reduced words: a finite quiver without directed cycles has finitely many
+    # paths (nLab "free category": the morphisms of the free category are the finite
+    # composable sequences of edges; inspected 2026-08-27), so when the generator
+    # graph is acyclic every morphism is reached by breadth-first extension of words,
+    # and otherwise no finite enumeration of morphisms is chosen.
+
+    def object_set(self) -> SetObject:
+        from sage_categories.sets.category import Sets
+
+        if self not in self._object_set:
+            self._object_set[self] = Sets().Finite()(self._labels)
+        return self._object_set[self]
+
+    def object_at(self, point: SetPoint) -> Vertex:
+        return self(enumerated_datum(self.object_set(), point))
+
+    def object_point(self, vertex: Vertex) -> SetPoint:
+        return self.object_set().point(self.label(vertex))
+
+    def _has_directed_cycle(self) -> bool:
+        successors: dict[Hashable, list[Hashable]] = {label: [] for label in self._labels}
+        for source, target in self._generator_endpoints.values():
+            successors[source].append(target)
+
+        def reaches(start: Hashable, stack: tuple[Hashable, ...]) -> bool:
+            return any(target in stack or reaches(target, (*stack, target)) for target in successors[start])
+
+        return any(reaches(label, (label,)) for label in self._labels)
+
+    def morphism_set(self) -> SetObject | UnknownClass:
+        """The finite set of morphisms, as data ``(source label, reduced word)``, when the quiver is acyclic."""
+        from sage_categories.sets.category import Sets
+
+        if self._has_directed_cycle():
+            return Unknown
+        if self not in self._morphism_set:
+            words: list[tuple[Hashable, Word]] = [(label, ()) for label in self._labels]
+            frontier = list(words)
+            while frontier:
+                source, word = frontier.pop(0)
+                position = source if not word else self._generator_endpoints[word[-1]][1]
+                for name, (start, _) in self._generator_endpoints.items():
+                    if start == position:
+                        extended = (source, self._reduce((*word, name)))
+                        if extended not in words:
+                            words.append(extended)
+                            frontier.append(extended)
+            self._morphism_set[self] = Sets().Finite()(words)
+        return self._morphism_set[self]
+
+    def morphism_at(self, point: SetPoint) -> Path:
+        source, word = enumerated_datum(self.morphism_set(), point)
+        target = source if not word else self._generator_endpoints[word[-1]][1]
+        return self.construct_morphism(self(source), self(target), word)
+
+    def generating_morphisms(self) -> tuple[Path, ...]:
+        """The generators: every morphism is a composite of them."""
+        return tuple(self.generator(name) for name in self._generator_endpoints)
 
     def _reduce(self, word: Word) -> Word:
         reduced = word
@@ -125,17 +208,20 @@ class FinitePresentedCategory(Category[[Word], []]):
             assert source == position, f"{name} does not start at {position!r}"
             position = target
         assert position == self.label(codomain), f"the path ends at {position!r}, not at {codomain!r}"
-        path = self.MorphismType(self.morphism_category(1), domain, codomain, self._reduce(word))
-        # A word in generators with declared inverses is invertible by construction.
-        if path.word() and all(name in self._inverse_generators() for name in path.word()):
-            refine(path, self.morphism_category(1).Isomorphisms())
-        return path
+        key = (self.label(domain), self._reduce(word))
+        if key not in self._paths:
+            path = self.MorphismType(self.morphism_category(1), domain, codomain, key[1])
+            # A word in generators with declared inverses is invertible by construction.
+            if path.word() and all(name in self._inverse_generators() for name in path.word()):
+                refine(path, self.morphism_category(1).Isomorphisms())
+            self._paths[key] = path
+        return self._paths[key]
 
     def _inverse_generators(self) -> dict[str, str]:
         return {left[0]: left[1] for left, right in self._relations if len(left) == 2 and not right}
 
     def construct_identity(self, vertex: Vertex) -> Path:
-        return self.MorphismType(self.morphism_category(1), vertex, vertex, ())
+        return self.construct_morphism(vertex, vertex, ())
 
     def element_from_defining_morphism(self, defining_morphism: Path) -> ElementOfObject:
         """The generalized element of ``codomain`` given by a path into it."""
@@ -144,14 +230,17 @@ class FinitePresentedCategory(Category[[Word], []]):
 
     def composite(self, second: Path, first: Path) -> Path:
         assert first.codomain() is second.domain()
-        return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain(), self._reduce((*first.word(), *second.word())))
+        return self.construct_morphism(first.domain(), second.codomain(), (*first.word(), *second.word()))
 
     def inverse_morphism(self, morphism: Path) -> Path:
         """The inverse of a path whose generators each have a declared inverse generator."""
         inverses = self._inverse_generators()
         return self.construct_morphism(morphism.codomain(), morphism.domain(), tuple(inverses[name] for name in reversed(morphism.word())))
 
-    def _paths_equal(self, first: CategoryPoint, candidate: Any) -> Decision:
+    def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
+        """Vertices are retained once per label, so identity decides; paths are equal exactly when their reduced words are."""
+        if first in self and candidate in self:
+            return first is candidate
         morphisms = self.morphism_category(1)
         if first not in morphisms or candidate not in morphisms:
             return Unknown
@@ -159,6 +248,15 @@ class FinitePresentedCategory(Category[[Word], []]):
 
     def __repr__(self) -> str:
         return self._name
+
+
+def enumerated_datum(finite_set: SetObject, point: SetPoint) -> Hashable:
+    """The datum of a point of a finite enumerated set, read through the chosen enumeration."""
+    from sage_categories.kernel.predicates import ask
+    from sage_categories.sets.category import Sets
+
+    assert point in finite_set, f"{point!r} is not a point of {finite_set!r}"
+    return next(datum for datum in Sets().Finite().chosen_enumeration(finite_set) if ask(finite_set.point(datum) == point) is True)
 
 
 def _edge(source: int, target: int) -> Generator:

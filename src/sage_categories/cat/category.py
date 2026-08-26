@@ -254,6 +254,16 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
             return composite
         raise AssertionError(f"{self!r} declares no composition")
 
+    def inverse_morphism(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
+        """The inverse of an isomorphism; a full subcategory inverts in its ambient (POL-KERNEL-025)."""
+        from sage_categories.kernel.refinement import refine
+
+        for ambient in self._inclusion_ambient:
+            inverse = ambient.inverse_morphism(morphism)
+            refine(inverse, self.morphism_category(1))
+            return inverse
+        raise AssertionError(f"{self!r} declares no inversion of isomorphisms")
+
     def identity_two_morphism(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
         from sage_categories.kernel.refinement import refine
 

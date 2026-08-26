@@ -9,13 +9,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Self
 
+from sage.misc.unknown import Unknown, UnknownClass
+
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.functors import StructuralFunctor
     from sage_categories.abstract_categories.hom_categories import HomCategory
     from sage_categories.category import Category
 
 
-type Decision = bool | Unknown
+type Decision = bool | UnknownClass
 
 
 _VALUES: dict[int, MathematicalObject] = {}

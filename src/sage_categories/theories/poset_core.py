@@ -27,7 +27,7 @@ from sage_categories.theories.sets import (
     is_set_hom_category,
 )
 from sage_categories.types import (
-    UNKNOWN,
+    Unknown,
     Arrow,
     Decision,
     MathematicalElement,
@@ -65,8 +65,8 @@ class PosetElement(TransportedElement):
 
     def __lt__(self, other: PosetElement) -> Decision:
         comparison = self <= other
-        if comparison is UNKNOWN:
-            return UNKNOWN
+        if comparison is Unknown:
+            return Unknown
         return comparison and self != other
 
     def __repr__(self) -> str:
@@ -79,15 +79,15 @@ def check_reflexive(
 ) -> Decision:
     """Return the exact result of the available reflexivity check."""
     if underlying_set.is_finite() is not True:
-        return UNKNOWN
+        return Unknown
     members = tuple(poset.element(s) for s in underlying_set)
     decision: Decision = True
     for x in members:
         reflexive = x <= x
         if reflexive is False:
             return False
-        if reflexive is UNKNOWN:
-            decision = UNKNOWN
+        if reflexive is Unknown:
+            decision = Unknown
     return decision
 
 
@@ -97,7 +97,7 @@ def check_antisymmetric(
 ) -> Decision:
     """Return the exact result of the available antisymmetry check."""
     if underlying_set.is_finite() is not True:
-        return UNKNOWN
+        return Unknown
     members = tuple(poset.element(s) for s in underlying_set)
     decision: Decision = True
     for i, x in enumerate(members):
@@ -106,8 +106,8 @@ def check_antisymmetric(
             r_yx = y <= x
             if r_xy is True and r_yx is True:
                 return False
-            if r_xy is UNKNOWN or r_yx is UNKNOWN:
-                decision = UNKNOWN
+            if r_xy is Unknown or r_yx is Unknown:
+                decision = Unknown
     return decision
 
 
@@ -117,7 +117,7 @@ def check_transitive(
 ) -> Decision:
     """Return the exact result of the available transitivity check."""
     if underlying_set.is_finite() is not True:
-        return UNKNOWN
+        return Unknown
     members = tuple(poset.element(s) for s in underlying_set)
     decision: Decision = True
     for x in members:
@@ -129,8 +129,8 @@ def check_transitive(
                     r_xz = x <= z
                     if r_xz is False:
                         return False
-                    if r_xz is UNKNOWN:
-                        decision = UNKNOWN
+                    if r_xz is Unknown:
+                        decision = Unknown
     return decision
 
 
@@ -185,7 +185,7 @@ class PosetObject(MathematicalObject):
     def is_total_order(self) -> Decision:
         underlying_set = PartiallyOrderedSets().underlying_set(self)
         if underlying_set.is_finite() is not True:
-            return UNKNOWN
+            return Unknown
         members = tuple(self)
         answer: Decision = True
         for position, left in enumerate(members):
@@ -198,7 +198,7 @@ class PosetObject(MathematicalObject):
                     continue
                 if left_le is False and right_le is False:
                     return False
-                answer = UNKNOWN
+                answer = Unknown
         return answer
 
     def thin_category(self) -> ThinCategory:
@@ -232,7 +232,7 @@ class PosetMorphism(TransportedArrow):
         assert PartiallyOrderedSets().contains_poset(target)
         underlying_set = PartiallyOrderedSets().underlying_set(source)
         if underlying_set.is_finite() is not True:
-            return UNKNOWN
+            return Unknown
         answer: Decision = True
         for left in source:
             assert is_poset_element(left)
@@ -242,8 +242,8 @@ class PosetMorphism(TransportedArrow):
                 source_comparison = left <= right
                 if image_comparison is True and source_comparison is False:
                     return False
-                if image_comparison is UNKNOWN or source_comparison is UNKNOWN:
-                    answer = UNKNOWN
+                if image_comparison is Unknown or source_comparison is Unknown:
+                    answer = Unknown
         return answer
 
     def is_order_embedding(self) -> Decision:
@@ -254,8 +254,8 @@ class PosetMorphism(TransportedArrow):
         reflecting = self.is_order_reflecting()
         if bijective is False or reflecting is False:
             return False
-        if bijective is UNKNOWN or reflecting is UNKNOWN:
-            return UNKNOWN
+        if bijective is Unknown or reflecting is Unknown:
+            return Unknown
         return True
 
 
@@ -266,7 +266,7 @@ def check_order_preserving(
 ) -> Decision:
     underlying_set = PartiallyOrderedSets().underlying_set(source)
     if underlying_set.is_finite() is not True:
-        return UNKNOWN
+        return Unknown
     decision: Decision = True
     forgetful = PartiallyOrderedSets().forgetful_functor()
     for left in source:
@@ -288,12 +288,12 @@ def check_order_preserving(
                 image_le = f_left <= f_right
                 if image_le is False:
                     return False
-                if image_le is UNKNOWN:
-                    decision = UNKNOWN
-            elif left_le is UNKNOWN:
+                if image_le is Unknown:
+                    decision = Unknown
+            elif left_le is Unknown:
                 image_le = f_left <= f_right
                 if image_le is False:
-                    decision = UNKNOWN
+                    decision = Unknown
     return decision
 
 
@@ -562,7 +562,7 @@ class PartiallyOrderedSetsCategory(Category):
             assert ProductElements().contains_product_element(right_components)
             indices = inherited_product.index_set()
             if indices.is_finite() is not True:
-                return UNKNOWN
+                return Unknown
             answer: Decision = True
             for index in indices:
                 factor = diagram(inherited_product.index_category().object(index))
@@ -572,8 +572,8 @@ class PartiallyOrderedSetsCategory(Category):
                 )
                 if comparison is False:
                     return False
-                if comparison is UNKNOWN:
-                    answer = UNKNOWN
+                if comparison is Unknown:
+                    answer = Unknown
             return answer
 
         # Theorem: the componentwise order on a product of posets is a partial

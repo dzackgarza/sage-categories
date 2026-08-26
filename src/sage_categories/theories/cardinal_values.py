@@ -12,9 +12,9 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 from sage_categories.types import (
-    UNKNOWN,
     Decision,
     MathematicalObject,
+    Unknown,
     registered_value,
 )
 
@@ -27,8 +27,8 @@ if TYPE_CHECKING:
 def _decision_and(left: Decision, right: Decision) -> Decision:
     if left is False or right is False:
         return False
-    if left is UNKNOWN or right is UNKNOWN:
-        return UNKNOWN
+    if left is Unknown or right is Unknown:
+        return Unknown
     return True
 
 
@@ -36,7 +36,6 @@ class CardinalKind(Enum):
     FINITE = "finite"
     ALEPH = "aleph"
     SYMBOL = "symbol"
-    UNKNOWN = "unknown"
     SUM = "sum"
     PRODUCT = "product"
     POWER = "power"
@@ -49,7 +48,7 @@ type CardinalFamily = Callable[[SetElement], Cardinal]
 
 
 class Cardinal(MathematicalObject):
-    """A finite, infinite, symbolic, or unknown cardinal number."""
+    """A finite, infinite, or symbolic cardinal number."""
 
     def __init__(
         self,
@@ -62,7 +61,6 @@ class Cardinal(MathematicalObject):
         index: Ordinal | None = None,
         index_set: SetObject | None = None,
         family: CardinalFamily | None = None,
-        finiteness: Decision = UNKNOWN,
     ) -> None:
         if kind is CardinalKind.FINITE:
             assert finite_value is not None and finite_value >= 0
@@ -83,7 +81,6 @@ class Cardinal(MathematicalObject):
         self._index = index
         self._index_set = index_set
         self._family = family
-        self._finiteness = finiteness
         super().__init__(category=category)
 
     def kind(self) -> CardinalKind:
@@ -142,8 +139,6 @@ class Cardinal(MathematicalObject):
         return 4, repr(self)
 
     def is_finite(self) -> Decision:
-        if self._finiteness is not UNKNOWN:
-            return self._finiteness
         if self._kind is CardinalKind.FINITE:
             return True
         if self._kind is CardinalKind.ALEPH:
@@ -154,11 +149,9 @@ class Cardinal(MathematicalObject):
                 return True
             if any(answer is False for answer in answers):
                 return False
-        return UNKNOWN
+        return Unknown
 
     def is_infinite(self) -> Decision:
-        if self._finiteness is not UNKNOWN:
-            return not self._finiteness
         if self._kind is CardinalKind.FINITE:
             return False
         if self._kind is CardinalKind.ALEPH or self.is_continuum():
@@ -169,11 +162,9 @@ class Cardinal(MathematicalObject):
                 return True
             if all(answer is False for answer in answers):
                 return False
-        return UNKNOWN
+        return Unknown
 
     def is_countable(self) -> Decision:
-        if self._finiteness is True:
-            return True
         if self._kind is CardinalKind.FINITE:
             return True
         if self._kind is CardinalKind.ALEPH:
@@ -186,12 +177,12 @@ class Cardinal(MathematicalObject):
                 return False
         if self.is_continuum():
             return False
-        return UNKNOWN
+        return Unknown
 
     def is_uncountable(self) -> Decision:
         countable = self.is_countable()
-        if countable is UNKNOWN:
-            return UNKNOWN
+        if countable is Unknown:
+            return Unknown
         return not countable
 
     def is_uncountably_infinite(self) -> Decision:
@@ -274,8 +265,6 @@ class Cardinal(MathematicalObject):
         if self._kind is CardinalKind.SYMBOL:
             assert self._name is not None
             return self._name
-        if self._kind is CardinalKind.UNKNOWN:
-            return "Unknown cardinality"
         if self._kind is CardinalKind.SUM:
             return " + ".join(map(str, self._terms))
         if self._kind is CardinalKind.PRODUCT:

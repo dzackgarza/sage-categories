@@ -14,7 +14,6 @@ from math import comb
 from sage_categories.theories.cardinals import (
     Cardinal,
     Cardinals,
-    UnknownCardinality,
     cardinal,
 )
 from sage_categories.theories.set_category import (
@@ -40,8 +39,9 @@ from sage_categories.theories.set_subobjects import (
     SubsetsOfSet,
 )
 from sage_categories.types import (
-    UNKNOWN,
     Decision,
+    Unknown,
+    UnknownClass,
     registered_value,
 )
 
@@ -53,13 +53,14 @@ class FixedCardinalitySubsetSet(SetObject):
         assert subset_cardinality >= 0
         self._source = source
         self._subset_cardinality = subset_cardinality
-        size = UnknownCardinality()
+        source_size = source.cardinality()
+        size: Cardinal | UnknownClass = Unknown
         if subset_cardinality == 0:
             size = cardinal(1)
-        elif source.is_finite() is True:
-            size = cardinal(comb(int(source.cardinality()), subset_cardinality))
-        elif source.is_infinite() is True:
-            size = source.cardinality()
+        elif source_size is not Unknown and source_size.is_finite() is True:
+            size = cardinal(comb(int(source_size), subset_cardinality))
+        elif source_size is not Unknown and source_size.is_infinite() is True:
+            size = source_size
         super().__init__(category=Sets(), cardinality=size)
 
     def source(self) -> SetObject:
@@ -74,7 +75,10 @@ class FixedCardinalitySubsetSet(SetObject):
     def _membership_(self, candidate: SetElement) -> Decision:
         if not SubsetsOfSet(self._source).contains_subset(candidate):
             return False
-        return candidate.underlying_set().cardinality() == self._subset_cardinality
+        size = candidate.underlying_set().cardinality()
+        if size is Unknown:
+            return Unknown
+        return size == self._subset_cardinality
 
     def _set_iterator_(self) -> Iterator[SetElement]:
         size = self._subset_cardinality
@@ -107,11 +111,12 @@ class FiniteSubsetSet(SetObject):
 
     def __init__(self, source: SetObject) -> None:
         self._source = source
-        size = UnknownCardinality()
-        if source.is_finite() is True:
-            size = cardinal(2) ** source.cardinality()
-        elif source.is_infinite() is True:
-            size = source.cardinality()
+        source_size = source.cardinality()
+        size: Cardinal | UnknownClass = Unknown
+        if source_size is not Unknown and source_size.is_finite() is True:
+            size = cardinal(2) ** source_size
+        elif source_size is not Unknown and source_size.is_infinite() is True:
+            size = source_size
         super().__init__(category=Sets(), cardinality=size)
 
     def source(self) -> SetObject:
@@ -123,7 +128,7 @@ class FiniteSubsetSet(SetObject):
     def _membership_(self, candidate: SetElement) -> Decision:
         if not SubsetsOfSet(self._source).contains_subset(candidate):
             return False
-        return candidate.underlying_set().cardinality().is_finite()
+        return candidate.underlying_set().is_finite()
 
     def _set_iterator_(self) -> Iterator[SetElement]:
         powerset = self.powerset()
@@ -214,16 +219,18 @@ class FinitelySupportedFunctionSet(SetObject):
     def basepoint(self) -> SetElement:
         return self._basepoint
 
-    def _construction_cardinality(self) -> Cardinal:
+    def _construction_cardinality(self) -> Cardinal | UnknownClass:
         value_cardinality = self._value_set.cardinality()
         index_cardinality = self._index_set.cardinality()
+        if value_cardinality is Unknown or index_cardinality is Unknown:
+            return Unknown
         if value_cardinality == 1 or index_cardinality == 0:
             return cardinal(1)
         if index_cardinality.is_finite() is True:
             return Cardinals().power(value_cardinality, index_cardinality)
         if index_cardinality.is_infinite() is True:
             return Cardinals().supremum(value_cardinality, index_cardinality)
-        return UnknownCardinality()
+        return Unknown
 
     def __call__(
         self,
@@ -235,7 +242,7 @@ class FinitelySupportedFunctionSet(SetObject):
 
         def finitely_supported_action(index: SetElement) -> SetElement:
             supported = support.membership(index)
-            assert supported is not UNKNOWN
+            assert supported is not Unknown
             if supported:
                 value = action(index)
                 assert value != self._basepoint
@@ -262,7 +269,7 @@ class FinitelySupportedFunctionSet(SetObject):
             return False
         support = _FUNCTION_SUPPORTS.get(id(candidate))
         if support is None:
-            return UNKNOWN
+            return Unknown
         return support in FiniteSubsets(self._index_set)
 
     def __repr__(self) -> str:
@@ -300,10 +307,11 @@ def _image_subobject(
     if domain.is_finite() is True:
         return PowerSet(codomain).from_enumerated_image(function)
     predicate = lambda member: _imagemembership(function, member)
-    if function.is_injective() is True:
+    domain_size = domain.cardinality()
+    if function.is_injective() is True and domain_size is not Unknown:
         return PowerSet(codomain).from_predicate_with_cardinality(
             predicate,
-            domain.cardinality(),
+            domain_size,
         )
     return PowerSet(codomain).from_predicate(predicate)
 
@@ -316,4 +324,4 @@ def _imagemembership(
     assert Sets().contains_set(codomain)
     if codomain.membership(member) is False:
         return False
-    return UNKNOWN
+    return Unknown

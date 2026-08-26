@@ -15,10 +15,10 @@ from sage_categories.abstract_categories.hom_categories import (
 )
 from sage_categories.category import Category
 from sage_categories.types import (
-    UNKNOWN,
     Arrow,
     Decision,
     MathematicalObject,
+    Unknown,
 )
 
 if TYPE_CHECKING:
@@ -105,7 +105,6 @@ class CardinalsCategory(Category):
         self._finite_cardinals: dict[int, Cardinal] = {}
         self._aleph_cardinals: dict[Ordinal, Cardinal] = {}
         self._symbolic_cardinals: dict[str, Cardinal] = {}
-        self._unknown_cardinal: Cardinal | None = None
         super().__init__(object_type=Cardinal)
 
     def _hom_category_type(self) -> type[HomCategory]:
@@ -158,14 +157,6 @@ class CardinalsCategory(Category):
             )
             self._symbolic_cardinals[name] = cached
         return cached
-
-    def unknown(self) -> Cardinal:
-        if self._unknown_cardinal is None:
-            self._unknown_cardinal = Cardinal(
-                category=self,
-                kind=CardinalKind.UNKNOWN,
-            )
-        return self._unknown_cardinal
 
     def contains_cardinal(
         self,
@@ -256,8 +247,6 @@ class CardinalsCategory(Category):
         self,
         index_set: SetObject,
         summands: CardinalFamily,
-        *,
-        finiteness: Decision = UNKNOWN,
     ) -> Cardinal:
         from sage_categories.theories.sets import Sets
 
@@ -267,15 +256,12 @@ class CardinalsCategory(Category):
             kind=CardinalKind.INDEXED_SUM,
             index_set=index_set,
             family=summands,
-            finiteness=finiteness,
         )
 
     def indexed_product(
         self,
         index_set: SetObject,
         factors: CardinalFamily,
-        *,
-        finiteness: Decision = UNKNOWN,
     ) -> Cardinal:
         from sage_categories.theories.sets import Sets
 
@@ -285,7 +271,6 @@ class CardinalsCategory(Category):
             kind=CardinalKind.INDEXED_PRODUCT,
             index_set=index_set,
             family=factors,
-            finiteness=finiteness,
         )
 
     def supremum(self, *cardinal_numbers: Cardinal) -> Cardinal:
@@ -318,11 +303,11 @@ class CardinalsCategory(Category):
         if target.kind() is CardinalKind.SUPREMUM:
             return self._is_lequal_to_supremum(source, target)
         size_comparison = self._compare_size_classes(source, target)
-        if size_comparison is not UNKNOWN:
+        if size_comparison is not Unknown:
             return size_comparison
         if target.kind() is CardinalKind.POWER:
             return self._is_lequal_to_power(source, target)
-        return UNKNOWN
+        return Unknown
 
     def _supremum_is_lequal(self, source: Cardinal, target: Cardinal) -> Decision:
         # A supremum is below a bound exactly when every term is.
@@ -331,13 +316,13 @@ class CardinalsCategory(Category):
             return True
         if any(answer is False for answer in answers):
             return False
-        return UNKNOWN
+        return Unknown
 
     def _is_lequal_to_supremum(self, source: Cardinal, target: Cardinal) -> Decision:
         # One term above the source suffices; no term above it decides nothing.
         if any(self._is_lequal(source, term) is True for term in target.terms()):
             return True
-        return UNKNOWN
+        return Unknown
 
     def _compare_size_classes(self, source: Cardinal, target: Cardinal) -> Decision:
         if source.kind() is CardinalKind.FINITE and target.kind() is CardinalKind.FINITE:
@@ -352,7 +337,7 @@ class CardinalsCategory(Category):
             return True
         if source.kind() is CardinalKind.ALEPH and source.aleph_index() == 1 and target.is_uncountable() is True:
             return True
-        return UNKNOWN
+        return Unknown
 
     def _is_lequal_to_power(self, source: Cardinal, target: Cardinal) -> Decision:
         base, exponent = target.terms()
@@ -365,7 +350,7 @@ class CardinalsCategory(Category):
             source_base, source_exponent = source.terms()
             if self._is_lequal(source_base, base) is True and self._is_lequal(source_exponent, exponent) is True:
                 return True
-        return UNKNOWN
+        return Unknown
 
     def _is_less_than(self, source: Cardinal, target: Cardinal) -> Decision:
         if source == target:
@@ -375,12 +360,12 @@ class CardinalsCategory(Category):
             return True
         if self._is_lequal(target, source) is True:
             return False
-        return UNKNOWN
+        return Unknown
 
     def are_incomparable(self, source: Cardinal, target: Cardinal) -> Decision:
         if self._is_lequal(source, target) is True or self._is_lequal(target, source) is True:
             return False
-        return UNKNOWN
+        return Unknown
 
     def sum_morphism(self, *morphisms: CardinalMorphism) -> CardinalMorphism:
         sources: list[Cardinal] = []

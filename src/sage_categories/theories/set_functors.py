@@ -31,6 +31,7 @@ from sage_categories.theories.set_homs import (
 from sage_categories.types import (
     Arrow,
     MathematicalObject,
+    Unknown,
 )
 
 if TYPE_CHECKING:
@@ -51,16 +52,14 @@ class CardinalityFunctor(Functor):
     def _object_image(self, source: MathematicalObject) -> Cardinal:
         assert source in self.domain()
         assert self._sets.contains_set(source)
-        return source.cardinality()
+        size = source.cardinality()
+        assert size is not Unknown, f"the cardinality of {source} is unknown"
+        return size
 
     def _morphism_image(self, morphism: Arrow) -> Arrow:
         assert morphism in self.domain().ArrowCategory()
-        source = morphism.domain()
-        target = morphism.codomain()
-        assert self._sets.contains_set(source)
-        assert self._sets.contains_set(target)
-        source_cardinality = source.cardinality()
-        target_cardinality = target.cardinality()
+        source_cardinality = self._object_image(morphism.domain())
+        target_cardinality = self._object_image(morphism.codomain())
         assert source_cardinality == target_cardinality
         hom_category = Cardinals().Hom(source_cardinality, target_cardinality)
         assert is_cardinal_hom_category(hom_category)

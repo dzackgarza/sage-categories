@@ -24,11 +24,12 @@ from sage_categories.theories.cardinals import (
     aleph,
 )
 from sage_categories.types import (
-    UNKNOWN,
     Arrow,
     Decision,
     MathematicalElement,
     MathematicalObject,
+    Unknown,
+    UnknownClass,
     registered_value,
 )
 
@@ -45,7 +46,7 @@ class SetObject(MathematicalObject):
         self,
         *,
         category: Category,
-        cardinality: Cardinal,
+        cardinality: Cardinal | UnknownClass,
     ) -> None:
         self._cardinality = cardinality
         self._subset_poset: sage_categories.theories.posets.PosetObject | None = None
@@ -73,13 +74,13 @@ class SetObject(MathematicalObject):
         if value is None or not SetElements().contains_set_element(value):
             return False
         answer = self.membership(value)
-        assert answer is not UNKNOWN, f"membership in {self} is unknown"
+        assert answer is not Unknown, f"membership in {self} is unknown"
         return answer
 
-    def cardinality(self) -> Cardinal:
+    def cardinality(self) -> Cardinal | UnknownClass:
         return self._cardinality_()
 
-    def _cardinality_(self) -> Cardinal:
+    def _cardinality_(self) -> Cardinal | UnknownClass:
         return self._cardinality
 
     def Hom(
@@ -92,16 +93,28 @@ class SetObject(MathematicalObject):
         return Sets().Hom(self, target)
 
     def is_finite(self) -> Decision:
-        return self.cardinality().is_finite()
+        size = self.cardinality()
+        if size is Unknown:
+            return Unknown
+        return size.is_finite()
 
     def is_infinite(self) -> Decision:
-        return self.cardinality().is_infinite()
+        size = self.cardinality()
+        if size is Unknown:
+            return Unknown
+        return size.is_infinite()
 
     def is_countable(self) -> Decision:
-        return self.cardinality().is_countable()
+        size = self.cardinality()
+        if size is Unknown:
+            return Unknown
+        return size.is_countable()
 
     def is_uncountable(self) -> Decision:
-        return self.cardinality().is_uncountable()
+        size = self.cardinality()
+        if size is Unknown:
+            return Unknown
+        return size.is_uncountable()
 
     def __iter__(self) -> Iterator[SetElement]:
         return self._set_iterator_()
@@ -359,6 +372,12 @@ def NaturalNumbers() -> MathematicalObject:
     return _NATURAL_NUMBERS
 
 
+def _known_cardinality(source: SetObject) -> Cardinal:
+    size = source.cardinality()
+    assert size is not Unknown, f"the cardinality of {source} is unknown"
+    return size
+
+
 def EnumerationInjection(
     source: SetObject,
     position: Callable[[SetElement], int],
@@ -374,7 +393,7 @@ def EnumerationInjection(
         NaturalNumbers(),
         lambda member: NaturalNumbers().element(ordinal(position(member))),
         True,
-        UNKNOWN,
+        Unknown,
     )
     monomorphisms = Sets().Mono(source, NaturalNumbers())
     assert is_restricted_hom_category(monomorphisms)

@@ -114,7 +114,6 @@ from sage_categories.theories.sets import (
     coproduct_morphism,
 )
 from sage_categories.types import (
-    UNKNOWN,
     Arrow,
     Decision,
     MathematicalElement,
@@ -129,7 +128,6 @@ __all__ = [
     "NN",
     "QQ",
     "RR",
-    "UNKNOWN",
     "ZZ",
     "Aleph",
     "Aleph0",

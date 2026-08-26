@@ -22,7 +22,6 @@ from sage_categories.category import Category
 from sage_categories.theories.cardinals import (
     Cardinal,
     Cardinals,
-    UnknownCardinality,
 )
 from sage_categories.theories.set_category import (
     Sets,
@@ -42,9 +41,10 @@ from sage_categories.theories.set_products import (
     is_product_set_element,
 )
 from sage_categories.types import (
-    UNKNOWN,
     Decision,
     MathematicalObject,
+    Unknown,
+    UnknownClass,
     registered_value,
 )
 
@@ -60,7 +60,7 @@ class LimitSet(ProductSet):
         diagram: Functor,
         *,
         category: Category,
-        cardinality: Cardinal,
+        cardinality: Cardinal | UnknownClass,
     ) -> None:
         self._compatible_elements: set[int] = set()
         super().__init__(diagram, category=category, cardinality=cardinality)
@@ -92,18 +92,18 @@ class LimitSet(ProductSet):
 
         return self._projection(_object_set_element(self.diagram().domain(), index))
 
-    def _cardinality_(self) -> Cardinal:
+    def _cardinality_(self) -> Cardinal | UnknownClass:
         # A limit is the compatible part of its product. When that product is
         # finite the limit is finite too, and membership decides each candidate,
         # so counting supplies the cardinality no construction formula gives.
         declared = super()._cardinality_()
-        if declared != UnknownCardinality():
+        if declared is not Unknown:
             return declared
         index_set = self.index_set()
         if index_set.is_finite() is not True:
-            return declared
+            return Unknown
         if any(self.factor(index).is_finite() is not True for index in index_set):
-            return declared
+            return Unknown
         return Cardinals()(sum(1 for _ in self))
 
     def _membership_(self, member: SetElement) -> Decision:
@@ -119,7 +119,7 @@ class LimitSet(ProductSet):
             return True
         arrows = index_arrows(self.diagram().domain())
         if arrows.is_finite() is not True:
-            return UNKNOWN
+            return Unknown
         value = registered_value(member)
         assert value is not None and is_product_set_element(value)
         for candidate in arrows:
@@ -147,7 +147,7 @@ class SetLimitObject(LimitObject):
         *,
         category: LimitsOfSetsCategory,
         diagram: Functor,
-        cardinality: Cardinal,
+        cardinality: Cardinal | UnknownClass,
     ) -> None:
         from sage_categories.theories.set_constructions import _limit_presentation
 
@@ -174,7 +174,7 @@ class SetLimitObject(LimitObject):
         if value is None or not ProductElements().contains_product_element(value):
             return False
         answer = self.membership(value)
-        assert answer is not UNKNOWN, f"membership in {self} is unknown"
+        assert answer is not Unknown, f"membership in {self} is unknown"
         return answer
 
 
@@ -193,7 +193,7 @@ class LimitsOfSetsCategory(LimitsOfCategory):
         preimage: MathematicalObject,
     ) -> SetLimitObject:
         assert is_functor(preimage)
-        return self._limit(preimage, UnknownCardinality())
+        return self._limit(preimage, Unknown)
 
     def with_cardinality(
         self,
@@ -205,12 +205,12 @@ class LimitsOfSetsCategory(LimitsOfCategory):
         return result
 
     def limit_of(self, diagram: Functor) -> SetLimitObject:
-        return self._limit(diagram, UnknownCardinality())
+        return self._limit(diagram, Unknown)
 
     def _limit(
         self,
         diagram: Functor,
-        cardinality: Cardinal,
+        cardinality: Cardinal | UnknownClass,
     ) -> SetLimitObject:
         assert diagram in self.functor().domain()
         key = id(diagram)

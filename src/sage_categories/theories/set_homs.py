@@ -38,7 +38,6 @@ from sage_categories.category import Category
 from sage_categories.theories.cardinals import (
     Cardinal,
     Cardinals,
-    UnknownCardinality,
     cardinal,
 )
 from sage_categories.theories.set_elements import (
@@ -57,10 +56,11 @@ from sage_categories.theories.set_subobjects import (
     _decision_and,
 )
 from sage_categories.types import (
-    UNKNOWN,
     Arrow,
     Decision,
     MathematicalObject,
+    Unknown,
+    UnknownClass,
     registered_value,
 )
 
@@ -112,7 +112,7 @@ class SetHomCategory(HomCategory, SetObject):
             image = action(member)
             assert image.ambient_set() is codomain
             assert codomain.membership(image) is True
-        return self._construct(action, UNKNOWN, UNKNOWN)
+        return self._construct(action, Unknown, Unknown)
 
     def _construct(
         self,
@@ -143,14 +143,18 @@ class SetHomCategory(HomCategory, SetObject):
     def _membership_(self, candidate: SetElement) -> Decision:
         return candidate in self
 
-    def _cardinality_(self) -> Cardinal:
+    def _cardinality_(self) -> Cardinal | UnknownClass:
         from sage_categories.theories.set_category import Sets
 
         domain = self.domain()
         codomain = self.codomain()
         assert Sets().contains_set(domain)
         assert Sets().contains_set(codomain)
-        return Cardinals().power(codomain.cardinality(), domain.cardinality())
+        base = codomain.cardinality()
+        exponent = domain.cardinality()
+        if base is Unknown or exponent is Unknown:
+            return Unknown
+        return Cardinals().power(base, exponent)
 
     def objects(self) -> SetObject:
         return self
@@ -244,16 +248,12 @@ class SetHomCategory(HomCategory, SetObject):
         self,
         predicate: MembershipPredicate,
     ) -> SetSubset:
-        return self._from_predicate(
-            predicate,
-            UnknownCardinality(),
-            None,
-        )
+        return self._from_predicate(predicate, Unknown, None)
 
     def _from_predicate(
         self,
         predicate: MembershipPredicate,
-        cardinality: Cardinal,
+        cardinality: Cardinal | UnknownClass,
         iterator: SetIterator | None,
     ) -> SetSubset:
         assert self.is_power_set()
@@ -434,13 +434,7 @@ class SetHomCategory(HomCategory, SetObject):
             )
             products = sets.Products(index_category)
             assert is_products_of_sets_category(products)
-            product = products(
-                diagram,
-                cardinality=Cardinals().product(
-                    self.cardinality(),
-                    exponent.cardinality(),
-                ),
-            )
+            product = products(diagram)
             function_projection = product.projection(function_index)
             argument_projection = product.projection(argument_index)
             assert sets.contains_set_morphism(function_projection)

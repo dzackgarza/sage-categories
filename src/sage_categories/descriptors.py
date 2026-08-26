@@ -11,7 +11,13 @@ from enum import Enum
 from types import FunctionType
 from typing import TYPE_CHECKING, Concatenate, ParamSpec, TypeVar, assert_never, cast
 
-from sage_categories.types import Arrow, Decision, MathematicalElement, MathematicalObject
+from sage_categories.types import (
+    Arrow,
+    Decision,
+    MathematicalElement,
+    MathematicalObject,
+    UnknownClass,
+)
 
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.full_subcategories import FullSubcategory
@@ -93,7 +99,7 @@ def _annotation_role(
             return ParameterRole.OBJECT
         if issubclass(annotation, Enum):
             return ParameterRole.VALUE
-        assert annotation in (bool, int, float, str, bytes) or (
+        assert annotation in (bool, int, float, str, bytes, UnknownClass) or (
             annotation is object and method_name == "__eq__"
         ), f"{annotation!r} has no exact mathematical transport role"
         return ParameterRole.VALUE
@@ -104,10 +110,12 @@ def _annotation_role(
         assert types.NoneType not in arguments, (
             f"{annotation!r} is not a total mathematical signature"
         )
+        # The ``Unknown`` singleton passes through every transport unchanged.
         roles = {
             _annotation_role(argument, receiver, method_name)
             for argument in arguments
-        }
+            if argument is not UnknownClass
+        } or {ParameterRole.VALUE}
         assert len(roles) == 1, f"{annotation!r} combines transport roles"
         return roles.pop()
     if origin is Iterator:

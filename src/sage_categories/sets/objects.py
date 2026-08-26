@@ -82,8 +82,7 @@ class SetObject(ObjectOfCategory):
         assert self._membership_rule(datum) is not False, f"{datum!r} is not a member of {self!r}"
         if datum not in self._points:
             sets = _sets.Sets()
-            defining_morphism = sets.construct_morphism(sets.Terminal(), self, lambda star: datum)
-            self._points[datum] = self.category().ElementType(defining_morphism, datum)
+            self._points[datum] = sets.element_from_defining_morphism(sets.construct_morphism(sets.Terminal(), self, lambda star: datum))
         return self._points[datum]
 
     def cardinality(self) -> CardinalObject | UnknownClass:

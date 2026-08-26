@@ -86,6 +86,10 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         """The selected structural graph: immediate functors, in preference order (D07)."""
         return ()
 
+    def classical_stages(self) -> tuple[ObjectOfCategory, ...]:
+        """The chosen representing objects whose points are the classical elements; none by default (D06)."""
+        return ()
+
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
         """The local role declaration: the nested class of this category's Python class."""
         match role:
@@ -621,6 +625,11 @@ class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
 
     def classical_stages(self) -> tuple[FinitePresentedCategory, ...]:
         return (self.Terminal(), self.Simplex(1))
+
+    def element_from_defining_morphism(self, defining_functor: Functor) -> CategoryPoint:
+        """The point of a category at the stage ``T`` given by a functor ``T -> C`` (D06)."""
+        assert defining_functor in self.morphism_category(1)
+        return self.ElementType(defining_functor)
 
     def __repr__(self) -> str:
         return "Cat"

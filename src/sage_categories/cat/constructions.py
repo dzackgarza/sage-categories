@@ -299,6 +299,7 @@ class ApexCategory(Category[[MorphismOfCategory], []]):
     def __init__(self, apex_category: Category) -> None:
         self._apex_category = apex_category
         self._presentations: MonoDict = MonoDict()
+        self._apexes: MonoDict = MonoDict()
         self._lowered: MonoDict = MonoDict()
         super().__init__()
         self._equality.register_handler(self._morphisms_equal)
@@ -371,10 +372,17 @@ class ApexCategory(Category[[MorphismOfCategory], []]):
                 self._presentations[diagram] = self.presentation(lowered)
         return self.presentation(diagram)
 
+    def presentation_with_apex(self, apex: ObjectOfCategory) -> ObjectOfCategory:
+        """The chosen presentation whose apex is ``apex``; a chosen apex presents one diagram."""
+        assert apex in self._apexes, f"{apex!r} is not the apex of a presentation retained by {self!r}"
+        return self._apexes[apex]
+
     def _retain(self, presentation: ObjectOfCategory) -> ObjectOfCategory:
-        diagram = presentation.diagram()
+        diagram, apex = presentation.diagram(), presentation.apex()
         assert diagram not in self._presentations, f"{self!r} already retains a presentation of {diagram!r}"
+        assert apex not in self._apexes, f"{apex!r} is already the apex of a presentation retained by {self!r}"
         self._presentations[diagram] = presentation
+        self._apexes[apex] = presentation
         return presentation
 
     def construct_morphism(self, domain: ObjectOfCategory, codomain: ObjectOfCategory, apex_morphism: MorphismOfCategory) -> PresentationMorphism:

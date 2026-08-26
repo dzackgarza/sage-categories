@@ -66,6 +66,14 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
     def structure_functors(self) -> tuple[Functor, ...]:
         return (_functors().full_inclusion(self, self._ambient),)
 
+    def classical_stages(self) -> tuple[CategoryPoint, ...]:
+        """The stages of the ambient that are objects of this subcategory (D06: an inclusion carries no stage data)."""
+        return tuple(stage for stage in self._ambient.classical_stages() if stage in self)
+
+    def element_from_defining_morphism(self, defining_morphism: MorphismOfCategory) -> CategoryPoint:
+        """The elements of a full subcategory are those of its ambient on the shared values (D08)."""
+        return self._ambient.element_from_defining_morphism(defining_morphism)
+
 
 _ordinals = itertools.count()
 

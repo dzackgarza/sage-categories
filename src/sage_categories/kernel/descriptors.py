@@ -60,8 +60,26 @@ def _apply(functor: Functor, step_role: Role, value: CategoryPoint) -> CategoryP
         case Role.MORPHISM:
             return declared.on_morphism(functor, value)
         case Role.ELEMENT:
-            return declared.on_element(functor, value)
+            return _apply_to_element(functor, declared, value)
     raise AssertionError(step_role)
+
+
+def _is_classical(element: CategoryPoint, category: Category) -> bool:
+    return any(element.stage() is stage for stage in category.classical_stages())
+
+
+def _apply_to_element(functor: Functor, declared: type, element: CategoryPoint) -> CategoryPoint:
+    # A classical element ``t: G_C -> X`` reaches the classical stage of the codomain
+    # through the stage comparison ``c: G_D -> F(G_C)`` retained by the selected functor:
+    # its image is the element ``F(t) after c`` (D06 classical transport pin, D13).  The
+    # identity comparison, retained when ``F(G_C) is G_D``, changes nothing.
+    if not _is_classical(element, functor.domain()) or not functor.codomain().classical_stages():
+        return declared.on_element(functor, element)
+    comparison = functor.stage_comparison()
+    if comparison is comparison.domain().identity():
+        return declared.on_element(functor, element)
+    image = declared.on_morphism(functor, element.defining_morphism()) * comparison
+    return functor.codomain().element_from_defining_morphism(image)
 
 
 def _apply_route(value: CategoryPoint, route: compiler.Route) -> CategoryPoint:
@@ -104,7 +122,10 @@ def transport(value: CategoryPoint, target: compiler.Node) -> CategoryPoint:
 def _transport_argument(argument: Any, argument_role: ArgumentRole, owner: Category) -> Any:
     # ``argument`` is whatever the caller passed to the inherited method (D13 decides its
     # role at runtime); it is returned unchanged unless it is an owned value with a route.
-    role = role_of(argument) if argument_role is ArgumentRole.POINT else Signature.transported_role(argument_role)
+    # A ``candidate`` (``__eq__``, ``__contains__``) is transported by its own role when it
+    # is such a value: ``x in P := U(x) in U(P)`` (D18).
+    by_own_role = argument_role is ArgumentRole.POINT or argument_role is ArgumentRole.CANDIDATE
+    role = role_of(argument) if by_own_role else Signature.transported_role(argument_role)
     if role is None or role_of(argument) is not role:
         return argument
     target = compiler.node(owner, role)

@@ -16,9 +16,12 @@ Method catalogue of a node (``specs/resolution.md``):
 4. incomparable owners with one spelling raise ``SemanticCollisionError``.
 
 The compiled role class is a Sage dynamic class (``sage.structure.dynamic_class``):
-bases are the local role class followed by the codomain role classes of the
-selected functors, and the surface holds one forwarding descriptor per inherited
-name.  Method compilation constructs no value image (POL-KERNEL-001).
+its bases are the local role class followed by the *controlled* direct bases that
+``sage.misc.c3_controlled.C3_sorted_merge`` returns for the node, and the surface
+holds one forwarding descriptor per inherited name.  Sage's algorithm builds the
+local information from the bare hierarchy so that Python's C3 never fails; hand-kept
+base orders do fail on a hierarchy this shape, which is the problem that module was
+written for.  Method compilation constructs no value image (POL-KERNEL-001).
 """
 
 from __future__ import annotations
@@ -27,6 +30,7 @@ import inspect
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Concatenate, NamedTuple
 
+from sage.misc.c3_controlled import C3_sorted_merge
 from sage.structure.dynamic_class import dynamic_class
 
 import sage_categories.kernel.descriptors as descriptors
@@ -88,15 +92,27 @@ class Entry[**P, R](NamedTuple):
 
 _IGNORED_NAMES = frozenset({"__init__", "__new__", "__repr__", "__init_subclass__", "__class_getitem__"})
 
-# The position of each role class in the global linearization order: the ordinal of
-# the first category compiled with it (a local class with no inherited surface is the
-# role class of every category that declares it, such as the identity 2-cells of
-# every 1-category).
-_class_keys: dict[type[CategoryPoint], int] = {}
-
 # The local role class of each category that declares none of its own, keyed by
 # identity: one declaring owner per node (POL-CAT-016).
 _empty_local_roles: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
+
+# Per role: the C3 linearization of each node and the controlled direct bases its
+# class is built from, keyed by the node's category; and the node of each node key.
+_linearizations: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
+_nodes_by_key: dict[int, Node] = {}
+
+_ROLE_POSITIONS: dict[Role, int] = {role: position for position, role in enumerate(Role)}
+
+
+def node_key(current: Node) -> int:
+    """The position of ``current`` in the total order the C3 merge is controlled by.
+
+    A category is constructed after every category it selects a functor into, so its
+    ordinal already ranks it above them; the role breaks the tie between the object
+    node and the morphism node of one category, which are distinct nodes that no
+    selected functor relates.
+    """
+    return current.category.ordinal() * len(Role) + _ROLE_POSITIONS[current.role]
 
 
 def node(category: Category, role: Role) -> Node:
@@ -216,6 +232,89 @@ def empty_local_role(category: Category, role: Role) -> type[CategoryPoint]:
     return table[category]
 
 
+def _selected_targets(current: Node) -> tuple[Node, ...]:
+    """The distinct nodes one selected step from ``current``, most recently constructed first.
+
+    The C3 merge takes the direct supers in the order of the total order, not in
+    declaration order: Sage sorts them the same way (``Category._super_categories``
+    applies ``Category._sort``, decreasing in ``_cmp_key``).  A category's ambient is
+    declared first and constructed first, so declaration order is the wrong one here.
+    Route order and catalogue precedence still read ``successors`` directly.
+    """
+    found: list[Node] = []
+    for _, target in successors(current):
+        if not any(same_node(target, known) for known in found):
+            found.append(target)
+    return tuple(sorted(found, key=node_key, reverse=True))
+
+
+def _name_of(key: int) -> str:
+    found = _nodes_by_key.get(key)
+    return f"{found.category!r}.{found.role.value}" if found else f"an uncompiled node (key {key})"
+
+
+def _out_of_order(current: Node, merged: list[int]) -> str:
+    """The first pair of the linearization that construction order ranks the wrong way."""
+    below, above = next((first, second) for first, second in zip(merged, merged[1:]) if first < second)
+    return (
+        f"the {current.role.value} linearization of {current.category!r} "
+        f"is not sorted by construction order: it places {_name_of(below)} above {_name_of(above)}.  "
+        "A category must be constructed after every category it selects a functor into."
+    )
+
+
+def _linearize(current: Node) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    """The nodes ``current`` inherits from in C3 order, and its controlled direct bases.
+
+    Both are tuples of node keys.  The reference implementation is Sage's
+    ``Category._all_super_categories`` (``sage/categories/category.py``): merge the
+    linearizations of the direct supers together with the list of direct supers, then
+    build the class from the *second* value ``C3_sorted_merge`` returns — the direct
+    bases carrying whatever control edges C3 needed.  Doing that is what guarantees
+    Python's C3 never fails on a large hierarchy (``sage.misc.c3_controlled``).
+
+    Nodes are merged as the integers ``node_key`` gives them: they compare by value,
+    they are already assigned when a node is reached, and every node ranks strictly
+    above every node it reaches, which is the total order the algorithm requires
+    (Sage states the same invariant for ``_cmp_key``).
+    """
+    table = _linearizations[current.role]
+    if current.category not in table:
+        _nodes_by_key[node_key(current)] = current
+        targets = _selected_targets(current)
+        merged: list[int] = []
+        bases: list[int] = []
+        if targets:
+            merged, bases = C3_sorted_merge(
+                [[node_key(target), *_linearize(target)[0]] for target in targets]
+                + [[node_key(target) for target in targets]]
+            )
+            assert sorted(merged, reverse=True) == merged, _out_of_order(current, merged)
+        table[current.category] = (tuple(merged), tuple(bases))
+    return table[current.category]
+
+
+def _base_classes(current: Node, local: type[CategoryPoint]) -> tuple[type[CategoryPoint], ...]:
+    """The controlled direct bases of ``current``'s class, as role classes after ``local``.
+
+    Several nodes can share one role class: a category that declares nothing and
+    inherits nothing keeps the class of the node it normalizes to, so distinct nodes
+    reach the same class.  Python requires the base list to be duplicate-free, and a
+    repeated class carries no further information, so the first occurrence in C3
+    order is kept and the rest dropped.
+    """
+    bases: list[type[CategoryPoint]] = [local]
+    for key in _linearize(current)[1]:
+        found = _nodes_by_key[key]
+        klass = found.category.role_class(found.role)
+        if not any(klass is known for known in bases):
+            bases.append(klass)
+    # A base that another base already derives from contributes nothing and only
+    # inverts the order: the local class of a category that declares nothing at this
+    # role is the bare kernel base, which every other base descends from.
+    return tuple(klass for klass in bases if not any(other is not klass and issubclass(other, klass) for other in bases))
+
+
 def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
     """Compile the three role classes of ``category`` from its local declarations and its selected functors."""
     for functor in functors:
@@ -230,6 +329,7 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
         _assert_acyclic(node(category, role), ())
     for role in Role:
         current = node(category, role)
+        _linearize(current)
         if current.category is not category:
             setattr(category, role.value, current.category.role_class(current.role))
             continue
@@ -243,22 +343,12 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
             # ``Cat().ObjectType is Category`` and ``Sets().ObjectType is SetObject``.
             setattr(category, role.value, category.local_role_class(role))
             continue
-        # The bases are the role classes of every reachable node, in one global order:
-        # the class compiled most recently first.  A selected functor's codomain is
-        # compiled before its source, so this is a linear extension of the selected
-        # graph; listing the whole closure in that order makes every compiled
-        # linearization a subsequence of one total order, so the C3 merge never
-        # conflicts (Sage's category framework fixes its linearizations the same way,
-        # through ``_cmp_key`` and ``sage.misc.c3_controlled``).
-        bases: list[type[CategoryPoint]] = [category.local_role_class(role)]
-        for klass in sorted({found.category.role_class(found.role) for found in reachable(current)[1:]}, key=_class_keys.__getitem__, reverse=True):
-            bases.append(klass)
+        # The local declaration first, then the controlled direct bases Sage's C3
+        # returns for this node (``_linearize``).
         compiled = dynamic_class(
             f"{category!r}.{role.value}",
-            tuple(bases),
+            _base_classes(current, category.local_role_class(role)),
             cls=type("Surface", (), surface),
             prepend_cls_bases=False,
         )
         setattr(category, role.value, compiled)
-    for role in Role:
-        _class_keys.setdefault(category.role_class(role), category.ordinal())

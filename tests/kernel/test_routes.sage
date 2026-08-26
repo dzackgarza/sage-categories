@@ -310,3 +310,23 @@ def test_a_narrowing_by_more_roots_includes_into_the_narrowing_by_fewer() -> Non
     assert is_placed(chain, with_top)
     assert chain in with_bottom
     assert chain in with_top
+
+
+def test_an_object_narrowed_by_two_independent_roots_still_composes_its_morphisms() -> None:
+    """The compiled class of a narrowing by independent roots is built from Sage's controlled C3 bases."""
+    finite = FinitePosets()
+    carrier = Sets().Finite()((int(0), int(1)))
+    order = (carrier * carrier).subset_from(lambda pair: pair(int(0)) <= pair(int(1)))
+    chain = Posets()(order)
+
+    # Compile the morphism property classes before narrowing, so the narrowing is
+    # constructed after them: that is the order in which the linearization is hard.
+    identity = chain.identity()
+    assert identity in Mor(Posets()).Automorphisms()
+    finite.intersection((finite.WithBottom(), finite.WithTop()))(chain)
+
+    fixed = Mor(Posets())(chain, chain)(lambda point: point)
+    assert ask(fixed * fixed == identity) is True
+    assert (fixed * fixed).domain() is chain
+    assert identity.inverse() is identity
+    assert ask(chain.cardinality() == int(2)) is True

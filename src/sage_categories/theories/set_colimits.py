@@ -25,14 +25,12 @@ from sage_categories.category import Category
 from sage_categories.theories.cardinals import (
     Cardinal,
     Cardinals,
-    UnknownCardinality,
 )
 from sage_categories.theories.discrete_sets import (
     DiscreteCategory,
     SetFamily,
 )
 from sage_categories.theories.set_category import (
-    FiniteSets,
     Sets,
     _set_morphism,
 )
@@ -51,12 +49,14 @@ from sage_categories.theories.set_elements import (
 )
 from sage_categories.theories.set_objects import (
     SetObject,
+    _known_cardinality,
 )
 from sage_categories.types import (
-    UNKNOWN,
     Decision,
     MathematicalObject,
     TransportedElement,
+    Unknown,
+    UnknownClass,
     registered_element,
     registered_value,
 )
@@ -96,7 +96,7 @@ class ColimitSetElement(SetElement):
         if value.colimit() is not self._colimit:
             return False
         answer = self._colimit.equivalent(self, value)
-        assert answer is not UNKNOWN, "equality in this colimit is not decidable from its presentation"
+        assert answer is not Unknown, "equality in this colimit is not decidable from its presentation"
         return answer
 
     def __hash__(self) -> int:
@@ -137,7 +137,7 @@ class ColimitElement(TransportedElement):
         if value.colimit() is not self.colimit():
             return False
         answer = self.colimit().equivalent(self, value)
-        assert answer is not UNKNOWN, "equality in this colimit is not decidable from its presentation"
+        assert answer is not Unknown, "equality in this colimit is not decidable from its presentation"
         return answer
 
     def __hash__(self) -> int:
@@ -203,7 +203,7 @@ class ColimitSet(SetObject):
         diagram: Functor,
         *,
         category: Category,
-        cardinality: Cardinal,
+        cardinality: Cardinal | UnknownClass,
     ) -> None:
         self._diagram = diagram
         objects = index_objects(diagram.domain())
@@ -253,7 +253,7 @@ class ColimitSet(SetObject):
             return True
         arrows = index_arrows(self._diagram.domain())
         if arrows.is_finite() is not True:
-            return UNKNOWN
+            return Unknown
         if _colimit_terms_are_related(
             self._diagram,
             arrows,
@@ -265,7 +265,7 @@ class ColimitSet(SetObject):
         # diagram generates, so the question becomes whether the two terms share
         # a connected component. Generating one enumerates every term.
         if not self._has_finitely_many_terms():
-            return UNKNOWN
+            return Unknown
         component = self._component_of(arrows, left_representative)
         return any(_same_coproduct_term(right_representative, term) for term in component)
 
@@ -336,7 +336,7 @@ class SetColimitObject(ColimitObject):
         *,
         category: ColimitsOfSetsCategory,
         diagram: Functor,
-        cardinality: Cardinal,
+        cardinality: Cardinal | UnknownClass,
     ) -> None:
         from sage_categories.theories.set_constructions import _colimit_presentation
 
@@ -430,7 +430,7 @@ class ColimitsOfSetsCategory(ColimitsOfCategory):
         preimage: MathematicalObject,
     ) -> SetColimitObject:
         assert is_functor(preimage)
-        return self._colimit(preimage, UnknownCardinality())
+        return self._colimit(preimage, Unknown)
 
     def with_cardinality(
         self,
@@ -442,12 +442,12 @@ class ColimitsOfSetsCategory(ColimitsOfCategory):
         return result
 
     def colimit_of(self, diagram: Functor) -> SetColimitObject:
-        return self._colimit(diagram, UnknownCardinality())
+        return self._colimit(diagram, Unknown)
 
     def _colimit(
         self,
         diagram: Functor,
-        cardinality: Cardinal,
+        cardinality: Cardinal | UnknownClass,
     ) -> SetColimitObject:
         assert diagram in self.functor().domain()
         key = id(diagram)
@@ -531,24 +531,30 @@ def index_arrows(index_category: Category) -> SetObject:
 def _indexed_product_cardinality(
     indices: SetObject,
     factors: Callable[[SetElement], SetObject],
-    *,
-    factor_finiteness: Decision = UNKNOWN,
-) -> Cardinal:
+) -> Cardinal | UnknownClass:
+    # #(prod_i X_i) = prod_i #X_i when the index is finite and every factor is known.
+    if indices.is_finite() is True:
+        sizes = tuple(factors(index).cardinality() for index in indices)
+        if any(size is Unknown for size in sizes):
+            return Unknown
+        return Cardinals().product(*sizes)
     return Cardinals().indexed_product(
         indices,
-        lambda index: factors(index).cardinality(),
-        finiteness=(True if factor_finiteness is True and indices in FiniteSets() else UNKNOWN),
+        lambda index: _known_cardinality(factors(index)),
     )
 
 
 def _indexed_sum_cardinality(
     indices: SetObject,
     summands: Callable[[SetElement], SetObject],
-    *,
-    summand_finiteness: Decision = UNKNOWN,
-) -> Cardinal:
+) -> Cardinal | UnknownClass:
+    # #(sum_i X_i) = sum_i #X_i when the index is finite and every summand is known.
+    if indices.is_finite() is True:
+        sizes = tuple(summands(index).cardinality() for index in indices)
+        if any(size is Unknown for size in sizes):
+            return Unknown
+        return Cardinals().sum(*sizes)
     return Cardinals().indexed_sum(
         indices,
-        lambda index: summands(index).cardinality(),
-        finiteness=(True if summand_finiteness is True and indices in FiniteSets() else UNKNOWN),
+        lambda index: _known_cardinality(summands(index)),
     )

@@ -451,7 +451,7 @@ def test_rejection_of_invalid_partial_orders() -> None:
     def unknown_leq(left: SetElement, right: SetElement) -> Decision:
         l_val = _element_int(left)
         r_val = _element_int(right)
-        return True if l_val == r_val else UNKNOWN
+        return True if l_val == r_val else Unknown
 
     with pytest.raises(AssertionError):
         Poset(((ZZ(int(1)), ZZ(int(2))), unknown_leq))

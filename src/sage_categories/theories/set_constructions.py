@@ -28,11 +28,6 @@ from sage_categories.abstract_categories.products import (
     Product,
     ProductPresentation,
 )
-from sage_categories.theories.cardinals import (
-    Cardinal,
-    Cardinals,
-    UnknownCardinality,
-)
 from sage_categories.theories.discrete_sets import (
     DiscreteCategory,
     SetFamily,
@@ -77,6 +72,7 @@ from sage_categories.theories.set_subobjects import (
 from sage_categories.types import (
     Arrow,
     MathematicalObject,
+    Unknown,
 )
 
 
@@ -183,18 +179,11 @@ def _coproduct_presentation(
 def LimitOfSets(
     diagram: Functor,
 ) -> ProductPresentation:
-    return LimitOfSetsWithCardinality(diagram, UnknownCardinality())
-
-
-def LimitOfSetsWithCardinality(
-    diagram: Functor,
-    cardinality: Cardinal,
-) -> ProductPresentation:
     assert diagram.codomain() is Sets()
     apex = LimitSet(
         diagram,
         category=Sets(),
-        cardinality=cardinality,
+        cardinality=Unknown,
     )
     return _limit_presentation(diagram, apex)
 
@@ -231,18 +220,11 @@ def _limit_presentation(
 def ColimitOfSets(
     diagram: Functor,
 ) -> CoproductPresentation:
-    return ColimitOfSetsWithCardinality(diagram, UnknownCardinality())
-
-
-def ColimitOfSetsWithCardinality(
-    diagram: Functor,
-    cardinality: Cardinal,
-) -> CoproductPresentation:
     assert diagram.codomain() is Sets()
     apex = ColimitSet(
         diagram,
         category=Sets(),
-        cardinality=cardinality,
+        cardinality=Unknown,
     )
     return _colimit_presentation(diagram, apex)
 
@@ -289,11 +271,9 @@ def CartesianProductOfSets(
         return factors[ordinal_index.finite_value()]
 
     diagram = SetFamily(index, factor)
-    size = Cardinals().product(*(factor.cardinality() for factor in factors))
     products = Sets().Products(index)
     assert is_products_of_sets_category(products)
-    image = products.with_cardinality(diagram, size)
-    return image
+    return products(diagram)
 
 
 def CartesianProductOfFamily(

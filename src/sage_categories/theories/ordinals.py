@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, TypeIs
 from sage_categories.abstract_categories.hom_categories import HomCategory
 from sage_categories.category import Category
 from sage_categories.types import (
-    UNKNOWN,
+    Unknown,
     Arrow,
     Decision,
     MathematicalObject,
@@ -341,7 +341,7 @@ class OrdinalsCategory(Category):
             return False
         if source.kind() is OrdinalKind.INITIAL and target.kind() is OrdinalKind.INITIAL:
             return self._is_lequal(source.initial_index(), target.initial_index())
-        return UNKNOWN
+        return Unknown
 
     def _is_less_than(self, source: Ordinal, target: Ordinal) -> Decision:
         if source == target:

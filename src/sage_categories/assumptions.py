@@ -9,7 +9,7 @@ from sympy.assumptions import global_assumptions
 from sympy.assumptions.assume import AppliedPredicate
 from sympy.logic.boolalg import Not
 
-from sage_categories.types import Decision, UNKNOWN
+from sage_categories.types import Decision, Unknown
 
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.full_subcategories import FullSubcategory
@@ -82,4 +82,4 @@ def assumption_decision(proposition: AppliedProperty) -> Decision:
         return True
     if Not(proposition.engine_value()) in global_assumptions:
         return False
-    return UNKNOWN
+    return Unknown

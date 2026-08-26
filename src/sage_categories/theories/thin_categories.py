@@ -24,7 +24,7 @@ from sage_categories.theories.sets import (
     Sets,
 )
 from sage_categories.types import (
-    UNKNOWN,
+    Unknown,
     Arrow,
     Decision,
     MathematicalObject,
@@ -132,7 +132,7 @@ class ThinCategoryHom(HomCategory):
 
     def objects(self) -> SetObject:
         comparison = self.comparison()
-        assert comparison is not UNKNOWN
+        assert comparison is not Unknown
         if comparison is False:
             return FiniteSet(())
         return FiniteSet((self.unique_morphism(),))
@@ -184,9 +184,7 @@ class ThinCategoryArrowSet(SetObject):
     def __init__(self, category: ThinCategory) -> None:
         self._thin_category = category
         self._elements: dict[int, ThinCategoryArrowElement] = {}
-        from sage_categories.theories.cardinals import UnknownCardinality
-
-        super().__init__(category=Sets(), cardinality=UnknownCardinality())
+        super().__init__(category=Sets(), cardinality=Unknown)
 
     def _element_(self, value: ThinCategoryArrow) -> ThinCategoryArrowElement:
         assert value in self._thin_category.ArrowCategory()
@@ -212,7 +210,7 @@ class ThinCategoryArrowSet(SetObject):
             for target in poset:
                 assert is_poset_element(target)
                 comparison = source <= target
-                assert comparison is not UNKNOWN
+                assert comparison is not Unknown
                 if comparison:
                     hom_category = self._thin_category.Hom(source, target)
                     yield self.element(hom_category())

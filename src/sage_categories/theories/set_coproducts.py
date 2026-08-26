@@ -35,11 +35,9 @@ from sage_categories.abstract_categories.products import (
 )
 from sage_categories.category import Category
 from sage_categories.theories.cardinals import (
-    Cardinal,
     Cardinals,
 )
 from sage_categories.theories.set_category import (
-    FiniteSets,
     Sets,
     _set_morphism,
 )
@@ -49,12 +47,13 @@ from sage_categories.theories.set_elements import (
 )
 from sage_categories.theories.set_objects import (
     SetObject,
+    _known_cardinality,
 )
 from sage_categories.types import (
-    UNKNOWN,
     Decision,
     MathematicalObject,
     TransportedElement,
+    Unknown,
     registered_element,
     registered_value,
 )
@@ -175,11 +174,7 @@ class CoproductSet(SetObject):
         from sage_categories.theories.set_colimits import _indexed_sum_cardinality
 
         self._diagram = diagram
-        size = _indexed_sum_cardinality(
-            self.index_set(),
-            self.cofactor,
-            summand_finiteness=(True if diagram.codomain().is_subcategory(FiniteSets()) else UNKNOWN),
-        )
+        size = _indexed_sum_cardinality(self.index_set(), self.cofactor)
         super().__init__(category=category, cardinality=size)
 
     def diagram(self) -> Functor:
@@ -206,7 +201,7 @@ class CoproductSet(SetObject):
         return DiscreteDiagram(
             self.index_category(),
             Cardinals(),
-            lambda index: self.cofactor(index.label()).cardinality(),
+            lambda index: _known_cardinality(self.cofactor(index.label())),
         )
 
     def _element_(self, index: SetElement, value: SetElement) -> CoproductSetElement:
@@ -234,7 +229,7 @@ class CoproductSet(SetObject):
             self,
             lambda value: self._element_(index, value),
             True,
-            UNKNOWN,
+            Unknown,
         )
 
     def __repr__(self) -> str:
@@ -304,7 +299,7 @@ class SetCoproductObject(CoproductObject):
             self,
             lambda value: self.element(index, value),
             True,
-            UNKNOWN,
+            Unknown,
         )
 
     def universal_morphism(self, cocone: CoconeObject) -> SetMorphism:

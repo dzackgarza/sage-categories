@@ -52,10 +52,6 @@ def SymbolicCardinal(name: str) -> Cardinal:
     return Cardinals().symbol(name)
 
 
-def UnknownCardinality() -> Cardinal:
-    return Cardinals().unknown()
-
-
 aleph0 = Aleph0()
 continuum = Continuum()
 __all__ = (
@@ -68,7 +64,6 @@ __all__ = (
     "CardinalsCategory",
     "Continuum",
     "SymbolicCardinal",
-    "UnknownCardinality",
     "aleph",
     "cardinal",
     "is_cardinal",

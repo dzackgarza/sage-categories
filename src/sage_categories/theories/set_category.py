@@ -30,10 +30,9 @@ from sage_categories.category import Category
 from sage_categories.theories.cardinals import (
     Cardinal,
     Cardinals,
-    UnknownCardinality,
 )
 from sage_categories.types import (
-    UNKNOWN,
+    Unknown,
     Arrow,
     Decision,
     MathematicalElement,
@@ -575,7 +574,7 @@ def _set_morphism(
 ) -> SetMorphism:
     hom_category = Sets().Hom(domain, codomain)
     assert is_set_hom_category(hom_category)
-    return hom_category._construct(action, UNKNOWN, UNKNOWN)
+    return hom_category._construct(action, Unknown, Unknown)
 
 
 def _set_morphism_with_properties(

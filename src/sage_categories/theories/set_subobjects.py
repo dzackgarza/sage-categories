@@ -22,7 +22,6 @@ from sage_categories.abstract_categories.hom_categories import (
 from sage_categories.category import Category
 from sage_categories.theories.cardinals import (
     Cardinal,
-    UnknownCardinality,
     cardinal,
 )
 from sage_categories.theories.set_elements import (
@@ -35,10 +34,11 @@ from sage_categories.theories.set_objects import (
     SetObject,
 )
 from sage_categories.types import (
-    UNKNOWN,
     Arrow,
     Decision,
     MathematicalObject,
+    Unknown,
+    UnknownClass,
     registered_value,
 )
 
@@ -75,7 +75,7 @@ class SubsetSetObject(SetObject):
         *,
         base_set: SetObject,
         predicate: MembershipPredicate,
-        cardinality: Cardinal,
+        cardinality: Cardinal | UnknownClass,
         iterator: SetIterator | None,
     ) -> None:
         from sage_categories.theories.set_category import Sets
@@ -195,14 +195,14 @@ class SetSubset(SetMorphism):
             from sage_categories.theories.set_constructions import TruthValues
 
             answer = predicate(member)
-            assert answer is not UNKNOWN, f"membership of {member} in {underlying_set} is unknown"
+            assert answer is not Unknown, f"membership of {member} in {underlying_set} is unknown"
             return TruthValues().element(ordinal(1 if answer else 0))
 
         super().__init__(
             hom_category=hom_category,
             action=characteristic_value,
-            injective=UNKNOWN,
-            surjective=UNKNOWN,
+            injective=Unknown,
+            surjective=Unknown,
         )
 
     def category(self) -> Category:
@@ -249,7 +249,7 @@ class SetSubset(SetMorphism):
         if value is None or not SetElements().contains_set_element(value):
             return False
         answer = self.membership(value)
-        assert answer is not UNKNOWN
+        assert answer is not Unknown
         return answer
 
     def __eq__(self, candidate: builtins.object) -> bool:
@@ -274,14 +274,14 @@ class SetSubset(SetMorphism):
         if self is other:
             return True
         if self._members is None:
-            return UNKNOWN
+            return Unknown
         answer: Decision = True
         for member in self._members:
             contained = other.membership(member)
             if contained is False:
                 return False
-            if contained is UNKNOWN:
-                answer = UNKNOWN
+            if contained is Unknown:
+                answer = Unknown
         return answer
 
     def __or__(self, other: SetSubset) -> SetSubset:
@@ -365,7 +365,7 @@ class SubsetsOfSetCategory(Category):
         hom_category: SetHomCategory,
         predicate: MembershipPredicate,
         *,
-        cardinality: Cardinal,
+        cardinality: Cardinal | UnknownClass,
         iterator: SetIterator | None,
         members: frozenset[SetElement] | None,
     ) -> SetSubset:
@@ -385,7 +385,7 @@ class SubsetsOfSetCategory(Category):
             self._base_set,
             underlying_set.base_element,
             True,
-            UNKNOWN,
+            Unknown,
         )
         monomorphisms = Sets().Mono(underlying_set, self._base_set)
         assert is_restricted_hom_category(monomorphisms)
@@ -417,12 +417,10 @@ class SubsetsOfSetCategory(Category):
 
         assert first in self and second in self
         members: frozenset[SetElement] | None = None
-        cardinality = UnknownCardinality()
         first_members = first._represented_members()
         second_members = second._represented_members()
         if first_members is not None and second_members is not None:
             members = first_members & second_members
-            cardinality = cardinal(len(members))
         subobjects = Sets().Subobjects(self._base_set)
         if members is None:
             pullback = Sets().pullback(
@@ -433,7 +431,7 @@ class SubsetsOfSetCategory(Category):
             pullback = Sets().pullback_with_cardinality(
                 first.structure_morphism(),
                 second.structure_morphism(),
-                cardinality,
+                cardinal(len(members)),
             )
         apex = pullback.apex()
         assert Sets().contains_set(apex)
@@ -487,20 +485,20 @@ def SubsetsOfSet(base_set: SetObject) -> SubsetsOfSetCategory:
 def _decision_and(left: Decision, right: Decision) -> Decision:
     if left is False or right is False:
         return False
-    if left is UNKNOWN or right is UNKNOWN:
-        return UNKNOWN
+    if left is Unknown or right is Unknown:
+        return Unknown
     return True
 
 
 def _decision_or(left: Decision, right: Decision) -> Decision:
     if left is True or right is True:
         return True
-    if left is UNKNOWN or right is UNKNOWN:
-        return UNKNOWN
+    if left is Unknown or right is Unknown:
+        return Unknown
     return False
 
 
 def _decision_not(value: Decision) -> Decision:
-    if value is UNKNOWN:
-        return UNKNOWN
+    if value is Unknown:
+        return Unknown
     return not value

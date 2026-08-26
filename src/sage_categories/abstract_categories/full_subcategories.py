@@ -20,7 +20,7 @@ from sage_categories.types import (
     Decision,
     MathematicalElement,
     MathematicalObject,
-    UNKNOWN,
+    Unknown,
     registered_element,
     registered_value,
 )

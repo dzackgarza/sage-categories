@@ -29,7 +29,7 @@ from sage_categories.cat.category import Assignment, Category, CategoryOfCategor
 from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategory
 from sage_categories.cat.properties import FixedEndpointProperty, PropertySubcategory
 from sage_categories.kernel.predicates import AppliedPredicate
-from sage_categories.kernel.refinement import place, refine
+from sage_categories.kernel.refinement import is_placed, place, refine
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
 
 if TYPE_CHECKING:
@@ -58,14 +58,19 @@ class Functor(MorphismOfCategory):
         self._on_object = on_object
         self._on_morphism = on_morphism
 
+    # A value whose placement already reaches the domain is accepted by that
+    # placement (a pure graph lookup); only an unplaced value has its membership
+    # proposition decided, since that decision may itself need this functor.
+
     def on_object(self, member_object: ObjectOfCategory) -> ObjectOfCategory:
         """The image of an object of the domain."""
-        assert member_object in self.domain(), f"{member_object!r} is not an object of {self.domain()!r}"
+        assert is_placed(member_object, self.domain()) or member_object in self.domain(), f"{member_object!r} is not an object of {self.domain()!r}"
         return self._on_object(member_object)
 
     def on_morphism(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
         """The image of a morphism of the domain."""
-        assert morphism in self.domain().morphism_category(1), f"{morphism!r} is not a morphism of {self.domain()!r}"
+        morphisms = self.domain().morphism_category(1)
+        assert is_placed(morphism, morphisms) or morphism in morphisms, f"{morphism!r} is not a morphism of {self.domain()!r}"
         return self._on_morphism(morphism)
 
     def on_element(self, element: ElementOfObject) -> ElementOfObject:

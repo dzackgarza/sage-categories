@@ -35,7 +35,6 @@ from typing import TYPE_CHECKING, Any
 
 from sage.structure.coerce_dict import MonoDict
 
-import sage_categories.kernel.compiler as compiler
 from sage_categories.cat.category import Category, member
 from sage_categories.cat.diagrams import from_sequence
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
@@ -43,10 +42,9 @@ from sage_categories.cat.properties import FullSubcategory
 from sage_categories.cat.shapes import index_set_of, is_discrete
 from sage_categories.kernel.caches import SequenceTable
 from sage_categories.kernel.decisions import Decision, Unknown
-from sage_categories.kernel.descriptors import transport
 from sage_categories.kernel.predicates import Predicate, Proposition, ask
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
-from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role
+from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
 
 if TYPE_CHECKING:
     from sage_categories.cat.shapes import DiscreteObject
@@ -101,6 +99,11 @@ def cocone_apex(transformation: NaturalTransformation) -> ObjectOfCategory:
     """The apex ``N`` of a cocone ``D => constant(N)``."""
     constant = transformation.codomain()
     return Fun(constant.domain(), constant.codomain()).constant_value(constant)
+
+
+def declares_subcategory(category: Category, ambient: Category) -> bool:
+    """Whether ``category`` is ``ambient`` or declared a full subcategory of it, directly or through its ambients (D08)."""
+    return category is ambient or any(declares_subcategory(declared, ambient) for declared in category.inclusion_ambient())
 
 
 # -- presentation roles ------------------------------------------------------------------
@@ -308,9 +311,14 @@ class ApexCategory(Category[[MorphismOfCategory], []]):
         """The apex functor ``Fun(self, C)``: the retained apex and the morphism of apexes."""
         return (Fun(self, self._apex_category)(lambda presentation: presentation.apex(), lambda morphism: morphism.apex_morphism()),)
 
-    def canonical_image(self, value: ObjectOfCategory) -> ObjectOfCategory:
-        """The canonical image of an object in ``C`` along the selected routes (D11): a presentation's apex."""
-        return transport(value, compiler.node(self._apex_category, Role.OBJECT))
+    def member_in_apex_category(self, value: ObjectOfCategory) -> ObjectOfCategory:
+        """A member of a sequence form as an object of ``C``: itself when its category declares
+        itself a subcategory of ``C``, else the apex it presents (it reached ``C`` through an
+        apex functor), so that ``(X * Y) * Z`` is a product of the apex of ``X * Y`` with ``Z``."""
+        if declares_subcategory(value.category(), self._apex_category):
+            return value
+        assert value in self._apex_category, f"{value!r} is not an object of {self._apex_category!r}"
+        return self.member_in_apex_category(value.apex())
 
     # The apex functor is fully faithful, so the universal constructions of a
     # category of presentations are those of its apex category applied to apexes;
@@ -329,7 +337,7 @@ class ApexCategory(Category[[MorphismOfCategory], []]):
         return self._apex_category.Colimits(shape)
 
     def exponential(self, exponent: ObjectOfCategory, base: ObjectOfCategory) -> ObjectOfCategory:
-        return self._apex_category.exponential(self.canonical_image(exponent), self.canonical_image(base))
+        return self._apex_category.exponential(self.member_in_apex_category(exponent), self.member_in_apex_category(base))
 
     def accepts(self, diagram: Functor, shape: Category) -> None:
         """A diagram of shape ``shape`` into ``C`` or into a subcategory of ``C`` (a diagram into ``Sets().Uncountable()`` is a diagram into ``Sets()``)."""
@@ -341,6 +349,7 @@ class ApexCategory(Category[[MorphismOfCategory], []]):
         codomain = diagram.codomain()
         if codomain is self._apex_category:
             return diagram
+        assert declares_subcategory(codomain, self._apex_category), f"{codomain!r} is not a declared subcategory of {self._apex_category!r}"
         if diagram not in self._lowered:
             self._lowered[diagram] = Fun(codomain, self._apex_category).FullyFaithful().inclusion() * diagram
         return self._lowered[diagram]
@@ -443,7 +452,7 @@ class ProductsCategory(ApexCategory):
     def _sequence_diagram(self, sequence: tuple[ObjectOfCategory, ...]) -> Functor:
         """The sequence diagram on the canonical images of the members in ``C``, retained per sequence."""
         if sequence not in self._sequences:
-            self._sequences[sequence] = from_sequence(self._apex_category, tuple(map(self.canonical_image, sequence)))
+            self._sequences[sequence] = from_sequence(self._apex_category, tuple(map(self.member_in_apex_category, sequence)))
         return self._sequences[sequence]
 
     def __call__(self, family: Functor | tuple[ObjectOfCategory, ...]) -> ProductPresentation:
@@ -518,7 +527,7 @@ class CoproductsCategory(ApexCategory):
     def _sequence_diagram(self, sequence: tuple[ObjectOfCategory, ...]) -> Functor:
         """The sequence diagram on the canonical images of the members in ``C``, retained per sequence."""
         if sequence not in self._sequences:
-            self._sequences[sequence] = from_sequence(self._apex_category, tuple(map(self.canonical_image, sequence)))
+            self._sequences[sequence] = from_sequence(self._apex_category, tuple(map(self.member_in_apex_category, sequence)))
         return self._sequences[sequence]
 
     def __call__(self, family: Functor | tuple[ObjectOfCategory, ...]) -> CoproductPresentation:
@@ -545,13 +554,9 @@ indexed_by = Predicate("indexed_by", 2, False)
 
 
 def _indexed_by_shape(presentation: CategoryPoint, family: Category) -> Decision:
-    # The retained diagram is read through the ambient's own declaration: the
-    # inherited method would transport the receiver along the inclusion whose
-    # domain membership is being decided here.
-    ambient = family.ambient()
-    if not is_placed(presentation, ambient):
+    if not is_placed(presentation, family.ambient()):
         return Unknown
-    return ambient.local_role_class(Role.OBJECT).diagram(presentation).domain() is family.shape()
+    return presentation.diagram().domain() is family.shape()
 
 
 indexed_by.register_handler(_indexed_by_shape)

@@ -527,6 +527,32 @@ class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
             lambda x: second.component(x) * first.component(x),
         )
 
+    # -- the constructions Cat() owns (D02; ``cat/cat_constructions.py``) --------
+
+    def limit_construction(self, shape: Category) -> Callable[[Functor], ObjectOfCategory]:
+        """Products over ``Discrete(S)`` and strict pullbacks over ``L(2, 2)``; no other shape in this unit."""
+        from sage_categories.cat.cat_constructions import product_of_categories, pullback_of_categories
+        from sage_categories.cat.shapes import is_discrete
+
+        if is_discrete(shape):
+            return product_of_categories
+        if shape is self.Horn(2, 2):
+            return pullback_of_categories
+        raise AssertionError(f"Cat owns no {shape!r}-limit construction in this unit: products over Discrete(S) and pullbacks over L(2, 2) are its owned shapes; supply universal data")
+
+    def colimit_construction(self, shape: Category) -> Callable[[Functor], ObjectOfCategory]:
+        """Coproducts over ``Discrete(S)``; no other shape in this unit."""
+        from sage_categories.cat.cat_constructions import coproduct_of_categories
+        from sage_categories.cat.shapes import is_discrete
+
+        if is_discrete(shape):
+            return coproduct_of_categories
+        raise AssertionError(f"Cat owns no {shape!r}-colimit construction in this unit: coproducts over Discrete(S) are its owned shape; supply universal data")
+
+    def exponential(self, exponent: Category, base: Category) -> Category:
+        """``D ** C = Fun(C, D)``: ``Cat()`` is cartesian closed (Mathlib ``Cat.exp_obj``; inspected 2026-08-26)."""
+        return self.morphism_category(1)(exponent, base)
+
     # -- finite presented shapes and canonical objects (D15, D16) ----------------
 
     def __call__(

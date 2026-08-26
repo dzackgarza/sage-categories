@@ -89,7 +89,7 @@ def cocone(diagram: Functor, apex: ObjectOfCategory, components: Callable[[Objec
 # -- presentation roles ------------------------------------------------------------------
 
 
-def _vertex(shape: Category, index: ObjectOfCategory | Hashable) -> ObjectOfCategory:
+def vertex_of(shape: Category, index: ObjectOfCategory | Hashable) -> ObjectOfCategory:
     """An object of a discrete shape, given directly or as a datum of its index set."""
     if index in shape:
         return index
@@ -157,7 +157,7 @@ class ProductPresentation(ObjectOfCategory):
 
     def product_projection(self, index: ObjectOfCategory | Hashable) -> MorphismOfCategory:
         """``pi_i: apex -> X_i`` for ``i`` an object of the index category or a datum of the index set (POL-CAT-093)."""
-        return self._cone.component(_vertex(self.index_category(), index))
+        return self._cone.component(vertex_of(self.index_category(), index))
 
     def universal_morphism(self, candidate_cone: NaturalTransformation) -> MorphismOfCategory:
         """The mediating morphism from the apex of another cone over the same diagram."""
@@ -240,7 +240,7 @@ class CoproductPresentation(ObjectOfCategory):
 
     def coproduct_injection(self, index: ObjectOfCategory | Hashable) -> MorphismOfCategory:
         """``iota_i: X_i -> apex`` for ``i`` an object of the index category or a datum of the index set (POL-CAT-093)."""
-        return self._cocone.component(_vertex(self.index_category(), index))
+        return self._cocone.component(vertex_of(self.index_category(), index))
 
     def universal_morphism(self, candidate_cocone: NaturalTransformation) -> MorphismOfCategory:
         """The mediating morphism to the apex of another cocone under the same diagram."""

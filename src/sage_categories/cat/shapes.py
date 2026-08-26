@@ -33,6 +33,7 @@ from sage_categories.cat.functors import Cat, Fun, Functor
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.kernel.decisions import Decision, Unknown, decision_and
 from sage_categories.kernel.predicates import Predicate, Proposition, ask
+from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.category import Sets
 from sage_categories.sets.elements import SetPoint
@@ -200,11 +201,24 @@ class Comparison(MorphismOfCategory):
         return f"{self.domain()!r} <= {self.codomain()!r}"
 
 
+# ``comparable(f, T)``: the endpoints of the comparison ``f`` of ``T`` satisfy ``T``'s order.
+comparable = Predicate("comparable", 2, False)
+
+
+def _comparable_by_order(candidate: CategoryPoint, thin: Category) -> Decision:
+    if not is_placed(candidate, thin.morphism_category(1)):
+        return Unknown
+    return ask(thin.order()(candidate.domain().point(), candidate.codomain().point()))
+
+
+comparable.register_handler(_comparable_by_order)
+
+
 class ThinMorphisms(MorphismCategory[[], []]):
     """``Mor(Thin(P, leq))``: a comparison is a member when its order proposition holds."""
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
-        return member(candidate, self) & self._base.order()(candidate.domain().point(), candidate.codomain().point())
+        return member(candidate, self) & comparable(candidate, self._base)
 
 
 class ThinCategory(Category[[], []]):

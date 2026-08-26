@@ -238,6 +238,8 @@ def test_dynamic_inheritance_surface_of_one_inclusion() -> None:
     assert swap in Mor(Sets())
     assert ask(swap(three) == pair.point(int(4))) is True
     assert ask(swap * swap == pair.identity()) is Unknown
+    with pytest.raises(AssertionError, match="element=3 is not an owned element"):
+        swap(int(3))
 
 
 def test_two_paths_to_one_owner_install_one_method_before_any_value_exists() -> None:

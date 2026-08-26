@@ -5,12 +5,12 @@ Every owned runtime value is an instance of exactly one of these bases
 
 - ``ObjectOfCategory``: the base of every ``C.ObjectType``;
 - ``ElementOfObject``: the base of every ``C.ElementType`` (a generalized element
-  ``t: T -> X``, represented by its defining morphism, D06);
+  ``t: T -> X``, represented by its defining morphism, POL-CAT-058);
 - ``MorphismOfCategory``: the base of every ``C.MorphismType``.
 
 All three refine ``CategoryPoint``, the role of ``Cat().ElementType``: a functor
 ``T -> C``.  An object is a stage-``1`` point of its category and a morphism a
-stage-``[1]`` point (D06 role pin).
+stage-``[1]`` point (``specs/functor.md``, "Generalized elements").
 
 A leaf's local role class subclasses only the kernel base of its role
 (POL-CAT-053).  The universal operations that every value receives from its
@@ -75,7 +75,7 @@ class ObjectOfCategory(CategoryPoint):
         return self._category.identity_morphism(self)
 
     # The universal binary operators, defined once and delegating to the
-    # category-owned constructions (D02, POL-CAT-088).  Two operands must share
+    # category-owned constructions (POL-CAT-088).  Two operands must share
     # one construction family: ``X.category()`` may be a property refinement of
     # ``Y.category()``, and both then use the products of their common base.
 
@@ -127,7 +127,7 @@ class ElementOfObject(CategoryPoint):
         return self._defining_morphism.codomain()
 
     def category(self) -> Category:
-        """``C.SliceOver(X)``; constructed by the slice unit of the register (D06, step 7)."""
+        """``C.SliceOver(X)``, the pullback of ``ev_1`` along ``X: 1 -> C`` (POL-CAT-058); the slice construction is not yet owned."""
         return self.parent().category().SliceOver(self.parent())
 
     def __eq__(self, candidate: Any) -> AppliedPredicate:
@@ -174,7 +174,7 @@ class MorphismOfCategory(CategoryPoint):
 
     def __mul__(self, first: MorphismOfCategory) -> MorphismOfCategory:
         """``self * first`` is ``self`` after ``first``: composition owned by ``C``."""
-        return self.base_category().composite(self, first)
+        return self.base_category().compose_morphisms(self, first)
 
     def is_monomorphism(self) -> AppliedPredicate:
         return self.base_category().morphism_category(1).Monomorphisms().predicate()(self)

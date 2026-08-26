@@ -32,7 +32,7 @@ def test_a_poset_is_constructed_from_its_relation_and_compares_its_elements() ->
     assert divisibility in Posets()
     assert divisibility in FinitePosets()
     assert divisibility.relation() in Sets().ChosenSubsets()
-    assert divisibility.relation().underlying_set() is (carrier * carrier).apex()
+    assert divisibility.relation().underlying_set() is carrier * carrier
     assert ask(two <= six) is True
     assert ask(two <= three) is False
     assert ask(three <= six) is True

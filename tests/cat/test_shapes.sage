@@ -3,7 +3,7 @@
 Oracles: the definition of the discrete category on a set (objects the points,
 identities only; Mathlib ``CategoryTheory.Discrete``), of the thin category of a
 preorder (at most one morphism ``x -> y``, present exactly when ``x <= y``; Mathlib
-``Preorder.smallCategory``), and of a finitely presented category (D15, D16).
+``Preorder.smallCategory``), and of a finitely presented category (POL-CAT-083; ``specs/functor.md``, "Canonical objects").
 """
 
 import pytest
@@ -17,25 +17,30 @@ def _integers():
 
 
 def test_the_discrete_category_on_a_set_has_the_points_as_objects_and_identities_only() -> None:
-    three = Sets().Simplex(int(2))
+    two_set, three = Sets().Simplex(int(1)), Sets().Simplex(int(2))
+    successor = Mor(Sets())(two_set, three)(lambda datum: datum + int(1))
     shape = Discrete(three)
-    one, one_again, two = shape(three.point(int(1))), shape(three.point(int(1))), shape(three.point(int(2)))
+    one, two = shape(three.point(int(1))), shape(three.point(int(2)))
+    one_again = Discrete(successor).on_object(Discrete(two_set)(two_set.point(int(0))))
 
     assert shape in Cat()
     assert one in shape
-    assert three.point(int(1)) is three.point(int(1))
-    assert one is one_again
+    assert successor(two_set.point(int(0))) is three.point(int(1))
+    assert one_again is one
     assert ask(one == one_again) is True
     assert ask(one == two) is False
     assert ask(Mor(shape)(one, one_again)() == one.identity()) is True
     assert one.identity() in Mor(shape)(one, one)
+    assert one.identity().inverse() is one.identity()
+    assert Sets().identity().inverse() is Sets().identity()
     with pytest.raises(AssertionError):
         Mor(shape)(one, two)()
 
     integers = _integers()
     seven = Discrete(integers)(integers.point(int(7)))
+    select_seven = Mor(Sets())(three, integers)(lambda datum: int(7))
     assert seven in Discrete(integers)
-    assert Discrete(integers)(integers.point(int(7))) is seven
+    assert Discrete(select_seven).on_object(one) is seven
     assert ask(seven.point() == integers.point(int(7))) is True
 
 
@@ -92,3 +97,10 @@ def test_the_uniform_call_form_constructs_a_presented_shape_with_its_relations()
     assert triangle.generator("u") in Mor(triangle)(triangle(int(0)), triangle(int(1)))
     assert ask(triangle.generator("v") * triangle.generator("u") == triangle.generator("w")) is True
     assert ask(triangle.generator("w") == triangle(int(0)).identity()) is False
+
+    retraction = Cat()((int(0), int(1)), (("s", int(0), int(1)), ("r", int(1), int(0))), ((("s", "r"), ()),))
+    assert ask(retraction.generator("r") * retraction.generator("s") == retraction(int(0)).identity()) is True
+    assert retraction.generator("s") not in Mor(retraction).Isomorphisms()
+    assert retraction.generator("r") not in Mor(retraction).Isomorphisms()
+    walking = Cat().WalkingIsomorphism()
+    assert walking.generator("f") in Mor(walking).Isomorphisms()

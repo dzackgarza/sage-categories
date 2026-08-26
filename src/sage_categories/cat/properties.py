@@ -1,4 +1,4 @@
-"""Full subcategories and property subcategories (D08, D09, POL-CAT-087).
+"""Full subcategories and property subcategories (POL-CAT-054, POL-CAT-087, POL-FUN-024).
 
 A full subcategory ``S`` of ``T`` shares ``T``'s object, element, and morphism
 values; its morphism categories, identities, and composition are inherited
@@ -49,15 +49,18 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
     """A full subcategory of an ambient category, declared by its inclusion.
 
     Its morphisms, identities, and composites are those of the ambient between its
-    objects; ``Category`` supplies them from the recorded ambient (D08).
+    objects; ``Category`` supplies them from the ambient (POL-CAT-087).
     """
 
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData]) -> None:
         self._ambient = ambient
-        self._inclusion_ambient = (ambient,)
         super().__init__()
 
+    def has_ambient(self) -> bool:
+        return True
+
     def ambient(self) -> Category[MorphismData, TwoMorphismData]:
+        """The ambient is construction data: this category declares exactly one inclusion."""
         return self._ambient
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
@@ -120,7 +123,7 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
         return empty_local_role(self, role)
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        """The inclusion into the ambient, then one inclusion per recorded implication (D09)."""
+        """The inclusion into the ambient, then one inclusion per recorded implication (POL-FUN-024)."""
         functors = _functors()
         return (
             functors.full_inclusion(self, self._ambient),
@@ -168,12 +171,13 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
         return root.predicate()
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        functors = _functors()
-        return (
-            functors.full_inclusion(self, self._ambient),
-            *(functors.full_inclusion(self, root) for root in self._roots),
-            *(functors.full_inclusion(self, wider.intersection(self._roots)) for wider in self._ambient.inclusion_ambient()),
-        )
+        """The inclusions into the ambient, into each root, and into the same narrowing of the ambient's ambient, each once."""
+        targets: list[Category] = [self._ambient, *self._roots]
+        if self._ambient.has_ambient():
+            narrowing = self._ambient.ambient().intersection(self._roots)
+            if not any(narrowing is target for target in targets):
+                targets.append(narrowing)
+        return tuple(_functors().full_inclusion(self, target) for target in targets)
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         """Membership in the ambient together with established placement in every root."""

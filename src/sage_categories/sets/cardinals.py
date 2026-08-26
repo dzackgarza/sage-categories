@@ -1,4 +1,4 @@
-"""``Cardinal()``: exact cardinal numbers (D01, ``specs/cardinality.md``).
+"""``Cardinal()``: exact cardinal numbers (POL-ASSUME-004, ``specs/cardinality.md``).
 
 A cardinal is an exact value: a finite cardinal, ``aleph(n)``, a cardinal power,
 or a finite formal supremum formed by exact cardinal arithmetic.  There is no
@@ -57,19 +57,19 @@ class CardinalObject(ObjectOfCategory):
         self._key = key
         self._terms = terms
 
-    def kind(self) -> str:
+    def _kind_(self) -> str:
         return self._key[0]
 
-    def terms(self) -> tuple[CardinalObject, ...]:
+    def _terms_(self) -> tuple[CardinalObject, ...]:
         return self._terms
 
-    def finite_value(self) -> int:
-        assert self.kind() == "finite"
+    def _finite_value_(self) -> int:
+        assert self._kind_() == "finite"
         return self._key[1]
 
     def aleph_index(self) -> OrdinalObject:
         """The ordinal index of an aleph, retained by identity at construction."""
-        assert self.kind() == "aleph"
+        assert self._kind_() == "aleph"
         return Cardinal()._aleph_indices[self]
 
     def initial_ordinal(self) -> OrdinalObject:
@@ -125,9 +125,9 @@ class CardinalObject(ObjectOfCategory):
         return hash(self._key)
 
     def __repr__(self) -> str:
-        match self.kind():
+        match self._kind_():
             case "finite":
-                return str(self.finite_value())
+                return str(self._finite_value_())
             case "aleph":
                 return f"ℵ_{self.aleph_index()}"
             case "power":
@@ -199,7 +199,7 @@ class CardinalCategory(Category[[], []]):
     def aleph(self, index: OrdinalObject | int) -> CardinalObject:
         """``aleph(alpha)`` for an ordinal index; an ``int`` is the finite-ordinal convenience (Mathlib ``Cardinal.aleph``)."""
         ordinal_index = Ordinals()(index)
-        key: Key = ("aleph", ordinal_index.expression_key())
+        key: Key = ("aleph", ordinal_index._expression_key_())
         if key not in self._cardinals:
             self._aleph_indices[self._retain(key, ())] = ordinal_index
         return self._cardinals[key]
@@ -217,7 +217,7 @@ class CardinalCategory(Category[[], []]):
         """The finite formal supremum, with dominated terms removed."""
         terms: list[CardinalObject] = []
         for cardinal in cardinals:
-            terms.extend(cardinal.terms() if cardinal.kind() == "supremum" else (cardinal,))
+            terms.extend(cardinal._terms_() if cardinal._kind_() == "supremum" else (cardinal,))
         assert terms
         maximal: list[CardinalObject] = []
         for candidate in sorted(terms, key=lambda term: repr(term._key)):
@@ -231,7 +231,7 @@ class CardinalCategory(Category[[], []]):
 
     def sum(self, first: CardinalObject, second: CardinalObject) -> CardinalObject:
         if self._finite(first) and self._finite(second):
-            return self(first.finite_value() + second.finite_value())
+            return self(first._finite_value_() + second._finite_value_())
         # Cardinal.add_eq_max: an infinite summand absorbs a smaller one.
         if self._finite(first):
             return second
@@ -241,8 +241,8 @@ class CardinalCategory(Category[[], []]):
 
     def product(self, first: CardinalObject, second: CardinalObject) -> CardinalObject:
         if self._finite(first) and self._finite(second):
-            return self(first.finite_value() * second.finite_value())
-        if self._finite(first) and first.finite_value() == 0 or self._finite(second) and second.finite_value() == 0:
+            return self(first._finite_value_() * second._finite_value_())
+        if self._finite(first) and first._finite_value_() == 0 or self._finite(second) and second._finite_value_() == 0:
             return self(0)
         # Cardinal.mul_eq_max: a positive finite factor is absorbed by an infinite one.
         if self._finite(first):
@@ -252,21 +252,21 @@ class CardinalCategory(Category[[], []]):
         return self.supremum(first, second)
 
     def power(self, base: CardinalObject, exponent: CardinalObject) -> CardinalObject:
-        if self._finite(exponent) and exponent.finite_value() == 0:
+        if self._finite(exponent) and exponent._finite_value_() == 0:
             return self(1)
-        if self._finite(base) and base.finite_value() in (0, 1):
+        if self._finite(base) and base._finite_value_() in (0, 1):
             return base
         if self._finite(base) and self._finite(exponent):
-            return self(base.finite_value() ** exponent.finite_value())
+            return self(base._finite_value_() ** exponent._finite_value_())
         if self._finite(exponent):
             # Cardinal.power_nat_eq: c ** n = c for infinite c and n >= 1.
             return base
-        if base.kind() == "power":
+        if base._kind_() == "power":
             # (a ** b) ** c = a ** (b * c).
-            inner_base, inner_exponent = base.terms()
+            inner_base, inner_exponent = base._terms_()
             return self.power(inner_base, self.product(inner_exponent, exponent))
-        if base.kind() == "supremum":
-            return self.supremum(*(self.power(term, exponent) for term in base.terms()))
+        if base._kind_() == "supremum":
+            return self.supremum(*(self.power(term, exponent) for term in base._terms_()))
         if self._finite(base):
             # Cardinal.nat_power_eq: n ** c = 2 ** c for finite n >= 2 and infinite c.
             base = self(2)
@@ -279,15 +279,15 @@ class CardinalCategory(Category[[], []]):
     # -- exact decisions -----------------------------------------------------------
 
     def _is_finite(self, cardinal: CardinalObject) -> Decision:
-        match cardinal.kind():
+        match cardinal._kind_():
             case "finite":
                 return True
             case "aleph" | "power":
                 return False
-        return all(self._is_finite(term) is True for term in cardinal.terms())
+        return all(self._is_finite(term) is True for term in cardinal._terms_())
 
     def _is_countable(self, cardinal: CardinalObject) -> Decision:
-        match cardinal.kind():
+        match cardinal._kind_():
             case "finite":
                 return True
             case "aleph":
@@ -296,7 +296,7 @@ class CardinalCategory(Category[[], []]):
             case "power":
                 # Cardinal.cantor': a < b ** a for 1 < b, so 2 ** (infinite) exceeds aleph0.
                 return False
-        return all(self._is_countable(term) is True for term in cardinal.terms())
+        return all(self._is_countable(term) is True for term in cardinal._terms_())
 
     def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
         if first not in self:
@@ -316,44 +316,44 @@ class CardinalCategory(Category[[], []]):
     def _at_most(self, first: CardinalObject, second: CardinalObject) -> Decision:
         if first._key == second._key:
             return True
-        if first.kind() == "supremum":
-            answers = [self._at_most(term, second) for term in first.terms()]
+        if first._kind_() == "supremum":
+            answers = [self._at_most(term, second) for term in first._terms_()]
             if all(answer is True for answer in answers):
                 return True
             if any(answer is False for answer in answers):
                 return False
             return Unknown
-        if second.kind() == "supremum":
-            if any(self._at_most(first, term) is True for term in second.terms()):
+        if second._kind_() == "supremum":
+            if any(self._at_most(first, term) is True for term in second._terms_()):
                 return True
             return Unknown
         if self._finite(first) and self._finite(second):
-            return first.finite_value() <= second.finite_value()
+            return first._finite_value_() <= second._finite_value_()
         if self._finite(first):
             return True
         if self._finite(second):
             return False
-        if first.kind() == "aleph" and second.kind() == "aleph":
+        if first._kind_() == "aleph" and second._kind_() == "aleph":
             # Cardinal.aleph_le_aleph: alephs are ordered by their ordinal indices.
             return ask(first.aleph_index() <= second.aleph_index())
-        if first.kind() == "aleph" and ask(first.aleph_index() == 0) is True:
+        if first._kind_() == "aleph" and ask(first.aleph_index() == 0) is True:
             return True
-        if first.kind() == "aleph" and ask(first.aleph_index() == 1) is True and self._is_countable(second) is False:
+        if first._kind_() == "aleph" and ask(first.aleph_index() == 1) is True and self._is_countable(second) is False:
             return True
-        if first.kind() == "power":
-            base, exponent = first.terms()
+        if first._kind_() == "power":
+            base, exponent = first._terms_()
             # Cardinal.cantor': b ** a > a for 1 < b, so b ** a is not below anything below a.
             if self._at_most(self(2), base) is True and self._at_most(second, exponent) is True:
                 return False
-        if second.kind() == "power":
-            base, exponent = second.terms()
+        if second._kind_() == "power":
+            base, exponent = second._terms_()
             if self._at_most(first, base) is True:
                 return True
             # Cardinal.cantor': the exponent is below a power with base at least two.
             if self._at_most(self(2), base) is True and self._at_most(first, exponent) is True:
                 return True
-            if first.kind() == "power":
-                first_base, first_exponent = first.terms()
+            if first._kind_() == "power":
+                first_base, first_exponent = first._terms_()
                 if self._at_most(first_base, base) is True and self._at_most(first_exponent, exponent) is True:
                     return True
         return Unknown

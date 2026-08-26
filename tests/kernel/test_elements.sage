@@ -444,10 +444,9 @@ def test_a_route_of_length_two_transports_one_object_element_and_morphism_to_exa
 def test_product_stages_map_to_the_factor_stages_with_the_identity_comparison() -> None:
     modules, groups = ToyModules(), ToyAbelianGroups()
     product = Cat().Products()((modules, groups))
-    apex = product.apex()
-    pair = apex((modules.ring(), groups.integers()))
+    pair = product((modules.ring(), groups.integers()))
 
-    assert apex.classical_stages() == (pair,)
+    assert product.classical_stages() == (pair,)
     assert product.product_projection(int(0)).on_object(pair) is modules.ring()
     assert product.product_projection(int(0)).stage_comparison() is modules.ring().identity()
     assert product.product_projection(int(1)).stage_comparison() is groups.integers().identity()

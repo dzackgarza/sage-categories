@@ -1,10 +1,11 @@
 """``Cat()``, the ``Mor`` tower, functors, natural transformations, properties, and canonical objects.
 
 Every expected fact has its oracle in the definition it exercises: the bootstrap
-convention of D02, the definition of ``Mor(n, C)`` (D03), the definition of a
-functor's actions (D05) and of composition of functors and natural
-transformations, the shape definitions of D15, and the property implications of
-D09.  No row claims to prove a functor law, naturality, or a universal property.
+convention ``Cat().category() is Cat()`` (POL-CAT-002), the definition of
+``Mor(n, C)`` (POL-CAT-021), the definition of a functor's actions (POL-FUN-001)
+and of composition of functors and natural transformations, the canonical shapes
+(POL-CAT-083), and the functor property implications (POL-FUN-024).  No row
+claims to prove a functor law, naturality, or a universal property (POL-MATH-036).
 """
 
 import pytest
@@ -143,8 +144,13 @@ def test_canonical_objects_exist_by_identity() -> None:
     assert arrow in Fun(Cat().Simplex(int(1)), Sets())
     assert arrow.on_morphism(Cat().Simplex(int(1)).generator("0->1")) is swap
     assert swap.defining_morphism() is arrow
-    assert two.defining_morphism() is two.defining_morphism()
     assert two.defining_morphism().on_object(Cat().Terminal()(int(0))) is two
+
+    vertex, edge = Cat().element_from_defining_morphism(two.defining_morphism()), Cat().element_from_defining_morphism(arrow)
+    assert vertex.stage() is Cat().Terminal() and vertex.parent() is Sets().Finite()
+    assert edge.stage() is Cat().Simplex(int(1)) and edge.parent() is Sets()
+    assert vertex.defining_morphism().on_object(Cat().Terminal()(int(0))) is two
+    assert edge.defining_morphism().on_morphism(Cat().Simplex(int(1)).generator("0->1")) is swap
 
 
 def test_global_and_fixed_endpoint_property_dispatch_reach_one_category() -> None:

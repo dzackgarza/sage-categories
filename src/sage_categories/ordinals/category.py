@@ -65,25 +65,25 @@ class OrdinalObject(ObjectOfCategory):
         self._key = key
         self._terms = terms
 
-    def kind(self) -> str:
+    def _kind_(self) -> str:
         return self._key[0]
 
-    def expression_key(self) -> Key:
+    def _expression_key_(self) -> Key:
         """The normalized expression that identifies this ordinal."""
         return self._key
 
-    def terms(self) -> tuple[OrdinalObject, ...]:
+    def _terms_(self) -> tuple[OrdinalObject, ...]:
         return self._terms
 
-    def finite_value(self) -> int:
-        assert self.kind() == "finite"
+    def _finite_value_(self) -> int:
+        assert self._kind_() == "finite"
         return self._key[1]
 
     def is_initial(self) -> AppliedPredicate:
         return initial(self)
 
     def initial_index(self) -> OrdinalObject:
-        assert self.kind() == "initial", f"{self!r} is not an initial ordinal"
+        assert self._kind_() == "initial", f"{self!r} is not an initial ordinal"
         return self._terms[0]
 
     def cardinality(self) -> CardinalObject:
@@ -103,9 +103,9 @@ class OrdinalObject(ObjectOfCategory):
         from sage_categories.sets.cardinals import Cardinal
 
         cardinals = Cardinal()
-        match self.kind():
+        match self._kind_():
             case "finite":
-                return cardinals(self.finite_value())
+                return cardinals(self._finite_value_())
             case "initial":
                 return cardinals.aleph(self.initial_index())
             case "natural_sum" | "ordinal_sum":
@@ -152,9 +152,9 @@ class OrdinalObject(ObjectOfCategory):
         return hash(self._key)
 
     def __repr__(self) -> str:
-        match self.kind():
+        match self._kind_():
             case "finite":
-                return str(self.finite_value())
+                return str(self._finite_value_())
             case "initial":
                 return f"ω_{self.initial_index()!r}"
             case "natural_sum":
@@ -212,7 +212,7 @@ class OrdinalsCategory(Category[[], []]):
     def omega(self, index: OrdinalObject | int) -> OrdinalObject:
         """The initial ordinal ``omega(index)`` (Mathlib ``Ordinal.omega``, ``SetTheory.Cardinal.Aleph``)."""
         ordinal_index = self(index)
-        return self._retain(("initial", ordinal_index.expression_key()), (ordinal_index,))
+        return self._retain(("initial", ordinal_index._expression_key_()), (ordinal_index,))
 
     def zero(self) -> OrdinalObject:
         return self(0)
@@ -221,20 +221,20 @@ class OrdinalsCategory(Category[[], []]):
         return self(1)
 
     def _is_finite(self, alpha: OrdinalObject, value: int) -> bool:
-        return alpha.kind() == "finite" and alpha.finite_value() == value
+        return alpha._kind_() == "finite" and alpha._finite_value_() == value
 
     def _expression(self, kind: str, terms: tuple[OrdinalObject, ...]) -> OrdinalObject:
-        return self._retain((kind, *(term.expression_key() for term in terms)), terms)
+        return self._retain((kind, *(term._expression_key_() for term in terms)), terms)
 
     def natural_sum(self, *summands: OrdinalObject) -> OrdinalObject:
         terms: list[OrdinalObject] = []
         finite_part = 0
         for summand in summands:
-            match summand.kind():
+            match summand._kind_():
                 case "finite":
-                    finite_part += summand.finite_value()
+                    finite_part += summand._finite_value_()
                 case "natural_sum":
-                    terms.extend(summand.terms())
+                    terms.extend(summand._terms_())
                 case _:
                     terms.append(summand)
         if finite_part:
@@ -248,19 +248,19 @@ class OrdinalsCategory(Category[[], []]):
 
     def natural_product(self, *factors: OrdinalObject) -> OrdinalObject:
         for index, factor in enumerate(factors):
-            if factor.kind() == "natural_sum":
+            if factor._kind_() == "natural_sum":
                 preceding, following = factors[:index], factors[index + 1 :]
-                return self.natural_sum(*(self.natural_product(*preceding, term, *following) for term in factor.terms()))
+                return self.natural_sum(*(self.natural_product(*preceding, term, *following) for term in factor._terms_()))
         terms: list[OrdinalObject] = []
         finite_part = 1
         for factor in factors:
-            match factor.kind():
+            match factor._kind_():
                 case "finite":
-                    if factor.finite_value() == 0:
+                    if factor._finite_value_() == 0:
                         return self.zero()
-                    finite_part *= factor.finite_value()
+                    finite_part *= factor._finite_value_()
                 case "natural_product":
-                    terms.extend(factor.terms())
+                    terms.extend(factor._terms_())
                 case _:
                     terms.append(factor)
         if finite_part != 1 or not terms:
@@ -271,8 +271,8 @@ class OrdinalsCategory(Category[[], []]):
         return self._expression("natural_product", tuple(terms))
 
     def ordinal_sum(self, left: OrdinalObject, right: OrdinalObject) -> OrdinalObject:
-        if left.kind() == "finite" and right.kind() == "finite":
-            return self(left.finite_value() + right.finite_value())
+        if left._kind_() == "finite" and right._kind_() == "finite":
+            return self(left._finite_value_() + right._finite_value_())
         if self._is_finite(left, 0):
             return right
         if self._is_finite(right, 0):
@@ -280,8 +280,8 @@ class OrdinalsCategory(Category[[], []]):
         return self._expression("ordinal_sum", (left, right))
 
     def ordinal_product(self, left: OrdinalObject, right: OrdinalObject) -> OrdinalObject:
-        if left.kind() == "finite" and right.kind() == "finite":
-            return self(left.finite_value() * right.finite_value())
+        if left._kind_() == "finite" and right._kind_() == "finite":
+            return self(left._finite_value_() * right._finite_value_())
         if self._is_finite(left, 0) or self._is_finite(right, 0):
             return self.zero()
         if self._is_finite(left, 1):
@@ -291,8 +291,8 @@ class OrdinalsCategory(Category[[], []]):
         return self._expression("ordinal_product", (left, right))
 
     def ordinal_power(self, base: OrdinalObject, exponent: OrdinalObject) -> OrdinalObject:
-        if base.kind() == "finite" and exponent.kind() == "finite":
-            return self(base.finite_value() ** exponent.finite_value())
+        if base._kind_() == "finite" and exponent._kind_() == "finite":
+            return self(base._finite_value_() ** exponent._finite_value_())
         if self._is_finite(exponent, 0):
             return self.one()
         if self._is_finite(base, 0):
@@ -306,7 +306,7 @@ class OrdinalsCategory(Category[[], []]):
     def _initial(self, alpha: OrdinalObject) -> Decision:
         """An initial-ordinal expression is initial and a finite ordinal is not (``Ordinal.natCast_lt_omega0``,
         ``Ordinal.omega0_le_omega``); a symbolic expression may still equal one, so it is ``Unknown``."""
-        match alpha.kind():
+        match alpha._kind_():
             case "initial":
                 return True
             case "finite":
@@ -331,13 +331,13 @@ class OrdinalsCategory(Category[[], []]):
     def _at_most(self, first: OrdinalObject, second: OrdinalObject) -> Decision:
         if first._key == second._key:
             return True
-        if first.kind() == "finite":
-            if second.kind() == "finite":
-                return first.finite_value() <= second.finite_value()
+        if first._kind_() == "finite":
+            if second._kind_() == "finite":
+                return first._finite_value_() <= second._finite_value_()
             return True
-        if second.kind() == "finite":
+        if second._kind_() == "finite":
             return False
-        if first.kind() == "initial" and second.kind() == "initial":
+        if first._kind_() == "initial" and second._kind_() == "initial":
             return self._at_most(first.initial_index(), second.initial_index())
         return Unknown
 

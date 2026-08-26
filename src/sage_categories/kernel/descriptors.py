@@ -1,9 +1,9 @@
-"""Forwarding descriptors and structural transport (D11, D13, D18).
+"""Forwarding descriptors and structural transport (POL-CAT-012, POL-KERNEL-021, POL-CAT-047).
 
 An inherited method means composition: ``X.f(...) := F(X).f(...)``.  The descriptor
 transports the receiver and every transportable argument forward to the declaring
 node, calls the declaring method on the images, and returns its value unchanged
-(there is no result branch, D18).
+(there is no result branch: POL-CAT-047, ``specs/resolution.md``).
 
 Transport is canonical: one image per value and reachable category, stored in
 the identity-keyed tables of ``kernel/caches.py``.  At the first transport of a
@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, Any
 import sage_categories.kernel.compiler as compiler
 from sage_categories.kernel.caches import canonical_images
 from sage_categories.kernel.roles import CategoryPoint, Role, role_of
-from sage_categories.kernel.signatures import ArgumentRole, Signature, declared_signature
+from sage_categories.kernel.signatures import ArgumentRole, ParameterRole, Signature, declared_signature
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
@@ -52,7 +52,7 @@ def placement_node(value: CategoryPoint) -> compiler.Node:
 def _apply(functor: Functor, step_role: Role, value: CategoryPoint) -> CategoryPoint:
     # The action is the one ``Cat()`` declares on its morphism role, invoked directly:
     # a functor placed in a property subcategory of ``Fun`` reaches the same declaration
-    # through an identity-on-value inclusion, so the value is the same (D08).
+    # through an identity-on-value inclusion, so the value is the same (POL-FUN-027).
     declared = functor.base_category().local_role_class(Role.MORPHISM)
     match step_role:
         case Role.OBJECT:
@@ -120,20 +120,61 @@ def transport(value: CategoryPoint, target: compiler.Node) -> CategoryPoint:
     return image
 
 
-def _transport_argument(argument: Any, argument_role: ArgumentRole, owner: Category) -> Any:
-    # ``argument`` is whatever the caller passed to the inherited method (D13 decides its
-    # role at runtime); it is returned unchanged unless it is an owned value with a route.
-    # A ``candidate`` (``__eq__``, ``__contains__``) is transported by its own role when it
-    # is such a value: ``x in P := U(x) in U(P)`` (D18).
-    by_own_role = argument_role is ArgumentRole.POINT or argument_role is ArgumentRole.CANDIDATE
-    role = role_of(argument) if by_own_role else Signature.transported_role(argument_role)
-    if role is None or role_of(argument) is not role:
-        return argument
+def _transport_value(argument: Any, role: Role, owner: Category, name: str, declared: ArgumentRole) -> CategoryPoint:
+    """The image of one declared-role argument at the owner; an argument without an exact rule is rejected (POL-CAT-071)."""
+    assert role_of(argument) is role, f"the argument {name}={argument!r} is not an owned {declared.value}"
     target = compiler.node(owner, role)
     source = placement_node(argument)
-    if not any(compiler.same_node(target, found) for found in compiler.reachable(source)):
-        return argument
+    assert any(compiler.same_node(target, found) for found in compiler.reachable(source)), (
+        f"the argument {name}={argument!r}, declared {declared.value}, has no selected route from {source.category!r} to {owner!r}"
+    )
     return transport(argument, target)
+
+
+def _transport_argument(argument: Any, parameter: ParameterRole, owner: Category, name: str, receiver_is_instance: bool) -> Any:
+    """The argument as the declaring method receives it, by its declared role (POL-KERNEL-021)."""
+    declared = parameter.role
+    match declared:
+        case ArgumentRole.VALUE:
+            return argument
+        case ArgumentRole.CANDIDATE:
+            # ``x in P := U(x) in U(P)``: a candidate that is an owned value with a
+            # selected route is transported by its own role; any other candidate is
+            # the declaring method's to judge (POL-CAT-062).
+            role = role_of(argument)
+            if role is None:
+                return argument
+            target = compiler.node(owner, role)
+            if not any(compiler.same_node(target, found) for found in compiler.reachable(placement_node(argument))):
+                return argument
+            return transport(argument, target)
+        case ArgumentRole.RECEIVER_POINT:
+            # The route acts on the receiver; a point of the receiver's own category
+            # is admitted only when the receiver's image is the receiver itself.
+            assert receiver_is_instance, f"the argument {name}={argument!r} is a point of the receiver's category, which the selected route does not map"
+            return argument
+    if parameter.admits_value and role_of(argument) is None:
+        return argument
+    role = Signature.transported_role(declared)
+    assert role is not None, declared
+    if Signature.is_family(declared):
+        return (_transport_value(item, role, owner, name, declared) for item in argument)
+    return _transport_value(argument, role, owner, name, declared)
+
+
+def _implementation(receiver: CategoryPoint, entry: compiler.Entry) -> Callable[..., Any]:
+    """The declaring method as the receiver's own implementation class realizes it.
+
+    An object of ``Cat()`` is an instance of its own ``Category`` subclass, which
+    refines the declarations of ``Cat().ObjectType``; ``F(X).f()`` for such an image
+    is that refinement, not the base declaration.
+    """
+    declaring_class = entry.owner.local_role_class(entry.role)
+    for klass in type(receiver).__mro__:
+        declared = vars(klass).get(entry.name)
+        if declared is not None and issubclass(klass, declaring_class) and not isinstance(declared, ForwardedMethod):
+            return declared
+    return entry.function
 
 
 class ForwardedMethod:
@@ -143,7 +184,7 @@ class ForwardedMethod:
         self._entry = entry
         self._target = compiler.Node(entry.owner, entry.role)
         declaration = f"{entry.owner!r}.{entry.role.value}.{entry.name}"
-        self._signature = declared_signature(entry.function, declaration, entry.owner.local_role_class(entry.role))
+        self._signature = declared_signature(entry.function, declaration, entry.owner, entry.role)
         self._python_signature = inspect.signature(entry.function)
 
     def entry(self) -> compiler.Entry:
@@ -152,22 +193,23 @@ class ForwardedMethod:
     def __get__(self, instance: CategoryPoint | None, owner: type) -> Callable[..., Any] | ForwardedMethod:
         if instance is None:
             return self
-        function = self._entry.function
         target = self._target
         roles = self._signature.parameters()
         python_signature = self._python_signature
 
         def bound(*arguments: Any, **keyword_arguments: Any) -> Any:
             receiver = transport(instance, target)
+            function = _implementation(receiver, self._entry)
             call = python_signature.bind(receiver, *arguments, **keyword_arguments)
+            same = receiver is instance
             for name, value in list(call.arguments.items())[1:]:
                 parameter = python_signature.parameters[name]
                 if parameter.kind is inspect.Parameter.VAR_POSITIONAL:
-                    call.arguments[name] = tuple(_transport_argument(item, roles[name], target.category) for item in value)
+                    call.arguments[name] = tuple(_transport_argument(item, roles[name], target.category, name, same) for item in value)
                 elif parameter.kind is inspect.Parameter.VAR_KEYWORD:
-                    call.arguments[name] = {key: _transport_argument(item, roles[name], target.category) for key, item in value.items()}
+                    call.arguments[name] = {key: _transport_argument(item, roles[name], target.category, name, same) for key, item in value.items()}
                 else:
-                    call.arguments[name] = _transport_argument(value, roles[name], target.category)
+                    call.arguments[name] = _transport_argument(value, roles[name], target.category, name, same)
             return function(*call.args, **call.kwargs)
 
         return bound

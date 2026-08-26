@@ -45,7 +45,6 @@ from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.shapes import ThinCategory
 from sage_categories.kernel.decisions import Decision, Unknown, decision_and, decision_not, decision_or
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask
-from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, role_of
 from sage_categories.sets.category import Sets
 from sage_categories.sets.elements import Datum, SetPoint
@@ -197,7 +196,7 @@ def _partial_order_on_enumerated(relation: SetObject) -> Decision:
     sets = Sets()
     if relation not in sets.ChosenSubsets():
         return Unknown
-    square = sets.Products().presentation_with_apex(relation.underlying_set())
+    square = relation.underlying_set()
     carrier = square.product_projection(0).codomain()
     if not sets.Finite().has_chosen_enumeration(carrier):
         return Unknown
@@ -251,7 +250,6 @@ class PosetsCategory(Category[[Rule], []]):
         self._functors: dict[str, Functor] = {}
         self._canonical: dict[tuple[str, int], Poset] = {}
         self._lifts: TripleDict = TripleDict(weak_values=False)
-        self._inverses: MonoDict = MonoDict()
         self._thin: MonoDict = MonoDict()
         super().__init__()
         self._equality.register_handler(self._equal)
@@ -285,7 +283,8 @@ class PosetsCategory(Category[[Rule], []]):
         return self._construct(underlying_set, relation)
 
     def _carrier(self, relation: SetObject) -> SetObject:
-        square = Sets().Products().presentation_with_apex(relation.underlying_set())
+        square = relation.underlying_set()
+        assert square in Sets().Products(), f"{relation!r} is not a subset of a chosen product"
         first, second = square.product_projection(0).codomain(), square.product_projection(1).codomain()
         assert first is second, f"{relation!r} is a subset of a product of two distinct sets"
         return first
@@ -355,9 +354,7 @@ class PosetsCategory(Category[[Rule], []]):
 
     def construct_identity(self, poset: Poset) -> MonotoneMap:
         # The identity is monotone: Mathlib ``OrderHom.id``.
-        identity = self.MorphismType(self.morphism_category(1), poset, poset, self.underlying_set_functor().on_object(poset).identity())
-        self._inverses[identity] = identity
-        return identity
+        return self.MorphismType(self.morphism_category(1), poset, poset, self.underlying_set_functor().on_object(poset).identity())
 
     def composite(self, second: MonotoneMap, first: MonotoneMap) -> MonotoneMap:
         # Monotone maps compose: Mathlib ``OrderHom.comp``.
@@ -369,11 +366,8 @@ class PosetsCategory(Category[[Rule], []]):
     def inverse_morphism(self, monotone: MonotoneMap) -> MonotoneMap:
         """The inverse of an order isomorphism: the inverse set map is monotone (Mathlib ``OrderIso.symm``)."""
         if monotone not in self._inverses:
-            morphisms = self.morphism_category(1)
-            inverse = self.MorphismType(morphisms, monotone.codomain(), monotone.domain(), monotone._set_map.inverse())
-            self._inverses[monotone] = inverse
-            self._inverses[inverse] = monotone
-            refine(inverse, morphisms.Isomorphisms())
+            inverse = self.MorphismType(self.morphism_category(1), monotone.codomain(), monotone.domain(), monotone._set_map.inverse())
+            self.retain_inverses(monotone, inverse)
         return self._inverses[monotone]
 
     def cartesian_lift(self, monomorphism: SetMap, target: Poset) -> MonotoneMap:

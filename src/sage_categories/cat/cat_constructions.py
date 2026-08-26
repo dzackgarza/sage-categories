@@ -1,8 +1,8 @@
-"""The constructions ``Cat()`` owns (D02): products and coproducts of categories over a discrete shape, the strict pullback, and the exponential.
+"""The constructions ``Cat()`` owns (POL-CAT-050, POL-MATH-037): products and coproducts of categories over a discrete shape, the strict pullback, and the exponential.
 
 Each construction line carries its inspected citation (POL-MATH-040); the
 universal property of each is a trusted declaration attached to the
-constructor (POL-MATH-037, D14).
+constructor (POL-MATH-037, POL-MATH-036).
 
 - The product of an ``S``-indexed family of categories has as objects the
   ``S``-indexed families of objects given by rule and as morphisms the
@@ -19,12 +19,13 @@ constructor (POL-MATH-037, D14).
   morphisms (Mathlib ``CategoryTheory.Cat.HasLimits.limitCone``, whose apex has
   as objects the compatible families of objects; inspected 2026-08-26).  A pair's
   membership is decided by ``ask(F(a) == G(b))``: identity first, ``Unknown`` for
-  two distinct rule-defined sets (D17).
+  two distinct rule-defined sets (POL-MATH-034).
 - The exponential ``D ** C`` is ``Fun(C, D)`` (Mathlib ``CategoryTheory.Cat.exp_obj``;
   inspected 2026-08-26).
 
-``Cat().Limits(I)`` and ``Cat().Colimits(I)`` for any other shape exist and
-constructing an object in them fails loudly in this unit.
+``Cat().Limits(I)`` and ``Cat().Colimits(I)`` for any other shape exist
+(POL-CAT-051); constructing an object in them fails loudly, naming the missing
+owned construction.
 """
 
 from __future__ import annotations
@@ -148,10 +149,6 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
         assert first.codomain() is second.domain()
         return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain(), lambda vertex: second.component(vertex) * first.component(vertex))
 
-    def element_from_defining_morphism(self, defining_morphism: FamilyMorphism) -> ElementOfObject:
-        assert defining_morphism in self.morphism_category(1)
-        return self.ElementType(defining_morphism)
-
     def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
         """Two families over a finitely enumerated index are equal when every component is."""
         if first not in self or candidate not in self:
@@ -272,10 +269,6 @@ class CoproductCategory(Category[[MorphismOfCategory], []]):
     def composite(self, second: TaggedMorphism, first: TaggedMorphism) -> TaggedMorphism:
         assert first.codomain() is second.domain()
         return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain(), second.morphism() * first.morphism())
-
-    def element_from_defining_morphism(self, defining_morphism: TaggedMorphism) -> ElementOfObject:
-        assert defining_morphism in self.morphism_category(1)
-        return self.ElementType(defining_morphism)
 
     def __repr__(self) -> str:
         return f"Coproduct({self._diagram!r})"
@@ -405,10 +398,6 @@ class PullbackCategory(Category[[tuple[MorphismOfCategory, MorphismOfCategory]],
     def composite(self, second: PairMorphism, first: PairMorphism) -> PairMorphism:
         assert first.codomain() is second.domain()
         return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain(), second.first() * first.first(), second.second() * first.second())
-
-    def element_from_defining_morphism(self, defining_morphism: PairMorphism) -> ElementOfObject:
-        assert defining_morphism in self.morphism_category(1)
-        return self.ElementType(defining_morphism)
 
     def __repr__(self) -> str:
         return f"Pullback({self._first_functor!r}, {self._second_functor!r})"

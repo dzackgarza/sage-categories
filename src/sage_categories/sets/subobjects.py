@@ -13,7 +13,7 @@ The predicate is a datum-level rule ``Callable[[Datum], Decision]``, the form of
 reject, and an ``Unknown`` predicate value keeps membership ``Unknown``.
 
 Cardinality and placement are decided by cited cases and are ``Unknown``
-otherwise (D01):
+otherwise (POL-ASSUME-004):
 
 - a subset of a set with a chosen enumeration whose predicate decides every member
   is constructed with the exact enumeration and count through ``Sets().Finite()``;

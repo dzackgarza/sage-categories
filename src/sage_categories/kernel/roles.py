@@ -228,9 +228,9 @@ def kernel_base(role: Role) -> type[CategoryPoint]:
     return _BASES[role]
 
 
-def role_of(value: Any) -> Role | None:
-    """The implementation role of a runtime value, or ``None`` for an unowned value."""
-    match value:
+def role_of(candidate: Any) -> Role | None:
+    """The implementation role of a candidate value, or ``None`` for an unowned candidate (POL-TYPE-004)."""
+    match candidate:
         case ObjectOfCategory():
             return Role.OBJECT
         case ElementOfObject():

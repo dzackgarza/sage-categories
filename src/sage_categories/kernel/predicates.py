@@ -41,7 +41,9 @@ if TYPE_CHECKING:
 
 __all__ = [
     "AppliedPredicate",
+    "Argument",
     "Conjunction",
+    "EqualityPredicate",
     "Negation",
     "Predicate",
     "PropertyPredicate",
@@ -50,6 +52,13 @@ __all__ = [
     "assume",
 ]
 
+# What a predicate is applied to: owned values, and the integer convenience of the
+# cardinal and ordinal orders.  The candidate of an equality proposition enters
+# through ``EqualityPredicate`` alone (POL-TYPE-004).
+type Argument = CategoryPoint | int
+
+# An exact decision procedure on a declared semantic domain; its arity is the
+# predicate's, and each owning category declares its exact parameter types.
 type Handler = Callable[..., Decision]
 
 
@@ -70,7 +79,7 @@ _engine_symbols: MonoDict = MonoDict()
 _decisions: TripleDict = TripleDict(weak_values=False)
 
 
-def _engine_symbol(argument: CategoryPoint | int) -> Basic:
+def _engine_symbol(argument: Argument) -> Basic:
     if isinstance(argument, int):
         return Integer(argument)
     assert isinstance(argument, CategoryPoint), f"{argument!r} has no engine symbol"
@@ -79,7 +88,8 @@ def _engine_symbol(argument: CategoryPoint | int) -> Basic:
     return _engine_symbols[argument]
 
 
-def _representable(argument: Any) -> bool:
+def _representable(argument: Argument) -> bool:
+    """Whether the session can carry the argument: an equality candidate may be neither owned nor an integer."""
     return isinstance(argument, (CategoryPoint, int))
 
 
@@ -114,12 +124,22 @@ class Predicate:
     def handlers(self) -> tuple[Handler, ...]:
         return tuple(self._handlers)
 
-    def __call__(self, *arguments: Any) -> AppliedPredicate:
+    def __call__(self, *arguments: Argument) -> AppliedPredicate:
         assert len(arguments) == self._arity, f"{self._name} has arity {self._arity}"
         return AppliedPredicate(self, arguments)
 
     def __repr__(self) -> str:
         return self._name
+
+
+class EqualityPredicate(Predicate):
+    """The binary equality predicate of a category: ``a == b`` applies it to ``a`` and any candidate (POL-TYPE-004)."""
+
+    def __init__(self, name: str) -> None:
+        super().__init__(name, 2, True)
+
+    def __call__(self, first: CategoryPoint, candidate: Any) -> AppliedPredicate:
+        return AppliedPredicate(self, (first, candidate))
 
 
 class PropertyPredicate(Predicate):
@@ -152,14 +172,14 @@ class Proposition:
 class AppliedPredicate(Proposition):
     """One predicate applied to its arguments."""
 
-    def __init__(self, predicate: Predicate, arguments: tuple[Any, ...]) -> None:
+    def __init__(self, predicate: Predicate, arguments: tuple[Argument, ...]) -> None:
         self._predicate = predicate
         self._arguments = arguments
 
     def predicate(self) -> Predicate:
         return self._predicate
 
-    def arguments(self) -> tuple[Any, ...]:
+    def arguments(self) -> tuple[Argument, ...]:
         return self._arguments
 
     def engine_value(self) -> EngineApplied:
@@ -208,13 +228,16 @@ def _session_decision(proposition: AppliedPredicate) -> Decision:
     return Unknown
 
 
-def _cache_key(proposition: AppliedPredicate) -> tuple[Predicate, Any, Any] | None:
+def _cache_key(proposition: AppliedPredicate) -> tuple[Predicate, CategoryPoint, CategoryPoint] | None:
+    """The identity key of a recordable decision: the predicate and its one or two owned arguments."""
     arguments = proposition.arguments()
     if not proposition.predicate().records_decisions():
         return None
-    if len(arguments) not in (1, 2) or not all(isinstance(a, CategoryPoint) for a in arguments):
+    if len(arguments) not in (1, 2):
         return None
     first, second = arguments[0], arguments[-1]
+    if not isinstance(first, CategoryPoint) or not isinstance(second, CategoryPoint):
+        return None
     return proposition.predicate(), first, second
 
 

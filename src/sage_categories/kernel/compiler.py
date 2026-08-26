@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, NamedTuple
+from typing import TYPE_CHECKING, Concatenate, NamedTuple
 
 from sage.structure.dynamic_class import dynamic_class
 
@@ -37,6 +37,7 @@ if TYPE_CHECKING:
     from sage_categories.cat.functors import Functor
 
 __all__ = [
+    "DeclaredMethod",
     "Entry",
     "Node",
     "Route",
@@ -68,12 +69,19 @@ class Node(NamedTuple):
 type Step = tuple[Functor, Role]
 type Route = tuple[Step, ...]
 
+# A declaring method: its receiver is a value of the declaring role class, and its
+# remaining parameters and result are exactly those of its typed signature
+# (POL-CAT-075, POL-TYPE-028).
+type DeclaredMethod[**P, R] = Callable[Concatenate[CategoryPoint, P], R]
 
-class Entry(NamedTuple):
+
+class Entry[**P, R](NamedTuple):
+    """One compiled method: its declaring owner and role, its spelling, its declaration, and its execution route."""
+
     owner: Category
     role: Role
     name: str
-    function: Callable[..., Any]
+    function: DeclaredMethod[P, R]
     route: Route
 
 
@@ -132,7 +140,8 @@ def _assert_acyclic(start: Node, stack: tuple[Node, ...]) -> None:
         _assert_acyclic(target, (*stack, start))
 
 
-def _local_methods(local_class: type) -> dict[str, Callable[..., Any]]:
+def _local_methods[**P, R](local_class: type[CategoryPoint]) -> dict[str, DeclaredMethod[P, R]]:
+    """The methods declared on the class body of a local role class; the catalogue is heterogeneous in ``P`` and ``R``."""
     return {
         name: function
         for name, function in vars(local_class).items()
@@ -144,7 +153,7 @@ def _is_subcategory(specific: Category, general: Category, role: Role) -> bool:
     return any(same_node(found, node(general, role)) for found in reachable(node(specific, role)))
 
 
-def _merge(existing: Entry, candidate: Entry) -> Entry:
+def _merge[**P, R](existing: Entry[P, R], candidate: Entry[P, R]) -> Entry[P, R]:
     if existing.owner is candidate.owner:
         return existing
     if _is_subcategory(existing.owner, candidate.owner, existing.role):
@@ -157,8 +166,8 @@ def _merge(existing: Entry, candidate: Entry) -> Entry:
     )
 
 
-def catalogue(current: Node) -> dict[str, Entry]:
-    """The compiled method catalogue of one node, cached on its category."""
+def catalogue[**P, R](current: Node) -> dict[str, Entry[P, R]]:
+    """The compiled method catalogue of one node, cached on its category; heterogeneous in ``P`` and ``R``."""
     catalogues = current.category.catalogues()
     if current.role in catalogues:
         return catalogues[current.role]

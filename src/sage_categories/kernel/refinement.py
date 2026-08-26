@@ -56,7 +56,7 @@ def _included_in(start: compiler.Node) -> Iterator[compiler.Node]:
 
 
 def is_placed(candidate: Any, category: Category) -> bool:
-    """Whether ``candidate`` is an object of ``category`` by established placement."""
+    """Whether ``candidate`` is an object of ``category`` by established placement (the ``member`` handler; POL-TYPE-004)."""
     if role_of(candidate) is None:
         return False
     target = compiler.node(category, Role.OBJECT)

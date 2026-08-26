@@ -1,17 +1,19 @@
 # Cardinalities and ordinals
 
 Cardinals are objects of a set-enriched skeletal category of cardinal representatives.
-Ordinals are elements of a commutative semiring. Both models retain exact expressions
-formed by their own arithmetic when no normalization rule applies.
+Ordinals are objects of the skeletal category `Ordinals()`, which the point functor into
+`Semirings()` presents as the commutative semiring of ordinals under the Hessenberg
+operations. Both models retain exact expressions formed by their own arithmetic when no
+normalization rule applies.
 
 Cardinal and ordinal operations specified as predicates follow the proposition interface
 in [Property refinement](property-refinement.md). Applying one returns a proposition.
 Only `ask()` decides it as `True`, `False`, or `Unknown`.
 
 The governing policies are `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001`,
-`POL-CAT-021`, `POL-CAT-028`, `POL-CAT-086`, `POL-CAT-088`, `POL-SET-009`, `POL-SET-010`,
-`POL-SET-025`, `POL-SET-026`, `POL-SET-033` through `POL-SET-035`,
-`POL-API-002`, and `POL-API-016`.
+`POL-CAT-021`, `POL-CAT-028`, `POL-CAT-083`, `POL-CAT-086`, `POL-CAT-088`,
+`POL-SET-009`, `POL-SET-010`, `POL-SET-025`, `POL-SET-026`,
+`POL-SET-033` through `POL-SET-035`, `POL-API-002`, and `POL-API-016`.
 
 ## Implementation ownership
 
@@ -440,9 +442,8 @@ CardinalityMorphism
 aleph0
 continuum
 
-OrdinalSemirings
 Ordinals
-Ordinal
+OrdinalObject
 omega0
 
 CardinalityFunctor

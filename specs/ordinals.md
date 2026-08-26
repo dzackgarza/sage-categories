@@ -7,67 +7,68 @@ Ordinal operations specified as predicates follow the proposition interface in
 `ask()` returns its decision.
 
 The governing policies are `POL-MATH-022` through `POL-MATH-025`, `POL-MATH-034`,
-`POL-MATH-035`, `POL-CAT-054`, `POL-CAT-060`, `POL-CAT-085`, `POL-CAT-087`,
-`POL-SET-025`, and `POL-SET-026`.
+`POL-MATH-035`, `POL-CAT-001`, `POL-CAT-054`, `POL-CAT-060`, `POL-CAT-083`,
+`POL-CAT-085`, `POL-SET-025`, and `POL-SET-026`.
 
 ## Ordinal model
 
-`Ordinals()` is one parent representing the commutative semiring of ordinals under Hessenberg operations.
-
-Ordinals are elements of that parent:
+`Ordinals()` is the skeletal category of ordinals. An ordinal is an object of it,
+exactly as a cardinal is an object of `Cardinal()`
+([cardinality.md](cardinality.md), "Cardinal model"):
 
 ```python
-Ordinal = OrdinalSemirings().ElementType
+OrdinalObject = Ordinals().ObjectType
 ```
 
-This differs from the cardinal model:
+`Ordinals()` owns ordinal construction, both families of ordinal arithmetic, the order
+predicates, and expression normalization. Sage supplies private runtime support only.
 
-- A cardinal is an object of `Cardinal()`.
+Two families of operations act on these objects. The Hessenberg natural sum and natural
+product are commutative; they are the semiring operations below. The ordinary ordinal
+sum, product, and power are noncommutative and carry explicit names; `Ordinals()` owns
+them as local operations.
 
-- An ordinal is an element of `Ordinals()`.
+An expression that no normalization rule evaluates is retained exactly.
 
-An ordinal semiring is a semiring whose carrier consists of ordinals, whose addition is
-Hessenberg natural sum, and whose multiplication is Hessenberg natural product.
-Its multiplication is commutative.
+### The ordinal semiring
 
-Let `P(S)` be this property of objects `S in Semirings()`. Then
-`OrdinalSemirings()` is the full subcategory defined by `P`. Its objects are the
-semiring objects satisfying `P`. Property refinement retains each same owned semiring.
-Its fixed-endpoint morphism categories are definitionally those of `Semirings()`:
-
-\[
-\operatorname{Mor}(\mathbf{OrdinalSemirings})(A,B)
-=
-\operatorname{Mor}(\mathbf{Semirings})(A,B).
-\]
-
-Thus the inclusion is fully faithful by construction. No fullness predicate or runtime
-check exists. This follows mathlib's
-[`CategoryTheory.ObjectProperty.FullSubcategory`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/FullSubcategory.html)
-definition: objects carry an object property, while morphisms ignore that property.
-
-The ambient predicate application is:
+The commutative semiring of ordinals under the Hessenberg operations is the point
+functor of `Ordinals()` into `Semirings()`
+([functor.md](functor.md#point-categories-and-point-functors)):
 
 ```python
-S.is_ordinal_semiring()
-```
-
-It returns `P(S)`. `ask()` uses its computational routes.
-
-The complete immediate structural tuple is:
-
-```python
+# Cat().Point(Ordinals())
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (Fun(self, Semirings()).FullyFaithful().inclusion(),)
+    return (Fun(self, Semirings()).Faithful().inclusion(),)
 ```
 
-The selected semiring functors supply both monoid structures and the set image fixed by
-the semiring presentation. Sage supplies private runtime support only.
+It regards the category `Ordinals()` as one object of `Semirings()`. Its additive monoid
+is the natural sum with unit `0`, its multiplicative monoid is the natural product with
+unit `1`, the product distributes over the sum, and the multiplication is commutative
+(Mathlib
+[`NatOrdinal.instCommSemiring`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/SetTheory/Ordinal/NaturalOps.html),
+`SetTheory.Ordinal.NaturalOps`).
+
+The level shift supplies the public surface. `Semirings()` declares `zero()` and `one()`
+on its object surface and `+` and `*` on its element surface
+([magmas-monoids-semirings.md](magmas-monoids-semirings.md)). One level down, the object
+surface belongs to the category `Ordinals()` and the element surface belongs to the
+objects of `Ordinals()`:
+
+```python
+Ordinals().zero()
+Ordinals().one()
+
+alpha + beta
+alpha * beta
+```
+
+At stage `[1]` the same element surface acts on the morphisms of `Ordinals()`, which is
+the functorial action of the two natural operations.
 
 ### Public ordinal constructors
 
 ```python
-OrdinalSemirings()
 Ordinals()
 
 Ordinals()(value)
@@ -78,7 +79,7 @@ omega0
 
 `Ordinals()(value)` accepts:
 
-- An existing `Ordinal`.
+- An existing `OrdinalObject`.
 
 - A nonnegative Python `int`.
 
@@ -117,23 +118,24 @@ The private expression model supports:
 
 ### `Ordinals()` API
 
-The parent supplies:
+The category supplies the two variadic natural operations:
 
 ```python
 O = Ordinals()
-
-O.zero()
-O.one()
 
 O.natural_sum(*ordinals)
 O.natural_product(*ordinals)
 ```
 
-`Ordinals()` is cached.
+`O.zero()` and `O.one()` arrive on the same surface through the point functor.
+
+`Ordinals()` is one cached category. Construction is cached by expression.
+Reconstructing an equal expression returns the same ordinal object.
 
 ### Natural arithmetic
 
-Python `+` and `*` mean Hessenberg natural operations:
+Python `+` and `*` are the semiring operations: the Hessenberg natural sum and the
+Hessenberg natural product.
 
 ```python
 alpha + beta
@@ -169,7 +171,8 @@ Natural product:
 
 - Sorts symbolic factors.
 
-The implementation does not define `**` as natural ordinal exponentiation.
+Ordinal exponentiation is `alpha.ordinal_power(beta)`. `**` keeps the categorical
+meaning fixed by `POL-CAT-088`.
 
 ### Ordinary ordinal arithmetic
 

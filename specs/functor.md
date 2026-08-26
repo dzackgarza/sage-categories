@@ -10,6 +10,7 @@
 - [Property resolution](#property-resolution)
 - [Inclusion functors](#inclusion-functors)
 - [Structural inheritance](#structural-inheritance)
+- [Point categories and point functors](#point-categories-and-point-functors)
 - [Functor construction and presentation data](#functor-construction-and-presentation-data)
 - [Products, coproducts, and component functors](#products-coproducts-and-component-functors)
 - [Diagram shapes and universal constructions](#diagram-shapes-and-universal-constructions)
@@ -175,7 +176,10 @@ subcategory `P` of `Mor(K)`: `P(A, B)` is `Mor(K)(A, B).P()`, one cached object.
   `L(2, 1)`, the free category on `0 -> 1 -> 2`, contains the composite `0 -> 2` and is
   the walking composable pair `[2]`, so `Cat().Horn(2, 1) is Cat().Simplex(2)`;
 - `Cat().WalkingIsomorphism()`: two objects and two mutually inverse morphisms;
-- `Cat().WalkingParallelPair()`: two objects and two parallel morphisms.
+- `Cat().WalkingParallelPair()`: two objects and two parallel morphisms;
+- `Cat().Point(X)`, written `{X}`: the one-object category on a distinguished object
+  `X`, one per `X`; see
+  [Point categories and point functors](#point-categories-and-point-functors).
 
 Two calls return one object by identity. No construction creates a second terminal
 object, simplex, or walking structure.
@@ -371,6 +375,91 @@ whose stage is exactly `G_C`. A selected structural functor that exposes the tar
 classical element methods retains a stage comparison `G_D -> F(G_C)`. Precomposition
 gives `G_D -> F(G_C) -> F(X)`, a classical element of `F(X)`; this forward direction is
 the only one the kernel uses.
+
+## Point categories and point functors
+
+For a distinguished mathematical object `X`, `Cat().Point(X)`, written `{X}`, is the
+one-object category whose sole object is `X` and whose sole morphism is `1_X`. It is an
+object of `Cat()`, retained once per `X`, and it owns the declarations specific to `X`
+(`POL-CAT-083`).
+
+A **point functor** of `X` is the inclusion of `{X}` into a category `D` that has `X`
+among its objects:
+
+```python
+iota = Fun(Cat().Point(X), D).Faithful().inclusion()
+```
+
+`{X}` has one hom category, so every functor out of it is faithful. A point functor is
+full exactly when `X` has no nonidentity endomorphism in `D`; a construction that
+establishes this states it by building the functor in `Fun({X}, D).FullyFaithful()`.
+
+The endpoint pair selects the category `Fun({X}, D)`, as for every other functor. The
+distinguished object `X` is the construction data. `X` retains the category placement it
+already has; each point functor states one further placement of `X` as an object of `D`.
+
+`{X}` selects its point functors by the ordinary declaration:
+
+```python
+# Cat().Point(X)
+def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
+    return (Fun(self, D).Faithful().inclusion(),)
+```
+
+A point functor is a selected structural functor under exactly this declaration and
+under no other. Like every entry, it contributes inherited public methods through
+selection alone (`POL-FUN-003`), it is an ordinary object of `Fun`, and its
+generalized-element action is derived from its morphism action (`POL-FUN-002`). The
+compiler reaches it through composition in `Cat` with the rest of the structural graph.
+
+### The level shift
+
+Take the distinguished object to be a category `C`. Then `{C}` has one object at the
+`Cat()` level, while `C` has its own objects and morphisms one level below. The compiled
+surface follows that difference from `Cat().ElementType`, which is already the role
+"generalized element of a category": a functor `T -> C`, refined by `C.ObjectType` at
+stage `1` and by `C.MorphismType` at stage `[1]`.
+
+A selected point functor `{C} -> D` therefore compiles as:
+
+| Surface of `D` | Surface it supplies |
+| --- | --- |
+| `D.ObjectType` | the category `C` itself, a `Cat().ObjectType` value |
+| `D.ElementType` at stage `1` | `C.ObjectType`, the objects of `C` |
+| `D.ElementType` at stage `[1]` | `C.MorphismType`, the morphisms of `C` |
+| `D.MorphismType` | `{C}.MorphismType`, whose sole value is `1_C` |
+
+The shift is the stage clause of `Cat().ElementType` applied to one object. It adds no
+second inheritance mechanism, no route normalization, and no propagation registry. `C`
+remains an object of `Cat()`, `{C}` remains a distinct object of `Cat()`, and
+`C.structure_functors()` continues to state the structure of `C` as a category.
+
+### Ordinals as a semiring
+
+An ordinal is an object of `Ordinals()` ([ordinals.md](ordinals.md)). The commutative
+semiring of ordinals under the Hessenberg operations is the point functor of
+`Ordinals()` into `Semirings()`:
+
+```python
+# Cat().Point(Ordinals())
+def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
+    return (Fun(self, Semirings()).Faithful().inclusion(),)
+```
+
+`Semirings()` declares `zero()` and `one()` on its object surface and `+` and `*` on its
+element surface ([magmas-monoids-semirings.md](magmas-monoids-semirings.md)). The level
+shift places each one level down:
+
+```python
+Ordinals().zero()          # the object surface, on the category
+Ordinals().one()
+
+alpha + beta               # the element surface at stage 1, on objects of Ordinals()
+alpha * beta
+```
+
+At stage `[1]` the same element surface acts on the morphisms of `Ordinals()`, which is
+the functorial action of the natural sum and natural product.
 
 ## Functor construction and presentation data
 
@@ -671,7 +760,11 @@ The compiler uses `structure_functors()` as its sole structural graph. It must:
    [resolution.md](resolution.md);
 9. canonicalize repeated construction of the same declared functor;
 10. derive inherited methods from these paths;
-11. derive subobject-of-product component functors by composition.
+11. derive subobject-of-product component functors by composition;
+12. install the compiled roles of a point category `{X}` on its distinguished object:
+    `{X}.ObjectType` on the value `X`, and `{X}.ElementType` on the generalized elements
+    of `X`, which for a category `X = C` are `C.ObjectType` at stage `1` and
+    `C.MorphismType` at stage `[1]`.
 
 Natural transformations are trusted constructions, never compiler proofs. There is no
 route normalization, route scoring, or preservation registry.
@@ -711,6 +804,7 @@ transformations; here it is `Mor(Cat())(C, D)`. Repository endpoint application
 | `CategoryTheory.Functor C D` | `Cat().MorphismType` with domain `C` and codomain `D` |
 | `C ⥤ D` | `Mor(Cat())(C, D)` or `Fun(C, D)` |
 | `Functor.id C` | `Fun(C, C).Equivalences().identity()` |
+| `Functor.fromPUnit X` | the point functor of `X`, an object of `Fun(Cat().Point(X), D)` |
 | `ObjectProperty.FullSubcategory P` | the property subcategory `C.P()` |
 | `ObjectProperty.ι P` | `Fun(C.P(), C).FullyFaithful().inclusion()` |
 | inclusion induced by `P -> Q` | `Fun(C.P(), C.Q()).FullyFaithful().inclusion()` |
@@ -734,6 +828,14 @@ Mathlib's `ConcreteCategory` contains a fixed faithful functor to `Type` as extr
 structure. Its `HasForget₂ C D` class also contains a chosen functor `C -> D`; it does
 not derive one from the endpoints. See
 [ConcreteCategory.Forget](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ConcreteCategory/Forget.html).
+
+Mathlib's `Functor.fromPUnit X : Discrete PUnit ⥤ C` sends the punctual category to a
+chosen object, and `Functor.equiv` states the equivalence
+`(Discrete PUnit ⥤ C) ≌ C`. See
+[PUnit](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/PUnit.html).
+Here `Cat().Point(X)` names its sole object `X` and owns the declarations specific to
+`X`, so the corresponding functor is an inclusion rather than a constant functor from an
+anonymous point.
 
 Mathlib defines `Prod.fst` and `Prod.snd` separately. See
 [Products.Basic](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Products/Basic.html).
@@ -767,6 +869,9 @@ is kernel infrastructure over already established mathematical functors.
 - Slice and coslice categories are pullbacks of `ev_1` and `ev_0` along the chosen object and retain their pullback projections.
 - Fibration and opfibration structure retains its cartesian or cocartesian lifts.
 - Kan extensions retain their units, counits, and universally induced natural transformations.
+- `Cat().Point(X)`, written `{X}`, is the one-object category on a distinguished object `X`, retained once per `X`.
+- A point functor is the inclusion `{X} -> D`, constructed through `Fun({X}, D)` and selected in `{X}.structure_functors()`.
+- A selected point functor `{C} -> D` supplies `D`'s object surface to the category `C`, and `D`'s element surface to `C.ObjectType` at stage `1` and `C.MorphismType` at stage `[1]`.
 - Every selected structural functor is an ordinary object of `Fun`.
 - `structure_functors()` affects method compilation only.
 - The compiler derives structural paths only through composition in `Cat`.

@@ -1,11 +1,11 @@
-"""The method compiler: catalogues, routes, and dynamic role classes (D07, D11, D12).
+"""The method compiler: catalogues, routes, and dynamic role classes (POL-CAT-016, POL-CAT-012, POL-KERNEL-001).
 
 The selected graph is ``structure_functors()`` alone.  Its nodes are pairs
 ``(category, role)``; the node ``(Mor(C), object)`` *is* the node ``(C, morphism)``
-(D03: one implementation type, one value, two placements), which
+(POL-CAT-021: one implementation type, one value, two placements), which
 ``Category.role_source`` normalizes.  A route is a simple directed path of steps
 ``(functor, role at the step's source)``; the graph reachable from a category is a
-finite DAG, asserted at compile time (D11).
+finite DAG, asserted at compile time (POL-CAT-012).
 
 Method catalogue of a node (``specs/resolution.md``):
 
@@ -18,7 +18,7 @@ Method catalogue of a node (``specs/resolution.md``):
 The compiled role class is a Sage dynamic class (``sage.structure.dynamic_class``):
 bases are the local role class followed by the codomain role classes of the
 selected functors, and the surface holds one forwarding descriptor per inherited
-name.  Method compilation constructs no value image (D12).
+name.  Method compilation constructs no value image (POL-KERNEL-001).
 """
 
 from __future__ import annotations
@@ -181,7 +181,8 @@ def empty_local_role(category: Category, role: Role) -> type[CategoryPoint]:
     """A local role class that declares nothing, on the kernel base of the ambient's role."""
     ambient_node = node(category.ambient(), role)
     ambient_class = ambient_node.category.role_class(ambient_node.role)
-    base = next(klass for klass in ambient_class.__mro__ if klass in (kernel_base(Role.OBJECT), kernel_base(Role.ELEMENT), kernel_base(Role.MORPHISM)))
+    kernel_bases = (kernel_base(Role.OBJECT), kernel_base(Role.ELEMENT), kernel_base(Role.MORPHISM), CategoryPoint)
+    base = next(klass for klass in ambient_class.__mro__ if klass in kernel_bases)
     return type(f"{category!r}.{role.value}", (base,), {})
 
 

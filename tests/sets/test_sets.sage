@@ -1,9 +1,9 @@
 """``Sets()``: rule-defined sets, finite enumerations, maps, isomorphisms, and cardinals.
 
-Oracles: the definitions of D01 (exact cardinal or ``Unknown``), D08 (inclusions map
-by identity), D09 (monomorphisms of sets are the injective maps: Mathlib
-``CategoryTheory.mono_iff_injective``), and D17 (equality handlers on their declared
-domains).
+Oracles: a cardinality is exact or ``Unknown`` (POL-ASSUME-004); an inclusion maps
+by identity (POL-FUN-027); monomorphisms of sets are the injective maps (Mathlib
+``CategoryTheory.mono_iff_injective``); equality handlers decide on their declared
+domains (POL-MATH-034, POL-MATH-042).
 """
 
 import pytest
@@ -23,6 +23,7 @@ def test_finite_sets_declare_one_inclusion_and_receive_the_set_surface() -> None
     successor = Mor(Sets().Finite())(triple, triple)(lambda datum: int(4) + (datum - int(3)) % int(3))
 
     assert inclusion in Fun(Sets().Finite(), Sets()).FullyFaithful()
+    assert inclusion is Fun(Sets().Finite(), Sets()).FullyFaithful().inclusion()
     assert inclusion.on_object(triple) is triple
     assert inclusion.on_morphism(successor) is successor
     assert inclusion.on_element(five) is five
@@ -36,6 +37,12 @@ def test_finite_sets_declare_one_inclusion_and_receive_the_set_surface() -> None
     assert all(any(ask(point == triple.point(datum)) is True for point in points) for datum in (int(4), int(5), int(6)))
     assert ask(successor(five) == triple.point(int(6))) is True
     assert successor in Mor(Sets())
+
+
+def test_a_finite_enumeration_lists_distinct_members() -> None:
+    assert ask(Sets().Finite()((int(1), int(2))).cardinality() == int(2)) is True
+    with pytest.raises(AssertionError):
+        Sets().Finite()((int(1), int(1)))
 
 
 def test_a_rule_defined_set_needs_no_enumeration_and_equals_itself_only() -> None:

@@ -1,4 +1,4 @@
-"""Functors, ``Fun = Mor(Cat())``, and natural transformations (D04, D05, D08, D09).
+"""Functors, ``Fun = Mor(Cat())``, and natural transformations (POL-FUN-001, POL-FUN-017, POL-FUN-027, POL-FUN-024).
 
 A functor is a morphism of ``Cat()``: a ``Cat().MorphismType`` value with a domain,
 a codomain, and total object and morphism actions (Mathlib
@@ -22,14 +22,14 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from sage.structure.coerce_dict import MonoDict
+from sage.structure.coerce_dict import MonoDict, TripleDict
 
 from sage_categories.cat import category as _category
 from sage_categories.cat.category import Assignment, Category, CategoryOfCategories, OnMorphism, OnObject
 from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategory
 from sage_categories.cat.properties import FixedEndpointProperty, PropertySubcategory
 from sage_categories.kernel.predicates import AppliedPredicate
-from sage_categories.kernel.refinement import is_placed, place, refine
+from sage_categories.kernel.refinement import is_placed, is_retained_inclusion, refine
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
 
 if TYPE_CHECKING:
@@ -39,7 +39,7 @@ __all__ = ["Fun", "Functor", "FunctorCategory", "FunctorProperty", "FunctorsCate
 
 
 def identity_on_values(value: CategoryPoint) -> CategoryPoint:
-    """The object and morphism action of every inclusion: the identity on the shared values (D08)."""
+    """The object and morphism action of every inclusion: the identity on the shared values (POL-FUN-027)."""
     return value
 
 
@@ -74,16 +74,17 @@ class Functor(MorphismOfCategory):
         return self._on_morphism(morphism)
 
     def on_element(self, element: ElementOfObject) -> ElementOfObject:
-        """The image of a generalized element ``t: T -> X``: the element with defining morphism ``F(t)`` (D05).
+        """The image of a generalized element ``t: T -> X``: the element with defining morphism ``F(t)`` (POL-FUN-002).
 
         A classical element whose stage is not an object of the domain belongs to the
-        subcategory's objects only through its ambient; an inclusion maps it to the
-        same value (D06: a subcategory without the ambient's stage receives classical
-        element operations through the inclusion image).
+        subcategory's objects only through its ambient; the retained inclusion maps
+        it to the same value (``specs/functor.md``, "Inclusion functors": a subcategory
+        without the ambient's stage receives classical element operations through the
+        inclusion image).  No other functor has an action on it.
         """
         defining = element.defining_morphism()
         if element.stage() not in self.domain():
-            assert self._on_object is identity_on_values, f"{element!r} is not a generalized element in {self.domain()!r}"
+            assert is_retained_inclusion(self), f"{element!r} is not a generalized element in {self.domain()!r}"
             return element
         image = self.on_morphism(defining)
         if image is defining:
@@ -144,13 +145,12 @@ class FunctorProperty(FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]
     """``Fun(C, D).P()``: functors ``C -> D`` with property ``P``; owns ``inclusion()`` and ``identity()``."""
 
     def inclusion(self) -> Functor:
-        """The identity-on-value inclusion of the domain into the codomain, asserted to have ``P`` (D08)."""
+        """The identity-on-value inclusion of the domain into the codomain, asserted to have ``P`` (POL-FUN-027, POL-MATH-037)."""
         functors = self.category().morphism_category(1)
         source, target = self._ambient.domain(), self._ambient.codomain()
         roots = self.narrowing_roots()
         if any(root is functors.FullyFaithful() for root in roots):
             inclusion = functors.full_inclusion(source, target)
-            source.declare_full_subcategory(target)
         else:
             assert any(root is functors.Faithful() for root in roots), f"an inclusion is faithful or fully faithful, not {self!r}"
             inclusion = functors.faithful_inclusion(source, target)
@@ -162,7 +162,7 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
     """``Fun(C, D)``: functors ``C -> D`` and their natural transformations.
 
     As the category of diagrams of shape ``C`` in ``D`` it retains its evaluation
-    functors and constant diagrams (``cat/diagrams.py``, D10, D16).
+    functors and constant diagrams (``cat/diagrams.py``, POL-FUN-029).
     """
 
     def __init__(self, morphisms: MorphismCategory, domain: Category, codomain: Category) -> None:
@@ -171,7 +171,7 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
         self._constant_values: MonoDict = MonoDict()
         super().__init__(morphisms, domain, codomain)
 
-    # -- diagrams (D10, D16) -----------------------------------------------------
+    # -- diagrams (POL-FUN-029) -----------------------------------------------------
 
     def evaluation(self, vertex: ObjectOfCategory) -> Functor:
         """``ev_i: Fun(I, C) -> C``, the evaluation at the object ``i`` of the shape."""
@@ -199,7 +199,7 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
 
         return from_object_rule(self, rule)
 
-    # -- functor properties (D09) -----------------------------------------------
+    # -- functor properties (POL-FUN-024) -----------------------------------------------
 
     def Full(self) -> Category:
         return self.property_subcategory(self.ambient().Full())
@@ -229,12 +229,26 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     def __init__(self, base: CategoryOfCategories) -> None:
         self._bootstrapping = False
         self._bootstrapped = False
+        # One inclusion per ``(source, target)``, constructed once and retained by
+        # identity (POL-FUN-027); "``F`` is an inclusion" is decided against this table.
+        self._inclusions: TripleDict = TripleDict(weak_values=False)
         super().__init__(base)
 
     def fixed_endpoint_type(self) -> type[FunctorCategory]:
         return FunctorCategory
 
-    # -- the functor property categories (D09) -----------------------------------
+    def _symbolic_inverse_(self, transformation: NaturalTransformation) -> NaturalTransformation:
+        """The componentwise inverse of a natural transformation placed in ``Mor(Fun).Isomorphisms()``.
+
+        A natural transformation is an isomorphism exactly when every component is
+        (Mathlib ``CategoryTheory.NatIso.isIso_of_isIso_app`` and
+        ``NatTrans.isIso_iff_isIso_app``, ``Mathlib/CategoryTheory/NatIso.lean``;
+        inspected 2026-08-27), and its inverse has components ``(eta_X)⁻¹``.
+        """
+        source, target = transformation.domain(), transformation.codomain()
+        return self.morphism_category(1)(target, source).Isomorphisms()(lambda member_object: transformation.component(member_object).inverse())
+
+    # -- the functor property categories (POL-FUN-024) -----------------------------------
 
     def _bootstrap(self) -> None:
         """Build the five functor property categories and place their inclusions."""
@@ -282,16 +296,27 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     def Equivalences(self) -> Category:
         return self._functor_property("Equivalences")
 
-    # -- inclusions (D08) ---------------------------------------------------------
+    # -- inclusions (POL-FUN-027) ---------------------------------------------------------
 
     def _inclusion(self, source: Category, target: Category, placement_name: str) -> Functor:
-        """The identity-on-value inclusion ``source -> target`` placed in a functor property."""
+        """The one identity-on-value inclusion ``source -> target``, placed in the declared functor property."""
         if not self._bootstrapped and not self._bootstrapping:
             self._bootstrap()
-        inclusion = self._base.construct_morphism(source, target, identity_on_values, identity_on_values)
+        key = (source, target, self)
+        if key not in self._inclusions:
+            self._inclusions[key] = self._base.construct_morphism(source, target, identity_on_values, identity_on_values)
+        inclusion = self._inclusions[key]
         if self._bootstrapped:
-            place(inclusion, self._properties[placement_name])
+            refine(inclusion, self._properties[placement_name])
         return inclusion
+
+    def retains_inclusion(self, source: Category, target: Category) -> bool:
+        return (source, target, self) in self._inclusions
+
+    def inclusion_of(self, source: Category, target: Category) -> Functor:
+        """The retained inclusion ``source -> target``."""
+        assert (source, target, self) in self._inclusions, f"no inclusion {source!r} -> {target!r} was declared"
+        return self._inclusions[source, target, self]
 
     def full_inclusion(self, source: Category, target: Category) -> Functor:
         """The inclusion of a full subcategory: fully faithful by construction (Mathlib ``ObjectProperty.ι``)."""

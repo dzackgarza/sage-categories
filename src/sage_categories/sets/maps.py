@@ -1,11 +1,11 @@
-"""``Sets().MorphismType``: total maps by rule (D03, D09, D17, POL-SET-002/019).
+"""``Sets().MorphismType``: total maps by rule (POL-SET-002/019, POL-SET-026, POL-FUN-024).
 
 ``Mor(Sets())(X, Y)(rule)`` constructs a total map from a rule on private data;
 the constructor trusts totality and codomain closure (POL-MATH-037).  ``f(x)``
 requires ``x in X`` and returns a point of ``Y``.  The exact handlers this module
 owns, each on its declared decidable domain (POL-MATH-042):
 
-- equality of two maps with one finite enumerable domain, pointwise (D17);
+- equality of two maps with one finite enumerable domain, pointwise (POL-MATH-034);
 - injectivity and surjectivity of a map with finite enumerable domain and codomain,
   registered on ``Mor(Sets()).Monomorphisms()`` and ``.Epimorphisms()`` because in
   ``Sets()`` monomorphisms are the injective maps and epimorphisms the surjective

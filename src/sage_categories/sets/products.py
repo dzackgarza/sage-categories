@@ -1,4 +1,4 @@
-"""``Sets()`` products and coproducts over discrete shapes, with their cardinality case trees (D16, POL-SET-013/020/021).
+"""``Sets()`` products and coproducts over discrete shapes, with their cardinality case trees (POL-SET-013/020/021).
 
 The product of ``D: Discrete(S) -> Sets()`` is the set of ``S``-indexed families
 ``i |-> x_i`` with ``x_i in D(i)``, a point given by a rule on the index data and
@@ -12,8 +12,8 @@ inspected 2026-08-26).  When the index set and every factor carry a chosen
 enumeration, the apex is constructed through ``Sets().Finite()`` and retains
 its enumeration.
 
-Cardinality is a computational case tree routed on the retained data (D16,
-POL-MATH-042), each case citing its theorem (all Mathlib, inspected 2026-08-26):
+Cardinality is a computational case tree routed on the retained data
+(POL-MATH-042), each case citing its theorem (all Mathlib, inspected 2026-08-26):
 
 - a finite enumerated index with every factor cardinality exact gives the exact
   product (``Cardinal.mk_pi`` with ``Cardinal.prod`` over a finite type,
@@ -27,7 +27,8 @@ POL-MATH-042), each case citing its theorem (all Mathlib, inspected 2026-08-26):
   points, so ``2 ** #S <= prod`` (``Cardinal.prod_le_prod``) and ``#S < 2 ** #S``
   (``Cardinal.cantor``) with ``aleph0 <= #S``;
 - a finite index with codomain in ``Sets().Countable()`` places the product in
-  ``Sets().Countable()`` (``instCountableForallOfFinite``);
+  ``Sets().Countable()`` (the instance ``[Finite α] [∀ a, Countable (π a)] :
+  Countable (∀ a, π a)`` of ``Mathlib/Data/Countable/Basic.lean``);
 - otherwise ``Unknown``.
 
 Coproducts use the dual sums: an enumerated index with every cofactor exact gives
@@ -36,7 +37,8 @@ diagram at ``X`` gives ``(#S) * (#X)`` (``Cardinal.sum_const'``); an infinite
 index with codomain in ``Sets().Uncountable()`` places the coproduct in
 ``Sets().Uncountable()`` (``Cardinal.le_sum``: a cofactor injects); a countable
 index with codomain in ``Sets().Countable()`` places it in ``Sets().Countable()``
-(``instCountableSigma``); otherwise ``Unknown``.  The empty-factor case of
+(the instance ``[Countable α] [∀ a, Countable (π a)] : Countable (Sigma π)`` of
+``Mathlib/Data/Countable/Basic.lean``); otherwise ``Unknown``.  The empty-factor case of
 products has no nontrivial dual: an empty cofactor contributes ``0`` to an exact
 sum.
 """
@@ -67,7 +69,7 @@ __all__ = ["Family", "coproduct_of_sets", "product_of_sets"]
 class Family:
     """The private datum of a point of a product: an indexed family of data by rule.
 
-    This is private computation data, not an owned value (D17 governs owned
+    This is private computation data, not an owned value (POL-SET-026 governs owned
     values).  Two families over one finitely enumerated index set compare
     componentwise, exactly, and then hash by the tuple of components, so equal
     families hash equal; over any other index set equality is ``Unknown`` except on
@@ -154,14 +156,17 @@ def _cardinal_product(cardinalities: tuple[CardinalObject, ...]) -> CardinalObje
     return product
 
 
-def _product_placements(diagram: Functor, index_set: SetObject, enumerated: bool) -> tuple[_sets.Category, ...]:
+def _product_placements(diagram: Functor, index_set: SetObject) -> tuple[_sets.Category, ...]:
     """The property categories the product enters by its case tree."""
     sets = _sets.Sets()
     if ask(index_set.is_infinite()) is True and is_subcategory(diagram.codomain(), sets.Uncountable()):
         # Cardinal.prod_le_prod with Cardinal.cantor: 2 ** #S <= prod and #S < 2 ** #S.
         return (sets.Uncountable(),)
-    if enumerated and is_subcategory(diagram.codomain(), sets.Countable()):
-        # instCountableForallOfFinite: a finite product of countable sets is countable.
+    if ask(index_set.is_finite()) is True and is_subcategory(diagram.codomain(), sets.Countable()):
+        # A product of countably many countable sets over a finite index is countable:
+        # Mathlib ``instance [Finite α] [∀ a, Countable (π a)] : Countable (∀ a, π a)``
+        # (``Mathlib/Data/Countable/Basic.lean``; inspected 2026-08-27).  Finiteness of
+        # the index is what the instance needs, not a chosen enumeration.
         return (sets.Countable(),)
     return ()
 
@@ -194,8 +199,8 @@ def product_of_sets(diagram: Functor) -> SetObject:
         choices = itertools.product(*(finite.chosen_enumeration(factor) for factor in factors))
         apex = finite(Family(index_set, dict(zip(enumeration, choice)).__getitem__) for choice in choices)
     else:
-        apex = sets.ObjectType(sets, membership_rule, _product_cardinality(diagram, index_set, factors))
-        for placement in _product_placements(diagram, index_set, enumerated):
+        apex = sets.rule_valued(membership_rule, _product_cardinality(diagram, index_set, factors))
+        for placement in _product_placements(diagram, index_set):
             refine(apex, placement)
 
     projections: MonoDict = MonoDict()
@@ -243,7 +248,9 @@ def _coproduct_placements(diagram: Functor, index_set: SetObject) -> tuple[_sets
         # Cardinal.le_sum: an uncountable cofactor injects into the coproduct.
         return (sets.Uncountable(),)
     if ask(index_set.is_countable()) is True and is_subcategory(diagram.codomain(), sets.Countable()):
-        # instCountableSigma: a countable union of countable sets is countable.
+        # A countable union of countable sets is countable: Mathlib ``instance [Countable α]
+        # [∀ a, Countable (π a)] : Countable (Sigma π)`` (``Mathlib/Data/Countable/Basic.lean``;
+        # inspected 2026-08-27).
         return (sets.Countable(),)
     return ()
 

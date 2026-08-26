@@ -1,4 +1,4 @@
-"""The equality predicate owned by every category (D17).
+"""The equality predicate owned by every category (POL-MATH-034, POL-SET-026).
 
 Every owned category owns one equality predicate for its objects, its morphisms,
 and the elements of its objects.  ``a == b`` on an owned value applies it and

@@ -54,7 +54,7 @@ class RationalsCategory(Category[[Rule], []]):
 
     def __init__(self) -> None:
         super().__init__()
-        # #QQ = aleph0: Mathlib ``Cardinal.mkRat`` (Mathlib.Data.Rat.Cardinal; inspected 2026-08-26).
+        # #QQ = aleph0: Mathlib ``Cardinal.mkRat : #ℚ = ℵ₀`` (``Mathlib/SetTheory/Cardinal/Rat.lean``; inspected 2026-08-27).
         self._rationals = self.ObjectType(self, _is_rational, aleph0)
 
     def structure_functors(self) -> tuple[Functor, ...]:

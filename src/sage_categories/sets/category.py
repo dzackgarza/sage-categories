@@ -1,4 +1,4 @@
-"""``Sets()``: the category of sets and total maps (D01, D15, D16, D17).
+"""``Sets()``: the category of sets and total maps (POL-SET-002, POL-CAT-083, POL-SET-013, POL-SET-026).
 
 ``Sets()`` owns arbitrary sets and arbitrary functions.  Its objects are
 rule-defined (``sets/objects.py``), its elements are points ``1 -> X`` at the
@@ -28,7 +28,8 @@ from sage_categories.kernel.decisions import Decision, Unknown, decision_not
 from sage_categories.kernel.predicates import ask
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import Role
-from sage_categories.sets.cardinals import Cardinal
+from sage_categories.kernel.decisions import UnknownClass
+from sage_categories.sets.cardinals import Cardinal, CardinalObject
 from sage_categories.sets.elements import Datum, SetPoint, points_equal
 from sage_categories.sets.maps import (
     Rule,
@@ -60,6 +61,10 @@ class FiniteSets(PropertySubcategory[[Rule], []]):
             refine(members, self)
             return members
         enumeration = tuple(members)
+        # An enumeration lists each member once: its length is the cardinality (POL-SET-011/027).
+        for position, first in enumerate(enumeration):
+            for second in enumeration[position + 1 :]:
+                assert (first == second) is False, f"the enumeration lists {first!r} and {second!r}, which are not exactly distinct"
         finite_set = self.ObjectType(self, enumeration)
         self._enumerations[finite_set] = enumeration
         return finite_set
@@ -82,8 +87,8 @@ class SetsCategory(Category[[Rule], []]):
 
     def __init__(self) -> None:
         self._canonical: dict[tuple[str, tuple[int, ...]], SetObject] = {}
-        self._inverses: MonoDict = MonoDict()
         self._constructions: dict[str, Category] = {}
+        self._rule_valued: MonoDict = MonoDict()
         super().__init__()
         self._equality.register_handler(points_equal)
         self._equality.register_handler(maps_equal)
@@ -91,8 +96,8 @@ class SetsCategory(Category[[Rule], []]):
         infinite = PropertySubcategory(self, "Infinite", {}, ())
         finite = FiniteSets(self, "Finite", {Role.OBJECT: FiniteSetRole}, (countable,))
         uncountable = PropertySubcategory(self, "Uncountable", {}, (infinite,))
-        # A known cardinality decides finiteness and countability (D01); established
-        # placement in the complementary property decides the negation (D16).
+        # A known cardinality decides finiteness and countability (``specs/cardinality.md``); established
+        # placement in the complementary property decides the negation (``specs/sets.md``, "Cardinality and enumeration").
         finite.predicate().register_handler(self._finite_by_cardinality)
         finite.predicate().register_handler(lambda ambient: False if ambient in infinite else Unknown)
         countable.predicate().register_handler(self._countable_by_cardinality)
@@ -110,6 +115,21 @@ class SetsCategory(Category[[Rule], []]):
     def __call__(self, membership_rule: MembershipRule) -> SetObject:
         """``Sets()(rule)``: the set defined by a membership rule on data, with no cardinal data."""
         return self.ObjectType(self, membership_rule, Unknown)
+
+    def rule_valued(self, membership_rule: MembershipRule, cardinality: CardinalObject | UnknownClass) -> SetObject:
+        """A set whose data are rules (families, names of maps): its points are retained per datum object.
+
+        The constructions that create such data (products over an unenumerated
+        index, function sets, colimit representatives) construct their apex here, so
+        ``X.point(datum)`` on it is ``X.rule_point(datum)``.
+        """
+        rule_valued = self.ObjectType(self, membership_rule, cardinality)
+        self._rule_valued[rule_valued] = rule_valued
+        return rule_valued
+
+    def points_by_rule(self, member_object: SetObject) -> bool:
+        """Whether ``member_object`` was constructed through ``rule_valued``."""
+        return member_object in self._rule_valued
 
     def Finite(self) -> FiniteSets:
         return self._properties["Finite"]
@@ -172,79 +192,55 @@ class SetsCategory(Category[[Rule], []]):
         if not inverse_rule:
             return forward
         (backward_rule,) = inverse_rule
-        self._retain_inverses(forward, self.MorphismType(morphisms, codomain, domain, backward_rule))
+        self.retain_inverses(forward, self.MorphismType(morphisms, codomain, domain, backward_rule))
         return forward
 
-    def _retain_inverses(self, forward: SetMap, backward: SetMap) -> None:
-        """Record two maps as mutually inverse and place both in ``Isomorphisms()``."""
-        self._inverses[forward] = backward
-        self._inverses[backward] = forward
-        isomorphisms = self.morphism_category(1).Isomorphisms()
-        refine(forward, isomorphisms)
-        refine(backward, isomorphisms)
-
     def construct_identity(self, member_object: SetObject) -> SetMap:
-        identity = self.MorphismType(self.morphism_category(1), member_object, member_object, lambda datum: datum)
-        self._retain_inverses(identity, identity)
-        return identity
+        return self.MorphismType(self.morphism_category(1), member_object, member_object, lambda datum: datum)
 
     def composite(self, second: SetMap, first: SetMap) -> SetMap:
         morphisms = self.morphism_category(1)
         assert first in morphisms and second in morphisms
         assert first.codomain() is second.domain(), f"{second!r} after {first!r} is not composable"
-        composite = self.MorphismType(morphisms, first.domain(), second.codomain(), lambda datum: second._rule(first._rule(datum)))
-        if first in self._inverses and second in self._inverses:
-            first_inverse, second_inverse = self._inverses[first], self._inverses[second]
-            inverse = self.MorphismType(morphisms, second.codomain(), first.domain(), lambda datum: first_inverse._rule(second_inverse._rule(datum)))
-            self._retain_inverses(composite, inverse)
-        return composite
+        return self.MorphismType(morphisms, first.domain(), second.codomain(), lambda datum: second._rule(first._rule(datum)))
 
     def inverse_morphism(self, morphism: SetMap) -> SetMap:
-        """The inverse of an isomorphism (D09).
-
-        The retained inverse when the construction supplied one; else the exact inverse
-        of a bijection out of a finite enumerable set; else the owned symbolic inverse,
-        whose equations hold by placement in ``Isomorphisms()`` and whose evaluation
-        has no executable rule.
-        """
-        if morphism in self._inverses:
-            return self._inverses[morphism]
+        """The inverse of an isomorphism: the generic retained inverse, else the exact inverse of a
+        bijection out of a finite enumerable set (POL-MATH-042), else the symbolic inverse."""
         finite = self.Finite()
         domain, codomain = morphism.domain(), morphism.codomain()
-        if finite.has_chosen_enumeration(domain):
+        if morphism not in self._inverses and finite.has_chosen_enumeration(domain):
             preimages = {morphism._rule(datum): datum for datum in finite.chosen_enumeration(domain)}
-            self._retain_inverses(morphism, self.MorphismType(self.morphism_category(1), codomain, domain, lambda datum: preimages[datum]))
-            return self._inverses[morphism]
+            self.retain_inverses(morphism, self.MorphismType(self.morphism_category(1), codomain, domain, lambda datum: preimages[datum]))
+        return super().inverse_morphism(morphism)
 
+    def _symbolic_inverse_(self, morphism: SetMap) -> SetMap:
         def no_rule(datum: Datum) -> Datum:
             assert False, f"the inverse of {morphism!r} has no executable rule; its equations hold by placement in Isomorphisms()"
 
-        symbolic = self.MorphismType(self.morphism_category(1), codomain, domain, no_rule)
-        self._retain_inverses(morphism, symbolic)
-        refine(symbolic, self.morphism_category(1)(codomain, domain).Isomorphisms())
-        return symbolic
+        return self.morphism_category(1)(morphism.codomain(), morphism.domain()).Isomorphisms()(no_rule)
 
-    # -- owned constructions (D16; ``sets/products.py``, ``sets/exponentials.py``) ---
+    # -- owned constructions (POL-SET-013; ``sets/products.py``, ``sets/exponentials.py``) ---
 
     def limit_construction(self, shape: Category) -> Callable[[Functor], SetObject]:
-        """Products over ``Discrete(S)``; general limits by compatible families arrive with the limits unit."""
+        """Products over ``Discrete(S)``; ``Sets()`` owns no other limit construction yet."""
         from sage_categories.cat.shapes import is_discrete
         from sage_categories.sets.products import product_of_sets
 
         assert is_discrete(shape), (
-            f"Sets owns no {shape!r}-limit construction in this unit: only products over Discrete(S); "
-            "general limits as sets of compatible families belong to Unit B; supply universal data"
+            f"Sets owns no {shape!r}-limit construction: only products over Discrete(S); "
+            "the limit as the set of compatible families is not yet owned; supply universal data"
         )
         return product_of_sets
 
     def colimit_construction(self, shape: Category) -> Callable[[Functor], SetObject]:
-        """Coproducts over ``Discrete(S)``; general colimits by quotients arrive with the limits unit."""
+        """Coproducts over ``Discrete(S)``; ``Sets()`` owns no other colimit construction yet."""
         from sage_categories.cat.shapes import is_discrete
         from sage_categories.sets.products import coproduct_of_sets
 
         assert is_discrete(shape), (
-            f"Sets owns no {shape!r}-colimit construction in this unit: only coproducts over Discrete(S); "
-            "general colimits as quotients of coproducts belong to Unit B; supply universal data"
+            f"Sets owns no {shape!r}-colimit construction: only coproducts over Discrete(S); "
+            "the colimit as a quotient of the coproduct is not yet owned; supply universal data"
         )
         return coproduct_of_sets
 
@@ -268,6 +264,13 @@ class SetsCategory(Category[[Rule], []]):
 
         assert exponent in self and base in self
         return evaluation_morphism(exponent, base)
+
+    def transpose(self, set_map: SetMap) -> SetMap:
+        """The transpose ``Z -> Y ** X`` of a map ``Z * X -> Y`` out of a chosen binary product, retained per map."""
+        from sage_categories.sets.exponentials import transpose
+
+        assert set_map in self.morphism_category(1)
+        return transpose(set_map)
 
     # -- exact routes (POL-MATH-042) --------------------------------------------------
 

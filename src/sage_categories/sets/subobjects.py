@@ -167,6 +167,15 @@ class ChosenSubsetsCategory(PropertySubcategory[[Rule], []]):
         subset = self.ObjectType(self, rule, cardinality)
         return self._retain_inclusion(subset, base_set)
 
+    def from_enumeration(self, base_set: SetObject, members: tuple[Datum, ...]) -> SetObject:
+        """The chosen subset of ``X`` with the given finite enumeration of member data, each admitted by ``X``."""
+        sets = _sets.Sets()
+        assert base_set in sets, f"{base_set!r} is not an object of {sets!r}"
+        assert all(base_set._membership_rule(member) is not False for member in members), f"{members!r} are not all members of {base_set!r}"
+        subset = sets.Finite()(members)
+        refine(subset, self)
+        return self._retain_inclusion(subset, base_set)
+
     def characteristic_morphism_of(self, subset: SetObject) -> SetMap:
         """``chi_A``, retained per chosen subset."""
         if subset not in self._characteristics:

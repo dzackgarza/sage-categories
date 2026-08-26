@@ -43,6 +43,7 @@ from sage_categories.sets.objects import FiniteSetRole, MembershipRule, SetObjec
 
 if TYPE_CHECKING:
     from sage_categories.cat.functors import Functor
+    from sage_categories.sets.finite_subsets import FiniteSubsetsCategory, FinitelySupportedFunctionsCategory, SizedSubsetsCategory
     from sage_categories.sets.power_objects import PowerObjectsCategory
     from sage_categories.sets.subobjects import ChosenQuotientsCategory, ChosenSubsetsCategory
 
@@ -284,6 +285,31 @@ class SetsCategory(Category[[Rule], []]):
         if "PowerObjects" not in self._constructions:
             self._constructions["PowerObjects"] = PowerObjectsCategory(self)
         return self._constructions["PowerObjects"]
+
+    def FiniteSubsets(self) -> FiniteSubsetsCategory:
+        """The narrowing of the sets of finite subsets ``FiniteSubsets()(X)`` (``sets/finite_subsets.py``)."""
+        from sage_categories.sets.finite_subsets import FiniteSubsetsCategory
+
+        if "FiniteSubsets" not in self._constructions:
+            self._constructions["FiniteSubsets"] = FiniteSubsetsCategory(self)
+        return self._constructions["FiniteSubsets"]
+
+    def SubsetsOfSize(self, size: int) -> SizedSubsetsCategory:
+        """``Sets().SubsetsOfSize(k)``, one narrowing per ``k``, whose constructor ``(X)`` is the set of subsets of ``X`` of size ``k``."""
+        from sage_categories.sets.finite_subsets import SizedSubsetsCategory
+
+        name = f"SubsetsOfSize({size})"
+        if name not in self._constructions:
+            self._constructions[name] = SizedSubsetsCategory(self, size)
+        return self._constructions[name]
+
+    def FinitelySupportedFunctions(self) -> FinitelySupportedFunctionsCategory:
+        """The narrowing of the finitely supported function sets ``X^(S)`` (``sets/finite_subsets.py``)."""
+        from sage_categories.sets.finite_subsets import FinitelySupportedFunctionsCategory
+
+        if "FinitelySupportedFunctions" not in self._constructions:
+            self._constructions["FinitelySupportedFunctions"] = FinitelySupportedFunctionsCategory(self)
+        return self._constructions["FinitelySupportedFunctions"]
 
     def name_of(self, set_map: SetMap) -> SetPoint:
         """The point of ``Y ** X`` naming a map ``X -> Y``."""

@@ -74,6 +74,33 @@ class ObjectOfCategory(CategoryPoint):
     def identity(self) -> MorphismOfCategory:
         return self._category.identity_morphism(self)
 
+    # The universal binary operators, defined once and delegating to the
+    # category-owned constructions (D02, POL-CAT-088).  Two operands must share
+    # one construction family: ``X.category()`` may be a property refinement of
+    # ``Y.category()``, and both then use the products of their common base.
+
+    def __mul__(self, other: ObjectOfCategory) -> ObjectOfCategory:
+        """``X * Y = C.Products()((X, Y))``."""
+        products = self._category.Products()
+        assert products is other.category().Products(), f"{self!r} and {other!r} have no common product family"
+        return products((self, other))
+
+    def __add__(self, other: ObjectOfCategory) -> ObjectOfCategory:
+        """``X + Y = C.Coproducts()((X, Y))``."""
+        coproducts = self._category.Coproducts()
+        assert coproducts is other.category().Coproducts(), f"{self!r} and {other!r} have no common coproduct family"
+        return coproducts((self, other))
+
+    def __matmul__(self, other: ObjectOfCategory) -> ObjectOfCategory:
+        """``X @ Y``: the biproduct, where the category declares one."""
+        assert self._category.Products() is other.category().Products(), f"{self!r} and {other!r} have no common biproduct family"
+        return self._category.biproduct(self, other)
+
+    def __pow__(self, exponent: ObjectOfCategory) -> ObjectOfCategory:
+        """``Y ** X``: the exponential object, where the category is declared cartesian closed."""
+        assert self._category.Products() is exponent.category().Products(), f"{self!r} and {exponent!r} have no common exponential family"
+        return self._category.exponential(exponent, self)
+
     def __eq__(self, candidate: Any) -> AppliedPredicate:
         return self._category.equality()(self, candidate)
 

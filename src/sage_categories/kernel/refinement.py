@@ -22,7 +22,7 @@ from sage_categories.kernel.roles import CategoryPoint, Role, role_of
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
 
-__all__ = ["is_placed", "place", "refine"]
+__all__ = ["is_placed", "is_subcategory", "place", "refine"]
 
 
 def is_placed(candidate: Any, category: Category) -> bool:
@@ -39,17 +39,18 @@ def place(value: CategoryPoint, category: Category) -> None:
     value.__class__ = compiler.node(category, Role.OBJECT).category.role_class(compiler.node(category, Role.OBJECT).role)
 
 
-def _is_subcategory(inner: Category, outer: Category) -> bool:
+def is_subcategory(inner: Category, outer: Category) -> bool:
+    """Whether ``outer`` is reachable from ``inner`` through selected functors on objects."""
     outer_node = compiler.node(outer, Role.OBJECT)
     return any(compiler.same_node(outer_node, found) for found in compiler.reachable(compiler.node(inner, Role.OBJECT)))
 
 
 def _join(current: Category, target: Category) -> Category:
     """The intersection of two placements: the narrower base, narrowed by both root sets."""
-    if _is_subcategory(target, current):
+    if is_subcategory(target, current):
         return target
     current_base, target_base = current.narrowing_base(), target.narrowing_base()
-    base = current_base if _is_subcategory(current_base, target_base) else target_base
+    base = current_base if is_subcategory(current_base, target_base) else target_base
     return base.intersection((*current.narrowing_roots(), *target.narrowing_roots()))
 
 

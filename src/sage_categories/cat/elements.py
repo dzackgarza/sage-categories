@@ -10,13 +10,9 @@ alone does not separate functors, ``[1]`` does.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
+from sage_categories.cat.category import Category
+from sage_categories.cat.functors import Functor
 from sage_categories.kernel.roles import CategoryPoint as KernelCategoryPoint
-
-if TYPE_CHECKING:
-    from sage_categories.cat.category import Category
-    from sage_categories.cat.functors import Functor
 
 __all__ = ["CategoryPoint"]
 

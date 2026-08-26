@@ -5,8 +5,9 @@ from importlib.metadata import version as _distribution_version
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Cat, Fun
 from sage_categories.cat.morphisms import Mor
+from sage_categories.cat.shapes import Discrete, Thin
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
-from sage_categories.kernel.predicates import ask, assume
+from sage_categories.kernel.predicates import Predicate, ask, assume
 from sage_categories.number_sets import NN, QQ, RR, ZZ, Primes
 from sage_categories.ordinals import Ordinals, omega0
 from sage_categories.sets.cardinals import Cardinal, aleph0, continuum
@@ -21,11 +22,14 @@ __all__ = [
     "Cat",
     "Category",
     "Decision",
+    "Discrete",
     "Fun",
     "Mor",
     "Ordinals",
+    "Predicate",
     "Primes",
     "Sets",
+    "Thin",
     "Unknown",
     "UnknownClass",
     "__version__",

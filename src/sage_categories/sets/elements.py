@@ -13,7 +13,7 @@ from collections.abc import Hashable
 from typing import TYPE_CHECKING, Any
 
 from sage_categories.kernel.decisions import Decision, Unknown
-from sage_categories.kernel.roles import ElementOfObject, Role, role_of
+from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, Role, role_of
 
 if TYPE_CHECKING:
     from sage_categories.kernel.roles import MorphismOfCategory
@@ -37,10 +37,10 @@ class SetPoint(ElementOfObject):
         return f"{self._datum!r} in {self.parent()!r}"
 
 
-def points_equal(first: Any, second: Any) -> Decision:
+def points_equal(first: CategoryPoint, candidate: Any) -> Decision:
     """Two points of one set are equal exactly when their data are (the engine comparison is exact)."""
-    if role_of(first) is not Role.ELEMENT or role_of(second) is not Role.ELEMENT:
+    if role_of(first) is not Role.ELEMENT or role_of(candidate) is not Role.ELEMENT:
         return Unknown
-    if first.parent() is not second.parent():
+    if first.parent() is not candidate.parent():
         return Unknown
-    return first._datum == second._datum
+    return first._datum == candidate._datum

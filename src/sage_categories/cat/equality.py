@@ -12,12 +12,13 @@ from typing import Any
 
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import Predicate
+from sage_categories.kernel.roles import CategoryPoint
 
 __all__ = ["equality_predicate"]
 
 
-def _identity(first: Any, second: Any) -> Decision:
-    if first is second:
+def _identity(first: CategoryPoint, candidate: Any) -> Decision:
+    if first is candidate:
         return True
     return Unknown
 

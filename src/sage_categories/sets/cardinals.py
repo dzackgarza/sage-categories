@@ -34,13 +34,13 @@ from sage_categories.cat.category import Category
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.decisions import Decision, Unknown, decision_and, decision_not
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask
-from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory, role_of
+from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, role_of
 
 __all__ = ["Cardinal", "CardinalObject", "aleph0", "continuum"]
 
 # A private expression key: nested tuples of strings and integers only, so caches
 # and hashes never compare owned values.
-type Key = tuple[Any, ...]
+type Key = tuple[str | int | Key, ...]
 
 
 class CardinalObject(ObjectOfCategory):
@@ -131,7 +131,7 @@ at_most = Predicate("cardinal_at_most", 2, True)
 less_than = Predicate("cardinal_less_than", 2, True)
 
 
-class CardinalCategory(Category):
+class CardinalCategory(Category[[], []]):
     """The skeletal category of cardinal representatives; morphisms arrive with the skeletal inclusion."""
 
     ObjectType = CardinalObject
@@ -278,13 +278,15 @@ class CardinalCategory(Category):
                 return False
         return all(self._is_countable(term) is True for term in cardinal.terms())
 
-    def _equal(self, first: Any, second: Any) -> Decision:
+    def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
         if first not in self:
             return Unknown
-        if second not in self:
-            if role_of(second) is not None:
-                return Unknown
-            second = self(second)
+        if candidate in self:
+            second = candidate
+        elif role_of(candidate) is None:
+            second = self(candidate)
+        else:
+            return Unknown
         if first._key == second._key:
             return True
         if self._at_most(first, second) is False or self._at_most(second, first) is False:

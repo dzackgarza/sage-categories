@@ -19,7 +19,7 @@ inclusion into ``C`` derives ``D.P()`` as the narrowing of ``C.P()`` to ``D``
 from __future__ import annotations
 
 import itertools
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from sage_categories.cat.category import Category, member
 from sage_categories.kernel.compiler import empty_local_role
@@ -28,7 +28,7 @@ from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, Role
 
 if TYPE_CHECKING:
-    from sage_categories.cat.functors import Functor
+    from sage_categories.cat.functors import Functor, FunctorsCategory
 
 __all__ = [
     "FixedEndpointProperty",
@@ -39,37 +39,43 @@ __all__ = [
 ]
 
 
-class FullSubcategory(Category):
+def _functors() -> FunctorsCategory:
+    from sage_categories.cat.functors import Fun
+
+    return Fun
+
+
+class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, TwoMorphismData]):
     """A full subcategory of an ambient category, declared by its inclusion.
 
     Its morphisms, identities, and composites are those of the ambient between its
     objects; ``Category`` supplies them from the recorded ambient (D08).
     """
 
-    def __init__(self, ambient: Category) -> None:
+    def __init__(self, ambient: Category[MorphismData, TwoMorphismData]) -> None:
         self._ambient = ambient
         self._inclusion_ambient = (ambient,)
         super().__init__()
 
-    def ambient(self) -> Category:
+    def ambient(self) -> Category[MorphismData, TwoMorphismData]:
         return self._ambient
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
         return empty_local_role(self, role)
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        return (self.category().morphism_category(1).full_inclusion(self, self._ambient),)
+        return (_functors().full_inclusion(self, self._ambient),)
 
 
 _ordinals = itertools.count()
 
 
-class PropertySubcategory(FullSubcategory):
+class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):
     """``C.P()``: the full subcategory of ``C`` on the objects satisfying ``P``."""
 
     def __init__(
         self,
-        ambient: Category,
+        ambient: Category[MorphismData, TwoMorphismData],
         name: str,
         roles: dict[Role, type[CategoryPoint]],
         implications: tuple[Category, ...],
@@ -107,7 +113,7 @@ class PropertySubcategory(FullSubcategory):
 
     def structure_functors(self) -> tuple[Functor, ...]:
         """The inclusion into the ambient, then one inclusion per recorded implication (D09)."""
-        functors = self.category().morphism_category(1)
+        functors = _functors()
         return (
             functors.full_inclusion(self, self._ambient),
             *(functors.full_inclusion(self, implied) for implied in self._implications),
@@ -131,14 +137,14 @@ class PropertySubcategory(FullSubcategory):
         return f"{self._ambient!r}.{self._name}()"
 
 
-class NarrowedProperty(FullSubcategory):
+class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):
     """``D.P().Q()...``: the objects of ``D`` satisfying each of the root properties.
 
     It is a full subcategory of ``D``, of each root, and of the same narrowing of
     ``D``'s ambient when ``D`` is itself a full subcategory (POL-CAT-084).
     """
 
-    def __init__(self, ambient: Category, roots: tuple[PropertySubcategory, ...]) -> None:
+    def __init__(self, ambient: Category[MorphismData, TwoMorphismData], roots: tuple[PropertySubcategory, ...]) -> None:
         self._roots = roots
         super().__init__(ambient)
 
@@ -154,7 +160,7 @@ class NarrowedProperty(FullSubcategory):
         return root.predicate()
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        functors = self.category().morphism_category(1)
+        functors = _functors()
         return (
             functors.full_inclusion(self, self._ambient),
             *(functors.full_inclusion(self, root) for root in self._roots),
@@ -177,15 +183,14 @@ class NarrowedProperty(FullSubcategory):
         return f"{self._ambient!r}." + ".".join(f"{root.name()}()" for root in self._roots)
 
 
-class FixedEndpointProperty(NarrowedProperty):
+class FixedEndpointProperty[**MorphismData, **TwoMorphismData](NarrowedProperty[TwoMorphismData, []]):
     """``Mor(C)(A, B).P()``: constructs a morphism ``A -> B`` with property ``P``, or refines one."""
 
-    def __call__(self, *construction_data: Any) -> MorphismOfCategory:
-        match construction_data:
-            case (value,) if value in self._ambient:
-                refine(value, self)
-                return value
-        morphism = self._ambient(*construction_data)
+    def __call__(self, *args: MorphismData.args, **kwargs: MorphismData.kwargs) -> MorphismOfCategory:
+        if len(args) == 1 and not kwargs and args[0] in self._ambient:
+            refine(args[0], self)
+            return args[0]
+        morphism = self._ambient(*args, **kwargs)
         refine(morphism, self)
         return morphism
 

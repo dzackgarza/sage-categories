@@ -31,7 +31,7 @@ from typing import Any
 from sage_categories.cat.category import Category
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
+from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
 
 __all__ = [
     "FinitePresentedCategory",
@@ -75,7 +75,7 @@ class Path(MorphismOfCategory):
         return " then ".join(self._word)
 
 
-class FinitePresentedCategory(Category):
+class FinitePresentedCategory(Category[[Word], []]):
     """The category presented by finitely many vertices, generators, and rewriting relations."""
 
     ObjectType = Vertex
@@ -101,7 +101,7 @@ class FinitePresentedCategory(Category):
 
     def generator(self, name: str) -> Path:
         source, target = self._generator_endpoints[name]
-        return self.construct_morphism(self(source), self(target), name)
+        return self.construct_morphism(self(source), self(target), (name,))
 
     def _reduce(self, word: Word) -> Word:
         reduced = word
@@ -117,15 +117,15 @@ class FinitePresentedCategory(Category):
             else:
                 return reduced
 
-    def construct_morphism(self, domain: Vertex, codomain: Vertex, *generators: str) -> Path:
+    def construct_morphism(self, domain: Vertex, codomain: Vertex, word: Word) -> Path:
         """The path along the named generators, reduced modulo the relations."""
         position = self.label(domain)
-        for name in generators:
+        for name in word:
             source, target = self._generator_endpoints[name]
             assert source == position, f"{name} does not start at {position!r}"
             position = target
         assert position == self.label(codomain), f"the path ends at {position!r}, not at {codomain!r}"
-        path = self.MorphismType(self.morphism_category(1), domain, codomain, self._reduce(generators))
+        path = self.MorphismType(self.morphism_category(1), domain, codomain, self._reduce(word))
         # A word in generators with declared inverses is invertible by construction.
         if path.word() and all(name in self._inverse_generators() for name in path.word()):
             refine(path, self.morphism_category(1).Isomorphisms())
@@ -149,13 +149,13 @@ class FinitePresentedCategory(Category):
     def inverse_morphism(self, morphism: Path) -> Path:
         """The inverse of a path whose generators each have a declared inverse generator."""
         inverses = self._inverse_generators()
-        return self.construct_morphism(morphism.codomain(), morphism.domain(), *(inverses[name] for name in reversed(morphism.word())))
+        return self.construct_morphism(morphism.codomain(), morphism.domain(), tuple(inverses[name] for name in reversed(morphism.word())))
 
-    def _paths_equal(self, first: Any, second: Any) -> Decision:
+    def _paths_equal(self, first: CategoryPoint, candidate: Any) -> Decision:
         morphisms = self.morphism_category(1)
-        if first not in morphisms or second not in morphisms:
+        if first not in morphisms or candidate not in morphisms:
             return Unknown
-        return first.domain() is second.domain() and first.codomain() is second.codomain() and first.word() == second.word()
+        return first.domain() is candidate.domain() and first.codomain() is candidate.codomain() and first.word() == candidate.word()
 
     def __repr__(self) -> str:
         return self._name

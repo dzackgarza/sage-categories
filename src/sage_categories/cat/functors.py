@@ -23,7 +23,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from sage_categories.cat import category as _category
-from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.category import Assignment, Category, CategoryOfCategories, OnMorphism, OnObject
 from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategory
 from sage_categories.cat.properties import FixedEndpointProperty, PropertySubcategory
 from sage_categories.kernel.predicates import AppliedPredicate
@@ -49,8 +49,8 @@ class Functor(MorphismOfCategory):
         category: Category,
         domain: Category,
         codomain: Category,
-        on_object: Callable[[ObjectOfCategory], ObjectOfCategory],
-        on_morphism: Callable[[MorphismOfCategory], MorphismOfCategory],
+        on_object: OnObject,
+        on_morphism: OnMorphism,
     ) -> None:
         super().__init__(category, domain, codomain)
         self._on_object = on_object
@@ -117,7 +117,7 @@ class NaturalTransformation(MorphismOfCategory):
         category: Category,
         source: Functor,
         target: Functor,
-        assignment: Callable[[ObjectOfCategory], MorphismOfCategory],
+        assignment: Assignment,
     ) -> None:
         super().__init__(category, source, target)
         self._assignment = assignment
@@ -133,7 +133,7 @@ class NaturalTransformation(MorphismOfCategory):
         return f"NaturalTransformation({self.domain()!r} => {self.codomain()!r})"
 
 
-class FunctorProperty(FixedEndpointProperty):
+class FunctorProperty(FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]]):
     """``Fun(C, D).P()``: functors ``C -> D`` with property ``P``; owns ``inclusion()`` and ``identity()``."""
 
     def inclusion(self) -> Functor:
@@ -151,7 +151,7 @@ class FunctorProperty(FixedEndpointProperty):
         return inclusion
 
 
-class FunctorCategory(FixedEndpointCategory):
+class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]]):
     """``Fun(C, D)``: functors ``C -> D`` and their natural transformations."""
 
     def Full(self) -> Category:
@@ -169,14 +169,14 @@ class FunctorCategory(FixedEndpointCategory):
     def Equivalences(self) -> Category:
         return self.property_subcategory(self.ambient().Equivalences())
 
-    def narrowing_type(self) -> type[Category]:
+    def narrowing_type(self) -> type[FunctorProperty]:
         return FunctorProperty
 
     def __repr__(self) -> str:
         return f"Fun({self.domain()!r}, {self.codomain()!r})"
 
 
-class FunctorsCategory(MorphismCategory):
+class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     """``Fun = Mor(Cat())``."""
 
     def __init__(self, base: CategoryOfCategories) -> None:
@@ -184,7 +184,7 @@ class FunctorsCategory(MorphismCategory):
         self._bootstrapped = False
         super().__init__(base)
 
-    def fixed_endpoint_type(self) -> type[FixedEndpointCategory]:
+    def fixed_endpoint_type(self) -> type[FunctorCategory]:
         return FunctorCategory
 
     # -- the functor property categories (D09) -----------------------------------

@@ -17,12 +17,16 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import sage_categories.kernel.compiler as compiler
 from sage_categories.kernel.caches import canonical_images
 from sage_categories.kernel.roles import CategoryPoint, Role, role_of
 from sage_categories.kernel.signatures import ArgumentRole, Signature, declared_signature
+
+if TYPE_CHECKING:
+    from sage_categories.cat.category import Category
+    from sage_categories.cat.functors import Functor
 
 __all__ = [
     "ForwardedElementMethod",
@@ -45,7 +49,7 @@ def placement_node(value: CategoryPoint) -> compiler.Node:
     raise AssertionError(f"{value!r} is not an owned value")
 
 
-def _apply(functor: Any, step_role: Role, value: CategoryPoint) -> CategoryPoint:
+def _apply(functor: Functor, step_role: Role, value: CategoryPoint) -> CategoryPoint:
     # The action is the one ``Cat()`` declares on its morphism role, invoked directly:
     # a functor placed in a property subcategory of ``Fun`` reaches the same declaration
     # through an identity-on-value inclusion, so the value is the same (D08).
@@ -97,7 +101,9 @@ def transport(value: CategoryPoint, target: compiler.Node) -> CategoryPoint:
     return image
 
 
-def _transport_argument(argument: Any, argument_role: ArgumentRole, owner: Any) -> Any:
+def _transport_argument(argument: Any, argument_role: ArgumentRole, owner: Category) -> Any:
+    # ``argument`` is whatever the caller passed to the inherited method (D13 decides its
+    # role at runtime); it is returned unchanged unless it is an owned value with a route.
     role = role_of(argument) if argument_role is ArgumentRole.POINT else Signature.transported_role(argument_role)
     if role is None or role_of(argument) is not role:
         return argument

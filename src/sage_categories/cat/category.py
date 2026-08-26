@@ -7,6 +7,11 @@ and ``MorphismType`` (POL-CAT-002/057).  ``Category`` owns the universal surface
 construction dispatch, membership, the ``Mor(n, C)`` tower, identities and
 composition, the equality predicate, and property narrowing (POL-CAT-084).
 
+A category is generic over the data of its morphism constructor (``MorphismData``:
+``Sets()`` takes a rule, ``Cat()`` an object action and a morphism action) and of its
+2-morphism constructor (``TwoMorphismData``: empty for a 1-category, a component
+assignment for ``Cat()``).  ``Mor(K)(A, B)(*data)`` is typed by ``MorphismData``.
+
 ``Cat()`` is an object of ``Cat()`` by the stated runtime convention: size is
 outside the model, and no kernel operation quantifies over, enumerates, or scans
 the objects of ``Cat()``.  The singleton is constructed once, before any other
@@ -16,25 +21,32 @@ category, with no structural graph; its ``category()`` is itself.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 from sage.structure.coerce_dict import MonoDict
 
 import sage_categories.kernel.compiler as compiler
 from sage_categories.cat.equality import equality_predicate
 from sage_categories.kernel.decisions import Unknown
-from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask
+from sage_categories.kernel.predicates import Predicate, Proposition, ask
 from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory, Role
 
 if TYPE_CHECKING:
     from sage_categories.cat.canonical import FinitePresentedCategory
-    from sage_categories.cat.functors import Functor, NaturalTransformation
+    from sage_categories.cat.functors import Functor, FunctorsCategory, NaturalTransformation
     from sage_categories.cat.morphisms import MorphismCategory
 
-__all__ = ["Cat", "Category", "CategoryOfCategories", "member"]
+__all__ = ["Assignment", "Cat", "Category", "CategoryOfCategories", "OnMorphism", "OnObject", "member"]
 
 logger = logging.getLogger("sage_categories")
+
+# The construction data of ``Cat()``: a functor's actions and a natural
+# transformation's component assignment (D05).
+type OnObject = Callable[[ObjectOfCategory], ObjectOfCategory]
+type OnMorphism = Callable[[MorphismOfCategory], MorphismOfCategory]
+type Assignment = Callable[[ObjectOfCategory], MorphismOfCategory]
 
 # ``member(x, C)``: ``x`` is an object of ``C``.  For a plain category the
 # proposition is decided by established placement alone (POL-CAT-068/073); a
@@ -43,22 +55,24 @@ member = Predicate("member", 2, False)
 member.register_handler(is_placed)
 
 
-class Category(ObjectOfCategory):
+class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     """The local ``Cat().ObjectType``: the universal surface of every category."""
 
     # The ambient category when this category was declared a full subcategory by
     # ``Fun(self, T).FullyFaithful().inclusion()`` (D08); empty otherwise.
-    _inclusion_ambient: tuple[Category, ...] = ()
+    _inclusion_ambient: tuple[Category[MorphismData, TwoMorphismData], ...] = ()
 
     def __init__(self) -> None:
         self._initialize(Cat())
 
-    def _initialize(self, universe: Category) -> None:
+    def _initialize(self, universe: Category[[OnObject, OnMorphism], [Assignment]]) -> None:
         ObjectOfCategory.__init__(self, universe)
-        self._morphism_categories: dict[int, MorphismCategory] = {}
-        self._narrowings: dict[tuple[int, ...], Category] = {}
+        self._morphism_categories: dict[int, MorphismCategory[MorphismData, TwoMorphismData]] = {}
+        self._narrowings: dict[tuple[int, ...], Category[MorphismData, TwoMorphismData]] = {}
         self._identities: MonoDict = MonoDict()
-        self._properties: dict[str, Category] = {}
+        self._points: MonoDict = MonoDict()
+        self._arrows: MonoDict = MonoDict()
+        self._properties: dict[str, Category[MorphismData, TwoMorphismData]] = {}
         self._catalogues: dict[Role, dict[str, compiler.Entry]] = {}
         self._equality = equality_predicate()
         compiler.compile_category(self)
@@ -70,12 +84,28 @@ class Category(ObjectOfCategory):
         return ()
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
-        return getattr(type(self), role.value)
+        """The local role declaration: the nested class of this category's Python class."""
+        match role:
+            case Role.OBJECT:
+                return type(self).ObjectType
+            case Role.ELEMENT:
+                return type(self).ElementType
+            case Role.MORPHISM:
+                return type(self).MorphismType
+        raise AssertionError(role)
 
     def role_class(self, role: Role) -> type[CategoryPoint]:
-        return getattr(self, role.value)
+        """The compiled role class installed on this category by the kernel."""
+        match role:
+            case Role.OBJECT:
+                return self.ObjectType
+            case Role.ELEMENT:
+                return self.ElementType
+            case Role.MORPHISM:
+                return self.MorphismType
+        raise AssertionError(role)
 
-    def role_source(self, role: Role) -> tuple[Category, Role]:
+    def role_source(self, role: Role) -> tuple[Category[MorphismData, TwoMorphismData], Role]:
         return self, role
 
     def catalogues(self) -> dict[Role, dict[str, compiler.Entry]]:
@@ -87,11 +117,11 @@ class Category(ObjectOfCategory):
     def selected_functors(self) -> tuple[Functor, ...]:
         return self._selected_functors
 
-    def inclusion_ambient(self) -> tuple[Category, ...]:
+    def inclusion_ambient(self) -> tuple[Category[MorphismData, TwoMorphismData], ...]:
         """The ambient category when this category is declared as a full subcategory."""
         return self._inclusion_ambient
 
-    def declare_full_subcategory(self, ambient: Category) -> None:
+    def declare_full_subcategory(self, ambient: Category[MorphismData, TwoMorphismData]) -> None:
         """Record the declaration ``Fun(self, ambient).FullyFaithful().inclusion()`` (D08)."""
         if not any(ambient is declared for declared in self._inclusion_ambient):
             self._inclusion_ambient = (*self._inclusion_ambient, ambient)
@@ -115,7 +145,26 @@ class Category(ObjectOfCategory):
 
     # -- the Mor(n, C) tower ----------------------------------------------------
 
-    def morphism_category(self, level: int) -> Category:
+    @overload
+    def morphism_category(self, level: Literal[0]) -> Category[MorphismData, TwoMorphismData]: ...
+
+    @overload
+    def morphism_category(self, level: Literal[1]) -> MorphismCategory[MorphismData, TwoMorphismData]: ...
+
+    @overload
+    def morphism_category(self, level: Literal[2]) -> MorphismCategory[TwoMorphismData, []]: ...
+
+    @overload
+    def morphism_category(self, level: int) -> MorphismCategory[[], []]: ...
+
+    def morphism_category(
+        self, level: int
+    ) -> (
+        Category[MorphismData, TwoMorphismData]
+        | MorphismCategory[MorphismData, TwoMorphismData]
+        | MorphismCategory[TwoMorphismData, []]
+        | MorphismCategory[[], []]
+    ):
         """``Mor(level, self)``: ``Mor(0, C)`` is ``C`` and ``Mor(n + 1, C)`` is ``Mor(Mor(n, C))``."""
         assert level >= 0
         if level == 0:
@@ -126,7 +175,7 @@ class Category(ObjectOfCategory):
             self._morphism_categories[1] = self.morphism_category_type()(self)
         return self._morphism_categories[1]
 
-    def morphism_category_type(self) -> type[MorphismCategory]:
+    def morphism_category_type(self) -> type[MorphismCategory[MorphismData, TwoMorphismData]]:
         from sage_categories.cat.morphisms import MorphismCategory
 
         return MorphismCategory
@@ -165,11 +214,17 @@ class Category(ObjectOfCategory):
             self._identities[member_object] = identity
         return self._identities[member_object]
 
-    def construct_morphism(self, domain: ObjectOfCategory, codomain: ObjectOfCategory, *data: Any) -> MorphismOfCategory:
+    def construct_morphism(
+        self,
+        domain: ObjectOfCategory,
+        codomain: ObjectOfCategory,
+        *args: MorphismData.args,
+        **kwargs: MorphismData.kwargs,
+    ) -> MorphismOfCategory:
         from sage_categories.kernel.refinement import refine
 
         for ambient in self._inclusion_ambient:
-            morphism = ambient.construct_morphism(domain, codomain, *data)
+            morphism = ambient.construct_morphism(domain, codomain, *args, **kwargs)
             refine(morphism, self.morphism_category(1))
             return morphism
         raise AssertionError(f"{self!r} declares no morphism constructor")
@@ -193,52 +248,59 @@ class Category(ObjectOfCategory):
         raise AssertionError(f"{self!r} declares no composition")
 
     def identity_two_morphism(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
-        from sage_categories.cat.morphisms import Mor
         from sage_categories.kernel.refinement import refine
 
         for ambient in self._inclusion_ambient:
             two_cell = ambient.identity_two_morphism(morphism)
-            refine(two_cell, Mor(2, self))
+            refine(two_cell, self.morphism_category(2))
             return two_cell
-        two_cells = Mor(2, self)
+        two_cells = self.morphism_category(2)
         return two_cells.ObjectType(two_cells, morphism)
 
     def compose_two_morphisms(self, second: MorphismOfCategory, first: MorphismOfCategory) -> MorphismOfCategory:
-        from sage_categories.cat.morphisms import Mor
         from sage_categories.kernel.refinement import refine
 
         for ambient in self._inclusion_ambient:
             two_cell = ambient.compose_two_morphisms(second, first)
-            refine(two_cell, Mor(2, self))
+            refine(two_cell, self.morphism_category(2))
             return two_cell
         # A 1-category has identity 2-morphisms only: the composite of two identities is either.
         assert first.domain() is first.codomain() and second.domain() is second.codomain()
         assert first.domain() is second.domain()
         return first
 
-    def construct_two_morphism(self, first: MorphismOfCategory, second: MorphismOfCategory, *data: Any) -> MorphismOfCategory:
-        from sage_categories.cat.morphisms import Mor
+    def construct_two_morphism(
+        self,
+        first: MorphismOfCategory,
+        second: MorphismOfCategory,
+        *args: TwoMorphismData.args,
+        **kwargs: TwoMorphismData.kwargs,
+    ) -> MorphismOfCategory:
         from sage_categories.kernel.refinement import refine
 
         for ambient in self._inclusion_ambient:
-            two_cell = ambient.construct_two_morphism(first, second, *data)
-            refine(two_cell, Mor(2, self))
+            two_cell = ambient.construct_two_morphism(first, second, *args, **kwargs)
+            refine(two_cell, self.morphism_category(2))
             return two_cell
-        assert first is second and not data, f"{self!r} is a 1-category: its only 2-morphisms are identities"
+        assert first is second and not args and not kwargs, f"{self!r} is a 1-category: its only 2-morphisms are identities"
         return self.morphism_category(1).identity_morphism(first)
 
-    # -- points of the category as Cat elements (D06) --------------------------
+    # -- points of the category as Cat elements (D06), retained once (D15) --------
 
     def point_functor(self, member_object: ObjectOfCategory) -> Functor:
         """The stage-``1`` point ``1 -> self`` selecting ``member_object``."""
         from sage_categories.cat.functors import Fun
 
-        return Fun(Cat().Terminal(), self)(lambda vertex: member_object, lambda path: member_object.identity())
+        if member_object not in self._points:
+            self._points[member_object] = Fun(Cat().Terminal(), self)(lambda vertex: member_object, lambda path: member_object.identity())
+        return self._points[member_object]
 
     def arrow_functor(self, morphism: MorphismOfCategory) -> Functor:
         """The stage-``[1]`` point ``[1] -> self`` selecting ``morphism``."""
         from sage_categories.cat.functors import Fun
 
+        if morphism in self._arrows:
+            return self._arrows[morphism]
         walking_arrow = Cat().Simplex(1)
         endpoints = {0: morphism.domain(), 1: morphism.codomain()}
 
@@ -250,7 +312,8 @@ class Category(ObjectOfCategory):
                 return on_object(path.domain()).identity()
             return morphism
 
-        return Fun(walking_arrow, self)(on_object, on_morphism)
+        self._arrows[morphism] = Fun(walking_arrow, self)(on_object, on_morphism)
+        return self._arrows[morphism]
 
     # -- property narrowing (POL-CAT-084) ---------------------------------------
     #
@@ -259,15 +322,15 @@ class Category(ObjectOfCategory):
     # ``D.P().Q()`` the narrowing by ``{P, Q}``.  One object exists per pair, so the
     # same intersection reached in any order is one category (D04, D09).
 
-    def narrowing_base(self) -> Category:
+    def narrowing_base(self) -> Category[MorphismData, TwoMorphismData]:
         """The category this placement narrows; ``self`` when it is no narrowing."""
         return self
 
-    def narrowing_roots(self) -> tuple[Category, ...]:
+    def narrowing_roots(self) -> tuple[Category[MorphismData, TwoMorphismData], ...]:
         """The root properties this placement is narrowed by."""
         return ()
 
-    def intersection(self, roots: tuple[Category, ...]) -> Category:
+    def intersection(self, roots: tuple[Category[MorphismData, TwoMorphismData], ...]) -> Category[MorphismData, TwoMorphismData]:
         """The narrowing of ``self`` by the given root properties, one object per set of roots."""
         ordered = tuple(sorted({root.ordinal(): root for root in roots}.items()))
         if not ordered:
@@ -279,17 +342,17 @@ class Category(ObjectOfCategory):
             self._narrowings[key] = self.narrowing_type()(self, tuple(root for _, root in ordered))
         return self._narrowings[key]
 
-    def property_subcategory(self, property_category: Category) -> Category:
+    def property_subcategory(self, property_category: Category[MorphismData, TwoMorphismData]) -> Category[MorphismData, TwoMorphismData]:
         """``self.P()``: the narrowing of this placement by the roots of ``P`` (POL-CAT-084)."""
         return self.narrowing_base().intersection((*self.narrowing_roots(), *property_category.narrowing_roots()))
 
-    def narrowing_type(self) -> type[Category]:
+    def narrowing_type(self) -> type[Category[MorphismData, TwoMorphismData]]:
         from sage_categories.cat.properties import NarrowedProperty
 
         return NarrowedProperty
 
 
-class CategoryOfCategories(Category):
+class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
     """The singleton ``Cat()``."""
 
     def __init__(self) -> None:
@@ -309,7 +372,7 @@ class CategoryOfCategories(Category):
                 return Functor
         raise AssertionError(role)
 
-    def morphism_category_type(self) -> type[MorphismCategory]:
+    def morphism_category_type(self) -> type[FunctorsCategory]:
         from sage_categories.cat.functors import FunctorsCategory
 
         return FunctorsCategory
@@ -323,8 +386,8 @@ class CategoryOfCategories(Category):
         self,
         domain: Category,
         codomain: Category,
-        on_object: Any,
-        on_morphism: Any,
+        on_object: OnObject,
+        on_morphism: OnMorphism,
     ) -> Functor:
         """``Fun(C, D)(on_object, on_morphism)``: a functor from its total actions (D05)."""
         assert domain in self and codomain in self
@@ -360,7 +423,7 @@ class CategoryOfCategories(Category):
                 refine(composite, property_category)
         return composite
 
-    def construct_two_morphism(self, source: Functor, target: Functor, assignment: Any) -> NaturalTransformation:
+    def construct_two_morphism(self, source: Functor, target: Functor, assignment: Assignment) -> NaturalTransformation:
         """``Mor(Fun(C, D))(F, G)(assignment)``: a natural transformation from a rule (D05)."""
         functors = self.morphism_category(1)
         assert source in functors and target in functors

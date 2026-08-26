@@ -1,8 +1,8 @@
-"""The constructions ``Cat()`` owns (D02): products and coproducts of categories over a discrete shape, the strict pullback, and the exponential.
+"""The constructions ``Cat()`` owns (POL-CAT-050, POL-MATH-037): products and coproducts of categories over a discrete shape, the strict pullback, and the exponential.
 
 Each construction line carries its inspected citation (POL-MATH-040); the
 universal property of each is a trusted declaration attached to the
-constructor (POL-MATH-037, D14).
+constructor (POL-MATH-037, POL-MATH-036).
 
 - The product of an ``S``-indexed family of categories has as objects the
   ``S``-indexed families of objects given by rule and as morphisms the
@@ -19,12 +19,13 @@ constructor (POL-MATH-037, D14).
   morphisms (Mathlib ``CategoryTheory.Cat.HasLimits.limitCone``, whose apex has
   as objects the compatible families of objects; inspected 2026-08-26).  A pair's
   membership is decided by ``ask(F(a) == G(b))``: identity first, ``Unknown`` for
-  two distinct rule-defined sets (D17).
+  two distinct rule-defined sets (POL-MATH-034).
 - The exponential ``D ** C`` is ``Fun(C, D)`` (Mathlib ``CategoryTheory.Cat.exp_obj``;
   inspected 2026-08-26).
 
-``Cat().Limits(I)`` and ``Cat().Colimits(I)`` for any other shape exist and
-constructing an object in them fails loudly in this unit.
+``Cat().Limits(I)`` and ``Cat().Colimits(I)`` for any other shape exist
+(POL-CAT-051); constructing an object in them fails loudly, naming the missing
+owned construction.
 """
 
 from __future__ import annotations
@@ -138,7 +139,7 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
         if "objects" not in self._finite_data:
             diagram = Fun(self.shape(), Sets()).from_object_rule(lambda vertex: self.factor(vertex).object_set())
             self._finite_data["objects"] = Sets().Products()(diagram)
-        return self._finite_data["objects"].apex()
+        return self._finite_data["objects"]
 
     def object_at(self, point: SetPoint) -> FamilyObject:
         self.object_set()
@@ -152,7 +153,7 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
         if "morphisms" not in self._finite_data:
             diagram = Fun(self.shape(), Sets()).from_object_rule(lambda vertex: factor_morphisms[sequence_position(vertex)])
             self._finite_data["morphisms"] = Sets().Products()(diagram)
-        return self._finite_data["morphisms"].apex()
+        return self._finite_data["morphisms"]
 
     def morphism_at(self, point: SetPoint) -> FamilyMorphism:
         product = self._finite_data["morphisms"]
@@ -184,10 +185,6 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
     def composite(self, second: FamilyMorphism, first: FamilyMorphism) -> FamilyMorphism:
         assert first.codomain() is second.domain()
         return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain(), lambda vertex: second.component(vertex) * first.component(vertex))
-
-    def element_from_defining_morphism(self, defining_morphism: FamilyMorphism) -> ElementOfObject:
-        assert defining_morphism in self.morphism_category(1)
-        return self.ElementType(defining_morphism)
 
     def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
         """Two families (of objects or of morphisms) over a finitely enumerated index are equal when every component is."""
@@ -310,10 +307,6 @@ class CoproductCategory(Category[[MorphismOfCategory], []]):
     def composite(self, second: TaggedMorphism, first: TaggedMorphism) -> TaggedMorphism:
         assert first.codomain() is second.domain()
         return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain(), second.morphism() * first.morphism())
-
-    def element_from_defining_morphism(self, defining_morphism: TaggedMorphism) -> ElementOfObject:
-        assert defining_morphism in self.morphism_category(1)
-        return self.ElementType(defining_morphism)
 
     def __repr__(self) -> str:
         return f"Coproduct({self._diagram!r})"
@@ -445,12 +438,12 @@ class PullbackCategory(Category[[tuple[MorphismOfCategory, MorphismOfCategory]],
             pairs = Sets().Products()((first.object_set(), second.object_set()))
 
             def agree(datum: Datum) -> Decision:
-                point = pairs.apex().point(datum)
+                point = pairs.point(datum)
                 left, right = first.object_at(pairs.product_projection(0)(point)), second.object_at(pairs.product_projection(1)(point))
                 return ask(self._first_functor.on_object(left) == self._second_functor.on_object(right))
 
             self._finite_data["objects"] = pairs
-            self._finite_data["object set"] = pairs.apex().subset_from(agree)
+            self._finite_data["object set"] = pairs.subset_from(agree)
         return self._finite_data["object set"]
 
     def object_at(self, point: SetPoint) -> PairObject:
@@ -467,12 +460,12 @@ class PullbackCategory(Category[[tuple[MorphismOfCategory, MorphismOfCategory]],
             pairs = Sets().Products()((first.morphism_set(), second.morphism_set()))
 
             def agree(datum: Datum) -> Decision:
-                point = pairs.apex().point(datum)
+                point = pairs.point(datum)
                 left, right = first.morphism_at(pairs.product_projection(0)(point)), second.morphism_at(pairs.product_projection(1)(point))
                 return ask(self._first_functor.on_morphism(left) == self._second_functor.on_morphism(right))
 
             self._finite_data["morphisms"] = pairs
-            self._finite_data["morphism set"] = pairs.apex().subset_from(agree)
+            self._finite_data["morphism set"] = pairs.subset_from(agree)
         return self._finite_data["morphism set"]
 
     def morphism_at(self, point: SetPoint) -> PairMorphism:
@@ -510,10 +503,6 @@ class PullbackCategory(Category[[tuple[MorphismOfCategory, MorphismOfCategory]],
     def composite(self, second: PairMorphism, first: PairMorphism) -> PairMorphism:
         assert first.codomain() is second.domain()
         return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain(), second.first() * first.first(), second.second() * first.second())
-
-    def element_from_defining_morphism(self, defining_morphism: PairMorphism) -> ElementOfObject:
-        assert defining_morphism in self.morphism_category(1)
-        return self.ElementType(defining_morphism)
 
     def __repr__(self) -> str:
         return f"Pullback({self._first_functor!r}, {self._second_functor!r})"
@@ -571,5 +560,4 @@ def strict_pullback(diagram: Functor, pullback: PullbackCategory) -> ObjectOfCat
         )
 
     lowered = Cat().Pullbacks().lowered(diagram)
-    Cat().Pullbacks().with_universal_data(lowered, pullback, cone(lowered, pullback, lambda vertex: legs[cospan.label(vertex)]), mediator)
-    return Cat().Pullbacks().presentation(lowered)
+    return Cat().Pullbacks().with_universal_data(lowered, pullback, cone(lowered, pullback, lambda vertex: legs[cospan.label(vertex)]), mediator)

@@ -137,25 +137,26 @@ def test_the_slice_is_the_pullback_of_the_codomain_evaluation_along_the_point() 
     assert over.first_functor() is squares.evaluation(arrow(int(1)))
     assert over.second_functor() is Sets().point_functor(three)
     assert over.first_projection().codomain() is squares
-    assert over.projection().domain() is over and over.projection().codomain() is Sets()
+    assert over.fixed_projection().domain() is over and over.fixed_projection().codomain() is Sets()
 
     lifted = over(successor)
     assert lifted in over
     assert over.first_projection().on_object(lifted) is successor
-    assert over.projection().on_object(lifted) is two
+    assert over.fixed_projection().on_object(lifted) is two
     assert successor in over
     assert ask(over.membership_proposition(parity)) is Unknown
     assert parity not in over
     other_three = Sets()(lambda datum: datum in (int(0), int(1), int(2)))
     unrelated = Mor(Sets())(two, other_three)(lambda datum: datum)
     assert ask(over.membership_proposition(unrelated)) is Unknown
-    assert ask(lifted.cardinality() == int(2)) is True
+    assert lifted not in Sets()
+    assert ask(over.fixed_projection().on_object(lifted).cardinality() == int(2)) is True
 
     under = Sets().CosliceUnder(two)
     assert under.first_functor() is squares.evaluation(arrow(int(0)))
     pointed = under(successor)
     assert pointed in under
-    assert under.projection().on_object(pointed) is three
+    assert under.fixed_projection().on_object(pointed) is three
     assert under.first_projection().on_object(pointed) is successor
 
 
@@ -170,7 +171,7 @@ def test_a_generalized_element_is_an_object_of_the_slice_over_its_parent() -> No
     assert point.parent() is three
     assert over(point).first() is point.defining_morphism()
     assert over(point.defining_morphism()) is over(point)
-    assert ask(over(point).cardinality() == int(1)) is True
+    assert over.fixed_projection().on_object(over(point)) is Sets().Terminal()
 
 
 def test_the_codomain_evaluation_lifts_a_map_by_pullback_with_both_projections() -> None:
@@ -192,7 +193,8 @@ def test_the_codomain_evaluation_lifts_a_map_by_pullback_with_both_projections()
     assert lift.component(arrow(int(1))) is include
     assert ask(residue * to_four == include * lifted) is True
     assert ask(lifted.domain().cardinality() == int(3)) is True
-    pullback = Sets().Pullbacks().presentation_of_apex(lifted.domain())
+    pullback = lifted.domain()
+    assert pullback in Sets().Pullbacks()
     assert pullback.diagram().on_object(cospan(int(0))) is four and pullback.diagram().on_object(cospan(int(1))) is two
     assert lifted is pullback.projection(cospan(int(1)))
     assert to_four is pullback.projection(cospan(int(0)))
@@ -209,9 +211,9 @@ def test_the_slice_projection_lifts_a_map_by_precomposition() -> None:
     lift = over.cartesian_lift(double, base)
     assert lift in Mor(over)
     assert lift.codomain() is base
-    assert over.projection().on_morphism(lift) is double
+    assert over.fixed_projection().on_morphism(lift) is double
     lifted = lift.domain()
-    assert over.projection().on_object(lifted) is two
+    assert over.fixed_projection().on_object(lifted) is two
     assert ask(lifted.first() == residue * double) is True
     assert ask(lifted.first()(two.point(int(1))) == three.point(int(2))) is True
 
@@ -219,7 +221,7 @@ def test_the_slice_projection_lifts_a_map_by_precomposition() -> None:
     pointed = under(double)
     colift = under.cocartesian_lift(residue, pointed)
     assert colift.domain() is pointed
-    assert under.projection().on_object(colift.codomain()) is three
+    assert under.fixed_projection().on_object(colift.codomain()) is three
     assert ask(colift.codomain().first() == residue * double) is True
 
 
@@ -233,9 +235,9 @@ def test_a_shared_carrier_pullback_accepts_one_carrier_and_rejects_two() -> None
     assert combined in Cat().Pullbacks()
     assert combined.projection(cospan(int(0))).codomain() is marked
     assert combined.projection(cospan(int(1))).codomain() is subsetted
-    pair = combined.apex()((marked(three, three.point(int(1))), subsetted(three, three.subset_from(lambda datum: datum > int(0)))))
-    assert pair in combined.apex()
+    pair = combined((marked(three, three.point(int(1))), subsetted(three, three.subset_from(lambda datum: datum > int(0)))))
+    assert pair in combined
     assert combined.projection(cospan(int(2))).on_object(pair) is three
     assert combined.projection(cospan(int(0))).on_object(pair).mark() is three.point(int(1))
     with pytest.raises(AssertionError):
-        combined.apex()((marked(three, three.point(int(1))), subsetted(other, other.subset_from(lambda datum: datum > int(0)))))
+        combined((marked(three, three.point(int(1))), subsetted(other, other.subset_from(lambda datum: datum > int(0)))))

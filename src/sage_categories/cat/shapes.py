@@ -1,4 +1,4 @@
-"""Diagram shapes supplied by the kernel: ``Discrete(S)`` and ``Thin(P, leq)`` (D16).
+"""Diagram shapes supplied by the kernel: ``Discrete(S)`` and ``Thin(P, leq)`` (POL-SET-013, POL-SET-014).
 
 ``Discrete`` is a functor ``Sets() -> Cat()`` retained once.  ``Discrete(S)`` is the
 discrete category on the set ``S``: its objects are the classical points of ``S``
@@ -14,8 +14,10 @@ order predicate ``leq``: objects are the points of ``P`` and there is at most on
 morphism ``x -> y``, which exists when ``ask(leq(x, y)) is True`` (Mathlib
 ``Preorder.smallCategory`` and ``Preorder.subsingleton_hom``; inspected
 2026-08-26).  The writer asserts reflexivity and transitivity (POL-MATH-037):
-identities and composites are the unique comparisons.  ``omega = Thin(NN)`` is
-constructed once ``NN`` arrives with the number-set migration.
+identities and composites are the unique comparisons.  The sequential shape
+``omega`` is ``Thin(NN, leq)`` for the natural order of ``NN`` (``specs/sets.md``,
+"General limits and colimits"); ``NN`` is an owned set, and the order predicate
+that makes it a preorder is supplied by the caller of ``Thin``.
 
 Finite presented shapes are ``FinitePresentedCategory`` (``cat/canonical.py``),
 constructed uniformly by ``Cat()(labels, generators, relations)``.
@@ -124,10 +126,6 @@ class DiscreteCategory(Category[[], []]):
     def composite(self, second: DiscreteIdentity, first: DiscreteIdentity) -> DiscreteIdentity:
         assert ask(first.codomain() == second.domain()) is True
         return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain())
-
-    def element_from_defining_morphism(self, defining_morphism: DiscreteIdentity) -> ElementOfObject:
-        assert defining_morphism in self.morphism_category(1)
-        return self.ElementType(defining_morphism)
 
     def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
         """Objects are equal when their points are; morphisms when their domains are."""
@@ -283,10 +281,6 @@ class ThinCategory(Category[[], []]):
     def composite(self, second: Comparison, first: Comparison) -> Comparison:
         assert ask(first.codomain() == second.domain()) is True
         return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain())
-
-    def element_from_defining_morphism(self, defining_morphism: Comparison) -> ElementOfObject:
-        assert defining_morphism in self.morphism_category(1)
-        return self.ElementType(defining_morphism)
 
     def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
         if first in self and candidate in self:

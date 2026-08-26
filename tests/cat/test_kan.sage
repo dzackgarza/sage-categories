@@ -42,7 +42,7 @@ def test_the_comma_category_is_the_pullback_of_the_endpoint_functor_with_the_exp
     assert comma in Cat()
     assert comma_category(inclusion, triangle.point_functor(triangle(int(2)))) is comma
     assert comma.second_functor().domain() is Fun(arrow, triangle)
-    assert comma.first_functor().codomain() is Cat().Products()((triangle, triangle)).apex()
+    assert comma.first_functor().codomain() is Cat().Products()((triangle, triangle))
     objects = list(comma.object_set())
     assert ask(comma.object_set().cardinality() == int(2)) is True
     structures = [comma.object_at(point).second() for point in objects]
@@ -120,11 +120,13 @@ def test_limits_in_a_functor_category_are_computed_pointwise() -> None:
     diagram = Fun(index, squares).from_object_rule(lambda vertex: successor if ask(vertex.point() == two.point(int(0))) is True else constant)
 
     product = squares.Products()(diagram)
-    apex = product.apex()
+    apex = product
     assert apex in squares
+    assert apex in Fun.Products()
     assert ask(apex.on_object(arrow(int(0))).cardinality() == int(4)) is True
     assert ask(apex.on_object(arrow(int(1))).cardinality() == int(9)) is True
-    at_source = Sets().Products().presentation_of_apex(apex.on_object(arrow(int(0))))
+    at_source = apex.on_object(arrow(int(0)))
+    assert at_source in Sets().Products()
     assert at_source.product_projection(index(two.point(int(1)))).codomain() is two
     first = product.product_projection(int(0))
     assert first in Mor(squares)(apex, successor)
@@ -132,5 +134,5 @@ def test_limits_in_a_functor_category_are_computed_pointwise() -> None:
     assert ask(first.component(arrow(int(1))) * apex.on_morphism(arrow.generator("0->1")) == successor * first.component(arrow(int(0)))) is True
 
     coproduct = squares.Coproducts()(diagram)
-    assert ask(coproduct.apex().on_object(arrow(int(1))).cardinality() == int(6)) is True
+    assert ask(coproduct.on_object(arrow(int(1))).cardinality() == int(6)) is True
     assert coproduct.coproduct_injection(int(1)).component(arrow(int(0))).domain() is two

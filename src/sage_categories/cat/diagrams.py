@@ -1,4 +1,4 @@
-"""Diagrams: evaluation functors of ``Fun(I, C)``, constant and discrete diagrams, pointwise limits, and the lifts of ``Fun([1], C)`` (POL-FUN-029, specs/functor.md, "Diagram shapes and universal constructions").
+"""Diagrams: evaluation functors of ``Fun(I, C)``, constant and discrete diagrams (POL-FUN-027, POL-FUN-029, POL-SET-013).
 
 A diagram of shape ``I`` in ``C`` is an object of ``Fun(I, C)``.  ``Fun(I, C)``
 retains one evaluation functor ``ev_i: Fun(I, C) -> C`` per object ``i`` of ``I``,
@@ -43,7 +43,7 @@ from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformatio
 from sage_categories.cat.shapes import Discrete, DiscreteObject, is_discrete
 from sage_categories.kernel.decisions import Decision
 from sage_categories.kernel.predicates import ask
-from sage_categories.kernel.roles import MorphismOfCategory, ObjectOfCategory
+from sage_categories.kernel.roles import ObjectOfCategory
 from sage_categories.sets.category import Sets
 
 if TYPE_CHECKING:
@@ -123,14 +123,14 @@ def square_set(functors: FunctorCategory) -> SetObject:
         quadruples = Sets().Products()((morphisms, morphisms, morphisms, morphisms))
 
         def commutes(datum: Datum) -> Decision:
-            point = quadruples.apex().point(datum)
+            point = quadruples.point(datum)
             f, g, a, b = (base.morphism_at(quadruples.product_projection(position)(point)) for position in range(4))
             if not (a.domain() is f.domain() and a.codomain() is g.domain() and b.domain() is f.codomain() and b.codomain() is g.codomain()):
                 return False
             return ask(g * a == b * f)
 
         functors._finite_data["quadruples"] = quadruples
-        functors._finite_data["squares"] = quadruples.apex().subset_from(commutes)
+        functors._finite_data["squares"] = quadruples.subset_from(commutes)
     return functors._finite_data["squares"]
 
 
@@ -238,7 +238,7 @@ def pointwise_limit(diagram: Functor) -> ObjectOfCategory:
         transformation = Fun(shape, target).morphism_category(1)(source, destination)(lambda vertex: functors.diagram(diagram.on_object(vertex)).on_morphism(morphism))
         return limits.limit_functor().on_morphism(transformation)
 
-    apex = functors(lambda vertex: at(vertex).apex(), on_morphism)
+    apex = functors(lambda vertex: at(vertex), on_morphism)
     projections: MonoDict = MonoDict()
 
     def projection(vertex: ObjectOfCategory) -> NaturalTransformation:
@@ -279,7 +279,7 @@ def pointwise_colimit(diagram: Functor) -> ObjectOfCategory:
         transformation = Fun(shape, target).morphism_category(1)(source, destination)(lambda vertex: functors.diagram(diagram.on_object(vertex)).on_morphism(morphism))
         return colimits.colimit_functor().on_morphism(transformation)
 
-    apex = functors(lambda vertex: at(vertex).apex(), on_morphism)
+    apex = functors(lambda vertex: at(vertex), on_morphism)
     injections: MonoDict = MonoDict()
 
     def injection(vertex: ObjectOfCategory) -> NaturalTransformation:

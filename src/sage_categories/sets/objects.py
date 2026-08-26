@@ -1,4 +1,4 @@
-"""``Sets().ObjectType``: rule-defined sets (D01, D11, D17).
+"""``Sets().ObjectType``: rule-defined sets (POL-ASSUME-004, POL-SET-016, POL-SET-026).
 
 A set is defined by a membership rule on private data; it needs no enumeration
 (POL-SET-016/029).  ``X.membership_proposition(x)`` is the applied ``element_of``
@@ -18,8 +18,11 @@ which retains each inclusion (``sets/subobjects.py``).
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable, Iterator
 from typing import Any
+
+from sage.structure.coerce_dict import MonoDict
 
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
@@ -31,6 +34,8 @@ from sage_categories.sets.elements import Datum, SetPoint
 
 __all__ = ["FiniteSetRole", "MembershipRule", "SetObject", "element_of"]
 
+logger = logging.getLogger("sage_categories")
+
 type MembershipRule = Callable[[Datum], Decision]
 
 # ``element_of(x, X)``: the point ``x`` lies in the set ``X``.
@@ -38,7 +43,7 @@ element_of = Predicate("element_of", 2, True)
 
 
 def _element_of_by_parent(candidate: Any, ambient: SetObject) -> Decision:
-    """A point ``1 -> X`` is an element of ``X`` by definition (D06)."""
+    """A point ``1 -> X`` is an element of ``X`` by definition (POL-CAT-058)."""
     if role_of(candidate) is Role.ELEMENT and candidate.parent() is ambient:
         return True
     return Unknown
@@ -66,25 +71,54 @@ class SetObject(ObjectOfCategory):
         super().__init__(category)
         self._membership_rule = membership_rule
         self._cardinality = cardinality
-        # One retained point per datum (D15): the datum is private computation data
-        # inside the set's boundary (POL-TYPE-012), so this table never keys on an
-        # owned value.
+        # One retained point per datum (POL-CAT-083): the datum is private computation
+        # data inside the set's boundary (POL-TYPE-012), so these tables never key on
+        # an owned value.  ``point`` keys the first table by datum value, for data whose
+        # engine equality is Boolean-exact; ``rule_point`` keys the second by datum
+        # identity, for the rule data of a set constructed through
+        # ``Sets().rule_valued`` (a rule-defined family, the name of a map).
         self._points: dict[Datum, SetPoint] = {}
+        self._rule_points: MonoDict = MonoDict()
 
     def membership_proposition(self, candidate: CategoryPoint) -> AppliedPredicate:
         return element_of(candidate, self)
 
     def __contains__(self, candidate: Any) -> bool:
-        return ask(element_of(candidate, self)) is True
+        decision = ask(element_of(candidate, self))
+        if decision is Unknown:
+            logger.info("membership of %r in %r was not established", candidate, self)
+            return False
+        return decision is True
 
     def point(self, datum: Datum) -> SetPoint:
-        """The classical element ``1 -> X`` selecting ``datum``, one point per datum."""
+        """The classical element ``1 -> X`` selecting ``datum``, one point per datum value.
+
+        A set constructed through ``Sets().rule_valued`` routes every point through
+        ``rule_point``, since its data compare three-valued.
+        """
+        if _sets.Sets().points_by_rule(self):
+            return self.rule_point(datum)
         assert self._membership_rule(datum) is not False, f"{datum!r} is not a member of {self!r}"
         if datum not in self._points:
-            sets = _sets.Sets()
-            defining_morphism = sets.construct_morphism(sets.Terminal(), self, lambda star: datum)
-            self._points[datum] = self.category().ElementType(defining_morphism, datum)
+            self._points[datum] = self._construct_point(datum)
         return self._points[datum]
+
+    def rule_point(self, datum: Datum) -> SetPoint:
+        """The point selecting a rule datum, one point per datum object.
+
+        Two distinct-but-equal rule data yield two points that are ``True``-equal
+        (their data compare equal through the engine) and hash-equal (a point hashes
+        by its datum, and equal rule data hash equal).
+        """
+        assert self._membership_rule(datum) is not False, f"{datum!r} is not a member of {self!r}"
+        if datum not in self._rule_points:
+            self._rule_points[datum] = self._construct_point(datum)
+        return self._rule_points[datum]
+
+    def _construct_point(self, datum: Datum) -> SetPoint:
+        sets = _sets.Sets()
+        defining_morphism = sets.construct_morphism(sets.Terminal(), self, lambda star: datum)
+        return self.category().ElementType(defining_morphism, datum)
 
     def cardinality(self) -> CardinalObject | UnknownClass:
         return self._cardinality

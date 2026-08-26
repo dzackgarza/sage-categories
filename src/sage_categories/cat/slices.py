@@ -9,9 +9,10 @@ the pullback of ``ev_0``.  A comma category ``(F, G)`` for ``F: A -> C`` and
 ``F * G`` (Mathlib ``CategoryTheory.Comma``: objects are triples ``(left, right,
 hom: L left -> R right)`` and morphisms are commuting squares; inspected
 2026-08-27).  Each retains its pullback projections; the varying object is the
-composite with ``ev_0`` (slice) or ``ev_1`` (coslice), and that composite is the
-slice's one selected structural functor: an object over ``x`` is an object of ``C``
-with a morphism to ``x`` (POL-CAT-047).
+composite with ``ev_0`` (slice) or ``ev_1`` (coslice), retained as the fixed
+projection to ``C`` and selected by no structural graph: an object over ``x`` is
+a pair, not an object of ``C``, and a generalized element of ``x`` does not
+acquire the object surface of ``C`` (POL-CAT-047, POL-FUN-031).
 
 The fixed slice projection ``C.SliceOver(x) -> C`` is the category of elements of
 ``Mor(C)(-, x)`` and a discrete fibration for every ``C``: the cartesian lift of
@@ -117,15 +118,12 @@ class SliceLikeCategory(PullbackCategory):
             return morphism.codomain()
         return morphism.domain()
 
-    def projection(self) -> Functor:
+    def fixed_projection(self) -> Functor:
         """The fixed projection to ``C``: the evaluation at the varying end after the pullback projection to ``Fun([1], C)``."""
         if self not in self._slice_projection:
             squares = Fun(_walking_arrow(), self._base_of_slice)
             self._slice_projection[self] = squares.evaluation(_walking_arrow()(1 - self._fixed_label)) * self.first_projection()
         return self._slice_projection[self]
-
-    def structure_functors(self) -> tuple[Functor, ...]:
-        return (self.projection(),)
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         return slice_member(candidate, self)
@@ -208,7 +206,7 @@ def _pair_functor(first: Functor, second: Functor) -> Functor:
     source = Cat().Products()((first.domain(), second.domain()))
     target = Cat().Products()((first.codomain(), second.codomain()))
     legs = {0: first * source.product_projection(0), 1: second * source.product_projection(1)}
-    return target.universal_morphism(cone(target.diagram(), source.apex(), lambda vertex: legs[sequence_position(vertex)]))
+    return target.universal_morphism(cone(target.diagram(), source, lambda vertex: legs[sequence_position(vertex)]))
 
 
 def _endpoint_functor(base: Category) -> Functor:
@@ -224,7 +222,7 @@ def comma_category(first: Functor, second: Functor) -> PullbackCategory:
     assert first.codomain() is second.codomain(), f"{first!r} and {second!r} have different codomains"
     key = (first, second, Cat())
     if key not in _commas:
-        _commas[key] = Cat().Pullbacks()(cospan_diagram(Cat(), _pair_functor(first, second), _endpoint_functor(first.codomain()))).apex()
+        _commas[key] = Cat().Pullbacks()(cospan_diagram(Cat(), _pair_functor(first, second), _endpoint_functor(first.codomain())))
     return _commas[key]
 
 

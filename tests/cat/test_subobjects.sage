@@ -31,7 +31,7 @@ def test_a_monomorphism_into_x_is_a_subobject_and_a_non_monomorphism_is_not() ->
     assert presented in subobjects
     assert presented in Sets().SliceOver(three)
     assert presented.first() is include
-    assert Sets().SliceOver(three).projection().on_object(presented) is two
+    assert Sets().SliceOver(three).fixed_projection().on_object(presented) is two
     with pytest.raises(AssertionError):
         subobjects(collapse)
 
@@ -51,14 +51,14 @@ def test_a_covering_object_is_the_pair_of_the_object_with_its_epimorphism() -> N
     covering = coverings(parity)
     assert covering in coverings
     assert covering.first() is parity
-    assert Sets().SliceOver(two).projection().on_object(covering) is three
+    assert Sets().SliceOver(two).fixed_projection().on_object(covering) is three
     assert covering is not parity
 
     superobjects = two.superobjects()
     assert include in superobjects
     assert parity not in three.superobjects()
     assert superobjects(include).first() is include
-    assert Sets().CosliceUnder(two).projection().on_object(superobjects(include)) is three
+    assert Sets().CosliceUnder(two).fixed_projection().on_object(superobjects(include)) is three
     assert parity in three.covered_objects()
     assert three.covered_objects()(parity).first() is parity
 
@@ -68,21 +68,21 @@ def test_a_subobject_of_a_product_of_categories_derives_its_component_functors()
     successor = Mor(Sets())(two, three)(lambda datum: datum + int(1))
     arrow = Cat().Simplex(int(1))
     product = Cat().Products()((arrow, Sets()))
-    chosen = PropertySubcategory(product.apex(), "Chosen", {}, ())
+    chosen = PropertySubcategory(product, "Chosen", {}, ())
     inclusion = chosen.selected_functors()[int(0)]
     subobjects = Cat().Products().Subobjects()
 
     presented = subobjects(inclusion)
     assert presented in subobjects
-    assert presented.apex() is chosen
+    assert presented is chosen
     assert presented.monomorphism() is inclusion
     assert presented.product() is product
     component = presented.product_projection(int(1))
     assert component in Fun(chosen, Sets())
     assert component.domain() is chosen and component.codomain() is Sets()
-    pair = chosen(product.apex()((arrow(int(0)), two)))
-    other = chosen(product.apex()((arrow(int(1)), three)))
+    pair = chosen(product((arrow(int(0)), two)))
+    other = chosen(product((arrow(int(1)), three)))
     assert component.on_object(pair) is two
     assert presented.product_projection(int(0)).on_object(other) is arrow(int(1))
-    morphism = Mor(product.apex())(pair, other)((arrow.generator("0->1"), successor))
+    morphism = Mor(product)(pair, other)((arrow.generator("0->1"), successor))
     assert component.on_morphism(morphism) is successor

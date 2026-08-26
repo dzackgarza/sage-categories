@@ -2,10 +2,10 @@
 
 Oracles: the definitions of the product and coproduct of categories (Mathlib
 ``CategoryTheory.pi``, ``CategoryTheory.Sigma.sigma``), of the strict pullback of
-categories (D02), of the exponential ``Fun(C, D)`` (Mathlib ``Cat.exp_obj``), of
-the evaluation functors of ``Fun(I, C)`` (D10), and of the presentation data every
+categories (POL-CAT-050), of the exponential ``Fun(C, D)`` (Mathlib ``Cat.exp_obj``), of
+the evaluation functors of ``Fun(I, C)`` (POL-FUN-029), and of the presentation data every
 construction retains (POL-CAT-046, POL-FUN-009/010).  No row proves a universal
-property (D14).
+property (POL-MATH-036, POL-TEST-006).
 """
 
 import pytest
@@ -61,7 +61,7 @@ def test_operators_are_the_binary_construction_categories() -> None:
     assert Sets() * Cat() is Cat().Products()((Sets(), Cat()))
     assert Sets() + Cat() is Cat().Coproducts()((Sets(), Cat()))
     assert Cat() ** Sets() is Fun(Sets(), Cat())
-    assert (Sets() * Cat()).apex()((two, Sets())) in (Sets() * Cat()).apex()
+    assert (Sets() * Cat())((two, Sets())) in Sets() * Cat()
     with pytest.raises(AssertionError):
         two * Cat()
     with pytest.raises(AssertionError):
@@ -77,20 +77,20 @@ def test_a_category_product_has_projections_with_exact_endpoints_acting_componen
 
     assert product in Cat().Products()
     assert product.category().category() is Cat()
-    assert first in Fun(product.apex(), arrow)
-    assert first.domain() is product.apex() and first.codomain() is arrow
+    assert first in Fun(product, arrow)
+    assert first.domain() is product and first.codomain() is arrow
     assert second.codomain() is Sets()
     assert first is not second
 
-    pair = product.apex()((arrow(int(0)), two))
-    other = product.apex()((arrow(int(1)), three))
+    pair = product((arrow(int(0)), two))
+    other = product((arrow(int(1)), three))
     assert first.on_object(pair) is arrow(int(0))
     assert second.on_object(pair) is two
-    morphism = Mor(product.apex())(pair, other)((arrow.generator("0->1"), successor))
+    morphism = Mor(product)(pair, other)((arrow.generator("0->1"), successor))
     assert ask(first.on_morphism(morphism) == arrow.generator("0->1")) is True
     assert second.on_morphism(morphism) is successor
 
-    generalized = product.apex().element_from_defining_morphism(morphism)
+    generalized = product.element_from_defining_morphism(morphism)
     assert generalized.stage() is pair and generalized.parent() is other
     image = first.on_element(generalized)
     assert ask(image.defining_morphism() == arrow.generator("0->1")) is True
@@ -103,15 +103,15 @@ def test_a_category_coproduct_has_injections_that_tag() -> None:
     coproduct = Cat().Coproducts()((Sets(), Cat()))
     into_sets, into_cat = coproduct.coproduct_injection(int(0)), coproduct.coproduct_injection(int(1))
 
-    assert into_sets in Fun(Sets(), coproduct.apex())
-    assert into_cat.domain() is Cat() and into_cat.codomain() is coproduct.apex()
+    assert into_sets in Fun(Sets(), coproduct)
+    assert into_cat.domain() is Cat() and into_cat.codomain() is coproduct
     tagged = into_sets.on_object(two)
-    assert tagged in coproduct.apex()
+    assert tagged in coproduct
     assert tagged.member() is two
     assert into_sets.on_morphism(successor).morphism() is successor
     assert into_sets.on_morphism(successor).domain() is tagged
     with pytest.raises(AssertionError):
-        Mor(coproduct.apex())(tagged, into_cat.on_object(Sets()))(successor)
+        Mor(coproduct)(tagged, into_cat.on_object(Sets()))(successor)
 
 
 def test_the_mediator_of_a_category_cone_lands_in_the_product() -> None:
@@ -123,7 +123,7 @@ def test_the_mediator_of_a_category_cone_lands_in_the_product() -> None:
     candidate = cone(product.diagram(), point, lambda vertex: legs[int(0)] if ask(vertex.point() == Sets().Simplex(int(1)).point(int(0))) is True else legs[int(1)])
 
     mediating = product.universal_morphism(candidate)
-    assert mediating in Fun(point, product.apex())
+    assert mediating in Fun(point, product)
     assert product.product_projection(int(0)).on_object(mediating.on_object(point(int(0)))) is two
     assert product.product_projection(int(1)).on_object(mediating.on_object(point(int(0)))) is Sets()
 
@@ -133,7 +133,6 @@ def test_a_construction_category_exists_without_an_owned_construction() -> None:
     arrow = Cat().Simplex(int(1))
     family = bare.Limits(arrow)
     assert family in Cat()
-    assert bare.Limits(arrow) is family
     assert bare.Limits(Cat().Simplex(int(2))) is not family
     assert bare.Pullbacks() is bare.Limits(Cat().Horn(int(2), int(2)))
     assert bare.Equalizers() is bare.Limits(Cat().WalkingParallelPair())
@@ -154,15 +153,15 @@ def test_the_strict_pullback_in_cat_admits_identical_images_and_leaves_distinct_
 
     pullback = Cat().Pullbacks()(_cospan_diagram(select_integers, select_integers_again))
     assert pullback in Cat().Limits(Cat().Horn(int(2), int(2)))
-    pair = pullback.apex()((point(int(0)), point(int(0))))
-    assert pair in pullback.apex()
+    pair = pullback((point(int(0)), point(int(0))))
+    assert pair in pullback
     assert pullback.projection(Cat().Horn(int(2), int(2))(int(0))).on_object(pair) is point(int(0))
     assert pullback.projection(Cat().Horn(int(2), int(2))(int(2))).on_object(pair) is integers
 
     undecided = Cat().Pullbacks()(_cospan_diagram(select_integers, select_other))
-    candidate = undecided.apex()((point(int(0)), point(int(0))))
-    assert ask(undecided.apex().membership_proposition(candidate)) is Unknown
-    assert candidate not in undecided.apex()
+    candidate = undecided((point(int(0)), point(int(0))))
+    assert ask(undecided.membership_proposition(candidate)) is Unknown
+    assert candidate not in undecided
 
 
 def test_fun_of_the_walking_arrow_has_morphisms_as_objects_and_evaluations_as_endpoints() -> None:

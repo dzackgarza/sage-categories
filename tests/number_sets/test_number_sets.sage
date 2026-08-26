@@ -4,7 +4,7 @@ Oracles: ``NN`` excludes zero by definition (POL-SET-032); the cardinalities are
 Mathlib ``Cardinal.mk_pnat``, ``Cardinal.mk_int``, ``Cardinal.mkRat``, and
 ``Cardinal.mk_real`` with ``Cardinal.continuum = 2 ^ aleph0``; the floor of ``7/2``
 is ``3`` by the definition of the floor (the greatest integer at most ``7/2``);
-equality of rationals is equality of reduced fractions; D17 for map equality on a
+equality of rationals is equality of reduced fractions; POL-MATH-034 for map equality on a
 rule-defined infinite domain.
 """
 

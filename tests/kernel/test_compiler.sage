@@ -1,6 +1,6 @@
 """The method compiler: dynamic inheritance surface, compile-time ownership, collisions.
 
-Toy categories live only in this file (D14).  Each witness calls inherited public
+Toy categories live only in this file (POL-TEST-006).  Each witness calls inherited public
 operations through the production compiler (POL-TEST-006).  A toy stores its own
 members on its own objects; it reads no ambient private field.
 """
@@ -9,6 +9,7 @@ import pytest
 
 from sage_categories.all import *
 from sage_categories.kernel.compiler import SemanticCollisionError
+from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
 
 
@@ -32,7 +33,9 @@ class PairSets(Category):
         return (Fun(self, Sets()).FullyFaithful().inclusion(),)
 
     def __call__(self, first, second):
-        return self.ObjectType(self, _finite_rule((first, second)), Cardinal()(int(2)))
+        pair = Sets().Finite()((first, second))
+        refine(pair, self)
+        return pair
 
     def __repr__(self):
         return "PairSets"
@@ -178,6 +181,46 @@ class BothSizes(Category):
         return "BothSizes"
 
 
+class Carried(Category):
+    """Objects carrying a set, related to ``Sets()`` by an explicit forgetful functor, not an inclusion."""
+
+    class ObjectType(ObjectOfCategory):
+        def __init__(self, category, carrier):
+            ObjectOfCategory.__init__(self, category)
+            self._carrier = carrier
+
+        def carrier(self) -> ObjectOfCategory:
+            return self._carrier
+
+    class ElementType(ElementOfObject):
+        """No local operation."""
+
+    class MorphismType(MorphismOfCategory):
+        def underlying_map(self) -> MorphismOfCategory:
+            return self._underlying
+
+    def structure_functors(self):
+        return (Fun(self, Sets()).Faithful()(lambda member: member.carrier(), lambda morphism: morphism.underlying_map()),)
+
+    def __call__(self, carrier):
+        return self.ObjectType(self, carrier)
+
+    def __repr__(self):
+        return "Carried"
+
+
+def test_a_selected_functor_that_is_not_an_inclusion_places_nothing() -> None:
+    """Placement follows retained inclusions only; the forgetful image still supplies inherited values."""
+    carried = Carried()
+    pair = carried(Sets().Finite()((int(3), int(4))))
+
+    assert pair in carried
+    assert pair not in Sets()
+    assert pair not in Sets().Finite()
+    assert ask(pair.cardinality() == int(2)) is True
+    assert ask(pair.is_finite()) is True
+
+
 def test_dynamic_inheritance_surface_of_one_inclusion() -> None:
     """One selected inclusion exposes the object, element, and morphism surface of ``Sets()``."""
     pairs = PairSets()
@@ -197,7 +240,9 @@ def test_dynamic_inheritance_surface_of_one_inclusion() -> None:
     assert swap in Mor(pairs)
     assert swap in Mor(Sets())
     assert ask(swap(three) == pair.point(int(4))) is True
-    assert ask(swap * swap == pair.identity()) is Unknown
+    assert ask(swap * swap == pair.identity()) is True
+    with pytest.raises(AssertionError, match="element=3 is not an owned element"):
+        swap(int(3))
 
 
 def test_two_paths_to_one_owner_install_one_method_before_any_value_exists() -> None:

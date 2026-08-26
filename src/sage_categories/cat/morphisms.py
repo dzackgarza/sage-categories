@@ -1,4 +1,4 @@
-"""The ``Mor(n, C)`` tower and fixed endpoints (D03, D04).
+"""The ``Mor(n, C)`` tower and fixed endpoints (POL-CAT-021, POL-API-009).
 
 For every category ``C`` and ``n >= 0``, ``Mor(n, C)`` is the category whose
 objects are the ``n``-morphisms of ``C`` and whose morphisms are the
@@ -137,8 +137,8 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
         return self._base.equality()
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
-        for ambient in self._base.inclusion_ambient():
-            return ambient.morphism_category(1).membership_proposition(candidate) & endpoints_in(candidate, self._base)
+        if self._base.has_ambient():
+            return self._base.ambient().morphism_category(1).membership_proposition(candidate) & endpoints_in(candidate, self._base)
         return member(candidate, self)
 
     # -- fixed endpoints ---------------------------------------------------------
@@ -171,16 +171,9 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
     ) -> MorphismOfCategory:
         return self._base.construct_two_morphism(source, target, *args, **kwargs)
 
-    def inverse_morphism(self, two_cell: MorphismOfCategory) -> MorphismOfCategory:
-        """The inverse of an invertible 2-morphism; in this unit only identity 2-cells are constructed invertible."""
-        assert two_cell is self.identity_morphism(two_cell.domain()), f"{two_cell!r} retains no inverse"
-        return two_cell
+    # -- property subcategories, defined once for every ``C`` (POL-FUN-024) -------------
 
-    # -- property subcategories, defined once for every ``C`` (D09) -------------
-
-    def _inclusion_ambient_morphisms(self) -> tuple[MorphismCategory, ...]:
-        # ``D`` included in ``C`` derives ``Mor(D).P()`` as the narrowing of ``Mor(C).P()`` (POL-CAT-084).
-        return tuple(ambient.morphism_category(1) for ambient in self._base.inclusion_ambient())
+    # ``D`` included in ``C`` derives ``Mor(D).P()`` as the narrowing of ``Mor(C).P()`` (POL-CAT-084).
 
     def _root_property(self, name: str, roles: dict[Role, type], implications: tuple[Category, ...]) -> PropertySubcategory:
         if name not in self._properties:
@@ -188,27 +181,27 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
         return self._properties[name]
 
     def Monomorphisms(self) -> Category:
-        for ambient in self._inclusion_ambient_morphisms():
-            return self.property_subcategory(ambient.Monomorphisms())
+        if self._base.has_ambient():
+            return self.property_subcategory(self._base.ambient().morphism_category(1).Monomorphisms())
         return self._root_property("Monomorphisms", {}, ())
 
     def Epimorphisms(self) -> Category:
-        for ambient in self._inclusion_ambient_morphisms():
-            return self.property_subcategory(ambient.Epimorphisms())
+        if self._base.has_ambient():
+            return self.property_subcategory(self._base.ambient().morphism_category(1).Epimorphisms())
         return self._root_property("Epimorphisms", {}, ())
 
     def Isomorphisms(self) -> Category:
         from sage_categories.cat.properties import IsomorphismRole
 
-        for ambient in self._inclusion_ambient_morphisms():
-            return self.property_subcategory(ambient.Isomorphisms())
+        if self._base.has_ambient():
+            return self.property_subcategory(self._base.ambient().morphism_category(1).Isomorphisms())
         # An isomorphism is monic and epic (``specs/undecidable-properties.md``,
         # "How ask() works": Isomorphism implies Monomorphism and Epimorphism).
         return self._root_property("Isomorphisms", {Role.OBJECT: IsomorphismRole}, (self.Monomorphisms(), self.Epimorphisms()))
 
     def Endomorphisms(self) -> Category:
-        for ambient in self._inclusion_ambient_morphisms():
-            return self.property_subcategory(ambient.Endomorphisms())
+        if self._base.has_ambient():
+            return self.property_subcategory(self._base.ambient().morphism_category(1).Endomorphisms())
         if "Endomorphisms" not in self._properties:
             self._root_property("Endomorphisms", {}, ()).predicate().register_handler(_endomorphism_by_equality)
         return self._properties["Endomorphisms"]
@@ -249,7 +242,7 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
     def compose(self, second: MorphismOfCategory, first: MorphismOfCategory) -> MorphismOfCategory:
         """``Mor(C)(A, C).compose(g, f)`` for ``f: A -> B`` and ``g: B -> C``."""
         assert first.domain() is self._domain_object and second.codomain() is self._codomain_object
-        return self.base_category().composite(second, first)
+        return self.base_category().compose_morphisms(second, first)
 
     def Monomorphisms(self) -> Category:
         return self.property_subcategory(self.ambient().Monomorphisms())

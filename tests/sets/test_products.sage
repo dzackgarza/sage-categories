@@ -9,13 +9,12 @@ over ``NN``; ``Cardinal.prod_eq_zero`` for an empty factor; ``Cardinal.prod_le_p
 with ``Cardinal.cantor`` for the uncountable placement; ``instCountableForallOfFinite``
 for the countable placement; ``CategoryTheory.mono_iff_injective`` for the
 injectivity decision.  The mediator equations are decided by the finite set-map
-equality handler (D17); no row proves a universal property (D14).
+equality handler (POL-MATH-034); no row proves a universal property (POL-MATH-036).
 """
 
 from sage_categories.all import *
 from sage_categories.cat.constructions import cocone, cone
 from sage_categories.cat.diagrams import sequence_position
-from sage_categories.sets.exponentials import Function
 
 
 def _sequence_cone(diagram, apex, legs):
@@ -29,13 +28,16 @@ def test_a_binary_product_is_the_chosen_product_with_projections_that_act() -> N
 
     assert product is Sets().Products()((two, three))
     assert product in Sets().Products()
+    assert product in Sets()
+    assert product in Sets().Finite()
     assert product in Sets().Limits(Discrete(Sets().Simplex(int(1))))
     assert ask(product.cardinality() == int(6)) is True
-    assert first.domain() is product.apex() and first.codomain() is two
+    assert first.domain() is product and first.codomain() is two
+    assert first in Mor(Sets())(product, two)
     assert second.codomain() is three
     assert first is not second
 
-    points = list(product.apex())
+    points = list(product)
     assert len(points) == int(6)
     chosen = next(point for point in points if ask(first(point) == two.point(int(1))) is True and ask(second(point) == three.point(int(2))) is True)
     assert chosen in product
@@ -50,7 +52,7 @@ def test_the_mediator_satisfies_the_projection_equations_on_finite_sets() -> Non
     zero = Mor(Sets())(four, three)(lambda datum: int(0))
 
     mediating = product.universal_morphism(_sequence_cone(product.diagram(), four, {int(0): parity, int(1): residue}))
-    assert mediating in Mor(Sets())(four, product.apex())
+    assert mediating in Mor(Sets())(four, product)
     assert ask(product.product_projection(int(0)) * mediating == parity) is True
     assert ask(product.product_projection(int(1)) * mediating == residue) is True
     assert ask(product.product_projection(int(1)) * mediating == zero) is False
@@ -67,9 +69,9 @@ def test_the_limit_functor_maps_a_natural_transformation_to_the_induced_morphism
     limit = Sets().Limits(source.index_category()).limit_functor()
 
     assert limit in Fun(Fun(source.index_category(), Sets()), Sets())
-    assert limit.on_object(source.diagram()) is source.apex()
+    assert limit.on_object(source.diagram()) is source
     induced = limit.on_morphism(transformation)
-    assert induced in Mor(Sets())(source.apex(), target.apex())
+    assert induced in Mor(Sets())(source, target)
     assert ask(target.product_projection(int(0)) * induced == include * source.product_projection(int(0))) is True
     assert ask(target.product_projection(int(1)) * induced == include_again * source.product_projection(int(1))) is True
 
@@ -107,8 +109,8 @@ def test_an_infinite_indexed_product_is_constructed_by_rule_and_its_projection_a
     three_everywhere = cone(diagram, Sets().Terminal(), lambda vertex: NN(int(3)).defining_morphism())
 
     family = Sets().element_from_defining_morphism(product.universal_morphism(three_everywhere))
-    assert family in product.apex()
-    assert product.product_projection(seven).domain() is product.apex()
+    assert family in product
+    assert product.product_projection(seven).domain() is product
     assert product.product_projection(seven).codomain() is NN
     assert ask(product.product_projection(seven)(family) == NN(int(3))) is True
     assert ask(product.product_projection(int(7))(family) == NN(int(3))) is True
@@ -124,7 +126,7 @@ def test_construction_cardinality_routes() -> None:
 
     uncountable = Sets().Products()(Fun(Discrete(NN), Sets().Uncountable()).from_object_rule(lambda vertex: RR))
     assert ask(uncountable.is_countable()) is False
-    assert uncountable.apex() in Sets().Uncountable()
+    assert uncountable in Sets().Uncountable()
     assert uncountable.cardinality() is Unknown
 
     assert Sets().Products()(Fun(Discrete(two), Sets().Countable()).from_object_rule(lambda vertex: NN)).cardinality() is aleph0
@@ -150,10 +152,10 @@ def test_a_coproduct_has_injections_that_tag_and_a_mediator_satisfying_the_injec
 
     assert coproduct is Sets().Coproducts()((two, three))
     assert ask(coproduct.cardinality() == int(5)) is True
-    assert into_three.domain() is three and into_three.codomain() is coproduct.apex()
+    assert into_three.domain() is three and into_three.codomain() is coproduct
     assert into_two is not into_three
     tagged = into_three(three.point(int(2)))
-    assert tagged in coproduct.apex()
+    assert tagged in coproduct
     assert ask(tagged == into_two(two.point(int(1)))) is False
 
     mediating = coproduct.universal_morphism(cocone(coproduct.diagram(), four, lambda vertex: {int(0): include, int(1): shift}[sequence_position(vertex)]))
@@ -181,20 +183,22 @@ def test_the_function_set_is_the_exponential_and_the_morphism_category_is_discre
     assert Mor(Mor(Sets())(four, two))(parity, parity).identity() not in Mor(Mor(Sets())(four, two))(parity, constant)
 
     evaluation = Sets().evaluation(two, three)
-    assert evaluation.domain() is (function_set * two).apex()
+    assert evaluation.domain() is function_set * two
     assert evaluation.codomain() is three
 
 
 def test_injectivity_into_a_function_set_is_decided_through_map_equality() -> None:
     two, four = Sets().Simplex(int(1)), Sets().Simplex(int(3))
-    parity, parity_again = Mor(Sets())(four, two)(lambda datum: datum % int(2)), Mor(Sets())(four, two)(lambda datum: (datum + int(2)) % int(2))
-    constant = Mor(Sets())(four, two)(lambda datum: int(0))
-    names = {int(0): Function(parity), int(1): Function(parity_again)}
-    collapsing = Mor(Sets())(two, two ** four)(lambda datum: names[datum])
-    separating = Mor(Sets())(two, two ** four)(lambda datum: Function(parity) if datum == int(0) else Function(constant))
+    parity = Mor(Sets())(four, two)(lambda datum: datum % int(2))
+    collapsing = Sets().transpose(Mor(Sets())(two * four, two)(lambda pair: pair(int(1)) % int(2)))
+    separating = Sets().transpose(Mor(Sets())(two * four, two)(lambda pair: pair(int(1)) % int(2) if pair(int(0)) == int(0) else int(0)))
 
+    assert collapsing in Mor(Sets())(two, two ** four)
+    assert ask(collapsing(two.point(int(0))) == Sets().name_of(parity)) is True
     assert ask(collapsing.is_monomorphism()) is False
-    assert collapsing(two.point(int(0))) is collapsing(two.point(int(1)))
+    assert ask(collapsing(two.point(int(0))) == collapsing(two.point(int(1)))) is True
+    assert ask(separating(two.point(int(0))) == Sets().name_of(parity)) is True
+    assert ask(separating(two.point(int(1))) == Sets().name_of(parity)) is False
     assert ask(separating.is_monomorphism()) is True
 
 
@@ -203,8 +207,8 @@ def test_the_diagonal_of_the_reals_is_a_mediator_that_needs_no_enumeration() -> 
     diagonal = plane.universal_morphism(_sequence_cone(plane.diagram(), RR, {int(0): RR.identity(), int(1): RR.identity()}))
     point = diagonal(RR(int(3)))
 
-    assert diagonal.domain() is RR and diagonal.codomain() is plane.apex()
-    assert point in plane.apex()
+    assert diagonal.domain() is RR and diagonal.codomain() is plane
+    assert point in plane
     assert ask(plane.product_projection(int(0))(point) == RR(int(3))) is True
     assert ask(plane.product_projection(int(1))(point) == RR(int(3))) is True
     assert ask(plane.product_projection(int(1))(point) == RR(int(2))) is False

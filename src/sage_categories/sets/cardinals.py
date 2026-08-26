@@ -22,19 +22,25 @@ theorem of Mathlib ``SetTheory.Cardinal`` (inspected 2026-08-26):
 - ``a < b ** a`` for ``1 < b`` (``Cardinal.cantor'``), so a power with an infinite
   exponent and a base of at least two is uncountable.
 
-``aleph(n)`` takes a nonnegative Python ``int`` in this unit; the ordinal-indexed
-form ``aleph(alpha)`` arrives with the ordinals migration.
+``aleph(alpha)`` takes an ordinal index ``alpha in Ordinals()`` (Mathlib
+``Cardinal.aleph``, ``SetTheory.Cardinal.Aleph``); a Python ``int`` is the
+finite-ordinal convenience.  The index ordinal is retained by identity, so
+``aleph(alpha).aleph_index() is alpha``, and ``initial_ordinal()`` is
+``omega(alpha)`` by ``Cardinal.ord_aleph`` (inspected 2026-08-26).
 """
 
 from __future__ import annotations
 
 from typing import Any
 
+from sage.structure.coerce_dict import MonoDict
+
 from sage_categories.cat.category import Category
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.decisions import Decision, Unknown, decision_and, decision_not
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, role_of
+from sage_categories.ordinals.category import OrdinalObject, Ordinals
 
 __all__ = ["Cardinal", "CardinalObject", "aleph0", "continuum"]
 
@@ -61,9 +67,14 @@ class CardinalObject(ObjectOfCategory):
         assert self.kind() == "finite"
         return self._key[1]
 
-    def aleph_index(self) -> int:
+    def aleph_index(self) -> OrdinalObject:
+        """The ordinal index of an aleph, retained by identity at construction."""
         assert self.kind() == "aleph"
-        return self._key[1]
+        return Cardinal()._aleph_indices[self]
+
+    def initial_ordinal(self) -> OrdinalObject:
+        """``omega(alpha)`` for ``aleph(alpha)``: Mathlib ``Cardinal.ord_aleph`` (inspected 2026-08-26)."""
+        return Ordinals().omega(self.aleph_index())
 
     def cardinality(self) -> CardinalObject:
         return self
@@ -144,6 +155,7 @@ class CardinalCategory(Category[[], []]):
 
     def __init__(self) -> None:
         self._cardinals: dict[Key, CardinalObject] = {}
+        self._aleph_indices: MonoDict = MonoDict()
         super().__init__()
         self._equality.register_handler(self._equal)
         at_most.register_handler(self._at_most)
@@ -184,10 +196,13 @@ class CardinalCategory(Category[[], []]):
         assert value >= 0, f"{value!r} is not a cardinal"
         return self._retain(("finite", value), ())
 
-    def aleph(self, index: int) -> CardinalObject:
-        """``aleph(n)`` for a nonnegative integer index (ordinal indices arrive with the ordinals migration)."""
-        assert index >= 0
-        return self._retain(("aleph", index), ())
+    def aleph(self, index: OrdinalObject | int) -> CardinalObject:
+        """``aleph(alpha)`` for an ordinal index; an ``int`` is the finite-ordinal convenience (Mathlib ``Cardinal.aleph``)."""
+        ordinal_index = Ordinals()(index)
+        key: Key = ("aleph", ordinal_index.expression_key())
+        if key not in self._cardinals:
+            self._aleph_indices[self._retain(key, ())] = ordinal_index
+        return self._cardinals[key]
 
     def zero(self) -> CardinalObject:
         return self(0)
@@ -272,7 +287,8 @@ class CardinalCategory(Category[[], []]):
             case "finite":
                 return True
             case "aleph":
-                return cardinal.aleph_index() == 0
+                # Cardinal.aleph0_lt_aleph: aleph(o) is uncountable exactly when 0 < o.
+                return ask(cardinal.aleph_index() == 0)
             case "power":
                 # Cardinal.cantor': a < b ** a for 1 < b, so 2 ** (infinite) exceeds aleph0.
                 return False
@@ -314,10 +330,11 @@ class CardinalCategory(Category[[], []]):
         if self._finite(second):
             return False
         if first.kind() == "aleph" and second.kind() == "aleph":
-            return first.aleph_index() <= second.aleph_index()
-        if first.kind() == "aleph" and first.aleph_index() == 0:
+            # Cardinal.aleph_le_aleph: alephs are ordered by their ordinal indices.
+            return ask(first.aleph_index() <= second.aleph_index())
+        if first.kind() == "aleph" and ask(first.aleph_index() == 0) is True:
             return True
-        if first.kind() == "aleph" and first.aleph_index() == 1 and self._is_countable(second) is False:
+        if first.kind() == "aleph" and ask(first.aleph_index() == 1) is True and self._is_countable(second) is False:
             return True
         if first.kind() == "power":
             base, exponent = first.terms()

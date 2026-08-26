@@ -1,0 +1,374 @@
+"""``Ordinals()``: exact ordinal expressions with Hessenberg natural arithmetic (``specs/ordinals.md``).
+
+An ordinal is an object of ``Ordinals()``, retained once by its normalized
+expression: a finite ordinal, an initial ordinal ``omega(alpha)``, a Hessenberg
+natural sum or product, or an ordinary ordinal sum, product, or power that no
+normalization rule evaluates.  Python ``+`` and ``*`` are the natural operations
+(Mathlib ``Ordinal.nadd`` and ``Ordinal.nmul``, whose carrier ``NatOrdinal`` is a
+commutative semiring: ``NatOrdinal.instCommSemiring``, Mathlib
+``SetTheory.Ordinal.NaturalOps``; inspected 2026-08-26); the noncommutative
+ordinary operations have explicit names.
+
+Normalization, exactly as ``specs/ordinals.md`` states it:
+
+- a natural sum flattens nested sums, combines its finite terms, drops zero, and
+  sorts its symbolic terms (``Ordinal.nadd_comm``, ``Ordinal.nadd_nat``, and the
+  semiring laws of ``NatOrdinal``);
+- a natural product distributes over natural sums (``Ordinal.nmul_nadd``,
+  ``Ordinal.nadd_nmul``), flattens, multiplies its finite factors, drops one
+  (``Ordinal.nmul_one``), is zero when a factor is zero, and sorts;
+- ordinary sums, products, and powers evaluate finite inputs (``Ordinal.natCast_mul``,
+  ``Ordinal.natCast_opow``, ``Nat.cast_add``), simplify by the unit laws and
+  ``Ordinal.opow_zero``, ``Ordinal.zero_opow``, ``Ordinal.one_opow``
+  (``SetTheory.Ordinal.Exponential``), and otherwise remain symbolic.
+
+Every nonfinite expression is at least ``omega0``: an initial ordinal by
+``Ordinal.omega0_le_omega``, and each symbolic sum, product, or power dominates a
+nonfinite term (``Ordinal.le_self_nadd``, ``Ordinal.add_le_nadd``,
+``Ordinal.mul_le_nmul``).  Hence finiteness is the expression kind, and the exact
+order handler decides: expression equality; order between finite ordinals; every
+finite ordinal below every nonfinite one (``Ordinal.natCast_lt_omega0``); order
+between initial ordinals through their indices (``Ordinal.omega_le_omega``,
+``Ordinal.omega_lt_omega``, Mathlib ``SetTheory.Cardinal.Aleph``).  Equality is
+``True`` by expression, ``False`` when the order handler separates the two
+expressions strictly, and ``Unknown`` otherwise: a symbolic expression can equal
+another (``1 +o omega0`` is ``omega0`` by ``Ordinal.one_add_omega0``), so distinct
+expressions never decide inequality by themselves.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Hashable
+from functools import reduce
+from typing import TYPE_CHECKING, Any
+
+from sage_categories.cat.category import Category
+from sage_categories.kernel.decisions import Decision, Unknown
+from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask
+from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, role_of
+
+if TYPE_CHECKING:
+    from sage_categories.sets.cardinals import CardinalObject
+
+__all__ = ["OrdinalObject", "Ordinals", "OrdinalsCategory", "omega", "omega0", "ordinal"]
+
+# A private expression key: nested tuples of strings and integers only, so caches
+# and hashes never compare owned values.
+type Key = tuple[Hashable, ...]
+
+
+class OrdinalObject(ObjectOfCategory):
+    """An exact ordinal, retained by its normalized expression."""
+
+    def __init__(self, category: Category, key: Key, terms: tuple[OrdinalObject, ...]) -> None:
+        super().__init__(category)
+        self._key = key
+        self._terms = terms
+
+    def kind(self) -> str:
+        return self._key[0]
+
+    def expression_key(self) -> Key:
+        """The normalized expression that identifies this ordinal."""
+        return self._key
+
+    def terms(self) -> tuple[OrdinalObject, ...]:
+        return self._terms
+
+    def finite_value(self) -> int:
+        assert self.kind() == "finite"
+        return self._key[1]
+
+    def is_initial(self) -> AppliedPredicate:
+        return initial(self)
+
+    def initial_index(self) -> OrdinalObject:
+        assert self.kind() == "initial", f"{self!r} is not an initial ordinal"
+        return self._terms[0]
+
+    def cardinality(self) -> CardinalObject:
+        """The cardinal of this ordinal (``specs/ordinals.md``, "Cardinality of ordinals").
+
+        Each rule is an inspected Mathlib theorem (inspected 2026-08-26):
+        ``Ordinal.card_nat``; ``Ordinal.card_omega`` (``SetTheory.Cardinal.Aleph``);
+        ``Ordinal.card_add`` and ``Ordinal.card_mul``, which the natural operations
+        share because a natural sum or product is the order type of a well-order on
+        the same underlying set as the ordinary one (``Ordinal.nadd``,
+        ``Ordinal.nmul`` in ``SetTheory.Ordinal.NaturalOps``); and for a symbolic
+        power ``Ordinal.card_opow_eq_of_omega0_le_left`` and
+        ``Ordinal.card_opow_eq_of_omega0_le_right`` (``SetTheory.Cardinal.Ordinal``):
+        ``|a ^o b| = max(|a|, |b|)`` when ``omega0 <= a`` and ``0 < b``, or
+        ``1 < a`` and ``omega0 <= b``, which are exactly the symbolic cases.
+        """
+        from sage_categories.sets.cardinals import Cardinal
+
+        cardinals = Cardinal()
+        match self.kind():
+            case "finite":
+                return cardinals(self.finite_value())
+            case "initial":
+                return cardinals.aleph(self.initial_index())
+            case "natural_sum" | "ordinal_sum":
+                return reduce(cardinals.sum, (term.cardinality() for term in self._terms))
+            case "natural_product" | "ordinal_product":
+                return reduce(cardinals.product, (term.cardinality() for term in self._terms))
+        base, exponent = self._terms
+        return cardinals.supremum(base.cardinality(), exponent.cardinality())
+
+    def __add__(self, other: OrdinalObject | int) -> OrdinalObject:
+        return Ordinals().natural_sum(self, Ordinals()(other))
+
+    def __radd__(self, other: int) -> OrdinalObject:
+        return Ordinals().natural_sum(Ordinals()(other), self)
+
+    def __mul__(self, other: OrdinalObject | int) -> OrdinalObject:
+        return Ordinals().natural_product(self, Ordinals()(other))
+
+    def __rmul__(self, other: int) -> OrdinalObject:
+        return Ordinals().natural_product(Ordinals()(other), self)
+
+    def ordinal_sum(self, other: OrdinalObject | int) -> OrdinalObject:
+        return Ordinals().ordinal_sum(self, Ordinals()(other))
+
+    def ordinal_product(self, other: OrdinalObject | int) -> OrdinalObject:
+        return Ordinals().ordinal_product(self, Ordinals()(other))
+
+    def ordinal_power(self, exponent: OrdinalObject | int) -> OrdinalObject:
+        return Ordinals().ordinal_power(self, Ordinals()(exponent))
+
+    def __le__(self, other: OrdinalObject | int) -> AppliedPredicate:
+        return at_most(self, Ordinals()(other))
+
+    def __lt__(self, other: OrdinalObject | int) -> AppliedPredicate:
+        return less_than(self, Ordinals()(other))
+
+    def __ge__(self, other: OrdinalObject | int) -> AppliedPredicate:
+        return at_most(Ordinals()(other), self)
+
+    def __gt__(self, other: OrdinalObject | int) -> AppliedPredicate:
+        return less_than(Ordinals()(other), self)
+
+    def __hash__(self) -> int:
+        return hash(self._key)
+
+    def __repr__(self) -> str:
+        match self.kind():
+            case "finite":
+                return str(self.finite_value())
+            case "initial":
+                return f"ω_{self.initial_index()!r}"
+            case "natural_sum":
+                return " # ".join(map(repr, self._terms))
+            case "natural_product":
+                return " ⊗ ".join(map(repr, self._terms))
+            case "ordinal_sum":
+                return f"({self._terms[0]!r} +o {self._terms[1]!r})"
+            case "ordinal_product":
+                return f"({self._terms[0]!r} *o {self._terms[1]!r})"
+        return f"({self._terms[0]!r} ^o {self._terms[1]!r})"
+
+
+# ``initial(alpha)``: ``alpha`` is an initial ordinal ``omega(beta)``.
+initial = Predicate("ordinal_initial", 1, True)
+# ``at_most(alpha, beta)``: ``alpha <= beta`` in the ordinal order.
+at_most = Predicate("ordinal_at_most", 2, True)
+# ``less_than(alpha, beta)``: ``alpha < beta``.
+less_than = Predicate("ordinal_less_than", 2, True)
+
+
+class OrdinalsCategory(Category[[], []]):
+    """The category of exact ordinal expressions."""
+
+    ObjectType = OrdinalObject
+
+    class ElementType(ElementOfObject):
+        """A generalized element of an ordinal; no local operation."""
+
+    class MorphismType(MorphismOfCategory):
+        """A morphism between ordinals; no local operation."""
+
+    def __init__(self) -> None:
+        self._ordinals: dict[Key, OrdinalObject] = {}
+        super().__init__()
+        self._equality.register_handler(self._equal)
+        at_most.register_handler(self._at_most)
+        less_than.register_handler(self._less_than)
+        initial.register_handler(self._initial)
+
+    # -- construction, cached by expression ---------------------------------------
+
+    def _retain(self, key: Key, terms: tuple[OrdinalObject, ...]) -> OrdinalObject:
+        if key not in self._ordinals:
+            self._ordinals[key] = self.ObjectType(self, key, terms)
+        return self._ordinals[key]
+
+    def __call__(self, value: OrdinalObject | int) -> OrdinalObject:
+        """``Ordinals()(n)`` for a nonnegative integer; an ordinal is returned unchanged."""
+        if value in self:
+            return value
+        assert value >= 0, f"{value!r} is not an ordinal"
+        return self._retain(("finite", int(value)), ())
+
+    def omega(self, index: OrdinalObject | int) -> OrdinalObject:
+        """The initial ordinal ``omega(index)`` (Mathlib ``Ordinal.omega``, ``SetTheory.Cardinal.Aleph``)."""
+        ordinal_index = self(index)
+        return self._retain(("initial", ordinal_index.expression_key()), (ordinal_index,))
+
+    def zero(self) -> OrdinalObject:
+        return self(0)
+
+    def one(self) -> OrdinalObject:
+        return self(1)
+
+    def _is_finite(self, alpha: OrdinalObject, value: int) -> bool:
+        return alpha.kind() == "finite" and alpha.finite_value() == value
+
+    def _expression(self, kind: str, terms: tuple[OrdinalObject, ...]) -> OrdinalObject:
+        return self._retain((kind, *(term.expression_key() for term in terms)), terms)
+
+    def natural_sum(self, *summands: OrdinalObject) -> OrdinalObject:
+        terms: list[OrdinalObject] = []
+        finite_part = 0
+        for summand in summands:
+            match summand.kind():
+                case "finite":
+                    finite_part += summand.finite_value()
+                case "natural_sum":
+                    terms.extend(summand.terms())
+                case _:
+                    terms.append(summand)
+        if finite_part:
+            terms.append(self(finite_part))
+        if not terms:
+            return self.zero()
+        terms.sort(key=repr)
+        if len(terms) == 1:
+            return terms[0]
+        return self._expression("natural_sum", tuple(terms))
+
+    def natural_product(self, *factors: OrdinalObject) -> OrdinalObject:
+        for index, factor in enumerate(factors):
+            if factor.kind() == "natural_sum":
+                preceding, following = factors[:index], factors[index + 1 :]
+                return self.natural_sum(*(self.natural_product(*preceding, term, *following) for term in factor.terms()))
+        terms: list[OrdinalObject] = []
+        finite_part = 1
+        for factor in factors:
+            match factor.kind():
+                case "finite":
+                    if factor.finite_value() == 0:
+                        return self.zero()
+                    finite_part *= factor.finite_value()
+                case "natural_product":
+                    terms.extend(factor.terms())
+                case _:
+                    terms.append(factor)
+        if finite_part != 1 or not terms:
+            terms.append(self(finite_part))
+        terms.sort(key=repr)
+        if len(terms) == 1:
+            return terms[0]
+        return self._expression("natural_product", tuple(terms))
+
+    def ordinal_sum(self, left: OrdinalObject, right: OrdinalObject) -> OrdinalObject:
+        if left.kind() == "finite" and right.kind() == "finite":
+            return self(left.finite_value() + right.finite_value())
+        if self._is_finite(left, 0):
+            return right
+        if self._is_finite(right, 0):
+            return left
+        return self._expression("ordinal_sum", (left, right))
+
+    def ordinal_product(self, left: OrdinalObject, right: OrdinalObject) -> OrdinalObject:
+        if left.kind() == "finite" and right.kind() == "finite":
+            return self(left.finite_value() * right.finite_value())
+        if self._is_finite(left, 0) or self._is_finite(right, 0):
+            return self.zero()
+        if self._is_finite(left, 1):
+            return right
+        if self._is_finite(right, 1):
+            return left
+        return self._expression("ordinal_product", (left, right))
+
+    def ordinal_power(self, base: OrdinalObject, exponent: OrdinalObject) -> OrdinalObject:
+        if base.kind() == "finite" and exponent.kind() == "finite":
+            return self(base.finite_value() ** exponent.finite_value())
+        if self._is_finite(exponent, 0):
+            return self.one()
+        if self._is_finite(base, 0):
+            return self.zero()
+        if self._is_finite(base, 1):
+            return self.one()
+        return self._expression("ordinal_power", (base, exponent))
+
+    # -- exact decisions -----------------------------------------------------------
+
+    def _initial(self, alpha: OrdinalObject) -> Decision:
+        """An initial-ordinal expression is initial and a finite ordinal is not (``Ordinal.natCast_lt_omega0``,
+        ``Ordinal.omega0_le_omega``); a symbolic expression may still equal one, so it is ``Unknown``."""
+        match alpha.kind():
+            case "initial":
+                return True
+            case "finite":
+                return False
+        return Unknown
+
+    def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
+        if first not in self:
+            return Unknown
+        if candidate in self:
+            second = candidate
+        elif role_of(candidate) is None:
+            second = self(candidate)
+        else:
+            return Unknown
+        if first._key == second._key:
+            return True
+        if self._at_most(first, second) is False or self._at_most(second, first) is False:
+            return False
+        return Unknown
+
+    def _at_most(self, first: OrdinalObject, second: OrdinalObject) -> Decision:
+        if first._key == second._key:
+            return True
+        if first.kind() == "finite":
+            if second.kind() == "finite":
+                return first.finite_value() <= second.finite_value()
+            return True
+        if second.kind() == "finite":
+            return False
+        if first.kind() == "initial" and second.kind() == "initial":
+            return self._at_most(first.initial_index(), second.initial_index())
+        return Unknown
+
+    def _less_than(self, first: OrdinalObject, second: OrdinalObject) -> Decision:
+        # Each ``True`` of ``_at_most`` between distinct expressions is strict: the
+        # finite and finite-below-nonfinite cases by definition, the initial case by
+        # induction on the indices (``Ordinal.omega_lt_omega``).
+        if first._key == second._key:
+            return False
+        return self._at_most(first, second)
+
+    def __repr__(self) -> str:
+        return "Ordinals"
+
+
+_ORDINALS = OrdinalsCategory()
+
+
+def Ordinals() -> OrdinalsCategory:
+    """The category of exact ordinals."""
+    return _ORDINALS
+
+
+def ordinal(value: OrdinalObject | int) -> OrdinalObject:
+    """``Ordinals()(value)``."""
+    return Ordinals()(value)
+
+
+def omega(index: OrdinalObject | int) -> OrdinalObject:
+    """``Ordinals().omega(index)``."""
+    return Ordinals().omega(index)
+
+
+omega0 = omega(0)

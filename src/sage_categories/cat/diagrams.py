@@ -25,7 +25,7 @@ from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.shapes import Discrete, DiscreteObject, is_discrete
 from sage_categories.kernel.predicates import ask
-from sage_categories.kernel.roles import MorphismOfCategory, ObjectOfCategory
+from sage_categories.kernel.roles import ObjectOfCategory
 from sage_categories.sets.category import Sets
 
 if TYPE_CHECKING:
@@ -72,9 +72,3 @@ def from_sequence(ambient: Category, sequence: tuple[ObjectOfCategory, ...]) -> 
     """The diagram ``(X_0, ..., X_n)`` over ``Discrete([n])``; the empty sequence is over ``Discrete({})``."""
     index_set = Sets().Simplex(len(sequence) - 1) if sequence else Sets().Empty()
     return from_object_rule(Fun(Discrete(index_set), ambient), lambda vertex: sequence[sequence_position(vertex)])
-
-
-def morphism_from_sequence(ambient: Category, domain: Functor, codomain: Functor, components: tuple[MorphismOfCategory, ...]) -> MorphismOfCategory:
-    """The natural transformation between two sequence diagrams with the given components."""
-    functors = Fun(domain.domain(), ambient)
-    return functors.morphism_category(1)(domain, codomain)(lambda vertex: components[sequence_position(vertex)])

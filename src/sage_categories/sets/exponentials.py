@@ -1,40 +1,48 @@
 """The function set ``Y ** X`` of ``Sets()`` (D02, POL-SET-017/020).
 
 ``Sets()`` is cartesian closed: the exponential ``Y ** X`` is the function set, the
-rule-defined set whose points are the maps ``X -> Y``, retained once per pair
-(Mathlib ``CategoryTheory.Types.instCartesianClosed``; inspected 2026-08-26).  It
-retains the evaluation morphism ``ev: (Y ** X) * X -> Y`` and, for a map ``f``, its
-name ``1 -> Y ** X`` (Mac Lane and Moerdijk, *Sheaves in Geometry and Logic*,
-I.6, the name of an arrow; inspected 2026-08-26).  ``Mor(Sets())(X, Y)`` is the
-discrete category on these points.  The cardinality is ``(#Y) ** (#X)`` when both
-cardinals are exact (Mathlib ``Cardinal.power_def``; inspected 2026-08-26) and
-``Unknown`` otherwise.
+rule-defined set whose points are the maps ``X -> Y``, retained once per pair.
+Mathlib states the closure as the instance ``MonoidalClosed (Type v₁)`` of
+``Mathlib/CategoryTheory/Monoidal/Closed/Types.lean`` over the cartesian monoidal
+structure ``CategoryTheory.typesCartesianMonoidalCategory`` of
+``Mathlib/CategoryTheory/Monoidal/Types/Basic.lean``, built from the adjunction
+``Types.tensorProductAdjunction : tensorLeft X ⊣ coyoneda.obj (op X)`` (inspected
+2026-08-27).  The function set retains the evaluation morphism
+``ev: (Y ** X) * X -> Y``, the transpose ``Z -> Y ** X`` of each map ``Z * X -> Y``
+(the adjunction's currying), and, for a map ``f``, its name ``1 -> Y ** X`` (Mac
+Lane and Moerdijk, *Sheaves in Geometry and Logic*, I.6, the name of an arrow;
+inspected 2026-08-26).  ``Mor(Sets())(X, Y)`` is the discrete category on these
+points.  The cardinality is ``(#Y) ** (#X)`` when both cardinals are exact (Mathlib
+``Cardinal.power_def``; inspected 2026-08-26) and ``Unknown`` otherwise.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
-from sage.structure.coerce_dict import TripleDict
+from sage.structure.coerce_dict import MonoDict, TripleDict
 
 import sage_categories.sets.category as _sets
+from sage_categories.cat.constructions import cone
+from sage_categories.cat.diagrams import sequence_position
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import ask
 from sage_categories.sets.elements import Datum, SetPoint
 from sage_categories.sets.maps import SetMap
 from sage_categories.sets.objects import SetObject
 
-__all__ = ["Function", "evaluation_morphism", "function_set", "name_of"]
+__all__ = ["Function", "evaluation_morphism", "function_set", "name_of", "transpose"]
 
 
 class Function:
     """The private datum of a point of ``Y ** X``: the map it names.
 
     This is private computation data, not an owned value (D17 governs owned
-    values).  Two names compare through map equality: exact when the domain has a
-    chosen enumeration, and then the hash is the hash of the tuple of image data, so
-    equal names hash equal; otherwise equality is ``Unknown`` except on identity and
-    the hash is by identity.
+    values).  Two names of one map are equal; two names compare through map
+    equality otherwise, exact when the domain has a chosen enumeration and
+    ``Unknown`` else.  The hash is the hash of the tuple of image data when the
+    domain is enumerated and the hash of the named map otherwise, so equal names
+    hash equal.
     """
 
     def __init__(self, set_map: SetMap) -> None:
@@ -50,8 +58,6 @@ class Function:
         return tuple(self._map._rule(datum) for datum in finite.chosen_enumeration(self._map.domain()))
 
     def __eq__(self, other: Any) -> Decision:
-        if other is self:
-            return True
         match other:
             case Function():
                 return ask(self._map == other.map())
@@ -61,7 +67,7 @@ class Function:
     def __hash__(self) -> int:
         images = self._images()
         if images is Unknown:
-            return object.__hash__(self)
+            return hash(self._map)
         return hash(images)
 
     def __repr__(self) -> str:
@@ -70,6 +76,7 @@ class Function:
 
 _function_sets: TripleDict = TripleDict(weak_values=False)
 _evaluations: TripleDict = TripleDict(weak_values=False)
+_transposes: MonoDict = MonoDict()
 
 
 def function_set(exponent: SetObject, base: SetObject) -> SetObject:
@@ -105,3 +112,28 @@ def evaluation_morphism(exponent: SetObject, base: SetObject) -> SetMap:
         product = sets.Products()((function_set(exponent, base), exponent))
         _evaluations[key] = sets.construct_morphism(product, base, lambda family: family(0).map()._rule(family(1)))
     return _evaluations[key]
+
+
+def transpose(set_map: SetMap) -> SetMap:
+    """The transpose ``Z -> Y ** X`` of ``f: Z * X -> Y``, retained per map.
+
+    Its value at ``z`` names the composite ``f after <z, id_X>: X -> Y``, where
+    ``<z, id_X>: X -> Z * X`` is the mediating map of the cone ``(constant at z,
+    identity)`` (Mac Lane, *Categories for the Working Mathematician*, IV.6, the
+    exponential transpose; inspected 2026-08-27).
+    """
+    sets = _sets.Sets()
+    if set_map not in _transposes:
+        product, base = set_map.domain(), set_map.codomain()
+        assert product in sets.Products(), f"{product!r} is not a chosen product"
+        source, exponent = product.product_projection(0).codomain(), product.product_projection(1).codomain()
+        assert product is sets.Products()((source, exponent)), f"{product!r} is not the chosen binary product {source!r} * {exponent!r}"
+
+        def transposed(source_datum: Datum) -> Function:
+            constant = sets.construct_morphism(exponent, source, lambda exponent_datum: source_datum)
+            legs = {0: constant, 1: exponent.identity()}
+            pairing = product.universal_morphism(cone(product.diagram(), exponent, lambda vertex: legs[sequence_position(vertex)]))
+            return Function(set_map * pairing)
+
+        _transposes[set_map] = sets.construct_morphism(source, function_set(exponent, base), transposed)
+    return _transposes[set_map]

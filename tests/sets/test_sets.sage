@@ -39,6 +39,12 @@ def test_finite_sets_declare_one_inclusion_and_receive_the_set_surface() -> None
     assert successor in Mor(Sets())
 
 
+def test_a_finite_enumeration_lists_distinct_members() -> None:
+    assert ask(Sets().Finite()((int(1), int(2))).cardinality() == int(2)) is True
+    with pytest.raises(AssertionError):
+        Sets().Finite()((int(1), int(1)))
+
+
 def test_a_rule_defined_set_needs_no_enumeration_and_equals_itself_only() -> None:
     integers, other_integers = _integers(), _integers()
 

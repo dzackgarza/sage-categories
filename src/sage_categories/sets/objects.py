@@ -18,8 +18,11 @@ which retains each inclusion (``sets/subobjects.py``).
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable, Iterator
 from typing import Any
+
+from sage.structure.coerce_dict import MonoDict
 
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
@@ -30,6 +33,8 @@ from sage_categories.sets.cardinals import Cardinal, CardinalObject
 from sage_categories.sets.elements import Datum, SetPoint
 
 __all__ = ["FiniteSetRole", "MembershipRule", "SetObject", "element_of"]
+
+logger = logging.getLogger("sage_categories")
 
 type MembershipRule = Callable[[Datum], Decision]
 
@@ -66,25 +71,36 @@ class SetObject(ObjectOfCategory):
         super().__init__(category)
         self._membership_rule = membership_rule
         self._cardinality = cardinality
-        # One retained point per datum (D15): the datum is private computation data
-        # inside the set's boundary (POL-TYPE-012), so this table never keys on an
-        # owned value.
+        # One retained point per datum (POL-CAT-083): the datum is private computation
+        # data inside the set's boundary (POL-TYPE-012), so these tables never key on
+        # an owned value.  A datum whose engine equality is Boolean-exact keys the
+        # first table by value, so two equal data select one point.  A datum whose
+        # equality can be ``Unknown`` (a rule-defined family, the name of a map with an
+        # unenumerated domain) is retained by identity in the second: two distinct
+        # such data yield two points, which are ``True``-equal and hash-equal exactly
+        # when the engine later decides their data equal.
         self._points: dict[Datum, SetPoint] = {}
+        self._rule_points: MonoDict = MonoDict()
 
     def membership_proposition(self, candidate: CategoryPoint) -> AppliedPredicate:
         return element_of(candidate, self)
 
     def __contains__(self, candidate: Any) -> bool:
-        return ask(element_of(candidate, self)) is True
+        decision = ask(element_of(candidate, self))
+        if decision is Unknown:
+            logger.info("membership of %r in %r was not established", candidate, self)
+            return False
+        return decision is True
 
     def point(self, datum: Datum) -> SetPoint:
         """The classical element ``1 -> X`` selecting ``datum``, one point per datum."""
         assert self._membership_rule(datum) is not False, f"{datum!r} is not a member of {self!r}"
-        if datum not in self._points:
+        table = self._points if isinstance(datum == datum, bool) else self._rule_points
+        if datum not in table:
             sets = _sets.Sets()
             defining_morphism = sets.construct_morphism(sets.Terminal(), self, lambda star: datum)
-            self._points[datum] = self.category().ElementType(defining_morphism, datum)
-        return self._points[datum]
+            table[datum] = self.category().ElementType(defining_morphism, datum)
+        return table[datum]
 
     def cardinality(self) -> CardinalObject | UnknownClass:
         return self._cardinality

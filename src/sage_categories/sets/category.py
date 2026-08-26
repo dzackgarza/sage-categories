@@ -60,6 +60,10 @@ class FiniteSets(PropertySubcategory[[Rule], []]):
             refine(members, self)
             return members
         enumeration = tuple(members)
+        # An enumeration lists each member once: its length is the cardinality (POL-SET-011/027).
+        for position, first in enumerate(enumeration):
+            for second in enumeration[position + 1 :]:
+                assert (first == second) is False, f"the enumeration lists {first!r} and {second!r}, which are not exactly distinct"
         finite_set = self.ObjectType(self, enumeration)
         self._enumerations[finite_set] = enumeration
         return finite_set
@@ -243,6 +247,13 @@ class SetsCategory(Category[[Rule], []]):
 
         assert exponent in self and base in self
         return evaluation_morphism(exponent, base)
+
+    def transpose(self, set_map: SetMap) -> SetMap:
+        """The transpose ``Z -> Y ** X`` of a map ``Z * X -> Y`` out of a chosen binary product, retained per map."""
+        from sage_categories.sets.exponentials import transpose
+
+        assert set_map in self.morphism_category(1)
+        return transpose(set_map)
 
     # -- exact routes (POL-MATH-042) --------------------------------------------------
 

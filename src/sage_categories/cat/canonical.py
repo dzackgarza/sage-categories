@@ -126,13 +126,19 @@ class FinitePresentedCategory(Category[[Word], []]):
             position = target
         assert position == self.label(codomain), f"the path ends at {position!r}, not at {codomain!r}"
         path = self.MorphismType(self.morphism_category(1), domain, codomain, self._reduce(word))
-        # A word in generators with declared inverses is invertible by construction.
+        # A word in generators with declared two-sided inverses is invertible by construction.
         if path.word() and all(name in self._inverse_generators() for name in path.word()):
             refine(path, self.morphism_category(1).Isomorphisms())
         return path
 
     def _inverse_generators(self) -> dict[str, str]:
-        return {left[0]: left[1] for left, right in self._relations if len(left) == 2 and not right}
+        """``u |-> v`` for every generator pair with both relations ``(u v) -> ()`` and ``(v u) -> ()``.
+
+        One relation alone makes ``u`` a split monomorphism and ``v`` a split
+        epimorphism, not an isomorphism (POL-MATH-042).
+        """
+        one_sided = {(left[0], left[1]) for left, right in self._relations if len(left) == 2 and not right}
+        return {first: second for first, second in one_sided if (second, first) in one_sided}
 
     def construct_identity(self, vertex: Vertex) -> Path:
         return self.MorphismType(self.morphism_category(1), vertex, vertex, ())

@@ -15,7 +15,6 @@ equality handler (D17); no row proves a universal property (D14).
 from sage_categories.all import *
 from sage_categories.cat.constructions import cocone, cone
 from sage_categories.cat.diagrams import sequence_position
-from sage_categories.sets.exponentials import Function
 
 
 def _sequence_cone(diagram, apex, legs):
@@ -190,12 +189,14 @@ def test_the_function_set_is_the_exponential_and_the_morphism_category_is_discre
 
 def test_injectivity_into_a_function_set_is_decided_through_map_equality() -> None:
     two, four = Sets().Simplex(int(1)), Sets().Simplex(int(3))
-    parity, parity_again = Mor(Sets())(four, two)(lambda datum: datum % int(2)), Mor(Sets())(four, two)(lambda datum: (datum + int(2)) % int(2))
-    constant = Mor(Sets())(four, two)(lambda datum: int(0))
-    names = {int(0): Function(parity), int(1): Function(parity_again)}
-    collapsing = Mor(Sets())(two, two ** four)(lambda datum: names[datum])
-    separating = Mor(Sets())(two, two ** four)(lambda datum: Function(parity) if datum == int(0) else Function(constant))
+    parity = Mor(Sets())(four, two)(lambda datum: datum % int(2))
+    collapsing = Sets().transpose(Mor(Sets())(two * four, two)(lambda pair: pair(int(1)) % int(2)))
+    separating = Sets().transpose(Mor(Sets())(two * four, two)(lambda pair: pair(int(1)) % int(2) if pair(int(0)) == int(0) else int(0)))
 
+    assert collapsing in Mor(Sets())(two, two ** four)
+    assert ask(collapsing(two.point(int(0))) == Sets().name_of(parity)) is True
     assert ask(collapsing.is_monomorphism()) is False
-    assert collapsing(two.point(int(0))) is collapsing(two.point(int(1)))
+    assert ask(collapsing(two.point(int(0))) == collapsing(two.point(int(1)))) is True
+    assert ask(separating(two.point(int(0))) == Sets().name_of(parity)) is True
+    assert ask(separating(two.point(int(1))) == Sets().name_of(parity)) is False
     assert ask(separating.is_monomorphism()) is True

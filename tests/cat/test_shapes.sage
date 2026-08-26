@@ -94,3 +94,10 @@ def test_the_uniform_call_form_constructs_a_presented_shape_with_its_relations()
     assert triangle.generator("u") in Mor(triangle)(triangle(int(0)), triangle(int(1)))
     assert ask(triangle.generator("v") * triangle.generator("u") == triangle.generator("w")) is True
     assert ask(triangle.generator("w") == triangle(int(0)).identity()) is False
+
+    retraction = Cat()((int(0), int(1)), (("s", int(0), int(1)), ("r", int(1), int(0))), ((("s", "r"), ()),))
+    assert ask(retraction.generator("r") * retraction.generator("s") == retraction(int(0)).identity()) is True
+    assert retraction.generator("s") not in Mor(retraction).Isomorphisms()
+    assert retraction.generator("r") not in Mor(retraction).Isomorphisms()
+    walking = Cat().WalkingIsomorphism()
+    assert walking.generator("f") in Mor(walking).Isomorphisms()

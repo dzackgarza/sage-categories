@@ -330,3 +330,27 @@ def test_an_object_narrowed_by_two_independent_roots_still_composes_its_morphism
     assert (fixed * fixed).domain() is chain
     assert identity.inverse() is identity
     assert ask(chain.cardinality() == int(2)) is True
+
+
+def test_a_narrowed_object_composes_a_retracted_pair_through_the_isomorphism_categories() -> None:
+    """The compiled class of a narrowing reached through several morphism properties.
+
+    A retraction places its composites in the isomorphism and endomorphism categories
+    of the narrowing, which is the node with the most morphism-property ancestors.
+    """
+    finite = FinitePosets()
+    carrier = Sets().Finite()((int(0), int(1)))
+    order = (carrier * carrier).subset_from(lambda pair: pair(int(0)) <= pair(int(1)))
+    chain = Posets()(order)
+    single = Sets().Finite()((int(0),))
+    point = Posets()((single * single).subset_from(lambda pair: True))
+
+    collapse = Mor(Posets())(chain, point)(lambda datum: int(0))
+    include = Mor(Posets())(point, chain)(lambda datum: int(0))
+    assert ask(collapse * include == point.identity()) is True
+    assert chain.identity() in Mor(Posets()).Automorphisms()
+
+    finite.intersection((finite.WithBottom(), finite.WithTop()))(chain)
+
+    assert ask(include * collapse == chain.identity()) is False
+    assert chain.identity().inverse() is chain.identity()

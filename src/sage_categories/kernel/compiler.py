@@ -101,6 +101,9 @@ _empty_local_roles: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
 _linearizations: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
 _nodes_by_key: dict[int, Node] = {}
 
+# The node each declared role class stands for: one class, one node (POL-CAT-016).
+_class_owners: dict[type[CategoryPoint], Node] = {}
+
 _ROLE_POSITIONS: dict[Role, int] = {role: position for position, role in enumerate(Role)}
 
 
@@ -333,6 +336,53 @@ def _base_classes(current: Node, local: type[CategoryPoint]) -> tuple[type[Categ
     return tuple(bases)
 
 
+def _declared_class(current: Node, local: type[CategoryPoint]) -> type[CategoryPoint]:
+    """The declaring class of ``current``, made its own.
+
+    Several categories inherit one nested declaration from a shared Python base -- the
+    identity 2-cells of every 1-category -- and a declared class sits in the compiled
+    MRO of every node that reaches it.  One class may stand for only one node
+    (POL-CAT-016): the compiled bases are node-ordered, and a class at two nodes would
+    have to hold both positions.  Sage's rule is the same, in
+    ``Category._make_named_class_key``: one key only for categories with one list of
+    super categories.  The first node keeps the declaration, so
+    ``Cat().ObjectType is Category``; a later node takes a subclass of it.
+    """
+    owner = _class_owners.get(local)
+    if owner is not None and not same_node(owner, current):
+        local = dynamic_class(f"{current.category!r}.{current.role.value}", (local,), prepend_cls_bases=False)
+    _class_owners.setdefault(local, current)
+    return local
+
+
+def _assert_linearized(current: Node, compiled: type[CategoryPoint]) -> None:
+    """The compiled class's MRO carries the reachable nodes' classes in linearization order.
+
+    Sage states the same invariant in ``Category._test_category_graph``
+    (``sage/categories/category.py``): ``parent_class.mro()`` is the ancestors'
+    compiled classes followed by ``object``.  Here the MRO also carries the declared
+    role classes and the kernel bases, so the check is on the ancestors' classes
+    alone: their relative order in the MRO must be the C3 order.  A class standing
+    for two nodes cannot satisfy this, which is the condition to fail loudly on.
+    """
+    order = [_nodes_by_key[key] for key in _linearize(current)[0]]
+    classes = [found.category.role_class(found.role) for found in order]
+    positions = {klass: position for position, klass in enumerate(compiled.mro())}
+    missing = [found for found, klass in zip(order, classes) if klass not in positions]
+    assert not missing, (
+        f"the {current.role.value} class of {current.category!r} does not carry "
+        f"{missing[0].category!r}.{missing[0].role.value}, which it reaches"
+    )
+    placed = [(found, positions[klass]) for found, klass in zip(order, classes)]
+    inverted = next(((first, second) for (first, a), (second, b) in zip(placed, placed[1:]) if a > b), None)
+    assert inverted is None, (
+        f"the {current.role.value} class of {current.category!r} puts "
+        f"{inverted[1].category!r}.{inverted[1].role.value} before "
+        f"{inverted[0].category!r}.{inverted[0].role.value}, against the C3 order; "
+        "one class stands for two nodes"
+    )
+
+
 def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
     """Compile the three role classes of ``category`` from its local declarations and its selected functors."""
     for functor in functors:
@@ -357,16 +407,31 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
             if entry.route
         }
         if not functors and not surface:
-            # Nothing is inherited: the local declaration is the role class itself, so
-            # ``Cat().ObjectType is Category`` and ``Sets().ObjectType is SetObject``.
-            setattr(category, role.value, category.local_role_class(role))
+            # Nothing is inherited, so the local declaration can be the role class
+            # itself: ``Cat().ObjectType is Category``, ``Sets().ObjectType is
+            # SetObject``.  Several categories inherit one nested declaration from a
+            # shared Python base, though -- the identity 2-cells of every 1-category --
+            # and one class may stand for only one node (POL-CAT-016): the compiled
+            # bases are node-ordered, and a class at two nodes would have to hold both
+            # positions.  Sage's rule is the same: ``_make_named_class_key`` may return
+            # one key only for categories with one list of super categories.  The first
+            # node keeps the declaration; a later node takes a subclass of it.
+            setattr(category, role.value, _declared_class(current, category.local_role_class(role)))
             continue
         # The local declaration first, then the controlled direct bases Sage's C3
         # returns for this node (``_linearize``).
-        compiled = dynamic_class(
-            f"{category!r}.{role.value}",
-            _base_classes(current, category.local_role_class(role)),
-            cls=type("Surface", (), surface),
-            prepend_cls_bases=False,
-        )
+        bases = _base_classes(current, _declared_class(current, category.local_role_class(role)))
+        try:
+            compiled = dynamic_class(
+                f"{category!r}.{role.value}",
+                bases,
+                cls=type("Surface", (), surface),
+                prepend_cls_bases=False,
+            )
+        except TypeError as conflict:
+            raise TypeError(
+                f"the {role.value} class of {category!r} has no linearization over "
+                f"{[klass.__name__ for klass in bases]}: {conflict}"
+            ) from conflict
         setattr(category, role.value, compiled)
+        _assert_linearized(current, compiled)

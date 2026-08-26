@@ -44,6 +44,7 @@ def test_cat_is_unstratified_and_bootstrapped_first() -> None:
     assert Cat().category() is Cat()
     assert Cat() in Cat()
     assert Cat().structure_functors() == ()
+    assert Cat().ObjectType is Category
 
 
 def test_an_ordinary_category_is_an_object_of_cat() -> None:
@@ -134,13 +135,16 @@ def test_canonical_objects_exist_by_identity() -> None:
     assert span.generator("0->2") in Mor(span)(span(int(0)), span(int(2)))
     assert cospan.generator("1->2") in Mor(cospan)(cospan(int(1)), cospan(int(2)))
     composite = Cat().Simplex(int(2)).generator("1->2") * Cat().Simplex(int(2)).generator("0->1")
-    assert ask(composite == Mor(Cat().Simplex(int(2)))(Cat().Simplex(int(2))(int(0)), Cat().Simplex(int(2))(int(2)))("0->1", "1->2")) is True
+    assert ask(composite == Mor(Cat().Simplex(int(2)))(Cat().Simplex(int(2))(int(0)), Cat().Simplex(int(2))(int(2)))(("0->1", "1->2"))) is True
 
     two = Sets().Simplex(int(1))
     swap = Mor(Sets())(two, two)(lambda datum: int(1) - datum)
     arrow = swap.defining_morphism()
     assert arrow in Fun(Cat().Simplex(int(1)), Sets())
     assert arrow.on_morphism(Cat().Simplex(int(1)).generator("0->1")) is swap
+    assert swap.defining_morphism() is arrow
+    assert two.defining_morphism() is two.defining_morphism()
+    assert two.defining_morphism().on_object(Cat().Terminal()(int(0))) is two
 
 
 def test_global_and_fixed_endpoint_property_dispatch_reach_one_category() -> None:

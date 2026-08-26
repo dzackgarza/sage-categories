@@ -208,6 +208,11 @@ def compile_category(category: Category) -> None:
             for name, entry in catalogue(current).items()
             if entry.route
         }
+        if not functors and not surface:
+            # Nothing is inherited: the local declaration is the role class itself, so
+            # ``Cat().ObjectType is Category`` and ``Sets().ObjectType is SetObject``.
+            setattr(category, role.value, category.local_role_class(role))
+            continue
         codomain_classes: list[type] = []
         for _, target in successors(current):
             klass = target.category.role_class(target.role)

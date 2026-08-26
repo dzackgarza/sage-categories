@@ -45,7 +45,47 @@ def is_prime(integer: SetElement) -> bool:
 
 def is_undecided(integer: SetElement) -> Decision:
     assert ZZ.contains_integer(integer)
-    return UNKNOWN
+    return Unknown
+
+
+def is_below_five(integer: SetElement) -> bool:
+    assert ZZ.contains_integer(integer)
+    return 0 <= int(integer) < 5
+
+
+def test_rule_defined_sets_without_cardinal_data_have_unknown_cardinality() -> None:
+    even_integers = ZZ.subset_from(is_even).object()
+
+    assert even_integers in Sets()
+    assert even_integers.cardinality() is Unknown
+    assert even_integers.is_finite() is Unknown
+
+
+def test_finite_products_multiply_known_cardinalities() -> None:
+    pair = FiniteSet((ZZ(int(0)), ZZ(int(1))))
+    triple = FiniteSet((ZZ(int(0)), ZZ(int(1)), ZZ(int(2))))
+    product = pair.cartesian_product(triple)
+
+    # #(X × Y) = #X · #Y (POL-SET-020); enumerating the product counts it independently.
+    assert product.cardinality() == 6
+    assert len(tuple(product)) == 6
+
+
+def test_products_with_an_unknown_factor_have_unknown_cardinality() -> None:
+    pair = FiniteSet((ZZ(int(0)), ZZ(int(1))))
+    even_integers = ZZ.subset_from(is_even).object()
+
+    assert pair.cartesian_product(even_integers).cardinality() is Unknown
+
+
+def test_assumed_finiteness_refines_without_supplying_a_cardinal() -> None:
+    small_integers = ZZ.subset_from(is_below_five).object()
+    assert small_integers.is_finite() is Unknown
+
+    assume(small_integers.is_finite())
+
+    assert small_integers in Sets().Finite()
+    assert small_integers.cardinality() is Unknown
 
 
 def test_arbitrary_set_maps_have_exact_endpoints() -> None:
@@ -88,7 +128,7 @@ def test_predicates_construct_infinite_subobjects() -> None:
     assert ZZ(int(3)) not in even_integers
     assert ZZ(int(2)) in prime_integers
     assert ZZ(int(4)) not in prime_integers
-    assert undecided_integers.membership(ZZ(int(0))) is UNKNOWN
+    assert undecided_integers.membership(ZZ(int(0))) is Unknown
     assert even_integers.object().category() is CountableSets()
     assert prime_integers.object().category() is CountableSets()
     assert undecided_integers.object().category() is Sets()
@@ -363,7 +403,7 @@ def test_cardinal_and_ordinal_structure_maps() -> None:
     assert ordinal(int(3)).is_initial() is False
     assert continuum.is_uncountably_infinite() is True
     assert cardinal(int(3)).sort_key() < aleph0.sort_key()
-    assert Cardinals().are_incomparable(kappa, lam) is UNKNOWN
+    assert Cardinals().are_incomparable(kappa, lam) is Unknown
 
     assert summed.domain() == Cardinals().sum(one, one)
     assert summed.codomain() == Cardinals().sum(two, two)

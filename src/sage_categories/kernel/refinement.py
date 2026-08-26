@@ -15,6 +15,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from sage.structure.dynamic_class import dynamic_class
+
 import sage_categories.kernel.compiler as compiler
 from sage_categories.kernel.descriptors import placement_node
 from sage_categories.kernel.roles import CategoryPoint, Role, role_of
@@ -34,9 +36,21 @@ def is_placed(candidate: Any, category: Category) -> bool:
 
 
 def place(value: CategoryPoint, category: Category) -> None:
-    """Record that ``value`` was constructed as an object of ``category``."""
+    """Record that ``value`` was constructed as an object of ``category``.
+
+    The value keeps its own implementation class: an object of ``Cat()`` is an
+    instance of its own ``Category`` subclass, so its refined class is the join of
+    the target role class with that class (POL-KERNEL-013, POL-CAT-074).
+    """
+    target = compiler.node(category, Role.OBJECT)
+    role_class = target.category.role_class(target.role)
     value._category = category
-    value.__class__ = compiler.node(category, Role.OBJECT).category.role_class(compiler.node(category, Role.OBJECT).role)
+    if issubclass(type(value), role_class):
+        return
+    if issubclass(role_class, type(value)):
+        value.__class__ = role_class
+        return
+    value.__class__ = dynamic_class(role_class.__name__, (role_class, type(value)), prepend_cls_bases=False)
 
 
 def is_subcategory(inner: Category, outer: Category) -> bool:

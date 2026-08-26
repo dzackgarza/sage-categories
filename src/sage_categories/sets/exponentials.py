@@ -103,5 +103,5 @@ def evaluation_morphism(exponent: SetObject, base: SetObject) -> SetMap:
     key = (exponent, base, sets)
     if key not in _evaluations:
         product = sets.Products()((function_set(exponent, base), exponent))
-        _evaluations[key] = sets.construct_morphism(product.apex(), base, lambda family: family(0).map()._rule(family(1)))
+        _evaluations[key] = sets.construct_morphism(product, base, lambda family: family(0).map()._rule(family(1)))
     return _evaluations[key]

@@ -114,6 +114,21 @@ def _transport_argument(argument: Any, argument_role: ArgumentRole, owner: Categ
     return transport(argument, target)
 
 
+def _implementation(receiver: CategoryPoint, entry: compiler.Entry) -> Callable[..., Any]:
+    """The declaring method as the receiver's own implementation class realizes it.
+
+    An object of ``Cat()`` is an instance of its own ``Category`` subclass, which
+    refines the declarations of ``Cat().ObjectType``; ``F(X).f()`` for such an image
+    is that refinement, not the base declaration.
+    """
+    declaring_class = entry.owner.local_role_class(entry.role)
+    for klass in type(receiver).__mro__:
+        declared = vars(klass).get(entry.name)
+        if declared is not None and issubclass(klass, declaring_class) and not isinstance(declared, ForwardedMethod):
+            return declared
+    return entry.function
+
+
 class ForwardedMethod:
     """A method inherited along a selected route; ``__get__`` binds the transport."""
 
@@ -130,13 +145,13 @@ class ForwardedMethod:
     def __get__(self, instance: CategoryPoint | None, owner: type) -> Callable[..., Any] | ForwardedMethod:
         if instance is None:
             return self
-        function = self._entry.function
         target = self._target
         roles = self._signature.parameters()
         python_signature = self._python_signature
 
         def bound(*arguments: Any, **keyword_arguments: Any) -> Any:
             receiver = transport(instance, target)
+            function = _implementation(receiver, self._entry)
             call = python_signature.bind(receiver, *arguments, **keyword_arguments)
             for name, value in list(call.arguments.items())[1:]:
                 parameter = python_signature.parameters[name]

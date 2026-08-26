@@ -181,7 +181,8 @@ def empty_local_role(category: Category, role: Role) -> type[CategoryPoint]:
     """A local role class that declares nothing, on the kernel base of the ambient's role."""
     ambient_node = node(category.ambient(), role)
     ambient_class = ambient_node.category.role_class(ambient_node.role)
-    base = next(klass for klass in ambient_class.__mro__ if klass in (kernel_base(Role.OBJECT), kernel_base(Role.ELEMENT), kernel_base(Role.MORPHISM)))
+    kernel_bases = (kernel_base(Role.OBJECT), kernel_base(Role.ELEMENT), kernel_base(Role.MORPHISM), CategoryPoint)
+    base = next(klass for klass in ambient_class.__mro__ if klass in kernel_bases)
     return type(f"{category!r}.{role.value}", (base,), {})
 
 

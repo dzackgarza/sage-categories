@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeIs
 
 from sage_categories.compiler import DeclaredMethod, category_compiler
+from sage_categories.kernel.structural_graph import selected_structure_functors
 from sage_categories.types import (
     Arrow,
     CategoryElement,
@@ -139,7 +140,10 @@ class Category(MathematicalObject):
 
     def super_categories(self) -> tuple[Category, ...]:
         """Return the category graph derived from structural functors."""
-        return tuple(functor.codomain() for functor in self.structure_functors())
+        return tuple(
+            functor.codomain()
+            for functor in selected_structure_functors(self)
+        )
 
     def structural_route_to(
         self,

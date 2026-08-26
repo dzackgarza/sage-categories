@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, TypeVar, assert_never
 
 from sage.structure.dynamic_class import dynamic_class
 
+from sage_categories.kernel.structural_graph import selected_structure_functors
 from sage_categories.descriptors import (
     ForwardedArrowMethod,
     ForwardedDescriptor,
@@ -293,7 +294,7 @@ class CategoryCompiler:
                 if local_type in _KERNEL_IMPLEMENTATIONS:
                     continue
                 reached: tuple[str, ...] = ()
-                for functor in category.structure_functors():
+                for functor in selected_structure_functors(category):
                     if not includes(functor):
                         continue
                     codomain = functor.codomain()
@@ -547,7 +548,7 @@ class CategoryCompiler:
     ) -> dict[str, DeclaredMethod]:
         local = self._local_methods(local_type)
         catalogue: dict[str, DeclaredMethod] = {}
-        for functor in category.structure_functors():
+        for functor in selected_structure_functors(category):
             inherited_methods = inherited_catalogue(functor.codomain())
             for name, declaration in inherited_methods.items():
                 candidate = DeclaredMethod(

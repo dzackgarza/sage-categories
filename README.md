@@ -1,7 +1,7 @@
 # sage-categories
 
 `sage-categories` is a categorical replacement universe for a significant subset of standard Sage mathematics.
-It shadows familiar Sage objects with package-owned versions whose categories own their objects, arrows, constructors, and methods.
+It shadows familiar Sage objects with package-owned versions whose categories own their objects, morphisms, constructors, and methods.
 
 The central rule is simple:
 
@@ -12,7 +12,7 @@ This rule replaces accidental inheritance with explicit mathematics.
 It also lets one public object receive operations from every category reached by the selected functors.
 
 The public API is not stable.
-The repository contains the categorical kernel, the arrow-category family, and an owned `Sets()` implementation.
+The repository contains the categorical kernel, the `Mor(n, C)` tower, and an owned `Sets()` implementation.
 The complete acceptance design described below remains the current implementation target.
 
 ## One import, one mathematical universe
@@ -49,7 +49,7 @@ These mechanisms can obscure three different facts:
 
 - which category owns an operation;
 
-- which functor transports an object or arrow;
+- which functor transports an object or morphism;
 
 - which implementation performs a computation.
 
@@ -74,7 +74,7 @@ Category theory supplies the reuse mechanism: actual functors replace copied met
 
 The kernel absorbs the Python machinery needed to compile that structure.
 Outside the kernel, category code should read as the mathematical definition it implements.
-A leaf-category contributor should mainly state new objects, arrows, functors, axioms, and construction rules.
+A leaf-category contributor should mainly state new objects, morphisms, functors, axioms, and construction rules.
 The inherited categorical machinery should supply the rest.
 
 The intended reviewer of a theory subtree is a mathematician with little programming experience.
@@ -87,19 +87,19 @@ Once the kernel is established, a researcher adding a leaf category should not n
 They should begin from a shipped category template, declare the new mathematical structure, connect it to nearby familiar categories through selected functors, and implement only the new methods.
 They should need to read only the mathematically relevant neighboring subtrees and their functor contracts.
 
-The compiler then supplies the complete inherited object, element, arrow, and construction interfaces.
+The compiler then supplies the complete inherited object, element, morphism, and construction interfaces.
 A specialized algebra category connected to `Algebras(R)`, modules, and sets receives their applicable operations without forwarding methods.
 Cardinality and other distant capabilities arrive through functor composition rather than leaf-specific code.
 
 For example, a researcher can add `FiniteSubsetsOfNN()` after the complete theory of sets exists.
 They declare its constructors, its inclusion functor into `Sets()`, and only its new methods, such as `minimal_element()` or `gcd_of_elements()`. The kernel constructs `FiniteSubsetsOfNN.ElementType` and supplies the full `Sets.ElementType` interface without a leaf-specific element class.
 The inherited set interface also makes products, coproducts, filtered limits, and other set constructions available without new implementations in the leaf.
-Each result remains an object of the category that owns the construction and returns to `FiniteSubsetsOfNN()` whenever the construction is known to land there.
+Each result remains an object of the category that owns the construction. The leaf returns it to `FiniteSubsetsOfNN()` by overriding the inherited construction and refining its result through the leaf's own constructor when the mathematics lands there.
 
 The same goal applies to functorial constructions.
 A full replete subcategory receives the inherited categorical interface automatically.
-Limits, colimits, and similar constructions descend automatically when their results are established to remain in that subcategory.
-The leaf author supplies only the closure or lift that is mathematically specific to the new structure.
+Limits, colimits, and similar constructions descend to a subcategory when its leaf overrides the inherited construction and refines the result through the leaf's own constructor.
+The leaf author supplies only that override, closure, or lift, which is the mathematics specific to the new structure.
 
 ## Core model
 
@@ -112,31 +112,26 @@ Each category `C` owns the implementation types relevant to its theory:
 
 - `C.ElementType` for elements, when the category uses elements;
 
-- `C.ArrowType` for arrows;
+- `C.MorphismType` for morphisms;
 
 - `C(...)` for category-owned construction.
 
 `C(...)` dispatches from semantic input to the exact private constructor route. This
 follows Sage's [`Parent.__call__()` constructor model](https://doc.sagemath.org/html/en/reference/structure/sage/structure/parent.html).
 
-For `A, B in C`, the following expressions return the same owned Hom category:
+For `A, B in C`, the one owned hom category is `Mor(C)(A, B)`: the full subcategory of
+`Mor(C)` on the morphisms `A -> B`. `Mor(C)(A, B)(data)` constructs a morphism `A -> B`;
+`C(data)` constructs an object of `C`.
 
-```python
-Ar(C)(A, B)
-Hom(C)(A, B)
-C.HomCategory(A, B)
-A.Hom(B)
-B ** A
-```
+`Mor(C)` has the morphisms of `C` as objects and the 2-morphisms of `C` as morphisms; for a
+1-category it is discrete. The category whose objects are morphisms and whose morphisms are
+commuting squares is `Fun([1], C)`, the functor category from the walking arrow, with
+evaluation functors `ev_0, ev_1: Fun([1], C) -> C`. For `C = Cat()`, the morphisms of
+`Fun(C, D)` are natural transformations.
 
-Each spelling sends construction data to that category's object constructor.
-
-Endpoint application `Ar(C)(A, B)` dispatches directly to `Hom_C(A, B)`. Separately,
-`Ar(C)` has the arrows of `C` as objects and commuting squares as arrows. For
-`C = Cat()`, the Hom-category arrows are natural transformations.
-
-Define `Fun = Ar(Cat())`. The endpoint Hom category `Fun(C, D)` owns construction of
-functors from `C` to `D`. The endpoints select the category, not a particular functor.
+Define `Fun = Mor(Cat())`. The endpoint hom category `Fun(C, D) = Mor(Cat())(C, D)` owns
+construction of functors from `C` to `D`. The endpoints select the category, not a
+particular functor.
 
 ```python
 Fun(C, D)(on_object, on_morphism)
@@ -165,13 +160,14 @@ If `S` is a subcategory of `P`, then `S` is an object of
 `Cat().Products().Subobjects()`. Its `product_projection(i)` is the subcategory inclusion
 followed by the corresponding projection of `P`.
 
-A slice or coslice is a subcategory of `C * Ar(C)`. Its first projection selects the
-varying object. Its second selects the defining arrow.
+`C.SliceOver(x)` is the pullback in `Cat()` of `ev_1: Fun([1], C) -> C` along `x: 1 -> C`;
+`C.CosliceUnder(x)` is the pullback of `ev_0`. Each retains its pullback projections; the
+varying object is the composite with `ev_0` or `ev_1`.
 
 For `X, Y in C`, the categorical operators are:
 
 ```python
-Y ** X  # Hom_C(X, Y)
+Y ** X  # exponential object, where C is declared cartesian closed
 X * Y   # product
 X + Y   # coproduct
 X @ Y   # biproduct
@@ -179,17 +175,17 @@ X @ Y   # biproduct
 
 The category foundation defines these operations once and retains their universal data.
 
-A functor `F: C -> D` is an arrow in `Cat` and an object of `Ar(Cat())`.
-It inherits its domain, codomain, object map, and arrow map from `Cat().ArrowType`.
-For fixed endpoints, `Fun(C, D)` is `Cat().HomCategory(C, D)`. Its arrows are natural
+A functor `F: C -> D` is a morphism in `Cat` and an object of `Fun = Mor(Cat())`.
+It inherits its domain, codomain, object map, and morphism map from `Cat().MorphismType`.
+For fixed endpoints, `Fun(C, D)` is `Mor(Cat())(C, D)`. Its morphisms are natural
 transformations.
 
-Functor properties use property subcategories of `Ar(Cat())`:
+Functor properties use property subcategories of `Mor(Cat())`:
 
 ```python
-Ar(Cat()).Full()
-Ar(Cat()).Faithful()
-Ar(Cat()).FullyFaithful()
+Mor(Cat()).Full()
+Mor(Cat()).Faithful()
+Mor(Cat()).FullyFaithful()
 ```
 
 Their `is_full()`, `is_faithful()`, and `is_fully_faithful()` methods return applied
@@ -201,7 +197,7 @@ Only selected structural functors contribute methods to the public surface.
 The selection is compiler input over an already established mathematical functor. It is
 not an additional kind of functor.
 
-For an object `x` in `C`, the kernel constructs and caches `F(x)` in `D`. It then exposes methods declared by `D.ObjectType` directly on `x`. The same process applies to elements and arrows.
+For an object `x` in `C`, the kernel constructs and caches `F(x)` in `D`. It then exposes methods declared by `D.ObjectType` directly on `x`. The same process applies to elements and morphisms.
 
 The method compiler records the category that declares each method.
 Local declarations take precedence.
@@ -216,17 +212,17 @@ The functor images remain available for inspection when their mathematical role 
 The implementation order follows the mathematical dependency order.
 
 The first layer is `Cat`, the category of categories. Its `ObjectType` implements every
-category, and its `ArrowType` implements every functor. The kernel constructs `Ar(C)` for
-all `C`, including `Ar(Cat())`. It also constructs functor categories, natural
+category, and its `MorphismType` implements every functor. The kernel constructs `Mor(C)`
+for all `C`, including `Fun = Mor(Cat())`. It also constructs functor categories, natural
 transformations, natural isomorphisms, and sequence products and coproducts from the same
-category and arrow mechanisms.
+category and morphism mechanisms.
 
-The next layer is the complete family of arrow categories.
+The next layer is the complete `Mor(n, C)` tower.
 This family includes:
 
-- arrow categories and commuting squares;
+- `Mor(C)` and the commuting-square category `Fun([1], C)`;
 
-- hom categories and endomorphism categories;
+- fixed-endpoint categories `Mor(C)(A, B)` and endomorphism categories;
 
 - monomorphism, epimorphism, isomorphism, and automorphism categories;
 
@@ -234,10 +230,11 @@ This family includes:
 
 - slices, coslices, subobjects, superobjects, covering objects, and covered objects.
 
-Subobjects of product categories receive component functors by composition. Slice and
-coslice projections use this rule with the source and target functors of `Ar(C)`.
+Subobjects of product categories receive component functors by composition. Slices and
+coslices are pullbacks of the evaluation functors `ev_1` and `ev_0` of `Fun([1], C)` and
+retain their pullback projections.
 
-These constructions must use the same `ObjectType`, `ElementType`, and `ArrowType` inheritance mechanism.
+These constructions must use the same `ObjectType`, `ElementType`, and `MorphismType` inheritance mechanism.
 
 The next layer is an owned category `Sets()`. It must replace Sage's Sets category for this project.
 Its design includes:
@@ -248,7 +245,7 @@ Its design includes:
 
 - function sets and exponentials;
 
-- predicate-defined subsets with inclusion arrows;
+- predicate-defined subsets with inclusion morphisms;
 
 - products, coproducts, limits, and colimits of arbitrary small diagrams;
 
@@ -274,7 +271,7 @@ The subset
 A = \{x \in B \mid P(x)\}
 \]
 
-is an object of `Sets()` together with an inclusion arrow \(A \hookrightarrow B\).
+is an object of `Sets()` together with an inclusion morphism \(A \hookrightarrow B\).
 Examples include the even integers and the prime integers as subobjects of
 \(\mathbb{Z}\). `ask(P(x))` returns `True`, `False`, or Sage's `Unknown`. Python
 containment converts that decision to a Boolean admission result.
@@ -286,11 +283,11 @@ The same requirement applies to coproducts, limits, colimits, and function sets.
 ## Universal constructions
 
 Universal constructions are categorical data, not container factories.
-A product retains its `product_projection(i)` arrows and its mediating arrow.
-A coproduct retains its `coproduct_injection(i)` arrows and its mediating arrow.
+A product retains its `product_projection(i)` morphisms and its mediating morphism.
+A coproduct retains its `coproduct_injection(i)` morphisms and its mediating morphism.
 Limits and colimits retain the diagrams, cones, cocones, and universal maps that define them.
 
-These constructions act on objects and arrows through functors.
+These constructions act on objects and morphisms through functors.
 Their results then receive methods from the categories in which they live.
 A product of sets is therefore still a set and receives set operations through the same structural route.
 
@@ -319,7 +316,7 @@ The theory layer must read like mathematics:
 
 - functors state every change of structure;
 
-- constructions preserve their defining arrows;
+- constructions preserve their defining morphisms;
 
 - inherited methods follow structural functors;
 

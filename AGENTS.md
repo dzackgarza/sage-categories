@@ -77,8 +77,8 @@ Work in mathematical dependency order:
 
 1. `Cat`, functor categories, sequence products and coproducts, natural transformations,
    and natural isomorphisms.
-2. The full arrow-category family, subobjects of products, and their component functors.
-3. The method compiler for `ObjectType`, `ElementType`, and `ArrowType` inheritance.
+2. The `Mor(n, C)` tower, subobjects of products, and their component functors.
+3. The method compiler for `ObjectType`, `ElementType`, and `MorphismType` inheritance.
 4. The owned category `Sets()` and its universal constructions.
 
 The current implementation surface ends at `Sets()`.
@@ -89,16 +89,17 @@ An algebra's cardinality must eventually come from its structural path to `Sets(
 A lattice isometry must eventually pass through module homs to set homs.
 These examples test the foundation; they do not authorize implementation of algebras, modules, or lattices now.
 
-The arrow-category foundation includes:
+The `Mor(n, C)` foundation includes:
 
-- arrow categories and commuting squares;
-- hom and endomorphism categories;
+- `Mor(C)` and the commuting-square category `Fun([1], C)`;
+- fixed-endpoint categories `Mor(C)(A, B)` and endomorphism categories;
 - monomorphism, epimorphism, isomorphism, and automorphism categories;
 - cores and wide subcategories;
 - slices, coslices, subobjects, superobjects, covering objects, and covered objects.
 
-Build slices and coslices after sequence products, subobjects, and arrow source and target
-projections. Their structure functors are composites of these general constructions.
+Build slices and coslices after sequence products, subobjects, `Fun([1], C)`, and its
+evaluation functors `ev_0` and `ev_1`. Their structure functors are composites of these
+general constructions.
 
 ## Mathematical structure as implementation compression
 
@@ -117,7 +118,7 @@ This is the main form of implementation compression in this repository:
 
 - one category owns a generic operation;
 - one functor states each change of structure;
-- one universal construction retains its defining arrows;
+- one universal construction retains its defining morphisms;
 - the compiler turns those declarations into a direct public surface.
 
 At every design, implementation, and review step, answer this question:
@@ -137,7 +138,7 @@ For a product, trace all of these parts:
 - method compilation and inherited public operations;
 - the leaf theorem or structure that adds the new mathematical delta.
 
-Perform the same trace for objects, elements, arrows, arguments, and results.
+Perform the same trace for objects, elements, morphisms, arguments, and results.
 The trace must explain the final public call without leaf-level engineering wiring.
 A missing step is a kernel, construction, functor, or compiler defect.
 Repair that owner instead of adding a leaf workaround.
@@ -172,13 +173,13 @@ Their value is the mathematical structure they make expressible, not their curre
 ## Mathematical judgment
 
 Treat a precise user description as a proposed mathematical model of the code.
-When the live implementation lacks the named category, functor, arrow, or universal property, surface that discrepancy.
+When the live implementation lacks the named category, functor, morphism, or universal property, surface that discrepancy.
 Do not substitute a nearby class, method, constructor, or data record.
 
 Category theory is not a metaphor in this package.
-A functor must map objects and arrows.
+A functor must map objects and morphisms.
 A subobject must include its monomorphism.
-A universal construction must include its universal arrows.
+A universal construction must include its universal morphisms.
 A computation-engine value must be used to construct an owned mathematical object.
 
 One false foundational assertion invalidates each downstream conclusion that uses it.
@@ -213,48 +214,47 @@ A functor constructs an implementation in another category.
 For each category `C`:
 
 - `C.ObjectType` implements objects of `C`.
-- `C.ElementType` implements elements when the theory uses them.
-- `C.ArrowType` implements arrows of `C`.
+- `C.ElementType` implements generalized elements: an element of `X in C` is a morphism `t: T -> X`, an object of `C.SliceOver(X)`; `t.stage()` is `T` and `t.parent()` is the codomain `X`.
+- `C.MorphismType` implements morphisms of `C`.
 - `C(...)` is the category-owned constructor.
 
-The kernel owns `Cat`. Every category in this repository uses `Cat().ObjectType`.
-Every functor uses `Cat().ArrowType` and is an object of `Ar(Cat())`.
+A category may choose a classical stage `G_C`; `Sets()` chooses its terminal object `1`. A classical element is a generalized element at that stage. `F.on_element(t)` is derived from `F.on_morphism` applied to the defining morphism of `t`; it is not additional functor data.
 
-The same architecture applies to objects, elements, and arrows.
+The kernel owns `Cat`. Every category in this repository uses `Cat().ObjectType`.
+Every functor uses `Cat().MorphismType` and is an object of `Fun = Mor(Cat())`.
+`Cat().ElementType` is the role "generalized element of a category": a functor `T -> C`; its stage-`1` points are the objects of `C` and its stage-`[1]` points are the morphisms of `C`.
+
+Size is outside the model. `Cat()` is an object of `Cat()` by runtime convention. No kernel operation quantifies over, enumerates, or scans the objects of `Cat()`.
+
+The same architecture applies to objects, elements, and morphisms.
 Do not solve one surface with a mechanism that cannot support the other two.
 
 Never assume that an arbitrary mathematical entity is a set.
 Every represented entity is a category or an object in its stated category.
 Establish that `X in Sets()` or apply an explicit functor to `Sets()` before using elements, membership, cardinality, enumeration, subsets, or set equality.
 An unjustified reduction to `Sets()` is a foundational error.
-Rebuild every dependent definition, type, arrow, and conclusion in the correct category.
+Rebuild every dependent definition, type, morphism, and conclusion in the correct category.
 
 A sheaf is an object of a sheaf category.
-An internal Hom of sheaves is again a sheaf.
-A functor is an object of `Ar(Cat())` and of `Fun(C, D) = Hom_Cat(C, D)` for its fixed
-domain and codomain.
+An internal hom of sheaves is again a sheaf.
+A functor is an object of `Fun = Mor(Cat())` and of `Fun(C, D) = Mor(Cat())(C, D)` for its
+fixed domain and codomain.
 None is a set without a specified set-valued functor.
 
 The following are categories and therefore objects of `Cat`:
 
-- `Ar(C)`, `EndAr(C)`, and `AutAr(C)`;
-- `Ar(Cat())` and `Fun(C, D) = Hom_Cat(C, D)`;
-- `Hom_C(x, y)`.
+- `Mor(n, C)` for every `n >= 0`, with `Mor(0, C) = C` and `Mor(C) = Mor(1, C)`, including `Mor(C).Endomorphisms()` and `Mor(C).Automorphisms()`;
+- `Fun = Mor(Cat())` and `Fun(C, D) = Mor(Cat())(C, D)`;
+- `Mor(C)(x, y)`.
 
-For `A, B in C`, these expressions are the same owned Hom category:
+For `A, B in C`, the one owned hom category is `Mor(C)(A, B)`: the full subcategory of
+`Mor(C)` on the morphisms with domain `A` and codomain `B`. It has no other spelling.
+A category `K` called with construction data constructs an object of `K`; `Mor(K)(A, B)`
+called with construction data constructs a morphism `A -> B`. These are the two call forms
+on categories.
 
-```python
-Ar(C)(A, B)
-Hom(C)(A, B)
-C.HomCategory(A, B)
-A.Hom(B)
-B ** A
-```
-
-All spellings dispatch construction data through that one category.
-
-Define `Fun = Ar(Cat())`. Thus `Fun(C, D)` owns construction of functors from `C` to
-`D`. The endpoints select this Hom category. They do not select one of its objects.
+Define `Fun = Mor(Cat())`. Thus `Fun(C, D)` owns construction of functors from `C` to
+`D`. The endpoints select this hom category. They do not select one of its objects.
 
 ```python
 Fun(C, D)(on_object, on_morphism)
@@ -267,20 +267,21 @@ all defining projections, evaluations, and inclusions. A leaf selects the functo
 supply its inherited public structure.
 
 The kernel does not inspect fields or tuple positions to choose a structure map. Product,
-pullback, comma, and arrow constructions retain their distinct projection functors.
+pullback, comma, and `Fun([1], C)` constructions retain their distinct projection and
+evaluation functors.
 
 A leaf selects the strongest functor-property category established by its mathematics.
 The construction trusts that declaration. It does not compute the property.
 
-Use `HomCatType`, not `HomSetType`, at the `Cat` level.
-For example, a hom category between sheaves can have natural transformations as its objects.
-Only `Sets()` identifies its hom objects with sets of functions.
+The hom object at the `Cat` level is the category `Mor(C)(A, B)`.
+For example, `Fun(C, D)` has natural transformations as its morphisms.
+Only `Sets()` identifies its hom objects with sets of functions: `Mor(Sets())(A, B)` is the discrete category on the maps `A -> B`, and `B ** A` is the function set.
 
 The `Cat` level supplies the uniform category constructors:
 
-- `HomCategory()`, `EndCategory()`, and `AutCategory()`;
-- `ArrowCategory()`, `EndArrowCategory()`, and `AutArrowCategory()`;
-- `Products()`, `Coproducts()`, `Subobjects()`, and their standard dual constructions.
+- `Mor(n, C)` for every `n`;
+- the property subcategories `Mor(C).Monomorphisms()`, `.Epimorphisms()`, `.Isomorphisms()`, `.Endomorphisms()`, and `.Automorphisms()`, and for `Fun` also `.Full()`, `.Faithful()`, `.FullyFaithful()`, `.EssentiallySurjective()`, and `.Equivalences()`, with endpoint dispatch `P(A, B) = Mor(K)(A, B).P()` for every property subcategory `P` of `Mor(K)`;
+- `Products()`, `Coproducts()`, `Limits(I)`, and `Colimits(I)` for a supplied shape `I in Cat()`, and `Subobjects()`.
 
 Apply products and coproducts to `Cat()` itself. For a sequence of categories:
 
@@ -291,38 +292,42 @@ P.product_projection(i)   # P -> C_i
 Q.coproduct_injection(i)  # C_i -> Q
 ```
 
-Each returned arrow is a functor and therefore a `Cat().ArrowType` value.
+Each returned morphism is a functor and therefore a `Cat().MorphismType` value.
+
+The operators are defined once, in two roles. On categories: `C * D = Cat().Products()((C, D))`, `C + D = Cat().Coproducts()((C, D))`, and `D ** C = Fun(C, D)`. On objects `X, Y` of one category `C`: `X * Y = C.Products()((X, Y))`, `X + Y = C.Coproducts()((X, Y))`, and `Y ** X` the exponential object where `C` is declared cartesian closed; each asserts `X.category() is Y.category()`. An external pair is constructed explicitly as `(C * D)((X, Y))`; no operator casts an object into a product category.
 
 If `j: S -> P` presents a subcategory of a product category, then `S` belongs to
 `Cat().Products().Subobjects()`. Its `product_projection(i)` is the composite of `j`
 with the corresponding projection of `P`.
 
-Present `C.SliceOver(x)` and `C.CosliceUnder(x)` as subcategories of `C * Ar(C)`.
-Their first product projection selects the varying object. Their second selects the
-defining arrow. Compose it with `Ar(C).source_projection()` or `target_projection()`.
+The category whose objects are the morphisms of `C` and whose morphisms are commuting
+squares is the functor category `Fun([1], C)` from the walking arrow `[1]`. Its evaluation
+functors `ev_0, ev_1: Fun([1], C) -> C` return the domain and codomain. `C.SliceOver(x)` is
+the pullback in `Cat()` of `ev_1` along `x: 1 -> C`; `C.CosliceUnder(x)` is the pullback of
+`ev_0` along `x`; a comma category `(F, G)` is the pullback of `(ev_0, ev_1): Fun([1], C) -> C * C`
+along `F * G`. Each retains its pullback projections; the varying object is the composite
+with `ev_0` or `ev_1`.
 
-The generic `ArrowType` stores its domain and codomain and exposes `domain()` and `codomain()`.
-If an arrow predicate names a subcategory, implement it as containment in that subcategory.
-For example, test `f in Ar(C).Monomorphisms()` instead of inspecting the Python class of `f`.
-Prefer an arrow or functor formulation when the mathematical definition names a relation or transport.
+The generic `MorphismType` stores its domain and codomain and exposes `domain()` and `codomain()`.
+If a morphism predicate names a subcategory, implement it as containment in that subcategory.
+For example, test `f in Mor(C).Monomorphisms()` instead of inspecting the Python class of `f`.
+Prefer a morphism or functor formulation when the mathematical definition names a relation or transport.
 
 For each functor `F: C -> D`:
 
 - `F.domain()` is `C`.
 - `F.codomain()` is `D`.
 - `F.on_object()` constructs the image of an object.
-- `F.on_morphism()` constructs the image of an arrow.
-
-An action on elements is additional mathematics of a concrete functor category. It is
-not part of every functor's defining data.
+- `F.on_morphism()` constructs the image of a morphism.
+- `F.on_element()` applies `F.on_morphism()` to the defining morphism of a generalized element.
 
 Functor properties are ordinary property subcategories:
 
-- `Ar(Cat()).Full()`;
-- `Ar(Cat()).Faithful()`;
-- `Ar(Cat()).FullyFaithful()`;
-- `Ar(Cat()).EssentiallySurjective()`;
-- `Ar(Cat()).Equivalences()`.
+- `Mor(Cat()).Full()`;
+- `Mor(Cat()).Faithful()`;
+- `Mor(Cat()).FullyFaithful()`;
+- `Mor(Cat()).EssentiallySurjective()`;
+- `Mor(Cat()).Equivalences()`.
 
 Their `is_*()` methods return applied predicates. Direct property construction and
 `assume()` refine the same owned functor. These properties currently have no
@@ -334,8 +339,11 @@ Only selected structural functors contribute methods to the public object surfac
 Ordinary mathematical functors remain available without changing public inheritance.
 
 For an object `x`, cache one canonical `F(x)` in each reachable category.
-Two structural routes to the same category must produce the same implementation.
-Reject route incoherence during method compilation.
+Two structural routes to the same category must return the same object by identity.
+At the first structural transport of a value to a reachable category, traverse every route
+to that category in declaration order, cache the first image, and assert that each later
+image `is` the cached one. A mismatch raises a construction-defect error naming both routes.
+Method compilation constructs no image and performs no such check.
 
 Compile the public method surface from category declarations:
 
@@ -345,18 +353,22 @@ Compile the public method surface from category declarations:
 - forwarding descriptors expose inherited methods directly on the public object;
 - descriptor installation must support Python special methods.
 
+An inherited method means `X.f() := F(X).f()` along the selected functor `F` and returns
+the declaring method's value. A leaf that wants a source-category result overrides the
+inherited method or adds its own.
+
 Derive supercategory information from structural functors.
 Do not maintain a second inheritance or propagation registry.
 
 ## Universal constructions
 
-A categorical construction acts on objects and arrows.
+A categorical construction acts on objects and morphisms.
 A parent-only result does not implement a categorical construction.
 
 Retain the data that states the universal property:
 
-- a product retains its diagram, `product_projection(i)`, and mediating arrow;
-- a coproduct retains its diagram, `coproduct_injection(i)`, and mediating arrow;
+- a product retains its diagram, `product_projection(i)`, and mediating morphism;
+- a coproduct retains its diagram, `coproduct_injection(i)`, and mediating morphism;
 - a limit retains its cone and universal map;
 - a colimit retains its cocone and universal map.
 
@@ -370,7 +382,7 @@ Construct the corresponding object of `C` from the diagram `D`.
 This applies to products, coproducts, limits, and colimits.
 
 A covering object of `Y` is a pair `(X, p: X -> Y)` with `p` an epimorphism.
-It is not the arrow `p` alone.
+It is not the morphism `p` alone.
 
 Implement constructions for arbitrary small diagrams.
 Finite diagrams are specimens, not the general interface.
@@ -398,7 +410,7 @@ It is not `False`.
 
 For a predicate on a set `B`, construct the selected subset `A` together with its inclusion `A -> B`.
 The subset is an object of `Sets()`.
-The inclusion is an arrow in `Sets()`.
+The inclusion is a morphism in `Sets()`.
 This must support infinite subobjects such as the even integers and prime integers inside `ZZ`.
 
 `Sets()` owns:
@@ -408,18 +420,19 @@ This must support infinite subobjects such as the even integers and prime intege
 - function sets and exponentials;
 - products and coproducts of arbitrary small families;
 - general limits and colimits;
-- predicate subobjects and their inclusion arrows.
+- predicate subobjects and their inclusion morphisms.
 
-In `Sets()`, the hom object, function set, and exponential are one object:
+In `Sets()`, the function set and the exponential are one object `Y ** X`, and
+`Mor(Sets())(X, Y)` is the discrete category on its elements:
 
 \[
-\operatorname{Hom}_{\mathbf{Set}}(X,Y)=Y^X.
+\operatorname{Mor}_{\mathbf{Set}}(X,Y)=Y^X.
 \]
 
 The power set is the corresponding exponential into the two-element set:
 
 \[
-\mathcal{P}(X)=2^X=\operatorname{Hom}_{\mathbf{Set}}(X,2).
+\mathcal{P}(X)=2^X=\operatorname{Mor}_{\mathbf{Set}}(X,2).
 \]
 
 Construct set maps from a well-typed callable or explicit mapping data.
@@ -448,7 +461,7 @@ Use `len()` only for a finite ordered Python sequence whose sequence length is t
 Methods such as `ngens()` and `rank()` return cardinalities when their definitions count mathematical sets.
 
 Every object whose parent is `Sets()` receives the complete `Sets.ObjectType` method surface.
-This includes ordinary sets, products, coproducts, subsets, `Y^X`, and `Hom_Set(X, Y)`.
+This includes ordinary sets, products, coproducts, subsets, and `Y ** X`.
 Products and subsets must delegate to the categorical constructions that create them.
 They must not define parallel set APIs.
 
@@ -457,23 +470,23 @@ Do not implement a second copy of a set operation in a higher category.
 
 ## Mathematical ownership
 
-Start with the mathematical object, data, laws, hypotheses, and arrows.
+Start with the mathematical object, data, laws, hypotheses, and morphisms.
 Choose a Python representation only after those facts are explicit.
 
 Use these ownership rules:
 
 - categories own generic operations;
 - objects own operations on themselves;
-- arrows own properties and operations whose definitions name the arrow;
+- morphisms own properties and operations whose definitions name the morphism;
 - functors own changes of structure;
-- universal constructions own their defining arrows;
+- universal constructions own their defining morphisms;
 - computation engines return data used to construct owned mathematical objects.
 
 Keep these notions distinct:
 
 - an object and a presentation of it;
 - an element and its coordinates;
-- an arrow and a matrix representing it;
+- a morphism and a matrix representing it;
 - a subobject and its inclusion;
 - a theorem and a runtime algorithm;
 - a mathematical result and an implementation-engine value.
@@ -505,7 +518,7 @@ Public APIs accept and return the semantic mathematical object.
 Use these boundaries:
 
 - compare elements through their parent and element interface, not their coordinates;
-- compare arrows as arrows, not by comparing representing matrices;
+- compare morphisms as morphisms, not by comparing representing matrices;
 - compute `f.kernel()`, `f.image()`, and `f.cokernel()` as semantic objects;
 - ask `f.is_surjective()` instead of comparing a presentation of `f.image()` with `f.codomain()`;
 - evaluate a form as a callable hom element;
@@ -530,7 +543,7 @@ It must not reinterpret a list, tuple, or numerical vector as such an element.
 To form a finite linear combination, obtain the module generators and write `sum(a_i * g_i)`.
 Do not add a differently named helper that accepts coefficient vectors.
 
-Implement scalar change and other functors on semantic objects and arrows.
+Implement scalar change and other functors on semantic objects and morphisms.
 Apply the functor before choosing bases and deriving a matrix in the new realization.
 
 ## Generality and hypotheses
@@ -543,7 +556,7 @@ A lattice over `R` starts from a finitely generated projective `R`-module with t
 Free `ZZ`-modules are specimens of that notion, not its definition.
 Select algorithms by proved ring properties, not by identity checks against `ZZ` or `QQ`.
 
-A `W`-valued bilinear form is an arrow from `M tensor_R M` to `W`.
+A `W`-valued bilinear form is a morphism from `M tensor_R M` to `W`.
 Its Gram matrix is its representation in a chosen basis.
 Use “inner product” only for a positive-definite symmetric bilinear form.
 Do not assume that a lattice is positive definite, free, based, embedded, or unimodular.
@@ -561,7 +574,7 @@ Use the semantic zero-object or kernel predicate supported by the relevant categ
 The same Python realization can define different mathematical objects in different categories.
 For example, `QQ` in `Algebras(ZZ)` and `QQ` in `Algebras(QQ)` have different structure morphisms.
 A scalar-change functor relates them.
-Do not erase the base category from the type, parent, or arrow data.
+Do not erase the base category from the type, parent, or morphism data.
 
 ## Sage and external computation engines
 
@@ -591,7 +604,7 @@ A Sage realization is not a structural functor.
 Its Python methods must not enter the public mathematical API by accident.
 
 Apply the same boundary to every external engine. Keep each engine value private.
-Reconstruct the owned mathematical object, element, arrow, cardinal, or decision before
+Reconstruct the owned mathematical object, element, morphism, cardinal, or decision before
 return. A method can combine several engine values before this reconstruction.
 
 Do not add a public backend selector, engine registry, competing `ObjectType`, automatic
@@ -614,19 +627,18 @@ Do not derive it from current class layouts, storage fields, or available method
 
 Use one owner, one public name, and one public export for each operation.
 Use established mathematical and Sage terminology.
-Name an accessor for the exact object or arrow that it returns.
+Name an accessor for the exact object or morphism that it returns.
 
-Use standard hom notation and dispatch.
-`X.Hom(Y)` takes `Y` as its codomain and delegates to `X._Hom_(Y)`.
-Callers use `X.Hom(Y)`.
-Only the owning public dispatch may call the private `_Hom_` method.
+Use the two call forms on categories.
+`K(data)` constructs an object of `K`.
+`Mor(K)(A, B)(data)` constructs a morphism `A -> B`.
 
 Treat private fields and private methods as private to their owner or documented subclass contract.
 Ask another object through its public mathematical interface.
 Invoke Python protocols through public syntax such as `f(x)` and `iter(x)`.
 
 Give every value the type that names its mathematical role.
-Distinguish categories, objects, elements, arrows, functors, rings, sets, domains, and codomains.
+Distinguish categories, objects, elements, morphisms, functors, rings, sets, domains, and codomains.
 
 Never use `object` as a type.
 Use `Any` only for a parameter that genuinely accepts every input.
@@ -729,13 +741,13 @@ As applicable, assert:
 - identity and composition;
 - functor laws;
 - naturality;
-- universal arrows;
+- universal morphisms;
 - mathematical equality;
 - isomorphisms and classification results;
 - semantic kernels, images, cokernels, and induced maps.
 
 Rank, determinant, signature, parity, dimension, and nonemptiness can be setup guards.
-They do not by themselves prove a richer claim about isomorphism, genus, a discriminant form, a universal construction, or an arrow.
+They do not by themselves prove a richer claim about isomorphism, genus, a discriminant form, a universal construction, or a morphism.
 State and test the stronger semantic claim.
 
 Tests must use semantic objects and public operations.
@@ -782,7 +794,7 @@ When a correction invalidates a foundational assumption, stop the local patch.
 Reconstruct the requested mathematical object and resume from the corrected model.
 
 If the category graph or method owner is wrong, stop runtime debugging.
-Fix `Cat`, the arrow categories, the method compiler, and `Sets()` in dependency order.
+Fix `Cat`, the `Mor(n, C)` tower, the method compiler, and `Sets()` in dependency order.
 During that migration, move each required behavior to its new owner before deleting its old implementation.
 
 For a sweeping architectural refactor, make the final ownership graph and dependency direction correct first.

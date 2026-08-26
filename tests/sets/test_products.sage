@@ -5,29 +5,17 @@ Oracles: the definition of the product and coproduct of sets (Mathlib
 identities ``#(X x Y) = #X #Y``, ``#(X + Y) = #X + #Y``, ``#(Y^X) = (#Y)^(#X)``
 (POL-SET-020; Mathlib ``Cardinal.mk_pi``, ``mk_sigma``, ``power_def``);
 ``Cardinal.prod_const'`` and ``Cardinal.power_self_eq`` for the constant product
-over a countably infinite index; ``Cardinal.prod_eq_zero`` for an empty factor;
-``Cardinal.prod_le_prod`` with ``Cardinal.cantor`` for the uncountable placement;
-``instCountableForallOfFinite`` for the countable placement.  The mediator
-equations are decided by the finite set-map equality handler (D17); no row proves
-a universal property (D14).
+over ``NN``; ``Cardinal.prod_eq_zero`` for an empty factor; ``Cardinal.prod_le_prod``
+with ``Cardinal.cantor`` for the uncountable placement; ``instCountableForallOfFinite``
+for the countable placement; ``CategoryTheory.mono_iff_injective`` for the
+injectivity decision.  The mediator equations are decided by the finite set-map
+equality handler (D17); no row proves a universal property (D14).
 """
 
 from sage_categories.all import *
 from sage_categories.cat.constructions import cocone, cone
 from sage_categories.cat.diagrams import sequence_position
-
-
-def _is_prime(datum):
-    return type(datum) is int and datum > int(1) and all(datum % divisor for divisor in range(int(2), int(datum**0.5) + int(1)))
-
-
-def _primes_with_known_cardinal():
-    """The primes by rule with the writer's cardinal ``aleph0`` (POL-MATH-037); never enumerated."""
-    return Sets().ObjectType(Sets(), _is_prime, aleph0)
-
-
-def _naturals_with_known_cardinal():
-    return Sets().ObjectType(Sets(), lambda datum: type(datum) is int and datum >= int(0), aleph0)
+from sage_categories.sets.exponentials import Function
 
 
 def _sequence_cone(diagram, apex, legs):
@@ -112,47 +100,43 @@ def test_a_subobject_of_a_product_derives_its_components_by_composition() -> Non
 
 
 def test_an_infinite_indexed_product_is_constructed_by_rule_and_its_projection_at_seven_acts() -> None:
-    primes, naturals = _primes_with_known_cardinal(), _naturals_with_known_cardinal()
-    shape = Discrete(primes)
-    diagram = Fun(shape, Sets()).from_object_rule(lambda vertex: naturals)
+    shape = Discrete(Primes)
+    diagram = Fun(shape, Sets()).from_object_rule(lambda vertex: NN)
     product = Sets().Products()(diagram)
-    seven = shape(primes.point(int(7)))
-    three_everywhere = cone(diagram, Sets().Terminal(), lambda vertex: naturals.point(int(3)).defining_morphism())
+    seven = shape(Primes.point(int(7)))
+    three_everywhere = cone(diagram, Sets().Terminal(), lambda vertex: NN(int(3)).defining_morphism())
 
     family = Sets().element_from_defining_morphism(product.universal_morphism(three_everywhere))
     assert family in product.apex()
     assert product.product_projection(seven).domain() is product.apex()
-    assert product.product_projection(seven).codomain() is naturals
-    assert ask(product.product_projection(seven)(family) == naturals.point(int(3))) is True
-    assert ask(product.product_projection(int(7))(family) == naturals.point(int(3))) is True
+    assert product.product_projection(seven).codomain() is NN
+    assert ask(product.product_projection(seven)(family) == NN(int(3))) is True
+    assert ask(product.product_projection(int(7))(family) == NN(int(3))) is True
     assert product.cardinality() is Unknown
 
 
 def test_construction_cardinality_routes() -> None:
     two, three, four = Sets().Simplex(int(1)), Sets().Simplex(int(2)), Sets().Simplex(int(3))
-    primes, naturals = _primes_with_known_cardinal(), _naturals_with_known_cardinal()
-    reals = Sets().Uncountable()(Sets()(lambda datum: type(datum) is float))
-    Sets().Countable()(naturals)
 
     assert ask(Sets().Products()((two, three, four)).cardinality() == int(24)) is True
     assert ask(Sets().Products()((two, Sets().Empty())).cardinality() == int(0)) is True
-    assert Sets().Products()(Fun(Discrete(primes), Sets()).constant(naturals)).cardinality() is continuum
+    assert Sets().Products()(Fun(Discrete(NN), Sets()).constant(NN)).cardinality() is continuum
 
-    uncountable = Sets().Products()(Fun(Discrete(primes), Sets().Uncountable()).from_object_rule(lambda vertex: reals))
+    uncountable = Sets().Products()(Fun(Discrete(NN), Sets().Uncountable()).from_object_rule(lambda vertex: RR))
     assert ask(uncountable.is_countable()) is False
     assert uncountable.apex() in Sets().Uncountable()
     assert uncountable.cardinality() is Unknown
 
-    assert Sets().Products()(Fun(Discrete(two), Sets().Countable()).from_object_rule(lambda vertex: naturals)).cardinality() is aleph0
+    assert Sets().Products()(Fun(Discrete(two), Sets().Countable()).from_object_rule(lambda vertex: NN)).cardinality() is aleph0
 
-    evens = Sets().Countable()(Sets()(lambda datum: type(datum) is int and datum % int(2) == int(0)))
+    evens = Sets().Countable()(NN.subset_from(lambda datum: datum % int(2) == int(0)))
     countable = Sets().Products()(Fun(Discrete(two), Sets().Countable()).from_object_rule(lambda vertex: evens))
     assert countable.cardinality() is Unknown
     assert ask(countable.is_countable()) is True
 
     integers, words = Sets()(lambda datum: type(datum) is int), Sets()(lambda datum: type(datum) is str)
-    two_prime = primes.point(int(2))
-    unplaced = Sets().Products()(Fun(Discrete(primes), Sets()).from_object_rule(lambda vertex: integers if ask(vertex.point() == two_prime) is True else words))
+    two_prime = Primes.point(int(2))
+    unplaced = Sets().Products()(Fun(Discrete(Primes), Sets()).from_object_rule(lambda vertex: integers if ask(vertex.point() == two_prime) is True else words))
     assert unplaced.cardinality() is Unknown
     assert ask(unplaced.is_countable()) is Unknown
 
@@ -177,8 +161,7 @@ def test_a_coproduct_has_injections_that_tag_and_a_mediator_satisfying_the_injec
     assert ask(mediating * into_three == shift) is True
     assert ask(mediating(tagged) == four.point(int(3))) is True
 
-    naturals = _naturals_with_known_cardinal()
-    constant = Sets().Coproducts()(Fun(Discrete(_primes_with_known_cardinal()), Sets()).constant(naturals))
+    constant = Sets().Coproducts()(Fun(Discrete(NN), Sets()).constant(NN))
     assert constant.cardinality() is aleph0
 
 
@@ -200,3 +183,16 @@ def test_the_function_set_is_the_exponential_and_the_morphism_category_is_discre
     evaluation = Sets().evaluation(two, three)
     assert evaluation.domain() is (function_set * two).apex()
     assert evaluation.codomain() is three
+
+
+def test_injectivity_into_a_function_set_is_decided_through_map_equality() -> None:
+    two, four = Sets().Simplex(int(1)), Sets().Simplex(int(3))
+    parity, parity_again = Mor(Sets())(four, two)(lambda datum: datum % int(2)), Mor(Sets())(four, two)(lambda datum: (datum + int(2)) % int(2))
+    constant = Mor(Sets())(four, two)(lambda datum: int(0))
+    names = {int(0): Function(parity), int(1): Function(parity_again)}
+    collapsing = Mor(Sets())(two, two ** four)(lambda datum: names[datum])
+    separating = Mor(Sets())(two, two ** four)(lambda datum: Function(parity) if datum == int(0) else Function(constant))
+
+    assert ask(collapsing.is_monomorphism()) is False
+    assert collapsing(two.point(int(0))) is collapsing(two.point(int(1)))
+    assert ask(separating.is_monomorphism()) is True

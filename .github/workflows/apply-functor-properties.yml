@@ -1,0 +1,162 @@
+name: Apply functor property categories
+
+on:
+  push:
+    branches:
+      - codex/functorial-core-kernel
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/functorial-core-kernel
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+      - name: Replace Boolean functor properties with property subcategories
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > src/sage_categories/abstract_categories/functor_properties.py <<'PY'
+          """Property subcategories of fixed-endpoint functor categories."""
+
+          from __future__ import annotations
+
+          from collections.abc import Callable
+          from typing import TYPE_CHECKING
+
+          from sage_categories.abstract_categories.full_subcategories import FullSubcategory
+          from sage_categories.types import Decision, MathematicalObject, UNKNOWN
+
+          if TYPE_CHECKING:
+              from sage_categories.abstract_categories.functor_core import Functor, FunctorCategory
+              from sage_categories.category import Category
+
+
+          class FunctorPropertySubcategory(FullSubcategory):
+              """One proposition-defined property of functors with fixed endpoints."""
+
+              def __init__(
+                  self,
+                  ambient_category: FunctorCategory,
+                  *,
+                  name: str,
+                  predicate_name: str,
+                  implications: Callable[[], tuple[Category, ...]],
+              ) -> None:
+                  self._functor_ambient = ambient_category
+                  self._implications = implications
+                  self._implication_inclusions: dict[int, Functor] = {}
+
+                  def undecided(candidate: MathematicalObject) -> Decision:
+                      assert candidate in ambient_category
+                      return UNKNOWN
+
+                  undecided.__name__ = predicate_name
+                  super().__init__(ambient_category, undecided, name=name)
+
+              def functor_category(self) -> FunctorCategory:
+                  return self._functor_ambient
+
+              def property_inclusion(self) -> Functor:
+                  """Return this full property's categorical inclusion into its ambient."""
+                  return FullSubcategory.inclusion(self)
+
+              def structure_functors(self) -> tuple[Functor, ...]:
+                  from sage_categories.abstract_categories.functor_core import InclusionFunctor
+
+                  implications = self._implications()
+                  if not implications:
+                      return (self.property_inclusion(),)
+                  selected: list[Functor] = []
+                  for target in implications:
+                      key = id(target)
+                      inclusion = self._implication_inclusions.get(key)
+                      if inclusion is None:
+                          inclusion = InclusionFunctor(self, target)
+                          self._implication_inclusions[key] = inclusion
+                      selected.append(inclusion)
+                  return tuple(selected)
+
+              def __call__(self, candidate: Functor) -> Functor:
+                  refined = super().__call__(candidate)
+                  return refined
+
+              def inclusion(self) -> Functor:
+                  """Construct the asserted inclusion functor between the endpoints."""
+                  from sage_categories.abstract_categories.functor_core import InclusionFunctor
+
+                  ambient = self.functor_category()
+                  return self(InclusionFunctor(ambient.domain(), ambient.codomain()))
+
+              def identity(self) -> Functor:
+                  """Construct the identity functor in this trusted property category."""
+                  from sage_categories.abstract_categories.functor_core import IdentityFunctor
+
+                  ambient = self.functor_category()
+                  assert ambient.domain() is ambient.codomain()
+                  return self(IdentityFunctor(ambient.domain(), hom_category=ambient))
+          PY
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          core = Path('src/sage_categories/abstract_categories/functor_core.py')
+          source = core.read_text()
+          applied_import = 'from sage_categories.assumptions import AppliedProperty\n'
+          if applied_import not in source:
+              anchor = 'from sage_categories.abstract_categories.hom_categories import (\n'
+              assert anchor in source
+              source = source.replace(anchor, applied_import + anchor)
+
+          source = re.sub(
+              r'\n    def is_faithful\(self\) -> bool:\n(?:        .*\n)+?(?=\n    def |\n\nclass )',
+              '\n',
+              source,
+          )
+
+          marker = '    def factors(self) -> tuple[Functor, ...]:\n'
+          properties = '''    def is_full(self) -> AppliedProperty:\n        """Return the proposition that this functor is full."""\n        return self.hom_category().Full().predicate(self)\n\n    def is_faithful(self) -> AppliedProperty:\n        """Return the proposition that this functor is faithful."""\n        return self.hom_category().Faithful().predicate(self)\n\n    def is_fully_faithful(self) -> AppliedProperty:\n        """Return the proposition that this functor is fully faithful."""\n        return self.hom_category().FullyFaithful().predicate(self)\n\n    def is_essentially_surjective(self) -> AppliedProperty:\n        """Return the proposition that this functor is essentially surjective."""\n        return self.hom_category().EssentiallySurjective().predicate(self)\n\n    def is_equivalence(self) -> AppliedProperty:\n        """Return the proposition that this functor is an equivalence."""\n        return self.hom_category().Equivalences().predicate(self)\n\n'''
+          first = source.index(marker)
+          if 'def is_full(self) -> AppliedProperty:' not in source[:first]:
+              source = source[:first] + properties + source[first:]
+
+          category_marker = 'class FunctorCategory(HomCategory):\n'
+          start = source.index(category_marker)
+          call_marker = '    def __call__(\n'
+          call_pos = source.index(call_marker, start)
+          cache_methods = '''    def __init__(self, **construction: object) -> None:\n        self._functor_properties: dict[str, Category] = {}\n        super().__init__(**construction)\n\n    def _property_category(\n        self,\n        key: str,\n        *,\n        name: str,\n        predicate_name: str,\n        implications: Callable[[], tuple[Category, ...]],\n    ) -> Category:\n        from sage_categories.abstract_categories.functor_properties import (\n            FunctorPropertySubcategory,\n        )\n\n        category = self._functor_properties.get(key)\n        if category is None:\n            category = FunctorPropertySubcategory(\n                self,\n                name=name,\n                predicate_name=predicate_name,\n                implications=implications,\n            )\n            self._functor_properties[key] = category\n        return category\n\n    def Full(self) -> Category:\n        return self._property_category(\n            "full", name=f"Full functors in {self}", predicate_name="_full_property",\n            implications=lambda: (),\n        )\n\n    def Faithful(self) -> Category:\n        return self._property_category(\n            "faithful", name=f"Faithful functors in {self}",\n            predicate_name="_faithful_property", implications=lambda: (),\n        )\n\n    def FullyFaithful(self) -> Category:\n        return self._property_category(\n            "fully_faithful", name=f"Fully faithful functors in {self}",\n            predicate_name="_fully_faithful_property",\n            implications=lambda: (self.Full(), self.Faithful()),\n        )\n\n    def EssentiallySurjective(self) -> Category:\n        return self._property_category(\n            "essentially_surjective",\n            name=f"Essentially surjective functors in {self}",\n            predicate_name="_essentially_surjective_property", implications=lambda: (),\n        )\n\n    def Equivalences(self) -> Category:\n        return self._property_category(\n            "equivalence", name=f"Equivalences in {self}",\n            predicate_name="_equivalence_property",\n            implications=lambda: (self.FullyFaithful(), self.EssentiallySurjective()),\n        )\n\n'''
+          if '_functor_properties' not in source[start:call_pos]:
+              source = source[:call_pos] + cache_methods + source[call_pos:]
+
+          core.write_text(source)
+
+          homs = Path('src/sage_categories/abstract_categories/hom_categories.py')
+          source = homs.read_text()
+          source = source.replace(
+              'assert all(functor.is_faithful() for functor in route)',
+              'assert all(\n            functor in functor.hom_category().Faithful()\n            for functor in route\n        )',
+          )
+          homs.write_text(source)
+
+          violations = []
+          text = core.read_text()
+          for match in re.finditer(r'def is_(?:full|faithful|fully_faithful|essentially_surjective|equivalence)\([^)]*\) -> bool', text):
+              violations.append(match.group(0))
+          assert not violations, violations
+          PY
+          rm -f .github/workflows/apply-functor-properties.yml
+          python -m compileall -q src
+          git diff --check
+          git config user.name 'OpenAI Codex'
+          git config user.email 'codex@openai.com'
+          git add -A
+          git commit -m 'refactor: model functor properties as owned propositions'
+          git push origin HEAD:codex/functorial-core-kernel

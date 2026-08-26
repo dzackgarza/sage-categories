@@ -297,22 +297,40 @@ def _linearize(current: Node) -> tuple[tuple[int, ...], tuple[int, ...]]:
 def _base_classes(current: Node, local: type[CategoryPoint]) -> tuple[type[CategoryPoint], ...]:
     """The controlled direct bases of ``current``'s class, as role classes after ``local``.
 
-    Several nodes can share one role class: a category that declares nothing and
-    inherits nothing keeps the class of the node it normalizes to, so distinct nodes
-    reach the same class.  Python requires the base list to be duplicate-free, and a
-    repeated class carries no further information, so the first occurrence in C3
-    order is kept and the rest dropped.
+    The controlled list is passed through as it is.  Its entries are not only the
+    direct targets: C3 adds the control edges that make the merge succeed, and
+    dropping one because another base already derives from it discards exactly the
+    guarantee the algorithm provides.  Sage passes ``_super_categories_for_classes``
+    to its class construction unchanged for the same reason.
+
+    Two adjustments are forced by Python rather than by the algorithm.  Several nodes
+    can share one role class — a category that declares nothing and inherits nothing
+    keeps the class it declares, and several categories declare one class, such as the
+    identity 2-cells of every 1-category.  A base list may not repeat a class, and the
+    shared class belongs at the *last* of its positions: it is an ancestor of whatever
+    the higher-ranked nodes contribute, so keeping an earlier occurrence would place it
+    above its own descendants.  Nothing is dropped, so every control edge survives.
+
+    The local class is prepended only when no controlled base already derives from it:
+    a category that declares nothing at this role has the bare kernel base as its local
+    class, and prepending that would invert the order the same way.
     """
-    bases: list[type[CategoryPoint]] = [local]
-    for key in _linearize(current)[1]:
-        found = _nodes_by_key[key]
-        klass = found.category.role_class(found.role)
-        if not any(klass is known for known in bases):
-            bases.append(klass)
-    # A base that another base already derives from contributes nothing and only
-    # inverts the order: the local class of a category that declares nothing at this
-    # role is the bare kernel base, which every other base descends from.
-    return tuple(klass for klass in bases if not any(other is not klass and issubclass(other, klass) for other in bases))
+    keys = _linearize(current)[1]
+    classes = [_nodes_by_key[key].category.role_class(_nodes_by_key[key].role) for key in keys]
+    bases = [klass for position, klass in enumerate(classes) if not any(later is klass for later in classes[position + 1 :])]
+    if not any(issubclass(klass, local) for klass in bases):
+        bases.insert(0, local)
+    inverted = [
+        (earlier, later)
+        for position, earlier in enumerate(bases)
+        for later in bases[position + 1 :]
+        if issubclass(later, earlier)
+    ]
+    assert not inverted, (
+        f"the {current.role.value} bases of {current.category!r} place {inverted[0][0].__name__} "
+        f"before {inverted[0][1].__name__}, which derives from it"
+    )
+    return tuple(bases)
 
 
 def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:

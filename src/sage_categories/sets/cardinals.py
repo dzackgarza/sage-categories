@@ -255,6 +255,10 @@ class CardinalCategory(Category[[], []]):
         if self._finite(base):
             # Cardinal.nat_power_eq: n ** c = 2 ** c for finite n >= 2 and infinite c.
             base = self(2)
+        elif self._at_most(base, exponent) is True:
+            # Cardinal.power_eq_two_power: a ** c = 2 ** c for 2 <= a <= c and infinite c
+            # (inspected 2026-08-27); in particular c ** c = 2 ** c (Cardinal.power_self_eq).
+            base = self(2)
         return self._retain(("power", base._key, exponent._key), (base, exponent))
 
     # -- exact decisions -----------------------------------------------------------

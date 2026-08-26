@@ -16,8 +16,8 @@ at ``Sets()`` (``inverse_morphism``).
 
 from __future__ import annotations
 
-from collections.abc import Iterable
-from typing import overload
+from collections.abc import Callable, Iterable
+from typing import TYPE_CHECKING, overload
 
 from sage.structure.coerce_dict import MonoDict
 
@@ -38,6 +38,9 @@ from sage_categories.sets.maps import (
     surjective_on_finite_domain,
 )
 from sage_categories.sets.objects import FiniteSetRole, MembershipRule, SetObject
+
+if TYPE_CHECKING:
+    from sage_categories.cat.functors import Functor
 
 __all__ = ["Sets", "SetsCategory"]
 
@@ -209,6 +212,51 @@ class SetsCategory(Category[[Rule], []]):
         self._retain_inverses(morphism, symbolic)
         refine(symbolic, self.morphism_category(1)(codomain, domain).Isomorphisms())
         return symbolic
+
+    # -- owned constructions (D16; ``sets/products.py``, ``sets/exponentials.py``) ---
+
+    def limit_construction(self, shape: Category) -> Callable[[Functor], SetObject]:
+        """Products over ``Discrete(S)``; general limits by compatible families arrive with the limits unit."""
+        from sage_categories.cat.shapes import is_discrete
+        from sage_categories.sets.products import product_of_sets
+
+        assert is_discrete(shape), (
+            f"Sets owns no {shape!r}-limit construction in this unit: only products over Discrete(S); "
+            "general limits as sets of compatible families belong to Unit B; supply universal data"
+        )
+        return product_of_sets
+
+    def colimit_construction(self, shape: Category) -> Callable[[Functor], SetObject]:
+        """Coproducts over ``Discrete(S)``; general colimits by quotients arrive with the limits unit."""
+        from sage_categories.cat.shapes import is_discrete
+        from sage_categories.sets.products import coproduct_of_sets
+
+        assert is_discrete(shape), (
+            f"Sets owns no {shape!r}-colimit construction in this unit: only coproducts over Discrete(S); "
+            "general colimits as quotients of coproducts belong to Unit B; supply universal data"
+        )
+        return coproduct_of_sets
+
+    def exponential(self, exponent: SetObject, base: SetObject) -> SetObject:
+        """``base ** exponent``: the function set (POL-SET-017)."""
+        from sage_categories.sets.exponentials import function_set
+
+        assert exponent in self and base in self
+        return function_set(exponent, base)
+
+    def name_of(self, set_map: SetMap) -> SetPoint:
+        """The point of ``Y ** X`` naming a map ``X -> Y``."""
+        from sage_categories.sets.exponentials import name_of
+
+        assert set_map in self.morphism_category(1)
+        return name_of(set_map)
+
+    def evaluation(self, exponent: SetObject, base: SetObject) -> SetMap:
+        """The evaluation morphism ``(base ** exponent) * exponent -> base`` retained by the exponential."""
+        from sage_categories.sets.exponentials import evaluation_morphism
+
+        assert exponent in self and base in self
+        return evaluation_morphism(exponent, base)
 
     # -- exact routes (POL-MATH-042) --------------------------------------------------
 

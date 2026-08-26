@@ -21,7 +21,7 @@ from typing import Any
 
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
-from sage_categories.kernel.decisions import Decision, UnknownClass
+from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask
 from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role, role_of
 from sage_categories.sets.cardinals import Cardinal, CardinalObject
@@ -35,12 +35,20 @@ type MembershipRule = Callable[[Datum], Decision]
 element_of = Predicate("element_of", 2, True)
 
 
+def _element_of_by_parent(candidate: Any, ambient: SetObject) -> Decision:
+    """A point ``1 -> X`` is an element of ``X`` by definition (D06)."""
+    if role_of(candidate) is Role.ELEMENT and candidate.parent() is ambient:
+        return True
+    return Unknown
+
+
 def _element_of_by_rule(candidate: Any, ambient: SetObject) -> Decision:
     if role_of(candidate) is not Role.ELEMENT:
         return False
     return ambient._membership_rule(candidate._datum)
 
 
+element_of.register_handler(_element_of_by_parent)
 element_of.register_handler(_element_of_by_rule)
 
 

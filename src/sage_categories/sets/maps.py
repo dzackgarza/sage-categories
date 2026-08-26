@@ -62,7 +62,8 @@ def maps_equal(first: CategoryPoint, candidate: Any) -> Decision:
     finite = sets.Finite()
     if not finite.has_chosen_enumeration(first.domain()):
         return Unknown
-    return all(first._rule(datum) == candidate._rule(datum) for datum in finite.chosen_enumeration(first.domain()))
+    # A comparison of two image data is exact or ``Unknown`` (a rule-defined family).
+    return decision_and(*(first._rule(datum) == candidate._rule(datum) for datum in finite.chosen_enumeration(first.domain())))
 
 
 def injective_on_finite_domain(morphism: MorphismOfCategory) -> Decision:

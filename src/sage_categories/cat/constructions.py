@@ -35,6 +35,7 @@ from typing import TYPE_CHECKING, Any
 
 from sage.structure.coerce_dict import MonoDict
 
+import sage_categories.kernel.compiler as compiler
 from sage_categories.cat.category import Category, member
 from sage_categories.cat.diagrams import from_sequence
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
@@ -42,9 +43,10 @@ from sage_categories.cat.properties import FullSubcategory
 from sage_categories.cat.shapes import index_set_of, is_discrete
 from sage_categories.kernel.caches import SequenceTable
 from sage_categories.kernel.decisions import Decision, Unknown
+from sage_categories.kernel.descriptors import transport
 from sage_categories.kernel.predicates import Predicate, Proposition, ask
-from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
+from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
+from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role
 
 if TYPE_CHECKING:
     from sage_categories.cat.shapes import DiscreteObject
@@ -58,9 +60,12 @@ __all__ = [
     "LimitsCategory",
     "ProductsCategory",
     "cocone",
+    "cocone_apex",
     "colimits",
     "cone",
+    "cone_apex",
     "limits",
+    "vertex_of",
 ]
 
 type Mediator = Callable[[NaturalTransformation], MorphismOfCategory]
@@ -84,6 +89,18 @@ def cocone(diagram: Functor, apex: ObjectOfCategory, components: Callable[[Objec
     """The cocone under ``diagram`` with the given apex and components ``i |-> D(i) -> N``."""
     functors = Fun(diagram.domain(), diagram.codomain())
     return functors.morphism_category(1)(diagram, functors.constant(apex))(components)
+
+
+def cone_apex(transformation: NaturalTransformation) -> ObjectOfCategory:
+    """The apex ``N`` of a cone ``constant(N) => D``: the value of its retained constant domain."""
+    constant = transformation.domain()
+    return Fun(constant.domain(), constant.codomain()).constant_value(constant)
+
+
+def cocone_apex(transformation: NaturalTransformation) -> ObjectOfCategory:
+    """The apex ``N`` of a cocone ``D => constant(N)``."""
+    constant = transformation.codomain()
+    return Fun(constant.domain(), constant.codomain()).constant_value(constant)
 
 
 # -- presentation roles ------------------------------------------------------------------
@@ -279,6 +296,7 @@ class ApexCategory(Category[[MorphismOfCategory], []]):
     def __init__(self, apex_category: Category) -> None:
         self._apex_category = apex_category
         self._presentations: MonoDict = MonoDict()
+        self._lowered: MonoDict = MonoDict()
         super().__init__()
         self._equality.register_handler(self._morphisms_equal)
 
@@ -290,6 +308,43 @@ class ApexCategory(Category[[MorphismOfCategory], []]):
         """The apex functor ``Fun(self, C)``: the retained apex and the morphism of apexes."""
         return (Fun(self, self._apex_category)(lambda presentation: presentation.apex(), lambda morphism: morphism.apex_morphism()),)
 
+    def canonical_image(self, value: ObjectOfCategory) -> ObjectOfCategory:
+        """The canonical image of an object in ``C`` along the selected routes (D11): a presentation's apex."""
+        return transport(value, compiler.node(self._apex_category, Role.OBJECT))
+
+    # The apex functor is fully faithful, so the universal constructions of a
+    # category of presentations are those of its apex category applied to apexes;
+    # an inherited operation on a presentation is the operation on its apex (D18).
+
+    def Products(self) -> Category:
+        return self._apex_category.Products()
+
+    def Coproducts(self) -> Category:
+        return self._apex_category.Coproducts()
+
+    def Limits(self, shape: Category) -> Category:
+        return self._apex_category.Limits(shape)
+
+    def Colimits(self, shape: Category) -> Category:
+        return self._apex_category.Colimits(shape)
+
+    def exponential(self, exponent: ObjectOfCategory, base: ObjectOfCategory) -> ObjectOfCategory:
+        return self._apex_category.exponential(self.canonical_image(exponent), self.canonical_image(base))
+
+    def accepts(self, diagram: Functor, shape: Category) -> None:
+        """A diagram of shape ``shape`` into ``C`` or into a subcategory of ``C`` (a diagram into ``Sets().Uncountable()`` is a diagram into ``Sets()``)."""
+        assert diagram in self.category().morphism_category(1) and diagram.domain() is shape, f"{diagram!r} is not a diagram of shape {shape!r}"
+        assert is_subcategory(diagram.codomain(), self._apex_category), f"{diagram!r} does not land in {self._apex_category!r}"
+
+    def lowered(self, diagram: Functor) -> Functor:
+        """The diagram as a diagram in ``C``: itself, or its composite with the inclusion of its codomain, retained per diagram."""
+        codomain = diagram.codomain()
+        if codomain is self._apex_category:
+            return diagram
+        if diagram not in self._lowered:
+            self._lowered[diagram] = Fun(codomain, self._apex_category).FullyFaithful().inclusion() * diagram
+        return self._lowered[diagram]
+
     def has_presentation(self, diagram: Functor) -> bool:
         return diagram in self._presentations
 
@@ -297,6 +352,15 @@ class ApexCategory(Category[[MorphismOfCategory], []]):
         """The chosen presentation retained for ``diagram``."""
         assert diagram in self._presentations, f"{self!r} retains no presentation of {diagram!r}"
         return self._presentations[diagram]
+
+    def chosen(self, diagram: Functor, construction: Construction) -> ObjectOfCategory:
+        """The chosen presentation of ``diagram``, constructed once; the diagram and its lowering share it."""
+        if not self.has_presentation(diagram):
+            construction(diagram)
+            lowered = self.lowered(diagram)
+            if lowered is not diagram:
+                self._presentations[diagram] = self.presentation(lowered)
+        return self.presentation(diagram)
 
     def _retain(self, presentation: ObjectOfCategory) -> ObjectOfCategory:
         diagram = presentation.diagram()
@@ -344,10 +408,8 @@ class LimitsCategory(ApexCategory):
 
     def __call__(self, diagram: Functor) -> LimitPresentation:
         """``C.Limits(I)(diagram)``: the chosen limit, through ``C.limit_construction(I)``."""
-        assert diagram in self.diagrams(), f"{diagram!r} is not a diagram of shape {self._shape!r} in {self._apex_category!r}"
-        if not self.has_presentation(diagram):
-            self._apex_category.limit_construction(self._shape)(diagram)
-        return self.presentation(diagram)
+        self.accepts(diagram, self._shape)
+        return self.chosen(diagram, self._apex_category.limit_construction(self._shape))
 
     def with_universal_data(self, diagram: Functor, apex: ObjectOfCategory, limiting_cone: NaturalTransformation, mediator: Mediator) -> LimitPresentation:
         """The chosen limit from supplied universal data; the writer asserts the universal property (POL-MATH-037)."""
@@ -379,18 +441,18 @@ class ProductsCategory(ApexCategory):
         return Fun(shape, self._apex_category)
 
     def _sequence_diagram(self, sequence: tuple[ObjectOfCategory, ...]) -> Functor:
+        """The sequence diagram on the canonical images of the members in ``C``, retained per sequence."""
         if sequence not in self._sequences:
-            self._sequences[sequence] = from_sequence(self._apex_category, sequence)
+            self._sequences[sequence] = from_sequence(self._apex_category, tuple(map(self.canonical_image, sequence)))
         return self._sequences[sequence]
 
     def __call__(self, family: Functor | tuple[ObjectOfCategory, ...]) -> ProductPresentation:
         """``C.Products()(diagram)`` for a diagram over ``Discrete(S)``; ``C.Products()((X_0, ..., X_n))`` for the sequence form."""
         diagram = family if family in self.category().morphism_category(1) else self._sequence_diagram(tuple(family))
         shape = diagram.domain()
-        assert diagram in self.diagrams(shape)
-        if not self.has_presentation(diagram):
-            self._apex_category.limit_construction(shape)(diagram)
-        return self.presentation(diagram)
+        assert is_discrete(shape), f"{shape!r} is not a discrete shape"
+        self.accepts(diagram, shape)
+        return self.chosen(diagram, self._apex_category.limit_construction(shape))
 
     def with_universal_data(self, diagram: Functor, apex: ObjectOfCategory, limiting_cone: NaturalTransformation, mediator: Mediator) -> ProductPresentation:
         """The chosen product from supplied universal data (POL-MATH-037)."""
@@ -421,10 +483,8 @@ class ColimitsCategory(ApexCategory):
 
     def __call__(self, diagram: Functor) -> ColimitPresentation:
         """``C.Colimits(I)(diagram)``: the chosen colimit, through ``C.colimit_construction(I)``."""
-        assert diagram in self.diagrams(), f"{diagram!r} is not a diagram of shape {self._shape!r} in {self._apex_category!r}"
-        if not self.has_presentation(diagram):
-            self._apex_category.colimit_construction(self._shape)(diagram)
-        return self.presentation(diagram)
+        self.accepts(diagram, self._shape)
+        return self.chosen(diagram, self._apex_category.colimit_construction(self._shape))
 
     def with_universal_data(self, diagram: Functor, apex: ObjectOfCategory, colimiting_cocone: NaturalTransformation, mediator: Mediator) -> ColimitPresentation:
         """The chosen colimit from supplied universal data (POL-MATH-037)."""
@@ -456,18 +516,18 @@ class CoproductsCategory(ApexCategory):
         return Fun(shape, self._apex_category)
 
     def _sequence_diagram(self, sequence: tuple[ObjectOfCategory, ...]) -> Functor:
+        """The sequence diagram on the canonical images of the members in ``C``, retained per sequence."""
         if sequence not in self._sequences:
-            self._sequences[sequence] = from_sequence(self._apex_category, sequence)
+            self._sequences[sequence] = from_sequence(self._apex_category, tuple(map(self.canonical_image, sequence)))
         return self._sequences[sequence]
 
     def __call__(self, family: Functor | tuple[ObjectOfCategory, ...]) -> CoproductPresentation:
         """``C.Coproducts()(diagram)`` for a diagram over ``Discrete(S)``; ``C.Coproducts()((X_0, ..., X_n))`` for the sequence form."""
         diagram = family if family in self.category().morphism_category(1) else self._sequence_diagram(tuple(family))
         shape = diagram.domain()
-        assert diagram in self.diagrams(shape)
-        if not self.has_presentation(diagram):
-            self._apex_category.colimit_construction(shape)(diagram)
-        return self.presentation(diagram)
+        assert is_discrete(shape), f"{shape!r} is not a discrete shape"
+        self.accepts(diagram, shape)
+        return self.chosen(diagram, self._apex_category.colimit_construction(shape))
 
     def with_universal_data(self, diagram: Functor, apex: ObjectOfCategory, colimiting_cocone: NaturalTransformation, mediator: Mediator) -> CoproductPresentation:
         """The chosen coproduct from supplied universal data (POL-MATH-037)."""
@@ -485,9 +545,13 @@ indexed_by = Predicate("indexed_by", 2, False)
 
 
 def _indexed_by_shape(presentation: CategoryPoint, family: Category) -> Decision:
-    if presentation not in family.ambient():
+    # The retained diagram is read through the ambient's own declaration: the
+    # inherited method would transport the receiver along the inclusion whose
+    # domain membership is being decided here.
+    ambient = family.ambient()
+    if not is_placed(presentation, ambient):
         return Unknown
-    return presentation.index_category() is family.shape()
+    return ambient.local_role_class(Role.OBJECT).diagram(presentation).domain() is family.shape()
 
 
 indexed_by.register_handler(_indexed_by_shape)
@@ -514,7 +578,7 @@ class DiscreteLimits(FullSubcategory[[MorphismOfCategory], []]):
         return member(candidate, self._ambient) & indexed_by(candidate, self)
 
     def __call__(self, diagram: Functor) -> ProductPresentation:
-        assert diagram in self.diagrams(), f"{diagram!r} is not a diagram of shape {self._shape!r}"
+        self._ambient.accepts(diagram, self._shape)
         presentation = self._ambient(diagram)
         refine(presentation, self)
         return presentation
@@ -556,7 +620,7 @@ class DiscreteColimits(FullSubcategory[[MorphismOfCategory], []]):
         return member(candidate, self._ambient) & indexed_by(candidate, self)
 
     def __call__(self, diagram: Functor) -> CoproductPresentation:
-        assert diagram in self.diagrams(), f"{diagram!r} is not a diagram of shape {self._shape!r}"
+        self._ambient.accepts(diagram, self._shape)
         presentation = self._ambient(diagram)
         refine(presentation, self)
         return presentation

@@ -35,7 +35,7 @@ from typing import Any
 from sage.structure.coerce_dict import MonoDict, TripleDict
 
 from sage_categories.cat.category import Category, member
-from sage_categories.cat.constructions import cocone, cone, vertex_of
+from sage_categories.cat.constructions import cocone, cocone_apex, cone, cone_apex, vertex_of
 from sage_categories.cat.diagrams import sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.shapes import DiscreteObject, index_set_of
@@ -169,7 +169,7 @@ def product_of_categories(diagram: Functor) -> ObjectOfCategory:
         return projections[vertex]
 
     def mediator(candidate_cone: NaturalTransformation) -> Functor:
-        source = _cone_apex(candidate_cone)
+        source = cone_apex(candidate_cone)
         return Fun(source, product)(
             lambda member_object: product(lambda vertex: candidate_cone.component(vertex).on_object(member_object)),
             lambda morphism: product.construct_morphism(
@@ -179,19 +179,12 @@ def product_of_categories(diagram: Functor) -> ObjectOfCategory:
             ),
         )
 
-    return Cat().Products().with_universal_data(diagram, product, cone(diagram, product, projection), mediator)
+    lowered = Cat().Products().lowered(diagram)
+    return Cat().Products().with_universal_data(lowered, product, cone(lowered, product, projection), mediator)
 
 
-def _cone_apex(transformation: NaturalTransformation) -> ObjectOfCategory:
-    """The apex of a cone ``constant(N) => D``: the value of its retained constant domain."""
-    constant = transformation.domain()
-    return Fun(constant.domain(), constant.codomain()).constant_value(constant)
 
 
-def _cocone_apex(transformation: NaturalTransformation) -> ObjectOfCategory:
-    """The apex of a cocone ``D => constant(N)``."""
-    constant = transformation.codomain()
-    return Fun(constant.domain(), constant.codomain()).constant_value(constant)
 
 
 # -- coproducts of categories --------------------------------------------------------------
@@ -292,13 +285,14 @@ def coproduct_of_categories(diagram: Functor) -> ObjectOfCategory:
         return injections[vertex]
 
     def mediator(candidate_cocone: NaturalTransformation) -> Functor:
-        target = _cocone_apex(candidate_cocone)
+        target = cocone_apex(candidate_cocone)
         return Fun(coproduct, target)(
             lambda tagged: candidate_cocone.component(tagged.tag()).on_object(tagged.member()),
             lambda morphism: candidate_cocone.component(morphism.domain().tag()).on_morphism(morphism.morphism()),
         )
 
-    return Cat().Coproducts().with_universal_data(diagram, coproduct, cocone(diagram, coproduct, injection), mediator)
+    lowered = Cat().Coproducts().lowered(diagram)
+    return Cat().Coproducts().with_universal_data(lowered, coproduct, cocone(lowered, coproduct, injection), mediator)
 
 
 # -- the strict pullback ----------------------------------------------------------------
@@ -420,7 +414,7 @@ def pullback_of_categories(diagram: Functor) -> ObjectOfCategory:
     legs = {0: first_projection, 1: second_projection, 2: first_functor * first_projection}
 
     def mediator(candidate_cone: NaturalTransformation) -> Functor:
-        source = _cone_apex(candidate_cone)
+        source = cone_apex(candidate_cone)
         to_first, to_second = candidate_cone.component(cospan(0)), candidate_cone.component(cospan(1))
         return Fun(source, pullback)(
             lambda member_object: pullback((to_first.on_object(member_object), to_second.on_object(member_object))),
@@ -431,4 +425,5 @@ def pullback_of_categories(diagram: Functor) -> ObjectOfCategory:
             ),
         )
 
-    return Cat().Pullbacks().with_universal_data(diagram, pullback, cone(diagram, pullback, lambda vertex: legs[cospan.label(vertex)]), mediator)
+    lowered = Cat().Pullbacks().lowered(diagram)
+    return Cat().Pullbacks().with_universal_data(lowered, pullback, cone(lowered, pullback, lambda vertex: legs[cospan.label(vertex)]), mediator)

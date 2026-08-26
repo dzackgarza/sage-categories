@@ -68,13 +68,22 @@ __all__ = [
 
 
 def evaluation(functors: FunctorCategory, vertex: ObjectOfCategory) -> Functor:
-    """``ev_i: Fun(I, C) -> C`` for an object ``i`` of ``I``, retained per ``i``."""
+    """``ev_i: Fun(I, C) -> C`` for an object ``i`` of ``I``, retained per ``i``.
+
+    For ``I = [1]`` the evaluation ``ev_1`` retains its cartesian lifts by pullback and
+    ``ev_0`` its cocartesian lifts by pushout (POL-FUN-029).
+    """
     assert vertex in functors.domain(), f"{vertex!r} is not an object of {functors.domain()!r}"
     if vertex not in functors._evaluations:
-        functors._evaluations[vertex] = Fun(functors, functors.codomain())(
+        evaluation_functor = Fun(functors, functors.codomain())(
             lambda diagram: functors.diagram(diagram).on_object(vertex),
             lambda transformation: transformation.component(vertex),
         )
+        functors._evaluations[vertex] = evaluation_functor
+        if functors.domain() is Cat().Simplex(1) and functors.domain().label(vertex) == 1:
+            evaluation_functor.retain_cartesian_lifts(lambda morphism, member_object: codomain_lift(functors, morphism, member_object))
+        if functors.domain() is Cat().Simplex(1) and functors.domain().label(vertex) == 0:
+            evaluation_functor.retain_cocartesian_lifts(lambda morphism, member_object: domain_lift(functors, morphism, member_object))
     return functors._evaluations[vertex]
 
 
@@ -194,31 +203,25 @@ def span_diagram(base: Category, first: MorphismOfCategory, second: MorphismOfCa
 
 
 def codomain_lift(functors: FunctorCategory, morphism: MorphismOfCategory, member_object: MorphismOfCategory) -> NaturalTransformation:
-    """The cartesian lift of ``f: y -> x`` at ``p: z -> x``: the square ``(pi_z, f)`` from ``pi_y: z *_x y -> y`` to ``p``."""
+    """The cartesian lift of ``f: y -> x`` at ``p: z -> x`` for ``ev_1``: the square ``(pi_z, f)`` from ``pi_y: z *_x y -> y`` to ``p``."""
     base, arrow = functors.codomain(), functors.domain()
     assert arrow is Cat().Simplex(1) and morphism.codomain() is member_object.codomain(), f"{morphism!r} does not end at the codomain of {member_object!r}"
-    key = (morphism, member_object, functors)
-    if key not in functors._lifts:
-        cospan = Cat().Horn(2, 2)
-        pullback = base.Pullbacks()(cospan_diagram(base, member_object, morphism))
-        to_first, to_second = pullback.projection(cospan(0)), pullback.projection(cospan(1))
-        components = {0: to_first, 1: morphism}
-        functors._lifts[key] = functors.morphism_category(1)(to_second, member_object)(lambda vertex: components[arrow.label(vertex)])
-    return functors._lifts[key]
+    cospan = Cat().Horn(2, 2)
+    pullback = base.Pullbacks()(cospan_diagram(base, member_object, morphism))
+    to_first, to_second = pullback.projection(cospan(0)), pullback.projection(cospan(1))
+    components = {0: to_first, 1: morphism}
+    return functors.morphism_category(1)(to_second, member_object)(lambda vertex: components[arrow.label(vertex)])
 
 
 def domain_lift(functors: FunctorCategory, morphism: MorphismOfCategory, member_object: MorphismOfCategory) -> NaturalTransformation:
-    """The cocartesian lift of ``f: x -> y`` at ``p: x -> z``: the square ``(f, iota_z)`` from ``p`` to ``iota_y: y -> z +_x y``."""
+    """The cocartesian lift of ``f: x -> y`` at ``p: x -> z`` for ``ev_0``: the square ``(f, iota_z)`` from ``p`` to ``iota_y: y -> z +_x y``."""
     base, arrow = functors.codomain(), functors.domain()
     assert arrow is Cat().Simplex(1) and morphism.domain() is member_object.domain(), f"{morphism!r} does not start at the domain of {member_object!r}"
-    key = (morphism, member_object, functors)
-    if key not in functors._lifts:
-        span = Cat().Horn(2, 0)
-        pushout = base.Pushouts()(span_diagram(base, member_object, morphism))
-        from_first, from_second = pushout.injection(span(1)), pushout.injection(span(2))
-        components = {0: morphism, 1: from_first}
-        functors._lifts[key] = functors.morphism_category(1)(member_object, from_second)(lambda vertex: components[arrow.label(vertex)])
-    return functors._lifts[key]
+    span = Cat().Horn(2, 0)
+    pushout = base.Pushouts()(span_diagram(base, member_object, morphism))
+    from_first, from_second = pushout.injection(span(1)), pushout.injection(span(2))
+    components = {0: morphism, 1: from_first}
+    return functors.morphism_category(1)(member_object, from_second)(lambda vertex: components[arrow.label(vertex)])
 
 
 # -- limits and colimits in ``Fun(I, C)``, pointwise (specs/functor.md, "Diagram shapes and universal constructions") -----------------------------------------

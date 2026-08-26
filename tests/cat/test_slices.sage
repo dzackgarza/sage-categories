@@ -193,8 +193,9 @@ def test_the_codomain_evaluation_lifts_a_map_by_pullback_with_both_projections()
     arrow = Cat().Simplex(int(1))
     squares = Fun(arrow, Sets())
     cospan = Cat().Horn(int(2), int(2))
+    ev_1 = squares.evaluation(arrow(int(1)))
 
-    lift = squares.cartesian_lift(include, residue)
+    lift = ev_1.cartesian_lift(include, residue)
     assert lift in Mor(squares)
     assert lift.codomain() is residue
     lifted = lift.domain()
@@ -210,7 +211,7 @@ def test_the_codomain_evaluation_lifts_a_map_by_pullback_with_both_projections()
     assert pullback.diagram().on_object(cospan(int(0))) is four and pullback.diagram().on_object(cospan(int(1))) is two
     assert lifted is pullback.projection(cospan(int(1)))
     assert to_four is pullback.projection(cospan(int(0)))
-    assert squares.cartesian_lift(include, residue) is lift
+    assert ev_1.cartesian_lift(include, residue) is lift
 
 
 def test_the_slice_projection_lifts_a_map_by_precomposition() -> None:
@@ -220,7 +221,7 @@ def test_the_slice_projection_lifts_a_map_by_precomposition() -> None:
     over = Sets().SliceOver(three)
     base = over(residue)
 
-    lift = over.cartesian_lift(double, base)
+    lift = over.fixed_projection().cartesian_lift(double, base)
     assert lift in Mor(over)
     assert lift.codomain() is base
     assert over.fixed_projection().on_morphism(lift) is double
@@ -231,7 +232,7 @@ def test_the_slice_projection_lifts_a_map_by_precomposition() -> None:
 
     under = Sets().CosliceUnder(two)
     pointed = under(double)
-    colift = under.cocartesian_lift(residue, pointed)
+    colift = under.fixed_projection().cocartesian_lift(residue, pointed)
     assert colift.domain() is pointed
     assert under.fixed_projection().on_object(colift.codomain()) is three
     assert ask(colift.codomain().first() == residue * double) is True

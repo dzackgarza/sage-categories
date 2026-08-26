@@ -160,7 +160,7 @@ def test_the_leaf_override_sub_poset_returns_the_induced_order_through_the_retai
     carrier = _underlying().on_object(divisibility)
     without_three = divisibility.sub_poset(lambda datum: datum != int(3))
     subset = divisibility.subset_from(lambda datum: datum != int(3))
-    lift = Posets().cartesian_lift(subset.inclusion(), divisibility)
+    lift = _underlying().cartesian_lift(subset.inclusion(), divisibility)
 
     assert without_three in Posets()
     assert without_three in FinitePosets()
@@ -179,7 +179,7 @@ def test_the_leaf_override_sub_poset_returns_the_induced_order_through_the_retai
 
     collapse = Mor(Sets())(carrier, carrier)(lambda datum: int(1))
     with pytest.raises(AssertionError):
-        Posets().cartesian_lift(collapse, divisibility)
+        _underlying().cartesian_lift(collapse, divisibility)
 
 
 def test_the_classical_stage_is_the_one_point_order_with_the_identity_comparison() -> None:

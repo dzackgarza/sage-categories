@@ -65,6 +65,18 @@ def _defining_functor_equal(first: CategoryPoint, candidate: Any) -> Decision:
 # selected functor exposing classical element methods (POL-LEAF-003), keyed by the functor.
 _stage_comparisons: MonoDict = MonoDict()
 
+# The lifts a functor ``p: E -> B`` retains over a stated class of morphisms of ``B``
+# (POL-FUN-029, ``specs/functor.md``, "Slices and coslices"): the owner of the
+# functor registers one rule per direction, and each lift is constructed once per
+# ``(morphism, object)`` and retained by identity.  The rule states the class of
+# morphisms it lifts and fails loudly outside it.
+type LiftRule = Callable[[MorphismOfCategory, CategoryPoint], MorphismOfCategory]
+
+_cartesian_rules: MonoDict = MonoDict()
+_cocartesian_rules: MonoDict = MonoDict()
+_cartesian_lifts: TripleDict = TripleDict(weak_values=False)
+_cocartesian_lifts: TripleDict = TripleDict(weak_values=False)
+
 
 class Functor(MorphismOfCategory):
     """The local ``Cat().MorphismType``: a functor ``C -> D`` from its total actions."""
@@ -138,6 +150,38 @@ class Functor(MorphismOfCategory):
         (target_stage,) = self.codomain().classical_stages()
         assert self.on_object(source_stage) is target_stage, f"{self!r} retains no stage comparison"
         return target_stage.identity()
+
+    # -- fibration and opfibration lifts (POL-FUN-029) ------------------------------------
+
+    def retain_cartesian_lifts(self, rule: LiftRule) -> None:
+        """Retain the rule constructing the cartesian lift of ``f: y -> p(e)`` at ``e`` over the class of morphisms the owner states."""
+        assert self not in _cartesian_rules, f"{self!r} already retains its cartesian lifts"
+        _cartesian_rules[self] = rule
+
+    def retain_cocartesian_lifts(self, rule: LiftRule) -> None:
+        """Retain the rule constructing the cocartesian lift of ``f: p(e) -> y`` at ``e`` over the class of morphisms the owner states."""
+        assert self not in _cocartesian_rules, f"{self!r} already retains its cocartesian lifts"
+        _cocartesian_rules[self] = rule
+
+    def cartesian_lift(self, morphism: MorphismOfCategory, member_object: CategoryPoint) -> MorphismOfCategory:
+        """The cartesian lift of ``morphism: y -> p(e)`` at ``e``: a morphism of the domain ending at ``e`` over ``morphism``, retained once per pair."""
+        assert self in _cartesian_rules, f"{self!r} retains no cartesian lifts"
+        assert morphism in self.codomain().morphism_category(1), f"{morphism!r} is not a morphism of {self.codomain()!r}"
+        assert morphism.codomain() is self.on_object(member_object), f"{morphism!r} does not end at the image of {member_object!r}"
+        key = (morphism, member_object, self)
+        if key not in _cartesian_lifts:
+            _cartesian_lifts[key] = _cartesian_rules[self](morphism, member_object)
+        return _cartesian_lifts[key]
+
+    def cocartesian_lift(self, morphism: MorphismOfCategory, member_object: CategoryPoint) -> MorphismOfCategory:
+        """The cocartesian lift of ``morphism: p(e) -> y`` at ``e``: a morphism of the domain starting at ``e`` over ``morphism``, retained once per pair."""
+        assert self in _cocartesian_rules, f"{self!r} retains no cocartesian lifts"
+        assert morphism in self.codomain().morphism_category(1), f"{morphism!r} is not a morphism of {self.codomain()!r}"
+        assert morphism.domain() is self.on_object(member_object), f"{morphism!r} does not start at the image of {member_object!r}"
+        key = (morphism, member_object, self)
+        if key not in _cocartesian_lifts:
+            _cocartesian_lifts[key] = _cocartesian_rules[self](morphism, member_object)
+        return _cocartesian_lifts[key]
 
     def is_full(self) -> AppliedPredicate:
         return Fun.Full().predicate()(self)
@@ -254,9 +298,10 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
     is the category of morphisms of ``C`` and commuting squares: a square
     ``f -> g`` is a natural transformation with components ``(a, b)`` satisfying
     ``g * a == b * f``, a trusted declaration checked where the finite set-map
-    equality handler decides it (specs/functor.md, "The Mor(n, C) tower", specs/sets.md, "Equality").  It retains the cartesian lifts of
-    ``ev_1`` by pullback and the cocartesian lifts of ``ev_0`` by pushout when the
-    codomain owns those constructions (POL-FUN-029; nLab "codomain fibration", inspected
+    equality handler decides it (specs/functor.md, "The Mor(n, C) tower", specs/sets.md, "Equality").  Its evaluation
+    ``ev_1`` retains cartesian lifts by pullback and ``ev_0`` cocartesian lifts by
+    pushout, constructed when the codomain owns those constructions
+    (``cat/diagrams.py``; POL-FUN-029; nLab "codomain fibration", inspected
     2026-08-27: "If C has all pullbacks, then the functor is in addition a
     Grothendieck fibration", with "the cartesian lift of a morphism c_1 -> c_2 in
     C ... given by the morphism c_1 x_{c_2} c'_2 -> c'_2").
@@ -266,7 +311,6 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
         self._evaluations: MonoDict = MonoDict()
         self._constants: MonoDict = MonoDict()
         self._constant_values: MonoDict = MonoDict()
-        self._lifts: TripleDict = TripleDict(weak_values=False)
         self._finite_data: MonoDict = MonoDict()
         super().__init__(morphisms, domain, codomain)
 
@@ -345,18 +389,6 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
         from sage_categories.cat.diagrams import square_at
 
         return square_at(self, point)
-
-    def cartesian_lift(self, morphism: MorphismOfCategory, member_object: MorphismOfCategory) -> NaturalTransformation:
-        """The cartesian lift of ``f: y -> x`` at ``p: z -> x`` for ``ev_1``: the square ``z *_x y -> y`` over ``p``, by pullback in ``C``."""
-        from sage_categories.cat.diagrams import codomain_lift
-
-        return codomain_lift(self, morphism, member_object)
-
-    def cocartesian_lift(self, morphism: MorphismOfCategory, member_object: MorphismOfCategory) -> NaturalTransformation:
-        """The cocartesian lift of ``f: x -> y`` at ``p: x -> z`` for ``ev_0``: the square from ``p`` to ``z +_x y <- y``, by pushout in ``C``."""
-        from sage_categories.cat.diagrams import domain_lift
-
-        return domain_lift(self, morphism, member_object)
 
     # -- functor properties (POL-FUN-024) -----------------------------------------------
 

@@ -43,6 +43,7 @@ from sage_categories.sets.objects import FiniteSetRole, MembershipRule, SetObjec
 
 if TYPE_CHECKING:
     from sage_categories.cat.functors import Functor
+    from sage_categories.sets.power_objects import PowerObjectsCategory
     from sage_categories.sets.subobjects import ChosenQuotientsCategory, ChosenSubsetsCategory
 
 __all__ = ["Sets", "SetsCategory"]
@@ -268,11 +269,21 @@ class SetsCategory(Category[[Rule], []]):
         return colimit_of_sets
 
     def exponential(self, exponent: SetObject, base: SetObject) -> SetObject:
-        """``base ** exponent``: the function set (POL-SET-017)."""
+        """``base ** exponent``: the function set (POL-SET-017); for ``base = [1]`` the power object ``2 ** exponent`` (POL-SET-018)."""
         from sage_categories.sets.exponentials import function_set
 
         assert exponent in self and base in self
+        if base is self.Simplex(1):
+            return self.PowerObjects()(exponent)
         return function_set(exponent, base)
+
+    def PowerObjects(self) -> PowerObjectsCategory:
+        """The narrowing of power objects ``2 ** X``, each retaining its base set (``sets/power_objects.py``)."""
+        from sage_categories.sets.power_objects import PowerObjectsCategory
+
+        if "PowerObjects" not in self._constructions:
+            self._constructions["PowerObjects"] = PowerObjectsCategory(self)
+        return self._constructions["PowerObjects"]
 
     def name_of(self, set_map: SetMap) -> SetPoint:
         """The point of ``Y ** X`` naming a map ``X -> Y``."""

@@ -43,7 +43,7 @@ from sage_categories.sets.objects import FiniteSetRole, MembershipRule, SetObjec
 
 if TYPE_CHECKING:
     from sage_categories.cat.functors import Functor
-    from sage_categories.sets.subobjects import ChosenSubsetsCategory
+    from sage_categories.sets.subobjects import ChosenQuotientsCategory, ChosenSubsetsCategory
 
 __all__ = ["Sets", "SetsCategory"]
 
@@ -149,8 +149,16 @@ class SetsCategory(Category[[Rule], []]):
         from sage_categories.sets.subobjects import ChosenSubsetsCategory
 
         if "ChosenSubsets" not in self._constructions:
-            self._constructions["ChosenSubsets"] = ChosenSubsetsCategory()
+            self._constructions["ChosenSubsets"] = ChosenSubsetsCategory(self)
         return self._constructions["ChosenSubsets"]
+
+    def ChosenQuotients(self) -> ChosenQuotientsCategory:
+        """The narrowing of chosen quotients, each retaining its quotient map (``sets/subobjects.py``)."""
+        from sage_categories.sets.subobjects import ChosenQuotientsCategory
+
+        if "ChosenQuotients" not in self._constructions:
+            self._constructions["ChosenQuotients"] = ChosenQuotientsCategory(self)
+        return self._constructions["ChosenQuotients"]
 
     def _canonical_finite(self, name: str, arguments: tuple[int, ...], members: Iterable[Datum]) -> SetObject:
         if (name, arguments) not in self._canonical:
@@ -226,26 +234,24 @@ class SetsCategory(Category[[Rule], []]):
     # -- owned constructions (POL-SET-013; ``sets/products.py``, ``sets/exponentials.py``) ---
 
     def limit_construction(self, shape: Category) -> Callable[[Functor], SetObject]:
-        """Products over ``Discrete(S)``; ``Sets()`` owns no other limit construction yet."""
+        """Products over ``Discrete(S)``; over every other shape, the compatible families (``sets/limits.py``)."""
         from sage_categories.cat.shapes import is_discrete
+        from sage_categories.sets.limits import limit_of_sets
         from sage_categories.sets.products import product_of_sets
 
-        assert is_discrete(shape), (
-            f"Sets owns no {shape!r}-limit construction: only products over Discrete(S); "
-            "the limit as the set of compatible families is not yet owned; supply universal data"
-        )
-        return product_of_sets
+        if is_discrete(shape):
+            return product_of_sets
+        return limit_of_sets
 
     def colimit_construction(self, shape: Category) -> Callable[[Functor], SetObject]:
-        """Coproducts over ``Discrete(S)``; ``Sets()`` owns no other colimit construction yet."""
+        """Coproducts over ``Discrete(S)``; over every other shape, the quotient of the coproduct (``sets/limits.py``)."""
         from sage_categories.cat.shapes import is_discrete
+        from sage_categories.sets.limits import colimit_of_sets
         from sage_categories.sets.products import coproduct_of_sets
 
-        assert is_discrete(shape), (
-            f"Sets owns no {shape!r}-colimit construction: only coproducts over Discrete(S); "
-            "the colimit as a quotient of the coproduct is not yet owned; supply universal data"
-        )
-        return coproduct_of_sets
+        if is_discrete(shape):
+            return coproduct_of_sets
+        return colimit_of_sets
 
     def exponential(self, exponent: SetObject, base: SetObject) -> SetObject:
         """``base ** exponent``: the function set (POL-SET-017)."""

@@ -200,3 +200,15 @@ def test_injectivity_into_a_function_set_is_decided_through_map_equality() -> No
     assert ask(separating(two.point(int(0))) == Sets().name_of(parity)) is True
     assert ask(separating(two.point(int(1))) == Sets().name_of(parity)) is False
     assert ask(separating.is_monomorphism()) is True
+
+
+def test_the_diagonal_of_the_reals_is_a_mediator_that_needs_no_enumeration() -> None:
+    plane = RR * RR
+    diagonal = plane.universal_morphism(_sequence_cone(plane.diagram(), RR, {int(0): RR.identity(), int(1): RR.identity()}))
+    point = diagonal(RR(int(3)))
+
+    assert diagonal.domain() is RR and diagonal.codomain() is plane
+    assert point in plane
+    assert ask(plane.product_projection(int(0))(point) == RR(int(3))) is True
+    assert ask(plane.product_projection(int(1))(point) == RR(int(3))) is True
+    assert ask(plane.product_projection(int(1))(point) == RR(int(2))) is False

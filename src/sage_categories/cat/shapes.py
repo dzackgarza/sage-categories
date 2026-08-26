@@ -85,7 +85,7 @@ class DiscreteCategory(Category[[], []]):
     def index_set(self) -> SetObject:
         return self._index_set
 
-    # The objects are the points of ``S`` and the morphisms their identities (D16).
+    # The objects are the points of ``S`` and the morphisms their identities (specs/functor.md, "Diagram shapes and universal constructions").
 
     def object_set(self) -> SetObject:
         return self._index_set
@@ -310,7 +310,7 @@ _omega: MonoDict = MonoDict()
 
 
 def omega() -> ThinCategory:
-    """``omega = Thin(NN)`` with the natural order: the sequential shape, constructed once (D16)."""
+    """``omega = Thin(NN)`` with the natural order: the sequential shape, constructed once (specs/functor.md, "Diagram shapes and universal constructions")."""
     from sage_categories.number_sets.positive_integers import NN, natural_order
 
     if NN not in _omega:

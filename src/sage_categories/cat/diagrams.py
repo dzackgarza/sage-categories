@@ -1,4 +1,4 @@
-"""Diagrams: evaluation functors of ``Fun(I, C)``, constant and discrete diagrams, pointwise limits, and the lifts of ``Fun([1], C)`` (D10, D16).
+"""Diagrams: evaluation functors of ``Fun(I, C)``, constant and discrete diagrams, pointwise limits, and the lifts of ``Fun([1], C)`` (POL-FUN-029, specs/functor.md, "Diagram shapes and universal constructions").
 
 A diagram of shape ``I`` in ``C`` is an object of ``Fun(I, C)``.  ``Fun(I, C)``
 retains one evaluation functor ``ev_i: Fun(I, C) -> C`` per object ``i`` of ``I``,
@@ -6,7 +6,7 @@ constructed through ``Fun(Fun(I, C), C)`` (Mathlib ``CategoryTheory.evaluation``
 inspected 2026-08-26): on a diagram it returns ``D(i)`` and on a natural
 transformation its component at ``i``.  For ``I = [1]`` the evaluations at ``0``
 and ``1`` are ``ev_0`` and ``ev_1``, the domain and codomain of a morphism, since
-the objects of ``Fun([1], C)`` are the morphisms of ``C`` (D03).
+the objects of ``Fun([1], C)`` are the morphisms of ``C`` (specs/functor.md, "The Mor(n, C) tower").
 
 The constant diagram at ``X`` sends every object to ``X`` and every morphism to
 its identity (Mathlib ``CategoryTheory.Functor.const``; inspected 2026-08-26); it
@@ -112,7 +112,7 @@ def morphism_from_sequence(ambient: Category, domain: Functor, codomain: Functor
     return functors.morphism_category(1)(domain, codomain)(lambda vertex: components[sequence_position(vertex)])
 
 
-# -- the commuting squares of ``Fun([1], C)`` as a finite set (D16) ---------------------------
+# -- the commuting squares of ``Fun([1], C)`` as a finite set (specs/functor.md, "Diagram shapes and universal constructions") ---------------------------
 
 
 def square_set(functors: FunctorCategory) -> SetObject:
@@ -143,7 +143,7 @@ def square_at(functors: FunctorCategory, point: SetPoint) -> NaturalTransformati
     return functors.morphism_category(1)(f, g)(lambda vertex: components[functors.domain().label(vertex)])
 
 
-# -- the lifts of ``ev_1`` and ``ev_0`` on ``Fun([1], C)`` (D10) ----------------------------------
+# -- the lifts of ``ev_1`` and ``ev_0`` on ``Fun([1], C)`` (POL-FUN-029) ----------------------------------
 
 
 def _fold(images: dict[str, MorphismOfCategory], identities: Callable[[ObjectOfCategory], MorphismOfCategory], path: MorphismOfCategory) -> MorphismOfCategory:
@@ -202,7 +202,7 @@ def domain_lift(functors: FunctorCategory, morphism: MorphismOfCategory, member_
     return functors._lifts[key]
 
 
-# -- limits and colimits in ``Fun(I, C)``, pointwise (D16) -----------------------------------------
+# -- limits and colimits in ``Fun(I, C)``, pointwise (specs/functor.md, "Diagram shapes and universal constructions") -----------------------------------------
 
 
 def _leg(presentation: ObjectOfCategory, vertex: ObjectOfCategory) -> MorphismOfCategory:
@@ -239,9 +239,12 @@ def pointwise_limit(diagram: Functor) -> ObjectOfCategory:
         return limits.limit_functor().on_morphism(transformation)
 
     apex = functors(lambda vertex: at(vertex).apex(), on_morphism)
+    projections: MonoDict = MonoDict()
 
     def projection(vertex: ObjectOfCategory) -> NaturalTransformation:
-        return functors.morphism_category(1)(apex, diagram.on_object(vertex))(lambda index_object: _leg(at(index_object), vertex))
+        if vertex not in projections:
+            projections[vertex] = functors.morphism_category(1)(apex, diagram.on_object(vertex))(lambda index_object: _leg(at(index_object), vertex))
+        return projections[vertex]
 
     def mediator(candidate_cone: NaturalTransformation) -> NaturalTransformation:
         source = cone_apex(candidate_cone)
@@ -277,9 +280,12 @@ def pointwise_colimit(diagram: Functor) -> ObjectOfCategory:
         return colimits.colimit_functor().on_morphism(transformation)
 
     apex = functors(lambda vertex: at(vertex).apex(), on_morphism)
+    injections: MonoDict = MonoDict()
 
     def injection(vertex: ObjectOfCategory) -> NaturalTransformation:
-        return functors.morphism_category(1)(diagram.on_object(vertex), apex)(lambda index_object: _coleg(at(index_object), vertex))
+        if vertex not in injections:
+            injections[vertex] = functors.morphism_category(1)(diagram.on_object(vertex), apex)(lambda index_object: _coleg(at(index_object), vertex))
+        return injections[vertex]
 
     def mediator(candidate_cocone: NaturalTransformation) -> NaturalTransformation:
         destination = cocone_apex(candidate_cocone)

@@ -46,7 +46,7 @@ def identity_on_values(value: CategoryPoint) -> CategoryPoint:
 
 
 def diagram_of(value: CategoryPoint) -> Functor:
-    """The functor that a value of ``Fun(I, C)`` denotes: a functor itself, or the retained defining functor of a point of ``C`` at stage ``I`` (D03, D06)."""
+    """The functor that a value of ``Fun(I, C)`` denotes: a functor itself, or the retained defining functor of a point of ``C`` at stage ``I`` (specs/functor.md, "The Mor(n, C) tower", specs/functor.md, "Slices and coslices")."""
     if is_placed(value, Fun):
         return value
     return value.defining_morphism()
@@ -192,10 +192,10 @@ class FunctorProperty(FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]
 
 
 # ``denotes_diagram(x, Fun(I, C))``: ``x`` is a functor ``I -> C``, or a point of ``C`` at
-# stage ``I`` (D06: an object of ``C`` is a point at stage ``1`` and a morphism a point at
+# stage ``I`` (specs/functor.md, "Slices and coslices": an object of ``C`` is a point at stage ``1`` and a morphism a point at
 # stage ``[1]``), whose defining functor is such a diagram.  Thus the objects of
 # ``Fun(1, C)`` are the objects of ``C`` and the objects of ``Fun([1], C)`` are the
-# morphisms of ``C`` (D03, D15): one value, denoting its retained defining functor.
+# morphisms of ``C`` (specs/functor.md, "The Mor(n, C) tower", specs/functor.md, "Canonical objects of Cat"): one value, denoting its retained defining functor.
 denotes_diagram = Predicate("denotes_diagram", 2, False)
 
 
@@ -210,7 +210,7 @@ def _denotes_diagram_by_stage(candidate: CategoryPoint, functors: FunctorCategor
 denotes_diagram.register_handler(_denotes_diagram_by_stage)
 
 # ``denotes_functor(x, Fun)``: ``x`` is a functor by placement, or a point of a category
-# at a categorical stage, which denotes its defining functor (D06).
+# at a categorical stage, which denotes its defining functor (specs/functor.md, "Slices and coslices").
 denotes_functor = Predicate("denotes_functor", 2, False)
 
 
@@ -227,13 +227,13 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
     """``Fun(C, D)``: functors ``C -> D`` and their natural transformations.
 
     As the category of diagrams of shape ``C`` in ``D`` it retains its evaluation
-    functors and constant diagrams (``cat/diagrams.py``, D10, D16).  ``Fun([1], C)``
+    functors and constant diagrams (``cat/diagrams.py``, POL-FUN-029, specs/functor.md, "Diagram shapes and universal constructions").  ``Fun([1], C)``
     is the category of morphisms of ``C`` and commuting squares: a square
     ``f -> g`` is a natural transformation with components ``(a, b)`` satisfying
     ``g * a == b * f``, a trusted declaration checked where the finite set-map
-    equality handler decides it (D03, D17).  It retains the cartesian lifts of
+    equality handler decides it (specs/functor.md, "The Mor(n, C) tower", specs/sets.md, "Equality").  It retains the cartesian lifts of
     ``ev_1`` by pullback and the cocartesian lifts of ``ev_0`` by pushout when the
-    codomain owns those constructions (D10; nLab "codomain fibration", inspected
+    codomain owns those constructions (POL-FUN-029; nLab "codomain fibration", inspected
     2026-08-27: "If C has all pullbacks, then the functor is in addition a
     Grothendieck fibration", with "the cartesian lift of a morphism c_1 -> c_2 in
     C ... given by the morphism c_1 x_{c_2} c'_2 -> c'_2").
@@ -297,7 +297,7 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
 
         return from_object_rule(self, rule)
 
-    # -- ``Fun([1], C)``: its finite data and its fibration lifts (D10, D16) -----------
+    # -- ``Fun([1], C)``: its finite data and its fibration lifts (POL-FUN-029, specs/functor.md, "Diagram shapes and universal constructions") -----------
 
     def object_set(self) -> SetObject:
         """For ``I = [1]``: the morphism set of ``C``, since the objects are the morphisms of ``C``."""
@@ -371,7 +371,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         return FunctorCategory
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
-        """A functor, or a point of a category at a categorical stage denoting its defining functor (D03, D06)."""
+        """A functor, or a point of a category at a categorical stage denoting its defining functor (specs/functor.md, "The Mor(n, C) tower", specs/functor.md, "Slices and coslices")."""
         return denotes_functor(candidate, self)
 
     # -- the functor property categories (D09) -----------------------------------
@@ -441,7 +441,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         """The inclusion of a subcategory: faithful by construction."""
         return self._inclusion(source, target, "Faithful")
 
-    # -- limits and colimits of functors, pointwise (D16; ``cat/diagrams.py``) -----------
+    # -- limits and colimits of functors, pointwise (specs/functor.md, "Diagram shapes and universal constructions"; ``cat/diagrams.py``) -----------
 
     def limit_construction(self, shape: Category) -> Callable[[Functor], ObjectOfCategory]:
         """``Fun(I, C)`` has the ``J``-limits that ``C`` has, computed by evaluation."""

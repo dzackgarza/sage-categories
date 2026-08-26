@@ -8,7 +8,7 @@ so ``(Lan_K F)(2)`` is the colimit of ``F(0) -> F(1)`` over the arrow-shaped com
 ``(K, 2)``, a set of ``#F(1)`` classes, and ``(Ran_K F)(2)`` is the limit over the
 empty comma ``(2, K)``, a one-point set; limits in ``Fun(I, C)`` are computed
 pointwise (Mathlib ``Limits.evaluationJointlyReflectsLimits``).  No row proves a
-universal property (D14).
+universal property (POL-MATH-036).
 """
 
 from sage_categories.all import *
@@ -67,7 +67,12 @@ def test_the_left_kan_extension_retains_its_unit_and_applies_a_nonidentity_compo
     assert ask(extension.on_object(triangle(int(2))).cardinality() == int(3)) is True
 
     unit = left_kan_unit(inclusion, diagram)
-    assert unit in Mor(Fun(arrow, Sets()))(diagram, extension * inclusion)
+    assert unit in Mor(Fun(arrow, Sets()))
+    assert unit.domain() is diagram
+    restricted = unit.codomain()
+    assert restricted in Fun(arrow, Sets())
+    assert restricted.on_object(arrow(int(1))) is extension.on_object(inclusion.on_object(arrow(int(1))))
+    assert ask(restricted.on_morphism(arrow.generator("0->1")) == extension.on_morphism(inclusion.on_morphism(arrow.generator("0->1")))) is True
     component = unit.component(arrow(int(1)))
     assert component.domain() is three and component.codomain() is extension.on_object(triangle(int(1)))
     assert component is not three.identity()
@@ -97,7 +102,9 @@ def test_the_right_kan_extension_retains_its_counit() -> None:
     assert ask(extension.on_object(triangle(int(2))).cardinality() == int(1)) is True
     assert ask(extension.on_object(triangle(int(0))).cardinality() == int(2)) is True
     counit = right_kan_counit(inclusion, diagram)
-    assert counit in Mor(Fun(arrow, Sets()))(extension * inclusion, diagram)
+    assert counit in Mor(Fun(arrow, Sets()))
+    assert counit.codomain() is diagram
+    assert counit.domain().on_object(arrow(int(0))) is extension.on_object(inclusion.on_object(arrow(int(0))))
     component = counit.component(arrow(int(0)))
     assert component.codomain() is two
     assert ask(component.is_isomorphism()) is True
@@ -117,7 +124,8 @@ def test_limits_in_a_functor_category_are_computed_pointwise() -> None:
     assert apex in squares
     assert ask(apex.on_object(arrow(int(0))).cardinality() == int(4)) is True
     assert ask(apex.on_object(arrow(int(1))).cardinality() == int(9)) is True
-    assert apex.on_object(arrow(int(0))) is (two * two).apex()
+    at_source = Sets().Products().presentation_of_apex(apex.on_object(arrow(int(0))))
+    assert at_source.product_projection(index(two.point(int(1)))).codomain() is two
     first = product.product_projection(int(0))
     assert first in Mor(squares)(apex, successor)
     assert first.component(arrow(int(1))).codomain() is three

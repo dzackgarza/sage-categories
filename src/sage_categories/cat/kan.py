@@ -1,4 +1,4 @@
-"""Left and right Kan extensions, computed pointwise over comma categories (D10, POL-FUN-032).
+"""Left and right Kan extensions, computed pointwise over comma categories (POL-FUN-029, POL-FUN-032).
 
 For ``K: C -> D`` and ``F: C -> E``, the left Kan extension ``Lan_K F: D -> E`` is
 computed pointwise: ``(Lan_K F)(d)`` is the colimit over the comma category

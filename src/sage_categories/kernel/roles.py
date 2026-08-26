@@ -75,7 +75,7 @@ class ObjectOfCategory(CategoryPoint):
         return self._category.identity_morphism(self)
 
     # The fibers over and under this object of the four morphism-property families,
-    # constructed by the category's slice constructions (D10, POL-CAT-026).
+    # constructed by the category's slice constructions (POL-FUN-029, POL-CAT-026).
 
     def subobjects(self) -> Category:
         """``C.Subobjects()(X)``: the monomorphisms into ``X`` as objects of ``C.SliceOver(X)``."""

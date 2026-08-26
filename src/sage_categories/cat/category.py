@@ -393,7 +393,7 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         """The owned construction of ``I``-colimits, when this category declares one."""
         raise AssertionError(f"{self!r} owns no {shape!r}-colimit construction; supply universal data")
 
-    # -- slices, coslices, and the categories of subobjects (D10, POL-CAT-095, POL-SCOPE-003) --
+    # -- slices, coslices, and the categories of subobjects (POL-FUN-029, POL-CAT-095, POL-SCOPE-003) --
 
     def SliceOver(self, member_object: ObjectOfCategory) -> Category:
         """``C.SliceOver(x)``: the strict pullback of ``ev_1: Fun([1], C) -> C`` along ``x: 1 -> C``."""
@@ -442,13 +442,13 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         """The epimorphisms of ``C``; ``C.CoveredObjects()(x)`` is the fiber under ``x`` in ``C.CosliceUnder(x)``."""
         return self._morphism_property_family("CoveredObjects")
 
-    # -- the chosen sets of objects and morphisms of a small shape (D16) -----------------
+    # -- the chosen sets of objects and morphisms of a small shape (specs/functor.md, "Diagram shapes and universal constructions") -----------------
     #
     # A shape used as a diagram index exposes its objects as an object of ``Sets()``
     # and, when it has finitely many morphisms, its morphisms too; the points of
     # those sets select objects and morphisms.  A category that declares neither
     # has all generalized elements and no enumeration; a set limit over it is then
-    # undecided (D16).  The sets are typed by their kernel roles here because the
+    # undecided (specs/functor.md, "Diagram shapes and universal constructions").  The sets are typed by their kernel roles here because the
     # theory of ``Sets()`` is constructed through this module; each shape declares
     # the exact ``Sets()`` types.
 
@@ -601,10 +601,10 @@ class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
         return composite
 
     def construct_two_morphism(self, source: CategoryPoint, target: CategoryPoint, assignment: Assignment) -> NaturalTransformation:
-        """``Mor(Fun(C, D))(F, G)(assignment)``: a natural transformation from a rule (D05).
+        """``Mor(Fun(C, D))(F, G)(assignment)``: a natural transformation from a rule (POL-FUN-007).
 
         The endpoints are objects of ``Fun(C, D)``: functors, or the points of ``D``
-        at stage ``C`` that denote their defining functors (D03).
+        at stage ``C`` that denote their defining functors (specs/functor.md, "The Mor(n, C) tower").
         """
         from sage_categories.cat.functors import diagram_of
 

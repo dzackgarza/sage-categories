@@ -72,7 +72,7 @@ class PositiveIntegersCategory(Category[[Rule], []]):
 _POSITIVE_INTEGERS = PositiveIntegersCategory()
 
 # ``natural_order(m, n)``: ``m <= n`` for two points of ``NN``, decided by Sage's exact
-# integer order; ``omega = Thin(NN, natural_order)`` is the sequential shape (D16).
+# integer order; ``omega = Thin(NN, natural_order)`` is the sequential shape (specs/functor.md, "Diagram shapes and universal constructions").
 natural_order = Predicate("natural_order", 2, True)
 
 

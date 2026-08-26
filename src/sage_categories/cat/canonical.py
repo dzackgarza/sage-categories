@@ -96,7 +96,7 @@ class FinitePresentedCategory(Category[[Word], []]):
         self._labels = labels
         self._generator_endpoints = {generator: (source, target) for generator, source, target in generators}
         self._relations = relations
-        # One retained path per (source label, reduced word) (D15): a morphism of a
+        # One retained path per (source label, reduced word) (specs/functor.md, "Canonical objects of Cat"): a morphism of a
         # finitely presented category exists once by identity.
         self._paths: dict[tuple[Hashable, Word], Path] = {}
         self._object_set: MonoDict = MonoDict()
@@ -124,7 +124,7 @@ class FinitePresentedCategory(Category[[Word], []]):
         source, target = self._generator_endpoints[name]
         return self.construct_morphism(self(source), self(target), (name,))
 
-    # -- the finite set of objects and, for an acyclic quiver, of morphisms (D16) -------
+    # -- the finite set of objects and, for an acyclic quiver, of morphisms (specs/functor.md, "Diagram shapes and universal constructions") -------
     #
     # The object set is the finite set of labels.  The morphism set is the finite
     # set of reduced words: a finite quiver without directed cycles has finitely many

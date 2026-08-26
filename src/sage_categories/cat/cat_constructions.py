@@ -77,11 +77,12 @@ class FamilyObject(ObjectOfCategory):
 
     def __init__(self, category: Category, rule: ObjectRule) -> None:
         ObjectOfCategory.__init__(self, category)
+        self._shape = category.shape()
         self._rule = rule
 
     def component(self, index: ObjectOfCategory | Hashable) -> ObjectOfCategory:
         """The object at ``i``, for ``i`` an object of the index category or a datum of the index set."""
-        return self._rule(vertex_of(self.category().shape(), index))
+        return self._rule(vertex_of(self._shape, index))
 
     def __repr__(self) -> str:
         return f"family in {self.category()!r}"
@@ -92,10 +93,11 @@ class FamilyMorphism(MorphismOfCategory):
 
     def __init__(self, category: Category, domain: FamilyObject, codomain: FamilyObject, rule: MorphismRule) -> None:
         MorphismOfCategory.__init__(self, category, domain, codomain)
+        self._shape = category.base_category().shape()
         self._rule = rule
 
     def component(self, index: ObjectOfCategory | Hashable) -> MorphismOfCategory:
-        return self._rule(vertex_of(self.base_category().shape(), index))
+        return self._rule(vertex_of(self._shape, index))
 
     def __repr__(self) -> str:
         return f"family morphism in {self.base_category()!r}"
@@ -124,7 +126,7 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
         return self._diagram.on_object(vertex_of(self.shape(), index))
 
     # The objects and morphisms are the families of objects and morphisms of the
-    # factors: their sets are the set products of the factors' sets (D16), for a
+    # factors: their sets are the set products of the factors' sets (specs/functor.md, "Diagram shapes and universal constructions"), for a
     # sequence-indexed product whose index set is ``[n]``.
 
     def _positions(self) -> tuple[Datum, ...]:
@@ -435,7 +437,7 @@ class PullbackCategory(Category[[tuple[MorphismOfCategory, MorphismOfCategory]],
         return member(candidate, self) & images_agree(candidate, self)
 
     # The objects are the pairs with one image: the subset of the product of the
-    # factors' object sets cut out by ``images_agree``; the morphisms likewise (D02, D16).
+    # factors' object sets cut out by ``images_agree``; the morphisms likewise (POL-CAT-092, specs/functor.md, "Diagram shapes and universal constructions").
 
     def object_set(self) -> SetObject:
         if "objects" not in self._finite_data:
@@ -518,7 +520,7 @@ class PullbackCategory(Category[[tuple[MorphismOfCategory, MorphismOfCategory]],
 
 
 class SharedCarrierPullback(PullbackCategory):
-    """A strict pullback whose objects carry two structures on one retained ancestor object (D10).
+    """A strict pullback whose objects carry two structures on one retained ancestor object (POL-FUN-029).
 
     The constructor asserts with ``is`` that both projections return the same
     ancestor object; the pullback retains that object once with both structures.

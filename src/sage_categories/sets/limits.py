@@ -1,4 +1,4 @@
-"""``Sets()`` limits and colimits over every shape: compatible families and quotients (D16, D17, POL-SET-014).
+"""``Sets()`` limits and colimits over every shape: compatible families and quotients (specs/functor.md, "Diagram shapes and universal constructions", specs/sets.md, "Equality", POL-SET-014).
 
 The limit of ``D: I -> Sets()`` is the chosen subset of the product
 ``prod_{i in Ob(I)} D(i)`` cut out by compatibility: a family ``(x_i)`` is a member
@@ -26,7 +26,7 @@ over the finite coproduct, Sage ``DisjointSet``), which decide ``True`` and
 
 Cardinality is exact when the finite enumerated case decides it, in which case
 the apex is constructed through ``Sets().Finite()`` with its enumeration, and
-``Unknown`` otherwise (D01).  The objects of a shape are read through its
+``Unknown`` otherwise (specs/sets.md, "Exact cardinality or Unknown").  The objects of a shape are read through its
 ``object_set()``, ``object_at()``, ``object_point()`` and ``generating_morphisms()``;
 no rule-defined shape is enumerated.
 """
@@ -80,9 +80,12 @@ def limit_of_sets(diagram: Functor) -> SetObject:
 
     apex = product.apex().subset_from(compatible)
     inclusion = apex.inclusion()
+    projections: MonoDict = MonoDict()
 
     def projection(member_object: ObjectOfCategory) -> SetMap:
-        return product.product_projection(vertex(member_object)) * inclusion
+        if member_object not in projections:
+            projections[member_object] = product.product_projection(vertex(member_object)) * inclusion
+        return projections[member_object]
 
     def mediator(candidate_cone: NaturalTransformation) -> SetMap:
         """The map into the product; a candidate whose components decidedly fail a cone equation is rejected."""
@@ -106,7 +109,7 @@ def limit_of_sets(diagram: Functor) -> SetObject:
 class Representative:
     """The private datum of a point of a colimit: a tagged point ``(i, x)`` of the coproduct, up to the generated equivalence.
 
-    This is private computation data, not an owned value (D17 governs owned
+    This is private computation data, not an owned value (specs/sets.md, "Equality" governs owned
     values).  Two representatives of one colimit compare through the quotient's
     exact routes; when the finite partition decides, the hash is the hash of the
     class root so equal representatives hash equal, and otherwise the hash is by

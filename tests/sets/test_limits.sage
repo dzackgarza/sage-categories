@@ -7,8 +7,9 @@ by ``(j, x) ~ (j', F.map f x)`` (Mathlib ``Functor.ColimitTypeRel``, ``Relation.
 the pullback of ``[1] -> [2] <- [3]`` with ``d |-> d`` and ``d |-> d mod 3`` has the
 three pairs ``(0, 0)``, ``(1, 1)``, ``(0, 3)`` by direct computation; the equalizer of
 ``d mod 2`` and ``0`` on ``{0, 1, 2}`` is ``{0, 2}`` and their coequalizer identifies
-``1`` with ``0``, leaving one class (D16); the mediator equations are decided by the
-finite set-map equality handler (D17).  No row proves a universal property (D14).
+``1`` with ``0``, leaving one class (``specs/sets.md``, "General limits and colimits");
+the mediator equations are decided by the finite set-map equality handler
+(``specs/sets.md``, "Equality").  No row proves a universal property (POL-MATH-036).
 """
 
 import pytest
@@ -17,7 +18,6 @@ from sage_categories.all import *
 from sage_categories.cat.constructions import cocone, cone
 from sage_categories.cat.diagrams import cospan_diagram
 from sage_categories.cat.shapes import omega
-from sage_categories.sets.exponentials import Function
 
 
 def _fold(images, path):
@@ -63,19 +63,20 @@ def test_set_limit_membership_is_the_compatibility_decision() -> None:
     assert all(ask(include(first(member)) == residue(second(member))) is True for member in members)
     assert any(ask(second(member) == four.point(int(3))) is True for member in members)
     product = pullback.apex().underlying_set()
-    assert ask(product.cardinality() == int(8)) is True
-    outside = next(point for point in product if ask(include(product.point(point._datum)) == residue(product.point(point._datum))) is False) if False else None
+    assert ask(product.cardinality() == int(24)) is True
     rejected = [point for point in product if point not in pullback.apex()]
-    assert len(rejected) == int(5)
+    assert len(rejected) == int(21)
     assert all(ask(pullback.apex().membership_proposition(point)) is False for point in rejected)
 
-    one = Sets().Terminal()
     increment = Mor(Sets())(NN, NN)(lambda datum: datum + int(1))
     increment_again = Mor(Sets())(NN, NN)(lambda datum: datum + int(1))
-    name = Mor(Sets())(one, NN ** NN)(lambda star: Function(increment))
-    name_again = Mor(Sets())(one, NN ** NN)(lambda star: Function(increment_again))
+    name, name_again = Sets().name_of(increment).defining_morphism(), Sets().name_of(increment_again).defining_morphism()
     undecided = Sets().Pullbacks()(cospan_diagram(Sets(), name, name_again))
-    corner = next(iter(undecided.apex().underlying_set()))
+    one = Sets().Terminal()
+    families = Sets().Products().presentation_of_apex(undecided.apex().underlying_set())
+    legs = {int(0): one.identity(), int(1): one.identity(), int(2): name}
+    into_families = families.universal_morphism(cone(families.diagram(), one, lambda vertex: legs[cospan.label(cospan.object_at(vertex.point()))]))
+    corner = into_families(one.point(()))
     assert ask(undecided.apex().membership_proposition(corner)) is Unknown
     assert corner not in undecided.apex()
     assert undecided.cardinality() is Unknown
@@ -89,7 +90,8 @@ def test_mediator_equations_hold_on_a_finite_cone_and_a_non_cone_is_rejected() -
     pullback = Sets().Pullbacks()(cospan_diagram(Sets(), include, residue))
     diagram = pullback.diagram()
     parity = Mor(Sets())(four, two)(lambda datum: datum % int(2))
-    fold = Mor(Sets())(four, four)(lambda datum: (datum % int(2)) + int(2) * (datum // int(3)))
+    fold = Mor(Sets())(four, four)(lambda datum: datum % int(2))
+    flip = Mor(Sets())(four, four)(lambda datum: int(3) - datum)
     legs = {int(0): parity, int(1): fold, int(2): include * parity}
     candidate = cone(diagram, four, lambda vertex: legs[cospan.label(vertex)])
 
@@ -97,8 +99,9 @@ def test_mediator_equations_hold_on_a_finite_cone_and_a_non_cone_is_rejected() -
     assert mediating in Mor(Sets())(four, pullback.apex())
     assert ask(pullback.projection(cospan(int(0))) * mediating == parity) is True
     assert ask(pullback.projection(cospan(int(1))) * mediating == fold) is True
-    assert ask(pullback.projection(cospan(int(1))) * mediating == parity * fold) is False
+    assert ask(pullback.projection(cospan(int(1))) * mediating == flip) is False
     assert mediating(four.point(int(3))) in pullback.apex()
+    assert ask(pullback.projection(cospan(int(1)))(mediating(four.point(int(3)))) == four.point(int(1))) is True
 
     twisted = {int(0): parity, int(1): Mor(Sets())(four, four)(lambda datum: datum), int(2): include * parity}
     with pytest.raises(AssertionError):
@@ -175,10 +178,25 @@ def test_shape_indexed_limit_families_are_distinct_and_retain_their_universal_da
     assert pullback.projection(cospan(int(1))).codomain() is two
     assert ask(pullback.cardinality() == int(2)) is True
 
-    colimit = Sets().Colimits(shape)(_simplex_sequence())
+    sequence = _simplex_sequence()
+    colimit = Sets().Colimits(shape)(sequence)
     assert colimit.injection(shape(NN(int(2)))).domain() is Sets().Simplex(int(1))
     assert colimit.injection(shape(NN(int(2)))).codomain() is colimit.apex()
     assert colimit.cardinality() is Unknown
+
+    one = Sets().Terminal()
+    limit = Sets().Limits(shape)(sequence)
+    assert limit.cone() in Mor(Fun(shape, Sets()))
+    assert limit.projection(shape(NN(int(3)))).codomain() is Sets().Simplex(int(2))
+    assert limit.cardinality() is Unknown
+    select_zero = cone(sequence, one, lambda vertex: Mor(Sets())(one, sequence.on_object(vertex))(lambda star: int(0)))
+    mediating = limit.universal_morphism(select_zero)
+    assert mediating in Mor(Sets())(one, limit.apex())
+    assert ask(limit.projection(shape(NN(int(3)))) * mediating == select_zero.component(shape(NN(int(3))))) is True
+    assert ask(limit.projection(shape(NN(int(3))))(mediating(one.point(()))) == Sets().Simplex(int(2)).point(int(0))) is True
+    families = Sets().Products().presentation_of_apex(limit.apex().underlying_set())
+    into_families = families.universal_morphism(cone(families.diagram(), one, lambda vertex: select_zero.component(shape.object_at(vertex.point()))))
+    assert ask(limit.apex().membership_proposition(into_families(one.point(())))) is Unknown
 
 
 def test_equalizers_coequalizers_and_pushouts_are_the_constructions_at_their_shapes() -> None:

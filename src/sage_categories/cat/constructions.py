@@ -187,9 +187,8 @@ class ProductPresentation(ObjectOfCategory):
     def subobject_projection(self, monomorphism: MorphismOfCategory, index: ObjectOfCategory | Hashable) -> MorphismOfCategory:
         """The component ``pi_i after j`` of a subobject ``j: S -> apex`` (POL-CAT-094).
 
-        The category ``C.Products().Subobjects()`` whose objects carry this as their own
-        ``product_projection(i)`` is built by the subobjects unit (Unit B); this method is
-        the composition rule it uses.
+        The objects of ``C.Products().Subobjects()`` carry this composite as their own
+        ``product_projection(i)``.
         """
         assert monomorphism.codomain() is self._apex, f"{monomorphism!r} does not present a subobject of {self._apex!r}"
         assert monomorphism in self._apex.category().morphism_category(1).Monomorphisms(), f"{monomorphism!r} is not a monomorphism"
@@ -531,10 +530,12 @@ class ProductSubobjectsCategory(ApexCategory):
         super().__init__(products.apex_category())
 
     def __call__(self, monomorphism: MorphismOfCategory) -> ProductSubobjectPresentation:
-        """The subobject presented by ``j: S -> P`` for a retained product apex ``P``; the monomorphism declaration is trusted unless decided false."""
-        assert monomorphism in self._apex_category.morphism_category(1), f"{monomorphism!r} is not a morphism of {self._apex_category!r}"
+        """The subobject presented by ``j: S -> P`` for a retained product apex ``P``: the trusted constructor of ``Monomorphisms()`` on ``j`` (POL-MATH-037), rejected only when decided false."""
+        morphisms = self._apex_category.morphism_category(1)
+        assert monomorphism in morphisms, f"{monomorphism!r} is not a morphism of {self._apex_category!r}"
         assert ask(monomorphism.is_monomorphism()) is not False, f"{monomorphism!r} is not a monomorphism"
         if monomorphism not in self._subobjects:
+            morphisms.Monomorphisms()(monomorphism)
             self._subobjects[monomorphism] = self.ObjectType(self, monomorphism, self._products.presentation_of_apex(monomorphism.codomain()))
         return self._subobjects[monomorphism]
 

@@ -1,15 +1,18 @@
 """``Fun([1], C)`` as morphisms and commuting squares; slices, coslices, and their fibration lifts; the shared-carrier pullback.
 
 Oracles: the definition of the functor category from the walking arrow (an object
-is a morphism, a morphism a commuting square ``g * a == b * f``; D03); the
-definition of ``C.SliceOver(x)`` as the pullback of ``ev_1`` along ``x`` and of its
-membership by ``ask(ev_1(f) == x)`` (D02, D10); the cartesian lift of ``f: y -> x``
+is a morphism, a morphism a commuting square ``g * a == b * f``; ``specs/functor.md``,
+"The Mor(n, C) tower"); the definition of ``C.SliceOver(x)`` as the pullback of
+``ev_1`` along ``x`` and of its membership by ``ask(ev_1(f) == x)`` (POL-CAT-095;
+``specs/functor.md``, "Slices and coslices"); the cartesian lift of ``f: y -> x``
 at ``p: z -> x`` for ``ev_1`` as the pullback projection ``z *_x y -> y`` (nLab
 "codomain fibration"); the cartesian lift of ``f: y -> z`` at ``(z, p)`` for the
-slice projection as ``(y, p * f) -> (z, p)`` (nLab "discrete fibration"); the
-slice pin of D06; the shared-carrier identity precondition of D10.  Every equality
-of finite-set maps is decided by the finite set-map handler (D17).  No row proves a
-universal property or a fibration law (D14).
+slice projection as ``(y, p * f) -> (z, p)`` (nLab "discrete fibration"); a
+generalized element of ``x`` as an object of ``C.SliceOver(x)`` (AGENTS.md, "Core
+categorical architecture"); the shared-carrier identity precondition (AGENTS.md,
+"Universal constructions").  Every equality of finite-set maps is decided by the
+finite set-map handler (``specs/sets.md``, "Equality").  No row proves a universal
+property or a fibration law (POL-MATH-036).
 """
 
 import pytest
@@ -25,7 +28,7 @@ class MarkedSets(Category):
 
     class ObjectType(ObjectOfCategory):
         def __init__(self, category, carrier, mark):
-            super().__init__(category)
+            ObjectOfCategory.__init__(self, category)
             self._carrier = carrier
             self._mark = mark
 
@@ -40,7 +43,7 @@ class MarkedSets(Category):
 
     class MorphismType(MorphismOfCategory):
         def __init__(self, category, domain, codomain, underlying):
-            super().__init__(category, domain, codomain)
+            MorphismOfCategory.__init__(self, category, domain, codomain)
             self._underlying = underlying
 
         def underlying(self) -> MorphismOfCategory:
@@ -62,7 +65,7 @@ class SubsetSets(Category):
 
     class ObjectType(ObjectOfCategory):
         def __init__(self, category, carrier, chosen):
-            super().__init__(category)
+            ObjectOfCategory.__init__(self, category)
             self._carrier = carrier
             self._chosen = chosen
 
@@ -77,7 +80,7 @@ class SubsetSets(Category):
 
     class MorphismType(MorphismOfCategory):
         def __init__(self, category, domain, codomain, underlying):
-            super().__init__(category, domain, codomain)
+            MorphismOfCategory.__init__(self, category, domain, codomain)
             self._underlying = underlying
 
         def underlying(self) -> MorphismOfCategory:
@@ -110,15 +113,15 @@ def test_commuting_squares_are_the_morphisms_of_fun_of_the_walking_arrow() -> No
     components = {int(0): swap, int(1): rotate}
     with pytest.raises(AssertionError):
         Mor(squares)(successor, successor)(lambda vertex: components[arrow.label(vertex)])
-    twist = Mor(Sets())(two, three)(lambda datum: int(2) - datum)
-    square = Mor(squares)(successor, twist)(lambda vertex: components[arrow.label(vertex)])
+    double = Mor(Sets())(two, three)(lambda datum: int(2) * datum)
+    square = Mor(squares)(successor, double)(lambda vertex: components[arrow.label(vertex)])
     assert square in Mor(squares)
-    assert square in Mor(squares)(successor, twist)
+    assert square in Mor(squares)(successor, double)
     assert square.domain() is successor
     assert ev_0.on_morphism(square) is swap
     assert ev_1.on_morphism(square) is rotate
-    assert ask(twist * swap == rotate * successor) is True
-    assert ask(rotated == twist) is True
+    assert ask(double * swap == rotate * successor) is True
+    assert ask(rotated == double * swap) is True
 
 
 def test_the_slice_is_the_pullback_of_the_codomain_evaluation_along_the_point() -> None:
@@ -189,7 +192,8 @@ def test_the_codomain_evaluation_lifts_a_map_by_pullback_with_both_projections()
     assert lift.component(arrow(int(1))) is include
     assert ask(residue * to_four == include * lifted) is True
     assert ask(lifted.domain().cardinality() == int(3)) is True
-    pullback = Sets().Pullbacks()(cospan_diagram(Sets(), residue, include))
+    pullback = Sets().Pullbacks().presentation_of_apex(lifted.domain())
+    assert pullback.diagram().on_object(cospan(int(0))) is four and pullback.diagram().on_object(cospan(int(1))) is two
     assert lifted is pullback.projection(cospan(int(1)))
     assert to_four is pullback.projection(cospan(int(0)))
     assert squares.cartesian_lift(include, residue) is lift
@@ -223,9 +227,8 @@ def test_a_shared_carrier_pullback_accepts_one_carrier_and_rejects_two() -> None
     marked, subsetted = MarkedSets(), SubsetSets()
     three = Sets().Simplex(int(2))
     other = Sets().Finite()((int(0), int(1), int(2)))
-    diagram = cospan_diagram(Cat(), marked.selected_functors()[int(0)], subsetted.selected_functors()[int(0)])
-    combined = shared_carrier_pullback(diagram)
     cospan = Cat().Horn(int(2), int(2))
+    combined = shared_carrier_pullback(cospan_diagram(Cat(), marked.selected_functors()[int(0)], subsetted.selected_functors()[int(0)]))
 
     assert combined in Cat().Pullbacks()
     assert combined.projection(cospan(int(0))).codomain() is marked

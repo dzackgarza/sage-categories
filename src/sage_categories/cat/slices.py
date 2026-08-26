@@ -1,17 +1,17 @@
-"""Slices, coslices, and comma categories as strict pullbacks; their fibration lifts; the subobject families (D06, D10, POL-CAT-026/095, POL-FUN-031).
+"""Slices, coslices, and comma categories as strict pullbacks; their fibration lifts; the subobject families (POL-CAT-026/095, POL-FUN-013/031, POL-SCOPE-003).
 
 ``C.SliceOver(x)`` is the strict pullback in ``Cat()`` of ``ev_1: Fun([1], C) -> C``
 along the point ``x: 1 -> C``: its objects are the pairs ``(f, *)`` with
 ``ev_1(f) == x``, decided by identity of retained objects and ``Unknown``
-otherwise (D02, D17).  ``C.CosliceUnder(x)`` is the pullback of ``ev_0``.  A comma
-category ``(F, G)`` for ``F: A -> C`` and ``G: B -> C`` is the pullback of
-``(ev_0, ev_1): Fun([1], C) -> C * C`` along ``F * G`` (Mathlib
-``CategoryTheory.Comma``: objects are triples ``(left, right, hom: L left -> R
-right)`` and morphisms are commuting squares; inspected 2026-08-27).  Each retains
-its pullback projections; the varying object is the composite with ``ev_0``
-(slice) or ``ev_1`` (coslice), and that composite is the slice's one selected
-structural functor: an object over ``x`` is an object of ``C`` with a morphism to
-``x`` (POL-CAT-047).
+otherwise (``specs/functor.md``, "Slices and coslices").  ``C.CosliceUnder(x)`` is
+the pullback of ``ev_0``.  A comma category ``(F, G)`` for ``F: A -> C`` and
+``G: B -> C`` is the pullback of ``(ev_0, ev_1): Fun([1], C) -> C * C`` along
+``F * G`` (Mathlib ``CategoryTheory.Comma``: objects are triples ``(left, right,
+hom: L left -> R right)`` and morphisms are commuting squares; inspected
+2026-08-27).  Each retains its pullback projections; the varying object is the
+composite with ``ev_0`` (slice) or ``ev_1`` (coslice), and that composite is the
+slice's one selected structural functor: an object over ``x`` is an object of ``C``
+with a morphism to ``x`` (POL-CAT-047).
 
 The fixed slice projection ``C.SliceOver(x) -> C`` is the category of elements of
 ``Mor(C)(-, x)`` and a discrete fibration for every ``C``: the cartesian lift of
@@ -21,11 +21,13 @@ object X corresponds to the canonical functor B/X -> B from the slice category
 over X").  Dually the coslice projection is a discrete opfibration with
 cocartesian lifts by postcomposition.  The lifts of ``ev_1`` and ``ev_0``
 themselves are retained by ``Fun([1], C)`` (``cat/diagrams.py``); the total
-category and its fiber carry distinct lift data (D10).
+category and its fiber carry distinct lift data (POL-FUN-031).
 
-Objects of ``C.SliceOver(x)`` are the generalized elements of ``x`` (D06): a
-morphism ``t: T -> x`` or an element with that defining morphism is accepted as
-the object ``(t, *)``, and is a member by the same decision.
+Objects of ``C.SliceOver(x)`` are the generalized elements of ``x``
+(``specs/functor.md``, "Slices and coslices"; AGENTS.md, "Core categorical
+architecture"): a morphism ``t: T -> x`` or an element with that defining
+morphism is accepted as the object ``(t, *)``, and is a member by the same
+decision.
 
 ``C.Subobjects()`` is the full subcategory of ``Fun([1], C)`` on the monomorphisms,
 decided through ``Mor(C).Monomorphisms()``; ``C.Subobjects()(x)`` is its fiber over
@@ -45,8 +47,9 @@ from sage_categories.cat.constructions import cone
 from sage_categories.cat.diagrams import cospan_diagram, sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.properties import FullSubcategory
-from sage_categories.kernel.decisions import Decision, Unknown
+from sage_categories.kernel.decisions import Decision
 from sage_categories.kernel.predicates import Predicate, Proposition, ask
+from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory, Role, role_of
 
 __all__ = [
@@ -68,32 +71,39 @@ def _star() -> ObjectOfCategory:
     return Cat().Terminal()(0)
 
 
-# ``slice_member(t, C/x)``: ``t`` is an object of the slice: a generalized element of
-# ``x`` (an element, or a morphism into ``x``), or a constructed pair whose images agree.
+def _denoted_morphism(candidate: CategoryPoint) -> CategoryPoint:
+    """The morphism a candidate denotes: the defining morphism of a generalized element, else the candidate itself."""
+    if role_of(candidate) is Role.ELEMENT:
+        return candidate.defining_morphism()
+    return candidate
+
+
+# ``slice_member(t, C/x)``: ``t`` is an object of the slice or coslice: a morphism of
+# ``C`` (or a generalized element denoting one) whose fixed end equals ``x``, or a
+# constructed pair whose images agree.
 slice_member = Predicate("slice_member", 2, False)
 
 
-def _slice_member_by_codomain(candidate: CategoryPoint, slice_category: Category) -> Decision:
-    base, fixed = slice_category.base_of_slice(), slice_category.fixed_object()
-    if role_of(candidate) is Role.ELEMENT:
-        return ask(candidate.parent() == fixed)
-    if candidate in base.morphism_category(1):
-        return ask(candidate.codomain() == fixed)
+def _slice_member_by_fixed_end(candidate: CategoryPoint, slice_category: Category) -> Decision:
+    morphism = _denoted_morphism(candidate)
+    if morphism in slice_category.base_of_slice().morphism_category(1):
+        return ask(slice_category.fixed_end(morphism) == slice_category.fixed_object())
     return ask(member(candidate, slice_category) & images_agree(candidate, slice_category))
 
 
-slice_member.register_handler(_slice_member_by_codomain)
+slice_member.register_handler(_slice_member_by_fixed_end)
 
 
-class SliceCategory(PullbackCategory):
-    """``C.SliceOver(x)``: the strict pullback of ``ev_1`` along ``x: 1 -> C``, with the generalized elements of ``x`` as objects."""
+class SliceLikeCategory(PullbackCategory):
+    """The pullback of an evaluation ``ev_k: Fun([1], C) -> C`` along ``x: 1 -> C``; ``k = 1`` is the slice, ``k = 0`` the coslice."""
 
-    def __init__(self, base: Category, fixed: ObjectOfCategory) -> None:
+    def __init__(self, base: Category, fixed: ObjectOfCategory, fixed_label: int) -> None:
         self._base_of_slice = base
         self._fixed = fixed
+        self._fixed_label = fixed_label
         self._slice_projection: MonoDict = MonoDict()
-        arrows = Fun(_walking_arrow(), base)
-        super().__init__(arrows.evaluation(_walking_arrow()(1)), base.point_functor(fixed))
+        squares = Fun(_walking_arrow(), base)
+        super().__init__(squares.evaluation(_walking_arrow()(fixed_label)), base.point_functor(fixed))
 
     def base_of_slice(self) -> Category:
         return self._base_of_slice
@@ -101,11 +111,17 @@ class SliceCategory(PullbackCategory):
     def fixed_object(self) -> ObjectOfCategory:
         return self._fixed
 
+    def fixed_end(self, morphism: MorphismOfCategory) -> ObjectOfCategory:
+        """The end of a morphism of ``C`` that an object must fix: the codomain over ``x``, the domain under ``x``."""
+        if self._fixed_label == 1:
+            return morphism.codomain()
+        return morphism.domain()
+
     def projection(self) -> Functor:
-        """The fixed slice projection ``C.SliceOver(x) -> C``: ``ev_0`` after the pullback projection to ``Fun([1], C)``."""
+        """The fixed projection to ``C``: the evaluation at the varying end after the pullback projection to ``Fun([1], C)``."""
         if self not in self._slice_projection:
-            arrows = Fun(_walking_arrow(), self._base_of_slice)
-            self._slice_projection[self] = arrows.evaluation(_walking_arrow()(0)) * self.first_projection()
+            squares = Fun(_walking_arrow(), self._base_of_slice)
+            self._slice_projection[self] = squares.evaluation(_walking_arrow()(1 - self._fixed_label)) * self.first_projection()
         return self._slice_projection[self]
 
     def structure_functors(self) -> tuple[Functor, ...]:
@@ -115,68 +131,53 @@ class SliceCategory(PullbackCategory):
         return slice_member(candidate, self)
 
     def __call__(self, value: CategoryPoint | tuple[CategoryPoint, ObjectOfCategory]) -> PairObject:
-        """The object ``(t, *)`` of a morphism ``t: T -> x``, of an element with that defining morphism, or of an explicit pair."""
+        """The object ``(t, *)`` of a morphism ``t`` of ``C``, of a generalized element denoting one, or of an explicit pair."""
         match value:
             case (first, second):
                 return super().__call__((first, second))
-        morphism = value if value in self._base_of_slice.morphism_category(1) else value.defining_morphism()
+        if is_placed(value, self):
+            return value
+        morphism = _denoted_morphism(value)
+        assert morphism in self._base_of_slice.morphism_category(1), f"{value!r} denotes no morphism of {self._base_of_slice!r}"
         return super().__call__((morphism, _star()))
+
+    def _square(self, source: MorphismOfCategory, target: MorphismOfCategory, varying: MorphismOfCategory) -> NaturalTransformation:
+        """The commuting square from ``source`` to ``target`` whose component at the fixed end is the identity of ``x``."""
+        components = {self._fixed_label: self._fixed.identity(), 1 - self._fixed_label: varying}
+        squares = Fun(_walking_arrow(), self._base_of_slice)
+        return squares.morphism_category(1)(source, target)(lambda vertex: components[_walking_arrow().label(vertex)])
+
+
+class SliceCategory(SliceLikeCategory):
+    """``C.SliceOver(x)``: the strict pullback of ``ev_1`` along ``x: 1 -> C``, with the generalized elements of ``x`` as objects."""
+
+    def __init__(self, base: Category, fixed: ObjectOfCategory) -> None:
+        super().__init__(base, fixed, 1)
 
     def cartesian_lift(self, morphism: MorphismOfCategory, member_object: PairObject) -> PairMorphism:
         """The cartesian lift of ``f: y -> z`` at ``(z, p)``: ``f: (y, p * f) -> (z, p)`` by precomposition."""
         structure = member_object.first()
         assert morphism.codomain() is structure.domain(), f"{morphism!r} does not end at the varying object of {member_object!r}"
         composite = structure * morphism
-        components = {0: morphism, 1: self._fixed.identity()}
-        arrows = Fun(_walking_arrow(), self._base_of_slice)
-        square = arrows.morphism_category(1)(composite, structure)(lambda vertex: components[_walking_arrow().label(vertex)])
+        square = self._square(composite, structure, morphism)
         return self.construct_morphism(self((composite, _star())), member_object, (square, _star().identity()))
 
     def __repr__(self) -> str:
         return f"{self._base_of_slice!r}.SliceOver({self._fixed!r})"
 
 
-class CosliceCategory(PullbackCategory):
+class CosliceCategory(SliceLikeCategory):
     """``C.CosliceUnder(x)``: the strict pullback of ``ev_0`` along ``x: 1 -> C``."""
 
     def __init__(self, base: Category, fixed: ObjectOfCategory) -> None:
-        self._base_of_slice = base
-        self._fixed = fixed
-        self._coslice_projection: MonoDict = MonoDict()
-        arrows = Fun(_walking_arrow(), base)
-        super().__init__(arrows.evaluation(_walking_arrow()(0)), base.point_functor(fixed))
-
-    def base_of_slice(self) -> Category:
-        return self._base_of_slice
-
-    def fixed_object(self) -> ObjectOfCategory:
-        return self._fixed
-
-    def projection(self) -> Functor:
-        """The fixed coslice projection ``C.CosliceUnder(x) -> C``: ``ev_1`` after the pullback projection to ``Fun([1], C)``."""
-        if self not in self._coslice_projection:
-            arrows = Fun(_walking_arrow(), self._base_of_slice)
-            self._coslice_projection[self] = arrows.evaluation(_walking_arrow()(1)) * self.first_projection()
-        return self._coslice_projection[self]
-
-    def structure_functors(self) -> tuple[Functor, ...]:
-        return (self.projection(),)
-
-    def __call__(self, value: MorphismOfCategory | tuple[MorphismOfCategory, ObjectOfCategory]) -> PairObject:
-        """The object ``(t, *)`` of a morphism ``t: x -> T`` or of an explicit pair."""
-        match value:
-            case (first, second):
-                return super().__call__((first, second))
-        return super().__call__((value, _star()))
+        super().__init__(base, fixed, 0)
 
     def cocartesian_lift(self, morphism: MorphismOfCategory, member_object: PairObject) -> PairMorphism:
         """The cocartesian lift of ``f: y -> z`` at ``(y, p)``: ``f: (y, p) -> (z, f * p)`` by postcomposition."""
         structure = member_object.first()
         assert morphism.domain() is structure.codomain(), f"{morphism!r} does not start at the varying object of {member_object!r}"
         composite = morphism * structure
-        components = {0: self._fixed.identity(), 1: morphism}
-        arrows = Fun(_walking_arrow(), self._base_of_slice)
-        square = arrows.morphism_category(1)(structure, composite)(lambda vertex: components[_walking_arrow().label(vertex)])
+        square = self._square(structure, composite, morphism)
         return self.construct_morphism(member_object, self((composite, _star())), (square, _star().identity()))
 
     def __repr__(self) -> str:
@@ -212,10 +213,10 @@ def _pair_functor(first: Functor, second: Functor) -> Functor:
 
 def _endpoint_functor(base: Category) -> Functor:
     """``(ev_0, ev_1): Fun([1], C) -> C * C``: the mediator of the cone of the two evaluations."""
-    arrows = Fun(_walking_arrow(), base)
+    squares = Fun(_walking_arrow(), base)
     target = Cat().Products()((base, base))
-    legs = {0: arrows.evaluation(_walking_arrow()(0)), 1: arrows.evaluation(_walking_arrow()(1))}
-    return target.universal_morphism(cone(target.diagram(), arrows, lambda vertex: legs[sequence_position(vertex)]))
+    legs = {0: squares.evaluation(_walking_arrow()(0)), 1: squares.evaluation(_walking_arrow()(1))}
+    return target.universal_morphism(cone(target.diagram(), squares, lambda vertex: legs[sequence_position(vertex)]))
 
 
 def comma_category(first: Functor, second: Functor) -> PullbackCategory:
@@ -278,14 +279,14 @@ class MorphismPropertyFamily(FullSubcategory[[NaturalTransformation], []]):
         return self._ambient.membership_proposition(candidate) & has_morphism_property(candidate, self)
 
     def __call__(self, value: CategoryPoint) -> CategoryPoint:
-        """``C.Subobjects()(x)`` is the fiber over (or under) the object ``x``; on a morphism, the trusted assertion of the property."""
+        """``C.Subobjects()(x)`` is the fiber over (or under) the object ``x``; on a morphism, the trusted constructor of the property (POL-MATH-037)."""
         if value in self._base_of_family:
             if value not in self._fibers:
                 fiber_ambient = self._base_of_family.SliceOver(value) if self.over() else self._base_of_family.CosliceUnder(value)
                 self._fibers[value] = MorphismPropertyFiber(self, fiber_ambient)
             return self._fibers[value]
         assert ask(has_morphism_property(value, self)) is not False, f"{value!r} is not in {self.property_category()!r}"
-        return value
+        return self.property_category()(self.morphism_of(value))
 
     def __repr__(self) -> str:
         return f"{self._base_of_family!r}.{self._name}()"
@@ -305,19 +306,19 @@ class MorphismPropertyFiber(FullSubcategory[[tuple[MorphismOfCategory, MorphismO
         return self._family.property_category()
 
     def morphism_of(self, candidate: CategoryPoint) -> MorphismOfCategory:
-        """The morphism of ``C`` that a slice object, a morphism into ``x``, or an element of ``x`` denotes."""
-        if role_of(candidate) is Role.ELEMENT:
-            return candidate.defining_morphism()
-        if candidate in self._family.base_of_family().morphism_category(1):
-            return candidate
+        """The morphism of ``C`` that a slice object, a morphism of ``C``, or a generalized element denotes."""
+        morphism = _denoted_morphism(candidate)
+        if morphism in self._family.base_of_family().morphism_category(1):
+            return morphism
         return candidate.first()
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         return self._ambient.membership_proposition(candidate) & has_morphism_property(candidate, self)
 
     def __call__(self, value: CategoryPoint) -> PairObject:
-        """The pair ``(m, *)`` of a morphism with the property; the writer's assertion is trusted unless decided false."""
+        """The pair ``(m, *)`` of a morphism with the property: the trusted constructor of the property on ``m`` (POL-MATH-037), rejected only when decided false."""
         assert ask(has_morphism_property(value, self)) is not False, f"{value!r} is not in {self.property_category()!r}"
+        self.property_category()(self.morphism_of(value))
         return self._ambient(value)
 
     def __repr__(self) -> str:

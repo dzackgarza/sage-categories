@@ -25,14 +25,14 @@ An object of `Magmas()` is a set `X` with a binary operation
 \mu:X\times X\longrightarrow X.
 \]
 
-An arrow `f : (X, mu_X) -> (Y, mu_Y)` is a set map satisfying
+A morphism `f : (X, mu_X) -> (Y, mu_Y)` is a set map satisfying
 
 \[
 f(\mu_X(x,y))=\mu_Y(f(x),f(y)).
 \]
 
 The magma category is a subcategory of the product category with factors `Sets()` and
-`Ar(Sets())`. The defining equations identify the source and target of the second
+`Mor(Sets())`. The defining equations identify the source and target of the second
 component with the required powers of the first component. Thus `Magmas()` is an object
 of `Cat().Products().Subobjects()`.
 
@@ -44,17 +44,17 @@ M.combine(x, y)
 f.is_magma_homomorphism()
 ```
 
-`operation()` returns the owned set arrow `mu`. `combine(x, y)` evaluates that arrow.
+`operation()` returns the owned set morphism `mu`. `combine(x, y)` evaluates that morphism.
 The homomorphism method returns the owned preservation predicate.
 
 The complete immediate structural tuple is:
 
 ```python
-def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
+def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (self.product_projection(0),)
 ```
 
-The second product projection maps `(X, mu)` to `mu` in `Ar(Sets())`. It remains an
+The second product projection maps `(X, mu)` to `mu` in `Mor(Sets())`. It remains an
 ordinary functor. Only the first projection supplies inherited operations.
 
 ## Additive and multiplicative operation roles
@@ -67,7 +67,7 @@ Magmas().Additive()
 Magmas().Multiplicative()
 ```
 
-They retain the same carrier, operation arrow, elements, and homomorphisms. Each selects
+They retain the same carrier, operation morphism, elements, and homomorphisms. Each selects
 one algebraic role and its standard syntax:
 
 ```python
@@ -75,20 +75,21 @@ x + y  # Magmas().Additive()
 x * y  # Magmas().Multiplicative()
 ```
 
-Each is the full subcategory defined by its operation-role property. Its Hom categories
-are definitionally the corresponding Hom categories of `Magmas()`.
+Each is the full subcategory defined by its operation-role property. For its objects
+`A, B`, `Mor(Magmas().Additive())(A, B)` is definitionally `Mor(Magmas())(A, B)`, and
+likewise for the multiplicative role.
 
 Their complete immediate structural tuples are:
 
 ```python
 # Magmas().Additive()
-def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
+def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (Fun(self, Magmas()).FullyFaithful().inclusion(),)
 ```
 
 ```python
 # Magmas().Multiplicative()
-def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
+def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (Fun(self, Magmas()).FullyFaithful().inclusion(),)
 ```
 
@@ -119,13 +120,13 @@ and
 \mu(e,x)=x=\mu(x,e).
 \]
 
-A monoid arrow preserves the operation and the neutral element. Thus `Monoids()` is a
+A monoid morphism preserves the operation and the neutral element. Thus `Monoids()` is a
 subcategory of `Magmas()`, but this inclusion is not full.
 
 The complete immediate structural tuple is:
 
 ```python
-def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
+def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (Fun(self, Magmas()).Faithful().inclusion(),)
 ```
 
@@ -151,7 +152,7 @@ preserve both category branches:
 
 ```python
 # Monoids().Additive()
-def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
+def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (
         Fun(self, Monoids()).FullyFaithful().inclusion(),
         Fun(self, Magmas().Additive()).Faithful().inclusion(),
@@ -160,16 +161,16 @@ def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
 
 ```python
 # Monoids().Multiplicative()
-def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
+def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (
         Fun(self, Monoids()).FullyFaithful().inclusion(),
         Fun(self, Magmas().Multiplicative()).Faithful().inclusion(),
     )
 ```
 
-Each refinement is full in `Monoids()`: its Hom categories are definitionally the
-monoid Hom categories between its objects. Its inclusion in the matching magma role is
-not full because a monoid arrow must preserve the neutral element.
+Each refinement is full in `Monoids()`: for its objects `A, B`, its `Mor(-)(A, B)` is
+definitionally `Mor(Monoids())(A, B)`. Its inclusion in the matching magma role is
+not full because a monoid morphism must preserve the neutral element.
 
 The additive refinement exposes `+` and `zero()`. The multiplicative refinement exposes
 `*` and `one()`. Each named unit is the monoid's neutral element in the selected
@@ -201,7 +202,7 @@ and
 0x=0=x0.
 \]
 
-A semiring arrow preserves both monoid structures. It therefore preserves `0`, `1`,
+A semiring morphism preserves both monoid structures. It therefore preserves `0`, `1`,
 addition, and multiplication.
 
 The semiring category is a subcategory of the product of
@@ -211,7 +212,7 @@ conditions identify their set images and impose distributivity and zero absorpti
 The complete immediate structural tuple is:
 
 ```python
-def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
+def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (
         self.product_projection(0),
         self.product_projection(1),
@@ -226,7 +227,7 @@ includes `zero()` and `one()`. Its public element surface includes `+` and `*`.
 
 ## Structural functors
 
-Each listed functor acts on objects and arrows. It acts on elements when the corresponding
+Each listed functor acts on objects and morphisms. It acts on elements when the corresponding
 change of structure has an element map.
 
 The additive and multiplicative refinements use inclusions because they retain the magma
@@ -242,10 +243,10 @@ Ownership follows this table:
 
 | Category | New public mathematics |
 | --- | --- |
-| `Magmas()` | Binary operation arrow and operation-preserving predicate. |
+| `Magmas()` | Binary operation morphism and operation-preserving predicate. |
 | `Magmas().Additive()` | Additive notation. |
 | `Magmas().Multiplicative()` | Multiplicative notation. |
-| `Monoids()` | Associativity, neutral element, and unit-preserving arrows. |
+| `Monoids()` | Associativity, neutral element, and unit-preserving morphisms. |
 | `Monoids().Additive()` | `zero()` in additive notation. |
 | `Monoids().Multiplicative()` | `one()` in multiplicative notation. |
 | `Semirings()` | Distributivity, zero absorption, and the two selected monoid structures. |
@@ -268,11 +269,11 @@ puts their common structure in the notation-neutral `Magmas()` and `Monoids()` o
 - A bare magma or monoid exposes no additive or multiplicative operator.
 - `Magmas().Additive()` and `Magmas().Multiplicative()` retain one operation-neutral
   magma image.
-- `Monoids()` preserves the neutral element in every arrow.
+- `Monoids()` preserves the neutral element in every morphism.
 - Additive monoids expose `+` and `zero()`.
 - Multiplicative monoids expose `*` and `one()`.
 - A semiring has one carrier and two distinct monoid structures.
-- Semiring arrows preserve both structures.
+- Semiring morphisms preserve both structures.
 - The two semiring routes reach one canonical set image.
 - Every immediate structural edge is an owned functor.
 - Deeper inherited operations arrive through functor composition.

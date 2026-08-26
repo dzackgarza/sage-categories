@@ -33,12 +33,12 @@ Its multiplication is commutative.
 Let `P(S)` be this property of objects `S in Semirings()`. Then
 `OrdinalSemirings()` is the full subcategory defined by `P`. Its objects are the
 semiring objects satisfying `P`. Property refinement retains each same owned semiring.
-Its Hom categories are definitionally those of `Semirings()`:
+Its fixed-endpoint morphism categories are definitionally those of `Semirings()`:
 
 \[
-\operatorname{Hom}_{\mathbf{OrdinalSemirings}}(A,B)
+\operatorname{Mor}(\mathbf{OrdinalSemirings})(A,B)
 =
-\operatorname{Hom}_{\mathbf{Semirings}}(A,B).
+\operatorname{Mor}(\mathbf{Semirings})(A,B).
 \]
 
 Thus the inclusion is fully faithful by construction. No fullness predicate or runtime
@@ -57,7 +57,7 @@ It returns `P(S)`. `ask()` uses its computational routes.
 The complete immediate structural tuple is:
 
 ```python
-def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
+def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (Fun(self, Semirings()).FullyFaithful().inclusion(),)
 ```
 

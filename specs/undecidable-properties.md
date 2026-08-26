@@ -163,7 +163,7 @@ The kernel derives:
 - the category constructor;
 - the membership proposition;
 - the structural functor \(D.P\to C.P\);
-- the refined object, element, and arrow types;
+- the refined object, element, and morphism types;
 - assumption-driven refinement;
 - category implications;
 - descendant propagation.
@@ -228,9 +228,9 @@ A generic set may use an exact decision procedure when `ask(X.is_finite())` reac
 
 ## Injectivity, monomorphisms, and isomorphisms
 
-These properties live on arrows.
+These properties live on morphisms.
 
-For \(D=\operatorname{Ar}(C)\), the generic categorical propositions are:
+For \(D=\operatorname{Mor}(C)\), the generic categorical propositions are:
 
 \[
 \operatorname{Monic}(f),
@@ -281,15 +281,15 @@ In `Sets()` one can use:
 \operatorname{Injective}(f)\land\operatorname{Surjective}(f).
 \]
 
-That converse is category-specific. A monic and epic arrow need not be an isomorphism in every category.
+That converse is category-specific. A monic and epic morphism need not be an isomorphism in every category.
 
 Examples:
 
 ```python
-f = Hom(Sets())(X, Y, rule)
+f = Mor(Sets())(X, Y)(rule)
 ask(f.is_injective())       # May compute or return Unknown.
 
-g = Ar(Sets()).Monomorphisms()(X, Y, rule)
+g = Mor(Sets()).Monomorphisms()(X, Y)(rule)
 ask(g.is_injective())       # True from category placement.
 
 assume(f.is_injective())    # Refines f through the same property constructor.
@@ -297,19 +297,24 @@ assume(f.is_injective())    # Refines f through the same property constructor.
 
 An identity map constructs directly into `D.Isomorphisms()`. It never runs injectivity or surjectivity algorithms.
 
-If an assumed isomorphism lacks a computed inverse, `inverse()` can return the owned symbolic inverse arrow. Category placement establishes its equations. A backend may later realize that arrow computationally.
+If an assumed isomorphism lacks a computed inverse, `inverse()` returns the owned symbolic inverse morphism. Category placement establishes its equations. A backend may later realize that morphism computationally.
 
 ## Functor properties
 
-The kernel constructs `Ar(Cat())` from the same arrow-category construction used for
+The kernel constructs `Fun = Mor(Cat())` from the same `Mor` construction used for
 every category. Its objects are functors. Therefore, functor properties are ordinary
 property subcategories:
 
 ```python
-FullFunctors = Ar(Cat()).Full()
-FaithfulFunctors = Ar(Cat()).Faithful()
-FullyFaithfulFunctors = Ar(Cat()).FullyFaithful()
+FullFunctors = Mor(Cat()).Full()
+FaithfulFunctors = Mor(Cat()).Faithful()
+FullyFaithfulFunctors = Mor(Cat()).FullyFaithful()
+EssentiallySurjectiveFunctors = Mor(Cat()).EssentiallySurjective()
+Equivalences = Mor(Cat()).Equivalences()
 ```
+
+Fixed endpoints use the same dispatch as every property subcategory of `Mor(K)`:
+`Fun(C, D).Full()` is `Mor(Cat())(C, D).Full()`.
 
 Their membership propositions are applied through the functor:
 
@@ -322,7 +327,7 @@ F.is_fully_faithful()
 The standard positive routes remain uniform:
 
 ```python
-F = Ar(Cat()).Full()(F)  # Trusted property-category construction.
+F = Mor(Cat()).Full()(F)  # Trusted property-category construction.
 assume(G.is_full())      # Interactive assumption and same-object refinement.
 ```
 
@@ -330,9 +335,9 @@ An inclusion from a full subcategory is constructed as
 `Fun(Source, Target).FullyFaithful().inclusion()`. Full faithfulness then implies
 fullness and faithfulness through property-category inclusions.
 
-No exact computational handlers are declared for these predicates. For an ambient
-functor with no applicable placement, assumption, or implication,
-`ask(F.is_full())` returns `Unknown`.
+These property categories register no computational handlers. `ask(F.is_full())`
+returns `Unknown` unless category placement, an active assumption, a cached exact
+decision, or a categorical implication decides it.
 
 ## Finite posets
 
@@ -835,14 +840,14 @@ Not every upstream Sage axiom fits this proposition-defined model.
 
 `Associative` is a property of an existing magma operation. It can also define a property subcategory.
 
-A construction that adds mathematical data requires more than a proposition. Its arrows can also change.
+A construction that adds mathematical data requires more than a proposition. Its morphisms can also change.
 
-For example, “has a unit” and “has a chosen unit preserved by arrows” are different categorical statements.
+For example, “has a unit” and “has a chosen unit preserved by morphisms” are different categorical statements.
 
 The kernel should therefore distinguish:
 
 - proposition-defined property subcategories;
-- categories that add structure or change the arrow notion.
+- categories that add structure or change the morphism notion.
 
 Only the first class receives automatic `ask()`, `assume()`, and property refinement.
 
@@ -1051,7 +1056,7 @@ f:\mathbf{RR}\to\mathbf{RR}.
 The canonical proposition is:
 
 ```python
-Ar(Sets()).Epimorphisms().membership_proposition(f)
+Mor(Sets()).Epimorphisms().membership_proposition(f)
 ```
 
 The owned predicate method is:
@@ -1072,7 +1077,7 @@ ask(f.is_surjective())
 
 The resolver first uses non-computational knowledge:
 
-1. Existing placement in `Ar(Sets()).Epimorphisms()`.
+1. Existing placement in `Mor(Sets()).Epimorphisms()`.
 2. A global assumption.
 3. A known inverse.
 4. A construction theorem.
@@ -1171,7 +1176,7 @@ cache False or retain Unknown
 ```
 
 Therefore, an exact positive result from any computational route refines `f` into
-`Ar(Sets()).Epimorphisms()`.
+`Mor(Sets()).Epimorphisms()`.
 
 The handlers may delegate to private Sage, SymPy, GAP, Julia, or external-program implementations.
 
@@ -1212,7 +1217,7 @@ The backend result does not escape as a SymPy set. The private boundary reconstr
 The property category wires this procedure through a positive semantic case:
 
 ```python
-def decide_surjective_set_map(f: Sets().ArrowType) -> Decision:
+def decide_surjective_set_map(f: Sets().MorphismType) -> Decision:
     match (f.domain(), f.codomain()):
         case (number_sets.RR, number_sets.RR):
             return sympy_sets.decide_exact_image_equals_reals(f)
@@ -1220,8 +1225,8 @@ def decide_surjective_set_map(f: Sets().ArrowType) -> Decision:
             return Unknown
 
 
-Ar(Sets()).Epimorphisms().register_exact_handler(
-    Sets().ArrowType,
+Mor(Sets()).Epimorphisms().register_exact_handler(
+    Sets().MorphismType,
     decide_surjective_set_map,
 )
 ```
@@ -1248,7 +1253,7 @@ decision = ask(p)
 If `decision` is `True`, then:
 
 ```python
-f in Ar(Sets()).Epimorphisms()
+f in Mor(Sets()).Epimorphisms()
 ```
 
 becomes true through category placement.
@@ -1268,7 +1273,7 @@ assume(f.is_surjective())
 Direct construction also refines without computation:
 
 ```python
-f = Ar(Sets()).Epimorphisms()(A, B, rule)
+f = Mor(Sets()).Epimorphisms()(A, B)(rule)
 ```
 
 All positive routes invoke the same property-category constructor.

@@ -29,7 +29,7 @@ For a property \(P\) with property subcategory \(C_P\), use this order:
 
 The defining property category adds real mathematics. Its role implementations can add
 operations valid under the property. They never replace the defining proposition with a
-Boolean method. Membership in `Ar(Sets()).Monomorphisms()` makes `ask()` return `True` through
+Boolean method. Membership in `Mor(Sets()).Monomorphisms()` makes `ask()` return `True` through
 category entailment.
 
 ### Durable refinement
@@ -37,27 +37,27 @@ category entailment.
 Suppose an ordinary owned set morphism uses a private SymPy representation.
 
 ```python
-f = Hom(Sets)(A, B)(rule)
+f = Mor(Sets())(A, B)(rule)
 ask(f.is_injective())
 ```
 
 If the computation returns exact `True`, the kernel uses Sage’s category-refinement machinery. The same refinement also occurs when the user assumes injectivity or constructs the morphism directly in the property category:
 
 ```python
-f = Hom(Sets)(A, B)(rule)
+f = Mor(Sets())(A, B)(rule)
 assume(f.is_injective())
 ```
 
 ```python
-f = Ar(Sets()).Monomorphisms()(A, B, rule)
+f = Mor(Sets()).Monomorphisms()(A, B)(rule)
 ```
 
 All three routes establish:
 
 \[
-\operatorname{Hom}_{\mathbf{Set}}(A,B)
+\operatorname{Mor}(\mathbf{Set})(A,B)
 \longrightarrow
-\operatorname{Monomorphisms}(\operatorname{Ar}(\mathbf{Set}))(A,B).
+\operatorname{Monomorphisms}(\operatorname{Mor}(\mathbf{Set}))(A,B).
 \]
 
 The same owned morphism now has the more specific category. Its refined dynamic class places the monomorphism implementation before the general set-morphism implementation.
@@ -81,14 +81,14 @@ If surjectivity is later established, the kernel refines again. It uses the cate
 An active assumption triggers property refinement without running the decision procedure.
 
 ```python
-f = Hom(Sets)(A, B)(rule)
+f = Mor(Sets())(A, B)(rule)
 assume(f.is_injective())
 ```
 
 This is a shortcut for constructing the same rule in the property category:
 
 ```python
-f = Ar(Sets()).Monomorphisms()(A, B, rule)
+f = Mor(Sets()).Monomorphisms()(A, B)(rule)
 ```
 
 The kernel reuses the existing domain, codomain, rule, private engine representation, and structural images. It does not recompute injectivity. It changes the owned morphism's category and dynamic class.
@@ -105,7 +105,7 @@ The active Sage or SymPy session remains the mathematical context. A consumer do
 
 ### Negative and unknown results
 
-A negative result cannot refine into `Ar(Sets()).Monomorphisms()`. The engine should cache that exact result through standard Sage or SymPy caching facilities.
+A negative result cannot refine into `Mor(Sets()).Monomorphisms()`. The engine should cache that exact result through standard Sage or SymPy caching facilities.
 
 A complementary category should exist only when it has mathematical value. It should not exist merely to cache `False`.
 
@@ -128,7 +128,7 @@ Property refinement is not transport into a second implementation. It is not a f
 For a property \(P\) defining \(C_P\), the property category owns the trusted constructor:
 
 ```python
-f = Ar(Sets()).Monomorphisms()(A, B, rule)
+f = Mor(Sets()).Monomorphisms()(A, B)(rule)
 ```
 
 That constructor accepts the semantic data needed for a monomorphism. Choosing the category asserts injectivity.
@@ -150,17 +150,17 @@ A named mathematical construction can still have its own API because it accepts 
 The Sage or SymPy session owns the global assumption context. A notebook user can write:
 
 ```python
-assume(Ar(Sets()).Monomorphisms().membership_proposition(f))
+assume(Mor(Sets()).Monomorphisms().membership_proposition(f))
 ```
 
 The standard spelling `assume(f.is_injective())` applies the same owned predicate. Both
-forms record the standard assumption and refine \(f\) through `Ar(Sets()).Monomorphisms()`.
+forms record the standard assumption and refine \(f\) through `Mor(Sets()).Monomorphisms()`.
 
 Internal code does something different:
 
-- An exact computational route that returns `True` refines into `Ar(Sets()).Monomorphisms()`.
-- An identity constructor constructs into `Ar(Sets()).Monomorphisms()`.
-- A theorem-backed construction constructs into `Ar(Sets()).Monomorphisms()`.
+- An exact computational route that returns `True` refines into `Mor(Sets()).Monomorphisms()`.
+- An identity constructor constructs into `Mor(Sets()).Monomorphisms()`.
+- A theorem-backed construction constructs into `Mor(Sets()).Monomorphisms()`.
 - A product lift constructs its projections in the required property category.
 
 Backend code does not create contexts or call `assume()` to justify its own output. It already knows the category in which it must construct the result.
@@ -263,7 +263,7 @@ change the default predicate contract.
 This rule applies to:
 
 - object properties such as finiteness, countability, totality, and connectedness;
-- arrow properties such as injectivity, surjectivity, monotonicity, and invertibility;
+- morphism properties such as injectivity, surjectivity, monotonicity, and invertibility;
 - functor properties such as fullness, faithfulness, full faithfulness, and essential
   surjectivity;
 - equality, order, inclusion, and incidence propositions;
@@ -304,13 +304,13 @@ that value itself.
 
 ### Functor predicates
 
-Every functor is an object of `Ar(Cat())`. Functor properties therefore use the same
-property-subcategory mechanism as object and arrow properties:
+Every functor is an object of `Fun = Mor(Cat())`. Functor properties therefore use the
+same property-subcategory mechanism as object and morphism properties:
 
 ```python
-FullFunctors = Ar(Cat()).Full()
-FaithfulFunctors = Ar(Cat()).Faithful()
-FullyFaithfulFunctors = Ar(Cat()).FullyFaithful()
+FullFunctors = Mor(Cat()).Full()
+FaithfulFunctors = Mor(Cat()).Faithful()
+FullyFaithfulFunctors = Mor(Cat()).FullyFaithful()
 ```
 
 The owning methods return applied predicates:
@@ -325,26 +325,26 @@ Direct construction in one of these categories establishes the property. An inte
 assumption refines the same owned functor:
 
 ```python
-F = Ar(Cat())(C, D, on_object, on_morphism)
+F = Fun(C, D)(on_object, on_morphism)
 assume(F.is_full())
 ```
 
 The kernel also applies established implications. Placement in
-`Ar(Cat()).FullyFaithful()` entails both fullness and faithfulness.
+`Mor(Cat()).FullyFaithful()` entails both fullness and faithfulness.
 
 These functor predicates have no computational routes. In the absence of category
 placement, an active assumption, or an applicable implication, `ask(F.is_full())`
 returns `Unknown`.
 
-### Hom-category predicates
+### Fixed-endpoint predicates
 
-For every category `C` and objects `A, B in C`, `Hom_C(A, B)` is a category. Its
+For every category `C` and objects `A, B in C`, `Mor(C)(A, B)` is a category. Its
 existence does not depend on a decision about its objects.
 
-The Hom category owns these predicates:
+The fixed-endpoint category owns these predicates:
 
 ```python
-H = C.HomCategory(A, B)
+H = Mor(C)(A, B)
 
 H.is_inhabited()
 H.is_empty()
@@ -358,9 +358,9 @@ ask(H.is_empty())      # True, False, or Unknown
 ```
 
 A constructed object of `H` establishes inhabitation. Exact emptiness establishes that
-no such object exists. `Unknown` preserves the same symbolic Hom category.
+no such object exists. `Unknown` preserves the same symbolic fixed-endpoint category.
 
-An implementation must not replace an unresolved Hom category with an empty category.
+An implementation must not replace an unresolved fixed-endpoint category with an empty category.
 This rule applies to thin categories and to general categories.
 
 ### Assertions ask predicates
@@ -400,7 +400,7 @@ Thus these routes still converge:
 ```python
 assume(f.is_injective())
 ask(f.is_injective())
-Ar(Sets()).Monomorphisms()(A, B, rule)
+Mor(Sets()).Monomorphisms()(A, B)(rule)
 ```
 
 Backend and theory code do not call `assume()` for facts they own. They construct the
@@ -421,7 +421,7 @@ Category placement contributes an exact evaluation rule:
 
 ```python
 ask(f.is_injective())
-# True when f is already in Ar(Sets()).Monomorphisms()
+# True when f is already in Mor(Sets()).Monomorphisms()
 ```
 
 The evaluation order is:

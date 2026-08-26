@@ -26,31 +26,31 @@ class LeafCategory(Category):
     def __call__(self, defining_data: LeafDefiningData) -> LeafObject:
         return self.ObjectType(category=self, defining_data=defining_data)
 
-    def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
+    def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
         """Return the selected immediate structural functors."""
         ...
 ```
 
 `Category` is `Cat().ObjectType`. Each entry in `structure_functors()` is an explicitly
-constructed object of `Fun = Ar(Cat())`. Include only immediate functors whose target
+constructed object of `Fun = Mor(Cat())`. Include only immediate functors whose target
 catalogue supplies the leaf's inherited public surface.
 
 For each inherited operation, the selected functor must construct every required object
-and arrow image. The compiler does not invent missing maps.
+and morphism image. The compiler does not invent missing maps.
 
-The functor connects the category-owned implementation roles. Its object and arrow maps
+The functor connects the category-owned implementation roles. Its object and morphism maps
 construct the corresponding target roles. A concrete functor category can add an element
 action when its mathematics supplies one.
 
 An inclusion uses the constructor on its fixed-endpoint functor category. A product,
-pullback, comma, arrow, or other category construction creates and retains its named
+pullback, comma, `Fun([1], C)`, or other category construction creates and retains its named
 projection functors. A leaf reuses those exact objects.
 
 Present structured categories as subobjects of sequence products when their objects have
 named components. The generic `Cat().Products().Subobjects()` construction then supplies
 `product_projection(i)`. The leaf selects the applicable indices without restating maps.
 
-For another functor, the leaf supplies its complete object and arrow actions through
+For another functor, the leaf supplies its complete object and morphism actions through
 `Fun(self, Target)`. It selects the strongest established property subcategory before
 construction. The endpoints never select a functor by themselves.
 
@@ -113,7 +113,7 @@ object, construct a property category, or mutate the mathematical context. The g
 For example, one exact set-map handler can support symbolic real endomorphisms:
 
 ```python
-def decide_surjective_set_map(f: Sets().ArrowType) -> Decision:
+def decide_surjective_set_map(f: Sets().MorphismType) -> Decision:
     match (f.domain(), f.codomain()):
         case (number_sets.RR, number_sets.RR):
             return sympy_sets.decide_exact_image_equals_reals(f)
@@ -121,16 +121,16 @@ def decide_surjective_set_map(f: Sets().ArrowType) -> Decision:
             return Unknown
 
 
-Ar(Sets()).Epimorphisms().register_exact_handler(
-    Sets().ArrowType,
+Mor(Sets()).Epimorphisms().register_exact_handler(
+    Sets().MorphismType,
     decide_surjective_set_map,
 )
 ```
 
 The private SymPy procedure constructs the exact owned image and compares it with
 `RR`. It returns `Unknown` when SymPy does not determine the image. This handler belongs
-to `Ar(Sets()).Epimorphisms()` because it decides surjectivity. An injectivity handler
-belongs to `Ar(Sets()).Monomorphisms()` and uses an exact injectivity procedure.
+to `Mor(Sets()).Epimorphisms()` because it decides surjectivity. An injectivity handler
+belongs to `Mor(Sets()).Monomorphisms()` and uses an exact injectivity procedure.
 
 See [functor.md](functor.md) for inclusion, projection, evaluation, and induced-functor
 declarations.

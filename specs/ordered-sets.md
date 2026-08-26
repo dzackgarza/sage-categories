@@ -37,9 +37,9 @@ Each category owns complete implementation roles:
 
 - `ObjectType` implements its objects.
 - `ElementType` implements owned elements.
-- `ArrowType` implements owned arrows.
+- `MorphismType` implements owned morphisms.
 
-`PartiallyOrderedSets()` introduces the order relation, comparison, and monotone arrows.
+`PartiallyOrderedSets()` introduces the order relation, comparison, and monotone morphisms.
 `TotallyOrderedSets()` adds only established totality. The finite categories add only
 algorithms and constructions that require finiteness.
 
@@ -131,8 +131,8 @@ established total-order category.
 
 ## Poset morphism admission
 
-A candidate poset morphism starts as an owned set arrow between the underlying sets.
-A bare callable can only be the private rule of that set arrow.
+A candidate poset morphism starts as an owned set morphism between the underlying sets.
+A bare callable can only be the private rule of that set morphism.
 
 The owned method `f.is_order_preserving()` returns the proposition:
 
@@ -142,20 +142,20 @@ x\leq_P y\Rightarrow f(x)\leq_Q f(y).
 
 For a represented finite source, exhaustive pair checking is one exact handler for
 `ask(f.is_order_preserving())`. A witnessed violation makes `ask()` return `False`. An
-unresolved evaluation makes it return `Unknown`. Exact `True` invokes the poset Hom
-constructor. Direct property construction, an active assumption, and a named
+unresolved evaluation makes it return `Unknown`. Exact `True` invokes the poset morphism
+constructor `Mor(PartiallyOrderedSets())(P, Q)`. Direct property construction, an active assumption, and a named
 mathematical construction use that same constructor.
 
 Named theorem-backed routes include identities, composites, product projections, and
-product mediating arrows.
+product mediating morphisms.
 
 The map `n -> n^2` from `NN` to `NN` uses a named theorem-backed constructor. It does
 not enumerate `NN`.
 
 A reversing map on the two-element chain fails checked admission. Its underlying set
-arrow remains valid.
+morphism remains valid.
 
-An admitted poset arrow supplies:
+An admitted poset morphism supplies:
 
 ```python
 f.is_order_preserving()
@@ -164,11 +164,11 @@ f.is_order_embedding()
 f.is_order_isomorphism()
 ```
 
-Every call returns an applied proposition. Hom admission makes
+Every call returns an applied proposition. Morphism admission makes
 `ask(f.is_order_preserving())` return `True`. The other propositions remain available
 for assumption or exact evaluation.
 
-Identity and composition arrive through inherited arrow operations. Poset theory adds
+Identity and composition arrive through inherited morphism operations. Poset theory adds
 only the theorem-backed admission needed to preserve monotonicity.
 
 ## Products
@@ -189,7 +189,7 @@ The result retains:
 - the universal monotone map;
 - the underlying set cone.
 
-The coordinatewise theorem admits the order and all product arrows. The constructor
+The coordinatewise theorem admits the order and all product morphisms. The constructor
 does not enumerate the product.
 
 The set-projection square to the chosen set product commutes. Product elements remain
@@ -255,10 +255,10 @@ Every poset supplies:
 P.thin_category()
 ```
 
-The result is an owned category. Its objects are the owned elements of `P`. Its Hom
-category is terminal when `x <= y` and empty otherwise.
+The result is an owned category. Its objects are the owned elements of `P`. Its
+fixed-endpoint category `Mor(-)(x, y)` is terminal when `x <= y` and empty otherwise.
 
-A monotone arrow induces the corresponding functor between thin categories.
+A monotone morphism induces the corresponding functor between thin categories.
 
 ## Inherited surface and implementation ownership
 
@@ -269,7 +269,7 @@ A monotone arrow induces the corresponding functor between thin categories.
 Set membership, iteration, cardinality, identity, composition, and universal set
 constructions arrive through structural inheritance.
 
-Each category-owned `ObjectType`, `ElementType`, and `ArrowType` is its implementation
+Each category-owned `ObjectType`, `ElementType`, and `MorphismType` is its implementation
 class. A leaf can use Sage or another engine through private helpers.
 
 Leaf methods remain ordinary typed mathematical methods. The compiler derives transport
@@ -296,10 +296,10 @@ facts:
 - total-order elements use inherited poset comparison;
 - all inherited set operations work through every structural route;
 - iteration returns elements owned by the public ambient poset;
-- nonmonotone set arrows fail poset Hom admission;
+- nonmonotone set morphisms fail poset morphism admission;
 - theorem-backed identities, composites, projections, and standard infinite maps enter
-  the poset Hom category;
-- poset products retain the chosen set-product apex and universal arrows;
+  `Mor(PartiallyOrderedSets())`;
+- poset products retain the chosen set-product apex and universal morphisms;
 - crossed product elements remain incomparable;
 - finite-poset collection algorithms return owned finite subobjects;
 - level sets return an owned indexed family;

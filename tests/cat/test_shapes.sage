@@ -23,6 +23,8 @@ def test_the_discrete_category_on_a_set_has_the_points_as_objects_and_identities
 
     assert shape in Cat()
     assert one in shape
+    assert three.point(int(1)) is three.point(int(1))
+    assert one is one_again
     assert ask(one == one_again) is True
     assert ask(one == two) is False
     assert ask(Mor(shape)(one, one_again)() == one.identity()) is True
@@ -33,6 +35,7 @@ def test_the_discrete_category_on_a_set_has_the_points_as_objects_and_identities
     integers = _integers()
     seven = Discrete(integers)(integers.point(int(7)))
     assert seven in Discrete(integers)
+    assert Discrete(integers)(integers.point(int(7))) is seven
     assert ask(seven.point() == integers.point(int(7))) is True
 
 

@@ -66,6 +66,10 @@ class SetObject(ObjectOfCategory):
         super().__init__(category)
         self._membership_rule = membership_rule
         self._cardinality = cardinality
+        # One retained point per datum (D15): the datum is private computation data
+        # inside the set's boundary (POL-TYPE-012), so this table never keys on an
+        # owned value.
+        self._points: dict[Datum, SetPoint] = {}
 
     def membership_proposition(self, candidate: CategoryPoint) -> AppliedPredicate:
         return element_of(candidate, self)
@@ -74,11 +78,13 @@ class SetObject(ObjectOfCategory):
         return ask(element_of(candidate, self)) is True
 
     def point(self, datum: Datum) -> SetPoint:
-        """The classical element ``1 -> X`` selecting ``datum``."""
+        """The classical element ``1 -> X`` selecting ``datum``, one point per datum."""
         assert self._membership_rule(datum) is not False, f"{datum!r} is not a member of {self!r}"
-        sets = _sets.Sets()
-        defining_morphism = sets.construct_morphism(sets.Terminal(), self, lambda star: datum)
-        return self.category().ElementType(defining_morphism, datum)
+        if datum not in self._points:
+            sets = _sets.Sets()
+            defining_morphism = sets.construct_morphism(sets.Terminal(), self, lambda star: datum)
+            self._points[datum] = self.category().ElementType(defining_morphism, datum)
+        return self._points[datum]
 
     def cardinality(self) -> CardinalObject | UnknownClass:
         return self._cardinality

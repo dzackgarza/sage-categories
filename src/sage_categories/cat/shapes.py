@@ -23,6 +23,7 @@ constructed uniformly by ``Cat()(labels, generators, relations)``.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 from sage.structure.coerce_dict import MonoDict
@@ -38,7 +39,22 @@ from sage_categories.sets.elements import SetPoint
 from sage_categories.sets.maps import SetMap
 from sage_categories.sets.objects import SetObject
 
-__all__ = ["Discrete", "DiscreteCategory", "Thin", "ThinCategory", "index_set_of", "is_discrete"]
+__all__ = ["Discrete", "DiscreteCategory", "Thin", "ThinCategory", "index_set_of", "is_discrete", "retained_by_point"]
+
+
+def retained_by_point[Retained](table: dict[int, list[Retained]], point: SetPoint, construct: Callable[[], Retained]) -> Retained:
+    """The value retained for a point of a set, one per point up to point equality.
+
+    A point hashes by its datum and equal points hash equal (D17), so the table is
+    keyed by that hash and each bucket is searched by the equality predicate; no
+    enumeration of the set occurs and no owned value is compared by ``==``.
+    """
+    bucket = table.setdefault(hash(point), [])
+    for retained in bucket:
+        if ask(retained.point() == point) is True:
+            return retained
+    bucket.append(construct())
+    return bucket[-1]
 
 
 # -- Discrete(S) ---------------------------------------------------------------------
@@ -77,6 +93,7 @@ class DiscreteCategory(Category[[], []]):
 
     def __init__(self, index_set: SetObject) -> None:
         self._index_set = index_set
+        self._objects: dict[int, list[DiscreteObject]] = {}
         super().__init__()
         self._equality.register_handler(self._equal)
 
@@ -84,9 +101,9 @@ class DiscreteCategory(Category[[], []]):
         return self._index_set
 
     def __call__(self, point: SetPoint) -> DiscreteObject:
-        """The object of ``Discrete(S)`` at a point of ``S``."""
+        """The object of ``Discrete(S)`` at a point of ``S``, one object per point up to point equality."""
         assert point in self._index_set, f"{point!r} is not a point of {self._index_set!r}"
-        return self.ObjectType(self, point)
+        return retained_by_point(self._objects, point, lambda: self.ObjectType(self, point))
 
     def construct_morphism(self, domain: DiscreteObject, codomain: DiscreteObject) -> DiscreteIdentity:
         """``Mor(Discrete(S))(x, y)()``: the identity, which exists exactly when ``x == y``."""
@@ -203,6 +220,7 @@ class ThinCategory(Category[[], []]):
         assert order.arity() == 2
         self._carrier = carrier
         self._order = order
+        self._objects: dict[int, list[ThinObject]] = {}
         super().__init__()
         self._equality.register_handler(self._equal)
 
@@ -217,7 +235,7 @@ class ThinCategory(Category[[], []]):
 
     def __call__(self, point: SetPoint) -> ThinObject:
         assert point in self._carrier, f"{point!r} is not a point of {self._carrier!r}"
-        return self.ObjectType(self, point)
+        return retained_by_point(self._objects, point, lambda: self.ObjectType(self, point))
 
     def construct_morphism(self, domain: ThinObject, codomain: ThinObject) -> Comparison:
         """``Mor(Thin)(x, y)()``: the comparison ``x <= y``; rejected only when the order decides against it."""

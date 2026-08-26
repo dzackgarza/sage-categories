@@ -121,7 +121,7 @@ class ForwardedMethod:
         self._entry = entry
         self._target = compiler.Node(entry.owner, entry.role)
         declaration = f"{entry.owner!r}.{entry.role.value}.{entry.name}"
-        self._signature = declared_signature(entry.function, declaration)
+        self._signature = declared_signature(entry.function, declaration, entry.owner.local_role_class(entry.role))
         self._python_signature = inspect.signature(entry.function)
 
     def entry(self) -> compiler.Entry:

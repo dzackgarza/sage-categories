@@ -97,6 +97,10 @@ def _classify(annotation: Any, declaration: str) -> ArgumentRole:
         raise TypeError(f"{declaration}: {annotation!r} is not an exact role")
     if annotation is None or annotation is type(None) or annotation is Ellipsis:
         return ArgumentRole.VALUE
+    if isinstance(annotation, (typing.TypeVar, typing.ParamSpec, typing.ParamSpecArgs, typing.ParamSpecKwargs, list, tuple)):
+        # A type parameter of the declaring class, or a parameter-list substitution
+        # for one, is generic construction data rather than a mathematical role.
+        return ArgumentRole.VALUE
     if isinstance(annotation, typing.TypeAliasType):
         return _classify(annotation.__value__, declaration)
     origin = typing.get_origin(annotation)
@@ -128,9 +132,17 @@ def _classify(annotation: Any, declaration: str) -> ArgumentRole:
     raise TypeError(f"{declaration}: {annotation!r} is not an exact role")
 
 
-def declared_signature(function: Callable[..., Any], declaration: str) -> Signature:
-    """Extract the exact argument and result roles of a declaring method."""
-    signature = inspect.signature(function, eval_str=True)
+def declared_signature(function: Callable[..., Any], declaration: str, declaring_class: type) -> Signature:
+    """Extract the exact argument and result roles of a declaring method.
+
+    Annotations are evaluated with the type parameters of the declaring role class
+    in scope, since a generic class's methods name them (``Category[MorphismData,
+    TwoMorphismData]``).
+    """
+    type_parameters = {
+        parameter.__name__: parameter for klass in reversed(declaring_class.__mro__) for parameter in getattr(klass, "__type_params__", ())
+    }
+    signature = inspect.signature(function, eval_str=True, locals=type_parameters)
     parameters: dict[str, ArgumentRole] = {}
     for index, (name, parameter) in enumerate(signature.parameters.items()):
         if index == 0:

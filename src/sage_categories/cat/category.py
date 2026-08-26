@@ -74,6 +74,9 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         self._arrows: MonoDict = MonoDict()
         self._properties: dict[str, Category[MorphismData, TwoMorphismData]] = {}
         self._catalogues: dict[Role, dict[str, compiler.Entry]] = {}
+        self._constructions: dict[str, Category] = {}
+        self._limits: MonoDict = MonoDict()
+        self._colimits: MonoDict = MonoDict()
         self._equality = equality_predicate()
         compiler.compile_category(self)
 
@@ -315,6 +318,88 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         self._arrows[morphism] = Fun(walking_arrow, self)(on_object, on_morphism)
         return self._arrows[morphism]
 
+    # -- universal constructions, defined once (D02, D16, POL-CAT-050/092) --------
+    #
+    # A full subcategory declared by an inclusion has the constructions of its
+    # ambient definitionally (D08); every other category owns its own families.
+    # Each family exists for every supplied shape without asserting that the
+    # category has those limits (POL-CAT-051): constructing an object needs an
+    # owned construction or supplied universal data.
+
+    def Products(self) -> Category:
+        """The category of chosen products over every discrete shape."""
+        from sage_categories.cat.constructions import ProductsCategory
+
+        for ambient in self._inclusion_ambient:
+            return ambient.Products()
+        if "Products" not in self._constructions:
+            self._constructions["Products"] = ProductsCategory(self)
+        return self._constructions["Products"]
+
+    def Coproducts(self) -> Category:
+        """The category of chosen coproducts over every discrete shape."""
+        from sage_categories.cat.constructions import CoproductsCategory
+
+        for ambient in self._inclusion_ambient:
+            return ambient.Coproducts()
+        if "Coproducts" not in self._constructions:
+            self._constructions["Coproducts"] = CoproductsCategory(self)
+        return self._constructions["Coproducts"]
+
+    def Limits(self, shape: Category) -> Category:
+        """``C.Limits(I)``: chosen limits of diagrams of shape ``I``, one family per shape."""
+        from sage_categories.cat.constructions import limits
+
+        for ambient in self._inclusion_ambient:
+            return ambient.Limits(shape)
+        assert shape in Cat(), f"{shape!r} is not a shape"
+        if shape not in self._limits:
+            self._limits[shape] = limits(self, shape)
+        return self._limits[shape]
+
+    def Colimits(self, shape: Category) -> Category:
+        """``C.Colimits(I)``: chosen colimits of diagrams of shape ``I``, one family per shape."""
+        from sage_categories.cat.constructions import colimits
+
+        for ambient in self._inclusion_ambient:
+            return ambient.Colimits(shape)
+        assert shape in Cat(), f"{shape!r} is not a shape"
+        if shape not in self._colimits:
+            self._colimits[shape] = colimits(self, shape)
+        return self._colimits[shape]
+
+    def Pullbacks(self) -> Category:
+        """``C.Limits(L(2, 2))``: limits over the walking cospan."""
+        return self.Limits(Cat().Horn(2, 2))
+
+    def Pushouts(self) -> Category:
+        """``C.Colimits(L(2, 0))``: colimits over the walking span."""
+        return self.Colimits(Cat().Horn(2, 0))
+
+    def Equalizers(self) -> Category:
+        return self.Limits(Cat().WalkingParallelPair())
+
+    def Coequalizers(self) -> Category:
+        return self.Colimits(Cat().WalkingParallelPair())
+
+    def limit_construction(self, shape: Category) -> Callable[[Functor], ObjectOfCategory]:
+        """The owned construction of ``I``-limits, when this category declares one."""
+        raise AssertionError(f"{self!r} owns no {shape!r}-limit construction; supply universal data")
+
+    def colimit_construction(self, shape: Category) -> Callable[[Functor], ObjectOfCategory]:
+        """The owned construction of ``I``-colimits, when this category declares one."""
+        raise AssertionError(f"{self!r} owns no {shape!r}-colimit construction; supply universal data")
+
+    def biproduct(self, first: ObjectOfCategory, second: ObjectOfCategory) -> ObjectOfCategory:
+        """``X @ Y``, where the category declares biproducts; no category in this unit does."""
+        raise AssertionError(f"{self!r} declares no biproduct")
+
+    def exponential(self, exponent: ObjectOfCategory, base: ObjectOfCategory) -> ObjectOfCategory:
+        """``base ** exponent``, where the category is declared cartesian closed."""
+        for ambient in self._inclusion_ambient:
+            return ambient.exponential(exponent, base)
+        raise AssertionError(f"{self!r} is not declared cartesian closed")
+
     # -- property narrowing (POL-CAT-084) ---------------------------------------
     #
     # Every placement is a base category together with a set of root properties it
@@ -516,8 +601,18 @@ class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
 
 
 def bootstrap() -> None:
-    """Construct the singleton ``Cat()`` once; ``cat/functors.py`` runs this at import."""
-    global _CAT
+    """Construct the singleton ``Cat()`` once; ``cat/functors.py`` runs this at import.
+
+    The theory modules that ``Category``'s signatures name form an import cycle with
+    this one, so their names are bound here, once those modules exist: the kernel
+    evaluates the declared signatures when it compiles a category that inherits the
+    ``Category`` surface (D13).
+    """
+    global _CAT, FinitePresentedCategory, Functor, FunctorsCategory, MorphismCategory, NaturalTransformation
+    from sage_categories.cat.canonical import FinitePresentedCategory
+    from sage_categories.cat.functors import Functor, FunctorsCategory, NaturalTransformation
+    from sage_categories.cat.morphisms import MorphismCategory
+
     _CAT = CategoryOfCategories()
 
 

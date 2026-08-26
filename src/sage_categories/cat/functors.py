@@ -151,7 +151,6 @@ class FunctorProperty(FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]
         roots = self.narrowing_roots()
         if any(root is functors.FullyFaithful() for root in roots):
             inclusion = functors.full_inclusion(source, target)
-            source.declare_full_subcategory(target)
         else:
             assert any(root is functors.Faithful() for root in roots), f"an inclusion is faithful or fully faithful, not {self!r}"
             inclusion = functors.faithful_inclusion(source, target)

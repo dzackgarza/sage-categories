@@ -30,7 +30,7 @@ import sage_categories.kernel.compiler as compiler
 from sage_categories.cat.equality import equality_predicate
 from sage_categories.kernel.decisions import Unknown
 from sage_categories.kernel.predicates import Predicate, Proposition, ask
-from sage_categories.kernel.refinement import is_placed
+from sage_categories.kernel.refinement import is_placed, is_retained_inclusion
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory, Role
 
 if TYPE_CHECKING:
@@ -58,10 +58,6 @@ member.register_handler(is_placed)
 class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     """The local ``Cat().ObjectType``: the universal surface of every category."""
 
-    # The ambient category when this category was declared a full subcategory by
-    # ``Fun(self, T).FullyFaithful().inclusion()`` (D08); empty otherwise.
-    _inclusion_ambient: tuple[Category[MorphismData, TwoMorphismData], ...] = ()
-
     def __init__(self) -> None:
         self._initialize(Cat())
 
@@ -78,6 +74,7 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         self._limits: MonoDict = MonoDict()
         self._colimits: MonoDict = MonoDict()
         self._equality = equality_predicate()
+        self._ambient_category: Category | None = None
         compiler.compile_category(self)
 
     # -- declarations read by the kernel --------------------------------------
@@ -115,25 +112,27 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         return self._catalogues
 
     def select_functors(self, functors: tuple[Functor, ...]) -> None:
+        """Record the compiled selection; the ambient is the codomain of its first retained inclusion (POL-CAT-016)."""
         self._selected_functors = functors
+        self._ambient_category = next((functor.codomain() for functor in functors if is_retained_inclusion(functor)), None)
 
     def selected_functors(self) -> tuple[Functor, ...]:
         return self._selected_functors
 
-    def inclusion_ambient(self) -> tuple[Category[MorphismData, TwoMorphismData], ...]:
-        """The ambient category when this category is declared as a full subcategory."""
-        return self._inclusion_ambient
+    def has_ambient(self) -> bool:
+        """Whether this category is a declared subcategory: one selected functor is a retained inclusion."""
+        return self._ambient_category is not None
 
-    def declare_full_subcategory(self, ambient: Category[MorphismData, TwoMorphismData]) -> None:
-        """Record the declaration ``Fun(self, ambient).FullyFaithful().inclusion()`` (D08)."""
-        if not any(ambient is declared for declared in self._inclusion_ambient):
-            self._inclusion_ambient = (*self._inclusion_ambient, ambient)
+    def ambient(self) -> Category[MorphismData, TwoMorphismData]:
+        """The category this one is a declared subcategory of, derived from the selected inclusions (D07, D08)."""
+        assert self._ambient_category is not None, f"{self!r} declares no inclusion into an ambient category"
+        return self._ambient_category
 
     # -- membership and equality ----------------------------------------------
 
     def equality(self) -> Predicate:
-        for ambient in self._inclusion_ambient:
-            return ambient.equality()
+        if self.has_ambient():
+            return self.ambient().equality()
         return self._equality
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
@@ -226,8 +225,8 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     ) -> MorphismOfCategory:
         from sage_categories.kernel.refinement import refine
 
-        for ambient in self._inclusion_ambient:
-            morphism = ambient.construct_morphism(domain, codomain, *args, **kwargs)
+        if self.has_ambient():
+            morphism = self.ambient().construct_morphism(domain, codomain, *args, **kwargs)
             refine(morphism, self.morphism_category(1))
             return morphism
         raise AssertionError(f"{self!r} declares no morphism constructor")
@@ -235,8 +234,8 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     def construct_identity(self, member_object: ObjectOfCategory) -> MorphismOfCategory:
         from sage_categories.kernel.refinement import refine
 
-        for ambient in self._inclusion_ambient:
-            identity = ambient.identity_morphism(member_object)
+        if self.has_ambient():
+            identity = self.ambient().identity_morphism(member_object)
             refine(identity, self.morphism_category(1))
             return identity
         raise AssertionError(f"{self!r} declares no identity construction")
@@ -244,8 +243,8 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     def composite(self, second: MorphismOfCategory, first: MorphismOfCategory) -> MorphismOfCategory:
         from sage_categories.kernel.refinement import refine
 
-        for ambient in self._inclusion_ambient:
-            composite = ambient.composite(second, first)
+        if self.has_ambient():
+            composite = self.ambient().composite(second, first)
             refine(composite, self.morphism_category(1))
             return composite
         raise AssertionError(f"{self!r} declares no composition")
@@ -253,8 +252,8 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     def identity_two_morphism(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
         from sage_categories.kernel.refinement import refine
 
-        for ambient in self._inclusion_ambient:
-            two_cell = ambient.identity_two_morphism(morphism)
+        if self.has_ambient():
+            two_cell = self.ambient().identity_two_morphism(morphism)
             refine(two_cell, self.morphism_category(2))
             return two_cell
         two_cells = self.morphism_category(2)
@@ -263,8 +262,8 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     def compose_two_morphisms(self, second: MorphismOfCategory, first: MorphismOfCategory) -> MorphismOfCategory:
         from sage_categories.kernel.refinement import refine
 
-        for ambient in self._inclusion_ambient:
-            two_cell = ambient.compose_two_morphisms(second, first)
+        if self.has_ambient():
+            two_cell = self.ambient().compose_two_morphisms(second, first)
             refine(two_cell, self.morphism_category(2))
             return two_cell
         # A 1-category has identity 2-morphisms only: the composite of two identities is either.
@@ -281,8 +280,8 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     ) -> MorphismOfCategory:
         from sage_categories.kernel.refinement import refine
 
-        for ambient in self._inclusion_ambient:
-            two_cell = ambient.construct_two_morphism(first, second, *args, **kwargs)
+        if self.has_ambient():
+            two_cell = self.ambient().construct_two_morphism(first, second, *args, **kwargs)
             refine(two_cell, self.morphism_category(2))
             return two_cell
         assert first is second and not args and not kwargs, f"{self!r} is a 1-category: its only 2-morphisms are identities"
@@ -330,8 +329,8 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         """The category of chosen products over every discrete shape."""
         from sage_categories.cat.constructions import ProductsCategory
 
-        for ambient in self._inclusion_ambient:
-            return ambient.Products()
+        if self.has_ambient():
+            return self.ambient().Products()
         if "Products" not in self._constructions:
             self._constructions["Products"] = ProductsCategory(self)
         return self._constructions["Products"]
@@ -340,8 +339,8 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         """The category of chosen coproducts over every discrete shape."""
         from sage_categories.cat.constructions import CoproductsCategory
 
-        for ambient in self._inclusion_ambient:
-            return ambient.Coproducts()
+        if self.has_ambient():
+            return self.ambient().Coproducts()
         if "Coproducts" not in self._constructions:
             self._constructions["Coproducts"] = CoproductsCategory(self)
         return self._constructions["Coproducts"]
@@ -350,8 +349,8 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         """``C.Limits(I)``: chosen limits of diagrams of shape ``I``, one family per shape."""
         from sage_categories.cat.constructions import limits
 
-        for ambient in self._inclusion_ambient:
-            return ambient.Limits(shape)
+        if self.has_ambient():
+            return self.ambient().Limits(shape)
         assert shape in Cat(), f"{shape!r} is not a shape"
         if shape not in self._limits:
             self._limits[shape] = limits(self, shape)
@@ -361,8 +360,8 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         """``C.Colimits(I)``: chosen colimits of diagrams of shape ``I``, one family per shape."""
         from sage_categories.cat.constructions import colimits
 
-        for ambient in self._inclusion_ambient:
-            return ambient.Colimits(shape)
+        if self.has_ambient():
+            return self.ambient().Colimits(shape)
         assert shape in Cat(), f"{shape!r} is not a shape"
         if shape not in self._colimits:
             self._colimits[shape] = colimits(self, shape)
@@ -396,8 +395,8 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
 
     def exponential(self, exponent: ObjectOfCategory, base: ObjectOfCategory) -> ObjectOfCategory:
         """``base ** exponent``, where the category is declared cartesian closed."""
-        for ambient in self._inclusion_ambient:
-            return ambient.exponential(exponent, base)
+        if self.has_ambient():
+            return self.ambient().exponential(exponent, base)
         raise AssertionError(f"{self!r} is not declared cartesian closed")
 
     # -- property narrowing (POL-CAT-084) ---------------------------------------
@@ -420,7 +419,7 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         ordered = tuple(sorted({root.ordinal(): root for root in roots}.items()))
         if not ordered:
             return self
-        if len(ordered) == 1 and ordered[0][1].inclusion_ambient()[0] is self:
+        if len(ordered) == 1 and ordered[0][1].ambient() is self:
             return ordered[0][1]
         key = tuple(ordinal for ordinal, _ in ordered)
         if key not in self._narrowings:

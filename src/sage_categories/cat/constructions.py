@@ -101,11 +101,6 @@ def cocone_apex(transformation: NaturalTransformation) -> ObjectOfCategory:
     return Fun(constant.domain(), constant.codomain()).constant_value(constant)
 
 
-def declares_subcategory(category: Category, ambient: Category) -> bool:
-    """Whether ``category`` is ``ambient`` or declared a full subcategory of it, directly or through its ambients (D08)."""
-    return category is ambient or any(declares_subcategory(declared, ambient) for declared in category.inclusion_ambient())
-
-
 def vertex_of(shape: Category, index: ObjectOfCategory | Hashable) -> ObjectOfCategory:
     """An object of a discrete shape, given directly or as a datum of its index set."""
     if index in shape:
@@ -280,7 +275,7 @@ class ApexCategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismDa
         codomain = diagram.codomain()
         if codomain is self._apex_category:
             return diagram
-        assert declares_subcategory(codomain, self._apex_category), f"{codomain!r} is not a declared subcategory of {self._apex_category!r}"
+        assert is_subcategory(codomain, self._apex_category), f"{codomain!r} is not a declared subcategory of {self._apex_category!r}"
         if diagram not in self._lowered:
             self._lowered[diagram] = Fun(codomain, self._apex_category).FullyFaithful().inclusion() * diagram
         return self._lowered[diagram]

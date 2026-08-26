@@ -54,10 +54,13 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
 
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData]) -> None:
         self._ambient = ambient
-        self._inclusion_ambient = (ambient,)
         super().__init__()
 
+    def has_ambient(self) -> bool:
+        return True
+
     def ambient(self) -> Category[MorphismData, TwoMorphismData]:
+        """The ambient is construction data: this category declares exactly one inclusion."""
         return self._ambient
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
@@ -162,8 +165,8 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
     def structure_functors(self) -> tuple[Functor, ...]:
         """The inclusions into the ambient, into each root, and into the same narrowing of the ambient's ambient, each once."""
         targets: list[Category] = [self._ambient, *self._roots]
-        for wider in self._ambient.inclusion_ambient():
-            narrowing = wider.intersection(self._roots)
+        if self._ambient.has_ambient():
+            narrowing = self._ambient.ambient().intersection(self._roots)
             if not any(narrowing is target for target in targets):
                 targets.append(narrowing)
         return tuple(_functors().full_inclusion(self, target) for target in targets)

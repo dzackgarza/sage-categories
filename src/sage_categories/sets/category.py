@@ -11,7 +11,8 @@ and ``Simplex(n)`` exist once by identity.
 
 Retained construction data, each keyed by identity at its owner: the chosen
 enumeration of a finite set at ``Sets().Finite()``; the inverse of an isomorphism
-at ``Sets()`` (``inverse_morphism``).
+at ``Sets()`` (``inverse_morphism``); the inclusion of a chosen subset at
+``Sets().ChosenSubsets()`` (``sets/subobjects.py``).
 """
 
 from __future__ import annotations
@@ -41,6 +42,7 @@ from sage_categories.sets.objects import FiniteSetRole, MembershipRule, SetObjec
 
 if TYPE_CHECKING:
     from sage_categories.cat.functors import Functor
+    from sage_categories.sets.subobjects import ChosenSubsetsCategory
 
 __all__ = ["Sets", "SetsCategory"]
 
@@ -81,6 +83,7 @@ class SetsCategory(Category[[Rule], []]):
     def __init__(self) -> None:
         self._canonical: dict[tuple[str, tuple[int, ...]], SetObject] = {}
         self._inverses: MonoDict = MonoDict()
+        self._constructions: dict[str, Category] = {}
         super().__init__()
         self._equality.register_handler(points_equal)
         self._equality.register_handler(maps_equal)
@@ -119,6 +122,14 @@ class SetsCategory(Category[[Rule], []]):
 
     def Uncountable(self) -> Category[[Rule], []]:
         return self._properties["Uncountable"]
+
+    def ChosenSubsets(self) -> ChosenSubsetsCategory:
+        """The full subcategory of chosen subsets, each retaining its inclusion (``sets/subobjects.py``)."""
+        from sage_categories.sets.subobjects import ChosenSubsetsCategory
+
+        if "ChosenSubsets" not in self._constructions:
+            self._constructions["ChosenSubsets"] = ChosenSubsetsCategory()
+        return self._constructions["ChosenSubsets"]
 
     def _canonical_finite(self, name: str, arguments: tuple[int, ...], members: Iterable[Datum]) -> SetObject:
         if (name, arguments) not in self._canonical:

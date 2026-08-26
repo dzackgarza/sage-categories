@@ -2,12 +2,18 @@
 
 One export per owner (POL-API-002): ``Cat``, ``Mor``, ``Fun``, ``Category``, and the
 shape constructors ``Discrete`` and ``Thin`` from the theory of ``Cat()``; ``Sets``,
-``Cardinal``, ``aleph0``, and ``continuum`` from the theory of sets; ``ask``,
-``assume``, ``Predicate``, ``Unknown``, and ``Decision`` from the kernel's predicate
-boundary.
+``Cardinal``, ``aleph0``, and ``continuum`` from the theory of sets; ``Ordinals`` and
+``omega0`` from the theory of ordinals; ``NN``, ``ZZ``, ``QQ``, ``RR``, and ``Primes``
+from the owned number sets, which shadow Sage's names inside the package universe;
+``ask``, ``assume``, ``Predicate``, ``Unknown``, and ``Decision`` from the kernel's
+predicate boundary.
 """
 
 from sage_categories import (
+    NN,
+    QQ,
+    RR,
+    ZZ,
     Cardinal,
     Cat,
     Category,
@@ -15,7 +21,9 @@ from sage_categories import (
     Discrete,
     Fun,
     Mor,
+    Ordinals,
     Predicate,
+    Primes,
     Sets,
     Thin,
     Unknown,
@@ -25,10 +33,15 @@ from sage_categories import (
     ask,
     assume,
     continuum,
+    omega0,
     version,
 )
 
 __all__ = [
+    "NN",
+    "QQ",
+    "RR",
+    "ZZ",
     "Cardinal",
     "Cat",
     "Category",
@@ -36,7 +49,9 @@ __all__ = [
     "Discrete",
     "Fun",
     "Mor",
+    "Ordinals",
     "Predicate",
+    "Primes",
     "Sets",
     "Thin",
     "Unknown",
@@ -46,5 +61,6 @@ __all__ = [
     "ask",
     "assume",
     "continuum",
+    "omega0",
     "version",
 ]

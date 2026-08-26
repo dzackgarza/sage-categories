@@ -1,0 +1,60 @@
+name: Apply structure-functor migration
+
+on:
+  push:
+    branches:
+      - codex/functorial-core-kernel
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/functorial-core-kernel
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+      - name: Replace the compatibility inheritance spelling
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          roots = (Path('src'), Path('tests'))
+          changed = []
+          for root in roots:
+              for path in root.rglob('*'):
+                  if not path.is_file() or path.suffix not in {'.py', '.sage'}:
+                      continue
+                  source = path.read_text()
+                  updated = source.replace('super_functors', 'structure_functors')
+                  if updated != source:
+                      path.write_text(updated)
+                      changed.append(path)
+
+          assert changed, 'the expected compatibility spelling was not present'
+          remaining = [
+              path
+              for root in roots
+              for path in root.rglob('*')
+              if path.is_file()
+              and path.suffix in {'.py', '.sage'}
+              and 'super_functors' in path.read_text()
+          ]
+          assert not remaining, remaining
+          PY
+          rm .github/workflows/apply-structure-functors.yml
+          python -m compileall -q src
+          git diff --check
+          git config user.name 'OpenAI Codex'
+          git config user.email 'codex@openai.com'
+          git add -A
+          git commit -m 'refactor: make structure_functors the sole inheritance declaration'
+          git push origin HEAD:codex/functorial-core-kernel

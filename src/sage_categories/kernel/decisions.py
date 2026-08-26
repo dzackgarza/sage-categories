@@ -1,7 +1,7 @@
 """Three-valued decisions.
 
 Sage owns the unresolved truth value: ``sage.misc.unknown.Unknown`` is the only
-``Unknown`` in this package (D01, POL-ASSUME-004).  A ``Decision`` is ``True``,
+``Unknown`` in this package (POL-ASSUME-004).  A ``Decision`` is ``True``,
 ``False``, or that singleton.  ``UnknownClass.__bool__`` raises, so no decision is
 ever used in a Boolean context by accident; every consumer compares with ``is``.
 """

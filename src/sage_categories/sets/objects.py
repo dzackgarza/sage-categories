@@ -1,4 +1,4 @@
-"""``Sets().ObjectType``: rule-defined sets (D01, D11, D17).
+"""``Sets().ObjectType``: rule-defined sets (POL-ASSUME-004, POL-SET-016, POL-SET-026).
 
 A set is defined by a membership rule on private data; it needs no enumeration
 (POL-SET-016/029).  ``X.membership_proposition(x)`` is the applied ``element_of``
@@ -43,7 +43,7 @@ element_of = Predicate("element_of", 2, True)
 
 
 def _element_of_by_parent(candidate: Any, ambient: SetObject) -> Decision:
-    """A point ``1 -> X`` is an element of ``X`` by definition (D06)."""
+    """A point ``1 -> X`` is an element of ``X`` by definition (POL-CAT-058)."""
     if role_of(candidate) is Role.ELEMENT and candidate.parent() is ambient:
         return True
     return Unknown

@@ -9,7 +9,7 @@ over ``NN``; ``Cardinal.prod_eq_zero`` for an empty factor; ``Cardinal.prod_le_p
 with ``Cardinal.cantor`` for the uncountable placement; ``instCountableForallOfFinite``
 for the countable placement; ``CategoryTheory.mono_iff_injective`` for the
 injectivity decision.  The mediator equations are decided by the finite set-map
-equality handler (D17); no row proves a universal property (D14).
+equality handler (POL-MATH-034); no row proves a universal property (POL-MATH-036).
 """
 
 from sage_categories.all import *

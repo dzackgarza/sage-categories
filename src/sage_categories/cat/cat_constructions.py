@@ -1,8 +1,8 @@
-"""The constructions ``Cat()`` owns (D02): products and coproducts of categories over a discrete shape, the strict pullback, and the exponential.
+"""The constructions ``Cat()`` owns (POL-CAT-050, POL-MATH-037): products and coproducts of categories over a discrete shape, the strict pullback, and the exponential.
 
 Each construction line carries its inspected citation (POL-MATH-040); the
 universal property of each is a trusted declaration attached to the
-constructor (POL-MATH-037, D14).
+constructor (POL-MATH-037, POL-MATH-036).
 
 - The product of an ``S``-indexed family of categories has as objects the
   ``S``-indexed families of objects given by rule and as morphisms the
@@ -19,12 +19,13 @@ constructor (POL-MATH-037, D14).
   morphisms (Mathlib ``CategoryTheory.Cat.HasLimits.limitCone``, whose apex has
   as objects the compatible families of objects; inspected 2026-08-26).  A pair's
   membership is decided by ``ask(F(a) == G(b))``: identity first, ``Unknown`` for
-  two distinct rule-defined sets (D17).
+  two distinct rule-defined sets (POL-MATH-034).
 - The exponential ``D ** C`` is ``Fun(C, D)`` (Mathlib ``CategoryTheory.Cat.exp_obj``;
   inspected 2026-08-26).
 
-``Cat().Limits(I)`` and ``Cat().Colimits(I)`` for any other shape exist and
-constructing an object in them fails loudly in this unit.
+``Cat().Limits(I)`` and ``Cat().Colimits(I)`` for any other shape exist
+(POL-CAT-051); constructing an object in them fails loudly, naming the missing
+owned construction.
 """
 
 from __future__ import annotations

@@ -1,6 +1,6 @@
 """The method compiler: dynamic inheritance surface, compile-time ownership, collisions.
 
-Toy categories live only in this file (D14).  Each witness calls inherited public
+Toy categories live only in this file (POL-TEST-006).  Each witness calls inherited public
 operations through the production compiler (POL-TEST-006).  A toy stores its own
 members on its own objects; it reads no ambient private field.
 """

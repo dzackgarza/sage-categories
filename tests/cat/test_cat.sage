@@ -1,10 +1,11 @@
 """``Cat()``, the ``Mor`` tower, functors, natural transformations, properties, and canonical objects.
 
 Every expected fact has its oracle in the definition it exercises: the bootstrap
-convention of D02, the definition of ``Mor(n, C)`` (D03), the definition of a
-functor's actions (D05) and of composition of functors and natural
-transformations, the shape definitions of D15, and the property implications of
-D09.  No row claims to prove a functor law, naturality, or a universal property.
+convention ``Cat().category() is Cat()`` (POL-CAT-002), the definition of
+``Mor(n, C)`` (POL-CAT-021), the definition of a functor's actions (POL-FUN-001)
+and of composition of functors and natural transformations, the canonical shapes
+(POL-CAT-083), and the functor property implications (POL-FUN-024).  No row
+claims to prove a functor law, naturality, or a universal property (POL-MATH-036).
 """
 
 import pytest

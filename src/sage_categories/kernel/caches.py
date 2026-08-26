@@ -1,7 +1,7 @@
 """Canonical-image tables keyed by identity.
 
 Every canonical cache is a ``sage.structure.coerce_dict`` dictionary: keys are
-compared with ``is``, held weakly, and values strongly (D12).  No cache ever calls
+compared with ``is``, held weakly, and values strongly (POL-KERNEL-001).  No cache ever calls
 ``__eq__`` or ``__hash__`` of an owned value.  One table per role; a key is
 ``(key1, key2, target category)``: objects ``(X, X, D)``, elements
 ``(parent, element, D)``, morphisms ``(f, f, D)`` (POL-CAT-066).
@@ -37,7 +37,7 @@ class SequenceTable:
     """A table keyed by finite sequences of owned values, each position compared by identity.
 
     It retains the value chosen for a sequence form such as ``(X, Y)`` so that
-    ``C.Products()((X, Y))`` and ``X * Y`` return one object (D16).
+    ``C.Products()((X, Y))`` and ``X * Y`` return one object (POL-CAT-093).
     """
 
     def __init__(self) -> None:

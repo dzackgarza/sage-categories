@@ -1,4 +1,4 @@
-"""The ``Mor(n, C)`` tower and fixed endpoints (D03, D04).
+"""The ``Mor(n, C)`` tower and fixed endpoints (POL-CAT-021, POL-API-009).
 
 For every category ``C`` and ``n >= 0``, ``Mor(n, C)`` is the category whose
 objects are the ``n``-morphisms of ``C`` and whose morphisms are the
@@ -171,7 +171,7 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
     ) -> MorphismOfCategory:
         return self._base.construct_two_morphism(source, target, *args, **kwargs)
 
-    # -- property subcategories, defined once for every ``C`` (D09) -------------
+    # -- property subcategories, defined once for every ``C`` (POL-FUN-024) -------------
 
     # ``D`` included in ``C`` derives ``Mor(D).P()`` as the narrowing of ``Mor(C).P()`` (POL-CAT-084).
 

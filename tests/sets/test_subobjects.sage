@@ -4,8 +4,9 @@ Oracles: the definition of a subset ``{x in X : P(x)}`` and of its inclusion;
 monomorphisms of ``Sets()`` are the injective maps and an inclusion is injective
 (Mathlib ``CategoryTheory.mono_iff_injective``, ``Set.inclusion_injective``); a
 subset of a countable set is countable (Mathlib ``Set.Countable.mono``) and of a
-finite set finite (``Set.Finite.subset``); D01 for ``Unknown`` cardinality; the
-Kleene conjunction of D17 for ``Unknown`` membership.
+finite set finite (``Set.Finite.subset``); POL-ASSUME-004 for ``Unknown``
+cardinality; the Kleene conjunction of decisions (POL-MATH-034) for ``Unknown``
+membership.
 """
 
 import pytest

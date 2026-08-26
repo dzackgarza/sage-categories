@@ -1,9 +1,9 @@
-"""Forwarding descriptors and structural transport (D11, D13, D18).
+"""Forwarding descriptors and structural transport (POL-CAT-012, POL-KERNEL-021, POL-CAT-047).
 
 An inherited method means composition: ``X.f(...) := F(X).f(...)``.  The descriptor
 transports the receiver and every transportable argument forward to the declaring
 node, calls the declaring method on the images, and returns its value unchanged
-(there is no result branch, D18).
+(there is no result branch: POL-CAT-047, ``specs/resolution.md``).
 
 Transport is canonical: one image per value and reachable category, stored in
 the identity-keyed tables of ``kernel/caches.py``.  At the first transport of a
@@ -52,7 +52,7 @@ def placement_node(value: CategoryPoint) -> compiler.Node:
 def _apply(functor: Functor, step_role: Role, value: CategoryPoint) -> CategoryPoint:
     # The action is the one ``Cat()`` declares on its morphism role, invoked directly:
     # a functor placed in a property subcategory of ``Fun`` reaches the same declaration
-    # through an identity-on-value inclusion, so the value is the same (D08).
+    # through an identity-on-value inclusion, so the value is the same (POL-FUN-027).
     declared = functor.base_category().local_role_class(Role.MORPHISM)
     match step_role:
         case Role.OBJECT:
@@ -113,7 +113,7 @@ def _transport_value(argument: Any, role: Role, owner: Category, name: str, decl
 
 
 def _transport_argument(argument: Any, parameter: ParameterRole, owner: Category, name: str, receiver_is_instance: bool) -> Any:
-    """The argument as the declaring method receives it, by its declared role (D13)."""
+    """The argument as the declaring method receives it, by its declared role (POL-KERNEL-021)."""
     declared = parameter.role
     match declared:
         case ArgumentRole.VALUE | ArgumentRole.CANDIDATE:

@@ -1,4 +1,4 @@
-"""Role extraction from typed signatures (D13, POL-KERNEL-021/024).
+"""Role extraction from typed signatures (POL-KERNEL-021/024).
 
 A declaring method's ordinary Python signature is its sole authoritative
 declaration (POL-CAT-075).  The receiver role comes from the declaring role class;

@@ -1,4 +1,4 @@
-"""Universal constructions as full subcategories of chosen apexes (D02, D10, D16).
+"""Universal constructions as full subcategories of chosen apexes (POL-CAT-046, POL-CAT-050, POL-FUN-029).
 
 For a category ``C`` and a shape ``I in Cat()``, ``C.Limits(I)`` is the full
 subcategory of ``C`` whose objects are the chosen limits of diagrams ``I -> C``
@@ -357,7 +357,7 @@ class LimitsCategory(ApexCategory):
 
 
 class ProductsCategory(ApexCategory):
-    """``C.Products()``: chosen products over every discrete shape (D16)."""
+    """``C.Products()``: chosen products over every discrete shape (POL-CAT-093)."""
 
     def __init__(self, apex_category: Category) -> None:
         self._sequences = SequenceTable()
@@ -436,7 +436,7 @@ class ColimitsCategory(ApexCategory):
 
 
 class CoproductsCategory(ApexCategory):
-    """``C.Coproducts()``: chosen coproducts over every discrete shape (D16)."""
+    """``C.Coproducts()``: chosen coproducts over every discrete shape (POL-CAT-093)."""
 
     def __init__(self, apex_category: Category) -> None:
         self._sequences = SequenceTable()
@@ -606,7 +606,7 @@ def colimit_functor(family: Category) -> Functor:
     )
 
 
-# -- the families owned once on ``Category`` (D02, POL-CAT-050) ---------------------------
+# -- the families owned once on ``Category`` (POL-CAT-050) ---------------------------
 
 
 def limits(apex_category: Category, shape: Category) -> Category:

@@ -1,4 +1,4 @@
-"""Canonical objects of ``Cat()`` and finitely presented categories (D15).
+"""Canonical objects of ``Cat()`` and finitely presented categories (POL-CAT-083).
 
 ``FinitePresentedCategory`` is the one implementation of every finite presented
 shape: named vertices, generating edges, and rewriting relations between

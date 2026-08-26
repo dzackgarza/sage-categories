@@ -2,11 +2,11 @@
 
 ``is_placed(x, C)`` is the implementation fact "``x`` entered ``C`` or a declared
 subcategory of ``C``" (POL-CAT-068): the node of ``C`` is reachable from ``x``'s
-placement node through retained inclusions alone (D08).  A selected functor that
+placement node through retained inclusions alone (POL-FUN-027).  A selected functor that
 is not the retained inclusion of its endpoints changes structure and places
 nothing: an object of a category with a selected forgetful functor ``U: C -> D``
 is not an object of ``D``.  Every recorded implication between property
-categories is such an inclusion, so implications act through the same walk (D09).
+categories is such an inclusion, so implications act through the same walk (POL-FUN-024).
 
 ``refine(x, P)`` strengthens ``x``'s placement to the join of its current category
 with the property category ``P``, rebuilding its dynamic class in place.  Identity,
@@ -32,7 +32,7 @@ __all__ = ["is_placed", "is_retained_inclusion", "is_subcategory", "place", "ref
 
 
 def is_retained_inclusion(functor: MorphismOfCategory) -> bool:
-    """Whether ``functor`` is the inclusion that ``Fun`` retained for its endpoints (D08)."""
+    """Whether ``functor`` is the inclusion that ``Fun`` retained for its endpoints (POL-FUN-027)."""
     functors = functor.base_category().morphism_category(1)
     source, target = functor.domain(), functor.codomain()
     return functors.retains_inclusion(source, target) and functors.inclusion_of(source, target) is functor

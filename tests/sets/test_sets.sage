@@ -1,9 +1,9 @@
 """``Sets()``: rule-defined sets, finite enumerations, maps, isomorphisms, and cardinals.
 
-Oracles: the definitions of D01 (exact cardinal or ``Unknown``), D08 (inclusions map
-by identity), D09 (monomorphisms of sets are the injective maps: Mathlib
-``CategoryTheory.mono_iff_injective``), and D17 (equality handlers on their declared
-domains).
+Oracles: a cardinality is exact or ``Unknown`` (POL-ASSUME-004); an inclusion maps
+by identity (POL-FUN-027); monomorphisms of sets are the injective maps (Mathlib
+``CategoryTheory.mono_iff_injective``); equality handlers decide on their declared
+domains (POL-MATH-034, POL-MATH-042).
 """
 
 import pytest

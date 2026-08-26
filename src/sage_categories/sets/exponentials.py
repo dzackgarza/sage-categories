@@ -1,4 +1,4 @@
-"""The function set ``Y ** X`` of ``Sets()`` (D02, POL-SET-017/020).
+"""The function set ``Y ** X`` of ``Sets()`` (POL-SET-017/020).
 
 ``Sets()`` is cartesian closed: the exponential ``Y ** X`` is the function set, the
 rule-defined set whose points are the maps ``X -> Y``, retained once per pair.
@@ -37,7 +37,7 @@ __all__ = ["Function", "evaluation_morphism", "function_set", "name_of", "transp
 class Function:
     """The private datum of a point of ``Y ** X``: the map it names.
 
-    This is private computation data, not an owned value (D17 governs owned
+    This is private computation data, not an owned value (POL-SET-026 governs owned
     values).  Two names of one map are equal; two names compare through map
     equality otherwise, exact when the domain has a chosen enumeration and
     ``Unknown`` else.  The hash is the hash of the tuple of image data when the

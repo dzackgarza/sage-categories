@@ -1,4 +1,4 @@
-"""Diagrams: evaluation functors of ``Fun(I, C)``, constant and discrete diagrams (D10, D16).
+"""Diagrams: evaluation functors of ``Fun(I, C)``, constant and discrete diagrams (POL-FUN-027, POL-FUN-029, POL-SET-013).
 
 A diagram of shape ``I`` in ``C`` is an object of ``Fun(I, C)``.  ``Fun(I, C)``
 retains one evaluation functor ``ev_i: Fun(I, C) -> C`` per object ``i`` of ``I``,

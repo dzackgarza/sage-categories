@@ -1,4 +1,4 @@
-"""``Sets()`` products and coproducts over discrete shapes, with their cardinality case trees (D16, POL-SET-013/020/021).
+"""``Sets()`` products and coproducts over discrete shapes, with their cardinality case trees (POL-SET-013/020/021).
 
 The product of ``D: Discrete(S) -> Sets()`` is the set of ``S``-indexed families
 ``i |-> x_i`` with ``x_i in D(i)``, a point given by a rule on the index data and
@@ -12,8 +12,8 @@ inspected 2026-08-26).  When the index set and every factor carry a chosen
 enumeration, the apex is constructed through ``Sets().Finite()`` and retains
 its enumeration.
 
-Cardinality is a computational case tree routed on the retained data (D16,
-POL-MATH-042), each case citing its theorem (all Mathlib, inspected 2026-08-26):
+Cardinality is a computational case tree routed on the retained data
+(POL-MATH-042), each case citing its theorem (all Mathlib, inspected 2026-08-26):
 
 - a finite enumerated index with every factor cardinality exact gives the exact
   product (``Cardinal.mk_pi`` with ``Cardinal.prod`` over a finite type,
@@ -69,7 +69,7 @@ __all__ = ["Family", "coproduct_of_sets", "product_of_sets"]
 class Family:
     """The private datum of a point of a product: an indexed family of data by rule.
 
-    This is private computation data, not an owned value (D17 governs owned
+    This is private computation data, not an owned value (POL-SET-026 governs owned
     values).  Two families over one finitely enumerated index set compare
     componentwise, exactly, and then hash by the tuple of components, so equal
     families hash equal; over any other index set equality is ``Unknown`` except on

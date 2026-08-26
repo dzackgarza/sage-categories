@@ -1,4 +1,4 @@
-"""``Sets().ElementType``: classical elements as points ``1 -> X`` (D06, D17).
+"""``Sets().ElementType``: classical elements as points ``1 -> X`` (POL-CAT-058, POL-SET-026).
 
 A classical element of a set ``X`` is a generalized element whose stage is the
 classical stage ``Sets().Terminal()``: a point ``1 -> X``.  It retains its defining

@@ -1,4 +1,4 @@
-"""``Cardinal()``: exact cardinal numbers (D01, ``specs/cardinality.md``).
+"""``Cardinal()``: exact cardinal numbers (POL-ASSUME-004, ``specs/cardinality.md``).
 
 A cardinal is an exact value: a finite cardinal, ``aleph(n)``, a cardinal power,
 or a finite formal supremum formed by exact cardinal arithmetic.  There is no

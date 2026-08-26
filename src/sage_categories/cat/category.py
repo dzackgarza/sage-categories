@@ -1,4 +1,4 @@
-"""``Cat()``: the category of categories, and the universal category surface (D02).
+"""``Cat()``: the category of categories, and the universal category surface (POL-CAT-002, POL-CAT-050).
 
 ``Category`` is the local ``Cat().ObjectType``: every category in this repository
 is constructed as an instance of a ``Category`` subclass, placed in ``Cat()``, and
@@ -43,7 +43,7 @@ __all__ = ["Assignment", "Cat", "Category", "CategoryOfCategories", "OnMorphism"
 logger = logging.getLogger("sage_categories")
 
 # The construction data of ``Cat()``: a functor's actions and a natural
-# transformation's component assignment (D05).
+# transformation's component assignment (POL-FUN-001).
 type OnObject = Callable[[ObjectOfCategory], ObjectOfCategory]
 type OnMorphism = Callable[[MorphismOfCategory], MorphismOfCategory]
 type Assignment = Callable[[ObjectOfCategory], MorphismOfCategory]
@@ -81,7 +81,7 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     # -- declarations read by the kernel --------------------------------------
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        """The selected structural graph: immediate functors, in preference order (D07)."""
+        """The selected structural graph: immediate functors, in preference order (POL-CAT-016, POL-FUN-003)."""
         return ()
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
@@ -125,7 +125,7 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         return self._ambient_category is not None
 
     def ambient(self) -> Category[MorphismData, TwoMorphismData]:
-        """The category this one is a declared subcategory of, derived from the selected inclusions (D07, D08)."""
+        """The category this one is a declared subcategory of, derived from the selected inclusions (POL-CAT-016, POL-FUN-027)."""
         assert self._ambient_category is not None, f"{self!r} declares no inclusion into an ambient category"
         return self._ambient_category
 
@@ -347,7 +347,7 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         assert first is second and not args and not kwargs, f"{self!r} is a 1-category: its only 2-morphisms are identities"
         return self.morphism_category(1).identity_morphism(first)
 
-    # -- points of the category as Cat elements (D06), retained once (D15) --------
+    # -- points of the category as Cat elements (POL-CAT-058), retained once (POL-CAT-083) --------
 
     def point_functor(self, member_object: ObjectOfCategory) -> Functor:
         """The stage-``1`` point ``1 -> self`` selecting ``member_object``."""
@@ -377,10 +377,10 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         self._arrows[morphism] = Fun(walking_arrow, self)(on_object, on_morphism)
         return self._arrows[morphism]
 
-    # -- universal constructions, defined once (D02, D16, POL-CAT-050/092) --------
+    # -- universal constructions, defined once (POL-CAT-050/092, POL-CAT-093) --------
     #
     # A full subcategory declared by an inclusion has the constructions of its
-    # ambient definitionally (D08); every other category owns its own families.
+    # ambient definitionally (POL-CAT-087); every other category owns its own families.
     # Each family exists for every supplied shape without asserting that the
     # category has those limits (POL-CAT-051): constructing an object needs an
     # owned construction or supplied universal data.
@@ -450,7 +450,7 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         raise AssertionError(f"{self!r} owns no {shape!r}-colimit construction; supply universal data")
 
     def biproduct(self, first: ObjectOfCategory, second: ObjectOfCategory) -> ObjectOfCategory:
-        """``X @ Y``, where the category declares biproducts; no category in this unit does."""
+        """``X @ Y``, where the category declares biproducts; no owned category declares them."""
         raise AssertionError(f"{self!r} declares no biproduct")
 
     def exponential(self, exponent: ObjectOfCategory, base: ObjectOfCategory) -> ObjectOfCategory:
@@ -464,7 +464,7 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     # Every placement is a base category together with a set of root properties it
     # is narrowed by: ``D.P()`` is the narrowing of ``D`` by ``{P}``, and
     # ``D.P().Q()`` the narrowing by ``{P, Q}``.  One object exists per pair, so the
-    # same intersection reached in any order is one category (D04, D09).
+    # same intersection reached in any order is one category (POL-API-009, POL-CAT-084).
 
     def narrowing_base(self) -> Category[MorphismData, TwoMorphismData]:
         """The category this placement narrows; ``self`` when it is no narrowing."""
@@ -533,7 +533,7 @@ class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
         on_object: OnObject,
         on_morphism: OnMorphism,
     ) -> Functor:
-        """``Fun(C, D)(on_object, on_morphism)``: a functor from its total actions (D05)."""
+        """``Fun(C, D)(on_object, on_morphism)``: a functor from its total actions (POL-FUN-001)."""
         assert domain in self and codomain in self
         return self.MorphismType(self.morphism_category(1), domain, codomain, on_object, on_morphism)
 
@@ -576,7 +576,7 @@ class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
         return composite
 
     def construct_two_morphism(self, source: Functor, target: Functor, assignment: Assignment) -> NaturalTransformation:
-        """``Mor(Fun(C, D))(F, G)(assignment)``: a natural transformation from a rule (D05)."""
+        """``Mor(Fun(C, D))(F, G)(assignment)``: a natural transformation from a rule (POL-MATH-036)."""
         functors = self.morphism_category(1)
         assert source in functors and target in functors
         assert source.domain() is target.domain() and source.codomain() is target.codomain()
@@ -594,10 +594,10 @@ class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
             lambda x: second.component(x) * first.component(x),
         )
 
-    # -- the constructions Cat() owns (D02; ``cat/cat_constructions.py``) --------
+    # -- the constructions Cat() owns (POL-CAT-050; ``cat/cat_constructions.py``) --------
 
     def limit_construction(self, shape: Category) -> Callable[[Functor], ObjectOfCategory]:
-        """Products over ``Discrete(S)`` and strict pullbacks over ``L(2, 2)``; no other shape in this unit."""
+        """Products over ``Discrete(S)`` and strict pullbacks over ``L(2, 2)``; ``Cat()`` owns no other limit construction."""
         from sage_categories.cat.cat_constructions import product_of_categories, pullback_of_categories
         from sage_categories.cat.shapes import is_discrete
 
@@ -605,22 +605,22 @@ class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
             return product_of_categories
         if shape is self.Horn(2, 2):
             return pullback_of_categories
-        raise AssertionError(f"Cat owns no {shape!r}-limit construction in this unit: products over Discrete(S) and pullbacks over L(2, 2) are its owned shapes; supply universal data")
+        raise AssertionError(f"Cat owns no {shape!r}-limit construction: products over Discrete(S) and pullbacks over L(2, 2) are its owned shapes; supply universal data")
 
     def colimit_construction(self, shape: Category) -> Callable[[Functor], ObjectOfCategory]:
-        """Coproducts over ``Discrete(S)``; no other shape in this unit."""
+        """Coproducts over ``Discrete(S)``; ``Cat()`` owns no other colimit construction."""
         from sage_categories.cat.cat_constructions import coproduct_of_categories
         from sage_categories.cat.shapes import is_discrete
 
         if is_discrete(shape):
             return coproduct_of_categories
-        raise AssertionError(f"Cat owns no {shape!r}-colimit construction in this unit: coproducts over Discrete(S) are its owned shape; supply universal data")
+        raise AssertionError(f"Cat owns no {shape!r}-colimit construction: coproducts over Discrete(S) are its owned shape; supply universal data")
 
     def exponential(self, exponent: Category, base: Category) -> Category:
         """``D ** C = Fun(C, D)``: ``Cat()`` is cartesian closed (Mathlib ``Cat.exp_obj``; inspected 2026-08-26)."""
         return self.morphism_category(1)(exponent, base)
 
-    # -- finite presented shapes and canonical objects (D15, D16) ----------------
+    # -- finite presented shapes and canonical objects (POL-CAT-083) ----------------
 
     def __call__(
         self,
@@ -654,7 +654,7 @@ class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
     def Boundary(self, dimension: int) -> FinitePresentedCategory:
         from sage_categories.cat import canonical
 
-        assert dimension == 2, "this unit constructs the boundary of the 2-simplex"
+        assert dimension == 2, "Cat owns the boundary of the 2-simplex only"
         if ("boundary", (dimension,)) not in self._canonical:
             self._canonical["boundary", (dimension,)] = canonical.boundary(dimension)
         return self._canonical["boundary", (dimension,)]
@@ -662,7 +662,7 @@ class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
     def Horn(self, dimension: int, omitted_face: int) -> FinitePresentedCategory:
         from sage_categories.cat import canonical
 
-        assert dimension == 2 and 0 <= omitted_face <= 2, "this unit constructs the horns of the 2-simplex"
+        assert dimension == 2 and 0 <= omitted_face <= 2, "Cat owns the horns of the 2-simplex only"
         if omitted_face == 1:
             # The free category on ``0 -> 1 -> 2`` contains the composite ``0 -> 2``:
             # it is the walking composable pair ``[2]`` (nLab "walking structure":
@@ -699,7 +699,7 @@ def bootstrap() -> None:
     The theory modules that ``Category``'s signatures name form an import cycle with
     this one, so their names are bound here, once those modules exist: the kernel
     evaluates the declared signatures when it compiles a category that inherits the
-    ``Category`` surface (D13).
+    ``Category`` surface (POL-KERNEL-021).
     """
     global _CAT, FinitePresentedCategory, Functor, FunctorsCategory, MorphismCategory, NaturalTransformation
     from sage_categories.cat.canonical import FinitePresentedCategory

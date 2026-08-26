@@ -1,4 +1,4 @@
-"""``Sets()``: the category of sets and total maps (D01, D15, D16, D17).
+"""``Sets()``: the category of sets and total maps (POL-SET-002, POL-CAT-083, POL-SET-013, POL-SET-026).
 
 ``Sets()`` owns arbitrary sets and arbitrary functions.  Its objects are
 rule-defined (``sets/objects.py``), its elements are points ``1 -> X`` at the
@@ -94,8 +94,8 @@ class SetsCategory(Category[[Rule], []]):
         infinite = PropertySubcategory(self, "Infinite", {}, ())
         finite = FiniteSets(self, "Finite", {Role.OBJECT: FiniteSetRole}, (countable,))
         uncountable = PropertySubcategory(self, "Uncountable", {}, (infinite,))
-        # A known cardinality decides finiteness and countability (D01); established
-        # placement in the complementary property decides the negation (D16).
+        # A known cardinality decides finiteness and countability (``specs/cardinality.md``); established
+        # placement in the complementary property decides the negation (``specs/sets.md``, "Cardinality and enumeration").
         finite.predicate().register_handler(self._finite_by_cardinality)
         finite.predicate().register_handler(lambda ambient: False if ambient in infinite else Unknown)
         countable.predicate().register_handler(self._countable_by_cardinality)
@@ -203,27 +203,27 @@ class SetsCategory(Category[[Rule], []]):
 
         return self.morphism_category(1)(morphism.codomain(), morphism.domain()).Isomorphisms()(no_rule)
 
-    # -- owned constructions (D16; ``sets/products.py``, ``sets/exponentials.py``) ---
+    # -- owned constructions (POL-SET-013; ``sets/products.py``, ``sets/exponentials.py``) ---
 
     def limit_construction(self, shape: Category) -> Callable[[Functor], SetObject]:
-        """Products over ``Discrete(S)``; general limits by compatible families arrive with the limits unit."""
+        """Products over ``Discrete(S)``; ``Sets()`` owns no other limit construction yet."""
         from sage_categories.cat.shapes import is_discrete
         from sage_categories.sets.products import product_of_sets
 
         assert is_discrete(shape), (
-            f"Sets owns no {shape!r}-limit construction in this unit: only products over Discrete(S); "
-            "general limits as sets of compatible families belong to Unit B; supply universal data"
+            f"Sets owns no {shape!r}-limit construction: only products over Discrete(S); "
+            "the limit as the set of compatible families is not yet owned; supply universal data"
         )
         return product_of_sets
 
     def colimit_construction(self, shape: Category) -> Callable[[Functor], SetObject]:
-        """Coproducts over ``Discrete(S)``; general colimits by quotients arrive with the limits unit."""
+        """Coproducts over ``Discrete(S)``; ``Sets()`` owns no other colimit construction yet."""
         from sage_categories.cat.shapes import is_discrete
         from sage_categories.sets.products import coproduct_of_sets
 
         assert is_discrete(shape), (
-            f"Sets owns no {shape!r}-colimit construction in this unit: only coproducts over Discrete(S); "
-            "general colimits as quotients of coproducts belong to Unit B; supply universal data"
+            f"Sets owns no {shape!r}-colimit construction: only coproducts over Discrete(S); "
+            "the colimit as a quotient of the coproduct is not yet owned; supply universal data"
         )
         return coproduct_of_sets
 

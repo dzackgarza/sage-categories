@@ -2,10 +2,10 @@
 
 Oracles: the definitions of the product and coproduct of categories (Mathlib
 ``CategoryTheory.pi``, ``CategoryTheory.Sigma.sigma``), of the strict pullback of
-categories (D02), of the exponential ``Fun(C, D)`` (Mathlib ``Cat.exp_obj``), of
-the evaluation functors of ``Fun(I, C)`` (D10), and of the presentation data every
+categories (POL-CAT-050), of the exponential ``Fun(C, D)`` (Mathlib ``Cat.exp_obj``), of
+the evaluation functors of ``Fun(I, C)`` (POL-FUN-029), and of the presentation data every
 construction retains (POL-CAT-046, POL-FUN-009/010).  No row proves a universal
-property (D14).
+property (POL-MATH-036, POL-TEST-006).
 """
 
 import pytest

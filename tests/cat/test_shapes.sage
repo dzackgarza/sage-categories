@@ -3,7 +3,7 @@
 Oracles: the definition of the discrete category on a set (objects the points,
 identities only; Mathlib ``CategoryTheory.Discrete``), of the thin category of a
 preorder (at most one morphism ``x -> y``, present exactly when ``x <= y``; Mathlib
-``Preorder.smallCategory``), and of a finitely presented category (D15, D16).
+``Preorder.smallCategory``), and of a finitely presented category (POL-CAT-083; ``specs/functor.md``, "Canonical objects").
 """
 
 import pytest

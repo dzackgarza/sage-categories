@@ -1,4 +1,4 @@
-"""Full subcategories and property subcategories (D08, D09, POL-CAT-087).
+"""Full subcategories and property subcategories (POL-CAT-054, POL-CAT-087, POL-FUN-024).
 
 A full subcategory ``S`` of ``T`` shares ``T``'s object, element, and morphism
 values; its morphism categories, identities, and composition are inherited
@@ -49,7 +49,7 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
     """A full subcategory of an ambient category, declared by its inclusion.
 
     Its morphisms, identities, and composites are those of the ambient between its
-    objects; ``Category`` supplies them from the recorded ambient (D08).
+    objects; ``Category`` supplies them from the ambient (POL-CAT-087).
     """
 
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData]) -> None:
@@ -115,7 +115,7 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
         return empty_local_role(self, role)
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        """The inclusion into the ambient, then one inclusion per recorded implication (D09)."""
+        """The inclusion into the ambient, then one inclusion per recorded implication (POL-FUN-024)."""
         functors = _functors()
         return (
             functors.full_inclusion(self, self._ambient),

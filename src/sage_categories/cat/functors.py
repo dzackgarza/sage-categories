@@ -1,4 +1,4 @@
-"""Functors, ``Fun = Mor(Cat())``, and natural transformations (D04, D05, D08, D09).
+"""Functors, ``Fun = Mor(Cat())``, and natural transformations (POL-FUN-001, POL-FUN-017, POL-FUN-027, POL-FUN-024).
 
 A functor is a morphism of ``Cat()``: a ``Cat().MorphismType`` value with a domain,
 a codomain, and total object and morphism actions (Mathlib
@@ -39,7 +39,7 @@ __all__ = ["Fun", "Functor", "FunctorCategory", "FunctorProperty", "FunctorsCate
 
 
 def identity_on_values(value: CategoryPoint) -> CategoryPoint:
-    """The object and morphism action of every inclusion: the identity on the shared values (D08)."""
+    """The object and morphism action of every inclusion: the identity on the shared values (POL-FUN-027)."""
     return value
 
 
@@ -145,7 +145,7 @@ class FunctorProperty(FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]
     """``Fun(C, D).P()``: functors ``C -> D`` with property ``P``; owns ``inclusion()`` and ``identity()``."""
 
     def inclusion(self) -> Functor:
-        """The identity-on-value inclusion of the domain into the codomain, asserted to have ``P`` (D08)."""
+        """The identity-on-value inclusion of the domain into the codomain, asserted to have ``P`` (POL-FUN-027, POL-MATH-037)."""
         functors = self.category().morphism_category(1)
         source, target = self._ambient.domain(), self._ambient.codomain()
         roots = self.narrowing_roots()
@@ -162,7 +162,7 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
     """``Fun(C, D)``: functors ``C -> D`` and their natural transformations.
 
     As the category of diagrams of shape ``C`` in ``D`` it retains its evaluation
-    functors and constant diagrams (``cat/diagrams.py``, D10, D16).
+    functors and constant diagrams (``cat/diagrams.py``, POL-FUN-029).
     """
 
     def __init__(self, morphisms: MorphismCategory, domain: Category, codomain: Category) -> None:
@@ -171,7 +171,7 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
         self._constant_values: MonoDict = MonoDict()
         super().__init__(morphisms, domain, codomain)
 
-    # -- diagrams (D10, D16) -----------------------------------------------------
+    # -- diagrams (POL-FUN-029) -----------------------------------------------------
 
     def evaluation(self, vertex: ObjectOfCategory) -> Functor:
         """``ev_i: Fun(I, C) -> C``, the evaluation at the object ``i`` of the shape."""
@@ -199,7 +199,7 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
 
         return from_object_rule(self, rule)
 
-    # -- functor properties (D09) -----------------------------------------------
+    # -- functor properties (POL-FUN-024) -----------------------------------------------
 
     def Full(self) -> Category:
         return self.property_subcategory(self.ambient().Full())
@@ -230,7 +230,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         self._bootstrapping = False
         self._bootstrapped = False
         # One inclusion per ``(source, target)``, constructed once and retained by
-        # identity (D08); "``F`` is an inclusion" is decided against this table.
+        # identity (POL-FUN-027); "``F`` is an inclusion" is decided against this table.
         self._inclusions: TripleDict = TripleDict(weak_values=False)
         super().__init__(base)
 
@@ -248,7 +248,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         source, target = transformation.domain(), transformation.codomain()
         return self.morphism_category(1)(target, source).Isomorphisms()(lambda member_object: transformation.component(member_object).inverse())
 
-    # -- the functor property categories (D09) -----------------------------------
+    # -- the functor property categories (POL-FUN-024) -----------------------------------
 
     def _bootstrap(self) -> None:
         """Build the five functor property categories and place their inclusions."""
@@ -296,7 +296,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     def Equivalences(self) -> Category:
         return self._functor_property("Equivalences")
 
-    # -- inclusions (D08) ---------------------------------------------------------
+    # -- inclusions (POL-FUN-027) ---------------------------------------------------------
 
     def _inclusion(self, source: Category, target: Category, placement_name: str) -> Functor:
         """The one identity-on-value inclusion ``source -> target``, placed in the declared functor property."""

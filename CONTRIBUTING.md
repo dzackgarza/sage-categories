@@ -89,6 +89,8 @@ The package must absorb the elliptic-curve construction before claiming that wor
 | `POL-MATH-040` | Support each nontrivial categorical declaration with an inspected external source. Use an exact theorem, definition, section, page, tag, or stable link from a textbook, a relevant item in the local Zotero library, nLab, the Stacks Project, Kerodon, or a primary paper. Put the citation on the construction line or in its immediate source documentation. |
 | `POL-MATH-041` | Treat citations, tests, runtime checks, and successful computations as aids to human audit. None certifies the categorical mathematics. The typed construction records what the writer asserts; the source lets a mathematician audit that assertion. |
 | `POL-MATH-042` | Register a computational route only for a predicate with an exact algorithm on its declared semantic domain. Never add a route that purports to prove a general category-theoretic property. Keep unsupported decisions `Unknown`. |
+| `POL-MATH-043` | Treat `Cat` as an abstract universe whose foundation is unspecified. Use only the structure that the repository explicitly declares. A declared ordinary or 2-categorical operation does not select a set-theoretic, simplicial, enriched, or higher-categorical realization. |
+| `POL-MATH-044` | A mathematical term imports only its explicit repository definition. Do not infer surrounding theory, laws, properties, or constructions from the term alone. |
 
 For example, an owned constructor for `RR` records its cardinality as $2^{\aleph_0}$.
 The implementation cites the supporting theorem in source documentation.
@@ -947,6 +949,10 @@ It remains a replaceable algorithm, not the representation or default structural
 | `POL-DOC-007` | Keep one authoritative catalogue for each public method surface. Reference that catalogue from dependent specifications instead of copying it. |
 | `POL-DOC-008` | Mention a small number of inherited methods only when they clarify a category-specific example. Do not reproduce the inherited API inventory. |
 | `POL-DOC-009` | Declare only mathematically meaningful immediate structural functors. Obtain deeper inherited capabilities by functor composition, not by adding direct functors for convenience. |
+| `POL-DOC-010` | Put a mathematical distinction or formal term in an implementation plan only when it changes a required construction, public API, admissible result, or failure condition. Vocabulary alone creates no implementation decision. |
+| `POL-DOC-011` | Classify two statements as contradictory only when they impose requirements that cannot both hold in the same scope and context. An override replaces an earlier rule. A specialization narrows it. An unresolved choice records alternatives. A different presentation is not a contradiction unless it imposes incompatible requirements. |
+| `POL-DOC-012` | When reconciling project history, let the latest explicit user decision and its stated context control earlier drafts. Then normalize every current durable owner. Do not use the current documents' conflict as evidence for either side. |
+| `POL-DOC-013` | Keep an executing plan limited to active decisions, fixed requirements and exclusions, dependency order, and acceptance conditions. Put completed work, archaeology, revision history, and provenance in a separate record. |
 
 For example, a lattice specification declares its selected functor to the appropriate formed-module category.
 It states that cardinality arrives through the existing functor chain from formed modules through modules to `Sets()`.

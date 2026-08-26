@@ -106,6 +106,22 @@ The leaf author supplies only that override, closure, or lift, which is the math
 The kernel owns `Cat`, the category of categories. Every category in this repository is
 an object of `Cat`. The public `Category` implementation is `Cat().ObjectType`.
 
+### Declared structure of `Cat`
+
+`Cat` is an abstract, package-owned universe in which all represented categories live.
+Its foundation is intentionally unspecified. The repository declares the categories,
+functors, natural transformations, universal constructions, and laws that it needs.
+Those declarations are the complete usable structure of `Cat`.
+
+A declaration of particular categorical operations does not select a realization of
+`Cat`. In particular, it does not make `Cat` a category of simplicial sets or Kan
+complexes, and it supplies no unstated horn-filling or higher-categorical properties.
+
+A borrowed mathematical name imports no surrounding theory. Names such as `Simplex`,
+`Boundary`, `Horn`, and `strict` denote only the constructions and laws stated here and
+in the governing specifications. For example, `Cat().Horn(n, k)` is the declared free
+category on its horn graph. Its name supplies no additional simplicial-set structure.
+
 Each category `C` owns the implementation types relevant to its theory:
 
 - `C.ObjectType` for objects;

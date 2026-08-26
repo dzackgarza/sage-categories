@@ -35,6 +35,10 @@ specification, resolve the meaning from the governing sources before acting. Pre
 all stated distinctions, examples, exceptions, construction boundaries, and proof
 boundaries. Do not compress a specific rule into a nearby general slogan.
 
+Apply `POL-DOC-010` before adding mathematical vocabulary to an implementation plan.
+Apply `POL-DOC-011` before reporting a contradiction. When the task reconciles past
+decisions, apply `POL-DOC-012`. Apply `POL-DOC-013` to every executing plan.
+
 If no policy or specification governs a material decision, surface that documentation
 gap. Do not invent a local convention and present it as repository architecture.
 
@@ -181,6 +185,10 @@ A functor must map objects and morphisms.
 A subobject must include its monomorphism.
 A universal construction must include its universal morphisms.
 A computation-engine value must be used to construct an owned mathematical object.
+
+Treat `Cat` as the abstract universe specified by the repository's declarations.
+Apply `POL-MATH-043` before assigning it a foundation or realization.
+Apply `POL-MATH-044` before deriving any property from a borrowed mathematical name.
 
 One false foundational assertion invalidates each downstream conclusion that uses it.
 When such an assertion appears, rederive the architecture from the mathematical definitions and the live code.

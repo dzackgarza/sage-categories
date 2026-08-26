@@ -196,3 +196,15 @@ def test_injectivity_into_a_function_set_is_decided_through_map_equality() -> No
     assert ask(collapsing.is_monomorphism()) is False
     assert collapsing(two.point(int(0))) is collapsing(two.point(int(1)))
     assert ask(separating.is_monomorphism()) is True
+
+
+def test_the_diagonal_of_the_reals_is_a_mediator_that_needs_no_enumeration() -> None:
+    plane = RR * RR
+    diagonal = plane.universal_morphism(_sequence_cone(plane.diagram(), RR, {int(0): RR.identity(), int(1): RR.identity()}))
+    point = diagonal(RR(int(3)))
+
+    assert diagonal.domain() is RR and diagonal.codomain() is plane.apex()
+    assert point in plane.apex()
+    assert ask(plane.product_projection(int(0))(point) == RR(int(3))) is True
+    assert ask(plane.product_projection(int(1))(point) == RR(int(3))) is True
+    assert ask(plane.product_projection(int(1))(point) == RR(int(2))) is False

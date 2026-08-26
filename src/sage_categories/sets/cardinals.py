@@ -1,10 +1,34 @@
-"""``Cardinal()``: exact cardinal numbers (POL-ASSUME-004, ``specs/cardinality.md``).
+"""``Cardinal()``: exact cardinal numbers, their representatives, and their morphisms (POL-ASSUME-004, POL-SET-025, ``specs/cardinality.md``).
 
 A cardinal is an exact value: a finite cardinal, ``aleph(n)``, a cardinal power,
 or a finite formal supremum formed by exact cardinal arithmetic.  There is no
 placeholder cardinal and no unknown cardinal; cardinals implement no ``Unknown``
 handling.  Construction is cached by expression, so an equal expression returns
 the same object.
+
+``Cardinal()`` is a skeletal presentation of ``Sets()``: each cardinal ``kappa``
+selects one representative set ``R_kappa`` (Mathlib's ``Quotient.out`` of a cardinal
+is such an arbitrary representative; ``specs/cardinality.md``, "Cardinal model").
+The representative of a finite cardinal ``n`` is ``[n - 1] = {0, ..., n - 1}``, of
+cardinality ``n`` (Mathlib ``Cardinal.mk_fin``; inspected 2026-08-27), and of ``0``
+the empty set; the representative of an infinite cardinal is a rule-defined set
+whose data are unknown and whose cardinality is recorded as ``kappa``
+(POL-SET-031).  ``Mor(Cardinal())(kappa, lambda)`` is the discrete category on the
+functions ``R_kappa -> R_lambda``: a cardinal morphism retains that set map, and
+composition, identities, and inverses are those of the maps.  The one selected
+structural functor sends a cardinal to its representative and a cardinal
+morphism to its map; it is fully faithful because the hom categories are, by
+definition, the function sets (the inclusion of a skeleton, Mathlib
+``CategoryTheory.fromSkeleton`` with ``fromSkeleton.isEquivalence``; inspected
+2026-08-27).  A cardinal is not placed in ``Sets()``: the functor is explicit, not
+an identity-on-value inclusion (``specs/functor.md``, "Inclusion functors").
+
+Cardinal order is the existence of an injection between the representatives:
+``kappa <= lambda`` is ``Mor(Cardinal()).Monomorphisms()(kappa, lambda).is_inhabited()``
+(Mathlib ``Cardinal.le_def``; inspected 2026-08-27), and cardinal equality is the
+existence of a bijection (``Cardinal.eq``).  The exact handler of that inhabitation
+is the comparison algorithm below, and a function ``R_kappa -> R_lambda`` exists
+exactly when ``kappa = 0`` or ``lambda != 0`` (``nonempty_fun``).
 
 Arithmetic normalizes by the rules of ``specs/cardinality.md``, each an inspected
 theorem of Mathlib ``SetTheory.Cardinal`` (inspected 2026-08-26):
@@ -27,22 +51,42 @@ theorem of Mathlib ``SetTheory.Cardinal`` (inspected 2026-08-26):
 finite-ordinal convenience.  The index ordinal is retained by identity, so
 ``aleph(alpha).aleph_index() is alpha``, and ``initial_ordinal()`` is
 ``omega(alpha)`` by ``Cardinal.ord_aleph`` (inspected 2026-08-26).
+
+The cardinality functor ``#: core(Sets()) -> Cardinal()`` (``specs/cardinality.md``,
+"Integration with ``Sets()``") sends a set to its cardinality and a bijection
+``f: X -> Y`` to the conjugate ``b_Y * f * b_X^-1`` by the selected bijections
+``b_X: X -> R_#X``.  The bijection of a finite enumerated set is the position map
+of its enumeration; of a representative, its identity; of any other set with an
+exact cardinality, a bijection with no executable rule, which exists by
+``Cardinal.eq``.  A set whose cardinality is ``Unknown`` has no cardinal object,
+so the functor has no executable value at it.
+
+``Cardinal()`` is constructed after ``Sets()``, since it selects a functor into it:
+``Cardinal()`` builds the singleton on first call, and ``aleph0`` and ``continuum``
+are module attributes resolved on first access.
 """
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sage.structure.coerce_dict import MonoDict
 
+import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
+from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.properties import PropertySubcategory
-from sage_categories.kernel.decisions import Decision, Unknown, decision_and, decision_not
+from sage_categories.kernel.decisions import Decision, Unknown, decision_not, decision_or
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, role_of
 from sage_categories.ordinals.category import OrdinalObject, Ordinals
 
-__all__ = ["Cardinal", "CardinalObject", "aleph0", "continuum"]
+if TYPE_CHECKING:
+    from sage_categories.sets.elements import Datum
+    from sage_categories.sets.maps import SetMap
+    from sage_categories.sets.objects import SetObject
+
+__all__ = ["Cardinal", "CardinalMorphism", "CardinalObject", "aleph0", "cardinality_functor", "continuum", "representative_bijection"]
 
 # A private expression key: nested tuples of strings and integers only, so caches
 # and hashes never compare owned values.
@@ -53,7 +97,7 @@ class CardinalObject(ObjectOfCategory):
     """An exact cardinal, retained by its normalized expression."""
 
     def __init__(self, category: Category, key: Key, terms: tuple[CardinalObject, ...]) -> None:
-        super().__init__(category)
+        ObjectOfCategory.__init__(self, category)
         self._key = key
         self._terms = terms
 
@@ -110,13 +154,15 @@ class CardinalObject(ObjectOfCategory):
         return Cardinal().power(Cardinal()(base), self)
 
     def __le__(self, other: CardinalObject | int) -> AppliedPredicate:
-        return at_most(self, Cardinal()(other))
+        """``kappa <= lambda``: an injection ``R_kappa -> R_lambda`` exists (Mathlib ``Cardinal.le_def``)."""
+        cardinals = Cardinal()
+        return cardinals.morphism_category(1).Monomorphisms()(self, cardinals(other)).is_inhabited()
 
     def __lt__(self, other: CardinalObject | int) -> AppliedPredicate:
         return less_than(self, Cardinal()(other))
 
     def __ge__(self, other: CardinalObject | int) -> AppliedPredicate:
-        return at_most(Cardinal()(other), self)
+        return Cardinal()(other) <= self
 
     def __gt__(self, other: CardinalObject | int) -> AppliedPredicate:
         return less_than(Cardinal()(other), self)
@@ -136,29 +182,37 @@ class CardinalObject(ObjectOfCategory):
         return "sup(" + ", ".join(map(repr, self._terms)) + ")"
 
 
-# ``at_most(kappa, lambda)``: an injection ``R_kappa -> R_lambda`` exists.
-at_most = Predicate("cardinal_at_most", 2, True)
+class CardinalMorphism(MorphismOfCategory):
+    """A morphism ``kappa -> lambda`` of ``Cardinal()``: a function between the representatives, retained as a set map."""
+
+    def __init__(self, category: Category, domain: CardinalObject, codomain: CardinalObject, set_map: SetMap) -> None:
+        MorphismOfCategory.__init__(self, category, domain, codomain)
+        self._set_map = set_map
+
+    def __repr__(self) -> str:
+        return f"CardinalMorphism({self.domain()!r} -> {self.codomain()!r})"
+
+
 # ``less_than(kappa, lambda)``: ``kappa <= lambda`` and not ``kappa == lambda``.
 less_than = Predicate("cardinal_less_than", 2, True)
 
 
-class CardinalCategory(Category[[], []]):
-    """The skeletal category of cardinal representatives; morphisms arrive with the skeletal inclusion."""
+class CardinalCategory(Category[[MorphismOfCategory], []]):
+    """The skeletal category of cardinal representatives; its morphisms are the functions between representatives."""
 
     ObjectType = CardinalObject
+    MorphismType = CardinalMorphism
 
     class ElementType(ElementOfObject):
         """A generalized element of a cardinal; no local operation."""
 
-    class MorphismType(MorphismOfCategory):
-        """A function between cardinal representatives; constructed with the skeletal inclusion into ``Sets()``."""
-
     def __init__(self) -> None:
         self._cardinals: dict[Key, CardinalObject] = {}
         self._aleph_indices: MonoDict = MonoDict()
+        self._representatives: MonoDict = MonoDict()
+        self._functors: dict[str, Functor] = {}
         super().__init__()
         self._equality.register_handler(self._equal)
-        at_most.register_handler(self._at_most)
         less_than.register_handler(self._less_than)
         countable = PropertySubcategory(self, "Countable", {}, ())
         infinite = PropertySubcategory(self, "Infinite", {}, ())
@@ -181,6 +235,40 @@ class CardinalCategory(Category[[], []]):
 
     def Uncountable(self) -> Category:
         return self._properties["Uncountable"]
+
+    # -- the skeletal presentation of ``Sets()`` (POL-SET-025) --------------------------
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        return (self.representative_functor(),)
+
+    def representative_functor(self) -> Functor:
+        """The functor ``Cardinal() -> Sets()`` sending ``kappa`` to ``R_kappa`` and a cardinal morphism to its map, retained once.
+
+        Fully faithful by the definition of the morphisms of ``Cardinal()``: the skeleton
+        inclusion (Mathlib ``CategoryTheory.fromSkeleton``, an equivalence; inspected 2026-08-27).
+        """
+        if "representative" not in self._functors:
+            self._functors["representative"] = Fun(self, _sets.Sets()).FullyFaithful()(self.representative, lambda morphism: morphism._set_map)
+        return self._functors["representative"]
+
+    def representative(self, cardinal: CardinalObject) -> SetObject:
+        """The selected representative set ``R_kappa``, one per cardinal."""
+        assert cardinal in self, f"{cardinal!r} is not a cardinal"
+        if cardinal not in self._representatives:
+            self._representatives[cardinal] = self._select_representative(cardinal)
+        return self._representatives[cardinal]
+
+    def _select_representative(self, cardinal: CardinalObject) -> SetObject:
+        sets = _sets.Sets()
+        if self._finite(cardinal):
+            # #[n - 1] = #{0, ..., n - 1} = n: Mathlib ``Cardinal.mk_fin`` (inspected 2026-08-27).
+            size = cardinal._finite_value_()
+            return sets.Empty() if size == 0 else sets.Simplex(size - 1)
+
+        def no_datum(datum: Datum) -> Decision:
+            return Unknown
+
+        return sets.with_cardinality(no_datum, cardinal)
 
     # -- construction, cached by expression ---------------------------------------
 
@@ -275,6 +363,54 @@ class CardinalCategory(Category[[], []]):
             # (inspected 2026-08-27); in particular c ** c = 2 ** c (Cardinal.power_self_eq).
             base = self(2)
         return self._retain(("power", base._key, exponent._key), (base, exponent))
+
+    # -- morphisms: functions between the representatives (``specs/cardinality.md``, "Cardinal morphisms") --
+
+    def construct_morphism(self, domain: CardinalObject, codomain: CardinalObject, set_map: SetMap) -> CardinalMorphism:
+        """``Mor(Cardinal())(kappa, lambda)(f)`` for a set map ``f: R_kappa -> R_lambda``."""
+        assert domain in self and codomain in self
+        assert set_map in _sets.Sets().morphism_category(1)(self.representative(domain), self.representative(codomain)), (
+            f"{set_map!r} is not a map from the representative of {domain!r} to the representative of {codomain!r}"
+        )
+        return self.MorphismType(self.morphism_category(1), domain, codomain, set_map)
+
+    def construct_identity(self, cardinal: CardinalObject) -> CardinalMorphism:
+        return self.MorphismType(self.morphism_category(1), cardinal, cardinal, self.representative(cardinal).identity())
+
+    def composite(self, second: CardinalMorphism, first: CardinalMorphism) -> CardinalMorphism:
+        """Composition is the composition of the maps between representatives."""
+        morphisms = self.morphism_category(1)
+        assert first in morphisms and second in morphisms
+        assert first.codomain() is second.domain(), f"{second!r} after {first!r} is not composable"
+        return self.MorphismType(morphisms, first.domain(), second.codomain(), second._set_map * first._set_map)
+
+    def inverse_morphism(self, morphism: CardinalMorphism) -> CardinalMorphism:
+        """The inverse of a cardinal isomorphism: the inverse of its map, an isomorphism of sets because the fully faithful representative functor reflects isomorphisms (Mathlib ``CategoryTheory.isIso_of_fully_faithful``; inspected 2026-08-27)."""
+        if morphism not in self._inverses:
+            set_map = _sets.Sets().morphism_category(1).Isomorphisms()(morphism._set_map)
+            self.retain_inverses(morphism, self.MorphismType(self.morphism_category(1), morphism.codomain(), morphism.domain(), set_map.inverse()))
+        return self._inverses[morphism]
+
+    def hom_inhabited(self, hom_category: Category) -> Decision:
+        """Inhabitation of ``Mor(Cardinal())(kappa, lambda)`` and of its monomorphism and isomorphism narrowings.
+
+        A function ``R_kappa -> R_lambda`` exists exactly when ``kappa = 0`` or
+        ``lambda != 0`` (Mathlib ``nonempty_fun``); an injection exactly when
+        ``kappa <= lambda`` (``Cardinal.le_def``), decided by the comparison
+        algorithm; a bijection exactly when ``kappa = lambda`` (``Cardinal.eq``).
+        All inspected 2026-08-27.
+        """
+        base = hom_category.narrowing_base()
+        source, target = base.domain(), base.codomain()
+        morphisms = self.morphism_category(1)
+        match hom_category.narrowing_roots():
+            case ():
+                return decision_or(self._equal(source, self(0)), decision_not(self._equal(target, self(0))))
+            case (root,) if root is morphisms.Monomorphisms():
+                return self._at_most(source, target)
+            case (root,) if root is morphisms.Isomorphisms():
+                return self._equal(source, target)
+        return Unknown
 
     # -- exact decisions -----------------------------------------------------------
 
@@ -371,13 +507,73 @@ class CardinalCategory(Category[[], []]):
         return "Cardinal"
 
 
-_CARDINAL = CardinalCategory()
+_CARDINAL: CardinalCategory | None = None
 
 
 def Cardinal() -> CardinalCategory:
-    """The category of exact cardinals."""
+    """The category of exact cardinals, constructed once on first call after ``Sets()`` exists."""
+    global _CARDINAL
+    if _CARDINAL is None:
+        _CARDINAL = CardinalCategory()
     return _CARDINAL
 
 
-aleph0 = Cardinal().aleph(0)
-continuum = Cardinal()(2) ** aleph0
+def __getattr__(name: str) -> CardinalObject:
+    """``aleph0`` and ``continuum`` are constructed with ``Cardinal()``, on first access."""
+    match name:
+        case "aleph0":
+            return Cardinal().aleph(0)
+        case "continuum":
+            return Cardinal()(2) ** Cardinal().aleph(0)
+    raise AttributeError(name)
+
+
+if TYPE_CHECKING:
+    aleph0: CardinalObject
+    continuum: CardinalObject
+
+
+# -- the cardinality functor ``#: core(Sets()) -> Cardinal()`` -------------------------------------
+
+_representative_bijections: MonoDict = MonoDict()
+
+
+def representative_bijection(member_object: SetObject) -> SetMap:
+    """The selected bijection ``X -> R_#X``, retained per set; ``X`` needs an exact cardinality."""
+    sets, cardinals = _sets.Sets(), Cardinal()
+    if member_object not in _representative_bijections:
+        cardinality = member_object.cardinality()
+        assert cardinality is not Unknown, f"{member_object!r} has no known cardinality, so no bijection with a representative is selected"
+        representative = cardinals.representative(cardinality)
+        finite = sets.Finite()
+        if representative is member_object:
+            _representative_bijections[member_object] = member_object.identity()
+        elif finite.has_chosen_enumeration(member_object):
+            # The position map of the chosen enumeration onto ``{0, ..., n - 1}``.
+            enumeration = finite.chosen_enumeration(member_object)
+            positions = {datum: position for position, datum in enumerate(enumeration)}
+            _representative_bijections[member_object] = sets.construct_morphism(member_object, representative, positions.__getitem__, enumeration.__getitem__)
+        else:
+
+            def no_rule(datum: Datum) -> Datum:
+                assert False, f"the selected bijection between {member_object!r} and {representative!r} has no executable rule; it exists by the definition of cardinality"
+
+            _representative_bijections[member_object] = sets.construct_morphism(member_object, representative, no_rule, no_rule)
+    return _representative_bijections[member_object]
+
+
+def cardinality_functor() -> Functor:
+    """``Sets().CardinalityFunctor()``: the object map ``X.cardinality()``, the morphism map the conjugate of a bijection by the selected bijections."""
+    sets, cardinals = _sets.Sets(), Cardinal()
+
+    def on_object(member_object: SetObject) -> CardinalObject:
+        cardinality = member_object.cardinality()
+        assert cardinality is not Unknown, f"{member_object!r} has no known cardinality, so the cardinality functor has no executable value at it"
+        return cardinality
+
+    def on_morphism(bijection: SetMap) -> CardinalMorphism:
+        source, target = bijection.domain(), bijection.codomain()
+        conjugate = representative_bijection(target) * bijection * representative_bijection(source).inverse()
+        return cardinals.morphism_category(1)(on_object(source), on_object(target)).Isomorphisms()(conjugate)
+
+    return Fun(sets.Core(), cardinals)(on_object, on_morphism)

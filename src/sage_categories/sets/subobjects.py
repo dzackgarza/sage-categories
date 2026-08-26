@@ -31,29 +31,72 @@ set is countable (Mathlib ``Set.Countable.image``; both inspected 2026-08-27), a
 the image of a map placed in ``Mor(Sets()).Monomorphisms()`` has the cardinality
 of its domain (``specs/sets.md``, "Subobjects, images, and power objects": the
 image of a monomorphism is the canonical chosen subset it represents).
+
+The chosen subsets of one set ``X`` carry the subset algebra (``specs/sets.md``,
+"Subobjects, images, and power objects"): ``A <= B`` is the applied predicate
+``subset_of(A, B)``, decided by identity, and exactly when ``A`` has a chosen
+enumeration each of whose members ``B`` decides; ``A.union(B)``,
+``A.intersection(B)``, ``A.difference(B)``, ``A.symmetric_difference(B)``, and
+``A.complement()`` are the chosen subsets of ``X`` cut out by the Kleene
+combinations of the two membership rules (the definitions ``Set.mem_union``,
+``Set.mem_inter_iff``, ``Set.mem_diff``, ``Set.mem_symmDiff``, ``Set.mem_compl_iff``);
+``|`` and ``&`` are union and intersection.  ``A.characteristic_morphism()`` is
+``chi_A: X -> 2`` with ``chi_A(x) = 1`` exactly when ``x in A`` (nLab "subobject
+classifier": in ``Set`` the classifier is ``2`` and the characteristic function of
+``S`` sends ``x`` to true exactly when ``x in S``; Mathlib ``Set.boolIndicator``
+with ``Set.mem_iff_boolIndicator``; both inspected 2026-08-27), retained once per
+subset; it has no value at a datum whose membership is ``Unknown``.
 """
 
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import Any
 
 from sage.structure.coerce_dict import MonoDict
 
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
 from sage_categories.cat.properties import PropertySubcategory
-from sage_categories.kernel.decisions import Decision, Unknown, decision_and, decision_or
+from sage_categories.kernel.decisions import Decision, Unknown, decision_and, decision_not, decision_or
+from sage_categories.kernel.predicates import AppliedPredicate, Predicate
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.roles import ObjectOfCategory, Role
+from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role
+from sage_categories.sets.cardinals import CardinalObject
 from sage_categories.sets.elements import Datum
 from sage_categories.sets.maps import Rule, SetMap
 from sage_categories.sets.objects import MembershipRule, SetObject
 
-__all__ = ["ChosenQuotientRole", "ChosenQuotientsCategory", "ChosenSubsetRole", "ChosenSubsetsCategory"]
+__all__ = ["ChosenQuotientRole", "ChosenQuotientsCategory", "ChosenSubsetRole", "ChosenSubsetsCategory", "subset_of"]
+
+# ``subset_of(A, B)``: every member of the chosen subset ``A`` is a member of the
+# chosen subset ``B`` of the same set.
+subset_of = Predicate("subset_of", 2, True)
+
+
+def _subset_by_identity(first: CategoryPoint, candidate: Any) -> Decision:
+    return True if first is candidate else Unknown
+
+
+def _subset_by_enumeration(first: CategoryPoint, candidate: Any) -> Decision:
+    """Exact when ``A`` has a chosen enumeration: ``B`` decides each member of ``A``."""
+    sets = _sets.Sets()
+    chosen, finite = sets.ChosenSubsets(), sets.Finite()
+    if first not in chosen or candidate not in chosen:
+        return Unknown
+    if first.underlying_set() is not candidate.underlying_set():
+        return Unknown
+    if not finite.has_chosen_enumeration(first):
+        return Unknown
+    return decision_and(*(candidate._membership_rule(datum) for datum in finite.chosen_enumeration(first)))
+
+
+subset_of.register_handler(_subset_by_identity)
+subset_of.register_handler(_subset_by_enumeration)
 
 
 class ChosenSubsetRole(ObjectOfCategory):
-    """The local object role of ``Sets().ChosenSubsets()``: a set that retains its inclusion."""
+    """The local object role of ``Sets().ChosenSubsets()``: a set that retains its inclusion and carries the subset algebra of its base set."""
 
     def inclusion(self) -> SetMap:
         """The retained inclusion monomorphism ``A -> X`` (POL-FUN-013)."""
@@ -63,6 +106,42 @@ class ChosenSubsetRole(ObjectOfCategory):
         """``X``, read from the codomain of the inclusion (POL-FUN-014)."""
         return self.inclusion().codomain()
 
+    def characteristic_morphism(self) -> SetMap:
+        """``chi_A: X -> 2 = [1]``, ``1`` on the members of ``A`` and ``0`` elsewhere, retained once."""
+        return _sets.Sets().ChosenSubsets().characteristic_morphism_of(self)
+
+    def __le__(self, other: SetObject) -> AppliedPredicate:
+        """``A <= B``: the proposition that ``A`` is contained in ``B``."""
+        return subset_of(self, other)
+
+    def union(self, other: SetObject) -> SetObject:
+        return self._combined(other, decision_or)
+
+    def intersection(self, other: SetObject) -> SetObject:
+        return self._combined(other, decision_and)
+
+    def difference(self, other: SetObject) -> SetObject:
+        return self._combined(other, lambda in_first, in_second: decision_and(in_first, decision_not(in_second)))
+
+    def symmetric_difference(self, other: SetObject) -> SetObject:
+        return self._combined(other, lambda in_first, in_second: decision_or(decision_and(in_first, decision_not(in_second)), decision_and(in_second, decision_not(in_first))))
+
+    def complement(self) -> SetObject:
+        rule = self._membership_rule
+        return self.underlying_set().subset_from(lambda datum: decision_not(rule(datum)))
+
+    def __or__(self, other: SetObject) -> SetObject:
+        return self.union(other)
+
+    def __and__(self, other: SetObject) -> SetObject:
+        return self.intersection(other)
+
+    def _combined(self, other: SetObject, combine: Callable[[Decision, Decision], Decision]) -> SetObject:
+        """The chosen subset of ``X`` whose membership is the combination of the two membership decisions."""
+        assert other in _sets.Sets().ChosenSubsets() and other.underlying_set() is self.underlying_set(), f"{other!r} is not a chosen subset of {self.underlying_set()!r}"
+        first_rule, second_rule = self._membership_rule, other._membership_rule
+        return self.underlying_set().subset_from(lambda datum: combine(first_rule(datum), second_rule(datum)))
+
 
 class ChosenSubsetsCategory(PropertySubcategory[[Rule], []]):
     """``Sets().ChosenSubsets()``: the chosen subsets, a narrowing of ``Sets()`` like ``Finite()``, so that a chosen subset combines with every other placement (a finite set, a chosen limit); owns their construction and retains each inclusion."""
@@ -70,7 +149,46 @@ class ChosenSubsetsCategory(PropertySubcategory[[Rule], []]):
     def __init__(self, ambient: Category[[Rule], []]) -> None:
         self._inclusions: MonoDict = MonoDict()
         self._images: MonoDict = MonoDict()
+        self._characteristics: MonoDict = MonoDict()
         super().__init__(ambient, "ChosenSubsets", {Role.OBJECT: ChosenSubsetRole}, ())
+
+    def with_cardinality(self, base_set: SetObject, predicate: MembershipRule, cardinality: CardinalObject) -> SetObject:
+        """The chosen subset ``{x in X : predicate(x)}`` whose exact cardinality a construction theorem supplies (POL-SET-031)."""
+        sets = _sets.Sets()
+        assert base_set in sets, f"{base_set!r} is not an object of {sets!r}"
+        base_rule = base_set._membership_rule
+
+        def rule(datum: Datum) -> Decision:
+            in_base = base_rule(datum)
+            if in_base is False:
+                return False
+            return decision_and(in_base, predicate(datum))
+
+        subset = self.ObjectType(self, rule, cardinality)
+        return self._retain_inclusion(subset, base_set)
+
+    def from_enumeration(self, base_set: SetObject, members: tuple[Datum, ...]) -> SetObject:
+        """The chosen subset of ``X`` with the given finite enumeration of member data, each admitted by ``X``."""
+        sets = _sets.Sets()
+        assert base_set in sets, f"{base_set!r} is not an object of {sets!r}"
+        assert all(base_set._membership_rule(member) is not False for member in members), f"{members!r} are not all members of {base_set!r}"
+        subset = sets.Finite()(members)
+        refine(subset, self)
+        return self._retain_inclusion(subset, base_set)
+
+    def characteristic_morphism_of(self, subset: SetObject) -> SetMap:
+        """``chi_A``, retained per chosen subset."""
+        if subset not in self._characteristics:
+            sets = _sets.Sets()
+            rule = subset._membership_rule
+
+            def indicator(datum: Datum) -> Datum:
+                decision = rule(datum)
+                assert decision is not Unknown, f"membership of {datum!r} in {subset!r} is not decided, so its characteristic morphism has no value there"
+                return 1 if decision is True else 0
+
+            self._characteristics[subset] = sets.morphism_category(1)(subset.underlying_set(), sets.Simplex(1))(indicator)
+        return self._characteristics[subset]
 
     def __call__(self, base_set: SetObject, predicate: MembershipRule) -> SetObject:
         """The chosen subset ``{x in X : predicate(x)}`` with its inclusion into ``X``."""

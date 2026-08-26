@@ -120,6 +120,10 @@ class SetObject(ObjectOfCategory):
         return sets.element_from_defining_morphism(sets.construct_morphism(sets.Terminal(), self, lambda star: datum))
 
     def cardinality(self) -> CardinalObject | UnknownClass:
+        """The recorded exact cardinal; a set placed in both ``Countable()`` and ``Infinite()`` has ``aleph0`` (Mathlib ``Cardinal.mk_eq_aleph0``; inspected 2026-08-27)."""
+        sets = _sets.Sets()
+        if self._cardinality is Unknown and self in sets.Countable() and self in sets.Infinite():
+            return Cardinal().aleph(0)
         return self._cardinality
 
     def subset_from(self, predicate: MembershipRule) -> SetObject:

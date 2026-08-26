@@ -19,11 +19,12 @@ inclusion into ``C`` derives ``D.P()`` as the narrowing of ``C.P()`` to ``D``
 from __future__ import annotations
 
 import itertools
+from types import ModuleType
 from typing import TYPE_CHECKING
 
 from sage_categories.cat.category import Category, member
 from sage_categories.kernel.compiler import empty_local_role
-from sage_categories.kernel.predicates import PropertyPredicate, Proposition
+from sage_categories.kernel.predicates import AppliedPredicate, PropertyPredicate, Proposition
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, Role
 
@@ -43,6 +44,12 @@ def _functors() -> FunctorsCategory:
     from sage_categories.cat.functors import Fun
 
     return Fun
+
+
+def _morphisms() -> ModuleType:
+    from sage_categories.cat import morphisms
+
+    return morphisms
 
 
 class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, TwoMorphismData]):
@@ -197,6 +204,20 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
 
 class FixedEndpointProperty[**MorphismData, **TwoMorphismData](NarrowedProperty[TwoMorphismData, []]):
     """``Mor(C)(A, B).P()``: constructs a morphism ``A -> B`` with property ``P``, or refines one."""
+
+    def domain(self) -> CategoryPoint:
+        return self._ambient.domain()
+
+    def codomain(self) -> CategoryPoint:
+        return self._ambient.codomain()
+
+    def is_inhabited(self) -> AppliedPredicate:
+        """The proposition that some morphism ``A -> B`` with the property exists (POL-CAT-086)."""
+        return _morphisms().inhabited(self)
+
+    def is_empty(self) -> Proposition:
+        """The negation of ``is_inhabited()``."""
+        return ~_morphisms().inhabited(self)
 
     def __call__(self, *args: MorphismData.args, **kwargs: MorphismData.kwargs) -> MorphismOfCategory:
         if len(args) == 1 and not kwargs and args[0] in self._ambient:

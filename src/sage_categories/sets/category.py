@@ -24,7 +24,7 @@ from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.cat.category import Category
 from sage_categories.cat.properties import PropertySubcategory
-from sage_categories.kernel.decisions import Decision, Unknown, decision_not
+from sage_categories.kernel.decisions import Decision, Unknown, decision_not, decision_or
 from sage_categories.kernel.predicates import ask
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import Role
@@ -43,6 +43,8 @@ from sage_categories.sets.objects import FiniteSetRole, MembershipRule, SetObjec
 
 if TYPE_CHECKING:
     from sage_categories.cat.functors import Functor
+    from sage_categories.sets.finite_subsets import FiniteSubsetsCategory, FinitelySupportedFunctionsCategory, SizedSubsetsCategory
+    from sage_categories.sets.power_objects import PowerObjectsCategory
     from sage_categories.sets.subobjects import ChosenQuotientsCategory, ChosenSubsetsCategory
 
 __all__ = ["Sets", "SetsCategory"]
@@ -88,6 +90,7 @@ class SetsCategory(Category[[Rule], []]):
     def __init__(self) -> None:
         self._canonical: dict[tuple[str, tuple[int, ...]], SetObject] = {}
         self._constructions: dict[str, Category] = {}
+        self._functors: dict[str, Functor] = {}
         self._rule_valued: MonoDict = MonoDict()
         self._classical_points: MonoDict = MonoDict()
         super().__init__()
@@ -116,6 +119,11 @@ class SetsCategory(Category[[Rule], []]):
     def __call__(self, membership_rule: MembershipRule) -> SetObject:
         """``Sets()(rule)``: the set defined by a membership rule on data, with no cardinal data."""
         return self.ObjectType(self, membership_rule, Unknown)
+
+    def with_cardinality(self, membership_rule: MembershipRule, cardinality: CardinalObject) -> SetObject:
+        """The set defined by a membership rule whose exact cardinality a construction theorem supplies (POL-SET-031, POL-MATH-024)."""
+        assert cardinality in Cardinal(), f"{cardinality!r} is not a cardinal"
+        return self.ObjectType(self, membership_rule, cardinality)
 
     def rule_valued(self, membership_rule: MembershipRule, cardinality: CardinalObject | UnknownClass) -> SetObject:
         """A set whose data are rules (families, names of maps): its points are retained per datum object.
@@ -179,6 +187,14 @@ class SetsCategory(Category[[Rule], []]):
 
     def classical_stages(self) -> tuple[SetObject, ...]:
         return (self.Terminal(),)
+
+    def CardinalityFunctor(self) -> Functor:
+        """``#: core(Sets()) -> Cardinal()``, retained once (``specs/cardinality.md``, "Integration with ``Sets()``"; ``sets/cardinals.py``)."""
+        from sage_categories.sets.cardinals import cardinality_functor
+
+        if "cardinality" not in self._functors:
+            self._functors["cardinality"] = cardinality_functor()
+        return self._functors["cardinality"]
 
     def element_from_defining_morphism(self, defining_morphism: SetMap) -> SetPoint:
         """The classical element whose defining morphism is the point ``1 -> X``, one element per point (POL-CAT-066)."""
@@ -254,11 +270,46 @@ class SetsCategory(Category[[Rule], []]):
         return colimit_of_sets
 
     def exponential(self, exponent: SetObject, base: SetObject) -> SetObject:
-        """``base ** exponent``: the function set (POL-SET-017)."""
+        """``base ** exponent``: the function set (POL-SET-017); for ``base = [1]`` the power object ``2 ** exponent`` (POL-SET-018)."""
         from sage_categories.sets.exponentials import function_set
 
         assert exponent in self and base in self
+        if base is self.Simplex(1):
+            return self.PowerObjects()(exponent)
         return function_set(exponent, base)
+
+    def PowerObjects(self) -> PowerObjectsCategory:
+        """The narrowing of power objects ``2 ** X``, each retaining its base set (``sets/power_objects.py``)."""
+        from sage_categories.sets.power_objects import PowerObjectsCategory
+
+        if "PowerObjects" not in self._constructions:
+            self._constructions["PowerObjects"] = PowerObjectsCategory(self)
+        return self._constructions["PowerObjects"]
+
+    def FiniteSubsets(self) -> FiniteSubsetsCategory:
+        """The narrowing of the sets of finite subsets ``FiniteSubsets()(X)`` (``sets/finite_subsets.py``)."""
+        from sage_categories.sets.finite_subsets import FiniteSubsetsCategory
+
+        if "FiniteSubsets" not in self._constructions:
+            self._constructions["FiniteSubsets"] = FiniteSubsetsCategory(self)
+        return self._constructions["FiniteSubsets"]
+
+    def SubsetsOfSize(self, size: int) -> SizedSubsetsCategory:
+        """``Sets().SubsetsOfSize(k)``, one narrowing per ``k``, whose constructor ``(X)`` is the set of subsets of ``X`` of size ``k``."""
+        from sage_categories.sets.finite_subsets import SizedSubsetsCategory
+
+        name = f"SubsetsOfSize({size})"
+        if name not in self._constructions:
+            self._constructions[name] = SizedSubsetsCategory(self, size)
+        return self._constructions[name]
+
+    def FinitelySupportedFunctions(self) -> FinitelySupportedFunctionsCategory:
+        """The narrowing of the finitely supported function sets ``X^(S)`` (``sets/finite_subsets.py``)."""
+        from sage_categories.sets.finite_subsets import FinitelySupportedFunctionsCategory
+
+        if "FinitelySupportedFunctions" not in self._constructions:
+            self._constructions["FinitelySupportedFunctions"] = FinitelySupportedFunctionsCategory(self)
+        return self._constructions["FinitelySupportedFunctions"]
 
     def name_of(self, set_map: SetMap) -> SetPoint:
         """The point of ``Y ** X`` naming a map ``X -> Y``."""
@@ -282,6 +333,32 @@ class SetsCategory(Category[[Rule], []]):
         return transpose(set_map)
 
     # -- exact routes (POL-MATH-042) --------------------------------------------------
+
+    def hom_inhabited(self, hom_category: Category) -> Decision:
+        """Inhabitation of ``Mor(Sets())(A, B)`` and of its isomorphism and monomorphism narrowings, from the cardinalities.
+
+        Each case is a Mathlib theorem (inspected 2026-08-27): a function ``A -> B``
+        exists exactly when ``A`` is empty or ``B`` is nonempty (``nonempty_fun``); a
+        bijection exists exactly when ``#A = #B`` (``Cardinal.eq``); an injection
+        exactly when ``#A <= #B`` (``Cardinal.le_def``).  ``Unknown`` when a needed
+        cardinality is unknown or the narrowing is another one.
+        """
+        base = hom_category.narrowing_base()
+        source, target = base.domain().cardinality(), base.codomain().cardinality()
+        morphisms = self.morphism_category(1)
+        match hom_category.narrowing_roots():
+            case ():
+                source_empty = Unknown if source is Unknown else ask(source == 0)
+                target_empty = Unknown if target is Unknown else ask(target == 0)
+                return decision_or(source_empty, decision_not(target_empty))
+        if source is Unknown or target is Unknown:
+            return Unknown
+        match hom_category.narrowing_roots():
+            case (root,) if root is morphisms.Isomorphisms():
+                return ask(source == target)
+            case (root,) if root is morphisms.Monomorphisms():
+                return ask(source <= target)
+        return Unknown
 
     def _finite_by_cardinality(self, ambient: SetObject) -> Decision:
         cardinality = ambient.cardinality()

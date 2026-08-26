@@ -251,6 +251,7 @@ class PosetsCategory(Category[[Rule], []]):
         self._canonical: dict[tuple[str, int], Poset] = {}
         self._lifts: TripleDict = TripleDict(weak_values=False)
         self._thin: MonoDict = MonoDict()
+        self._subset_posets: MonoDict = MonoDict()
         super().__init__()
         self._equality.register_handler(self._equal)
         partial_order.register_handler(_partial_order_on_enumerated)
@@ -321,6 +322,24 @@ class PosetsCategory(Category[[Rule], []]):
             point = Sets().Terminal()
             self._canonical["terminal", 0] = self.TotallyOrdered()(self._construct(point, (point * point).subset_from(lambda pair: True)))
         return self._canonical["terminal", 0]
+
+    def subset_poset(self, base_set: SetObject) -> Poset:
+        """The power object ``2 ** X`` ordered by inclusion of the subsets its points name, retained per ``X``.
+
+        The order relation is the chosen subset of ``(2 ** X) * (2 ** X)`` of the pairs
+        ``(chi_A, chi_B)`` with ``A <= B``; containment is a partial order (nLab "power
+        set": "the power set canonically carries a partial order by containment";
+        inspected 2026-08-27), so the poset is constructed directly (POL-MATH-037).
+        ``2 ** X`` retains ``X`` as its base set (``sets/power_objects.py``).
+        """
+        if base_set not in self._subset_posets:
+            power = Sets().Simplex(1) ** base_set
+
+            def included(pair: Datum) -> Decision:
+                return ask(power.from_characteristic_morphism(pair(0).map()) <= power.from_characteristic_morphism(pair(1).map()))
+
+            self._subset_posets[base_set] = self._construct(power, (power * power).subset_from(included))
+        return self._subset_posets[base_set]
 
     def Finite(self) -> Category[[Rule], []]:
         """``FinitePosets()``: the property subcategory by finiteness of the underlying set (``posets/finite.py``)."""

@@ -6,7 +6,8 @@ monomorphisms of ``Sets()`` are the injective maps and an inclusion is injective
 subset of a countable set is countable (Mathlib ``Set.Countable.mono``) and of a
 finite set finite (``Set.Finite.subset``); POL-ASSUME-004 for ``Unknown``
 cardinality; the Kleene conjunction of decisions (POL-MATH-034) for ``Unknown``
-membership.
+membership; the characteristic function of a subset takes ``1`` exactly on its
+members (nLab "subobject classifier" in ``Set``; Mathlib ``Set.mem_iff_boolIndicator``).
 """
 
 import pytest
@@ -76,3 +77,21 @@ def test_a_subset_of_a_finite_enumerated_set_has_the_exact_count() -> None:
     assert undecided in Sets().Finite()
     assert undecided.cardinality() is Unknown
     assert ask(undecided.membership_proposition(triple.point(int(1)))) is Unknown
+
+
+def test_every_chosen_subset_has_a_characteristic_morphism_into_two() -> None:
+    two = Sets().Simplex(int(1))
+    even = ZZ.subset_from(lambda n: n % 2 == 0)
+    characteristic = even.characteristic_morphism()
+
+    assert characteristic in Mor(Sets())(ZZ, two)
+    assert characteristic.domain() is ZZ and characteristic.codomain() is two
+    assert ask(characteristic(ZZ(4)) == two.point(int(1))) is True
+    assert ask(characteristic(ZZ(3)) == two.point(int(0))) is True
+    assert Sets().name_of(characteristic) in two ** ZZ
+    assert Primes.characteristic_morphism() in Mor(Sets())(ZZ, two)
+    assert ask(Primes.characteristic_morphism()(ZZ(7)) == two.point(int(1))) is True
+
+    undecided = ZZ.subset_from(lambda n: Unknown)
+    with pytest.raises(AssertionError):
+        undecided.characteristic_morphism()(ZZ(0))

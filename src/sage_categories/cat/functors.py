@@ -22,6 +22,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
+from sage.structure.coerce_dict import MonoDict
+
 from sage_categories.cat import category as _category
 from sage_categories.cat.category import Assignment, Category, CategoryOfCategories, OnMorphism, OnObject
 from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategory
@@ -152,7 +154,47 @@ class FunctorProperty(FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]
 
 
 class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]]):
-    """``Fun(C, D)``: functors ``C -> D`` and their natural transformations."""
+    """``Fun(C, D)``: functors ``C -> D`` and their natural transformations.
+
+    As the category of diagrams of shape ``C`` in ``D`` it retains its evaluation
+    functors and constant diagrams (``cat/diagrams.py``, D10, D16).
+    """
+
+    def __init__(self, morphisms: MorphismCategory, domain: Category, codomain: Category) -> None:
+        self._evaluations: MonoDict = MonoDict()
+        self._constants: MonoDict = MonoDict()
+        self._constant_values: MonoDict = MonoDict()
+        super().__init__(morphisms, domain, codomain)
+
+    # -- diagrams (D10, D16) -----------------------------------------------------
+
+    def evaluation(self, vertex: ObjectOfCategory) -> Functor:
+        """``ev_i: Fun(I, C) -> C``, the evaluation at the object ``i`` of the shape."""
+        from sage_categories.cat.diagrams import evaluation
+
+        return evaluation(self, vertex)
+
+    def constant(self, value: ObjectOfCategory) -> Functor:
+        """The constant diagram at an object of the codomain."""
+        from sage_categories.cat.diagrams import constant
+
+        return constant(self, value)
+
+    def has_constant_value(self, diagram: Functor) -> bool:
+        return diagram in self._constant_values
+
+    def constant_value(self, diagram: Functor) -> ObjectOfCategory:
+        """The object at which a retained constant diagram is constant."""
+        assert diagram in self._constant_values, f"{diagram!r} is not a retained constant diagram"
+        return self._constant_values[diagram]
+
+    def from_object_rule(self, rule: OnObject) -> Functor:
+        """A diagram over a discrete shape from its object rule alone."""
+        from sage_categories.cat.diagrams import from_object_rule
+
+        return from_object_rule(self, rule)
+
+    # -- functor properties (D09) -----------------------------------------------
 
     def Full(self) -> Category:
         return self.property_subcategory(self.ambient().Full())

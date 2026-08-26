@@ -88,6 +88,7 @@ class SetsCategory(Category[[Rule], []]):
     def __init__(self) -> None:
         self._canonical: dict[tuple[str, tuple[int, ...]], SetObject] = {}
         self._constructions: dict[str, Category] = {}
+        self._functors: dict[str, Functor] = {}
         self._rule_valued: MonoDict = MonoDict()
         self._classical_points: MonoDict = MonoDict()
         super().__init__()
@@ -116,6 +117,11 @@ class SetsCategory(Category[[Rule], []]):
     def __call__(self, membership_rule: MembershipRule) -> SetObject:
         """``Sets()(rule)``: the set defined by a membership rule on data, with no cardinal data."""
         return self.ObjectType(self, membership_rule, Unknown)
+
+    def with_cardinality(self, membership_rule: MembershipRule, cardinality: CardinalObject) -> SetObject:
+        """The set defined by a membership rule whose exact cardinality a construction theorem supplies (POL-SET-031, POL-MATH-024)."""
+        assert cardinality in Cardinal(), f"{cardinality!r} is not a cardinal"
+        return self.ObjectType(self, membership_rule, cardinality)
 
     def rule_valued(self, membership_rule: MembershipRule, cardinality: CardinalObject | UnknownClass) -> SetObject:
         """A set whose data are rules (families, names of maps): its points are retained per datum object.
@@ -179,6 +185,14 @@ class SetsCategory(Category[[Rule], []]):
 
     def classical_stages(self) -> tuple[SetObject, ...]:
         return (self.Terminal(),)
+
+    def CardinalityFunctor(self) -> Functor:
+        """``#: core(Sets()) -> Cardinal()``, retained once (``specs/cardinality.md``, "Integration with ``Sets()``"; ``sets/cardinals.py``)."""
+        from sage_categories.sets.cardinals import cardinality_functor
+
+        if "cardinality" not in self._functors:
+            self._functors["cardinality"] = cardinality_functor()
+        return self._functors["cardinality"]
 
     def element_from_defining_morphism(self, defining_morphism: SetMap) -> SetPoint:
         """The classical element whose defining morphism is the point ``1 -> X``, one element per point (POL-CAT-066)."""

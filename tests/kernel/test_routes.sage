@@ -16,7 +16,7 @@ import pytest
 
 from sage_categories.all import *
 from sage_categories.kernel import compiler
-from sage_categories.kernel.refinement import is_placed, is_subcategory
+from sage_categories.kernel.refinement import common_ancestor, is_placed, is_subcategory
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role
 
 
@@ -214,6 +214,75 @@ def test_the_routes_of_a_diamond_are_listed_in_declaration_order() -> None:
     assert set(map(id, leading)) == {id(first_declared), id(second_declared)}
     assert all(step[int(1)] is Role.OBJECT for route in found for step in route)
     assert all(route[-int(1)][int(0)].codomain() is Sets() for route in found)
+
+
+def test_the_binary_operators_construct_in_the_least_common_ancestor() -> None:
+    """The operand precondition is a least common ancestor along retained inclusions (D02)."""
+    finite = Sets().Finite()((int(0), int(1), int(2)))
+    other = Sets().Finite()((int(7), int(8)))
+
+    # A finite set and a countable set meet at ``Sets().Countable()``, whose
+    # construction family is that of ``Sets()``: the product is owned by ``Sets()``.
+    assert common_ancestor(finite.category(), QQ.category()) is Sets().Countable()
+    assert Sets().Countable().Products() is Sets().Products()
+    product = finite * QQ
+    assert product in Sets().Products()
+    assert product.product_projection(int(0)).codomain() is finite
+    assert product.product_projection(int(1)).codomain() is QQ
+
+    # Two finite sets combine in the narrowest category that receives both.
+    assert common_ancestor(finite.category(), other.category()) is Sets().Finite()
+    assert (finite * other) is Sets().Finite().Products()((finite, other))
+    assert (finite + other) is Sets().Finite().Coproducts()((finite, other))
+    assert (other ** finite) is Sets().Finite().exponential(finite, other)
+    assert ask((finite * other).cardinality() == int(6)) is True
+    assert ask((finite + other).cardinality() == int(5)) is True
+    assert ask((other ** finite).cardinality() == int(8)) is True
+
+
+def test_a_poset_and_a_set_have_no_common_ancestor_and_do_not_combine() -> None:
+    """``U: Posets() -> Sets()`` is not an inclusion, so the two categories meet nowhere (POL-FUN-027)."""
+    chain = Posets().Simplex(int(2))
+    carrier = Sets().Finite()((int(0), int(1)))
+
+    assert not is_subcategory(chain.category(), Sets())
+    assert not is_subcategory(carrier.category(), Posets())
+    for combine in (lambda: chain * carrier, lambda: chain + carrier, lambda: carrier ** chain):
+        with pytest.raises(AssertionError, match="have no least common category along retained inclusions"):
+            combine()
+
+    message = ""
+    try:
+        chain * carrier
+    except AssertionError as rejected:
+        message = str(rejected)
+    assert repr(chain.category()) in message
+    assert repr(carrier.category()) in message
+    assert "Posets" in message
+    assert "Sets" in message
+
+
+def test_star_on_a_morphism_is_composition_and_the_product_of_morphisms_is_named() -> None:
+    """``*`` carries one meaning on the morphism role; the product of two objects of ``Mor(C)`` has no operator (D02)."""
+    chain = Posets().Simplex(int(2))
+    pair = Posets().Simplex(int(1))
+    collapse = Mor(Posets())(chain, pair)(lambda datum: min(datum, int(1)))
+    include = Mor(Posets())(pair, chain)(lambda datum: datum)
+
+    composite = collapse * include
+    assert composite.domain() is pair
+    assert composite.codomain() is pair
+    assert ask(composite == pair.identity()) is True
+    assert (include * collapse).domain() is chain
+
+    # The product of the two morphisms is the product of two objects of ``Mor(C)``.
+    # It is constructed by naming that category, and ``Mor(Posets())`` declares no
+    # such construction: the refusal comes from the construction family, not from a
+    # missing operator.
+    morphisms = Mor(Posets())
+    assert morphisms.Products() is not Posets().Products()
+    with pytest.raises(AssertionError, match="owns no .*-limit construction"):
+        morphisms.Products()((collapse, include))
 
 
 def test_a_narrowing_by_more_roots_includes_into_the_narrowing_by_fewer() -> None:

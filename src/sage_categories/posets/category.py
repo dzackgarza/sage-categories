@@ -52,7 +52,7 @@ from sage_categories.sets.elements import Datum, SetPoint
 from sage_categories.sets.maps import Rule, SetMap
 from sage_categories.sets.objects import MembershipRule, SetObject
 
-__all__ = ["FinitePosets", "MonotoneMap", "Poset", "PosetElement", "Posets", "PosetsCategory", "TotallyOrderedSets"]
+__all__ = ["FinitePosets", "FiniteTotallyOrderedSets", "MonotoneMap", "Poset", "PosetElement", "Posets", "PosetsCategory", "TotallyOrderedSets"]
 
 # ``partial_order(R)``: the relation ``R`` on ``X`` is reflexive, antisymmetric, and transitive.
 partial_order = Predicate("partial_order", 1, True)
@@ -430,3 +430,8 @@ def FinitePosets() -> Category[[Rule], []]:
 def TotallyOrderedSets() -> Category[[Rule], []]:
     """``Posets().TotallyOrdered()``: the totally ordered sets."""
     return _POSETS.TotallyOrdered()
+
+
+def FiniteTotallyOrderedSets() -> Category[[Rule], []]:
+    """``Posets().Finite().TotallyOrdered()``: the finite totally ordered sets."""
+    return _POSETS.Finite().TotallyOrdered()

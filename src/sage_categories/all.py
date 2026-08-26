@@ -5,7 +5,8 @@ shape constructors ``Discrete`` and ``Thin`` from the theory of ``Cat()``; ``Set
 ``Cardinal``, ``aleph0``, and ``continuum`` from the theory of sets; ``Ordinals`` and
 ``omega0`` from the theory of ordinals; ``NN``, ``ZZ``, ``QQ``, ``RR``, and ``Primes``
 from the owned number sets, which shadow Sage's names inside the package universe;
-``Posets``, ``FinitePosets``, and ``TotallyOrderedSets`` from the theory of ordered sets;
+``Posets``, ``FinitePosets``, ``TotallyOrderedSets``, and ``FiniteTotallyOrderedSets`` from the
+theory of ordered sets;
 ``ask``, ``assume``, ``Predicate``, ``Unknown``, and ``Decision`` from the kernel's
 predicate boundary.
 """
@@ -21,6 +22,7 @@ from sage_categories import (
     Decision,
     Discrete,
     FinitePosets,
+    FiniteTotallyOrderedSets,
     Fun,
     Mor,
     Ordinals,
@@ -52,6 +54,7 @@ __all__ = [
     "Decision",
     "Discrete",
     "FinitePosets",
+    "FiniteTotallyOrderedSets",
     "Fun",
     "Mor",
     "Ordinals",

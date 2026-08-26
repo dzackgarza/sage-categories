@@ -23,7 +23,7 @@ from sage_categories.sets.category import Sets
 from sage_categories.sets.elements import Datum
 from sage_categories.sets.objects import MembershipRule, SetObject
 
-__all__ = ["count", "datum", "element", "sage_poset", "selecting"]
+__all__ = ["count", "data", "datum", "element", "sage_poset", "selecting"]
 
 _sage_posets: MonoDict = MonoDict()
 
@@ -53,6 +53,13 @@ def datum(poset: Poset, member: PosetElement) -> Datum:
     point = _posets.Posets().underlying_set_functor().on_element(member)
     assert point.parent() is carrier, f"{member!r} is not an element of {poset!r}"
     return next(candidate for candidate in Sets().Finite().chosen_enumeration(carrier) if carrier.point(candidate) is point)
+
+
+def data(poset: Poset, members: Poset) -> tuple[Datum, ...]:
+    """The enumeration data of a sub-poset ``A`` of ``P``: ``U(A)`` is a chosen subset of ``U(P)``."""
+    carrier = _carrier(members)
+    assert carrier.inclusion().codomain() is _carrier(poset), f"{members!r} is not a sub-poset of {poset!r}"
+    return Sets().Finite().chosen_enumeration(carrier)
 
 
 def element(poset: Poset, value: Datum) -> PosetElement:

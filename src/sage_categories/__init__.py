@@ -10,7 +10,7 @@ from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import Predicate, ask, assume
 from sage_categories.number_sets import NN, QQ, RR, ZZ, Primes
 from sage_categories.ordinals import Ordinals, omega0
-from sage_categories.posets import FinitePosets, Posets, TotallyOrderedSets
+from sage_categories.posets import FinitePosets, FiniteTotallyOrderedSets, Posets, TotallyOrderedSets
 from sage_categories.sets.cardinals import Cardinal, aleph0, continuum
 from sage_categories.sets.category import Sets
 
@@ -25,6 +25,7 @@ __all__ = [
     "Decision",
     "Discrete",
     "FinitePosets",
+    "FiniteTotallyOrderedSets",
     "Fun",
     "Mor",
     "Ordinals",

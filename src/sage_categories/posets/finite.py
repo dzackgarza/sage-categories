@@ -30,8 +30,10 @@ from sage.combinat.posets.posets import FinitePoset as SagePoset
 
 import sage_categories.posets.category as _posets
 from sage_categories.cat.category import Category
+from sage_categories.cat.diagrams import sequence_position
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.properties import PropertySubcategory
+from sage_categories.cat.shapes import Discrete
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import AppliedPredicate, ask
 from sage_categories.kernel.refinement import refine
@@ -84,6 +86,58 @@ class FinitePosetRole(ObjectOfCategory):
     def maximal_elements(self) -> Poset:
         return self.sub_poset(engine.selecting(engine.sage_poset(self).maximal_elements()))
 
+    def common_lower_covers(self, members: Poset) -> Poset:
+        """The sub-poset of elements covered by every element of the sub-poset ``members``."""
+        return self.sub_poset(engine.selecting(engine.sage_poset(self).common_lower_covers(engine.data(self, members))))
+
+    def common_upper_covers(self, members: Poset) -> Poset:
+        """The sub-poset of elements covering every element of the sub-poset ``members``."""
+        return self.sub_poset(engine.selecting(engine.sage_poset(self).common_upper_covers(engine.data(self, members))))
+
+    def open_interval(self, lower: PosetElement, upper: PosetElement) -> Poset:
+        """``{z : lower < z < upper}`` with the induced order."""
+        return self.sub_poset(engine.selecting(engine.sage_poset(self).open_interval(engine.datum(self, lower), engine.datum(self, upper))))
+
+    def closed_interval(self, lower: PosetElement, upper: PosetElement) -> Poset:
+        """``{z : lower <= z <= upper}`` with the induced order."""
+        return self.sub_poset(engine.selecting(engine.sage_poset(self).closed_interval(engine.datum(self, lower), engine.datum(self, upper))))
+
+    def principal_order_ideal(self, member: PosetElement) -> Poset:
+        """``{z : z <= member}`` with the induced order."""
+        return self.sub_poset(engine.selecting(engine.sage_poset(self).order_ideal((engine.datum(self, member),))))
+
+    def principal_order_filter(self, member: PosetElement) -> Poset:
+        """``{z : member <= z}`` with the induced order."""
+        return self.sub_poset(engine.selecting(engine.sage_poset(self).order_filter((engine.datum(self, member),))))
+
+    def order_ideal(self, members: Poset) -> Poset:
+        """The down-closure of the sub-poset ``members``, with the induced order."""
+        return self.sub_poset(engine.selecting(engine.sage_poset(self).order_ideal(engine.data(self, members))))
+
+    def order_filter(self, members: Poset) -> Poset:
+        """The up-closure of the sub-poset ``members``, with the induced order."""
+        return self.sub_poset(engine.selecting(engine.sage_poset(self).order_filter(engine.data(self, members))))
+
+    def is_chain_of_poset(self, members: Poset) -> Decision:
+        """Whether the elements of the sub-poset ``members`` are pairwise comparable."""
+        return bool(engine.sage_poset(self).is_chain_of_poset(engine.data(self, members)))
+
+    def is_antichain_of_poset(self, members: Poset) -> Decision:
+        """Whether the elements of the sub-poset ``members`` are pairwise incomparable."""
+        return bool(engine.sage_poset(self).is_antichain_of_poset(engine.data(self, members)))
+
+    def linear_extension(self) -> Poset:
+        """A total order on ``U(P)`` extending the order of ``P``.
+
+        Sage ``FinitePoset.linear_extension`` lists the elements in an order compatible with
+        ``P`` (inspected 2026-08-27); the order of positions in that list is linear.
+        """
+        posets = _posets.Posets()
+        positions = {datum: position for position, datum in enumerate(engine.sage_poset(self).linear_extension())}
+        carrier = posets.underlying_set_functor().on_object(self)
+        extension = (carrier * carrier).subset_from(lambda pair: positions[pair(0)] <= positions[pair(1)])
+        return posets.TotallyOrdered()(posets._construct(carrier, extension))
+
 
 class WithBottomRole(ObjectOfCategory):
     """The local object role of ``FinitePosets().WithBottom()``."""
@@ -108,6 +162,17 @@ class RankedRole(ObjectOfCategory):
 
     def rank_of_element(self, member: PosetElement) -> CardinalObject:
         return Cardinal()(engine.count(engine.sage_poset(self).rank(engine.datum(self, member))))
+
+    def level_sets(self) -> Functor:
+        """The rank levels ``P_0, ..., P_r`` as a diagram ``Discrete([r]) -> Posets()`` of sub-posets.
+
+        On a ranked poset the level of an element is its rank: Sage ``FinitePoset.level_sets``
+        groups elements by the maximal number of covers from a minimal element, and
+        ``FinitePoset.rank_function`` is normalized to ``0`` on the minimal elements of each
+        component (inspected 2026-08-27).
+        """
+        levels = tuple(self.sub_poset(engine.selecting(level)) for level in engine.sage_poset(self).level_sets())
+        return Fun(Discrete(Sets().Simplex(len(levels) - 1)), _posets.Posets()).from_object_rule(lambda vertex: levels[sequence_position(vertex)])
 
 
 class GradedRole(ObjectOfCategory):
@@ -162,6 +227,10 @@ class FinitePosetsCategory(PropertySubcategory[[Rule], []]):
         Sets().Finite()(self._ambient.underlying_set_functor().on_object(poset))
         refine(poset, self)
         return poset
+
+    def TotallyOrdered(self) -> Category[[Rule], []]:
+        """``FinitePosets().TotallyOrdered()``: the narrowing of ``Posets().TotallyOrdered()`` to finite posets (POL-CAT-084)."""
+        return self.property_subcategory(self._ambient.TotallyOrdered())
 
     def WithBottom(self) -> Category[[Rule], []]:
         return self._properties["WithBottom"]

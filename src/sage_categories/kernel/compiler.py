@@ -406,20 +406,16 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
             for name, entry in catalogue(current).items()
             if entry.route
         }
-        if not functors and not surface:
-            # Nothing is inherited, so the local declaration can be the role class
-            # itself: ``Cat().ObjectType is Category``, ``Sets().ObjectType is
-            # SetObject``.  Several categories inherit one nested declaration from a
-            # shared Python base, though -- the identity 2-cells of every 1-category --
-            # and one class may stand for only one node (POL-CAT-016): the compiled
-            # bases are node-ordered, and a class at two nodes would have to hold both
-            # positions.  Sage's rule is the same: ``_make_named_class_key`` may return
-            # one key only for categories with one list of super categories.  The first
-            # node keeps the declaration; a later node takes a subclass of it.
-            setattr(category, role.value, _declared_class(current, category.local_role_class(role)))
-            continue
-        # The local declaration first, then the controlled direct bases Sage's C3
-        # returns for this node (``_linearize``).
+        # Every node gets its own compiled class, including one that declares nothing
+        # and inherits nothing: in Sage a category without ``ParentMethods`` still has
+        # its own ``parent_class``, built from its super categories and adding no
+        # methods.  Installing the declaration itself instead would put one class at
+        # several nodes -- the bare kernel base is the declaration of every category
+        # that declares no role class -- and the compiled bases are node-ordered, so a
+        # class at two nodes would have to hold both positions (POL-CAT-016).
+        #
+        # The declared class stays what it was: ``local_role_class`` reads the class
+        # attribute, ``role_class`` the compiled instance attribute.
         bases = _base_classes(current, _declared_class(current, category.local_role_class(role)))
         try:
             compiled = dynamic_class(

@@ -90,7 +90,10 @@ class HomCategory(Category):
     ) -> tuple[Functor, ...]:
         route = self.base_category().structural_route_to(target)
         assert route, f"{self.base_category()} declares no arrow construction route"
-        assert all(functor.is_faithful() for functor in route), (
+        assert all(
+            functor in functor.hom_category().Faithful()
+            for functor in route
+        ), (
             f"the declared route from {self.base_category()} to {target} is not faithful"
         )
         return route

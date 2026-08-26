@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from sage_categories.abstract_categories.product_images import ProductObject
     from sage_categories.abstract_categories.product_presentations import ProductPresentation
 
+from sage_categories.assumptions import AppliedProperty
 from sage_categories.abstract_categories.hom_categories import (
     HomCategory,
     HomCategoryFamily,
@@ -172,8 +173,26 @@ class Functor(Arrow, ABC):
         assert object_image in self.codomain()
         return object_image
 
-    def is_faithful(self) -> bool:
-        return False
+
+    def is_full(self) -> AppliedProperty:
+        """Return the proposition that this functor is full."""
+        return self.hom_category().Full().predicate(self)
+
+    def is_faithful(self) -> AppliedProperty:
+        """Return the proposition that this functor is faithful."""
+        return self.hom_category().Faithful().predicate(self)
+
+    def is_fully_faithful(self) -> AppliedProperty:
+        """Return the proposition that this functor is fully faithful."""
+        return self.hom_category().FullyFaithful().predicate(self)
+
+    def is_essentially_surjective(self) -> AppliedProperty:
+        """Return the proposition that this functor is essentially surjective."""
+        return self.hom_category().EssentiallySurjective().predicate(self)
+
+    def is_equivalence(self) -> AppliedProperty:
+        """Return the proposition that this functor is an equivalence."""
+        return self.hom_category().Equivalences().predicate(self)
 
     def factors(self) -> tuple[Functor, ...]:
         return (self,)
@@ -452,8 +471,6 @@ class IdentityFunctor(ConcreteFunctor):
     ) -> MathematicalElement:
         return element
 
-    def is_faithful(self) -> bool:
-        return True
 
     def factors(self) -> tuple[Functor, ...]:
         return ()
@@ -535,8 +552,6 @@ class RestrictedConcreteFunctor(ConcreteFunctor):
             ambient_element,
         )
 
-    def is_faithful(self) -> bool:
-        return self._ambient_functor.is_faithful()
 
     def is_inclusion(self) -> bool:
         return self._ambient_functor.is_inclusion()
@@ -577,8 +592,6 @@ class InclusionFunctor(ConcreteFunctor):
     ) -> MathematicalElement:
         return self._included_domain._refine_element(source, element)
 
-    def is_faithful(self) -> bool:
-        return True
 
     def is_inclusion(self) -> bool:
         return True
@@ -612,8 +625,6 @@ class HomCategoryFamilyInclusionFunctor(ConcreteFunctor):
     ) -> MathematicalElement:
         return element
 
-    def is_faithful(self) -> bool:
-        return True
 
 
 class ComposedFunctor(Functor):
@@ -881,6 +892,66 @@ class FunctorCategory(HomCategory):
 
     ObjectType = Functor
     ElementType = Functor
+
+    def __init__(self, **construction: object) -> None:
+        self._functor_properties: dict[str, Category] = {}
+        super().__init__(**construction)
+
+    def _property_category(
+        self,
+        key: str,
+        *,
+        name: str,
+        predicate_name: str,
+        implications: Callable[[], tuple[Category, ...]],
+    ) -> Category:
+        from sage_categories.abstract_categories.functor_properties import (
+            FunctorPropertySubcategory,
+        )
+
+        category = self._functor_properties.get(key)
+        if category is None:
+            category = FunctorPropertySubcategory(
+                self,
+                name=name,
+                predicate_name=predicate_name,
+                implications=implications,
+            )
+            self._functor_properties[key] = category
+        return category
+
+    def Full(self) -> Category:
+        return self._property_category(
+            "full", name=f"Full functors in {self}", predicate_name="_full_property",
+            implications=lambda: (),
+        )
+
+    def Faithful(self) -> Category:
+        return self._property_category(
+            "faithful", name=f"Faithful functors in {self}",
+            predicate_name="_faithful_property", implications=lambda: (),
+        )
+
+    def FullyFaithful(self) -> Category:
+        return self._property_category(
+            "fully_faithful", name=f"Fully faithful functors in {self}",
+            predicate_name="_fully_faithful_property",
+            implications=lambda: (self.Full(), self.Faithful()),
+        )
+
+    def EssentiallySurjective(self) -> Category:
+        return self._property_category(
+            "essentially_surjective",
+            name=f"Essentially surjective functors in {self}",
+            predicate_name="_essentially_surjective_property", implications=lambda: (),
+        )
+
+    def Equivalences(self) -> Category:
+        return self._property_category(
+            "equivalence", name=f"Equivalences in {self}",
+            predicate_name="_equivalence_property",
+            implications=lambda: (self.FullyFaithful(), self.EssentiallySurjective()),
+        )
 
     def __call__(
         self,

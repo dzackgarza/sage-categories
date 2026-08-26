@@ -133,7 +133,6 @@ def test_a_construction_category_exists_without_an_owned_construction() -> None:
     arrow = Cat().Simplex(int(1))
     family = bare.Limits(arrow)
     assert family in Cat()
-    assert bare.Limits(arrow) is family
     assert bare.Limits(Cat().Simplex(int(2))) is not family
     assert bare.Pullbacks() is bare.Limits(Cat().Horn(int(2), int(2)))
     assert bare.Equalizers() is bare.Limits(Cat().WalkingParallelPair())

@@ -9,6 +9,7 @@ import pytest
 
 from sage_categories.all import *
 from sage_categories.kernel.compiler import SemanticCollisionError
+from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
 
 
@@ -32,7 +33,9 @@ class PairSets(Category):
         return (Fun(self, Sets()).FullyFaithful().inclusion(),)
 
     def __call__(self, first, second):
-        return self.ObjectType(self, _finite_rule((first, second)), Cardinal()(int(2)))
+        pair = Sets().Finite()((first, second))
+        refine(pair, self)
+        return pair
 
     def __repr__(self):
         return "PairSets"
@@ -237,7 +240,7 @@ def test_dynamic_inheritance_surface_of_one_inclusion() -> None:
     assert swap in Mor(pairs)
     assert swap in Mor(Sets())
     assert ask(swap(three) == pair.point(int(4))) is True
-    assert ask(swap * swap == pair.identity()) is Unknown
+    assert ask(swap * swap == pair.identity()) is True
     with pytest.raises(AssertionError, match="element=3 is not an owned element"):
         swap(int(3))
 

@@ -17,14 +17,16 @@ def _integers():
 
 
 def test_the_discrete_category_on_a_set_has_the_points_as_objects_and_identities_only() -> None:
-    three = Sets().Simplex(int(2))
+    two_set, three = Sets().Simplex(int(1)), Sets().Simplex(int(2))
+    successor = Mor(Sets())(two_set, three)(lambda datum: datum + int(1))
     shape = Discrete(three)
-    one, one_again, two = shape(three.point(int(1))), shape(three.point(int(1))), shape(three.point(int(2)))
+    one, two = shape(three.point(int(1))), shape(three.point(int(2)))
+    one_again = Discrete(successor).on_object(Discrete(two_set)(two_set.point(int(0))))
 
     assert shape in Cat()
     assert one in shape
-    assert three.point(int(1)) is three.point(int(1))
-    assert one is one_again
+    assert successor(two_set.point(int(0))) is three.point(int(1))
+    assert one_again is one
     assert ask(one == one_again) is True
     assert ask(one == two) is False
     assert ask(Mor(shape)(one, one_again)() == one.identity()) is True
@@ -36,8 +38,9 @@ def test_the_discrete_category_on_a_set_has_the_points_as_objects_and_identities
 
     integers = _integers()
     seven = Discrete(integers)(integers.point(int(7)))
+    select_seven = Mor(Sets())(three, integers)(lambda datum: int(7))
     assert seven in Discrete(integers)
-    assert Discrete(integers)(integers.point(int(7))) is seven
+    assert Discrete(select_seven).on_object(one) is seven
     assert ask(seven.point() == integers.point(int(7))) is True
 
 

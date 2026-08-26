@@ -1,7 +1,8 @@
 """The method compiler: dynamic inheritance surface, compile-time ownership, collisions.
 
 Toy categories live only in this file (D14).  Each witness calls inherited public
-operations through the production compiler (POL-TEST-006).
+operations through the production compiler (POL-TEST-006).  A toy stores its own
+members on its own objects; it reads no ambient private field.
 """
 
 import pytest
@@ -9,6 +10,10 @@ import pytest
 from sage_categories.all import *
 from sage_categories.kernel.compiler import SemanticCollisionError
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
+
+
+def _finite_rule(members):
+    return lambda datum: any(datum == member for member in members)
 
 
 class PairSets(Category):
@@ -27,7 +32,7 @@ class PairSets(Category):
         return (Fun(self, Sets()).FullyFaithful().inclusion(),)
 
     def __call__(self, first, second):
-        return self.ObjectType(self, lambda datum: datum == first or datum == second, Cardinal()(int(2)), (first, second))
+        return self.ObjectType(self, _finite_rule((first, second)), Cardinal()(int(2)))
 
     def __repr__(self):
         return "PairSets"
@@ -38,7 +43,7 @@ class Left(Category):
 
     class ObjectType(ObjectOfCategory):
         def left_datum(self) -> int:
-            return self._enumeration[0]
+            return self._members[0]
 
     class ElementType(ElementOfObject):
         """No local operation."""
@@ -58,7 +63,7 @@ class Right(Category):
 
     class ObjectType(ObjectOfCategory):
         def right_datum(self) -> int:
-            return self._enumeration[-1]
+            return self._members[-1]
 
     class ElementType(ElementOfObject):
         """No local operation."""
@@ -98,7 +103,9 @@ class Diamond(Category):
 
     def __call__(self, members):
         members = tuple(members)
-        return self.ObjectType(self, lambda datum: datum in members, Cardinal()(len(members)), members)
+        apex = self.ObjectType(self, _finite_rule(members), Cardinal()(len(members)))
+        apex._members = members
+        return apex
 
     def __repr__(self):
         return "Diamond"
@@ -109,7 +116,7 @@ class Colliding(Category):
 
     class ObjectType(ObjectOfCategory):
         def size(self) -> int:
-            return self._enumeration[0]
+            return self._members[0]
 
     class ElementType(ElementOfObject):
         """No local operation."""
@@ -129,7 +136,7 @@ class Sizes(Category):
 
     class ObjectType(ObjectOfCategory):
         def size(self) -> int:
-            return len(self._enumeration)
+            return len(self._members)
 
     class ElementType(ElementOfObject):
         """No local operation."""
@@ -190,7 +197,7 @@ def test_dynamic_inheritance_surface_of_one_inclusion() -> None:
     assert swap in Mor(pairs)
     assert swap in Mor(Sets())
     assert ask(swap(three) == pair.point(int(4))) is True
-    assert ask(swap.is_monomorphism()) is True
+    assert ask(swap * swap == pair.identity()) is Unknown
 
 
 def test_two_paths_to_one_owner_install_one_method_before_any_value_exists() -> None:

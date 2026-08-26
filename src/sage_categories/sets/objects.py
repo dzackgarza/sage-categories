@@ -9,8 +9,9 @@ assumptions, the implications ``Finite => Countable`` and
 ``Uncountable => Infinite``, and the exact route "a known cardinality decides
 finiteness and countability" (``specs/sets.md``, "Cardinality and enumeration").
 
-Objects of ``Sets().Finite()`` constructed from an explicit enumeration retain it;
-it is the chosen structure that supplies iteration.
+A chosen enumeration is structure a finite set has, not a field of every set: it is
+retained by ``Sets().Finite()``, whose enumeration constructor records it
+(``specs/sets.md``, "Cardinality and enumeration").  Iteration reads it there.
 """
 
 from __future__ import annotations
@@ -20,7 +21,7 @@ from typing import Any
 
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
-from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
+from sage_categories.kernel.decisions import Decision, UnknownClass
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask
 from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role, role_of
 from sage_categories.sets.cardinals import Cardinal, CardinalObject
@@ -51,12 +52,10 @@ class SetObject(ObjectOfCategory):
         category: Category,
         membership_rule: MembershipRule,
         cardinality: CardinalObject | UnknownClass,
-        enumeration: tuple[Datum, ...] | UnknownClass,
     ) -> None:
         super().__init__(category)
         self._membership_rule = membership_rule
         self._cardinality = cardinality
-        self._enumeration = enumeration
 
     def membership_proposition(self, candidate: CategoryPoint) -> AppliedPredicate:
         return element_of(candidate, self)
@@ -87,22 +86,21 @@ class SetObject(ObjectOfCategory):
         return _sets.Sets().Uncountable().predicate()(self)
 
     def __repr__(self) -> str:
-        if self._enumeration is Unknown:
-            return f"Set({self._membership_rule.__name__})"
-        return "{" + ", ".join(map(repr, self._enumeration)) + "}"
+        finite = _sets.Sets().Finite()
+        if finite.has_chosen_enumeration(self):
+            return "{" + ", ".join(map(repr, finite.chosen_enumeration(self))) + "}"
+        return "Set(<rule>)"
 
 
 class FiniteSetRole(ObjectOfCategory):
-    """The local object role of ``Sets().Finite()``: a chosen enumeration supplies iteration."""
+    """The local object role of ``Sets().Finite()``: the chosen enumeration supplies iteration."""
 
     def __init__(self, category: Category, members: tuple[Datum, ...]) -> None:
         super().__init__(
             category,
             lambda datum: any(datum == member for member in members),
             Cardinal()(len(members)),
-            members,
         )
 
     def __iter__(self) -> Iterator[SetPoint]:
-        assert self._enumeration is not Unknown, f"{self!r} is finite but has no chosen enumeration"
-        return (self.point(datum) for datum in self._enumeration)
+        return (self.point(datum) for datum in _sets.Sets().Finite().chosen_enumeration(self))

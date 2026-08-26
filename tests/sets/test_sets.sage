@@ -100,6 +100,18 @@ def test_a_set_isomorphism_supplies_its_inverse_from_the_isomorphism_category() 
     assert two.identity() in Mor(Sets()).Automorphisms()
 
 
+def test_an_asserted_isomorphism_without_a_rule_has_a_symbolic_inverse() -> None:
+    integers = _integers()
+    shift = Mor(Sets())(integers, integers).Isomorphisms()(lambda datum: datum + int(1))
+    symbolic = shift.inverse()
+
+    assert symbolic in Mor(Sets())(integers, integers).Isomorphisms()
+    assert symbolic.inverse() is shift
+    assert ask(shift(integers.point(int(2))) == integers.point(int(3))) is True
+    with pytest.raises(AssertionError):
+        symbolic(integers.point(int(3)))
+
+
 def test_cardinality_is_exact_or_unknown_and_assumptions_refine() -> None:
     triple = Sets().Finite()((int(1), int(2), int(3)))
     assert ask(triple.cardinality() == int(3)) is True

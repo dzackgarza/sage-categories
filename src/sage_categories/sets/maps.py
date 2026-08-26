@@ -13,6 +13,9 @@ owns, each on its declared decidable domain (POL-MATH-042):
   inspected 2026-08-26);
 - an isomorphism of sets is a bijection (Mathlib ``CategoryTheory.isIso_iff_bijective``;
   inspected 2026-08-26), so ``Isomorphisms()`` decides through both.
+
+A retained inverse is construction data owned by ``Sets()`` (``inverse_morphism``),
+not a field of every map.
 """
 
 from __future__ import annotations
@@ -22,8 +25,8 @@ from typing import Any
 
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
-from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass, decision_and
-from sage_categories.kernel.roles import MorphismOfCategory
+from sage_categories.kernel.decisions import Decision, Unknown, decision_and
+from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory
 from sage_categories.sets.elements import Datum, SetPoint
 from sage_categories.sets.objects import SetObject
 
@@ -33,19 +36,11 @@ type Rule = Callable[[Datum], Datum]
 
 
 class SetMap(MorphismOfCategory):
-    """A total map ``X -> Y`` given by a rule on data; retains its inverse when the construction supplied one."""
+    """A total map ``X -> Y`` given by a rule on data."""
 
-    def __init__(
-        self,
-        category: Category,
-        domain: SetObject,
-        codomain: SetObject,
-        rule: Rule,
-        inverse: SetMap | UnknownClass,
-    ) -> None:
+    def __init__(self, category: Category, domain: SetObject, codomain: SetObject, rule: Rule) -> None:
         super().__init__(category, domain, codomain)
         self._rule = rule
-        self._inverse = inverse
 
     def __call__(self, element: SetPoint) -> SetPoint:
         """The image of a point of the domain: a point of the codomain (POL-CAT-040)."""
@@ -56,45 +51,38 @@ class SetMap(MorphismOfCategory):
         return f"SetMap({self.domain()!r} -> {self.codomain()!r})"
 
 
-def _finite_enumeration(ambient: SetObject) -> tuple[Datum, ...] | UnknownClass:
-    return ambient._enumeration
-
-
-def maps_equal(first: Any, second: Any) -> Decision:
+def maps_equal(first: CategoryPoint, candidate: Any) -> Decision:
     """Two maps with one finite enumerable domain are equal exactly when they agree on every point."""
-    morphisms = _sets.Sets().morphism_category(1)
-    if first not in morphisms or second not in morphisms:
+    sets = _sets.Sets()
+    morphisms = sets.morphism_category(1)
+    if first not in morphisms or candidate not in morphisms:
         return Unknown
-    if first.domain() is not second.domain() or first.codomain() is not second.codomain():
+    if first.domain() is not candidate.domain() or first.codomain() is not candidate.codomain():
         return Unknown
-    enumeration = _finite_enumeration(first.domain())
-    if enumeration is Unknown:
+    finite = sets.Finite()
+    if not finite.has_chosen_enumeration(first.domain()):
         return Unknown
-    return all(first._rule(datum) == second._rule(datum) for datum in enumeration)
+    return all(first._rule(datum) == candidate._rule(datum) for datum in finite.chosen_enumeration(first.domain()))
 
 
-def injective_on_finite_domain(morphism: Any) -> Decision:
-    morphisms = _sets.Sets().morphism_category(1)
-    if morphism not in morphisms:
+def injective_on_finite_domain(morphism: MorphismOfCategory) -> Decision:
+    sets = _sets.Sets()
+    if morphism not in sets.morphism_category(1) or not sets.Finite().has_chosen_enumeration(morphism.domain()):
         return Unknown
-    enumeration = _finite_enumeration(morphism.domain())
-    if enumeration is Unknown:
-        return Unknown
-    images = [morphism._rule(datum) for datum in enumeration]
+    images = [morphism._rule(datum) for datum in sets.Finite().chosen_enumeration(morphism.domain())]
     return len(set(images)) == len(images)
 
 
-def surjective_on_finite_domain(morphism: Any) -> Decision:
-    morphisms = _sets.Sets().morphism_category(1)
-    if morphism not in morphisms:
+def surjective_on_finite_domain(morphism: MorphismOfCategory) -> Decision:
+    sets = _sets.Sets()
+    finite = sets.Finite()
+    if morphism not in sets.morphism_category(1):
         return Unknown
-    enumeration = _finite_enumeration(morphism.domain())
-    codomain_enumeration = _finite_enumeration(morphism.codomain())
-    if enumeration is Unknown or codomain_enumeration is Unknown:
+    if not finite.has_chosen_enumeration(morphism.domain()) or not finite.has_chosen_enumeration(morphism.codomain()):
         return Unknown
-    images = {morphism._rule(datum) for datum in enumeration}
-    return all(datum in images for datum in codomain_enumeration)
+    images = {morphism._rule(datum) for datum in finite.chosen_enumeration(morphism.domain())}
+    return all(datum in images for datum in finite.chosen_enumeration(morphism.codomain()))
 
 
-def bijective_on_finite_domain(morphism: Any) -> Decision:
+def bijective_on_finite_domain(morphism: MorphismOfCategory) -> Decision:
     return decision_and(injective_on_finite_domain(morphism), surjective_on_finite_domain(morphism))

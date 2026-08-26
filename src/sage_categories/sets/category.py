@@ -8,12 +8,18 @@ total maps by rule (``sets/maps.py``).  The property subcategories ``Finite()``,
 supply their cardinal data; ``Finite => Countable`` and ``Uncountable => Infinite``
 are their recorded inclusions.  The canonical objects ``Empty()``, ``Terminal()``,
 and ``Simplex(n)`` exist once by identity.
+
+Retained construction data, each keyed by identity at its owner: the chosen
+enumeration of a finite set at ``Sets().Finite()``; the inverse of an isomorphism
+at ``Sets()`` (``inverse_morphism``).
 """
 
 from __future__ import annotations
 
-from collections.abc import Hashable, Iterable
-from typing import Any
+from collections.abc import Iterable
+from typing import overload
+
+from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.cat.category import Category
 from sage_categories.cat.properties import PropertySubcategory
@@ -36,20 +42,33 @@ from sage_categories.sets.objects import FiniteSetRole, MembershipRule, SetObjec
 __all__ = ["Sets", "SetsCategory"]
 
 
-class FiniteSets(PropertySubcategory):
-    """``Sets().Finite()``: owns construction from an explicit finite enumeration."""
+class FiniteSets(PropertySubcategory[[Rule], []]):
+    """``Sets().Finite()``: owns construction from an explicit finite enumeration and retains it."""
 
-    def __call__(self, *arguments: Any) -> SetObject:
-        match arguments:
-            case (value,) if value in self.ambient():
-                refine(value, self)
-                return value
-            case (members,):
-                return self.ObjectType(self, tuple(members))
-        raise TypeError(f"{self!r} takes one set to refine or one finite enumeration")
+    def __init__(self, ambient: Category[[Rule], []], name: str, roles: dict[Role, type], implications: tuple[Category, ...]) -> None:
+        self._enumerations: MonoDict = MonoDict()
+        super().__init__(ambient, name, roles, implications)
+
+    def __call__(self, members: SetObject | Iterable[Datum]) -> SetObject:
+        """Refine a set of ``Sets()``, or construct the finite set with the given enumeration."""
+        if members in self.ambient():
+            refine(members, self)
+            return members
+        enumeration = tuple(members)
+        finite_set = self.ObjectType(self, enumeration)
+        self._enumerations[finite_set] = enumeration
+        return finite_set
+
+    def has_chosen_enumeration(self, finite_set: SetObject) -> bool:
+        return finite_set in self._enumerations
+
+    def chosen_enumeration(self, finite_set: SetObject) -> tuple[Datum, ...]:
+        """The enumeration this constructor retained for ``finite_set``."""
+        assert finite_set in self._enumerations, f"{finite_set!r} has no chosen enumeration"
+        return self._enumerations[finite_set]
 
 
-class SetsCategory(Category):
+class SetsCategory(Category[[Rule], []]):
     """The category of sets."""
 
     ObjectType = SetObject
@@ -58,6 +77,7 @@ class SetsCategory(Category):
 
     def __init__(self) -> None:
         self._canonical: dict[tuple[str, tuple[int, ...]], SetObject] = {}
+        self._inverses: MonoDict = MonoDict()
         super().__init__()
         self._equality.register_handler(points_equal)
         self._equality.register_handler(maps_equal)
@@ -83,18 +103,18 @@ class SetsCategory(Category):
 
     def __call__(self, membership_rule: MembershipRule) -> SetObject:
         """``Sets()(rule)``: the set defined by a membership rule on data, with no cardinal data."""
-        return self.ObjectType(self, membership_rule, Unknown, Unknown)
+        return self.ObjectType(self, membership_rule, Unknown)
 
     def Finite(self) -> FiniteSets:
         return self._properties["Finite"]
 
-    def Infinite(self) -> Category:
+    def Infinite(self) -> Category[[Rule], []]:
         return self._properties["Infinite"]
 
-    def Countable(self) -> Category:
+    def Countable(self) -> Category[[Rule], []]:
         return self._properties["Countable"]
 
-    def Uncountable(self) -> Category:
+    def Uncountable(self) -> Category[[Rule], []]:
         return self._properties["Uncountable"]
 
     def _canonical_finite(self, name: str, arguments: tuple[int, ...], members: Iterable[Datum]) -> SetObject:
@@ -124,52 +144,71 @@ class SetsCategory(Category):
 
     # -- morphisms ----------------------------------------------------------------------
 
-    def construct_morphism(self, domain: SetObject, codomain: SetObject, *data: Any) -> SetMap:
+    @overload
+    def construct_morphism(self, domain: SetObject, codomain: SetObject, rule: Rule) -> SetMap: ...
+
+    @overload
+    def construct_morphism(self, domain: SetObject, codomain: SetObject, rule: Rule, inverse_rule: Rule) -> SetMap: ...
+
+    def construct_morphism(self, domain: SetObject, codomain: SetObject, rule: Rule, *inverse_rule: Rule) -> SetMap:
         """``Mor(Sets())(X, Y)(rule)`` or, with an inverse rule, an isomorphism retaining its inverse."""
         assert domain in self and codomain in self
         morphisms = self.morphism_category(1)
-        match data:
-            case (rule,):
-                return self.MorphismType(morphisms, domain, codomain, rule, Unknown)
-            case (rule, inverse_rule):
-                forward = self.MorphismType(morphisms, domain, codomain, rule, Unknown)
-                backward = self.MorphismType(morphisms, codomain, domain, inverse_rule, forward)
-                forward._inverse = backward
-                isomorphisms = morphisms.Isomorphisms()
-                refine(forward, isomorphisms)
-                refine(backward, isomorphisms)
-                return forward
-        raise TypeError("a set map is constructed from a rule, or from a rule and its inverse rule")
+        forward = self.MorphismType(morphisms, domain, codomain, rule)
+        if not inverse_rule:
+            return forward
+        (backward_rule,) = inverse_rule
+        self._retain_inverses(forward, self.MorphismType(morphisms, codomain, domain, backward_rule))
+        return forward
+
+    def _retain_inverses(self, forward: SetMap, backward: SetMap) -> None:
+        """Record two maps as mutually inverse and place both in ``Isomorphisms()``."""
+        self._inverses[forward] = backward
+        self._inverses[backward] = forward
+        isomorphisms = self.morphism_category(1).Isomorphisms()
+        refine(forward, isomorphisms)
+        refine(backward, isomorphisms)
 
     def construct_identity(self, member_object: SetObject) -> SetMap:
-        identity = self.MorphismType(self.morphism_category(1), member_object, member_object, lambda datum: datum, Unknown)
-        identity._inverse = identity
-        refine(identity, self.morphism_category(1).Isomorphisms())
+        identity = self.MorphismType(self.morphism_category(1), member_object, member_object, lambda datum: datum)
+        self._retain_inverses(identity, identity)
         return identity
 
     def composite(self, second: SetMap, first: SetMap) -> SetMap:
         morphisms = self.morphism_category(1)
         assert first in morphisms and second in morphisms
         assert first.codomain() is second.domain(), f"{second!r} after {first!r} is not composable"
-        composite = self.MorphismType(morphisms, first.domain(), second.codomain(), lambda datum: second._rule(first._rule(datum)), Unknown)
-        if first._inverse is not Unknown and second._inverse is not Unknown:
-            inverse = self.MorphismType(morphisms, second.codomain(), first.domain(), lambda datum: first._inverse._rule(second._inverse._rule(datum)), composite)
-            composite._inverse = inverse
-            refine(composite, morphisms.Isomorphisms())
-            refine(inverse, morphisms.Isomorphisms())
+        composite = self.MorphismType(morphisms, first.domain(), second.codomain(), lambda datum: second._rule(first._rule(datum)))
+        if first in self._inverses and second in self._inverses:
+            first_inverse, second_inverse = self._inverses[first], self._inverses[second]
+            inverse = self.MorphismType(morphisms, second.codomain(), first.domain(), lambda datum: first_inverse._rule(second_inverse._rule(datum)))
+            self._retain_inverses(composite, inverse)
         return composite
 
     def inverse_morphism(self, morphism: SetMap) -> SetMap:
-        """The retained inverse, or the exact inverse of a bijection between finite enumerable sets."""
-        if morphism._inverse is not Unknown:
-            return morphism._inverse
-        enumeration = morphism.domain()._enumeration
-        assert enumeration is not Unknown, f"{morphism!r} retains no inverse and its domain has no chosen enumeration"
-        preimages = {morphism._rule(datum): datum for datum in enumeration}
-        inverse = self.MorphismType(self.morphism_category(1), morphism.codomain(), morphism.domain(), lambda datum: preimages[datum], morphism)
-        morphism._inverse = inverse
-        refine(inverse, self.morphism_category(1).Isomorphisms())
-        return inverse
+        """The inverse of an isomorphism (D09).
+
+        The retained inverse when the construction supplied one; else the exact inverse
+        of a bijection out of a finite enumerable set; else the owned symbolic inverse,
+        whose equations hold by placement in ``Isomorphisms()`` and whose evaluation
+        has no executable rule.
+        """
+        if morphism in self._inverses:
+            return self._inverses[morphism]
+        finite = self.Finite()
+        domain, codomain = morphism.domain(), morphism.codomain()
+        if finite.has_chosen_enumeration(domain):
+            preimages = {morphism._rule(datum): datum for datum in finite.chosen_enumeration(domain)}
+            self._retain_inverses(morphism, self.MorphismType(self.morphism_category(1), codomain, domain, lambda datum: preimages[datum]))
+            return self._inverses[morphism]
+
+        def no_rule(datum: Datum) -> Datum:
+            assert False, f"the inverse of {morphism!r} has no executable rule; its equations hold by placement in Isomorphisms()"
+
+        symbolic = self.MorphismType(self.morphism_category(1), codomain, domain, no_rule)
+        self._retain_inverses(morphism, symbolic)
+        refine(symbolic, self.morphism_category(1)(codomain, domain).Isomorphisms())
+        return symbolic
 
     # -- exact routes (POL-MATH-042) --------------------------------------------------
 

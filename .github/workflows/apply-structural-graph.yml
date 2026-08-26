@@ -1,0 +1,111 @@
+name: Apply selected structural graph
+
+on:
+  push:
+    branches:
+      - codex/functorial-core-kernel
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/functorial-core-kernel
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+      - name: Commit the selected-functor graph kernel
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p src/sage_categories/kernel
+          cat > src/sage_categories/kernel/__init__.py <<'PY'
+          """Category-independent implementation kernel."""
+          PY
+          cat > src/sage_categories/kernel/structural_graph.py <<'PY'
+          """Validation of the selected ordinary-functor inheritance graph."""
+
+          from __future__ import annotations
+
+          from typing import TYPE_CHECKING
+
+          if TYPE_CHECKING:
+              from sage_categories.abstract_categories.functors import Functor
+              from sage_categories.category import Category
+
+
+          def selected_structure_functors(
+              category: Category,
+          ) -> tuple[Functor, ...]:
+              """Return and validate ``category``'s immediate selected functors.
+
+              Selection is compiler input only.  Every selected value is an ordinary
+              functor whose domain is the declaring category; endpoint pairs and object
+              fields never synthesize an edge.
+              """
+              from sage_categories.abstract_categories.cat import Cat
+
+              functors = category.structure_functors()
+              assert isinstance(functors, tuple)
+              assert all(functor in Cat().ArrowCategory() for functor in functors)
+              assert all(functor.domain() is category for functor in functors)
+              assert len({id(functor) for functor in functors}) == len(functors)
+              return functors
+          PY
+          python - <<'PY'
+          from pathlib import Path
+
+          roots = (Path('src'), Path('tests'))
+          for root in roots:
+              for path in root.rglob('*'):
+                  if path.is_file() and path.suffix in {'.py', '.sage'}:
+                      source = path.read_text()
+                      updated = source.replace('super_functors', 'structure_functors')
+                      if updated != source:
+                          path.write_text(updated)
+
+          category = Path('src/sage_categories/category.py')
+          source = category.read_text()
+          import_line = 'from sage_categories.kernel.structural_graph import selected_structure_functors\n'
+          if import_line not in source:
+              anchor = 'from sage_categories.compiler import DeclaredMethod, category_compiler\n'
+              assert anchor in source
+              source = source.replace(anchor, anchor + import_line)
+          source = source.replace(
+              'return tuple(functor.codomain() for functor in self.structure_functors())',
+              'return tuple(\n            functor.codomain()\n            for functor in selected_structure_functors(self)\n        )',
+          )
+          category.write_text(source)
+
+          compiler = Path('src/sage_categories/compiler.py')
+          source = compiler.read_text()
+          if import_line not in source:
+              anchor = 'from sage_categories.descriptors import (\n'
+              assert anchor in source
+              source = source.replace(anchor, import_line + anchor)
+          source = source.replace('category.structure_functors()', 'selected_structure_functors(category)')
+          compiler.write_text(source)
+
+          violations = []
+          for root in roots:
+              for path in root.rglob('*'):
+                  if path.is_file() and path.suffix in {'.py', '.sage'} and 'super_functors' in path.read_text():
+                      violations.append(path)
+          assert not violations, violations
+          PY
+          rm -f .github/workflows/apply-structure-functors.yml
+          rm -f .github/workflows/apply-concrete-functors.yml
+          rm -f .github/workflows/apply-structural-graph.yml
+          python -m compileall -q src
+          git diff --check
+          git config user.name 'OpenAI Codex'
+          git config user.email 'codex@openai.com'
+          git add -A
+          git commit -m 'refactor: make selected ordinary functors the sole structural graph'
+          git push origin HEAD:codex/functorial-core-kernel

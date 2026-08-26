@@ -7,7 +7,7 @@ from typing import TypeIs
 from sage_categories.abstract_categories.functors import (
     Functor,
     NaturalIsomorphism,
-    StructuralFunctor,
+    ConcreteFunctor,
     compose_functors,
 )
 from sage_categories.abstract_categories.hom_categories import (
@@ -162,7 +162,7 @@ class PullbackHomCategory(HomCategory):
         return arrow in self
 
 
-class PullbackProjectionFunctor(StructuralFunctor):
+class PullbackProjectionFunctor(ConcreteFunctor):
     """One structural projection from a pullback category."""
 
     def __init__(
@@ -351,7 +351,7 @@ class PullbackCategory(Category):
     ) -> PullbackMediatingFunctor:
         return PullbackMediatingFunctor(self, first, second)
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         return self.first_projection(), self.second_projection()
 
     def structural_coherences(self) -> tuple[Isomorphism, ...]:

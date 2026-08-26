@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from sage_categories.abstract_categories.diagram_shapes import ConeObject
-from sage_categories.abstract_categories.functor_core import Functor, StructuralFunctor
+from sage_categories.abstract_categories.functor_core import Functor, ConcreteFunctor
 from sage_categories.abstract_categories.product_presentations import (
     Cone,
     Product,
@@ -18,7 +18,7 @@ from sage_categories.types import Arrow, MathematicalObject
 
 
 def lift_product(
-    structural_functor: StructuralFunctor,
+    structural_functor: ConcreteFunctor,
     diagram: Functor,
     apex: MathematicalObject,
     inherited_product: ProductPresentation | ProductObject,
@@ -63,7 +63,7 @@ def lift_product(
 
 
 def inherited_product(
-    structural_functor: StructuralFunctor,
+    structural_functor: ConcreteFunctor,
     diagram: Functor,
 ) -> ProductObject:
     """Return the product after structural transport of its diagram."""

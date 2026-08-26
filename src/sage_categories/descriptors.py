@@ -15,7 +15,7 @@ from sage_categories.types import Arrow, Decision, MathematicalElement, Mathemat
 
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.full_subcategories import FullSubcategory
-    from sage_categories.abstract_categories.functors import StructuralFunctor
+    from sage_categories.abstract_categories.functors import ConcreteFunctor, Functor
     from sage_categories.category import Category
 
 
@@ -182,11 +182,11 @@ def method_signature(
 
 def _pull_back_element_along(
     element: MathematicalElement,
-    route: tuple[StructuralFunctor, ...],
+    route: tuple[Functor, ...],
     source_ambient: MathematicalObject,
 ) -> MathematicalElement:
     objects: list[MathematicalObject] = [source_ambient]
-    prefix: tuple[StructuralFunctor, ...] = ()
+    prefix: tuple[Functor, ...] = ()
     for functor in route[:-1]:
         prefix = (*prefix, functor)
         objects.append(source_ambient._object_image_along(prefix))
@@ -199,7 +199,7 @@ def _pull_back_element_along(
 def _forward_value(
     value: Value,
     role: ParameterRole,
-    route: tuple[StructuralFunctor, ...],
+    route: tuple[Functor, ...],
 ) -> Value:
     if not route or role is ParameterRole.VALUE:
         return value
@@ -265,7 +265,7 @@ def _forward_arguments(
     args: tuple[Value, ...],
     kwargs: dict[str, Value],
     signature: MethodSignature,
-    route: tuple[StructuralFunctor, ...],
+    route: tuple[Functor, ...],
 ) -> tuple[tuple[Value, ...], dict[str, Value]]:
     forwarded_args = tuple(
         _forward_value(value, signature.role_for_positional(position), route)
@@ -281,7 +281,7 @@ def _forward_arguments(
 def _transport_result(
     result: R,
     role: ParameterRole,
-    route: tuple[StructuralFunctor, ...],
+    route: tuple[Functor, ...],
     source_ambient: MathematicalObject,
     target_ambient: MathematicalObject,
     instance: MathematicalObject | MathematicalElement | Arrow,
@@ -340,14 +340,14 @@ class ForwardedObjectMethod[Receiver: MathematicalObject, **P, R]:
     def __init__(
         self,
         category: Category,
-        route: tuple[StructuralFunctor, ...],
+        route: tuple[Functor, ...],
         method: Callable[Concatenate[MathematicalObject, P], R],
         signature: MethodSignature,
     ) -> None:
         self._declarations: dict[
             int,
             tuple[
-                tuple[StructuralFunctor, ...],
+                tuple[Functor, ...],
                 FunctionType,
                 MethodSignature,
             ],
@@ -357,7 +357,7 @@ class ForwardedObjectMethod[Receiver: MathematicalObject, **P, R]:
     def register(
         self,
         category: Category,
-        route: tuple[StructuralFunctor, ...],
+        route: tuple[Functor, ...],
         method: Callable[Concatenate[MathematicalObject, P], R],
         signature: MethodSignature,
     ) -> None:
@@ -458,14 +458,14 @@ class ForwardedElementMethod[Receiver: MathematicalElement, **P, R]:
     def __init__(
         self,
         category: Category,
-        route: tuple[StructuralFunctor, ...],
+        route: tuple[Functor, ...],
         method: Callable[Concatenate[MathematicalElement, P], R],
         signature: MethodSignature,
     ) -> None:
         self._declarations: dict[
             int,
             tuple[
-                tuple[StructuralFunctor, ...],
+                tuple[Functor, ...],
                 FunctionType,
                 MethodSignature,
             ],
@@ -475,7 +475,7 @@ class ForwardedElementMethod[Receiver: MathematicalElement, **P, R]:
     def register(
         self,
         category: Category,
-        route: tuple[StructuralFunctor, ...],
+        route: tuple[Functor, ...],
         method: Callable[Concatenate[MathematicalElement, P], R],
         signature: MethodSignature,
     ) -> None:
@@ -516,14 +516,14 @@ class ForwardedArrowMethod[Receiver: Arrow, **P, R]:
     def __init__(
         self,
         category: Category,
-        route: tuple[StructuralFunctor, ...],
+        route: tuple[Functor, ...],
         method: Callable[Concatenate[Arrow, P], R],
         signature: MethodSignature,
     ) -> None:
         self._declarations: dict[
             int,
             tuple[
-                tuple[StructuralFunctor, ...],
+                tuple[Functor, ...],
                 FunctionType,
                 MethodSignature,
             ],
@@ -533,7 +533,7 @@ class ForwardedArrowMethod[Receiver: Arrow, **P, R]:
     def register(
         self,
         category: Category,
-        route: tuple[StructuralFunctor, ...],
+        route: tuple[Functor, ...],
         method: Callable[Concatenate[Arrow, P], R],
         signature: MethodSignature,
     ) -> None:

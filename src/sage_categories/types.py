@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Self
 
 if TYPE_CHECKING:
-    from sage_categories.abstract_categories.functors import StructuralFunctor
+    from sage_categories.abstract_categories.functors import ConcreteFunctor, Functor
     from sage_categories.abstract_categories.hom_categories import HomCategory
     from sage_categories.category import Category
 
@@ -151,7 +151,7 @@ class MathematicalObject:
 
     def _object_image_along(
         self,
-        route: tuple[StructuralFunctor, ...],
+        route: tuple[Functor, ...],
     ) -> MathematicalObject:
         from sage_categories.compiler import category_compiler
 
@@ -176,13 +176,13 @@ class MathematicalObject:
 
     def _element_image_along(
         self,
-        route: tuple[StructuralFunctor, ...],
+        route: tuple[Functor, ...],
     ) -> MathematicalObject:
         assert False, f"{self} is not represented as an element"
 
     def _morphism_image_along(
         self,
-        route: tuple[StructuralFunctor, ...],
+        route: tuple[Functor, ...],
     ) -> Arrow:
         assert False, f"{self} is not represented as a morphism"
 
@@ -228,7 +228,7 @@ class MathematicalElement(MathematicalObject):
 
     def _element_image_along(
         self,
-        route: tuple[StructuralFunctor, ...],
+        route: tuple[Functor, ...],
     ) -> MathematicalElement:
         from sage_categories.compiler import category_compiler
 
@@ -240,7 +240,7 @@ class MathematicalElement(MathematicalObject):
         ambient = self._ambient_object
         source = ambient
         element = self
-        prefix: tuple[StructuralFunctor, ...] = ()
+        prefix: tuple[Functor, ...] = ()
         for functor in route:
             prefix = (*prefix, functor)
             codomain = functor.codomain()
@@ -252,6 +252,11 @@ class MathematicalElement(MathematicalObject):
                 source = target
                 element = cached
                 continue
+            from sage_categories.abstract_categories.functors import is_concrete_functor
+
+            assert is_concrete_functor(functor), (
+                f"selected functor {functor} has no concrete element action"
+            )
             element = functor.on_element(source, element)
             assert element.ambient_object() is target
             source = target
@@ -350,7 +355,7 @@ class Arrow(MathematicalElement):
 
     def _morphism_image_along(
         self,
-        route: tuple[StructuralFunctor, ...],
+        route: tuple[Functor, ...],
     ) -> Arrow:
         from sage_categories.compiler import category_compiler
 
@@ -360,7 +365,7 @@ class Arrow(MathematicalElement):
                 route[-1].codomain(),
             )
         value = self
-        prefix: tuple[StructuralFunctor, ...] = ()
+        prefix: tuple[Functor, ...] = ()
         for functor in route:
             prefix = (*prefix, functor)
             codomain = functor.codomain()

@@ -11,11 +11,12 @@ from collections.abc import Callable, Iterator
 from typing import Any, TypeIs
 
 from sage_categories.abstract_categories.functors import (
+    Functor,
     DiscreteCategories,
     DiscreteDiagram,
     DiscreteObject,
     InclusionFunctor,
-    StructuralFunctor,
+    ConcreteFunctor,
 )
 from sage_categories.abstract_categories.functors import (
     DiscreteCategory as DiscreteCategoryObject,
@@ -155,7 +156,7 @@ class FiniteDiscreteCategoriesCategory(Category):
         assert Sets().contains_set(objects)
         return objects.is_finite() is True
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         if self._inclusion is None:
             self._inclusion = InclusionFunctor(self, DiscreteCategories())
         return (self._inclusion,)

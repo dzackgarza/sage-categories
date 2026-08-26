@@ -11,7 +11,8 @@ from sage_categories.abstract_categories.category_constructions import (
     FullSubcategoryObject,
 )
 from sage_categories.abstract_categories.functors import (
-    StructuralFunctor,
+    Functor,
+    ConcreteFunctor,
 )
 from sage_categories.abstract_categories.hom_categories import (
     HomCategory,
@@ -136,7 +137,7 @@ class CoveredObjectArrow(FullSubcategoryArrow):
     """A morphism between covered-object presentations."""
 
 
-class SliceForgetfulFunctor(StructuralFunctor):
+class SliceForgetfulFunctor(ConcreteFunctor):
     """Send a chosen arrow object to its varying ambient object."""
 
     def __init__(
@@ -317,7 +318,7 @@ class SliceOverCategory(Category):
     def _hom_category_type(self) -> type[HomCategory]:
         return SliceHomCategory
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         if self._forgetful is None:
             self._forgetful = SliceForgetfulFunctor(self)
         return (self._forgetful,)
@@ -379,7 +380,7 @@ class CosliceUnderCategory(Category):
     def _hom_category_type(self) -> type[HomCategory]:
         return CosliceHomCategory
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         if self._forgetful is None:
             self._forgetful = SliceForgetfulFunctor(self)
         return (self._forgetful,)

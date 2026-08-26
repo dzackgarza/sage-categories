@@ -13,7 +13,7 @@ from sage_categories.abstract_categories.diagram_shapes import (
 )
 from sage_categories.abstract_categories.functors import (
     Functor,
-    StructuralFunctor,
+    ConcreteFunctor,
 )
 from sage_categories.abstract_categories.hom_categories import (
     HomCategory,
@@ -196,7 +196,7 @@ class PresentationHomCategory(HomCategory):
         return arrow in self
 
 
-class ProductApexFunctor(StructuralFunctor):
+class ProductApexFunctor(ConcreteFunctor):
     """Send a product presentation to its apex."""
 
     def __init__(self, domain: ProductPresentations) -> None:
@@ -219,7 +219,7 @@ class ProductApexFunctor(StructuralFunctor):
         return element
 
 
-class CoproductApexFunctor(StructuralFunctor):
+class CoproductApexFunctor(ConcreteFunctor):
     """Send a coproduct presentation to its apex."""
 
     def __init__(self, domain: CoproductPresentations) -> None:
@@ -242,7 +242,7 @@ class CoproductApexFunctor(StructuralFunctor):
         return element
 
 
-class BiproductApexFunctor(StructuralFunctor):
+class BiproductApexFunctor(ConcreteFunctor):
     """Send a biproduct presentation to its common apex."""
 
     def __init__(self, domain: BiproductPresentations) -> None:
@@ -284,7 +284,7 @@ class ProductPresentations(Category):
     def cones(self) -> ConeCategory:
         return Cones(self._diagram)
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         if self._apex_functor is None:
             self._apex_functor = ProductApexFunctor(self)
         return (self._apex_functor,)
@@ -339,7 +339,7 @@ class CoproductPresentations(Category):
     def cocones(self) -> CoconeCategory:
         return Cocones(self._diagram)
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         if self._apex_functor is None:
             self._apex_functor = CoproductApexFunctor(self)
         return (self._apex_functor,)
@@ -391,7 +391,7 @@ class BiproductPresentations(Category):
     def ambient_category(self) -> Category:
         return self._diagram.codomain()
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         if self._apex_functor is None:
             self._apex_functor = BiproductApexFunctor(self)
         return (self._apex_functor,)

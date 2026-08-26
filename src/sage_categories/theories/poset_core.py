@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Self, TypeIs
 from sage_categories.abstract_categories.functors import (
     DiscreteCategories,
     Functor,
-    StructuralFunctor,
+    ConcreteFunctor,
 )
 from sage_categories.abstract_categories.hom_categories import HomCategory
 from sage_categories.abstract_categories.products import ProductObject
@@ -346,7 +346,7 @@ class PosetHomCategory(HomCategory):
         return arrow in self
 
 
-class ForgetPosetFunctor(StructuralFunctor):
+class ForgetPosetFunctor(ConcreteFunctor):
     """Forget the chosen order and retain the underlying set and function."""
 
     def __init__(
@@ -507,7 +507,7 @@ class PartiallyOrderedSetsCategory(Category):
             self._forgetful_functor = ForgetPosetFunctor(self, Sets())
         return self._forgetful_functor
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         return (self.forgetful_functor(),)
 
     def contains_poset(self, candidate: MathematicalObject) -> TypeIs[PosetObject]:

@@ -16,7 +16,7 @@ from sage_categories.types import (
 )
 
 if TYPE_CHECKING:
-    from sage_categories.abstract_categories.functors import StructuralFunctor
+    from sage_categories.abstract_categories.functors import ConcreteFunctor, Functor
 
 
 class HomCategory(Category):
@@ -87,7 +87,7 @@ class HomCategory(Category):
     def _declared_arrow_route(
         self,
         target: Category,
-    ) -> tuple[StructuralFunctor, ...]:
+    ) -> tuple[Functor, ...]:
         route = self.base_category().structural_route_to(target)
         assert route, f"{self.base_category()} declares no arrow construction route"
         assert all(functor.is_faithful() for functor in route), (
@@ -98,7 +98,7 @@ class HomCategory(Category):
     def _lift_along_declared_route(
         self,
         image: Arrow,
-        route: tuple[StructuralFunctor, ...],
+        route: tuple[Functor, ...],
     ) -> Arrow:
         sources = [self.domain()]
         targets = [self.codomain()]
@@ -433,10 +433,10 @@ class EndCategoryFamily(HomCategoryFamily):
     """The endomorphism categories of one category."""
 
     def __init__(self, base_category: Category) -> None:
-        self._inclusion: StructuralFunctor | None = None
+        self._inclusion: ConcreteFunctor | None = None
         super().__init__(base_category, hom_category_type=EndomorphismHomCategory)
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         from sage_categories.abstract_categories.functors import (
             HomCategoryFamilyInclusionFunctor,
         )
@@ -461,10 +461,10 @@ class MonomorphismCategoryFamily(HomCategoryFamily):
     """The monomorphism categories of one category."""
 
     def __init__(self, base_category: Category) -> None:
-        self._inclusion: StructuralFunctor | None = None
+        self._inclusion: ConcreteFunctor | None = None
         super().__init__(base_category, hom_category_type=MonomorphismHomCategory)
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         from sage_categories.abstract_categories.functors import (
             HomCategoryFamilyInclusionFunctor,
         )
@@ -481,10 +481,10 @@ class EpimorphismCategoryFamily(HomCategoryFamily):
     """The epimorphism categories of one category."""
 
     def __init__(self, base_category: Category) -> None:
-        self._inclusion: StructuralFunctor | None = None
+        self._inclusion: ConcreteFunctor | None = None
         super().__init__(base_category, hom_category_type=EpimorphismHomCategory)
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         from sage_categories.abstract_categories.functors import (
             HomCategoryFamilyInclusionFunctor,
         )
@@ -501,10 +501,10 @@ class IsomorphismCategoryFamily(HomCategoryFamily):
     """The isomorphism categories of one category."""
 
     def __init__(self, base_category: Category) -> None:
-        self._inclusion: StructuralFunctor | None = None
+        self._inclusion: ConcreteFunctor | None = None
         super().__init__(base_category, hom_category_type=IsomorphismHomCategory)
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         from sage_categories.abstract_categories.functors import (
             HomCategoryFamilyInclusionFunctor,
         )
@@ -524,10 +524,10 @@ class AutomorphismCategoryFamily(HomCategoryFamily):
     """The automorphism categories of one category."""
 
     def __init__(self, base_category: Category) -> None:
-        self._inclusion: StructuralFunctor | None = None
+        self._inclusion: ConcreteFunctor | None = None
         super().__init__(base_category, hom_category_type=AutomorphismHomCategory)
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         from sage_categories.abstract_categories.functors import (
             HomCategoryFamilyInclusionFunctor,
         )

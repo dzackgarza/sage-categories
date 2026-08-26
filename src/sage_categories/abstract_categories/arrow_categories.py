@@ -10,8 +10,9 @@ from collections.abc import Iterable
 from typing import Any, TypeIs
 
 from sage_categories.abstract_categories.functors import (
+    ConcreteFunctor,
+    Functor,
     InclusionFunctor,
-    StructuralFunctor,
 )
 from sage_categories.abstract_categories.hom_categories import (
     HomCategory,
@@ -208,7 +209,7 @@ class EndArrowCategory(Category):
             return False
         return value.domain() is value.codomain()
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         if self._inclusion is None:
             self._inclusion = InclusionFunctor(
                 self,
@@ -234,7 +235,7 @@ class MonomorphismArrowCategory(Category):
             return False
         return value.hom_category() in self._base_category.MonoCategory() or (value.hom_category() in self._base_category.IsoCategory())
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         if self._inclusion is None:
             self._inclusion = InclusionFunctor(
                 self,
@@ -260,7 +261,7 @@ class EpimorphismArrowCategory(Category):
             return False
         return value.hom_category() in self._base_category.EpiCategory() or (value.hom_category() in self._base_category.IsoCategory())
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         if self._inclusion is None:
             self._inclusion = InclusionFunctor(
                 self,
@@ -286,7 +287,7 @@ class IsomorphismArrowCategory(Category):
             return False
         return value.hom_category() in self._base_category.IsoCategory()
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         if self._inclusion is None:
             self._inclusion = InclusionFunctor(
                 self,
@@ -315,7 +316,7 @@ class AutomorphismArrowCategory(Category):
             return False
         return value.hom_category() in self._base_category.AutCategory()
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         if self._inclusion is None:
             self._inclusion = InclusionFunctor(
                 self,
@@ -397,7 +398,7 @@ class WideSubcategory(Category):
     def _hom_category_type(self) -> type[HomCategory]:
         return WideHomCategory
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         if self._inclusion is None:
             self._inclusion = InclusionFunctor(self, self._base_category)
         return (self._inclusion,)

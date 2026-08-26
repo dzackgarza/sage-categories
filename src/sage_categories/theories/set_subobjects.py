@@ -12,8 +12,9 @@ from collections.abc import Callable, Iterator
 from typing import TYPE_CHECKING, Any, TypeIs
 
 from sage_categories.abstract_categories.functors import (
+    Functor,
     InclusionFunctor,
-    StructuralFunctor,
+    ConcreteFunctor,
 )
 from sage_categories.abstract_categories.hom_categories import (
     is_restricted_hom_category,
@@ -460,7 +461,7 @@ class SubsetsOfSetCategory(Category):
             members=members,
         )
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         from sage_categories.theories.set_category import Sets
 
         if self._inclusion is None:

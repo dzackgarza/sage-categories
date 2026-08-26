@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, TypeIs
 from sage_categories.abstract_categories.functors import (
     Functor,
     InclusionFunctor,
-    StructuralFunctor,
+    ConcreteFunctor,
     is_functor,
 )
 from sage_categories.abstract_categories.products import (
@@ -151,7 +151,7 @@ class ColimitElementsCategory(Category):
         self._inclusion: InclusionFunctor | None = None
         super().__init__(object_type=ColimitElement)
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         if self._inclusion is None:
             self._inclusion = InclusionFunctor(self, SetElements())
         return (self._inclusion,)

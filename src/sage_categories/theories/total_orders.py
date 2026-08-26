@@ -8,8 +8,9 @@ from sage_categories.abstract_categories.category_constructions import (
     FullSubcategory,
 )
 from sage_categories.abstract_categories.functors import (
-    RestrictedStructuralFunctor,
-    StructuralFunctor,
+    Functor,
+    RestrictedConcreteFunctor,
+    ConcreteFunctor,
 )
 from sage_categories.category import Category
 from sage_categories.theories.poset_core import (
@@ -35,7 +36,7 @@ if TYPE_CHECKING:
     from sage_categories.theories.finite_posets import FinitePosetsCategory
 
 
-class FiniteTotalToFinitePosetFunctor(RestrictedStructuralFunctor):
+class FiniteTotalToFinitePosetFunctor(RestrictedConcreteFunctor):
     """Restrict a finite total-order refinement to its finite poset image."""
 
     def __init__(self, finite_total_orders: FiniteTotallyOrderedSetsCategory) -> None:
@@ -106,7 +107,7 @@ class FiniteTotallyOrderedSetsCategory(FullSubcategory):
             self._finite_poset_functor = FiniteTotalToFinitePosetFunctor(self)
         return self._finite_poset_functor
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         return self.inclusion(), self.finite_poset_functor()
 
     def contains_finite_total_order(self, candidate: MathematicalObject) -> bool:

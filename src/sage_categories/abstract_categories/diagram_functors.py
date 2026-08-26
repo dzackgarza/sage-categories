@@ -21,7 +21,7 @@ from sage_categories.types import (
 from sage_categories.abstract_categories.functor_core import (
     Functor,
     NaturalTransformation,
-    StructuralFunctor,
+    ConcreteFunctor,
     is_functor,
     is_natural_transformation_hom_category,
 )
@@ -164,7 +164,7 @@ class DiscreteCategory(Category):
         return f"Discrete({self._label_set})"
 
 
-class ObjectSetFunctor(StructuralFunctor):
+class ObjectSetFunctor(ConcreteFunctor):
     """Send a discrete category to its object set."""
 
     def __init__(self, domain: DiscreteCategoriesCategory) -> None:
@@ -223,7 +223,7 @@ class DiscreteCategoriesCategory(Category):
     def __call__(self, label_set: MathematicalObject) -> DiscreteCategory:
         return self.ObjectType(category=self, label_set=label_set)
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         if self._object_set_functor is None:
             self._object_set_functor = ObjectSetFunctor(self)
         return (self._object_set_functor,)

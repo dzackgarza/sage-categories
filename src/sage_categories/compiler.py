@@ -29,7 +29,7 @@ from sage_categories.types import (
 
 if TYPE_CHECKING:
     from sage_categories.abstract_categories.full_subcategories import FullSubcategory
-    from sage_categories.abstract_categories.functors import StructuralFunctor
+    from sage_categories.abstract_categories.functors import ConcreteFunctor, Functor
     from sage_categories.abstract_categories.hom_categories import HomCategory
     from sage_categories.category import Category
 
@@ -56,11 +56,11 @@ def _local_type(category: Category, role: ImplementationRole) -> type:
             assert_never(role)
 
 
-def _all_structural_functors(functor: StructuralFunctor) -> bool:
+def _all_structural_functors(functor: Functor) -> bool:
     return True
 
 
-def _inclusion_functors(functor: StructuralFunctor) -> bool:
+def _inclusion_functors(functor: Functor) -> bool:
     return functor.is_inclusion()
 
 
@@ -73,7 +73,7 @@ _IGNORED_METHODS = frozenset(
         "__module__",
         "__weakref__",
         "structural_coherences",
-        "super_functors",
+        "structure_functors",
     }
 )
 
@@ -103,8 +103,8 @@ class DeclaredMethod:
         implementation_owner: Category,
         method: FunctionType,
         role: ImplementationRole,
-        route: tuple[StructuralFunctor, ...] = (),
-        implementation_route: tuple[StructuralFunctor, ...] = (),
+        route: tuple[Functor, ...] = (),
+        implementation_route: tuple[Functor, ...] = (),
     ) -> None:
         self.owner = owner
         self.implementation_owner = implementation_owner
@@ -131,7 +131,7 @@ class CategoryCompiler:
         self._object_catalogues: dict[int, dict[str, DeclaredMethod]] = {}
         self._element_catalogues: dict[int, dict[str, DeclaredMethod]] = {}
         self._arrow_catalogues: dict[int, dict[str, DeclaredMethod]] = {}
-        self._routes: dict[tuple[int, int], tuple[StructuralFunctor, ...]] = {}
+        self._routes: dict[tuple[int, int], tuple[Functor, ...]] = {}
         self._compiled_categories: dict[int, Category] = {}
 
     def _refined_type(
@@ -283,7 +283,7 @@ class CategoryCompiler:
 
     def _declared_relations(
         self,
-        includes: Callable[[StructuralFunctor], bool],
+        includes: Callable[[Functor], bool],
     ) -> dict[str, dict[str, tuple[str, ...]]]:
         reported: dict[str, dict[str, tuple[str, ...]]] = {}
         for role in ImplementationRole:
@@ -293,7 +293,7 @@ class CategoryCompiler:
                 if local_type in _KERNEL_IMPLEMENTATIONS:
                     continue
                 reached: tuple[str, ...] = ()
-                for functor in category.super_functors():
+                for functor in category.structure_functors():
                     if not includes(functor):
                         continue
                     codomain = functor.codomain()
@@ -436,7 +436,7 @@ class CategoryCompiler:
         self,
         source: Category,
         target: Category,
-    ) -> tuple[StructuralFunctor, ...]:
+    ) -> tuple[Functor, ...]:
         """Return the unique structural-functor route from source to target."""
         if source is target:
             return ()
@@ -455,8 +455,8 @@ class CategoryCompiler:
         self,
         source: Category,
         target: Category,
-        routes: tuple[tuple[StructuralFunctor, ...], ...],
-    ) -> tuple[StructuralFunctor, ...]:
+        routes: tuple[tuple[Functor, ...], ...],
+    ) -> tuple[Functor, ...]:
         distinct = tuple(route for position, route in enumerate(routes) if route not in routes[:position])
         normalized = tuple(self._normalize_route(source, route) for route in distinct)
         canonical = normalized[0]
@@ -472,8 +472,8 @@ class CategoryCompiler:
     def _normalize_route(
         self,
         source: Category,
-        route: tuple[StructuralFunctor, ...],
-    ) -> tuple[StructuralFunctor, ...]:
+        route: tuple[Functor, ...],
+    ) -> tuple[Functor, ...]:
         if not route:
             return ()
         first = route[0]
@@ -502,14 +502,14 @@ class CategoryCompiler:
     def _coherent_replacement(
         self,
         source: Category,
-        route: tuple[StructuralFunctor, ...],
-    ) -> tuple[StructuralFunctor, ...] | None:
+        route: tuple[Functor, ...],
+    ) -> tuple[Functor, ...] | None:
         # Bundled natural isomorphisms between parallel composites follow
         # Mathlib's ``CategoryTheory.NatIso`` construction:
         # https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/CategoryTheory/Grothendieck.lean
         from sage_categories.abstract_categories.functors import (
             is_functor,
-            is_structural_functor,
+            is_concrete_functor,
         )
         from sage_categories.abstract_categories.hom_categories import (
             is_isomorphism,
@@ -524,13 +524,13 @@ class CategoryCompiler:
             assert canonical_functor.domain() is source
             assert equivalent_functor.domain() is source
             assert canonical_functor.codomain() is equivalent_functor.codomain()
-            canonical: tuple[StructuralFunctor, ...] = ()
+            canonical: tuple[Functor, ...] = ()
             for factor in canonical_functor.factors():
-                assert is_structural_functor(factor)
+                assert is_concrete_functor(factor)
                 canonical = (*canonical, factor)
-            equivalent: tuple[StructuralFunctor, ...] = ()
+            equivalent: tuple[Functor, ...] = ()
             for factor in equivalent_functor.factors():
-                assert is_structural_functor(factor)
+                assert is_concrete_functor(factor)
                 equivalent = (*equivalent, factor)
             assert canonical
             assert equivalent
@@ -547,7 +547,7 @@ class CategoryCompiler:
     ) -> dict[str, DeclaredMethod]:
         local = self._local_methods(local_type)
         catalogue: dict[str, DeclaredMethod] = {}
-        for functor in category.super_functors():
+        for functor in category.structure_functors():
             inherited_methods = inherited_catalogue(functor.codomain())
             for name, declaration in inherited_methods.items():
                 candidate = DeclaredMethod(
@@ -646,7 +646,7 @@ class CategoryCompiler:
         # https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/CategoryTheory/Grothendieck.lean
         from sage_categories.abstract_categories.functors import (
             is_functor,
-            is_structural_functor,
+            is_concrete_functor,
         )
         from sage_categories.abstract_categories.hom_categories import (
             is_isomorphism,
@@ -666,13 +666,13 @@ class CategoryCompiler:
             equivalent_functor = coherence.codomain()
             assert is_functor(canonical_functor)
             assert is_functor(equivalent_functor)
-            canonical: tuple[StructuralFunctor, ...] = ()
+            canonical: tuple[Functor, ...] = ()
             for factor in canonical_functor.factors():
-                assert is_structural_functor(factor)
+                assert is_concrete_functor(factor)
                 canonical = (*canonical, factor)
-            equivalent: tuple[StructuralFunctor, ...] = ()
+            equivalent: tuple[Functor, ...] = ()
             for factor in equivalent_functor.factors():
-                assert is_structural_functor(factor)
+                assert is_concrete_functor(factor)
                 equivalent = (*equivalent, factor)
             divergence = next(
                 (position for position, pair in enumerate(zip(canonical, equivalent, strict=False)) if pair[0] is not pair[1]),
@@ -682,7 +682,7 @@ class CategoryCompiler:
 
             def follows(
                 declaration: DeclaredMethod,
-                route: tuple[StructuralFunctor, ...],
+                route: tuple[Functor, ...],
                 divergence_position: int = divergence,
             ) -> bool:
                 return len(declaration.route) > divergence_position and declaration.route[: divergence_position + 1] == route[: divergence_position + 1]
@@ -823,9 +823,9 @@ class CategoryCompiler:
         source: Category,
         target: Category,
         visited: tuple[int, ...],
-    ) -> list[tuple[StructuralFunctor, ...]]:
-        routes: list[tuple[StructuralFunctor, ...]] = []
-        for functor in source.super_functors():
+    ) -> list[tuple[Functor, ...]]:
+        routes: list[tuple[Functor, ...]] = []
+        for functor in source.structure_functors():
             codomain = functor.codomain()
             assert id(codomain) not in visited, "the structural-functor graph has a cycle"
             if codomain is target:

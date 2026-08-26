@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, TypeIs
 from sage_categories.abstract_categories.functors import (
     Functor,
     InclusionFunctor,
-    StructuralFunctor,
+    ConcreteFunctor,
 )
 from sage_categories.abstract_categories.hom_categories import (
     HomCategory,
@@ -59,7 +59,7 @@ class FullSubcategoryHomCategory(HomCategory):
         codomain: MathematicalObject,
         hom_category: HomCategoryFamily,
     ) -> None:
-        self._ambient_inclusion: StructuralFunctor | None = None
+        self._ambient_inclusion: ConcreteFunctor | None = None
         super().__init__(
             domain=domain,
             codomain=codomain,
@@ -133,7 +133,7 @@ class FullSubcategoryHomCategory(HomCategory):
             )
         )
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         if self._ambient_inclusion is None:
             self._ambient_inclusion = InclusionFunctor(
                 self,
@@ -280,7 +280,7 @@ class FullSubcategory(Category):
     ) -> FullSubcategoryHomCategory:
         return self.HomCategory().Of(domain, codomain)
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         return (self.inclusion(),)
 
     def inclusion(self) -> InclusionFunctor:

@@ -10,7 +10,7 @@ from sage_categories.abstract_categories.functors import (
     Functor,
     InclusionFunctor,
     NaturalTransformation,
-    StructuralFunctor,
+    ConcreteFunctor,
 )
 from sage_categories.abstract_categories.hom_categories import (
     HomCategory,
@@ -152,7 +152,7 @@ class DiagramCategory(Category):
     def _hom_category_type(self) -> type[HomCategory]:
         return DiagramHomCategory
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         if self._ambient_inclusion is None:
             self._ambient_inclusion = InclusionFunctor(self, self._ambient_category)
         return (self._ambient_inclusion,)
@@ -190,7 +190,7 @@ class DirectedSystem(DiagramCategory):
         self._diagram_category.admit(arrow)
         return super().admit(arrow)
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         if self._diagram_inclusion is None:
             self._diagram_inclusion = InclusionFunctor(
                 self,
@@ -228,7 +228,7 @@ class InverseSystem(DiagramCategory):
         self._diagram_category.admit(arrow)
         return super().admit(arrow)
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         if self._diagram_inclusion is None:
             self._diagram_inclusion = InclusionFunctor(
                 self,

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TypeIs
 
-from sage_categories.abstract_categories.functors import Functor, StructuralFunctor
+from sage_categories.abstract_categories.functors import Functor, ConcreteFunctor
 from sage_categories.abstract_categories.hom_categories import HomCategory
 from sage_categories.category import Category
 from sage_categories.types import (
@@ -112,7 +112,7 @@ class FunctorImageHomCategory(HomCategory):
         return arrow in self
 
 
-class ImageInclusionFunctor(StructuralFunctor):
+class ImageInclusionFunctor(ConcreteFunctor):
     """The inclusion of a represented functor image into its codomain."""
 
     def __init__(self, image_category: ImageOfFunctor) -> None:
@@ -179,7 +179,7 @@ class ImageOfFunctor(Category):
     def functor(self) -> Functor:
         return self._functor
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         if self._inclusion is None:
             self._inclusion = ImageInclusionFunctor(self)
         return (self._inclusion,)

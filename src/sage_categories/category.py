@@ -18,10 +18,7 @@ if TYPE_CHECKING:
     from sage_categories.abstract_categories.arrow_categories import (
         ArrowCategory as ArrowCategoryObject,
     )
-    from sage_categories.abstract_categories.functors import (
-        Functor,
-        StructuralFunctor,
-    )
+    from sage_categories.abstract_categories.functors import ConcreteFunctor, Functor
     from sage_categories.abstract_categories.hom_categories import (
         HomCategory as HomCategoryObject,
     )
@@ -136,18 +133,18 @@ class Category(MathematicalObject):
         """Return the arrow implementation declared at this category."""
         return self._local_arrow_type
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         """Return functors selected for implicit implementation inheritance."""
         return ()
 
     def super_categories(self) -> tuple[Category, ...]:
         """Return the category graph derived from structural functors."""
-        return tuple(functor.codomain() for functor in self.super_functors())
+        return tuple(functor.codomain() for functor in self.structure_functors())
 
     def structural_route_to(
         self,
         category: Category,
-    ) -> tuple[StructuralFunctor, ...]:
+    ) -> tuple[Functor, ...]:
         """Return the canonical structural-functor route to ``category``."""
         assert self.is_subcategory(category)
         return category_compiler().implementation_route(self, category)
@@ -596,7 +593,7 @@ class Category(MathematicalObject):
             inherited_product,
         )
 
-    def _product_lift(self) -> StructuralFunctor:
+    def _product_lift(self) -> ConcreteFunctor:
         """Return the declared structural functor which creates products."""
         assert False, f"{self} does not declare a product lift"
 

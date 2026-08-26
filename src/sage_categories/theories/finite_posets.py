@@ -10,7 +10,7 @@ from sage_categories.abstract_categories.category_constructions import (
 )
 from sage_categories.abstract_categories.functors import (
     InclusionFunctor,
-    StructuralFunctor,
+    ConcreteFunctor,
 )
 from sage_categories.theories.sets import (
     DiscreteCategory,

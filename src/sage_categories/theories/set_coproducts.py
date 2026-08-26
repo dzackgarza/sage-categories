@@ -19,7 +19,7 @@ from sage_categories.abstract_categories.functors import (
     DiscreteDiagram,
     Functor,
     InclusionFunctor,
-    StructuralFunctor,
+    ConcreteFunctor,
     is_functor,
 )
 from sage_categories.abstract_categories.functors import (
@@ -119,7 +119,7 @@ class CoproductElementsCategory(Category):
         self._inclusion: InclusionFunctor | None = None
         super().__init__(object_type=CoproductElement)
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         if self._inclusion is None:
             self._inclusion = InclusionFunctor(self, SetElements())
         return (self._inclusion,)

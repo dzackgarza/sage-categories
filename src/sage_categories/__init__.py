@@ -18,7 +18,7 @@ from sage_categories.abstract_categories.functors import (
     NaturalIsomorphism,
     NaturalTransformation,
     NaturalTransformations,
-    StructuralFunctor,
+    ConcreteFunctor,
 )
 from sage_categories.abstract_categories.products import (
     Biproduct,
@@ -206,7 +206,7 @@ __all__ = [
     "SetMorphism",
     "Sets",
     "Slice",
-    "StructuralFunctor",
+    "ConcreteFunctor",
     "Subobject",
     "SubsetsOfSize",
     "Superobject",

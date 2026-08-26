@@ -30,13 +30,13 @@ from sage_categories.abstract_categories.functor_core import (
     NaturalTransformationHomCategory,
     NaturalTransformations,
     PostcompositionFunctor,
-    RestrictedStructuralFunctor,
-    StructuralFunctor,
+    RestrictedConcreteFunctor,
+    ConcreteFunctor,
     compose_functors,
     is_functor,
     is_functor_category,
     is_natural_transformation_hom_category,
-    is_structural_functor,
+    is_concrete_functor,
 )
 
 __all__ = (
@@ -67,11 +67,11 @@ __all__ = (
     "ObjectSetFunctor",
     "PostcompositionFunctor",
     "ProductFunctor",
-    "RestrictedStructuralFunctor",
-    "StructuralFunctor",
+    "RestrictedConcreteFunctor",
+    "ConcreteFunctor",
     "compose_functors",
     "is_functor",
     "is_functor_category",
     "is_natural_transformation_hom_category",
-    "is_structural_functor",
+    "is_concrete_functor",
 )

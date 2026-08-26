@@ -12,9 +12,10 @@ from itertools import product as cartesian_product
 from typing import Any
 
 from sage_categories.abstract_categories.functors import (
+    Functor,
     DiscreteHomCategory,
     InclusionFunctor,
-    StructuralFunctor,
+    ConcreteFunctor,
 )
 from sage_categories.abstract_categories.hom_categories import (
     Automorphism,
@@ -580,7 +581,7 @@ class SetAutomorphismHomCategory(IsomorphismHomCategory):
 
 class SetEndomorphismCategoryFamily(EndCategoryFamily):
     def __init__(self, base_category: Category) -> None:
-        self._inclusion: StructuralFunctor | None = None
+        self._inclusion: ConcreteFunctor | None = None
         HomCategoryFamily.__init__(
             self,
             base_category,
@@ -590,7 +591,7 @@ class SetEndomorphismCategoryFamily(EndCategoryFamily):
 
 class SetMonomorphismCategoryFamily(MonomorphismCategoryFamily):
     def __init__(self, base_category: Category) -> None:
-        self._inclusion: StructuralFunctor | None = None
+        self._inclusion: ConcreteFunctor | None = None
         HomCategoryFamily.__init__(
             self,
             base_category,
@@ -600,7 +601,7 @@ class SetMonomorphismCategoryFamily(MonomorphismCategoryFamily):
 
 class SetEpimorphismCategoryFamily(EpimorphismCategoryFamily):
     def __init__(self, base_category: Category) -> None:
-        self._inclusion: StructuralFunctor | None = None
+        self._inclusion: ConcreteFunctor | None = None
         HomCategoryFamily.__init__(
             self,
             base_category,
@@ -610,7 +611,7 @@ class SetEpimorphismCategoryFamily(EpimorphismCategoryFamily):
 
 class SetIsomorphismCategoryFamily(IsomorphismCategoryFamily):
     def __init__(self, base_category: Category) -> None:
-        self._inclusion: StructuralFunctor | None = None
+        self._inclusion: ConcreteFunctor | None = None
         HomCategoryFamily.__init__(
             self,
             base_category,
@@ -620,7 +621,7 @@ class SetIsomorphismCategoryFamily(IsomorphismCategoryFamily):
 
 class SetAutomorphismCategoryFamily(AutomorphismCategoryFamily):
     def __init__(self, base_category: Category) -> None:
-        self._inclusion: StructuralFunctor | None = None
+        self._inclusion: ConcreteFunctor | None = None
         HomCategoryFamily.__init__(
             self,
             base_category,
@@ -642,7 +643,7 @@ class SetHomCategoryFamily(HomCategoryFamily):
         self._sets_inclusion: InclusionFunctor | None = None
         super().__init__(base_category, hom_category_type=hom_category_type)
 
-    def super_functors(self) -> tuple[StructuralFunctor, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         from sage_categories.theories.set_category import Sets
 
         if self._sets_inclusion is None:

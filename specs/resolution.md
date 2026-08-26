@@ -47,7 +47,7 @@ There are three separate questions:
 
 1. Which methods introduced by \(B\) and \(C\) reach the public object?
 2. Which route supplies a method owned by the common category \(A\)?
-3. Do both routes construct the same object, elements, arrows, and universal data in
+3. Do both routes construct the same object, elements, morphisms, and universal data in
    \(A\)?
 
 These questions must not be combined into one method-resolution rule.
@@ -81,16 +81,15 @@ This framework transports more than methods. A selected structural functor acts 
 
 - objects;
 - elements;
-- arrows;
+- morphisms;
 - method receivers;
 - mathematical arguments;
-- mathematical results;
 - lazy mathematical collections;
-- the arrows in universal constructions.
+- the morphisms in universal constructions.
 
 The compiler also keeps canonical images in reachable categories. Therefore, a route
-choice can affect exact parent identity, arrow domains and codomains, element ambient
-objects, projections, injections, and mediating arrows.
+choice can affect exact parent identity, morphism domains and codomains, element
+parents, projections, injections, and mediating morphisms.
 
 Two implementations can be mathematically isomorphic without being the same chosen
 implementation. A tuple product and a vector-space product are a simple example. Their
@@ -100,8 +99,8 @@ Thus, Python MRO alone is insufficient. A route resolution must select or identi
 complete mathematical image, not only the method body.
 
 Implicit coherence is safe when both routes are strict in this framework. They must
-produce the same canonical object, element, and arrow images. It is unsafe to treat a
-nonidentity natural isomorphism as literal identity without applying its components.
+produce the same canonical object, element, and morphism images by identity. It is
+unsafe to treat a nonidentity natural isomorphism as literal identity.
 
 ## The first proposed resolution
 
@@ -148,7 +147,7 @@ the compiler applies this ownership rule:
 | \(D\) | Use the local declaration. |
 | \(B\) | Use the route \(D\to B\). |
 | \(C\) | Use the route \(D\to C\). |
-| \(A\) | Resolve the two routes to one canonical \(A\)-image. |
+| \(A\) | Both routes return one canonical \(A\)-image by identity; the compiler checks this at the first transport. |
 | Both \(B\) and \(C\) under one name | Require a mathematical resolution or reject compilation. |
 
 The public surface is the union of both branches. Route resolution applies only to
@@ -199,7 +198,7 @@ contains:
 
 - the module apex \(P\);
 - linear projections \(\pi_i:P\to M_i\);
-- the linear mediating arrow;
+- the linear mediating morphism;
 - componentwise addition and scalar multiplication;
 - its complete product universal property.
 
@@ -220,12 +219,12 @@ U\!\left(\prod_i M_i\right)
 
 after the framework chooses compatible product presentations.
 
-The module branch supplies linear structure and linear universal arrows. The set branch
+The module branch supplies linear structure and linear universal morphisms. The set branch
 supplies membership, elements, iteration when available, and cardinality. These are
 compatible capabilities. They are not competing product implementations.
 
 The module product must select one complete presentation. Its apex, projections,
-elements, mediating arrows, and set image must belong to that presentation. The
+elements, mediating morphisms, and set image must belong to that presentation. The
 implementation must not take the apex from one presentation and projections or elements
 from another merely isomorphic presentation.
 
@@ -337,8 +336,8 @@ Therefore, the compiler must not assume that every structural functor preserves 
 universal construction. Construction preservation is separate mathematical data. A
 functor can preserve limits without preserving colimits.
 
-This is not a reason for leaf wiring. It is a reason to make preservation and lift
-declarations mathematically exact in the kernel interface.
+This is not a reason for leaf wiring. A construction states each preservation or lift
+fact at that construction. The compiler has no general preservation registry.
 
 ## Several presentations of one construction
 
@@ -356,7 +355,7 @@ The choice includes:
 - its elements and their ambient object;
 - all projections;
 - all injections when the product is also used as a finite biproduct;
-- mediating and factoring arrows;
+- mediating and factoring morphisms;
 - the image under every selected structural functor.
 
 This choice does not remove algorithms associated with another category branch. It only
@@ -367,7 +366,7 @@ isomorphism. It does not contribute methods through structural inheritance unles
 category declares it as the selected structural realization.
 
 General non-strict coherence is needed only if the public object must accept methods and
-universal arrows from both nonidentical presentations transparently. The present goal of
+universal morphisms from both nonidentical presentations transparently. The present goal of
 managing a mathematical algorithm catalogue does not require that behavior.
 
 ## Method-name collisions
@@ -406,29 +405,37 @@ image. A diamond can satisfy this rule in either of two ways.
 
 ### Strictly coherent routes
 
-Both routes construct the same selected image. The object image, element image, arrow
-image, ambient objects, domains, and codomains agree exactly. The compiler can
-deduplicate the routes.
+Both routes return the same selected image by identity. The object image, element
+image, morphism image, parents, domains, and codomains are the same objects. The
+compiler deduplicates the routes.
 
-Routine structural diamonds should normally have this form. The two selected paths from
-a finite module to sets should reach the same set image.
+This identity holds by construction. A source value retains each ancestor value supplied
+as defining data. A derived ancestor image is constructed once from retained data and
+cached for that source value. A selected structural functor returns that retained or
+cached ancestor value on every call and never reconstructs an equal or isomorphic
+replacement.
+
+The compiler checks the identity eagerly. At the first structural transport of a value
+to any reachable category, it traverses every route to that category in
+`structure_functors()` declaration order, stores the first image in the canonical cache,
+and asserts that each later image `is` the stored image. On the first mismatch it raises
+a construction-defect error that names the source value's construction, the two routes,
+and the shared ancestor category. Nothing is repaired, replaced, or retried. The compiler
+never asks whether the two values are mathematically equal.
+
+Routine structural diamonds have this form. The two selected paths from a finite module
+to sets reach the same set object.
 
 ### Merely isomorphic routes
 
-The two routes construct different presentations connected by a natural isomorphism.
-The kernel cannot assert that the two images are identical. It must do one of these:
+A functor enters `structure_functors()` only when every shared-ancestor route through it
+returns the retained canonical value by identity. Two routes that construct different
+presentations connected by a natural isomorphism are therefore never both selected. The
+second presentation remains an ordinary functor of `Fun` or an explicit isomorphism.
 
-- select one presentation as canonical and apply the comparison isomorphism to all
-  transported data;
-- retain the second presentation as an ordinary explicit realization;
-- support genuine non-strict coherence, if a future public requirement needs both.
-
-A natural-isomorphism declaration is not sufficient when the implementation only
-rewrites a route name and never applies the component isomorphism. Exact parent and
-arrow identities would still be wrong.
-
-The framework does not need general higher-coherence machinery for its current purpose.
-It does need honest treatment of any route pair that is only isomorphic.
+Natural transformations are trusted constructions. They never rewrite, normalize, or
+identify structural routes, and the compiler performs no naturality or higher-categorical
+proof.
 
 ## Final decision
 
@@ -437,30 +444,38 @@ The architecture uses the following rules.
 1. Selected structural functors form the complete inheritance graph.
 2. The compiler collects methods from every reachable branch.
 3. A branch-specific method remains available on every structural descendant.
-4. Two routes to the same declaring category resolve to one canonical image.
+4. Two routes to the same declaring category return one canonical image by identity.
 5. Routine strictly coherent diamonds resolve automatically in the kernel.
 6. A leaf never traverses a route, normalizes to an ancestor, moves images, manages a
    canonical-image cache, or installs forwarding methods.
 7. A genuine presentation or algorithm choice is a small mathematical declaration by
    the category that owns the choice. The kernel executes it.
-8. A choice of presentation includes objects, elements, arrows, and universal data. It
-   cannot mix data from different presentations.
+8. A choice of presentation includes objects, elements, morphisms, and universal data.
+   It cannot mix data from different presentations.
 9. Independent method declarations with different meanings require distinct names or an
    explicit mathematical operation at the common descendant.
 10. Method-resolution order never decides mathematical meaning.
-11. Every functor states which universal constructions it preserves or lifts. Structural
-    placement alone implies no general preservation of limits or colimits.
-12. A route pair that is only naturally isomorphic is not treated as strictly equal.
-13. Alternate realizations remain ordinary functors or explicit isomorphisms unless the
-    public contract requires transparent multi-presentation transport.
-14. General non-strict or higher coherence remains outside the kernel until a concrete
-    mathematical capability requires it.
+11. A source value retains each ancestor value supplied as defining data. A derived
+    ancestor image is constructed once and cached. A selected structural functor returns
+    that retained value on every call and never reconstructs an equal or isomorphic
+    replacement.
+12. At the first structural transport of a value to any reachable category, the compiler
+    traverses every route to that category in declaration order, stores the first image,
+    and asserts that each later image `is` the stored image. A mismatch raises a
+    construction-defect error naming both routes and the shared ancestor.
+13. The compiler never asks whether two images are mathematically equal and performs no
+    naturality or higher-categorical proof. Natural transformations are trusted
+    constructions. A construction states each preservation or lift fact at that
+    construction; the compiler has no preservation registry.
+14. A functor enters `structure_functors()` only when every shared-ancestor route through
+    it returns the retained canonical value by identity. A route pair that is only
+    naturally isomorphic remains a pair of ordinary functors of `Fun`.
 
 The short form is:
 
-> Preserve every branch. Resolve only duplicate access to a common owner. Derive routine
-> coherence in the kernel. Ask a category for a choice only when the mathematics
-> contains a real choice.
+> Preserve every branch. Resolve only duplicate access to a common owner. Identity holds
+> by construction and is checked at the first transport. Ask a category for a choice
+> only when the mathematics contains a real choice.
 
 ## Acceptance examples
 
@@ -481,7 +496,7 @@ does not enumerate its \(p^n\) elements to establish finiteness.
 ### Module products
 
 A product in \(\operatorname{Modules}(R)\) retains its module apex, projections, and
-mediating arrow. Its underlying set is the chosen set product. Product elements belong
+mediating morphism. Its underlying set is the chosen set product. Product elements belong
 to that exact apex.
 
 ### Module coproducts
@@ -502,6 +517,7 @@ ambiguity or the public API gives the operations distinct mathematical names.
 
 ### Nonidentical presentations
 
-When two routes yield merely isomorphic product presentations, projections and elements
-from one presentation are not attached to the other apex. One complete presentation is
-canonical, or the kernel applies the explicit comparison isomorphism.
+When two routes would yield merely isomorphic product presentations, projections and
+elements from one presentation are not attached to the other apex. One complete
+presentation is canonical and selected; the other remains an ordinary functor or an
+explicit isomorphism and is never a selected route.

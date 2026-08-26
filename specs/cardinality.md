@@ -1,8 +1,8 @@
 # Cardinalities and ordinals
 
 Cardinals are objects of a set-enriched skeletal category of cardinal representatives.
-Ordinals are elements of a commutative semiring. Both models retain symbolic
-expressions when their exact normalization is not available.
+Ordinals are elements of a commutative semiring. Both models retain exact expressions
+formed by their own arithmetic when no normalization rule applies.
 
 Cardinal and ordinal operations specified as predicates follow the proposition interface
 in [Property refinement](property-refinement.md). Applying one returns a proposition.
@@ -30,33 +30,32 @@ Mathlib's
 [cardinal definitions](https://leanprover-community.github.io/mathlib4_docs/Mathlib/SetTheory/Cardinal/Defs.html)
 define cardinals as types modulo bijection and define addition, multiplication, and
 exponentiation through sum, product, and function types. This category retains the same
-constructions and their universal arrows.
+constructions and their universal morphisms.
 
 A cardinal is an object of this category:
 
 ```python
 CardinalObject = Cardinal().ObjectType
-CardinalityHomCategory = Cardinal().HomCatType
-CardinalityMorphism = Cardinal().ArrowType
+CardinalityMorphism = Cardinal().MorphismType
 ```
 
 Its complete structural tuple selects the skeletal inclusion:
 
 ```python
-def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
+def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (Fun(self, Sets()).FullyFaithful().inclusion(),)
 ```
 
 The inclusion sends each cardinal to its selected representative and acts identically
 on the corresponding function sets.
 
-For every pair of represented cardinals, the Hom category is the owned function set
-between their representatives:
+For every pair of represented cardinals, `Mor(Cardinal())(kappa, lambda)` is the
+discrete category on the owned function set between their representatives:
 
 \[
-\operatorname{Hom}_{\mathbf{Cardinal}}(\kappa,\lambda)
+\operatorname{Mor}_{\mathbf{Cardinal}}(\kappa,\lambda)
 =
-\operatorname{Hom}_{\mathbf{Set}}
+\operatorname{Mor}_{\mathbf{Set}}
   (R_\kappa,R_\lambda).
 \]
 
@@ -65,12 +64,12 @@ Its objects are functions. Cardinal order is the existence of an injective funct
 \[
 \kappa\leq\lambda
 \quad\Longleftrightarrow\quad
-\operatorname{Ar}(\mathbf{Cardinal}).\operatorname{Monomorphisms()}
+\operatorname{Mor}(\mathbf{Cardinal}).\operatorname{Monomorphisms()}
   (\kappa,\lambda)\text{ is inhabited}.
 \]
 
 Cardinal equality is represented by isomorphism of the selected representatives. Mere
-inhabitation of the unrestricted Hom category does not define cardinal order.
+inhabitation of the unrestricted morphism category does not define cardinal order.
 
 ### Public cardinal constructors
 
@@ -192,11 +191,11 @@ These are the inherited categorical constructions:
 \kappa\lambda=\kappa\times\lambda,
 \qquad
 \lambda^\kappa=
-\operatorname{Hom}_{\mathbf{Cardinal}}(\kappa,\lambda).
+R_\lambda^{\,R_\kappa}.
 \]
 
 The coproduct and product retain their injections, projections, and universal maps. The
-Hom category retains the representative functions. Their cardinal objects are exactly
+function set retains the representative functions. Their cardinal objects are exactly
 cardinal addition, multiplication, and exponentiation.
 
 The implementation normalizes these cases:
@@ -336,7 +335,7 @@ not establish incomparability.
 For all cardinals `kappa` and `lambda`:
 
 ```python
-H = Cardinal().HomCategory(kappa, lambda)
+H = Mor(Cardinal())(kappa, lambda)
 
 H.is_inhabited()
 H.is_empty()
@@ -349,19 +348,19 @@ that no such function exists. `Unknown` preserves `H` without either conclusion.
 The order proposition uses the monomorphism endpoint category:
 
 ```python
-M = Ar(Cardinal()).Monomorphisms()(kappa, lambda)
+M = Mor(Cardinal()).Monomorphisms()(kappa, lambda)
 kappa <= lambda  # dispatches to M.is_inhabited()
 ```
 
 The base-category identity is an object of the endomorphism category:
 
 ```python
-kappa.identity() in kappa.Hom(kappa)
+kappa.identity() in Mor(Cardinal())(kappa, kappa)
 ```
 
 Inherited base-category composition is ordinary function composition. Coproduct,
-product, and Hom functoriality act on these arrows through their universal
-constructions. These constructions supply the complete action on arrows.
+product, and function-set functoriality act on these morphisms through their universal
+constructions. These constructions supply the complete action on morphisms.
 
 
 The ordinal model is specified in [`ordinals.md`](ordinals.md).
@@ -380,7 +379,7 @@ Its object map calls:
 X.cardinality()
 ```
 
-Its arrow map accepts a set isomorphism. The construction retains a selected bijection
+Its morphism map accepts a set isomorphism. The construction retains a selected bijection
 between each set and its cardinal representative. It conjugates the set isomorphism by
 these selected bijections to construct the corresponding cardinal isomorphism.
 
@@ -400,11 +399,21 @@ For a category \(\mathbf C\) with selected set-valued structural functor
 supplies cardinality.
 A constructor can pass known cardinality data to its underlying-set constructor.
 
-Set constructions use cardinal expressions directly:
+A set construction's `cardinality()` is a computational case tree owned by the
+`Sets()` implementation of that construction. It routes on the data the construction
+retains: the index set's cardinality, the retained diagram's codomain placement
+(`Sets().Finite()`, `Sets().Countable()`, `Sets().Uncountable()`), a retained constant
+diagram, and the factor cardinalities when the index is finite. Each case cites the
+theorem that decides it. When no case applies, `cardinality()` returns `Unknown`. The
+cases are:
 
-- Products use indexed products.
+- Products over a finite index with every factor exact use the exact product; a finite
+  index with an empty factor gives \(0\); the constant diagram at \(X\) over \(S\)
+  gives \(|X|^{|S|}\); an infinite index with codomain `Sets().Uncountable()` places
+  the product in `Sets().Uncountable()`; a finite index with codomain
+  `Sets().Countable()` places the product in `Sets().Countable()`.
 
-- Coproducts use indexed sums.
+- Coproducts use the dual sum cases.
 
 - Function sets use \(|Y|^{|X|}\).
 
@@ -427,7 +436,6 @@ The mathematical exports are:
 ```python
 Cardinal
 CardinalObject
-CardinalityHomCategory
 CardinalityMorphism
 aleph0
 continuum

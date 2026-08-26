@@ -21,11 +21,11 @@ through `POL-SET-036`, and `POL-API-009`, `POL-API-010`, `POL-API-015`, and
 
 - `Sets.ObjectType` implements set objects.
 - `Sets.ElementType` implements elements with an ambient set.
-- `Sets.ArrowType` implements total functions with a domain and codomain.
+- `Sets.MorphismType` implements total functions with a domain and codomain.
 
-An owned element records both its value and its ambient set. Transport must preserve
-that ambient set. The same mathematical value can produce distinct owned elements in
-distinct sets.
+An owned element is a point `1 -> X` at the classical stage `Sets().Terminal()`; its
+parent is its codomain `X`. Transport preserves that codomain. The same mathematical
+value can produce distinct owned elements in distinct sets.
 
 Private representations can include Sage parents, predicates, symbolic expressions,
 finite collections, indexed families, tagged values, or universal-construction data.
@@ -34,7 +34,7 @@ No private representation becomes another public owner.
 The `Sets()` subtree owns:
 
 - membership and available iteration;
-- total set maps and their arrow properties;
+- total set maps and their morphism properties;
 - cardinality;
 - subobjects and images;
 - function sets and exponentials;
@@ -48,12 +48,12 @@ Every object of `Sets()` supplies these operations when their input data exists:
 
 ```python
 X.cardinality()
-X.Hom(Y)
-X.End()
-X.Aut()
-X.Iso(Y)
-X.Mono(Y)
-X.Epi(Y)
+Mor(Sets())(X, Y)
+Mor(Sets())(X, X)
+Mor(Sets())(X, X).Automorphisms()
+Mor(Sets())(X, Y).Isomorphisms()
+Mor(Sets())(X, Y).Monomorphisms()
+Mor(Sets())(X, Y).Epimorphisms()
 X.identity()
 
 X.subobjects()
@@ -67,30 +67,45 @@ X + Y
 ```
 
 Generic categorical methods come from the category foundation. `Sets()` does not
-create another implementation of identity, composition, or arrow-category formation.
+create another implementation of identity, composition, or morphism-category formation.
 
-`X.cardinality()` returns a cardinal object. It can remain a symbolic cardinal
-expression when no exact algorithm normalizes it.
+`X.cardinality()` returns an exact cardinal or Sage `Unknown`.
 
-## Set maps, Hom categories, and function sets
+## Canonical objects and the classical stage
 
-`X.Hom(Y)` is the Hom category of total set maps from `X` to `Y`. It exists for every
-pair `X, Y in Sets()`. Its inhabitation and emptiness are owned predicates.
+`Sets()` owns these objects, each constructed once and retained by identity:
 
-This Hom category is discrete. The same owned value is the function set and exponential
-from `X` to `Y`. Its elements and its category objects are the total set maps.
+- `Sets().Empty()`, the empty set `{}`;
+- `Sets().Terminal()`, the one-point set `1 = {*}`;
+- `Sets().Simplex(n)`, the set `[n] = {0, ..., n}` for `n >= 0`.
 
-A map constructor can use a callable or explicit mapping as its private rule. The
-constructor must establish that the rule is total and lands in `Y`.
+`[1] = {0, 1}` is the object `2` of the power object `2 ** X`.
+
+`G_Sets = Sets().Terminal()` is the classical stage of `Sets()`. A classical element of
+`X` is a point `1 -> X`. Set membership, enumeration, and cardinality use
+`Mor(Sets())(1, X)` through this stage.
+
+## Set maps, morphism categories, and function sets
+
+`Mor(Sets())(X, Y)` is the discrete category on the total set maps from `X` to `Y`. It
+exists for every pair `X, Y in Sets()`. Its inhabitation and emptiness are owned
+predicates.
+
+The function set `Y ** X` is the exponential object of `Sets()`. It is a distinct owned
+object: `Mor(Sets())(X, Y)` is the discrete category on the elements of `Y ** X`.
+
+`Mor(Sets())(X, Y)(rule)` constructs a set map. The rule can be a callable or explicit
+mapping as its private rule. The constructor must establish that the rule is total and
+lands in `Y`.
 
 A raw rule determines propositions stating totality and codomain closure. `ask()` can
-evaluate those propositions. Exact `True` invokes the owned Hom constructor. Exact
-`False` rejects admission. `Unknown` leaves the rule outside the set-arrow category.
-The trusted Hom constructor, an active assumption, exact positive evaluation, and a
+evaluate those propositions. Exact `True` invokes the owned morphism constructor. Exact
+`False` rejects admission. `Unknown` leaves the rule outside the set-morphism category.
+The trusted morphism constructor, an active assumption, exact positive evaluation, and a
 named mathematical construction all use the same category constructor. A callable does
 not establish totality by itself.
 
-After admission, a set arrow supplies:
+After admission, a set morphism supplies:
 
 ```python
 f(x)
@@ -100,25 +115,26 @@ f.image()
 ```
 
 Evaluation requires `x in f.domain()`. It returns an owned element of `f.codomain()`.
-Identity and composition arrive through inherited arrow operations.
+Identity and composition arrive through inherited morphism operations.
 
-The generic categorical operation has these equivalent standard notations:
+The exponential object is:
 
 ```python
-X.Hom(Y)
 Y ** X
 ```
 
-This object is (Y^X). It retains the evaluation arrow. Its currying operation returns
-the unique arrow required by the exponential universal property.
+This object is (Y^X). It retains the evaluation morphism. Its currying operation returns
+the unique morphism required by the exponential universal property.
 
 Function rules need no enumeration. This supports maps such as `QQ -> ZZ` and
 `RR -> RR^2`.
 
-## Arrow property categories
+## Morphism property categories
 
-Set isomorphisms, monomorphisms, and epimorphisms are objects of their inherited arrow
-property categories.
+Set isomorphisms, monomorphisms, and epimorphisms are objects of the property
+subcategories `Mor(Sets()).Isomorphisms()`, `Mor(Sets()).Monomorphisms()`, and
+`Mor(Sets()).Epimorphisms()`, defined once at the `Cat()` level. Fixed endpoints use
+`Mor(Sets())(X, Y).Monomorphisms()`.
 
 In `Sets()`:
 
@@ -126,24 +142,26 @@ In `Sets()`:
 - monomorphisms are injective functions;
 - epimorphisms are surjective functions.
 
-An arrow-property predicate returns its applied proposition. `ask()` evaluates it. A
-property constructor refines an arrow only after an exact result, scoped hypothesis, or
+A morphism-property predicate returns its applied proposition. `ask()` evaluates it. A
+property constructor refines a morphism only after an exact result, scoped hypothesis, or
 named theorem establishes the property.
 
-An inverse of an isomorphism is an owned set arrow. It satisfies both inverse equations.
+An inverse of an isomorphism is an owned set morphism. It satisfies both inverse equations.
 
 ## Products
 
-The product construction accepts an arbitrary small diagram through its category-owned
-constructor:
+The product construction accepts a discrete diagram over `Discrete(S)` for `S in Sets()`
+through its category-owned constructor. The diagram is given by its object rule
+`i |-> X_i`; it never requires a finite tuple. A Python sequence `(X_0, ..., X_n)` is the
+convenience form and denotes the diagram over `Discrete([n])`.
 
 ```python
 P = Sets().Products()(diagram)
 P2 = X * Y
 ```
 
-The binary operator uses the discrete diagram on `X` and `Y`. The product functor maps
-diagram arrows to the induced product arrows.
+`X * Y` is `Sets().Products()((X, Y))`. The product functor maps diagram morphisms to
+the induced product morphisms.
 
 A product presentation retains:
 
@@ -156,7 +174,7 @@ P.cardinality()
 P.factor_cardinalities()
 ```
 
-`P.product_projection(i)` and `P.universal_morphism(cone)` are owned set arrows. They
+`P.product_projection(i)` and `P.universal_morphism(cone)` are owned set morphisms. They
 satisfy the product equations.
 
 A product element is an indexed family:
@@ -167,7 +185,8 @@ x.components()
 iter(x)  # only when the index set has a chosen finite enumeration
 ```
 
-The product cardinality is the indexed product of the factor cardinalities.
+`P.cardinality()` is the computational case tree owned by the product implementation
+(see [Cardinality and enumeration](#cardinality-and-enumeration)).
 
 ## Coproducts
 
@@ -178,8 +197,9 @@ Q = Sets().Coproducts()(diagram)
 Q2 = X + Y
 ```
 
-The binary operator uses the discrete diagram on `X` and `Y`. The coproduct functor maps
-diagram arrows to the induced coproduct arrows.
+`X + Y` is `Sets().Coproducts()((X, Y))`. The diagram is a discrete diagram over
+`Discrete(S)` given by rule, as for products. The coproduct functor maps diagram
+morphisms to the induced coproduct morphisms.
 
 A coproduct presentation retains:
 
@@ -199,32 +219,48 @@ x.index()
 x.value()
 ```
 
-The coproduct cardinality is the indexed sum of the factor cardinalities.
+`Q.cardinality()` is the computational case tree owned by the coproduct implementation
+(see [Cardinality and enumeration](#cardinality-and-enumeration)).
 
 ## General limits and colimits
 
-The limit constructor accepts an arbitrary small diagram in `Sets()`. Its result retains:
+`Sets().Limits(I)` and `Sets().Colimits(I)` are indexed by one supplied shape
+`I in Cat()`. A diagram of shape `I` is an object of `Fun(I, Sets())`. The limit
+constructor accepts such a diagram `D`. Its result retains:
 
 - the diagram;
 - the limiting cone;
 - every cone component;
 - the universal map from another cone.
 
-The standard set algorithm realizes the apex as a subobject of the product of diagram
-objects. Its predicate is compatibility with every diagram arrow.
+The limit of `D: I -> Sets()` is the predicate subset of the product
+`prod_{i in Ob(I)} D(i)` cut out by compatibility: a family `(x_i)` is a member when
+`ask(D(u)(x_i) == x_j) is True` for every generating morphism `u: i -> j` of `I`.
+Membership decides when `I` is finitely presented and every generating equality decides,
+and is `Unknown` otherwise. The projections are the restricted product projections. The
+mediating map of a cone is its map into the product.
 
-The colimit constructor also accepts an arbitrary small diagram. Its result retains:
+The colimit constructor also accepts a diagram of shape `I`. Its result retains:
 
 - the diagram;
 - the colimiting cocone;
 - every cocone component;
 - the universal map to another cocone.
 
-The standard set algorithm realizes the apex as a quotient of the coproduct of diagram
-objects by the generated diagram relation.
+The colimit of `D` is the quotient of the coproduct `coprod_i D(i)` by the equivalence
+relation generated by `(i, x) ~ (j, D(u)(x))`. Its injections are the coproduct
+injections followed by the quotient map. Its element equality is an owned predicate.
+For `I = omega`, the exact handler decides `True` when two representatives agree at the
+larger of their two stages under the transition maps and returns `Unknown` otherwise;
+for every other infinite shape it returns `Unknown`.
 
-Products and coproducts use discrete diagrams. Other diagram shapes use the same limit
-and colimit interfaces.
+Products and coproducts are these constructions at discrete shapes. Pullbacks,
+pushouts, equalizers, and coequalizers are these constructions at their named shapes:
+`Sets().Pullbacks() = Sets().Limits(L(2, 2))`,
+`Sets().Pushouts() = Sets().Colimits(L(2, 0))`,
+`Sets().Equalizers() = Sets().Limits(WalkingParallelPair)`, and
+`Sets().Coequalizers() = Sets().Colimits(WalkingParallelPair)`. Each retains its named
+projections and injections.
 
 ## Subobjects, images, and power objects
 
@@ -247,8 +283,8 @@ chosen subset representative. The chosen monomorphism remains part of the subobj
 `f.image()` constructs an owned subobject of `f.codomain()`. It does not require source
 enumeration. Image membership remains a proposition when no handler can decide it.
 
-For the owned two-element set `Two`, `Two ** X` constructs the power object of `X`.
-It is the Hom category and function set from `X` to `Two`.
+`2 ** X`, with `2 = [1] = Sets().Simplex(1)`, constructs the power object of `X`. It is
+the function set from `X` to `2`.
 
 The power object supplies:
 
@@ -335,91 +371,50 @@ Each category declares its membership proposition once. The kernel implements
 that Boolean category admission is not established. A trusted category constructor or
 named mathematical construction places a set directly in the property category.
 
-### Symbolic cardinalities
+### Exact cardinality or `Unknown`
 
-`Unknown` is not a possible cardinality. It is an epistemic result for a proposition
-which the available exact mathematics does not decide.
-
-The cardinality operation is total:
+The cardinality operation returns an exact cardinal or Sage `Unknown`:
 
 ```python
-X.cardinality() -> CardinalObject
+X.cardinality() -> Cardinal | UnknownClass
 ```
 
-It always returns an owned cardinal. When no algorithm normalizes the result, return
-the symbolic cardinal `CardinalityOf(X)`. Distinct set objects retain distinct symbolic
-cardinal expressions.
+A cardinal is an exact value: a finite cardinal, `aleph(alpha)`, `2 ** aleph(0)`, or
+another value formed by exact cardinal arithmetic. There is no placeholder cardinal, no
+unknown cardinal kind, and no symbolic "cardinality of X" value.
 
-For example, retain
+Cardinal arithmetic, equality, and order are defined on cardinals only. Cardinals
+implement no `Unknown` handling.
 
-\[
-3\lvert X\rvert
-\]
+A set construction's `cardinality()` is a computational case tree owned by the `Sets()`
+implementation of that construction. It routes on the data the construction retains:
+the index set's cardinality, the retained diagram's codomain placement
+(`Sets().Finite()`, `Sets().Countable()`, `Sets().Uncountable()`), a retained constant
+diagram, and the factor cardinalities when the index is finite. Each case cites the
+theorem that decides it. The product cases are: a finite index with every factor exact
+gives the exact product; a finite index with an empty factor gives `0`; the constant
+diagram at `X` over `S` gives `(#X) ** (#S)`; an infinite index with codomain
+`Sets().Uncountable()` places the product in `Sets().Uncountable()`; a finite index
+with codomain `Sets().Countable()` places the product in `Sets().Countable()`. When no
+case applies the result is `Unknown`. Coproducts use the dual sum cases.
 
-as a cardinal expression. The cardinal arithmetic owner can apply
+If SymPy normalizes a subset to `FiniteSet(1, 2, 3)`, its cardinality is `3`.
 
-\[
-0\kappa=0,
-\qquad
-1\kappa=\kappa,
-\]
-
-and, after establishing that \(\kappa\) is infinite,
-
-\[
-n\kappa=\kappa
-\qquad
-(0<n<\aleph_0).
-\]
-
-Likewise,
-
-\[
-\lvert X\times Y\rvert=\lvert X\rvert\lvert Y\rvert
-\]
-
-returns that symbolic product when neither factor has a normalized cardinal.
-
-Keep these responsibilities separate:
-
-- `CardinalObject` represents exact finite, infinite, or symbolic cardinal values.
-- Cardinal addition, multiplication, and exponentiation return `CardinalObject`.
-- Normalization uses construction theorems and private computation engines.
-- Cardinal equality, order, finiteness, and countability methods return propositions.
-- `Unknown` occurs only as the result of `ask()` when such a proposition cannot be
-  decided.
-
-Examples include:
-
-```python
-arbitrary_subset.cardinality()
-# CardinalityOf(arbitrary_subset)
-
-image.cardinality()
-# CardinalityOf(image)
-
-product.cardinality()
-# left.cardinality() * right.cardinality()
-```
-
-If SymPy normalizes the subset to `FiniteSet(1, 2, 3)`, the same cardinal normalizes to
-`3`.
-
-If the image arrow is monic, the construction theorem normalizes
+If the image morphism is monic, the construction theorem gives
 
 \[
 \lvert\operatorname{im}(f)\rvert=\lvert\operatorname{dom}(f)\rvert.
 \]
 
-If neither route applies, the symbolic cardinal remains valid.
+If neither route applies, `cardinality()` returns `Unknown`.
 
-This places the complexity at its correct owner. Set constructions need no `None` or
-unknown-cardinality branches. The cardinal implementation supplies symbolic ordered
-semiring arithmetic and exact normalization.
-
-If an unresolved-cardinality implementation type exists internally, each value must
-remain tied to its owning set. It must not be one singleton unknown value.
-`CardinalityOf(X)` is the public mathematical model.
+`X.is_finite()`, `X.is_countable()`, and the other cardinal property methods return
+applied predicates. `ask()` decides them from category placement, active assumptions,
+and the routes the owning implementation registers: a known cardinality decides
+finiteness and countability, and a `Sets()` construction registers the case routes that
+external mathematics supplies for it. `assume(X.is_finite())` and the property
+subcategory constructors `Sets().Finite()`, `Sets().Countable()`, and
+`Sets().Uncountable()` are the positive routes.
 
 Countability does not select an enumeration. A chosen enumeration adds:
 
@@ -486,7 +481,7 @@ name. Engine methods never enter the public surface automatically.
 
 Select engines through the known semantic form of the input. Do not probe engines by
 exception or attempt implementations until one succeeds. If no applicable exact
-algorithm or construction theorem decides the result, return the typed unknown value.
+algorithm or construction theorem decides the result, return Sage `Unknown`.
 
 Construction-owned mathematics remains authoritative. For example, the image of an
 established monomorphism has the domain cardinality. No engine must rediscover that
@@ -541,8 +536,8 @@ ConditionSet(n, Eq(p(n), 0), S.Naturals).is_finite_set
 ```
 
 An unevaluated `ImageSet` or `ConditionSet` remains a valid private representation. Its
-owned cardinality is `CardinalityOf(owned_set)` unless defining data or a construction
-theorem supplies a stronger normalization.
+owned cardinality is `Unknown` unless defining data or a construction theorem supplies an
+exact cardinal.
 
 SymPy sets do not supply one general `cardinality()` operation. Reconstruct the owned
 cardinal from the normalized result:
@@ -551,9 +546,8 @@ cardinal from the normalized result:
 - A finite `Range` contributes its exact finite size.
 - An infinite `Range` contributes `aleph0`.
 - A standard number set contributes its established cardinal.
-- An unresolved symbolic set contributes `CardinalityOf(owned_set)`.
+- An unresolved symbolic set contributes `Unknown`.
 
-Each unresolved cardinal reconstructs as its distinct `CardinalityOf(owned_set)`.
 An image receives the domain cardinality when injectivity or another theorem establishes
 that equality.
 
@@ -566,8 +560,8 @@ that equality.
 | Progression normalization | `Range` | Return an owned enumerated set and its finite cardinal or `aleph0`. |
 | Set algebra | `Union`, `Intersection`, `Complement`, `ProductSet` | Return the corresponding owned construction. |
 | Set equality or inclusion | symbolic set relations | Return the owned proposition; use `ask()` for its decision. |
-| Cardinal calculation | normalized set type and symbolic properties | Return an owned cardinal value, never `None`. |
-| Universal constructions | symbolic set expressions | Retain all defining arrows and universal maps. |
+| Cardinal calculation | normalized set type and symbolic properties | Return an exact cardinal or `Unknown`, never `None`. |
+| Universal constructions | symbolic set expressions | Retain all defining morphisms and universal maps. |
 
 The owning set method reconstructs the owned mathematical result. See the [SymPy sets
 documentation](https://docs.sympy.org/latest/modules/sets.html) for the supported
@@ -592,34 +586,59 @@ membership proposition. They log and return `False` when the decision is `Unknow
 without changing the proposition or recording a negative mathematical result.
 
 `Unknown` does not block construction of an honest predicate subobject, symbolic image,
-universal construction, or cardinal expression.
+or universal construction.
+
+### Equality
+
+Every owned category owns an equality predicate for its objects, for its morphisms, and
+for the elements of its objects. `__eq__` on every owned object, element, and morphism
+returns the applied equality predicate, and `ask(a == b)` decides it. Identity is the
+first exact positive handler of every equality predicate.
+
+The applied predicate defines `__bool__` to raise. The mature references are SymPy
+`Relational.__bool__` and Sage `UnknownClass.__bool__`. Therefore `if a == b:` fails
+loudly, and repository code writes `ask(a == b) is True`. Containment (`in`) remains the
+one Boolean boundary.
+
+`__hash__` is defined explicitly on every owned value. Objects and morphisms hash by
+identity. A classical element hashes by its chosen datum, so two elements whose equality
+is `True` hash equal.
+
+For two classical elements of one set, the exact handler compares their chosen data
+through the private computation boundary. For two rule-defined sets, equality is
+`Unknown` unless identity or a cited exact handler decides it; no handler inspects
+contents. For two set maps with one finite enumerable domain, the exact handler compares
+images pointwise over that domain's enumeration; two maps with a rule-defined infinite
+domain compare by identity only and are otherwise `Unknown`.
 
 ## Acceptance conditions
 
 The implementation satisfies this specification when the public API establishes these
 facts:
 
-- every admitted arrow is total and has its stated domain and codomain;
+- every admitted morphism is total and has its stated domain and codomain;
 - evaluation returns an owned codomain element;
-- identity and composition use inherited arrow operations;
-- all four function-set entry points return one canonical object;
+- identity and composition use inherited morphism operations;
+- the function set `Y ** X` is one canonical object, and `Mor(Sets())(X, Y)` is the
+  discrete category on its elements;
 - every chosen subset retains its inclusion;
 - every abstract subobject retains its monomorphism and canonical image;
 - products retain `product_projection(i)` and universal maps;
 - coproducts retain `coproduct_injection(i)` and universal maps;
 - limits and colimits retain their diagrams and universal data;
-- power-object operations return owned subsets and arrows;
+- power-object operations return owned subsets and morphisms;
 - countability does not create a chosen enumeration;
-- cardinal methods return cardinal objects;
+- `cardinality()` returns an exact cardinal or `Unknown`;
 - every operation uses a mature engine construction when one supplies the required exact
   mathematics;
 - one owned set can combine several private engines without exposing an engine choice;
 - supported symbolic set operations use SymPy instead of duplicate local algorithms;
 - normalized `FiniteSet` and `Range` results reconstruct their exact owned cardinalities;
-- unevaluated `ConditionSet` and `ImageSet` results reconstruct valid owned sets with
-  distinct symbolic `CardinalityOf(owned_set)` values when no theorem decides more;
-- cardinal arithmetic retains symbolic expressions instead of propagating a shared
-  unknown value;
+- unevaluated `ConditionSet` and `ImageSet` results reconstruct valid owned sets whose
+  cardinality is `Unknown` when no theorem decides more;
+- cardinal arithmetic is defined on exact cardinals only;
+- `a == b` on owned values is an applied predicate, `bool(a == b)` raises, and identity
+  decides `ask(a == a) is True`;
 - every operation specified as a predicate returns an applied proposition;
 - only `ask()` returns `True`, `False`, or `Unknown` for that proposition;
 - every category declares one potentially compound membership proposition;

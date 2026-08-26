@@ -5,7 +5,7 @@ the discussion that separated structural inheritance from private computation.
 
 The central rule is:
 
-> `C.ObjectType`, `C.ElementType`, and `C.ArrowType` are the executable implementation
+> `C.ObjectType`, `C.ElementType`, and `C.MorphismType` are the executable implementation
 > classes for `C`. The category declaration defines or links those exact classes.
 
 These classes are not interfaces for another implementation hierarchy. They are not
@@ -39,12 +39,12 @@ method catalogues that a compiler matches against backend method names.
 
 ## Intended architecture
 
-A category owns its objects, elements, arrows, and operations. Its implementation types
+A category owns its objects, elements, morphisms, and operations. Its implementation types
 are part of that ownership:
 
 - `C.ObjectType` implements objects of `C`;
 - `C.ElementType` implements elements of those objects;
-- `C.ArrowType` implements arrows of `C`;
+- `C.MorphismType` implements morphisms of `C`;
 - the category declaration identifies those implementation types;
 - selected structural functors supply inherited operations.
 
@@ -60,13 +60,13 @@ Leaf purity is semantic purity. It is not implementation abstinence.
 ## Standard mathematics determines the software roles
 
 This repository uses the ordinary mathematical meanings of category, object, element,
-arrow, functor, construction, and theorem. The Python implementation does not define
+morphism, functor, construction, and theorem. The Python implementation does not define
 new meanings for these terms.
 
 The standard definitions already determine the software roles:
 
-- a category determines what its objects and arrows are;
-- `C.ObjectType` and `C.ArrowType` implement those roles;
+- a category determines what its objects and morphisms are;
+- `C.ObjectType` and `C.MorphismType` implement those roles;
 - `C.ElementType` implements the elements of represented objects when the theory has them;
 - an operation's mathematical signature determines its receiver, parameter, and result roles;
 - a selected functor determines structural transport through its declared maps;
@@ -82,8 +82,8 @@ registry. A theorem does not become applicable through an authority token.
 Use the following meanings throughout this specification:
 
 - **explicit** means present in the semantic API as an exact type, category placement,
-  defining arrow, selected functor, named construction, predicate result, or hypothesis;
-- **owner** means the category, object, arrow, functor, or universal construction whose
+  defining morphism, selected functor, named construction, predicate result, or hypothesis;
+- **owner** means the category, object, morphism, functor, or universal construction whose
   mathematical definition states the operation or fact;
 - **declaration** means the ordinary typed category, class, method, functor, or
   constructor definition at that owner;
@@ -96,7 +96,7 @@ registry, marker type, wrapper, or authority object.
 A compiler error, import error, or type error can show that the current Python encoding
 is wrong. It cannot select a new mathematical model. When the code lacks an obvious
 encoding, derive the encoding from the standard mathematical definition. If the
-repository cannot state that definition, the missing category, functor, arrow,
+repository cannot state that definition, the missing category, functor, morphism,
 construction, or exact type is the foundational defect.
 
 The governing policies are `POL-MATH-001`, `POL-MATH-031` through `POL-MATH-033`,
@@ -118,7 +118,7 @@ Examples include:
 
 - membership inherited from `Sets()`;
 - addition inherited from additive groups;
-- composition inherited from the owning arrow category;
+- composition inherited from the owning morphism category;
 - cardinality inherited through the route to `Sets()`.
 
 The leaf does not implement, forward, or dispatch these operations.
@@ -146,7 +146,7 @@ executable bodies of mathematics newly introduced by a leaf.
 
 ## The implementation classes
 
-`ObjectType`, `ElementType`, and `ArrowType` have one precise meaning. They are the
+`ObjectType`, `ElementType`, and `MorphismType` have one precise meaning. They are the
 classes whose instances implement the corresponding mathematical roles.
 
 They are not:
@@ -160,7 +160,7 @@ They are not:
 
 Each public operation has one executable declaration on its mathematical owner. A local
 operation on objects has its body on `C.ObjectType`. The same rule applies to elements
-and arrows.
+and morphisms.
 
 The implementation class can call dependencies. Calling a dependency does not transfer
 ownership to that dependency.
@@ -176,7 +176,7 @@ cardinality is not available consistently across them.
 This repository must not reproduce that split behind another abstraction. A category
 never offers a menu of competing object implementations. Its `ObjectType` is the one
 public class for objects of that category. The same rule applies to `ElementType` and
-`ArrowType`.
+`MorphismType`.
 
 The sole class is a firewall. It collects the complete owned public operation surface
 and hides all possible computation choices. A caller works with a free module, finite
@@ -226,13 +226,24 @@ category. Then `product_projection(0)` is the set functor and
 The same rule applies downstream:
 
 - An algebra structure morphism `R -> End(X)` determines both `R` and `X`.
-- A bilinear form `b` in `Hom_R(TL[2], R)` determines its module `L` and base ring `R`.
+- A bilinear form `b` in `Mor(Modules(R))(TL[2], R)` determines its module `L` and base ring `R`.
 - A lattice constructor can accept `b`, or the explicit pair `(L, b)` when that pair is
   the intended public presentation.
 
 A downstream leaf selects its immediate structural ancestor. It never reconstructs or
 requests an explicit underlying set. Some category on the inherited route already owns
 that construction and its selected route to `Sets()`.
+
+A source value retains each ancestor value supplied as defining data. A derived ancestor
+image is constructed once from retained data and cached for that source value. A
+selected structural functor returns that retained or cached ancestor value on every call
+and never reconstructs an equal or isomorphic replacement. A construction lift adds
+structure to the chosen ancestor value.
+
+A category that combines two structures on one carrier is their pullback over the shared
+ancestor. Its constructor asserts with `is` that both projections return the same
+ancestor object. The pullback object retains that shared ancestor once with both defining
+structures.
 
 When added structure does not add element data, the leaf `ElementType` declares no
 constructor. The kernel constructs that exact category-owned element type with its
@@ -244,7 +255,7 @@ is a subobject of a product uses `product_projection(i)`. Otherwise, it reuses t
 functors retained by its defining category construction.
 
 A leaf selects the strongest established property subcategory. It does not repeat maps
-already retained by a product, pullback, comma, arrow, or similar construction. It never
+already retained by a product, pullback, comma, `Fun([1], C)`, or similar construction. It never
 exposes a private engine conversion as a structural map.
 
 If this implementation becomes sufficiently large or dominated by Python, foreign
@@ -269,7 +280,7 @@ It can instead link one imported class:
 class LeafCategory(Category):
     ObjectType = LeafObject
     ElementType = LeafElement
-    ArrowType = LeafMorphism
+    MorphismType = LeafMorphism
 ```
 
 Both forms have one implementation class for each mathematical role.
@@ -324,7 +335,7 @@ For a method declared by a structural ancestor, the compiler:
 - selects the complete structural route to the declaring category;
 - transports the receiver and mathematical arguments;
 - invokes the ancestor's executable method;
-- transports the mathematical result back;
+- returns the declaring method's value unchanged (`X.f() := F(X).f()`);
 - preserves exact ambient objects, domains, and codomains.
 
 For a method declared locally by the leaf, the compiler does none of these operations.
@@ -430,7 +441,7 @@ A mirrored backend surface would create:
 - name-based implementation matching;
 - pressure for backend registries and abstract interfaces;
 - uncertainty about which class owns mathematical reconstruction;
-- a parallel hierarchy for objects, elements, and arrows.
+- a parallel hierarchy for objects, elements, and morphisms.
 
 The backend does not implement the owned category. It supplies engine values,
 conversions, and algorithms to the owned implementation class.
@@ -488,7 +499,7 @@ For a finite-poset method, this can require:
 - obtaining the corresponding engine element;
 - running a Sage finite-poset algorithm;
 - mapping engine elements back to canonical owned elements;
-- constructing an owned finite set, ordered set, subobject, or arrow;
+- constructing an owned finite set, ordered set, subobject, or morphism;
 - preserving the original ambient poset.
 
 A Sage iterator is not an owned mathematical collection. A Python `int` is not
@@ -508,7 +519,7 @@ The word “realization” must distinguish two different notions.
 ### Mathematical realization functor
 
 A realization functor is appropriate when the project models an actual mathematical
-functor between categories. It has object and arrow maps and can be used explicitly.
+functor between categories. It has object and morphism maps and can be used explicitly.
 
 Such a functor does not contribute methods through structural inheritance unless the
 category deliberately selects it as a structural functor.
@@ -580,7 +591,7 @@ The private module can own:
 It cannot own:
 
 - public mathematical signatures;
-- `ObjectType`, `ElementType`, or `ArrowType` alternatives;
+- `ObjectType`, `ElementType`, or `MorphismType` alternatives;
 - category membership or refinement decisions;
 - public semantic result construction;
 - operation documentation;
@@ -634,12 +645,12 @@ catalogues, the architecture is wrong.
 
 | Concern | Owner |
 | --- | --- |
-| Category-local operation name and signature | `ObjectType`, `ElementType`, or `ArrowType` |
+| Category-local operation name and signature | `ObjectType`, `ElementType`, or `MorphismType` |
 | Category-local executable method body | The same implementation class |
 | Inherited method catalogue | Declaring structural ancestor |
 | Structural route discovery | Kernel |
 | Receiver and argument transport | Kernel |
-| Result and collection reverse transport | Kernel |
+| Results and collections returned as the declaring method returned them | Kernel |
 | Canonical images and preimages | Kernel |
 | Dynamic descriptor installation for inherited methods | Kernel |
 | Choice of exact leaf algorithm | Leaf implementation method |
@@ -729,8 +740,9 @@ Structural diamonds preserve every branch. They resolve only duplicate access to
 common owner. See [resolution.md](resolution.md) for the complete decision.
 
 For \(R^n\), the algebra-to-rings and algebra-to-modules routes introduce different
-applicable operations. Both later reach `Sets()`. The kernel preserves both catalogues
-and chooses one canonical underlying set image.
+applicable operations. Both later reach `Sets()`. The kernel preserves both catalogues.
+Both routes return the one retained underlying set by identity, and the compiler checks
+that identity at the first transport.
 
 This structural transport does not dispatch the algebra's local methods to Sage. The
 two mechanisms remain separate:
@@ -816,8 +828,8 @@ not require every private engine value or algorithm call to enter the functor co
 A leaf implementation satisfies this specification when all these facts hold:
 
 - the category declaration defines or links one `ObjectType`, one `ElementType`, and one
-  `ArrowType`;
-- object, element, arrow, parameter, result, and transport roles follow from the
+  `MorphismType`;
+- object, element, morphism, parameter, result, and transport roles follow from the
   category, operation, and functor definitions without another runtime carrier;
 - a theorem-backed named construction states its conclusion through the exact result
   category without an authority value, proof token, or metadata record;
@@ -836,7 +848,7 @@ A leaf implementation satisfies this specification when all these facts hold:
 - an engine-specific neighboring module exists only for substantial shared computation;
 - construction results retain every mathematically established category placement;
 - structural diamonds preserve all branch-owned operations and one canonical common
-  image;
+  image returned by identity on every route;
 - a mathematician can find the executable operation from its category-owned
   implementation class without understanding compiler dispatch.
 

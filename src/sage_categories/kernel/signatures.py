@@ -114,11 +114,23 @@ class Signature:
         return argument_role in _ITEM
 
 
+def _local_role_class(owner: Category, role: Role) -> type[CategoryPoint]:
+    """The local declaration of a role, at the node that owns it: the objects of ``Mor(C)`` are the morphisms of ``C``."""
+    source, source_role = owner.role_source(role)
+    return source.local_role_class(source_role)
+
+
 class _Context:
-    """The declaring category's compiled role classes and the receiver's role."""
+    """The declaring category's local role classes and the receiver's role.
+
+    The local declarations decide: the compiled role classes refine every selected
+    codomain's role classes, so an annotation naming an ancestor's role (a set point
+    as the parameter of a poset method) would otherwise read as the owner's own role
+    and be transported to an owner it cannot reach (POL-KERNEL-021).
+    """
 
     def __init__(self, owner: Category, receiver: Role) -> None:
-        self.roles = {role: owner.role_class(role) for role in Role}
+        self.roles = {role: _local_role_class(owner, role) for role in Role}
         self.receiver = receiver
 
     def role_of_class(self, annotation: type) -> ArgumentRole:

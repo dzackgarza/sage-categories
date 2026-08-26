@@ -60,8 +60,27 @@ def _apply(functor: Functor, step_role: Role, value: CategoryPoint) -> CategoryP
         case Role.MORPHISM:
             return declared.on_morphism(functor, value)
         case Role.ELEMENT:
-            return declared.on_element(functor, value)
+            return _apply_to_element(functor, declared, value)
     raise AssertionError(step_role)
+
+
+def _is_classical(element: CategoryPoint, category: Category) -> bool:
+    return any(element.stage() is stage for stage in category.classical_stages())
+
+
+def _apply_to_element(functor: Functor, declared: type, element: CategoryPoint) -> CategoryPoint:
+    # A classical element ``t: G_C -> X`` reaches the classical stage of the codomain
+    # through the stage comparison ``c: G_D -> F(G_C)`` retained by the selected functor:
+    # its image is the element ``F(t) after c`` (``specs/functor.md``, "Structural
+    # inheritance"; POL-CAT-062).  The identity comparison, retained when ``F(G_C) is
+    # G_D``, changes nothing.
+    if not _is_classical(element, functor.domain()) or not functor.codomain().classical_stages():
+        return declared.on_element(functor, element)
+    comparison = functor.stage_comparison()
+    if comparison is comparison.domain().identity():
+        return declared.on_element(functor, element)
+    image = declared.on_morphism(functor, element.defining_morphism()) * comparison
+    return functor.codomain().element_from_defining_morphism(image)
 
 
 def _apply_route(value: CategoryPoint, route: compiler.Route) -> CategoryPoint:
@@ -116,8 +135,19 @@ def _transport_argument(argument: Any, parameter: ParameterRole, owner: Category
     """The argument as the declaring method receives it, by its declared role (POL-KERNEL-021)."""
     declared = parameter.role
     match declared:
-        case ArgumentRole.VALUE | ArgumentRole.CANDIDATE:
+        case ArgumentRole.VALUE:
             return argument
+        case ArgumentRole.CANDIDATE:
+            # ``x in P := U(x) in U(P)``: a candidate that is an owned value with a
+            # selected route is transported by its own role; any other candidate is
+            # the declaring method's to judge (POL-CAT-062).
+            role = role_of(argument)
+            if role is None:
+                return argument
+            target = compiler.node(owner, role)
+            if not any(compiler.same_node(target, found) for found in compiler.reachable(placement_node(argument))):
+                return argument
+            return transport(argument, target)
         case ArgumentRole.RECEIVER_POINT:
             # The route acts on the receiver; a point of the receiver's own category
             # is admitted only when the receiver's image is the receiver itself.

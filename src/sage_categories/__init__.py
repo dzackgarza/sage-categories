@@ -7,16 +7,24 @@ from sage_categories.cat.functors import Cat, Fun
 from sage_categories.cat.morphisms import Mor
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import ask, assume
+from sage_categories.number_sets import NN, QQ, RR, ZZ, Primes
+from sage_categories.ordinals import Ordinals, omega0
 from sage_categories.sets.cardinals import Cardinal, aleph0, continuum
 from sage_categories.sets.category import Sets
 
 __all__ = [
+    "NN",
+    "QQ",
+    "RR",
+    "ZZ",
     "Cardinal",
     "Cat",
     "Category",
     "Decision",
     "Fun",
     "Mor",
+    "Ordinals",
+    "Primes",
     "Sets",
     "Unknown",
     "UnknownClass",
@@ -25,6 +33,7 @@ __all__ = [
     "ask",
     "assume",
     "continuum",
+    "omega0",
     "version",
 ]
 

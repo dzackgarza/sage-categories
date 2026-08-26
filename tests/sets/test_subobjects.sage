@@ -1,0 +1,77 @@
+"""Chosen subsets: ``X.subset_from(predicate)`` retains its inclusion and decides membership.
+
+Oracles: the definition of a subset ``{x in X : P(x)}`` and of its inclusion;
+monomorphisms of ``Sets()`` are the injective maps and an inclusion is injective
+(Mathlib ``CategoryTheory.mono_iff_injective``, ``Set.inclusion_injective``); a
+subset of a countable set is countable (Mathlib ``Set.Countable.mono``) and of a
+finite set finite (``Set.Finite.subset``); D01 for ``Unknown`` cardinality; the
+Kleene conjunction of D17 for ``Unknown`` membership.
+"""
+
+import pytest
+
+from sage_categories.all import *
+
+
+def test_a_predicate_subset_of_the_integers_retains_its_inclusion() -> None:
+    even = ZZ.subset_from(lambda n: n % 2 == 0)
+    inclusion = even.inclusion()
+
+    assert inclusion in Mor(Sets())(even, ZZ).Monomorphisms()
+    assert inclusion in Mor(Sets()).Monomorphisms()
+    assert inclusion.domain() is even
+    assert inclusion.codomain() is ZZ
+    assert even.underlying_set() is ZZ
+    assert even in Sets()
+    assert even in Sets().Countable()
+
+    assert ZZ(4) in even
+    assert ZZ(3) not in even
+    assert ask(inclusion(ZZ(4)) == ZZ(4)) is True
+    assert even.cardinality() is Unknown
+    assert ask(even.is_countable()) is True
+    assert ask(even.is_finite()) is Unknown
+
+
+def test_the_primes_decide_membership_exactly() -> None:
+    assert ZZ(7) in Primes
+    assert ZZ(9) not in Primes
+    assert ZZ(2) in Primes
+    assert ZZ(-7) not in Primes
+    assert QQ(1 / 2) not in Primes
+    assert Primes.underlying_set() is ZZ
+    assert Primes.inclusion() in Mor(Sets())(Primes, ZZ).Monomorphisms()
+    assert Primes in Sets().Countable()
+    assert Primes.cardinality() is Unknown
+
+
+def test_an_undecided_predicate_keeps_membership_unknown() -> None:
+    undecided = ZZ.subset_from(lambda n: Unknown)
+
+    assert ask(undecided.membership_proposition(ZZ(0))) is Unknown
+    assert ZZ(0) not in undecided
+    assert ask(undecided.membership_proposition(QQ(1 / 2))) is False
+    assert undecided.cardinality() is Unknown
+    assert undecided in Sets().Countable()
+
+
+def test_a_subset_of_a_finite_enumerated_set_has_the_exact_count() -> None:
+    triple = Sets().Finite()((int(1), int(2), int(3)))
+    odd = triple.subset_from(lambda datum: datum % int(2) == int(1))
+
+    assert odd in Sets().Finite()
+    assert ask(odd.cardinality() == int(2)) is True
+    assert odd.underlying_set() is triple
+    assert odd.inclusion() in Mor(Sets())(odd, triple).Monomorphisms()
+    assert triple.point(int(1)) in odd
+    assert triple.point(int(2)) not in odd
+    points = list(odd)
+    assert len(points) == int(2)
+    assert all(any(ask(point == odd.point(datum)) is True for point in points) for datum in (int(1), int(3)))
+    assert ask(odd.inclusion()(odd.point(int(3))) == triple.point(int(3))) is True
+    assert odd.inclusion()(odd.point(int(3))).parent() is triple
+
+    undecided = triple.subset_from(lambda datum: Unknown)
+    assert undecided in Sets().Finite()
+    assert undecided.cardinality() is Unknown
+    assert ask(undecided.membership_proposition(triple.point(int(1)))) is Unknown

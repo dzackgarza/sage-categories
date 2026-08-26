@@ -12,6 +12,8 @@ finiteness and countability" (``specs/sets.md``, "Cardinality and enumeration").
 A chosen enumeration is structure a finite set has, not a field of every set: it is
 retained by ``Sets().Finite()``, whose enumeration constructor records it
 (``specs/sets.md``, "Cardinality and enumeration").  Iteration reads it there.
+Likewise ``X.subset_from(predicate)`` constructs through ``Sets().ChosenSubsets()``,
+which retains each inclusion (``sets/subobjects.py``).
 """
 
 from __future__ import annotations
@@ -72,6 +74,14 @@ class SetObject(ObjectOfCategory):
 
     def cardinality(self) -> CardinalObject | UnknownClass:
         return self._cardinality
+
+    def subset_from(self, predicate: MembershipRule) -> SetObject:
+        """The chosen subset ``{x in X : predicate(x)}`` with its retained inclusion (POL-SET-007, POL-ENGINE-004).
+
+        The predicate is a datum-level rule, the form of ``Sets()(rule)``; the
+        construction is owned by ``Sets().ChosenSubsets()`` (``sets/subobjects.py``).
+        """
+        return _sets.Sets().ChosenSubsets()(self, predicate)
 
     def is_finite(self) -> AppliedPredicate:
         return _sets.Sets().Finite().predicate()(self)

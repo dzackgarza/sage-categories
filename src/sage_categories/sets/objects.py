@@ -117,8 +117,7 @@ class SetObject(ObjectOfCategory):
 
     def _construct_point(self, datum: Datum) -> SetPoint:
         sets = _sets.Sets()
-        defining_morphism = sets.construct_morphism(sets.Terminal(), self, lambda star: datum)
-        return self.category().ElementType(defining_morphism, datum)
+        return sets.element_from_defining_morphism(sets.construct_morphism(sets.Terminal(), self, lambda star: datum))
 
     def cardinality(self) -> CardinalObject | UnknownClass:
         return self._cardinality

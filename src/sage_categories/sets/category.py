@@ -89,6 +89,7 @@ class SetsCategory(Category[[Rule], []]):
         self._canonical: dict[tuple[str, tuple[int, ...]], SetObject] = {}
         self._constructions: dict[str, Category] = {}
         self._rule_valued: MonoDict = MonoDict()
+        self._classical_points: MonoDict = MonoDict()
         super().__init__()
         self._equality.register_handler(points_equal)
         self._equality.register_handler(maps_equal)
@@ -172,9 +173,11 @@ class SetsCategory(Category[[Rule], []]):
         return (self.Terminal(),)
 
     def element_from_defining_morphism(self, defining_morphism: SetMap) -> SetPoint:
-        """The classical element whose defining morphism is the point ``1 -> X``."""
+        """The classical element whose defining morphism is the point ``1 -> X``, one element per point (POL-CAT-066)."""
         assert defining_morphism.domain() is self.Terminal(), f"{defining_morphism!r} is not a point at the classical stage"
-        return defining_morphism.codomain().category().ElementType(defining_morphism, defining_morphism._rule(()))
+        if defining_morphism not in self._classical_points:
+            self._classical_points[defining_morphism] = defining_morphism.codomain().category().ElementType(defining_morphism, defining_morphism._rule(()))
+        return self._classical_points[defining_morphism]
 
     # -- morphisms ----------------------------------------------------------------------
 

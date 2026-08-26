@@ -164,6 +164,16 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
             components,
         )
 
+    def classical_stages(self) -> tuple[FamilyObject, ...]:
+        """The stage ``(G_i)_i`` when every factor of an enumerated family chooses one stage."""
+        index_set, finite = index_set_of(self.shape()), Sets().Finite()
+        if not finite.has_chosen_enumeration(index_set):
+            return ()
+        stages = tuple(self.factor(datum).classical_stages() for datum in finite.chosen_enumeration(index_set))
+        if any(len(family) != 1 for family in stages):
+            return ()
+        return (self(tuple(stage for (stage,) in stages)),)
+
     def __call__(self, family: ObjectRule | tuple[ObjectOfCategory, ...]) -> FamilyObject:
         """``P(rule)`` for a family by rule; ``P((X_0, ..., X_n))`` for the external tuple, retained per tuple."""
         if callable(family):

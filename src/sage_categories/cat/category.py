@@ -21,7 +21,7 @@ category, with no structural graph; its ``category()`` is itself.
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Hashable
 from typing import TYPE_CHECKING, Any, Literal, overload
 
 from sage.structure.coerce_dict import MonoDict
@@ -442,7 +442,18 @@ class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
             lambda x: second.component(x) * first.component(x),
         )
 
-    # -- canonical objects (D15) -------------------------------------------------
+    # -- finite presented shapes and canonical objects (D15, D16) ----------------
+
+    def __call__(
+        self,
+        labels: tuple[Hashable, ...],
+        generators: tuple[tuple[str, Hashable, Hashable], ...],
+        relations: tuple[tuple[tuple[str, ...], tuple[str, ...]], ...],
+    ) -> FinitePresentedCategory:
+        """``Cat()(labels, generators, relations)``: the category presented by finitely many objects, generating morphisms, and relations."""
+        from sage_categories.cat import canonical
+
+        return canonical.FinitePresentedCategory(f"Presented{tuple(labels)!r}", tuple(labels), tuple(generators), tuple(relations))
 
     def Empty(self) -> FinitePresentedCategory:
         from sage_categories.cat import canonical

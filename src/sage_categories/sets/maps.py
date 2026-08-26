@@ -14,6 +14,12 @@ owns, each on its declared decidable domain (POL-MATH-042):
 - an isomorphism of sets is a bijection (Mathlib ``CategoryTheory.isIso_iff_bijective``;
   inspected 2026-08-26), so ``Isomorphisms()`` decides through both.
 
+Each handler compares image data pairwise.  A comparison of two data at the
+private boundary is exact (a ``bool``) or ``Unknown`` (a rule-defined family or
+the name of a map with an unenumerated domain), and the handlers combine those
+answers three-valued: they never decide through a hash table on data whose
+equality may be ``Unknown``.
+
 A retained inverse is construction data owned by ``Sets()`` (``inverse_morphism``),
 not a field of every map.
 """
@@ -25,7 +31,7 @@ from typing import Any
 
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
-from sage_categories.kernel.decisions import Decision, Unknown, decision_and
+from sage_categories.kernel.decisions import Decision, Unknown, decision_and, decision_not, decision_or
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory
 from sage_categories.sets.elements import Datum, SetPoint
 from sage_categories.sets.objects import SetObject
@@ -51,6 +57,11 @@ class SetMap(MorphismOfCategory):
         return f"SetMap({self.domain()!r} -> {self.codomain()!r})"
 
 
+def _data_equal(first: Datum, second: Datum) -> Decision:
+    """The engine comparison of two data: exact, or ``Unknown`` for rule-defined data."""
+    return first == second
+
+
 def maps_equal(first: CategoryPoint, candidate: Any) -> Decision:
     """Two maps with one finite enumerable domain are equal exactly when they agree on every point."""
     sets = _sets.Sets()
@@ -62,27 +73,29 @@ def maps_equal(first: CategoryPoint, candidate: Any) -> Decision:
     finite = sets.Finite()
     if not finite.has_chosen_enumeration(first.domain()):
         return Unknown
-    # A comparison of two image data is exact or ``Unknown`` (a rule-defined family).
-    return decision_and(*(first._rule(datum) == candidate._rule(datum) for datum in finite.chosen_enumeration(first.domain())))
+    return decision_and(*(_data_equal(first._rule(datum), candidate._rule(datum)) for datum in finite.chosen_enumeration(first.domain())))
 
 
 def injective_on_finite_domain(morphism: MorphismOfCategory) -> Decision:
+    """Injective exactly when no two distinct points of the enumerated domain have equal images."""
     sets = _sets.Sets()
     if morphism not in sets.morphism_category(1) or not sets.Finite().has_chosen_enumeration(morphism.domain()):
         return Unknown
     images = [morphism._rule(datum) for datum in sets.Finite().chosen_enumeration(morphism.domain())]
-    return len(set(images)) == len(images)
+    collisions = (_data_equal(images[i], images[j]) for i in range(len(images)) for j in range(i + 1, len(images)))
+    return decision_not(decision_or(*collisions))
 
 
 def surjective_on_finite_domain(morphism: MorphismOfCategory) -> Decision:
+    """Surjective exactly when every point of the enumerated codomain is an image."""
     sets = _sets.Sets()
     finite = sets.Finite()
     if morphism not in sets.morphism_category(1):
         return Unknown
     if not finite.has_chosen_enumeration(morphism.domain()) or not finite.has_chosen_enumeration(morphism.codomain()):
         return Unknown
-    images = {morphism._rule(datum) for datum in finite.chosen_enumeration(morphism.domain())}
-    return all(datum in images for datum in finite.chosen_enumeration(morphism.codomain()))
+    images = [morphism._rule(datum) for datum in finite.chosen_enumeration(morphism.domain())]
+    return decision_and(*(decision_or(*(_data_equal(image, datum) for image in images)) for datum in finite.chosen_enumeration(morphism.codomain())))
 
 
 def bijective_on_finite_domain(morphism: MorphismOfCategory) -> Decision:

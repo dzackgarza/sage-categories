@@ -67,10 +67,11 @@ __all__ = ["Family", "coproduct_of_sets", "product_of_sets"]
 class Family:
     """The private datum of a point of a product: an indexed family of data by rule.
 
-    Two families over one finitely enumerated index set compare componentwise,
-    exactly; over any other index set the engine comparison is not exact and the
-    answer is ``Unknown`` (D17).  A family over an enumerated index hashes by its
-    tuple of components, so equal families hash equal.
+    This is private computation data, not an owned value (D17 governs owned
+    values).  Two families over one finitely enumerated index set compare
+    componentwise, exactly, and then hash by the tuple of components, so equal
+    families hash equal; over any other index set equality is ``Unknown`` except on
+    identity and the hash is by identity.
     """
 
     def __init__(self, index_set: SetObject, rule: Callable[[Datum], Datum]) -> None:

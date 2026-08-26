@@ -18,7 +18,7 @@ from typing import Any
 from sage.structure.coerce_dict import TripleDict
 
 import sage_categories.sets.category as _sets
-from sage_categories.kernel.decisions import Decision, Unknown
+from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import ask
 from sage_categories.sets.elements import Datum, SetPoint
 from sage_categories.sets.maps import SetMap
@@ -28,13 +28,26 @@ __all__ = ["Function", "evaluation_morphism", "function_set", "name_of"]
 
 
 class Function:
-    """The private datum of a point of ``Y ** X``: the map it names; compared through map equality."""
+    """The private datum of a point of ``Y ** X``: the map it names.
+
+    This is private computation data, not an owned value (D17 governs owned
+    values).  Two names compare through map equality: exact when the domain has a
+    chosen enumeration, and then the hash is the hash of the tuple of image data, so
+    equal names hash equal; otherwise equality is ``Unknown`` except on identity and
+    the hash is by identity.
+    """
 
     def __init__(self, set_map: SetMap) -> None:
         self._map = set_map
 
     def map(self) -> SetMap:
         return self._map
+
+    def _images(self) -> tuple[Datum, ...] | UnknownClass:
+        finite = _sets.Sets().Finite()
+        if not finite.has_chosen_enumeration(self._map.domain()):
+            return Unknown
+        return tuple(self._map._rule(datum) for datum in finite.chosen_enumeration(self._map.domain()))
 
     def __eq__(self, other: Any) -> Decision:
         if other is self:
@@ -46,7 +59,10 @@ class Function:
                 return False
 
     def __hash__(self) -> int:
-        return object.__hash__(self)
+        images = self._images()
+        if images is Unknown:
+            return object.__hash__(self)
+        return hash(images)
 
     def __repr__(self) -> str:
         return f"name of {self._map!r}"

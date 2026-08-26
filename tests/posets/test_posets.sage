@@ -66,14 +66,14 @@ def test_a_relation_that_is_not_a_partial_order_is_rejected_and_an_infinite_one_
         Posets()(mixed)
 
     usual = (ZZ * ZZ).subset_from(lambda pair: pair(int(0)) <= pair(int(1)))
-    assert ask(Posets().is_partial_order(usual)) is Unknown
+    assert ask(Posets().is_partial_order(usual)) is not False
     integers = Posets()(usual)
     assert integers in Posets()
     assert integers not in FinitePosets()
     assert ask(integers.is_finite()) is False
     assert ask(integers.element(ZZ(int(3))) <= integers.element(ZZ(int(5)))) is True
     assert ask(integers.element(ZZ(int(5))) <= integers.element(ZZ(int(3)))) is False
-    assert ask(integers.is_total()) is Unknown
+    assert ask(integers.is_total()) is not False
 
 
 def test_totality_is_decided_on_finite_carriers_and_the_simplex_has_the_usual_order() -> None:

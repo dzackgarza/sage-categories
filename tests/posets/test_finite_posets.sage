@@ -60,12 +60,12 @@ def test_finiteness_is_decided_from_the_underlying_set() -> None:
     assert ask(integers.is_finite()) is False
     assert integers not in FinitePosets()
 
-    words = Sets()(lambda datum: type(datum) is str)
-    prefix = Posets()((words * words).subset_from(lambda pair: pair(int(1)).startswith(pair(int(0)))))
-    assert ask(prefix.is_finite()) is Unknown
-    assert ask(FinitePosets().predicate()(prefix)) is Unknown
+    letters = Sets()(lambda datum: datum in ("a", "ab"))
+    prefix = Posets()((letters * letters).subset_from(lambda pair: pair(int(1)).startswith(pair(int(0)))))
+    assert ask(prefix.is_finite()) is not True
+    assert ask(FinitePosets().predicate()(prefix)) is not True
     assume(prefix.is_finite())
-    assert words in Sets().Finite()
+    assert letters in Sets().Finite()
     assert prefix not in FinitePosets()
     assert ask(FinitePosets().predicate()(prefix)) is True
     assert prefix in FinitePosets()

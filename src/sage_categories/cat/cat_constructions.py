@@ -138,10 +138,6 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
         assert first.codomain() is second.domain()
         return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain(), lambda vertex: second.component(vertex) * first.component(vertex))
 
-    def element_from_defining_morphism(self, defining_morphism: FamilyMorphism) -> ElementOfObject:
-        assert defining_morphism in self.morphism_category(1)
-        return self.ElementType(defining_morphism)
-
     def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
         """Two families over a finitely enumerated index are equal when every component is."""
         if first not in self or candidate not in self:
@@ -262,10 +258,6 @@ class CoproductCategory(Category[[MorphismOfCategory], []]):
     def composite(self, second: TaggedMorphism, first: TaggedMorphism) -> TaggedMorphism:
         assert first.codomain() is second.domain()
         return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain(), second.morphism() * first.morphism())
-
-    def element_from_defining_morphism(self, defining_morphism: TaggedMorphism) -> ElementOfObject:
-        assert defining_morphism in self.morphism_category(1)
-        return self.ElementType(defining_morphism)
 
     def __repr__(self) -> str:
         return f"Coproduct({self._diagram!r})"
@@ -395,10 +387,6 @@ class PullbackCategory(Category[[tuple[MorphismOfCategory, MorphismOfCategory]],
     def composite(self, second: PairMorphism, first: PairMorphism) -> PairMorphism:
         assert first.codomain() is second.domain()
         return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain(), second.first() * first.first(), second.second() * first.second())
-
-    def element_from_defining_morphism(self, defining_morphism: PairMorphism) -> ElementOfObject:
-        assert defining_morphism in self.morphism_category(1)
-        return self.ElementType(defining_morphism)
 
     def __repr__(self) -> str:
         return f"Pullback({self._first_functor!r}, {self._second_functor!r})"

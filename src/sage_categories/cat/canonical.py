@@ -137,11 +137,6 @@ class FinitePresentedCategory(Category[[Word], []]):
     def construct_identity(self, vertex: Vertex) -> Path:
         return self.MorphismType(self.morphism_category(1), vertex, vertex, ())
 
-    def element_from_defining_morphism(self, defining_morphism: Path) -> ElementOfObject:
-        """The generalized element of ``codomain`` given by a path into it."""
-        assert defining_morphism in self.morphism_category(1)
-        return self.ElementType(defining_morphism)
-
     def composite(self, second: Path, first: Path) -> Path:
         assert first.codomain() is second.domain()
         return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain(), self._reduce((*first.word(), *second.word())))

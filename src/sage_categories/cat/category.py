@@ -66,6 +66,7 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         self._morphism_categories: dict[int, MorphismCategory[MorphismData, TwoMorphismData]] = {}
         self._narrowings: dict[tuple[int, ...], Category[MorphismData, TwoMorphismData]] = {}
         self._identities: MonoDict = MonoDict()
+        self._inverses: MonoDict = MonoDict()
         self._points: MonoDict = MonoDict()
         self._arrows: MonoDict = MonoDict()
         self._properties: dict[str, Category[MorphismData, TwoMorphismData]] = {}
@@ -203,18 +204,77 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     # each into ``Mor(self)``.  Every other category owns these constructions.
 
     def identity_morphism(self, member_object: ObjectOfCategory) -> MorphismOfCategory:
-        """The one identity morphism of an object, constructed once (D15).
+        """The one identity morphism of an object, constructed once (POL-CAT-083).
 
-        An identity is its own inverse and an endomorphism: it is placed in
-        ``Mor(self).Automorphisms()`` by construction (POL-CAT-079/081).
+        An identity is its own inverse and an endomorphism: it retains itself as its
+        inverse and is placed in ``Mor(self).Automorphisms()`` by construction
+        (POL-CAT-079/081).
         """
         from sage_categories.kernel.refinement import refine
 
         if member_object not in self._identities:
             identity = self.construct_identity(member_object)
-            refine(identity, self.morphism_category(1).Automorphisms())
             self._identities[member_object] = identity
+            self.retain_inverses(identity, identity)
+            refine(identity, self.morphism_category(1).Automorphisms())
         return self._identities[member_object]
+
+    def retain_inverses(self, forward: MorphismOfCategory, backward: MorphismOfCategory) -> None:
+        """Record two morphisms as mutually inverse; both enter ``Mor(self).Isomorphisms()`` (POL-MATH-037)."""
+        from sage_categories.kernel.refinement import refine
+
+        self._inverses[forward] = backward
+        self._inverses[backward] = forward
+        isomorphisms = self.morphism_category(1).Isomorphisms()
+        refine(forward, isomorphisms)
+        refine(backward, isomorphisms)
+
+    def compose_morphisms(self, second: MorphismOfCategory, first: MorphismOfCategory) -> MorphismOfCategory:
+        """``second * first`` through the owned composition; a composite of retained-invertible morphisms retains ``first⁻¹ * second⁻¹``."""
+        composite = self.composite(second, first)
+        if first in self._inverses and second in self._inverses and composite not in self._inverses:
+            self.retain_inverses(composite, self.composite(self._inverses[first], self._inverses[second]))
+        return composite
+
+    def inverse_morphism(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
+        """The inverse of a morphism placed in ``Mor(self).Isomorphisms()`` (POL-CAT-079, POL-KERNEL-025).
+
+        The retained inverse when this category retained one (an identity, a
+        two-rule construction, a composite of invertibles); the ambient's inverse for
+        a declared subcategory; else the owned symbolic inverse, constructed in
+        ``Mor(self)(B, A).Isomorphisms()`` by ``_symbolic_inverse_`` and whose equations
+        hold by placement (``specs/undecidable-properties.md``, isomorphism inversion).
+        """
+        from sage_categories.kernel.refinement import refine
+
+        if morphism in self._inverses:
+            return self._inverses[morphism]
+        if self.has_ambient():
+            inverse = self.ambient().inverse_morphism(morphism)
+            refine(inverse, self.morphism_category(1))
+            return inverse
+        symbolic = self._symbolic_inverse_(morphism)
+        self.retain_inverses(morphism, symbolic)
+        return symbolic
+
+    def _symbolic_inverse_(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
+        """The symbolic inverse of ``morphism``, constructed in ``Mor(self)(B, A).Isomorphisms()`` with no executable rule.
+
+        A category whose morphisms carry no data constructs it from none; a category
+        whose morphisms carry a rule supplies a rule that fails when evaluated.
+        """
+        return self.morphism_category(1)(morphism.codomain(), morphism.domain()).Isomorphisms()()
+
+    def element_from_defining_morphism(self, defining_morphism: MorphismOfCategory) -> CategoryPoint:
+        """The generalized element ``t: T -> X`` of ``X`` given by a morphism into it (POL-CAT-058).
+
+        A declared subcategory shares its ambient's element values; ``Sets()``
+        overrides for its classical points, which carry a datum.
+        """
+        assert defining_morphism in self.morphism_category(1), f"{defining_morphism!r} is not a morphism of {self!r}"
+        if self.has_ambient():
+            return self.ambient().element_from_defining_morphism(defining_morphism)
+        return self.ElementType(defining_morphism)
 
     def construct_morphism(
         self,
@@ -486,6 +546,14 @@ class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
         # with ``IsEquivalence`` of the identity (inspected 2026-08-26).
         refine(identity, Fun(category, category).Equivalences())
         return identity
+
+    def _symbolic_inverse_(self, functor: Functor) -> Functor:
+        """The inverse of a functor placed in ``Fun.Isomorphisms()`` by declaration: its actions have no executable rule."""
+
+        def no_action(value: CategoryPoint) -> CategoryPoint:
+            assert False, f"the inverse of {functor!r} has no executable action; its equations hold by placement in Isomorphisms()"
+
+        return self.morphism_category(1)(functor.codomain(), functor.domain()).Isomorphisms()(no_action, no_action)
 
     def composite(self, second: Functor, first: Functor) -> Functor:
         """``second * first``: the composite functor, rules composed (Mathlib ``Functor.comp``)."""

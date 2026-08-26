@@ -104,10 +104,6 @@ class DiscreteCategory(Category[[], []]):
         assert ask(first.codomain() == second.domain()) is True
         return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain())
 
-    def element_from_defining_morphism(self, defining_morphism: DiscreteIdentity) -> ElementOfObject:
-        assert defining_morphism in self.morphism_category(1)
-        return self.ElementType(defining_morphism)
-
     def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
         """Objects are equal when their points are; morphisms when their domains are."""
         if first in self and candidate in self:
@@ -251,10 +247,6 @@ class ThinCategory(Category[[], []]):
     def composite(self, second: Comparison, first: Comparison) -> Comparison:
         assert ask(first.codomain() == second.domain()) is True
         return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain())
-
-    def element_from_defining_morphism(self, defining_morphism: Comparison) -> ElementOfObject:
-        assert defining_morphism in self.morphism_category(1)
-        return self.ElementType(defining_morphism)
 
     def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
         if first in self and candidate in self:

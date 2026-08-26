@@ -29,6 +29,8 @@ def test_the_discrete_category_on_a_set_has_the_points_as_objects_and_identities
     assert ask(one == two) is False
     assert ask(Mor(shape)(one, one_again)() == one.identity()) is True
     assert one.identity() in Mor(shape)(one, one)
+    assert one.identity().inverse() is one.identity()
+    assert Sets().identity().inverse() is Sets().identity()
     with pytest.raises(AssertionError):
         Mor(shape)(one, two)()
 

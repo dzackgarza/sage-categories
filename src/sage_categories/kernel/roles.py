@@ -174,7 +174,7 @@ class MorphismOfCategory(CategoryPoint):
 
     def __mul__(self, first: MorphismOfCategory) -> MorphismOfCategory:
         """``self * first`` is ``self`` after ``first``: composition owned by ``C``."""
-        return self.base_category().composite(self, first)
+        return self.base_category().compose_morphisms(self, first)
 
     def is_monomorphism(self) -> AppliedPredicate:
         return self.base_category().morphism_category(1).Monomorphisms().predicate()(self)

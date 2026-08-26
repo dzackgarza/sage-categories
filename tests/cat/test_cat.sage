@@ -143,8 +143,13 @@ def test_canonical_objects_exist_by_identity() -> None:
     assert arrow in Fun(Cat().Simplex(int(1)), Sets())
     assert arrow.on_morphism(Cat().Simplex(int(1)).generator("0->1")) is swap
     assert swap.defining_morphism() is arrow
-    assert two.defining_morphism() is two.defining_morphism()
     assert two.defining_morphism().on_object(Cat().Terminal()(int(0))) is two
+
+    vertex, edge = Cat().element_from_defining_morphism(two.defining_morphism()), Cat().element_from_defining_morphism(arrow)
+    assert vertex.stage() is Cat().Terminal() and vertex.parent() is Sets().Finite()
+    assert edge.stage() is Cat().Simplex(int(1)) and edge.parent() is Sets()
+    assert vertex.defining_morphism().on_object(Cat().Terminal()(int(0))) is two
+    assert edge.defining_morphism().on_morphism(Cat().Simplex(int(1)).generator("0->1")) is swap
 
 
 def test_global_and_fixed_endpoint_property_dispatch_reach_one_category() -> None:

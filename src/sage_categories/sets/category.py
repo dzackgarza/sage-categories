@@ -82,7 +82,6 @@ class SetsCategory(Category[[Rule], []]):
 
     def __init__(self) -> None:
         self._canonical: dict[tuple[str, tuple[int, ...]], SetObject] = {}
-        self._inverses: MonoDict = MonoDict()
         self._constructions: dict[str, Category] = {}
         super().__init__()
         self._equality.register_handler(points_equal)
@@ -172,57 +171,33 @@ class SetsCategory(Category[[Rule], []]):
         if not inverse_rule:
             return forward
         (backward_rule,) = inverse_rule
-        self._retain_inverses(forward, self.MorphismType(morphisms, codomain, domain, backward_rule))
+        self.retain_inverses(forward, self.MorphismType(morphisms, codomain, domain, backward_rule))
         return forward
 
-    def _retain_inverses(self, forward: SetMap, backward: SetMap) -> None:
-        """Record two maps as mutually inverse and place both in ``Isomorphisms()``."""
-        self._inverses[forward] = backward
-        self._inverses[backward] = forward
-        isomorphisms = self.morphism_category(1).Isomorphisms()
-        refine(forward, isomorphisms)
-        refine(backward, isomorphisms)
-
     def construct_identity(self, member_object: SetObject) -> SetMap:
-        identity = self.MorphismType(self.morphism_category(1), member_object, member_object, lambda datum: datum)
-        self._retain_inverses(identity, identity)
-        return identity
+        return self.MorphismType(self.morphism_category(1), member_object, member_object, lambda datum: datum)
 
     def composite(self, second: SetMap, first: SetMap) -> SetMap:
         morphisms = self.morphism_category(1)
         assert first in morphisms and second in morphisms
         assert first.codomain() is second.domain(), f"{second!r} after {first!r} is not composable"
-        composite = self.MorphismType(morphisms, first.domain(), second.codomain(), lambda datum: second._rule(first._rule(datum)))
-        if first in self._inverses and second in self._inverses:
-            first_inverse, second_inverse = self._inverses[first], self._inverses[second]
-            inverse = self.MorphismType(morphisms, second.codomain(), first.domain(), lambda datum: first_inverse._rule(second_inverse._rule(datum)))
-            self._retain_inverses(composite, inverse)
-        return composite
+        return self.MorphismType(morphisms, first.domain(), second.codomain(), lambda datum: second._rule(first._rule(datum)))
 
     def inverse_morphism(self, morphism: SetMap) -> SetMap:
-        """The inverse of an isomorphism (D09).
-
-        The retained inverse when the construction supplied one; else the exact inverse
-        of a bijection out of a finite enumerable set; else the owned symbolic inverse,
-        whose equations hold by placement in ``Isomorphisms()`` and whose evaluation
-        has no executable rule.
-        """
-        if morphism in self._inverses:
-            return self._inverses[morphism]
+        """The inverse of an isomorphism: the generic retained inverse, else the exact inverse of a
+        bijection out of a finite enumerable set (POL-MATH-042), else the symbolic inverse."""
         finite = self.Finite()
         domain, codomain = morphism.domain(), morphism.codomain()
-        if finite.has_chosen_enumeration(domain):
+        if morphism not in self._inverses and finite.has_chosen_enumeration(domain):
             preimages = {morphism._rule(datum): datum for datum in finite.chosen_enumeration(domain)}
-            self._retain_inverses(morphism, self.MorphismType(self.morphism_category(1), codomain, domain, lambda datum: preimages[datum]))
-            return self._inverses[morphism]
+            self.retain_inverses(morphism, self.MorphismType(self.morphism_category(1), codomain, domain, lambda datum: preimages[datum]))
+        return super().inverse_morphism(morphism)
 
+    def _symbolic_inverse_(self, morphism: SetMap) -> SetMap:
         def no_rule(datum: Datum) -> Datum:
             assert False, f"the inverse of {morphism!r} has no executable rule; its equations hold by placement in Isomorphisms()"
 
-        symbolic = self.MorphismType(self.morphism_category(1), codomain, domain, no_rule)
-        self._retain_inverses(morphism, symbolic)
-        refine(symbolic, self.morphism_category(1)(codomain, domain).Isomorphisms())
-        return symbolic
+        return self.morphism_category(1)(morphism.codomain(), morphism.domain()).Isomorphisms()(no_rule)
 
     # -- owned constructions (D16; ``sets/products.py``, ``sets/exponentials.py``) ---
 

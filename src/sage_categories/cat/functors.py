@@ -237,6 +237,17 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     def fixed_endpoint_type(self) -> type[FunctorCategory]:
         return FunctorCategory
 
+    def _symbolic_inverse_(self, transformation: NaturalTransformation) -> NaturalTransformation:
+        """The componentwise inverse of a natural transformation placed in ``Mor(Fun).Isomorphisms()``.
+
+        A natural transformation is an isomorphism exactly when every component is
+        (Mathlib ``CategoryTheory.NatIso.isIso_of_isIso_app`` and
+        ``NatTrans.isIso_iff_isIso_app``, ``Mathlib/CategoryTheory/NatIso.lean``;
+        inspected 2026-08-27), and its inverse has components ``(eta_X)⁻¹``.
+        """
+        source, target = transformation.domain(), transformation.codomain()
+        return self.morphism_category(1)(target, source).Isomorphisms()(lambda member_object: transformation.component(member_object).inverse())
+
     # -- the functor property categories (D09) -----------------------------------
 
     def _bootstrap(self) -> None:

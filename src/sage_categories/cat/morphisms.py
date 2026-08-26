@@ -171,11 +171,6 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
     ) -> MorphismOfCategory:
         return self._base.construct_two_morphism(source, target, *args, **kwargs)
 
-    def inverse_morphism(self, two_cell: MorphismOfCategory) -> MorphismOfCategory:
-        """The inverse of an invertible 2-morphism; in this unit only identity 2-cells are constructed invertible."""
-        assert two_cell is self.identity_morphism(two_cell.domain()), f"{two_cell!r} retains no inverse"
-        return two_cell
-
     # -- property subcategories, defined once for every ``C`` (D09) -------------
 
     # ``D`` included in ``C`` derives ``Mor(D).P()`` as the narrowing of ``Mor(C).P()`` (POL-CAT-084).
@@ -247,7 +242,7 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
     def compose(self, second: MorphismOfCategory, first: MorphismOfCategory) -> MorphismOfCategory:
         """``Mor(C)(A, C).compose(g, f)`` for ``f: A -> B`` and ``g: B -> C``."""
         assert first.domain() is self._domain_object and second.codomain() is self._codomain_object
-        return self.base_category().composite(second, first)
+        return self.base_category().compose_morphisms(second, first)
 
     def Monomorphisms(self) -> Category:
         return self.property_subcategory(self.ambient().Monomorphisms())

@@ -1,4 +1,4 @@
-"""Wide subcategories and cores (``specs/functor.md``, "Inclusion functors"; POL-CAT-054, POL-FUN-027, POL-MATH-037).
+"""Wide subcategories and cores (``specs/functor.md``, "Monomorphisms of ``Cat()`` and placement"; POL-CAT-054, POL-FUN-027, POL-MATH-037).
 
 A wide subcategory ``W = C.WideSubcategory(P)`` retains every object of ``C`` and
 restricts the morphisms to those placed in a property subcategory ``P`` of
@@ -13,8 +13,8 @@ by ``C``'s membership proposition, a morphism of ``Mor(W)`` by placement in ``P`
 and ``Mor(W)(A, B)(data)`` constructs through the trusted constructor
 ``Mor(C)(A, B).P()``.
 
-Its one selected structural functor is the identity-on-value inclusion
-``Fun(W, C).Faithful().inclusion()`` (Mathlib ``wideSubcategory.faithful``;
+Its one selected structural functor is the identity-on-values monomorphism
+``Fun(W, C).Monomorphisms().Isofibrations()()`` (Mathlib ``wideSubcategory.faithful``;
 inspected 2026-08-27).  It is not full unless ``P`` is all of ``Mor(C)``, so ``W``
 owns its own constructions, identities, and composites rather than inheriting them
 definitionally from ``C`` (``Category.has_full_ambient``).
@@ -47,7 +47,7 @@ class WideFixedEndpointCategory(FixedEndpointCategory):
 
     The morphisms of ``W`` are the morphisms of ``C`` placed in ``P``, so these two
     categories have the same objects and ``Mor(W)(A, B)(data)`` is the constructor
-    ``Mor(C)(A, B).P()(data)``.  The declared inclusion states that identity, so the
+    ``Mor(C)(A, B).P()(data)``.  The declared monomorphism states that identity, so the
     placement a value enters through either spelling is comparable with the other
     (POL-CAT-068, POL-CAT-084).
     """
@@ -55,7 +55,7 @@ class WideFixedEndpointCategory(FixedEndpointCategory):
     def structure_functors(self) -> tuple[Functor, ...]:
         wide = self.ambient().base_category()
         endpoints = wide.morphism_property()(self.domain(), self.codomain())
-        return (*super().structure_functors(), Fun.full_inclusion(self, endpoints))
+        return (*super().structure_functors(), Fun.full_subcategory_monomorphism(self, endpoints))
 
 
 class WideMorphismCategory(MorphismCategory):
@@ -85,14 +85,14 @@ class WideSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
         return empty_local_role(self, role)
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        return (Fun(self, self._ambient).Faithful().inclusion(),)
+        return (Fun(self, self._ambient).Monomorphisms().Isofibrations()(),)
 
     def morphism_category_type(self) -> type[WideMorphismCategory]:
         return WideMorphismCategory
 
-    def classical_stages(self) -> tuple[ObjectOfCategory, ...]:
-        """Every object of ``C`` is an object of ``W``, so the stages are those of ``C``."""
-        return self._ambient.classical_stages()
+    def separating_family(self) -> tuple[ObjectOfCategory, ...]:
+        """Every object of ``C`` is an object of ``W``, so the separators are those of ``C``."""
+        return self._ambient.separating_family()
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         return self._ambient.membership_proposition(candidate)

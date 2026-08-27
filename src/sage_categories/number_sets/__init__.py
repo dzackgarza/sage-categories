@@ -2,7 +2,7 @@
 
 Each set is the sole object of its named-object leaf category (POL-CAT-083): a
 rule-defined set placed in its established property category by the leaf's one
-selected inclusion, with its exact cardinality recorded at construction.  These
+selected subcategory monomorphism, with its exact cardinality recorded at construction.  These
 names shadow Sage's inside the package universe.
 """
 

@@ -2,11 +2,11 @@
 
 Oracles: the definition of a partial order (reflexive, antisymmetric, transitive) and of
 a total order; the definition of the induced order on a subset, the ``U``-initial lift
-of its inclusion (Adamek, Herrlich, Strecker, Definition 10.41 and Example 10.42(6);
+of its monomorphism (Adamek, Herrlich, Strecker, Definition 10.41 and Example 10.42(6);
 Mathlib ``PartialOrder.lift``); POL-CAT-062 for the category of every inherited result
-(the declaring method's value in ``Sets()``); ``specs/functor.md`` for the classical
-stage, its identity comparison under ``U``, and the generalized elements at other
-stages; the usual order on ``{0, 1, 2}`` and divisibility on ``{1, 2, 3, 6}``.
+(the declaring method's value in ``Sets()``); ``specs/functor.md`` for the separator,
+its identity comparison under ``U``, and the generalized elements with other
+domains; the usual order on ``{0, 1, 2}`` and divisibility on ``{1, 2, 3, 6}``.
 """
 
 import pytest
@@ -143,7 +143,7 @@ def test_inherited_results_are_the_declaring_methods_values_in_sets() -> None:
     assert evens in Sets()
     assert evens not in Posets()
     assert evens.underlying_set() is carrier
-    assert evens.inclusion() in Mor(Sets())(evens, carrier)
+    assert evens.monomorphism() in Mor(Sets())(evens, carrier)
     assert ask(evens.cardinality() == int(2)) is True
 
     points = list(divisibility)
@@ -161,7 +161,7 @@ def test_the_leaf_override_sub_poset_returns_the_induced_order_through_the_retai
     carrier = _underlying().on_object(divisibility)
     without_three = divisibility.sub_poset(lambda datum: datum != int(3))
     subset = divisibility.subset_from(lambda datum: datum != int(3))
-    lift = _underlying().cartesian_lift(subset.inclusion(), divisibility)
+    lift = _underlying().cartesian_lift(subset.monomorphism(), divisibility)
 
     assert without_three in Posets()
     assert without_three in FinitePosets()
@@ -174,7 +174,7 @@ def test_the_leaf_override_sub_poset_returns_the_induced_order_through_the_retai
 
     assert lift in Mor(Posets())
     assert lift.codomain() is divisibility
-    assert _underlying().on_morphism(lift) is subset.inclusion()
+    assert _underlying().on_morphism(lift) is subset.monomorphism()
     assert _underlying().on_object(lift.domain()) is subset
     assert ask(lift(two) == carrier.point(int(2))) is True
 
@@ -183,17 +183,17 @@ def test_the_leaf_override_sub_poset_returns_the_induced_order_through_the_retai
         _underlying().cartesian_lift(collapse, divisibility)
 
 
-def test_the_classical_stage_is_the_one_point_order_with_the_identity_comparison() -> None:
+def test_the_separator_is_the_one_point_order_with_the_identity_comparison() -> None:
     divisibility = _divisibility()
     carrier = _underlying().on_object(divisibility)
     one_point = Posets().Terminal()
 
-    assert Posets().classical_stages() == (one_point,)
+    assert Posets().separating_family() == (one_point,)
     assert _underlying().on_object(one_point) is Sets().Terminal()
-    assert _underlying().stage_comparison() is Sets().Terminal().identity()
+    assert _underlying().separator_comparison() is Sets().Terminal().identity()
 
     two = divisibility.element(carrier.point(int(2)))
-    assert two.stage() is one_point
+    assert two.defining_morphism().domain() is one_point
     assert two.parent() is divisibility
     assert two.defining_morphism() in Mor(Posets())(one_point, divisibility)
     assert _underlying().on_element(two) is carrier.point(int(2))
@@ -203,7 +203,7 @@ def test_the_classical_stage_is_the_one_point_order_with_the_identity_comparison
     pair = Posets().Simplex(int(1))
     comparable = Mor(Posets())(pair, divisibility)(lambda datum: int(2) if datum == int(0) else int(6))
     generalized = Posets().element_from_defining_morphism(comparable)
-    assert generalized.stage() is pair
+    assert generalized.defining_morphism().domain() is pair
     assert generalized.parent() is divisibility
     assert generalized.defining_morphism() is comparable
 

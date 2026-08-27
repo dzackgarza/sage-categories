@@ -13,10 +13,10 @@ The one selected structural functor is the underlying-set functor
 retained ``X`` of a poset and the retained set map of a monotone map, and it supplies
 the complete set surface: every inherited method returns the declaring method's value
 in ``Sets()`` (POL-CAT-062).  A poset is never placed in ``Sets()``; it reaches every
-set operation through ``U`` alone.  The classical stage is the one-point order
-``Posets().Terminal()``; ``U`` carries the identity stage comparison because the
+set operation through ``U`` alone.  The separator is the one-point order
+``Posets().Terminal()``; ``U`` carries the identity separator comparison because the
 underlying set of the one-point order is ``Sets().Terminal()`` by construction.  For
-classical elements ``x, y`` of ``P``, ``x <= y`` is the membership proposition of the
+points ``x, y`` of ``P``, ``x <= y`` is the membership proposition of the
 pair point ``(x, y): 1 -> X * X`` in ``R``.
 
 A monotone map ``Mor(Posets())(P, Q)(rule)`` retains its underlying set map; identities
@@ -51,8 +51,8 @@ from sage_categories.kernel.construction import (
     retained_morphism_input,
     retained_object_input,
 )
-from sage_categories.kernel.decisions import Decision, Unknown, decision_and, decision_not, decision_or
-from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask
+from sage_categories.kernel.decisions import Decision, Unknown
+from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask, conjunction, disjunction, implication, negation
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, role_of
 from sage_categories.sets.category import Sets
@@ -100,12 +100,12 @@ class PosetDeclaration(ObjectOfCategory):
         return self._poset_object_data.relation
 
     def element(self, point: SetElement) -> PosetElement:
-        """The classical element over a point ``x: 1 -> U(P)``: the monotone map ``1 -> P`` under ``x``."""
+        """The point over a point ``x: 1 -> U(P)``: the monotone map ``1 -> P`` under ``x``."""
         state = self._poset_object_data
         carrier = Posets().underlying_set_functor().on_object(self)
         assert point in carrier, f"{point!r} is not a point of {carrier!r}"
         if point not in state.elements:
-            # The classical element of ``P`` is a morphism of the category ``P`` was
+            # The point of ``P`` is a morphism of the category ``P`` was
             # placed in, not of ``Posets()``: a functor out of ``Posets().Finite()``
             # transports a morphism of ``Mor(Posets().Finite())`` (POL-CAT-074).
             posets, category = Posets(), self.category()
@@ -121,7 +121,7 @@ class PosetDeclaration(ObjectOfCategory):
         cartesian lift retained by ``U`` supplies the induced order.
         """
         subset = self.subset_from(predicate)
-        return Posets().underlying_set_functor().cartesian_lift(subset.inclusion(), self).domain()
+        return Posets().underlying_set_functor().cartesian_lift(subset.monomorphism(), self).domain()
 
     def is_total(self) -> AppliedPredicate:
         """Totality: any two elements are comparable."""
@@ -149,7 +149,7 @@ class PosetElementDeclaration(ElementOfObject):
     def __le__(self, other: PosetElement) -> AppliedPredicate:
         """``x <= y``: the pair point ``(U(x), U(y))`` is a member of ``R``."""
         poset = self.parent()
-        assert _is_classical(self) and _is_classical(other), f"{self!r} <= {other!r} compares classical elements"
+        assert _is_point(self) and _is_point(other), f"{self!r} <= {other!r} compares points"
         assert other.parent() is poset, f"{other!r} is not an element of {poset!r}"
         underlying = Posets().underlying_set_functor()
         return poset.relation().membership_proposition(poset._pair(underlying.on_element(self), underlying.on_element(other)))
@@ -164,7 +164,7 @@ class PosetElementDeclaration(ElementOfObject):
         return (other <= self) & (self != other)
 
     def __repr__(self) -> str:
-        return f"point of {self.parent()!r} at stage {self.stage()!r}"
+        return f"point of {self.parent()!r} with domain {self.defining_morphism().domain()!r}"
 
 
 class MonotoneMapDeclaration(MorphismOfCategory):
@@ -177,15 +177,15 @@ class MonotoneMapDeclaration(MorphismOfCategory):
 # -- exact handlers on finite enumerated carriers (POL-MATH-042) --------------------------
 
 
-def _is_classical(candidate: Any) -> bool:
-    """Whether a candidate is a classical element of a poset.
+def _is_point(candidate: Any) -> bool:
+    """Whether a candidate is a point of a poset.
 
     A classifier of the equality candidate, like ``role_of`` and ``is_placed``: it
     receives exactly the second argument of ``_equal`` and must accept every input
     (POL-TYPE-004).
     """
     posets = Posets()
-    return role_of(candidate) is Role.ELEMENT and candidate.parent() in posets and candidate.stage() is posets.Terminal()
+    return role_of(candidate) is Role.ELEMENT and candidate.parent() in posets and candidate.defining_morphism().domain() is posets.Terminal()
 
 
 def _enumerated_points(carrier: SetObject) -> tuple[SetElement, ...]:
@@ -199,17 +199,17 @@ def _decided(decide: Callable[[SetElement, SetElement], Decision], points: tuple
 
 
 def _reflexive(relation: Relation, size: int) -> Decision:
-    return decision_and(*(relation[i, i] for i in range(size)))
+    return ask(conjunction(relation[i, i] for i in range(size)))
 
 
 def _antisymmetric(relation: Relation, size: int) -> Decision:
-    return decision_and(*(decision_not(decision_and(relation[i, j], relation[j, i])) for i in range(size) for j in range(i + 1, size)))
+    return ask(conjunction(negation(conjunction((relation[i, j], relation[j, i]))) for i in range(size) for j in range(i + 1, size)))
 
 
 def _transitive(relation: Relation, size: int) -> Decision:
-    return decision_and(
-        *(
-            decision_or(decision_not(decision_and(relation[i, j], relation[j, k])), relation[i, k])
+    return ask(
+        conjunction(
+            implication(conjunction((relation[i, j], relation[j, k])), relation[i, k])
             for i in range(size)
             for j in range(size)
             for k in range(size)
@@ -218,7 +218,7 @@ def _transitive(relation: Relation, size: int) -> Decision:
 
 
 def _total(relation: Relation, size: int) -> Decision:
-    return decision_and(*(decision_or(relation[i, j], relation[j, i]) for i in range(size) for j in range(i + 1, size)))
+    return ask(conjunction(disjunction((relation[i, j], relation[j, i])) for i in range(size) for j in range(i + 1, size)))
 
 
 def _partial_order_on_enumerated(relation: SetObject) -> Decision:
@@ -231,7 +231,7 @@ def _partial_order_on_enumerated(relation: SetObject) -> Decision:
         return Unknown
     points = _enumerated_points(carrier)
     pairs = _decided(lambda left, right: ask(relation.membership_proposition(_pair_point(square, left, right))), points)
-    return decision_and(_reflexive(pairs, len(points)), _antisymmetric(pairs, len(points)), _transitive(pairs, len(points)))
+    return ask(conjunction((_reflexive(pairs, len(points)), _antisymmetric(pairs, len(points)), _transitive(pairs, len(points)))))
 
 
 def _square(relation: SetObject) -> ObjectOfCategory:
@@ -274,8 +274,8 @@ def _order_preserving_on_enumerated(source: Poset, target: Poset, set_map: SetMa
     points = _enumerated_points(carrier)
     images = tuple(set_map(point) for point in points)
     domain_order, codomain_order = _order_relation(source, points), _order_relation(target, images)
-    return decision_and(
-        *(decision_or(decision_not(domain_order[i, j]), codomain_order[i, j]) for i in range(len(points)) for j in range(len(points)))
+    return ask(
+        conjunction(implication(domain_order[i, j], codomain_order[i, j]) for i in range(len(points)) for j in range(len(points)))
     )
 
 
@@ -328,7 +328,7 @@ class PosetsCategory(Category[[Rule], []]):
             self._functors["underlying_set"] = underlying
         return self._functors["underlying_set"]
 
-    def classical_stages(self) -> tuple[Poset, ...]:
+    def separating_family(self) -> tuple[Poset, ...]:
         return (self.Terminal(),)
 
     # -- construction (POL-CAT-069, POL-LEAF-002) ----------------------------------------
@@ -374,7 +374,7 @@ class PosetsCategory(Category[[Rule], []]):
         return self._canonical["simplex", dimension]
 
     def Terminal(self) -> Poset:
-        """The one-point order on ``Sets().Terminal()``, the classical stage of ``Posets()``."""
+        """The one-point order on ``Sets().Terminal()``, the separator of ``Posets()``."""
         if ("terminal", 0) not in self._canonical:
             point = Sets().Terminal()
             self._canonical["terminal", 0] = self.TotallyOrdered()(self._construct((point * point).subset_from(lambda pair: True)))
@@ -413,9 +413,9 @@ class PosetsCategory(Category[[Rule], []]):
     def element_from_defining_morphism(self, defining_morphism: MonotoneMap) -> PosetElement:
         """The generalized element defined by ``T -> P``, retained by that exact map (POL-CAT-066).
 
-        A classical stage adds no local state: the underlying set point of ``t: 1 -> P``
+        A separator adds no local state: the underlying set point of ``t: 1 -> P``
         is ``U(t)``, which the selected functor supplies on demand.  ``Poset.element``
-        owns the classical point of one carrier element; it reaches this constructor.
+        owns the point of one carrier element; it reaches this constructor.
         """
         assert defining_morphism in self.morphism_category(1)
         if defining_morphism not in self._elements:
@@ -478,7 +478,7 @@ class PosetsCategory(Category[[Rule], []]):
 
     def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
         """Classical elements of one poset are equal when their points are; monotone maps when their set maps are."""
-        if _is_classical(first) and _is_classical(candidate) and first.parent() is candidate.parent():
+        if _is_point(first) and _is_point(candidate) and first.parent() is candidate.parent():
             underlying = self.underlying_set_functor()
             return ask(underlying.on_element(first) == underlying.on_element(candidate))
         morphisms = self.morphism_category(1)

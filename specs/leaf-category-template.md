@@ -31,37 +31,33 @@ class LeafCategory(Category):
         ...
 ```
 
-`Category` is `Cat().ObjectType`. Each entry in `structure_functors()` is an explicitly
-constructed object of `Fun = Mor(Cat())`. Include only immediate functors whose target
-catalogue supplies the leaf's inherited public surface.
+`Category` is `Cat().ObjectType`. Each entry in `structure_functors()` is an explicitly constructed object of `Fun = Mor(Cat())`. Include only immediate functors whose target catalogue supplies the leaf's inherited public surface.
 
-For each inherited operation, the selected functor must construct every required object
-and morphism image. The compiler does not invent missing maps.
+For each inherited operation, the selected functor must construct every required object and morphism image.
+The compiler does not invent missing maps.
 
-The functor connects the category-owned implementation roles. Its object and morphism maps
-construct the corresponding target roles. A concrete functor category can add an element
-action when its mathematics supplies one.
+The functor connects the category-owned implementation roles.
+Its object and morphism maps construct the corresponding target roles.
+A concrete functor category can add an element action when its mathematics supplies one.
 
-An inclusion uses the constructor on its fixed-endpoint functor category. A product,
-pullback, comma, `Fun([1], C)`, or other category construction creates and retains its named
-projection functors. A leaf reuses those exact objects.
+A subcategory monomorphism uses the constructor on its fixed-endpoint functor category.
+A product, pullback, comma, `Fun([1], C)`, or other category construction creates and retains its named projection functors.
+A leaf reuses those exact objects.
 
-Present structured categories as subobjects of sequence products when their objects have
-named components. The generic `Cat().Products().ChosenSubobjects()` construction then supplies
-`product_projection(i)`. The leaf selects the applicable indices without restating maps.
+Present structured categories as subobjects of sequence products when their objects have named components.
+The generic `Cat().Products().ChosenSubobjects()` construction then supplies `product_projection(i)`. The leaf selects the applicable indices without restating maps.
 
-For another functor, the leaf supplies its complete object and morphism actions through
-`Fun(self, Target)`. It selects the strongest established property subcategory before
-construction. The endpoints never select a functor by themselves.
+For another functor, the leaf supplies its complete object and morphism actions through `Fun(self, Target)`. It selects the strongest established property subcategory before construction.
+The endpoints never select a functor by themselves.
 
-For a structured object with several defining components, select only components used as
-its inherited public structure. Other component functors remain ordinary functors. This
-selection has the same purpose as Sage's `super_categories()` declaration.
+For a structured object with several defining components, select only components used as its inherited public structure.
+Other component functors remain ordinary functors.
+This selection has the same purpose as Sage's `super_categories()` declaration.
 
 ## Property subcategories and predicate handlers
 
-A property subcategory owns its membership predicate. The ambient object method only
-constructs that proposition:
+A property subcategory owns its membership predicate.
+The ambient object method only constructs that proposition:
 
 ```python
 def is_P(self) -> Proposition:
@@ -77,13 +73,12 @@ assume(proposition)
 proposition.assume()
 ```
 
-The leaf does not implement `ask()`, `assume()`, or `Proposition.assume()`. The predicate
-kernel owns those operations. Direct construction in `C().P()` asserts the property.
-An exact `True` decision or a positive assumption refines the same owned object through
-that property-category constructor.
+The leaf does not implement `ask()`, `assume()`, or `Proposition.assume()`. The predicate kernel owns those operations.
+Direct construction in `C().P()` asserts the property.
+An exact `True` decision or a positive assumption refines the same owned object through that property-category constructor.
 
-Bind computational procedures at the property-category integration site. Put their
-engine work in a private backend module:
+Bind computational procedures at the property-category integration site.
+Put their engine work in a private backend module:
 
 ```python
 C().P().register_exact_handler(C.ObjectType, decide_P_for_C_objects)
@@ -102,13 +97,12 @@ def decide_P_for_C_objects(x: C.ObjectType) -> Decision:
             return Unknown
 ```
 
-Add support by adding a new `case`. Do not start from unsupported cases. Do not replace
-this form with an `if` cascade. The wildcard case is the only fallback and returns
-`Unknown`.
+Add support by adding a new `case`. Do not start from unsupported cases.
+Do not replace this form with an `if` cascade.
+The wildcard case is the only fallback and returns `Unknown`.
 
-The handler returns `True`, `False`, or `Unknown`. It does not call `assume()`, refine an
-object, construct a property category, or mutate the mathematical context. The generic
-`ask()` path owns those effects after it receives the decision.
+The handler returns `True`, `False`, or `Unknown`. It does not call `assume()`, refine an object, construct a property category, or mutate the mathematical context.
+The generic `ask()` path owns those effects after it receives the decision.
 
 For example, one exact set-map handler can support symbolic real endomorphisms:
 
@@ -127,14 +121,11 @@ Mor(Sets()).Epimorphisms().register_exact_handler(
 )
 ```
 
-The private SymPy procedure constructs the exact owned image and compares it with
-`RR`. It returns `Unknown` when SymPy does not determine the image. This handler belongs
-to `Mor(Sets()).Epimorphisms()` because it decides surjectivity. An injectivity handler
-belongs to `Mor(Sets()).Monomorphisms()` and uses an exact injectivity procedure.
+The private SymPy procedure constructs the exact owned image and compares it with `RR`. It returns `Unknown` when SymPy does not determine the image.
+This handler belongs to `Mor(Sets()).Epimorphisms()` because it decides surjectivity.
+An injectivity handler belongs to `Mor(Sets()).Monomorphisms()` and uses an exact injectivity procedure.
 
-See [functor.md](functor.md) for inclusion, projection, evaluation, and induced-functor
-declarations.
+See [functor.md](functor.md) for subcategory-monomorphism, projection, evaluation, and induced-functor declarations.
 
-See [finite-set-minimal-template.py](finite-set-minimal-template.py) for a property
-subcategory. See [poset-minimal-template.py](poset-minimal-template.py) for objects with
-additional structure and an explicit set projection.
+See [finite-set-minimal-template.py](finite-set-minimal-template.py) for a property subcategory.
+See [poset-minimal-template.py](poset-minimal-template.py) for objects with additional structure and an explicit set projection.

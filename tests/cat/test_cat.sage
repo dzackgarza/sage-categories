@@ -133,10 +133,10 @@ def test_natural_transformations_compose_componentwise() -> None:
 def test_canonical_objects_exist_by_identity() -> None:
     # Each line reaches one canonical object through two distinct public entry points.
     assert Cat().Terminal() is Cat().Simplex(int(0))
-    assert Cat().Simplex(int(1)) is Cat().classical_stages()[int(1)]
+    assert Cat().Simplex(int(1)) is Cat().separating_family()[int(1)]
     assert Cat().Horn(int(2), int(1)) is Cat().Simplex(int(2))
     assert Cat().Horn(int(2), int(2)) is Sets().Pullbacks().shape()
-    assert Sets().Terminal() is Sets().classical_stages()[int(0)]
+    assert Sets().Terminal() is Sets().separating_family()[int(0)]
 
     span, cospan = Cat().Horn(int(2), int(0)), Cat().Horn(int(2), int(2))
     assert span.generator("0->1") in Mor(span)(span(int(0)), span(int(1)))
@@ -154,8 +154,8 @@ def test_canonical_objects_exist_by_identity() -> None:
     assert two.defining_morphism().on_object(Cat().Terminal()(int(0))) is two
 
     vertex, edge = Cat().element_from_defining_morphism(two.defining_morphism()), Cat().element_from_defining_morphism(arrow)
-    assert vertex.stage() is Cat().Terminal() and vertex.parent() is Sets().Finite()
-    assert edge.stage() is Cat().Simplex(int(1)) and edge.parent() is Sets()
+    assert vertex.defining_morphism().domain() is Cat().Terminal() and vertex.parent() is Sets().Finite()
+    assert edge.defining_morphism().domain() is Cat().Simplex(int(1)) and edge.parent() is Sets()
     assert vertex.defining_morphism().on_object(Cat().Terminal()(int(0))) is two
     assert edge.defining_morphism().on_morphism(Cat().Simplex(int(1)).generator("0->1")) is swap
 
@@ -252,12 +252,12 @@ def test_the_induced_element_action_follows_the_morphism_action() -> None:
     composite = Fun(Sets(), Sets()).Equivalences().identity() * functor
 
     generalized = walking_arrow.element_from_defining_morphism(walking_arrow.generator("0->1"))
-    assert generalized.stage() is walking_arrow(int(0))
+    assert generalized.defining_morphism().domain() is walking_arrow(int(0))
     assert generalized.parent() is walking_arrow(int(1))
 
     image = functor.on_element(generalized)
     assert image.parent() is two
-    assert image.stage() is one
+    assert image.defining_morphism().domain() is one
     assert image.defining_morphism() is select_one
     assert ask(image == two.point(int(1))) is True
     assert composite.on_element(generalized).defining_morphism() is select_one

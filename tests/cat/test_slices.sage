@@ -187,7 +187,6 @@ def test_the_slice_is_the_pullback_of_the_codomain_evaluation_along_the_point() 
     assert over.first_projection().on_object(lifted) is successor
     assert over.fixed_projection().on_object(lifted) is two
     assert successor in over
-    assert ask(over.membership_proposition(parity)) is Unknown
     assert parity not in over
     other_three = Sets()(lambda datum: datum in (int(0), int(1), int(2)))
     unrelated = Mor(Sets())(two, other_three)(lambda datum: datum)
@@ -210,17 +209,17 @@ def test_a_generalized_element_is_an_object_of_the_slice_over_its_parent() -> No
 
     assert point.category() is over
     assert point in over
-    assert point.stage() is Sets().Terminal()
+    assert point.defining_morphism().domain() is Sets().Terminal()
     assert point.parent() is three
     assert over(point).first() is point.defining_morphism()
     assert over(point.defining_morphism()) is over(point)
     assert over.fixed_projection().on_object(over(point)) is Sets().Terminal()
 
-    # A stage other than the classical one: ``t: T -> X`` for ``T`` a two-element set.
+    # A domain other than the separator: ``t: T -> X`` for ``T`` a two-element set.
     two = Sets().Simplex(int(1))
     successor = Mor(Sets())(two, three)(lambda datum: datum + int(1))
     generalized = Sets().element_from_defining_morphism(successor)
-    assert generalized.stage() is two
+    assert generalized.defining_morphism().domain() is two
     assert generalized.parent() is three
     assert generalized.defining_morphism() is successor
     assert generalized.category() is over

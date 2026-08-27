@@ -1,17 +1,17 @@
 """``Sets()``: the category of sets and total maps (POL-SET-002, POL-CAT-083, POL-SET-013, POL-SET-026).
 
 ``Sets()`` owns arbitrary sets and arbitrary functions.  Its objects are
-rule-defined (``sets/objects.py``), its elements are maps ``T -> X`` with classical
-points at the stage ``Sets().Terminal()`` (``sets/elements.py``), and its morphisms
+rule-defined (``sets/objects.py``), its elements are maps ``T -> X`` with
+points with domain ``Sets().Terminal()`` (``sets/elements.py``), and its morphisms
 are total maps by rule (``sets/maps.py``).  The property subcategories ``Finite()``,
 ``Infinite()``, ``Countable()``, and ``Uncountable()`` own the constructors that
 supply their cardinal data; ``Finite => Countable`` and ``Uncountable => Infinite``
-are their recorded inclusions.  The canonical objects ``Empty()``, ``Terminal()``,
+are their recorded subcategory monomorphisms.  The canonical objects ``Empty()``, ``Terminal()``,
 and ``Simplex(n)`` exist once by identity.
 
 Retained construction data, each keyed by identity at its owner: the chosen
 enumeration of a finite set at ``Sets().Finite()``; the inverse of an isomorphism
-at ``Sets()`` (``inverse_morphism``); the inclusion of a chosen subset at
+at ``Sets()`` (``inverse_morphism``); the presenting monomorphism of a chosen subset at
 ``Sets().ChosenSubsets()`` (``sets/subobjects.py``).
 """
 
@@ -28,8 +28,8 @@ from sage_categories.sets import maps as _set_maps
 from sage_categories.sets import objects as _set_objects
 from sage_categories.cat.category import Category
 from sage_categories.cat.properties import PropertySubcategory
-from sage_categories.kernel.decisions import Decision, Unknown, decision_not, decision_or
-from sage_categories.kernel.predicates import ask
+from sage_categories.kernel.decisions import Decision, Unknown
+from sage_categories.kernel.predicates import ask, disjunction, negation
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import Role
 from sage_categories.kernel.decisions import UnknownClass
@@ -43,7 +43,7 @@ from sage_categories.sets.maps import (
     maps_equal,
     surjective_on_finite_domain,
 )
-from sage_categories.sets.objects import FiniteSetRole, MembershipRule, SetObjectData, SetObjectDeclaration
+from sage_categories.sets.objects import FiniteSetRole, MembershipRule, SetObjectData, SetObjectDeclaration, sets_equal
 
 if TYPE_CHECKING:
     from sage_categories.cat.functors import Functor
@@ -111,6 +111,7 @@ class SetsCategory(Category[[Rule], []]):
         self._rule_valued: MonoDict = MonoDict()
         super().__init__()
         self._equality.register_handler(points_equal)
+        self._equality.register_handler(sets_equal)
         self._equality.register_handler(maps_equal)
         self._countable = PropertySubcategory(self, "Countable", {}, ())
         self._infinite = PropertySubcategory(self, "Infinite", {}, ())
@@ -122,8 +123,8 @@ class SetsCategory(Category[[Rule], []]):
         self._finite.predicate().register_handler(lambda ambient: False if ambient in self._infinite else Unknown)
         self._countable.predicate().register_handler(self._countable_by_cardinality)
         self._countable.predicate().register_handler(lambda ambient: False if ambient in self._uncountable else Unknown)
-        self._infinite.predicate().register_handler(lambda ambient: decision_not(ask(ambient.is_finite())))
-        self._uncountable.predicate().register_handler(lambda ambient: decision_not(ask(ambient.is_countable())))
+        self._infinite.predicate().register_handler(lambda ambient: ask(~ambient.is_finite()))
+        self._uncountable.predicate().register_handler(lambda ambient: ask(~ambient.is_countable()))
         morphisms = self.morphism_category(1)
         morphisms.Monomorphisms().predicate().register_handler(injective_on_finite_domain)
         morphisms.Epimorphisms().predicate().register_handler(surjective_on_finite_domain)
@@ -171,7 +172,7 @@ class SetsCategory(Category[[Rule], []]):
 
     @cached_method
     def ChosenSubsets(self) -> ChosenSubsetsCategory:
-        """The construction family of chosen subsets, each retaining its inclusion (``sets/subobjects.py``)."""
+        """The construction family of chosen subsets, each retaining its monomorphism (``sets/subobjects.py``)."""
         from sage_categories.sets.subobjects import ChosenSubsetsCategory
 
         return ChosenSubsetsCategory(self)
@@ -207,7 +208,7 @@ class SetsCategory(Category[[Rule], []]):
         return Cardinal().representative(Cardinal().zero())
 
     def Terminal(self) -> SetObject:
-        """The one-point set ``1 = {*}``, the classical stage of ``Sets()``."""
+        """The one-point set ``1 = {*}``, the separator of ``Sets()``."""
         return self._canonical_finite("terminal", (), ((),))
 
     def Simplex(self, dimension: int) -> SetObject:
@@ -217,14 +218,14 @@ class SetsCategory(Category[[Rule], []]):
         assert dimension >= 0
         return Cardinal().representative(Cardinal()(dimension + 1))
 
-    def classical_stages(self) -> tuple[SetObject, ...]:
+    def separating_family(self) -> tuple[SetObject, ...]:
         """``G_Sets = 1``.  The writer asserts that ``1`` separates ``Sets()``, so ``Mor(Sets())(1, -)`` is faithful (POL-MATH-037).
 
         nLab "separator", Definitions ("if ``f . e = g . e`` for every morphism
         ``e: S -> X``, then ``f = g``") and Examples and applications ("In Set, any
         inhabited set is a separator; in particular, the point is a separator");
         inspected 2026-08-27.  Set membership, enumeration, and cardinality read
-        ``Mor(Sets())(1, X)`` through this stage.
+        ``Mor(Sets())(1, X)`` through this separator.
         """
         return (self.Terminal(),)
 
@@ -412,7 +413,7 @@ class SetsCategory(Category[[Rule], []]):
             case ():
                 source_empty = Unknown if source is Unknown else ask(source == 0)
                 target_empty = Unknown if target is Unknown else ask(target == 0)
-                return decision_or(source_empty, decision_not(target_empty))
+                return ask(disjunction((source_empty, negation(target_empty))))
         if source is Unknown or target is Unknown:
             return Unknown
         match hom_category.narrowing_roots():

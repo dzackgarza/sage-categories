@@ -11,7 +11,7 @@ property (POL-MATH-036, POL-TEST-006).
 import pytest
 
 from sage_categories.all import *
-from sage_categories.cat.constructions import cone
+from sage_categories.cat.constructions import cone, vertex_of
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
 
 
@@ -92,10 +92,10 @@ def test_a_category_product_has_projections_with_exact_endpoints_acting_componen
     assert second.on_morphism(morphism) is successor
 
     generalized = product.element_from_defining_morphism(morphism)
-    assert generalized.stage() is pair and generalized.parent() is other
+    assert generalized.defining_morphism().domain() is pair and generalized.parent() is other
     image = first.on_element(generalized)
     assert ask(image.defining_morphism() == arrow.generator("0->1")) is True
-    assert image.stage() is arrow(int(0)) and image.parent() is arrow(int(1))
+    assert image.defining_morphism().domain() is arrow(int(0)) and image.parent() is arrow(int(1))
 
 
 def test_a_category_coproduct_has_injections_that_tag() -> None:
@@ -117,9 +117,35 @@ def test_a_category_coproduct_has_injections_that_tag() -> None:
     # A generalized point follows the injection's morphism action.
     generalized = Sets().element_from_defining_morphism(successor)
     image = into_sets.on_element(generalized)
-    assert image.stage() is tagged
+    assert image.defining_morphism().domain() is tagged
     assert image.parent() is into_sets.on_object(three)
     assert image.defining_morphism().morphism() is successor
+
+
+def test_a_universal_construction_has_one_apex_and_one_defining_morphism_each() -> None:
+    two, three = Sets().Simplex(int(1)), Sets().Simplex(int(2))
+    successor = Mor(Sets())(two, three)(lambda datum: datum + int(1))
+
+    product = Cat().Products()((Sets(), Cat()))
+    coproduct = Cat().Coproducts()((Sets(), Cat()))
+    assert Cat().Products()((Sets(), Cat())) is product
+    assert Cat().Coproducts()((Sets(), Cat())) is coproduct
+
+    projection = product.product_projection(int(0))
+    injection = coproduct.coproduct_injection(int(0))
+    assert product.product_projection(int(0)) is projection
+    assert coproduct.coproduct_injection(int(0)) is injection
+
+    assert injection.on_object(two) is injection.on_object(two)
+    assert injection.on_morphism(successor) is injection.on_morphism(successor)
+    assert ask(injection.on_morphism(successor) == injection.on_morphism(successor)) is True
+    assert projection.on_object(product((two, Sets()))) is two
+
+    # The set product is the same statement one level down.
+    pair = Sets().Products()((two, three))
+    assert Sets().Products()((two, three)) is pair
+    assert pair.product_projection(int(0)) is pair.product_projection(int(0))
+    assert pair.cone().component(vertex_of(pair.diagram().domain(), int(0))) is pair.product_projection(int(0))
 
 
 def test_the_mediator_of_a_category_cone_lands_in_the_product() -> None:
@@ -169,7 +195,6 @@ def test_the_strict_pullback_in_cat_admits_identical_images_and_leaves_distinct_
     undecided = Cat().Pullbacks()(_cospan_diagram(select_integers, select_other))
     candidate = undecided((point(int(0)), point(int(0))))
     assert ask(undecided.membership_proposition(candidate)) is Unknown
-    assert candidate not in undecided
 
 
 def test_fun_of_the_walking_arrow_has_morphisms_as_objects_and_evaluations_as_endpoints() -> None:

@@ -1,10 +1,10 @@
 """``Sets().ElementType``: generalized elements ``T -> X`` (POL-CAT-058, POL-FUN-002).
 
-A classical element of a set ``X`` is a generalized element whose stage is the
-classical stage ``Sets().Terminal()``: a point ``1 -> X``.  It retains its defining
+A point of a set ``X`` is a generalized element whose domain is the
+separator ``Sets().Terminal()``: a point ``1 -> X``.  It retains its defining
 morphism and, at the private computation boundary, the datum that the point
-selects.  A generalized element at another stage retains no point datum.  Two
-classical points of one set are equal exactly when their data are equal; a point
+selects.  A generalized element with another domain retains no point datum.  Two
+points of one set are equal exactly when their data are equal; a point
 hashes by its datum, so equal points hash equal.
 """
 
@@ -14,6 +14,7 @@ from collections.abc import Hashable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
+import sage_categories.sets.category as _sets
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import ask
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, Role, role_of
@@ -21,23 +22,9 @@ from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, Role, r
 if TYPE_CHECKING:
     from sage_categories.sets.category import SetElement
 
-__all__ = ["Datum", "SetElementData", "SetPointData", "data_equal", "points_equal"]
+__all__ = ["Datum", "SetElementData", "SetPointData", "points_equal"]
 
 type Datum = Hashable
-
-
-def data_equal(first: Datum, second: Datum) -> Decision:
-    """The engine comparison of two data at the private boundary (POL-MATH-034).
-
-    Exact for an engine value, ``Unknown`` for a rule-defined family, and the decided
-    owned equality when either datum is an owned mathematical value: the data of the set
-    ``Mor(C)(G_C, X)`` represented by a classical stage are morphisms of ``C``, whose
-    ``==`` is their category's equality predicate.
-    """
-    comparison = first == second
-    if role_of(first) is None and role_of(second) is None:
-        return comparison
-    return ask(comparison)
 
 
 @dataclass(eq=False, slots=True)
@@ -54,7 +41,7 @@ class SetElementData:
 
 @dataclass(eq=False, slots=True)
 class SetPointData(SetElementData):
-    """The additional chosen datum of a terminal-stage set element."""
+    """The additional chosen datum of a point of a set."""
 
     datum: Datum
 
@@ -77,21 +64,26 @@ class SetElementDeclaration(ElementOfObject):
             return f"{self._set_element_data.datum!r} in {self.parent()!r}"
         return f"{self.defining_morphism()!r} as a generalized element of {self.parent()!r}"
 
-    def _classical_datum_(self) -> Datum:
-        """The selected datum of this terminal-stage element."""
-        state = self._set_element_data
-        assert isinstance(state, SetPointData), f"{self!r} is not a classical set element"
-        return state.datum
+    def _point_datum_(self) -> Datum:
+        """The selected datum of this point."""
+        assert self.defining_morphism().domain() is _sets.Sets().Terminal(), f"{self!r} is not a point of a set"
+        return self._set_element_data.datum
 
 
 def points_equal(first: CategoryPoint, candidate: Any) -> Decision:
-    """Two points of one set are equal exactly when their data are (the engine comparison is exact)."""
+    """Two points of one set are equal exactly when their data are.
+
+    A generalized element is a point exactly when its domain is the separator of
+    ``Sets()`` (POL-CAT-058); with any other domain this handler decides nothing.  The two
+    data compare at the private boundary, where ``==`` is exact for an engine value,
+    ``Unknown`` for a rule-defined family, and a proposition for an owned mathematical
+    value, so the comparison is asked rather than returned (POL-MATH-034).
+    """
     if role_of(first) is not Role.ELEMENT or role_of(candidate) is not Role.ELEMENT:
         return Unknown
     if first.parent() is not candidate.parent():
         return Unknown
-    first_state = first._set_element_data
-    candidate_state = candidate._set_element_data
-    if not isinstance(first_state, SetPointData) or not isinstance(candidate_state, SetPointData):
+    separator = _sets.Sets().Terminal()
+    if first.defining_morphism().domain() is not separator or candidate.defining_morphism().domain() is not separator:
         return Unknown
-    return data_equal(first_state.datum, candidate_state.datum)
+    return ask(first._point_datum_() == candidate._point_datum_())

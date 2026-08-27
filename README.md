@@ -58,7 +58,8 @@ Theory code should state the mathematical definition and the immediate functors 
 The kernel should compile that information into a direct method surface.
 
 The separation also preserves mathematical consequences that concrete Sage implementations can lose.
-For example, an integral-lattice presentation has a product projection to finite-rank `ZZ`-modules. The resulting structural path to `Sets()` determines cardinality and supports lazy enumeration.
+For example, an integral-lattice presentation has a product projection to finite-rank `ZZ`-modules.
+The resulting structural path to `Sets()` determines cardinality and supports lazy enumeration.
 A concrete lattice implementation that does not retain those categorical relationships can fail to expose either operation.
 Long-running searches, including bounded enumeration in Vinberg-type algorithms, need those consequences without bespoke lattice-level implementations.
 
@@ -88,28 +89,19 @@ They should begin from a shipped category template, declare the new mathematical
 They should need to read only the mathematically relevant neighboring subtrees and their functor contracts.
 
 The compiler then supplies the complete inherited object, element, morphism, and construction interfaces.
-Let \((\mathcal M,\odot,1)\) be monoidal, let \(\mathcal C\) be an
-\(\mathcal M\)-actegory, and let \(A\) be a monoid object of \(\mathcal M\).
-An object of [`Modules(A, C)`](specs/modules.md) is an object \(X\) of \(\mathcal C\) with an action
-\(A\mathbin{\bullet}X\to X\). The category retains the ambient monoidal category,
-the actegory, the acting monoid, and the action.
+Let \((\mathcal M,\odot,1)\) be monoidal, let \(\mathcal C\) be an \(\mathcal M\)-actegory, and let \(A\) be a monoid object of \(\mathcal M\). An object of [`Modules(A, C)`](specs/modules.md) is an object \(X\) of \(\mathcal C\) with an action \(A\mathbin{\bullet}X\to X\). The category retains the ambient monoidal category, the actegory, the acting monoid, and the action.
 
-When closed or enriched structure represents these actions by an internal
-endomorphism monoid, the same module structure is equivalently a monoid morphism
-\(A\to\operatorname{End}_{\mathcal C}(X)\). The action morphism is the general
-definition.
+When closed or enriched structure represents these actions by an internal endomorphism monoid, the same module structure is equivalently a monoid morphism \(A\to\operatorname{End}_{\mathcal C}(X)\). The action morphism is the general definition.
 
-[`Algebras(R, C)`](specs/algebras.md) is the base-relative presentation of the monoid
-objects in the supplied monoidal category `Modules(R, C)`. Its selected route through
-the general monoid, magma, and module categories supplies the applicable operations.
-A general module or algebra object reaches `Sets()` only through an explicit selected
-functor from its ambient category.
+[`Algebras(R, C)`](specs/algebras.md) is the base-relative presentation of the monoid objects in the supplied monoidal category `Modules(R, C)`. Its selected route through the general monoid, magma, and module categories supplies the applicable operations.
+A general module or algebra object reaches `Sets()` only through an explicit selected functor from its ambient category.
 Cardinality and other distant capabilities arrive through functor composition rather than leaf-specific code.
 
 For example, a researcher can add `FiniteSubsetsOfNN()` after the complete theory of sets exists.
-They declare its constructors, its inclusion functor into `Sets()`, and only its new methods, such as `minimal_element()` or `gcd_of_elements()`. The kernel constructs `FiniteSubsetsOfNN.ElementType` and supplies the full `Sets.ElementType` interface without a leaf-specific element class.
+They declare its constructors, its monomorphism into `Sets()`, and only its new methods, such as `minimal_element()` or `gcd_of_elements()`. The kernel constructs `FiniteSubsetsOfNN.ElementType` and supplies the full `Sets.ElementType` interface without a leaf-specific element class.
 The inherited set interface also makes products, coproducts, filtered limits, and other set constructions available without new implementations in the leaf.
-Each result remains an object of the category that owns the construction. The leaf returns it to `FiniteSubsetsOfNN()` by overriding the inherited construction and refining its result through the leaf's own constructor when the mathematics lands there.
+Each result remains an object of the category that owns the construction.
+The leaf returns it to `FiniteSubsetsOfNN()` by overriding the inherited construction and refining its result through the leaf's own constructor when the mathematics lands there.
 
 The same goal applies to functorial constructions.
 A full replete subcategory receives the inherited categorical interface automatically.
@@ -118,24 +110,22 @@ The leaf author supplies only that override, closure, or lift, which is the math
 
 ## Core model
 
-The kernel owns `Cat`, the category of categories. Every category in this repository is
-an object of `Cat`. The public `Category` implementation is `Cat().ObjectType`.
+The kernel owns `Cat`, the category of categories.
+Every category in this repository is an object of `Cat`. The public `Category` implementation is `Cat().ObjectType`.
 
 ### Declared structure of `Cat`
 
 `Cat` is an abstract, package-owned universe in which all represented categories live.
-Its foundation is intentionally unspecified. The repository declares the categories,
-functors, natural transformations, universal constructions, and laws that it needs.
+Its foundation is intentionally unspecified.
+The repository declares the categories, functors, natural transformations, universal constructions, and laws that it needs.
 Those declarations are the complete usable structure of `Cat`.
 
-A declaration of particular categorical operations does not select a realization of
-`Cat`. In particular, it does not make `Cat` a category of simplicial sets or Kan
-complexes, and it supplies no unstated horn-filling or higher-categorical properties.
+A declaration of particular categorical operations does not select a realization of `Cat`. In particular, it does not make `Cat` a category of simplicial sets or Kan complexes, and it supplies no unstated horn-filling or higher-categorical properties.
 
-A borrowed mathematical name imports no surrounding theory. Names such as `Simplex`,
-`Boundary`, `Horn`, and `strict` denote only the constructions and laws stated here and
-in the governing specifications. For example, `Cat().Horn(n, k)` is the declared free
-category on its horn graph. Its name supplies no additional simplicial-set structure.
+A borrowed mathematical name imports no surrounding theory.
+Names such as `Simplex`, `Boundary`, `Horn`, and `strict` denote only the constructions and laws stated here and in the governing specifications.
+For example, `Cat().Horn(n, k)` is the declared free category on its horn graph.
+Its name supplies no additional simplicial-set structure.
 
 Each category `C` owns the implementation types relevant to its theory:
 
@@ -147,36 +137,29 @@ Each category `C` owns the implementation types relevant to its theory:
 
 - `C(...)` for category-owned construction.
 
-`C(...)` dispatches from semantic input to the exact private constructor route. This
-follows Sage's [`Parent.__call__()` constructor model](https://doc.sagemath.org/html/en/reference/structure/sage/structure/parent.html).
+`C(...)` dispatches from semantic input to the exact private constructor route.
+This follows Sage's [`Parent.__call__()` constructor model](https://doc.sagemath.org/html/en/reference/structure/sage/structure/parent.html).
 
-For `A, B in C`, the one owned hom category is `Mor(C)(A, B)`: the full subcategory of
-`Mor(C)` on the morphisms `A -> B`. `Mor(C)(A, B)(data)` constructs a morphism `A -> B`;
-`C(data)` constructs an object of `C`.
+For `A, B in C`, the one owned hom category is `Mor(C)(A, B)`: the full subcategory of `Mor(C)` on the morphisms `A -> B`. `Mor(C)(A, B)(data)` constructs a morphism `A -> B`; `C(data)` constructs an object of `C`.
 
-`Mor(C)` has the morphisms of `C` as objects and the 2-morphisms of `C` as morphisms; for a
-1-category it is discrete. The category whose objects are morphisms and whose morphisms are
-commuting squares is `Fun([1], C)`, the functor category from the walking arrow, with
-evaluation functors `ev_0, ev_1: Fun([1], C) -> C`. For `C = Cat()`, the morphisms of
-`Fun(C, D)` are natural transformations.
+`Mor(C)` has the morphisms of `C` as objects and the 2-morphisms of `C` as morphisms; for a 1-category it is discrete.
+The category whose objects are morphisms and whose morphisms are commuting squares is `Fun([1], C)`, the functor category from the walking arrow, with evaluation functors `ev_0, ev_1: Fun([1], C) -> C`. For `C = Cat()`, the morphisms of `Fun(C, D)` are natural transformations.
 
-Define `Fun = Mor(Cat())`. The endpoint hom category `Fun(C, D) = Mor(Cat())(C, D)` owns
-construction of functors from `C` to `D`. The endpoints select the category, not a
-particular functor.
+Define `Fun = Mor(Cat())`. The endpoint hom category `Fun(C, D) = Mor(Cat())(C, D)` owns construction of functors from `C` to `D`. The endpoints select the category, not a particular functor.
 
 ```python
 Fun(C, D)(on_object, on_morphism)
-Fun(S, T).FullyFaithful().inclusion()
+Fun(S, T).Monomorphisms().Isofibrations().Full()()
 Fun(C, C).Equivalences().identity()
 ```
 
-A category construction creates its named functors there and retains them. Product and
-pullback presentations retain each projection separately. A leaf selects the functors
-that supply inherited operations.
+A category construction creates its named functors there and retains them.
+Product and pullback presentations retain each projection separately.
+A leaf selects the functors that supply inherited operations.
 
-The selected property category records the theorem known by the leaf writer. The
-constructor does not compute that property. The kernel never selects a component by
-inspecting fields or tuple positions.
+The selected property category records the theorem known by the leaf writer.
+The constructor does not compute that property.
+The kernel never selects a component by inspecting fields or tuple positions.
 
 The same construction system applies to `Cat()` itself:
 
@@ -187,13 +170,9 @@ P.product_projection(i)   # P -> C_i
 Q.coproduct_injection(i)  # C_i -> Q
 ```
 
-If `S` is a subcategory of `P`, then `S` is an object of
-`Cat().Products().ChosenSubobjects()`. Its `product_projection(i)` is the subcategory inclusion
-followed by the corresponding projection of `P`.
+If `S` is a subcategory of `P`, then `S` is an object of `Cat().Products().ChosenSubobjects()`. Its `product_projection(i)` is the subcategory monomorphism followed by the corresponding projection of `P`.
 
-`C.SliceOver(x)` is the pullback in `Cat()` of `ev_1: Fun([1], C) -> C` along `x: 1 -> C`;
-`C.CosliceUnder(x)` is the pullback of `ev_0`. Each retains its pullback projections; the
-varying object is the composite with `ev_0` or `ev_1`.
+`C.SliceOver(x)` is the pullback in `Cat()` of `ev_1: Fun([1], C) -> C` along `x: 1 -> C`; `C.CosliceUnder(x)` is the pullback of `ev_0`. Each retains its pullback projections; the varying object is the composite with `ev_0` or `ev_1`.
 
 For `X, Y in C`, the categorical operators are:
 
@@ -206,10 +185,7 @@ X @ Y   # biproduct
 
 The category foundation defines these operations once and retains their universal data.
 
-A functor `F: C -> D` is a morphism in `Cat` and an object of `Fun = Mor(Cat())`.
-It inherits its domain, codomain, object map, and morphism map from `Cat().MorphismType`.
-For fixed endpoints, `Fun(C, D)` is `Mor(Cat())(C, D)`. Its morphisms are natural
-transformations.
+A functor `F: C -> D` is a morphism in `Cat` and an object of `Fun = Mor(Cat())`. It inherits its domain, codomain, object map, and morphism map from `Cat().MorphismType`. For fixed endpoints, `Fun(C, D)` is `Mor(Cat())(C, D)`. Its morphisms are natural transformations.
 
 Functor properties use property subcategories of `Mor(Cat())`:
 
@@ -219,14 +195,14 @@ Mor(Cat()).Faithful()
 Mor(Cat()).FullyFaithful()
 ```
 
-Their `is_full()`, `is_faithful()`, and `is_fully_faithful()` methods return applied
-predicates. Direct property construction and assumptions refine the same owned functor.
+Their `is_full()`, `is_faithful()`, and `is_fully_faithful()` methods return applied predicates.
+Direct property construction and assumptions refine the same owned functor.
 These predicates have no computational routes.
 
 Every functor is an explicit mathematical object.
 Only selected structural functors contribute methods to the public surface.
-The selection is compiler input over an already established mathematical functor. It is
-not an additional kind of functor.
+The selection is compiler input over an already established mathematical functor.
+It is not an additional kind of functor.
 
 For an object `x` in `C`, the kernel constructs and caches `F(x)` in `D`. It then exposes methods declared by `D.ObjectType` directly on `x`. The same process applies to elements and morphisms.
 
@@ -242,11 +218,9 @@ The functor images remain available for inspection when their mathematical role 
 
 The implementation order follows the mathematical dependency order.
 
-The first layer is `Cat`, the category of categories. Its `ObjectType` implements every
-category, and its `MorphismType` implements every functor. The kernel constructs `Mor(C)`
-for all `C`, including `Fun = Mor(Cat())`. It also constructs functor categories, natural
-transformations, natural isomorphisms, and sequence products and coproducts from the same
-category and morphism mechanisms.
+The first layer is `Cat`, the category of categories.
+Its `ObjectType` implements every category, and its `MorphismType` implements every functor.
+The kernel constructs `Mor(C)` for all `C`, including `Fun = Mor(Cat())`. It also constructs functor categories, natural transformations, natural isomorphisms, and sequence products and coproducts from the same category and morphism mechanisms.
 
 The next layer is the complete `Mor(n, C)` tower.
 This family includes:
@@ -261,9 +235,8 @@ This family includes:
 
 - slices, coslices, subobjects, superobjects, covering objects, and covered objects.
 
-Subobjects of product categories receive component functors by composition. Slices and
-coslices are pullbacks of the evaluation functors `ev_1` and `ev_0` of `Fun([1], C)` and
-retain their pullback projections.
+Subobjects of product categories receive component functors by composition.
+Slices and coslices are pullbacks of the evaluation functors `ev_1` and `ev_0` of `Fun([1], C)` and retain their pullback projections.
 
 These constructions must use the same `ObjectType`, `ElementType`, and `MorphismType` inheritance mechanism.
 
@@ -276,7 +249,7 @@ Its design includes:
 
 - function sets and exponentials;
 
-- predicate-defined subsets with inclusion morphisms;
+- predicate-defined subsets with their monomorphisms;
 
 - products, coproducts, limits, and colimits of arbitrary small diagrams;
 
@@ -302,10 +275,7 @@ The subset
 A = \{x \in B \mid P(x)\}
 \]
 
-is an object of `Sets()` together with an inclusion morphism \(A \hookrightarrow B\).
-Examples include the even integers and the prime integers as subobjects of
-\(\mathbb{Z}\). `ask(P(x))` returns `True`, `False`, or Sage's `Unknown`. Python
-containment converts that decision to a Boolean admission result.
+is an object of `Sets()` together with a monomorphism \(A \hookrightarrow B\). Examples include the even integers and the prime integers as subobjects of \(\mathbb{Z}\). `ask(P(x))` returns `True`, `False`, or Sage's `Unknown`. Python containment converts that decision to a Boolean admission result.
 
 Finite products are only one specimen of the general product construction.
 The final interface must accept arbitrary small diagrams.
@@ -331,8 +301,8 @@ Natural transformations record comparisons between such constructions.
 Sage remains valuable for arithmetic, symbolic computation, and mature algorithms.
 A modeled mathematical realization is an explicit functor.
 
-A category-owned method can also use a private Sage value directly inside its
-computation boundary. It reconstructs the owned mathematical result before returning.
+A category-owned method can also use a private Sage value directly inside its computation boundary.
+It reconstructs the owned mathematical result before returning.
 A private computation representation supplies no public methods.
 
 This boundary keeps mathematical ownership in this framework.

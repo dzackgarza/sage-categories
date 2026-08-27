@@ -4,7 +4,7 @@
 underlying set (``specs/ordered-sets.md``, "Category and role surface").  It is not a
 narrowing of ``Posets()`` by ``Sets().Finite()``: a poset is never placed in ``Sets()``
 or a subcategory of it, and POL-CAT-084 derives a narrowing only along a selected
-inclusion.  Its two selected functors are the inclusion into ``Posets()`` and the
+monomorphism.  Its two selected functors are the monomorphism into ``Posets()`` and the
 restriction of ``U`` to ``Sets().Finite()``, whose object action returns the very same
 retained underlying set; both routes to ``Sets()`` therefore return one value by
 identity (``specs/resolution.md``, "Finite-rank free modules over finite fields").  Its
@@ -15,7 +15,7 @@ the finiteness proposition of ``U(P)``.
 
 The finite operations lower the poset to a Sage finite poset once
 (``_finite_poset_sage.py``, POL-LAYOUT-020) and reconstruct owned results
-(POL-LEAF-044): elements as classical elements, collections as sub-posets, counts as
+(POL-LEAF-044): elements as points, collections as sub-posets, counts as
 cardinals, properties as placements.  Bottom, top, and rank belong to the property
 subcategories that guarantee them (POL-API-019): ``WithBottom()``, ``WithTop()``,
 ``Ranked()``; ``Graded()`` implies ``Ranked()`` (Sage ``is_graded``: a graded poset is
@@ -220,7 +220,7 @@ class FinitePosetsCategory(PropertySubcategory[[Rule], []]):
         self._graded.predicate().register_handler(_decided_by(lambda finite_poset: finite_poset.is_graded()))
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        """The inclusion into ``Posets()``, then ``U`` restricted to ``Sets().Finite()``."""
+        """The monomorphism into ``Posets()``, then ``U`` restricted to ``Sets().Finite()``."""
         if "underlying_finite_set" not in self._functors:
             underlying = self._ambient.underlying_set_functor()
             finite_sets = Sets().Finite()

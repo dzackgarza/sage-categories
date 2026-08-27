@@ -10,7 +10,7 @@ Every owned runtime value has one role-specific path through these classes
 
 ``CategoryPointKernel`` is the stable end of the role MRO.  The module preallocates
 the compiled ``Cat().ElementType`` class over it.  The object, ordinary-element, and
-morphism kernel classes then refine that one class at their stated stages
+morphism kernel classes then refine that one class at their stated domains
 (``specs/functor.md``, "Generalized elements").
 
 A leaf's local role class subclasses only the kernel base of its role
@@ -62,48 +62,31 @@ class CategoryPointKernel:
 
     def defining_morphism(self) -> MorphismOfCategory:
         from sage_categories.kernel.construction import (
-            ArrowStageIdentity,
+            CategoryArrowIdentity,
             GeneralCategoryPointIdentity,
-            ObjectStageIdentity,
+            CategoryPointIdentity,
         )
 
         match self._cat_element_identity:
             case GeneralCategoryPointIdentity(defining_morphism):
                 return defining_morphism
-            case ObjectStageIdentity(parent):
+            case CategoryPointIdentity(parent):
                 return parent.point_functor(self)
-            case ArrowStageIdentity(parent, _, _):
+            case CategoryArrowIdentity(parent, _, _):
                 return parent.arrow_functor(self)
-        raise AssertionError(self._cat_element_identity)
-
-    def stage(self) -> ObjectOfCategory:
-        from sage_categories.cat.category import Cat
-        from sage_categories.kernel.construction import (
-            ArrowStageIdentity,
-            GeneralCategoryPointIdentity,
-            ObjectStageIdentity,
-        )
-
-        match self._cat_element_identity:
-            case GeneralCategoryPointIdentity(defining_morphism):
-                return defining_morphism.domain()
-            case ObjectStageIdentity():
-                return Cat().Terminal()
-            case ArrowStageIdentity():
-                return Cat().Simplex(1)
         raise AssertionError(self._cat_element_identity)
 
     def parent(self) -> ObjectOfCategory:
         from sage_categories.kernel.construction import (
-            ArrowStageIdentity,
+            CategoryArrowIdentity,
             GeneralCategoryPointIdentity,
-            ObjectStageIdentity,
+            CategoryPointIdentity,
         )
 
         match self._cat_element_identity:
             case GeneralCategoryPointIdentity(defining_morphism):
                 return defining_morphism.codomain()
-            case ObjectStageIdentity(parent) | ArrowStageIdentity(parent, _, _):
+            case CategoryPointIdentity(parent) | CategoryArrowIdentity(parent, _, _):
                 return parent
         raise AssertionError(self._cat_element_identity)
 
@@ -138,7 +121,7 @@ def cat_element_root() -> type[CategoryPoint]:
 
 
 class ObjectOfCategory(CategoryPoint):
-    """An object of a category: a stage-``1`` point of it."""
+    """An object of a category: a generalized point ``1 -> C`` of it."""
 
     def __init__(self) -> None:
         from sage_categories.kernel.construction import active_object_context
@@ -189,7 +172,7 @@ class ElementOfObject(CategoryPoint):
 
 
 class MorphismOfCategory(CategoryPoint):
-    """A morphism ``f: A -> B`` of ``C``: an object of ``Mor(C)``, a stage-``[1]`` point of ``C``."""
+    """A morphism ``f: A -> B`` of ``C``: an object of ``Mor(C)``, a generalized point ``[1] -> C`` of ``C``."""
 
     def __init__(self) -> None:
         from sage_categories.kernel.construction import active_morphism_context

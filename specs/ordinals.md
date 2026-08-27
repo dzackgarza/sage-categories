@@ -2,75 +2,52 @@
 
 This document specifies the ordinal model used by the cardinality framework.
 
-Ordinal operations specified as predicates follow the proposition interface in
-[Property refinement](property-refinement.md). Applying one returns a proposition.
+Ordinal operations specified as predicates follow the proposition interface in [Property refinement](property-refinement.md).
+Applying one returns a proposition.
 `ask()` returns its decision.
 
-The governing policies are `POL-MATH-022` through `POL-MATH-025`, `POL-MATH-034`,
-`POL-MATH-035`, `POL-GEN-017`, `POL-GEN-020`, `POL-GEN-021`, `POL-CAT-001`, `POL-CAT-054`, `POL-CAT-060`, `POL-CAT-071`,
-`POL-CAT-083`, `POL-CAT-085`, `POL-FUN-002`, `POL-FUN-003`, `POL-FUN-035`,
-`POL-SET-025`, `POL-SET-026`, and `POL-DOC-010` through `POL-DOC-013`.
+The governing policies are `POL-MATH-022` through `POL-MATH-025`, `POL-MATH-034`, `POL-MATH-035`, `POL-GEN-017`, `POL-GEN-020`, `POL-GEN-021`, `POL-CAT-001`, `POL-CAT-054`, `POL-CAT-060`, `POL-CAT-071`, `POL-CAT-083`, `POL-CAT-085`, `POL-FUN-002`, `POL-FUN-003`, `POL-FUN-035`, `POL-SET-025`, `POL-SET-026`, and `POL-DOC-010` through `POL-DOC-013`.
 
 ## Ordinal model
 
-`Ordinals()` is the skeletal category of ordinals. An ordinal is an object of it,
-exactly as a cardinal is an object of `Cardinal()`
-([cardinality.md](cardinality.md), "Cardinal model"):
+`Ordinals()` is the skeletal category of ordinals.
+An ordinal is an object of it, exactly as a cardinal is an object of `Cardinal()` ([cardinality.md](cardinality.md), "Cardinal model"):
 
 ```python
 OrdinalObject = Ordinals().ObjectType
 ```
 
-`Ordinals()` owns ordinal construction, both families of ordinal arithmetic, the order
-predicates, and expression normalization. Sage supplies private runtime support only.
+`Ordinals()` owns ordinal construction, both families of ordinal arithmetic, the order predicates, and expression normalization.
+Sage supplies private runtime support only.
 
-Two families of operations act on these objects. The Hessenberg natural sum and natural
-product are commutative; they are the semiring operations below. The ordinary ordinal
-sum, product, and power are noncommutative and carry explicit names; `Ordinals()` owns
-them as local operations.
+Two families of operations act on these objects.
+The Hessenberg natural sum and natural product are commutative; they are the semiring operations below.
+The ordinary ordinal sum, product, and power are noncommutative and carry explicit names; `Ordinals()` owns them as local operations.
 
 An expression that no normalization rule evaluates is retained exactly.
 
 ### The ordinal semiring
 
-The commutative semiring of ordinals under the Hessenberg operations is the point
-functor of `Ordinals()` into `Semirings(Cat())`
-([functor.md](functor.md#point-categories-and-point-functors)):
+The commutative semiring of ordinals under the Hessenberg operations is the point functor of `Ordinals()` into `Semirings(Cat())` ([functor.md](functor.md#point-categories-and-point-functors)):
 
 ```python
 # Cat().Point(Ordinals())
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (Fun(self, Semirings(Cat())).Faithful().inclusion(),)
+    return (Fun(self, Semirings(Cat())).Monomorphisms().Isofibrations()(),)
 ```
 
-It regards the category `Ordinals()` as one object of `Semirings(Cat())`. That
-category's objects, its two operation morphisms, its unit points, and its laws are
-defined in [Semirings](magmas-monoids-semirings.md#semirings). `Ordinals()` adds only
-which functors those are: its additive operation functor is the natural sum with unit
-object `0`, and its multiplicative operation functor is the natural product with unit
-object `1`.
+It regards the category `Ordinals()` as one object of `Semirings(Cat())`. That category's objects, its two operation morphisms, its unit points, and its laws are defined in [Semirings](magmas-monoids-semirings.md#semirings).
+`Ordinals()` adds only which functors those are: its additive operation functor is the natural sum with unit object `0`, and its multiplicative operation functor is the natural product with unit object `1`.
 
-Mathlib establishes the semiring laws for these two operations. Its
-[`Mathlib/SetTheory/Ordinal/NaturalOps.lean`](https://github.com/leanprover-community/mathlib4/blob/v4.14.0/Mathlib/SetTheory/Ordinal/NaturalOps.lean)
-defines "natural addition and multiplication on ordinals, also known as the Hessenberg
-sum and product" and states that "they're commutative, associative, preserve order, have
-the usual `0` and `1` from ordinals, and distribute over one another". Its
-`OrderedCommSemiring NatOrdinal` instance supplies the two distributivity fields
-`left_distrib` and `right_distrib`, the two absorption fields `zero_mul` and `mul_zero`,
-and `mul_comm`.
+Mathlib establishes the semiring laws for these two operations.
+Its [`Mathlib/SetTheory/Ordinal/NaturalOps.lean`](https://github.com/leanprover-community/mathlib4/blob/v4.14.0/Mathlib/SetTheory/Ordinal/NaturalOps.lean) defines "natural addition and multiplication on ordinals, also known as the Hessenberg sum and product" and states that "they're commutative, associative, preserve order, have the usual `0` and `1` from ordinals, and distribute over one another".
+Its `OrderedCommSemiring NatOrdinal` instance supplies the two distributivity fields `left_distrib` and `right_distrib`, the two absorption fields `zero_mul` and `mul_zero`, and `mul_comm`.
 
-The `Cat()`-level law data is the equations between these functors
-([functor.md](functor.md#ambient-algebraic-categories)). `Ordinals()` is skeletal, so the
-natural sum and the natural product each select one representative and the laws hold as
-equalities
-([Laws in the supplied ambient](magmas-monoids-semirings.md#laws-in-the-supplied-ambient)).
+The `Cat()`-level law data is the equations between these functors ([functor.md](functor.md#ambient-algebraic-categories)). `Ordinals()` is skeletal, so the natural sum and the natural product each select one representative and the laws hold as equalities ([Laws in the supplied ambient](magmas-monoids-semirings.md#laws-in-the-supplied-ambient)).
 
 The point functor supplies complete compiled roles and exact constructor conversions.
-Those constructors initialize the semiring state before they expose its methods. The
-level shift places `zero()` and `one()` on the category and `+` and `*` on its objects
-([Semirings](magmas-monoids-semirings.md#semirings)). One level down, the object
-surface belongs to the category `Ordinals()` and the element surface belongs to the
-objects of `Ordinals()`:
+Those constructors initialize the semiring state before they expose its methods.
+The level shift places `zero()` and `one()` on the category and `+` and `*` on its objects ([Semirings](magmas-monoids-semirings.md#semirings)). One level down, the object surface belongs to the category `Ordinals()` and the element surface belongs to the objects of `Ordinals()`:
 
 ```python
 Ordinals().zero()
@@ -80,8 +57,7 @@ alpha + beta
 alpha * beta
 ```
 
-At stage `[1]` the same element surface acts on the morphisms of `Ordinals()`, which is
-the functorial action of the two natural operations.
+With domain `[1]` the same element surface acts on the morphisms of `Ordinals()`, which is the functorial action of the two natural operations.
 
 ### Public ordinal constructors
 
@@ -146,20 +122,22 @@ O.natural_product(*ordinals)
 
 `O.zero()` and `O.one()` arrive on the same surface through the point functor.
 
-`Ordinals()` is one cached category. Construction is cached by expression.
+`Ordinals()` is one cached category.
+Construction is cached by expression.
 Reconstructing an equal expression returns the same ordinal object.
 
 ### Natural arithmetic
 
-Python `+` and `*` are the semiring operations: the Hessenberg natural sum and the
-Hessenberg natural product. Each is a morphism out of a product,
+Python `+` and `*` are the semiring operations: the Hessenberg natural sum and the Hessenberg natural product.
+Each is a morphism out of a product,
 
 \[
 \alpha,\mu:\operatorname{Ordinals}()\times\operatorname{Ordinals}()
 \longrightarrow\operatorname{Ordinals}(),
 \]
 
-so applying one to a pair returns an ordinal. It presents no diagram and carries no cone.
+so applying one to a pair returns an ordinal.
+It presents no diagram and carries no cone.
 
 ```python
 alpha + beta
@@ -195,8 +173,7 @@ Natural product:
 
 - Sorts symbolic factors.
 
-Ordinal exponentiation is `alpha.ordinal_power(beta)`. `**` keeps the categorical
-meaning fixed by `POL-CAT-088`.
+Ordinal exponentiation is `alpha.ordinal_power(beta)`. `**` keeps the categorical meaning fixed by `POL-CAT-088`.
 
 ### Ordinary ordinal arithmetic
 
@@ -261,8 +238,8 @@ The exact handler for `ask(alpha <= beta)` recognizes:
 
 When no exact handler decides a represented comparison, `ask()` returns `Unknown`.
 
-Thus ordinal comparison operators state order propositions. They do not replace an
-unresolved proposition with Boolean `False`.
+Thus ordinal comparison operators state order propositions.
+They do not replace an unresolved proposition with Boolean `False`.
 
 ### Ordinal representations
 
@@ -311,7 +288,8 @@ Both natural and ordinary ordinal products map to cardinal products:
 |\alpha\beta|=|\alpha||\beta|.
 \]
 
-Ordinary ordinal powers do not map to cardinal exponentiation in general. For example,
+Ordinary ordinal powers do not map to cardinal exponentiation in general.
+For example,
 
 \[
 2^\omega=\omega,
@@ -321,9 +299,8 @@ Ordinary ordinal powers do not map to cardinal exponentiation in general. For ex
 |2|^{|\omega|}=2^{\aleph_0}.
 \]
 
-This follows from the limit-power rule in Enderton,
-[Elements of Set Theory, Chapter 8, Theorem 8L](https://docs.ufpr.br/~hoefel/ensino/CM304_CompleMat_PE3/livros/Enderton_Elements%20of%20set%20theory_%281977%29.pdf).
+This follows from the limit-power rule in Enderton, [Elements of Set Theory, Chapter 8, Theorem 8L](https://docs.ufpr.br/~hoefel/ensino/CM304_CompleMat_PE3/livros/Enderton_Elements%20of%20set%20theory_%281977%29.pdf).
 
-`alpha.ordinal_power(beta).cardinality()` uses exact ordinal normalization rules. If no
-rule determines the value, it returns a symbolic cardinal expression for the ordinal
-power. It does not replace that expression with cardinal exponentiation.
+`alpha.ordinal_power(beta).cardinality()` uses exact ordinal normalization rules.
+If no rule determines the value, it returns a symbolic cardinal expression for the ordinal power.
+It does not replace that expression with cardinal exponentiation.

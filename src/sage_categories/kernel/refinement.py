@@ -2,11 +2,10 @@
 
 ``is_placed(x, C)`` is the implementation fact "``x`` entered ``C`` or a declared
 subcategory of ``C``" (POL-CAT-068): the node of ``C`` is reachable from ``x``'s
-placement node through retained inclusions alone (POL-FUN-027).  A selected functor that
-is not the retained inclusion of its endpoints changes structure and places
-nothing: an object of a category with a selected forgetful functor ``U: C -> D``
-is not an object of ``D``.  Every recorded implication between property
-categories is such an inclusion, so implications act through the same walk (POL-FUN-024).
+placement node through placement-tracing functors alone, which are the declared
+monomorphisms of ``Cat()`` that are isofibrations (POL-FUN-036).  Every recorded
+implication between property categories is declared that way, so implications act
+through the same walk (POL-FUN-024).
 
 ``refine(x, P)`` strengthens ``x``'s placement to the join of its current category
 with the property category ``P``, rebuilding its dynamic class in place.  Identity,
@@ -28,25 +27,34 @@ from sage_categories.kernel.transport import placement_node
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
 
-__all__ = ["common_ancestor", "is_placed", "is_retained_inclusion", "is_subcategory", "place", "refine"]
+__all__ = ["common_ancestor", "is_placed", "is_subcategory", "place", "refine", "traces_placement"]
 
 
-def is_retained_inclusion(functor: MorphismOfCategory) -> bool:
-    """Whether ``functor`` is the inclusion that ``Fun`` retained for its endpoints (POL-FUN-027)."""
-    functors = functor.base_category().morphism_category(1)
-    source, target = functor.domain(), functor.codomain()
-    return functors.retains_inclusion(source, target) and functors.inclusion_of(source, target) is functor
+def traces_placement(functor: MorphismOfCategory) -> bool:
+    """Whether placement follows ``functor``: it is declared a monomorphism of ``Cat()`` and an isofibration (POL-FUN-036).
+
+    Both conditions are read off the functor's own placement, which is what the leaf
+    declared by constructing in ``Fun(S, T).Monomorphisms().Isofibrations()``.  Monicity
+    gives one value rather than a copy; the isofibration condition is repleteness of the
+    subcategory, without which a skeleton would qualify and a cardinal would be a set
+    (``specs/functor.md``, "Monomorphisms of Cat() and placement").  A functor with one
+    condition and not the other changes structure and places nothing: an object of a
+    category with a selected forgetful functor ``U: C -> D`` is not an object of ``D``.
+    """
+    from sage_categories.cat.functors import Fun
+
+    return Fun.declares_subcategory(functor)
 
 
-def _included_in(start: compiler.Node) -> Iterator[compiler.Node]:
-    """Every node reachable from ``start`` through retained inclusions, ``start`` first."""
+def _reached_placements(start: compiler.Node) -> Iterator[compiler.Node]:
+    """Every node reachable from ``start`` through placement-tracing functors, ``start`` first."""
     found: list[compiler.Node] = [start]
     frontier = [start]
     while frontier:
         current = frontier.pop(0)
         yield current
         for functor in current.category.selected_functors():
-            if not is_retained_inclusion(functor):
+            if not traces_placement(functor):
                 continue
             target = compiler.node(functor.codomain(), current.role)
             if any(compiler.same_node(target, known) for known in found):
@@ -60,25 +68,25 @@ def is_placed(candidate: Any, category: Category) -> bool:
     if role_of(candidate) is None:
         return False
     target = compiler.node(category, Role.OBJECT)
-    return any(compiler.same_node(target, found) for found in _included_in(placement_node(candidate)))
+    return any(compiler.same_node(target, found) for found in _reached_placements(placement_node(candidate)))
 
 
 def is_subcategory(inner: Category, outer: Category) -> bool:
-    """Whether ``inner`` is ``outer`` or a declared subcategory of it, through retained inclusions."""
+    """Whether ``inner`` is ``outer`` or a declared subcategory of it, through placement-tracing functors."""
     outer_node = compiler.node(outer, Role.OBJECT)
-    return any(compiler.same_node(outer_node, found) for found in _included_in(compiler.node(inner, Role.OBJECT)))
+    return any(compiler.same_node(outer_node, found) for found in _reached_placements(compiler.node(inner, Role.OBJECT)))
 
 
 def common_ancestor(first: Category, second: Category) -> Category | None:
-    """The narrowest category containing both, along retained inclusions, or ``None`` (POL-CAT-088, POL-FUN-027).
+    """The narrowest category containing both, along placement-tracing functors, or ``None`` (POL-CAT-088, POL-FUN-036).
 
-    Narrowest is minimal in the inclusion order, not first in the walk: a category
-    declares its inclusions in its own preference order, so the walk can reach a wider
-    category before a narrower one.  A selected functor that is not a retained inclusion
-    changes structure and is not walked, so a poset and a set meet nowhere.  The caller
-    states the precondition, because only the caller knows the two values.
+    Narrowest is minimal in the subcategory order, not first in the walk: a category
+    declares its subcategory monomorphisms in its own preference order, so the walk can
+    reach a wider category before a narrower one.  A selected functor that does not trace
+    placement changes structure and is not walked, so a poset and a set meet nowhere.  The
+    caller states the precondition, because only the caller knows the two values.
     """
-    common = [reached.category for reached in _included_in(compiler.node(first, Role.OBJECT)) if is_subcategory(second, reached.category)]
+    common = [reached.category for reached in _reached_placements(compiler.node(first, Role.OBJECT)) if is_subcategory(second, reached.category)]
     return next((candidate for candidate in common if all(is_subcategory(candidate, other) for other in common)), None)
 
 
@@ -105,13 +113,13 @@ def place(value: CategoryPoint, category: Category) -> None:
     value._category = category
     match role_of(value):
         case Role.OBJECT:
-            from sage_categories.kernel.construction import ObjectStageIdentity
+            from sage_categories.kernel.construction import CategoryPointIdentity
 
-            value._cat_element_identity = ObjectStageIdentity(category)
+            value._cat_element_identity = CategoryPointIdentity(category)
         case Role.MORPHISM:
-            from sage_categories.kernel.construction import ArrowStageIdentity
+            from sage_categories.kernel.construction import CategoryArrowIdentity
 
-            value._cat_element_identity = ArrowStageIdentity(category.base_category(), value.domain(), value.codomain())
+            value._cat_element_identity = CategoryArrowIdentity(category.base_category(), value.domain(), value.codomain())
     if issubclass(type(value), role_class):
         return
     if issubclass(role_class, type(value)):

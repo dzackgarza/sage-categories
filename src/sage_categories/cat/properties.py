@@ -3,16 +3,16 @@
 A full subcategory ``S`` of ``T`` shares ``T``'s object, element, and morphism
 values; its morphism categories, identities, and composition are inherited
 definitionally from ``T`` (Mathlib ``CategoryTheory.ObjectProperty.FullSubcategory``
-and its inclusion ``ObjectProperty.ι``, full and faithful; inspected 2026-08-26).
-Its one selected structural functor is the identity-on-value inclusion
-``Fun(S, T).FullyFaithful().inclusion()``.
+and the functor ``ObjectProperty.ι`` it carries, full and faithful; inspected
+2026-08-26).  Its one selected structural functor is the identity-on-values
+monomorphism ``Fun(S, T).Monomorphisms().Isofibrations().Full()()``.
 
 A property subcategory ``C.P()`` is the full subcategory on the objects satisfying
 a predicate ``P``.  Its constructor is the trusted boundary of that property
 (POL-CAT-038/069): calling it on a value of ``C`` refines the same value in place.
-An implication ``P => Q`` is recorded as the inclusion ``C.P() -> C.Q()``
-(``specs/functor.md``, "Inclusion functors").  A descendant ``D`` with a selected
-inclusion into ``C`` derives ``D.P()`` as the narrowing of ``C.P()`` to ``D``
+An implication ``P => Q`` is recorded as the subcategory monomorphism ``C.P() -> C.Q()``
+(``specs/functor.md``, "Monomorphisms of ``Cat()`` and placement").  A descendant ``D`` with a selected
+subcategory monomorphism into ``C`` derives ``D.P()`` as the narrowing of ``C.P()`` to ``D``
 (POL-CAT-084): a full subcategory of both, with the same predicate.
 """
 
@@ -52,7 +52,7 @@ def _morphisms() -> ModuleType:
 
 
 class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, TwoMorphismData]):
-    """A full subcategory of an ambient category, declared by its inclusion.
+    """A full subcategory of an ambient category, declared by its monomorphism into the ambient.
 
     Its morphisms, identities, and composites are those of the ambient between its
     objects; ``Category`` supplies them from the ambient (POL-CAT-087).
@@ -73,7 +73,7 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
         return True
 
     def ambient(self) -> Category[MorphismData, TwoMorphismData]:
-        """The ambient is construction data: this category declares exactly one inclusion."""
+        """The ambient is construction data: this category declares exactly one subcategory monomorphism."""
         return self._ambient
 
     def narrowing_base(self) -> Category:
@@ -86,11 +86,11 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
         return empty_local_role(self, role)
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        return (_functors().full_inclusion(self, self._ambient),)
+        return (_functors().full_subcategory_monomorphism(self, self._ambient),)
 
-    def classical_stages(self) -> tuple[CategoryPoint, ...]:
-        """The stages of the ambient that are objects of this subcategory: an inclusion carries no stage data."""
-        return tuple(stage for stage in self._ambient.classical_stages() if stage in self)
+    def separating_family(self) -> tuple[CategoryPoint, ...]:
+        """The separators of the ambient that are objects of this subcategory: a subcategory monomorphism supplies none of its own."""
+        return tuple(separator for separator in self._ambient.separating_family() if separator in self)
 
     def element_from_defining_morphism(self, defining_morphism: MorphismOfCategory) -> CategoryPoint:
         """The elements of a full subcategory are those of its ambient on the shared values (POL-CAT-087)."""
@@ -128,11 +128,11 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
         return empty_local_role(self, role)
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        """The inclusion into the ambient, then one inclusion per recorded implication (POL-FUN-024)."""
+        """The monomorphism into the ambient, then one per recorded implication (POL-FUN-024)."""
         functors = _functors()
         return (
-            functors.full_inclusion(self, self._ambient),
-            *(functors.full_inclusion(self, implied) for implied in self._implications),
+            functors.full_subcategory_monomorphism(self, self._ambient),
+            *(functors.full_subcategory_monomorphism(self, implied) for implied in self._implications),
         )
 
     # Membership in a property subcategory is established placement (POL-CAT-043/044):
@@ -175,7 +175,7 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
         return root.predicate()
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        """The inclusions into the base, into each root, into each narrowing by the roots not below one root, and into the same narrowing of the base's ambient, each once."""
+        """The monomorphisms into the base, into each root, into each narrowing by the roots not below one root, and into the same narrowing of the base's ambient, each once."""
         targets: list[Category] = [self._ambient, *self._roots]
         for omitted in self._roots:
             kept = tuple(root for root in self._roots if not is_subcategory(root, omitted))
@@ -187,7 +187,7 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
         for target in targets:
             if target is not self and not any(target is known for known in distinct):
                 distinct.append(target)
-        return tuple(_functors().full_inclusion(self, target) for target in distinct)
+        return tuple(_functors().full_subcategory_monomorphism(self, target) for target in distinct)
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         """Membership in the ambient together with established placement in every root."""

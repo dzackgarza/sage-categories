@@ -4,7 +4,7 @@ Oracles: the core of a category is the wide subcategory on its isomorphisms (nLa
 "core": all objects, morphisms only the isomorphisms; Mathlib ``CategoryTheory.Core``),
 and a wide subcategory contains all objects and restricts morphisms to a
 multiplicative class (nLab "wide subcategory"; Mathlib ``CategoryTheory.WideSubcategory``)
-with a faithful inclusion (Mathlib ``wideSubcategory.faithful``); isomorphisms of sets
+with a subcategory monomorphism (Mathlib ``wideSubcategory.faithful``); isomorphisms of sets
 are the bijections (Mathlib ``CategoryTheory.isIso_iff_bijective``); a function
 ``A -> B`` exists exactly when ``A`` is empty or ``B`` is nonempty (Mathlib
 ``nonempty_fun``); a bijection ``A -> B`` exists exactly when ``#A = #B`` (Mathlib
@@ -47,21 +47,21 @@ def test_the_core_of_sets_contains_a_bijection_and_not_a_non_bijection() -> None
     assert core.morphism_property() is Mor(Sets()).Isomorphisms()
 
 
-def test_the_core_retains_a_faithful_inclusion_acting_by_identity() -> None:
+def test_the_core_retains_a_subcategory_monomorphism_acting_by_identity() -> None:
     core = Sets().Core()
     two = Sets().Simplex(int(1))
     swap = Mor(Sets())(two, two).Isomorphisms()(lambda datum: int(1) - datum, lambda datum: int(1) - datum)
-    (inclusion,) = core.structure_functors()
+    (monomorphism,) = core.structure_functors()
 
-    assert inclusion is Fun(core, Sets()).Faithful().inclusion()
-    assert inclusion in Fun(core, Sets()).Faithful()
-    assert inclusion in Fun.Faithful()
-    assert inclusion not in Fun.FullyFaithful()
-    assert inclusion.domain() is core and inclusion.codomain() is Sets()
-    assert inclusion.on_object(two) is two
-    assert inclusion.on_morphism(swap) is swap
+    assert monomorphism is Fun(core, Sets()).Monomorphisms().Isofibrations()()
+    assert monomorphism in Fun(core, Sets()).Faithful()
+    assert monomorphism in Fun.Faithful()
+    assert monomorphism not in Fun.FullyFaithful()
+    assert monomorphism.domain() is core and monomorphism.codomain() is Sets()
+    assert monomorphism.on_object(two) is two
+    assert monomorphism.on_morphism(swap) is swap
     with pytest.raises(AssertionError):
-        inclusion.on_morphism(Mor(Sets())(two, two)(lambda datum: int(0)))
+        monomorphism.on_morphism(Mor(Sets())(two, two)(lambda datum: int(0)))
 
 
 def test_the_core_constructs_and_composes_isomorphisms_through_the_isomorphism_category() -> None:

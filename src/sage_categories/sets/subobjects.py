@@ -1,16 +1,16 @@
 """Chosen subsets and chosen quotients: ``X.subset_from(predicate)`` and ``Sets().ChosenQuotients()`` (POL-SET-007/008, POL-ENGINE-004, POL-FUN-013/014).
 
-A chosen subset of ``X`` is a set ``A`` together with its inclusion monomorphism
+A chosen subset of ``X`` is a set ``A`` together with the monomorphism
 ``A -> X``.  ``Sets().ChosenSubsets()`` is the construction family of the chosen
 subsets: a full subcategory of ``Sets()`` whose membership is placement by
 construction, and a root of the narrowings of ``Sets()`` like every full
 subcategory, so that a chosen subset combines with every other placement (a
 finite set, a chosen limit).  Its constructor ``ChosenSubsets()(X, predicate)``
 builds ``A`` as the rule-defined set whose membership rule conjoins the rule of
-``X`` with the predicate, constructs the inclusion in
+``X`` with the predicate, constructs that monomorphism in
 ``Mor(Sets())(A, X).Monomorphisms()``, and retains it by identity;
-``A.inclusion()`` reads it back and ``A.underlying_set()`` is
-``A.inclusion().codomain()``.
+``A.monomorphism()`` reads it back and ``A.underlying_set()`` is
+``A.monomorphism().codomain()``.
 
 The predicate is a datum-level rule ``Callable[[Datum], Decision]``, the form of
 ``Sets()(rule)``.  It is applied only to data that the rule of ``X`` does not
@@ -60,8 +60,8 @@ from sage.structure.coerce_dict import MonoDict
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
 from sage_categories.cat.properties import FullSubcategory
-from sage_categories.kernel.decisions import Decision, Unknown, decision_and, decision_not, decision_or
-from sage_categories.kernel.predicates import AppliedPredicate, Predicate
+from sage_categories.kernel.decisions import Decision, Unknown
+from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask, conjunction, disjunction, negation
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role
 from sage_categories.sets.cardinals import CardinalObject
@@ -94,7 +94,7 @@ def _subset_by_enumeration(first: CategoryPoint, candidate: Any) -> Decision:
     if not finite.has_chosen_enumeration(first):
         return Unknown
     rule = candidate._set_object_data.membership_rule
-    return decision_and(*(rule(datum) for datum in finite.chosen_enumeration(first)))
+    return ask(conjunction(rule(datum) for datum in finite.chosen_enumeration(first)))
 
 
 subset_of.register_handler(_subset_by_identity)
@@ -102,15 +102,15 @@ subset_of.register_handler(_subset_by_enumeration)
 
 
 class ChosenSubsetRole(ObjectOfCategory):
-    """The local object role of ``Sets().ChosenSubsets()``: a set that retains its inclusion and carries the subset algebra of its base set."""
+    """The local object role of ``Sets().ChosenSubsets()``: a set that retains its presenting monomorphism and carries the subset algebra of its base set."""
 
-    def inclusion(self) -> SetMap:
-        """The retained inclusion monomorphism ``A -> X`` (POL-FUN-013)."""
-        return _sets.Sets().ChosenSubsets().retained_inclusion(self)
+    def monomorphism(self) -> SetMap:
+        """The retained monomorphism ``A -> X`` that presents this subobject (POL-FUN-013)."""
+        return _sets.Sets().ChosenSubsets().presenting_monomorphism(self)
 
     def underlying_set(self) -> SetObject:
-        """``X``, read from the codomain of the inclusion (POL-FUN-014)."""
-        return self.inclusion().codomain()
+        """``X``, read from the codomain of the presenting monomorphism (POL-FUN-014)."""
+        return self.monomorphism().codomain()
 
     def characteristic_morphism(self) -> SetMap:
         """``chi_A: X -> 2 = [1]``, ``1`` on the members of ``A`` and ``0`` elsewhere, retained once."""
@@ -121,20 +121,20 @@ class ChosenSubsetRole(ObjectOfCategory):
         return subset_of(self, other)
 
     def union(self, other: SetObject) -> SetObject:
-        return self._combined(other, decision_or)
+        return self._combined(other, lambda in_first, in_second: ask(disjunction((in_first, in_second))))
 
     def intersection(self, other: SetObject) -> SetObject:
-        return self._combined(other, decision_and)
+        return self._combined(other, lambda in_first, in_second: ask(conjunction((in_first, in_second))))
 
     def difference(self, other: SetObject) -> SetObject:
-        return self._combined(other, lambda in_first, in_second: decision_and(in_first, decision_not(in_second)))
+        return self._combined(other, lambda in_first, in_second: ask(conjunction((in_first, negation(in_second)))))
 
     def symmetric_difference(self, other: SetObject) -> SetObject:
-        return self._combined(other, lambda in_first, in_second: decision_or(decision_and(in_first, decision_not(in_second)), decision_and(in_second, decision_not(in_first))))
+        return self._combined(other, lambda in_first, in_second: ask(disjunction((conjunction((in_first, negation(in_second))), conjunction((in_second, negation(in_first)))))))
 
     def complement(self) -> SetObject:
         rule = self._set_object_data.membership_rule
-        return self.underlying_set().subset_from(lambda datum: decision_not(rule(datum)))
+        return self.underlying_set().subset_from(lambda datum: ask(negation(rule(datum))))
 
     def __or__(self, other: SetObject) -> SetObject:
         return self.union(other)
@@ -151,10 +151,10 @@ class ChosenSubsetRole(ObjectOfCategory):
 
 
 class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
-    """``Sets().ChosenSubsets()``: the construction family of the chosen subsets; owns their construction and retains each inclusion."""
+    """``Sets().ChosenSubsets()``: the construction family of the chosen subsets; owns their construction and retains each presenting monomorphism."""
 
     def __init__(self, ambient: Category[[Rule], []]) -> None:
-        self._inclusions: MonoDict = MonoDict()
+        self._monomorphisms: MonoDict = MonoDict()
         self._images: MonoDict = MonoDict()
         self._characteristics: MonoDict = MonoDict()
         super().__init__(ambient)
@@ -180,11 +180,11 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
             in_base = base_rule(datum)
             if in_base is False:
                 return False
-            return decision_and(in_base, predicate(datum))
+            return ask(conjunction((in_base, predicate(datum))))
 
         subset = sets.with_cardinality(rule, cardinality)
         refine(subset, self)
-        return self._retain_inclusion(subset, base_set)
+        return self._retain_monomorphism(subset, base_set)
 
     def from_enumeration(self, base_set: SetObject, members: tuple[Datum, ...]) -> SetObject:
         """The chosen subset of ``X`` with the given finite enumeration of member data, each admitted by ``X``."""
@@ -194,7 +194,7 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
         assert all(base_rule(member) is not False for member in members), f"{members!r} are not all members of {base_set!r}"
         subset = sets.Finite()(members)
         refine(subset, self)
-        return self._retain_inclusion(subset, base_set)
+        return self._retain_monomorphism(subset, base_set)
 
     def characteristic_morphism_of(self, subset: SetObject) -> SetMap:
         """``chi_A``, retained per chosen subset."""
@@ -211,7 +211,7 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
         return self._characteristics[subset]
 
     def __call__(self, base_set: SetObject, predicate: MembershipRule) -> SetObject:
-        """The chosen subset ``{x in X : predicate(x)}`` with its inclusion into ``X``."""
+        """The chosen subset ``{x in X : predicate(x)}`` with its monomorphism into ``X``."""
         sets = _sets.Sets()
         assert base_set in sets, f"{base_set!r} is not an object of {sets!r}"
         finite = sets.Finite()
@@ -221,14 +221,14 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
             in_base = base_rule(datum)
             if in_base is False:
                 return False
-            return decision_and(in_base, predicate(datum))
+            return ask(conjunction((in_base, predicate(datum))))
 
         if finite.has_chosen_enumeration(base_set):
             decided = tuple((datum, predicate(datum)) for datum in finite.chosen_enumeration(base_set))
             if all(decision is not Unknown for _, decision in decided):
                 subset = finite(tuple(datum for datum, decision in decided if decision is True))
                 refine(subset, self)
-                return self._retain_inclusion(subset, base_set)
+                return self._retain_monomorphism(subset, base_set)
         subset = sets(rule)
         refine(subset, self)
         if base_set in finite:
@@ -239,7 +239,7 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
             # A subset of a countable set is countable: Mathlib ``Set.Countable.mono``
             # (Mathlib.Data.Set.Countable; inspected 2026-08-26).
             sets.Countable()(subset)
-        return self._retain_inclusion(subset, base_set)
+        return self._retain_monomorphism(subset, base_set)
 
     def image_of(self, set_map: SetMap) -> SetObject:
         """``f.image()``: the chosen subset of the codomain of the points with a preimage, retained per map."""
@@ -260,14 +260,14 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
                 distinct = tuple(image for position, image in enumerate(images) if not any((image == earlier) is True for earlier in images[:position]))
                 subset = finite(distinct)
                 refine(subset, self)
-                self._images[set_map] = self._retain_inclusion(subset, codomain)
+                self._images[set_map] = self._retain_monomorphism(subset, codomain)
                 return subset
 
             def has_preimage(datum: Datum) -> Decision:
                 in_codomain = codomain_rule(datum)
                 if in_codomain is False:
                     return False
-                return decision_and(in_codomain, decision_or(*(image == datum for image in images)))
+                return ask(conjunction((in_codomain, disjunction(image == datum for image in images))))
 
         else:
 
@@ -290,20 +290,20 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
             finite(subset)
         elif codomain in countable:
             countable(subset)
-        self._images[set_map] = self._retain_inclusion(subset, codomain)
+        self._images[set_map] = self._retain_monomorphism(subset, codomain)
         return subset
 
-    def _retain_inclusion(self, subset: SetObject, base_set: SetObject) -> SetObject:
-        # The inclusion of a subset is injective: Mathlib ``Set.inclusion_injective``
+    def _retain_monomorphism(self, subset: SetObject, base_set: SetObject) -> SetObject:
+        # The monomorphism of a subset is injective: Mathlib ``Set.inclusion_injective``
         # (Mathlib.Data.Set.Inclusion; inspected 2026-08-26).
         monomorphisms = _sets.Sets().morphism_category(1)(subset, base_set).Monomorphisms()
-        self._inclusions[subset] = monomorphisms(lambda datum: datum)
+        self._monomorphisms[subset] = monomorphisms(lambda datum: datum)
         return subset
 
-    def retained_inclusion(self, subset: SetObject) -> SetMap:
-        """The inclusion this category retained for ``subset``."""
-        assert subset in self._inclusions, f"{subset!r} retains no inclusion"
-        return self._inclusions[subset]
+    def presenting_monomorphism(self, subset: SetObject) -> SetMap:
+        """The monomorphism this category retained for ``subset``."""
+        assert subset in self._monomorphisms, f"{subset!r} retains no presenting monomorphism"
+        return self._monomorphisms[subset]
 
 
 class ChosenQuotientRole(ObjectOfCategory):

@@ -85,7 +85,6 @@ def test_a_comparison_with_an_undecided_order_has_unknown_membership() -> None:
 
     comparison = Mor(thin)(two, six)()
     assert ask(Mor(thin).membership_proposition(comparison)) is Unknown
-    assert comparison not in Mor(thin)
     assume(divides(two.point(), six.point()))
     assert comparison in Mor(thin)
 

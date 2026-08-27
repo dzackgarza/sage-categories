@@ -6,15 +6,15 @@ from sage.misc.cachefunc import cached_method
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.properties import PropertySubcategory as PropertySubcategory
-from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown, UnknownClass as UnknownClass, decision_not as decision_not, decision_or as decision_or
-from sage_categories.kernel.predicates import ask as ask
+from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown, UnknownClass as UnknownClass
+from sage_categories.kernel.predicates import ask as ask, disjunction as disjunction, negation as negation
 from sage_categories.kernel.refinement import refine as refine
 from sage_categories.kernel.roles import Role as Role
 from sage_categories.sets.cardinals import CardinalObject as CardinalObject
 from sage_categories.sets.elements import Datum as Datum, SetElementData as SetElementData, SetElementDeclaration as SetElementDeclaration, SetPointData as SetPointData, points_equal as points_equal
 from sage_categories.sets.finite_subsets import FiniteSubsetsCategory as FiniteSubsetsCategory, FinitelySupportedFunctionsCategory as FinitelySupportedFunctionsCategory, SizedSubsetsCategory as SizedSubsetsCategory
 from sage_categories.sets.maps import Rule as Rule, SetMapDeclaration as SetMapDeclaration, SetMorphismData as SetMorphismData, bijective_on_finite_domain as bijective_on_finite_domain, injective_on_finite_domain as injective_on_finite_domain, maps_equal as maps_equal, surjective_on_finite_domain as surjective_on_finite_domain
-from sage_categories.sets.objects import FiniteSetRole as FiniteSetRole, MembershipRule as MembershipRule, SetObjectData as SetObjectData, SetObjectDeclaration as SetObjectDeclaration
+from sage_categories.sets.objects import FiniteSetRole as FiniteSetRole, MembershipRule as MembershipRule, SetObjectData as SetObjectData, SetObjectDeclaration as SetObjectDeclaration, sets_equal as sets_equal
 from sage_categories.sets.power_objects import PowerObjectsCategory as PowerObjectsCategory
 from sage_categories.sets.subobjects import ChosenQuotientsCategory as ChosenQuotientsCategory, ChosenSubsetsCategory as ChosenSubsetsCategory
 from typing import overload
@@ -57,7 +57,7 @@ class SetsCategory(CategoryDeclaration[[Rule], []]):
     def Empty(self) -> SetObject: ...
     def Terminal(self) -> SetObject: ...
     def Simplex(self, dimension: int) -> SetObject: ...
-    def classical_stages(self) -> tuple[SetObject, ...]: ...
+    def separating_family(self) -> tuple[SetObject, ...]: ...
     @cached_method
     def CardinalityFunctor(self) -> Functor: ...
     def element_from_defining_morphism(self, defining_morphism: SetMap) -> SetElement: ...

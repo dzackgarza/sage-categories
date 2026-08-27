@@ -245,7 +245,7 @@ class OrdinalsCategory(Category[[], []]):
     def one(self) -> OrdinalObject:
         return self(1)
 
-    def _is_finite(self, alpha: OrdinalObject, value: int) -> bool:
+    def _equals_finite(self, alpha: OrdinalObject, value: int) -> bool:
         return alpha._kind_() == "finite" and alpha._finite_value_() == value
 
     def _expression(self, kind: str, terms: tuple[OrdinalObject, ...]) -> OrdinalObject:
@@ -298,31 +298,31 @@ class OrdinalsCategory(Category[[], []]):
     def ordinal_sum(self, left: OrdinalObject, right: OrdinalObject) -> OrdinalObject:
         if left._kind_() == "finite" and right._kind_() == "finite":
             return self(left._finite_value_() + right._finite_value_())
-        if self._is_finite(left, 0):
+        if self._equals_finite(left, 0):
             return right
-        if self._is_finite(right, 0):
+        if self._equals_finite(right, 0):
             return left
         return self._expression("ordinal_sum", (left, right))
 
     def ordinal_product(self, left: OrdinalObject, right: OrdinalObject) -> OrdinalObject:
         if left._kind_() == "finite" and right._kind_() == "finite":
             return self(left._finite_value_() * right._finite_value_())
-        if self._is_finite(left, 0) or self._is_finite(right, 0):
+        if self._equals_finite(left, 0) or self._equals_finite(right, 0):
             return self.zero()
-        if self._is_finite(left, 1):
+        if self._equals_finite(left, 1):
             return right
-        if self._is_finite(right, 1):
+        if self._equals_finite(right, 1):
             return left
         return self._expression("ordinal_product", (left, right))
 
     def ordinal_power(self, base: OrdinalObject, exponent: OrdinalObject) -> OrdinalObject:
         if base._kind_() == "finite" and exponent._kind_() == "finite":
             return self(base._finite_value_() ** exponent._finite_value_())
-        if self._is_finite(exponent, 0):
+        if self._equals_finite(exponent, 0):
             return self.one()
-        if self._is_finite(base, 0):
+        if self._equals_finite(base, 0):
             return self.zero()
-        if self._is_finite(base, 1):
+        if self._equals_finite(base, 1):
             return self.one()
         return self._expression("ordinal_power", (base, exponent))
 

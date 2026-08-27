@@ -22,8 +22,9 @@ if TYPE_CHECKING:
     from sage_categories.kernel.compiler import Node
 
 __all__ = [
-    "ArrowStageIdentity",
     "CatElementRoleIdentity",
+    "CategoryArrowIdentity",
+    "CategoryPointIdentity",
     "ElementConstructionContext",
     "ElementConstructionInput",
     "ElementRoleIdentity",
@@ -34,12 +35,11 @@ __all__ = [
     "ObjectConstructionContext",
     "ObjectConstructionInput",
     "ObjectRoleIdentity",
-    "ObjectStageIdentity",
     "activate_element_context",
     "activate_morphism_context",
     "activate_object_context",
-    "active_element_context",
     "active_construction_context",
+    "active_element_context",
     "active_morphism_context",
     "active_object_context",
     "deactivate_element_context",
@@ -78,22 +78,22 @@ ElementRoleIdentity = GeneralCategoryPointIdentity
 
 
 @dataclass(frozen=True, slots=True, eq=False)
-class ObjectStageIdentity:
-    """An object as a stage-``1`` generalized element of its category."""
+class CategoryPointIdentity:
+    """An object as a generalized point ``1 -> C`` of its category."""
 
     parent: Category
 
 
 @dataclass(frozen=True, slots=True, eq=False)
-class ArrowStageIdentity:
-    """A morphism as a stage-``[1]`` generalized element of its category."""
+class CategoryArrowIdentity:
+    """A morphism as a generalized point ``[1] -> C`` of its category."""
 
     parent: Category
     domain: ObjectOfCategory
     codomain: ObjectOfCategory
 
 
-type CatElementRoleIdentity = GeneralCategoryPointIdentity | ObjectStageIdentity | ArrowStageIdentity
+type CatElementRoleIdentity = GeneralCategoryPointIdentity | CategoryPointIdentity | CategoryArrowIdentity
 
 
 @dataclass(frozen=True, slots=True, eq=False)
@@ -207,7 +207,7 @@ class ObjectConstructionContext:
 
     canonical_image: ObjectOfCategory
     identity: ObjectRoleIdentity
-    cat_element_identity: ObjectStageIdentity
+    cat_element_identity: CategoryPointIdentity
     steps: tuple[tuple[Node, Callable[[], None]], ...]
     initialized: list[Node] = field(default_factory=list)
 
@@ -253,7 +253,7 @@ class MorphismConstructionContext:
 
     canonical_image: MorphismOfCategory
     identity: MorphismRoleIdentity
-    cat_element_identity: ArrowStageIdentity
+    cat_element_identity: CategoryArrowIdentity
     steps: tuple[tuple[Node, Callable[[], None]], ...]
     initialized: list[Node] = field(default_factory=list)
 

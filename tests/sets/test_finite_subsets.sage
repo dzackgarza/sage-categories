@@ -5,7 +5,7 @@ and ``C(5, 2) = 10`` of size ``2`` (``Finset.card_powersetCard``); the finite su
 infinite set have its cardinality (``Cardinal.mk_finset_of_infinite``), as do the subsets
 of a fixed positive size (the embedding sandwich of ``sets/finite_subsets.py``); the
 finite subsets of a countable set are countable (``Finset.countable``); a subset of ``X``
-is a chosen subobject with its inclusion (POL-FUN-013); Sage's ``Subsets`` enumerates in
+is a chosen subobject with its monomorphism (POL-FUN-013); Sage's ``Subsets`` enumerates in
 rank order with ``{}`` first and the whole set last; ``#(S →₀ X) = (#X) ** (#S)`` for
 finite ``S`` (``Cardinal.mk_finsupp_lift_of_fintype``) and ``max(#S, #X)`` for infinite
 ``S`` and ``#X >= 2`` (``Cardinal.mk_finsupp_of_infinite``); a countable infinite set has
@@ -36,7 +36,7 @@ def test_the_finite_subsets_of_an_enumerated_set_are_enumerated_and_select_subob
     assert first.underlying_set() is five
     assert ask(first.cardinality() == int(0)) is True
     assert ask(last.cardinality() == int(5)) is True
-    assert last.inclusion() in Mor(Sets())(last, five).Monomorphisms()
+    assert last.monomorphism() in Mor(Sets())(last, five).Monomorphisms()
     assert ask(subsets.index(last) == int(31)) is True
     assert ask(subsets.index(first) == int(0)) is True
 
@@ -120,7 +120,7 @@ def test_finitely_supported_functions_retain_their_pointed_data_and_cardinalitie
     assert functions.value_set() is four
     assert functions.basepoint() is four.point(int(0))
     assert functions.underlying_set() is four ** three
-    assert functions.inclusion() in Mor(Sets())(functions, four ** three).Monomorphisms()
+    assert functions.monomorphism() in Mor(Sets())(functions, four ** three).Monomorphisms()
     assert ask(functions.cardinality() == int(64)) is True
     name = Sets().name_of(Mor(Sets())(three, four)(lambda datum: datum + int(1)))
     assert name in functions

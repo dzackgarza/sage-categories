@@ -14,12 +14,12 @@ owns, each on its declared decidable domain (POL-MATH-042):
 - an isomorphism of sets is a bijection (Mathlib ``CategoryTheory.isIso_iff_bijective``;
   inspected 2026-08-26), so ``Isomorphisms()`` decides through both.
 
-Each handler compares image data pairwise through ``data_equal``
-(``sets/elements.py``), the one owner of that private boundary: exact for an engine
-value, ``Unknown`` for a rule-defined family or the name of a map with an
-unenumerated domain, and the decided owned equality for an owned mathematical
-value.  The handlers combine those answers three-valued: they never decide through
-a hash table on data whose equality may be ``Unknown``.
+Each handler compares image data pairwise at the private computation boundary, where
+``==`` is exact for an engine value, ``Unknown`` for a rule-defined family or the name
+of a map with an unenumerated domain, and a proposition for an owned mathematical
+value, so each comparison is asked (POL-MATH-034).  The handlers combine those answers
+three-valued: they never decide through a hash table on data whose equality may be
+``Unknown``.
 
 A retained inverse is construction data owned by ``Sets()`` (``inverse_morphism``),
 not a field of every map.
@@ -33,9 +33,10 @@ from typing import TYPE_CHECKING, Any
 
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
-from sage_categories.kernel.decisions import Decision, Unknown, decision_and, decision_not, decision_or
+from sage_categories.kernel.decisions import Decision, Unknown
+from sage_categories.kernel.predicates import ask, conjunction, disjunction, negation
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory
-from sage_categories.sets.elements import Datum, data_equal
+from sage_categories.sets.elements import Datum
 
 if TYPE_CHECKING:
     from sage_categories.sets.category import SetElement, SetMap, SetObject
@@ -67,17 +68,17 @@ class SetMapDeclaration(MorphismOfCategory):
         super().__init__()
 
     def __call__(self, element: SetElement) -> SetElement:
-        """Compose with a generalized element; evaluate its datum at the classical stage (POL-CAT-040)."""
+        """Compose with a generalized element; evaluate its datum at the separator (POL-CAT-040)."""
         assert element in self.domain(), f"{element!r} is not an element of {self.domain()!r}"
         canonical_map = self._set_morphism_data.canonical
         canonical = element._set_element_data.canonical
-        if canonical.stage() is _sets.Sets().Terminal():
-            return canonical_map.codomain().point(self._set_morphism_data.rule(canonical._classical_datum_()))
+        if canonical.defining_morphism().domain() is _sets.Sets().Terminal():
+            return canonical_map.codomain().point(self._set_morphism_data.rule(canonical._point_datum_()))
         defining_morphism = canonical_map * canonical.defining_morphism()
         return _sets.Sets().element_from_defining_morphism(defining_morphism)
 
     def image(self) -> SetObject:
-        """The chosen subset of the codomain of the points with a preimage, with its inclusion (POL-ENGINE-004; ``sets/subobjects.py``)."""
+        """The chosen subset of the codomain of the points with a preimage, with its monomorphism (POL-ENGINE-004; ``sets/subobjects.py``)."""
         return _sets.Sets().ChosenSubsets().image_of(self._set_morphism_data.canonical)
 
     def __repr__(self) -> str:
@@ -97,7 +98,7 @@ def maps_equal(first: CategoryPoint, candidate: Any) -> Decision:
         return Unknown
     first_rule = first._set_morphism_data.rule
     candidate_rule = candidate._set_morphism_data.rule
-    return decision_and(*(data_equal(first_rule(datum), candidate_rule(datum)) for datum in finite.chosen_enumeration(first.domain())))
+    return ask(conjunction(first_rule(datum) == candidate_rule(datum) for datum in finite.chosen_enumeration(first.domain())))
 
 
 def injective_on_finite_domain(morphism: MorphismOfCategory) -> Decision:
@@ -107,8 +108,8 @@ def injective_on_finite_domain(morphism: MorphismOfCategory) -> Decision:
         return Unknown
     rule = morphism._set_morphism_data.rule
     images = [rule(datum) for datum in sets.Finite().chosen_enumeration(morphism.domain())]
-    collisions = (data_equal(images[i], images[j]) for i in range(len(images)) for j in range(i + 1, len(images)))
-    return decision_not(decision_or(*collisions))
+    collisions = (images[i] == images[j] for i in range(len(images)) for j in range(i + 1, len(images)))
+    return ask(negation(disjunction(collisions)))
 
 
 def surjective_on_finite_domain(morphism: MorphismOfCategory) -> Decision:
@@ -121,8 +122,8 @@ def surjective_on_finite_domain(morphism: MorphismOfCategory) -> Decision:
         return Unknown
     rule = morphism._set_morphism_data.rule
     images = [rule(datum) for datum in finite.chosen_enumeration(morphism.domain())]
-    return decision_and(*(decision_or(*(data_equal(image, datum) for image in images)) for datum in finite.chosen_enumeration(morphism.codomain())))
+    return ask(conjunction(disjunction(image == datum for image in images) for datum in finite.chosen_enumeration(morphism.codomain())))
 
 
 def bijective_on_finite_domain(morphism: MorphismOfCategory) -> Decision:
-    return decision_and(injective_on_finite_domain(morphism), surjective_on_finite_domain(morphism))
+    return ask(conjunction((injective_on_finite_domain(morphism), surjective_on_finite_domain(morphism))))

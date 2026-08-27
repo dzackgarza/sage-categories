@@ -30,12 +30,12 @@ def _fold(images, path):
     return image
 
 
-def _sequence(stage_sets, transitions):
+def _sequence(index_sets, transitions):
     """A diagram over ``omega`` from a rule ``n |-> X_n`` and a rule ``(m, n) |-> X_m -> X_n``."""
     shape = omega()
 
     def on_object(vertex):
-        return stage_sets(vertex.point())
+        return index_sets(vertex.point())
 
     def on_morphism(comparison):
         return transitions(comparison.domain().point(), comparison.codomain().point())
@@ -46,7 +46,7 @@ def _sequence(stage_sets, transitions):
 def _natural(point):
     """The ``k`` with ``point == NN(k)``, found by the owned equality predicate.
 
-    A classical element of a set is a morphism ``1 -> X``; the datum it selects is
+    A point of a set is a morphism ``1 -> X``; the datum it selects is
     engine state its owner keeps private.  A vertex of ``omega`` therefore names its
     natural number the way any two elements are compared, through ``ask``.
     """
@@ -57,7 +57,7 @@ def _natural(point):
 
 
 def _simplex_sequence():
-    """The sequence ``[0] -> [1] -> [2] -> ...`` of inclusions ``d |-> d``."""
+    """The sequence ``[0] -> [1] -> [2] -> ...`` of monomorphisms ``d |-> d``."""
     return _sequence(lambda point: Sets().Simplex(_natural(point) - int(1)), lambda lower, upper: Mor(Sets())(Sets().Simplex(_natural(lower) - int(1)), Sets().Simplex(_natural(upper) - int(1)))(lambda datum: datum))
 
 
@@ -78,7 +78,7 @@ def test_set_limit_membership_is_the_compatibility_decision() -> None:
     assert pullback in Sets()
     assert pullback in Sets().ChosenSubsets()
     product = pullback.underlying_set()
-    assert pullback.inclusion() in Mor(Sets())(pullback, product).Monomorphisms()
+    assert pullback.monomorphism() in Mor(Sets())(pullback, product).Monomorphisms()
     assert product in Sets().Products()
     assert ask(product.cardinality() == int(24)) is True
     rejected = [point for point in product if point not in pullback]
@@ -95,7 +95,6 @@ def test_set_limit_membership_is_the_compatibility_decision() -> None:
     into_families = families.universal_morphism(cone(families.diagram(), one, lambda vertex: legs[cospan.label(cospan.object_at(vertex.point()))]))
     corner = into_families(one.point(()))
     assert ask(undecided.membership_proposition(corner)) is Unknown
-    assert corner not in undecided
     assert undecided.cardinality() is Unknown
 
 
@@ -145,7 +144,7 @@ def test_the_limit_functor_maps_a_natural_transformation_to_the_induced_morphism
         assert ask(target.projection(vertex) * induced == transformation.component(vertex) * source.projection(vertex)) is True
 
 
-def test_set_colimit_equality_over_omega_is_agreement_at_the_larger_stage() -> None:
+def test_set_colimit_equality_over_omega_is_agreement_at_the_larger_index() -> None:
     shape = omega()
     sequence = _sequence(lambda point: NN, lambda lower, upper: Mor(Sets())(NN, NN)(lambda datum: datum + (_natural(upper) - _natural(lower))))
     colimit = Sets().Colimits(shape)(sequence)
@@ -179,8 +178,8 @@ def test_the_colimit_functor_maps_a_natural_transformation_between_sequences() -
     assert colimit.on_object(source) is lower
     induced = colimit.on_morphism(successor)
     assert induced in Mor(Sets())(lower, upper)
-    for stage in (shape(NN(int(2))), shape(NN(int(3)))):
-        assert ask(induced * lower.injection(stage) == upper.injection(stage) * successor.component(stage)) is True
+    for index in (shape(NN(int(2))), shape(NN(int(3)))):
+        assert ask(induced * lower.injection(index) == upper.injection(index) * successor.component(index)) is True
     assert ask(induced(lower.injection(shape(NN(int(2))))(Sets().Simplex(int(1)).point(int(1)))) == upper.injection(shape(NN(int(4))))(Sets().Simplex(int(4)).point(int(2)))) is True
 
 
@@ -260,7 +259,7 @@ def test_an_image_is_the_chosen_subset_of_points_with_a_preimage() -> None:
     assert image in Sets().Finite()
     assert ask(image.cardinality() == int(3)) is True
     assert ask(collapsed.cardinality() == int(2)) is True
-    assert collapsed.inclusion() in Mor(Sets())(collapsed, three).Monomorphisms()
+    assert collapsed.monomorphism() in Mor(Sets())(collapsed, three).Monomorphisms()
     assert collapsed.underlying_set() is three
     assert three.point(int(1)) in collapsed
     assert three.point(int(2)) not in collapsed

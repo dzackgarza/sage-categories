@@ -70,7 +70,7 @@ class RealsCategory(Category[[Rule], []]):
         refine(self._reals, self)
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        return (Fun(self, Sets().Uncountable()).FullyFaithful().inclusion(),)
+        return (Fun(self, Sets().Uncountable()).Monomorphisms().Isofibrations().Full()(),)
 
     def __call__(self) -> SetObject:
         """The sole object ``RR``, retained by identity."""

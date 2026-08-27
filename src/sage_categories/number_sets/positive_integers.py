@@ -61,7 +61,7 @@ class PositiveIntegersCategory(Category[[Rule], []]):
         refine(self._positive_integers, self)
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        return (Fun(self, Sets().Countable()).FullyFaithful().inclusion(),)
+        return (Fun(self, Sets().Countable()).Monomorphisms().Isofibrations().Full()(),)
 
     def __call__(self) -> SetObject:
         """The sole object ``NN``, retained by identity."""
@@ -81,7 +81,7 @@ natural_order: Predicate = Predicate("natural_order", 2, True)
 def _natural_order_by_integer_comparison(first: CategoryPoint, second: CategoryPoint) -> Decision:
     if first not in _POSITIVE_INTEGERS() or second not in _POSITIVE_INTEGERS():
         return Unknown
-    return bool(first._classical_datum_() <= second._classical_datum_())
+    return bool(first._point_datum_() <= second._point_datum_())
 
 
 natural_order.register_handler(_natural_order_by_integer_comparison)

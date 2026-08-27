@@ -3,8 +3,8 @@
 A finite poset is lowered once to a Sage finite poset on the enumeration data of its
 underlying set (Sage ``Poset((elements, relation), facade=True)``: ``relation(x, y)`` is
 ``x <= y`` and the elements are the data themselves; inspected 2026-08-27).  The
-lowering of a classical element is its datum, and ``element`` reconstructs the
-classical element over a datum.  Nothing here is public mathematics.
+lowering of a point is its datum, and ``element`` reconstructs the
+point over a datum.  Nothing here is public mathematics.
 """
 
 from __future__ import annotations
@@ -48,7 +48,7 @@ def sage_poset(poset: Poset) -> SagePoset:
 
 
 def datum(poset: Poset, member: PosetElement) -> Datum:
-    """The enumeration datum of a classical element of ``P``."""
+    """The enumeration datum of a point of ``P``."""
     carrier = _carrier(poset)
     point = _posets.Posets().underlying_set_functor().on_element(member)
     assert point.parent() is carrier, f"{member!r} is not an element of {poset!r}"
@@ -58,12 +58,12 @@ def datum(poset: Poset, member: PosetElement) -> Datum:
 def data(poset: Poset, members: Poset) -> tuple[Datum, ...]:
     """The enumeration data of a sub-poset ``A`` of ``P``: ``U(A)`` is a chosen subset of ``U(P)``."""
     carrier = _carrier(members)
-    assert carrier.inclusion().codomain() is _carrier(poset), f"{members!r} is not a sub-poset of {poset!r}"
+    assert carrier.monomorphism().codomain() is _carrier(poset), f"{members!r} is not a sub-poset of {poset!r}"
     return Sets().Finite().chosen_enumeration(carrier)
 
 
 def element(poset: Poset, value: Datum) -> PosetElement:
-    """The classical element of ``P`` over the point selecting an enumeration datum."""
+    """The point of ``P`` over the point selecting an enumeration datum."""
     return poset.element(_carrier(poset).point(value))
 
 

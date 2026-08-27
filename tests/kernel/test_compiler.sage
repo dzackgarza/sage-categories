@@ -32,10 +32,10 @@ def _enumeration(finite_set):
 
 
 class PairSets(Category):
-    """Two-element sets, declared a full subcategory of ``Sets()`` by one inclusion and nothing else."""
+    """Two-element sets, declared a full subcategory of ``Sets()`` by one monomorphism and nothing else."""
 
     def structure_functors(self):
-        return (Fun(self, Sets()).FullyFaithful().inclusion(),)
+        return (Fun(self, Sets()).Monomorphisms().Isofibrations().Full()(),)
 
     def __call__(self, first, second):
         pair = Sets().Finite()((first, second))
@@ -55,7 +55,7 @@ class Left(Category):
             return _enumeration(self)[int(0)]
 
     def structure_functors(self):
-        return (Fun(self, Sets()).FullyFaithful().inclusion(),)
+        return (Fun(self, Sets()).Monomorphisms().Isofibrations().Full()(),)
 
     def __repr__(self):
         return "Left"
@@ -70,7 +70,7 @@ class Right(Category):
             return _enumeration(self)[int(-1)]
 
     def structure_functors(self):
-        return (Fun(self, Sets()).FullyFaithful().inclusion(),)
+        return (Fun(self, Sets()).Monomorphisms().Isofibrations().Full()(),)
 
     def __repr__(self):
         return "Right"
@@ -86,8 +86,8 @@ class Diamond(Category):
 
     def structure_functors(self):
         return (
-            Fun(self, self._left).FullyFaithful().inclusion(),
-            Fun(self, self._right).FullyFaithful().inclusion(),
+            Fun(self, self._left).Monomorphisms().Isofibrations().Full()(),
+            Fun(self, self._right).Monomorphisms().Isofibrations().Full()(),
         )
 
     def __call__(self, members):
@@ -108,7 +108,7 @@ class Colliding(Category):
             return _enumeration(self)[int(0)]
 
     def structure_functors(self):
-        return (Fun(self, Sets()).FullyFaithful().inclusion(),)
+        return (Fun(self, Sets()).Monomorphisms().Isofibrations().Full()(),)
 
     def __repr__(self):
         return "Colliding"
@@ -123,7 +123,7 @@ class Sizes(Category):
             return len(_enumeration(self))
 
     def structure_functors(self):
-        return (Fun(self, Sets()).FullyFaithful().inclusion(),)
+        return (Fun(self, Sets()).Monomorphisms().Isofibrations().Full()(),)
 
     def __repr__(self):
         return "Sizes"
@@ -139,8 +139,8 @@ class BothSizes(Category):
 
     def structure_functors(self):
         return (
-            Fun(self, self._colliding).FullyFaithful().inclusion(),
-            Fun(self, self._sizes).FullyFaithful().inclusion(),
+            Fun(self, self._colliding).Monomorphisms().Isofibrations().Full()(),
+            Fun(self, self._sizes).Monomorphisms().Isofibrations().Full()(),
         )
 
     def __repr__(self):
@@ -155,7 +155,7 @@ class ElementWeight(Category):
             return int(1)
 
     def structure_functors(self):
-        return (Fun(self, Sets()).FullyFaithful().inclusion(),)
+        return (Fun(self, Sets()).Monomorphisms().Isofibrations().Full()(),)
 
     def __repr__(self):
         return "ElementWeight"
@@ -169,7 +169,7 @@ class ElementMass(Category):
             return int(2)
 
     def structure_functors(self):
-        return (Fun(self, Sets()).FullyFaithful().inclusion(),)
+        return (Fun(self, Sets()).Monomorphisms().Isofibrations().Full()(),)
 
     def __repr__(self):
         return "ElementMass"
@@ -183,7 +183,7 @@ class MorphismDegree(Category):
             return int(1)
 
     def structure_functors(self):
-        return (Fun(self, Sets()).FullyFaithful().inclusion(),)
+        return (Fun(self, Sets()).Monomorphisms().Isofibrations().Full()(),)
 
     def __repr__(self):
         return "MorphismDegree"
@@ -197,7 +197,7 @@ class MorphismOrder(Category):
             return int(2)
 
     def structure_functors(self):
-        return (Fun(self, Sets()).FullyFaithful().inclusion(),)
+        return (Fun(self, Sets()).Monomorphisms().Isofibrations().Full()(),)
 
     def __repr__(self):
         return "MorphismOrder"
@@ -213,8 +213,8 @@ class BothRoles(Category):
 
     def structure_functors(self):
         return (
-            Fun(self, self._first).FullyFaithful().inclusion(),
-            Fun(self, self._second).FullyFaithful().inclusion(),
+            Fun(self, self._first).Monomorphisms().Isofibrations().Full()(),
+            Fun(self, self._second).Monomorphisms().Isofibrations().Full()(),
         )
 
     def __repr__(self):
@@ -236,7 +236,7 @@ class CarrierMapData:
 
 
 class Carried(Category):
-    """Objects carrying a set, related to ``Sets()`` by an explicit forgetful functor, not an inclusion."""
+    """Objects carrying a set, related to ``Sets()`` by an explicit forgetful functor, not an monomorphism."""
 
     class DeclaredObjectType(ObjectOfCategory):
         def __init__(self, data):
@@ -340,7 +340,7 @@ class PresentedMapData:
 class Presented(Category):
     """Objects with a chosen presentation of a skeletal object, related to it by a forgetful functor.
 
-    The functor is not an inclusion, so the image of a presented object is a different
+    The functor is not an monomorphism, so the image of a presented object is a different
     object, and an inherited result that stayed with the receiver would be visible.
     """
 
@@ -383,8 +383,8 @@ class Presented(Category):
         return "Presented"
 
 
-def test_a_selected_functor_that_is_not_an_inclusion_places_nothing() -> None:
-    """Placement follows retained inclusions only; the forgetful image still supplies inherited values."""
+def test_a_selected_functor_that_does_not_trace_placement_places_nothing() -> None:
+    """Placement follows subcategory monomorphisms only; the forgetful image still supplies inherited values."""
     carried = Carried()
     pair = carried(Sets().Finite()((int(3), int(4))))
 
@@ -395,8 +395,8 @@ def test_a_selected_functor_that_is_not_an_inclusion_places_nothing() -> None:
     assert ask(pair.is_finite()) is True
 
 
-def test_dynamic_inheritance_surface_of_one_inclusion() -> None:
-    """One selected inclusion exposes the object, element, and morphism surface of ``Sets()``."""
+def test_dynamic_inheritance_surface_of_one_subcategory_monomorphism() -> None:
+    """One selected monomorphism exposes the object, element, and morphism surface of ``Sets()``."""
     pairs = PairSets()
     pair = pairs(int(3), int(4))
 
@@ -465,7 +465,7 @@ def test_two_paths_to_one_owner_install_one_element_and_morphism_method_before_a
     assert hash(point) == hash(int(5))
     assert ask(fixed(point) == point) is True
     assert fixed.image() in Sets().ChosenSubsets()
-    assert fixed.image().inclusion().codomain() is apex
+    assert fixed.image().monomorphism().codomain() is apex
 
 
 def test_incomparable_owners_of_one_spelling_are_a_semantic_collision() -> None:

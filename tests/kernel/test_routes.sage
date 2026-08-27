@@ -88,8 +88,8 @@ class Duplicated(Category):
     """A leaf that declares one functor twice."""
 
     def structure_functors(self):
-        inclusion = Fun(self, Sets()).FullyFaithful().inclusion()
-        return (inclusion, inclusion)
+        monomorphism = Fun(self, Sets()).Monomorphisms().Isofibrations().Full()()
+        return (monomorphism, monomorphism)
 
     def __repr__(self):
         return "Duplicated"
@@ -208,12 +208,12 @@ def test_a_cycle_in_the_selected_graph_fails_at_construction() -> None:
 
 
 def test_the_first_declared_functor_of_a_diamond_decides_the_ambient_category() -> None:
-    """``FinitePosets()`` declares the inclusion into ``Posets()`` first, so ``Posets()`` is its ambient (POL-CAT-016, POL-FUN-027).
+    """``FinitePosets()`` declares the monomorphism into ``Posets()`` first, so ``Posets()`` is its ambient (POL-CAT-016, POL-FUN-027).
 
     Both declared functors of the diamond reach ``Sets()``, and the second reaches it in
     one step where the first needs two.  The ambient is the codomain of the first
-    declared retained inclusion, so it is ``Posets()``.  The second functor is faithful
-    and not an inclusion: it places nothing and still acts.
+    declared subcategory monomorphism, so it is ``Posets()``.  The second functor is faithful
+    and not an monomorphism: it places nothing and still acts.
     """
     finite_posets = FinitePosets()
     first_declared, second_declared = finite_posets.structure_functors()
@@ -233,7 +233,7 @@ def test_the_first_declared_functor_of_a_diamond_decides_the_ambient_category() 
 
 
 def test_the_binary_operators_construct_in_the_least_common_ancestor() -> None:
-    """The operand precondition is a least common ancestor along retained inclusions (D02)."""
+    """The operand precondition is a least common ancestor along subcategory monomorphisms (D02)."""
     finite = Sets().Finite()((int(0), int(1), int(2)))
     other = Sets().Finite()((int(7), int(8)))
 
@@ -257,14 +257,14 @@ def test_the_binary_operators_construct_in_the_least_common_ancestor() -> None:
 
 
 def test_a_poset_and_a_set_have_no_common_ancestor_and_do_not_combine() -> None:
-    """``U: Posets() -> Sets()`` is not an inclusion, so the two categories meet nowhere (POL-FUN-027)."""
+    """``U: Posets() -> Sets()`` is not an monomorphism, so the two categories meet nowhere (POL-FUN-027)."""
     chain = Posets().Simplex(int(2))
     carrier = Sets().Finite()((int(0), int(1)))
 
     assert not is_subcategory(chain.category(), Sets())
     assert not is_subcategory(carrier.category(), Posets())
     for combine in (lambda: chain * carrier, lambda: chain + carrier, lambda: carrier ** chain):
-        with pytest.raises(AssertionError, match="have no least common category along retained inclusions"):
+        with pytest.raises(AssertionError, match="have no least common category along subcategory monomorphisms"):
             combine()
 
     message = ""

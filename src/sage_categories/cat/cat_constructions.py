@@ -30,11 +30,11 @@ owned construction.
 Each of these categories retains one object per construction datum -- one tagged
 object per ``(i, x)``, one family per rule, one pair per ``(a, b)`` -- because a
 category has one object per datum, and the structural transport caches identify
-images by it (POL-CAT-066).  Their morphisms are constructed on demand and are not
-retained, as ``Mor(Sets())(X, Y)(rule)`` is not: two calls with the same data give
-two morphisms, which the category's equality predicate compares (POL-MATH-034).  A
-component functor therefore returns one object image by identity and a fresh
-morphism image per call.
+images by it (POL-CAT-066).  A universal object is unique up to unique isomorphism
+and has one construction, so a second call with the same data returns the same
+object; the projections, injections, and functor images of that construction are
+likewise one morphism each, retained by the functor and the limiting cone that own
+them (``cat/functors.py``; POL-CAT-012).
 """
 
 from __future__ import annotations
@@ -51,8 +51,8 @@ from sage_categories.cat.diagrams import sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.shapes import DiscreteObject, index_set_of
 from sage_categories.kernel.caches import SequenceTable
-from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass, decision_and
-from sage_categories.kernel.predicates import Predicate, Proposition, ask
+from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
+from sage_categories.kernel.predicates import Predicate, Proposition, ask, conjunction
 from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.category import Sets
@@ -188,15 +188,15 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
             components,
         )
 
-    def classical_stages(self) -> tuple[FamilyObject, ...]:
-        """The stage ``(G_i)_i`` when every factor of an enumerated family chooses one stage."""
+    def separating_family(self) -> tuple[FamilyObject, ...]:
+        """The separator ``(G_i)_i`` when every factor of an enumerated family chooses one separator."""
         index_set, finite = index_set_of(self.shape()), Sets().Finite()
         if not finite.has_chosen_enumeration(index_set):
             return ()
-        stages = tuple(self.factor(datum).classical_stages() for datum in finite.chosen_enumeration(index_set))
-        if any(len(family) != 1 for family in stages):
+        separators = tuple(self.factor(datum).separating_family() for datum in finite.chosen_enumeration(index_set))
+        if any(len(family) != 1 for family in separators):
             return ()
-        return (self(tuple(stage for (stage,) in stages)),)
+        return (self(tuple(separator for (separator,) in separators)),)
 
     def __call__(self, family: ObjectRule | tuple[ObjectOfCategory, ...]) -> FamilyObject:
         """``P(rule)`` for a family by rule; ``P((X_0, ..., X_n))`` for the external tuple, retained per tuple."""
@@ -243,7 +243,7 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
         index_set, finite = index_set_of(self.shape()), Sets().Finite()
         if not finite.has_chosen_enumeration(index_set):
             return Unknown
-        return decision_and(*(ask(first.component(datum) == candidate.component(datum)) for datum in finite.chosen_enumeration(index_set)))
+        return ask(conjunction(first.component(datum) == candidate.component(datum) for datum in finite.chosen_enumeration(index_set)))
 
     def __repr__(self) -> str:
         return f"Product({self._diagram!r})"
@@ -344,12 +344,29 @@ class CoproductCategory(Category[[MorphismOfCategory], []]):
         self._diagram = diagram
         self._objects: TripleDict = TripleDict(weak_values=False)
         super().__init__()
+        self._equality.register_handler(self._equal)
 
     def shape(self) -> Category:
         return self._diagram.domain()
 
     def summand(self, index: ObjectOfCategory | Hashable) -> Category:
         return self._diagram.on_object(vertex_of(self.shape(), index))
+
+    def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
+        """Two tagged values are equal when they carry one tag and their members are equal.
+
+        A morphism of the coproduct lies within one summand, so equal tags reduce the
+        question to the summand's own equality (Mathlib ``CategoryTheory.Sigma.SigmaHom``,
+        ``Mathlib/CategoryTheory/Sigma/Basic.lean``: "a morphism ``(i, X) -> (j, Y)`` when
+        ``i = j`` is just a morphism ``X -> Y``, and if ``i != j`` then there are no such
+        morphisms"; inspected 2026-08-28).
+        """
+        if first in self and candidate in self:
+            return first.tag() is candidate.tag() and ask(first.member() == candidate.member())
+        morphisms = self.morphism_category(1)
+        if first in morphisms and candidate in morphisms:
+            return first.domain().tag() is candidate.domain().tag() and ask(first.morphism() == candidate.morphism())
+        return Unknown
 
     def __call__(self, index: ObjectOfCategory | Hashable, member_object: ObjectOfCategory) -> TaggedObject:
         """``Q(i, x)``: the object of the ``i``-th summand tagged by ``i``, retained per pair."""
@@ -573,7 +590,7 @@ class PullbackCategory(Category[[tuple[MorphismOfCategory, MorphismOfCategory]],
         """Two pairs are equal when both components are."""
         morphisms = self.morphism_category(1)
         if (first in self and candidate in self) or (first in morphisms and candidate in morphisms):
-            return decision_and(ask(first.first() == candidate.first()), ask(first.second() == candidate.second()))
+            return ask((first.first() == candidate.first()) & (first.second() == candidate.second()))
         return Unknown
 
     def __call__(self, pair: tuple[ObjectOfCategory, ObjectOfCategory]) -> PairObject:

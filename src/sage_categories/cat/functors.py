@@ -120,6 +120,11 @@ class FunctorDeclaration(MorphismOfCategory):
     def __init__(self, data: FunctorData) -> None:
         self._on_object = data.on_object
         self._on_morphism = data.on_morphism
+        # ``F(f)`` is one morphism, not a fresh one per call: a functor assigns each
+        # morphism of its domain a single image (POL-CAT-012, POL-FUN-001).  The object
+        # action is canonical already, through the construction that retains one object
+        # per construction datum and through the transport caches.
+        self._morphism_images: MonoDict = MonoDict()
         super().__init__()
 
     # The admission condition is the one the image construction needs.  A retained
@@ -149,7 +154,14 @@ class FunctorDeclaration(MorphismOfCategory):
         return self._on_object(member_object)
 
     def on_morphism(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
-        """The image of a morphism of the domain."""
+        """The image of a morphism of the domain, one value per morphism."""
+        if morphism in self._morphism_images:
+            return self._morphism_images[morphism]
+        image = self._construct_morphism_image(morphism)
+        self._morphism_images[morphism] = image
+        return image
+
+    def _construct_morphism_image(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
         morphisms = self.domain().morphism_category(1)
         if self in _morphism_constructor_conversions:
             from sage_categories.kernel import compiler
@@ -468,6 +480,7 @@ class NaturalTransformationDeclaration(MorphismOfCategory):
 
     def __init__(self, data: NaturalTransformationData) -> None:
         self._assignment = data.assignment
+        self._components: MonoDict = MonoDict()
         super().__init__()
 
     def source_functor(self) -> Functor:
@@ -477,10 +490,19 @@ class NaturalTransformationDeclaration(MorphismOfCategory):
         return diagram_of(self.codomain())
 
     def component(self, member_object: ObjectOfCategory) -> MorphismOfCategory:
-        """``eta_X: F(X) -> G(X)``; naturality is a trusted declaration (POL-MATH-036)."""
+        """``eta_X: F(X) -> G(X)``, one morphism per object; naturality is a trusted declaration (POL-MATH-036).
+
+        A natural transformation has one component at each object, so the assignment runs
+        once per object and its value is retained by identity (POL-CAT-012).  This is what
+        makes the projections of a chosen product and the injections of a chosen coproduct
+        one morphism each: they are the components of the limiting cone and cocone.
+        """
+        if member_object in self._components:
+            return self._components[member_object]
         source, target = self.source_functor(), self.target_functor()
         component = self._assignment(member_object)
         assert component in source.codomain().morphism_category(1)(source.on_object(member_object), target.on_object(member_object))
+        self._components[member_object] = component
         return component
 
     def __repr__(self) -> str:

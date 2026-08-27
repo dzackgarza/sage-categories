@@ -30,11 +30,11 @@ owned construction.
 Each of these categories retains one object per construction datum -- one tagged
 object per ``(i, x)``, one family per rule, one pair per ``(a, b)`` -- because a
 category has one object per datum, and the structural transport caches identify
-images by it (POL-CAT-066).  Their morphisms are constructed on demand and are not
-retained, as ``Mor(Sets())(X, Y)(rule)`` is not: two calls with the same data give
-two morphisms, which the category's equality predicate compares (POL-MATH-034).  A
-component functor therefore returns one object image by identity and a fresh
-morphism image per call.
+images by it (POL-CAT-066).  A universal object is unique up to unique isomorphism
+and has one construction, so a second call with the same data returns the same
+object; the projections, injections, and functor images of that construction are
+likewise one morphism each, retained by the functor and the limiting cone that own
+them (``cat/functors.py``; POL-CAT-012).
 """
 
 from __future__ import annotations
@@ -344,12 +344,29 @@ class CoproductCategory(Category[[MorphismOfCategory], []]):
         self._diagram = diagram
         self._objects: TripleDict = TripleDict(weak_values=False)
         super().__init__()
+        self._equality.register_handler(self._equal)
 
     def shape(self) -> Category:
         return self._diagram.domain()
 
     def summand(self, index: ObjectOfCategory | Hashable) -> Category:
         return self._diagram.on_object(vertex_of(self.shape(), index))
+
+    def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
+        """Two tagged values are equal when they carry one tag and their members are equal.
+
+        A morphism of the coproduct lies within one summand, so equal tags reduce the
+        question to the summand's own equality (Mathlib ``CategoryTheory.Sigma.SigmaHom``,
+        ``Mathlib/CategoryTheory/Sigma/Basic.lean``: "a morphism ``(i, X) -> (j, Y)`` when
+        ``i = j`` is just a morphism ``X -> Y``, and if ``i != j`` then there are no such
+        morphisms"; inspected 2026-08-28).
+        """
+        if first in self and candidate in self:
+            return first.tag() is candidate.tag() and ask(first.member() == candidate.member())
+        morphisms = self.morphism_category(1)
+        if first in morphisms and candidate in morphisms:
+            return first.domain().tag() is candidate.domain().tag() and ask(first.morphism() == candidate.morphism())
+        return Unknown
 
     def __call__(self, index: ObjectOfCategory | Hashable, member_object: ObjectOfCategory) -> TaggedObject:
         """``Q(i, x)``: the object of the ``i``-th summand tagged by ``i``, retained per pair."""

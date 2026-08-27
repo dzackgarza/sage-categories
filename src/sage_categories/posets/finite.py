@@ -34,7 +34,7 @@ from sage_categories.cat.diagrams import sequence_position
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.shapes import Discrete
-from sage_categories.kernel.construction import ElementConstructionInput, MorphismConstructionInput, ObjectConstructionInput
+from sage_categories.kernel.construction import MorphismConstructionInput, ObjectConstructionInput
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import AppliedPredicate, ask
 from sage_categories.kernel.refinement import refine
@@ -43,7 +43,6 @@ from sage_categories.posets import _finite_poset_sage as engine
 from sage_categories.posets.category import MonotoneMap, Poset, PosetElement, PosetMorphismData, PosetObjectData
 from sage_categories.sets.cardinals import Cardinal, CardinalObject
 from sage_categories.sets.category import SetObject, Sets
-from sage_categories.sets.elements import SetElement, SetElementData
 from sage_categories.sets.maps import Rule, SetMap, SetMorphismData
 from sage_categories.sets.objects import SetObjectData
 
@@ -229,11 +228,6 @@ class FinitePosetsCategory(PropertySubcategory[[Rule], []]):
                 target: ObjectConstructionInput[SetObject, SetObjectData] = underlying.object_constructor_input(source)
                 finite_sets(target.canonical_image)
                 return target
-
-            def element_input(
-                source: ElementConstructionInput[PosetElement, None],
-            ) -> ElementConstructionInput[SetElement, SetElementData]:
-                return underlying.element_constructor_input(source)
 
             def morphism_input(
                 source: MorphismConstructionInput[MonotoneMap, PosetMorphismData],

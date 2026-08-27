@@ -39,6 +39,7 @@ expressions never decide inequality by themselves.
 from __future__ import annotations
 
 from collections.abc import Hashable
+from dataclasses import dataclass
 from functools import reduce
 from typing import TYPE_CHECKING, Any
 
@@ -57,13 +58,21 @@ __all__ = ["OrdinalObject", "Ordinals", "OrdinalsCategory", "omega", "omega0", "
 type Key = tuple[Hashable, ...]
 
 
+@dataclass(frozen=True, eq=False, slots=True)
+class OrdinalObjectData:
+    """The normalized expression state introduced by ``Ordinals()``."""
+
+    key: Key
+    terms: tuple[OrdinalObject, ...]
+
+
 class OrdinalObject(ObjectOfCategory):
     """An exact ordinal, retained by its normalized expression."""
 
-    def __init__(self, category: Category, key: Key, terms: tuple[OrdinalObject, ...]) -> None:
-        super().__init__(category)
-        self._key = key
-        self._terms = terms
+    def __init__(self, data: OrdinalObjectData) -> None:
+        self._key = data.key
+        self._terms = data.terms
+        super().__init__()
 
     def _kind_(self) -> str:
         return self._key[0]
@@ -199,7 +208,7 @@ class OrdinalsCategory(Category[[], []]):
 
     def _retain(self, key: Key, terms: tuple[OrdinalObject, ...]) -> OrdinalObject:
         if key not in self._ordinals:
-            self._ordinals[key] = self.ObjectType(self, key, terms)
+            self._ordinals[key] = self.ObjectType(category=self, data=OrdinalObjectData(key=key, terms=terms))
         return self._ordinals[key]
 
     def __call__(self, value: OrdinalObject | int) -> OrdinalObject:

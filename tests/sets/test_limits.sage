@@ -57,7 +57,7 @@ def _natural(point):
 
 
 def _simplex_sequence():
-    """The sequence ``[0] -> [1] -> [2] -> ...`` of inclusions ``d |-> d``."""
+    """The sequence ``[0] -> [1] -> [2] -> ...`` of monomorphisms ``d |-> d``."""
     return _sequence(lambda point: Sets().Simplex(_natural(point) - int(1)), lambda lower, upper: Mor(Sets())(Sets().Simplex(_natural(lower) - int(1)), Sets().Simplex(_natural(upper) - int(1)))(lambda datum: datum))
 
 

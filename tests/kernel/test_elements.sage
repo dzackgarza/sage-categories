@@ -352,7 +352,7 @@ def ToyModules():
 
 @functools.cache
 def _two_generator_modules():
-    """The full subcategory of the two-generator free modules, declared by one inclusion; constructed once."""
+    """The full subcategory of the two-generator free modules, declared by one monomorphism; constructed once."""
     from sage_categories.cat.properties import PropertySubcategory
 
     return PropertySubcategory(ToyModules(), "TwoGenerator", {}, ())
@@ -544,18 +544,18 @@ def test_the_element_path_to_sets_and_special_methods_through_a_length_two_route
 def test_a_route_of_length_two_transports_one_object_element_and_morphism_to_exact_images() -> None:
     modules, groups = ToyModules(), ToyAbelianGroups()
     free = _two_generator_modules()
-    inclusion = free.structure_functors()[int(0)]
+    monomorphism = free.structure_functors()[int(0)]
     additive = modules.structure_functors()[int(0)]
     plane = free(modules(int(2)))
     swap = Mor(free)(plane, plane)(lambda v: (v[int(1)], v[int(0)]))
     first = plane.element((int(1), int(0)))
 
-    assert additive.on_object(inclusion.on_object(plane)) is plane.additive_group()
-    assert additive.on_morphism(inclusion.on_morphism(swap)).set_map() is swap.set_map()
-    assert additive.on_morphism(inclusion.on_morphism(swap)) in Mor(groups)(plane.additive_group(), plane.additive_group())
+    assert additive.on_object(monomorphism.on_object(plane)) is plane.additive_group()
+    assert additive.on_morphism(monomorphism.on_morphism(swap)).set_map() is swap.set_map()
+    assert additive.on_morphism(monomorphism.on_morphism(swap)) in Mor(groups)(plane.additive_group(), plane.additive_group())
     assert ask(swap(first) == plane.carrier().point((int(0), int(1)))) is True
     assert swap(first).parent() is plane.carrier()
-    image = additive.on_element(inclusion.on_element(first))
+    image = additive.on_element(monomorphism.on_element(first))
     assert image.parent() is plane.additive_group()
     assert image.defining_morphism().set_map() is first.defining_morphism().set_map()
 

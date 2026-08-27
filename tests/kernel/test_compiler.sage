@@ -32,7 +32,7 @@ def _enumeration(finite_set):
 
 
 class PairSets(Category):
-    """Two-element sets, declared a full subcategory of ``Sets()`` by one inclusion and nothing else."""
+    """Two-element sets, declared a full subcategory of ``Sets()`` by one monomorphism and nothing else."""
 
     def structure_functors(self):
         return (Fun(self, Sets()).Monomorphisms().Isofibrations().Full()(),)
@@ -236,7 +236,7 @@ class CarrierMapData:
 
 
 class Carried(Category):
-    """Objects carrying a set, related to ``Sets()`` by an explicit forgetful functor, not an inclusion."""
+    """Objects carrying a set, related to ``Sets()`` by an explicit forgetful functor, not an monomorphism."""
 
     class DeclaredObjectType(ObjectOfCategory):
         def __init__(self, data):
@@ -340,7 +340,7 @@ class PresentedMapData:
 class Presented(Category):
     """Objects with a chosen presentation of a skeletal object, related to it by a forgetful functor.
 
-    The functor is not an inclusion, so the image of a presented object is a different
+    The functor is not an monomorphism, so the image of a presented object is a different
     object, and an inherited result that stayed with the receiver would be visible.
     """
 
@@ -383,8 +383,8 @@ class Presented(Category):
         return "Presented"
 
 
-def test_a_selected_functor_that_is_not_an_inclusion_places_nothing() -> None:
-    """Placement follows retained inclusions only; the forgetful image still supplies inherited values."""
+def test_a_selected_functor_that_does_not_trace_placement_places_nothing() -> None:
+    """Placement follows subcategory monomorphisms only; the forgetful image still supplies inherited values."""
     carried = Carried()
     pair = carried(Sets().Finite()((int(3), int(4))))
 
@@ -395,8 +395,8 @@ def test_a_selected_functor_that_is_not_an_inclusion_places_nothing() -> None:
     assert ask(pair.is_finite()) is True
 
 
-def test_dynamic_inheritance_surface_of_one_inclusion() -> None:
-    """One selected inclusion exposes the object, element, and morphism surface of ``Sets()``."""
+def test_dynamic_inheritance_surface_of_one_subcategory_monomorphism() -> None:
+    """One selected monomorphism exposes the object, element, and morphism surface of ``Sets()``."""
     pairs = PairSets()
     pair = pairs(int(3), int(4))
 

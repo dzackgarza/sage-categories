@@ -1,7 +1,7 @@
 """Point categories and the level shift (POL-CAT-083, ``specs/functor.md``).
 
 ``Cat().Point(X)``, written ``{X}``, is the one-object category whose sole object is
-``X`` and whose sole morphism is ``1_X``.  A point functor is its faithful inclusion into
+``X`` and whose sole morphism is ``1_X``.  A point functor is its subcategory monomorphism into
 a category that already has ``X`` among its objects.
 
 For ``X`` a category ``C``, the surface of the target lands one level down, because
@@ -65,7 +65,7 @@ def test_a_point_category_is_the_one_object_category_on_its_member() -> None:
     assert point is not Cat().Terminal(), "the terminal category's object is a vertex, not this member"
 
 
-def test_a_point_functor_is_the_faithful_inclusion_of_the_point_category() -> None:
+def test_a_point_functor_is_the_subcategory_monomorphism_of_the_point_category() -> None:
     """``{X}`` selects one point functor per target, constructed through ``Fun({X}, D)``."""
     marked, subject, point = MARKED, SUBJECT, POINT
 

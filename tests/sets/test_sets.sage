@@ -1,6 +1,6 @@
 """``Sets()``: rule-defined sets, finite enumerations, maps, isomorphisms, and cardinals.
 
-Oracles: a cardinality is exact or ``Unknown`` (POL-ASSUME-004); an inclusion maps
+Oracles: a cardinality is exact or ``Unknown`` (POL-ASSUME-004); a subcategory monomorphism maps
 by identity (POL-FUN-027); monomorphisms of sets are the injective maps (Mathlib
 ``CategoryTheory.mono_iff_injective``); equality handlers decide on their declared
 domains (POL-MATH-034, POL-MATH-042).

@@ -49,7 +49,7 @@ def write(directory, name, body):
 
 
 # ``Carrier()`` owns an addition on its generalized elements and returns ``Self``;
-# ``Additive()`` declares one inclusion into it and no element class of its own.  The
+# ``Additive()`` declares one monomorphism into it and no element class of its own.  The
 # sum of two elements of ``Additive()`` is therefore an inherited operation whose
 # result is the receiver's role, which is what the third specimen reads.
 
@@ -145,14 +145,14 @@ DOWNSTREAM = '''
 
 
     class AdditiveCategory(Category[[], []]):
-        """The downstream category: one inclusion, and no operation of its own."""
+        """The downstream category: one monomorphism, and no operation of its own."""
 
         DeclaredObjectType = AdditiveObject
         DeclaredElementType = AdditiveElement
         DeclaredMorphismType = AdditiveMorphism
 
         def structure_functors(self) -> tuple[Functor, ...]:
-            """The inclusion into the carrier category."""
+            """The monomorphism into the carrier category."""
             return (Fun(self, Carrier()).Monomorphisms().Isofibrations().Full()(),)
 
         def __repr__(self) -> str:

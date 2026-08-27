@@ -1,7 +1,7 @@
-"""Chosen subsets: ``X.subset_from(predicate)`` retains its inclusion and decides membership.
+"""Chosen subsets: ``X.subset_from(predicate)`` retains its monomorphism and decides membership.
 
-Oracles: the definition of a subset ``{x in X : P(x)}`` and of its inclusion;
-monomorphisms of ``Sets()`` are the injective maps and an inclusion is injective
+Oracles: the definition of a subset ``{x in X : P(x)}`` and of its monomorphism;
+monomorphisms of ``Sets()`` are the injective maps and an monomorphism is injective
 (Mathlib ``CategoryTheory.mono_iff_injective``, ``Set.inclusion_injective``); a
 subset of a countable set is countable (Mathlib ``Set.Countable.mono``) and of a
 finite set finite (``Set.Finite.subset``); Euclid's theorem on the infinitude of
@@ -20,21 +20,21 @@ import pytest
 from sage_categories.all import *
 
 
-def test_a_predicate_subset_of_the_integers_retains_its_inclusion() -> None:
+def test_a_predicate_subset_of_the_integers_retains_its_monomorphism() -> None:
     even = ZZ.subset_from(lambda n: n % 2 == 0)
-    inclusion = even.monomorphism()
+    monomorphism = even.monomorphism()
 
-    assert inclusion in Mor(Sets())(even, ZZ).Monomorphisms()
-    assert inclusion in Mor(Sets()).Monomorphisms()
-    assert inclusion.domain() is even
-    assert inclusion.codomain() is ZZ
+    assert monomorphism in Mor(Sets())(even, ZZ).Monomorphisms()
+    assert monomorphism in Mor(Sets()).Monomorphisms()
+    assert monomorphism.domain() is even
+    assert monomorphism.codomain() is ZZ
     assert even.underlying_set() is ZZ
     assert even in Sets()
     assert even in Sets().Countable()
 
     assert ZZ(4) in even
     assert ZZ(3) not in even
-    assert ask(inclusion(ZZ(4)) == ZZ(4)) is True
+    assert ask(monomorphism(ZZ(4)) == ZZ(4)) is True
     assert even.cardinality() is Unknown
     assert ask(even.is_countable()) is True
     assert ask(even.is_finite()) is Unknown

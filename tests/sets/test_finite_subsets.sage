@@ -5,7 +5,7 @@ and ``C(5, 2) = 10`` of size ``2`` (``Finset.card_powersetCard``); the finite su
 infinite set have its cardinality (``Cardinal.mk_finset_of_infinite``), as do the subsets
 of a fixed positive size (the embedding sandwich of ``sets/finite_subsets.py``); the
 finite subsets of a countable set are countable (``Finset.countable``); a subset of ``X``
-is a chosen subobject with its inclusion (POL-FUN-013); Sage's ``Subsets`` enumerates in
+is a chosen subobject with its monomorphism (POL-FUN-013); Sage's ``Subsets`` enumerates in
 rank order with ``{}`` first and the whole set last; ``#(S →₀ X) = (#X) ** (#S)`` for
 finite ``S`` (``Cardinal.mk_finsupp_lift_of_fintype``) and ``max(#S, #X)`` for infinite
 ``S`` and ``#X >= 2`` (``Cardinal.mk_finsupp_of_infinite``); a countable infinite set has

@@ -2,7 +2,7 @@
 
 Oracles: the comma category ``(K, d)`` has as objects the pairs ``(c, K c -> d)``
 (Mathlib ``CategoryTheory.Comma``, ``CostructuredArrow``); the left Kan extension of
-``F: [1] -> Sets()`` along the inclusion ``K: [1] -> [2]`` is computed pointwise as
+``F: [1] -> Sets()`` along the monomorphism ``K: [1] -> [2]`` is computed pointwise as
 ``(Lan_K F)(d) = colim_{(K, d)} F`` (Mathlib ``Functor.pointwiseLeftKanExtension``),
 so ``(Lan_K F)(2)`` is the colimit of ``F(0) -> F(1)`` over the arrow-shaped comma
 ``(K, 2)``, a set of ``#F(1)`` classes, and ``(Ran_K F)(2)`` is the limit over the
@@ -36,11 +36,11 @@ def _arrow_diagram(two, three, successor):
 
 def test_the_comma_category_is_the_pullback_of_the_endpoint_functor_with_the_expected_objects() -> None:
     arrow, triangle = Cat().Simplex(int(1)), Cat().Simplex(int(2))
-    inclusion = _path_functor(arrow, triangle, lambda label: label)
-    comma = comma_category(inclusion, triangle.point_functor(triangle(int(2))))
+    monomorphism = _path_functor(arrow, triangle, lambda label: label)
+    comma = comma_category(monomorphism, triangle.point_functor(triangle(int(2))))
 
     assert comma in Cat()
-    assert comma_category(inclusion, triangle.point_functor(triangle(int(2)))) is comma
+    assert comma_category(monomorphism, triangle.point_functor(triangle(int(2)))) is comma
     assert comma.second_functor().domain() is Fun(arrow, triangle)
     assert comma.first_functor().codomain() is Cat().Products()((triangle, triangle))
     objects = list(comma.object_set())
@@ -49,30 +49,30 @@ def test_the_comma_category_is_the_pullback_of_the_endpoint_functor_with_the_exp
     assert any(ask(structure == triangle.generator("1->2")) is True for structure in structures)
     assert any(ask(structure == triangle.generator("1->2") * triangle.generator("0->1")) is True for structure in structures)
     assert len(comma.generating_morphisms()) == int(3)
-    assert ask(comma_category(inclusion, triangle.point_functor(triangle(int(0)))).object_set().cardinality() == int(1)) is True
+    assert ask(comma_category(monomorphism, triangle.point_functor(triangle(int(0)))).object_set().cardinality() == int(1)) is True
 
 
 def test_the_left_kan_extension_retains_its_unit_and_applies_a_nonidentity_component() -> None:
     arrow, triangle = Cat().Simplex(int(1)), Cat().Simplex(int(2))
     two, three = Sets().Simplex(int(1)), Sets().Simplex(int(2))
     successor = Mor(Sets())(two, three)(lambda datum: datum + int(1))
-    inclusion = _path_functor(arrow, triangle, lambda label: label)
+    monomorphism = _path_functor(arrow, triangle, lambda label: label)
     diagram = _arrow_diagram(two, three, successor)
 
-    extension = left_kan_extension(inclusion, diagram)
+    extension = left_kan_extension(monomorphism, diagram)
     assert extension in Fun(triangle, Sets())
-    assert left_kan_extension(inclusion, diagram) is extension
+    assert left_kan_extension(monomorphism, diagram) is extension
     assert ask(extension.on_object(triangle(int(0))).cardinality() == int(2)) is True
     assert ask(extension.on_object(triangle(int(1))).cardinality() == int(3)) is True
     assert ask(extension.on_object(triangle(int(2))).cardinality() == int(3)) is True
 
-    unit = left_kan_unit(inclusion, diagram)
+    unit = left_kan_unit(monomorphism, diagram)
     assert unit in Mor(Fun(arrow, Sets()))
     assert unit.domain() is diagram
     restricted = unit.codomain()
     assert restricted in Fun(arrow, Sets())
-    assert restricted.on_object(arrow(int(1))) is extension.on_object(inclusion.on_object(arrow(int(1))))
-    assert ask(restricted.on_morphism(arrow.generator("0->1")) == extension.on_morphism(inclusion.on_morphism(arrow.generator("0->1")))) is True
+    assert restricted.on_object(arrow(int(1))) is extension.on_object(monomorphism.on_object(arrow(int(1))))
+    assert ask(restricted.on_morphism(arrow.generator("0->1")) == extension.on_morphism(monomorphism.on_morphism(arrow.generator("0->1")))) is True
     component = unit.component(arrow(int(1)))
     assert component.domain() is three and component.codomain() is extension.on_object(triangle(int(1)))
     assert component is not three.identity()
@@ -95,16 +95,16 @@ def test_the_right_kan_extension_retains_its_counit() -> None:
     arrow, triangle = Cat().Simplex(int(1)), Cat().Simplex(int(2))
     two, three = Sets().Simplex(int(1)), Sets().Simplex(int(2))
     successor = Mor(Sets())(two, three)(lambda datum: datum + int(1))
-    inclusion = _path_functor(arrow, triangle, lambda label: label)
+    monomorphism = _path_functor(arrow, triangle, lambda label: label)
     diagram = _arrow_diagram(two, three, successor)
 
-    extension = right_kan_extension(inclusion, diagram)
+    extension = right_kan_extension(monomorphism, diagram)
     assert ask(extension.on_object(triangle(int(2))).cardinality() == int(1)) is True
     assert ask(extension.on_object(triangle(int(0))).cardinality() == int(2)) is True
-    counit = right_kan_counit(inclusion, diagram)
+    counit = right_kan_counit(monomorphism, diagram)
     assert counit in Mor(Fun(arrow, Sets()))
     assert counit.codomain() is diagram
-    assert counit.domain().on_object(arrow(int(0))) is extension.on_object(inclusion.on_object(arrow(int(0))))
+    assert counit.domain().on_object(arrow(int(0))) is extension.on_object(monomorphism.on_object(arrow(int(0))))
     component = counit.component(arrow(int(0)))
     assert component.codomain() is two
     assert ask(component.is_isomorphism()) is True

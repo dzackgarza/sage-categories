@@ -206,9 +206,9 @@ class LabelMapData:
 
 
 class Labelled(Category):
-    """Objects built on a chosen anchored object, related to it by a non-inclusion faithful functor.
+    """Objects built on a chosen anchored object, related to it by a non-monomorphism faithful functor.
 
-    The functor is not an inclusion, so the image of a labelled object is a different
+    The functor is not an monomorphism, so the image of a labelled object is a different
     object and an inherited result transported to the image would be visible.
     """
 
@@ -256,7 +256,7 @@ def test_an_inherited_receiver_valued_method_returns_the_descendant() -> None:
 
     Every ancestor initializer stores its typed state on the descendant instance, so the
     inherited method executes there (D18, POL-KERNEL-028).  This witnesses that on one
-    specimen through a selected functor that is not an inclusion, so the image is a
+    specimen through a selected functor that is not an monomorphism, so the image is a
     distinct object and a transported result would be visible.
     """
     anchored = Anchored()

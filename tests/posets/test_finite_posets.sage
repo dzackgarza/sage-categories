@@ -29,24 +29,24 @@ def _antichain():
 
 def test_the_structural_diamond_returns_one_underlying_set_map_and_point_by_identity() -> None:
     divisibility = _divisibility()
-    inclusion, restricted = FinitePosets().structure_functors()
+    monomorphism, restricted = FinitePosets().structure_functors()
     underlying = Posets().structure_functors()[int(0)]
-    finite_inclusion = Sets().Finite().structure_functors()[int(0)]
+    into_sets = Sets().Finite().structure_functors()[int(0)]
     carrier = underlying.on_object(divisibility)
 
     assert divisibility in FinitePosets()
     assert restricted in Fun(FinitePosets(), Sets().Finite())
-    assert underlying.on_object(inclusion.on_object(divisibility)) is finite_inclusion.on_object(restricted.on_object(divisibility))
+    assert underlying.on_object(monomorphism.on_object(divisibility)) is into_sets.on_object(restricted.on_object(divisibility))
     assert restricted.on_object(divisibility) is carrier
     assert carrier in Sets().Finite()
 
     doubling = Mor(FinitePosets())(divisibility, divisibility)(lambda datum: datum if datum % int(2) == int(0) else int(2) * datum)
     assert doubling in Mor(FinitePosets())
-    assert underlying.on_morphism(inclusion.on_morphism(doubling)) is finite_inclusion.on_morphism(restricted.on_morphism(doubling))
+    assert underlying.on_morphism(monomorphism.on_morphism(doubling)) is into_sets.on_morphism(restricted.on_morphism(doubling))
     assert restricted.on_morphism(doubling) in Mor(Sets().Finite())
 
     two = divisibility.element(carrier.point(int(2)))
-    assert underlying.on_element(inclusion.on_element(two)) is finite_inclusion.on_element(restricted.on_element(two))
+    assert underlying.on_element(monomorphism.on_element(two)) is into_sets.on_element(restricted.on_element(two))
     assert restricted.on_element(two) is carrier.point(int(2))
 
     assert ask(divisibility.cardinality() == int(4)) is True

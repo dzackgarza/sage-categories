@@ -529,10 +529,7 @@ def __contains__(self, candidate: Any) -> bool:
     return decision is True
 ```
 
-Python requires set and category containment to be Boolean, and a bool cannot carry
-`Unknown`. The undecided case therefore fails loudly here rather than being reported as
-non-membership: `Unknown` is not `False`, and a caller that receives `False` has no way
-to tell the two apart.
+Python requires set and category containment to be Boolean, and a bool cannot carry `Unknown`. The undecided case therefore fails loudly here rather than being reported as non-membership: `Unknown` is not `False`, and a caller that receives `False` has no way to tell the two apart.
 
 Consequently:
 
@@ -542,15 +539,10 @@ ask(X.is_finite())          # True, False, or Unknown
 X in Sets().Finite()        # established placement, two-valued
 ```
 
-Placement in a property subcategory is two-valued: `X` entered `Sets().Finite()` or it
-did not (`POL-CAT-068`). `X not in Sets().Finite()` means that current knowledge does not
-place `X` in that category; it does not establish the negated property, and the kernel
-does not cache a negative decision, infer the negated property, or construct a
-complementary category from this boundary result.
+Placement in a property subcategory is two-valued: `X` entered `Sets().Finite()` or it did not (`POL-CAT-068`). `X not in Sets().Finite()` means that current knowledge does not place `X` in that category; it does not establish the negated property, and the kernel does not cache a negative decision, infer the negated property, or construct a complementary category from this boundary result.
 
-Where membership rests on a mathematical predicate rather than on placement — the
-membership rule of a rule-defined set, or endpoint equality in `Mor(C)(A, B)` — that
-predicate can be undecided, and the assertion catches it. Ask the proposition instead.
+Where membership rests on a mathematical predicate rather than on placement — the membership rule of a rule-defined set, or endpoint equality in `Mor(C)(A, B)` — that predicate can be undecided, and the assertion catches it.
+Ask the proposition instead.
 
 Compound property categories use the same rule.
 For example, membership in `Fields().Countable().PartiallyOrdered()` asks one conjunction built from the defining propositions.

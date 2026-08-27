@@ -144,16 +144,10 @@ def __contains__(self, candidate: Any) -> bool:
     return decision is True
 ```
 
-`Unknown` is not `False`, and a bool cannot carry it, so the undecided case fails loudly
-rather than being reported as non-membership. The three-valued question is
-`ask(C.membership_proposition(x))`, which every caller that must handle the undecided
-case asks instead.
+`Unknown` is not `False`, and a bool cannot carry it, so the undecided case fails loudly rather than being reported as non-membership.
+The three-valued question is `ask(C.membership_proposition(x))`, which every caller that must handle the undecided case asks instead.
 
-Placement in a category or a property subcategory is two-valued and therefore never
-reaches that assertion: a value entered the category or it did not (`POL-CAT-068`).
-A subcategory whose membership rests on a mathematical predicate instead — endpoint
-equality in `Mor(C)(A, B)`, or the membership rule of a rule-defined set — can be
-undecided, and that is the case the assertion catches.
+Placement in a category or a property subcategory is two-valued and therefore never reaches that assertion: a value entered the category or it did not (`POL-CAT-068`). A subcategory whose membership rests on a mathematical predicate instead — endpoint equality in `Mor(C)(A, B)`, or the membership rule of a rule-defined set — can be undecided, and that is the case the assertion catches.
 
 The kernel must not cache `Unknown` as mathematical falsity.
 

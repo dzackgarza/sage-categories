@@ -80,8 +80,10 @@ from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.construction import (
+    ElementConstructionInput,
     MorphismConstructionInput,
     ObjectConstructionInput,
+    retained_element_input,
     retained_morphism_input,
     retained_object_input,
 )
@@ -93,11 +95,20 @@ from sage_categories.sets.maps import SetMorphismData
 from sage_categories.sets.objects import SetObjectData
 
 if TYPE_CHECKING:
-    from sage_categories.sets.elements import Datum
+    from sage_categories.sets.elements import Datum, SetElement, SetElementData
     from sage_categories.sets.maps import SetMap
     from sage_categories.sets.objects import SetObject
 
-__all__ = ["Cardinal", "CardinalityMorphism", "CardinalObject", "aleph0", "cardinality_functor", "continuum", "representative_bijection"]
+__all__ = [
+    "Cardinal",
+    "CardinalElement",
+    "CardinalityMorphism",
+    "CardinalObject",
+    "aleph0",
+    "cardinality_functor",
+    "continuum",
+    "representative_bijection",
+]
 
 # A private expression key: nested tuples of strings and integers only, so caches
 # and hashes never compare owned values.
@@ -288,7 +299,18 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
             ) -> MorphismConstructionInput[SetMap, SetMorphismData]:
                 return retained_morphism_input(source.datum.set_map)
 
+            def element_input(
+                source: ElementConstructionInput[CardinalElement, None],
+            ) -> ElementConstructionInput[SetElement, SetElementData]:
+                defining: MorphismConstructionInput[CardinalityMorphism, CardinalMorphismData] = retained_morphism_input(
+                    source.identity.defining_morphism,
+                )
+                set_morphism: MorphismConstructionInput[SetMap, SetMorphismData] = representative.morphism_constructor_input(defining)
+                element = _sets.Sets().element_from_defining_morphism(set_morphism.canonical_image)
+                return retained_element_input(element)
+
             representative.retain_object_constructor_conversion(object_input)
+            representative.retain_element_constructor_conversion(element_input)
             representative.retain_morphism_constructor_conversion(morphism_input)
             self._functors["representative"] = representative
         return self._functors["representative"]
@@ -572,6 +594,7 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
 
 _CARDINAL = CardinalCategory()
 CardinalObject = _CARDINAL.ObjectType
+CardinalElement = _CARDINAL.ElementType
 CardinalityMorphism = _CARDINAL.MorphismType
 _sets.CardinalObject = CardinalObject
 _set_objects.CardinalObject = CardinalObject

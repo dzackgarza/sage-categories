@@ -38,6 +38,7 @@ A cardinal is an object of this category:
 
 ```python
 CardinalObject = Cardinal().ObjectType
+CardinalElement = Cardinal().ElementType
 CardinalityMorphism = Cardinal().MorphismType
 ```
 
@@ -48,8 +49,9 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (Fun(self, Sets()).FullyFaithful().inclusion(),)
 ```
 
-The inclusion sends each cardinal to its selected representative and acts identically
-on the corresponding function sets.
+The inclusion sends each cardinal to its selected representative. It sends a cardinal
+morphism to its retained set map. Thus a generalized element `t: T -> kappa` maps to the
+generalized set element `R(t): R_T -> R_kappa` through the same morphism action.
 
 For every pair of represented cardinals, `Mor(Cardinal())(kappa, lambda)` is the
 discrete category on the owned function set between their representatives:

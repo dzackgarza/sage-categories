@@ -129,6 +129,7 @@ def test_inherited_results_are_the_declaring_methods_values_in_sets() -> None:
 
     cardinality = divisibility.cardinality()
     assert cardinality is carrier.cardinality()
+    assert cardinality in Cardinal()
     assert ask(cardinality == int(4)) is True
     assert ask(divisibility.is_countable()) is True
 

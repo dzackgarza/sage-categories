@@ -1,10 +1,10 @@
 """The shared ``Cat().ElementType`` root and role-specific kernel classes.
 
-Every owned runtime value is an instance of exactly one of these bases
+Every owned runtime value has one role-specific path through these classes
 (architecture contract §2, §3):
 
 - ``ObjectOfCategory``: the base of every ``C.ObjectType``;
-- ``ElementOfObject``: the base of every ``C.ElementType`` (a generalized element
+- ``ElementOfObject``: the base of every ordinary ``C.ElementType`` (a generalized element
   ``t: T -> X``, represented by its defining morphism, POL-CAT-058);
 - ``MorphismOfCategory``: the base of every ``C.MorphismType``.
 

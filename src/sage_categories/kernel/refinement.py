@@ -79,6 +79,15 @@ def place(value: CategoryPoint, category: Category) -> None:
     target = compiler.node(category, Role.OBJECT)
     role_class = target.category.role_class(target.role)
     value._category = category
+    match role_of(value):
+        case Role.OBJECT:
+            from sage_categories.kernel.construction import ObjectStageIdentity
+
+            value._cat_element_identity = ObjectStageIdentity(category)
+        case Role.MORPHISM:
+            from sage_categories.kernel.construction import ArrowStageIdentity
+
+            value._cat_element_identity = ArrowStageIdentity(category.base_category(), value.domain(), value.codomain())
     if issubclass(type(value), role_class):
         return
     if issubclass(role_class, type(value)):

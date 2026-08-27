@@ -230,16 +230,25 @@ def _local_methods[**P, R](local_class: type[CategoryPoint]) -> dict[str, Declar
     }
 
 
-def _is_subcategory(specific: Category, general: Category, role: Role) -> bool:
-    return any(same_node(found, node(general, role)) for found in reachable(node(specific, role)))
+def _reaches_owner(specific: Entry, general: Entry) -> bool:
+    """Whether the declaring node of ``specific`` reaches that of ``general``."""
+    specific_node = node(specific.owner, specific.role)
+    general_node = node(general.owner, general.role)
+    if same_node(specific_node, general_node):
+        return True
+    if _is_cat_element_root(general_node):
+        return True
+    if specific_node.role is not general_node.role:
+        return False
+    return any(same_node(found, general_node) for found in reachable(specific_node))
 
 
 def _merge[**P, R](existing: Entry[P, R], candidate: Entry[P, R]) -> Entry[P, R]:
-    if existing.owner is candidate.owner:
+    if existing.owner is candidate.owner and existing.role is candidate.role:
         return existing
-    if _is_subcategory(existing.owner, candidate.owner, existing.role):
+    if _reaches_owner(existing, candidate):
         return existing
-    if _is_subcategory(candidate.owner, existing.owner, candidate.role):
+    if _reaches_owner(candidate, existing):
         return candidate
     raise SemanticCollisionError(
         f"{existing.name!r} is declared by both {existing.owner!r} and {candidate.owner!r}, "
@@ -260,6 +269,12 @@ def catalogue[**P, R](current: Node) -> dict[str, Entry[P, R]]:
     for _, target in successors(current):
         for name, inherited in catalogue(target).items():
             if name in entries and entries[name].owner is current.category:
+                continue
+            entries[name] = _merge(entries[name], inherited) if name in entries else inherited
+    if not _is_cat_element_root(current):
+        cat_element = node(current.category.category(), Role.ELEMENT)
+        for name, inherited in catalogue(cat_element).items():
+            if name in entries and entries[name].owner is current.category and entries[name].role is current.role:
                 continue
             entries[name] = _merge(entries[name], inherited) if name in entries else inherited
     catalogues[current.role] = entries

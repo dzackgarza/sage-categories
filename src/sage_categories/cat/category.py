@@ -725,8 +725,15 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         on_morphism: OnMorphism,
     ) -> Functor:
         """``Fun(C, D)(on_object, on_morphism)``: a functor from its total actions (POL-FUN-001)."""
+        from sage_categories.cat.functors import FunctorData
+
         assert domain in self and codomain in self
-        return self.MorphismType(self.morphism_category(1), domain, codomain, on_object, on_morphism)
+        return self.MorphismType(
+            category=self.morphism_category(1),
+            domain=domain,
+            codomain=codomain,
+            data=FunctorData(on_object, on_morphism),
+        )
 
     def construct_identity(self, category: Category) -> Functor:
         from sage_categories.cat.functors import Fun
@@ -774,13 +781,18 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         The endpoints are objects of ``Fun(C, D)``: functors, or the points of ``D``
         at stage ``C`` that denote their defining functors (specs/functor.md, "The Mor(n, C) tower").
         """
-        from sage_categories.cat.functors import diagram_of
+        from sage_categories.cat.functors import NaturalTransformationData, diagram_of
 
         functors = self.morphism_category(1)
         source_functor, target_functor = diagram_of(source), diagram_of(target)
         assert source_functor in functors and target_functor in functors
         assert source_functor.domain() is target_functor.domain() and source_functor.codomain() is target_functor.codomain()
-        return functors.MorphismType(functors.morphism_category(1), source, target, source_functor, target_functor, assignment)
+        return functors.MorphismType(
+            category=functors.morphism_category(1),
+            domain=source,
+            codomain=target,
+            data=NaturalTransformationData(assignment),
+        )
 
     def identity_two_morphism(self, member_object: CategoryPoint) -> NaturalTransformation:
         from sage_categories.cat.functors import diagram_of

@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, get_args, get_origin, get_type_hints
 
 from sage.structure.coerce_dict import MonoDict, TripleDict
@@ -105,20 +106,21 @@ def _identity_morphism_constructor_input[Datum](source: MorphismConstructionInpu
     return source
 
 
+@dataclass(frozen=True, eq=False, slots=True)
+class FunctorData:
+    """The local state introduced by the functor role."""
+
+    on_object: OnObject
+    on_morphism: OnMorphism
+
+
 class FunctorDeclaration(MorphismOfCategory):
     """The local ``Cat().MorphismType`` declaration."""
 
-    def __init__(
-        self,
-        category: Category,
-        domain: Category,
-        codomain: Category,
-        on_object: OnObject,
-        on_morphism: OnMorphism,
-    ) -> None:
-        super().__init__(category, domain, codomain)
-        self._on_object = on_object
-        self._on_morphism = on_morphism
+    def __init__(self, data: FunctorData) -> None:
+        self._on_object = data.on_object
+        self._on_morphism = data.on_morphism
+        super().__init__()
 
     # A value whose placement already reaches the domain is accepted by that
     # placement (a pure graph lookup); only an unplaced value has its membership
@@ -391,6 +393,13 @@ class FunctorDeclaration(MorphismOfCategory):
         return f"Functor({self.domain()!r} -> {self.codomain()!r})"
 
 
+@dataclass(frozen=True, eq=False, slots=True)
+class NaturalTransformationData:
+    """The local state introduced by the natural-transformation role."""
+
+    assignment: Assignment
+
+
 class NaturalTransformationDeclaration(MorphismOfCategory):
     """The local ``Fun.MorphismType`` declaration.
 
@@ -399,29 +408,19 @@ class NaturalTransformationDeclaration(MorphismOfCategory):
     are retained for the components.
     """
 
-    def __init__(
-        self,
-        category: Category,
-        source: CategoryPoint,
-        target: CategoryPoint,
-        source_functor: Functor,
-        target_functor: Functor,
-        assignment: Assignment,
-    ) -> None:
-        super().__init__(category, source, target)
-        self._source_functor = source_functor
-        self._target_functor = target_functor
-        self._assignment = assignment
+    def __init__(self, data: NaturalTransformationData) -> None:
+        self._assignment = data.assignment
+        super().__init__()
 
     def source_functor(self) -> Functor:
-        return self._source_functor
+        return diagram_of(self.domain())
 
     def target_functor(self) -> Functor:
-        return self._target_functor
+        return diagram_of(self.codomain())
 
     def component(self, member_object: ObjectOfCategory) -> MorphismOfCategory:
         """``eta_X: F(X) -> G(X)``; naturality is a trusted declaration (POL-MATH-036)."""
-        source, target = self._source_functor, self._target_functor
+        source, target = self.source_functor(), self.target_functor()
         component = self._assignment(member_object)
         assert component in source.codomain().morphism_category(1)(source.on_object(member_object), target.on_object(member_object))
         return component

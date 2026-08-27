@@ -369,7 +369,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
             refine(two_cell, self.morphism_category(2))
             return two_cell
         two_cells = self.morphism_category(2)
-        return two_cells.ObjectType(two_cells, morphism)
+        return two_cells.ObjectType(category=two_cells, domain=morphism, codomain=morphism)
 
     def compose_two_morphisms(self, second: MorphismOfCategory, first: MorphismOfCategory) -> MorphismOfCategory:
         from sage_categories.kernel.refinement import refine

@@ -66,9 +66,6 @@ def Mor(*arguments: int | Category) -> Category:
 class IdentityTwoCell(MorphismOfCategory):
     """The identity 2-morphism of a morphism of a 1-category: the only morphisms of ``Mor(C)``."""
 
-    def __init__(self, category: Category, morphism: MorphismOfCategory) -> None:
-        super().__init__(category, morphism, morphism)
-
     def __repr__(self) -> str:
         return f"identity of {self.domain()!r}"
 

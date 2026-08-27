@@ -32,16 +32,16 @@ def test_finite_sets_declare_one_subcategory_monomorphism_and_receive_the_set_su
     assert triple in Sets().Finite()
     assert triple in Sets()
     assert five in triple
-    assert ask(triple.cardinality() == int(3)) is True
+    assert ask(triple.cardinality() == int(3))
     points = list(triple)
     assert len(points) == int(3)
-    assert all(any(ask(point == triple.point(datum)) is True for point in points) for datum in (int(4), int(5), int(6)))
-    assert ask(successor(five) == triple.point(int(6))) is True
+    assert all(any(ask(point == triple.point(datum)) for point in points) for datum in (int(4), int(5), int(6)))
+    assert ask(successor(five) == triple.point(int(6)))
     assert successor in Mor(Sets())
 
 
 def test_a_finite_enumeration_lists_distinct_members() -> None:
-    assert ask(Sets().Finite()((int(1), int(2))).cardinality() == int(2)) is True
+    assert ask(Sets().Finite()((int(1), int(2))).cardinality() == int(2))
     with pytest.raises(AssertionError):
         Sets().Finite()((int(1), int(1)))
 
@@ -57,9 +57,9 @@ def test_a_finite_set_enumerated_by_owned_points_decides_membership_and_image() 
     pair = Sets().Finite()((first, second))
 
     assert pair in Sets().Finite()
-    assert ask(pair.cardinality() == int(2)) is True
+    assert ask(pair.cardinality() == int(2))
     assert pair.point(first) in pair
-    assert ask(pair.membership_proposition(pair.point(second))) is True
+    assert ask(pair.membership_proposition(pair.point(second)))
     with pytest.raises(AssertionError):
         pair.point(third)
 
@@ -67,8 +67,8 @@ def test_a_finite_set_enumerated_by_owned_points_decides_membership_and_image() 
     image = constant.image()
 
     assert image in Sets().Finite()
-    assert ask(image.cardinality() == int(1)) is True
-    assert ask(image.membership_proposition(image.point(first))) is True
+    assert ask(image.cardinality() == int(1))
+    assert ask(image.membership_proposition(image.point(first)))
     assert image.monomorphism() in Mor(Sets())(image, pair).Monomorphisms()
 
 
@@ -78,7 +78,7 @@ def test_a_rule_defined_set_needs_no_enumeration_and_equals_itself_only() -> Non
     assert integers.point(int(7)) in integers
     assert integers.point(int(7)) in other_integers
     assert integers.cardinality() is Unknown
-    assert ask(integers == integers) is True
+    assert ask(integers == integers)
     assert ask(integers == other_integers) is Unknown
     assert ask(integers.is_finite()) is Unknown
 
@@ -102,15 +102,15 @@ def test_finite_set_map_equality_is_pointwise() -> None:
     successor_again = Mor(Sets())(three, four)(lambda datum: (datum + int(1)) % int(4))
     shifted = Mor(Sets())(three, four)(lambda datum: datum)
 
-    assert ask(successor == successor_again) is True
-    assert ask(successor == shifted) is False
+    assert ask(successor == successor_again)
+    assert not ask(successor == shifted)
 
     increment = Mor(Sets())(ZZ, ZZ)(lambda datum: datum + int(1))
     increment_again = Mor(Sets())(ZZ, ZZ)(lambda datum: datum + int(1))
-    assert ask(increment(ZZ(int(2))) == ZZ(int(3))) is True
-    assert ask(increment_again(ZZ(int(2))) == ZZ(int(3))) is True
+    assert ask(increment(ZZ(int(2))) == ZZ(int(3)))
+    assert ask(increment_again(ZZ(int(2))) == ZZ(int(3)))
     assert ask(increment == increment_again) is Unknown
-    assert ask(increment == increment) is True
+    assert ask(increment == increment)
 
 
 def test_injectivity_is_placement_in_the_monomorphism_category() -> None:
@@ -121,12 +121,12 @@ def test_injectivity_is_placement_in_the_monomorphism_category() -> None:
     increment = Mor(Sets())(integers, integers)(lambda datum: datum + int(1))
 
     assert injection not in Mor(Sets()).Monomorphisms()
-    assert ask(injection.is_monomorphism()) is True
+    assert ask(injection.is_monomorphism())
     assert injection in Mor(Sets()).Monomorphisms()
     assert injection in Mor(Sets())(two, three).Monomorphisms()
-    assert ask(injection.is_epimorphism()) is False
-    assert ask(collapse.is_epimorphism()) is True
-    assert ask(collapse.is_monomorphism()) is False
+    assert not ask(injection.is_epimorphism())
+    assert ask(collapse.is_epimorphism())
+    assert not ask(collapse.is_monomorphism())
     assert ask(increment.is_monomorphism()) is Unknown
 
 
@@ -138,13 +138,13 @@ def test_a_set_isomorphism_supplies_its_inverse_from_the_isomorphism_category() 
     assert swap in Mor(Sets()).Isomorphisms()
     assert swap in Mor(Sets()).Monomorphisms()
     assert inverse in Mor(Sets())(pair, two).Isomorphisms()
-    assert ask(inverse * swap == two.identity()) is True
-    assert ask(swap * inverse == pair.identity()) is True
+    assert ask(inverse * swap == two.identity())
+    assert ask(swap * inverse == pair.identity())
     assert inverse.inverse() is swap
 
     bijection = Mor(Sets())(two, two)(lambda datum: int(1) - datum)
-    assert ask(bijection.is_isomorphism()) is True
-    assert ask(bijection.inverse() * bijection == two.identity()) is True
+    assert ask(bijection.is_isomorphism())
+    assert ask(bijection.inverse() * bijection == two.identity())
     assert two.identity() in Mor(Sets()).Automorphisms()
 
 
@@ -155,16 +155,16 @@ def test_an_asserted_isomorphism_without_a_rule_has_a_symbolic_inverse() -> None
 
     assert symbolic in Mor(Sets())(integers, integers).Isomorphisms()
     assert symbolic.inverse() is shift
-    assert ask(shift(integers.point(int(2))) == integers.point(int(3))) is True
+    assert ask(shift(integers.point(int(2))) == integers.point(int(3)))
     with pytest.raises(AssertionError):
         symbolic(integers.point(int(3)))
 
 
 def test_cardinality_is_exact_or_unknown_and_assumptions_refine() -> None:
     triple = Sets().Finite()((int(1), int(2), int(3)))
-    assert ask(triple.cardinality() == int(3)) is True
-    assert ask(triple.cardinality() == int(4)) is False
-    assert ask(triple.is_countable()) is True
+    assert ask(triple.cardinality() == int(3))
+    assert not ask(triple.cardinality() == int(4))
+    assert ask(triple.is_countable())
 
     integers = _integers()
     assert integers.cardinality() is Unknown
@@ -172,26 +172,26 @@ def test_cardinality_is_exact_or_unknown_and_assumptions_refine() -> None:
     assume(integers.is_finite())
     assert integers in Sets().Finite()
     assert integers.cardinality() is Unknown
-    assert ask(integers.is_countable()) is True
+    assert ask(integers.is_countable())
 
     reals = Sets()(lambda datum: type(datum) is float)
     assert ask(reals.is_uncountable()) is Unknown
     Sets().Uncountable()(reals)
-    assert ask(reals.is_infinite()) is True
-    assert ask(reals.is_countable()) is False
+    assert ask(reals.is_infinite())
+    assert not ask(reals.is_countable())
 
 
 def test_cardinal_arithmetic_and_order() -> None:
-    assert ask(Cardinal()(int(3)) + int(4) == int(7)) is True
-    assert ask(aleph0 + int(5) == aleph0) is True
-    assert ask(int(3) * aleph0 == aleph0) is True
+    assert ask(Cardinal()(int(3)) + int(4) == int(7))
+    assert ask(aleph0 + int(5) == aleph0)
+    assert ask(int(3) * aleph0 == aleph0)
     assert Cardinal()(int(2)) ** aleph0 is continuum
-    assert ask(continuum ** int(2) == continuum) is True
-    assert ask(aleph0 < continuum) is True
-    assert ask(Cardinal().aleph(int(1)) <= continuum) is True
+    assert ask(continuum ** int(2) == continuum)
+    assert ask(aleph0 < continuum)
+    assert ask(Cardinal().aleph(int(1)) <= continuum)
     assert ask(Cardinal().aleph(int(1)) == continuum) is Unknown
-    assert ask(continuum.is_uncountable()) is True
-    assert ask(aleph0.is_countable()) is True
-    assert ask(Cardinal()(int(3)) <= int(5)) is True
-    assert ask(int(5) < Cardinal()(int(3))) is False
+    assert ask(continuum.is_uncountable())
+    assert ask(aleph0.is_countable())
+    assert ask(Cardinal()(int(3)) <= int(5))
+    assert not ask(int(5) < Cardinal()(int(3)))
     assert Cardinal().aleph(int(0)) is aleph0

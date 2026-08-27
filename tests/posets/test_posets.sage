@@ -33,19 +33,19 @@ def test_a_poset_is_constructed_from_its_relation_and_compares_its_elements() ->
     assert divisibility in FinitePosets()
     assert divisibility.relation() in Sets().ChosenSubsets()
     assert divisibility.relation().underlying_set() is (carrier * carrier)
-    assert ask(two <= six) is True
-    assert ask(two <= three) is False
-    assert ask(three <= six) is True
-    assert ask(six <= two) is False
-    assert ask(two <= two) is True
-    assert ask(two < two) is False
-    assert ask(one < six) is True
-    assert ask(six >= two) is True
-    assert ask(two > one) is True
-    assert ask(two == two) is True
-    assert ask(two == divisibility.element(carrier.point(int(2)))) is True
-    assert ask(two == three) is False
-    assert ask(divisibility.is_total()) is False
+    assert ask(two <= six)
+    assert not ask(two <= three)
+    assert ask(three <= six)
+    assert not ask(six <= two)
+    assert ask(two <= two)
+    assert not ask(two < two)
+    assert ask(one < six)
+    assert ask(six >= two)
+    assert ask(two > one)
+    assert ask(two == two)
+    assert ask(two == divisibility.element(carrier.point(int(2))))
+    assert not ask(two == three)
+    assert not ask(divisibility.is_total())
     assert divisibility not in TotallyOrderedSets()
 
 
@@ -53,12 +53,12 @@ def test_a_relation_that_is_not_a_partial_order_is_rejected_and_an_infinite_one_
     three = Sets().Simplex(int(2))
     covers = {(int(0), int(0)), (int(1), int(1)), (int(2), int(2)), (int(0), int(1)), (int(1), int(2))}
     not_transitive = (three * three).subset_from(lambda pair: (pair(int(0)), pair(int(1))) in covers)
-    assert ask(Posets().is_partial_order(not_transitive)) is False
+    assert not ask(Posets().is_partial_order(not_transitive))
     with pytest.raises(AssertionError):
         Posets()(not_transitive)
 
     strict = (three * three).subset_from(lambda pair: pair(int(0)) < pair(int(1)))
-    assert ask(Posets().is_partial_order(strict)) is False
+    assert not ask(Posets().is_partial_order(strict))
 
     two = Sets().Simplex(int(1))
     mixed = (two * three).subset_from(lambda pair: True)
@@ -70,9 +70,9 @@ def test_a_relation_that_is_not_a_partial_order_is_rejected_and_an_infinite_one_
     integers = Posets()(usual)
     assert integers in Posets()
     assert integers not in FinitePosets()
-    assert ask(integers.is_finite()) is False
-    assert ask(integers.element(ZZ(int(3))) <= integers.element(ZZ(int(5)))) is True
-    assert ask(integers.element(ZZ(int(5))) <= integers.element(ZZ(int(3)))) is False
+    assert not ask(integers.is_finite())
+    assert ask(integers.element(ZZ(int(3))) <= integers.element(ZZ(int(5))))
+    assert not ask(integers.element(ZZ(int(5))) <= integers.element(ZZ(int(3))))
     assert ask(integers.is_total()) is not False
 
 
@@ -84,19 +84,19 @@ def test_totality_is_decided_on_finite_carriers_and_the_simplex_has_the_usual_or
     assert chain in TotallyOrderedSets()
     assert chain in FinitePosets()
     assert _underlying().on_object(chain) is carrier
-    assert ask(zero <= one) is True
-    assert ask(one <= zero) is False
-    assert ask(zero < two) is True
-    assert ask(two <= two) is True
+    assert ask(zero <= one)
+    assert not ask(one <= zero)
+    assert ask(zero < two)
+    assert ask(two <= two)
 
     letters = Sets().Finite()(("a", "b"))
     ordered = Posets()((letters * letters).subset_from(lambda pair: pair(int(0)) <= pair(int(1))))
     assert ordered not in TotallyOrderedSets()
-    assert ask(ordered.is_total()) is True
+    assert ask(ordered.is_total())
     assert ordered in TotallyOrderedSets()
 
     equality = Posets()((letters * letters).subset_from(lambda pair: pair(int(0)) == pair(int(1))))
-    assert ask(equality.is_total()) is False
+    assert not ask(equality.is_total())
     assert equality not in TotallyOrderedSets()
 
 
@@ -110,17 +110,17 @@ def test_monotone_maps_are_constructed_from_rules_and_inherit_the_set_map_surfac
     assert collapse in Mor(Posets())
     assert _underlying().on_morphism(collapse) in Mor(Sets())(three, two)
     top = chain.element(three.point(int(2)))
-    assert ask(collapse(top) == two.point(int(1))) is True
+    assert ask(collapse(top) == two.point(int(1)))
     assert collapse(top).parent() is two
-    assert ask(collapse * include == pair.identity()) is True
-    assert ask(include * collapse == chain.identity()) is False
+    assert ask(collapse * include == pair.identity())
+    assert not ask(include * collapse == chain.identity())
     assert chain.identity() in Mor(Posets()).Automorphisms()
     assert chain.identity().inverse() is chain.identity()
 
     with pytest.raises(AssertionError):
         Mor(Posets())(chain, chain)(lambda datum: int(2) - datum)
-    assert ask(Posets().is_order_preserving(chain, chain, Mor(Sets())(three, three)(lambda datum: int(2) - datum))) is False
-    assert ask(Posets().is_order_preserving(chain, chain, Mor(Sets())(three, three)(lambda datum: int(0)))) is True
+    assert not ask(Posets().is_order_preserving(chain, chain, Mor(Sets())(three, three)(lambda datum: int(2) - datum)))
+    assert ask(Posets().is_order_preserving(chain, chain, Mor(Sets())(three, three)(lambda datum: int(0))))
 
 
 def test_inherited_results_are_the_declaring_methods_values_in_sets() -> None:
@@ -130,8 +130,8 @@ def test_inherited_results_are_the_declaring_methods_values_in_sets() -> None:
     cardinality = divisibility.cardinality()
     assert cardinality is carrier.cardinality()
     assert cardinality in Cardinal()
-    assert ask(cardinality == int(4)) is True
-    assert ask(divisibility.is_countable()) is True
+    assert ask(cardinality == int(4))
+    assert ask(divisibility.is_countable())
 
     point = divisibility.point(int(6))
     assert point is carrier.point(int(6))
@@ -144,7 +144,7 @@ def test_inherited_results_are_the_declaring_methods_values_in_sets() -> None:
     assert evens not in Posets()
     assert evens.underlying_set() is carrier
     assert evens.monomorphism() in Mor(Sets())(evens, carrier)
-    assert ask(evens.cardinality() == int(2)) is True
+    assert ask(evens.cardinality() == int(2))
 
     points = list(divisibility)
     assert len(points) == int(4)
@@ -165,18 +165,18 @@ def test_the_leaf_override_sub_poset_returns_the_induced_order_through_the_retai
 
     assert without_three in Posets()
     assert without_three in FinitePosets()
-    assert ask(without_three.cardinality() == int(3)) is True
+    assert ask(without_three.cardinality() == int(3))
     one, two, six = (without_three.element(without_three.point(int(k))) for k in (1, 2, 6))
-    assert ask(one <= two) is True
-    assert ask(two <= six) is True
-    assert ask(six <= two) is False
-    assert ask(one <= six) is True
+    assert ask(one <= two)
+    assert ask(two <= six)
+    assert not ask(six <= two)
+    assert ask(one <= six)
 
     assert lift in Mor(Posets())
     assert lift.codomain() is divisibility
     assert _underlying().on_morphism(lift) is subset.monomorphism()
     assert _underlying().on_object(lift.domain()) is subset
-    assert ask(lift(two) == carrier.point(int(2))) is True
+    assert ask(lift(two) == carrier.point(int(2)))
 
     collapse = Mor(Sets())(carrier, carrier)(lambda datum: int(1))
     with pytest.raises(AssertionError):
@@ -218,7 +218,7 @@ def test_the_thin_category_of_a_poset_has_one_comparison_per_related_pair() -> N
     assert thin in Cat()
     assert thin.carrier() is carrier
     assert Mor(thin)(two, six)() in Mor(thin)(two, six)
-    assert ask(Mor(thin)(six, six)() == six.identity()) is True
+    assert ask(Mor(thin)(six, six)() == six.identity())
     with pytest.raises(AssertionError):
         Mor(thin)(two, three)()
     assert Posets().Simplex(int(2)).thin_category() is not Cat().Simplex(int(2))

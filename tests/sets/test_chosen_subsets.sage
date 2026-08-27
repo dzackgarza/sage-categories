@@ -34,9 +34,9 @@ def test_a_predicate_subset_of_the_integers_retains_its_monomorphism() -> None:
 
     assert ZZ(4) in even
     assert ZZ(3) not in even
-    assert ask(monomorphism(ZZ(4)) == ZZ(4)) is True
+    assert ask(monomorphism(ZZ(4)) == ZZ(4))
     assert even.cardinality() is Unknown
-    assert ask(even.is_countable()) is True
+    assert ask(even.is_countable())
     assert ask(even.is_finite()) is Unknown
 
 
@@ -51,15 +51,15 @@ def test_the_primes_decide_membership_exactly() -> None:
     assert Primes in Sets().Countable()
     assert Primes in Sets().Infinite()
     assert Primes.cardinality() is aleph0
-    assert ask(Primes.is_infinite()) is True
-    assert ask(Primes.is_finite()) is False
+    assert ask(Primes.is_infinite())
+    assert not ask(Primes.is_finite())
 
 
 def test_an_undecided_predicate_keeps_membership_unknown() -> None:
     undecided = ZZ.subset_from(lambda n: Unknown)
 
     assert ask(undecided.membership_proposition(ZZ(0))) is Unknown
-    assert ask(undecided.membership_proposition(QQ(1 / 2))) is False
+    assert not ask(undecided.membership_proposition(QQ(1 / 2)))
     assert undecided.cardinality() is Unknown
     assert undecided in Sets().Countable()
 
@@ -69,15 +69,15 @@ def test_a_subset_of_a_finite_enumerated_set_has_the_exact_count() -> None:
     odd = triple.subset_from(lambda datum: datum % int(2) == int(1))
 
     assert odd in Sets().Finite()
-    assert ask(odd.cardinality() == int(2)) is True
+    assert ask(odd.cardinality() == int(2))
     assert odd.underlying_set() is triple
     assert odd.monomorphism() in Mor(Sets())(odd, triple).Monomorphisms()
     assert triple.point(int(1)) in odd
     assert triple.point(int(2)) not in odd
     points = list(odd)
     assert len(points) == int(2)
-    assert all(any(ask(point == odd.point(datum)) is True for point in points) for datum in (int(1), int(3)))
-    assert ask(odd.monomorphism()(odd.point(int(3))) == triple.point(int(3))) is True
+    assert all(any(ask(point == odd.point(datum)) for point in points) for datum in (int(1), int(3)))
+    assert ask(odd.monomorphism()(odd.point(int(3))) == triple.point(int(3)))
     assert odd.monomorphism()(odd.point(int(3))).parent() is triple
 
     undecided = triple.subset_from(lambda datum: Unknown)
@@ -93,11 +93,11 @@ def test_every_chosen_subset_has_a_characteristic_morphism_into_two() -> None:
 
     assert characteristic in Mor(Sets())(ZZ, two)
     assert characteristic.domain() is ZZ and characteristic.codomain() is two
-    assert ask(characteristic(ZZ(4)) == two.point(int(1))) is True
-    assert ask(characteristic(ZZ(3)) == two.point(int(0))) is True
+    assert ask(characteristic(ZZ(4)) == two.point(int(1)))
+    assert ask(characteristic(ZZ(3)) == two.point(int(0)))
     assert Sets().name_of(characteristic) in two ** ZZ
     assert Primes.characteristic_morphism() in Mor(Sets())(ZZ, two)
-    assert ask(Primes.characteristic_morphism()(ZZ(7)) == two.point(int(1))) is True
+    assert ask(Primes.characteristic_morphism()(ZZ(7)) == two.point(int(1)))
 
     undecided = ZZ.subset_from(lambda n: Unknown)
     with pytest.raises(AssertionError):

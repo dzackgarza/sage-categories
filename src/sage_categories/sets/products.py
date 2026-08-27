@@ -55,7 +55,7 @@ from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.shapes import DiscreteObject, index_set_of
 from sage_categories.kernel.caches import retained_method
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
-from sage_categories.kernel.predicates import ask, conjunction
+from sage_categories.kernel.predicates import ask, conjunction, established, negation
 from sage_categories.kernel.refinement import is_subcategory, refine
 from sage_categories.sets.cardinals import Cardinal, CardinalObject
 from sage_categories.sets.elements import Datum
@@ -138,7 +138,7 @@ def _product_cardinality(diagram: Functor, index_set: SetObject, factors: tuple[
         if all(map(_exact, cardinalities)):
             # Cardinal.mk_pi, Fintype.card_pi: the exact finite product.
             return Cardinal()(_cardinal_product(cardinalities))
-        if any(_exact(cardinality) and ask(cardinality == 0) is True for cardinality in cardinalities):
+        if any(_exact(cardinality) and established(cardinality == 0) for cardinality in cardinalities):
             # Cardinal.prod_eq_zero: a factor of cardinality 0.
             return Cardinal()(0)
     functors = Fun(diagram.domain(), diagram.codomain())
@@ -160,10 +160,10 @@ def _cardinal_product(cardinalities: tuple[CardinalObject, ...]) -> CardinalObje
 def _product_placements(diagram: Functor, index_set: SetObject) -> tuple[_sets.Category, ...]:
     """The property categories the product enters by its case tree."""
     sets = _sets.Sets()
-    if ask(index_set.is_infinite()) is True and is_subcategory(diagram.codomain(), sets.Uncountable()):
+    if established(index_set.is_infinite()) and is_subcategory(diagram.codomain(), sets.Uncountable()):
         # Cardinal.prod_le_prod with Cardinal.cantor: 2 ** #S <= prod and #S < 2 ** #S.
         return (sets.Uncountable(),)
-    if ask(index_set.is_finite()) is True and is_subcategory(diagram.codomain(), sets.Countable()):
+    if established(index_set.is_finite()) and is_subcategory(diagram.codomain(), sets.Countable()):
         # A product of countably many countable sets over a finite index is countable:
         # Mathlib ``instance [Finite α] [∀ a, Countable (π a)] : Countable (∀ a, π a)``
         # (``Mathlib/Data/Countable/Basic.lean``; inspected 2026-08-27).  Finiteness of
@@ -245,10 +245,10 @@ def _coproduct_cardinality(diagram: Functor, index_set: SetObject, cofactors: tu
 
 def _coproduct_placements(diagram: Functor, index_set: SetObject) -> tuple[_sets.Category, ...]:
     sets = _sets.Sets()
-    if ask(index_set.is_infinite()) is True and is_subcategory(diagram.codomain(), sets.Uncountable()):
+    if established(index_set.is_infinite()) and is_subcategory(diagram.codomain(), sets.Uncountable()):
         # Cardinal.le_sum: an uncountable cofactor injects into the coproduct.
         return (sets.Uncountable(),)
-    if ask(index_set.is_countable()) is True and is_subcategory(diagram.codomain(), sets.Countable()):
+    if established(index_set.is_countable()) and is_subcategory(diagram.codomain(), sets.Countable()):
         # A countable union of countable sets is countable: Mathlib ``instance [Countable α]
         # [∀ a, Countable (π a)] : Countable (Sigma π)`` (``Mathlib/Data/Countable/Basic.lean``;
         # inspected 2026-08-27).
@@ -274,7 +274,7 @@ def coproduct_of_sets(diagram: Functor) -> SetObject:
         match datum:
             case (index_datum, value):
                 index_decision = index_set._set_object_data.membership_rule(index_datum)
-                if index_decision is False:
+                if established(negation(index_decision)):
                     return False
                 return ask(conjunction((index_decision, cofactor(index_datum)._set_object_data.membership_rule(value))))
             case _:

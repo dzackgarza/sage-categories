@@ -37,7 +37,7 @@ def test_a_binary_product_is_the_chosen_product_with_projections_that_act() -> N
     assert product in Sets()
     assert product in Sets().Finite()
     assert product in Sets().Limits(Discrete(Sets().Simplex(int(1))))
-    assert ask(product.cardinality() == int(6)) is True
+    assert ask(product.cardinality() == int(6))
     assert first.domain() is product and first.codomain() is two
     assert first in Mor(Sets())(product, two)
     assert second.codomain() is three
@@ -45,9 +45,9 @@ def test_a_binary_product_is_the_chosen_product_with_projections_that_act() -> N
 
     points = list(product)
     assert len(points) == int(6)
-    chosen = next(point for point in points if ask(first(point) == two.point(int(1))) is True and ask(second(point) == three.point(int(2))) is True)
+    chosen = next(point for point in points if ask(first(point) == two.point(int(1))) and ask(second(point) == three.point(int(2))))
     assert chosen in product
-    assert ask(second(chosen) == three.point(int(2))) is True
+    assert ask(second(chosen) == three.point(int(2)))
 
 
 def test_the_mediator_satisfies_the_projection_equations_on_finite_sets() -> None:
@@ -59,10 +59,10 @@ def test_the_mediator_satisfies_the_projection_equations_on_finite_sets() -> Non
 
     mediating = product.universal_morphism(_sequence_cone(product.diagram(), four, {int(0): parity, int(1): residue}))
     assert mediating in Mor(Sets())(four, product)
-    assert ask(product.product_projection(int(0)) * mediating == parity) is True
-    assert ask(product.product_projection(int(1)) * mediating == residue) is True
-    assert ask(product.product_projection(int(1)) * mediating == zero) is False
-    assert ask(product.product_projection(int(1))(mediating(four.point(int(2)))) == three.point(int(2))) is True
+    assert ask(product.product_projection(int(0)) * mediating == parity)
+    assert ask(product.product_projection(int(1)) * mediating == residue)
+    assert not ask(product.product_projection(int(1)) * mediating == zero)
+    assert ask(product.product_projection(int(1))(mediating(four.point(int(2)))) == three.point(int(2)))
 
 
 def test_the_limit_functor_maps_a_natural_transformation_to_the_induced_morphism_of_products() -> None:
@@ -78,8 +78,8 @@ def test_the_limit_functor_maps_a_natural_transformation_to_the_induced_morphism
     assert limit.on_object(source.diagram()) is source
     induced = limit.on_morphism(transformation)
     assert induced in Mor(Sets())(source, target)
-    assert ask(target.product_projection(int(0)) * induced == include * source.product_projection(int(0))) is True
-    assert ask(target.product_projection(int(1)) * induced == include_again * source.product_projection(int(1))) is True
+    assert ask(target.product_projection(int(0)) * induced == include * source.product_projection(int(0)))
+    assert ask(target.product_projection(int(1)) * induced == include_again * source.product_projection(int(1)))
 
 
 def test_the_iterated_binary_product_is_distinct_from_the_flat_product_with_the_same_cardinality() -> None:
@@ -88,8 +88,8 @@ def test_the_iterated_binary_product_is_distinct_from_the_flat_product_with_the_
     iterated = (two * three) * four
 
     assert flat is not iterated
-    assert ask(flat.cardinality() == int(24)) is True
-    assert ask(iterated.cardinality() == int(24)) is True
+    assert ask(flat.cardinality() == int(24))
+    assert ask(iterated.cardinality() == int(24))
     assert flat.product_projection(int(2)).codomain() is four
 
 
@@ -100,11 +100,11 @@ def test_a_subobject_of_a_product_derives_its_components_by_composition() -> Non
     include = Mor(Sets())(two, three)(lambda datum: datum)
     diagonal = product.universal_morphism(_sequence_cone(product.diagram(), two, {int(0): same, int(1): include}))
 
-    assert ask(diagonal.is_monomorphism()) is True
+    assert ask(diagonal.is_monomorphism())
     component = product.subobject_projection(diagonal, int(1))
     assert component in Mor(Sets())(two, three)
-    assert ask(component == include) is True
-    assert ask(component(two.point(int(1))) == three.point(int(1))) is True
+    assert ask(component == include)
+    assert ask(component(two.point(int(1))) == three.point(int(1)))
 
 
 def test_an_infinite_indexed_product_is_constructed_by_rule_and_its_projection_at_seven_acts() -> None:
@@ -118,8 +118,8 @@ def test_an_infinite_indexed_product_is_constructed_by_rule_and_its_projection_a
     assert family in product
     assert product.product_projection(seven).domain() is product
     assert product.product_projection(seven).codomain() is NN
-    assert ask(product.product_projection(seven)(family) == NN(int(3))) is True
-    assert ask(product.product_projection(int(7))(family) == NN(int(3))) is True
+    assert ask(product.product_projection(seven)(family) == NN(int(3)))
+    assert ask(product.product_projection(int(7))(family) == NN(int(3)))
     assert product.cardinality() is Unknown
 
 
@@ -132,12 +132,12 @@ def test_construction_cardinality_routes() -> None:
     assert (ZZ + RR).cardinality() is continuum
     assert (RR ** ZZ).cardinality() is continuum
 
-    assert ask(Sets().Products()((two, three, four)).cardinality() == int(24)) is True
-    assert ask(Sets().Products()((two, Sets().Empty())).cardinality() == int(0)) is True
+    assert ask(Sets().Products()((two, three, four)).cardinality() == int(24))
+    assert ask(Sets().Products()((two, Sets().Empty())).cardinality() == int(0))
     assert Sets().Products()(Fun(Discrete(NN), Sets()).constant(NN)).cardinality() is continuum
 
     uncountable = Sets().Products()(Fun(Discrete(NN), Sets().Uncountable()).from_object_rule(lambda vertex: RR))
-    assert ask(uncountable.is_countable()) is False
+    assert not ask(uncountable.is_countable())
     assert uncountable in Sets().Uncountable()
     assert uncountable.cardinality() is Unknown
 
@@ -146,11 +146,11 @@ def test_construction_cardinality_routes() -> None:
     evens = Sets().Countable()(NN.subset_from(lambda datum: datum % int(2) == int(0)))
     countable = Sets().Products()(Fun(Discrete(two), Sets().Countable()).from_object_rule(lambda vertex: evens))
     assert countable.cardinality() is Unknown
-    assert ask(countable.is_countable()) is True
+    assert ask(countable.is_countable())
 
     integers, words = Sets()(lambda datum: type(datum) is int), Sets()(lambda datum: type(datum) is str)
     two_prime = Primes.point(int(2))
-    unplaced = Sets().Products()(Fun(Discrete(Primes), Sets()).from_object_rule(lambda vertex: integers if ask(vertex.point() == two_prime) is True else words))
+    unplaced = Sets().Products()(Fun(Discrete(Primes), Sets()).from_object_rule(lambda vertex: integers if ask(vertex.point() == two_prime) else words))
     assert unplaced.cardinality() is Unknown
     assert ask(unplaced.is_countable()) is Unknown
 
@@ -163,17 +163,17 @@ def test_a_coproduct_has_injections_that_tag_and_a_mediator_satisfying_the_injec
     shift = Mor(Sets())(three, four)(lambda datum: datum + int(1))
 
     assert coproduct is Sets().Coproducts()((two, three))
-    assert ask(coproduct.cardinality() == int(5)) is True
+    assert ask(coproduct.cardinality() == int(5))
     assert into_three.domain() is three and into_three.codomain() is coproduct
     assert into_two is not into_three
     tagged = into_three(three.point(int(2)))
     assert tagged in coproduct
-    assert ask(tagged == into_two(two.point(int(1)))) is False
+    assert not ask(tagged == into_two(two.point(int(1))))
 
     mediating = coproduct.universal_morphism(cocone(coproduct.diagram(), four, lambda vertex: {int(0): include, int(1): shift}[sequence_position(vertex)]))
-    assert ask(mediating * into_two == include) is True
-    assert ask(mediating * into_three == shift) is True
-    assert ask(mediating(tagged) == four.point(int(3))) is True
+    assert ask(mediating * into_two == include)
+    assert ask(mediating * into_three == shift)
+    assert ask(mediating(tagged) == four.point(int(3)))
 
     constant = Sets().Coproducts()(Fun(Discrete(NN), Sets()).constant(NN))
     assert constant.cardinality() is aleph0
@@ -186,11 +186,11 @@ def test_the_function_set_is_the_exponential_and_the_morphism_category_is_discre
     constant = Mor(Sets())(four, two)(lambda datum: int(0))
 
     assert function_set is Sets().exponential(two, three)
-    assert ask(function_set.cardinality() == int(9)) is True
-    assert ask((two ** four).cardinality() == int(16)) is True
+    assert ask(function_set.cardinality() == int(9))
+    assert ask((two ** four).cardinality() == int(16))
     assert Sets().name_of(parity) in two ** four
-    assert ask(Sets().name_of(parity) == Sets().name_of(parity_again)) is True
-    assert ask(Sets().name_of(parity) == Sets().name_of(constant)) is False
+    assert ask(Sets().name_of(parity) == Sets().name_of(parity_again))
+    assert not ask(Sets().name_of(parity) == Sets().name_of(constant))
     assert parity in Mor(Sets())(four, two)
     assert Mor(Mor(Sets())(four, two))(parity, parity).identity() not in Mor(Mor(Sets())(four, two))(parity, constant)
 
@@ -206,12 +206,12 @@ def test_injectivity_into_a_function_set_is_decided_through_map_equality() -> No
     separating = Sets().transpose(Mor(Sets())((two * four), two)(lambda pair: pair(int(1)) % int(2) if pair(int(0)) == int(0) else int(0)))
 
     assert collapsing in Mor(Sets())(two, two ** four)
-    assert ask(collapsing(two.point(int(0))) == Sets().name_of(parity)) is True
-    assert ask(collapsing.is_monomorphism()) is False
-    assert ask(collapsing(two.point(int(0))) == collapsing(two.point(int(1)))) is True
-    assert ask(separating(two.point(int(0))) == Sets().name_of(parity)) is True
-    assert ask(separating(two.point(int(1))) == Sets().name_of(parity)) is False
-    assert ask(separating.is_monomorphism()) is True
+    assert ask(collapsing(two.point(int(0))) == Sets().name_of(parity))
+    assert not ask(collapsing.is_monomorphism())
+    assert ask(collapsing(two.point(int(0))) == collapsing(two.point(int(1))))
+    assert ask(separating(two.point(int(0))) == Sets().name_of(parity))
+    assert not ask(separating(two.point(int(1))) == Sets().name_of(parity))
+    assert ask(separating.is_monomorphism())
 
 
 def test_the_diagonal_of_the_reals_is_a_mediator_that_needs_no_enumeration() -> None:
@@ -221,6 +221,6 @@ def test_the_diagonal_of_the_reals_is_a_mediator_that_needs_no_enumeration() -> 
 
     assert diagonal.domain() is RR and diagonal.codomain() is plane
     assert point in plane
-    assert ask(plane.product_projection(int(0))(point) == RR(int(3))) is True
-    assert ask(plane.product_projection(int(1))(point) == RR(int(3))) is True
-    assert ask(plane.product_projection(int(1))(point) == RR(int(2))) is False
+    assert ask(plane.product_projection(int(0))(point) == RR(int(3)))
+    assert ask(plane.product_projection(int(1))(point) == RR(int(3)))
+    assert not ask(plane.product_projection(int(1))(point) == RR(int(2)))

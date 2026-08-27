@@ -71,19 +71,19 @@ def test_set_limit_membership_is_the_compatibility_decision() -> None:
 
     assert pullback in Sets().Limits(cospan)
     assert pullback in Sets().Finite()
-    assert ask(pullback.cardinality() == int(3)) is True
+    assert ask(pullback.cardinality() == int(3))
     members = list(pullback)
-    assert all(ask(include(first(member)) == residue(second(member))) is True for member in members)
-    assert any(ask(second(member) == four.point(int(3))) is True for member in members)
+    assert all(ask(include(first(member)) == residue(second(member))) for member in members)
+    assert any(ask(second(member) == four.point(int(3))) for member in members)
     assert pullback in Sets()
     assert pullback in Sets().ChosenSubsets()
     product = pullback.underlying_set()
     assert pullback.monomorphism() in Mor(Sets())(pullback, product).Monomorphisms()
     assert product in Sets().Products()
-    assert ask(product.cardinality() == int(24)) is True
+    assert ask(product.cardinality() == int(24))
     rejected = [point for point in product if point not in pullback]
     assert len(rejected) == int(21)
-    assert all(ask(pullback.membership_proposition(point)) is False for point in rejected)
+    assert all(not ask(pullback.membership_proposition(point)) for point in rejected)
 
     increment = Mor(Sets())(NN, NN)(lambda datum: datum + int(1))
     increment_again = Mor(Sets())(NN, NN)(lambda datum: datum + int(1))
@@ -113,11 +113,11 @@ def test_mediator_equations_hold_on_a_finite_cone_and_a_non_cone_is_rejected() -
 
     mediating = pullback.universal_morphism(candidate)
     assert mediating in Mor(Sets())(four, pullback)
-    assert ask(pullback.projection(cospan(int(0))) * mediating == parity) is True
-    assert ask(pullback.projection(cospan(int(1))) * mediating == fold) is True
-    assert ask(pullback.projection(cospan(int(1))) * mediating == flip) is False
+    assert ask(pullback.projection(cospan(int(0))) * mediating == parity)
+    assert ask(pullback.projection(cospan(int(1))) * mediating == fold)
+    assert not ask(pullback.projection(cospan(int(1))) * mediating == flip)
     assert mediating(four.point(int(3))) in pullback
-    assert ask(pullback.projection(cospan(int(1)))(mediating(four.point(int(3)))) == four.point(int(1))) is True
+    assert ask(pullback.projection(cospan(int(1)))(mediating(four.point(int(3)))) == four.point(int(1)))
 
     twisted = {int(0): parity, int(1): Mor(Sets())(four, four)(lambda datum: datum), int(2): include * parity}
     with pytest.raises(AssertionError):
@@ -141,7 +141,7 @@ def test_the_limit_functor_maps_a_natural_transformation_to_the_induced_morphism
     induced = limit.on_morphism(transformation)
     assert induced in Mor(Sets())(source, target)
     for vertex in (cospan(int(0)), cospan(int(1))):
-        assert ask(target.projection(vertex) * induced == transformation.component(vertex) * source.projection(vertex)) is True
+        assert ask(target.projection(vertex) * induced == transformation.component(vertex) * source.projection(vertex))
 
 
 def test_set_colimit_equality_over_omega_is_agreement_at_the_larger_index() -> None:
@@ -155,16 +155,16 @@ def test_set_colimit_equality_over_omega_is_agreement_at_the_larger_index() -> N
     assert colimit.quotient_map() in Mor(Sets())(colimit.underlying_set(), colimit).Epimorphisms()
     assert colimit.underlying_set() in Sets().Coproducts()
     assert colimit.cocone() in Mor(Fun(shape, Sets()))
-    assert ask(first(NN(int(5))) == third(NN(int(7)))) is True
+    assert ask(first(NN(int(5))) == third(NN(int(7))))
     assert ask(first(NN(int(5))) == third(NN(int(8)))) is Unknown
-    assert ask(third(NN(int(7))) == first(NN(int(5)))) is True
+    assert ask(third(NN(int(7))) == first(NN(int(5))))
     assert colimit.cardinality() is Unknown
 
     descend = cocone(sequence, ZZ, lambda vertex: Mor(Sets())(NN, ZZ)(lambda datum: datum - _natural(vertex.point())))
     mediating = colimit.universal_morphism(descend)
     assert mediating in Mor(Sets())(colimit, ZZ)
-    assert ask(mediating(third(NN(int(7)))) == ZZ(int(4))) is True
-    assert ask(mediating(first(NN(int(5)))) == ZZ(int(4))) is True
+    assert ask(mediating(third(NN(int(7)))) == ZZ(int(4)))
+    assert ask(mediating(first(NN(int(5)))) == ZZ(int(4)))
 
 
 def test_a_colimit_over_omega_of_sets_whose_data_are_owned_points_decides_agreement() -> None:
@@ -186,9 +186,9 @@ def test_a_colimit_over_omega_of_sets_whose_data_are_owned_points_decides_agreem
     # The coproduct over omega has no chosen enumeration, so no finite partition
     # decides these; the tagged representatives are compared directly.
     assert colimit.cardinality() is Unknown
-    assert ask(first(left) == first(left)) is True
-    assert ask(first(left) == second(left)) is True
-    assert ask(second(right) == first(right)) is True
+    assert ask(first(left) == first(left))
+    assert ask(first(left) == second(left))
+    assert ask(second(right) == first(right))
     assert ask(first(left) == second(right)) is Unknown
 
 
@@ -204,8 +204,8 @@ def test_the_colimit_functor_maps_a_natural_transformation_between_sequences() -
     induced = colimit.on_morphism(successor)
     assert induced in Mor(Sets())(lower, upper)
     for index in (shape(NN(int(2))), shape(NN(int(3)))):
-        assert ask(induced * lower.injection(index) == upper.injection(index) * successor.component(index)) is True
-    assert ask(induced(lower.injection(shape(NN(int(2))))(Sets().Simplex(int(1)).point(int(1)))) == upper.injection(shape(NN(int(4))))(Sets().Simplex(int(4)).point(int(2)))) is True
+        assert ask(induced * lower.injection(index) == upper.injection(index) * successor.component(index))
+    assert ask(induced(lower.injection(shape(NN(int(2))))(Sets().Simplex(int(1)).point(int(1)))) == upper.injection(shape(NN(int(4))))(Sets().Simplex(int(4)).point(int(2))))
 
 
 def test_shape_indexed_limit_families_are_distinct_and_retain_their_universal_data() -> None:
@@ -222,7 +222,7 @@ def test_shape_indexed_limit_families_are_distinct_and_retain_their_universal_da
     assert pullback.cone() in Mor(Fun(cospan, Sets()))
     assert pullback.projection(cospan(int(0))).domain() is pullback
     assert pullback.projection(cospan(int(1))).codomain() is two
-    assert ask(pullback.cardinality() == int(2)) is True
+    assert ask(pullback.cardinality() == int(2))
 
     sequence = _simplex_sequence()
     colimit = Sets().Colimits(shape)(sequence)
@@ -238,8 +238,8 @@ def test_shape_indexed_limit_families_are_distinct_and_retain_their_universal_da
     select_zero = cone(sequence, one, lambda vertex: Mor(Sets())(one, sequence.on_object(vertex))(lambda star: int(0)))
     mediating = limit.universal_morphism(select_zero)
     assert mediating in Mor(Sets())(one, limit)
-    assert ask(limit.projection(shape(NN(int(3)))) * mediating == select_zero.component(shape(NN(int(3))))) is True
-    assert ask(limit.projection(shape(NN(int(3))))(mediating(one.point(()))) == Sets().Simplex(int(2)).point(int(0))) is True
+    assert ask(limit.projection(shape(NN(int(3)))) * mediating == select_zero.component(shape(NN(int(3)))))
+    assert ask(limit.projection(shape(NN(int(3))))(mediating(one.point(()))) == Sets().Simplex(int(2)).point(int(0)))
     families = limit.underlying_set()
     into_families = families.universal_morphism(cone(families.diagram(), one, lambda vertex: select_zero.component(shape.object_at(vertex.point()))))
     assert ask(limit.membership_proposition(into_families(one.point(())))) is Unknown
@@ -255,14 +255,14 @@ def test_equalizers_coequalizers_and_pushouts_are_the_constructions_at_their_sha
     diagram = Fun(pair, Sets())(lambda vertex: objects[pair.label(vertex)], lambda path: _fold(images, path))
 
     equalizer = Sets().Equalizers()(diagram)
-    assert ask(equalizer.cardinality() == int(2)) is True
+    assert ask(equalizer.cardinality() == int(2))
     members = list(equalizer)
-    assert all(ask(parity(equalizer.projection(pair(int(0)))(member)) == zero(equalizer.projection(pair(int(0)))(member))) is True for member in members)
-    assert all(ask(equalizer.projection(pair(int(0)))(member) == three.point(int(1))) is False for member in members)
+    assert all(ask(parity(equalizer.projection(pair(int(0)))(member)) == zero(equalizer.projection(pair(int(0)))(member))) for member in members)
+    assert all(not ask(equalizer.projection(pair(int(0)))(member) == three.point(int(1))) for member in members)
 
     coequalizer = Sets().Coequalizers()(diagram)
-    assert ask(coequalizer.cardinality() == int(1)) is True
-    assert ask(coequalizer.injection(pair(int(1)))(two.point(int(0))) == coequalizer.injection(pair(int(1)))(two.point(int(1)))) is True
+    assert ask(coequalizer.cardinality() == int(1))
+    assert ask(coequalizer.injection(pair(int(1)))(two.point(int(0))) == coequalizer.injection(pair(int(1)))(two.point(int(1))))
 
     span = Cat().Horn(int(2), int(0))
     one = Sets().Terminal()
@@ -270,9 +270,9 @@ def test_equalizers_coequalizers_and_pushouts_are_the_constructions_at_their_sha
     legs = {int(0): one, int(1): two, int(2): three}
     span_images = {"identity": lambda vertex: legs[span.label(vertex)].identity(), "0->1": select_zero, "0->2": select_one}
     pushout = Sets().Pushouts()(Fun(span, Sets())(lambda vertex: legs[span.label(vertex)], lambda path: _fold(span_images, path)))
-    assert ask(pushout.cardinality() == int(4)) is True
-    assert ask(pushout.injection(span(int(1)))(two.point(int(0))) == pushout.injection(span(int(2)))(three.point(int(1)))) is True
-    assert ask(pushout.injection(span(int(1)))(two.point(int(1))) == pushout.injection(span(int(2)))(three.point(int(1)))) is False
+    assert ask(pushout.cardinality() == int(4))
+    assert ask(pushout.injection(span(int(1)))(two.point(int(0))) == pushout.injection(span(int(2)))(three.point(int(1))))
+    assert not ask(pushout.injection(span(int(1)))(two.point(int(1))) == pushout.injection(span(int(2)))(three.point(int(1))))
 
 
 def test_an_image_is_the_chosen_subset_of_points_with_a_preimage() -> None:
@@ -282,8 +282,8 @@ def test_an_image_is_the_chosen_subset_of_points_with_a_preimage() -> None:
     image, collapsed = residue.image(), collapse.image()
 
     assert image in Sets().Finite()
-    assert ask(image.cardinality() == int(3)) is True
-    assert ask(collapsed.cardinality() == int(2)) is True
+    assert ask(image.cardinality() == int(3))
+    assert ask(collapsed.cardinality() == int(2))
     assert collapsed.monomorphism() in Mor(Sets())(collapsed, three).Monomorphisms()
     assert collapsed.underlying_set() is three
     assert three.point(int(1)) in collapsed
@@ -291,7 +291,7 @@ def test_an_image_is_the_chosen_subset_of_points_with_a_preimage() -> None:
     assert residue.image() is image
 
     include = Mor(Sets())(two, three)(lambda datum: datum)
-    assert ask(include.is_monomorphism()) is True
+    assert ask(include.is_monomorphism())
     assert include.image().cardinality() is two.cardinality()
 
     shift = Mor(Sets())(ZZ, ZZ).Monomorphisms()(lambda datum: datum + int(1))
@@ -299,4 +299,4 @@ def test_an_image_is_the_chosen_subset_of_points_with_a_preimage() -> None:
     assert shifted.cardinality() is ZZ.cardinality()
     assert shifted in Sets().Countable()
     assert ask(shifted.membership_proposition(ZZ(int(3)))) is Unknown
-    assert ask(shifted.membership_proposition(QQ(int(1) / int(2)))) is False
+    assert not ask(shifted.membership_proposition(QQ(int(1) / int(2))))

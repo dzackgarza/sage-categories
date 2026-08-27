@@ -10,7 +10,7 @@ from sage_categories.cat.category import Category as Category
 from sage_categories.cat.properties import FullSubcategory as FullSubcategory
 from sage_categories.kernel.caches import retained_method as retained_method
 from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown, UnknownClass as UnknownClass
-from sage_categories.kernel.predicates import AppliedPredicate as AppliedPredicate, Predicate as Predicate, ask as ask, conjunction as conjunction, disjunction as disjunction, negation as negation
+from sage_categories.kernel.predicates import AppliedPredicate as AppliedPredicate, Predicate as Predicate, ask as ask, conjunction as conjunction, disjunction as disjunction, established as established, negation as negation
 from sage_categories.kernel.refinement import refine as refine
 from sage_categories.kernel.roles import CategoryPoint as CategoryPoint, ObjectOfCategory as ObjectOfCategory, Role as Role
 from sage_categories.sets.cardinals import CardinalObject as CardinalObject

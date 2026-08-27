@@ -60,7 +60,7 @@ from sage_categories.cat.category import Category
 from sage_categories.cat.properties import FullSubcategory
 from sage_categories.kernel.caches import retained_method
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
-from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask, conjunction, disjunction, negation
+from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask, conjunction, disjunction, established, negation
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role
 from sage_categories.sets.cardinals import CardinalObject
@@ -88,7 +88,7 @@ def _restricted_rule(base_set: SetObject, predicate: MembershipRule) -> Membersh
 
     def rule(datum: Datum) -> Decision:
         in_base = base_rule(datum)
-        if in_base is False:
+        if established(negation(in_base)):
             return False
         return ask(conjunction((in_base, predicate(datum))))
 
@@ -107,7 +107,7 @@ def _distinct(data: tuple[Datum, ...]) -> tuple[Datum, ...] | UnknownClass:
     """
     if any(ask(first == second) is Unknown for position, first in enumerate(data) for second in data[:position]):
         return Unknown
-    return tuple(datum for position, datum in enumerate(data) if not any(ask(datum == earlier) is True for earlier in data[:position]))
+    return tuple(datum for position, datum in enumerate(data) if not any(ask(datum == earlier) for earlier in data[:position]))
 
 
 def _subset_by_identity(first: CategoryPoint, candidate: Any) -> Decision:
@@ -225,7 +225,7 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
         def indicator(datum: Datum) -> Datum:
             decision = rule(datum)
             assert decision is not Unknown, f"membership of {datum!r} in {subset!r} is not decided, so its characteristic morphism has no value there"
-            return 1 if decision is True else 0
+            return 1 if decision else 0
 
         return sets.morphism_category(1)(subset.underlying_set(), sets.Simplex(1))(indicator)
 
@@ -237,7 +237,7 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
         if finite.has_chosen_enumeration(base_set):
             decided = tuple((datum, predicate(datum)) for datum in finite.chosen_enumeration(base_set))
             if all(decision is not Unknown for _, decision in decided):
-                subset = finite(tuple(datum for datum, decision in decided if decision is True))
+                subset = finite(tuple(datum for datum, decision in decided if decision))
                 refine(subset, self)
                 return self._retain_monomorphism(subset, base_set)
         subset = sets(_restricted_rule(base_set, predicate))
@@ -273,7 +273,7 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
 
             def has_preimage(datum: Datum) -> Decision:
                 in_codomain = codomain_rule(datum)
-                if in_codomain is False:
+                if established(negation(in_codomain)):
                     return False
                 return ask(conjunction((in_codomain, disjunction(image == datum for image in images))))
 
@@ -281,7 +281,7 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
 
             def has_preimage(datum: Datum) -> Decision:
                 in_codomain = codomain_rule(datum)
-                if in_codomain is False:
+                if established(negation(in_codomain)):
                     return False
                 return Unknown
 

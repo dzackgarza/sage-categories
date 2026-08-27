@@ -391,8 +391,8 @@ def test_a_selected_functor_that_does_not_trace_placement_places_nothing() -> No
     assert pair in carried
     assert pair not in Sets()
     assert pair not in Sets().Finite()
-    assert ask(pair.cardinality() == int(2)) is True
-    assert ask(pair.is_finite()) is True
+    assert ask(pair.cardinality() == int(2))
+    assert ask(pair.is_finite())
 
 
 def test_dynamic_inheritance_surface_of_one_subcategory_monomorphism() -> None:
@@ -402,19 +402,19 @@ def test_dynamic_inheritance_surface_of_one_subcategory_monomorphism() -> None:
 
     assert pair in pairs
     assert pair in Sets()
-    assert ask(pair.cardinality() == int(2)) is True
-    assert ask(pair.is_finite()) is True
+    assert ask(pair.cardinality() == int(2))
+    assert ask(pair.is_finite())
 
     three = pair.point(int(3))
     assert three in pair
-    assert ask(three == pair.point(int(3))) is True
+    assert ask(three == pair.point(int(3)))
     assert three.parent() is pair
 
     swap = Mor(pairs)(pair, pair)(lambda datum: int(7) - datum)
     assert swap in Mor(pairs)
     assert swap in Mor(Sets())
-    assert ask(swap(three) == pair.point(int(4))) is True
-    assert ask(swap * swap == pair.identity()) is True
+    assert ask(swap(three) == pair.point(int(4)))
+    assert ask(swap * swap == pair.identity())
 
 
 def test_two_paths_to_one_owner_install_one_method_before_any_value_exists() -> None:
@@ -438,7 +438,7 @@ def test_two_paths_to_one_owner_install_one_method_before_any_value_exists() -> 
     apex = diamond((int(5), int(8)))
     assert apex.left_datum() == int(5)
     assert apex.right_datum() == int(8)
-    assert ask(apex.cardinality() == int(2)) is True
+    assert ask(apex.cardinality() == int(2))
     assert apex in Sets()
 
 
@@ -463,7 +463,7 @@ def test_two_paths_to_one_owner_install_one_element_and_morphism_method_before_a
 
     # The inherited special methods run the declaring method on the transported value.
     assert hash(point) == hash(int(5))
-    assert ask(fixed(point) == point) is True
+    assert ask(fixed(point) == point)
     assert fixed.image() in Sets().ChosenSubsets()
     assert fixed.image().monomorphism().codomain() is apex
 

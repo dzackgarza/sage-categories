@@ -103,10 +103,10 @@ def test_the_horizontal_composite_has_the_component_its_two_whiskerings_give() -
 
     component = composite.component(point(int(0)))
     assert component in Mor(Sets())(two, four)
-    assert ask(component == Mor(Sets())(two, four)(lambda datum: datum + int(2))) is True
+    assert ask(component == Mor(Sets())(two, four)(lambda datum: datum + int(2)))
     # ``K(eta_X) . theta_{F(X)}`` and ``theta_{G(X)} . H(eta_X)``.
-    assert ask(component == above.on_morphism(generator) * theta.component(arrow(int(0)))) is True
-    assert ask(component == theta.component(arrow(int(1))) * below.on_morphism(generator)) is True
+    assert ask(component == above.on_morphism(generator) * theta.component(arrow(int(0))))
+    assert ask(component == theta.component(arrow(int(1))) * below.on_morphism(generator))
 
 
 def test_the_exponential_acts_on_a_morphism_of_cat_and_keeps_one_value_per_morphism() -> None:
@@ -295,13 +295,13 @@ def test_the_chosen_separator_represents_the_underlying_set_functor() -> None:
     top = Mor(Posets())(separator, chain)(lambda datum: int(2))
     assert underlying_points.on_object(chain) in Sets()
     assert underlying_points.on_object(chain).point(top) in underlying_points.on_object(chain)
-    assert ask(underlying_points.on_object(chain).membership_proposition(collapse)) is False
+    assert not ask(underlying_points.on_object(chain).membership_proposition(collapse))
 
     image = collapse * top
     assert image in Mor(Posets())(separator, pair)
     postcomposition = underlying_points.on_morphism(collapse)
     assert postcomposition in Mor(Sets())(underlying_points.on_object(chain), underlying_points.on_object(pair))
-    assert ask(postcomposition(underlying_points.on_object(chain).point(top)) == underlying_points.on_object(pair).point(image)) is True
+    assert ask(postcomposition(underlying_points.on_object(chain).point(top)) == underlying_points.on_object(pair).point(image))
 
     identity = underlying_points.on_morphism(chain.identity())
-    assert ask(identity(underlying_points.on_object(chain).point(top)) == underlying_points.on_object(chain).point(chain.identity() * top)) is True
+    assert ask(identity(underlying_points.on_object(chain).point(top)) == underlying_points.on_object(chain).point(chain.identity() * top))

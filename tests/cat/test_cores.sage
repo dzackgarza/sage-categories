@@ -38,9 +38,9 @@ def test_the_core_of_sets_contains_a_bijection_and_not_a_non_bijection() -> None
     assert swap in Mor(core)
     assert swap in Mor(core)(two, two)
     assert constant not in Mor(core)
-    assert ask(Mor(core).membership_proposition(constant)) is False
+    assert not ask(Mor(core).membership_proposition(constant))
     assert undecided not in Mor(core)
-    assert ask(undecided.is_isomorphism()) is True
+    assert ask(undecided.is_isomorphism())
     assert undecided in Mor(core)
     assert two.identity() in Mor(core)(two, two)
     assert Mor(core)(two, two).identity() is two.identity()
@@ -73,12 +73,12 @@ def test_the_core_constructs_and_composes_isomorphisms_through_the_isomorphism_c
     assert swap in Mor(Sets())(two, pair).Isomorphisms()
     assert swap in Mor(core)(two, pair)
     assert swap.domain() is two and swap.codomain() is pair
-    assert ask(swap(two.point(int(0))) == pair.point(int(10))) is True
+    assert ask(swap(two.point(int(0))) == pair.point(int(10)))
     composite = Mor(core)(two, pair).compose(flip, swap)
     assert composite in Mor(core)
     assert composite in Mor(Sets()).Isomorphisms()
-    assert ask(composite(two.point(int(0))) == pair.point(int(20))) is True
-    assert ask(composite.inverse() * composite == two.identity()) is True
+    assert ask(composite(two.point(int(0))) == pair.point(int(20)))
+    assert ask(composite.inverse() * composite == two.identity())
     assert flip * swap in Mor(core)
 
 
@@ -92,7 +92,7 @@ def test_a_wide_subcategory_on_monomorphisms_admits_an_injection_and_not_a_colla
     assert three in injective
     assert include in Mor(injective)
     assert include in Mor(Sets()).Monomorphisms()
-    assert ask(collapse.is_monomorphism()) is False
+    assert not ask(collapse.is_monomorphism())
     assert collapse not in Mor(injective)
     assert three.identity() in Mor(injective)(three, three)
     assert Mor(injective)(two, three).compose(three.identity(), include) in Mor(injective)
@@ -102,15 +102,15 @@ def test_fixed_endpoint_inhabitation_in_sets_is_decided_from_cardinalities() -> 
     two, three, empty = Sets().Simplex(int(1)), Sets().Simplex(int(2)), Sets().Empty()
     integers, words = _integers(), Sets()(lambda datum: type(datum) is str)
 
-    assert ask(Mor(Sets())(two, three).is_inhabited()) is True
-    assert ask(Mor(Sets())(three, empty).is_inhabited()) is False
-    assert ask(Mor(Sets())(three, empty).is_empty()) is True
-    assert ask(Mor(Sets())(empty, three).is_inhabited()) is True
-    assert ask(Mor(Sets())(empty, empty).is_inhabited()) is True
+    assert ask(Mor(Sets())(two, three).is_inhabited())
+    assert not ask(Mor(Sets())(three, empty).is_inhabited())
+    assert ask(Mor(Sets())(three, empty).is_empty())
+    assert ask(Mor(Sets())(empty, three).is_inhabited())
+    assert ask(Mor(Sets())(empty, empty).is_inhabited())
     assert ask(Mor(Sets())(integers, words).is_inhabited()) is Unknown
     assert ask(Mor(Sets())(integers, words).is_empty()) is Unknown
-    assert ask(Mor(Sets())(integers, integers).is_inhabited()) is True
-    assert ask(Mor(Sets())(integers, three).is_inhabited()) is True
+    assert ask(Mor(Sets())(integers, integers).is_inhabited())
+    assert ask(Mor(Sets())(integers, three).is_inhabited())
     assert ask(Mor(Sets())(integers, empty).is_inhabited()) is Unknown
     with pytest.raises(TypeError):
         bool(Mor(Sets())(two, three).is_inhabited())
@@ -120,16 +120,16 @@ def test_fixed_endpoint_inhabitation_of_property_narrowings_and_the_core() -> No
     two, three = Sets().Simplex(int(1)), Sets().Simplex(int(2))
     core = Sets().Core()
 
-    assert ask(Mor(Sets()).Isomorphisms()(two, three).is_inhabited()) is False
-    assert ask(Mor(Sets()).Isomorphisms()(two, two).is_inhabited()) is True
-    assert ask(Mor(Sets()).Monomorphisms()(two, three).is_inhabited()) is True
-    assert ask(Mor(Sets()).Monomorphisms()(three, two).is_inhabited()) is False
-    assert ask(Mor(Sets()).Monomorphisms()(three, two).is_empty()) is True
+    assert not ask(Mor(Sets()).Isomorphisms()(two, three).is_inhabited())
+    assert ask(Mor(Sets()).Isomorphisms()(two, two).is_inhabited())
+    assert ask(Mor(Sets()).Monomorphisms()(two, three).is_inhabited())
+    assert not ask(Mor(Sets()).Monomorphisms()(three, two).is_inhabited())
+    assert ask(Mor(Sets()).Monomorphisms()(three, two).is_empty())
     assert ask(Mor(Sets()).Epimorphisms()(two, three).is_inhabited()) is Unknown
-    assert ask(Mor(core)(two, three).is_inhabited()) is False
-    assert ask(Mor(core)(two, two).is_inhabited()) is True
-    assert ask(Mor(core)(two, three).is_empty()) is True
-    assert ask(Mor(Sets().Finite())(two, three).is_inhabited()) is True
-    assert ask(Mor(Sets().Finite())(three, Sets().Empty()).is_inhabited()) is False
-    assert ask(Fun(Sets(), Sets()).is_inhabited()) is True
+    assert not ask(Mor(core)(two, three).is_inhabited())
+    assert ask(Mor(core)(two, two).is_inhabited())
+    assert ask(Mor(core)(two, three).is_empty())
+    assert ask(Mor(Sets().Finite())(two, three).is_inhabited())
+    assert not ask(Mor(Sets().Finite())(three, Sets().Empty()).is_inhabited())
+    assert ask(Fun(Sets(), Sets()).is_inhabited())
     assert ask(Fun(Sets(), Cat()).is_inhabited()) is Unknown

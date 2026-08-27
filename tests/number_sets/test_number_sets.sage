@@ -35,11 +35,11 @@ def test_the_number_sets_record_their_cardinalities_and_placements() -> None:
     assert ZZ in Sets()
     assert ZZ in Sets().Countable()
     assert RR in Sets().Uncountable()
-    assert ask(RR.is_uncountable()) is True
-    assert ask(RR.is_countable()) is False
-    assert ask(QQ.is_countable()) is True
-    assert ask(ZZ.is_finite()) is False
-    assert ask(ZZ.is_infinite()) is True
+    assert ask(RR.is_uncountable())
+    assert not ask(RR.is_countable())
+    assert ask(QQ.is_countable())
+    assert not ask(ZZ.is_finite())
+    assert ask(ZZ.is_infinite())
 
 
 def test_membership_decides_exactly_for_supplied_data() -> None:
@@ -62,9 +62,9 @@ def test_membership_is_unknown_where_no_exact_algorithm_decides_it() -> None:
     root_two = RR.point(AA(sqrt(2)))
     gamma = RR.point(euler_gamma)
 
-    assert ask(QQ.membership_proposition(root_two)) is False
-    assert ask(ZZ.membership_proposition(root_two)) is False
-    assert ask(NN.membership_proposition(root_two)) is False
+    assert not ask(QQ.membership_proposition(root_two))
+    assert not ask(ZZ.membership_proposition(root_two))
+    assert not ask(NN.membership_proposition(root_two))
 
     assert ask(QQ.membership_proposition(gamma)) is Unknown
     assert ask(ZZ.membership_proposition(gamma)) is Unknown
@@ -75,13 +75,13 @@ def test_membership_is_unknown_where_no_exact_algorithm_decides_it() -> None:
 
 
 def test_points_of_one_set_compare_by_their_exact_data() -> None:
-    assert ask(QQ(1 / 2) == QQ(2 / 4)) is True
+    assert ask(QQ(1 / 2) == QQ(2 / 4))
     assert hash(QQ(1 / 2)) == hash(QQ(2 / 4))
-    assert ask(QQ(1 / 2) == QQ(1 / 3)) is False
-    assert ask(ZZ(3) == ZZ(3)) is True
-    assert ask(ZZ(3) == ZZ(4)) is False
-    assert ask(RR(3) == RR(3)) is True
-    assert ask(RR(3) == RR(1 / 2)) is False
+    assert not ask(QQ(1 / 2) == QQ(1 / 3))
+    assert ask(ZZ(3) == ZZ(3))
+    assert not ask(ZZ(3) == ZZ(4))
+    assert ask(RR(3) == RR(3))
+    assert not ask(RR(3) == RR(1 / 2))
 
 
 def test_a_floor_map_from_the_rationals_needs_no_enumeration() -> None:
@@ -91,10 +91,10 @@ def test_a_floor_map_from_the_rationals_needs_no_enumeration() -> None:
     assert floor.domain() is QQ
     assert floor.codomain() is ZZ
     assert floor in Mor(Sets())(QQ, ZZ)
-    assert ask(floor(QQ(7 / 2)) == ZZ(3)) is True
-    assert ask(floor(QQ(-7 / 2)) == ZZ(-4)) is True
+    assert ask(floor(QQ(7 / 2)) == ZZ(3))
+    assert ask(floor(QQ(-7 / 2)) == ZZ(-4))
     assert floor(QQ(7 / 2)).parent() is ZZ
-    assert ask(floor == floor) is True
+    assert ask(floor == floor)
     assert ask(floor == floor_again) is Unknown
 
 
@@ -103,8 +103,8 @@ def test_maps_between_the_number_sets_are_ordinary_set_maps() -> None:
     into_naturals = Mor(Sets())(QQ, NN)(lambda q: q.numerator().abs() + 1)
     include = Mor(Sets())(NN, ZZ)(lambda n: n)
 
-    assert ask(square(RR(3)) == RR(9)) is True
-    assert ask(into_naturals(QQ(-2 / 3)) == NN(3)) is True
-    assert ask((include * into_naturals)(QQ(-2 / 3)) == ZZ(3)) is True
+    assert ask(square(RR(3)) == RR(9))
+    assert ask(into_naturals(QQ(-2 / 3)) == NN(3))
+    assert ask((include * into_naturals)(QQ(-2 / 3)) == ZZ(3))
     assert (include * into_naturals).domain() is QQ
     assert (include * into_naturals).codomain() is ZZ

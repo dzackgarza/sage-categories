@@ -121,7 +121,7 @@ def sequence_position(vertex: DiscreteObject) -> int:
     """The position ``k`` of an object of ``Discrete([n])`` at the point ``k`` of ``[n]``."""
     simplex = vertex.category().index_set()
     enumeration = Sets().Finite().chosen_enumeration(simplex)
-    return next(position for position, datum in enumerate(enumeration) if ask(vertex.point() == simplex.point(datum)) is True)
+    return next(position for position, datum in enumerate(enumeration) if ask(vertex.point() == simplex.point(datum)))
 
 
 def from_sequence(ambient: Category, sequence: tuple[ObjectOfCategory, ...]) -> Functor:

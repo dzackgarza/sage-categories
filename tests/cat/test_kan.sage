@@ -44,12 +44,12 @@ def test_the_comma_category_is_the_pullback_of_the_endpoint_functor_with_the_exp
     assert comma.second_functor().domain() is Fun(arrow, triangle)
     assert comma.first_functor().codomain() is Cat().Products()((triangle, triangle))
     objects = list(comma.object_set())
-    assert ask(comma.object_set().cardinality() == int(2)) is True
+    assert ask(comma.object_set().cardinality() == int(2))
     structures = [comma.object_at(point).second() for point in objects]
-    assert any(ask(structure == triangle.generator("1->2")) is True for structure in structures)
-    assert any(ask(structure == triangle.generator("1->2") * triangle.generator("0->1")) is True for structure in structures)
+    assert any(ask(structure == triangle.generator("1->2")) for structure in structures)
+    assert any(ask(structure == triangle.generator("1->2") * triangle.generator("0->1")) for structure in structures)
     assert len(comma.generating_morphisms()) == int(3)
-    assert ask(comma_category(monomorphism, triangle.point_functor(triangle(int(0)))).object_set().cardinality() == int(1)) is True
+    assert ask(comma_category(monomorphism, triangle.point_functor(triangle(int(0)))).object_set().cardinality() == int(1))
 
 
 def test_the_left_kan_extension_retains_its_unit_and_applies_a_nonidentity_component() -> None:
@@ -62,9 +62,9 @@ def test_the_left_kan_extension_retains_its_unit_and_applies_a_nonidentity_compo
     extension = left_kan_extension(monomorphism, diagram)
     assert extension in Fun(triangle, Sets())
     assert left_kan_extension(monomorphism, diagram) is extension
-    assert ask(extension.on_object(triangle(int(0))).cardinality() == int(2)) is True
-    assert ask(extension.on_object(triangle(int(1))).cardinality() == int(3)) is True
-    assert ask(extension.on_object(triangle(int(2))).cardinality() == int(3)) is True
+    assert ask(extension.on_object(triangle(int(0))).cardinality() == int(2))
+    assert ask(extension.on_object(triangle(int(1))).cardinality() == int(3))
+    assert ask(extension.on_object(triangle(int(2))).cardinality() == int(3))
 
     unit = left_kan_unit(monomorphism, diagram)
     assert unit in Mor(Fun(arrow, Sets()))
@@ -72,23 +72,23 @@ def test_the_left_kan_extension_retains_its_unit_and_applies_a_nonidentity_compo
     restricted = unit.codomain()
     assert restricted in Fun(arrow, Sets())
     assert restricted.on_object(arrow(int(1))) is extension.on_object(monomorphism.on_object(arrow(int(1))))
-    assert ask(restricted.on_morphism(arrow.generator("0->1")) == extension.on_morphism(monomorphism.on_morphism(arrow.generator("0->1")))) is True
+    assert ask(restricted.on_morphism(arrow.generator("0->1")) == extension.on_morphism(monomorphism.on_morphism(arrow.generator("0->1"))))
     component = unit.component(arrow(int(1)))
     assert component.domain() is three and component.codomain() is extension.on_object(triangle(int(1)))
     assert component is not three.identity()
     image = component(three.point(int(2)))
     assert image in extension.on_object(triangle(int(1)))
-    assert ask(image == component(three.point(int(2)))) is True
-    assert ask(image == component(three.point(int(1)))) is False
-    assert ask(component.is_monomorphism()) is True
+    assert ask(image == component(three.point(int(2))))
+    assert not ask(image == component(three.point(int(1))))
+    assert ask(component.is_monomorphism())
 
     lifted = extension.on_morphism(triangle.generator("1->2"))
     assert lifted in Mor(Sets())(extension.on_object(triangle(int(1))), extension.on_object(triangle(int(2))))
-    assert ask(lifted.is_monomorphism()) is True
-    assert ask(lifted(image) == lifted(component(three.point(int(1))))) is False
+    assert ask(lifted.is_monomorphism())
+    assert not ask(lifted(image) == lifted(component(three.point(int(1)))))
     composite = extension.on_morphism(triangle.generator("1->2") * triangle.generator("0->1"))
-    assert ask(composite == lifted * extension.on_morphism(triangle.generator("0->1"))) is True
-    assert ask(extension.on_morphism(triangle.generator("0->1")) * unit.component(arrow(int(0))) == component * successor) is True
+    assert ask(composite == lifted * extension.on_morphism(triangle.generator("0->1")))
+    assert ask(extension.on_morphism(triangle.generator("0->1")) * unit.component(arrow(int(0))) == component * successor)
 
 
 def test_the_right_kan_extension_retains_its_counit() -> None:
@@ -99,15 +99,15 @@ def test_the_right_kan_extension_retains_its_counit() -> None:
     diagram = _arrow_diagram(two, three, successor)
 
     extension = right_kan_extension(monomorphism, diagram)
-    assert ask(extension.on_object(triangle(int(2))).cardinality() == int(1)) is True
-    assert ask(extension.on_object(triangle(int(0))).cardinality() == int(2)) is True
+    assert ask(extension.on_object(triangle(int(2))).cardinality() == int(1))
+    assert ask(extension.on_object(triangle(int(0))).cardinality() == int(2))
     counit = right_kan_counit(monomorphism, diagram)
     assert counit in Mor(Fun(arrow, Sets()))
     assert counit.codomain() is diagram
     assert counit.domain().on_object(arrow(int(0))) is extension.on_object(monomorphism.on_object(arrow(int(0))))
     component = counit.component(arrow(int(0)))
     assert component.codomain() is two
-    assert ask(component.is_isomorphism()) is True
+    assert ask(component.is_isomorphism())
 
 
 def test_limits_in_a_functor_category_are_computed_pointwise() -> None:
@@ -117,22 +117,22 @@ def test_limits_in_a_functor_category_are_computed_pointwise() -> None:
     arrow = Cat().Simplex(int(1))
     squares = Fun(arrow, Sets())
     index = Discrete(two)
-    diagram = Fun(index, squares).from_object_rule(lambda vertex: successor if ask(vertex.point() == two.point(int(0))) is True else constant)
+    diagram = Fun(index, squares).from_object_rule(lambda vertex: successor if ask(vertex.point() == two.point(int(0))) else constant)
 
     product = squares.Products()(diagram)
     apex = product
     assert apex in squares
     assert apex in Fun.Products()
-    assert ask(apex.on_object(arrow(int(0))).cardinality() == int(4)) is True
-    assert ask(apex.on_object(arrow(int(1))).cardinality() == int(9)) is True
+    assert ask(apex.on_object(arrow(int(0))).cardinality() == int(4))
+    assert ask(apex.on_object(arrow(int(1))).cardinality() == int(9))
     at_source = apex.on_object(arrow(int(0)))
     assert at_source in Sets().Products()
     assert at_source.product_projection(index(two.point(int(1)))).codomain() is two
     first = product.product_projection(int(0))
     assert first in Mor(squares)(apex, successor)
     assert first.component(arrow(int(1))).codomain() is three
-    assert ask(first.component(arrow(int(1))) * apex.on_morphism(arrow.generator("0->1")) == successor * first.component(arrow(int(0)))) is True
+    assert ask(first.component(arrow(int(1))) * apex.on_morphism(arrow.generator("0->1")) == successor * first.component(arrow(int(0))))
 
     coproduct = squares.Coproducts()(diagram)
-    assert ask(coproduct.on_object(arrow(int(1))).cardinality() == int(6)) is True
+    assert ask(coproduct.on_object(arrow(int(1))).cardinality() == int(6))
     assert coproduct.coproduct_injection(int(1)).component(arrow(int(0))).domain() is two

@@ -2,7 +2,7 @@
 
 The limit of ``D: I -> Sets()`` is the subset of the product
 ``prod_{i in Ob(I)} D(i)`` cut out by compatibility: a family ``(x_i)`` is a member
-when ``ask(D(u)(x_i) == x_j) is True`` for every generating morphism ``u: i -> j``
+when ``ask(D(u)(x_i) == x_j)`` holds for every generating morphism ``u: i -> j``
 of ``I`` (Mathlib ``CategoryTheory.Limits.Types.limitCone``, whose apex is the
 type of sections, the families with ``F.map f (s j) = s j'``; inspected
 2026-08-27).  Membership decides when ``I`` declares a finite generating family
@@ -48,7 +48,7 @@ from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.shapes import Discrete, omega
 from sage_categories.kernel.caches import retained_method
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
-from sage_categories.kernel.predicates import ask, conjunction
+from sage_categories.kernel.predicates import ask, conjunction, established
 from sage_categories.kernel.roles import ObjectOfCategory
 from sage_categories.sets.elements import Datum
 from sage_categories.sets.objects import SetObject
@@ -186,7 +186,7 @@ class Quotient:
 
     def equivalent(self, first: Representative, second: Representative) -> Decision:
         left, right = first.tagged(), second.tagged()
-        if self._tagged_equal(left, right) is True:
+        if established(self._tagged_equal(left, right)):
             return True
         partition = self.partition()
         if partition is not Unknown:
@@ -196,7 +196,7 @@ class Quotient:
             # integers of ``NN``, so this order comparison is a decision.
             lower, upper = (left, right) if left[0] <= right[0] else (right, left)
             transported = self.transition(lower[0], upper[0])._set_morphism_data.rule(lower[1])
-            if ask(transported == upper[1]) is True:
+            if established(transported == upper[1]):
                 return True
         return Unknown
 

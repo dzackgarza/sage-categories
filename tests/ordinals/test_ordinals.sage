@@ -23,14 +23,14 @@ from sage_categories.ordinals import omega, ordinal
 
 
 def test_ordinal_order_is_decided_by_exact_handlers() -> None:
-    assert ask(ordinal(int(2)) < omega0) is True
-    assert ask(ordinal(int(2)) <= ordinal(int(3))) is True
-    assert ask(ordinal(int(3)) < ordinal(int(3))) is False
-    assert ask(omega0 <= omega0) is True
-    assert ask(omega0 < omega0) is False
-    assert ask(omega0 < omega(int(1))) is True
-    assert ask(omega(int(1)) <= omega0) is False
-    assert ask(omega0 <= ordinal(int(5))) is False
+    assert ask(ordinal(int(2)) < omega0)
+    assert ask(ordinal(int(2)) <= ordinal(int(3)))
+    assert not ask(ordinal(int(3)) < ordinal(int(3)))
+    assert ask(omega0 <= omega0)
+    assert not ask(omega0 < omega0)
+    assert ask(omega0 < omega(int(1)))
+    assert not ask(omega(int(1)) <= omega0)
+    assert not ask(omega0 <= ordinal(int(5)))
     assert ask(omega0 <= omega0.ordinal_sum(int(1))) is not False
     with pytest.raises(TypeError):
         bool(omega0 < omega(int(1)))
@@ -47,15 +47,15 @@ def test_a_value_that_is_not_a_natural_number_names_no_ordinal() -> None:
         ask(ordinal(int(3)) > 5 / 2)
 
     assert ordinal(int(2)) is ordinal(int(2))
-    assert ask(ordinal(int(2)) == int(2)) is True
-    assert ask(ordinal(int(2)) == int(3)) is False
+    assert ask(ordinal(int(2)) == int(2))
+    assert not ask(ordinal(int(2)) == int(3))
 
 
 def test_natural_sum_is_commutative_and_ordinary_sum_retains_its_order() -> None:
-    assert ask(omega0 + int(1) == int(1) + omega0) is True
+    assert ask(omega0 + int(1) == int(1) + omega0)
     assert hash(omega0 + int(1)) == hash(int(1) + omega0)
-    assert ask(ordinal(int(2)) + int(3) == int(5)) is True
-    assert ask(ordinal(int(2)) * int(3) == int(6)) is True
+    assert ask(ordinal(int(2)) + int(3) == int(5))
+    assert ask(ordinal(int(2)) * int(3) == int(6))
 
     left, right = omega0.ordinal_sum(int(1)), ordinal(int(1)).ordinal_sum(omega0)
     assert left is not right
@@ -66,9 +66,9 @@ def test_natural_sum_is_commutative_and_ordinary_sum_retains_its_order() -> None
 
 
 def test_ordinary_arithmetic_evaluates_finite_inputs_and_unit_laws() -> None:
-    assert ask(ordinal(int(2)).ordinal_sum(int(3)) == int(5)) is True
-    assert ask(ordinal(int(2)).ordinal_product(int(3)) == int(6)) is True
-    assert ask(ordinal(int(2)).ordinal_power(int(3)) == int(8)) is True
+    assert ask(ordinal(int(2)).ordinal_sum(int(3)) == int(5))
+    assert ask(ordinal(int(2)).ordinal_product(int(3)) == int(6))
+    assert ask(ordinal(int(2)).ordinal_power(int(3)) == int(8))
     assert omega0.ordinal_sum(int(0)) is omega0
     assert ordinal(int(0)).ordinal_sum(omega0) is omega0
     assert omega0.ordinal_product(int(1)) is omega0
@@ -81,19 +81,19 @@ def test_ordinary_arithmetic_evaluates_finite_inputs_and_unit_laws() -> None:
 def test_initial_ordinals_and_ordinal_indexed_alephs() -> None:
     assert omega(int(0)) is omega0
     assert omega(omega0).initial_index() is omega0
-    assert ask(omega0.is_initial()) is True
-    assert ask(ordinal(int(3)).is_initial()) is False
+    assert ask(omega0.is_initial())
+    assert not ask(ordinal(int(3)).is_initial())
     assert ask(ordinal(int(1)).ordinal_sum(omega0).is_initial()) is not False
 
     assert Cardinal().aleph(omega0).aleph_index() is omega0
     assert Cardinal().aleph(int(1)).aleph_index() is ordinal(int(1))
     assert Cardinal().aleph(int(0)) is aleph0
     assert Cardinal().aleph(omega0).initial_ordinal() is omega(omega0)
-    assert ask(Cardinal().aleph(int(1)) < Cardinal().aleph(omega0)) is True
-    assert ask(aleph0 < Cardinal().aleph(omega0)) is True
-    assert ask(Cardinal().aleph(omega0) <= Cardinal().aleph(int(1))) is False
-    assert ask(Cardinal().aleph(omega0).is_countable()) is False
-    assert ask(Cardinal().aleph(omega0).is_uncountable()) is True
+    assert ask(Cardinal().aleph(int(1)) < Cardinal().aleph(omega0))
+    assert ask(aleph0 < Cardinal().aleph(omega0))
+    assert not ask(Cardinal().aleph(omega0) <= Cardinal().aleph(int(1)))
+    assert not ask(Cardinal().aleph(omega0).is_countable())
+    assert ask(Cardinal().aleph(omega0).is_uncountable())
 
 
 def test_ordinal_cardinalities() -> None:

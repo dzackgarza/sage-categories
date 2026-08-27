@@ -733,6 +733,31 @@ def _construct_morphism_root[Datum](
         deactivate_morphism_context(token)
 
 
+def initialize_category_declaration(instance: ObjectOfCategory, universe: Category) -> None:
+    """Initialize a category class defined before ``Category`` names ``Cat().ObjectType``.
+
+    Its Python base is the provisional local declaration, so the call is already inside
+    that node initializer.  This finite bootstrap path initializes the two remaining
+    classes in the exact public tail: ``ObjectOfCategory`` and ``Cat().ElementType``.
+    """
+    identity = ObjectRoleIdentity(universe)
+    root = ObjectConstructionInput(instance, identity, None)
+    retain_object_input(root)
+    cat_element_identity = ObjectStageIdentity(universe)
+    context = ObjectConstructionContext(
+        root.canonical_image,
+        root.identity,
+        cat_element_identity,
+        (_object_cat_element_step(root),),
+    )
+    token = activate_object_context(context)
+    try:
+        ObjectOfCategory.__init__(instance, universe)
+        context.assert_complete()
+    finally:
+        deactivate_object_context(token)
+
+
 def _object_wrapper(current: Node) -> FunctionType:
 
     def initialize[Datum](

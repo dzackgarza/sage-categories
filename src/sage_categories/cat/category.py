@@ -68,9 +68,15 @@ member.register_handler(is_placed)
 class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     """The local ``Cat().ObjectType`` declaration."""
 
-    def __init__(self, data: None) -> None:
-        super().__init__()
-        self._initialize(Cat())
+    def __init__(self, data: None = None) -> None:
+        from sage_categories.kernel.construction import active_construction_context
+
+        universe = Cat()
+        if active_construction_context(self) is None:
+            compiler.initialize_category_declaration(self, universe)
+        else:
+            super().__init__()
+        self._initialize(universe)
 
     def __mul__(self, other: Category) -> Category:
         """``C * D``: the product category."""

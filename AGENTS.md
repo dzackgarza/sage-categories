@@ -296,17 +296,19 @@ Apply products and coproducts to `Cat()` itself. For a sequence of categories:
 ```python
 P = Cat().Products()((C_0, ..., C_n))
 Q = Cat().Coproducts()((C_0, ..., C_n))
-P.product_projection(i)   # P -> C_i
-Q.coproduct_injection(i)  # C_i -> Q
+P.product_projection(i)   # A_P -> C_i
+Q.coproduct_injection(i)  # C_i -> A_Q
 ```
 
-Each returned morphism is a functor and therefore a `Cat().MorphismType` value.
+Here `A_P` and `A_Q` are the apex categories retained by `P` and `Q`. Each returned
+morphism is a functor and therefore a `Cat().MorphismType` value.
 
 The operators are defined once, in two roles. On categories: `C * D = Cat().Products()((C, D))`, `C + D = Cat().Coproducts()((C, D))`, and `D ** C = Fun(C, D)`. On objects `X, Y` of one category `C`: `X * Y = C.Products()((X, Y))`, `X + Y = C.Coproducts()((X, Y))`, and `Y ** X` the exponential object where `C` is declared cartesian closed; each asserts `X.category() is Y.category()`. An external pair is constructed explicitly as `(C * D)((X, Y))`; no operator casts an object into a product category.
 
-If `j: S -> P` presents a subcategory of a product category, then `S` belongs to
-`Cat().Products().Subobjects()`. Its `product_projection(i)` is the composite of `j`
-with the corresponding projection of `P`.
+Let `P_D` be a product presentation with apex `A_D`. If `j: S -> A_D` presents a
+subcategory, the corresponding object of `Cat().Products().Subobjects()` retains both
+`P_D` and `j`. Its `product_projection(i)` is the composite of `j` with the
+corresponding projection retained by `P_D`.
 
 The category whose objects are the morphisms of `C` and whose morphisms are commuting
 squares is the functor category `Fun([1], C)` from the walking arrow `[1]`. Its evaluation

@@ -445,20 +445,21 @@ them retain a `__class__` closure. The compiler rebinds that closure to the fina
 class before it installs the function. This makes literal zero-argument `super()` enter
 the controlled compiled MRO.
 
-Object and morphism constructor conversions are retained implementation data of the
-selected functor. The target image retained by a conversion is the canonical `F(x)`.
-Public object or morphism application returns that exact value. All routes to one node
-return the same image and construction input by identity. Identity functors retain
-identity conversions. Composite functors retain the composites of their factors'
-conversions.
+Object, element, and morphism constructor conversions are retained implementation data
+of the selected functor. For an object or morphism, the target image retained by a
+conversion is the canonical `F(x)`. Public object or morphism application returns that
+exact value. The element conversion supplies compiler input. Public element application
+follows the morphism action described below. All routes to one node return the same
+image and construction input by identity. Identity functors retain identity conversions.
+Composite functors retain the composites of their factors' conversions.
 
-Each canonical public object or morphism retains one root construction input. A
-conversion returns the input retained by its canonical target image. The input type
-names its exact canonical role value and local datum. During source construction, the
-conversion reads the source input's typed datum and identity, constructs the canonical
-target through the target category, and retains that image. Later public functor
-application reads the source value's retained input and calls the same conversion. It
-reads no fields of a partly initialized source value.
+Each canonical public value retains one root construction input. A conversion returns
+the input retained by its canonical target image. The input type names its exact
+canonical role value and local datum. During source construction, the conversion reads
+the source input's typed datum and identity, constructs the canonical target through the
+target category, and retains that image. Later public object or morphism application
+reads the source value's retained input and calls the same conversion. No conversion
+reads fields of a partly initialized source value.
 
 An inherited method executes on the descendant. Its declaring role's private state
 retains the canonical functor image. A method that must supply an object, element, or
@@ -474,16 +475,20 @@ identity retains the defining morphism. An object `X in C` uses
 `C`, and `f.defining_morphism()` lazily requests `C.arrow_functor(f)`. Every `F: C -> D`
 induces `F/X: C/X -> D/F(X)`, sending `t` to the public image
 `q = F(t): F(T) -> F(X)` through `F.on_morphism`. This action requires no additional
-functor data. The canonical value `q` retains its own construction input and cache
-identity.
+functor data. The canonical value `q` retains its own root construction input and cache
+identity. For a nonclassical source, the element conversion gives the compiler the input
+retained by `q`.
 
 A category may choose a classical stage `G_C`: `1` for `Sets()`; `Cat()` uses `1` for
 objects and `[1]` for morphisms. A classical element of `X` is a generalized element
 whose stage is exactly `G_C`. A selected structural functor that exposes the target's
 classical element methods retains a stage comparison `c_F: G_D -> F(G_C)`. For a
 classical `t: G_C -> X`, the compiler precomposes `q = F(t)` with `c_F` and obtains the
-classical input `p: G_D -> F(X)`. The public image `q` and compiler input `p` are
-separate generalized elements with separate construction inputs and cache identities.
+classical input `p: G_D -> F(X)`. The element conversion gives the compiler the input
+retained by `p`. The values `q` and `p` have separate identities and cache entries when
+their stages, defining morphisms, or codomains differ. For an identity functor,
+\(c_{\mathrm{id}} = 1_G\). For composable `F: C -> D` and `H: D -> E`,
+\(c_{H \circ F} = H(c_F) \circ c_H\).
 
 ## Point categories and point functors
 
@@ -700,19 +705,20 @@ Q = Cat().Coproducts()((C_0, ..., C_n))
 Their category-owned public functors are:
 
 ```python
-P.product_projection(i)   # an object of Fun(P, C_i)
-Q.coproduct_injection(i)  # an object of Fun(C_i, Q)
+P.product_projection(i)   # an object of Fun(A_P, C_i)
+Q.coproduct_injection(i)  # an object of Fun(C_i, A_Q)
 ```
 
-The index is an `int` in the supplied sequence. These methods come from
-`Cat().Products().ObjectType` and `Cat().Coproducts().ObjectType`. They return
-`Cat().MorphismType` values.
+Here `A_P` and `A_Q` are the apex categories retained by `P` and `Q`. The index is an
+`int` in the supplied sequence. These methods come from `Cat().Products().ObjectType`
+and `Cat().Coproducts().ObjectType`. They return `Cat().MorphismType` values.
 
-Let `j: S -> P` present `S` as a subcategory of the product category `P`. Then `S` is an
-object of `Cat().Products().Subobjects()`. Its component functor is
+Let `P_D` be a product presentation with apex `A_D`. Let `j: S -> A_D` present `S` as a
+subcategory. The corresponding object of `Cat().Products().Subobjects()` retains both
+`P_D` and `j`. Its component functor is
 
 \[
-S.\operatorname{product\_projection}(i)=\pi_i\circ j:S\longrightarrow C_i.
+(P_D,j).\operatorname{product\_projection}(i)=\pi_i\circ j:S\longrightarrow C_i.
 \]
 
 Thus every subcategory of a sequence product receives all component functors. The
@@ -1009,7 +1015,7 @@ is kernel infrastructure over already established mathematical functors.
 - Each category presentation retains all projections and evaluations required by its definition.
 - `Cat().Products()` and `Cat().Coproducts()` accept sequence-indexed category diagrams.
 - Their objects own `product_projection(i)` and `coproduct_injection(i)` respectively.
-- Every object of `Cat().Products().Subobjects()` derives its component functors by composition.
+- Every object of `Cat().Products().Subobjects()` retains its product presentation and apex monomorphism, then derives its component functors by composition.
 - Slice and coslice categories are pullbacks of `ev_1` and `ev_0` along the chosen object and retain their pullback projections.
 - Fibration and opfibration structure retains its cartesian or cocartesian lifts.
 - Kan extensions retain their units, counits, and universally induced natural transformations.

@@ -1,4 +1,3 @@
-from sage_categories.cat.elements import CategoryPointDeclaration as CategoryPointDeclaration
 from sage_categories.cat.functors import Fun_MorphismType as Fun_MorphismType
 from sage_categories.cat.functors import FunctorDeclaration as FunctorDeclaration
 import logging

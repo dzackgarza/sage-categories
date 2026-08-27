@@ -1,5 +1,4 @@
 from sage_categories.cat.category import CategoryDeclaration as CategoryDeclaration
-from sage_categories.cat.elements import CategoryPointDeclaration as CategoryPointDeclaration
 from sage_categories.cat.functors import FunctorDeclaration as FunctorDeclaration
 from sage_categories.posets.finite import FinitePosetRole as FinitePosetRole
 from sage_categories.sets.category import Sets_Finite_ElementType as Sets_Finite_ElementType

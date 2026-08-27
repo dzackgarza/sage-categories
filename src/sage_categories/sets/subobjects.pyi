@@ -1,5 +1,4 @@
 from sage_categories.cat.category import CategoryDeclaration as CategoryDeclaration
-from sage_categories.cat.elements import CategoryPointDeclaration as CategoryPointDeclaration
 from sage_categories.sets.cardinals import CardinalObjectDeclaration as CardinalObjectDeclaration
 from sage_categories.sets.category import Sets_ChosenQuotients_ElementType as Sets_ChosenQuotients_ElementType
 from sage_categories.sets.category import Sets_ChosenQuotients_MorphismType as Sets_ChosenQuotients_MorphismType

@@ -1,5 +1,4 @@
 from sage_categories.cat.category import CategoryDeclaration as CategoryDeclaration
-from sage_categories.cat.elements import CategoryPointDeclaration as CategoryPointDeclaration
 from collections.abc import Hashable
 from dataclasses import dataclass
 from sage_categories.cat.category import Category as Category

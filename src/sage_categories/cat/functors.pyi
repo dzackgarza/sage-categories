@@ -1,5 +1,4 @@
 from sage_categories.cat.category import CategoryDeclaration as CategoryDeclaration
-from sage_categories.cat.elements import CategoryPointDeclaration as CategoryPointDeclaration
 from sage_categories.kernel.roles import ElementOfObject as ElementOfObject
 from _typeshed import Incomplete
 from collections.abc import Callable

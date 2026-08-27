@@ -1,4 +1,3 @@
-from sage_categories.cat.elements import CategoryPointDeclaration as CategoryPointDeclaration
 from collections.abc import Hashable
 from dataclasses import dataclass, field
 from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown

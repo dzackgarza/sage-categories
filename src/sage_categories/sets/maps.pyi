@@ -1,5 +1,4 @@
 from sage_categories.cat.category import CategoryDeclaration as CategoryDeclaration
-from sage_categories.cat.elements import CategoryPointDeclaration as CategoryPointDeclaration
 from sage_categories.sets.elements import SetElementDeclaration as SetElementDeclaration
 from sage_categories.sets.objects import SetObjectDeclaration as SetObjectDeclaration
 from collections.abc import Callable

@@ -1,5 +1,4 @@
 from sage_categories.cat.category import CategoryDeclaration as CategoryDeclaration
-from sage_categories.cat.elements import CategoryPointDeclaration as CategoryPointDeclaration
 from sage_categories.cat.functors import FunctorDeclaration as FunctorDeclaration
 from sage_categories.ordinals.category import OrdinalObjectDeclaration as OrdinalObjectDeclaration
 from sage_categories.sets.elements import SetElementDeclaration as SetElementDeclaration

@@ -97,14 +97,10 @@ class PosetDeclaration(ObjectOfCategory):
         """The defining order relation ``R``, a chosen subset of ``X * X``."""
         return self._poset_object_data.relation
 
-    def point(self, datum: Datum) -> PosetElement:
-        """Construct the poset point over the inherited canonical set point."""
-        return self.element(super().point(datum))
-
     def element(self, point: SetElement) -> PosetElement:
         """The classical element over a point ``x: 1 -> U(P)``: the monotone map ``1 -> P`` under ``x``."""
         state = self._poset_object_data
-        carrier = self._set_object_data.canonical
+        carrier = Posets().underlying_set_functor().on_object(self)
         assert point in carrier, f"{point!r} is not a point of {carrier!r}"
         if point not in state.elements:
             posets = Posets()
@@ -131,14 +127,14 @@ class PosetDeclaration(ObjectOfCategory):
         if self not in retained:
             order = Predicate("poset_order", 2, True)
             order.register_handler(lambda left, right: ask(self.element(left) <= self.element(right)))
-            retained[self] = ThinCategory(self._set_object_data.canonical, order)
+            retained[self] = ThinCategory(Posets().underlying_set_functor().on_object(self), order)
         return retained[self]
 
     def _pair(self, left: SetElement, right: SetElement) -> SetElement:
         return _pair_point(self._poset_object_data.relation.underlying_set(), left, right)
 
     def __repr__(self) -> str:
-        return f"Poset({self._set_object_data.canonical!r})"
+        return f"Poset({Posets().underlying_set_functor().on_object(self)!r})"
 
 
 class PosetElementDeclaration(ElementOfObject):

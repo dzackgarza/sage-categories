@@ -69,9 +69,10 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
 The additive operation functor is the categorical coproduct in `Cardinal()`, with unit
 object `0`. The multiplicative operation functor is the categorical product, with unit
 object `1`. The selected point functor supplies their complete compiled roles, exact
-constructor conversions, retained state, and public methods. The strict-or-coherent law
-data follows the open choice recorded in
-[functor.md](functor.md#ambient-algebraic-categories).
+constructor conversions, retained state, and public methods. The law data is the
+equations between these functors ([functor.md](functor.md#ambient-algebraic-categories)).
+`Cardinal()` is skeletal, so each operation selects one representative and the laws hold
+as equalities.
 
 For every pair of represented cardinals, `Mor(Cardinal())(kappa, lambda)` is the
 discrete category on the owned function set between their representatives:

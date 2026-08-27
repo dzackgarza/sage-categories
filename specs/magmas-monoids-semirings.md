@@ -313,17 +313,17 @@ The family parameter supports algebraic objects whose carrier is a category.
 Thus the intended placement for category-valued ordinal and cardinal arithmetic is
 `Semirings(Cat())`.
 
-Two standard categorical meanings remain available for this specialization:
+An object of `Semirings(Cat())` is a strict internal semiring object in the ordinary
+category `Cat()`.
+Its algebraic laws are equalities of functors, as the laws of `Semirings(Sets())` are
+equalities of maps.
+The two operation functors are formed over the finite products of `Cat()`.
 
-1. A strict internal semiring object in the ordinary category `Cat()` uses equalities
-   of functors for the algebraic laws.
-2. A coherent rig category uses natural isomorphisms and coherence diagrams for those
-   laws.
+`Cardinal()` and `Ordinals()` satisfy that strictness because both are skeletal.
+Each operation selects one representative, so `(a + b) + c` and `a + (b + c)` name one
+object and the law is an equality of functors.
 
-The public meaning of `Semirings(Cat())` requires an explicit ruling between these
-constructions.
-That ruling also determines the corresponding `Rings(Cat())` convention, specified in
-[Ring objects](rings.md).
+`Rings(Cat())` follows the same convention; see [Ring objects](rings.md).
 
 ## Definition sources
 
@@ -352,7 +352,7 @@ and [semirings](https://doc.sagemath.org/html/en/reference/categories/sage/categ
 - Both semiring component routes reach one canonical object of `C`.
 - Every immediate structural edge is an owned functor.
 - Deeper inherited operations arrive through functor composition.
-- The `Cat()` strict-versus-coherent choice remains explicit until its ruling.
+- `Semirings(Cat())` states its laws as equalities of functors.
 
 The complete governing set also includes `POL-MATH-001` through `POL-MATH-013`,
 `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001` through `POL-CAT-020`,

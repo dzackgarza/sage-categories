@@ -46,10 +46,8 @@ from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.shapes import ThinCategory
 from sage_categories.kernel.construction import (
-    ElementConstructionInput,
     MorphismConstructionInput,
     ObjectConstructionInput,
-    retained_element_input,
     retained_morphism_input,
     retained_object_input,
 )
@@ -58,7 +56,7 @@ from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Propo
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, role_of
 from sage_categories.sets.category import Sets
-from sage_categories.sets.elements import Datum, SetElement, SetElementData
+from sage_categories.sets.elements import Datum, SetElement
 from sage_categories.sets.maps import Rule, SetMap, SetMorphismData
 from sage_categories.sets.objects import MembershipRule, SetObject, SetObjectData
 

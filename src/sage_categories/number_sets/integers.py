@@ -17,6 +17,7 @@ from sage.rings.integer_ring import ZZ as _integer_ring
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.kernel.decisions import Decision
+from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.cardinals import aleph0
 from sage_categories.sets.category import Sets
@@ -56,7 +57,8 @@ class IntegersCategory(Category[[Rule], []]):
     def __init__(self) -> None:
         super().__init__()
         # #ZZ = aleph0: Mathlib ``Cardinal.mk_int`` (Mathlib.SetTheory.Cardinal.Basic; inspected 2026-08-26).
-        self._integers = self.ObjectType(self, _is_integer, aleph0)
+        self._integers = Sets().with_cardinality(_is_integer, aleph0)
+        refine(self._integers, self)
 
     def structure_functors(self) -> tuple[Functor, ...]:
         return (Fun(self, Sets().Countable()).FullyFaithful().inclusion(),)

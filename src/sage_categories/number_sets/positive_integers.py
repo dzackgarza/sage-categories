@@ -17,6 +17,7 @@ from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import Predicate
+from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.cardinals import aleph0
 from sage_categories.sets.category import Sets
@@ -56,7 +57,8 @@ class PositiveIntegersCategory(Category[[Rule], []]):
     def __init__(self) -> None:
         super().__init__()
         # #NN = aleph0: Mathlib ``Cardinal.mk_pnat`` (Mathlib.SetTheory.Cardinal.Basic; inspected 2026-08-26).
-        self._positive_integers = self.ObjectType(self, _is_positive_integer, aleph0)
+        self._positive_integers = Sets().with_cardinality(_is_positive_integer, aleph0)
+        refine(self._positive_integers, self)
 
     def structure_functors(self) -> tuple[Functor, ...]:
         return (Fun(self, Sets().Countable()).FullyFaithful().inclusion(),)

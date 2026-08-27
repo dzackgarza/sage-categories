@@ -16,6 +16,7 @@ from sage.rings.rational_field import QQ as _rational_field
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.kernel.decisions import Decision
+from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.cardinals import aleph0
 from sage_categories.sets.category import Sets
@@ -55,7 +56,8 @@ class RationalsCategory(Category[[Rule], []]):
     def __init__(self) -> None:
         super().__init__()
         # #QQ = aleph0: Mathlib ``Cardinal.mkRat : #ℚ = ℵ₀`` (``Mathlib/SetTheory/Cardinal/Rat.lean``; inspected 2026-08-27).
-        self._rationals = self.ObjectType(self, _is_rational, aleph0)
+        self._rationals = Sets().with_cardinality(_is_rational, aleph0)
+        refine(self._rationals, self)
 
     def structure_functors(self) -> tuple[Functor, ...]:
         return (Fun(self, Sets().Countable()).FullyFaithful().inclusion(),)

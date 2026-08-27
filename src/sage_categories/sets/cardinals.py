@@ -71,6 +71,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict
 
 import sage_categories.sets.category as _sets
@@ -252,7 +253,6 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
         self._cardinals: dict[Key, CardinalObject] = {}
         self._aleph_indices: MonoDict = MonoDict()
         self._representatives: MonoDict = MonoDict()
-        self._functors: dict[str, Functor] = {}
         super().__init__()
         self._equality.register_handler(self._equal)
         less_than.register_handler(self._less_than)
@@ -282,32 +282,31 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
     def structure_functors(self) -> tuple[Functor, ...]:
         return (self.representative_functor(),)
 
+    @cached_method
     def representative_functor(self) -> Functor:
         """The functor ``Cardinal() -> Sets()`` sending ``kappa`` to ``R_kappa`` and a cardinal morphism to its map, retained once.
 
         Fully faithful by the definition of the morphisms of ``Cardinal()``: the skeleton
         monomorphism (Mathlib ``CategoryTheory.fromSkeleton``, an equivalence; inspected 2026-08-27).
         """
-        if "representative" not in self._functors:
-            representative = Fun(self, _sets.Sets()).FullyFaithful()(self.representative, lambda morphism: morphism._set_map)
+        representative = Fun(self, _sets.Sets()).FullyFaithful()(self.representative, lambda morphism: morphism._set_map)
 
-            def object_input(
-                source: ObjectConstructionInput[CardinalObject, CardinalObjectData],
-            ) -> ObjectConstructionInput[SetObject, SetObjectData]:
-                cardinal = source.canonical_image
-                if cardinal not in self._representatives:
-                    self._representatives[cardinal] = self._select_representative(cardinal, source.datum)
-                return retained_object_input(self._representatives[cardinal])
+        def object_input(
+            source: ObjectConstructionInput[CardinalObject, CardinalObjectData],
+        ) -> ObjectConstructionInput[SetObject, SetObjectData]:
+            cardinal = source.canonical_image
+            if cardinal not in self._representatives:
+                self._representatives[cardinal] = self._select_representative(cardinal, source.datum)
+            return retained_object_input(self._representatives[cardinal])
 
-            def morphism_input(
-                source: MorphismConstructionInput[CardinalityMorphism, CardinalMorphismData],
-            ) -> MorphismConstructionInput[SetMap, SetMorphismData]:
-                return retained_morphism_input(source.datum.set_map)
+        def morphism_input(
+            source: MorphismConstructionInput[CardinalityMorphism, CardinalMorphismData],
+        ) -> MorphismConstructionInput[SetMap, SetMorphismData]:
+            return retained_morphism_input(source.datum.set_map)
 
-            representative.retain_object_constructor_conversion(object_input)
-            representative.retain_morphism_constructor_conversion(morphism_input)
-            self._functors["representative"] = representative
-        return self._functors["representative"]
+        representative.retain_object_constructor_conversion(object_input)
+        representative.retain_morphism_constructor_conversion(morphism_input)
+        return representative
 
     def representative(self, cardinal: CardinalObject) -> SetObject:
         """The selected representative set ``R_kappa``, one per cardinal."""
@@ -319,9 +318,7 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
             # #[n - 1] = #{0, ..., n - 1} = n: Mathlib ``Cardinal.mk_fin`` (inspected 2026-08-27).
             size = data.key[1]
             assert isinstance(size, int)
-            if size == 0:
-                return sets._canonical_finite_from_cardinality("empty", (), (), cardinal)
-            return sets._canonical_finite_from_cardinality("simplex", (size - 1,), tuple(range(size)), cardinal)
+            return sets.Finite()._from_enumeration(tuple(range(size)), cardinal)
 
         def no_datum(datum: Datum) -> Decision:
             return Unknown

@@ -159,7 +159,7 @@ class Quotient:
         self._shape = diagram.domain()
         self._objects = self._shape.object_set()
         self._coproduct = coproduct
-        self._partition: MonoDict = MonoDict()
+        self._components: DisjointSet | None = None
 
     def index_datum(self, member_object: ObjectOfCategory) -> Datum:
         return self._shape.object_point(member_object)._point_datum_()
@@ -178,15 +178,14 @@ class Quotient:
         generators = self._shape.generating_morphisms()
         if generators is Unknown or not finite.has_chosen_enumeration(self._coproduct):
             return Unknown
-        if self._coproduct not in self._partition:
-            components = DisjointSet(list(finite.chosen_enumeration(self._coproduct)))
+        if self._components is None:
+            self._components = DisjointSet(list(finite.chosen_enumeration(self._coproduct)))
             for generator in generators:
                 source, target = self.index_datum(generator.domain()), self.index_datum(generator.codomain())
                 transition = self._diagram.on_morphism(generator)
                 for value in finite.chosen_enumeration(transition.domain()):
-                    components.union((source, value), (target, transition._set_morphism_data.rule(value)))
-            self._partition[self._coproduct] = components
-        return self._partition[self._coproduct]
+                    self._components.union((source, value), (target, transition._set_morphism_data.rule(value)))
+        return self._components
 
     def equivalent(self, first: Representative, second: Representative) -> Decision:
         left, right = first.tagged(), second.tagged()

@@ -79,7 +79,7 @@ from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.decisions import Decision, Unknown, decision_not, decision_or
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, role_of
-from sage_categories.ordinals.category import OrdinalObject, Ordinals
+from sage_categories.ordinals.category import OrdinalObject, Ordinals, bind_cardinals
 
 if TYPE_CHECKING:
     from sage_categories.sets.elements import Datum
@@ -194,7 +194,7 @@ class CardinalMorphism(MorphismOfCategory):
 
 
 # ``less_than(kappa, lambda)``: ``kappa <= lambda`` and not ``kappa == lambda``.
-less_than = Predicate("cardinal_less_than", 2, True)
+less_than: Predicate = Predicate("cardinal_less_than", 2, True)
 
 
 class CardinalCategory(Category[[MorphismOfCategory], []]):
@@ -576,3 +576,9 @@ def cardinality_functor() -> Functor:
         return cardinals.morphism_category(1)(on_object(source), on_object(target)).Isomorphisms()(conjugate)
 
     return Fun(sets.Core(), cardinals)(on_object, on_morphism)
+
+
+# ``ordinals/category.py`` is imported above and names ``CardinalObject`` in a
+# declared signature; this module is where that name exists, so it closes the
+# cluster (``ordinals.category.bind_cardinals``).
+bind_cardinals()

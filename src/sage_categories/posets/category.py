@@ -55,9 +55,9 @@ from sage_categories.sets.objects import MembershipRule, SetObject
 __all__ = ["FinitePosets", "FiniteTotallyOrderedSets", "MonotoneMap", "Poset", "PosetElement", "Posets", "PosetsCategory", "TotallyOrderedSets"]
 
 # ``partial_order(R)``: the relation ``R`` on ``X`` is reflexive, antisymmetric, and transitive.
-partial_order = Predicate("partial_order", 1, True)
+partial_order: Predicate = Predicate("partial_order", 1, True)
 # ``order_preserving(P, Q, f)``: the set map ``f: U(P) -> U(Q)`` is monotone.
-order_preserving = Predicate("order_preserving", 3, False)
+order_preserving: Predicate = Predicate("order_preserving", 3, False)
 
 type Relation = dict[tuple[int, int], Decision]
 

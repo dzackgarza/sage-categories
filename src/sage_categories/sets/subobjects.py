@@ -73,7 +73,7 @@ __all__ = ["ChosenQuotientRole", "ChosenQuotientsCategory", "ChosenSubsetRole", 
 
 # ``subset_of(A, B)``: every member of the chosen subset ``A`` is a member of the
 # chosen subset ``B`` of the same set.
-subset_of = Predicate("subset_of", 2, True)
+subset_of: Predicate = Predicate("subset_of", 2, True)
 
 
 def _subset_by_identity(first: CategoryPoint, candidate: Any) -> Decision:

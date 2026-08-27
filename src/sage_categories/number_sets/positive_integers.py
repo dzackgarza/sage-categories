@@ -73,7 +73,7 @@ _POSITIVE_INTEGERS = PositiveIntegersCategory()
 
 # ``natural_order(m, n)``: ``m <= n`` for two points of ``NN``, decided by Sage's exact
 # integer order; ``omega = Thin(NN, natural_order)`` is the sequential shape (specs/functor.md, "Diagram shapes and universal constructions").
-natural_order = Predicate("natural_order", 2, True)
+natural_order: Predicate = Predicate("natural_order", 2, True)
 
 
 def _natural_order_by_integer_comparison(first: CategoryPoint, second: CategoryPoint) -> Decision:
@@ -90,4 +90,4 @@ def PositiveIntegers() -> PositiveIntegersCategory:
     return _POSITIVE_INTEGERS
 
 
-NN = PositiveIntegers()()
+NN: SetObject = PositiveIntegers()()

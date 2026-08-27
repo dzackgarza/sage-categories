@@ -14,16 +14,31 @@ ai_review_ci_default_branch := "main"
 default:
     @just --list
 
+# Regenerate the static projection of the compiled ownership graph.
+#
+# The .pyi files under src/ are derived artifacts: the kernel generator writes
+# them from the live category declarations, and a declaration change rewrites
+# them here rather than by hand (POL-TYPE-025, POL-TYPE-026). The gates below
+# depend on this, so the checker always reads the projection of the tree it is
+# checking. The generator imports the package, so it runs under the Sage
+# interpreter, on this checkout's sources rather than an installed copy.
+stubs:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    sage_python="$(just -f ~/ai-review-ci/justfiles/sage.just -d . _sage-python)"
+    PYTHONPATH="$(pwd -P)/src${PYTHONPATH:+:$PYTHONPATH}" \
+        "$sage_python" -m sage_categories.kernel.stubs src/sage_categories
+
 # Run commit-tier SageMath QC through the central implementation.
-test-commit:
+test-commit: stubs
     @just -f ~/ai-review-ci/justfiles/sage.just -d . test-commit
 
 # Run the full SageMath test suite before pushing.
-test-push:
+test-push: stubs
     @just -f ~/ai-review-ci/justfiles/sage.just -d . test-push
 
 # Run CI acceptance QC through the central implementation.
-test-ci:
+test-ci: stubs
     @just -f ~/ai-review-ci/justfiles/sage.just -d . test-ci
 
 # The research Sage environment, run rather than extracted.

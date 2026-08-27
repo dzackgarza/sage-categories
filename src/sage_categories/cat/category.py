@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 __all__ = ["Assignment", "Cat", "Category", "CategoryOfCategories", "OnMorphism", "OnObject", "member"]
 
-logger = logging.getLogger("sage_categories")
+logger: logging.Logger = logging.getLogger("sage_categories")
 
 # The compilation order of categories: a category takes its ordinal after its
 # selected functors exist, so decreasing ordinal is a linear extension of the
@@ -59,7 +59,7 @@ type Assignment = Callable[[ObjectOfCategory], MorphismOfCategory]
 # ``member(x, C)``: ``x`` is an object of ``C``.  For a plain category the
 # proposition is decided by established placement alone (POL-CAT-068/073); a
 # property subcategory conjoins its own predicate (``cat/properties.py``).
-member = Predicate("member", 2, False)
+member: Predicate = Predicate("member", 2, False)
 member.register_handler(is_placed)
 
 

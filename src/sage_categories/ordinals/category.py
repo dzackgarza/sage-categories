@@ -50,7 +50,23 @@ from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, Morphis
 if TYPE_CHECKING:
     from sage_categories.sets.cardinals import CardinalObject
 
-__all__ = ["OrdinalObject", "Ordinals", "OrdinalsCategory", "omega", "omega0", "ordinal"]
+__all__ = ["OrdinalObject", "Ordinals", "OrdinalsCategory", "bind_cardinals", "omega", "omega0", "ordinal"]
+
+
+def bind_cardinals() -> None:
+    """Bind ``CardinalObject`` in this module, once ``sets/cardinals.py`` exists.
+
+    ``OrdinalObject.cardinality()`` names a cardinal, and the kernel evaluates a
+    declared annotation with ``eval_str`` against the declaring module
+    (POL-KERNEL-021), so the name must resolve here.  Cardinals are indexed by
+    ordinals, so this module is imported first and cannot import them; the
+    cardinals module closes the cluster by calling this, exactly as
+    ``cat/category.py`` closes the ``Cat()`` cluster in ``bootstrap``.
+    """
+    global CardinalObject
+
+    from sage_categories.sets.cardinals import CardinalObject
+
 
 # A private expression key: nested tuples of strings and integers only, so caches
 # and hashes never compare owned values.
@@ -169,11 +185,11 @@ class OrdinalObject(ObjectOfCategory):
 
 
 # ``initial(alpha)``: ``alpha`` is an initial ordinal ``omega(beta)``.
-initial = Predicate("ordinal_initial", 1, True)
+initial: Predicate = Predicate("ordinal_initial", 1, True)
 # ``at_most(alpha, beta)``: ``alpha <= beta`` in the ordinal order.
-at_most = Predicate("ordinal_at_most", 2, True)
+at_most: Predicate = Predicate("ordinal_at_most", 2, True)
 # ``less_than(alpha, beta)``: ``alpha < beta``.
-less_than = Predicate("ordinal_less_than", 2, True)
+less_than: Predicate = Predicate("ordinal_less_than", 2, True)
 
 
 class OrdinalsCategory(Category[[], []]):
@@ -371,4 +387,4 @@ def omega(index: OrdinalObject | int) -> OrdinalObject:
     return Ordinals().omega(index)
 
 
-omega0 = omega(0)
+omega0: OrdinalObject = omega(0)

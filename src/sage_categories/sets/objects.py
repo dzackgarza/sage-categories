@@ -34,12 +34,12 @@ from sage_categories.sets.elements import Datum, SetPoint
 
 __all__ = ["FiniteSetRole", "MembershipRule", "SetObject", "element_of"]
 
-logger = logging.getLogger("sage_categories")
+logger: logging.Logger = logging.getLogger("sage_categories")
 
 type MembershipRule = Callable[[Datum], Decision]
 
 # ``element_of(x, X)``: the point ``x`` lies in the set ``X``.
-element_of = Predicate("element_of", 2, True)
+element_of: Predicate = Predicate("element_of", 2, True)
 
 
 def _element_of_by_parent(candidate: Any, ambient: SetObject) -> Decision:

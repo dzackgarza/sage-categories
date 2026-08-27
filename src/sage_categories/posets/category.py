@@ -232,16 +232,14 @@ def _partial_order_on_enumerated(relation: SetObject) -> Decision:
 
 
 def _square(relation: SetObject) -> ObjectOfCategory:
-    """The product presentation ``X * X`` that ``relation`` is a chosen subset of.
+    """The chosen product ``X * X`` that ``relation`` is a chosen subset of.
 
-    A chosen subset retains its ambient object, which is the canonical apex of the
-    product; the projections and the mediator belong to the presentation the
-    product family retains for that apex (POL-CAT-046, POL-FUN-019).
+    A chosen subset retains its ambient object, which is the chosen product itself;
+    that object owns the projections and the mediator (POL-CAT-046, POL-FUN-019).
     """
-    apex = relation.underlying_set()
-    products = Sets().Products()
-    assert products.retains(apex), f"{relation!r} is not a chosen subset of the canonical apex of a chosen product"
-    return products.canonical_presentation(apex)
+    square = relation.underlying_set()
+    assert square in Sets().Products(), f"{relation!r} is not a chosen subset of a chosen product"
+    return square
 
 
 def _pair_point(square: ObjectOfCategory, left: SetElement, right: SetElement) -> SetElement:

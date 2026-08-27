@@ -43,32 +43,32 @@ def _star() -> ObjectOfCategory:
 def _left_data(along: Functor, functor: Functor) -> tuple[Functor, NaturalTransformation]:
     source, target, values = along.domain(), along.codomain(), functor.codomain()
     product = Cat().Products()((source, Cat().Terminal()))
-    presentations: MonoDict = MonoDict()
+    colimits: MonoDict = MonoDict()
 
     def comma(member_object: ObjectOfCategory) -> ObjectOfCategory:
         return comma_category(along, target.point_functor(member_object))
 
     def at(member_object: ObjectOfCategory) -> ObjectOfCategory:
         """The chosen colimit over ``(K, d)`` of ``F`` after the projection to ``C``."""
-        if member_object not in presentations:
+        if member_object not in colimits:
             shape = comma(member_object)
             diagram = functor * (product.product_projection(0) * shape.first_projection())
-            presentations[member_object] = values.Colimits(shape)(diagram)
-        return presentations[member_object]
+            colimits[member_object] = values.Colimits(shape)(diagram)
+        return colimits[member_object]
 
     def on_morphism(morphism: MorphismOfCategory) -> MorphismOfCategory:
         lower, upper = at(morphism.domain()), at(morphism.codomain())
         destination = comma(morphism.codomain())
-        induced = cocone(lower.diagram(), upper.apex(), lambda vertex: upper.injection(destination((vertex.first(), morphism * vertex.second()))))
+        induced = cocone(lower.diagram(), upper, lambda vertex: upper.injection(destination((vertex.first(), morphism * vertex.second()))))
         return lower.universal_morphism(induced)
 
-    # ``at`` retains the presentation, which owns the injections and the mediator; the
-    # extension is a functor into ``values``, so its object action is the apex.
-    extension = Fun(target, values)(lambda member_object: at(member_object).apex(), on_morphism)
+    # ``at`` is the chosen colimit, an object of ``values`` owning the injections and
+    # the mediator; the extension is the functor sending ``d`` to it.
+    extension = Fun(target, values)(at, on_morphism)
 
     def unit_component(member_object: ObjectOfCategory) -> MorphismOfCategory:
         image = along.on_object(member_object)
-        return at(image).injection(comma(image)((product.apex()((member_object, _star())), image.identity())))
+        return at(image).injection(comma(image)((product((member_object, _star())), image.identity())))
 
     unit = Fun(source, values).morphism_category(1)(functor, extension * along)(unit_component)
     return extension, unit
@@ -77,32 +77,32 @@ def _left_data(along: Functor, functor: Functor) -> tuple[Functor, NaturalTransf
 def _right_data(along: Functor, functor: Functor) -> tuple[Functor, NaturalTransformation]:
     source, target, values = along.domain(), along.codomain(), functor.codomain()
     product = Cat().Products()((Cat().Terminal(), source))
-    presentations: MonoDict = MonoDict()
+    limits: MonoDict = MonoDict()
 
     def comma(member_object: ObjectOfCategory) -> ObjectOfCategory:
         return comma_category(target.point_functor(member_object), along)
 
     def at(member_object: ObjectOfCategory) -> ObjectOfCategory:
         """The chosen limit over ``(d, K)`` of ``F`` after the projection to ``C``."""
-        if member_object not in presentations:
+        if member_object not in limits:
             shape = comma(member_object)
             diagram = functor * (product.product_projection(1) * shape.first_projection())
-            presentations[member_object] = values.Limits(shape)(diagram)
-        return presentations[member_object]
+            limits[member_object] = values.Limits(shape)(diagram)
+        return limits[member_object]
 
     def on_morphism(morphism: MorphismOfCategory) -> MorphismOfCategory:
         lower, upper = at(morphism.domain()), at(morphism.codomain())
         origin = comma(morphism.domain())
-        induced = cone(upper.diagram(), lower.apex(), lambda vertex: lower.projection(origin((vertex.first(), vertex.second() * morphism))))
+        induced = cone(upper.diagram(), lower, lambda vertex: lower.projection(origin((vertex.first(), vertex.second() * morphism))))
         return upper.universal_morphism(induced)
 
-    # ``at`` retains the presentation, which owns the projections and the mediator; the
-    # extension is a functor into ``values``, so its object action is the apex.
-    extension = Fun(target, values)(lambda member_object: at(member_object).apex(), on_morphism)
+    # ``at`` is the chosen limit, an object of ``values`` owning the projections and
+    # the mediator; the extension is the functor sending ``d`` to it.
+    extension = Fun(target, values)(at, on_morphism)
 
     def counit_component(member_object: ObjectOfCategory) -> MorphismOfCategory:
         image = along.on_object(member_object)
-        return at(image).projection(comma(image)((product.apex()((_star(), member_object)), image.identity())))
+        return at(image).projection(comma(image)((product((_star(), member_object)), image.identity())))
 
     counit = Fun(source, values).morphism_category(1)(extension * along, functor)(counit_component)
     return extension, counit

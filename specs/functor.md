@@ -748,11 +748,11 @@ For `F: C -> D`, `F.essential_image()` is the full property subcategory of `D` o
 objects isomorphic to `F(X)` for some `X in C`. Its inclusion into `D` is fully faithful
 by construction. The original functor factors through this category.
 
-A universal-construction presentation category has more data. For each diagram `D`,
-`C.Products()` has a distinct presentation object `P_D`. It retains `D`, its canonical
-apex `A_D`, its projections, and its universal maps. Its structural apex functor maps
-`P_D` to `A_D` in `C`. The essential image of the product functor records only which
-objects are isomorphic to product apexes.
+A universal-construction family has more data. `C.Products()` is the full subcategory
+of `C` on the chosen products, reached by its retained identity-on-values inclusion. It
+retains the universal data of each diagram `D`: `D` itself, its projections, and its
+universal maps. The essential image of the product functor records only which objects
+are isomorphic to chosen products.
 
 ## Products, coproducts, and component functors
 
@@ -767,24 +767,25 @@ Q = Cat().Coproducts()((C_0, ..., C_n))
 Their category-owned public functors are:
 
 ```python
-P.product_projection(i)   # an object of Fun(A_P, C_i)
-Q.coproduct_injection(i)  # an object of Fun(C_i, A_Q)
+P.product_projection(i)   # an object of Fun(P, C_i)
+Q.coproduct_injection(i)  # an object of Fun(C_i, Q)
 ```
 
-Here `A_P` and `A_Q` are the apex categories retained by `P` and `Q`. The index is an
+Here `P` and `Q` are the product and coproduct categories themselves: `Cat().Products()`
+is the full subcategory of `Cat()` on the chosen product categories. The index is an
 `int` in the supplied sequence. These methods come from `Cat().Products().ObjectType`
 and `Cat().Coproducts().ObjectType`. They return `Cat().MorphismType` values.
 
-Let `P_D` be a product presentation with apex `A_D`. Let `j: S -> A_D` present `S` as a
-subcategory. The corresponding object of `Cat().Products().Subobjects()` retains both
-`P_D` and `j`. Its component functor is
+Let `P` be a chosen product category. Let `j: S -> P` present `S` as a subcategory. The
+corresponding object of `Cat().Products().Subobjects()` retains `j` and reads `P` as its
+codomain. Its component functor is
 
 \[
-(P_D,j).\operatorname{product\_projection}(i)=\pi_i\circ j:S\longrightarrow C_i.
+S.\operatorname{product\_projection}(i)=\pi_i\circ j:S\longrightarrow C_i.
 \]
 
 Thus every subcategory of a sequence product receives all component functors. The
-subobject-of-product construction owns this rule. A leaf supplies its presentation and
+subobject-of-product construction owns this rule. A leaf supplies its monomorphism and
 selects the required component functors in `structure_functors()`.
 
 A generic component functor need not be faithful or full. A specialized category
@@ -827,10 +828,10 @@ A discrete diagram needs only its object rule `i |-> X_i`. The rule is an assign
 `S`; it never enumerates `S`. A Python sequence `(X_0, ..., X_n)` is the convenience form
 and denotes the diagram over `Discrete([n])`.
 
-`C.Products()(diagram)` constructs a presentation `P_D` with canonical apex `A_D` in
-`C`, `product_projection(i)` indexed by `i in S`, and the universal map. The selected
-apex functor maps `P_D` to `A_D`. `C.Coproducts()` is dual with
-`coproduct_injection(i)`. `X * Y` is `C.Products()((X, Y))`.
+`C.Products()(diagram)` constructs one object of `C`, placed in `C.Products()`, with
+`product_projection(i)` indexed by `i in S` and the universal map. The selected functor
+of the family is its retained identity-on-values inclusion into `C`. `C.Coproducts()` is
+dual with `coproduct_injection(i)`. `X * Y` is `C.Products()((X, Y))`.
 
 `C.Limits(I)` and `C.Colimits(I)` are the general families for one supplied shape `I`.
 The named conveniences are instances:
@@ -1050,7 +1051,7 @@ anonymous point.
 
 Mathlib defines `Prod.fst` and `Prod.snd` separately. See
 [Products.Basic](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Products/Basic.html).
-This repository follows that construction-owned pattern for every presentation.
+This repository follows that construction-owned pattern for every construction.
 
 The selection of functors for Python method inheritance has no Mathlib counterpart. It
 is kernel infrastructure over already established mathematical functors.
@@ -1076,7 +1077,9 @@ is kernel infrastructure over already established mathematical functors.
 - Each category presentation retains all projections and evaluations required by its definition.
 - `Cat().Products()` and `Cat().Coproducts()` accept sequence-indexed category diagrams.
 - Their objects own `product_projection(i)` and `coproduct_injection(i)` respectively.
-- Every object of `Cat().Products().Subobjects()` retains its product presentation and apex monomorphism, then derives its component functors by composition.
+- A universal construction returns one value: the constructed object, an object of the ambient category, placed in the construction family and carrying its defining morphisms and universal maps.
+- A construction family is a full subcategory of its ambient category, reached by the retained identity-on-values inclusion, and retains the universal data of each diagram it constructed from.
+- Every object of `Cat().Products().Subobjects()` retains its presenting monomorphism into a chosen product, then derives its component functors by composition.
 - Slice and coslice categories are pullbacks of `ev_1` and `ev_0` along the chosen object and retain their pullback projections.
 - Fibration and opfibration structure retains its cartesian or cocartesian lifts.
 - Kan extensions retain their units, counits, and universally induced natural transformations.

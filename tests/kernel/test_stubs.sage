@@ -279,7 +279,7 @@ def test_the_inherited_sum_is_the_downstream_element_role_at_runtime(tmp_path):
 
 
 def test_a_union_of_two_roles_fails_generation_at_its_declaration(tmp_path):
-    """An erased parameter fails generation where ``signatures.py`` fails descriptor construction."""
+    """A parameter that is either an object or a morphism is type erasure, and the stub would state it (POL-TYPE-029)."""
     module = write(tmp_path, "broad", BROAD)
     with pytest.raises(StubGenerationError) as failure:
         generate_stubs((module,))

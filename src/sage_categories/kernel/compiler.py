@@ -48,7 +48,7 @@ from sage.structure.dynamic_class import dynamic_class
 
 import sage_categories.kernel.descriptors as descriptors
 from sage_categories.kernel.caches import MonoDict
-from sage_categories.kernel.roles import CategoryPoint, Role, kernel_base
+from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role, kernel_base
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
@@ -60,6 +60,7 @@ __all__ = [
     "Node",
     "Route",
     "SemanticCollisionError",
+    "Step",
     "StructuralImageMismatch",
     "catalogue",
     "compile_category",
@@ -84,7 +85,22 @@ class Node(NamedTuple):
     role: Role
 
 
-type Step = tuple[Functor, Role]
+class Step(NamedTuple):
+    """One selected structural step: a functor, the roles at its two ends, and the stage it applies to.
+
+    The two roles differ only for a level shift, where no functor acts and ``functor`` is
+    ``None``: the objects of a category ``C`` are the stage-``1`` generalized elements of
+    ``C``, and its morphisms the stage-``[1]`` ones (``specs/functor.md``, "The level
+    shift").  ``stage`` restricts a step to the values at one stage and is ``None`` for
+    every ordinary step, which acts on its source role at every stage.
+    """
+
+    functor: Functor | None
+    source_role: Role
+    target_role: Role
+    stage: ObjectOfCategory | None
+
+
 type Route = tuple[Step, ...]
 
 # A declaring method: its receiver is a value of the declaring role class, and its
@@ -147,7 +163,7 @@ def same_node(first: Node, second: Node) -> bool:
 
 def successors(current: Node) -> tuple[tuple[Step, Node], ...]:
     return tuple(
-        ((functor, current.role), node(functor.codomain(), current.role))
+        (Step(functor, current.role, current.role, None), node(functor.codomain(), current.role))
         for functor in current.category.selected_functors()
     )
 

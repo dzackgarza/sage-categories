@@ -136,13 +136,14 @@ def _apply_to_element(functor: Functor, element: ElementOfObject) -> ElementOfOb
 
 def _apply_route(value: CategoryPoint, route: compiler.Route) -> CategoryPoint:
     image = value
-    for functor, step_role in route:
-        image = _apply(functor, step_role, image)
+    for step in route:
+        assert step.functor is not None, step
+        image = _apply(step.functor, step.source_role, image)
     return image
 
 
 def _route_name(route: compiler.Route) -> str:
-    return " then ".join(repr(functor) for functor, _ in route) or "the identity route"
+    return " then ".join(repr(step.functor) for step in route) or "the identity route"
 
 
 @overload

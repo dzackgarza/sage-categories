@@ -23,14 +23,14 @@ from sage.structure.coerce_dict import TripleDict
 
 from sage_categories.cat.category import Category, member
 from sage_categories.cat.properties import FullSubcategory, PropertySubcategory
-from sage_categories.kernel.decisions import Decision, decision_and
-from sage_categories.kernel.predicates import Predicate, Proposition, ask
+from sage_categories.kernel.decisions import Decision, Unknown, decision_and
+from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role
 
 if TYPE_CHECKING:
     from sage_categories.cat.properties import FixedEndpointProperty
 
-__all__ = ["FixedEndpointCategory", "IdentityTwoCell", "Mor", "MorphismCategory"]
+__all__ = ["FixedEndpointCategory", "IdentityTwoCell", "Mor", "MorphismCategory", "inhabited"]
 
 
 @overload
@@ -105,6 +105,29 @@ def _endpoints_in_by_membership(morphism: MorphismOfCategory, subcategory: Categ
 
 
 endpoints_in.register_handler(_endpoints_in_by_membership)
+
+# ``inhabited(H)``: the fixed-endpoint category ``H = Mor(C)(A, B)``, or a property
+# narrowing of it, has an object (POL-CAT-086; ``specs/property-refinement.md``,
+# "Fixed-endpoint predicates").  A constructed object establishes inhabitation, so
+# the decision is not a permanent fact of ``H`` and is never cached.  The exact
+# routes: the identity of ``A`` when ``A is B`` and it is a member; then the decision
+# the base category owns for its hom categories (``Category.hom_inhabited``).
+inhabited = Predicate("inhabited", 1, False)
+
+
+def _inhabited_by_identity(hom_category: Category) -> Decision:
+    base = hom_category.narrowing_base()
+    if base.domain() is not base.codomain():
+        return Unknown
+    return True if base.domain().identity() in hom_category else Unknown
+
+
+def _inhabited_by_base_category(hom_category: Category) -> Decision:
+    return hom_category.narrowing_base().base_category().hom_inhabited(hom_category)
+
+
+inhabited.register_handler(_inhabited_by_identity)
+inhabited.register_handler(_inhabited_by_base_category)
 
 
 class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismData, []]):
@@ -261,7 +284,16 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
         return ()
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
-        return member(candidate, self.ambient()) & endpoints(candidate, self._domain_object, self._codomain_object)
+        """A morphism of ``Mor(C)`` with these endpoints (POL-CAT-087: the ambient decides which values are its morphisms)."""
+        return self.ambient().membership_proposition(candidate) & endpoints(candidate, self._domain_object, self._codomain_object)
+
+    def is_inhabited(self) -> AppliedPredicate:
+        """The proposition that some morphism ``A -> B`` exists (POL-CAT-086)."""
+        return inhabited(self)
+
+    def is_empty(self) -> Proposition:
+        """The negation of ``is_inhabited()``: the two propositions are mutually negated by construction."""
+        return ~inhabited(self)
 
     def __call__(self, *args: MorphismData.args, **kwargs: MorphismData.kwargs) -> MorphismOfCategory:
         """``Mor(C)(A, B)(data)``: a morphism ``A -> B`` through ``C``'s constructor."""

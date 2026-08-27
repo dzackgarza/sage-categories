@@ -68,11 +68,11 @@ member.register_handler(is_placed)
 class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     """The local ``Cat().ObjectType`` declaration."""
 
-    def __init__(self) -> None:
+    def __init__(self, data: None) -> None:
+        super().__init__()
         self._initialize(Cat())
 
     def _initialize(self, universe: Category[[OnObject, OnMorphism], [Assignment]]) -> None:
-        ObjectOfCategory.__init__(self, universe)
         self._morphism_categories: dict[int, MorphismCategory[MorphismData, TwoMorphismData]] = {}
         self._narrowings: dict[tuple[int, ...], Category[MorphismData, TwoMorphismData]] = {}
         self._identities: MonoDict = MonoDict()
@@ -692,6 +692,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
     def __init__(self) -> None:
         self._canonical: dict[tuple[str, tuple[int, ...]], FinitePresentedCategory] = {}
+        ObjectOfCategory.__init__(self, self)
         self._initialize(self)
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:

@@ -658,7 +658,9 @@ def _object_wrapper(current: Node) -> FunctionType:
             assert category is None and data is None, "an ancestor object constructor receives only its precomputed input"
             active.run(current.category)
             return
-        assert category is not None, "an object root constructor requires its category"
+        if category is None:
+            category = current.category
+        assert category is current.category, f"the {current.category!r} object role cannot construct an object of {category!r}"
         identity = ObjectRoleIdentity(category)
         if data is None:
             _construct_object_root(current, instance, identity, None)

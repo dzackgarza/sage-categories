@@ -111,6 +111,11 @@ def test_a_category_coproduct_has_injections_that_tag() -> None:
     assert tagged.member() is two
     assert into_sets.on_morphism(successor).morphism() is successor
     assert into_sets.on_morphism(successor).domain() is tagged
+    # An object of the coproduct is the pair ``(i, X)`` (Mathlib
+    # ``CategoryTheory.Sigma.sigma``), so two objects with different tags are distinct
+    # and two with one tag are distinct exactly when their members are.
+    assert ask(tagged == into_cat.on_object(Sets())) is False
+    assert ask(tagged == into_sets.on_object(three)) is False
     with pytest.raises(AssertionError):
         Mor(coproduct)(tagged, into_cat.on_object(Sets()))(successor)
 

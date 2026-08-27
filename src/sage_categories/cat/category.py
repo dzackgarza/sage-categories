@@ -1130,12 +1130,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     def Terminal(self) -> FinitePresentedCategory:
         return self.Simplex(0)
 
-    def Point(
-        self,
-        member: CategoryPoint,
-        targets: tuple[Category, ...] = (),
-        roles: dict[Role, type[CategoryPoint]] | None = None,
-    ) -> PointCategory:
+    def Point(self, member: CategoryPoint, targets: tuple[Category, ...] = ()) -> PointCategory:
         """``{X}``: the one-object category on ``member``, retained by identity (POL-CAT-083).
 
         ``targets`` are the categories the point functors place ``member`` in.  Building
@@ -1144,21 +1139,15 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         functors' generalized-element surface on the objects and morphisms of ``member``
         when ``member`` is itself a category (``specs/functor.md``, "The level shift").
 
-        ``roles`` are the declarations specific to ``X``: the operations the distinguished
-        object introduces, which ``{X}`` owns because ``X`` is its sole object.  A named
-        mathematical object is a rule, a cited cardinality or other established property,
-        the placements those establish, and these declarations; ``{X}`` supplies
-        everything else a category needs.
-
         One point category exists per object, so calling this again returns the retained
-        one and its declared targets and roles stand.
+        one and its declared targets stand.
         """
         from sage_categories.cat.points import PointCategory
         from sage_categories.kernel.refinement import refine
 
         assert role_of(member) is Role.OBJECT, f"{member!r} is not an object of a category"
         if member not in self._point_categories:
-            point = PointCategory(member, targets, roles if roles is not None else {})
+            point = PointCategory(member, targets)
             self._point_categories[member] = point
             refine(member, point)
             compiler.install_level_shift(point)

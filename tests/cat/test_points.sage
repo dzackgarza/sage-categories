@@ -121,11 +121,11 @@ def test_the_level_shift_contributes_no_class_base() -> None:
     assert not issubclass(subject.MorphismType, point.ElementType)
 
 
-# -- a distinguished named object declared entirely by its point category (POL-CAT-083) --
+# -- a point category on a distinguished named object (POL-CAT-083) --
 #
-# The even integers: a rule, a cited cardinality, a placement, and a point constructor.
-# Everything else -- the object, element, and morphism roles, the subcategory
-# monomorphism, the constructor returning the sole object -- comes from ``{X}``.
+# The even integers: a rule, a cited cardinality, and one further placement.  ``{X}``
+# supplies the object, element, and morphism roles, the subcategory monomorphism, and
+# the constructor returning the sole object.
 
 
 def _is_even(datum) -> bool:
@@ -133,31 +133,19 @@ def _is_even(datum) -> bool:
     return datum in _integer_ring and Integer(datum) % int(2) == int(0)
 
 
-class EvenIntegerSet(ObjectOfCategory):
-    """The declarations specific to ``2ZZ``: its point constructor and its name."""
-
-    def __call__(self, integer):
-        return self.point(Integer(integer))
-
-    def __repr__(self) -> str:
-        return "2ZZ"
-
-
 # #2ZZ = aleph0: the doubling bijection ZZ -> 2ZZ, with Mathlib ``Cardinal.mk_int``
 # (Mathlib.SetTheory.Cardinal.Basic; inspected 2026-08-26) for #ZZ = aleph0.
 EVEN_INTEGERS = Sets().with_cardinality(_is_even, aleph0)
-EVENS = Cat().Point(EVEN_INTEGERS, (Sets().Countable(),), {Role.OBJECT: EvenIntegerSet})
+EVENS = Cat().Point(EVEN_INTEGERS, (Sets().Countable(),))
 
 
-def test_a_named_object_leaf_states_only_its_rule_cardinality_placement_and_constructor() -> None:
-    """``{X}`` owns the declarations specific to ``X`` and supplies the rest of the category (POL-CAT-083)."""
+def test_the_member_of_a_point_category_is_its_sole_object_and_is_placed_there() -> None:
+    """``{X}`` has ``X`` as its sole object, and refining ``X`` into it keeps ``X``'s own membership rule."""
     evens = EVEN_INTEGERS
 
     assert EVENS() is evens, "the sole object of the point category"
     assert evens.category() is EVENS, "the member is placed in its point category"
-    assert repr(evens) == "2ZZ", "the declared name reaches the value"
-    assert evens(int(6)) is evens.point(Integer(6)), "the declared point constructor is that of the sole object"
-    assert ask(evens.membership_proposition(evens(int(6)))) is True
+    assert ask(evens.membership_proposition(evens.point(Integer(6)))) is True
     assert ask(evens.membership_proposition(ZZ(int(3)))) is False
 
 

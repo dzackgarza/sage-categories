@@ -241,7 +241,6 @@ class FinitePosetsCategory(PropertySubcategory[[Rule], []]):
                 return underlying.morphism_constructor_input(source)
 
             finite_underlying.retain_object_constructor_conversion(object_input)
-            finite_underlying.retain_element_constructor_conversion(element_input)
             finite_underlying.retain_morphism_constructor_conversion(morphism_input)
             self._functors["underlying_finite_set"] = finite_underlying
         return (*super().structure_functors(), self._functors["underlying_finite_set"])

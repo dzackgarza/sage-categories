@@ -531,12 +531,15 @@ chain then initializes each reachable target role once. A target constructor rec
 its exact converted datum and calls `super().__init__()`. Thus a point placement supplies
 the target role's state as well as its methods.
 
-One implementation choice remains open. A point placement can participate in the
-distinguished object's initial role compilation. It can instead use same-object Sage
-refinement that extends each affected compiled role without invalidating existing
-descendants or values, then runs every newly required initializer once. The selected
-design must support point categories formed from runtime objects, preserve role
-identities, and use no second inheritance registry.
+A point placement arrives through same-object Sage refinement. It extends each affected
+compiled role without invalidating existing descendants or values, then runs every newly
+required initializer once. The distinguished object keeps the role identities it already
+has, and the placement adds no second inheritance registry.
+
+Refinement is what makes a point category formed from a runtime object work. `Cardinal()`
+and `Ordinals()` are constructed before `Semirings(Cat())` exists, and each receives its
+semiring surface when `Cat().Point(Cardinal())` and `Cat().Point(Ordinals())` declare
+their point functors. No construction order between the three is required.
 
 The defining morphism `1 -> C` used by an object-stage identity remains lazy. It is
 distinct from a selected inclusion `{X} -> D`. Laziness of the defining morphism does
@@ -602,12 +605,17 @@ For example, `Semirings(Sets())` has set carriers and set maps. `Semirings(Cat()
 category carriers and functors. A category-valued distinguished object therefore uses a
 point functor into `Semirings(Cat())`.
 
-One definition remains open for the `Cat()` specialization. `Semirings(Cat())` can use
-strict internal semiring objects, where the laws are equalities of functors. It can
-instead use coherent rig categories, where associativity, units, symmetry, and
-distributivity are specified natural isomorphisms satisfying coherence diagrams. The
-selected convention must define one exact category. The point-functor and compiled-role
-contracts are the same for either convention.
+`Semirings(Cat())` is the category of strict internal semiring objects. Associativity,
+units, symmetry, distributivity, and absorption are equalities of functors, exactly as
+`Semirings(Sets())` states them as equalities of maps. `Cat()` supplies the finite
+products those functors are formed over.
+
+Its two consumers satisfy that strictness by construction. `Cardinal()` and `Ordinals()`
+are skeletal (`POL-SET-025`), so each operation selects one representative and
+`(a + b) + c` and `a + (b + c)` are one object. The equality of functors therefore holds
+on objects and on morphisms.
+
+A category-valued semiring whose carrier is not skeletal is outside this definition.
 
 ### Ordinals as a semiring
 

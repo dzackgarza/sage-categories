@@ -12,38 +12,63 @@ by fewer, ``specs/functor.md``, "Inclusion functors", POL-CAT-084); the compiler
 stated construction-defect messages (POL-CAT-012).
 """
 
+from dataclasses import dataclass
+
 import pytest
 
 from sage_categories.all import *
+from sage_categories.kernel.construction import retained_morphism_input, retained_object_input
 from sage_categories.kernel.refinement import common_ancestor, is_placed, is_subcategory
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
+
+
+@dataclass(eq=False, slots=True)
+class CarrierData:
+    """The local datum of an object carrying one set."""
+
+    carrier: object
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class CarrierMapData:
+    """The local datum of a morphism carrying one set map."""
+
+    set_map: object
 
 
 class Plain(Category):
     """A leaf whose one selected functor is a plain functor: no declared property."""
 
-    class ObjectType(ObjectOfCategory):
-        def __init__(self, category, carrier):
-            ObjectOfCategory.__init__(self, category)
-            self._carrier = carrier
+    class DeclaredObjectType(ObjectOfCategory):
+        def __init__(self, data):
+            self._carrier_data = data
+            super().__init__()
 
         def carrier(self) -> ObjectOfCategory:
-            return self._carrier
+            return self._carrier_data.carrier
 
-    class ElementType(ElementOfObject):
-        """No local operation."""
+    class DeclaredMorphismType(MorphismOfCategory):
+        def __init__(self, data):
+            self._carrier_map_data = data
+            super().__init__()
 
-    class MorphismType(MorphismOfCategory):
         def underlying_map(self) -> MorphismOfCategory:
-            return self._underlying
+            return self._carrier_map_data.set_map
+
+    def __init__(self):
+        self._selected = {}
+        super().__init__()
 
     def structure_functors(self):
-        if "carrier" not in self.__dict__.setdefault("_selected", {}):
-            self._selected["carrier"] = Fun(self, Sets())(lambda member: member.carrier(), lambda morphism: morphism.underlying_map())
+        if "carrier" not in self._selected:
+            underlying = Fun(self, Sets())(lambda member: member.carrier(), lambda morphism: morphism.underlying_map())
+            underlying.retain_object_constructor_conversion(lambda source: retained_object_input(source.datum.carrier))
+            underlying.retain_morphism_constructor_conversion(lambda source: retained_morphism_input(source.datum.set_map))
+            self._selected["carrier"] = underlying
         return (self._selected["carrier"],)
 
     def __call__(self, carrier):
-        return self.ObjectType(self, carrier)
+        return self.ObjectType(self, CarrierData(carrier))
 
     def __repr__(self):
         return "Plain"
@@ -52,17 +77,8 @@ class Plain(Category):
 class ForeignDomain(Category):
     """A leaf whose declared entry is a functor out of another category."""
 
-    class ObjectType(ObjectOfCategory):
-        """No local operation."""
-
-    class ElementType(ElementOfObject):
-        """No local operation."""
-
-    class MorphismType(MorphismOfCategory):
-        """No local operation."""
-
     def structure_functors(self):
-        return (Fun(Posets(), Sets()).Faithful()(lambda poset: poset.underlying_set(), lambda monotone: monotone.underlying_map()),)
+        return (Posets().structure_functors()[int(0)],)
 
     def __repr__(self):
         return "ForeignDomain"
@@ -70,15 +86,6 @@ class ForeignDomain(Category):
 
 class Duplicated(Category):
     """A leaf that declares one functor twice."""
-
-    class ObjectType(ObjectOfCategory):
-        """No local operation."""
-
-    class ElementType(ElementOfObject):
-        """No local operation."""
-
-    class MorphismType(MorphismOfCategory):
-        """No local operation."""
 
     def structure_functors(self):
         inclusion = Fun(self, Sets()).FullyFaithful().inclusion()
@@ -91,17 +98,8 @@ class Duplicated(Category):
 class SelfLooped(Category):
     """A leaf that selects a functor from itself to itself: a cycle of length one."""
 
-    class ObjectType(ObjectOfCategory):
-        """No local operation."""
-
-    class ElementType(ElementOfObject):
-        """No local operation."""
-
-    class MorphismType(MorphismOfCategory):
-        """No local operation."""
-
     def structure_functors(self):
-        return (Fun(self, self)(lambda member: member, lambda morphism: morphism),)
+        return (Fun(self, self).Equivalences().identity(),)
 
     def __repr__(self):
         return "SelfLooped"

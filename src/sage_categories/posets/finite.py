@@ -238,10 +238,11 @@ class FinitePosetsCategory(PropertySubcategory[[Rule], []]):
             def morphism_input(
                 source: MorphismConstructionInput[MonotoneMap, PosetMorphismData],
             ) -> MorphismConstructionInput[SetMap, SetMorphismData]:
-                return underlying.morphism_constructor_input(source)
+                target: MorphismConstructionInput[SetMap, SetMorphismData] = underlying.morphism_constructor_input(source)
+                refine(target.canonical_image, finite_sets.morphism_category(1))
+                return target
 
             finite_underlying.retain_object_constructor_conversion(object_input)
-            finite_underlying.retain_element_constructor_conversion(element_input)
             finite_underlying.retain_morphism_constructor_conversion(morphism_input)
             self._functors["underlying_finite_set"] = finite_underlying
         return (*super().structure_functors(), self._functors["underlying_finite_set"])

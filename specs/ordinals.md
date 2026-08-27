@@ -50,10 +50,10 @@ sum, and the multiplication is commutative (Mathlib
 [`NatOrdinal.instCommSemiring`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/SetTheory/Ordinal/NaturalOps.html),
 `SetTheory.Ordinal.NaturalOps`).
 
-The exact `Cat()`-level law data follows the strict-or-coherent choice recorded in
-[functor.md](functor.md#ambient-algebraic-categories). The strict form retains equations
-between these functors. The coherent form retains the corresponding natural
-isomorphisms and coherence diagrams.
+The `Cat()`-level law data is the equations between these functors
+([functor.md](functor.md#ambient-algebraic-categories)). `Ordinals()` is skeletal, so the
+natural sum and the natural product each select one representative and the laws hold as
+equalities.
 
 The point functor supplies complete compiled roles and exact constructor conversions.
 Those constructors initialize the semiring state before they expose its methods. The

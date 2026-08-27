@@ -303,7 +303,7 @@ Q.coproduct_injection(i)  # C_i -> A_Q
 Here `A_P` and `A_Q` are the apex categories retained by `P` and `Q`. Each returned
 morphism is a functor and therefore a `Cat().MorphismType` value.
 
-The operators are defined once, in two roles. On categories: `C * D = Cat().Products()((C, D))`, `C + D = Cat().Coproducts()((C, D))`, and `D ** C = Fun(C, D)`. On objects `X, Y` of one category `C`: `X * Y = C.Products()((X, Y))`, `X + Y = C.Coproducts()((X, Y))`, and `Y ** X` the exponential object where `C` is declared cartesian closed; each asserts `X.category() is Y.category()`. An external pair is constructed explicitly as `(C * D)((X, Y))`; no operator casts an object into a product category.
+The operators are defined once, in two roles. On categories: `C * D = Cat().Products()((C, D))`, `C + D = Cat().Coproducts()((C, D))`, and `D ** C = Fun(C, D)`. On objects `X, Y` of one category `C`: `X * Y = C.Products()((X, Y))`, `X + Y = C.Coproducts()((X, Y))`, and `Y ** X` the exponential object where `C` is declared cartesian closed; each takes its construction in the narrowest category containing both operands and asserts that such a category exists. An object refined into `C.P()` and an object of `C` are both objects of `C`; their product is the product in `C`. Operands with no common category, such as a set and a category, fail the assertion. An external pair is constructed explicitly as `(C * D)((X, Y))`; no operator casts an object into a product category.
 
 Let `P_D` be a product presentation with apex `A_D`. If `j: S -> A_D` presents a
 subcategory, the corresponding object of `Cat().Products().Subobjects()` retains both

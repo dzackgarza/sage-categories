@@ -15,9 +15,10 @@ from sage_categories.kernel.caches import canonical_input, has_canonical_transpo
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, role_of
 
 if TYPE_CHECKING:
+    from sage_categories.cat.category import Category
     from sage_categories.kernel.construction import ElementConstructionInput, MorphismConstructionInput, ObjectConstructionInput
 
-__all__ = ["construction_input", "placement_node"]
+__all__ = ["construction_input", "placement_node", "transport"]
 
 
 def placement_node(value: CategoryPoint) -> compiler.Node:
@@ -32,6 +33,17 @@ def placement_node(value: CategoryPoint) -> compiler.Node:
 
 def _route_name(route: compiler.Route) -> str:
     return " then ".join(repr(functor) for functor, _ in route) or "the identity route"
+
+
+def _from_construction(placement: Category, constructed_in: Category) -> bool:
+    """Whether ``placement`` is the category a value was constructed in, or a refinement of it.
+
+    Refinement narrows a value's placement in place and keeps its retained construction
+    input, so the two agree only up to that narrowing (``kernel/refinement.py``).
+    """
+    from sage_categories.kernel.refinement import is_subcategory
+
+    return is_subcategory(placement, constructed_in)
 
 
 def _routes(source: compiler.Node, target: compiler.Node) -> tuple[compiler.Route, ...]:
@@ -106,7 +118,10 @@ def _object_input_at[
     source_node: compiler.Node,
     target: compiler.Node,
 ) -> ObjectConstructionInput[TargetValue, TargetDatum]:
-    assert compiler.same_node(compiler.node(source.identity.category, Role.OBJECT), source_node)
+    assert _from_construction(source_node.category, source.identity.category), (
+        f"{source.canonical_image!r} is placed in {source_node.category!r}, which is not the category "
+        f"{source.identity.category!r} it was constructed in or a refinement of it"
+    )
     routes = _routes(source_node, target)
     first = _object_route(source, routes[0])
     for route in routes[1:]:
@@ -130,7 +145,10 @@ def _element_input_at[
 
     assert isinstance(source.identity, GeneralCategoryPointIdentity)
     category = source.identity.defining_morphism.codomain().category()
-    assert compiler.same_node(compiler.node(category, Role.ELEMENT), source_node)
+    assert _from_construction(source_node.category, category), (
+        f"{source.canonical_image!r} is placed in {source_node.category!r}, which is not the category "
+        f"{category!r} of its parent or a refinement of it"
+    )
     routes = _routes(source_node, target)
     first = _element_route(source, routes[0])
     for route in routes[1:]:
@@ -150,7 +168,10 @@ def _morphism_input_at[
     source_node: compiler.Node,
     target: compiler.Node,
 ) -> MorphismConstructionInput[TargetValue, TargetDatum]:
-    assert compiler.same_node(compiler.node(source.identity.category, Role.OBJECT), source_node)
+    assert _from_construction(source_node.category, source.identity.category), (
+        f"{source.canonical_image!r} is placed in {source_node.category!r}, which is not the category "
+        f"{source.identity.category!r} it was constructed in or a refinement of it"
+    )
     routes = _routes(source_node, target)
     first = _morphism_route(source, routes[0])
     for route in routes[1:]:
@@ -231,3 +252,8 @@ def construction_input[
 
     retain_canonical_transport(value, target.category, converted.canonical_image, converted)
     return converted
+
+
+def transport(value: CategoryPoint, target: compiler.Node) -> CategoryPoint:
+    """The canonical image of ``value`` at ``target``: the value its selected route constructs."""
+    return construction_input(value, target).canonical_image

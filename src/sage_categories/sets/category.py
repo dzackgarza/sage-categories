@@ -202,16 +202,21 @@ class SetsCategory(Category[[Rule], []]):
         return self._canonical[name, arguments]
 
     def Empty(self) -> SetObject:
-        return self._canonical_finite("empty", (), ())
+        """The empty set: the representative that ``Cardinal()`` selects for ``0`` (``sets/cardinals.py``)."""
+        from sage_categories.sets.cardinals import Cardinal
+
+        return Cardinal().representative(Cardinal().zero())
 
     def Terminal(self) -> SetObject:
         """The one-point set ``1 = {*}``, the classical stage of ``Sets()``."""
         return self._canonical_finite("terminal", (), ((),))
 
     def Simplex(self, dimension: int) -> SetObject:
-        """``[n] = {0, ..., n}``."""
+        """``[n] = {0, ..., n}``: the representative that ``Cardinal()`` selects for ``n + 1`` (Mathlib ``Cardinal.mk_fin``; ``sets/cardinals.py``)."""
+        from sage_categories.sets.cardinals import Cardinal
+
         assert dimension >= 0
-        return self._canonical_finite("simplex", (dimension,), range(dimension + 1))
+        return Cardinal().representative(Cardinal()(dimension + 1))
 
     def classical_stages(self) -> tuple[SetObject, ...]:
         """``G_Sets = 1``.  The writer asserts that ``1`` separates ``Sets()``, so ``Mor(Sets())(1, -)`` is faithful (POL-MATH-037).

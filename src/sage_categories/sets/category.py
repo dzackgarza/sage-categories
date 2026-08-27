@@ -109,7 +109,6 @@ class SetsCategory(Category[[Rule], []]):
     def __init__(self) -> None:
         self._canonical: dict[tuple[str, tuple[int, ...]], SetObject] = {}
         self._rule_valued: MonoDict = MonoDict()
-        self._elements: MonoDict = MonoDict()
         super().__init__()
         self._equality.register_handler(points_equal)
         self._equality.register_handler(maps_equal)

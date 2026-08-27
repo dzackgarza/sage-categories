@@ -12,3 +12,6 @@ __pycache__/
 
 # mypy's own cache: written by the stub generator and by the type checker.
 .mypy_cache/
+
+# Agent worktrees: separate checkouts of this repository, never its contents.
+.claude/worktrees/

@@ -94,6 +94,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         self._inverses: MonoDict = MonoDict()
         self._points: MonoDict = MonoDict()
         self._arrows: MonoDict = MonoDict()
+        self._elements: MonoDict = MonoDict()
         self._catalogues: dict[Role, dict[str, compiler.Entry]] = {}
         self._limits: MonoDict = MonoDict()
         self._colimits: MonoDict = MonoDict()
@@ -352,13 +353,17 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     def element_from_defining_morphism(self, defining_morphism: MorphismOfCategory) -> CategoryPoint:
         """The generalized element ``t: T -> X`` of ``X`` given by a morphism into it (POL-CAT-058).
 
-        A declared subcategory shares its ambient's element values; ``Sets()``
-        overrides for its classical points, which carry a datum.
+        The element is retained by that exact morphism (POL-CAT-066): one defining
+        morphism names one generalized element, so two callers reach one value and one
+        construction input.  A declared subcategory shares its ambient's element values;
+        ``Sets()`` overrides for its classical points, which carry a datum.
         """
         assert defining_morphism in self.morphism_category(1), f"{defining_morphism!r} is not a morphism of {self!r}"
         if self.has_ambient():
             return self.ambient().element_from_defining_morphism(defining_morphism)
-        return self.ElementType(defining_morphism)
+        if defining_morphism not in self._elements:
+            self._elements[defining_morphism] = self.ElementType(defining_morphism)
+        return self._elements[defining_morphism]
 
     def construct_morphism(
         self,

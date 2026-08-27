@@ -290,7 +290,6 @@ class PosetsCategory(Category[[Rule], []]):
         self._canonical: dict[tuple[str, int], Poset] = {}
         self._thin: MonoDict = MonoDict()
         self._subset_posets: MonoDict = MonoDict()
-        self._elements: MonoDict = MonoDict()
         super().__init__()
         self.underlying_set_functor().retain_cartesian_lifts(self._induced_order)
         self._equality.register_handler(self._equal)

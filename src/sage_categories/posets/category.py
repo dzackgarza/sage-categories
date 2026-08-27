@@ -407,7 +407,7 @@ class PosetsCategory(Category[[Rule], []]):
         if defining_morphism.domain() is self.Terminal():
             set_map = self.underlying_set_functor().on_morphism(defining_morphism)
             return defining_morphism.codomain().element(Sets().element_from_defining_morphism(set_map))
-        return defining_morphism.codomain().category().ElementType(defining_morphism)
+        return defining_morphism.codomain().category().ElementType(defining_morphism, None)
 
     # -- morphisms ------------------------------------------------------------------------------
 

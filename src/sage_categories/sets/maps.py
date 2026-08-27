@@ -33,8 +33,8 @@ from typing import TYPE_CHECKING, Any
 
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
-from sage_categories.kernel.decisions import Decision, Unknown, decision_and, decision_not, decision_or
-from sage_categories.kernel.predicates import ask
+from sage_categories.kernel.decisions import Decision, Unknown
+from sage_categories.kernel.predicates import ask, conjunction, disjunction, negation
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory
 from sage_categories.sets.elements import Datum
 
@@ -98,7 +98,7 @@ def maps_equal(first: CategoryPoint, candidate: Any) -> Decision:
         return Unknown
     first_rule = first._set_morphism_data.rule
     candidate_rule = candidate._set_morphism_data.rule
-    return decision_and(*(ask(first_rule(datum) == candidate_rule(datum)) for datum in finite.chosen_enumeration(first.domain())))
+    return ask(conjunction(first_rule(datum) == candidate_rule(datum) for datum in finite.chosen_enumeration(first.domain())))
 
 
 def injective_on_finite_domain(morphism: MorphismOfCategory) -> Decision:
@@ -108,8 +108,8 @@ def injective_on_finite_domain(morphism: MorphismOfCategory) -> Decision:
         return Unknown
     rule = morphism._set_morphism_data.rule
     images = [rule(datum) for datum in sets.Finite().chosen_enumeration(morphism.domain())]
-    collisions = (ask(images[i] == images[j]) for i in range(len(images)) for j in range(i + 1, len(images)))
-    return decision_not(decision_or(*collisions))
+    collisions = (images[i] == images[j] for i in range(len(images)) for j in range(i + 1, len(images)))
+    return ask(negation(disjunction(collisions)))
 
 
 def surjective_on_finite_domain(morphism: MorphismOfCategory) -> Decision:
@@ -122,8 +122,8 @@ def surjective_on_finite_domain(morphism: MorphismOfCategory) -> Decision:
         return Unknown
     rule = morphism._set_morphism_data.rule
     images = [rule(datum) for datum in finite.chosen_enumeration(morphism.domain())]
-    return decision_and(*(decision_or(*(ask(image == datum) for image in images)) for datum in finite.chosen_enumeration(morphism.codomain())))
+    return ask(conjunction(disjunction(image == datum for image in images) for datum in finite.chosen_enumeration(morphism.codomain())))
 
 
 def bijective_on_finite_domain(morphism: MorphismOfCategory) -> Decision:
-    return decision_and(injective_on_finite_domain(morphism), surjective_on_finite_domain(morphism))
+    return ask(conjunction((injective_on_finite_domain(morphism), surjective_on_finite_domain(morphism))))

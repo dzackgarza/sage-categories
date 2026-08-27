@@ -6,8 +6,8 @@ from sage.misc.cachefunc import cached_method
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.properties import PropertySubcategory as PropertySubcategory
-from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown, UnknownClass as UnknownClass, decision_not as decision_not, decision_or as decision_or
-from sage_categories.kernel.predicates import ask as ask
+from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown, UnknownClass as UnknownClass
+from sage_categories.kernel.predicates import ask as ask, disjunction as disjunction, negation as negation
 from sage_categories.kernel.refinement import refine as refine
 from sage_categories.kernel.roles import Role as Role
 from sage_categories.sets.cardinals import CardinalObject as CardinalObject

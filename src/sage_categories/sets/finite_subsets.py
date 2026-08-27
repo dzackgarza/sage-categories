@@ -53,8 +53,8 @@ from sage.structure.coerce_dict import MonoDict, TripleDict
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
 from sage_categories.cat.properties import PropertySubcategory
-from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass, decision_and
-from sage_categories.kernel.predicates import ask
+from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
+from sage_categories.kernel.predicates import ask, conjunction
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import ObjectOfCategory, Role
 from sage_categories.sets.cardinals import Cardinal, CardinalObject
@@ -174,7 +174,7 @@ class FiniteSubsetsCategory(PropertySubcategory[[Rule], []]):
             def membership_rule(datum: Datum) -> Decision:
                 match datum:
                     case frozenset() if size is Unknown or len(datum) == size:
-                        return decision_and(*(base_rule(member) for member in datum))
+                        return ask(conjunction(base_rule(member) for member in datum))
                     case _:
                         return False
 

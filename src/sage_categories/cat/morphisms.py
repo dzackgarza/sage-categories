@@ -23,7 +23,7 @@ from sage.structure.coerce_dict import TripleDict
 
 from sage_categories.cat.category import Category, member
 from sage_categories.cat.properties import FullSubcategory, PropertySubcategory
-from sage_categories.kernel.decisions import Decision, Unknown, decision_and
+from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role
@@ -77,7 +77,7 @@ endpoints = Predicate("endpoints", 3, False)
 
 
 def _endpoints_by_equality(morphism: MorphismOfCategory, domain: ObjectOfCategory, codomain: ObjectOfCategory) -> Decision:
-    return decision_and(ask(morphism.domain() == domain), ask(morphism.codomain() == codomain))
+    return ask((morphism.domain() == domain) & (morphism.codomain() == codomain))
 
 
 endpoints.register_handler(_endpoints_by_equality)
@@ -96,10 +96,7 @@ endpoints_in = Predicate("endpoints_in", 2, False)
 
 
 def _endpoints_in_by_membership(morphism: MorphismOfCategory, subcategory: Category) -> Decision:
-    return decision_and(
-        ask(subcategory.membership_proposition(morphism.domain())),
-        ask(subcategory.membership_proposition(morphism.codomain())),
-    )
+    return ask(subcategory.membership_proposition(morphism.domain()) & subcategory.membership_proposition(morphism.codomain()))
 
 
 endpoints_in.register_handler(_endpoints_in_by_membership)

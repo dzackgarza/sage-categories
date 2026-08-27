@@ -47,8 +47,8 @@ import sage_categories.sets.category as _sets
 from sage_categories.cat.constructions import cocone, cocone_apex, cone, cone_apex
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.shapes import Discrete, omega
-from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass, decision_and
-from sage_categories.kernel.predicates import ask
+from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
+from sage_categories.kernel.predicates import ask, conjunction
 from sage_categories.kernel.roles import ObjectOfCategory
 from sage_categories.sets.elements import Datum
 from sage_categories.sets.objects import SetObject
@@ -78,9 +78,9 @@ def limit_of_sets(diagram: Functor) -> SetObject:
         if generators is Unknown:
             return Unknown
         family = product.point(datum)
-        return decision_and(
-            *(
-                ask(diagram.on_morphism(generator)(product.product_projection(vertex(generator.domain()))(family)) == product.product_projection(vertex(generator.codomain()))(family))
+        return ask(
+            conjunction(
+                diagram.on_morphism(generator)(product.product_projection(vertex(generator.domain()))(family)) == product.product_projection(vertex(generator.codomain()))(family)
                 for generator in generators
             )
         )

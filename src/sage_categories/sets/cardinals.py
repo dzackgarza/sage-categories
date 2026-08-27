@@ -85,8 +85,8 @@ from sage_categories.kernel.construction import (
     retained_morphism_input,
     retained_object_input,
 )
-from sage_categories.kernel.decisions import Decision, Unknown, decision_not, decision_or
-from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask
+from sage_categories.kernel.decisions import Decision, Unknown
+from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask, disjunction, negation
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, role_of
 from sage_categories.ordinals.category import OrdinalObject, Ordinals, bind_cardinals
 from sage_categories.sets.maps import SetMorphismData
@@ -261,9 +261,9 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
         self._finite_cardinals = PropertySubcategory(self, "Finite", {}, (self._countable_cardinals,))
         self._uncountable_cardinals = PropertySubcategory(self, "Uncountable", {}, (self._infinite_cardinals,))
         self._finite_cardinals.predicate().register_handler(self._is_finite)
-        self._infinite_cardinals.predicate().register_handler(lambda cardinal: decision_not(self._is_finite(cardinal)))
+        self._infinite_cardinals.predicate().register_handler(lambda cardinal: ask(negation(self._is_finite(cardinal))))
         self._countable_cardinals.predicate().register_handler(self._is_countable)
-        self._uncountable_cardinals.predicate().register_handler(lambda cardinal: decision_not(self._is_countable(cardinal)))
+        self._uncountable_cardinals.predicate().register_handler(lambda cardinal: ask(negation(self._is_countable(cardinal))))
 
     def Finite(self) -> Category:
         return self._finite_cardinals
@@ -484,7 +484,7 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
         morphisms = self.morphism_category(1)
         match hom_category.narrowing_roots():
             case ():
-                return decision_or(self._equal(source, self(0)), decision_not(self._equal(target, self(0))))
+                return ask(disjunction((self._equal(source, self(0)), negation(self._equal(target, self(0))))))
             case (root,) if root is morphisms.Monomorphisms():
                 return self._at_most(source, target)
             case (root,) if root is morphisms.Isomorphisms():
@@ -577,7 +577,7 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
         if first._key == second._key:
             return False
         if self._at_most(first, second) is True:
-            return decision_not(ask(first == second))
+            return ask(~(first == second))
         if self._at_most(second, first) is True:
             return False
         return Unknown

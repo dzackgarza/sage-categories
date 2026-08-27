@@ -18,21 +18,34 @@ assumption context (POL-ASSUME-002/004): every proposition has an engine value
 
 Exact ``True`` for a property predicate refines the argument through the
 property's constructor (POL-CAT-044, POL-ASSUME-007).
+
+There is one three-valued logic, and it is this one.  A handler composes its
+sub-questions as propositions -- ``conjunction``, ``disjunction``, ``negation``,
+``implication``, and the ``&``, ``|``, ``~`` operators -- and asks the result once.
+``Connective`` carries no truth table: it delegates to ``sympy.logic.boolalg``'s
+``And``, ``Or``, ``Not``, and ``Implies``, exactly as an applied predicate delegates to
+``Q.owned_property``.  What the wrapper adds over a bare SymPy expression is that the
+parts stay owned until ``ask`` decides them, because an exact handler needs the owned
+arguments of a leaf and the engine expression has replaced them by dummies.
+
+A part may be a decision rather than a proposition: an exact handler that compares two
+private data holds one, since ``==`` on an engine value is exact.  ``ask`` sympifies a
+decided part, so the two kinds compose without a caller ever inspecting which it holds.
 """
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING, Any
 
 from sage.structure.coerce_dict import MonoDict, TripleDict
-from sympy import Dummy, Integer, Predicate as EnginePredicate, Q
+from sympy import Dummy, Integer, Predicate as EnginePredicate, Q, S, sympify
 from sympy.assumptions import global_assumptions
 from sympy.assumptions.assume import AppliedPredicate as EngineApplied
 from sympy.core.basic import Basic
-from sympy.logic.boolalg import And, Not
+from sympy.logic.boolalg import And, Implies, Not, Or
 
-from sage_categories.kernel.decisions import Decision, Unknown, decision_and, decision_not
+from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.refinement import is_placed, refine
 from sage_categories.kernel.roles import CategoryPoint
 
@@ -42,14 +55,17 @@ if TYPE_CHECKING:
 __all__ = [
     "AppliedPredicate",
     "Argument",
-    "Conjunction",
+    "Connective",
     "EqualityPredicate",
-    "Negation",
     "Predicate",
     "PropertyPredicate",
     "Proposition",
     "ask",
     "assume",
+    "conjunction",
+    "disjunction",
+    "implication",
+    "negation",
 ]
 
 # What a predicate is applied to: owned values, and the integer convenience of the
@@ -162,11 +178,20 @@ class Proposition:
         # Python truth value (POL-MATH-035).
         raise TypeError(f"cannot determine truth value of {self!r}; use ask()")
 
-    def __invert__(self) -> Negation:
-        return Negation(self)
+    def __invert__(self) -> Connective:
+        return Connective(Not, (self,))
 
-    def __and__(self, other: Proposition) -> Conjunction:
-        return Conjunction((self, other))
+    def __and__(self, other: Decision | Proposition) -> Connective:
+        return Connective(And, (self, other))
+
+    def __rand__(self, other: Decision | Proposition) -> Connective:
+        return Connective(And, (other, self))
+
+    def __or__(self, other: Decision | Proposition) -> Connective:
+        return Connective(Or, (self, other))
+
+    def __ror__(self, other: Decision | Proposition) -> Connective:
+        return Connective(Or, (other, self))
 
 
 class AppliedPredicate(Proposition):
@@ -189,32 +214,66 @@ class AppliedPredicate(Proposition):
         return f"{self._predicate}({', '.join(map(repr, self._arguments))})"
 
 
-class Negation(Proposition):
-    def __init__(self, positive: Proposition) -> None:
-        self._positive = positive
+class Connective(Proposition):
+    """Propositions under one SymPy boolean operator: ``And``, ``Or``, or ``Not``.
 
-    def positive(self) -> Proposition:
-        return self._positive
+    The boolean algebra is SymPy's (``sympy.logic.boolalg``), so this class carries no
+    truth table of its own.  What it adds over SymPy's own expression is that its parts
+    stay owned propositions until ``ask`` decides them: an exact handler needs the owned
+    arguments of a leaf, which the engine expression has already replaced by dummies.
 
-    def engine_value(self) -> Basic:
-        return Not(self._positive.engine_value())
+    A part may be a decision instead of a proposition.  A handler that compares two
+    private data holds one, since ``==`` on an engine value is exact; ``ask`` sympifies
+    it and the connective composes the two kinds uniformly.
+    """
 
-    def __repr__(self) -> str:
-        return f"not {self._positive!r}"
-
-
-class Conjunction(Proposition):
-    def __init__(self, parts: tuple[Proposition, ...]) -> None:
+    def __init__(self, operator: Callable[..., Basic], parts: tuple[Decision | Proposition, ...]) -> None:
+        self._operator = operator
         self._parts = parts
 
-    def parts(self) -> tuple[Proposition, ...]:
+    def operator(self) -> Callable[..., Basic]:
+        return self._operator
+
+    def parts(self) -> tuple[Decision | Proposition, ...]:
         return self._parts
 
     def engine_value(self) -> Basic:
-        return And(*(part.engine_value() for part in self._parts))
+        return self._operator(*(_engine_proposition(part) for part in self._parts))
 
     def __repr__(self) -> str:
-        return " and ".join(map(repr, self._parts))
+        if self._operator is Not:
+            return f"not {self._parts[0]!r}"
+        separator = " and " if self._operator is And else (" implies " if self._operator is Implies else " or ")
+        return separator.join(map(repr, self._parts))
+
+
+def _engine_proposition(part: Decision | Proposition) -> Basic:
+    """A part as an engine expression, with a decided part as its SymPy truth value."""
+    if part is True or part is False:
+        return sympify(part)
+    if part is Unknown:
+        return Dummy("undecided")
+    return part.engine_value()
+
+
+def conjunction(parts: Iterable[Decision | Proposition]) -> Proposition:
+    """The conjunction of the parts; the empty conjunction is ``True``."""
+    return Connective(And, tuple(parts))
+
+
+def disjunction(parts: Iterable[Decision | Proposition]) -> Proposition:
+    """The disjunction of the parts; the empty disjunction is ``False``."""
+    return Connective(Or, tuple(parts))
+
+
+def negation(part: Decision | Proposition) -> Proposition:
+    """The negation of a proposition or of a decided part."""
+    return Connective(Not, (part,))
+
+
+def implication(antecedent: Decision | Proposition, consequent: Decision | Proposition) -> Proposition:
+    """``antecedent => consequent``."""
+    return Connective(Implies, (antecedent, consequent))
 
 
 def _session_decision(proposition: AppliedPredicate) -> Decision:
@@ -264,6 +323,41 @@ def _ask_applied(proposition: AppliedPredicate) -> Decision:
     return Unknown
 
 
+def _decided(proposition: Decision | Proposition) -> Basic:
+    """The engine value of ``proposition`` with every decided leaf replaced by its truth value.
+
+    An undecided leaf stays its own engine expression, which is unique to its predicate
+    and arguments, so SymPy's boolean algebra combines the parts: it reads ``True or P``
+    as ``True`` and leaves ``P or Q`` undecided.  That algebra is the only truth table
+    involved, and it is SymPy's.
+    """
+    if proposition is True or proposition is False:
+        return sympify(proposition)
+    if proposition is Unknown:
+        return Dummy("undecided")
+    match proposition:
+        case Connective():
+            operator = proposition.operator()
+            if operator is not And and operator is not Or:
+                return operator(*(_decided(part) for part in proposition.parts()))
+            # A conjunction stops at ``False`` and a disjunction at ``True``.  This is not
+            # an optimization: a guarded proposition such as "``f`` is a morphism of ``C``
+            # and its endpoints are ``A, B``" states that the later parts are asked only
+            # once the earlier ones hold, and its handlers require that.
+            absorbing = S.false if operator is And else S.true
+            values: list[Basic] = []
+            for part in proposition.parts():
+                value = _decided(part)
+                if value is absorbing:
+                    return absorbing
+                values.append(value)
+            return operator(*values)
+        case AppliedPredicate():
+            decision = _ask_applied(proposition)
+            return proposition.engine_value() if decision is Unknown else sympify(decision)
+    raise TypeError(f"{proposition!r} is not a proposition")
+
+
 def ask(proposition: Decision | Proposition) -> Decision:
     """Decide ``proposition`` as ``True``, ``False``, or Sage ``Unknown``.
 
@@ -271,31 +365,22 @@ def ask(proposition: Decision | Proposition) -> Decision:
     value and a decision for an engine value, and asking an already decided one is
     idempotent, so a caller never inspects which of the two it holds (POL-MATH-034).
     """
-    if proposition is True or proposition is False or proposition is Unknown:
-        return proposition
-    match proposition:
-        case AppliedPredicate():
-            return _ask_applied(proposition)
-        case Negation():
-            return decision_not(ask(proposition.positive()))
-        case Conjunction():
-            decision: Decision = True
-            for part in proposition.parts():
-                decision = decision_and(decision, ask(part))
-                if decision is False:
-                    return False
-            return decision
-    raise TypeError(f"{proposition!r} is not a proposition")
+    value = _decided(proposition)
+    if value is S.true:
+        return True
+    if value is S.false:
+        return False
+    return Unknown
 
 
 def assume(proposition: Proposition) -> None:
     """Record ``proposition`` in the active session and refine positively (POL-ASSUME-007)."""
     match proposition:
-        case Conjunction():
+        case Connective() if proposition.operator() is And:
             for part in proposition.parts():
                 assume(part)
             return
-        case AppliedPredicate() | Negation():
+        case AppliedPredicate() | Connective():
             global_assumptions.add(proposition.engine_value())
     if isinstance(proposition, AppliedPredicate) and isinstance(proposition.predicate(), PropertyPredicate):
         refine(proposition.arguments()[0], proposition.predicate().category())

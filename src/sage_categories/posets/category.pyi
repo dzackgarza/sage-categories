@@ -17,8 +17,8 @@ from sage_categories.cat.functors import Fun as Fun, Functor as Functor
 from sage_categories.cat.properties import PropertySubcategory as PropertySubcategory
 from sage_categories.cat.shapes import ThinCategory as ThinCategory
 from sage_categories.kernel.construction import MorphismConstructionInput as MorphismConstructionInput, ObjectConstructionInput as ObjectConstructionInput, retained_morphism_input as retained_morphism_input, retained_object_input as retained_object_input
-from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown, decision_and as decision_and, decision_not as decision_not, decision_or as decision_or
-from sage_categories.kernel.predicates import AppliedPredicate as AppliedPredicate, Predicate as Predicate, Proposition as Proposition, ask as ask
+from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown
+from sage_categories.kernel.predicates import AppliedPredicate as AppliedPredicate, Predicate as Predicate, Proposition as Proposition, ask as ask, conjunction as conjunction, disjunction as disjunction, implication as implication, negation as negation
 from sage_categories.kernel.refinement import refine as refine
 from sage_categories.kernel.roles import CategoryPoint as CategoryPoint, ElementOfObject as ElementOfObject, MorphismOfCategory as MorphismOfCategory, ObjectOfCategory as ObjectOfCategory, Role as Role, role_of as role_of
 from sage_categories.sets.category import SetMap as SetMap, Sets as Sets

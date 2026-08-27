@@ -60,8 +60,8 @@ from sage.structure.coerce_dict import MonoDict
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
 from sage_categories.cat.properties import FullSubcategory
-from sage_categories.kernel.decisions import Decision, Unknown, decision_and, decision_not, decision_or
-from sage_categories.kernel.predicates import AppliedPredicate, Predicate
+from sage_categories.kernel.decisions import Decision, Unknown
+from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask, conjunction, disjunction, negation
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role
 from sage_categories.sets.cardinals import CardinalObject
@@ -94,7 +94,7 @@ def _subset_by_enumeration(first: CategoryPoint, candidate: Any) -> Decision:
     if not finite.has_chosen_enumeration(first):
         return Unknown
     rule = candidate._set_object_data.membership_rule
-    return decision_and(*(rule(datum) for datum in finite.chosen_enumeration(first)))
+    return ask(conjunction(rule(datum) for datum in finite.chosen_enumeration(first)))
 
 
 subset_of.register_handler(_subset_by_identity)
@@ -121,20 +121,20 @@ class ChosenSubsetRole(ObjectOfCategory):
         return subset_of(self, other)
 
     def union(self, other: SetObject) -> SetObject:
-        return self._combined(other, decision_or)
+        return self._combined(other, lambda in_first, in_second: ask(disjunction((in_first, in_second))))
 
     def intersection(self, other: SetObject) -> SetObject:
-        return self._combined(other, decision_and)
+        return self._combined(other, lambda in_first, in_second: ask(conjunction((in_first, in_second))))
 
     def difference(self, other: SetObject) -> SetObject:
-        return self._combined(other, lambda in_first, in_second: decision_and(in_first, decision_not(in_second)))
+        return self._combined(other, lambda in_first, in_second: ask(conjunction((in_first, negation(in_second)))))
 
     def symmetric_difference(self, other: SetObject) -> SetObject:
-        return self._combined(other, lambda in_first, in_second: decision_or(decision_and(in_first, decision_not(in_second)), decision_and(in_second, decision_not(in_first))))
+        return self._combined(other, lambda in_first, in_second: ask(disjunction((conjunction((in_first, negation(in_second))), conjunction((in_second, negation(in_first)))))))
 
     def complement(self) -> SetObject:
         rule = self._set_object_data.membership_rule
-        return self.underlying_set().subset_from(lambda datum: decision_not(rule(datum)))
+        return self.underlying_set().subset_from(lambda datum: ask(negation(rule(datum))))
 
     def __or__(self, other: SetObject) -> SetObject:
         return self.union(other)
@@ -180,7 +180,7 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
             in_base = base_rule(datum)
             if in_base is False:
                 return False
-            return decision_and(in_base, predicate(datum))
+            return ask(conjunction((in_base, predicate(datum))))
 
         subset = sets.with_cardinality(rule, cardinality)
         refine(subset, self)
@@ -221,7 +221,7 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
             in_base = base_rule(datum)
             if in_base is False:
                 return False
-            return decision_and(in_base, predicate(datum))
+            return ask(conjunction((in_base, predicate(datum))))
 
         if finite.has_chosen_enumeration(base_set):
             decided = tuple((datum, predicate(datum)) for datum in finite.chosen_enumeration(base_set))
@@ -267,7 +267,7 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
                 in_codomain = codomain_rule(datum)
                 if in_codomain is False:
                     return False
-                return decision_and(in_codomain, decision_or(*(image == datum for image in images)))
+                return ask(conjunction((in_codomain, disjunction(image == datum for image in images))))
 
         else:
 

@@ -51,8 +51,8 @@ from sage_categories.cat.diagrams import sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.shapes import DiscreteObject, index_set_of
 from sage_categories.kernel.caches import SequenceTable
-from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass, decision_and
-from sage_categories.kernel.predicates import Predicate, Proposition, ask
+from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
+from sage_categories.kernel.predicates import Predicate, Proposition, ask, conjunction
 from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.category import Sets
@@ -243,7 +243,7 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
         index_set, finite = index_set_of(self.shape()), Sets().Finite()
         if not finite.has_chosen_enumeration(index_set):
             return Unknown
-        return decision_and(*(ask(first.component(datum) == candidate.component(datum)) for datum in finite.chosen_enumeration(index_set)))
+        return ask(conjunction(first.component(datum) == candidate.component(datum) for datum in finite.chosen_enumeration(index_set)))
 
     def __repr__(self) -> str:
         return f"Product({self._diagram!r})"
@@ -590,7 +590,7 @@ class PullbackCategory(Category[[tuple[MorphismOfCategory, MorphismOfCategory]],
         """Two pairs are equal when both components are."""
         morphisms = self.morphism_category(1)
         if (first in self and candidate in self) or (first in morphisms and candidate in morphisms):
-            return decision_and(ask(first.first() == candidate.first()), ask(first.second() == candidate.second()))
+            return ask((first.first() == candidate.first()) & (first.second() == candidate.second()))
         return Unknown
 
     def __call__(self, pair: tuple[ObjectOfCategory, ObjectOfCategory]) -> PairObject:

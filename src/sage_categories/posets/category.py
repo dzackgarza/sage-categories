@@ -51,8 +51,8 @@ from sage_categories.kernel.construction import (
     retained_morphism_input,
     retained_object_input,
 )
-from sage_categories.kernel.decisions import Decision, Unknown, decision_and, decision_not, decision_or
-from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask
+from sage_categories.kernel.decisions import Decision, Unknown
+from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask, conjunction, disjunction, implication, negation
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, role_of
 from sage_categories.sets.category import Sets
@@ -199,17 +199,17 @@ def _decided(decide: Callable[[SetElement, SetElement], Decision], points: tuple
 
 
 def _reflexive(relation: Relation, size: int) -> Decision:
-    return decision_and(*(relation[i, i] for i in range(size)))
+    return ask(conjunction(relation[i, i] for i in range(size)))
 
 
 def _antisymmetric(relation: Relation, size: int) -> Decision:
-    return decision_and(*(decision_not(decision_and(relation[i, j], relation[j, i])) for i in range(size) for j in range(i + 1, size)))
+    return ask(conjunction(negation(conjunction((relation[i, j], relation[j, i]))) for i in range(size) for j in range(i + 1, size)))
 
 
 def _transitive(relation: Relation, size: int) -> Decision:
-    return decision_and(
-        *(
-            decision_or(decision_not(decision_and(relation[i, j], relation[j, k])), relation[i, k])
+    return ask(
+        conjunction(
+            implication(conjunction((relation[i, j], relation[j, k])), relation[i, k])
             for i in range(size)
             for j in range(size)
             for k in range(size)
@@ -218,7 +218,7 @@ def _transitive(relation: Relation, size: int) -> Decision:
 
 
 def _total(relation: Relation, size: int) -> Decision:
-    return decision_and(*(decision_or(relation[i, j], relation[j, i]) for i in range(size) for j in range(i + 1, size)))
+    return ask(conjunction(disjunction((relation[i, j], relation[j, i])) for i in range(size) for j in range(i + 1, size)))
 
 
 def _partial_order_on_enumerated(relation: SetObject) -> Decision:
@@ -231,7 +231,7 @@ def _partial_order_on_enumerated(relation: SetObject) -> Decision:
         return Unknown
     points = _enumerated_points(carrier)
     pairs = _decided(lambda left, right: ask(relation.membership_proposition(_pair_point(square, left, right))), points)
-    return decision_and(_reflexive(pairs, len(points)), _antisymmetric(pairs, len(points)), _transitive(pairs, len(points)))
+    return ask(conjunction((_reflexive(pairs, len(points)), _antisymmetric(pairs, len(points)), _transitive(pairs, len(points)))))
 
 
 def _square(relation: SetObject) -> ObjectOfCategory:
@@ -274,8 +274,8 @@ def _order_preserving_on_enumerated(source: Poset, target: Poset, set_map: SetMa
     points = _enumerated_points(carrier)
     images = tuple(set_map(point) for point in points)
     domain_order, codomain_order = _order_relation(source, points), _order_relation(target, images)
-    return decision_and(
-        *(decision_or(decision_not(domain_order[i, j]), codomain_order[i, j]) for i in range(len(points)) for j in range(len(points)))
+    return ask(
+        conjunction(implication(domain_order[i, j], codomain_order[i, j]) for i in range(len(points)) for j in range(len(points)))
     )
 
 

@@ -6,8 +6,8 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from sage.structure.coerce_dict import MonoDict
 from sage_categories.cat.category import Category as Category
-from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown, UnknownClass as UnknownClass, decision_and as decision_and, decision_or as decision_or
-from sage_categories.kernel.predicates import AppliedPredicate as AppliedPredicate, Predicate as Predicate, ask as ask
+from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown, UnknownClass as UnknownClass
+from sage_categories.kernel.predicates import AppliedPredicate as AppliedPredicate, Predicate as Predicate, ask as ask, conjunction as conjunction, disjunction as disjunction
 from sage_categories.kernel.roles import CategoryPoint as CategoryPoint, ObjectOfCategory as ObjectOfCategory, Role as Role, role_of as role_of
 from sage_categories.sets.cardinals import CardinalObject as CardinalObject
 from sage_categories.sets.category import SetElement as SetElement, SetObject as SetObject

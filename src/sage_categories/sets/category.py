@@ -28,8 +28,8 @@ from sage_categories.sets import maps as _set_maps
 from sage_categories.sets import objects as _set_objects
 from sage_categories.cat.category import Category
 from sage_categories.cat.properties import PropertySubcategory
-from sage_categories.kernel.decisions import Decision, Unknown, decision_not, decision_or
-from sage_categories.kernel.predicates import ask
+from sage_categories.kernel.decisions import Decision, Unknown
+from sage_categories.kernel.predicates import ask, disjunction, negation
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import Role
 from sage_categories.kernel.decisions import UnknownClass
@@ -123,8 +123,8 @@ class SetsCategory(Category[[Rule], []]):
         self._finite.predicate().register_handler(lambda ambient: False if ambient in self._infinite else Unknown)
         self._countable.predicate().register_handler(self._countable_by_cardinality)
         self._countable.predicate().register_handler(lambda ambient: False if ambient in self._uncountable else Unknown)
-        self._infinite.predicate().register_handler(lambda ambient: decision_not(ask(ambient.is_finite())))
-        self._uncountable.predicate().register_handler(lambda ambient: decision_not(ask(ambient.is_countable())))
+        self._infinite.predicate().register_handler(lambda ambient: ask(~ambient.is_finite()))
+        self._uncountable.predicate().register_handler(lambda ambient: ask(~ambient.is_countable()))
         morphisms = self.morphism_category(1)
         morphisms.Monomorphisms().predicate().register_handler(injective_on_finite_domain)
         morphisms.Epimorphisms().predicate().register_handler(surjective_on_finite_domain)
@@ -413,7 +413,7 @@ class SetsCategory(Category[[Rule], []]):
             case ():
                 source_empty = Unknown if source is Unknown else ask(source == 0)
                 target_empty = Unknown if target is Unknown else ask(target == 0)
-                return decision_or(source_empty, decision_not(target_empty))
+                return ask(disjunction((source_empty, negation(target_empty))))
         if source is Unknown or target is Unknown:
             return Unknown
         match hom_category.narrowing_roots():

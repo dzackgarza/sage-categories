@@ -26,8 +26,8 @@ from sage.structure.coerce_dict import MonoDict
 
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
-from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass, decision_and, decision_or
-from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask
+from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
+from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask, conjunction, disjunction
 from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role, role_of
 from sage_categories.sets.elements import Datum, SetPointData
 
@@ -82,7 +82,7 @@ def sets_equal(first: CategoryPoint, candidate: Any) -> Decision:
     left, right = finite.chosen_enumeration(first), finite.chosen_enumeration(candidate)
     if len(left) != len(right):
         return False
-    return decision_and(*(decision_or(*(ask(member == other) for other in right)) for member in left))
+    return ask(conjunction(disjunction(member == other for other in right) for member in left))
 
 
 @dataclass(eq=False, slots=True)

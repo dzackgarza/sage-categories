@@ -33,7 +33,7 @@ from sage.structure.coerce_dict import MonoDict
 from sage_categories.cat.category import Category, member
 from sage_categories.cat.functors import Cat, Fun, Functor
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass, decision_and
+from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import Predicate, Proposition, ask
 from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
@@ -304,7 +304,7 @@ class ThinCategory(Category[[], []]):
             return ask(first.point() == candidate.point())
         morphisms = self.morphism_category(1)
         if first in morphisms and candidate in morphisms:
-            return decision_and(ask(first.domain() == candidate.domain()), ask(first.codomain() == candidate.codomain()))
+            return ask((first.domain() == candidate.domain()) & (first.codomain() == candidate.codomain()))
         return Unknown
 
     def __repr__(self) -> str:

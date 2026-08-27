@@ -55,8 +55,8 @@ import sage_categories.sets.category as _sets
 from sage_categories.cat.constructions import cocone, cocone_apex, cone, cone_apex
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.shapes import DiscreteObject, index_set_of
-from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass, decision_and
-from sage_categories.kernel.predicates import ask
+from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
+from sage_categories.kernel.predicates import ask, conjunction
 from sage_categories.kernel.refinement import is_subcategory, refine
 from sage_categories.sets.cardinals import Cardinal, CardinalObject
 from sage_categories.sets.elements import Datum
@@ -106,7 +106,7 @@ class Family:
         enumeration = self._enumeration()
         if enumeration is Unknown:
             return Unknown
-        return decision_and(*(self(datum) == other(datum) for datum in enumeration))
+        return ask(conjunction(self(datum) == other(datum) for datum in enumeration))
 
     def __hash__(self) -> int:
         enumeration = self._enumeration()
@@ -192,7 +192,7 @@ def product_of_sets(diagram: Functor) -> SetObject:
             case Family() if datum.index_set() is index_set:
                 if factors is Unknown:
                     return Unknown
-                return decision_and(*(factor._set_object_data.membership_rule(datum(index)) for index, factor in zip(finite.chosen_enumeration(index_set), factors)))
+                return ask(conjunction(factor._set_object_data.membership_rule(datum(index)) for index, factor in zip(finite.chosen_enumeration(index_set), factors)))
             case _:
                 return False
 
@@ -280,7 +280,7 @@ def coproduct_of_sets(diagram: Functor) -> SetObject:
                 index_decision = index_set._set_object_data.membership_rule(index_datum)
                 if index_decision is False:
                     return False
-                return decision_and(index_decision, cofactor(index_datum)._set_object_data.membership_rule(value))
+                return ask(conjunction((index_decision, cofactor(index_datum)._set_object_data.membership_rule(value))))
             case _:
                 return False
 

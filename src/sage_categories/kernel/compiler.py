@@ -18,21 +18,22 @@ Method catalogue of a node (``specs/resolution.md``):
 The compiled role class is a Sage dynamic class (``sage.structure.dynamic_class``).
 Its bases are exactly the *controlled* direct bases that
 ``sage.misc.c3_controlled.C3_sorted_merge`` returns for the node: compiled classes of
-reachable nodes.  A node that reaches none ends its chain and takes its own
-declaration as its base, which is how the chain reaches a real class — ``Category``
-for the object node of ``Cat()``, the kernel role bases below the rest.
+reachable nodes.  A node that reaches none ends its chain on the kernel role class its
+declaration stands on: ``Category`` for the category role, ``ObjectOfCategory``,
+``ElementOfObject``, or ``MorphismOfCategory`` below the rest.
 
-Everywhere else the declaration is passed as ``cls``, so its methods are inserted into
-the compiled class and its own Python bases are dropped.  This is Sage's
+A declaration is never a base.  It is passed as ``cls``, so its methods are inserted
+into the compiled class and its own Python bases are dropped.  This is Sage's
 ``Category._make_named_class``, which passes ``ParentMethods`` the same way and warns
 when a method provider has a super class at all.
 
-The distinction decides whether Python can linearize the result.  ``C3_sorted_merge``
-orders *nodes*; every class it never sees is unconstrained, and Python then places it
-wherever each individual class construction allows.  Those placements contradict each
-other across branches of a diamond, and the class has no MRO.  With declarations out
-of the bases, every class in every base's MRO is a node class and carries the node
-order.  Method compilation constructs no value image (POL-KERNEL-001).
+That is what lets Python linearize the result.  ``C3_sorted_merge`` orders *nodes*;
+every class it never sees is unconstrained, and Python then places it wherever each
+individual class construction allows.  Two constructions rank one such pair opposite
+ways, and a node reaching both has no MRO at all.  With declarations out of the bases,
+every class in every compiled MRO is a node class or a chain end, and carries the node
+order; ``_assert_linearized`` holds that.  Method compilation constructs no value image
+(POL-KERNEL-001).
 """
 
 from __future__ import annotations
@@ -40,7 +41,7 @@ from __future__ import annotations
 import inspect
 from collections.abc import Callable
 from types import CellType, FunctionType
-from typing import TYPE_CHECKING, Any, Concatenate, NamedTuple
+from typing import TYPE_CHECKING, Any, Concatenate, Generic, NamedTuple
 
 from sage.misc.c3_controlled import C3_sorted_merge
 from sage.structure.dynamic_class import dynamic_class
@@ -230,20 +231,24 @@ def catalogue[**P, R](current: Node) -> dict[str, Entry[P, R]]:
     return entries
 
 
-def _kernel_base_of(klass: type[CategoryPoint]) -> type[CategoryPoint]:
-    """The kernel role class of a role class: the end of every chain of that role.
+def _chain_end_classes() -> tuple[type, ...]:
+    """The classes a chain of any role may end in, most specific first.
 
     ``Category`` ends the chain of the category role.  It is ``Cat().ObjectType``'s own
     declaration and the class every category is an instance of: a category is built from
     its own hand-written ``Category`` subclass and never from a compiled class
     (``refinement.place``), so those subclasses must be able to override its methods,
     which only inheritance gives them.  The three kernel role classes end the other
-    chains the same way.
+    chains the same way.  ``Generic`` and ``object`` are Python's, below all of them.
     """
     from sage_categories.cat.category import Category
 
-    bases = (Category, kernel_base(Role.OBJECT), kernel_base(Role.ELEMENT), kernel_base(Role.MORPHISM), CategoryPoint)
-    return next(found for found in klass.__mro__ if found in bases)
+    return (Category, kernel_base(Role.OBJECT), kernel_base(Role.ELEMENT), kernel_base(Role.MORPHISM), CategoryPoint, Generic, object)
+
+
+def _kernel_base_of(klass: type[CategoryPoint]) -> type[CategoryPoint]:
+    """The kernel role class a role class stands on: the end of its chain."""
+    return next(found for found in klass.__mro__ if found in _chain_end_classes())
 
 
 def empty_local_role(category: Category, role: Role) -> type[CategoryPoint]:
@@ -399,14 +404,22 @@ def _assert_linearized(current: Node, compiled: type[CategoryPoint]) -> None:
 
     Sage states the same invariant in ``Category._test_category_graph``
     (``sage/categories/category.py``): ``parent_class.mro()`` is the ancestors'
-    compiled classes followed by ``object``.  Here the MRO also carries the declared
-    role classes and the kernel bases, so the check is on the ancestors' classes
-    alone: their relative order in the MRO must be the C3 order.  A class standing
-    for two nodes cannot satisfy this, which is the condition to fail loudly on.
+    compiled classes followed by ``object``.  The MRO here is exactly that, plus the
+    kernel role class the chain ends in.  Nothing else may appear: a class the node
+    order does not rank is free to sit anywhere, two class constructions then rank one
+    such pair opposite ways, and a node reaching both has no linearization at all.
+    That failure surfaces far from its cause, so the condition is checked here.
     """
     order = [_nodes_by_key[key] for key in _linearize(current)[0]]
     classes = [found.category.role_class(found.role) for found in order]
     positions = {klass: position for position, klass in enumerate(compiled.mro())}
+    ranked = {*classes, compiled, *_chain_end_classes()}
+    unranked = [klass for klass in compiled.mro() if klass not in ranked]
+    assert not unranked, (
+        f"the {current.role.value} class of {current.category!r} carries "
+        f"{unranked[0].__name__}, which stands for no node and which the node order "
+        "therefore does not rank"
+    )
     missing = [found for found, klass in zip(order, classes) if klass not in positions]
     assert not missing, (
         f"the {current.role.value} class of {current.category!r} does not carry "

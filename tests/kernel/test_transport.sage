@@ -31,7 +31,7 @@ from sage_categories.kernel import compiler
 from sage_categories.kernel.compiler import StructuralImageMismatch
 from sage_categories.kernel.construction import retained_morphism_input, retained_object_input
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role
-from sage_categories.kernel.transport import placement_node, transport
+from sage_categories.kernel.transport import placement_node, role_node, transport
 
 
 @dataclass(eq=False, slots=True)
@@ -231,7 +231,10 @@ def test_an_object_image_and_a_morphism_image_of_one_value_are_one_cache_entry()
     underlying = Posets().structure_functors()[int(0)]
 
     assert compiler.same_node(compiler.node(Mor(Posets()), Role.OBJECT), compiler.node(Posets(), Role.MORPHISM))
-    assert compiler.same_node(placement_node(fixed), compiler.node(Posets(), Role.MORPHISM))
+    assert compiler.same_node(role_node(fixed), compiler.node(Posets(), Role.MORPHISM))
+    assert compiler.same_node(placement_node(fixed), compiler.node(Mor(Posets())(chain, chain), Role.OBJECT)), (
+        "constructing through Mor(C)(A, B) places the morphism there"
+    )
 
     as_morphism = transport(fixed, compiler.node(Sets(), Role.MORPHISM))
     as_object_of_mor = transport(fixed, compiler.node(Mor(Sets()), Role.OBJECT))

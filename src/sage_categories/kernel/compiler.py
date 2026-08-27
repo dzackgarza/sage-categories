@@ -3,9 +3,9 @@
 The selected graph is ``structure_functors()`` alone.  Its nodes are pairs
 ``(category, role)``; the node ``(Mor(C), object)`` *is* the node ``(C, morphism)``
 (POL-CAT-021: one implementation type, one value, two placements), which
-``Category.role_source`` normalizes.  A route is a simple directed path of steps
-``(functor, role at the step's source)``; the graph reachable from a category is a
-finite DAG, asserted at compile time (POL-CAT-012).
+``Category.role_source`` normalizes.  A route is a simple directed path of ``Step``
+edges; the graph reachable from a category is a finite DAG, asserted at compile time
+(POL-CAT-012).
 
 Method catalogue of a node (``specs/resolution.md``):
 
@@ -93,9 +93,13 @@ __all__ = [
     "Route",
     "SemanticCollisionError",
     "StructuralImageMismatch",
+    "Step",
     "catalogue",
     "compile_category",
+    "controlled_bases",
     "empty_local_role",
+    "install_level_shift",
+    "level_shift",
     "node",
     "reachable",
     "routes",
@@ -116,7 +120,22 @@ class Node(NamedTuple):
     role: Role
 
 
-type Step = tuple[Functor, Role]
+class Step(NamedTuple):
+    """One directed edge of the compiled graph.
+
+    A selected functor keeps the role it is followed at, so ``source_role`` and
+    ``target_role`` agree and ``stage`` is ``None``.  A level shift applies no functor
+    and changes the role: the objects of a category ``C`` are the stage-``1``
+    generalized elements of ``{C}`` and its morphisms the stage-``[1]`` ones
+    (``specs/functor.md``, "The level shift").
+    """
+
+    functor: Functor | None
+    source_role: Role
+    target_role: Role
+    stage: ObjectOfCategory | None
+
+
 type Route = tuple[Step, ...]
 
 # A declaring method: its receiver is a value of the declaring role class, and its
@@ -182,10 +201,31 @@ def _is_cat_element_root(current: Node) -> bool:
 
 
 def successors(current: Node) -> tuple[tuple[Step, Node], ...]:
+    """The selected functor steps out of ``current``; each keeps the role it starts in."""
     return tuple(
-        ((functor, current.role), node(functor.codomain(), current.role))
+        (Step(functor, current.role, current.role, None), node(functor.codomain(), current.role))
         for functor in current.category.selected_functors()
     )
+
+
+def level_shift(current: Node) -> tuple[tuple[Step, Node], ...]:
+    """The step from the objects or morphisms of a category ``C`` to the elements of ``{C}``.
+
+    ``Cat().Point(C)`` retains one point category per object; the compiler reads that
+    retention to find ``{C}`` from ``C``, and ``C`` records nothing.  The step applies no
+    functor: its value is the value's own defining morphism, an object of ``C`` naming
+    the functor ``1 -> C`` that selects it and a morphism naming ``[1] -> C``
+    (``specs/functor.md``, "The level shift").
+    """
+    from sage_categories.cat.category import Cat
+
+    if current.role is Role.ELEMENT:
+        return ()
+    point = Cat().retained_point(current.category)
+    if point is None:
+        return ()
+    stage = Cat().Terminal() if current.role is Role.OBJECT else Cat().Simplex(1)
+    return ((Step(None, current.role, Role.ELEMENT, stage), node(point, Role.ELEMENT)),)
 
 
 def reachable(start: Node) -> tuple[Node, ...]:
@@ -207,7 +247,7 @@ def routes(source: Node, target: Node) -> tuple[Route, ...]:
     if same_node(source, target):
         return ((),)
     found: list[Route] = []
-    for step, next_node in successors(source):
+    for step, next_node in (*successors(source), *level_shift(source)):
         for suffix in routes(next_node, target):
             found.append((step, *suffix))
     return tuple(found)
@@ -293,7 +333,7 @@ def empty_local_role(category: Category, role: Role) -> type[CategoryPoint]:
     return table[category]
 
 
-def _selected_targets(current: Node) -> tuple[Node, ...]:
+def controlled_bases(current: Node) -> tuple[Node, ...]:
     """The distinct nodes one selected step from ``current``, most recently constructed first.
 
     The C3 merge takes the direct supers in the order of the total order, not in
@@ -301,9 +341,16 @@ def _selected_targets(current: Node) -> tuple[Node, ...]:
     applies ``Category._sort``, decreasing in ``_cmp_key``).  A category's ambient is
     declared first and constructed first, so declaration order is the wrong one here.
     Constructor route order still reads ``successors`` directly.
+
+    The common ``Cat().ElementType`` node is not among them.  It is the preallocated end
+    of every element chain, reached through the role's kernel class, so a selected
+    functor into ``Cat()`` -- the inclusion a point category declares -- adds no base at
+    the element role and would place the chain end above its own descendants.
     """
     found: list[Node] = []
     for _, target in successors(current):
+        if _is_cat_element_root(target):
+            continue
         if not any(same_node(target, known) for known in found):
             found.append(target)
     return tuple(sorted(found, key=node_key, reverse=True))
@@ -342,7 +389,7 @@ def _linearize(current: Node) -> tuple[tuple[int, ...], tuple[int, ...]]:
     table = _linearizations[current.role]
     if current.category not in table:
         _nodes_by_key[node_key(current)] = current
-        targets = _selected_targets(current)
+        targets = controlled_bases(current)
         merged: list[int] = []
         bases: list[int] = []
         if targets:
@@ -498,7 +545,7 @@ def _assert_linearized(current: Node, compiled: type[CategoryPoint]) -> None:
 
 
 def _route_name(route: Route) -> str:
-    return " then ".join(repr(functor) for functor, _ in route) or "the identity route"
+    return " then ".join(repr(step.functor) if step.functor is not None else "the level shift" for step in route) or "the identity route"
 
 
 class _NodeRuntime(NamedTuple):
@@ -593,9 +640,9 @@ def _object_steps[RootValue: ObjectOfCategory, RootDatum](
                     f"{source.category!r} return distinct canonical images or construction inputs"
                 )
         for step, target in successors(source):
-            functor, _ = step
-            target_input = functor.object_constructor_input(source_input)
-            assert isinstance(target_input, ObjectConstructionInput), f"{functor!r} returned no object construction input"
+            assert step.functor is not None
+            target_input = step.functor.object_constructor_input(source_input)
+            assert isinstance(target_input, ObjectConstructionInput), f"{step.functor!r} returned no object construction input"
             visit(target, target_input, (*route, step))
 
     visit(current, root, ())
@@ -629,9 +676,9 @@ def _element_steps[RootValue: CategoryPoint, RootDatum](
                     f"{source.category!r} return distinct canonical images or construction inputs"
                 )
         for step, target in successors(source):
-            functor, _ = step
-            target_input = functor.element_constructor_input(source_input)
-            assert isinstance(target_input, ElementConstructionInput), f"{functor!r} returned no element construction input"
+            assert step.functor is not None
+            target_input = step.functor.element_constructor_input(source_input)
+            assert isinstance(target_input, ElementConstructionInput), f"{step.functor!r} returned no element construction input"
             visit(target, target_input, (*route, step))
 
     visit(current, root, ())
@@ -644,7 +691,7 @@ def _object_cat_element_step[Value: ObjectOfCategory, Datum](
     root: ObjectConstructionInput[Value, Datum],
 ) -> tuple[Node, Callable[[], None]]:
     """The stage-``1`` input at the common ``Cat().ElementType`` MRO root."""
-    target = node(root.identity.category.category(), Role.ELEMENT)
+    target = node(root.identity.category.universe(), Role.ELEMENT)
     stage_input = ElementConstructionInput(root.canonical_image, ObjectStageIdentity(root.identity.category), None)
     return target, _element_step(target, stage_input, root.canonical_image)
 
@@ -654,7 +701,7 @@ def _element_cat_element_step[Value: CategoryPoint, Datum](
 ) -> tuple[Node, Callable[[], None]]:
     """The defining-morphism input at the common ``Cat().ElementType`` MRO root."""
     assert isinstance(root.identity, GeneralCategoryPointIdentity)
-    target = node(root.identity.defining_morphism.base_category().category(), Role.ELEMENT)
+    target = node(root.identity.defining_morphism.base_category().universe(), Role.ELEMENT)
     stage_input = ElementConstructionInput(root.canonical_image, root.identity, None)
     return target, _element_step(target, stage_input, root.canonical_image)
 
@@ -664,7 +711,7 @@ def _morphism_cat_element_step[Value: MorphismOfCategory, Datum](
 ) -> tuple[Node, Callable[[], None]]:
     """The stage-``[1]`` input at the common ``Cat().ElementType`` MRO root."""
     parent = root.identity.category.base_category()
-    target = node(parent.category(), Role.ELEMENT)
+    target = node(parent.universe(), Role.ELEMENT)
     identity = ArrowStageIdentity(parent, root.identity.domain, root.identity.codomain)
     stage_input = ElementConstructionInput(root.canonical_image, identity, None)
     return target, _element_step(target, stage_input, root.canonical_image)
@@ -695,9 +742,9 @@ def _morphism_steps[RootValue: MorphismOfCategory, RootDatum](
                     f"{source.category!r} return distinct canonical images or construction inputs"
                 )
         for step, target in successors(source):
-            functor, _ = step
-            target_input = functor.morphism_constructor_input(source_input)
-            assert isinstance(target_input, MorphismConstructionInput), f"{functor!r} returned no morphism construction input"
+            assert step.functor is not None
+            target_input = step.functor.morphism_constructor_input(source_input)
+            assert isinstance(target_input, MorphismConstructionInput), f"{step.functor!r} returned no morphism construction input"
             visit(target, target_input, (*route, step))
 
     visit(current, root, ())
@@ -940,3 +987,42 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
         _node_runtimes[role][category] = _NodeRuntime(node_initializer, cell)
         setattr(category, role.value, compiled)
         _assert_linearized(current, compiled)
+
+
+def install_level_shift(point: Category) -> None:
+    """Install the point-inherited generalized-element surface on the roles of ``{C}``'s member.
+
+    The member of a point category is a category ``C`` exactly when the level shift
+    applies.  ``{C}``'s generalized elements are then the objects of ``C`` at stage
+    ``1`` and its morphisms at stage ``[1]``, so the two roles that receive the point
+    functors' element surface are ``C.ObjectType`` and ``C.MorphismType``
+    (``specs/functor.md``, "The level shift").
+
+    Both classes already exist and already have descendants and live values, so the
+    shift writes the point-inherited spellings onto those exact classes.  It adds no
+    base, replaces no class, and constructs no value: a value of ``C`` answers the new
+    spellings immediately and keeps every role identity it had (POL-CAT-083).  Sage
+    refines a live parent the same way, rebuilding what the existing value answers
+    rather than allocating a second one (``Parent._refine_category_``,
+    ``sage/structure/parent.pyx``, inspected 2026-08-27).
+    """
+    member = point.member()
+    if member not in point.universe():
+        return
+    universal = catalogue(node(member.universe(), Role.ELEMENT))
+    shifted = catalogue(node(point, Role.ELEMENT))
+    added = tuple(name for name, entry in shifted.items() if universal.get(name) is not entry)
+    for role in (Role.OBJECT, Role.MORPHISM):
+        current = node(member, role)
+        # The member's catalogue is recomputed because its generalized-element node is
+        # now ``{C}``'s: the merge is what rejects a spelling the shift and the member
+        # both declare.
+        current.category.catalogues().pop(current.role, None)
+        compiled = catalogue(current)
+        role_class = current.category.role_class(current.role)
+        for name in added:
+            assert compiled[name] is shifted[name], (
+                f"{name!r} is declared both by {compiled[name].owner!r} and by the level shift from {point!r}; "
+                "name the two mathematical operations distinctly"
+            )
+            setattr(role_class, name, inspect.getattr_static(point.ElementType, name))

@@ -61,7 +61,7 @@ from sage_categories.kernel.refinement import is_subcategory, refine
 from sage_categories.sets.cardinals import Cardinal, CardinalObject
 from sage_categories.sets.elements import Datum
 from sage_categories.sets.maps import SetMap
-from sage_categories.sets.objects import SetObject
+from sage_categories.sets.objects import SetObject, SetObjectData
 
 __all__ = ["Family", "coproduct_of_sets", "product_of_sets"]
 
@@ -289,7 +289,10 @@ def coproduct_of_sets(diagram: Functor) -> SetObject:
             for value in finite.chosen_enumeration(cofactor)
         )
     else:
-        apex = sets.ObjectType(sets, membership_rule, _coproduct_cardinality(diagram, index_set, cofactors))
+        apex = sets.ObjectType(
+            category=sets,
+            data=SetObjectData(membership_rule, _coproduct_cardinality(diagram, index_set, cofactors)),
+        )
         for placement in _coproduct_placements(diagram, index_set):
             refine(apex, placement)
 

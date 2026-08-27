@@ -5,7 +5,8 @@ The current implementation milestone remains `Sets()` and its universal construc
 Algebra objects are a later vertical acceptance target for that foundation.
 
 The governing policies are `POL-MATH-019`, `POL-MATH-022`, `POL-MATH-023`,
-`POL-GEN-001`, `POL-GEN-019`, `POL-CAT-027`, `POL-CAT-030`, `POL-CAT-031`,
+`POL-GEN-001`, `POL-GEN-019`, `POL-GEN-020`, `POL-CAT-027`, `POL-CAT-030`,
+`POL-CAT-031`,
 and `POL-DOC-003` through `POL-DOC-009`.
 
 ## Ambient categorical data
@@ -27,9 +28,16 @@ Algebras(R, C)
 ```
 
 Mathematically, its objects are monoid objects in `V_R`.
-This applies the monoid-object construction from the
-[nLab monoid-object definition](https://ncatlab.org/nlab/show/monoid%2Bin%2Ba%2Bmonoidal%2Bcategory)
-to `Modules(R, C)`.
+This applies the monoid-object construction to `Modules(R, C)`.
+The definition of a monoid object is stated once, in
+[Monoids](magmas-monoids-semirings.md#monoids); this specification adds only the base
+relative placement.
+
+The
+[nLab monoid in a monoidal category](https://ncatlab.org/nlab/show/monoid%2Bin%2Ba%2Bmonoidal%2Bcategory)
+entry, section "Examples", names the resulting objects: "A monoid in a monoidal category
+of modules RMod (over any ground ring R and equipped with the tensor product of modules)
+is an associative unital algebra over R."
 
 For any selected monoidal category `V`, `Monoids(V)` is the public general
 monoid-object construction.
@@ -121,6 +129,26 @@ The same Python realization in `Algebras(R, C)` and `Algebras(S, C)` represents
 different algebra objects when the scalar structure morphisms differ.
 Scalar change is a functor between these categories.
 
+## Instances
+
+An instance needs the supplied monoidal structure `V_R`, not an ambient category alone.
+
+At `R` a commutative ring and `C = Ab` with the relative tensor product, an object is an
+ordinary associative unital `R`-algebra. Sage's
+[`Algebras`](https://doc.sagemath.org/html/en/reference/categories/sage/categories/algebras.html)
+names the same objects: "The category of associative and unital algebras over a given
+base ring. An associative and unital algebra over a ring R is a module over R which is
+itself a ring."
+
+At `R = ZZ` the module category is `Ab` itself, and the same nLab "Examples" section
+gives the instance: "A monoid object in the monoidal category Ab of abelian groups with
+the tensor product of abelian groups, is a ring."
+
+There is no algebra object in `Cat()`. The construction needs `Modules(R, Cat())`, which
+first needs a monoidal `M`, a left `M`-action on `Cat()`, and `R in Monoids(M)`
+([Instances](modules.md#instances)), and then a monoidal structure on that module
+category. Naming `Cat()` supplies none of these.
+
 ## Relation to module objects
 
 The algebra construction starts only after the selected module category has a
@@ -130,12 +158,13 @@ An actegory action by itself supplies `Modules(R, C)` through
 The additional relative tensor product and its coherence data supply the
 monoid-object construction used by `Algebras(R, C)`.
 
-The module action contract follows the
-[nLab module-object definition](https://ncatlab.org/nlab/show/module%2Bobject).
+The module action contract is stated once, in
+[Module objects](modules.md#objects-and-action-laws).
 
 ## Acceptance conditions
 
 - `Algebras(R, C)` retains the selected monoidal structure on `Modules(R, C)`.
+- An instance names `V_R`; an ambient category alone selects no instance.
 - An algebra carrier is a module object in that supplied category.
 - Multiplication and unit are morphisms in the module category.
 - Algebra morphisms preserve both structure morphisms.

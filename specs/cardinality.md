@@ -1,8 +1,8 @@
 # Cardinalities and ordinals
 
 Cardinals are objects of a set-enriched skeletal category of cardinal representatives.
-The point functor of `Cardinal()` into `Semirings(Cat())` presents its coproduct and
-product as cardinal addition and multiplication. Ordinals are objects of the skeletal
+The point functor of `Cardinal()` into `Semirings(Cat())` presents cardinal addition and
+multiplication as its two semiring operations. Ordinals are objects of the skeletal
 category `Ordinals()`. Its point functor into `Semirings(Cat())` presents the Hessenberg
 operations as ordinal addition and multiplication. Both models retain exact expressions
 when no normalization rule applies.
@@ -12,7 +12,7 @@ in [Property refinement](property-refinement.md). Applying one returns a proposi
 Only `ask()` decides it as `True`, `False`, or `Unknown`.
 
 The governing policies are `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001`,
-`POL-GEN-017`, `POL-CAT-021`, `POL-CAT-028`, `POL-CAT-071`, `POL-CAT-083`, `POL-CAT-085`,
+`POL-GEN-017`, `POL-GEN-020`, `POL-GEN-021`, `POL-CAT-021`, `POL-CAT-028`, `POL-CAT-071`, `POL-CAT-083`, `POL-CAT-085`,
 `POL-CAT-086`, `POL-CAT-088`, `POL-FUN-002`, `POL-FUN-003`, `POL-FUN-035`,
 `POL-SET-009`, `POL-SET-010`, `POL-SET-025`, `POL-SET-026`, `POL-SET-033`
 through `POL-SET-035`, `POL-API-002`, `POL-API-016`, and `POL-DOC-010` through
@@ -33,9 +33,21 @@ predicates, universal arithmetic, and expression normalization.
 construction selects one representative set \(R_\kappa\) for each cardinal \(\kappa\).
 Mathlib's
 [cardinal definitions](https://leanprover-community.github.io/mathlib4_docs/Mathlib/SetTheory/Cardinal/Defs.html)
-define cardinals as types modulo bijection and define addition, multiplication, and
-exponentiation through sum, product, and function types. This category retains the same
-constructions and their universal morphisms.
+define cardinals "as a quotient of types under the equivalence relation of equinumerosity
+(i.e., existence of a bijection)". Its section "Main definitions" fixes the arithmetic by
+three equations:
+
+\[
+\#\alpha+\#\beta=\#(\alpha\oplus\beta),
+\qquad
+\#\alpha\cdot\#\beta=\#(\alpha\times\beta),
+\qquad
+\#\alpha^{\#\beta}=\#(\beta\to\alpha).
+\]
+
+Each operation acts on cardinals. The sum, product, and function type on the right are
+constructions on types. `Cardinal()` states the same relation through the cardinality
+functor; see [Cardinal arithmetic](#cardinal-arithmetic).
 
 A cardinal is an object of this category:
 
@@ -66,15 +78,17 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (Fun(self, Semirings(Cat())).Faithful().inclusion(),)
 ```
 
-The additive operation functor is cardinal addition, with unit object `0`. The
-multiplicative operation functor is cardinal multiplication, with unit object `1`. Each
-is a morphism `Cardinal() * Cardinal() -> Cardinal()` in `Cat()`, which is what makes
-`Cardinal()` a semiring object there; neither is a universal construction in
-`Cardinal()`. The selected point functor supplies their complete compiled roles, exact
-constructor conversions, retained state, and public methods. The law data is the
+`Semirings(Cat())` is the general internal semiring category at ambient `Cat()`. Its
+objects, its two operation morphisms, its unit points, and its laws are defined in
+[Semirings](magmas-monoids-semirings.md#semirings). `Cardinal()` adds only which
+functors those are: the additive operation functor is cardinal addition, with unit
+object `0`, and the multiplicative operation functor is cardinal multiplication, with
+unit object `1`. The selected point functor supplies their complete compiled roles,
+exact constructor conversions, retained state, and public methods. The law data is the
 equations between these functors ([functor.md](functor.md#ambient-algebraic-categories)).
 `Cardinal()` is skeletal, so each operation selects one representative and the laws hold
-as equalities.
+as equalities
+([Laws in the supplied ambient](magmas-monoids-semirings.md#laws-in-the-supplied-ambient)).
 
 For every pair of represented cardinals, `Mor(Cardinal())(kappa, lambda)` is the
 discrete category on the owned function set between their representatives:
@@ -192,9 +206,12 @@ C.Products()(diagram)
 
 `supremum()` accepts a nonempty finite indexed family.
 
-The indexed coproduct and product constructors accept an owned diagram. A finite
-diagram can normalize by iteration. An infinite diagram produces a formal indexed
-expression when no stronger normalization is available.
+The indexed coproduct and product constructors accept an owned diagram. They retain
+their injections and projections, as every universal construction does. Their apexes are
+the indexed cardinal sum and the indexed cardinal product, which Mathlib defines as
+"the cardinality of the corresponding sigma type" and "the cardinality of the
+corresponding pi type". A finite diagram can normalize by iteration. An infinite diagram
+produces a formal indexed expression when no stronger normalization is available.
 
 ### Cardinal arithmetic
 
@@ -210,17 +227,19 @@ n * kappa
 n ** kappa
 ```
 
-Addition and multiplication are the semiring operations the point functor exposes. Each
-is a morphism out of a product,
+Addition and multiplication are the semiring operations that the point functor exposes
+([Semirings](magmas-monoids-semirings.md#semirings)). Each is a morphism out of a
+product,
 
 \[
 \alpha,\mu:\operatorname{Cardinal}()\times\operatorname{Cardinal}()
 \longrightarrow\operatorname{Cardinal}(),
 \]
 
-so applying one to a pair returns a cardinal and nothing else. Neither is a universal
-construction and neither carries a cone: `Cardinal()` owns no coproduct or product
-construction, and `Cardinal().Products()` has no diagram to present.
+so applying one to a pair returns a cardinal. It presents no diagram, retains no
+injection or projection, and carries no cone. The indexed constructions
+`Cardinal().Coproducts()` and `Cardinal().Products()` are separate operations with their
+own presentations; see [`Cardinal()` API](#cardinal-api).
 
 What relates these operations to constructions is the cardinality functor. For
 `X, Y in core(Sets())`,

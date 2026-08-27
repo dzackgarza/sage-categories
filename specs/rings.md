@@ -5,7 +5,8 @@ The current implementation milestone remains `Sets()` and its universal construc
 Ring objects are a later vertical acceptance target for that foundation.
 
 The governing policies are `POL-MATH-019`, `POL-MATH-022`, `POL-MATH-023`,
-`POL-GEN-001`, `POL-GEN-017`, `POL-CAT-027`, `POL-CAT-030`, `POL-CAT-031`,
+`POL-GEN-001`, `POL-GEN-017`, `POL-GEN-020`, `POL-GEN-021`, `POL-CAT-027`,
+`POL-CAT-030`, `POL-CAT-031`,
 and `POL-DOC-003` through `POL-DOC-009`.
 
 ## Ambient categorical data
@@ -13,6 +14,8 @@ and `POL-DOC-003` through `POL-DOC-009`.
 Let `C` be a category with finite products.
 Write `C_x` for the specified cartesian monoidal category `(C, product, 1)`.
 The constructor `Rings(C)` uses this structure.
+The ambient is a parameter. Fixing it gives an instance, and no instance is the
+definition.
 
 An object of `Rings(C)` is an object `R in C` with morphisms
 
@@ -33,11 +36,25 @@ An object of `Rings(C)` is an object `R in C` with morphisms
 These morphisms make `(R, +, 0, -)` an object of
 `Groups(C_x).Additive().Commutative()`.
 They make `(R, multiplication, 1)` an object of `Monoids(C_x).Multiplicative()`.
-The left and right distributivity diagrams commute.
+
+Each operation is a morphism out of a product in `C`, in the sense stated by
+[Magmas, monoids, and semirings](magmas-monoids-semirings.md#magmas).
+`(R, +, 0, multiplication, 1)` is then an object of `Semirings(C)`, which owns the
+distributivity and absorption diagrams
+([Semirings](magmas-monoids-semirings.md#semirings)).
+`Rings(C)` adds the additive inversion morphism and its two inverse diagrams, and
+nothing else.
+Sage records the same relation for the ordinary instance: `Rings()` is
+`Semirings().AdditiveInverse()`
+([Sage `Rings`](https://doc.sagemath.org/html/en/reference/categories/sage/categories/rings.html)).
 
 This is the traditional internal ring-object definition from the
-[nLab ring-object definition](https://ncatlab.org/nlab/show/ring%2Bobject),
-in its finite-product form.
+[nLab ring object](https://ncatlab.org/nlab/show/ring%2Bobject) entry, section
+"Definition / Traditional definition": "a ring object consists of an object R in a
+cartesian monoidal category C together with morphisms a : R x R -> R (addition),
+m : R x R -> R (multiplication), 0 : 1 -> R (zero), e : 1 -> R (multiplicative
+identity), - : R -> R (additive inversion), subject to commutative diagrams in C that
+express the usual ring axioms".
 
 ## Morphisms
 
@@ -45,9 +62,34 @@ A morphism in `Rings(C)` is a morphism `f:R -> S` in `C` that preserves
 addition, multiplication, zero, and one.
 It then preserves additive inverses by the internal group laws.
 
-`Rings(Sets())` is the category of ordinary unital rings and ring homomorphisms.
 `Rings(C).Commutative()` is the full property subcategory defined by symmetry of
 the multiplication morphism.
+
+## Instances
+
+At `C = Sets()`, an object is an ordinary unital ring and a morphism is a ring
+homomorphism. Sage's
+[`Rings`](https://doc.sagemath.org/html/en/reference/categories/sage/categories/rings.html)
+names the same objects: "The category of rings. Associative rings with unit, not
+necessarily commutative."
+
+At `C = Cat()`, an object is a category `R` with functors
+
+\[
++,\ \mathbin{\cdot}:R\times R\longrightarrow R,
+\qquad
+\iota:R\longrightarrow R,
+\]
+
+two functors `1 -> R` that select the zero object and the one object, and every ring law
+an equality of functors
+([Laws in the supplied ambient](magmas-monoids-semirings.md#laws-in-the-supplied-ambient)).
+Its additive part is a commutative group object in `Cat()`; the general group-object
+instance there is the strict 2-group
+([Groups](magmas-monoids-semirings.md#groups)).
+
+`Cardinal()` and `Ordinals()` are not objects of `Rings(Cat())`. Neither addition admits
+an inversion functor, so both stay in `Semirings(Cat())`.
 
 ## Structural functors
 
@@ -68,9 +110,8 @@ The semiring projection supplies both operation roles and their unit points.
 The additive-group projection supplies inversion and subtraction.
 Both paths reach one canonical additive monoid and one canonical object of `C`.
 
-The `Cat()` specialization states its laws as equalities of functors, as
-`Semirings(Cat())` does in
-[Magmas, monoids, and semirings](magmas-monoids-semirings.md#the-cat-specialization).
+Both projections state their laws in the supplied ambient
+([Laws in the supplied ambient](magmas-monoids-semirings.md#laws-in-the-supplied-ambient)).
 
 ## Owned operations
 
@@ -79,7 +120,7 @@ The two projections retain all five structure morphisms.
 Unary `-` and subtraction come from `Groups(C_x).Additive().Commutative()`.
 Addition, multiplication, zero, and one come from `Semirings(C)`.
 
-For `C = Sets()`, the internal diagrams give the usual element operations.
+At `C = Sets()`, the internal diagrams give the usual element operations.
 For a general `C`, the morphisms and diagrams above remain the public definition.
 
 ## Acceptance conditions
@@ -89,8 +130,10 @@ For a general `C`, the morphisms and diagrams above remain the public definition
 - Its axioms are commutative diagrams in `C`.
 - Its structural functors target `Semirings(C)` and
   `Groups(C_x).Additive().Commutative()`.
-- `Rings(Sets())` gives ordinary rings.
+- `Rings(Sets())` gives ordinary rings; `Rings(Cat())` states its laws as equalities of
+  functors.
 - `Rings(C).Commutative()` is a full property subcategory.
+- Every structure map is a morphism out of a product, never a universal construction.
 - Inherited operations arrive through the two retained projections.
 
 The complete governing set also includes `POL-MATH-001` through `POL-MATH-013`,

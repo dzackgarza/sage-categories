@@ -41,6 +41,7 @@ if TYPE_CHECKING:
     from sage_categories.cat.canonical import FinitePresentedCategory
     from sage_categories.cat.functors import Functor, FunctorsCategory, NaturalTransformation
     from sage_categories.cat.morphisms import MorphismCategory
+    from sage_categories.cat.points import PointCategory
 
 __all__ = ["Assignment", "Cat", "Category", "CategoryOfCategories", "OnMorphism", "OnObject", "member"]
 
@@ -706,6 +707,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
     def __init__(self) -> None:
         self._canonical: dict[tuple[str, tuple[int, ...]], FinitePresentedCategory] = {}
+        self._point_categories: MonoDict = MonoDict()
         super().__init__()
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
@@ -871,6 +873,15 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
     def Terminal(self) -> FinitePresentedCategory:
         return self.Simplex(0)
+
+    def Point(self, distinguished_object: CategoryPoint) -> PointCategory:
+        """The one-object category whose object is ``distinguished_object``, retained by identity."""
+        from sage_categories.cat.points import PointCategory
+
+        assert isinstance(distinguished_object, CategoryPoint), f"{distinguished_object!r} is not an object of a category"
+        if distinguished_object not in self._point_categories:
+            self._point_categories[distinguished_object] = PointCategory(distinguished_object)
+        return self._point_categories[distinguished_object]
 
     def Simplex(self, dimension: int) -> FinitePresentedCategory:
         from sage_categories.cat import canonical

@@ -55,7 +55,7 @@ from sage_categories.cat.category import Category
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.caches import retained_method
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
-from sage_categories.kernel.predicates import ask, conjunction
+from sage_categories.kernel.predicates import ask, conjunction, established
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import ObjectOfCategory, Role
 from sage_categories.sets.cardinals import Cardinal, CardinalObject
@@ -187,17 +187,17 @@ class FiniteSubsetsCategory(PropertySubcategory[[Rule], []]):
         if base_cardinality is Unknown:
             return Unknown
         finite = ask(base_cardinality.is_finite())
-        if finite is True:
+        if finite is Unknown:
+            # Every theorem below hypothesizes a finite or an infinite base set, which
+            # an undecided finiteness does not supply.
+            return Unknown
+        if finite:
             if size is Unknown:
                 # Finset.card_powerset, Cardinal.mk_set.
                 return cardinals(2) ** base_cardinality
             # Finset.card_powersetCard, Fintype.card_finset_len; the engine's integer is lowered to
             # the Python integer that keys every finite cardinal.
             return cardinals(int(binomial(base_cardinality._finite_value_(), size)))
-        if finite is not False:
-            # Every remaining theorem hypothesizes an infinite base set, which an
-            # undecided finiteness does not supply.
-            return Unknown
         if size is Unknown:
             # Cardinal.mk_finset_of_infinite.
             return base_cardinality
@@ -288,13 +288,13 @@ class FinitelySupportedFunctionsCategory(PropertySubcategory[[Rule], []]):
         """The case tree of the module docstring."""
         if index_cardinality is Unknown or value_cardinality is Unknown:
             return Unknown
-        if ask(index_cardinality.is_finite()) is True:
+        if established(index_cardinality.is_finite()):
             # Cardinal.mk_finsupp_lift_of_fintype: every function on a finite index set is finitely supported.
             return value_cardinality**index_cardinality
-        if ask(value_cardinality == 1) is True:
+        if established(value_cardinality == 1):
             # The basepoint is the only value, so the constant function is the only one; no hypothesis on S.
             return Cardinal()(1)
-        if ask(index_cardinality.is_infinite()) is True and ask(value_cardinality >= 2) is True:
+        if established(index_cardinality.is_infinite()) and established(value_cardinality >= 2):
             # Cardinal.mk_finsupp_of_infinite: #(S →₀ X) = max(#S, #X) for infinite S and nontrivial X.
             return Cardinal().supremum(index_cardinality, value_cardinality)
         return Unknown

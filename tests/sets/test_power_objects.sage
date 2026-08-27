@@ -40,8 +40,8 @@ def test_the_power_object_is_the_function_set_into_two_with_the_exact_cardinalit
     assert power in Sets().PowerObjects()
     assert power in Sets()
     assert power.base_set() is three
-    assert ask(power.cardinality() == int(8)) is True
-    assert ask((two ** six).cardinality() == int(128)) is True
+    assert ask(power.cardinality() == int(8))
+    assert ask((two ** six).cardinality() == int(128))
     assert (two ** six).base_set() is six
     assert (two ** ZZ).cardinality() is continuum
     assert (three ** three) not in Sets().PowerObjects()
@@ -60,30 +60,30 @@ def test_characteristic_morphisms_and_subsets_from_them_are_mutually_inverse() -
 
     assert characteristic in Mor(Sets())(six, two)
     assert Sets().ChosenSubsets().characteristic_morphism_of(divisors) is characteristic
-    assert ask(characteristic(six.point(int(2))) == two.point(int(1))) is True
-    assert ask(characteristic(six.point(int(4))) == two.point(int(0))) is True
-    assert ask(characteristic(six.point(int(6))) == two.point(int(1))) is True
+    assert ask(characteristic(six.point(int(2))) == two.point(int(1)))
+    assert ask(characteristic(six.point(int(4))) == two.point(int(0)))
+    assert ask(characteristic(six.point(int(6))) == two.point(int(1)))
 
     recovered = power.from_characteristic_morphism(characteristic)
     assert Sets().PowerObjects().subset_of_characteristic_morphism(power, characteristic) is recovered
     assert recovered in Sets().ChosenSubsets()
     assert recovered.underlying_set() is six
-    assert ask(recovered.cardinality() == int(4)) is True
+    assert ask(recovered.cardinality() == int(4))
     assert six.point(int(3)) in recovered
     assert six.point(int(4)) not in recovered
-    assert ask(recovered <= divisors) is True
-    assert ask(divisors <= recovered) is True
-    assert ask(recovered.characteristic_morphism() == characteristic) is True
+    assert ask(recovered <= divisors)
+    assert ask(divisors <= recovered)
+    assert ask(recovered.characteristic_morphism() == characteristic)
 
     predicate_subset = power.from_predicate(lambda datum: datum > int(4))
-    assert ask(predicate_subset.cardinality() == int(2)) is True
+    assert ask(predicate_subset.cardinality() == int(2))
     assert predicate_subset.underlying_set() is six
-    assert ask(power.top().cardinality() == int(7)) is True
-    assert ask(power.bottom().cardinality() == int(0)) is True
+    assert ask(power.top().cardinality() == int(7))
+    assert ask(power.bottom().cardinality() == int(0))
     assert Sets().PowerObjects().extreme_subset(power, True) is power.top()
-    assert ask(divisors <= power.top()) is True
-    assert ask(power.bottom() <= divisors) is True
-    assert ask(power.top() <= divisors) is False
+    assert ask(divisors <= power.top())
+    assert ask(power.bottom() <= divisors)
+    assert not ask(power.top() <= divisors)
 
 
 def test_the_subset_algebra_on_the_divisibility_specimen() -> None:
@@ -93,40 +93,40 @@ def test_the_subset_algebra_on_the_divisibility_specimen() -> None:
     union = divisors.union(evens)
     assert union in Sets().ChosenSubsets()
     assert union.underlying_set() is six
-    assert ask(union.cardinality() == int(6)) is True
+    assert ask(union.cardinality() == int(6))
     assert six.point(int(5)) not in union
     assert six.point(int(0)) in union
-    assert ask((divisors | evens).cardinality() == int(6)) is True
-    assert ask(divisors <= union) is True
-    assert ask(evens <= union) is True
-    assert ask(union <= divisors) is False
+    assert ask((divisors | evens).cardinality() == int(6))
+    assert ask(divisors <= union)
+    assert ask(evens <= union)
+    assert not ask(union <= divisors)
 
     intersection = divisors.intersection(evens)
-    assert ask(intersection.cardinality() == int(2)) is True
+    assert ask(intersection.cardinality() == int(2))
     assert six.point(int(2)) in intersection and six.point(int(6)) in intersection
     assert six.point(int(3)) not in intersection
-    assert ask((divisors & evens).cardinality() == int(2)) is True
-    assert ask(intersection <= divisors) is True
-    assert ask(intersection <= evens) is True
+    assert ask((divisors & evens).cardinality() == int(2))
+    assert ask(intersection <= divisors)
+    assert ask(intersection <= evens)
 
     difference = divisors.difference(evens)
-    assert ask(difference.cardinality() == int(2)) is True
+    assert ask(difference.cardinality() == int(2))
     assert six.point(int(1)) in difference and six.point(int(3)) in difference
     assert six.point(int(2)) not in difference
 
     symmetric = divisors.symmetric_difference(evens)
-    assert ask(symmetric.cardinality() == int(4)) is True
+    assert ask(symmetric.cardinality() == int(4))
     assert six.point(int(4)) in symmetric and six.point(int(1)) in symmetric
     assert six.point(int(6)) not in symmetric
 
     complement = divisors.complement()
-    assert ask(complement.cardinality() == int(3)) is True
+    assert ask(complement.cardinality() == int(3))
     assert six.point(int(5)) in complement
     assert six.point(int(6)) not in complement
-    assert ask(complement.intersection(divisors).cardinality() == int(0)) is True
-    assert ask(complement.union(divisors).cardinality() == int(7)) is True
-    assert ask(divisors <= divisors) is True
-    assert ask(divisors <= evens) is False
+    assert ask(complement.intersection(divisors).cardinality() == int(0))
+    assert ask(complement.union(divisors).cardinality() == int(7))
+    assert ask(divisors <= divisors)
+    assert not ask(divisors <= evens)
     with pytest.raises(TypeError):
         bool(divisors <= evens)
 
@@ -149,7 +149,7 @@ def test_direct_and_inverse_image_morphisms_act_on_names_of_characteristic_morph
     image_name = direct(Sets().name_of(divisors.characteristic_morphism()))
     assert image_name in target
     image = target.subset_named_by(image_name)
-    assert ask(image.cardinality() == int(3)) is True
+    assert ask(image.cardinality() == int(3))
     assert three.point(int(0)) in image
     assert power.subset_named_by(Sets().name_of(divisors.characteristic_morphism())) is power.from_characteristic_morphism(divisors.characteristic_morphism())
 
@@ -157,7 +157,7 @@ def test_direct_and_inverse_image_morphisms_act_on_names_of_characteristic_morph
     assert inverse in Mor(Sets())(target, power)
     one = three.subset_from(lambda datum: datum == int(1))
     preimage = power.subset_named_by(inverse(Sets().name_of(one.characteristic_morphism())))
-    assert ask(preimage.cardinality() == int(2)) is True
+    assert ask(preimage.cardinality() == int(2))
     assert six.point(int(1)) in preimage and six.point(int(4)) in preimage
     assert six.point(int(2)) not in preimage
 
@@ -172,17 +172,17 @@ def test_the_subset_poset_orders_the_power_object_by_inclusion() -> None:
     assert poset in Posets()
     assert underlying.on_object(poset) is power
     assert power.base_set() is letters
-    assert ask(poset.cardinality() == int(4)) is True
+    assert ask(poset.cardinality() == int(4))
 
     empty, only_a, only_b, whole = (
         poset.element(Sets().name_of(subset.characteristic_morphism()))
         for subset in (power.bottom(), letters.subset_from(lambda datum: datum == "a"), letters.subset_from(lambda datum: datum == "b"), power.top())
     )
-    assert ask(empty <= only_a) is True
-    assert ask(only_a <= whole) is True
-    assert ask(empty <= whole) is True
-    assert ask(only_a <= only_b) is False
-    assert ask(only_b <= only_a) is False
-    assert ask(whole <= only_a) is False
-    assert ask(only_a <= only_a) is True
+    assert ask(empty <= only_a)
+    assert ask(only_a <= whole)
+    assert ask(empty <= whole)
+    assert not ask(only_a <= only_b)
+    assert not ask(only_b <= only_a)
+    assert not ask(whole <= only_a)
+    assert ask(only_a <= only_a)
     assert ask(poset.is_total()) is Unknown

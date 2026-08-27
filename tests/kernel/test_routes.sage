@@ -172,8 +172,8 @@ def test_a_composite_retains_its_factors_and_applies_them_in_categorical_order()
     shape = composite.on_object(chain)
     vertex = shape(carrier.point(int(1)))
     assert vertex in shape
-    assert ask(vertex.point() == carrier.point(int(1))) is True
-    assert ask(shape.object_set().cardinality() == int(3)) is True
+    assert ask(vertex.point() == carrier.point(int(1)))
+    assert ask(shape.object_set().cardinality() == int(3))
 
 
 def test_two_functors_with_one_pair_of_endpoints_are_both_retained_and_both_applied() -> None:
@@ -188,8 +188,8 @@ def test_two_functors_with_one_pair_of_endpoints_are_both_retained_and_both_appl
     assert first.codomain() is second.codomain()
     assert first.on_object(pair) is left
     assert second.on_object(pair) is right
-    assert ask(first.on_object(pair).cardinality() == int(2)) is True
-    assert ask(second.on_object(pair).cardinality() == int(1)) is True
+    assert ask(first.on_object(pair).cardinality() == int(2))
+    assert ask(second.on_object(pair).cardinality() == int(1))
 
 
 def test_a_declared_functor_out_of_another_category_fails_at_construction() -> None:
@@ -229,7 +229,7 @@ def test_the_first_declared_functor_of_a_diamond_decides_the_ambient_category() 
     assert chain not in Sets().Finite()
     assert first_declared.on_object(chain) is chain
     assert second_declared.on_object(chain) in Sets().Finite()
-    assert ask(second_declared.on_object(chain).cardinality() == int(3)) is True
+    assert ask(second_declared.on_object(chain).cardinality() == int(3))
 
 
 def test_the_binary_operators_construct_in_the_least_common_ancestor() -> None:
@@ -251,9 +251,9 @@ def test_the_binary_operators_construct_in_the_least_common_ancestor() -> None:
     assert (finite * other) is Sets().Finite().Products()((finite, other))
     assert (finite + other) is Sets().Finite().Coproducts()((finite, other))
     assert (other ** finite) is Sets().Finite().exponential(finite, other)
-    assert ask((finite * other).cardinality() == int(6)) is True
-    assert ask((finite + other).cardinality() == int(5)) is True
-    assert ask((other ** finite).cardinality() == int(8)) is True
+    assert ask((finite * other).cardinality() == int(6))
+    assert ask((finite + other).cardinality() == int(5))
+    assert ask((other ** finite).cardinality() == int(8))
 
 
 def test_a_poset_and_a_set_have_no_common_ancestor_and_do_not_combine() -> None:
@@ -288,7 +288,7 @@ def test_star_on_a_morphism_is_composition_and_the_product_of_morphisms_is_named
     composite = collapse * include
     assert composite.domain() is pair
     assert composite.codomain() is pair
-    assert ask(composite == pair.identity()) is True
+    assert ask(composite == pair.identity())
     assert (include * collapse).domain() is chain
 
     # The product of the two morphisms is the product of two objects of ``Mor(C)``.
@@ -342,10 +342,10 @@ def test_an_object_narrowed_by_two_independent_roots_still_composes_its_morphism
     finite.intersection((finite.WithBottom(), finite.WithTop()))(chain)
 
     fixed = Mor(Posets())(chain, chain)(lambda point: point)
-    assert ask(fixed * fixed == identity) is True
+    assert ask(fixed * fixed == identity)
     assert (fixed * fixed).domain() is chain
     assert identity.inverse() is identity
-    assert ask(chain.cardinality() == int(2)) is True
+    assert ask(chain.cardinality() == int(2))
 
 
 def test_a_narrowed_object_composes_a_retracted_pair_through_the_isomorphism_categories() -> None:
@@ -363,10 +363,10 @@ def test_a_narrowed_object_composes_a_retracted_pair_through_the_isomorphism_cat
 
     collapse = Mor(Posets())(chain, point)(lambda datum: int(0))
     include = Mor(Posets())(point, chain)(lambda datum: int(0))
-    assert ask(collapse * include == point.identity()) is True
+    assert ask(collapse * include == point.identity())
     assert chain.identity() in Mor(Posets()).Automorphisms()
 
     finite.intersection((finite.WithBottom(), finite.WithTop()))(chain)
 
-    assert ask(include * collapse == chain.identity()) is False
+    assert not ask(include * collapse == chain.identity())
     assert chain.identity().inverse() is chain.identity()

@@ -47,7 +47,7 @@ from sage.rings.integer_ring import ZZ as _integer_ring
 
 from sage_categories.cat.category import Category
 from sage_categories.kernel.decisions import Decision, Unknown
-from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask
+from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask, conjunction
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, role_of
 
 if TYPE_CHECKING:
@@ -369,9 +369,9 @@ class OrdinalsCategory(Category[[], []]):
             return Unknown
         if first._key == second._key:
             return True
-        if self._at_most(first, second) is False or self._at_most(second, first) is False:
-            return False
-        return Unknown
+        # Ordinal.le_antisymm: two ordinals are equal exactly when each is at most the
+        # other (inspected 2026-08-28).
+        return ask(conjunction((self._at_most(first, second), self._at_most(second, first))))
 
     def _at_most(self, first: OrdinalObject, second: OrdinalObject) -> Decision:
         if first._key == second._key:

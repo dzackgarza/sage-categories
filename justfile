@@ -29,8 +29,22 @@ stubs:
     PYTHONPATH="$(pwd -P)/src${PYTHONPATH:+:$PYTHONPATH}" \
         "$sage_python" -m sage_categories.kernel.stubs src/sage_categories
 
+# Ban `is True` and `is False` across the package and the test corpus (POL-ASSUME-012).
+#
+# The rule is repository-local because its reason is: this repository owns
+# `Unknown`, and those comparisons are what silently turn an undecided answer into
+# a negative one. It states nothing in a repository whose predicates are
+# two-valued. The central Sage gate (~/ai-review-ci/justfiles/sage.just,
+# _sage-ast-grep) scans the central config and reads no repo-local rule directory,
+# so this repository runs its own rules through its own recipe.
+#
+# `sgconfig.yml` reads `.sage` as Python through `languageGlobs`, so the test
+# corpus needs no preparse pass here.
+no-boolean-identity:
+    @npx -y --package @ast-grep/cli ast-grep scan --config sgconfig.yml src tests
+
 # Run commit-tier SageMath QC through the central implementation.
-test-commit: stubs
+test-commit: stubs no-boolean-identity
     @just -f ~/ai-review-ci/justfiles/sage.just -d . test-commit
 
 # Run the full SageMath test suite before pushing.

@@ -88,13 +88,13 @@ def test_a_category_product_has_projections_with_exact_endpoints_acting_componen
     assert first.on_object(pair) is arrow(int(0))
     assert second.on_object(pair) is two
     morphism = Mor(product)(pair, other)((arrow.generator("0->1"), successor))
-    assert ask(first.on_morphism(morphism) == arrow.generator("0->1")) is True
+    assert ask(first.on_morphism(morphism) == arrow.generator("0->1"))
     assert second.on_morphism(morphism) is successor
 
     generalized = product.element_from_defining_morphism(morphism)
     assert generalized.defining_morphism().domain() is pair and generalized.parent() is other
     image = first.on_element(generalized)
-    assert ask(image.defining_morphism() == arrow.generator("0->1")) is True
+    assert ask(image.defining_morphism() == arrow.generator("0->1"))
     assert image.defining_morphism().domain() is arrow(int(0)) and image.parent() is arrow(int(1))
 
 
@@ -114,8 +114,8 @@ def test_a_category_coproduct_has_injections_that_tag() -> None:
     # An object of the coproduct is the pair ``(i, X)`` (Mathlib
     # ``CategoryTheory.Sigma.sigma``), so two objects with different tags are distinct
     # and two with one tag are distinct exactly when their members are.
-    assert ask(tagged == into_cat.on_object(Sets())) is False
-    assert ask(tagged == into_sets.on_object(three)) is False
+    assert not ask(tagged == into_cat.on_object(Sets()))
+    assert not ask(tagged == into_sets.on_object(three))
     with pytest.raises(AssertionError):
         Mor(coproduct)(tagged, into_cat.on_object(Sets()))(successor)
 
@@ -143,7 +143,7 @@ def test_a_universal_construction_has_one_apex_and_one_defining_morphism_each() 
 
     assert injection.on_object(two) is injection.on_object(two)
     assert injection.on_morphism(successor) is injection.on_morphism(successor)
-    assert ask(injection.on_morphism(successor) == injection.on_morphism(successor)) is True
+    assert ask(injection.on_morphism(successor) == injection.on_morphism(successor))
     assert projection.on_object(product((two, Sets()))) is two
 
     # The set product is the same statement one level down.
@@ -159,7 +159,7 @@ def test_the_mediator_of_a_category_cone_lands_in_the_product() -> None:
     point = Cat().Terminal()
     legs = {int(0): _point_functor(Sets(), two), int(1): _point_functor(Cat(), Sets())}
     index = product.index_category()
-    candidate = cone(product.diagram(), point, lambda vertex: legs[int(0)] if ask(vertex.point() == Sets().Simplex(int(1)).point(int(0))) is True else legs[int(1)])
+    candidate = cone(product.diagram(), point, lambda vertex: legs[int(0)] if ask(vertex.point() == Sets().Simplex(int(1)).point(int(0))) else legs[int(1)])
 
     mediating = product.universal_morphism(candidate)
     assert mediating in Fun(point, product)

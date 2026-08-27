@@ -11,7 +11,7 @@ Discrete(T)`` acting on points by ``f``.
 
 ``Thin(P, leq)`` is the thin category of a preorder given as a set ``P`` with an
 order predicate ``leq``: objects are the points of ``P`` and there is at most one
-morphism ``x -> y``, which exists when ``ask(leq(x, y)) is True`` (Mathlib
+morphism ``x -> y``, which exists when ``ask(leq(x, y))`` holds (Mathlib
 ``Preorder.smallCategory`` and ``Preorder.subsingleton_hom``; inspected
 2026-08-26).  The writer asserts reflexivity and transitivity (POL-MATH-037):
 identities and composites are the unique comparisons.  The sequential shape
@@ -127,14 +127,14 @@ class DiscreteCategory(Category[[], []]):
 
     def construct_morphism(self, domain: DiscreteObject, codomain: DiscreteObject) -> DiscreteIdentity:
         """``Mor(Discrete(S))(x, y)()``: the identity, which exists exactly when ``x == y``."""
-        assert ask(domain == codomain) is True, f"{self!r} has no morphism {domain!r} -> {codomain!r}"
+        assert ask(domain == codomain), f"{self!r} has no morphism {domain!r} -> {codomain!r}"
         return self.MorphismType(self.morphism_category(1), domain, codomain)
 
     def construct_identity(self, member_object: DiscreteObject) -> DiscreteIdentity:
         return self.MorphismType(self.morphism_category(1), member_object, member_object)
 
     def composite(self, second: DiscreteIdentity, first: DiscreteIdentity) -> DiscreteIdentity:
-        assert ask(first.codomain() == second.domain()) is True
+        assert ask(first.codomain() == second.domain())
         return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain())
 
     def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
@@ -296,7 +296,7 @@ class ThinCategory(Category[[], []]):
         return self.MorphismType(self.morphism_category(1), member_object, member_object)
 
     def composite(self, second: Comparison, first: Comparison) -> Comparison:
-        assert ask(first.codomain() == second.domain()) is True
+        assert ask(first.codomain() == second.domain())
         return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain())
 
     def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:

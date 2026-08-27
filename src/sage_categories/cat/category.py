@@ -278,7 +278,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
             f"membership of {candidate!r} in {self!r} is not established by the available data and algorithms; "
             f"ask(this_category.membership_proposition(candidate)) for the three-valued answer"
         )
-        return decision is True
+        return bool(decision)
 
     # -- the Mor(n, C) tower ----------------------------------------------------
 
@@ -727,7 +727,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
 
     def object_point(self, member_object: ObjectOfCategory) -> ElementOfObject:
         """The point of ``object_set()`` selecting an object: the one whose object equals it."""
-        return next(point for point in self.object_set() if ask(self.object_at(point) == member_object) is True)
+        return next(point for point in self.object_set() if ask(self.object_at(point) == member_object))
 
     def morphism_set(self) -> ObjectOfCategory | UnknownClass:
         """The set of morphisms as a finite enumerated object of ``Sets()``, or ``Unknown`` when none is chosen."""

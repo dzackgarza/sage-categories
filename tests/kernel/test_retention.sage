@@ -93,7 +93,7 @@ def test_each_value_retains_its_own_chosen_structure() -> None:
 
     assert first.basepoint() is first_point
     assert second.basepoint() is second_point
-    assert ask(first == second) is True, "extensionality: equal sets, and still two chosen points"
+    assert ask(first == second), "extensionality: equal sets, and still two chosen points"
 
 
 def test_a_value_that_entered_no_such_constructor_retains_no_datum() -> None:
@@ -112,7 +112,7 @@ def test_a_retained_construction_returns_one_value_for_one_argument_sequence() -
     members = Sets().Finite()((int(0), int(1)))
 
     assert SEGMENTING.initial_segment(members, int(2)) is SEGMENTING.initial_segment(members, int(2))
-    assert ask(SEGMENTING.initial_segment(members, int(2)).cardinality() == int(2)) is True
+    assert ask(SEGMENTING.initial_segment(members, int(2)).cardinality() == int(2))
 
 
 def test_a_retained_construction_separates_argument_sequences_that_differ() -> None:
@@ -121,7 +121,7 @@ def test_a_retained_construction_separates_argument_sequences_that_differ() -> N
     two, three = SEGMENTING.initial_segment(members, int(2)), SEGMENTING.initial_segment(members, int(3))
 
     assert two is not three
-    assert ask(three.cardinality() == int(3)) is True
+    assert ask(three.cardinality() == int(3))
 
 
 def test_an_owned_argument_is_compared_by_identity_and_not_by_equality() -> None:
@@ -130,7 +130,7 @@ def test_an_owned_argument_is_compared_by_identity_and_not_by_equality() -> None
     second = Sets().Finite()((int(0), int(1)))
 
     assert first is not second
-    assert ask(first == second) is True, "extensionality: the same members"
+    assert ask(first == second), "extensionality: the same members"
     assert SEGMENTING.initial_segment(first, int(2)) is not SEGMENTING.initial_segment(second, int(2))
 
 

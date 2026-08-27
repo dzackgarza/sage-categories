@@ -480,7 +480,7 @@ def test_represented_concrete_structure_makes_points_the_separator_points() -> N
     assert Sets().separating_family() == (Sets().Terminal(),)
     assert three.defining_morphism().domain() is integers
     assert three.defining_morphism() in Mor(groups)(integers, cyclic)
-    assert ask(three.defining_morphism().set_map()(ZZ(int(2))) == Sets().Simplex(int(3)).point(int(2))) is True
+    assert ask(three.defining_morphism().set_map()(ZZ(int(2))) == Sets().Simplex(int(3)).point(int(2)))
 
     hom = Mor(groups)(integers, cyclic)(lambda k: (int(3) * k) % int(4))
     assert groups.element_from_defining_morphism(hom) is three
@@ -500,7 +500,7 @@ def test_the_public_element_image_keeps_the_source_separator_and_the_compiler_in
 
     comparison = additive.separator_comparison()
     assert comparison in Mor(groups)(groups.integers(), additive.on_object(modules.ring()))
-    assert ask(comparison.set_map()(ZZ(int(3))) == modules.ring().carrier().point((int(1),))) is True
+    assert ask(comparison.set_map()(ZZ(int(3))) == modules.ring().carrier().point((int(1),)))
 
     # The public image is ``q``: its domain is ``F(G_C)``, not the target's own separator.
     image = additive.on_element(first)
@@ -513,7 +513,7 @@ def test_the_public_element_image_keeps_the_source_separator_and_the_compiler_in
     assert total.parent() is plane.additive_group()
     assert total.defining_morphism().domain() is groups.integers()
     assert total is plane.additive_group().element((int(1), int(1)))
-    assert ask(total.defining_morphism().set_map()(ZZ(int(1))) == plane.carrier().point((int(1), int(1)))) is True
+    assert ask(total.defining_morphism().set_map()(ZZ(int(1))) == plane.carrier().point((int(1), int(1))))
     assert (first + first) is plane.additive_group().element((int(0), int(0)))
 
 
@@ -532,12 +532,12 @@ def test_the_element_path_to_sets_and_special_methods_through_a_length_two_route
     # special method inherited over two edges returns those sums, not merely a value of
     # the additive image at the target separator.
     assert total is plane.additive_group().element((int(1), int(1)))
-    assert ask(total.defining_morphism().set_map()(ZZ(int(1))) == plane.carrier().point((int(1), int(1)))) is True
+    assert ask(total.defining_morphism().set_map()(ZZ(int(1))) == plane.carrier().point((int(1), int(1))))
     assert (second + second) is plane.additive_group().element((int(0), int(0)))
 
     assert hash(first) == hash(plane.carrier().point((int(1), int(0))))
     assert first in plane
-    assert ask(plane.cardinality() == int(4)) is True
+    assert ask(plane.cardinality() == int(4))
     assert plane.point((int(1), int(1))) is plane.carrier().point((int(1), int(1)))
 
 
@@ -553,7 +553,7 @@ def test_a_route_of_length_two_transports_one_object_element_and_morphism_to_exa
     assert additive.on_object(monomorphism.on_object(plane)) is plane.additive_group()
     assert additive.on_morphism(monomorphism.on_morphism(swap)).set_map() is swap.set_map()
     assert additive.on_morphism(monomorphism.on_morphism(swap)) in Mor(groups)(plane.additive_group(), plane.additive_group())
-    assert ask(swap(first) == plane.carrier().point((int(0), int(1)))) is True
+    assert ask(swap(first) == plane.carrier().point((int(0), int(1))))
     assert swap(first).parent() is plane.carrier()
     image = additive.on_element(monomorphism.on_element(first))
     assert image.parent() is plane.additive_group()

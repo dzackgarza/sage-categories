@@ -163,8 +163,8 @@ def test_commuting_squares_are_the_morphisms_of_fun_of_the_walking_arrow() -> No
     assert square.domain() is successor
     assert ev_0.on_morphism(square) is swap
     assert ev_1.on_morphism(square) is rotate
-    assert ask(double * swap == rotate * successor) is True
-    assert ask(rotated == double * swap) is True
+    assert ask(double * swap == rotate * successor)
+    assert ask(rotated == double * swap)
 
 
 def test_the_slice_is_the_pullback_of_the_codomain_evaluation_along_the_point() -> None:
@@ -192,7 +192,7 @@ def test_the_slice_is_the_pullback_of_the_codomain_evaluation_along_the_point() 
     unrelated = Mor(Sets())(two, other_three)(lambda datum: datum)
     assert ask(over.membership_proposition(unrelated)) is Unknown
     assert lifted not in Sets()
-    assert ask(over.fixed_projection().on_object(lifted).cardinality() == int(2)) is True
+    assert ask(over.fixed_projection().on_object(lifted).cardinality() == int(2))
 
     under = Sets().CosliceUnder(two)
     assert under.first_functor() is squares.evaluation(arrow(int(0)))
@@ -247,8 +247,8 @@ def test_the_codomain_evaluation_lifts_a_map_by_pullback_with_both_projections()
     to_four = lift.component(arrow(int(0)))
     assert to_four.domain() is lifted.domain() and to_four.codomain() is four
     assert lift.component(arrow(int(1))) is include
-    assert ask(residue * to_four == include * lifted) is True
-    assert ask(lifted.domain().cardinality() == int(3)) is True
+    assert ask(residue * to_four == include * lifted)
+    assert ask(lifted.domain().cardinality() == int(3))
     pullback = lifted.domain()
     assert pullback in Sets().Pullbacks()
     assert pullback.diagram().on_object(cospan(int(0))) is four and pullback.diagram().on_object(cospan(int(1))) is two
@@ -270,15 +270,15 @@ def test_the_slice_projection_lifts_a_map_by_precomposition() -> None:
     assert over.fixed_projection().on_morphism(lift) is double
     lifted = lift.domain()
     assert over.fixed_projection().on_object(lifted) is two
-    assert ask(lifted.first() == residue * double) is True
-    assert ask(lifted.first()(two.point(int(1))) == three.point(int(2))) is True
+    assert ask(lifted.first() == residue * double)
+    assert ask(lifted.first()(two.point(int(1))) == three.point(int(2)))
 
     under = Sets().CosliceUnder(two)
     pointed = under(double)
     colift = under.fixed_projection().cocartesian_lift(residue, pointed)
     assert colift.domain() is pointed
     assert under.fixed_projection().on_object(colift.codomain()) is three
-    assert ask(colift.codomain().first() == residue * double) is True
+    assert ask(colift.codomain().first() == residue * double)
 
 
 def test_a_shared_carrier_pullback_accepts_one_carrier_and_rejects_two() -> None:

@@ -49,15 +49,15 @@ def test_the_structural_diamond_returns_one_underlying_set_map_and_point_by_iden
     assert underlying.on_element(monomorphism.on_element(two)) is into_sets.on_element(restricted.on_element(two))
     assert restricted.on_element(two) is carrier.point(int(2))
 
-    assert ask(divisibility.cardinality() == int(4)) is True
+    assert ask(divisibility.cardinality() == int(4))
     assert len(list(divisibility)) == int(4)
-    assert ask(doubling(two) == carrier.point(int(2))) is True
+    assert ask(doubling(two) == carrier.point(int(2)))
 
 
 def test_finiteness_is_decided_from_the_underlying_set() -> None:
     usual = (ZZ * ZZ).subset_from(lambda pair: pair(int(0)) <= pair(int(1)))
     integers = Posets()(usual)
-    assert ask(integers.is_finite()) is False
+    assert not ask(integers.is_finite())
     assert integers not in FinitePosets()
 
     letters = Sets()(lambda datum: datum in ("a", "ab"))
@@ -67,7 +67,7 @@ def test_finiteness_is_decided_from_the_underlying_set() -> None:
     assume(prefix.is_finite())
     assert letters in Sets().Finite()
     assert prefix not in FinitePosets()
-    assert ask(FinitePosets().predicate()(prefix)) is True
+    assert ask(FinitePosets().predicate()(prefix))
     assert prefix in FinitePosets()
 
 
@@ -76,49 +76,49 @@ def test_the_finite_order_algorithms_reconstruct_owned_results() -> None:
     carrier = Posets().structure_functors()[int(0)].on_object(divisibility)
     one, two, three, six = (divisibility.element(carrier.point(int(k))) for k in (1, 2, 3, 6))
 
-    assert ask(divisibility.has_bottom()) is True
+    assert ask(divisibility.has_bottom())
     assert divisibility in FinitePosets().WithBottom()
     assert divisibility.bottom() is one
-    assert ask(divisibility.has_top()) is True
+    assert ask(divisibility.has_top())
     assert divisibility.top() is six
-    assert ask(divisibility.height() == int(3)) is True
-    assert ask(divisibility.width() == int(2)) is True
-    assert divisibility.covers(one, two) is True
-    assert divisibility.covers(one, six) is False
-    assert divisibility.covers(two, one) is False
+    assert ask(divisibility.height() == int(3))
+    assert ask(divisibility.width() == int(2))
+    assert divisibility.covers(one, two)
+    assert not divisibility.covers(one, six)
+    assert not divisibility.covers(two, one)
 
-    assert ask(divisibility.is_graded()) is True
+    assert ask(divisibility.is_graded())
     assert divisibility in FinitePosets().Graded()
     assert divisibility in FinitePosets().Ranked()
-    assert ask(divisibility.rank() == int(2)) is True
-    assert ask(divisibility.rank_of_element(one) == int(0)) is True
-    assert ask(divisibility.rank_of_element(three) == int(1)) is True
+    assert ask(divisibility.rank() == int(2))
+    assert ask(divisibility.rank_of_element(one) == int(0))
+    assert ask(divisibility.rank_of_element(three) == int(1))
 
     below_six = divisibility.lower_covers(six)
     assert below_six in FinitePosets()
-    assert ask(below_six.cardinality() == int(2)) is True
+    assert ask(below_six.cardinality() == int(2))
     assert carrier.point(int(2)) in below_six
     assert carrier.point(int(3)) in below_six
     assert carrier.point(int(1)) not in below_six
-    assert ask(below_six.element(below_six.point(int(2))) <= below_six.element(below_six.point(int(3)))) is False
-    assert ask(divisibility.upper_covers(one).cardinality() == int(2)) is True
-    assert ask(divisibility.minimal_elements().cardinality() == int(1)) is True
+    assert not ask(below_six.element(below_six.point(int(2))) <= below_six.element(below_six.point(int(3))))
+    assert ask(divisibility.upper_covers(one).cardinality() == int(2))
+    assert ask(divisibility.minimal_elements().cardinality() == int(1))
     assert carrier.point(int(6)) in divisibility.maximal_elements()
 
 
 def test_bottom_and_top_belong_to_the_property_subcategories_that_guarantee_them() -> None:
     antichain = _antichain()
-    assert ask(antichain.has_bottom()) is False
+    assert not ask(antichain.has_bottom())
     assert antichain not in FinitePosets().WithBottom()
-    assert ask(antichain.has_top()) is False
+    assert not ask(antichain.has_top())
     with pytest.raises(AttributeError):
         antichain.bottom
     with pytest.raises(AttributeError):
         antichain.top
-    assert ask(antichain.height() == int(1)) is True
-    assert ask(antichain.width() == int(2)) is True
-    assert ask(antichain.is_ranked()) is True
-    assert ask(antichain.rank() == int(0)) is True
+    assert ask(antichain.height() == int(1))
+    assert ask(antichain.width() == int(2))
+    assert ask(antichain.is_ranked())
+    assert ask(antichain.rank() == int(0))
 
 
 def test_intervals_ideals_filters_and_common_covers_are_sub_posets() -> None:
@@ -129,28 +129,28 @@ def test_intervals_ideals_filters_and_common_covers_are_sub_posets() -> None:
 
     closed = divisibility.closed_interval(one, six)
     assert closed in FinitePosets()
-    assert ask(closed.cardinality() == int(4)) is True
+    assert ask(closed.cardinality() == int(4))
     between = divisibility.open_interval(one, six)
-    assert ask(between.cardinality() == int(2)) is True
+    assert ask(between.cardinality() == int(2))
     assert carrier.point(int(2)) in between
     assert carrier.point(int(3)) in between
-    assert ask(between.element(between.point(int(2))) <= between.element(between.point(int(3)))) is False
-    assert divisibility.is_antichain_of_poset(between) is True
-    assert divisibility.is_chain_of_poset(between) is False
-    assert divisibility.is_chain_of_poset(divisibility.sub_poset(lambda datum: datum != int(3))) is True
+    assert not ask(between.element(between.point(int(2))) <= between.element(between.point(int(3))))
+    assert divisibility.is_antichain_of_poset(between)
+    assert not divisibility.is_chain_of_poset(between)
+    assert divisibility.is_chain_of_poset(divisibility.sub_poset(lambda datum: datum != int(3)))
 
     below_two = divisibility.principal_order_ideal(two)
-    assert ask(below_two.cardinality() == int(2)) is True
+    assert ask(below_two.cardinality() == int(2))
     assert carrier.point(int(1)) in below_two
     assert carrier.point(int(2)) in below_two
     above_two = divisibility.principal_order_filter(two)
-    assert ask(above_two.cardinality() == int(2)) is True
+    assert ask(above_two.cardinality() == int(2))
     assert carrier.point(int(6)) in above_two
-    assert ask(divisibility.order_ideal(middle).cardinality() == int(3)) is True
+    assert ask(divisibility.order_ideal(middle).cardinality() == int(3))
     assert carrier.point(int(6)) not in divisibility.order_ideal(middle)
-    assert ask(divisibility.order_filter(middle).cardinality() == int(3)) is True
+    assert ask(divisibility.order_filter(middle).cardinality() == int(3))
     assert carrier.point(int(1)) not in divisibility.order_filter(middle)
-    assert ask(divisibility.common_lower_covers(middle).cardinality() == int(1)) is True
+    assert ask(divisibility.common_lower_covers(middle).cardinality() == int(1))
     assert carrier.point(int(1)) in divisibility.common_lower_covers(middle)
     assert carrier.point(int(6)) in divisibility.common_upper_covers(middle)
 
@@ -164,21 +164,21 @@ def test_a_linear_extension_is_a_finite_total_order_on_the_same_set_extending_th
     assert extension in TotallyOrderedSets()
     assert extension in FiniteTotallyOrderedSets()
     assert underlying.on_object(extension) is carrier
-    assert ask(extension.cardinality() == int(4)) is True
+    assert ask(extension.cardinality() == int(4))
     for lower, upper in ((1, 2), (1, 3), (2, 6), (3, 6)):
-        assert ask(divisibility.element(carrier.point(int(lower))) <= divisibility.element(carrier.point(int(upper)))) is True
-        assert ask(extension.element(carrier.point(int(lower))) <= extension.element(carrier.point(int(upper)))) is True
+        assert ask(divisibility.element(carrier.point(int(lower))) <= divisibility.element(carrier.point(int(upper))))
+        assert ask(extension.element(carrier.point(int(lower))) <= extension.element(carrier.point(int(upper))))
 
     chain = Posets().Simplex(int(2))
     assert FiniteTotallyOrderedSets() is FinitePosets().TotallyOrdered()
     assert chain in FiniteTotallyOrderedSets()
-    assert ask(chain.cardinality() == int(3)) is True
+    assert ask(chain.cardinality() == int(3))
 
 
 def test_level_sets_of_a_ranked_poset_are_its_rank_levels_indexed_by_a_discrete_diagram() -> None:
     divisibility = _divisibility()
     carrier = Posets().structure_functors()[int(0)].on_object(divisibility)
-    assert ask(divisibility.is_ranked()) is True
+    assert ask(divisibility.is_ranked())
     levels = divisibility.level_sets()
     index = Sets().Simplex(int(2))
 
@@ -191,4 +191,4 @@ def test_level_sets_of_a_ranked_poset_are_its_rank_levels_indexed_by_a_discrete_
     assert carrier.point(int(3)) in level[int(1)]
     assert carrier.point(int(6)) in level[int(2)]
     for member, rank in ((1, 0), (2, 1), (3, 1), (6, 2)):
-        assert ask(divisibility.rank_of_element(divisibility.element(carrier.point(int(member)))) == int(rank)) is True
+        assert ask(divisibility.rank_of_element(divisibility.element(carrier.point(int(member)))) == int(rank))

@@ -28,17 +28,17 @@ def test_the_finite_subsets_of_an_enumerated_set_are_enumerated_and_select_subob
     assert subsets in Sets().FiniteSubsets()
     assert subsets in Sets().Finite()
     assert subsets.base_set() is five
-    assert ask(subsets.cardinality() == int(32)) is True
+    assert ask(subsets.cardinality() == int(32))
     assert Sets().FiniteSubsets()(five) is subsets
 
     first, last = subsets[int(0)], subsets[int(31)]
     assert first in Sets().ChosenSubsets()
     assert first.underlying_set() is five
-    assert ask(first.cardinality() == int(0)) is True
-    assert ask(last.cardinality() == int(5)) is True
+    assert ask(first.cardinality() == int(0))
+    assert ask(last.cardinality() == int(5))
     assert last.monomorphism() in Mor(Sets())(last, five).Monomorphisms()
-    assert ask(subsets.index(last) == int(31)) is True
-    assert ask(subsets.index(first) == int(0)) is True
+    assert ask(subsets.index(last) == int(31))
+    assert ask(subsets.index(first) == int(0))
 
     odd = five.subset_from(lambda datum: datum % int(2) == int(1))
     point = subsets.point_of(odd)
@@ -46,13 +46,13 @@ def test_the_finite_subsets_of_an_enumerated_set_are_enumerated_and_select_subob
     assert point.parent() is subsets
     selected = subsets.subset_at(point)
     assert selected in Sets().Finite()
-    assert ask(selected.cardinality() == int(2)) is True
+    assert ask(selected.cardinality() == int(2))
     assert five.point(int(3)) in selected
     assert five.point(int(2)) not in selected
-    assert ask(selected <= odd) is True and ask(odd <= selected) is True
+    assert ask(selected <= odd) and ask(odd <= selected)
     assert subsets[subsets.index(odd)] is selected
-    assert ask(subsets.point_of(selected) == point) is True
-    assert ask(subsets.point_of(odd) == subsets.point_of(five.subset_from(lambda datum: datum == int(0)))) is False
+    assert ask(subsets.point_of(selected) == point)
+    assert not ask(subsets.point_of(odd) == subsets.point_of(five.subset_from(lambda datum: datum == int(0))))
     with pytest.raises(AssertionError):
         subsets.point_of(ZZ.subset_from(lambda n: n > int(0)))
 
@@ -65,18 +65,18 @@ def test_subsets_of_a_fixed_size_have_the_binomial_count_and_inherit_the_finite_
     assert pairs in Sets().FiniteSubsets()
     assert pairs is not Sets().FiniteSubsets()(five)
     assert pairs.base_set() is five
-    assert ask(pairs.subset_cardinality() == int(2)) is True
-    assert ask(pairs.cardinality() == int(10)) is True
-    assert ask(Sets().SubsetsOfSize(int(0))(five).cardinality() == int(1)) is True
-    assert ask(Sets().SubsetsOfSize(int(5))(five).cardinality() == int(1)) is True
-    assert ask(Sets().SubsetsOfSize(int(6))(five).cardinality() == int(0)) is True
+    assert ask(pairs.subset_cardinality() == int(2))
+    assert ask(pairs.cardinality() == int(10))
+    assert ask(Sets().SubsetsOfSize(int(0))(five).cardinality() == int(1))
+    assert ask(Sets().SubsetsOfSize(int(5))(five).cardinality() == int(1))
+    assert ask(Sets().SubsetsOfSize(int(6))(five).cardinality() == int(0))
 
     first = pairs[int(0)]
-    assert ask(first.cardinality() == int(2)) is True
+    assert ask(first.cardinality() == int(2))
     assert five.point(int(0)) in first and five.point(int(1)) in first
-    assert ask(pairs.index(first) == int(0)) is True
+    assert ask(pairs.index(first) == int(0))
     top = five.subset_from(lambda datum: datum >= int(3))
-    assert ask(pairs.index(top) == int(9)) is True
+    assert ask(pairs.index(top) == int(9))
     assert pairs.subset_at(pairs.point_of(top)) is pairs[int(9)]
     assert Sets().SubsetsOfSize(int(2)) is Sets().SubsetsOfSize(int(2))
     assert Sets().SubsetsOfSize(int(2)) is not Sets().SubsetsOfSize(int(3))
@@ -98,12 +98,12 @@ def test_finite_subsets_of_an_infinite_set_have_its_cardinality_and_no_induced_e
     subset = finite.subset_at(point)
     assert subset in Sets().Finite()
     assert subset.underlying_set() is ZZ
-    assert ask(subset.cardinality() == int(2)) is True
+    assert ask(subset.cardinality() == int(2))
     assert ZZ(int(3)) in subset
     assert ZZ(int(4)) not in subset
-    assert ask(pairs.membership_proposition(point)) is True
-    assert ask(pairs.membership_proposition(pairs.point_of(subset))) is True
-    assert ask(pairs.membership_proposition(finite.point_of(Sets().ChosenSubsets().from_enumeration(ZZ, (int(1), int(2), int(3)))))) is False
+    assert ask(pairs.membership_proposition(point))
+    assert ask(pairs.membership_proposition(pairs.point_of(subset)))
+    assert not ask(pairs.membership_proposition(finite.point_of(Sets().ChosenSubsets().from_enumeration(ZZ, (int(1), int(2), int(3))))))
     with pytest.raises(AssertionError):
         finite[int(0)]
     with pytest.raises(AssertionError):
@@ -121,7 +121,7 @@ def test_finitely_supported_functions_retain_their_pointed_data_and_cardinalitie
     assert functions.basepoint() is four.point(int(0))
     assert functions.underlying_set() is four ** three
     assert functions.monomorphism() in Mor(Sets())(functions, four ** three).Monomorphisms()
-    assert ask(functions.cardinality() == int(64)) is True
+    assert ask(functions.cardinality() == int(64))
     name = Sets().name_of(Mor(Sets())(three, four)(lambda datum: datum + int(1)))
     assert name in functions
     assert Sets().FinitelySupportedFunctions()(three, four.point(int(0))) is functions
@@ -142,4 +142,4 @@ def test_a_countable_infinite_set_has_cardinality_aleph_zero_by_placement() -> N
     assume(even.is_infinite())
     assert even in Sets().Infinite()
     assert even.cardinality() is aleph0
-    assert ask(even.is_countable()) is True
+    assert ask(even.is_countable())

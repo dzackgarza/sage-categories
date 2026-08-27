@@ -87,7 +87,7 @@ from sage_categories.kernel.construction import (
     retained_object_input,
 )
 from sage_categories.kernel.decisions import Decision, Unknown
-from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask, conjunction, disjunction, negation
+from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask, conjunction, disjunction, established, negation
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, role_of
 from sage_categories.ordinals.category import OrdinalObject, Ordinals, bind_cardinals, is_natural_number
 from sage_categories.sets.maps import SetMorphismData
@@ -365,7 +365,7 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
         undecided.  A caller uses this to select a normalization rule that needs finite
         operands and otherwise keeps the expression symbolic (POL-MATH-042).
         """
-        return self._is_finite(cardinal) is True
+        return established(self._is_finite(cardinal))
 
     def supremum(self, *cardinals: CardinalObject) -> CardinalObject:
         """The finite formal supremum, with dominated terms removed."""
@@ -375,9 +375,9 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
         assert terms
         maximal: list[CardinalObject] = []
         for candidate in sorted(terms, key=lambda term: repr(term._key)):
-            if any(self._at_most(candidate, term) is True for term in maximal):
+            if any(established(self._at_most(candidate, term)) for term in maximal):
                 continue
-            maximal = [term for term in maximal if self._at_most(term, candidate) is not True]
+            maximal = [term for term in maximal if not established(self._at_most(term, candidate))]
             maximal.append(candidate)
         if len(maximal) == 1:
             return maximal[0]
@@ -424,7 +424,7 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
         if self._established_finite(base):
             # Cardinal.nat_power_eq: n ** c = 2 ** c for finite n >= 2 and infinite c.
             base = self(2)
-        elif self._at_most(base, exponent) is True:
+        elif established(self._at_most(base, exponent)):
             # Cardinal.power_eq_two_power: a ** c = 2 ** c for 2 <= a <= c and infinite c
             # (inspected 2026-08-27); in particular c ** c = 2 ** c (Cardinal.power_self_eq).
             base = self(2)
@@ -532,24 +532,21 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
             return Unknown
         if first._key == second._key:
             return True
-        if self._at_most(first, second) is False or self._at_most(second, first) is False:
-            return False
-        return Unknown
+        # Cardinal.le_antisymm: two cardinals are equal exactly when each is at most the
+        # other (inspected 2026-08-28).
+        return ask(conjunction((self._at_most(first, second), self._at_most(second, first))))
 
     def _at_most(self, first: CardinalObject, second: CardinalObject) -> Decision:
         if first._key == second._key:
             return True
         if first._kind_() == "supremum":
-            answers = [self._at_most(term, second) for term in first._terms_()]
-            if all(answer is True for answer in answers):
-                return True
-            if any(answer is False for answer in answers):
-                return False
-            return Unknown
+            # Cardinal.sup_le_iff: sup T <= b exactly when every term is (inspected 2026-08-28).
+            return ask(conjunction(self._at_most(term, second) for term in first._terms_()))
         if second._kind_() == "supremum":
-            if any(self._at_most(first, term) is True for term in second._terms_()):
-                return True
-            return Unknown
+            # A finite supremum in the linear order of cardinals is its maximum, so
+            # a <= sup T exactly when some term dominates a (Mathlib ``le_max_iff``
+            # with ``Cardinal.linearOrder``; inspected 2026-08-28).
+            return ask(disjunction(self._at_most(first, term) for term in second._terms_()))
         if self._established_finite(first) and self._established_finite(second):
             return first._finite_value_() <= second._finite_value_()
         if self._established_finite(first):
@@ -559,34 +556,34 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
         if first._kind_() == "aleph" and second._kind_() == "aleph":
             # Cardinal.aleph_le_aleph: alephs are ordered by their ordinal indices.
             return ask(first.aleph_index() <= second.aleph_index())
-        if first._kind_() == "aleph" and ask(first.aleph_index() == 0) is True:
+        if first._kind_() == "aleph" and established(first.aleph_index() == 0):
             return True
-        if first._kind_() == "aleph" and ask(first.aleph_index() == 1) is True and self._is_countable(second) is False:
+        if first._kind_() == "aleph" and established(first.aleph_index() == 1) and established(negation(self._is_countable(second))):
             return True
         if first._kind_() == "power":
             base, exponent = first._terms_()
             # Cardinal.cantor': b ** a > a for 1 < b, so b ** a is not below anything below a.
-            if self._at_most(self(2), base) is True and self._at_most(second, exponent) is True:
+            if established(self._at_most(self(2), base)) and established(self._at_most(second, exponent)):
                 return False
         if second._kind_() == "power":
             base, exponent = second._terms_()
-            if self._at_most(first, base) is True:
+            if established(self._at_most(first, base)):
                 return True
             # Cardinal.cantor': the exponent is below a power with base at least two.
-            if self._at_most(self(2), base) is True and self._at_most(first, exponent) is True:
+            if established(self._at_most(self(2), base)) and established(self._at_most(first, exponent)):
                 return True
             if first._kind_() == "power":
                 first_base, first_exponent = first._terms_()
-                if self._at_most(first_base, base) is True and self._at_most(first_exponent, exponent) is True:
+                if established(self._at_most(first_base, base)) and established(self._at_most(first_exponent, exponent)):
                     return True
         return Unknown
 
     def _less_than(self, first: CardinalObject, second: CardinalObject) -> Decision:
         if first._key == second._key:
             return False
-        if self._at_most(first, second) is True:
+        if established(self._at_most(first, second)):
             return ask(~(first == second))
-        if self._at_most(second, first) is True:
+        if established(self._at_most(second, first)):
             return False
         return Unknown
 

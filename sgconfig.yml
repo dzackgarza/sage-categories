@@ -1,0 +1,15 @@
+# Repository-local ast-grep rules.
+#
+# The central Sage gate (~/ai-review-ci/justfiles/sage.just, _sage-ast-grep) scans
+# against the central config and has no repo-local rule directory. The rule here
+# is specific to a repository that owns ``Unknown``: it states nothing in a
+# repository whose predicates are two-valued, so it stays local.
+#
+# ``languageGlobs`` reads the test corpus, which is Sage source, as Python. The
+# tests use no preparser-only syntax, so this needs no preparse step.
+ruleDirs:
+  - .ast-grep/rules
+
+languageGlobs:
+  python:
+    - "*.sage"

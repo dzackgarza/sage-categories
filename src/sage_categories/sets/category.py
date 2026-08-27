@@ -81,7 +81,7 @@ class FiniteSets(PropertySubcategory[[Rule], []]):
         # certify distinctness nor answer membership.
         for position, first in enumerate(enumeration):
             for second in enumeration[position + 1 :]:
-                assert ask(first == second) is False, f"the enumeration lists {first!r} and {second!r}, which are not exactly distinct"
+                assert ask(negation(first == second)), f"the enumeration lists {first!r} and {second!r}, which are not exactly distinct"
         ambient = self.ambient()
         finite_set = ambient.ObjectType(
             ambient,

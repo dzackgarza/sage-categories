@@ -25,7 +25,7 @@ def test_a_monomorphism_into_x_is_a_subobject_and_a_non_monomorphism_is_not() ->
     assert collapse not in Sets().Subobjects()
     assert include in subobjects
     assert collapse not in subobjects
-    assert ask(subobjects.membership_proposition(collapse)) is False
+    assert not ask(subobjects.membership_proposition(collapse))
     assert parity not in subobjects
     presented = subobjects(include)
     assert presented in subobjects

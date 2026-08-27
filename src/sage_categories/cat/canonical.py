@@ -277,7 +277,7 @@ def enumerated_datum(finite_set: SetObject, point: SetElement) -> Hashable:
     from sage_categories.sets.category import Sets
 
     assert point in finite_set, f"{point!r} is not a point of {finite_set!r}"
-    return next(datum for datum in Sets().Finite().chosen_enumeration(finite_set) if ask(finite_set.point(datum) == point) is True)
+    return next(datum for datum in Sets().Finite().chosen_enumeration(finite_set) if ask(finite_set.point(datum) == point))
 
 
 def _edge(source: int, target: int) -> Generator:

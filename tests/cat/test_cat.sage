@@ -96,7 +96,7 @@ def test_a_functor_is_a_morphism_of_cat_and_an_object_of_fun() -> None:
     assert arrow in Fun(walking_arrow, Sets())
     assert arrow.on_object(walking_arrow(int(0))) is two
     assert arrow.on_morphism(walking_arrow.generator("0->1")) is successor
-    assert ask(arrow.on_morphism(walking_arrow(int(1)).identity()) == two.identity()) is True
+    assert ask(arrow.on_morphism(walking_arrow(int(1)).identity()) == two.identity())
 
 
 def test_fixed_endpoints() -> None:
@@ -127,7 +127,7 @@ def test_natural_transformations_compose_componentwise() -> None:
     assert eta.component(point(int(0))) is successor
     composite = theta * eta
     add_two = Mor(Sets())(two, four)(lambda datum: datum + int(2))
-    assert ask(composite.component(point(int(0))) == add_two) is True
+    assert ask(composite.component(point(int(0))) == add_two)
 
 
 def test_canonical_objects_exist_by_identity() -> None:
@@ -143,7 +143,7 @@ def test_canonical_objects_exist_by_identity() -> None:
     assert span.generator("0->2") in Mor(span)(span(int(0)), span(int(2)))
     assert cospan.generator("1->2") in Mor(cospan)(cospan(int(1)), cospan(int(2)))
     composite = Cat().Simplex(int(2)).generator("1->2") * Cat().Simplex(int(2)).generator("0->1")
-    assert ask(composite == Mor(Cat().Simplex(int(2)))(Cat().Simplex(int(2))(int(0)), Cat().Simplex(int(2))(int(2)))(("0->1", "1->2"))) is True
+    assert ask(composite == Mor(Cat().Simplex(int(2)))(Cat().Simplex(int(2))(int(0)), Cat().Simplex(int(2))(int(2)))(("0->1", "1->2")))
 
     two = Sets().Simplex(int(1))
     swap = Mor(Sets())(two, two)(lambda datum: int(1) - datum)
@@ -183,7 +183,7 @@ def test_direct_construction_and_assumption_refine_the_same_functor() -> None:
     assumed = Fun(Sets(), Sets())(lambda member: member, lambda morphism: morphism)
     assume(assumed.is_full())
     assert assumed in Fun.Full()
-    assert ask(assumed.is_full()) is True
+    assert ask(assumed.is_full())
 
     constructed = Fun(Sets(), Sets())(lambda member: member, lambda morphism: morphism)
     assert Fun(Sets(), Sets()).Faithful()(constructed) is constructed
@@ -200,8 +200,8 @@ def test_an_unplaced_functor_property_is_unknown() -> None:
 
 def test_full_faithfulness_implies_fullness_and_faithfulness() -> None:
     functor = Fun(Sets(), Sets()).FullyFaithful()(lambda member: member, lambda morphism: morphism)
-    assert ask(functor.is_full()) is True
-    assert ask(functor.is_faithful()) is True
+    assert ask(functor.is_full())
+    assert ask(functor.is_faithful())
     assert functor in Fun.Faithful()
     assert ask(functor.is_essentially_surjective()) is Unknown
 
@@ -217,8 +217,8 @@ def test_a_constructed_functor_maps_one_nonidentity_composite() -> None:
     functor = Fun(triangle, Sets())(lambda vertex: objects[triangle.label(vertex)], lambda path: _fold(images, path))
 
     composite = triangle.generator("1->2") * triangle.generator("0->1")
-    assert ask(functor.on_morphism(composite) == successor * include) is True
-    assert ask(functor.on_morphism(composite)(one.point(int(0))) == three.point(int(1))) is True
+    assert ask(functor.on_morphism(composite) == successor * include)
+    assert ask(functor.on_morphism(composite)(one.point(int(0))) == three.point(int(1)))
 
 
 def test_generic_identity_and_composition() -> None:
@@ -233,13 +233,13 @@ def test_generic_identity_and_composition() -> None:
 
     assert identity.on_object(two) is two
     assert identity.on_morphism(swap) is swap
-    assert ask(identity.is_equivalence()) is True
+    assert ask(identity.is_equivalence())
     assert composite.on_object(walking(int(1))) is pair
     assert composite.on_morphism(walking.generator("f")) is swap
 
     inverse_image = functor.on_morphism(walking.generator("f").inverse())
     assert inverse_image is functor.on_morphism(walking.generator("f")).inverse()
-    assert ask(inverse_image(pair.point(int(20))) == two.point(int(1))) is True
+    assert ask(inverse_image(pair.point(int(20))) == two.point(int(1)))
 
 
 def test_the_induced_element_action_follows_the_morphism_action() -> None:
@@ -259,7 +259,7 @@ def test_the_induced_element_action_follows_the_morphism_action() -> None:
     assert image.parent() is two
     assert image.defining_morphism().domain() is one
     assert image.defining_morphism() is select_one
-    assert ask(image == two.point(int(1))) is True
+    assert ask(image == two.point(int(1)))
     assert composite.on_element(generalized).defining_morphism() is select_one
 
 
@@ -267,12 +267,12 @@ def test_equality_is_a_predicate_decided_by_ask() -> None:
     four = Sets().Simplex(int(3))
     first, second, first_again = four.point(int(1)), four.point(int(2)), four.point(int(1))
 
-    assert ask(first == second) is False
-    assert ask(first == first_again) is True
-    assert ask(first != second) is True
+    assert not ask(first == second)
+    assert ask(first == first_again)
+    assert ask(first != second)
     assert hash(first) == hash(first_again)
     with pytest.raises(TypeError):
         bool(first == second)
     with pytest.raises(TypeError):
         bool(four == four)
-    assert ask(four == four) is True
+    assert ask(four == four)

@@ -134,7 +134,7 @@ class SetObjectDeclaration(ObjectOfCategory):
             f"membership of {candidate!r} in {self!r} is not established by the available data and algorithms; "
             f"ask(this_set.membership_proposition(candidate)) for the three-valued answer"
         )
-        return decision is True
+        return bool(decision)
 
     def point(self, datum: Datum) -> SetElement:
         """The point ``1 -> X`` selecting ``datum``, one point per datum value.

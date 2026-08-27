@@ -27,9 +27,9 @@ def test_the_discrete_category_on_a_set_has_the_points_as_objects_and_identities
     assert one in shape
     assert successor(two_set.point(int(0))) is three.point(int(1))
     assert one_again is one
-    assert ask(one == one_again) is True
-    assert ask(one == two) is False
-    assert ask(Mor(shape)(one, one_again)() == one.identity()) is True
+    assert ask(one == one_again)
+    assert not ask(one == two)
+    assert ask(Mor(shape)(one, one_again)() == one.identity())
     assert one.identity() in Mor(shape)(one, one)
     assert one.identity().inverse() is one.identity()
     assert Sets().identity().inverse() is Sets().identity()
@@ -41,7 +41,7 @@ def test_the_discrete_category_on_a_set_has_the_points_as_objects_and_identities
     select_seven = Mor(Sets())(three, integers)(lambda datum: int(7))
     assert seven in Discrete(integers)
     assert Discrete(select_seven).on_object(one) is seven
-    assert ask(seven.point() == integers.point(int(7))) is True
+    assert ask(seven.point() == integers.point(int(7)))
 
 
 def test_discrete_is_a_functor_from_sets_to_cat() -> None:
@@ -52,9 +52,9 @@ def test_discrete_is_a_functor_from_sets_to_cat() -> None:
     functor = Discrete(times_ten)
     assert functor in Fun(Discrete(three), Discrete(integers))
     vertex = Discrete(three)(three.point(int(2)))
-    assert ask(functor.on_object(vertex).point() == integers.point(int(20))) is True
+    assert ask(functor.on_object(vertex).point() == integers.point(int(20)))
     assert functor.on_morphism(vertex.identity()) in Mor(Discrete(integers))
-    assert ask(functor.on_morphism(vertex.identity()).domain() == Discrete(integers)(integers.point(int(20)))) is True
+    assert ask(functor.on_morphism(vertex.identity()).domain() == Discrete(integers)(integers.point(int(20))))
 
 
 def test_the_thin_category_of_a_preorder_has_one_comparison_per_related_pair() -> None:
@@ -62,7 +62,7 @@ def test_the_thin_category_of_a_preorder_has_one_comparison_per_related_pair() -
     points = list(three)
 
     def position(point):
-        return next(index for index, candidate in enumerate(points) if ask(candidate == point) is True)
+        return next(index for index, candidate in enumerate(points) if ask(candidate == point))
 
     leq = Predicate("leq", int(2), True)
     leq.register_handler(lambda first, second: position(first) <= position(second))
@@ -71,8 +71,8 @@ def test_the_thin_category_of_a_preorder_has_one_comparison_per_related_pair() -
 
     zero_to_one, one_to_two = Mor(thin)(zero, one)(), Mor(thin)(one, two)()
     assert zero_to_one in Mor(thin)(zero, one)
-    assert ask(one_to_two * zero_to_one == Mor(thin)(zero, two)()) is True
-    assert ask(Mor(thin)(one, one)() == one.identity()) is True
+    assert ask(one_to_two * zero_to_one == Mor(thin)(zero, two)())
+    assert ask(Mor(thin)(one, one)() == one.identity())
     with pytest.raises(AssertionError):
         Mor(thin)(two, zero)()
 
@@ -94,11 +94,11 @@ def test_the_uniform_call_form_constructs_a_presented_shape_with_its_relations()
 
     assert triangle in Cat()
     assert triangle.generator("u") in Mor(triangle)(triangle(int(0)), triangle(int(1)))
-    assert ask(triangle.generator("v") * triangle.generator("u") == triangle.generator("w")) is True
-    assert ask(triangle.generator("w") == triangle(int(0)).identity()) is False
+    assert ask(triangle.generator("v") * triangle.generator("u") == triangle.generator("w"))
+    assert not ask(triangle.generator("w") == triangle(int(0)).identity())
 
     retraction = Cat()((int(0), int(1)), (("s", int(0), int(1)), ("r", int(1), int(0))), ((("s", "r"), ()),))
-    assert ask(retraction.generator("r") * retraction.generator("s") == retraction(int(0)).identity()) is True
+    assert ask(retraction.generator("r") * retraction.generator("s") == retraction(int(0)).identity())
     assert retraction.generator("s") not in Mor(retraction).Isomorphisms()
     assert retraction.generator("r") not in Mor(retraction).Isomorphisms()
     walking = Cat().WalkingIsomorphism()

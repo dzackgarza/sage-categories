@@ -202,7 +202,7 @@ def test_two_structural_routes_to_one_category_return_one_underlying_set_map_and
 
     image = transport(member, compiler.node(Sets(), Role.OBJECT))
     assert image is carrier
-    assert ask(member.cardinality() == int(2)) is True
+    assert ask(member.cardinality() == int(2))
     assert member.point(int(1)) is carrier.point(int(1))
 
     # The same three statements on a morphism: one set map, reached by both routes.
@@ -214,7 +214,7 @@ def test_two_structural_routes_to_one_category_return_one_underlying_set_map_and
     assert map_through_additive is swap_map
     assert map_through_multiplicative is swap_map
     assert transport(swap, compiler.node(Sets(), Role.MORPHISM)) is swap_map
-    assert ask(swap(member.point(int(0))) == carrier.point(int(1))) is True
+    assert ask(swap(member.point(int(0))) == carrier.point(int(1)))
 
 
 def test_the_finite_poset_diamond_returns_one_underlying_set_map_and_point() -> None:
@@ -241,7 +241,7 @@ def test_the_image_a_compiled_method_uses_is_the_image_the_selected_functor_retu
     target = compiler.node(Sets(), Role.OBJECT)
 
     # ``chain.cardinality()`` is compiled from ``Sets()``: it runs on the transported image.
-    assert ask(chain.cardinality() == int(3)) is True
+    assert ask(chain.cardinality() == int(3))
     assert transport(chain, target) is underlying.on_object(chain)
     assert chain.cardinality() is underlying.on_object(chain).cardinality()
 
@@ -259,7 +259,7 @@ def test_a_category_reads_the_structural_image_of_a_descendant_value() -> None:
     assert Sets().structural_image(zero) is underlying.on_element(zero)
 
     # A method ``Sets()`` declares reads the carrier's cardinality, which is the poset's.
-    assert ask(Sets().structural_image(chain).cardinality() == chain.cardinality()) is True
+    assert ask(Sets().structural_image(chain).cardinality() == chain.cardinality())
 
 
 def test_a_category_reads_its_own_value_as_its_own_image() -> None:
@@ -341,7 +341,7 @@ def test_a_lifted_product_reuses_the_retained_ancestor_apex_and_its_projections(
     assert lifted.product_projection(int(0)).codomain() is left
     assert lifted.product_projection(int(1)).codomain() is right
     assert ancestor in Sets().Finite()
-    assert ask(ancestor.cardinality() == int(2)) is True
+    assert ask(ancestor.cardinality() == int(2))
 
 
 def test_two_routes_that_agree_by_identity_transport_without_error() -> None:
@@ -352,7 +352,7 @@ def test_two_routes_that_agree_by_identity_transport_without_error() -> None:
 
     assert len(compiler.routes(placement_node(member), target)) == int(2)
     assert transport(member, target) is member._ringlike_data.carrier
-    assert ask(member.cardinality() == int(3)) is True
+    assert ask(member.cardinality() == int(3))
 
 
 def test_the_eager_check_names_both_routes_and_the_shared_category() -> None:

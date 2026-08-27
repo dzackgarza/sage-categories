@@ -64,6 +64,7 @@ __all__ = [
     "assume",
     "conjunction",
     "disjunction",
+    "established",
     "implication",
     "negation",
 ]
@@ -249,11 +250,11 @@ class Connective(Proposition):
 
 def _engine_proposition(part: Decision | Proposition) -> Basic:
     """A part as an engine expression, with a decided part as its SymPy truth value."""
-    if part is True or part is False:
-        return sympify(part)
     if part is Unknown:
         return Dummy("undecided")
-    return part.engine_value()
+    if isinstance(part, Proposition):
+        return part.engine_value()
+    return sympify(part)
 
 
 def conjunction(parts: Iterable[Decision | Proposition]) -> Proposition:
@@ -317,7 +318,7 @@ def _ask_applied(proposition: AppliedPredicate) -> Decision:
             continue
         if key is not None:
             _decisions[key] = decision
-        if decision is True and isinstance(predicate, PropertyPredicate):
+        if decision and isinstance(predicate, PropertyPredicate):
             refine(arguments[0], predicate.category())
         return decision
     return Unknown
@@ -331,11 +332,11 @@ def _decided(proposition: Decision | Proposition) -> Basic:
     as ``True`` and leaves ``P or Q`` undecided.  That algebra is the only truth table
     involved, and it is SymPy's.
     """
-    if proposition is True or proposition is False:
-        return sympify(proposition)
     if proposition is Unknown:
         return Dummy("undecided")
     match proposition:
+        case bool():
+            return sympify(proposition)
         case Connective():
             operator = proposition.operator()
             if operator is not And and operator is not Or:
@@ -378,6 +379,24 @@ def ask(proposition: Decision | Proposition) -> Decision:
     if value is S.false:
         return False
     return Unknown
+
+
+def established(proposition: Decision | Proposition) -> bool:
+    """Whether ``proposition`` is decided affirmatively, which is what fires an exact rule.
+
+    Not the mathematical question: that is ``ask(proposition)``, and it can be
+    ``Unknown``.  A rule whose hypothesis is a theorem's premise fires only where that
+    premise is established, and an undecided hypothesis does not supply it, so the
+    procedure falls through to its next rule and finally to ``Unknown``.  Whether a
+    premise is established is two-valued by construction (POL-ASSUME-015), in the same
+    way category placement is.
+
+    A caller that must have an answer asks instead and asserts the answer is decided
+    (POL-ASSUME-014); a caller that composes answers builds one proposition and asks it
+    once (POL-ASSUME-013).  This is neither: it selects a rule.
+    """
+    decision = ask(proposition)
+    return isinstance(decision, bool) and decision
 
 
 def assume(proposition: Proposition) -> None:

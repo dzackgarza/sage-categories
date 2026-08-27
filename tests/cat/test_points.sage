@@ -145,8 +145,8 @@ def test_the_member_of_a_point_category_is_its_sole_object_and_is_placed_there()
 
     assert EVENS() is evens, "the sole object of the point category"
     assert evens.category() is EVENS, "the member is placed in its point category"
-    assert ask(evens.membership_proposition(evens.point(Integer(6)))) is True
-    assert ask(evens.membership_proposition(ZZ(int(3)))) is False
+    assert ask(evens.membership_proposition(evens.point(Integer(6))))
+    assert not ask(evens.membership_proposition(ZZ(int(3))))
 
 
 def test_a_point_functor_carries_the_cited_placement_and_the_inherited_set_surface() -> None:
@@ -155,6 +155,6 @@ def test_a_point_functor_carries_the_cited_placement_and_the_inherited_set_surfa
 
     assert evens in Sets().Countable(), "the placement the point functor installs"
     assert evens in Sets(), "and therefore in the ambient"
-    assert ask(evens.cardinality() == aleph0) is True, "the recorded cardinal, read through the Sets() surface"
-    assert ask(evens.is_countable()) is True
-    assert ask(evens.is_finite()) is False
+    assert ask(evens.cardinality() == aleph0), "the recorded cardinal, read through the Sets() surface"
+    assert ask(evens.is_countable())
+    assert not ask(evens.is_finite())

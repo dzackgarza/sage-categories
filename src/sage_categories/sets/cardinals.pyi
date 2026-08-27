@@ -12,7 +12,7 @@ from sage_categories.cat.functors import Fun as Fun, Functor as Functor
 from sage_categories.cat.properties import PropertySubcategory as PropertySubcategory
 from sage_categories.kernel.construction import MorphismConstructionInput as MorphismConstructionInput, ObjectConstructionInput as ObjectConstructionInput, retained_morphism_input as retained_morphism_input, retained_object_input as retained_object_input
 from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown
-from sage_categories.kernel.predicates import AppliedPredicate as AppliedPredicate, Predicate as Predicate, ask as ask, conjunction as conjunction, disjunction as disjunction, negation as negation
+from sage_categories.kernel.predicates import AppliedPredicate as AppliedPredicate, Predicate as Predicate, ask as ask, conjunction as conjunction, disjunction as disjunction, established as established, negation as negation
 from sage_categories.kernel.roles import CategoryPoint as CategoryPoint, ElementOfObject as ElementOfObject, MorphismOfCategory as MorphismOfCategory, ObjectOfCategory as ObjectOfCategory, role_of as role_of
 from sage_categories.ordinals.category import OrdinalObject as OrdinalObject, Ordinals as Ordinals, bind_cardinals as bind_cardinals, is_natural_number as is_natural_number
 from sage_categories.sets.category import SetMap as SetMap

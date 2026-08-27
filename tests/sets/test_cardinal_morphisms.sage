@@ -39,11 +39,11 @@ def test_each_cardinal_selects_one_representative_set() -> None:
     assert functor.on_object(aleph0) is countable
     assert countable in Sets()
     assert countable.cardinality() is aleph0
-    assert ask(countable.is_countable()) is True
-    assert ask(countable.is_finite()) is False
+    assert ask(countable.is_countable())
+    assert not ask(countable.is_finite())
     assert three not in Sets()
     assert three in cardinals
-    assert ask(cardinals.representative(continuum).is_uncountable()) is True
+    assert ask(cardinals.representative(continuum).is_uncountable())
 
 
 def test_cardinal_morphisms_are_functions_between_representatives_and_compose_as_such() -> None:
@@ -60,8 +60,8 @@ def test_cardinal_morphisms_are_functions_between_representatives_and_compose_as
     assert functor.on_morphism(lift) is successor
     composite = collapse * lift
     assert composite in Mor(cardinals)(cardinals(int(3)), cardinals(int(2)))
-    assert ask(functor.on_morphism(composite) == parity * successor) is True
-    assert ask(functor.on_morphism(composite)(three.point(int(2))) == two.point(int(1))) is True
+    assert ask(functor.on_morphism(composite) == parity * successor)
+    assert ask(functor.on_morphism(composite)(three.point(int(2))) == two.point(int(1)))
     with pytest.raises(AssertionError):
         Mor(cardinals)(cardinals(int(2)), cardinals(int(5)))(successor)
 
@@ -74,7 +74,7 @@ def test_cardinal_morphisms_are_functions_between_representatives_and_compose_as
     swap = Mor(cardinals)(cardinals(int(2)), cardinals(int(2))).Isomorphisms()(Mor(Sets())(two, two)(lambda datum: int(1) - datum))
     assert swap in Mor(cardinals).Isomorphisms()
     assert swap.inverse() in Mor(cardinals)(cardinals(int(2)), cardinals(int(2)))
-    assert ask(functor.on_morphism(swap.inverse() * swap) == two.identity()) is True
+    assert ask(functor.on_morphism(swap.inverse() * swap) == two.identity())
     assert swap.inverse().inverse() is swap
 
 
@@ -83,23 +83,23 @@ def test_inhabitation_of_cardinal_hom_categories_is_decided_by_cardinal_comparis
     zero, three, five = cardinals(int(0)), cardinals(int(3)), cardinals(int(5))
     aleph1 = cardinals.aleph(int(1))
 
-    assert ask(Mor(cardinals)(three, five).is_inhabited()) is True
-    assert ask(Mor(cardinals)(five, three).is_inhabited()) is True
-    assert ask(Mor(cardinals)(five, zero).is_inhabited()) is False
-    assert ask(Mor(cardinals)(five, zero).is_empty()) is True
-    assert ask(Mor(cardinals)(zero, five).is_inhabited()) is True
-    assert ask(Mor(cardinals)(zero, zero).is_inhabited()) is True
-    assert ask(Mor(cardinals)(aleph0, zero).is_inhabited()) is False
+    assert ask(Mor(cardinals)(three, five).is_inhabited())
+    assert ask(Mor(cardinals)(five, three).is_inhabited())
+    assert not ask(Mor(cardinals)(five, zero).is_inhabited())
+    assert ask(Mor(cardinals)(five, zero).is_empty())
+    assert ask(Mor(cardinals)(zero, five).is_inhabited())
+    assert ask(Mor(cardinals)(zero, zero).is_inhabited())
+    assert not ask(Mor(cardinals)(aleph0, zero).is_inhabited())
 
-    assert ask(Mor(cardinals).Monomorphisms()(three, five).is_inhabited()) is True
-    assert ask(Mor(cardinals).Monomorphisms()(five, three).is_inhabited()) is False
-    assert ask(Mor(cardinals).Monomorphisms()(five, three).is_empty()) is True
-    assert ask(Mor(cardinals).Monomorphisms()(aleph0, three).is_inhabited()) is False
-    assert ask(Mor(cardinals).Monomorphisms()(three, aleph0).is_inhabited()) is True
-    assert ask(Mor(cardinals).Monomorphisms()(aleph1, continuum).is_inhabited()) is True
+    assert ask(Mor(cardinals).Monomorphisms()(three, five).is_inhabited())
+    assert not ask(Mor(cardinals).Monomorphisms()(five, three).is_inhabited())
+    assert ask(Mor(cardinals).Monomorphisms()(five, three).is_empty())
+    assert not ask(Mor(cardinals).Monomorphisms()(aleph0, three).is_inhabited())
+    assert ask(Mor(cardinals).Monomorphisms()(three, aleph0).is_inhabited())
+    assert ask(Mor(cardinals).Monomorphisms()(aleph1, continuum).is_inhabited())
     assert ask(Mor(cardinals).Monomorphisms()(continuum, aleph1).is_inhabited()) is Unknown
-    assert ask(Mor(cardinals).Isomorphisms()(three, five).is_inhabited()) is False
-    assert ask(Mor(cardinals).Isomorphisms()(three, three).is_inhabited()) is True
+    assert not ask(Mor(cardinals).Isomorphisms()(three, five).is_inhabited())
+    assert ask(Mor(cardinals).Isomorphisms()(three, three).is_inhabited())
     assert ask(Mor(cardinals).Isomorphisms()(aleph1, continuum).is_inhabited()) is Unknown
     assert ask(Mor(cardinals).Epimorphisms()(five, three).is_inhabited()) is Unknown
 
@@ -110,15 +110,15 @@ def test_cardinal_order_is_the_inhabitation_of_the_monomorphism_category() -> No
     proposition = three <= five
 
     assert proposition.arguments()[int(0)] is Mor(cardinals).Monomorphisms()(three, five)
-    assert ask(proposition) is True
-    assert ask(five <= three) is False
-    assert ask(three <= int(3)) is True
-    assert ask(int(5) >= three) is True
-    assert ask(aleph0 <= continuum) is True
-    assert ask(cardinals.aleph(int(1)) <= continuum) is True
+    assert ask(proposition)
+    assert not ask(five <= three)
+    assert ask(three <= int(3))
+    assert ask(int(5) >= three)
+    assert ask(aleph0 <= continuum)
+    assert ask(cardinals.aleph(int(1)) <= continuum)
     assert ask(continuum <= cardinals.aleph(int(1))) is Unknown
-    assert ask(three < five) is True
-    assert ask(five < three) is False
+    assert ask(three < five)
+    assert not ask(five < three)
     with pytest.raises(TypeError):
         bool(three <= five)
 
@@ -141,15 +141,15 @@ def test_the_cardinality_functor_sends_a_bijection_to_a_cardinal_isomorphism() -
 
     named = counting.on_morphism(name)
     assert named in Mor(cardinals)(cardinals(int(3)), cardinals(int(3))).Isomorphisms()
-    assert ask(named.is_endomorphism()) is True
+    assert ask(named.is_endomorphism())
     assert named in Mor(cardinals).Automorphisms()
     assert functor.on_morphism(named) in Mor(Sets())(three, three)
-    assert ask(functor.on_morphism(named) == three.identity()) is True
+    assert ask(functor.on_morphism(named) == three.identity())
     rotated = counting.on_morphism(rotate)
-    assert ask(functor.on_morphism(rotated)(three.point(int(0))) == three.point(int(1))) is True
-    assert ask(functor.on_morphism(rotated)(three.point(int(2))) == three.point(int(0))) is True
-    assert ask(functor.on_morphism(rotated) == three.identity()) is False
-    assert ask(functor.on_morphism(rotated.inverse() * rotated) == three.identity()) is True
+    assert ask(functor.on_morphism(rotated)(three.point(int(0))) == three.point(int(1)))
+    assert ask(functor.on_morphism(rotated)(three.point(int(2))) == three.point(int(0)))
+    assert not ask(functor.on_morphism(rotated) == three.identity())
+    assert ask(functor.on_morphism(rotated.inverse() * rotated) == three.identity())
 
     shift = counting.on_morphism(Mor(Sets())(ZZ, ZZ).Isomorphisms()(lambda datum: datum + int(1), lambda datum: datum - int(1)))
     assert shift in Mor(cardinals)(aleph0, aleph0).Isomorphisms()

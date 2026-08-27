@@ -35,7 +35,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from sage.structure.coerce_dict import MonoDict, TripleDict
+from sage.misc.cachefunc import cached_method
+from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.cat.category import Category
 from sage_categories.cat.constructions import cone
@@ -91,7 +92,7 @@ class Poset(ObjectOfCategory):
         cartesian lift retained by ``U`` supplies the induced order.
         """
         subset = self.subset_from(predicate)
-        return Posets().cartesian_lift(subset.inclusion(), self).domain()
+        return Posets().underlying_set_functor().cartesian_lift(subset.inclusion(), self).domain()
 
     def is_total(self) -> AppliedPredicate:
         """Totality: any two elements are comparable."""
@@ -155,6 +156,12 @@ class MonotoneMap(MorphismOfCategory):
 
 
 def _is_classical(candidate: Any) -> bool:
+    """Whether a candidate is a classical element of a poset.
+
+    A classifier of the equality candidate, like ``role_of`` and ``is_placed``: it
+    receives exactly the second argument of ``_equal`` and must accept every input
+    (POL-TYPE-004).
+    """
     posets = Posets()
     return role_of(candidate) is Role.ELEMENT and candidate.parent() in posets and candidate.stage() is posets.Terminal()
 
@@ -249,16 +256,15 @@ class PosetsCategory(Category[[Rule], []]):
     def __init__(self) -> None:
         self._functors: dict[str, Functor] = {}
         self._canonical: dict[tuple[str, int], Poset] = {}
-        self._lifts: TripleDict = TripleDict(weak_values=False)
         self._thin: MonoDict = MonoDict()
         self._subset_posets: MonoDict = MonoDict()
         super().__init__()
+        self.underlying_set_functor().retain_cartesian_lifts(self._induced_order)
         self._equality.register_handler(self._equal)
         partial_order.register_handler(_partial_order_on_enumerated)
         order_preserving.register_handler(_order_preserving_on_enumerated)
-        totally_ordered = PropertySubcategory(self, "TotallyOrdered", {}, ())
-        totally_ordered.predicate().register_handler(_total_on_enumerated)
-        self._properties["TotallyOrdered"] = totally_ordered
+        self._totally_ordered = PropertySubcategory(self, "TotallyOrdered", {}, ())
+        self._totally_ordered.predicate().register_handler(_total_on_enumerated)
 
     # -- the selected structural functor -------------------------------------------
 
@@ -341,16 +347,15 @@ class PosetsCategory(Category[[Rule], []]):
             self._subset_posets[base_set] = self._construct(power, (power * power).subset_from(included))
         return self._subset_posets[base_set]
 
+    @cached_method
     def Finite(self) -> Category[[Rule], []]:
-        """``FinitePosets()``: the property subcategory by finiteness of the underlying set (``posets/finite.py``)."""
-        if "Finite" not in self._properties:
-            from sage_categories.posets.finite import FinitePosetRole, FinitePosetsCategory
+        """``FinitePosets()``: the property subcategory by finiteness of the underlying set (``posets/finite.py``), constructed once."""
+        from sage_categories.posets.finite import FinitePosetRole, FinitePosetsCategory
 
-            self._properties["Finite"] = FinitePosetsCategory(self, "Finite", {Role.OBJECT: FinitePosetRole}, ())
-        return self._properties["Finite"]
+        return FinitePosetsCategory(self, "Finite", {Role.OBJECT: FinitePosetRole}, ())
 
     def TotallyOrdered(self) -> Category[[Rule], []]:
-        return self._properties["TotallyOrdered"]
+        return self._totally_ordered
 
     # -- elements ---------------------------------------------------------------------------
 
@@ -389,27 +394,22 @@ class PosetsCategory(Category[[Rule], []]):
             self.retain_inverses(monotone, inverse)
         return self._inverses[monotone]
 
-    def cartesian_lift(self, monomorphism: SetMap, target: Poset) -> MonotoneMap:
-        """The cartesian lift of ``m: Y -> U(P)`` at ``P``: the sub-poset ``(Y, R restricted to Y)`` with ``m`` monotone.
+    def _induced_order(self, monomorphism: SetMap, target: Poset) -> MonotoneMap:
+        """The cartesian lift of ``m: Y -> U(P)`` at ``P`` that ``U`` retains: the sub-poset ``(Y, R restricted to Y)`` with ``m`` monotone.
 
         The induced order is the ``U``-initial lift of the monomorphism (AHS Definition
-        10.41, Example 10.42(6); Mathlib ``PartialOrder.lift``), retained per ``(m, P)``
-        (POL-LEAF-024, POL-SCOPE-011).
+        10.41, Example 10.42(6); Mathlib ``PartialOrder.lift``); ``U`` lifts exactly
+        the monomorphisms of ``Sets()`` (POL-LEAF-024, POL-SCOPE-011).
         """
-        key = (monomorphism, target, self)
-        if key not in self._lifts:
-            sets = Sets()
-            assert target in self and monomorphism in sets.morphism_category(1).Monomorphisms()
-            assert monomorphism.codomain() is self.underlying_set_functor().on_object(target)
-            subset = monomorphism.domain()
+        assert target in self and monomorphism in Sets().morphism_category(1).Monomorphisms(), f"{monomorphism!r} is not a monomorphism into the underlying set of {target!r}"
+        subset = monomorphism.domain()
 
-            def induced(pair: Datum) -> Decision:
-                left, right = monomorphism(subset.point(pair(0))), monomorphism(subset.point(pair(1)))
-                return ask(target.relation().membership_proposition(target._pair(left, right)))
+        def induced(pair: Datum) -> Decision:
+            left, right = monomorphism(subset.point(pair(0))), monomorphism(subset.point(pair(1)))
+            return ask(target.relation().membership_proposition(target._pair(left, right)))
 
-            sub_poset = self._construct(subset, (subset * subset).subset_from(induced))
-            self._lifts[key] = self.MorphismType(self.morphism_category(1), sub_poset, target, monomorphism)
-        return self._lifts[key]
+        sub_poset = self._construct(subset, (subset * subset).subset_from(induced))
+        return self.MorphismType(self.morphism_category(1), sub_poset, target, monomorphism)
 
     # -- equality (POL-API-015, POL-SET-026) ----------------------------------------------------------------
 

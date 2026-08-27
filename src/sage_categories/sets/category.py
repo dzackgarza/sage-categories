@@ -20,6 +20,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING, overload
 
+from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.cat.category import Category
@@ -89,26 +90,23 @@ class SetsCategory(Category[[Rule], []]):
 
     def __init__(self) -> None:
         self._canonical: dict[tuple[str, tuple[int, ...]], SetObject] = {}
-        self._constructions: dict[str, Category] = {}
-        self._functors: dict[str, Functor] = {}
         self._rule_valued: MonoDict = MonoDict()
         self._classical_points: MonoDict = MonoDict()
         super().__init__()
         self._equality.register_handler(points_equal)
         self._equality.register_handler(maps_equal)
-        countable = PropertySubcategory(self, "Countable", {}, ())
-        infinite = PropertySubcategory(self, "Infinite", {}, ())
-        finite = FiniteSets(self, "Finite", {Role.OBJECT: FiniteSetRole}, (countable,))
-        uncountable = PropertySubcategory(self, "Uncountable", {}, (infinite,))
+        self._countable = PropertySubcategory(self, "Countable", {}, ())
+        self._infinite = PropertySubcategory(self, "Infinite", {}, ())
+        self._finite = FiniteSets(self, "Finite", {Role.OBJECT: FiniteSetRole}, (self._countable,))
+        self._uncountable = PropertySubcategory(self, "Uncountable", {}, (self._infinite,))
         # A known cardinality decides finiteness and countability (``specs/cardinality.md``); established
         # placement in the complementary property decides the negation (``specs/sets.md``, "Cardinality and enumeration").
-        finite.predicate().register_handler(self._finite_by_cardinality)
-        finite.predicate().register_handler(lambda ambient: False if ambient in infinite else Unknown)
-        countable.predicate().register_handler(self._countable_by_cardinality)
-        countable.predicate().register_handler(lambda ambient: False if ambient in uncountable else Unknown)
-        infinite.predicate().register_handler(lambda ambient: decision_not(ask(ambient.is_finite())))
-        uncountable.predicate().register_handler(lambda ambient: decision_not(ask(ambient.is_countable())))
-        self._properties.update({"Finite": finite, "Infinite": infinite, "Countable": countable, "Uncountable": uncountable})
+        self._finite.predicate().register_handler(self._finite_by_cardinality)
+        self._finite.predicate().register_handler(lambda ambient: False if ambient in self._infinite else Unknown)
+        self._countable.predicate().register_handler(self._countable_by_cardinality)
+        self._countable.predicate().register_handler(lambda ambient: False if ambient in self._uncountable else Unknown)
+        self._infinite.predicate().register_handler(lambda ambient: decision_not(ask(ambient.is_finite())))
+        self._uncountable.predicate().register_handler(lambda ambient: decision_not(ask(ambient.is_countable())))
         morphisms = self.morphism_category(1)
         morphisms.Monomorphisms().predicate().register_handler(injective_on_finite_domain)
         morphisms.Epimorphisms().predicate().register_handler(surjective_on_finite_domain)
@@ -141,32 +139,30 @@ class SetsCategory(Category[[Rule], []]):
         return member_object in self._rule_valued
 
     def Finite(self) -> FiniteSets:
-        return self._properties["Finite"]
+        return self._finite
 
     def Infinite(self) -> Category[[Rule], []]:
-        return self._properties["Infinite"]
+        return self._infinite
 
     def Countable(self) -> Category[[Rule], []]:
-        return self._properties["Countable"]
+        return self._countable
 
     def Uncountable(self) -> Category[[Rule], []]:
-        return self._properties["Uncountable"]
+        return self._uncountable
 
+    @cached_method
     def ChosenSubsets(self) -> ChosenSubsetsCategory:
-        """The full subcategory of chosen subsets, each retaining its inclusion (``sets/subobjects.py``)."""
+        """The construction family of chosen subsets, each retaining its inclusion (``sets/subobjects.py``)."""
         from sage_categories.sets.subobjects import ChosenSubsetsCategory
 
-        if "ChosenSubsets" not in self._constructions:
-            self._constructions["ChosenSubsets"] = ChosenSubsetsCategory(self)
-        return self._constructions["ChosenSubsets"]
+        return ChosenSubsetsCategory(self)
 
+    @cached_method
     def ChosenQuotients(self) -> ChosenQuotientsCategory:
-        """The narrowing of chosen quotients, each retaining its quotient map (``sets/subobjects.py``)."""
+        """The construction family of chosen quotients, each retaining its quotient map (``sets/subobjects.py``)."""
         from sage_categories.sets.subobjects import ChosenQuotientsCategory
 
-        if "ChosenQuotients" not in self._constructions:
-            self._constructions["ChosenQuotients"] = ChosenQuotientsCategory(self)
-        return self._constructions["ChosenQuotients"]
+        return ChosenQuotientsCategory(self)
 
     def _canonical_finite(self, name: str, arguments: tuple[int, ...], members: Iterable[Datum]) -> SetObject:
         if (name, arguments) not in self._canonical:
@@ -188,13 +184,12 @@ class SetsCategory(Category[[Rule], []]):
     def classical_stages(self) -> tuple[SetObject, ...]:
         return (self.Terminal(),)
 
+    @cached_method
     def CardinalityFunctor(self) -> Functor:
         """``#: core(Sets()) -> Cardinal()``, retained once (``specs/cardinality.md``, "Integration with ``Sets()``"; ``sets/cardinals.py``)."""
         from sage_categories.sets.cardinals import cardinality_functor
 
-        if "cardinality" not in self._functors:
-            self._functors["cardinality"] = cardinality_functor()
-        return self._functors["cardinality"]
+        return cardinality_functor()
 
     def element_from_defining_morphism(self, defining_morphism: SetMap) -> SetPoint:
         """The classical element whose defining morphism is the point ``1 -> X``, one element per point (POL-CAT-066)."""
@@ -278,38 +273,33 @@ class SetsCategory(Category[[Rule], []]):
             return self.PowerObjects()(exponent)
         return function_set(exponent, base)
 
+    @cached_method
     def PowerObjects(self) -> PowerObjectsCategory:
         """The narrowing of power objects ``2 ** X``, each retaining its base set (``sets/power_objects.py``)."""
         from sage_categories.sets.power_objects import PowerObjectsCategory
 
-        if "PowerObjects" not in self._constructions:
-            self._constructions["PowerObjects"] = PowerObjectsCategory(self)
-        return self._constructions["PowerObjects"]
+        return PowerObjectsCategory(self)
 
+    @cached_method
     def FiniteSubsets(self) -> FiniteSubsetsCategory:
         """The narrowing of the sets of finite subsets ``FiniteSubsets()(X)`` (``sets/finite_subsets.py``)."""
         from sage_categories.sets.finite_subsets import FiniteSubsetsCategory
 
-        if "FiniteSubsets" not in self._constructions:
-            self._constructions["FiniteSubsets"] = FiniteSubsetsCategory(self)
-        return self._constructions["FiniteSubsets"]
+        return FiniteSubsetsCategory(self)
 
+    @cached_method
     def SubsetsOfSize(self, size: int) -> SizedSubsetsCategory:
         """``Sets().SubsetsOfSize(k)``, one narrowing per ``k``, whose constructor ``(X)`` is the set of subsets of ``X`` of size ``k``."""
         from sage_categories.sets.finite_subsets import SizedSubsetsCategory
 
-        name = f"SubsetsOfSize({size})"
-        if name not in self._constructions:
-            self._constructions[name] = SizedSubsetsCategory(self, size)
-        return self._constructions[name]
+        return SizedSubsetsCategory(self, size)
 
+    @cached_method
     def FinitelySupportedFunctions(self) -> FinitelySupportedFunctionsCategory:
         """The narrowing of the finitely supported function sets ``X^(S)`` (``sets/finite_subsets.py``)."""
         from sage_categories.sets.finite_subsets import FinitelySupportedFunctionsCategory
 
-        if "FinitelySupportedFunctions" not in self._constructions:
-            self._constructions["FinitelySupportedFunctions"] = FinitelySupportedFunctionsCategory(self)
-        return self._constructions["FinitelySupportedFunctions"]
+        return FinitelySupportedFunctionsCategory(self)
 
     def name_of(self, set_map: SetMap) -> SetPoint:
         """The point of ``Y ** X`` naming a map ``X -> Y``."""

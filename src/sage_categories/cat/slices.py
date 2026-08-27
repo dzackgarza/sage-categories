@@ -20,9 +20,10 @@ The fixed slice projection ``C.SliceOver(x) -> C`` is the category of elements o
 "discrete fibration", inspected 2026-08-27: "the representable presheaf on an
 object X corresponds to the canonical functor B/X -> B from the slice category
 over X").  Dually the coslice projection is a discrete opfibration with
-cocartesian lifts by postcomposition.  The lifts of ``ev_1`` and ``ev_0``
-themselves are retained by ``Fun([1], C)`` (``cat/diagrams.py``); the total
-category and its fiber carry distinct lift data (POL-FUN-031).
+cocartesian lifts by postcomposition.  Each slice registers its lift rule on its
+fixed projection, which retains the lifts (``Functor.cartesian_lift``); the
+evaluations ``ev_1`` and ``ev_0`` retain their own lifts (``cat/diagrams.py``), so
+the total category and its fiber carry distinct lift data (POL-FUN-031).
 
 Objects of ``C.SliceOver(x)`` are the generalized elements of ``x``
 (``specs/functor.md``, "Slices and coslices"; AGENTS.md, "Core categorical
@@ -107,6 +108,11 @@ class SliceLikeCategory(PullbackCategory):
         squares = Fun(_walking_arrow(), base)
         super().__init__(squares.evaluation(_walking_arrow()(fixed_label)), base.point_functor(fixed))
         self._fixed_projection = squares.evaluation(_walking_arrow()(1 - fixed_label)) * self.first_projection()
+        self.retain_lifts(self._fixed_projection)
+
+    def retain_lifts(self, fixed_projection: Functor) -> None:
+        """Retain on the fixed projection the lifts that make it a discrete fibration (slice) or opfibration (coslice)."""
+        raise AssertionError(f"{self!r} declares no lifts")
 
     def base_of_slice(self) -> Category:
         return self._base_of_slice
@@ -151,8 +157,11 @@ class SliceCategory(SliceLikeCategory):
     def __init__(self, base: Category, fixed: ObjectOfCategory) -> None:
         super().__init__(base, fixed, 1)
 
-    def cartesian_lift(self, morphism: MorphismOfCategory, member_object: PairObject) -> PairMorphism:
-        """The cartesian lift of ``f: y -> z`` at ``(z, p)``: ``f: (y, p * f) -> (z, p)`` by precomposition."""
+    def retain_lifts(self, fixed_projection: Functor) -> None:
+        fixed_projection.retain_cartesian_lifts(self._precomposition_lift)
+
+    def _precomposition_lift(self, morphism: MorphismOfCategory, member_object: PairObject) -> PairMorphism:
+        """The cartesian lift of ``f: y -> z`` at ``(z, p)`` for the fixed projection: ``f: (y, p * f) -> (z, p)`` by precomposition."""
         structure = member_object.first()
         assert morphism.codomain() is structure.domain(), f"{morphism!r} does not end at the varying object of {member_object!r}"
         composite = structure * morphism
@@ -169,8 +178,11 @@ class CosliceCategory(SliceLikeCategory):
     def __init__(self, base: Category, fixed: ObjectOfCategory) -> None:
         super().__init__(base, fixed, 0)
 
-    def cocartesian_lift(self, morphism: MorphismOfCategory, member_object: PairObject) -> PairMorphism:
-        """The cocartesian lift of ``f: y -> z`` at ``(y, p)``: ``f: (y, p) -> (z, f * p)`` by postcomposition."""
+    def retain_lifts(self, fixed_projection: Functor) -> None:
+        fixed_projection.retain_cocartesian_lifts(self._postcomposition_lift)
+
+    def _postcomposition_lift(self, morphism: MorphismOfCategory, member_object: PairObject) -> PairMorphism:
+        """The cocartesian lift of ``f: y -> z`` at ``(y, p)`` for the fixed projection: ``f: (y, p) -> (z, f * p)`` by postcomposition."""
         structure = member_object.first()
         assert morphism.domain() is structure.codomain(), f"{morphism!r} does not start at the varying object of {member_object!r}"
         composite = morphism * structure

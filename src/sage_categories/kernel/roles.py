@@ -45,6 +45,18 @@ class Role(Enum):
     MORPHISM = "MorphismType"
 
 
+def _universe() -> Category:
+    """``Cat()``, where the walking point and the walking arrow live.
+
+    Read from the universe rather than from a value's placement: a placement can be a
+    subcategory of ``Cat()`` -- a point category is one -- and the shapes belong to
+    ``Cat()`` itself, not to whichever narrowing a value currently sits in.
+    """
+    from sage_categories.cat.category import Cat
+
+    return Cat()
+
+
 class CategoryPoint:
     """A generalized element ``T -> C`` of a category; ``Cat().ElementType``'s base.
 
@@ -63,7 +75,7 @@ class ObjectOfCategory(CategoryPoint):
         return self._category
 
     def stage(self) -> ObjectOfCategory:
-        return self._category.category().Terminal()
+        return _universe().Terminal()
 
     def parent(self) -> Category:
         return self._category
@@ -94,31 +106,32 @@ class ObjectOfCategory(CategoryPoint):
         return self._category.CoveredObjects()(self)
 
     # The universal binary operators, defined once and delegating to the
-    # category-owned constructions (POL-CAT-088).  Two operands must share
-    # one construction family: ``X.category()`` may be a property refinement of
-    # ``Y.category()``, and both then use the products of their common base.
+    # category-owned constructions (POL-CAT-088).  The operand precondition is
+    # mathematical: the two categories have a least common ancestor along retained
+    # inclusion functors, and that ancestor owns the construction.  A finite set and
+    # an arbitrary set meet at ``Sets()``; a poset and a set meet nowhere, because
+    # the underlying-set functor is not an inclusion.
+
+    def _owner(self, other: ObjectOfCategory) -> Category:
+        from sage_categories.kernel.refinement import common_ancestor
+
+        return common_ancestor(self._category, other.category())
 
     def __mul__(self, other: ObjectOfCategory) -> ObjectOfCategory:
-        """``X * Y = C.Products()((X, Y))``."""
-        products = self._category.Products()
-        assert products is other.category().Products(), f"{self!r} and {other!r} have no common product family"
-        return products((self, other))
+        """``X * Y = C.Products()((X, Y))`` for ``C`` the least common ancestor."""
+        return self._owner(other).Products()((self, other))
 
     def __add__(self, other: ObjectOfCategory) -> ObjectOfCategory:
-        """``X + Y = C.Coproducts()((X, Y))``."""
-        coproducts = self._category.Coproducts()
-        assert coproducts is other.category().Coproducts(), f"{self!r} and {other!r} have no common coproduct family"
-        return coproducts((self, other))
+        """``X + Y = C.Coproducts()((X, Y))`` for ``C`` the least common ancestor."""
+        return self._owner(other).Coproducts()((self, other))
 
     def __matmul__(self, other: ObjectOfCategory) -> ObjectOfCategory:
         """``X @ Y``: the biproduct, where the category declares one."""
-        assert self._category.Products() is other.category().Products(), f"{self!r} and {other!r} have no common biproduct family"
-        return self._category.biproduct(self, other)
+        return self._owner(other).biproduct(self, other)
 
     def __pow__(self, exponent: ObjectOfCategory) -> ObjectOfCategory:
         """``Y ** X``: the exponential object, where the category is declared cartesian closed."""
-        assert self._category.Products() is exponent.category().Products(), f"{self!r} and {exponent!r} have no common exponential family"
-        return self._category.exponential(exponent, self)
+        return self._owner(exponent).exponential(exponent, self)
 
     def __eq__(self, candidate: Any) -> AppliedPredicate:
         return self._category.equality()(self, candidate)
@@ -183,7 +196,7 @@ class MorphismOfCategory(CategoryPoint):
         return self._codomain
 
     def stage(self) -> ObjectOfCategory:
-        return self.base_category().category().Simplex(1)
+        return _universe().Simplex(1)
 
     def parent(self) -> Category:
         return self.base_category()
@@ -192,7 +205,13 @@ class MorphismOfCategory(CategoryPoint):
         return self.base_category().arrow_functor(self)
 
     def __mul__(self, first: MorphismOfCategory) -> MorphismOfCategory:
-        """``self * first`` is ``self`` after ``first``: composition owned by ``C``."""
+        """``self * first`` is ``self`` after ``first``: composition owned by ``C``.
+
+        ``*`` on a morphism is composition and nothing else: no operator carries two
+        meanings on one role (POL-CAT-088).  The product of two morphisms is the
+        product of two objects of ``Mor(C)`` and is constructed by naming that
+        category: ``Mor(C).Products()((f, g))``.  It has no operator.
+        """
         return self.base_category().compose_morphisms(self, first)
 
     def is_monomorphism(self) -> AppliedPredicate:
@@ -228,9 +247,9 @@ def kernel_base(role: Role) -> type[CategoryPoint]:
     return _BASES[role]
 
 
-def role_of(value: Any) -> Role | None:
-    """The implementation role of a runtime value, or ``None`` for an unowned value."""
-    match value:
+def role_of(candidate: Any) -> Role | None:
+    """The implementation role of a candidate value, or ``None`` for an unowned candidate (POL-TYPE-004)."""
+    match candidate:
         case ObjectOfCategory():
             return Role.OBJECT
         case ElementOfObject():

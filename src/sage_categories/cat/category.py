@@ -20,28 +20,35 @@ category, with no structural graph; its ``category()`` is itself.
 
 from __future__ import annotations
 
+import itertools
 import logging
 from collections.abc import Callable, Hashable
 from typing import TYPE_CHECKING, Any, Literal, overload
 
+from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict
 
 import sage_categories.kernel.compiler as compiler
 from sage_categories.cat.equality import equality_predicate
-from sage_categories.kernel.decisions import Decision, Unknown
+from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import Predicate, Proposition, ask
-from sage_categories.kernel.refinement import is_placed, is_retained_inclusion
+from sage_categories.kernel.refinement import is_placed, is_retained_inclusion, is_subcategory
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role
 
 if TYPE_CHECKING:
     from sage_categories.cat.canonical import FinitePresentedCategory
     from sage_categories.cat.functors import Functor, FunctorsCategory, NaturalTransformation
     from sage_categories.cat.morphisms import MorphismCategory
-    from sage_categories.kernel.decisions import UnknownClass
 
 __all__ = ["Assignment", "Cat", "Category", "CategoryOfCategories", "OnMorphism", "OnObject", "member"]
 
 logger = logging.getLogger("sage_categories")
+
+# The compilation order of categories: a category takes its ordinal after its
+# selected functors exist, so decreasing ordinal is a linear extension of the
+# selected graph; the kernel linearizes role classes by it and narrowings are
+# canonicalized by the ordinals of their roots.
+_category_ordinals = itertools.count()
 
 # The construction data of ``Cat()``: a functor's actions and a natural
 # transformation's component assignment (POL-FUN-001).
@@ -70,9 +77,7 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         self._inverses: MonoDict = MonoDict()
         self._points: MonoDict = MonoDict()
         self._arrows: MonoDict = MonoDict()
-        self._properties: dict[str, Category[MorphismData, TwoMorphismData]] = {}
         self._catalogues: dict[Role, dict[str, compiler.Entry]] = {}
-        self._constructions: dict[str, Category] = {}
         self._limits: MonoDict = MonoDict()
         self._colimits: MonoDict = MonoDict()
         self._slices: MonoDict = MonoDict()
@@ -81,9 +86,27 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         self._equality = equality_predicate()
         self._ambient_category: Category | None = None
         self._ambient_inclusion: Functor | None = None
-        compiler.compile_category(self)
+        # The selected functors are constructed before the ordinal is taken, so every
+        # codomain (and every narrowing a declaration constructs) is older than this
+        # category.
+        functors = tuple(self.structure_functors())
+        self._ordinal = next(_category_ordinals)
+        compiler.compile_category(self, functors)
 
     # -- declarations read by the kernel --------------------------------------
+
+    def universe(self) -> CategoryOfCategories:
+        """``Cat()``, whose objects are the categories.
+
+        Not ``category()``: that is the strongest placement established for this
+        category, and a point category ``{self}`` narrows it (POL-CAT-083).  Anything
+        that means "the functor category" or "the shapes" wants this one.
+        """
+        return Cat()
+
+    def ordinal(self) -> int:
+        """The construction order of this category among all categories."""
+        return self._ordinal
 
     def structure_functors(self) -> tuple[Functor, ...]:
         """The selected structural graph: immediate functors, in preference order (POL-CAT-016, POL-FUN-003)."""
@@ -144,7 +167,7 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         """
         if self._ambient_inclusion is None:
             return False
-        return is_placed(self._ambient_inclusion, self.category().morphism_category(1).FullyFaithful())
+        return is_placed(self._ambient_inclusion, self.universe().morphism_category(1).FullyFaithful())
 
     def ambient(self) -> Category[MorphismData, TwoMorphismData]:
         """The category this one is a declared subcategory of, derived from the selected inclusions (POL-CAT-016, POL-FUN-027)."""
@@ -418,25 +441,23 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     # category has those limits (POL-CAT-051): constructing an object needs an
     # owned construction or supplied universal data.
 
+    @cached_method
     def Products(self) -> Category:
         """The category of chosen products over every discrete shape."""
         from sage_categories.cat.constructions import ProductsCategory
 
         if self.has_full_ambient():
             return self.ambient().Products()
-        if "Products" not in self._constructions:
-            self._constructions["Products"] = ProductsCategory(self)
-        return self._constructions["Products"]
+        return ProductsCategory(self)
 
+    @cached_method
     def Coproducts(self) -> Category:
         """The category of chosen coproducts over every discrete shape."""
         from sage_categories.cat.constructions import CoproductsCategory
 
         if self.has_full_ambient():
             return self.ambient().Coproducts()
-        if "Coproducts" not in self._constructions:
-            self._constructions["Coproducts"] = CoproductsCategory(self)
-        return self._constructions["Coproducts"]
+        return CoproductsCategory(self)
 
     def Limits(self, shape: Category) -> Category:
         """``C.Limits(I)``: chosen limits of diagrams of shape ``I``, one family per shape."""
@@ -506,29 +527,40 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
             self._coslices[member_object] = coslice_under(self, member_object)
         return self._coslices[member_object]
 
+    # Each family is retained by the method that names it (Sage ``cached_method``):
+    # the spelling is the method, not a key in a registry (POL-CAT-083).
+
     def _morphism_property_family(self, name: str, property_of: Callable[[Category], Category], over: bool) -> Category:
         from sage_categories.cat.slices import MorphismPropertyFamily
 
-        if self.has_full_ambient():
-            return self.ambient()._morphism_property_family(name, property_of, over)
-        if name not in self._constructions:
-            self._constructions[name] = MorphismPropertyFamily(self, name, property_of, over)
-        return self._constructions[name]
+        return MorphismPropertyFamily(self, name, property_of, over)
 
+    @cached_method
     def Subobjects(self) -> Category:
         """The monomorphisms of ``C`` as objects of ``Fun([1], C)``; ``C.Subobjects()(x)`` is the fiber over ``x`` in ``C.SliceOver(x)``."""
+        if self.has_full_ambient():
+            return self.ambient().Subobjects()
         return self._morphism_property_family("Subobjects", lambda morphisms: morphisms.Monomorphisms(), True)
 
+    @cached_method
     def Superobjects(self) -> Category:
         """The monomorphisms of ``C``; ``C.Superobjects()(x)`` is the fiber under ``x`` in ``C.CosliceUnder(x)``."""
+        if self.has_full_ambient():
+            return self.ambient().Superobjects()
         return self._morphism_property_family("Superobjects", lambda morphisms: morphisms.Monomorphisms(), False)
 
+    @cached_method
     def CoveringObjects(self) -> Category:
         """The epimorphisms of ``C``; ``C.CoveringObjects()(y)`` is the fiber over ``y``: pairs ``(X, p: X -> y)`` (POL-CAT-026)."""
+        if self.has_full_ambient():
+            return self.ambient().CoveringObjects()
         return self._morphism_property_family("CoveringObjects", lambda morphisms: morphisms.Epimorphisms(), True)
 
+    @cached_method
     def CoveredObjects(self) -> Category:
         """The epimorphisms of ``C``; ``C.CoveredObjects()(x)`` is the fiber under ``x`` in ``C.CosliceUnder(x)``."""
+        if self.has_full_ambient():
+            return self.ambient().CoveredObjects()
         return self._morphism_property_family("CoveredObjects", lambda morphisms: morphisms.Epimorphisms(), False)
 
     # -- wide subcategories and the core (``specs/functor.md``, "Inclusion functors"; ``cat/wide.py``) --
@@ -597,29 +629,51 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
 
     # -- property narrowing (POL-CAT-084) ---------------------------------------
     #
-    # Every placement is a base category together with a set of root properties it
-    # is narrowed by: ``D.P()`` is the narrowing of ``D`` by ``{P}``, and
-    # ``D.P().Q()`` the narrowing by ``{P, Q}``.  One object exists per pair, so the
-    # same intersection reached in any order is one category (POL-API-009, POL-CAT-084).
+    # Every placement is a base category together with the set of roots it is
+    # narrowed by: full subcategories of the base, closed under the roots of their
+    # own placements (a full subcategory of ``D`` inside ``C`` carries ``D`` as a
+    # root).  ``D.P()`` is the narrowing of the base by ``{D, P}``, ``D.P().Q()`` by
+    # ``{D, P, Q}``.  One object exists per set of roots, so the same intersection
+    # reached in any order or from any spelling is one category (POL-API-009,
+    # POL-CAT-084); a narrowing by more roots is a full subcategory of the narrowing
+    # by fewer.
+
+    def name(self) -> str:
+        """The spelling of this category as a root of a narrowing."""
+        return repr(self)
 
     def narrowing_base(self) -> Category[MorphismData, TwoMorphismData]:
-        """The category this placement narrows; ``self`` when it is no narrowing."""
+        """The category whose narrowings this placement is one of; ``self`` when it is a base."""
         return self
 
     def narrowing_roots(self) -> tuple[Category[MorphismData, TwoMorphismData], ...]:
-        """The root properties this placement is narrowed by."""
+        """The roots this placement is narrowed by, closed under the roots of each root's own placement."""
         return ()
 
     def intersection(self, roots: tuple[Category[MorphismData, TwoMorphismData], ...]) -> Category[MorphismData, TwoMorphismData]:
-        """The narrowing of ``self`` by the given root properties, one object per set of roots."""
-        ordered = tuple(sorted({root.ordinal(): root for root in roots}.items()))
+        """The narrowing of this base by the given roots, one object per closed set of roots.
+
+        A root containing the base narrows nothing; a set of roots that is exactly one
+        root's own closed set is that root.
+        """
+        base = self.narrowing_base()
+        if base is not self:
+            return base.intersection((*self.narrowing_roots(), *roots))
+        closed: dict[int, Category] = {}
+        for root in roots:
+            for member in root.narrowing_roots():
+                if not is_subcategory(self, member):
+                    closed[member.ordinal()] = member
+        ordered = tuple(sorted(closed.items()))
         if not ordered:
             return self
-        if len(ordered) == 1 and ordered[0][1].ambient() is self:
-            return ordered[0][1]
+        selected = tuple(root for _, root in ordered)
+        for root in selected:
+            if is_subcategory(root, self) and {member.ordinal() for member in root.narrowing_roots()} == set(closed):
+                return root
         key = tuple(ordinal for ordinal, _ in ordered)
         if key not in self._narrowings:
-            self._narrowings[key] = self.narrowing_type()(self, tuple(root for _, root in ordered))
+            self._narrowings[key] = self.narrowing_type()(self, selected)
         return self._narrowings[key]
 
     def property_subcategory(self, property_category: Category[MorphismData, TwoMorphismData]) -> Category[MorphismData, TwoMorphismData]:
@@ -637,6 +691,9 @@ class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
 
     def __init__(self) -> None:
         self._canonical: dict[tuple[str, tuple[int, ...]], FinitePresentedCategory] = {}
+        # One point category per distinguished object, keyed by identity.  The compiler
+        # reads this table the other way, to find ``{X}`` from ``X`` (POL-CAT-083).
+        self._point_categories: MonoDict = MonoDict()
         self._initialize(self)
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
@@ -704,6 +761,7 @@ class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
             lambda x: second.on_object(first.on_object(x)),
             lambda f: second.on_morphism(first.on_morphism(f)),
         )
+        composite.retain_factors(first, second)
         # Full, faithful, and fully faithful functors compose (Mathlib
         # ``Functor.FullyFaithful.comp``, ``Full.comp``, ``Faithful.comp``; inspected 2026-08-26).
         for property_category in (Fun.FullyFaithful(), Fun.Full(), Fun.Faithful()):
@@ -789,6 +847,28 @@ class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
     def Terminal(self) -> FinitePresentedCategory:
         return self.Simplex(0)
 
+    def Point(self, member: ObjectOfCategory, targets: tuple[Category, ...] = ()) -> Category:
+        """``{member}``: the one-object category on ``member``, retained once per object (POL-CAT-083).
+
+        ``targets`` are the categories that already have ``member`` among their objects;
+        ``{member}`` selects one point functor into each.  A later call returns the
+        retained category and ignores its ``targets``, because a category's selected
+        functors are fixed when it is compiled.
+        """
+        from sage_categories.cat.points import PointCategory
+
+        if member not in self._point_categories:
+            self._point_categories[member] = PointCategory(member, targets)
+            # ``{C}``'s elements are ``C``'s own objects and morphisms, so ``C``'s
+            # surface gains the level shift as soon as this table entry exists.
+            if isinstance(member, Category):
+                compiler.install_level_shift(member)
+        return self._point_categories[member]
+
+    def retained_point(self, member: ObjectOfCategory) -> Category | None:
+        """The point category on ``member``, if one was constructed; the same table read the other way."""
+        return self._point_categories[member] if member in self._point_categories else None
+
     def Simplex(self, dimension: int) -> FinitePresentedCategory:
         from sage_categories.cat import canonical
 
@@ -844,19 +924,36 @@ class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
         return "Cat"
 
 
+# The singleton, bound by ``bootstrap``.  It is ``None`` while ``Cat()`` compiles its own
+# roles, which is the one moment the kernel can reach this module before it exists.
+_CAT: CategoryOfCategories | None = None
+
+
 def bootstrap() -> None:
     """Construct the singleton ``Cat()`` once; ``cat/functors.py`` runs this at import.
 
-    The theory modules that ``Category``'s signatures name form an import cycle with
-    this one, so their names are bound here, once those modules exist: the kernel
-    evaluates the declared signatures when it compiles a category that inherits the
-    ``Category`` surface (POL-KERNEL-021).
+    ``Cat()`` is self-referential mathematics: ``Cat().ObjectType`` is ``Category``,
+    ``Cat().MorphismType`` is ``Functor``, and ``Functor`` is itself an object of
+    ``Fun = Mor(Cat())``, so ``Category`` and ``Functor`` are mutually defined and
+    do not split into two layers.  ``MorphismCategory`` and
+    ``FinitePresentedCategory`` subclass ``Category``, and ``Functor`` and
+    ``NaturalTransformation`` are constructed through it, so none can be imported
+    here at module level, while ``Category``'s signatures name them.  The kernel
+    evaluates those signatures with ``eval_str`` when it compiles a category that
+    inherits the ``Category`` surface (POL-KERNEL-021), so the names must resolve
+    in this module then.
+
+    The theory is therefore one import layer with one entry point:
+    ``cat/__init__.py`` imports ``cat/functors.py``, whose last statement calls
+    this function, so the cluster is complete before any module in it is used.
+    Binding the names here is that layering, not a name registry: each name is
+    bound once, to the class the cluster defines, and nothing looks a class up by
+    string.
     """
-    global _CAT, FinitePresentedCategory, Functor, FunctorsCategory, MorphismCategory, NaturalTransformation, UnknownClass
+    global _CAT, FinitePresentedCategory, Functor, FunctorsCategory, MorphismCategory, NaturalTransformation
     from sage_categories.cat.canonical import FinitePresentedCategory
     from sage_categories.cat.functors import Functor, FunctorsCategory, NaturalTransformation
     from sage_categories.cat.morphisms import MorphismCategory
-    from sage_categories.kernel.decisions import UnknownClass
 
     _CAT = CategoryOfCategories()
 

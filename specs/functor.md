@@ -354,8 +354,8 @@ class FiniteSetsCategory(Category):
 ```
 
 The leaf explicitly constructs the inclusion and records full faithfulness through the
-selected property category. The tuple tells the compiler to expose operations owned by
-`Sets()` through that functor.
+selected property category. The tuple tells the compiler to include the compiled roles
+owned by `Sets()` through that functor.
 
 The categories `Fun(self, D)` can contain many other functors. Their existence does not
 affect the compiled public surface. Selection changes compiler behavior only. It does
@@ -363,6 +363,37 @@ not change a functor's mathematical definition.
 
 Each category lists only immediate selected functors. The kernel obtains longer routes
 by composition and applies [resolution.md](resolution.md) to diamonds.
+
+### Compiled roles
+
+A local declaration and the compiled role built from it are distinct classes. The
+declaration owns the category's new methods. `C.ObjectType`, `C.ElementType`, and
+`C.MorphismType` are the compiled roles, and only they are public.
+
+The bases of a compiled role are the compiled roles of the selected target categories,
+in the controlled order of [resolution.md](resolution.md). A role that reaches no other
+role stands on the kernel role class of its role: `Category` for the category role,
+otherwise the kernel base of objects, elements, or morphisms.
+
+A declaration is not a base. The kernel copies its class body onto the compiled role and
+drops the declaration's own Python bases. The copy carries a category's own declaration
+onto its own compiled role, which is class construction and not a second owner: no
+category acquires a method owned by another one this way (`POL-CAT-006`). A method declared with zero-argument `super()`
+closes over `__class__`, which Python bound to the declaration; the kernel rebinds that
+closure to the compiled role, so `super()` enters the compiled chain.
+
+One declaration is an exception, because it is the kernel role class the category role
+ends on. `Cat().ObjectType` stands on `Category`, which is the class every category is an
+instance of: a category is built from its own hand-written `Category` subclass, never
+from a compiled role, and only inheritance lets those subclasses override `Category`'s
+methods. A chain end is inherited, never copied.
+
+The rule is what makes the result linearizable. The controlled order ranks compiled
+roles. A declaration left in the bases is ranked by nothing, so Python places it wherever
+each separate class construction allows; two constructions then rank one pair of
+declarations opposite ways, and a role reaching both has no method resolution order at
+all. With declarations out of the bases, every class in a compiled role's method
+resolution order is a compiled role or a kernel role class.
 
 An element of `X in C` is a generalized element `t: T -> X`, an object of
 `C.SliceOver(X)`. `t.stage()` is `T` and `t.parent()` is its codomain `X`. Every
@@ -407,8 +438,8 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
 ```
 
 A point functor is a selected structural functor under exactly this declaration and
-under no other. Like every entry, it contributes inherited public methods through
-selection alone (`POL-FUN-003`), it is an ordinary object of `Fun`, and its
+under no other. Like every entry, it contributes its compiled roles and inherited public
+methods through selection alone (`POL-FUN-003`), it is an ordinary object of `Fun`, and its
 generalized-element action is derived from its morphism action (`POL-FUN-002`). The
 compiler reaches it through composition in `Cat` with the rest of the structural graph.
 
@@ -433,6 +464,35 @@ The shift is the stage clause of `Cat().ElementType` applied to one object. It a
 second inheritance mechanism, no route normalization, and no propagation registry. `C`
 remains an object of `Cat()`, `{C}` remains a distinct object of `Cat()`, and
 `C.structure_functors()` continues to state the structure of `C` as a category.
+
+The middle two rows are the one structural step whose two roles differ, and no functor
+acts along it. The value of the step is the value's own defining morphism: an object of
+`C` names the functor `1 -> C` that selects it, a morphism of `C` names the functor
+`[1] -> C`, and those are what the generalized elements of `C` are. `Cat().Point(C)`
+retains one point category per object; the compiler reads that retention to find `{C}`
+from `C`, and `C` records nothing.
+
+A shift contributes no class base. It runs from `C` to `{C}`, which is constructed later
+and therefore ranks below `C`, while a compiled role's bases must rank above it for the
+controlled merge of [resolution.md](resolution.md) to hold. A shift is not a subcategory
+relation either, so `C.ObjectType` does not derive from `{C}.ElementType`. Class bases
+come from the functor steps; the method catalogue follows both kinds.
+
+`stage()`, `parent()`, and `defining_morphism()` never compile. Every kernel role class
+defines its own, and the compiler calls them to find a value's node, so a compiled copy
+would call the accessor it is transporting for. `{C}`'s element node is the first to
+reach `Cat()`'s, where all three are declared.
+
+`{C}` is constructed after `C`, so `C`'s roles were compiled before the shift existed.
+The shift adds inherited spellings and nothing else, so constructing `{C}` installs them
+on the role classes `C` already has. Rebuilding those classes instead would leave every
+already-compiled descendant holding the previous ones as bases, where they would stand
+for no node. Installing also gives the surface to the values of `C` that already exist,
+since they are instances of exactly these classes.
+
+`{C}` retains one generalized element per defining functor. Two selected routes to
+`({C}, element)` must produce the same image, and a morphism of `C` placed in several
+property subcategories is reached by exactly such routes.
 
 ### Ordinals as a semiring
 
@@ -759,9 +819,11 @@ The compiler uses `structure_functors()` as its sole structural graph. It must:
    mismatch; method compilation constructs no images; diamonds otherwise follow
    [resolution.md](resolution.md);
 9. canonicalize repeated construction of the same declared functor;
-10. derive inherited methods from these paths;
-11. derive subobject-of-product component functors by composition;
-12. install the compiled roles of a point category `{X}` on its distinguished object:
+10. build each compiled role on the controlled compiled ancestor roles, copy the local
+    declaration's class body onto it, and rebind copied `__class__` closures to it;
+11. derive inherited methods from these paths;
+12. derive subobject-of-product component functors by composition;
+13. install the compiled roles of a point category `{X}` on its distinguished object:
     `{X}.ObjectType` on the value `X`, and `{X}.ElementType` on the generalized elements
     of `X`, which for a category `X = C` are `C.ObjectType` at stage `1` and
     `C.MorphismType` at stage `[1]`.
@@ -873,5 +935,5 @@ is kernel infrastructure over already established mathematical functors.
 - A point functor is the inclusion `{X} -> D`, constructed through `Fun({X}, D)` and selected in `{X}.structure_functors()`.
 - A selected point functor `{C} -> D` supplies `D`'s object surface to the category `C`, and `D`'s element surface to `C.ObjectType` at stage `1` and `C.MorphismType` at stage `[1]`.
 - Every selected structural functor is an ordinary object of `Fun`.
-- `structure_functors()` affects method compilation only.
+- `structure_functors()` determines compiled role bases and method compilation, nothing else.
 - The compiler derives structural paths only through composition in `Cat`.

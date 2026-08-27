@@ -11,7 +11,7 @@ claims to prove a functor law, naturality, or a universal property (POL-MATH-036
 import pytest
 
 from sage_categories.all import *
-from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
+from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role
 
 
 class Bare(Category):
@@ -45,7 +45,12 @@ def test_cat_is_unstratified_and_bootstrapped_first() -> None:
     assert Cat().category() is Cat()
     assert Cat() in Cat()
     assert Cat().structure_functors() == ()
-    assert Cat().ObjectType is Category
+    # The objects of ``Cat()`` are implemented by ``Category`` itself, with no wrapper:
+    # that is the declared role class.  The compiled class every node gets is a subclass
+    # of it carrying no method of its own (Sage's ``ParentMethods`` versus ``parent_class``).
+    assert Cat().local_role_class(Role.OBJECT) is Category
+    assert issubclass(Cat().ObjectType, Category)
+    assert not [name for name in vars(Cat().ObjectType) if not name.startswith("_")]
 
 
 def test_an_ordinary_category_is_an_object_of_cat() -> None:

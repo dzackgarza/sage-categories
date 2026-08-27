@@ -181,6 +181,113 @@ class BothSizes(Category):
         return "BothSizes"
 
 
+class ElementWeight(Category):
+    """A full subcategory of ``Sets()`` declaring ``weight`` on generalized elements."""
+
+    class ObjectType(ObjectOfCategory):
+        """No local operation."""
+
+    class ElementType(ElementOfObject):
+        def weight(self) -> int:
+            return int(1)
+
+    class MorphismType(MorphismOfCategory):
+        """No local operation."""
+
+    def structure_functors(self):
+        return (Fun(self, Sets()).FullyFaithful().inclusion(),)
+
+    def __repr__(self):
+        return "ElementWeight"
+
+
+class ElementMass(Category):
+    """A second full subcategory of ``Sets()`` declaring ``weight`` with an unrelated meaning."""
+
+    class ObjectType(ObjectOfCategory):
+        """No local operation."""
+
+    class ElementType(ElementOfObject):
+        def weight(self) -> int:
+            return int(2)
+
+    class MorphismType(MorphismOfCategory):
+        """No local operation."""
+
+    def structure_functors(self):
+        return (Fun(self, Sets()).FullyFaithful().inclusion(),)
+
+    def __repr__(self):
+        return "ElementMass"
+
+
+class MorphismDegree(Category):
+    """A full subcategory of ``Sets()`` declaring ``degree`` on morphisms."""
+
+    class ObjectType(ObjectOfCategory):
+        """No local operation."""
+
+    class ElementType(ElementOfObject):
+        """No local operation."""
+
+    class MorphismType(MorphismOfCategory):
+        def degree(self) -> int:
+            return int(1)
+
+    def structure_functors(self):
+        return (Fun(self, Sets()).FullyFaithful().inclusion(),)
+
+    def __repr__(self):
+        return "MorphismDegree"
+
+
+class MorphismOrder(Category):
+    """A second full subcategory of ``Sets()`` declaring ``degree`` with an unrelated meaning."""
+
+    class ObjectType(ObjectOfCategory):
+        """No local operation."""
+
+    class ElementType(ElementOfObject):
+        """No local operation."""
+
+    class MorphismType(MorphismOfCategory):
+        def degree(self) -> int:
+            return int(2)
+
+    def structure_functors(self):
+        return (Fun(self, Sets()).FullyFaithful().inclusion(),)
+
+    def __repr__(self):
+        return "MorphismOrder"
+
+
+class BothRoles(Category):
+    """Included in two categories that collide on one role's spelling."""
+
+    class ObjectType(ObjectOfCategory):
+        """No local operation."""
+
+    class ElementType(ElementOfObject):
+        """No local operation."""
+
+    class MorphismType(MorphismOfCategory):
+        """No local operation."""
+
+    def __init__(self, first, second):
+        self._first = first
+        self._second = second
+        super().__init__()
+
+    def structure_functors(self):
+        return (
+            Fun(self, self._first).FullyFaithful().inclusion(),
+            Fun(self, self._second).FullyFaithful().inclusion(),
+        )
+
+    def __repr__(self):
+        return "BothRoles"
+
+
 class Carried(Category):
     """Objects carrying a set, related to ``Sets()`` by an explicit forgetful functor, not an inclusion."""
 
@@ -261,7 +368,42 @@ def test_two_paths_to_one_owner_install_one_method_before_any_value_exists() -> 
     assert apex in Sets()
 
 
+def test_two_paths_to_one_owner_install_one_element_and_morphism_method_before_any_value_exists() -> None:
+    """Compilation constructs no image (POL-KERNEL-001): the element and morphism surfaces exist with no value of the diamond."""
+    diamond = Diamond(Left(), Right())
+
+    # ``__hash__`` and ``__call__`` are the special-method witnesses: a forwarding
+    # descriptor must install them on the class, not on an instance.
+    assert "__hash__" in vars(diamond.ElementType)
+    assert "__call__" in vars(diamond.MorphismType)
+    assert "image" in vars(diamond.MorphismType)
+    assert diamond.ElementType is not Sets().ElementType
+    assert diamond.MorphismType is not Sets().MorphismType
+
+    apex = diamond((int(5), int(8)))
+    point = apex.point(int(5))
+    fixed = Mor(diamond)(apex, apex)(lambda datum: datum)
+
+    # The inherited special methods run the declaring method on the transported value.
+    assert hash(point) == hash(int(5))
+    assert ask(fixed(point) == point) is True
+    assert fixed.image() in Sets().ChosenSubsets()
+    assert fixed.image().inclusion().codomain() is apex
+
+
 def test_incomparable_owners_of_one_spelling_are_a_semantic_collision() -> None:
     """Two unrelated owners of ``size`` cannot be compiled onto one category."""
     with pytest.raises(SemanticCollisionError):
         BothSizes(Colliding(), Sizes())
+
+
+def test_incomparable_owners_of_one_element_spelling_are_a_semantic_collision() -> None:
+    """The collision rule is the same for the element role (POL-CAT-011, POL-API-011)."""
+    with pytest.raises(SemanticCollisionError, match="'weight' is declared by both"):
+        BothRoles(ElementWeight(), ElementMass())
+
+
+def test_incomparable_owners_of_one_morphism_spelling_are_a_semantic_collision() -> None:
+    """The collision rule is the same for the morphism role (POL-CAT-011, POL-API-011)."""
+    with pytest.raises(SemanticCollisionError, match="'degree' is declared by both"):
+        BothRoles(MorphismDegree(), MorphismOrder())

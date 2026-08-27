@@ -343,7 +343,7 @@ computational handlers. `ask()` returns `Unknown` unless category placement, an 
 assumption, a cached exact decision, or a categorical implication decides the predicate.
 
 Every functor is explicit.
-Only selected structural functors contribute methods to the public object surface.
+Only selected structural functors contribute compiled roles and methods to the public object surface.
 Ordinary mathematical functors remain available without changing public inheritance.
 
 For an object `x`, cache one canonical `F(x)` in each reachable category.
@@ -358,6 +358,13 @@ Compile the public method surface from category declarations:
 - local declarations take precedence;
 - routes to the same declaring category share one method owner;
 - unrelated declarations with the same name are errors;
+- the bases of a compiled role are the compiled roles of its selected targets;
+- a role that reaches none stands on the kernel role class of its role, which is
+  `Category` for the category role;
+- the kernel copies each local declaration's class body onto its compiled role and
+  rebinds copied `__class__` closures to that role, so a declaration is not a base;
+- a declaration that is itself the chain's kernel role class is inherited, not copied,
+  so that its Python subclasses can still override it;
 - forwarding descriptors expose inherited methods directly on the public object;
 - descriptor installation must support Python special methods.
 

@@ -12,25 +12,18 @@ from __future__ import annotations
 
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Functor
-from sage_categories.kernel.roles import CategoryPoint as KernelCategoryPoint
+from sage_categories.kernel.roles import ElementOfObject
 
 __all__ = ["CategoryPoint"]
 
 
-class CategoryPoint(KernelCategoryPoint):
-    """A functor ``T -> C`` regarded as a point of ``C`` at stage ``T``."""
+class CategoryPoint(ElementOfObject):
+    """A functor ``T -> C`` regarded as a point of ``C`` at stage ``T``.
 
-    def __init__(self, defining_functor: Functor) -> None:
-        self._defining_functor = defining_functor
-
-    def defining_morphism(self) -> Functor:
-        return self._defining_functor
-
-    def stage(self) -> Category:
-        return self._defining_functor.domain()
-
-    def parent(self) -> Category:
-        return self._defining_functor.codomain()
+    A generalized element of a category is a generalized element like any other, so this
+    is ``ElementOfObject`` with the stage and parent it already defines: the domain and
+    codomain of the defining functor.
+    """
 
     def __repr__(self) -> str:
         return f"point of {self.parent()!r} at stage {self.stage()!r}"

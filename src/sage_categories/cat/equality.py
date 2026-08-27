@@ -11,7 +11,7 @@ domain, paths of a finitely presented category).  Everything else is ``Unknown``
 from typing import Any
 
 from sage_categories.kernel.decisions import Decision, Unknown
-from sage_categories.kernel.predicates import Predicate
+from sage_categories.kernel.predicates import EqualityPredicate
 from sage_categories.kernel.roles import CategoryPoint
 
 __all__ = ["equality_predicate"]
@@ -23,8 +23,8 @@ def _identity(first: CategoryPoint, candidate: Any) -> Decision:
     return Unknown
 
 
-def equality_predicate() -> Predicate:
+def equality_predicate() -> EqualityPredicate:
     """A fresh equality predicate whose first handler is identity."""
-    equal = Predicate("equal", 2, True)
+    equal = EqualityPredicate("equal")
     equal.register_handler(_identity)
     return equal

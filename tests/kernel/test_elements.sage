@@ -14,6 +14,7 @@ the construction-defect error; the classical stages ``1`` of ``Sets()`` and ``{1
 of ``Cat()``.
 """
 
+import functools
 import itertools
 
 import pytest
@@ -264,13 +265,12 @@ def ToyModules():
     return _MODULES
 
 
+@functools.cache
 def _two_generator_modules():
-    """The full subcategory of the two-generator free modules, declared by one inclusion."""
+    """The full subcategory of the two-generator free modules, declared by one inclusion; constructed once."""
     from sage_categories.cat.properties import PropertySubcategory
 
-    if "TwoGenerator" not in ToyModules()._properties:
-        ToyModules()._properties["TwoGenerator"] = PropertySubcategory(ToyModules(), "TwoGenerator", {}, ())
-    return ToyModules()._properties["TwoGenerator"]
+    return PropertySubcategory(ToyModules(), "TwoGenerator", {}, ())
 
 
 class Rebuilt(Category):

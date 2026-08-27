@@ -43,12 +43,32 @@ from collections.abc import Callable, Iterator
 from enum import Enum
 from typing import TYPE_CHECKING, Any, NamedTuple
 
+from typing_extensions import TypeForm
+
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
+    from sage_categories.kernel.compiler import DeclaredMethod
 
-__all__ = ["ArgumentRole", "ParameterRole", "Signature", "declared_signature"]
+__all__ = ["Annotation", "ArgumentRole", "ParameterRole", "Signature", "declared_signature"]
+
+# One annotation of a declaring method as ``inspect`` evaluates it: a type form
+# (a class, a union, a generic alias, ``Self``, ``None``, a type alias), or one of
+# the substitution forms the kernel inspects on its way through a generic
+# declaration: a type parameter of the declaring class, a parameter-list
+# substitution for a ``ParamSpec``, and the ``...`` of ``tuple[X, ...]``.
+type Annotation = (
+    TypeForm
+    | typing.TypeVar
+    | typing.ParamSpec
+    | typing.ParamSpecArgs
+    | typing.ParamSpecKwargs
+    | list[Annotation]
+    | tuple[Annotation, ...]
+    | types.EllipsisType
+    | type[inspect.Parameter.empty]
+)
 
 
 class ArgumentRole(Enum):
@@ -144,7 +164,7 @@ class _Context:
         return ArgumentRole.VALUE
 
 
-def _classify(annotation: Any, declaration: str, context: _Context) -> ParameterRole:
+def _classify(annotation: Annotation, declaration: str, context: _Context) -> ParameterRole:
     if annotation is inspect.Parameter.empty:
         raise TypeError(f"{declaration}: every parameter and the result need an exact annotation")
     if annotation is Any or annotation is object:
@@ -188,7 +208,7 @@ def _classify(annotation: Any, declaration: str, context: _Context) -> Parameter
     raise TypeError(f"{declaration}: {annotation!r} is not an exact role")
 
 
-def declared_signature(function: Callable[..., Any], declaration: str, owner: Category, receiver: Role) -> Signature:
+def declared_signature[**P, R](function: DeclaredMethod[P, R], declaration: str, owner: Category, receiver: Role) -> Signature:
     """Extract the exact argument and result roles of a declaring method of ``owner``.
 
     Annotations are evaluated with the type parameters of the declaring role class

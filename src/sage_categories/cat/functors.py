@@ -65,6 +65,23 @@ def _defining_functor_equal(first: CategoryPoint, candidate: Any) -> Decision:
 # selected functor exposing classical element methods (POL-LEAF-003), keyed by the functor.
 _stage_comparisons: MonoDict = MonoDict()
 
+# The lifts a functor ``p: E -> B`` retains over a stated class of morphisms of ``B``
+# (POL-FUN-029, ``specs/functor.md``, "Slices and coslices"): the owner of the
+# functor registers one rule per direction, and each lift is constructed once per
+# ``(morphism, object)`` and retained by identity.  The rule states the class of
+# morphisms it lifts and fails loudly outside it.
+type LiftRule = Callable[[MorphismOfCategory, CategoryPoint], MorphismOfCategory]
+
+_cartesian_rules: MonoDict = MonoDict()
+_cocartesian_rules: MonoDict = MonoDict()
+_cartesian_lifts: TripleDict = TripleDict(weak_values=False)
+_cocartesian_lifts: TripleDict = TripleDict(weak_values=False)
+
+# The factors ``(first, second)`` of every composite ``second * first`` constructed by
+# ``Cat()``: an explicit composite names its construction (``specs/functor.md``,
+# "Structural inheritance": a selected composite retains its factor functors).
+_composite_factors: MonoDict = MonoDict()
+
 
 class Functor(MorphismOfCategory):
     """The local ``Cat().MorphismType``: a functor ``C -> D`` from its total actions."""
@@ -139,6 +156,51 @@ class Functor(MorphismOfCategory):
         assert self.on_object(source_stage) is target_stage, f"{self!r} retains no stage comparison"
         return target_stage.identity()
 
+    # -- composition data ------------------------------------------------------------------
+
+    def retain_factors(self, first: Functor, second: Functor) -> None:
+        """Retain that this functor is the composite ``second * first``."""
+        assert self not in _composite_factors, f"{self!r} already retains its factors"
+        assert first.codomain() is second.domain() and self.domain() is first.domain() and self.codomain() is second.codomain()
+        _composite_factors[self] = (first, second)
+
+    def factors(self) -> tuple[Functor, Functor]:
+        """The retained factors ``(first, second)`` of an explicit composite ``second * first``, in categorical order."""
+        assert self in _composite_factors, f"{self!r} is not a retained composite"
+        return _composite_factors[self]
+
+    # -- fibration and opfibration lifts (POL-FUN-029) ------------------------------------
+
+    def retain_cartesian_lifts(self, rule: LiftRule) -> None:
+        """Retain the rule constructing the cartesian lift of ``f: y -> p(e)`` at ``e`` over the class of morphisms the owner states."""
+        assert self not in _cartesian_rules, f"{self!r} already retains its cartesian lifts"
+        _cartesian_rules[self] = rule
+
+    def retain_cocartesian_lifts(self, rule: LiftRule) -> None:
+        """Retain the rule constructing the cocartesian lift of ``f: p(e) -> y`` at ``e`` over the class of morphisms the owner states."""
+        assert self not in _cocartesian_rules, f"{self!r} already retains its cocartesian lifts"
+        _cocartesian_rules[self] = rule
+
+    def cartesian_lift(self, morphism: MorphismOfCategory, member_object: CategoryPoint) -> MorphismOfCategory:
+        """The cartesian lift of ``morphism: y -> p(e)`` at ``e``: a morphism of the domain ending at ``e`` over ``morphism``, retained once per pair."""
+        assert self in _cartesian_rules, f"{self!r} retains no cartesian lifts"
+        assert morphism in self.codomain().morphism_category(1), f"{morphism!r} is not a morphism of {self.codomain()!r}"
+        assert morphism.codomain() is self.on_object(member_object), f"{morphism!r} does not end at the image of {member_object!r}"
+        key = (morphism, member_object, self)
+        if key not in _cartesian_lifts:
+            _cartesian_lifts[key] = _cartesian_rules[self](morphism, member_object)
+        return _cartesian_lifts[key]
+
+    def cocartesian_lift(self, morphism: MorphismOfCategory, member_object: CategoryPoint) -> MorphismOfCategory:
+        """The cocartesian lift of ``morphism: p(e) -> y`` at ``e``: a morphism of the domain starting at ``e`` over ``morphism``, retained once per pair."""
+        assert self in _cocartesian_rules, f"{self!r} retains no cocartesian lifts"
+        assert morphism in self.codomain().morphism_category(1), f"{morphism!r} is not a morphism of {self.codomain()!r}"
+        assert morphism.domain() is self.on_object(member_object), f"{morphism!r} does not start at the image of {member_object!r}"
+        key = (morphism, member_object, self)
+        if key not in _cocartesian_lifts:
+            _cocartesian_lifts[key] = _cocartesian_rules[self](morphism, member_object)
+        return _cocartesian_lifts[key]
+
     def is_full(self) -> AppliedPredicate:
         return Fun.Full().predicate()(self)
 
@@ -202,7 +264,7 @@ class FunctorProperty(FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]
 
     def inclusion(self) -> Functor:
         """The identity-on-value inclusion of the domain into the codomain, asserted to have ``P`` (POL-FUN-027, POL-MATH-037)."""
-        functors = self.category().morphism_category(1)
+        functors = self.universe().morphism_category(1)
         source, target = self._ambient.domain(), self._ambient.codomain()
         roots = self.narrowing_roots()
         if any(root is functors.FullyFaithful() for root in roots):
@@ -254,9 +316,10 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
     is the category of morphisms of ``C`` and commuting squares: a square
     ``f -> g`` is a natural transformation with components ``(a, b)`` satisfying
     ``g * a == b * f``, a trusted declaration checked where the finite set-map
-    equality handler decides it (specs/functor.md, "The Mor(n, C) tower", specs/sets.md, "Equality").  It retains the cartesian lifts of
-    ``ev_1`` by pullback and the cocartesian lifts of ``ev_0`` by pushout when the
-    codomain owns those constructions (POL-FUN-029; nLab "codomain fibration", inspected
+    equality handler decides it (specs/functor.md, "The Mor(n, C) tower", specs/sets.md, "Equality").  Its evaluation
+    ``ev_1`` retains cartesian lifts by pullback and ``ev_0`` cocartesian lifts by
+    pushout, constructed when the codomain owns those constructions
+    (``cat/diagrams.py``; POL-FUN-029; nLab "codomain fibration", inspected
     2026-08-27: "If C has all pullbacks, then the functor is in addition a
     Grothendieck fibration", with "the cartesian lift of a morphism c_1 -> c_2 in
     C ... given by the morphism c_1 x_{c_2} c'_2 -> c'_2").
@@ -266,7 +329,6 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
         self._evaluations: MonoDict = MonoDict()
         self._constants: MonoDict = MonoDict()
         self._constant_values: MonoDict = MonoDict()
-        self._lifts: TripleDict = TripleDict(weak_values=False)
         self._finite_data: MonoDict = MonoDict()
         super().__init__(morphisms, domain, codomain)
 
@@ -346,18 +408,6 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
 
         return square_at(self, point)
 
-    def cartesian_lift(self, morphism: MorphismOfCategory, member_object: MorphismOfCategory) -> NaturalTransformation:
-        """The cartesian lift of ``f: y -> x`` at ``p: z -> x`` for ``ev_1``: the square ``z *_x y -> y`` over ``p``, by pullback in ``C``."""
-        from sage_categories.cat.diagrams import codomain_lift
-
-        return codomain_lift(self, morphism, member_object)
-
-    def cocartesian_lift(self, morphism: MorphismOfCategory, member_object: MorphismOfCategory) -> NaturalTransformation:
-        """The cocartesian lift of ``f: x -> y`` at ``p: x -> z`` for ``ev_0``: the square from ``p`` to ``z +_x y <- y``, by pushout in ``C``."""
-        from sage_categories.cat.diagrams import domain_lift
-
-        return domain_lift(self, morphism, member_object)
-
     # -- functor properties (POL-FUN-024) -----------------------------------------------
 
     def Full(self) -> Category:
@@ -415,54 +465,54 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     # -- the functor property categories (POL-FUN-024) -----------------------------------
 
     def _bootstrap(self) -> None:
-        """Build the five functor property categories and place their inclusions."""
+        """Build the five functor property categories once and place their inclusions.
+
+        Their own inclusions into ``Fun`` are constructed while the properties do not
+        yet exist, so they are placed in ``FullyFaithful()`` afterwards.
+        """
         self._bootstrapping = True
-        full = PropertySubcategory(self, "Full", {}, ())
-        faithful = PropertySubcategory(self, "Faithful", {}, ())
-        essentially_surjective = PropertySubcategory(self, "EssentiallySurjective", {}, ())
+        self._full = PropertySubcategory(self, "Full", {}, ())
+        self._faithful = PropertySubcategory(self, "Faithful", {}, ())
+        self._essentially_surjective = PropertySubcategory(self, "EssentiallySurjective", {}, ())
         # FullyFaithful implies Full and Faithful; Equivalences implies FullyFaithful
         # and EssentiallySurjective (Mathlib ``Functor.FullyFaithful.full``,
         # ``Functor.FullyFaithful.faithful``, ``Functor.IsEquivalence``; inspected 2026-08-26).
-        fully_faithful = PropertySubcategory(self, "FullyFaithful", {}, (full, faithful))
-        equivalences = PropertySubcategory(self, "Equivalences", {}, (fully_faithful, essentially_surjective))
-        self._properties.update(
-            {
-                "Full": full,
-                "Faithful": faithful,
-                "EssentiallySurjective": essentially_surjective,
-                "FullyFaithful": fully_faithful,
-                "Equivalences": equivalences,
-            }
-        )
+        self._fully_faithful = PropertySubcategory(self, "FullyFaithful", {}, (self._full, self._faithful))
+        self._equivalences = PropertySubcategory(self, "Equivalences", {}, (self._fully_faithful, self._essentially_surjective))
         self._bootstrapping = False
         self._bootstrapped = True
-        for property_category in (full, faithful, essentially_surjective, fully_faithful, equivalences):
+        for property_category in (self._full, self._faithful, self._essentially_surjective, self._fully_faithful, self._equivalences):
             for inclusion in property_category.selected_functors():
-                refine(inclusion, fully_faithful)
-
-    def _functor_property(self, name: str) -> Category:
-        if not self._bootstrapped:
-            self._bootstrap()
-        return self._properties[name]
+                refine(inclusion, self._fully_faithful)
 
     def Full(self) -> Category:
-        return self._functor_property("Full")
+        if not self._bootstrapped:
+            self._bootstrap()
+        return self._full
 
     def Faithful(self) -> Category:
-        return self._functor_property("Faithful")
+        if not self._bootstrapped:
+            self._bootstrap()
+        return self._faithful
 
     def FullyFaithful(self) -> Category:
-        return self._functor_property("FullyFaithful")
+        if not self._bootstrapped:
+            self._bootstrap()
+        return self._fully_faithful
 
     def EssentiallySurjective(self) -> Category:
-        return self._functor_property("EssentiallySurjective")
+        if not self._bootstrapped:
+            self._bootstrap()
+        return self._essentially_surjective
 
     def Equivalences(self) -> Category:
-        return self._functor_property("Equivalences")
+        if not self._bootstrapped:
+            self._bootstrap()
+        return self._equivalences
 
     # -- inclusions (POL-FUN-027) ---------------------------------------------------------
 
-    def _inclusion(self, source: Category, target: Category, placement_name: str) -> Functor:
+    def _inclusion(self, source: Category, target: Category, placement: Callable[[], Category]) -> Functor:
         """The one identity-on-value inclusion ``source -> target``, placed in the declared functor property."""
         if not self._bootstrapped and not self._bootstrapping:
             self._bootstrap()
@@ -471,7 +521,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             self._inclusions[key] = self._base.construct_morphism(source, target, identity_on_values, identity_on_values)
         inclusion = self._inclusions[key]
         if self._bootstrapped:
-            refine(inclusion, self._properties[placement_name])
+            refine(inclusion, placement())
         return inclusion
 
     def retains_inclusion(self, source: Category, target: Category) -> bool:
@@ -484,11 +534,11 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
 
     def full_inclusion(self, source: Category, target: Category) -> Functor:
         """The inclusion of a full subcategory: fully faithful by construction (Mathlib ``ObjectProperty.ι``)."""
-        return self._inclusion(source, target, "FullyFaithful")
+        return self._inclusion(source, target, self.FullyFaithful)
 
     def faithful_inclusion(self, source: Category, target: Category) -> Functor:
         """The inclusion of a subcategory: faithful by construction."""
-        return self._inclusion(source, target, "Faithful")
+        return self._inclusion(source, target, self.Faithful)
 
     # -- limits and colimits of functors, pointwise (specs/functor.md, "Diagram shapes and universal constructions"; ``cat/diagrams.py``) -----------
 

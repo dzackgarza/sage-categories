@@ -36,6 +36,7 @@ from __future__ import annotations
 from collections.abc import Callable, Hashable
 from typing import NamedTuple
 
+from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.cat.category import Category, member
@@ -267,7 +268,7 @@ class ApexCategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismDa
 
     def accepts(self, diagram: Functor, shape: Category) -> None:
         """A diagram of shape ``shape`` into ``C`` or into a subcategory of ``C`` (a diagram into ``Sets().Uncountable()`` is a diagram into ``Sets()``)."""
-        assert diagram in self.category().morphism_category(1) and diagram.domain() is shape, f"{diagram!r} is not a diagram of shape {shape!r}"
+        assert diagram in self.universe().morphism_category(1) and diagram.domain() is shape, f"{diagram!r} is not a diagram of shape {shape!r}"
         assert is_subcategory(diagram.codomain(), self._apex_category), f"{diagram!r} does not land in {self._apex_category!r}"
 
     def lowered(self, diagram: Functor) -> Functor:
@@ -380,7 +381,7 @@ class ProductsCategory(ApexCategory):
 
     def __call__(self, family: Functor | tuple[ObjectOfCategory, ...]) -> ObjectOfCategory:
         """``C.Products()(diagram)`` for a diagram over ``Discrete(S)``; ``C.Products()((X_0, ..., X_n))`` for the sequence form."""
-        diagram = family if family in self.category().morphism_category(1) else self._sequence_diagram(tuple(family))
+        diagram = family if family in self.universe().morphism_category(1) else self._sequence_diagram(tuple(family))
         shape = diagram.domain()
         assert is_discrete(shape), f"{shape!r} is not a discrete shape"
         self.accepts(diagram, shape)
@@ -393,11 +394,10 @@ class ProductsCategory(ApexCategory):
         assert limiting_cone in diagrams.morphism_category(1)(diagrams.constant(apex), diagram)
         return self._retain(apex, UniversalData(diagram, limiting_cone, mediator))
 
+    @cached_method
     def Subobjects(self) -> Category:
         """``C.Products().Subobjects()``: the objects presented by a monomorphism into a chosen product, with their derived component projections (POL-CAT-094)."""
-        if "Subobjects" not in self._constructions:
-            self._constructions["Subobjects"] = ProductSubobjectsCategory(self)
-        return self._constructions["Subobjects"]
+        return ProductSubobjectsCategory(self)
 
     def __repr__(self) -> str:
         return f"{self._apex_category!r}.Products()"
@@ -531,7 +531,7 @@ class CoproductsCategory(ApexCategory):
 
     def __call__(self, family: Functor | tuple[ObjectOfCategory, ...]) -> ObjectOfCategory:
         """``C.Coproducts()(diagram)`` for a diagram over ``Discrete(S)``; ``C.Coproducts()((X_0, ..., X_n))`` for the sequence form."""
-        diagram = family if family in self.category().morphism_category(1) else self._sequence_diagram(tuple(family))
+        diagram = family if family in self.universe().morphism_category(1) else self._sequence_diagram(tuple(family))
         shape = diagram.domain()
         assert is_discrete(shape), f"{shape!r} is not a discrete shape"
         self.accepts(diagram, shape)

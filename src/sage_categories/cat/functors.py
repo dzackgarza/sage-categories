@@ -29,8 +29,6 @@ from sage.structure.coerce_dict import MonoDict, TripleDict
 
 from sage_categories.cat import category as _category
 from sage_categories.cat.category import Assignment, Category, CategoryOfCategories, OnMorphism, OnObject
-from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategory, endpoints
-from sage_categories.cat.properties import FixedEndpointProperty, PropertySubcategory
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask
 from sage_categories.kernel.refinement import is_placed, is_retained_inclusion, refine
@@ -474,6 +472,19 @@ class NaturalTransformationDeclaration(MorphismOfCategory):
         return f"NaturalTransformation({self.domain()!r} => {self.codomain()!r})"
 
 
+Functor = FunctorDeclaration
+NaturalTransformation = NaturalTransformationDeclaration
+
+_category.bootstrap()
+Cat = _category.Cat
+Category = _category.Category
+Functor = Cat().MorphismType
+_category.Functor = Functor
+
+from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategory, endpoints
+from sage_categories.cat.properties import FixedEndpointProperty, PropertySubcategory
+
+
 class FunctorProperty(FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]]):
     """``Fun(C, D).P()``: functors ``C -> D`` with property ``P``; owns ``inclusion()`` and ``identity()``."""
 
@@ -773,26 +784,9 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         return "Fun"
 
 
-Functor = FunctorDeclaration
-NaturalTransformation = NaturalTransformationDeclaration
-
-_category.bootstrap()
-Cat = _category.Cat
-Category = _category.Category
-Functor = Cat().MorphismType
-
-from sage_categories.cat import canonical as _canonical
 from sage_categories.cat import elements as _elements
-from sage_categories.cat import morphisms as _morphisms
-from sage_categories.cat import properties as _properties
 
-_canonical.Category = Category
-_elements.Category = Category
-_elements.Functor = Functor
 _elements.CategoryPoint = Cat().ElementType
-_morphisms.Category = Category
-_properties.Category = Category
-_category.Functor = Functor
 Fun: FunctorsCategory = Cat().morphism_category(1)
 NaturalTransformation = Fun.MorphismType
 _category.NaturalTransformation = NaturalTransformation

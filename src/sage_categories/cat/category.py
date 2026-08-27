@@ -955,9 +955,9 @@ def bootstrap() -> None:
     ``Cat().MorphismType`` is ``Functor``, and ``Functor`` is itself an object of
     ``Fun = Mor(Cat())``.  The bootstrap first defines their distinct local
     declarations.  It then compiles ``Cat()`` and binds the semantic names to its
-    public roles.  ``MorphismCategory`` and ``FinitePresentedCategory`` need the
-    local category declaration while this cluster is incomplete.  Their values
-    enter the compiled ``Category`` role during construction.  The kernel evaluates
+    public roles.  Modules that declare other category classes import only after this
+    function returns.  Their classes therefore derive from the compiled ``Category``
+    role and enter its generated constructor chain normally.  The kernel evaluates
     deferred signatures after the semantic names are bound (POL-KERNEL-021).
 
     The theory is therefore one import layer with one entry point:
@@ -966,15 +966,12 @@ def bootstrap() -> None:
     Binding these names completes the bootstrap.  It does not create a lookup
     registry.
     """
-    global _CAT, Category, FinitePresentedCategory, Functor, FunctorsCategory, MorphismCategory, NaturalTransformation
-    from sage_categories.cat.canonical import FinitePresentedCategory
-    from sage_categories.cat.functors import FunctorDeclaration, FunctorsCategory, NaturalTransformationDeclaration
-    from sage_categories.cat.morphisms import MorphismCategory
+    global _CAT, Category, Functor
+    from sage_categories.cat.functors import FunctorDeclaration
 
     _CAT = CategoryOfCategories()
     Category = _CAT.ObjectType
-    Functor = FunctorDeclaration
-    NaturalTransformation = NaturalTransformationDeclaration
+    Functor = _CAT.MorphismType
 
 
 def Cat() -> CategoryOfCategories:

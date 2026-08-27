@@ -398,9 +398,10 @@ Let each apex inherit methods from the category in which it lives.
 Use functor composition and natural transformations to move structure.
 Do not create a separate method-propagation system for constructions.
 
-For a construction functor `F: Diag(C) -> C`, give `F(D)` the parent `Image(F)`.
-The immediate structural supercategory of `Image(F)` is `C`.
-Construct the corresponding object of `C` from the diagram `D`.
+For a construction functor `F: Diag(C) -> C`, construct a distinct presentation `P_D`
+for each diagram `D`. Retain `D`, the canonical apex `A_D = F(D)`, the defining
+morphisms, and the universal maps. The selected apex functor maps `P_D` to `A_D` in
+`C`. The immediate structural supercategory of the presentation category is `C`.
 This applies to products, coproducts, limits, and colimits.
 
 A covering object of `Y` is a pair `(X, p: X -> Y)` with `p` an epimorphism.

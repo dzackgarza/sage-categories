@@ -445,20 +445,20 @@ them retain a `__class__` closure. The compiler rebinds that closure to the fina
 class before it installs the function. This makes literal zero-argument `super()` enter
 the controlled compiled MRO.
 
-Constructor conversions are retained implementation data of the selected functor. The
-target image retained by a conversion is the canonical `F(x)`. Public functor application
-returns that exact value. All routes to one node return the same image and construction
-input by identity. Identity functors retain identity conversions. Composite functors
-retain the composites of their factors' conversions.
+Object and morphism constructor conversions are retained implementation data of the
+selected functor. The target image retained by a conversion is the canonical `F(x)`.
+Public object or morphism application returns that exact value. All routes to one node
+return the same image and construction input by identity. Identity functors retain
+identity conversions. Composite functors retain the composites of their factors'
+conversions.
 
-Each canonical public value retains one root construction input. A conversion returns
-the input retained by its canonical target image; it does not allocate a second input
-record. The input type names its exact canonical role value and local datum. The
-conversion is the implementation of the corresponding object or morphism action. During
-source construction, it reads the source input's typed datum and identity, constructs the
-canonical target through the target category, and retains that image.
-Later public functor application reads the source value's retained input and calls the
-same conversion. It does not inspect fields of a partly initialized source value.
+Each canonical public object or morphism retains one root construction input. A
+conversion returns the input retained by its canonical target image. The input type
+names its exact canonical role value and local datum. During source construction, the
+conversion reads the source input's typed datum and identity, constructs the canonical
+target through the target category, and retains that image. Later public functor
+application reads the source value's retained input and calls the same conversion. It
+reads no fields of a partly initialized source value.
 
 An inherited method executes on the descendant. Its declaring role's private state
 retains the canonical functor image. A method that must supply an object, element, or
@@ -472,15 +472,18 @@ identity retains the defining morphism. An object `X in C` uses
 `X.defining_morphism()` lazily requests `C.point_functor(X)`. A morphism `f: A -> B` in
 `C` uses `ArrowStageIdentity(C, A, B)`: its stage is `Cat().Simplex(1)`, its parent is
 `C`, and `f.defining_morphism()` lazily requests `C.arrow_functor(f)`. Every `F: C -> D`
-induces `F/X: C/X -> D/F(X)`, sending `t` to `F(t): F(T) -> F(X)` through
-`F.on_morphism`; this action requires no additional functor data.
+induces `F/X: C/X -> D/F(X)`, sending `t` to the public image
+`q = F(t): F(T) -> F(X)` through `F.on_morphism`. This action requires no additional
+functor data. The canonical value `q` retains its own construction input and cache
+identity.
 
 A category may choose a classical stage `G_C`: `1` for `Sets()`; `Cat()` uses `1` for
 objects and `[1]` for morphisms. A classical element of `X` is a generalized element
 whose stage is exactly `G_C`. A selected structural functor that exposes the target's
-classical element methods retains a stage comparison `G_D -> F(G_C)`. Precomposition
-gives `G_D -> F(G_C) -> F(X)`, a classical element of `F(X)`; this forward direction is
-the only one the kernel uses.
+classical element methods retains a stage comparison `c_F: G_D -> F(G_C)`. For a
+classical `t: G_C -> X`, the compiler precomposes `q = F(t)` with `c_F` and obtains the
+classical input `p: G_D -> F(X)`. The public image `q` and compiler input `p` are
+separate generalized elements with separate construction inputs and cache identities.
 
 ## Point categories and point functors
 
@@ -678,10 +681,11 @@ For `F: C -> D`, `F.essential_image()` is the full property subcategory of `D` o
 objects isomorphic to `F(X)` for some `X in C`. Its inclusion into `D` is fully faithful
 by construction. The original functor factors through this category.
 
-A universal-construction presentation category has more data. For example,
-`C.Products()` retains the input diagram, apex, projections, and universal maps. Its
-structural apex functor lands in `C`. The essential image of the product functor records
-only which objects are isomorphic to product apexes.
+A universal-construction presentation category has more data. For each diagram `D`,
+`C.Products()` has a distinct presentation object `P_D`. It retains `D`, its canonical
+apex `A_D`, its projections, and its universal maps. Its structural apex functor maps
+`P_D` to `A_D` in `C`. The essential image of the product functor records only which
+objects are isomorphic to product apexes.
 
 ## Products, coproducts, and component functors
 
@@ -755,9 +759,10 @@ A discrete diagram needs only its object rule `i |-> X_i`. The rule is an assign
 `S`; it never enumerates `S`. A Python sequence `(X_0, ..., X_n)` is the convenience form
 and denotes the diagram over `Discrete([n])`.
 
-`C.Products()(diagram)` constructs the apex with `product_projection(i)` indexed by
-`i in S` and the universal map. `C.Coproducts()` is dual with `coproduct_injection(i)`.
-`X * Y` is `C.Products()((X, Y))`.
+`C.Products()(diagram)` constructs a presentation `P_D` with canonical apex `A_D` in
+`C`, `product_projection(i)` indexed by `i in S`, and the universal map. The selected
+apex functor maps `P_D` to `A_D`. `C.Coproducts()` is dual with
+`coproduct_injection(i)`. `X * Y` is `C.Products()((X, Y))`.
 
 `C.Limits(I)` and `C.Colimits(I)` are the general families for one supplied shape `I`.
 The named conveniences are instances:

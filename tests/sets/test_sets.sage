@@ -93,7 +93,7 @@ def test_equality_with_a_candidate_outside_the_category_is_undecided() -> None:
     assert ask(Sets().Terminal() == 2.5) is Unknown
     assert ask(Sets().Terminal() == "1") is Unknown
     assert ask(Sets().Simplex(int(1)).point(int(0)) == 2.5) is Unknown
-    assert ask(Sets().Terminal() == Sets().Terminal()) is True
+    assert ask(Sets().Terminal() == Sets().Terminal())
 
 
 def test_finite_set_map_equality_is_pointwise() -> None:

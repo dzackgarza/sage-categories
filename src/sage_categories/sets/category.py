@@ -70,13 +70,21 @@ class FiniteSets(PropertySubcategory[[Rule], []]):
             refine(members, self)
             return members
         enumeration = tuple(members)
+        return self._from_enumeration(enumeration, Cardinal()(len(enumeration)))
+
+    def _from_enumeration(self, enumeration: tuple[Datum, ...], cardinality: CardinalObject) -> SetObject:
+        """Construct the finite set with this exact enumeration and cardinal."""
         # An enumeration lists each member once: its length is the cardinality (POL-SET-011/027).
         for position, first in enumerate(enumeration):
             for second in enumeration[position + 1 :]:
                 assert (first == second) is False, f"the enumeration lists {first!r} and {second!r}, which are not exactly distinct"
-        finite_set = _sets.Sets().with_cardinality(
-            lambda datum: any(datum == member for member in enumeration),
-            Cardinal()(len(enumeration)),
+        ambient = self.ambient()
+        finite_set = ambient.ObjectType(
+            ambient,
+            SetObjectData(
+                lambda datum: any(datum == member for member in enumeration),
+                cardinality,
+            ),
         )
         refine(finite_set, self)
         self._enumerations[finite_set] = enumeration
@@ -179,6 +187,18 @@ class SetsCategory(Category[[Rule], []]):
     def _canonical_finite(self, name: str, arguments: tuple[int, ...], members: Iterable[Datum]) -> SetObject:
         if (name, arguments) not in self._canonical:
             self._canonical[name, arguments] = self.Finite()(members)
+        return self._canonical[name, arguments]
+
+    def _canonical_finite_from_cardinality(
+        self,
+        name: str,
+        arguments: tuple[int, ...],
+        members: tuple[Datum, ...],
+        cardinality: CardinalObject,
+    ) -> SetObject:
+        """Retain a canonical finite set whose construction already supplies its cardinal."""
+        if (name, arguments) not in self._canonical:
+            self._canonical[name, arguments] = self.Finite()._from_enumeration(members, cardinality)
         return self._canonical[name, arguments]
 
     def Empty(self) -> SetObject:

@@ -61,15 +61,15 @@ exact cardinality, a bijection with no executable rule, which exists by
 ``Cardinal.eq``.  A set whose cardinality is ``Unknown`` has no cardinal object,
 so the functor has no executable value at it.
 
-``Cardinal()`` is constructed after ``Sets()``, since it selects a functor into it:
-``Cardinal()`` builds the singleton on first call, and ``aleph0`` and ``continuum``
-are module attributes resolved on first access.
+``Sets()`` is constructed first.  This module then constructs the ``Cardinal()``
+singleton and binds its semantic role names.  ``aleph0`` and ``continuum`` are
+module attributes resolved on first access.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from sage.structure.coerce_dict import MonoDict
 
@@ -77,10 +77,18 @@ import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.properties import PropertySubcategory
+from sage_categories.kernel.construction import (
+    MorphismConstructionInput,
+    ObjectConstructionInput,
+    retained_morphism_input,
+    retained_object_input,
+)
 from sage_categories.kernel.decisions import Decision, Unknown, decision_not, decision_or
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, role_of
 from sage_categories.ordinals.category import OrdinalObject, Ordinals
+from sage_categories.sets.maps import SetMorphismData
+from sage_categories.sets.objects import SetObjectData
 
 if TYPE_CHECKING:
     from sage_categories.sets.elements import Datum
@@ -109,7 +117,7 @@ class CardinalMorphismData:
     set_map: SetMap
 
 
-class CardinalObject(ObjectOfCategory):
+class CardinalObjectDeclaration(ObjectOfCategory):
     """An exact cardinal, retained by its normalized expression."""
 
     def __init__(self, data: CardinalObjectData) -> None:
@@ -198,7 +206,7 @@ class CardinalObject(ObjectOfCategory):
         return "sup(" + ", ".join(map(repr, self._terms)) + ")"
 
 
-class CardinalMorphism(MorphismOfCategory):
+class CardinalMorphismDeclaration(MorphismOfCategory):
     """A morphism ``kappa -> lambda`` of ``Cardinal()``: a function between the representatives, retained as a set map."""
 
     def __init__(self, data: CardinalMorphismData) -> None:
@@ -216,8 +224,8 @@ less_than = Predicate("cardinal_less_than", 2, True)
 class CardinalCategory(Category[[MorphismOfCategory], []]):
     """The skeletal category of cardinal representatives; its morphisms are the functions between representatives."""
 
-    DeclaredObjectType = CardinalObject
-    DeclaredMorphismType = CardinalMorphism
+    DeclaredObjectType = CardinalObjectDeclaration
+    DeclaredMorphismType = CardinalMorphismDeclaration
 
     class DeclaredElementType(ElementOfObject):
         """A generalized element of a cardinal; no local operation."""
@@ -263,27 +271,42 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
         inclusion (Mathlib ``CategoryTheory.fromSkeleton``, an equivalence; inspected 2026-08-27).
         """
         if "representative" not in self._functors:
-            self._functors["representative"] = Fun(self, _sets.Sets()).FullyFaithful()(self.representative, lambda morphism: morphism._set_map)
+            representative = Fun(self, _sets.Sets()).FullyFaithful()(self.representative, lambda morphism: morphism._set_map)
+
+            def object_input(source: ObjectConstructionInput[CardinalObjectData]) -> ObjectConstructionInput[SetObjectData]:
+                cardinal = cast(CardinalObject, source.canonical_image)
+                if cardinal not in self._representatives:
+                    self._representatives[cardinal] = self._select_representative(cardinal, source.datum)
+                return retained_object_input(self._representatives[cardinal])
+
+            def morphism_input(
+                source: MorphismConstructionInput[CardinalMorphismData],
+            ) -> MorphismConstructionInput[SetMorphismData]:
+                return retained_morphism_input(source.datum.set_map)
+
+            representative.retain_object_constructor_conversion(object_input)
+            representative.retain_morphism_constructor_conversion(morphism_input)
+            self._functors["representative"] = representative
         return self._functors["representative"]
 
     def representative(self, cardinal: CardinalObject) -> SetObject:
         """The selected representative set ``R_kappa``, one per cardinal."""
-        assert cardinal in self, f"{cardinal!r} is not a cardinal"
-        if cardinal not in self._representatives:
-            self._representatives[cardinal] = self._select_representative(cardinal)
-        return self._representatives[cardinal]
+        return self.representative_functor().on_object(cardinal)
 
-    def _select_representative(self, cardinal: CardinalObject) -> SetObject:
+    def _select_representative(self, cardinal: CardinalObject, data: CardinalObjectData) -> SetObject:
         sets = _sets.Sets()
-        if self._finite(cardinal):
+        if data.key[0] == "finite":
             # #[n - 1] = #{0, ..., n - 1} = n: Mathlib ``Cardinal.mk_fin`` (inspected 2026-08-27).
-            size = cardinal._finite_value_()
-            return sets.Empty() if size == 0 else sets.Simplex(size - 1)
+            size = data.key[1]
+            assert isinstance(size, int)
+            if size == 0:
+                return sets._canonical_finite_from_cardinality("empty", (), (), cardinal)
+            return sets._canonical_finite_from_cardinality("simplex", (size - 1,), tuple(range(size)), cardinal)
 
         def no_datum(datum: Datum) -> Decision:
             return Unknown
 
-        return sets.with_cardinality(no_datum, cardinal)
+        return sets.rule_valued(no_datum, cardinal)
 
     # -- construction, cached by expression ---------------------------------------
 
@@ -543,14 +566,13 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
         return "Cardinal"
 
 
-_CARDINAL: CardinalCategory | None = None
+_CARDINAL = CardinalCategory()
+CardinalObject = _CARDINAL.ObjectType
+CardinalMorphism = _CARDINAL.MorphismType
 
 
 def Cardinal() -> CardinalCategory:
-    """The category of exact cardinals, constructed once on first call after ``Sets()`` exists."""
-    global _CARDINAL
-    if _CARDINAL is None:
-        _CARDINAL = CardinalCategory()
+    """The category of exact cardinals."""
     return _CARDINAL
 
 

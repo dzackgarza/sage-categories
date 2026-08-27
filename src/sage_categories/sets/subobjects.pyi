@@ -1,7 +1,12 @@
+from sage_categories.cat.category import CategoryDeclaration as CategoryDeclaration
+from sage_categories.cat.elements import CategoryPointDeclaration as CategoryPointDeclaration
+from sage_categories.sets.cardinals import CardinalObjectDeclaration as CardinalObjectDeclaration
 from sage_categories.sets.category import Sets_ChosenQuotients_ElementType as Sets_ChosenQuotients_ElementType
 from sage_categories.sets.category import Sets_ChosenQuotients_MorphismType as Sets_ChosenQuotients_MorphismType
 from sage_categories.sets.category import Sets_ChosenSubsets_ElementType as Sets_ChosenSubsets_ElementType
 from sage_categories.sets.category import Sets_ChosenSubsets_MorphismType as Sets_ChosenSubsets_MorphismType
+from sage_categories.sets.maps import SetMapDeclaration as SetMapDeclaration
+from sage_categories.sets.objects import SetObjectDeclaration as SetObjectDeclaration
 from collections.abc import Callable
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.properties import FullSubcategory as FullSubcategory
@@ -16,7 +21,7 @@ from sage_categories.sets.objects import MembershipRule as MembershipRule, SetOb
 
 subset_of: Predicate
 
-class ChosenSubsetRole(SetObject):
+class ChosenSubsetRole(SetObjectDeclaration):
     def inclusion(self) -> SetMap: ...
     def underlying_set(self) -> SetObject: ...
     def characteristic_morphism(self) -> SetMap: ...
@@ -46,7 +51,7 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
     def image_of(self, set_map: SetMap) -> SetObject: ...
     def retained_inclusion(self, subset: SetObject) -> SetMap: ...
 
-class ChosenQuotientRole(SetObject):
+class ChosenQuotientRole(SetObjectDeclaration):
     def quotient_map(self) -> SetMap: ...
     def underlying_set(self) -> SetObject: ...
 

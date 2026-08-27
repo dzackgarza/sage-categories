@@ -72,9 +72,9 @@ DOWNSTREAM = '''
     class CarrierElement(ElementOfObject):
         """A residue modulo three, as a generalized element of the carrier."""
 
-        def __init__(self, defining_morphism: CarrierMorphism, residue: int) -> None:
-            super().__init__(defining_morphism)
+        def __init__(self, residue: int) -> None:
             self._residue = residue
+            super().__init__()
 
         def residue(self) -> int:
             """The residue this element names."""
@@ -86,35 +86,47 @@ DOWNSTREAM = '''
 
 
     class CarrierMorphism(MorphismOfCategory):
-        """An endomorphism of the carrier."""
+        """Translation by a residue: the morphisms of the one-object category are the residues."""
+
+        def __init__(self, residue: int) -> None:
+            self._residue = residue
+            super().__init__()
 
 
     class CarrierCategory(Category[[], []]):
-        """The upstream category: one object, its residues, and their addition."""
+        """The upstream category: the cyclic group of order three as a one-object category."""
 
-        ObjectType = CarrierObject
-        ElementType = CarrierElement
-        MorphismType = CarrierMorphism
+        DeclaredObjectType = CarrierObject
+        DeclaredElementType = CarrierElement
+        DeclaredMorphismType = CarrierMorphism
 
         def __init__(self) -> None:
             super().__init__()
             self._carrier = self.ObjectType(self)
+            self._translations: dict[int, CarrierMorphism] = {}
             self._residues: dict[int, CarrierElement] = {}
 
         def carrier(self) -> CarrierObject:
             """The sole object."""
             return self._carrier
 
+        def translation(self, residue: int) -> CarrierMorphism:
+            """Translation by the given residue, retained once."""
+            reduced = residue % 3
+            if reduced not in self._translations:
+                self._translations[reduced] = self.MorphismType(self.morphism_category(1), self._carrier, self._carrier, reduced)
+            return self._translations[reduced]
+
         def element(self, residue: int) -> CarrierElement:
-            """The element of the given residue, retained once."""
+            """The element of the given residue: the translation by it, at the stage of the carrier."""
             reduced = residue % 3
             if reduced not in self._residues:
-                self._residues[reduced] = self.ElementType(self.identity_morphism(self._carrier), reduced)
+                self._residues[reduced] = self.ElementType(self.translation(reduced), reduced)
             return self._residues[reduced]
 
         def construct_identity(self, member_object: ObjectOfCategory) -> CarrierMorphism:
-            """The identity of the carrier."""
-            return self.MorphismType(self.morphism_category(1), member_object, member_object)
+            """The identity of the carrier: translation by zero."""
+            return self.translation(0)
 
         def __repr__(self) -> str:
             return "Carrier"
@@ -135,9 +147,9 @@ DOWNSTREAM = '''
     class AdditiveCategory(Category[[], []]):
         """The downstream category: one inclusion, and no operation of its own."""
 
-        ObjectType = AdditiveObject
-        ElementType = AdditiveElement
-        MorphismType = AdditiveMorphism
+        DeclaredObjectType = AdditiveObject
+        DeclaredElementType = AdditiveElement
+        DeclaredMorphismType = AdditiveMorphism
 
         def structure_functors(self) -> tuple[Functor, ...]:
             """The inclusion into the carrier category."""
@@ -189,9 +201,9 @@ BROAD = '''
     class BroadCategory(Category[[], []]):
         """A category whose object declaration erases a role."""
 
-        ObjectType = BroadObject
-        ElementType = BroadElement
-        MorphismType = BroadMorphism
+        DeclaredObjectType = BroadObject
+        DeclaredElementType = BroadElement
+        DeclaredMorphismType = BroadMorphism
 
         def __repr__(self) -> str:
             return "Broad"
@@ -205,8 +217,7 @@ COMMITTED_SPECIMEN = '''
 
     from sage_categories.kernel.decisions import UnknownClass
     from sage_categories.sets.cardinals import CardinalObject
-    from sage_categories.sets.category import Sets, Sets_Finite_MorphismType
-    from sage_categories.sets.maps import SetMap
+    from sage_categories.sets.category import SetMap, Sets, Sets_Finite_MorphismType
 
 
     def cardinality_of_a_finite_set(members: tuple[int, ...]) -> None:
@@ -268,7 +279,7 @@ def test_the_inherited_sum_is_the_downstream_element_role_at_runtime(tmp_path):
 
 
 def test_a_union_of_two_roles_fails_generation_at_its_declaration(tmp_path):
-    """An erased parameter fails generation where ``signatures.py`` fails descriptor construction."""
+    """A parameter that is either an object or a morphism is type erasure, and the stub would state it (POL-TYPE-029)."""
     module = write(tmp_path, "broad", BROAD)
     with pytest.raises(StubGenerationError) as failure:
         generate_stubs((module,))

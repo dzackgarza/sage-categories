@@ -1,21 +1,34 @@
+from sage_categories.cat.category import CategoryDeclaration as CategoryDeclaration
+from sage_categories.cat.elements import CategoryPointDeclaration as CategoryPointDeclaration
+from sage_categories.cat.functors import FunctorDeclaration as FunctorDeclaration
+from sage_categories.posets.category import MonotoneMapDeclaration as MonotoneMapDeclaration
+from sage_categories.posets.category import PosetDeclaration as PosetDeclaration
+from sage_categories.posets.category import PosetElementDeclaration as PosetElementDeclaration
 from sage_categories.posets.category import Posets_Finite_ElementType as Posets_Finite_ElementType
 from sage_categories.posets.category import Posets_Finite_MorphismType as Posets_Finite_MorphismType
+from sage_categories.sets.cardinals import CardinalObjectDeclaration as CardinalObjectDeclaration
+from sage_categories.sets.elements import SetElementDeclaration as SetElementDeclaration
+from sage_categories.sets.maps import SetMapDeclaration as SetMapDeclaration
 from sage_categories.sets.objects import FiniteSetRole as FiniteSetRole
+from sage_categories.sets.objects import SetObjectDeclaration as SetObjectDeclaration
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.diagrams import sequence_position as sequence_position
 from sage_categories.cat.functors import Fun as Fun, Functor as Functor
 from sage_categories.cat.properties import PropertySubcategory as PropertySubcategory
 from sage_categories.cat.shapes import Discrete as Discrete
+from sage_categories.kernel.construction import ElementConstructionInput as ElementConstructionInput, MorphismConstructionInput as MorphismConstructionInput, ObjectConstructionInput as ObjectConstructionInput
 from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown
 from sage_categories.kernel.predicates import AppliedPredicate as AppliedPredicate, ask as ask
 from sage_categories.kernel.refinement import refine as refine
 from sage_categories.kernel.roles import CategoryPoint as CategoryPoint, ObjectOfCategory as ObjectOfCategory, Role as Role
-from sage_categories.posets.category import Poset as Poset, PosetElement as PosetElement
+from sage_categories.posets.category import MonotoneMap as MonotoneMap, Poset as Poset, PosetElement as PosetElement, PosetMorphismData as PosetMorphismData, PosetObjectData as PosetObjectData
 from sage_categories.sets.cardinals import Cardinal as Cardinal, CardinalObject as CardinalObject
-from sage_categories.sets.category import Sets as Sets
-from sage_categories.sets.maps import Rule as Rule
+from sage_categories.sets.category import SetObject as SetObject, Sets as Sets
+from sage_categories.sets.elements import SetElement as SetElement, SetElementData as SetElementData
+from sage_categories.sets.maps import Rule as Rule, SetMap as SetMap, SetMorphismData as SetMorphismData
+from sage_categories.sets.objects import SetObjectData as SetObjectData
 
-class FinitePosetRole(Poset, FiniteSetRole):
+class FinitePosetRole(PosetDeclaration, FiniteSetRole):
     def has_bottom(self) -> AppliedPredicate: ...
     def has_top(self) -> AppliedPredicate: ...
     def is_ranked(self) -> AppliedPredicate: ...

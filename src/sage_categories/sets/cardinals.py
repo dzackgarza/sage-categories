@@ -114,6 +114,31 @@ __all__ = [
 type Key = tuple[str | int | Key, ...]
 
 
+def _key_order(cardinal: CardinalObject) -> tuple[tuple[int, int | str], ...]:
+    """A total order on expression keys, used only to make reduction deterministic.
+
+    This orders *expressions*, never cardinals: the order on cardinals is
+    ``_at_most``, which answers ``Unknown`` where ZFC does not decide. Reduction to a
+    maximal antichain must visit its candidates in some fixed order, and that order
+    carries no mathematical claim.
+
+    A key is a nested tuple of strings and integers, so its parts are ordered by kind
+    first and value second; comparing the parts directly would raise on a string
+    against an integer.
+    """
+
+    def parts(key: Key) -> tuple[tuple[int, int | str], ...]:
+        ordered: list[tuple[int, int | str]] = []
+        for part in key:
+            if isinstance(part, tuple):
+                ordered.extend(parts(part))
+            else:
+                ordered.append((0, part) if isinstance(part, int) else (1, part))
+        return tuple(ordered)
+
+    return parts(cardinal._key)
+
+
 @dataclass(frozen=True, eq=False, slots=True)
 class CardinalObjectData:
     """The normalized expression state introduced by ``Cardinal()``."""
@@ -374,7 +399,7 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
             terms.extend(cardinal._terms_() if cardinal._kind_() == "supremum" else (cardinal,))
         assert terms
         maximal: list[CardinalObject] = []
-        for candidate in sorted(terms, key=lambda term: repr(term._key)):
+        for candidate in sorted(terms, key=_key_order):
             if any(established(self._at_most(candidate, term)) for term in maximal):
                 continue
             maximal = [term for term in maximal if not established(self._at_most(term, candidate))]
@@ -421,6 +446,11 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
             return self.power(inner_base, self.product(inner_exponent, exponent))
         if base._kind_() == "supremum":
             return self.supremum(*(self.power(term, exponent) for term in base._terms_()))
+        if exponent._kind_() == "supremum":
+            # ``k ** sup T = sup {k ** t}``: a finite supremum of cardinals is its
+            # maximum, and ``k ** -`` is monotone (Mathlib ``Cardinal.power_le_power_left``;
+            # inspected 2026-08-28).
+            return self.supremum(*(self.power(base, term) for term in exponent._terms_()))
         if self._established_finite(base):
             # Cardinal.nat_power_eq: n ** c = 2 ** c for finite n >= 2 and infinite c.
             base = self(2)

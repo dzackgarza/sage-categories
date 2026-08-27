@@ -18,9 +18,7 @@ Method catalogue of a node (``specs/resolution.md``):
 The compiled role class is a Sage dynamic class (``sage.structure.dynamic_class``).
 Its bases are exactly the *controlled* direct bases that
 ``sage.misc.c3_controlled.C3_sorted_merge`` returns for the node: compiled classes of
-reachable nodes.  A node that reaches none ends its chain on the kernel role class its
-declaration stands on: ``Category`` for the category role, ``ObjectOfCategory``,
-``ElementOfObject``, or ``MorphismOfCategory`` below the rest.
+reachable nodes.  A node that reaches none ends its chain on its kernel role class.
 
 A declaration is never a base.  It is passed as ``cls``, so its methods are inserted
 into the compiled class and its own Python bases are dropped.  This is Sage's
@@ -31,9 +29,13 @@ That is what lets Python linearize the result.  ``C3_sorted_merge`` orders *node
 every class it never sees is unconstrained, and Python then places it wherever each
 individual class construction allows.  Two constructions rank one such pair opposite
 ways, and a node reaching both has no MRO at all.  With declarations out of the bases,
-every class in every compiled MRO is a node class or a chain end, and carries the node
-order; ``_assert_linearized`` holds that.  Method compilation constructs no value image
-(POL-KERNEL-001).
+every class in every compiled MRO is a node class or its role's kernel chain end, and
+carries the node order; ``_assert_linearized`` holds that.
+
+Each compiled node owns one generated constructor wrapper.  Before that wrapper starts
+the local ``super()`` chain, every selected functor converts the complete source input
+to the retained input of its canonical target.  The wrappers then consume those inputs
+in C3 order and initialize every reachable node once (POL-KERNEL-028/029).
 """
 
 from __future__ import annotations
@@ -41,14 +43,36 @@ from __future__ import annotations
 import inspect
 from collections.abc import Callable
 from types import CellType, FunctionType
-from typing import TYPE_CHECKING, Any, Concatenate, Generic, NamedTuple
+from typing import TYPE_CHECKING, Concatenate, NamedTuple
 
 from sage.misc.c3_controlled import C3_sorted_merge
 from sage.structure.dynamic_class import dynamic_class
 
-import sage_categories.kernel.descriptors as descriptors
 from sage_categories.kernel.caches import MonoDict
-from sage_categories.kernel.roles import CategoryPoint, Role, kernel_base
+from sage_categories.kernel.construction import (
+    ElementConstructionContext,
+    ElementConstructionInput,
+    ElementRoleIdentity,
+    MorphismConstructionContext,
+    MorphismConstructionInput,
+    MorphismRoleIdentity,
+    ObjectConstructionContext,
+    ObjectConstructionInput,
+    ObjectRoleIdentity,
+    activate_element_context,
+    activate_morphism_context,
+    activate_object_context,
+    active_element_context,
+    active_morphism_context,
+    active_object_context,
+    deactivate_element_context,
+    deactivate_morphism_context,
+    deactivate_object_context,
+    retain_element_input,
+    retain_morphism_input,
+    retain_object_input,
+)
+from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, kernel_base
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
@@ -91,12 +115,6 @@ type Route = tuple[Step, ...]
 # remaining parameters and result are exactly those of its typed signature
 # (POL-CAT-075, POL-TYPE-028).
 type DeclaredMethod[**P, R] = Callable[Concatenate[CategoryPoint, P], R]
-
-# One entry of a class body: a function, a descriptor, a nested class, or a constant.
-# ``vars`` is Python's own introspection of a namespace and admits every value, so the
-# ambiguity is genuine and named once here (POL-TYPE-004).
-type ClassBodyValue = Any
-
 
 class Entry[**P, R](NamedTuple):
     """One compiled method: its declaring owner and role, its spelling, its declaration, and its execution route."""
@@ -231,38 +249,15 @@ def catalogue[**P, R](current: Node) -> dict[str, Entry[P, R]]:
     return entries
 
 
-def _chain_end_classes() -> tuple[type, ...]:
-    """The classes a chain of any role may end in, most specific first.
-
-    ``Category`` ends the chain of the category role.  It is ``Cat().ObjectType``'s own
-    declaration and the class every category is an instance of: a category is built from
-    its own hand-written ``Category`` subclass and never from a compiled class
-    (``refinement.place``), so those subclasses must be able to override its methods,
-    which only inheritance gives them.  The three kernel role classes end the other
-    chains the same way.  ``Generic`` and ``object`` are Python's, below all of them.
-    """
-    from sage_categories.cat.category import Category
-
-    return (Category, kernel_base(Role.OBJECT), kernel_base(Role.ELEMENT), kernel_base(Role.MORPHISM), CategoryPoint, Generic, object)
-
-
-def _kernel_base_of(klass: type[CategoryPoint]) -> type[CategoryPoint]:
-    """The kernel role class a role class stands on: the end of its chain."""
-    return next(found for found in klass.__mro__ if found in _chain_end_classes())
-
-
 def empty_local_role(category: Category, role: Role) -> type[CategoryPoint]:
-    """The local role class that declares nothing, on the kernel base of the ambient's role.
+    """The local role declaration that introduces no members or state.
 
     One class per category and role, retained: it names the declaring owner of the node
-    for ``descriptors._declared``, and a node that reaches no other node reads its
-    kernel base off it (POL-CAT-016, POL-CAT-011).
+    and stands directly on the role's kernel base (POL-CAT-053, POL-KERNEL-028).
     """
     table = _empty_local_roles[role]
     if category not in table:
-        ambient_node = node(category.ambient(), role)
-        base = _kernel_base_of(ambient_node.category.role_class(ambient_node.role))
-        table[category] = type(f"{category!r}.{role.value}", (base,), {})
+        table[category] = type(f"Declared{category!r}.{role.value}", (kernel_base(role),), {})
     return table[category]
 
 
@@ -328,7 +323,7 @@ def _linearize(current: Node) -> tuple[tuple[int, ...], tuple[int, ...]]:
     return table[current.category]
 
 
-def _base_classes(current: Node, local: type[CategoryPoint]) -> tuple[type[CategoryPoint], ...]:
+def _base_classes(current: Node) -> tuple[type[CategoryPoint], ...]:
     """The controlled direct bases of ``current``'s class: compiled role classes only.
 
     The controlled list is passed through as it is.  Its entries are not only the
@@ -345,16 +340,14 @@ def _base_classes(current: Node, local: type[CategoryPoint]) -> tuple[type[Categ
     occurrence would place it above its own descendants.  Nothing is dropped, so every
     control edge survives.
 
-    A node that reaches no other node is the end of its chain, and its base is the kernel
-    role class its declaration stands on.  A declaration is never a base itself: it
-    belongs to one node, but two chain ends put two declarations directly above one
-    kernel role class, and nothing then orders those two against each other.
+    A node that reaches no other node ends on its role's kernel class.  A declaration is
+    never a base: its members are copied into its one compiled node.
     """
     keys = _linearize(current)[1]
     classes = [_nodes_by_key[key].category.role_class(_nodes_by_key[key].role) for key in keys]
     bases = [klass for position, klass in enumerate(classes) if not any(later is klass for later in classes[position + 1 :])]
     if not bases:
-        bases = [_kernel_base_of(local)]
+        bases = [kernel_base(current.role)]
     inverted = [
         (earlier, later)
         for position, earlier in enumerate(bases)
@@ -388,51 +381,299 @@ def _rebound(function: FunctionType, cell: CellType) -> FunctionType:
     return copy
 
 
-def _declaration_methods(local: type[CategoryPoint], cell: CellType) -> dict[str, ClassBodyValue]:
-    """The complete class body of a local declaration, ready to be inserted into a compiled class."""
-    namespace: dict[str, ClassBodyValue] = {}
+_CLASS_METADATA = frozenset({"__dict__", "__weakref__", "__qualname__", "__classcell__"})
+
+
+def _rebound_member(value, cell: CellType):
+    uses_super = isinstance(value, FunctionType) and "__class__" in value.__code__.co_freevars
+    return _rebound(value, cell) if uses_super else value
+
+
+def _local_initializer(local: type[CategoryPoint], cell: CellType) -> FunctionType | None:
+    """The declaration's initializer, rebound to its compiled node and kept out of the copied members."""
+    initializer = vars(local).get("__init__")
+    if not isinstance(initializer, FunctionType):
+        return None
+    return _rebound_member(initializer, cell)
+
+
+def _method_provider(
+    local: type[CategoryPoint],
+    cell: CellType,
+    initializer: FunctionType,
+) -> type:
+    """A Sage method provider containing local members and the generated wrapper."""
+    provider = type(local.__name__, (), {})
     for name, value in vars(local).items():
-        if name in ("__dict__", "__weakref__", "__qualname__"):
+        if name in _CLASS_METADATA or name == "__init__":
             continue
-        uses_super = isinstance(value, FunctionType) and "__class__" in value.__code__.co_freevars
-        namespace[name] = _rebound(value, cell) if uses_super else value
-    return namespace
+        setattr(provider, name, _rebound_member(value, cell))
+    setattr(provider, "__init__", initializer)
+    return provider
 
 
 def _assert_linearized(current: Node, compiled: type[CategoryPoint]) -> None:
-    """The compiled class's MRO carries the reachable nodes' classes in linearization order.
+    """The MRO is the node linearization followed by exactly one kernel role chain.
 
     Sage states the same invariant in ``Category._test_category_graph``
     (``sage/categories/category.py``): ``parent_class.mro()`` is the ancestors'
-    compiled classes followed by ``object``.  The MRO here is exactly that, plus the
-    kernel role class the chain ends in.  Nothing else may appear: a class the node
-    order does not rank is free to sit anywhere, two class constructions then rank one
-    such pair opposite ways, and a node reaching both has no linearization at all.
-    That failure surfaces far from its cause, so the condition is checked here.
+    compiled classes followed by the common Python chain end.  Raw declarations never
+    occur in this order (POL-KERNEL-028).
     """
     order = [_nodes_by_key[key] for key in _linearize(current)[0]]
     classes = [found.category.role_class(found.role) for found in order]
-    positions = {klass: position for position, klass in enumerate(compiled.mro())}
-    ranked = {*classes, compiled, *_chain_end_classes()}
-    unranked = [klass for klass in compiled.mro() if klass not in ranked]
-    assert not unranked, (
-        f"the {current.role.value} class of {current.category!r} carries "
-        f"{unranked[0].__name__}, which stands for no node and which the node order "
-        "therefore does not rank"
+    expected = (compiled, *classes, *kernel_base(current.role).__mro__)
+    actual = tuple(compiled.__mro__)
+    assert actual == expected, (
+        f"the {current.role.value} MRO of {current.category!r} is "
+        f"{[klass.__name__ for klass in actual]}, expected "
+        f"{[klass.__name__ for klass in expected]}"
     )
-    missing = [found for found, klass in zip(order, classes) if klass not in positions]
-    assert not missing, (
-        f"the {current.role.value} class of {current.category!r} does not carry "
-        f"{missing[0].category!r}.{missing[0].role.value}, which it reaches"
+
+
+def _route_name(route: Route) -> str:
+    return " then ".join(repr(functor) for functor, _ in route) or "the identity route"
+
+
+def _object_inputs(current: Node, root: ObjectConstructionInput) -> tuple[tuple[Category, ObjectConstructionInput], ...]:
+    """Precompute one object input per reachable node and check every route by identity."""
+    assert current.role is Role.OBJECT
+    found: list[tuple[Node, ObjectConstructionInput, Route]] = []
+
+    def visit(source: Node, source_input: ObjectConstructionInput, route: Route) -> None:
+        known = next(((held, first_route) for owner, held, first_route in found if same_node(owner, source)), None)
+        if known is None:
+            found.append((source, source_input, route))
+        else:
+            held, first_route = known
+            if held is not source_input or held.canonical_image is not source_input.canonical_image:
+                raise StructuralImageMismatch(
+                    f"the object routes {_route_name(first_route)} and {_route_name(route)} to "
+                    f"{source.category!r} return distinct canonical images or construction inputs"
+                )
+        for step, target in successors(source):
+            functor, _ = step
+            target_input = functor.object_constructor_input(source_input)
+            assert isinstance(target_input, ObjectConstructionInput), f"{functor!r} returned no object construction input"
+            visit(target, target_input, (*route, step))
+
+    visit(current, root, ())
+    expected = reachable(current)
+    assert all(any(same_node(owner, target) for owner, _, _ in found) for target in expected)
+    return tuple(
+        (target.category, next(construction_input for owner, construction_input, _ in found if same_node(owner, target)))
+        for target in expected
     )
-    placed = [(found, positions[klass]) for found, klass in zip(order, classes)]
-    inverted = next(((first, second) for (first, a), (second, b) in zip(placed, placed[1:]) if a > b), None)
-    assert inverted is None, (
-        f"the {current.role.value} class of {current.category!r} puts "
-        f"{inverted[1].category!r}.{inverted[1].role.value} before "
-        f"{inverted[0].category!r}.{inverted[0].role.value}, against the C3 order; "
-        "one class stands for two nodes"
+
+
+def _element_inputs(current: Node, root: ElementConstructionInput) -> tuple[tuple[Category, ElementConstructionInput], ...]:
+    """Precompute one element input per reachable node and check every route by identity."""
+    assert current.role is Role.ELEMENT
+    found: list[tuple[Node, ElementConstructionInput, Route]] = []
+
+    def visit(source: Node, source_input: ElementConstructionInput, route: Route) -> None:
+        known = next(((held, first_route) for owner, held, first_route in found if same_node(owner, source)), None)
+        if known is None:
+            found.append((source, source_input, route))
+        else:
+            held, first_route = known
+            if held is not source_input or held.canonical_image is not source_input.canonical_image:
+                raise StructuralImageMismatch(
+                    f"the element routes {_route_name(first_route)} and {_route_name(route)} to "
+                    f"{source.category!r} return distinct canonical images or construction inputs"
+                )
+        for step, target in successors(source):
+            functor, _ = step
+            target_input = functor.element_constructor_input(source_input)
+            assert isinstance(target_input, ElementConstructionInput), f"{functor!r} returned no element construction input"
+            visit(target, target_input, (*route, step))
+
+    visit(current, root, ())
+    expected = reachable(current)
+    assert all(any(same_node(owner, target) for owner, _, _ in found) for target in expected)
+    return tuple(
+        (target.category, next(construction_input for owner, construction_input, _ in found if same_node(owner, target)))
+        for target in expected
     )
+
+
+def _morphism_inputs(current: Node, root: MorphismConstructionInput) -> tuple[tuple[Category, MorphismConstructionInput], ...]:
+    """Precompute one morphism input per reachable node and check every route by identity."""
+    assert current.role is Role.MORPHISM
+    found: list[tuple[Node, MorphismConstructionInput, Route]] = []
+
+    def visit(source: Node, source_input: MorphismConstructionInput, route: Route) -> None:
+        known = next(((held, first_route) for owner, held, first_route in found if same_node(owner, source)), None)
+        if known is None:
+            found.append((source, source_input, route))
+        else:
+            held, first_route = known
+            if held is not source_input or held.canonical_image is not source_input.canonical_image:
+                raise StructuralImageMismatch(
+                    f"the morphism routes {_route_name(first_route)} and {_route_name(route)} to "
+                    f"{source.category!r} return distinct canonical images or construction inputs"
+                )
+        for step, target in successors(source):
+            functor, _ = step
+            target_input = functor.morphism_constructor_input(source_input)
+            assert isinstance(target_input, MorphismConstructionInput), f"{functor!r} returned no morphism construction input"
+            visit(target, target_input, (*route, step))
+
+    visit(current, root, ())
+    expected = reachable(current)
+    assert all(any(same_node(owner, target) for owner, _, _ in found) for target in expected)
+    return tuple(
+        (target.category, next(construction_input for owner, construction_input, _ in found if same_node(owner, target)))
+        for target in expected
+    )
+
+
+def _advance(cell: CellType, instance: CategoryPoint) -> None:
+    """Enter the next generated wrapper, or the kernel role initializer."""
+    super(cell.cell_contents, instance).__init__()
+
+
+def _initialize_object_node(
+    current: Node,
+    initializer: FunctionType | None,
+    cell: CellType,
+    instance: ObjectOfCategory,
+    context: ObjectConstructionContext,
+) -> None:
+    construction_input = context.begin(current.category)
+    if initializer is None:
+        _advance(cell, instance)
+        return
+    initializer(instance, construction_input.datum)
+
+
+def _initialize_element_node(
+    current: Node,
+    initializer: FunctionType | None,
+    cell: CellType,
+    instance: ElementOfObject,
+    context: ElementConstructionContext,
+) -> None:
+    construction_input = context.begin(current.category)
+    if initializer is None:
+        _advance(cell, instance)
+        return
+    initializer(instance, construction_input.datum)
+
+
+def _initialize_morphism_node(
+    current: Node,
+    initializer: FunctionType | None,
+    cell: CellType,
+    instance: MorphismOfCategory,
+    context: MorphismConstructionContext,
+) -> None:
+    construction_input = context.begin(current.category)
+    if initializer is None:
+        _advance(cell, instance)
+        return
+    initializer(instance, construction_input.datum)
+
+
+def _object_wrapper(current: Node, local: type[CategoryPoint], cell: CellType) -> FunctionType:
+    node_initializer = _local_initializer(local, cell)
+
+    def initialize[Datum](
+        instance: ObjectOfCategory,
+        category: Category | None = None,
+        data: Datum | None = None,
+    ) -> None:
+        active = active_object_context()
+        if active is not None and active.root.canonical_image is instance:
+            assert category is None and data is None, "an ancestor object constructor receives only its precomputed input"
+            _initialize_object_node(current, node_initializer, cell, instance, active)
+            return
+        assert category is not None, "an object root constructor requires its category"
+        root = ObjectConstructionInput(instance, ObjectRoleIdentity(category), data)
+        retain_object_input(root)
+        context = ObjectConstructionContext(root, _object_inputs(current, root))
+        token = activate_object_context(context)
+        try:
+            _initialize_object_node(current, node_initializer, cell, instance, context)
+            context.assert_complete()
+        finally:
+            deactivate_object_context(token)
+
+    initialize.__name__ = "__init__"
+    return initialize
+
+
+def _element_wrapper(current: Node, local: type[CategoryPoint], cell: CellType) -> FunctionType:
+    node_initializer = _local_initializer(local, cell)
+
+    def initialize[Datum](
+        instance: ElementOfObject,
+        defining_morphism: MorphismOfCategory | None = None,
+        data: Datum | None = None,
+    ) -> None:
+        active = active_element_context()
+        if active is not None and active.root.canonical_image is instance:
+            assert defining_morphism is None and data is None, "an ancestor element constructor receives only its precomputed input"
+            _initialize_element_node(current, node_initializer, cell, instance, active)
+            return
+        assert defining_morphism is not None, "an element root constructor requires its defining morphism"
+        root = ElementConstructionInput(instance, ElementRoleIdentity(defining_morphism), data)
+        retain_element_input(root)
+        context = ElementConstructionContext(root, _element_inputs(current, root))
+        token = activate_element_context(context)
+        try:
+            _initialize_element_node(current, node_initializer, cell, instance, context)
+            context.assert_complete()
+        finally:
+            deactivate_element_context(token)
+
+    initialize.__name__ = "__init__"
+    return initialize
+
+
+def _morphism_wrapper(current: Node, local: type[CategoryPoint], cell: CellType) -> FunctionType:
+    node_initializer = _local_initializer(local, cell)
+
+    def initialize[Datum](
+        instance: MorphismOfCategory,
+        category: Category | None = None,
+        domain: ObjectOfCategory | None = None,
+        codomain: ObjectOfCategory | None = None,
+        data: Datum | None = None,
+    ) -> None:
+        active = active_morphism_context()
+        if active is not None and active.root.canonical_image is instance:
+            assert category is None and domain is None and codomain is None and data is None, (
+                "an ancestor morphism constructor receives only its precomputed input"
+            )
+            _initialize_morphism_node(current, node_initializer, cell, instance, active)
+            return
+        assert category is not None and domain is not None and codomain is not None, (
+            "a morphism root constructor requires its category and endpoints"
+        )
+        root = MorphismConstructionInput(instance, MorphismRoleIdentity(category, domain, codomain), data)
+        retain_morphism_input(root)
+        context = MorphismConstructionContext(root, _morphism_inputs(current, root))
+        token = activate_morphism_context(context)
+        try:
+            _initialize_morphism_node(current, node_initializer, cell, instance, context)
+            context.assert_complete()
+        finally:
+            deactivate_morphism_context(token)
+
+    initialize.__name__ = "__init__"
+    return initialize
+
+
+def _constructor_wrapper(current: Node, local: type[CategoryPoint], cell: CellType) -> FunctionType:
+    match current.role:
+        case Role.OBJECT:
+            return _object_wrapper(current, local, cell)
+        case Role.ELEMENT:
+            return _element_wrapper(current, local, cell)
+        case Role.MORPHISM:
+            return _morphism_wrapper(current, local, cell)
+    raise AssertionError(current.role)
 
 
 def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
@@ -453,11 +694,9 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
         if current.category is not category:
             setattr(category, role.value, current.category.role_class(current.role))
             continue
-        surface = {
-            name: descriptors.forwarding_descriptor(entry)
-            for name, entry in catalogue(current).items()
-            if entry.route
-        }
+        # Catalogue construction rejects semantic collisions.  Inherited execution
+        # itself is ordinary Python lookup through the controlled compiled MRO.
+        catalogue(current)
         # Every node gets its own compiled class, including one that declares nothing
         # and inherits nothing: in Sage a category without ``ParentMethods`` still has
         # its own ``parent_class``, built from its super categories and adding no
@@ -468,18 +707,15 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
         # The declared class stays what it was: ``local_role_class`` reads the class
         # attribute, ``role_class`` the compiled instance attribute.
         local = category.local_role_class(role)
-        bases = _base_classes(current, local)
+        bases = _base_classes(current)
         cell = CellType()
-        # The declaration supplies its methods by inheritance when it is the kernel role
-        # class that ends the chain, and by copy otherwise.  Copying ``Category`` onto
-        # ``Cat().ObjectType`` would shadow the overrides of its own Python subclasses,
-        # which are the classes categories are built from (``refinement.place``).
-        namespace = dict(surface) if local in bases else {**surface, **_declaration_methods(local, cell)}
+        wrapper = _constructor_wrapper(current, local, cell)
+        provider = _method_provider(local, cell, wrapper)
         try:
             compiled = dynamic_class(
                 f"{category!r}.{role.value}",
                 bases,
-                cls=type(local.__name__, (), namespace),
+                cls=provider,
                 doccls=local,
                 prepend_cls_bases=False,
             )

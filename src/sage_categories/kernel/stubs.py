@@ -24,15 +24,19 @@ The projection of one category ``C`` and one role:
 - ``ObjectType``, ``ElementType``, and ``MorphismType`` are read-only properties
   returning ``type`` of those classes.  Only the compiler writes them.
 
-The level shift contributes methods and no base.  ``{C}``'s generalized elements
-are the objects of ``C`` at stage ``1`` and its morphisms at stage ``[1]``, so the
-shift is not a subcategory relation: ``compiler._selected_targets`` keeps it out of
-the bases and ``compiler.install_level_shift`` puts the inherited spellings
-directly onto ``C``'s already-compiled classes.  The stub states those spellings
-as explicit method signatures on the object and morphism role classes of ``C``.  A
-point category ``{X}`` is itself indexed by a runtime object value, so it receives
-no stub class of its own, and neither does any other construction family: a stub
-is not a dependent type indexed by runtime category values.
+The level shift is outside the projection, and so is the point category it comes
+from.  ``{X}`` is built by ``Cat().Point(X)`` from a value, at any moment in a
+session; ``{C}``'s generalized elements are then the objects of ``C`` at stage
+``1`` and its morphisms at stage ``[1]``, and ``compiler.install_level_shift``
+writes those spellings straight onto the classes ``C``'s roles already are.  That
+is a runtime refinement of the compiled graph, not a declaration: a stub that
+carried it would describe whichever point categories one session happened to
+build, and the same declarations would project differently in the next.  So the
+projection follows selected functors only -- which is also why the shift
+contributes no base -- and a category with a point category gets a stub stating
+its declared surface and nothing of the shift.  Every other construction family
+is excluded for the same reason it is not named: a stub is not a dependent type
+indexed by runtime category values.
 
 A stub describes exactly the categories declared in the modules of one generation
 run.  A codomain declared outside that set fails generation naming its module.  A
@@ -82,7 +86,6 @@ class RoleProjection(NamedTuple):
     reference: Reference
     bases: tuple[Reference, ...]
     declared: bool
-    shifted: tuple[compiler.Entry, ...]
 
 
 type Projections = dict[tuple[int, Role], RoleProjection]
@@ -124,11 +127,15 @@ def _module_paths(targets: tuple[Path, ...]) -> tuple[Path, ...]:
 
 
 def _declared_categories(names: tuple[str, ...]) -> tuple[Category, ...]:
-    """Every category bound at module level in the generation set, by identity."""
+    """Every category the generation set declares: one bound at module level whose class one of these modules writes.
+
+    A module also binds the categories it imports -- ``Fun``, ``Sets`` -- and those
+    belong to the modules that declare them, not to the one that uses them.
+    """
     found: list[Category] = []
     for name in names:
         for value in vars(sys.modules[name]).values():
-            if isinstance(value, Category) and not any(value is known for known in found):
+            if isinstance(value, Category) and _declaring_class(value).__module__ in names and not any(value is known for known in found):
                 found.append(value)
     return tuple(found)
 
@@ -161,7 +168,7 @@ def _constructed(category: Category) -> tuple[Category, ...]:
     data and are reached only where a declaration selects a functor into one.
     """
     found: list[Category] = []
-    for name in vars(type(category)):
+    for name in vars(_declaring_class(category)):
         if not name[:1].isupper() or name in _ROLE_NAMES:
             continue
         member = getattr(category, name)
@@ -174,13 +181,15 @@ def _constructed(category: Category) -> tuple[Category, ...]:
 
 
 def _reached(category: Category) -> tuple[Category, ...]:
-    """Every category the selected graph reaches from one, at any role.
+    """The categories one step of the selected graph reaches from one, at any role.
 
-    ``compiler.reachable`` is that graph: the codomains of ``structure_functors()``
-    transitively, with the node normalization and the level shift the compiler
-    itself applies.
+    ``compiler.controlled_bases`` follows the selected functors and nothing else.
+    A level shift is deliberately not among them: it points at a point category
+    ``{X}``, which ``Cat().Point(X)`` builds from a runtime value, and it installs
+    its spellings on classes the compiler has already built.  A stub states the
+    declarations, so neither the point category nor the shift enters it.
     """
-    return tuple(current.category for role in Role for current in compiler.reachable(compiler.node(category, role)))
+    return tuple(current.category for role in Role for current in compiler.controlled_bases(compiler.node(category, role)))
 
 
 def _closure(seeds: tuple[Category, ...]) -> tuple[Category, ...]:
@@ -219,7 +228,7 @@ def _home(category: Category) -> str:
     root = category
     while root.has_ambient():
         root = root.ambient()
-    return type(root).__module__
+    return _declaring_class(root).__module__
 
 
 def _written(klass: type) -> bool:
@@ -242,16 +251,21 @@ def _declares(category: Category, role: Role) -> bool:
     return _written(category.local_role_class(role))
 
 
+def _declaring_class(category: Category) -> type:
+    """The class a module writes for this category.
+
+    ``type(category)`` is not it: placing a category in a subcategory rebuilds its
+    class as a dynamic join (``kernel/refinement.place``), and a category placed in
+    its own point category carries a class that no module writes and that a stub
+    must never name.  The written class below it is the declaration.
+    """
+    return next(klass for klass in type(category).__mro__ if _written(klass))
+
+
 def _role_reference(category: Category, role: Role) -> Reference:
     if _declares(category, role):
         return _reference(category.local_role_class(role))
     return Reference(_home(category), _generated_name(category, role))
-
-
-def _shifted(current: compiler.Node) -> tuple[compiler.Entry, ...]:
-    """The catalogue entries a level shift supplies: those whose first step applies no functor."""
-    entries: dict[str, compiler.Entry] = compiler.catalogue(current)
-    return tuple(entry for entry in entries.values() if entry.route and entry.route[0].functor is None)
 
 
 def _validate(category: Category, role: Role, local: type[CategoryPoint]) -> None:
@@ -290,7 +304,7 @@ def _bases(category: Category, role: Role, modules: frozenset[str]) -> tuple[Ref
     """
     found: list[Reference] = []
     for target in compiler.controlled_bases(compiler.node(category, role)):
-        _require_in_set(type(target.category), modules, category)
+        _require_in_set(_declaring_class(target.category), modules, category)
         reference = _role_reference(target.category, target.role)
         found = [known for known in found if known != reference]
         found.append(reference)
@@ -301,7 +315,7 @@ def project(categories: tuple[Category, ...], modules: frozenset[str]) -> Projec
     """The stub class of each role of each category, keyed by ordinal and role."""
     projections: Projections = {}
     for category in categories:
-        _require_in_set(type(category), modules, category)
+        _require_in_set(_declaring_class(category), modules, category)
         for role in Role:
             current = compiler.node(category, role)
             if current.category is not category or current.role is not role:
@@ -316,7 +330,6 @@ def project(categories: tuple[Category, ...], modules: frozenset[str]) -> Projec
                 _role_reference(category, role),
                 _bases(category, role, modules),
                 _declares(category, role),
-                _shifted(current),
             )
     return projections
 
@@ -352,11 +365,6 @@ def _bound_names(lines: list[str]) -> dict[str, str]:
     return found
 
 
-def _signature(entry: compiler.Entry) -> str:
-    """The declared signature of an inherited method, as its declaration writes it."""
-    return f"{entry.name}{inspect.signature(entry.function)}"
-
-
 def _role_references(category: Category | None, projections: Projections) -> tuple[Reference, ...]:
     """The three role classes of a category class; the kernel bases when the class stands for a family."""
     if category is None:
@@ -370,7 +378,7 @@ def _category_classes(module: str, categories: tuple[Category, ...]) -> dict[str
     for name, value in vars(sys.modules[module]).items():
         if not isinstance(value, type) or not issubclass(value, Category) or value.__module__ != module:
             continue
-        single = [category for category in categories if type(category) is value]
+        single = [category for category in categories if _declaring_class(category) is value]
         found[name] = single[0] if len(single) == 1 else None
     return found
 
@@ -396,7 +404,7 @@ def _resolved(references: set[Reference], module: str, lines: list[str]) -> tupl
 
 
 def _rewrite(text: str, module: str, categories: tuple[Category, ...], projections: Projections) -> str:
-    """One module's stub, carrying the compiled bases, role attributes, and shifted methods."""
+    """One module's stub, carrying the compiled bases and the role attributes."""
     owned = {
         projection.reference.name: projection
         for projection in projections.values()
@@ -435,7 +443,6 @@ def _rewrite(text: str, module: str, categories: tuple[Category, ...], projectio
         if qualified in owned:
             bases = ", ".join(spelling[base] for base in owned[qualified].bases)
             result.append(f"{match['indent']}class {name}{parameters}({bases}):")
-            body.extend(f"{match['indent']}    def {_signature(entry)}: ..." for entry in owned[qualified].shifted)
         else:
             result.append(f"{match['indent']}class {name}{parameters}({match['bases']}):" if match["bases"] else f"{match['indent']}class {name}{parameters}:")
         # A category whose role is a nested class of its own body already names that
@@ -454,9 +461,7 @@ def _rewrite(text: str, module: str, categories: tuple[Category, ...], projectio
         bases = ", ".join(spelling[base] for base in projection.bases)
         result.append("")
         result.append(f"class {projection.reference.name}({bases}):")
-        result.extend(f"    def {_signature(entry)}: ..." for entry in projection.shifted)
-        if not projection.shifted:
-            result.append("    ...")
+        result.append("    ...")
     return "\n".join([*imports, *result]) + "\n"
 
 
@@ -469,9 +474,12 @@ def generate_stubs(targets: tuple[Path, ...], destination: Path | None = None) -
     ``targets`` are Python files or package directories.  Every module is imported,
     every category declared in one of them is compiled through the ownership
     computation of ``kernel/compiler.py``, and the role classes are projected into
-    the stubs.  Without ``destination`` each stub is written beside its module;
-    with one, the package layout is reproduced under it, which is how a downstream
-    package or a test generates stubs for its own declarations.
+    the stubs.  Without ``destination`` each stub is written beside its module, and
+    a stub the projection no longer states is removed: the ``.pyi`` files under the
+    targets *are* the projection, and a stale one would go on shadowing its module
+    for good.  With a ``destination`` the package layout is reproduced under it,
+    which is how a downstream package or a test generates stubs for its own
+    declarations.
     """
     paths = _module_paths(targets)
     names = tuple(module_name(path) for path in paths)
@@ -481,19 +489,22 @@ def generate_stubs(targets: tuple[Path, ...], destination: Path | None = None) -
     categories = _closure(_declared_categories(names))
     projections = project(categories, modules)
     carried = {projection.reference.module for projection in projections.values()}
-    carried.update(type(category).__module__ for category in categories)
+    carried.update(_declaring_class(category).__module__ for category in categories)
     selected = tuple((path, name) for path, name in zip(paths, names) if name in carried)
-    if not selected:
-        return ()
     written: list[Path] = []
-    with tempfile.TemporaryDirectory() as scratch:
-        _stubgen(tuple(path for path, _ in selected), Path(scratch))
-        for path, name in selected:
-            produced = Path(scratch).joinpath(*name.split(".")).with_suffix(".pyi")
-            stub = path.with_suffix(".pyi") if destination is None else destination.joinpath(*name.split(".")).with_suffix(".pyi")
-            stub.parent.mkdir(parents=True, exist_ok=True)
-            stub.write_text(_rewrite(produced.read_text(), name, categories, projections))
-            written.append(stub)
+    if selected:
+        with tempfile.TemporaryDirectory() as scratch:
+            _stubgen(tuple(path for path, _ in selected), Path(scratch))
+            for path, name in selected:
+                produced = Path(scratch).joinpath(*name.split(".")).with_suffix(".pyi")
+                stub = path.with_suffix(".pyi") if destination is None else destination.joinpath(*name.split(".")).with_suffix(".pyi")
+                stub.parent.mkdir(parents=True, exist_ok=True)
+                stub.write_text(_rewrite(produced.read_text(), name, categories, projections))
+                written.append(stub)
+    if destination is None:
+        for stale in (path.with_suffix(".pyi") for path in paths):
+            if stale.exists() and not any(stale == stub for stub in written):
+                stale.unlink()
     return tuple(written)
 
 

@@ -1,11 +1,11 @@
 # Cardinalities and ordinals
 
 Cardinals are objects of a set-enriched skeletal category of cardinal representatives.
-The point functor of `Cardinal()` into `Semirings(Cat())` presents its coproduct and
-product as cardinal addition and multiplication. Ordinals are objects of the skeletal
-category `Ordinals()`. Its point functor into `Semirings(Cat())` presents the Hessenberg
-operations as ordinal addition and multiplication. Both models retain exact expressions
-when no normalization rule applies.
+The point functor of `Cardinal()` into `Semirings(Cat())` presents cardinal addition and
+multiplication as its semiring operations. Ordinals are objects of the skeletal category
+`Ordinals()`. Its point functor into `Semirings(Cat())` presents the Hessenberg
+operations the same way. Both models retain exact expressions when no normalization rule
+applies.
 
 Cardinal and ordinal operations specified as predicates follow the proposition interface
 in [Property refinement](property-refinement.md). Applying one returns a proposition.
@@ -186,15 +186,17 @@ C.one()
 
 C.supremum(cardinals)
 
-C.Coproducts()(diagram)
-C.Products()(diagram)
+C.indexed_sum(diagram)
+C.indexed_product(diagram)
 ```
 
 `supremum()` accepts a nonempty finite indexed family.
 
-The indexed coproduct and product constructors accept an owned diagram. A finite
-diagram can normalize by iteration. An infinite diagram produces a formal indexed
-expression when no stronger normalization is available.
+`indexed_sum()` and `indexed_product()` are the indexed semiring operations. Each accepts
+an owned diagram of cardinals and returns a cardinal. A finite diagram can normalize by
+iteration. An infinite diagram produces a formal indexed expression when no stronger
+normalization is available. Neither is a universal construction: `Cardinal()` owns no
+coproduct or product construction.
 
 ### Cardinal arithmetic
 
@@ -404,9 +406,11 @@ The base-category identity is an object of the endomorphism category:
 kappa.identity() in Mor(Cardinal())(kappa, kappa)
 ```
 
-Inherited base-category composition is ordinary function composition. Coproduct,
-product, and function-set functoriality act on these morphisms through their universal
-constructions. These constructions supply the complete action on morphisms.
+Inherited base-category composition is ordinary function composition. The coproduct,
+product, and function set of `Sets()` act on the representative functions through their
+universal constructions there. The cardinality functor carries those actions to
+`Cardinal()`, which is what makes addition, multiplication, and exponentiation act on
+cardinal morphisms.
 
 
 The ordinal model is specified in [`ordinals.md`](ordinals.md).

@@ -133,7 +133,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         return ()
 
     def separating_family(self) -> tuple[ObjectOfCategory, ...]:
-        """The chosen representing objects whose points are the points; none by default."""
+        """The chosen objects whose hom functors are jointly faithful; none by default (POL-MATH-037)."""
         return ()
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
@@ -364,7 +364,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         The element is retained by that exact morphism (POL-CAT-066): one defining
         morphism names one generalized element, so two callers reach one value and one
         construction input.  A declared subcategory shares its ambient's element values;
-        ``Sets()`` overrides for its classical points, which carry a datum.
+        ``Sets()`` overrides for its points, which carry a datum.
         """
         assert defining_morphism in self.morphism_category(1), f"{defining_morphism!r} is not a morphism of {self!r}"
         if self.has_ambient():

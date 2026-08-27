@@ -86,7 +86,7 @@ from sage_categories.kernel.construction import (
     retained_object_input,
 )
 from sage_categories.kernel.decisions import Decision, Unknown
-from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask, disjunction, negation
+from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask, conjunction, disjunction, negation
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, role_of
 from sage_categories.ordinals.category import OrdinalObject, Ordinals, bind_cardinals
 from sage_categories.sets.maps import SetMorphismData
@@ -356,7 +356,13 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
     def one(self) -> CardinalObject:
         return self(1)
 
-    def _finite(self, cardinal: CardinalObject) -> bool:
+    def _established_finite(self, cardinal: CardinalObject) -> bool:
+        """Whether finiteness is established, which is what gates an exact arithmetic rule.
+
+        Not the mathematical question: that is ``cardinal.is_finite()``, and it can be
+        undecided.  A caller uses this to select a normalization rule that needs finite
+        operands and otherwise keeps the expression symbolic (POL-MATH-042).
+        """
         return self._is_finite(cardinal) is True
 
     def supremum(self, *cardinals: CardinalObject) -> CardinalObject:
@@ -376,35 +382,35 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
         return self._retain(("supremum", tuple(term._key for term in maximal)), tuple(maximal))
 
     def sum(self, first: CardinalObject, second: CardinalObject) -> CardinalObject:
-        if self._finite(first) and self._finite(second):
+        if self._established_finite(first) and self._established_finite(second):
             return self(first._finite_value_() + second._finite_value_())
         # Cardinal.add_eq_max: an infinite summand absorbs a smaller one.
-        if self._finite(first):
+        if self._established_finite(first):
             return second
-        if self._finite(second):
+        if self._established_finite(second):
             return first
         return self.supremum(first, second)
 
     def product(self, first: CardinalObject, second: CardinalObject) -> CardinalObject:
-        if self._finite(first) and self._finite(second):
+        if self._established_finite(first) and self._established_finite(second):
             return self(first._finite_value_() * second._finite_value_())
-        if self._finite(first) and first._finite_value_() == 0 or self._finite(second) and second._finite_value_() == 0:
+        if self._established_finite(first) and first._finite_value_() == 0 or self._established_finite(second) and second._finite_value_() == 0:
             return self(0)
         # Cardinal.mul_eq_max: a positive finite factor is absorbed by an infinite one.
-        if self._finite(first):
+        if self._established_finite(first):
             return second
-        if self._finite(second):
+        if self._established_finite(second):
             return first
         return self.supremum(first, second)
 
     def power(self, base: CardinalObject, exponent: CardinalObject) -> CardinalObject:
-        if self._finite(exponent) and exponent._finite_value_() == 0:
+        if self._established_finite(exponent) and exponent._finite_value_() == 0:
             return self(1)
-        if self._finite(base) and base._finite_value_() in (0, 1):
+        if self._established_finite(base) and base._finite_value_() in (0, 1):
             return base
-        if self._finite(base) and self._finite(exponent):
+        if self._established_finite(base) and self._established_finite(exponent):
             return self(base._finite_value_() ** exponent._finite_value_())
-        if self._finite(exponent):
+        if self._established_finite(exponent):
             # Cardinal.power_nat_eq: c ** n = c for infinite c and n >= 1.
             return base
         if base._kind_() == "power":
@@ -413,7 +419,7 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
             return self.power(inner_base, self.product(inner_exponent, exponent))
         if base._kind_() == "supremum":
             return self.supremum(*(self.power(term, exponent) for term in base._terms_()))
-        if self._finite(base):
+        if self._established_finite(base):
             # Cardinal.nat_power_eq: n ** c = 2 ** c for finite n >= 2 and infinite c.
             base = self(2)
         elif self._at_most(base, exponent) is True:
@@ -499,7 +505,7 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
                 return True
             case "aleph" | "power":
                 return False
-        return all(self._is_finite(term) is True for term in cardinal._terms_())
+        return ask(conjunction(self._is_finite(term) for term in cardinal._terms_()))
 
     def _is_countable(self, cardinal: CardinalObject) -> Decision:
         match cardinal._kind_():
@@ -511,7 +517,7 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
             case "power":
                 # Cardinal.cantor': a < b ** a for 1 < b, so 2 ** (infinite) exceeds aleph0.
                 return False
-        return all(self._is_countable(term) is True for term in cardinal._terms_())
+        return ask(conjunction(self._is_countable(term) for term in cardinal._terms_()))
 
     def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
         if first not in self:
@@ -542,11 +548,11 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
             if any(self._at_most(first, term) is True for term in second._terms_()):
                 return True
             return Unknown
-        if self._finite(first) and self._finite(second):
+        if self._established_finite(first) and self._established_finite(second):
             return first._finite_value_() <= second._finite_value_()
-        if self._finite(first):
+        if self._established_finite(first):
             return True
-        if self._finite(second):
+        if self._established_finite(second):
             return False
         if first._kind_() == "aleph" and second._kind_() == "aleph":
             # Cardinal.aleph_le_aleph: alephs are ordered by their ordinal indices.

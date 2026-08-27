@@ -4,7 +4,7 @@ A point of a set ``X`` is a generalized element whose domain is the
 separator ``Sets().Terminal()``: a point ``1 -> X``.  It retains its defining
 morphism and, at the private computation boundary, the datum that the point
 selects.  A generalized element with another domain retains no point datum.  Two
-classical points of one set are equal exactly when their data are equal; a point
+points of one set are equal exactly when their data are equal; a point
 hashes by its datum, so equal points hash equal.
 """
 
@@ -66,12 +66,12 @@ class SetElementDeclaration(ElementOfObject):
 
     def _point_datum_(self) -> Datum:
         """The selected datum of this point."""
-        assert self.defining_morphism().domain() is _sets.Sets().Terminal(), f"{self!r} is not a classical set element"
+        assert self.defining_morphism().domain() is _sets.Sets().Terminal(), f"{self!r} is not a point of a set"
         return self._set_element_data.datum
 
 
 def points_equal(first: CategoryPoint, candidate: Any) -> Decision:
-    """Two classical points of one set are equal exactly when their data are.
+    """Two points of one set are equal exactly when their data are.
 
     A generalized element is a point exactly when its domain is the separator of
     ``Sets()`` (POL-CAT-058); with any other domain this handler decides nothing.  The two
@@ -83,7 +83,7 @@ def points_equal(first: CategoryPoint, candidate: Any) -> Decision:
         return Unknown
     if first.parent() is not candidate.parent():
         return Unknown
-    classical = _sets.Sets().Terminal()
-    if first.defining_morphism().domain() is not classical or candidate.defining_morphism().domain() is not classical:
+    separator = _sets.Sets().Terminal()
+    if first.defining_morphism().domain() is not separator or candidate.defining_morphism().domain() is not separator:
         return Unknown
     return ask(first._point_datum_() == candidate._point_datum_())

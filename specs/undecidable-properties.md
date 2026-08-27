@@ -71,13 +71,10 @@ This matches SymPy’s split between a `Predicate`, an applied predicate, and `a
 The repository must provide one kernel bridge between that logic and categorical refinement.
 SymPy does not know the category graph.
 
-There is one logic. Propositions compose under `conjunction`, `disjunction`, `negation`,
-and `implication`, and under the `&`, `|`, and `~` operators, all of which delegate to
-`sympy.logic.boolalg`'s `And`, `Or`, `Not`, and `Implies`. An exact handler builds one
-proposition from its sub-questions and returns `ask` of it; it never folds decisions.
-A decided part composes with a proposition, so a handler that compares two private data
-at the computation boundary needs no separate combinator. `Decision` is what `ask`
-returns and nothing more: it has no operations of its own.
+There is one logic.
+Propositions compose under `conjunction`, `disjunction`, `negation`, and `implication`, and under the `&`, `|`, and `~` operators, all of which delegate to `sympy.logic.boolalg`'s `And`, `Or`, `Not`, and `Implies`. An exact handler builds one proposition from its sub-questions and returns `ask` of it; it never folds decisions.
+A decided part composes with a proposition, so a handler that compares two private data at the computation boundary needs no separate combinator.
+`Decision` is what `ask` returns and nothing more: it has no operations of its own.
 
 ## How `ask()` works
 
@@ -142,25 +139,25 @@ The kernel therefore generates this behavior:
 
 ```python
 def __contains__(self, candidate: Any) -> bool:
-    proposition = self.membership_proposition(candidate)
-    decision = ask(proposition)
-
-    if decision is Unknown:
-        logger.log("Category membership was not established.")
-        return False
-
+    decision = ask(self.membership_proposition(candidate))
+    assert decision is not Unknown, "membership is not established by the available data and algorithms"
     return decision is True
 ```
 
-The important distinction is:
+`Unknown` is not `False`, and a bool cannot carry it, so the undecided case fails loudly
+rather than being reported as non-membership. The three-valued question is
+`ask(C.membership_proposition(x))`, which every caller that must handle the undecided
+case asks instead.
 
-- `False` from `in` means admission was not established.
+Placement in a category or a property subcategory is two-valued and therefore never
+reaches that assertion: a value entered the category or it did not (`POL-CAT-068`).
+A subcategory whose membership rests on a mathematical predicate instead — endpoint
+equality in `Mor(C)(A, B)`, or the membership rule of a rule-defined set — can be
+undecided, and that is the case the assertion catches.
 
-- It does not establish the negated mathematical proposition.
+The kernel must not cache `Unknown` as mathematical falsity.
 
-- The kernel must not cache `Unknown` as mathematical falsity.
-
-Leaves never implement `__contains__`.
+Leaves never implement `__contains__` on a category.
 
 ## Property propagation
 

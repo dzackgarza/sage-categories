@@ -2,10 +2,10 @@
 
 Oracles: the definition of a partial order (reflexive, antisymmetric, transitive) and of
 a total order; the definition of the induced order on a subset, the ``U``-initial lift
-of its inclusion (Adamek, Herrlich, Strecker, Definition 10.41 and Example 10.42(6);
+of its monomorphism (Adamek, Herrlich, Strecker, Definition 10.41 and Example 10.42(6);
 Mathlib ``PartialOrder.lift``); POL-CAT-062 for the category of every inherited result
-(the declaring method's value in ``Sets()``); ``specs/functor.md`` for the classical
-separator, its identity comparison under ``U``, and the generalized elements with other
+(the declaring method's value in ``Sets()``); ``specs/functor.md`` for the separator,
+its identity comparison under ``U``, and the generalized elements with other
 domains; the usual order on ``{0, 1, 2}`` and divisibility on ``{1, 2, 3, 6}``.
 """
 

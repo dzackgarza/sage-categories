@@ -13,7 +13,7 @@ conversion is derived from the morphism one (POL-FUN-002).
 
 Oracles: the definition of a generalized element and of its image under a functor
 (``F`` applied to the defining morphism); the definition of the separator comparison (the
-classical image is ``F(t)`` precomposed with ``G_D -> F(G_C)``); the sum in
+the image at the separator is ``F(t)`` precomposed with ``G_D -> F(G_C)``); the sum in
 ``(Z/2)^2``; POL-CAT-062 for the category of every inherited result; POL-CAT-012 for
 the construction-defect error; the separators ``1`` of ``Sets()`` and ``{1, [1]}``
 of ``Cat()``.
@@ -450,10 +450,10 @@ def test_a_generalized_element_retains_its_domain_defining_morphism_and_parent()
     assert generalized.defining_morphism() is first_coordinate
     assert generalized.defining_morphism().domain() is not modules.ring()
 
-    classical = plane.element((int(1), int(0)))
-    assert classical.defining_morphism().domain() is modules.ring()
-    assert classical.parent() is plane
-    assert classical.defining_morphism() in Mor(modules)(modules.ring(), plane)
+    at_separator = plane.element((int(1), int(0)))
+    assert at_separator.defining_morphism().domain() is modules.ring()
+    assert at_separator.parent() is plane
+    assert at_separator.defining_morphism() in Mor(modules)(modules.ring(), plane)
 
 
 def test_the_derived_element_action_applies_the_morphism_action_and_induces_the_slice_functor() -> None:
@@ -492,7 +492,7 @@ def test_represented_concrete_structure_makes_points_the_separator_points() -> N
 
 
 def test_the_public_element_image_keeps_the_source_separator_and_the_compiler_input_shifts_it() -> None:
-    """``F.on_element(t)`` is ``q = F(t)``; the classical compiler input is ``p = q . c_F`` (POL-FUN-002/035)."""
+    """``F.on_element(t)`` is ``q = F(t)``; the compiler input at the separator is ``p = q . c_F`` (POL-FUN-002/035)."""
     modules, groups = ToyModules(), ToyAbelianGroups()
     additive = modules.structure_functors()[int(0)]
     plane = modules(int(2))

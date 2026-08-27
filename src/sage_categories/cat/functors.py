@@ -184,7 +184,7 @@ class FunctorDeclaration(MorphismOfCategory):
         This action is derived, never stored: it applies ``on_morphism`` to the defining
         morphism of ``t``.  A functor retains no element callback and no element
         capability.  The element conversion a selected functor retains supplies compiler
-        input only; it never answers this call, so the public image of a classical
+        input only; it never answers this call, so the public image of a point
         element keeps the domain ``F(G_C)`` rather than the target's separator
         (``specs/functor.md``, "Structural inheritance").
 
@@ -213,16 +213,16 @@ class FunctorDeclaration(MorphismOfCategory):
 
     # -- separators (``specs/functor.md``, "Structural inheritance") ----------------
     #
-    # The retained morphism ``c: G_D -> F(G_C)`` is the whole datum of the classical
+    # The retained morphism ``c: G_D -> F(G_C)`` is the whole datum of the separator
     # transport.  By the covariant Yoneda lemma it *is* the natural transformation
-    # ``phi_F: U_C => U_D . F`` between the represented classical-element functors:
+    # ``phi_F: U_C => U_D . F`` between the represented point functors:
     # Mathlib ``CategoryTheory.coyonedaEquiv : (coyoneda.obj (op X) ⟶ F) ≃ F.obj X``
     # (inspected 2026-08-27) with ``X = G_C`` and the presheaf ``U_D . F``, whose value
     # at ``G_C`` is ``Mor(D)(G_D, F(G_C))``.  The construction therefore retains the
     # separator morphism and no natural-transformation carrier on ``F``.
 
     def retain_separator_comparison(self, comparison: MorphismOfCategory) -> None:
-        """Retain ``c: G_D -> F(G_C)`` as the defining datum of this functor's classical transport (POL-LEAF-003)."""
+        """Retain ``c: G_D -> F(G_C)`` as the defining datum of this functor's transport at the separator (POL-LEAF-003)."""
         (source_separator,) = self.domain().separating_family()
         (target_separator,) = self.codomain().separating_family()
         assert comparison in self.codomain().morphism_category(1)(target_separator, self.on_object(source_separator))
@@ -309,14 +309,14 @@ class FunctorDeclaration(MorphismOfCategory):
         self,
         source: ElementConstructionInput[SourceValue, SourceDatum],
     ) -> ElementConstructionInput[TargetValue, TargetDatum]:
-        """The compiler input for the image of ``t``: that of ``q = F(t)``, or of ``p = q . c_F`` for a classical ``t`` (POL-FUN-002/035).
+        """The compiler input for the image of ``t``: that of ``q = F(t)``, or of ``p = q . c_F`` for a ``t`` at the separator (POL-FUN-002/035).
 
         Applying the morphism conversion to the defining morphism of ``t`` gives the
         defining morphism of ``q: F(T) -> F(X)``, the value public element application
         returns.  This derivation is the whole element action; the functor retains no
         element conversion of its own.
 
-        A classical source ``t: G_C -> X`` instead supplies the target's classical
+        A source ``t: G_C -> X`` at the separator instead supplies the target's
         element methods, which read a point of the target's own separator.
         Precomposing ``q`` with the retained comparison ``c_F: G_D -> F(G_C)`` produces
         that point ``p: G_D -> F(X)``.  When ``c_F`` is an identity, ``F(G_C)`` is

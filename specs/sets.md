@@ -357,7 +357,7 @@ Sets().Uncountable()
 
 Each category declares its membership proposition once.
 The kernel implements `__contains__()` by calling `ask()` on that proposition.
-An `Unknown` decision means that Boolean category admission is not established.
+An `Unknown` decision fails loudly there, since a bool cannot carry it; ask the proposition when the undecided case must be handled.
 A trusted category constructor or named mathematical construction places a set directly in the property category.
 
 ### Exact cardinality or `Unknown`
@@ -583,7 +583,7 @@ The `ask()` contract is:
 No public propositional method returns any of these decisions.
 Python `in` is the Boolean boundary.
 Set and category `__contains__()` methods ask their declared membership proposition.
-They log and return `False` when the decision is `Unknown`, without changing the proposition or recording a negative mathematical result.
+An `Unknown` decision fails loudly rather than being returned as `False`: `Unknown` is not `False`, and no negative mathematical result is recorded.
 
 `Unknown` does not block construction of an honest predicate subobject, symbolic image, or universal construction.
 

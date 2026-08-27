@@ -1,7 +1,7 @@
 """``Sets()``: the category of sets and total maps (POL-SET-002, POL-CAT-083, POL-SET-013, POL-SET-026).
 
 ``Sets()`` owns arbitrary sets and arbitrary functions.  Its objects are
-rule-defined (``sets/objects.py``), its elements are maps ``T -> X`` with classical
+rule-defined (``sets/objects.py``), its elements are maps ``T -> X`` with
 points with domain ``Sets().Terminal()`` (``sets/elements.py``), and its morphisms
 are total maps by rule (``sets/maps.py``).  The property subcategories ``Finite()``,
 ``Infinite()``, ``Countable()``, and ``Uncountable()`` own the constructors that

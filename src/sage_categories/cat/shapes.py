@@ -1,7 +1,7 @@
 """Diagram shapes supplied by the kernel: ``Discrete(S)`` and ``Thin(P, leq)`` (POL-SET-013, POL-SET-014).
 
 ``Discrete`` is a functor ``Sets() -> Cat()`` retained once.  ``Discrete(S)`` is the
-discrete category on the set ``S``: its objects are the classical points of ``S``
+discrete category on the set ``S``: its objects are the points of ``S``
 and its morphisms are identities only (Mathlib ``CategoryTheory.Discrete`` and
 ``CategoryTheory.discreteCategory``; inspected 2026-08-26).  No enumeration of
 ``S`` occurs: an object ``Discrete(S)(x)`` is constructed from a point ``x`` whose
@@ -58,7 +58,7 @@ class DiscreteObjectData:
 
 
 class DiscreteObject(ObjectOfCategory):
-    """An object of ``Discrete(S)``: a classical point of ``S``."""
+    """An object of ``Discrete(S)``: a point of ``S``."""
 
     def __init__(self, data: DiscreteObjectData) -> None:
         self._point = data.point

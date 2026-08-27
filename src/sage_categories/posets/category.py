@@ -149,7 +149,7 @@ class PosetElementDeclaration(ElementOfObject):
     def __le__(self, other: PosetElement) -> AppliedPredicate:
         """``x <= y``: the pair point ``(U(x), U(y))`` is a member of ``R``."""
         poset = self.parent()
-        assert _is_classical(self) and _is_classical(other), f"{self!r} <= {other!r} compares points"
+        assert _is_point(self) and _is_point(other), f"{self!r} <= {other!r} compares points"
         assert other.parent() is poset, f"{other!r} is not an element of {poset!r}"
         underlying = Posets().underlying_set_functor()
         return poset.relation().membership_proposition(poset._pair(underlying.on_element(self), underlying.on_element(other)))
@@ -177,7 +177,7 @@ class MonotoneMapDeclaration(MorphismOfCategory):
 # -- exact handlers on finite enumerated carriers (POL-MATH-042) --------------------------
 
 
-def _is_classical(candidate: Any) -> bool:
+def _is_point(candidate: Any) -> bool:
     """Whether a candidate is a point of a poset.
 
     A classifier of the equality candidate, like ``role_of`` and ``is_placed``: it
@@ -415,7 +415,7 @@ class PosetsCategory(Category[[Rule], []]):
 
         A separator adds no local state: the underlying set point of ``t: 1 -> P``
         is ``U(t)``, which the selected functor supplies on demand.  ``Poset.element``
-        owns the classical point of one carrier element; it reaches this constructor.
+        owns the point of one carrier element; it reaches this constructor.
         """
         assert defining_morphism in self.morphism_category(1)
         if defining_morphism not in self._elements:
@@ -478,7 +478,7 @@ class PosetsCategory(Category[[Rule], []]):
 
     def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
         """Classical elements of one poset are equal when their points are; monotone maps when their set maps are."""
-        if _is_classical(first) and _is_classical(candidate) and first.parent() is candidate.parent():
+        if _is_point(first) and _is_point(candidate) and first.parent() is candidate.parent():
             underlying = self.underlying_set_functor()
             return ask(underlying.on_element(first) == underlying.on_element(candidate))
         morphisms = self.morphism_category(1)

@@ -171,6 +171,13 @@ _ROLE_POSITIONS: dict[Role, int] = {
 
 _COMPILE_ORDER = (Role.ELEMENT, Role.OBJECT, Role.MORPHISM)
 
+# The construction input a node carries, by the role the node lives in.
+_INPUT_TYPES: dict[Role, type] = {
+    Role.OBJECT: ObjectConstructionInput,
+    Role.ELEMENT: ElementConstructionInput,
+    Role.MORPHISM: MorphismConstructionInput,
+}
+
 
 def node_key(current: Node) -> int:
     """The position of ``current`` in the total order the C3 merge is controlled by.
@@ -642,7 +649,12 @@ def _object_steps[RootValue: ObjectOfCategory, RootDatum](
         for step, target in successors(source):
             assert step.functor is not None
             target_input = step.functor.object_constructor_input(source_input)
-            assert isinstance(target_input, ObjectConstructionInput), f"{step.functor!r} returned no object construction input"
+            # An object walk that reaches ``(Mor(C), object)`` is at the node
+            # ``(C, morphism)``, whose values are morphisms and retain a morphism input
+            # (POL-CAT-021).  The node's role names the input the step must supply.
+            assert isinstance(target_input, _INPUT_TYPES[target.role]), (
+                f"{step.functor!r} returned no {target.role.value} construction input for {target.category!r}"
+            )
             visit(target, target_input, (*route, step))
 
     visit(current, root, ())

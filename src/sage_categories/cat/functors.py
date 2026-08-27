@@ -276,12 +276,16 @@ class FunctorDeclaration(MorphismOfCategory):
         self,
         source: ObjectConstructionInput[SourceValue, SourceDatum],
     ) -> ObjectConstructionInput[TargetValue, TargetDatum]:
-        """Return the root input retained by this object's canonical functor image."""
-        from sage_categories.kernel.construction import retained_object_input
+        """Return the root input retained by this object's canonical functor image.
+
+        The image is read in its own role: the objects of a morphism category are the
+        morphisms of its base and retain a morphism input (POL-CAT-021).
+        """
+        from sage_categories.kernel.construction import retained_input
 
         assert self in _object_constructor_conversions, f"{self!r} retains no object constructor conversion"
         target = _object_constructor_conversions[self](source)
-        assert retained_object_input(target.canonical_image) is target, f"{self!r} constructed a parallel object input"
+        assert retained_input(target.canonical_image) is target, f"{self!r} constructed a parallel object input"
         return target
 
     def element_constructor_input[

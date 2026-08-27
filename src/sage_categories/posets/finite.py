@@ -28,6 +28,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from sage.combinat.posets.posets import FinitePoset as SagePoset
+from sage.misc.cachefunc import cached_method
 
 import sage_categories.posets.category as _posets
 from sage_categories.cat.category import Category
@@ -207,7 +208,6 @@ class FinitePosetsCategory(PropertySubcategory[[Rule], []]):
     """``Posets().Finite()``: finite posets, with the restriction of ``U`` to finite sets selected."""
 
     def __init__(self, ambient: Category[[Rule], []], name: str, roles: dict[Role, type], implications: tuple[Category, ...]) -> None:
-        self._functors: dict[str, Functor] = {}
         super().__init__(ambient, name, roles, implications)
         self.predicate().register_handler(_finite_by_underlying_set)
         self._with_bottom = PropertySubcategory(self, "WithBottom", {Role.OBJECT: WithBottomRole}, ())
@@ -219,31 +219,34 @@ class FinitePosetsCategory(PropertySubcategory[[Rule], []]):
         self._ranked.predicate().register_handler(_decided_by(lambda finite_poset: finite_poset.is_ranked()))
         self._graded.predicate().register_handler(_decided_by(lambda finite_poset: finite_poset.is_graded()))
 
+    @cached_method
+    def underlying_finite_set_functor(self) -> Functor:
+        """``U`` restricted to ``Sets().Finite()``, retained once: the very same underlying set and set map."""
+        underlying = self._ambient.underlying_set_functor()
+        finite_sets = Sets().Finite()
+        finite_underlying = Fun(self, finite_sets).Faithful()(underlying.on_object, underlying.on_morphism)
+
+        def object_input(
+            source: ObjectConstructionInput[Poset, PosetObjectData],
+        ) -> ObjectConstructionInput[SetObject, SetObjectData]:
+            target: ObjectConstructionInput[SetObject, SetObjectData] = underlying.object_constructor_input(source)
+            finite_sets(target.canonical_image)
+            return target
+
+        def morphism_input(
+            source: MorphismConstructionInput[MonotoneMap, PosetMorphismData],
+        ) -> MorphismConstructionInput[SetMap, SetMorphismData]:
+            target: MorphismConstructionInput[SetMap, SetMorphismData] = underlying.morphism_constructor_input(source)
+            refine(target.canonical_image, finite_sets.morphism_category(1))
+            return target
+
+        finite_underlying.retain_object_constructor_conversion(object_input)
+        finite_underlying.retain_morphism_constructor_conversion(morphism_input)
+        return finite_underlying
+
     def structure_functors(self) -> tuple[Functor, ...]:
         """The monomorphism into ``Posets()``, then ``U`` restricted to ``Sets().Finite()``."""
-        if "underlying_finite_set" not in self._functors:
-            underlying = self._ambient.underlying_set_functor()
-            finite_sets = Sets().Finite()
-            finite_underlying = Fun(self, finite_sets).Faithful()(underlying.on_object, underlying.on_morphism)
-
-            def object_input(
-                source: ObjectConstructionInput[Poset, PosetObjectData],
-            ) -> ObjectConstructionInput[SetObject, SetObjectData]:
-                target: ObjectConstructionInput[SetObject, SetObjectData] = underlying.object_constructor_input(source)
-                finite_sets(target.canonical_image)
-                return target
-
-            def morphism_input(
-                source: MorphismConstructionInput[MonotoneMap, PosetMorphismData],
-            ) -> MorphismConstructionInput[SetMap, SetMorphismData]:
-                target: MorphismConstructionInput[SetMap, SetMorphismData] = underlying.morphism_constructor_input(source)
-                refine(target.canonical_image, finite_sets.morphism_category(1))
-                return target
-
-            finite_underlying.retain_object_constructor_conversion(object_input)
-            finite_underlying.retain_morphism_constructor_conversion(morphism_input)
-            self._functors["underlying_finite_set"] = finite_underlying
-        return (*super().structure_functors(), self._functors["underlying_finite_set"])
+        return (*super().structure_functors(), self.underlying_finite_set_functor())
 
     def __call__(self, poset: Poset) -> Poset:
         """The trusted constructor: the underlying set is finite, so it enters ``Sets().Finite()`` with the poset here."""

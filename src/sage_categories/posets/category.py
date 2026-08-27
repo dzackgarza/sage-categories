@@ -287,8 +287,6 @@ class PosetsCategory(Category[[Rule], []]):
     DeclaredMorphismType = MonotoneMapDeclaration
 
     def __init__(self) -> None:
-        self._functors: dict[str, Functor] = {}
-        self._canonical: dict[tuple[str, int], Poset] = {}
         self._thin: MonoDict = MonoDict()
         self._subset_posets: MonoDict = MonoDict()
         super().__init__()
@@ -304,29 +302,28 @@ class PosetsCategory(Category[[Rule], []]):
     def structure_functors(self) -> tuple[Functor, ...]:
         return (self.underlying_set_functor(),)
 
+    @cached_method
     def underlying_set_functor(self) -> Functor:
         """``U: Posets() -> Sets()``, retained once: the retained carrier and the retained set map."""
-        if "underlying_set" not in self._functors:
-            underlying = Fun(self, Sets()).Faithful()(
-                lambda poset: poset._set_object_data.canonical,
-                lambda monotone: monotone._set_morphism_data.canonical,
-            )
+        underlying = Fun(self, Sets()).Faithful()(
+            lambda poset: poset._set_object_data.canonical,
+            lambda monotone: monotone._set_morphism_data.canonical,
+        )
 
-            def object_input(
-                source: ObjectConstructionInput[Poset, PosetObjectData],
-            ) -> ObjectConstructionInput[SetObject, SetObjectData]:
-                carrier = self._carrier(source.datum.relation)
-                return retained_object_input(carrier)
+        def object_input(
+            source: ObjectConstructionInput[Poset, PosetObjectData],
+        ) -> ObjectConstructionInput[SetObject, SetObjectData]:
+            carrier = self._carrier(source.datum.relation)
+            return retained_object_input(carrier)
 
-            def morphism_input(
-                source: MorphismConstructionInput[MonotoneMap, PosetMorphismData],
-            ) -> MorphismConstructionInput[SetMap, SetMorphismData]:
-                return retained_morphism_input(source.datum.set_map)
+        def morphism_input(
+            source: MorphismConstructionInput[MonotoneMap, PosetMorphismData],
+        ) -> MorphismConstructionInput[SetMap, SetMorphismData]:
+            return retained_morphism_input(source.datum.set_map)
 
-            underlying.retain_object_constructor_conversion(object_input)
-            underlying.retain_morphism_constructor_conversion(morphism_input)
-            self._functors["underlying_set"] = underlying
-        return self._functors["underlying_set"]
+        underlying.retain_object_constructor_conversion(object_input)
+        underlying.retain_morphism_constructor_conversion(morphism_input)
+        return underlying
 
     def separating_family(self) -> tuple[Poset, ...]:
         return (self.Terminal(),)
@@ -362,23 +359,21 @@ class PosetsCategory(Category[[Rule], []]):
         """The proposition that a set map ``U(P) -> U(Q)`` is monotone."""
         return order_preserving(source, target, set_map)
 
+    @cached_method
     def Simplex(self, dimension: int) -> Poset:
         """``[n]``: the poset on ``Sets().Simplex(n)`` with the usual order, retained once."""
         assert dimension >= 0
-        if ("simplex", dimension) not in self._canonical:
-            simplex = Sets().Simplex(dimension)
-            usual_order = (simplex * simplex).subset_from(lambda pair: pair(0) <= pair(1))
-            # The usual order on {0, ..., n} is a linear order: Mathlib ``Nat.instLinearOrder``
-            # restricted along ``Subtype.instLinearOrder`` (inspected 2026-08-27).
-            self._canonical["simplex", dimension] = self.TotallyOrdered()(self._construct(usual_order))
-        return self._canonical["simplex", dimension]
+        simplex = Sets().Simplex(dimension)
+        usual_order = (simplex * simplex).subset_from(lambda pair: pair(0) <= pair(1))
+        # The usual order on {0, ..., n} is a linear order: Mathlib ``Nat.instLinearOrder``
+        # restricted along ``Subtype.instLinearOrder`` (inspected 2026-08-27).
+        return self.TotallyOrdered()(self._construct(usual_order))
 
+    @cached_method
     def Terminal(self) -> Poset:
         """The one-point order on ``Sets().Terminal()``, the separator of ``Posets()``."""
-        if ("terminal", 0) not in self._canonical:
-            point = Sets().Terminal()
-            self._canonical["terminal", 0] = self.TotallyOrdered()(self._construct((point * point).subset_from(lambda pair: True)))
-        return self._canonical["terminal", 0]
+        point = Sets().Terminal()
+        return self.TotallyOrdered()(self._construct((point * point).subset_from(lambda pair: True)))
 
     def subset_poset(self, base_set: SetObject) -> Poset:
         """The power object ``2 ** X`` ordered by inclusion of the subsets its points name, retained per ``X``.

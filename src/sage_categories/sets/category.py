@@ -107,7 +107,6 @@ class SetsCategory(Category[[Rule], []]):
     DeclaredMorphismType = SetMapDeclaration
 
     def __init__(self) -> None:
-        self._canonical: dict[tuple[str, tuple[int, ...]], SetObject] = {}
         self._rule_valued: MonoDict = MonoDict()
         super().__init__()
         self._equality.register_handler(points_equal)
@@ -184,32 +183,16 @@ class SetsCategory(Category[[Rule], []]):
 
         return ChosenQuotientsCategory(self)
 
-    def _canonical_finite(self, name: str, arguments: tuple[int, ...], members: Iterable[Datum]) -> SetObject:
-        if (name, arguments) not in self._canonical:
-            self._canonical[name, arguments] = self.Finite()(members)
-        return self._canonical[name, arguments]
-
-    def _canonical_finite_from_cardinality(
-        self,
-        name: str,
-        arguments: tuple[int, ...],
-        members: tuple[Datum, ...],
-        cardinality: CardinalObject,
-    ) -> SetObject:
-        """Retain a canonical finite set whose construction already supplies its cardinal."""
-        if (name, arguments) not in self._canonical:
-            self._canonical[name, arguments] = self.Finite()._from_enumeration(members, cardinality)
-        return self._canonical[name, arguments]
-
     def Empty(self) -> SetObject:
         """The empty set: the representative that ``Cardinal()`` selects for ``0`` (``sets/cardinals.py``)."""
         from sage_categories.sets.cardinals import Cardinal
 
         return Cardinal().representative(Cardinal().zero())
 
+    @cached_method
     def Terminal(self) -> SetObject:
         """The one-point set ``1 = {*}``, the separator of ``Sets()``."""
-        return self._canonical_finite("terminal", (), ((),))
+        return self.Finite()(((),))
 
     def Simplex(self, dimension: int) -> SetObject:
         """``[n] = {0, ..., n}``: the representative that ``Cardinal()`` selects for ``n + 1`` (Mathlib ``Cardinal.mk_fin``; ``sets/cardinals.py``)."""

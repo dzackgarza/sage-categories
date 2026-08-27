@@ -150,20 +150,30 @@ def test_a_hom_category_of_cat_is_not_a_functor_and_supplies_no_action() -> None
 
 
 def test_a_composite_retains_its_factors_and_applies_them_in_categorical_order() -> None:
-    """``Cat()``'s composite names its construction: ``(second . first)(x) = second(first(x))``."""
-    posets, sets = Posets(), Sets()
+    """``Cat()``'s composite names its construction: ``(second . first)(x) = second(first(x))``.
+
+    Neither factor is an identity: ``U: Posets() -> Sets()`` then ``Discrete: Sets() -> Cat()``.
+    The image of the chain is therefore the discrete category on the three points of its
+    underlying set, which a composite that applied only one of its factors cannot return.
+    """
+    posets = Posets()
     underlying = posets.structure_functors()[int(0)]
-    identity = Fun(posets, posets).Equivalences().identity()
-    composite = Cat().compose_morphisms(underlying, identity)
+    composite = Cat().compose_morphisms(Discrete, underlying)
     chain = posets.Simplex(int(2))
+    carrier = underlying.on_object(chain)
     fixed = Mor(posets)(chain, chain)(lambda point: point)
 
-    assert composite.factors() == (identity, underlying)
+    assert composite.factors() == (underlying, Discrete)
     assert composite.domain() is posets
-    assert composite.codomain() is sets
-    assert composite.on_object(chain) is underlying.on_object(identity.on_object(chain))
-    assert composite.on_morphism(fixed) is underlying.on_morphism(identity.on_morphism(fixed))
-    assert composite.on_object(chain) is not chain
+    assert composite.codomain() is Cat()
+    assert composite.on_object(chain) is Discrete.on_object(underlying.on_object(chain))
+    assert composite.on_morphism(fixed) is Discrete.on_morphism(underlying.on_morphism(fixed))
+
+    shape = composite.on_object(chain)
+    vertex = shape(carrier.point(int(1)))
+    assert vertex in shape
+    assert ask(vertex.point() == carrier.point(int(1))) is True
+    assert ask(shape.object_set().cardinality() == int(3)) is True
 
 
 def test_two_functors_with_one_pair_of_endpoints_are_both_retained_and_both_applied() -> None:

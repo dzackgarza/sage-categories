@@ -238,7 +238,7 @@ The same rule applies downstream:
 - An object of `Algebras(R, C)` retains its base-relative presentation as a monoid
   object in the supplied monoidal category `Modules(R, C)`. The general monoid
   category owns its multiplication, unit, and laws.
-- In the ordinary commutative-ring specialization, a bilinear form \(b\) retains its
+- At a commutative base ring, a bilinear form \(b\) retains its
   module \(L\), the tensor presentation \(L\otimes_R L\), and its codomain \(R\).
 - A lattice constructor can accept `b`, or the explicit pair `(L, b)` when that pair is
   the intended public presentation.
@@ -700,7 +700,7 @@ mathematical implementation hierarchy.
 
 ## The product algebra example
 
-This example uses the ordinary set-based specialization. Let
+This example takes the ambient to be `Sets()`. Let
 
 \[
 \mathcal C=

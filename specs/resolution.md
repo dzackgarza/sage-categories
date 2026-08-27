@@ -252,7 +252,7 @@ explicit isomorphic presentation. It does not become a second structural identit
 
 ## Finite-rank free modules over finite fields
 
-This example uses the ordinary set-based specialization. Let
+This example takes the ambient to be `Sets()`. Let
 
 \[
 \mathcal C=
@@ -461,7 +461,7 @@ a construction-defect error that names the source value's construction, the two 
 and the shared ancestor category. Nothing is repaired, replaced, or retried. The compiler
 never asks whether the two values are mathematically equal.
 
-Routine structural diamonds have this form. In the ordinary set-based specialization,
+Routine structural diamonds have this form. At the ambient `Sets()`,
 the two selected paths from a finite module to sets reach the same set object.
 
 ### Merely isomorphic routes
@@ -550,12 +550,12 @@ does not enumerate its \(p^n\) elements to establish finiteness.
 
 A product in `Modules(A, C)` retains its module apex, action, projections, and mediating
 morphism. When the selected functor to \(\mathcal C\) preserves products, its
-\(\mathcal C\)-image is the chosen product there. In the ordinary set-based
-specialization, the composite underlying-set image is the chosen set product.
+\(\mathcal C\)-image is the chosen product there. At the
+ambient `Sets()`, the composite underlying-set image is the chosen set product.
 
 ### Module coproducts
 
-In the ordinary set-based specialization, the underlying set of a module coproduct is
+At the ambient `Sets()`, the underlying set of a module coproduct is
 not identified with the set coproduct. The compiler uses only the construction
 preservation supplied by the selected structural functor.
 

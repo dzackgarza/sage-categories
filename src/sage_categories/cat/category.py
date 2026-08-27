@@ -913,6 +913,15 @@ class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
         return self._canonical["walking parallel pair", ()]
 
     def classical_stages(self) -> tuple[FinitePresentedCategory, ...]:
+        """``{1, [1]}``.  The writer asserts that this family separates ``Cat()`` (POL-MATH-037).
+
+        nLab "separator", Definitions: a family separates when ``f . e = g . e`` for every
+        ``e`` sourced in it forces ``f = g`` (inspected 2026-08-27).  Functors ``1 -> C``
+        are the objects of ``C`` and functors ``[1] -> C`` its morphisms (nLab "walking
+        morphism", Applications: ``Arr(D) := [I, D]``, whose objects are the morphisms of
+        ``D``; inspected 2026-08-27), and a functor is determined by those two actions.
+        ``1`` alone does not separate: ``Mor(Cat())(1, -)`` forgets the morphism action.
+        """
         return (self.Terminal(), self.Simplex(1))
 
     def element_from_defining_morphism(self, defining_functor: Functor) -> CategoryPoint:

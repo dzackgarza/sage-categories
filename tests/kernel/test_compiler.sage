@@ -5,12 +5,15 @@ operations through the production compiler (POL-TEST-006).  A toy stores its own
 members on its own objects; it reads no ambient private field.
 """
 
+from typing import Self
+
 import pytest
 
 from sage_categories.all import *
 from sage_categories.kernel.compiler import SemanticCollisionError
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
+from sage_categories.sets.maps import SetMap
 
 
 def _finite_rule(members):
@@ -316,6 +319,78 @@ class Carried(Category):
         return "Carried"
 
 
+class Skeletal(Category):
+    """A skeletal category of sets: one object per isomorphism class, so each object is its own chosen representative.
+
+    It declares the two result roles no category in ``src/`` currently declares: a
+    receiver-valued operation and a set-map-valued one.
+    """
+
+    class ObjectType(ObjectOfCategory):
+        def __init__(self, category, carrier):
+            ObjectOfCategory.__init__(self, category)
+            self._carrier = carrier
+
+        def carrier(self) -> ObjectOfCategory:
+            return self._carrier
+
+        def chosen_representative(self) -> Self:
+            """The representative of this object's isomorphism class: in a skeletal category, itself."""
+            return self
+
+        def carrier_identity(self) -> SetMap:
+            """The identity of the underlying set: a morphism of ``Sets()``, whatever category the receiver lives in."""
+            return self._carrier.identity()
+
+    class ElementType(ElementOfObject):
+        """No local operation."""
+
+    class MorphismType(MorphismOfCategory):
+        """No local operation."""
+
+    def __call__(self, carrier):
+        return self.ObjectType(self, carrier)
+
+    def __repr__(self):
+        return "Skeletal"
+
+
+class Presented(Category):
+    """Objects with a chosen presentation of a skeletal object, related to it by a forgetful functor.
+
+    The functor is not an inclusion, so the image of a presented object is a different
+    object, and an inherited result that stayed with the receiver would be visible.
+    """
+
+    class ObjectType(ObjectOfCategory):
+        def __init__(self, category, presented):
+            ObjectOfCategory.__init__(self, category)
+            self._presented = presented
+
+        def presented_object(self) -> ObjectOfCategory:
+            return self._presented
+
+    class ElementType(ElementOfObject):
+        """No local operation."""
+
+    class MorphismType(MorphismOfCategory):
+        def underlying_morphism(self) -> MorphismOfCategory:
+            return self._underlying
+
+    def __init__(self, skeletal):
+        self._skeletal = skeletal
+        super().__init__()
+
+    def structure_functors(self):
+        return (Fun(self, self._skeletal).Faithful()(lambda member: member.presented_object(), lambda morphism: morphism.underlying_morphism()),)
+
+    def __call__(self, presented):
+        return self.ObjectType(self, presented)
+
+    def __repr__(self):
+        return "Presented"
+
+
 def test_a_selected_functor_that_is_not_an_inclusion_places_nothing() -> None:
     """Placement follows retained inclusions only; the forgetful image still supplies inherited values."""
     carried = Carried()
@@ -407,3 +482,31 @@ def test_incomparable_owners_of_one_morphism_spelling_are_a_semantic_collision()
     """The collision rule is the same for the morphism role (POL-CAT-011, POL-API-011)."""
     with pytest.raises(SemanticCollisionError, match="'degree' is declared by both"):
         BothRoles(MorphismDegree(), MorphismOrder())
+
+
+def test_a_receiver_valued_and_a_map_valued_inherited_result_stay_in_the_declaring_category() -> None:
+    """``X.f() := F(X).f()``: nothing is transported back (POL-CAT-062).
+
+    ``Presented`` selects one forgetful functor into ``Skeletal``, so the image of a
+    presented object is the skeletal object it presents, a different object.  The
+    receiver-valued declaration therefore returns that image, and the set-map-valued
+    declaration returns an object of ``Mor(Sets())``; neither result is lifted back into
+    ``Presented``.  ``Sets()`` declares no method of either result role, so the poset
+    specimen in ``tests/posets/test_posets.sage`` cannot state these two.
+    """
+    skeletal = Skeletal()
+    presented = Presented(skeletal)
+    (forgetful,) = presented.structure_functors()
+    carrier = Sets().Finite()((int(3), int(4)))
+    representative = skeletal(carrier)
+    member = presented(representative)
+
+    assert forgetful.on_object(member) is representative
+    assert representative is not member
+
+    assert member.chosen_representative() is representative
+    assert representative.chosen_representative() is representative
+
+    assert member.carrier_identity() is carrier.identity()
+    assert member.carrier_identity() in Mor(Sets())(carrier, carrier)
+    assert member.carrier_identity() not in Mor(presented)

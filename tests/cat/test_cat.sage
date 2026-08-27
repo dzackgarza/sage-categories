@@ -45,6 +45,10 @@ def test_cat_is_unstratified_and_bootstrapped_first() -> None:
     assert Cat().category() is Cat()
     assert Cat() in Cat()
     assert Cat().structure_functors() == ()
+    # Constructed before any other category: it is first in the construction order
+    # every later category is numbered against, ``Fun = Mor(Cat())`` included.
+    assert Cat().ordinal() == int(0)
+    assert Cat().ordinal() < min(Fun.ordinal(), Sets().ordinal(), Bare().ordinal())
     # The objects of ``Cat()`` are implemented by ``Category`` itself, with no wrapper:
     # that is the declared role class.  The compiled class every node gets is a subclass
     # of it carrying no method of its own (Sage's ``ParentMethods`` versus ``parent_class``).
@@ -130,10 +134,11 @@ def test_natural_transformations_compose_componentwise() -> None:
 
 
 def test_canonical_objects_exist_by_identity() -> None:
-    assert Cat().Simplex(int(1)) is Cat().Simplex(int(1))
+    # Each line reaches one canonical object through two distinct public entry points.
     assert Cat().Terminal() is Cat().Simplex(int(0))
+    assert Cat().Simplex(int(1)) is Cat().classical_stages()[int(1)]
     assert Cat().Horn(int(2), int(1)) is Cat().Simplex(int(2))
-    assert Cat().Horn(int(2), int(2)) is Cat().Horn(int(2), int(2))
+    assert Cat().Horn(int(2), int(2)) is Sets().Pullbacks().shape()
     assert Sets().Terminal() is Sets().classical_stages()[int(0)]
 
     span, cospan = Cat().Horn(int(2), int(0)), Cat().Horn(int(2), int(2))

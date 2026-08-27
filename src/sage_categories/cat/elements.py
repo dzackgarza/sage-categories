@@ -21,16 +21,23 @@ __all__ = ["CategoryPoint"]
 
 
 def _shared_category(first: ObjectOfCategory, second: ObjectOfCategory) -> Category:
-    """The one category that owns a binary construction on both operands (POL-CAT-088).
+    """The narrowest category containing both operands, which owns their construction (POL-CAT-088).
 
-    Both operands are objects of the least category receiving both, so that category
-    owns the construction.  It is the category of both operands when their placements
-    agree, and the least category receiving both otherwise.  No operator casts an
-    operand into a product category: an external pair is written ``(C * D)((X, Y))``.
+    An object refined into ``C.P()`` and an object of ``C`` are both objects of ``C``,
+    so their construction is the one in ``C``.  Identity of the two strongest recorded
+    placements is an implementation fact, not this precondition (POL-CAT-073).  Operands
+    with no common category, such as a set and a category, fail the assertion.  No
+    operator casts an operand into a product category: an external pair is written
+    ``(C * D)((X, Y))``.
     """
     from sage_categories.kernel.refinement import common_ancestor
 
-    return common_ancestor(first.category(), second.category())
+    shared = common_ancestor(first.category(), second.category())
+    assert shared is not None, (
+        f"{first!r} in {first.category()!r} and {second!r} in {second.category()!r} "
+        f"have no least common category along retained inclusions"
+    )
+    return shared
 
 
 class CategoryPointDeclaration(CategoryPointKernel):

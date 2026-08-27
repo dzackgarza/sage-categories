@@ -69,19 +69,17 @@ def is_subcategory(inner: Category, outer: Category) -> bool:
     return any(compiler.same_node(outer_node, found) for found in _included_in(compiler.node(inner, Role.OBJECT)))
 
 
-def common_ancestor(first: Category, second: Category) -> Category:
-    """The least category receiving both, along retained inclusions (POL-CAT-088, POL-FUN-027).
+def common_ancestor(first: Category, second: Category) -> Category | None:
+    """The narrowest category containing both, along retained inclusions, or ``None`` (POL-CAT-088, POL-FUN-027).
 
-    Least is minimal in the inclusion order, not first in the walk: a category that
-    receives ``first`` declares its inclusions in its own preference order, so the
-    walk can reach a wider category before a narrower one.  A selected functor that is
-    not a retained inclusion changes structure and is not walked, so a poset and a set
-    meet nowhere.
+    Narrowest is minimal in the inclusion order, not first in the walk: a category
+    declares its inclusions in its own preference order, so the walk can reach a wider
+    category before a narrower one.  A selected functor that is not a retained inclusion
+    changes structure and is not walked, so a poset and a set meet nowhere.  The caller
+    states the precondition, because only the caller knows the two values.
     """
     common = [reached.category for reached in _included_in(compiler.node(first, Role.OBJECT)) if is_subcategory(second, reached.category)]
-    least = next((candidate for candidate in common if all(is_subcategory(candidate, other) for other in common)), None)
-    assert least is not None, f"{first!r} and {second!r} have no least common category along retained inclusions"
-    return least
+    return next((candidate for candidate in common if all(is_subcategory(candidate, other) for other in common)), None)
 
 
 def place(value: CategoryPoint, category: Category) -> None:

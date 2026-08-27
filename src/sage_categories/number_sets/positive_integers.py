@@ -79,7 +79,7 @@ natural_order = Predicate("natural_order", 2, True)
 def _natural_order_by_integer_comparison(first: CategoryPoint, second: CategoryPoint) -> Decision:
     if first not in _POSITIVE_INTEGERS() or second not in _POSITIVE_INTEGERS():
         return Unknown
-    return bool(first._datum <= second._datum)
+    return bool(first._set_element_data.datum <= second._set_element_data.datum)
 
 
 natural_order.register_handler(_natural_order_by_integer_comparison)

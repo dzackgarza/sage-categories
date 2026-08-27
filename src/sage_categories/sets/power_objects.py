@@ -59,7 +59,7 @@ class PowerObjectRole(ObjectOfCategory):
     def subset_named_by(self, point: SetPoint) -> SetObject:
         """The chosen subset whose characteristic morphism a point ``1 -> 2 ** X`` names: the inverse of ``Sets().name_of`` on chosen subsets."""
         assert point in self, f"{point!r} is not a point of {self!r}"
-        return self.from_characteristic_morphism(point._datum.map())
+        return self.from_characteristic_morphism(point._set_element_data.datum.map())
 
     def top(self) -> SetObject:
         """``X`` as a chosen subset of itself."""
@@ -109,7 +109,7 @@ class PowerObjectsCategory(PropertySubcategory[[Rule], []]):
         base_set = self.retained_base_set(power)
         assert characteristic in sets.morphism_category(1)(base_set, sets.Simplex(1)), f"{characteristic!r} is not a map {base_set!r} -> [1]"
         if characteristic not in self._subsets:
-            rule = characteristic._rule
+            rule = characteristic._set_morphism_data.rule
             self._subsets[characteristic] = base_set.subset_from(lambda datum: rule(datum) == 1)
         return self._subsets[characteristic]
 

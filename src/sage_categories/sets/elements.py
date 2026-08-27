@@ -10,6 +10,7 @@ point hashes by its datum, so equal points hash equal.
 from __future__ import annotations
 
 from collections.abc import Hashable
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from sage_categories.kernel.decisions import Decision, Unknown
@@ -18,23 +19,37 @@ from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, Role, r
 if TYPE_CHECKING:
     from sage_categories.kernel.roles import MorphismOfCategory
 
-__all__ = ["Datum", "SetPoint", "points_equal"]
+__all__ = ["Datum", "SetElementData", "SetPoint", "points_equal"]
 
 type Datum = Hashable
+
+
+@dataclass(eq=False, slots=True)
+class SetElementData:
+    """The private state used by the complete set-element implementation."""
+
+    datum: Datum
+    canonical: SetPoint = field(init=False)
+
+    def bind(self, canonical: SetPoint) -> None:
+        """Bind direct construction once; inherited construction reuses that state."""
+        if not hasattr(self, "canonical"):
+            self.canonical = canonical
 
 
 class SetPoint(ElementOfObject):
     """A point ``1 -> X`` of a set, selecting the private datum ``datum``."""
 
-    def __init__(self, defining_morphism: MorphismOfCategory, datum: Datum) -> None:
-        super().__init__(defining_morphism)
-        self._datum = datum
+    def __init__(self, data: SetElementData) -> None:
+        data.bind(self)
+        self._set_element_data = data
+        super().__init__()
 
     def __hash__(self) -> int:
-        return hash(self._datum)
+        return hash(self._set_element_data.datum)
 
     def __repr__(self) -> str:
-        return f"{self._datum!r} in {self.parent()!r}"
+        return f"{self._set_element_data.datum!r} in {self.parent()!r}"
 
 
 def points_equal(first: CategoryPoint, candidate: Any) -> Decision:
@@ -43,4 +58,4 @@ def points_equal(first: CategoryPoint, candidate: Any) -> Decision:
         return Unknown
     if first.parent() is not candidate.parent():
         return Unknown
-    return first._datum == candidate._datum
+    return first._set_element_data.datum == candidate._set_element_data.datum

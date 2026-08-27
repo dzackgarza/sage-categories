@@ -58,7 +58,7 @@ from sage_categories.kernel.predicates import ask
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import ObjectOfCategory, Role
 from sage_categories.sets.cardinals import Cardinal, CardinalObject
-from sage_categories.sets.elements import Datum, SetPoint
+from sage_categories.sets.elements import Datum, SetElement
 from sage_categories.sets.exponentials import Function
 from sage_categories.sets.maps import Rule
 from sage_categories.sets.objects import SetObject
@@ -86,11 +86,11 @@ class FiniteSubsetsRole(ObjectOfCategory):
     def base_set(self) -> SetObject:
         return _sets.Sets().FiniteSubsets().retained_base_set(self)
 
-    def subset_at(self, point: SetPoint) -> SetObject:
+    def subset_at(self, point: SetElement) -> SetObject:
         """The finite chosen subobject of the base set that a point selects, retained per point."""
         return _sets.Sets().FiniteSubsets().subset_at(self, point)
 
-    def point_of(self, subset: SetObject) -> SetPoint:
+    def point_of(self, subset: SetObject) -> SetElement:
         """The point selecting a finite enumerated chosen subset of the base set."""
         return _sets.Sets().FiniteSubsets().point_of(self, subset)
 
@@ -169,7 +169,7 @@ class FiniteSubsetsCategory(PropertySubcategory[[Rule], []]):
             subsets = finite(tuple(frozenset(members) for members in engine))
             self._engines[subsets] = engine
         else:
-            base_rule = base_set._membership_rule
+            base_rule = base_set._set_object_data.membership_rule
 
             def membership_rule(datum: Datum) -> Decision:
                 match datum:
@@ -217,18 +217,18 @@ class FiniteSubsetsCategory(PropertySubcategory[[Rule], []]):
         assert subsets in self._sizes, f"{subsets!r} retains no subset size"
         return self._sizes[subsets]
 
-    def subset_at(self, subsets: SetObject, point: SetPoint) -> SetObject:
+    def subset_at(self, subsets: SetObject, point: SetElement) -> SetObject:
         assert point in subsets, f"{point!r} is not a point of {subsets!r}"
         if point not in self._subsets:
             sets = _sets.Sets()
-            base_set, members = self.retained_base_set(subsets), point._datum
+            base_set, members = self.retained_base_set(subsets), point._classical_datum_()
             if sets.Finite().has_chosen_enumeration(base_set):
                 # The induced enumeration lists the members in the order of the base set's.
                 members = frozenset(datum for datum in sets.Finite().chosen_enumeration(base_set) if datum in members)
             self._subsets[point] = sets.ChosenSubsets().from_enumeration(base_set, tuple(members))
         return self._subsets[point]
 
-    def point_of(self, subsets: SetObject, subset: SetObject) -> SetPoint:
+    def point_of(self, subsets: SetObject, subset: SetObject) -> SetElement:
         sets = _sets.Sets()
         base_set = self.retained_base_set(subsets)
         assert subset in sets.ChosenSubsets() and subset.underlying_set() is base_set, f"{subset!r} is not a chosen subset of {base_set!r}"
@@ -237,7 +237,7 @@ class FiniteSubsetsCategory(PropertySubcategory[[Rule], []]):
 
     def index(self, subsets: SetObject, subset: SetObject) -> CardinalObject:
         assert subsets in self._engines, f"{self.retained_base_set(subsets)!r} has no chosen enumeration, so {subsets!r} has no induced enumeration"
-        return Cardinal()(self._engines[subsets].rank(self.point_of(subsets, subset)._datum))
+        return Cardinal()(self._engines[subsets].rank(self.point_of(subsets, subset)._classical_datum_()))
 
     def subset_at_position(self, subsets: SetObject, position: CardinalObject | int) -> SetObject:
         assert subsets in self._engines, f"{self.retained_base_set(subsets)!r} has no chosen enumeration, so {subsets!r} has no induced enumeration"
@@ -253,7 +253,7 @@ class FinitelySupportedFunctionsRole(ObjectOfCategory):
     def value_set(self) -> SetObject:
         return _sets.Sets().FinitelySupportedFunctions().retained_basepoint(self).parent()
 
-    def basepoint(self) -> SetPoint:
+    def basepoint(self) -> SetElement:
         return _sets.Sets().FinitelySupportedFunctions().retained_basepoint(self)
 
 
@@ -266,7 +266,7 @@ class FinitelySupportedFunctionsCategory(PropertySubcategory[[Rule], []]):
         self._basepoints: MonoDict = MonoDict()
         super().__init__(ambient, "FinitelySupportedFunctions", {Role.OBJECT: FinitelySupportedFunctionsRole}, ())
 
-    def __call__(self, index_set: SetObject, basepoint: SetPoint) -> SetObject:
+    def __call__(self, index_set: SetObject, basepoint: SetElement) -> SetObject:
         """``X^(S)`` for the pointed set ``(X, x0)`` with ``x0`` a point of ``X``, retained per pair."""
         sets = _sets.Sets()
         assert index_set in sets, f"{index_set!r} is not an object of {sets!r}"
@@ -311,6 +311,6 @@ class FinitelySupportedFunctionsCategory(PropertySubcategory[[Rule], []]):
         assert functions in self._index_sets, f"{functions!r} retains no index set"
         return self._index_sets[functions]
 
-    def retained_basepoint(self, functions: SetObject) -> SetPoint:
+    def retained_basepoint(self, functions: SetObject) -> SetElement:
         assert functions in self._basepoints, f"{functions!r} retains no basepoint"
         return self._basepoints[functions]

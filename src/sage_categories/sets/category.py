@@ -1,9 +1,9 @@
 """``Sets()``: the category of sets and total maps (POL-SET-002, POL-CAT-083, POL-SET-013, POL-SET-026).
 
 ``Sets()`` owns arbitrary sets and arbitrary functions.  Its objects are
-rule-defined (``sets/objects.py``), its elements are points ``1 -> X`` at the
-classical stage ``Sets().Terminal()`` (``sets/elements.py``), and its morphisms are
-total maps by rule (``sets/maps.py``).  The property subcategories ``Finite()``,
+rule-defined (``sets/objects.py``), its elements are maps ``T -> X`` with classical
+points at the stage ``Sets().Terminal()`` (``sets/elements.py``), and its morphisms
+are total maps by rule (``sets/maps.py``).  The property subcategories ``Finite()``,
 ``Infinite()``, ``Countable()``, and ``Uncountable()`` own the constructors that
 supply their cardinal data; ``Finite => Countable`` and ``Uncountable => Infinite``
 are their recorded inclusions.  The canonical objects ``Empty()``, ``Terminal()``,
@@ -23,6 +23,9 @@ from typing import TYPE_CHECKING, overload
 from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict
 
+from sage_categories.sets import elements as _set_elements
+from sage_categories.sets import maps as _set_maps
+from sage_categories.sets import objects as _set_objects
 from sage_categories.cat.category import Category
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.decisions import Decision, Unknown, decision_not, decision_or
@@ -30,25 +33,26 @@ from sage_categories.kernel.predicates import ask
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import Role
 from sage_categories.kernel.decisions import UnknownClass
-from sage_categories.sets.cardinals import Cardinal, CardinalObject
-from sage_categories.sets.elements import Datum, SetPoint, points_equal
+from sage_categories.sets.elements import Datum, SetElementData, SetElementDeclaration, SetPointData, points_equal
 from sage_categories.sets.maps import (
     Rule,
-    SetMap,
+    SetMorphismData,
+    SetMapDeclaration,
     bijective_on_finite_domain,
     injective_on_finite_domain,
     maps_equal,
     surjective_on_finite_domain,
 )
-from sage_categories.sets.objects import FiniteSetRole, MembershipRule, SetObject
+from sage_categories.sets.objects import FiniteSetRole, MembershipRule, SetObjectData, SetObjectDeclaration
 
 if TYPE_CHECKING:
     from sage_categories.cat.functors import Functor
+    from sage_categories.sets.cardinals import CardinalObject
     from sage_categories.sets.finite_subsets import FiniteSubsetsCategory, FinitelySupportedFunctionsCategory, SizedSubsetsCategory
     from sage_categories.sets.power_objects import PowerObjectsCategory
     from sage_categories.sets.subobjects import ChosenQuotientsCategory, ChosenSubsetsCategory
 
-__all__ = ["Sets", "SetsCategory"]
+__all__ = ["SetElement", "SetMap", "SetObject", "Sets", "SetsCategory"]
 
 
 class FiniteSets(PropertySubcategory[[Rule], []]):
@@ -60,15 +64,29 @@ class FiniteSets(PropertySubcategory[[Rule], []]):
 
     def __call__(self, members: SetObject | Iterable[Datum]) -> SetObject:
         """Refine a set of ``Sets()``, or construct the finite set with the given enumeration."""
+        from sage_categories.sets.cardinals import Cardinal
+
         if members in self.ambient():
             refine(members, self)
             return members
         enumeration = tuple(members)
+        return self._from_enumeration(enumeration, Cardinal()(len(enumeration)))
+
+    def _from_enumeration(self, enumeration: tuple[Datum, ...], cardinality: CardinalObject) -> SetObject:
+        """Construct the finite set with this exact enumeration and cardinal."""
         # An enumeration lists each member once: its length is the cardinality (POL-SET-011/027).
         for position, first in enumerate(enumeration):
             for second in enumeration[position + 1 :]:
                 assert (first == second) is False, f"the enumeration lists {first!r} and {second!r}, which are not exactly distinct"
-        finite_set = self.ObjectType(self, enumeration)
+        ambient = self.ambient()
+        finite_set = ambient.ObjectType(
+            ambient,
+            SetObjectData(
+                lambda datum: any(datum == member for member in enumeration),
+                cardinality,
+            ),
+        )
+        refine(finite_set, self)
         self._enumerations[finite_set] = enumeration
         return finite_set
 
@@ -84,14 +102,14 @@ class FiniteSets(PropertySubcategory[[Rule], []]):
 class SetsCategory(Category[[Rule], []]):
     """The category of sets."""
 
-    ObjectType = SetObject
-    ElementType = SetPoint
-    MorphismType = SetMap
+    DeclaredObjectType = SetObjectDeclaration
+    DeclaredElementType = SetElementDeclaration
+    DeclaredMorphismType = SetMapDeclaration
 
     def __init__(self) -> None:
         self._canonical: dict[tuple[str, tuple[int, ...]], SetObject] = {}
         self._rule_valued: MonoDict = MonoDict()
-        self._classical_points: MonoDict = MonoDict()
+        self._elements: MonoDict = MonoDict()
         super().__init__()
         self._equality.register_handler(points_equal)
         self._equality.register_handler(maps_equal)
@@ -116,12 +134,14 @@ class SetsCategory(Category[[Rule], []]):
 
     def __call__(self, membership_rule: MembershipRule) -> SetObject:
         """``Sets()(rule)``: the set defined by a membership rule on data, with no cardinal data."""
-        return self.ObjectType(self, membership_rule, Unknown)
+        return self.ObjectType(self, SetObjectData(membership_rule, Unknown))
 
     def with_cardinality(self, membership_rule: MembershipRule, cardinality: CardinalObject) -> SetObject:
         """The set defined by a membership rule whose exact cardinality a construction theorem supplies (POL-SET-031, POL-MATH-024)."""
+        from sage_categories.sets.cardinals import Cardinal
+
         assert cardinality in Cardinal(), f"{cardinality!r} is not a cardinal"
-        return self.ObjectType(self, membership_rule, cardinality)
+        return self.ObjectType(self, SetObjectData(membership_rule, cardinality))
 
     def rule_valued(self, membership_rule: MembershipRule, cardinality: CardinalObject | UnknownClass) -> SetObject:
         """A set whose data are rules (families, names of maps): its points are retained per datum object.
@@ -130,7 +150,7 @@ class SetsCategory(Category[[Rule], []]):
         index, function sets, colimit representatives) construct their apex here, so
         ``X.point(datum)`` on it is ``X.rule_point(datum)``.
         """
-        rule_valued = self.ObjectType(self, membership_rule, cardinality)
+        rule_valued = self.ObjectType(self, SetObjectData(membership_rule, cardinality))
         self._rule_valued[rule_valued] = rule_valued
         return rule_valued
 
@@ -169,6 +189,18 @@ class SetsCategory(Category[[Rule], []]):
             self._canonical[name, arguments] = self.Finite()(members)
         return self._canonical[name, arguments]
 
+    def _canonical_finite_from_cardinality(
+        self,
+        name: str,
+        arguments: tuple[int, ...],
+        members: tuple[Datum, ...],
+        cardinality: CardinalObject,
+    ) -> SetObject:
+        """Retain a canonical finite set whose construction already supplies its cardinal."""
+        if (name, arguments) not in self._canonical:
+            self._canonical[name, arguments] = self.Finite()._from_enumeration(members, cardinality)
+        return self._canonical[name, arguments]
+
     def Empty(self) -> SetObject:
         return self._canonical_finite("empty", (), ())
 
@@ -199,12 +231,16 @@ class SetsCategory(Category[[Rule], []]):
 
         return cardinality_functor()
 
-    def element_from_defining_morphism(self, defining_morphism: SetMap) -> SetPoint:
-        """The classical element whose defining morphism is the point ``1 -> X``, one element per point (POL-CAT-066)."""
-        assert defining_morphism.domain() is self.Terminal(), f"{defining_morphism!r} is not a point at the classical stage"
-        if defining_morphism not in self._classical_points:
-            self._classical_points[defining_morphism] = defining_morphism.codomain().category().ElementType(defining_morphism, defining_morphism._rule(()))
-        return self._classical_points[defining_morphism]
+    def element_from_defining_morphism(self, defining_morphism: SetMap) -> SetElement:
+        """The generalized element defined by ``T -> X``, retained by that exact map (POL-CAT-066)."""
+        assert defining_morphism in self.morphism_category(1), f"{defining_morphism!r} is not a set morphism"
+        if defining_morphism not in self._elements:
+            if defining_morphism.domain() is self.Terminal():
+                state = SetPointData(defining_morphism._set_morphism_data.rule(()))
+            else:
+                state = SetElementData()
+            self._elements[defining_morphism] = defining_morphism.codomain().category().ElementType(defining_morphism, state)
+        return self._elements[defining_morphism]
 
     # -- morphisms ----------------------------------------------------------------------
 
@@ -218,21 +254,36 @@ class SetsCategory(Category[[Rule], []]):
         """``Mor(Sets())(X, Y)(rule)`` or, with an inverse rule, an isomorphism retaining its inverse."""
         assert domain in self and codomain in self
         morphisms = self.morphism_category(1)
-        forward = self.MorphismType(morphisms, domain, codomain, rule)
+        forward = self.MorphismType(morphisms, domain, codomain, SetMorphismData(rule))
         if not inverse_rule:
             return forward
         (backward_rule,) = inverse_rule
-        self.retain_inverses(forward, self.MorphismType(morphisms, codomain, domain, backward_rule))
+        self.retain_inverses(
+            forward,
+            self.MorphismType(morphisms, codomain, domain, SetMorphismData(backward_rule)),
+        )
         return forward
 
     def construct_identity(self, member_object: SetObject) -> SetMap:
-        return self.MorphismType(self.morphism_category(1), member_object, member_object, lambda datum: datum)
+        return self.MorphismType(
+            self.morphism_category(1),
+            member_object,
+            member_object,
+            SetMorphismData(lambda datum: datum),
+        )
 
     def composite(self, second: SetMap, first: SetMap) -> SetMap:
         morphisms = self.morphism_category(1)
         assert first in morphisms and second in morphisms
         assert first.codomain() is second.domain(), f"{second!r} after {first!r} is not composable"
-        return self.MorphismType(morphisms, first.domain(), second.codomain(), lambda datum: second._rule(first._rule(datum)))
+        first_rule = first._set_morphism_data.rule
+        second_rule = second._set_morphism_data.rule
+        return self.MorphismType(
+            morphisms,
+            first.domain(),
+            second.codomain(),
+            SetMorphismData(lambda datum: second_rule(first_rule(datum))),
+        )
 
     def inverse_morphism(self, morphism: SetMap) -> SetMap:
         """The inverse of an isomorphism: the generic retained inverse, else the exact inverse of a
@@ -240,8 +291,17 @@ class SetsCategory(Category[[Rule], []]):
         finite = self.Finite()
         domain, codomain = morphism.domain(), morphism.codomain()
         if morphism not in self._inverses and finite.has_chosen_enumeration(domain):
-            preimages = {morphism._rule(datum): datum for datum in finite.chosen_enumeration(domain)}
-            self.retain_inverses(morphism, self.MorphismType(self.morphism_category(1), codomain, domain, lambda datum: preimages[datum]))
+            rule = morphism._set_morphism_data.rule
+            preimages = {rule(datum): datum for datum in finite.chosen_enumeration(domain)}
+            self.retain_inverses(
+                morphism,
+                self.MorphismType(
+                    self.morphism_category(1),
+                    codomain,
+                    domain,
+                    SetMorphismData(lambda datum: preimages[datum]),
+                ),
+            )
         return super().inverse_morphism(morphism)
 
     def _symbolic_inverse_(self, morphism: SetMap) -> SetMap:
@@ -309,7 +369,7 @@ class SetsCategory(Category[[Rule], []]):
 
         return FinitelySupportedFunctionsCategory(self)
 
-    def name_of(self, set_map: SetMap) -> SetPoint:
+    def name_of(self, set_map: SetMap) -> SetElement:
         """The point of ``Y ** X`` naming a map ``X -> Y``."""
         from sage_categories.sets.exponentials import name_of
 
@@ -375,6 +435,16 @@ class SetsCategory(Category[[Rule], []]):
 
 
 _SETS = SetsCategory()
+SetObject = _SETS.ObjectType
+SetElement = _SETS.ElementType
+SetMap = _SETS.MorphismType
+
+_set_objects.SetObject = SetObject
+_set_objects.SetElement = SetElement
+_set_elements.SetElement = SetElement
+_set_maps.SetObject = SetObject
+_set_maps.SetElement = SetElement
+_set_maps.SetMap = SetMap
 
 
 def Sets() -> SetsCategory:

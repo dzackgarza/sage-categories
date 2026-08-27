@@ -66,9 +66,6 @@ def Mor(*arguments: int | Category) -> Category:
 class IdentityTwoCell(MorphismOfCategory):
     """The identity 2-morphism of a morphism of a 1-category: the only morphisms of ``Mor(C)``."""
 
-    def __init__(self, category: Category, morphism: MorphismOfCategory) -> None:
-        super().__init__(category, morphism, morphism)
-
     def __repr__(self) -> str:
         return f"identity of {self.domain()!r}"
 
@@ -138,7 +135,7 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
         self._fixed_endpoints: TripleDict = TripleDict(weak_values=False)
         # Each morphism category owns its element role (POL-CAT-058): a generalized
         # element of a morphism of ``C``, with no local operation.
-        self._element_role = type(f"Mor({base!r}).ElementType", (ElementOfObject,), {})
+        self._declared_element_role = type(f"Mor({base!r}).DeclaredElementType", (ElementOfObject,), {})
         super().__init__()
 
     def base_category(self) -> Category[MorphismData, TwoMorphismData]:
@@ -173,7 +170,7 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
         match role:
             case Role.ELEMENT:
-                return self._element_role
+                return self._declared_element_role
             case Role.MORPHISM:
                 return self._base.two_morphism_type()
         raise AssertionError(f"the objects of {self!r} are the morphisms of {self._base!r}")

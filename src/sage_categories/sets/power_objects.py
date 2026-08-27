@@ -33,12 +33,12 @@ from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.decisions import Decision
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import ObjectOfCategory, Role
-from sage_categories.sets.elements import Datum, SetPoint
+from sage_categories.sets.elements import Datum, SetElement
 from sage_categories.sets.exponentials import Function, function_set
 from sage_categories.sets.maps import Rule, SetMap
 from sage_categories.sets.objects import MembershipRule, SetObject
 
-__all__ = ["PowerObjectRole", "PowerObjectsCategory"]
+__all__ = ["PowerObjectsCategory"]
 
 
 class PowerObjectRole(ObjectOfCategory):
@@ -56,10 +56,10 @@ class PowerObjectRole(ObjectOfCategory):
         """The chosen subset ``{x in X : chi(x) = 1}`` of a map ``chi: X -> 2``, retained per map."""
         return _sets.Sets().PowerObjects().subset_of_characteristic_morphism(self, characteristic)
 
-    def subset_named_by(self, point: SetPoint) -> SetObject:
+    def subset_named_by(self, point: SetElement) -> SetObject:
         """The chosen subset whose characteristic morphism a point ``1 -> 2 ** X`` names: the inverse of ``Sets().name_of`` on chosen subsets."""
         assert point in self, f"{point!r} is not a point of {self!r}"
-        return self.from_characteristic_morphism(point._datum.map())
+        return self.from_characteristic_morphism(point._classical_datum_().map())
 
     def top(self) -> SetObject:
         """``X`` as a chosen subset of itself."""
@@ -109,7 +109,7 @@ class PowerObjectsCategory(PropertySubcategory[[Rule], []]):
         base_set = self.retained_base_set(power)
         assert characteristic in sets.morphism_category(1)(base_set, sets.Simplex(1)), f"{characteristic!r} is not a map {base_set!r} -> [1]"
         if characteristic not in self._subsets:
-            rule = characteristic._rule
+            rule = characteristic._set_morphism_data.rule
             self._subsets[characteristic] = base_set.subset_from(lambda datum: rule(datum) == 1)
         return self._subsets[characteristic]
 

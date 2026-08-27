@@ -27,35 +27,57 @@ not a field of every map.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any
 
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
 from sage_categories.kernel.decisions import Decision, Unknown, decision_and, decision_not, decision_or
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory
-from sage_categories.sets.elements import Datum, SetPoint
-from sage_categories.sets.objects import SetObject
+from sage_categories.sets.elements import Datum
 
-__all__ = ["Rule", "SetMap", "injective_on_finite_domain", "maps_equal", "surjective_on_finite_domain"]
+if TYPE_CHECKING:
+    from sage_categories.sets.category import SetElement, SetObject
+
+__all__ = ["Rule", "SetMorphismData", "injective_on_finite_domain", "maps_equal", "surjective_on_finite_domain"]
 
 type Rule = Callable[[Datum], Datum]
 
 
-class SetMap(MorphismOfCategory):
-    """A total map ``X -> Y`` given by a rule on data."""
+@dataclass(eq=False, slots=True)
+class SetMorphismData:
+    """The private state used by the complete set-morphism implementation."""
 
-    def __init__(self, category: Category, domain: SetObject, codomain: SetObject, rule: Rule) -> None:
-        super().__init__(category, domain, codomain)
-        self._rule = rule
+    rule: Rule
+    canonical: SetMap = field(init=False)
 
-    def __call__(self, element: SetPoint) -> SetPoint:
-        """The image of a point of the domain: a point of the codomain (POL-CAT-040)."""
-        assert element in self.domain(), f"{element!r} is not an element of {self.domain()!r}"
-        return self.codomain().point(self._rule(element._datum))
+    def bind(self, canonical: SetMap) -> None:
+        """Bind direct construction once; inherited construction reuses that state."""
+        if not hasattr(self, "canonical"):
+            self.canonical = canonical
+
+
+class SetMapDeclaration(MorphismOfCategory):
+    """The local ``Sets().MorphismType`` declaration."""
+
+    def __init__(self, data: SetMorphismData) -> None:
+        data.bind(self)
+        self._set_morphism_data = data
+        super().__init__()
+
+    def __call__(self, element: SetElement) -> SetElement:
+        """Compose with a generalized element; evaluate its datum at the classical stage (POL-CAT-040)."""
+        canonical_map = self._set_morphism_data.canonical
+        canonical = element._set_element_data.canonical
+        assert canonical in canonical_map.domain(), f"{element!r} is not an element of {self.domain()!r}"
+        if canonical.stage() is _sets.Sets().Terminal():
+            return canonical_map.codomain().point(self._set_morphism_data.rule(canonical._classical_datum_()))
+        defining_morphism = canonical_map * canonical.defining_morphism()
+        return _sets.Sets().element_from_defining_morphism(defining_morphism)
 
     def image(self) -> SetObject:
         """The chosen subset of the codomain of the points with a preimage, with its inclusion (POL-ENGINE-004; ``sets/subobjects.py``)."""
-        return _sets.Sets().ChosenSubsets().image_of(self)
+        return _sets.Sets().ChosenSubsets().image_of(self._set_morphism_data.canonical)
 
     def __repr__(self) -> str:
         return f"SetMap({self.domain()!r} -> {self.codomain()!r})"
@@ -77,7 +99,9 @@ def maps_equal(first: CategoryPoint, candidate: Any) -> Decision:
     finite = sets.Finite()
     if not finite.has_chosen_enumeration(first.domain()):
         return Unknown
-    return decision_and(*(_data_equal(first._rule(datum), candidate._rule(datum)) for datum in finite.chosen_enumeration(first.domain())))
+    first_rule = first._set_morphism_data.rule
+    candidate_rule = candidate._set_morphism_data.rule
+    return decision_and(*(_data_equal(first_rule(datum), candidate_rule(datum)) for datum in finite.chosen_enumeration(first.domain())))
 
 
 def injective_on_finite_domain(morphism: MorphismOfCategory) -> Decision:
@@ -85,7 +109,8 @@ def injective_on_finite_domain(morphism: MorphismOfCategory) -> Decision:
     sets = _sets.Sets()
     if morphism not in sets.morphism_category(1) or not sets.Finite().has_chosen_enumeration(morphism.domain()):
         return Unknown
-    images = [morphism._rule(datum) for datum in sets.Finite().chosen_enumeration(morphism.domain())]
+    rule = morphism._set_morphism_data.rule
+    images = [rule(datum) for datum in sets.Finite().chosen_enumeration(morphism.domain())]
     collisions = (_data_equal(images[i], images[j]) for i in range(len(images)) for j in range(i + 1, len(images)))
     return decision_not(decision_or(*collisions))
 
@@ -98,7 +123,8 @@ def surjective_on_finite_domain(morphism: MorphismOfCategory) -> Decision:
         return Unknown
     if not finite.has_chosen_enumeration(morphism.domain()) or not finite.has_chosen_enumeration(morphism.codomain()):
         return Unknown
-    images = [morphism._rule(datum) for datum in finite.chosen_enumeration(morphism.domain())]
+    rule = morphism._set_morphism_data.rule
+    images = [rule(datum) for datum in finite.chosen_enumeration(morphism.domain())]
     return decision_and(*(decision_or(*(_data_equal(image, datum) for image in images)) for datum in finite.chosen_enumeration(morphism.codomain())))
 
 

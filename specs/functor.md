@@ -32,6 +32,15 @@ Category = Cat().ObjectType
 Thus `Sets()`, `Mor(C)`, and every property subcategory are instances of
 `Cat().ObjectType`. They do not form a second Python category hierarchy.
 
+Bootstrap follows the same local/public split. A stable `CategoryPointKernel` exists
+without a `Cat()` instance. Module loading preallocates the compiled
+`Cat().ElementType` class over that kernel. `ObjectOfCategory`, `ElementOfObject`, and
+`MorphismOfCategory` then derive from this one stable class. When the `Cat()` singleton
+exists, the compiler copies the distinct `CategoryPointDeclaration` into the
+preallocated class. It compiles `Cat().ObjectType` and `Cat().MorphismType` next.
+`CategoryDeclaration` supplies the local `Cat` object role. After the singleton is
+compiled, `Category` names `Cat().ObjectType`. The local declaration and public category
+class are distinct.
 `Cat` owns the same role types as every other category:
 
 - `Cat().ObjectType` implements categories;
@@ -42,6 +51,12 @@ Thus `Sets()`, `Mor(C)`, and every property subcategory are instances of
   at stage `[1]`;
 - `Cat()(...)` constructs categories;
 - `Fun = Mor(Cat())` constructs the category whose objects are functors.
+
+These stage refinements use one Python inheritance root. The kernel compiles
+`Cat().ElementType` first. A root object role continues through `ObjectOfCategory` to
+that compiled class. A root morphism role continues through `MorphismOfCategory` to the
+same class. Ordinary `C.ElementType` inheritance keeps its element-role graph and ends
+at `Cat().ElementType`.
 
 The kernel also supplies the uniform categorical constructions, defined once at the
 `Cat()` level and applicable to every category:
@@ -382,30 +397,96 @@ category acquires a method owned by another one this way (`POL-CAT-006`). A meth
 closes over `__class__`, which Python bound to the declaration; the kernel rebinds that
 closure to the compiled role, so `super()` enters the compiled chain.
 
-One declaration is an exception, because it is the kernel role class the category role
-ends on. `Cat().ObjectType` stands on `Category`, which is the class every category is an
-instance of: a category is built from its own hand-written `Category` subclass, never
-from a compiled role, and only inheritance lets those subclasses override `Category`'s
-methods. A chain end is inherited, never copied.
+Each local constructor accepts one exact typed datum. That datum contains only the state
+introduced at its category. The constructor initializes that state and calls
+`super().__init__()` once. A construction input can also carry exact semantic data used
+only to construct selected ancestor state. A node that retains none of that data has no
+local initializer, and its generated wrapper advances. Every role construction input
+keeps its datum separate from its identity. The object identity records its category.
+The morphism identity records its category and endpoints. The `Cat().ElementType`
+identity is the closed sum
 
-The rule is what makes the result linearizable. The controlled order ranks compiled
-roles. A declaration left in the bases is ranked by nothing, so Python places it wherever
-each separate class construction allows; two constructions then rank one pair of
-declarations opposite ways, and a role reaching both has no method resolution order at
-all. With declarations out of the bases, every class in a compiled role's method
-resolution order is a compiled role or a kernel role class.
+```text
+GeneralCategoryPointIdentity(defining_morphism)
+ObjectStageIdentity(parent_category)
+ArrowStageIdentity(parent_category, domain, codomain)
+```
+
+The general form is used by an ordinary generalized element. Its defining morphism is a
+functor only when the represented object is a category. The construction input
+already stores the canonical object or morphism for the two stage forms. Their local
+`Cat().ElementType` datum is `None`.
+
+A selected functor retains a pure typed conversion from its source construction input to
+its target construction input for each role. Thus a poset datum states only its order
+data. Its selected functor to `Sets()` uses the source identity and datum to return the
+input retained by the canonical set image. The conversion does not inspect a partly
+initialized poset.
+
+The kernel allocates the compiled value first. It creates the root input with that value
+as its canonical image. It then follows structural edges and computes one construction
+input for each reachable node. An object context also precomputes
+`ObjectStageIdentity(C)`. A morphism context also precomputes
+`ArrowStageIdentity(C, A, B)`. These inputs initialize the common
+`Cat().ElementType` root. The kernel checks every route to a common node by
+canonical-image and input identity. Finally, it activates one role-specific construction
+context and starts initialization.
+
+The controlled C3 order can place unrelated branches next to each other. For example,
+the order for `D -> B -> A` and `D -> C -> A` is `D, B, C, A`. Generated wrappers do not
+interpret `B` followed by `C` as a structural edge. Each wrapper reads its own node's
+precomputed input and passes only its datum to that node's local constructor. Literal
+`super()` enters the next wrapper. C3 initializes `D`, `B`, `C`, and `A` once each.
+
+The raw declaration classes do not occur in the public MRO. Python functions copied from
+them retain a `__class__` closure. The compiler rebinds that closure to the final compiled
+class before it installs the function. This makes literal zero-argument `super()` enter
+the controlled compiled MRO.
+
+Object, element, and morphism constructor conversions are retained implementation data
+of the selected functor. For an object or morphism, the target image retained by a
+conversion is the canonical `F(x)`. Public object or morphism application returns that
+exact value. The element conversion supplies compiler input. Public element application
+follows the morphism action described below. All routes to one node return the same
+image and construction input by identity. Identity functors retain identity conversions.
+Composite functors retain the composites of their factors' conversions.
+
+Each canonical public value retains one root construction input. A conversion returns
+the input retained by its canonical target image. The input type names its exact
+canonical role value and local datum. During source construction, the conversion reads
+the source input's typed datum and identity, constructs the canonical target through the
+target category, and retains that image. Later public object or morphism application
+reads the source value's retained input and calls the same conversion. No conversion
+reads fields of a partly initialized source value.
+
+An inherited method executes on the descendant. Its declaring role's private state
+retains the canonical functor image. A method that must supply an object, element, or
+morphism in the declaring category uses that image. A method can inspect its declaring
+role's local state directly when no category-sensitive value crosses the call boundary.
 
 An element of `X in C` is a generalized element `t: T -> X`, an object of
-`C.SliceOver(X)`. `t.stage()` is `T` and `t.parent()` is its codomain `X`. Every
-`F: C -> D` induces `F/X: C/X -> D/F(X)`, sending `t` to `F(t): F(T) -> F(X)` through
-`F.on_morphism`; this action requires no additional functor data.
+`C.SliceOver(X)`. `t.stage()` is `T` and `t.parent()` is its codomain `X`. Its general
+identity retains the defining morphism. An object `X in C` uses
+`ObjectStageIdentity(C)`: its stage is `Cat().Terminal()`, its parent is `C`, and
+`X.defining_morphism()` lazily requests `C.point_functor(X)`. A morphism `f: A -> B` in
+`C` uses `ArrowStageIdentity(C, A, B)`: its stage is `Cat().Simplex(1)`, its parent is
+`C`, and `f.defining_morphism()` lazily requests `C.arrow_functor(f)`. Every `F: C -> D`
+induces `F/X: C/X -> D/F(X)`, sending `t` to the public image
+`q = F(t): F(T) -> F(X)` through `F.on_morphism`. This action requires no additional
+functor data. The canonical value `q` retains its own root construction input and cache
+identity. For a nonclassical source, the element conversion gives the compiler the input
+retained by `q`.
 
 A category may choose a classical stage `G_C`: `1` for `Sets()`; `Cat()` uses `1` for
 objects and `[1]` for morphisms. A classical element of `X` is a generalized element
 whose stage is exactly `G_C`. A selected structural functor that exposes the target's
-classical element methods retains a stage comparison `G_D -> F(G_C)`. Precomposition
-gives `G_D -> F(G_C) -> F(X)`, a classical element of `F(X)`; this forward direction is
-the only one the kernel uses.
+classical element methods retains a stage comparison `c_F: G_D -> F(G_C)`. For a
+classical `t: G_C -> X`, the compiler precomposes `q = F(t)` with `c_F` and obtains the
+classical input `p: G_D -> F(X)`. The element conversion gives the compiler the input
+retained by `p`. The values `q` and `p` have separate identities and cache entries when
+their stages, defining morphisms, or codomains differ. For an identity functor,
+\(c_{\mathrm{id}} = 1_G\). For composable `F: C -> D` and `H: D -> E`,
+\(c_{H \circ F} = H(c_F) \circ c_H\).
 
 ## Point categories and point functors
 
@@ -443,6 +524,14 @@ methods through selection alone (`POL-FUN-003`), it is an ordinary object of `Fu
 generalized-element action is derived from its morphism action (`POL-FUN-002`). The
 compiler reaches it through composition in `Cat` with the rest of the structural graph.
 
+The object-stage identity does not construct this functor during object initialization.
+`X.defining_morphism()` requests `C.point_functor(X)` only when a caller needs it. The
+new functor receives its own arrow-stage identity. Its construction therefore does not
+request its own arrow functor. The same rule applies to `C.arrow_functor(f)`.
+
+For `{C} -> D`, these conversions initialize `D.ObjectType` state on `C`,
+`D.ElementType` state on stage-`1` objects and stage-`[1]` morphisms, and
+`D.MorphismType` state on `1_C`.
 ### The level shift
 
 Take the distinguished object to be a category `C`. Then `{C}` has one object at the
@@ -623,10 +712,11 @@ For `F: C -> D`, `F.essential_image()` is the full property subcategory of `D` o
 objects isomorphic to `F(X)` for some `X in C`. Its inclusion into `D` is fully faithful
 by construction. The original functor factors through this category.
 
-A universal-construction presentation category has more data. For example,
-`C.Products()` retains the input diagram, apex, projections, and universal maps. Its
-structural apex functor lands in `C`. The essential image of the product functor records
-only which objects are isomorphic to product apexes.
+A universal-construction presentation category has more data. For each diagram `D`,
+`C.Products()` has a distinct presentation object `P_D`. It retains `D`, its canonical
+apex `A_D`, its projections, and its universal maps. Its structural apex functor maps
+`P_D` to `A_D` in `C`. The essential image of the product functor records only which
+objects are isomorphic to product apexes.
 
 ## Products, coproducts, and component functors
 
@@ -641,19 +731,20 @@ Q = Cat().Coproducts()((C_0, ..., C_n))
 Their category-owned public functors are:
 
 ```python
-P.product_projection(i)   # an object of Fun(P, C_i)
-Q.coproduct_injection(i)  # an object of Fun(C_i, Q)
+P.product_projection(i)   # an object of Fun(A_P, C_i)
+Q.coproduct_injection(i)  # an object of Fun(C_i, A_Q)
 ```
 
-The index is an `int` in the supplied sequence. These methods come from
-`Cat().Products().ObjectType` and `Cat().Coproducts().ObjectType`. They return
-`Cat().MorphismType` values.
+Here `A_P` and `A_Q` are the apex categories retained by `P` and `Q`. The index is an
+`int` in the supplied sequence. These methods come from `Cat().Products().ObjectType`
+and `Cat().Coproducts().ObjectType`. They return `Cat().MorphismType` values.
 
-Let `j: S -> P` present `S` as a subcategory of the product category `P`. Then `S` is an
-object of `Cat().Products().Subobjects()`. Its component functor is
+Let `P_D` be a product presentation with apex `A_D`. Let `j: S -> A_D` present `S` as a
+subcategory. The corresponding object of `Cat().Products().Subobjects()` retains both
+`P_D` and `j`. Its component functor is
 
 \[
-S.\operatorname{product\_projection}(i)=\pi_i\circ j:S\longrightarrow C_i.
+(P_D,j).\operatorname{product\_projection}(i)=\pi_i\circ j:S\longrightarrow C_i.
 \]
 
 Thus every subcategory of a sequence product receives all component functors. The
@@ -700,9 +791,10 @@ A discrete diagram needs only its object rule `i |-> X_i`. The rule is an assign
 `S`; it never enumerates `S`. A Python sequence `(X_0, ..., X_n)` is the convenience form
 and denotes the diagram over `Discrete([n])`.
 
-`C.Products()(diagram)` constructs the apex with `product_projection(i)` indexed by
-`i in S` and the universal map. `C.Coproducts()` is dual with `coproduct_injection(i)`.
-`X * Y` is `C.Products()((X, Y))`.
+`C.Products()(diagram)` constructs a presentation `P_D` with canonical apex `A_D` in
+`C`, `product_projection(i)` indexed by `i in S`, and the universal map. The selected
+apex functor maps `P_D` to `A_D`. `C.Coproducts()` is dual with
+`coproduct_injection(i)`. `X * Y` is `C.Products()((X, Y))`.
 
 `C.Limits(I)` and `C.Colimits(I)` are the general families for one supplied shape `I`.
 The named conveniences are instances:
@@ -811,17 +903,24 @@ The compiler uses `structure_functors()` as its sole structural graph. It must:
 5. preserve each functor's exact object and morphism maps;
 6. derive each functor's generalized-element action from its morphism action, and
    precompose a retained stage comparison only for classical-stage methods;
-7. reject transport when the selected functor lacks a required mathematical map;
-8. detect a structural-image mismatch at the first transport of a value: traverse every
-   route to a reachable category in declaration order, store the first image in the
-   canonical cache, require each later image to be the same object by identity, and
+7. reject a selected edge when a target role needs construction input and the functor
+   lacks an exact typed conversion;
+8. detect a structural-image or construction-input mismatch during construction or the
+   first public functor application: traverse every route to a reachable category in
+   declaration order, store the first image and input, require each later route to supply
+   the same objects by identity, and
    raise a construction-defect error naming both routes and the shared ancestor on a
    mismatch; method compilation constructs no images; diamonds otherwise follow
    [resolution.md](resolution.md);
 9. canonicalize repeated construction of the same declared functor;
-10. build each compiled role on the controlled compiled ancestor roles, copy the local
-    declaration's class body onto it, and rebind copied `__class__` closures to it;
-11. derive inherited methods from these paths;
+10. complete the preallocated `Cat().ElementType` root first, then build each public role
+    from the local members, retained node initializer, generated initializer wrapper,
+    and controlled compiled ancestor roles; rebind copied `__class__` closures to that
+    public role;
+11. compute one construction input per reachable node through structural edges; add the
+    one object-stage or arrow-stage `Cat().ElementType` input to an object or morphism
+    context; activate the matching role context and invoke each constructor once through
+    C3;
 12. derive subobject-of-product component functors by composition;
 13. install the compiled roles of a point category `{X}` on its distinguished object:
     `{X}.ObjectType` on the value `X`, and `{X}.ElementType` on the generalized elements
@@ -831,15 +930,29 @@ The compiler uses `structure_functors()` as its sole structural graph. It must:
 Natural transformations are trusted constructions, never compiler proofs. There is no
 route normalization, route scoring, or preservation registry.
 
-The meaning of every inherited method is composition: `X.f() := F(X).f()`. The receiver
-and every mathematical argument are transported forward along the selected route; for a
-classical element the stage comparison is precomposed; the declaring method runs on the
-images; its value is returned exactly as `D` returned it.
+Every inherited method enters the descendant through the compiled role MRO. The declaring
+method runs on the original descendant instance with the supplied arguments. When it needs
+an object in its declaring category, it reads the canonical image retained in that role's
+private state. A classical element's construction input uses the retained stage comparison.
+The method's value is returned exactly as declared.
 
 The public surface is dynamic inheritance in Sage's sense. The kernel builds
 `C.ObjectType`, `C.ElementType`, and `C.MorphismType` as dynamic classes carrying the
 linearized surface of every selected route. A leaf writes no Python inheritance. A leaf
 that wants a source-category result overrides the inherited method or adds its own.
+
+The exact MRO tails are:
+
+```text
+C.ObjectType, selected object roles, ObjectOfCategory,
+Cat().ElementType, CategoryPointKernel
+
+C.MorphismType, selected morphism roles, MorphismOfCategory,
+Cat().ElementType, CategoryPointKernel
+
+ordinary C.ElementType, selected element roles, ElementOfObject,
+Cat().ElementType, CategoryPointKernel
+```
 
 The compiler does not infer a functor from a category pair. It does not infer fullness,
 faithfulness, or equivalence from a class name. It does not add computational routes to
@@ -927,7 +1040,7 @@ is kernel infrastructure over already established mathematical functors.
 - Each category presentation retains all projections and evaluations required by its definition.
 - `Cat().Products()` and `Cat().Coproducts()` accept sequence-indexed category diagrams.
 - Their objects own `product_projection(i)` and `coproduct_injection(i)` respectively.
-- Every object of `Cat().Products().Subobjects()` derives its component functors by composition.
+- Every object of `Cat().Products().Subobjects()` retains its product presentation and apex monomorphism, then derives its component functors by composition.
 - Slice and coslice categories are pullbacks of `ev_1` and `ev_0` along the chosen object and retain their pullback projections.
 - Fibration and opfibration structure retains its cartesian or cocartesian lifts.
 - Kan extensions retain their units, counits, and universally induced natural transformations.
@@ -935,5 +1048,6 @@ is kernel infrastructure over already established mathematical functors.
 - A point functor is the inclusion `{X} -> D`, constructed through `Fun({X}, D)` and selected in `{X}.structure_functors()`.
 - A selected point functor `{C} -> D` supplies `D`'s object surface to the category `C`, and `D`'s element surface to `C.ObjectType` at stage `1` and `C.MorphismType` at stage `[1]`.
 - Every selected structural functor is an ordinary object of `Fun`.
-- `structure_functors()` determines compiled role bases and method compilation, nothing else.
+- `structure_functors()` determines the structural graph, compiled role bases,
+  construction-input conversions, canonical images, and inherited method surface.
 - The compiler derives structural paths only through composition in `Cat`.

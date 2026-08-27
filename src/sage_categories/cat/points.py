@@ -1,97 +1,101 @@
-"""``Cat().Point(X)``, the one-object category on a distinguished object (POL-CAT-083).
+"""The parameterized one-object categories ``Cat().Point(X)`` (POL-CAT-083).
 
-``{X}`` has one object, ``X``, and one morphism, ``1_X``.  Its point functors are the
-faithful inclusions into the categories that already have ``X`` among their objects
-(``specs/functor.md``, "Point categories and point functors").  ``{X}`` has one hom
-category, so every functor out of it is faithful.
+``Cat().Point(X)`` has the existing object ``X`` as its sole object and the
+existing identity ``1_X`` as its sole morphism.  It follows Mathlib's punctual
+category ``Discrete PUnit`` and ``Functor.fromPUnit``; the repository names the
+chosen object in the category itself instead of in a constant functor
+(``Mathlib/CategoryTheory/PUnit``, inspected 2026-08-27).
 
-``Cat().Point(X)`` is not ``Cat().Terminal()``: the terminal category's sole object is an
-abstract vertex, while ``{X}``'s sole object is ``X`` itself.  ``Category.point_functor``
-is a third thing again, the stage-``1`` generalized element ``1 -> C`` selecting an
-object; ``{X}`` uses it below, but is not it.
+The object and identity keep their established category placements.  Membership
+in the punctual category is therefore the exact identity statement owned by this
+construction.
 """
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from sage_categories.cat.category import Category
-from sage_categories.kernel.caches import MonoDict
-from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
+from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.kernel.compiler import empty_local_role
+from sage_categories.kernel.decisions import Decision, Unknown
+from sage_categories.kernel.predicates import Predicate, Proposition
+from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, Role
 
-if TYPE_CHECKING:
-    from sage_categories.cat.functors import Functor
+__all__ = ["PointCategory", "PointMorphismCategory"]
 
-__all__ = ["PointCategory"]
+
+point_object = Predicate("point_object", 2, False)
+point_identity = Predicate("point_identity", 2, False)
+
+
+def _point_object_by_identity(candidate: CategoryPoint, category: Category) -> Decision:
+    if not isinstance(category, PointCategory):
+        return Unknown
+    return candidate is category.distinguished_object()
+
+
+def _point_identity_by_identity(candidate: CategoryPoint, category: Category) -> Decision:
+    if not isinstance(category, PointCategory):
+        return Unknown
+    return candidate is category.identity_morphism(category.distinguished_object())
+
+
+point_object.register_handler(_point_object_by_identity)
+point_identity.register_handler(_point_identity_by_identity)
+
+
+class PointMorphismCategory(MorphismCategory[[], []]):
+    """The one-object category whose sole object is ``1_X``."""
+
+    def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
+        return point_identity(candidate, self._base)
 
 
 class PointCategory(Category[[], []]):
-    """``{X}``: the one-object category whose sole object is ``X`` and whose sole morphism is ``1_X``."""
+    """The one-object category on one existing object ``X``."""
 
-    class ObjectType(ObjectOfCategory):
-        """The sole object ``X``; ``{X}`` declares no operation of its own."""
-
-    class ElementType(ElementOfObject):
-        """A generalized element of ``X``.
-
-        For a category ``X = C`` these are the objects of ``C`` at stage ``1`` and the
-        morphisms of ``C`` at stage ``[1]`` (``specs/functor.md``, "The level shift").
-        """
-
-    class MorphismType(MorphismOfCategory):
-        """The sole morphism ``1_X``."""
-
-    def __init__(self, member: ObjectOfCategory, targets: tuple[Category, ...]) -> None:
-        self._member = member
-        self._targets = targets
-        self._elements: MonoDict = MonoDict()
+    def __init__(self, distinguished_object: CategoryPoint) -> None:
+        self._distinguished_object = distinguished_object
         super().__init__()
-        # ``{X}`` is the strongest established placement of ``X``: it is a subcategory of
-        # ``X``'s own category, and its object surface is what a point functor supplies
-        # to ``X`` (``specs/functor.md``, "The level shift", row 1).
-        refine(member, self)
 
-    def structure_functors(self) -> tuple[Functor, ...]:
-        """The inclusion into ``Cat()``, then one point functor per target category (POL-FUN-027).
+    def distinguished_object(self) -> CategoryPoint:
+        """The sole object ``X``."""
+        return self._distinguished_object
 
-        ``{X}`` is a subcategory of ``Cat()`` on one object and one morphism, so its
-        inclusion there comes first and is its ambient.  Each further entry states one
-        more placement of ``X`` as an object of that target.
-        """
-        from sage_categories.cat.functors import Fun
+    def local_role_class(self, role: Role) -> type[CategoryPoint]:
+        return empty_local_role(self, role)
 
-        universe = self._member.category().category()
-        return (
-            Fun(self, universe).Faithful().inclusion(),
-            *(Fun(self, target).Faithful().inclusion() for target in self._targets),
-        )
+    def morphism_category_type(self) -> type[PointMorphismCategory]:
+        return PointMorphismCategory
 
-    def element_from_defining_morphism(self, defining_morphism: Functor) -> ElementOfObject:
-        """The generalized element of the sole object named by a functor ``T -> X``, retained by identity.
+    def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
+        return point_object(candidate, self)
 
-        Not the ambient's: ``{X}``'s elements are the generalized elements of ``X``, named
-        by functors into ``X``, while ``{X}``'s own only morphism is ``1_X``.
+    def __call__(self) -> CategoryPoint:
+        """Return the sole object ``X``."""
+        return self._distinguished_object
 
-        One value per defining functor.  Two selected routes to this node must produce
-        the same image, and a fresh element each call would make them differ
-        (POL-CAT-012); a morphism of ``X`` placed in several property subcategories is
-        reached by exactly such routes.
-        """
-        assert defining_morphism.codomain() is self._member, (
-            f"{defining_morphism!r} does not name a generalized element of {self._member!r}"
-        )
-        if defining_morphism not in self._elements:
-            self._elements[defining_morphism] = self.ElementType(defining_morphism)
-        return self._elements[defining_morphism]
+    def construct_morphism(self, domain: CategoryPoint, codomain: CategoryPoint) -> MorphismOfCategory:
+        """Return ``1_X``, the sole morphism, for its unique endpoint pair."""
+        assert domain is self._distinguished_object and codomain is self._distinguished_object
+        return self.identity_morphism(self._distinguished_object)
 
-    def member(self) -> ObjectOfCategory:
-        """The distinguished object."""
-        return self._member
+    def construct_identity(self, member_object: CategoryPoint) -> MorphismOfCategory:
+        assert member_object is self._distinguished_object
+        return member_object.category().identity_morphism(member_object)
 
-    def __call__(self) -> ObjectOfCategory:
-        """The sole object, retained by identity."""
-        return self._member
+    def identity_morphism(self, member_object: CategoryPoint) -> MorphismOfCategory:
+        """Return the existing identity of ``X``."""
+        return self.construct_identity(member_object)
+
+    def composite(self, second: MorphismOfCategory, first: MorphismOfCategory) -> MorphismOfCategory:
+        identity = self.identity_morphism(self._distinguished_object)
+        assert first is identity and second is identity
+        return identity
+
+    def inverse_morphism(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
+        identity = self.identity_morphism(self._distinguished_object)
+        assert morphism is identity
+        return identity
 
     def __repr__(self) -> str:
-        return f"{{{self._member!r}}}"
+        return f"{{{self._distinguished_object!r}}}"

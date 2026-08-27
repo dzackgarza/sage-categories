@@ -22,13 +22,13 @@ from typing import TYPE_CHECKING, Any
 from sage.structure.dynamic_class import dynamic_class
 
 import sage_categories.kernel.compiler as compiler
-from sage_categories.kernel.descriptors import placement_node
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, Role, role_of
+from sage_categories.kernel.transport import placement_node
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
 
-__all__ = ["common_ancestor", "is_placed", "is_retained_inclusion", "is_subcategory", "place", "refine"]
+__all__ = ["is_placed", "is_retained_inclusion", "is_subcategory", "place", "refine"]
 
 
 def is_retained_inclusion(functor: MorphismOfCategory) -> bool:
@@ -69,27 +69,6 @@ def is_subcategory(inner: Category, outer: Category) -> bool:
     return any(compiler.same_node(outer_node, found) for found in _included_in(compiler.node(inner, Role.OBJECT)))
 
 
-def common_ancestor(first: Category, second: Category) -> Category:
-    """The least category both include into along retained inclusions (POL-FUN-027, POL-CAT-088).
-
-    This is the precondition of the binary operators on objects: ``X * Y`` is
-    constructed by the category that owns both operands.  A finite set and an
-    arbitrary set meet at ``Sets()``; a poset and a set meet nowhere, because the
-    underlying-set functor is not an inclusion, and they do not combine.
-    """
-    shared = [
-        found.category
-        for found in _included_in(compiler.node(first, Role.OBJECT))
-        if is_subcategory(second, found.category)
-    ]
-    least = [candidate for candidate in shared if all(is_subcategory(candidate, other) for other in shared)]
-    assert len(least) == 1, (
-        f"{first!r} and {second!r} have no least common category along retained inclusions: "
-        f"{'they include into none' if not shared else 'the categories they both include into have no least element'}"
-    )
-    return least[0]
-
-
 def place(value: CategoryPoint, category: Category) -> None:
     """Record that ``value`` was constructed as an object of ``category``.
 
@@ -100,6 +79,15 @@ def place(value: CategoryPoint, category: Category) -> None:
     target = compiler.node(category, Role.OBJECT)
     role_class = target.category.role_class(target.role)
     value._category = category
+    match role_of(value):
+        case Role.OBJECT:
+            from sage_categories.kernel.construction import ObjectStageIdentity
+
+            value._cat_element_identity = ObjectStageIdentity(category)
+        case Role.MORPHISM:
+            from sage_categories.kernel.construction import ArrowStageIdentity
+
+            value._cat_element_identity = ArrowStageIdentity(category.base_category(), value.domain(), value.codomain())
     if issubclass(type(value), role_class):
         return
     if issubclass(role_class, type(value)):

@@ -27,7 +27,7 @@ from sage_categories.cat.constructions import cone
 from sage_categories.cat.diagrams import sequence_position
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import ask
-from sage_categories.sets.elements import Datum, SetPoint
+from sage_categories.sets.elements import Datum, SetElement
 from sage_categories.sets.maps import SetMap
 from sage_categories.sets.objects import SetObject
 
@@ -55,7 +55,8 @@ class Function:
         finite = _sets.Sets().Finite()
         if not finite.has_chosen_enumeration(self._map.domain()):
             return Unknown
-        return tuple(self._map._rule(datum) for datum in finite.chosen_enumeration(self._map.domain()))
+        rule = self._map._set_morphism_data.rule
+        return tuple(rule(datum) for datum in finite.chosen_enumeration(self._map.domain()))
 
     def __eq__(self, other: Any) -> Decision:
         match other:
@@ -99,7 +100,7 @@ def function_set(exponent: SetObject, base: SetObject) -> SetObject:
     return _function_sets[key]
 
 
-def name_of(set_map: SetMap) -> SetPoint:
+def name_of(set_map: SetMap) -> SetElement:
     """The point ``1 -> Y ** X`` naming a map ``X -> Y``."""
     return function_set(set_map.domain(), set_map.codomain()).point(Function(set_map))
 
@@ -110,7 +111,7 @@ def evaluation_morphism(exponent: SetObject, base: SetObject) -> SetMap:
     key = (exponent, base, sets)
     if key not in _evaluations:
         product = sets.Products()((function_set(exponent, base), exponent))
-        _evaluations[key] = sets.construct_morphism(product, base, lambda family: family(0).map()._rule(family(1)))
+        _evaluations[key] = sets.construct_morphism(product, base, lambda family: family(0).map()._set_morphism_data.rule(family(1)))
     return _evaluations[key]
 
 

@@ -17,10 +17,11 @@ from sage.rings.integer_ring import ZZ as _integer_ring
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.kernel.decisions import Decision
+from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.cardinals import aleph0
 from sage_categories.sets.category import Sets
-from sage_categories.sets.elements import Datum, SetPoint
+from sage_categories.sets.elements import Datum, SetElement
 from sage_categories.sets.maps import Rule
 from sage_categories.sets.objects import SetObject
 
@@ -35,7 +36,7 @@ def _is_integer(datum: Datum) -> Decision:
 class IntegerSet(ObjectOfCategory):
     """The local object role of ``Integers()``: ``ZZ(n)`` is the point selecting ``n``."""
 
-    def __call__(self, integer: int | Integer) -> SetPoint:
+    def __call__(self, integer: int | Integer) -> SetElement:
         return self.point(Integer(integer))
 
     def __repr__(self) -> str:
@@ -45,18 +46,19 @@ class IntegerSet(ObjectOfCategory):
 class IntegersCategory(Category[[Rule], []]):
     """The one-object category of ``ZZ``, a full subcategory of ``Sets().Countable()``."""
 
-    ObjectType = IntegerSet
+    DeclaredObjectType = IntegerSet
 
-    class ElementType(ElementOfObject):
+    class DeclaredElementType(ElementOfObject):
         """A generalized element of ``ZZ``; no local operation."""
 
-    class MorphismType(MorphismOfCategory):
+    class DeclaredMorphismType(MorphismOfCategory):
         """A map ``ZZ -> ZZ``; no local operation."""
 
     def __init__(self) -> None:
         super().__init__()
         # #ZZ = aleph0: Mathlib ``Cardinal.mk_int`` (Mathlib.SetTheory.Cardinal.Basic; inspected 2026-08-26).
-        self._integers = self.ObjectType(self, _is_integer, aleph0)
+        self._integers = Sets().with_cardinality(_is_integer, aleph0)
+        refine(self._integers, self)
 
     def structure_functors(self) -> tuple[Functor, ...]:
         return (Fun(self, Sets().Countable()).FullyFaithful().inclusion(),)

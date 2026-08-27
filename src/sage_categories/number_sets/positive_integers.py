@@ -17,10 +17,11 @@ from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import Predicate
+from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.cardinals import aleph0
 from sage_categories.sets.category import Sets
-from sage_categories.sets.elements import Datum, SetPoint
+from sage_categories.sets.elements import Datum, SetElement
 from sage_categories.sets.maps import Rule
 from sage_categories.sets.objects import SetObject
 
@@ -35,7 +36,7 @@ def _is_positive_integer(datum: Datum) -> Decision:
 class PositiveIntegerSet(ObjectOfCategory):
     """The local object role of ``PositiveIntegers()``: ``NN(n)`` is the point selecting ``n``."""
 
-    def __call__(self, integer: int | Integer) -> SetPoint:
+    def __call__(self, integer: int | Integer) -> SetElement:
         return self.point(Integer(integer))
 
     def __repr__(self) -> str:
@@ -45,18 +46,19 @@ class PositiveIntegerSet(ObjectOfCategory):
 class PositiveIntegersCategory(Category[[Rule], []]):
     """The one-object category of ``NN``, a full subcategory of ``Sets().Countable()``."""
 
-    ObjectType = PositiveIntegerSet
+    DeclaredObjectType = PositiveIntegerSet
 
-    class ElementType(ElementOfObject):
+    class DeclaredElementType(ElementOfObject):
         """A generalized element of ``NN``; no local operation."""
 
-    class MorphismType(MorphismOfCategory):
+    class DeclaredMorphismType(MorphismOfCategory):
         """A map ``NN -> NN``; no local operation."""
 
     def __init__(self) -> None:
         super().__init__()
         # #NN = aleph0: Mathlib ``Cardinal.mk_pnat`` (Mathlib.SetTheory.Cardinal.Basic; inspected 2026-08-26).
-        self._positive_integers = self.ObjectType(self, _is_positive_integer, aleph0)
+        self._positive_integers = Sets().with_cardinality(_is_positive_integer, aleph0)
+        refine(self._positive_integers, self)
 
     def structure_functors(self) -> tuple[Functor, ...]:
         return (Fun(self, Sets().Countable()).FullyFaithful().inclusion(),)
@@ -79,7 +81,7 @@ natural_order: Predicate = Predicate("natural_order", 2, True)
 def _natural_order_by_integer_comparison(first: CategoryPoint, second: CategoryPoint) -> Decision:
     if first not in _POSITIVE_INTEGERS() or second not in _POSITIVE_INTEGERS():
         return Unknown
-    return bool(first._datum <= second._datum)
+    return bool(first._classical_datum_() <= second._classical_datum_())
 
 
 natural_order.register_handler(_natural_order_by_integer_comparison)

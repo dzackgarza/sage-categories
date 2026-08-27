@@ -101,7 +101,7 @@ def limit_of_sets(diagram: Functor) -> SetObject:
                     f"{candidate_cone!r} is not a cone: its components do not commute with {generator!r}"
                 )
         into_product = product.universal_morphism(cone(product.diagram(), source, lambda index_vertex: candidate_cone.component(shape.object_at(index_vertex.point()))))
-        return sets.construct_morphism(source, apex, into_product._rule)
+        return sets.construct_morphism(source, apex, into_product._set_morphism_data.rule)
 
     family = sets.Limits(shape)
     lowered = family.lowered(diagram)
@@ -160,7 +160,7 @@ class Quotient:
         self._partition: MonoDict = MonoDict()
 
     def index_datum(self, member_object: ObjectOfCategory) -> Datum:
-        return self._shape.object_point(member_object)._datum
+        return self._shape.object_point(member_object)._classical_datum_()
 
     def object_at(self, index_datum: Datum) -> ObjectOfCategory:
         return self._shape.object_at(self._objects.point(index_datum))
@@ -182,7 +182,7 @@ class Quotient:
                 source, target = self.index_datum(generator.domain()), self.index_datum(generator.codomain())
                 transition = self._diagram.on_morphism(generator)
                 for value in finite.chosen_enumeration(transition.domain()):
-                    components.union((source, value), (target, transition._rule(value)))
+                    components.union((source, value), (target, transition._set_morphism_data.rule(value)))
             self._partition[self._coproduct] = components
         return self._partition[self._coproduct]
 
@@ -195,7 +195,7 @@ class Quotient:
             return partition.find(left) == partition.find(right)
         if self._shape is omega():
             lower, upper = (left, right) if left[0] <= right[0] else (right, left)
-            transported = self.transition(lower[0], upper[0])._rule(lower[1])
+            transported = self.transition(lower[0], upper[0])._set_morphism_data.rule(lower[1])
             if (transported == upper[1]) is True:
                 return True
         return Unknown
@@ -221,7 +221,7 @@ def colimit_of_sets(diagram: Functor) -> SetObject:
     index_shape = Discrete(objects)
     coproduct = sets.Coproducts()(Fun(index_shape, sets).from_object_rule(lambda vertex: diagram.on_object(shape.object_at(vertex.point()))))
     quotient = Quotient(diagram, coproduct)
-    coproduct_rule = coproduct._membership_rule
+    coproduct_rule = coproduct._set_object_data.membership_rule
 
     def membership_rule(datum: Datum) -> Decision:
         match datum:
@@ -255,7 +255,9 @@ def colimit_of_sets(diagram: Functor) -> SetObject:
         return sets.construct_morphism(
             apex,
             target,
-            lambda representative: candidate_cocone.component(quotient.object_at(representative.tagged()[0]))._rule(representative.tagged()[1]),
+            lambda representative: candidate_cocone.component(
+                quotient.object_at(representative.tagged()[0])
+            )._set_morphism_data.rule(representative.tagged()[1]),
         )
 
     family = sets.Colimits(shape)

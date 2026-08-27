@@ -31,6 +31,7 @@ owned construction.
 from __future__ import annotations
 
 from collections.abc import Callable, Hashable
+from dataclasses import dataclass
 from typing import Any
 
 from sage.structure.coerce_dict import MonoDict, TripleDict
@@ -46,7 +47,7 @@ from sage_categories.kernel.predicates import Predicate, Proposition, ask
 from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.category import Sets
-from sage_categories.sets.elements import SetPoint
+from sage_categories.sets.elements import SetElement
 from sage_categories.sets.objects import SetObject
 
 __all__ = [
@@ -73,13 +74,20 @@ def _sequence_rule[Value](sequence: tuple[Value, ...]) -> Callable[[DiscreteObje
 # -- products of categories ---------------------------------------------------------------
 
 
+@dataclass(frozen=True, eq=False, slots=True)
+class FamilyObjectData:
+    """The local state introduced by a product-category object."""
+
+    rule: ObjectRule
+
+
 class FamilyObject(ObjectOfCategory):
     """An object of a product category: an ``S``-indexed family of objects by rule."""
 
-    def __init__(self, category: Category, rule: ObjectRule) -> None:
-        ObjectOfCategory.__init__(self, category)
-        self._shape = category.shape()
-        self._rule = rule
+    def __init__(self, data: FamilyObjectData) -> None:
+        self._rule = data.rule
+        super().__init__()
+        self._shape = self.category().shape()
 
     def component(self, index: ObjectOfCategory | Hashable) -> ObjectOfCategory:
         """The object at ``i``, for ``i`` an object of the index category or a datum of the index set."""
@@ -89,13 +97,20 @@ class FamilyObject(ObjectOfCategory):
         return f"family in {self.category()!r}"
 
 
+@dataclass(frozen=True, eq=False, slots=True)
+class FamilyMorphismData:
+    """The local state introduced by a product-category morphism."""
+
+    rule: MorphismRule
+
+
 class FamilyMorphism(MorphismOfCategory):
     """A morphism of a product category: a componentwise family of morphisms."""
 
-    def __init__(self, category: Category, domain: FamilyObject, codomain: FamilyObject, rule: MorphismRule) -> None:
-        MorphismOfCategory.__init__(self, category, domain, codomain)
-        self._shape = category.base_category().shape()
-        self._rule = rule
+    def __init__(self, data: FamilyMorphismData) -> None:
+        self._rule = data.rule
+        super().__init__()
+        self._shape = self.base_category().shape()
 
     def component(self, index: ObjectOfCategory | Hashable) -> MorphismOfCategory:
         return self._rule(vertex_of(self._shape, index))
@@ -107,10 +122,10 @@ class FamilyMorphism(MorphismOfCategory):
 class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], []]):
     """The product of an ``S``-indexed family of categories."""
 
-    ObjectType = FamilyObject
-    MorphismType = FamilyMorphism
+    DeclaredObjectType = FamilyObject
+    DeclaredMorphismType = FamilyMorphism
 
-    class ElementType(ElementOfObject):
+    class DeclaredElementType(ElementOfObject):
         """A generalized element of a family; no local operation."""
 
     def __init__(self, diagram: Functor) -> None:
@@ -141,7 +156,7 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
             self._finite_data["objects"] = Sets().Products()(diagram)
         return self._finite_data["objects"]
 
-    def object_at(self, point: SetPoint) -> FamilyObject:
+    def object_at(self, point: SetElement) -> FamilyObject:
         self.object_set()
         product = self._finite_data["objects"]
         return self(tuple(self.factor(position).object_at(product.product_projection(position)(point)) for position in self._positions()))
@@ -155,7 +170,7 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
             self._finite_data["morphisms"] = Sets().Products()(diagram)
         return self._finite_data["morphisms"]
 
-    def morphism_at(self, point: SetPoint) -> FamilyMorphism:
+    def morphism_at(self, point: SetElement) -> FamilyMorphism:
         product = self._finite_data["morphisms"]
         components = tuple(self.factor(position).morphism_at(product.product_projection(position)(point)) for position in self._positions())
         return self.construct_morphism(
@@ -177,24 +192,39 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
     def __call__(self, family: ObjectRule | tuple[ObjectOfCategory, ...]) -> FamilyObject:
         """``P(rule)`` for a family by rule; ``P((X_0, ..., X_n))`` for the external tuple, retained per tuple."""
         if callable(family):
-            return self.ObjectType(self, family)
+            return self.ObjectType(category=self, data=FamilyObjectData(family))
         sequence = tuple(family)
         if sequence not in self._sequences:
             for position, member_object in enumerate(sequence):
                 assert member_object in self.factor(position), f"{member_object!r} is not an object of {self.factor(position)!r}"
-            self._sequences[sequence] = self.ObjectType(self, _sequence_rule(sequence))
+            self._sequences[sequence] = self.ObjectType(category=self, data=FamilyObjectData(_sequence_rule(sequence)))
         return self._sequences[sequence]
 
     def construct_morphism(self, domain: FamilyObject, codomain: FamilyObject, family: MorphismRule | tuple[MorphismOfCategory, ...]) -> FamilyMorphism:
         rule = family if callable(family) else _sequence_rule(tuple(family))
-        return self.MorphismType(self.morphism_category(1), domain, codomain, rule)
+        return self.MorphismType(
+            category=self.morphism_category(1),
+            domain=domain,
+            codomain=codomain,
+            data=FamilyMorphismData(rule),
+        )
 
     def construct_identity(self, member_object: FamilyObject) -> FamilyMorphism:
-        return self.MorphismType(self.morphism_category(1), member_object, member_object, lambda vertex: member_object.component(vertex).identity())
+        return self.MorphismType(
+            category=self.morphism_category(1),
+            domain=member_object,
+            codomain=member_object,
+            data=FamilyMorphismData(lambda vertex: member_object.component(vertex).identity()),
+        )
 
     def composite(self, second: FamilyMorphism, first: FamilyMorphism) -> FamilyMorphism:
         assert first.codomain() is second.domain()
-        return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain(), lambda vertex: second.component(vertex) * first.component(vertex))
+        return self.MorphismType(
+            category=self.morphism_category(1),
+            domain=first.domain(),
+            codomain=second.codomain(),
+            data=FamilyMorphismData(lambda vertex: second.component(vertex) * first.component(vertex)),
+        )
 
     def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
         """Two families (of objects or of morphisms) over a finitely enumerated index are equal when every component is."""
@@ -245,13 +275,21 @@ def product_of_categories(diagram: Functor) -> ObjectOfCategory:
 # -- coproducts of categories --------------------------------------------------------------
 
 
+@dataclass(frozen=True, eq=False, slots=True)
+class TaggedObjectData:
+    """The local state introduced by a coproduct-category object."""
+
+    tag: DiscreteObject
+    member: ObjectOfCategory
+
+
 class TaggedObject(ObjectOfCategory):
     """An object of a coproduct category: an object of one summand, tagged by its index."""
 
-    def __init__(self, category: Category, tag: DiscreteObject, member_object: ObjectOfCategory) -> None:
-        ObjectOfCategory.__init__(self, category)
-        self._tag = tag
-        self._member = member_object
+    def __init__(self, data: TaggedObjectData) -> None:
+        self._tag = data.tag
+        self._member = data.member
+        super().__init__()
 
     def tag(self) -> DiscreteObject:
         return self._tag
@@ -263,12 +301,19 @@ class TaggedObject(ObjectOfCategory):
         return f"({self._tag!r}, {self._member!r})"
 
 
+@dataclass(frozen=True, eq=False, slots=True)
+class TaggedMorphismData:
+    """The local state introduced by a coproduct-category morphism."""
+
+    morphism: MorphismOfCategory
+
+
 class TaggedMorphism(MorphismOfCategory):
     """A morphism of a coproduct category: a morphism within one summand."""
 
-    def __init__(self, category: Category, domain: TaggedObject, codomain: TaggedObject, morphism: MorphismOfCategory) -> None:
-        MorphismOfCategory.__init__(self, category, domain, codomain)
-        self._morphism = morphism
+    def __init__(self, data: TaggedMorphismData) -> None:
+        self._morphism = data.morphism
+        super().__init__()
 
     def morphism(self) -> MorphismOfCategory:
         return self._morphism
@@ -280,10 +325,10 @@ class TaggedMorphism(MorphismOfCategory):
 class CoproductCategory(Category[[MorphismOfCategory], []]):
     """The coproduct of an ``S``-indexed family of categories."""
 
-    ObjectType = TaggedObject
-    MorphismType = TaggedMorphism
+    DeclaredObjectType = TaggedObject
+    DeclaredMorphismType = TaggedMorphism
 
-    class ElementType(ElementOfObject):
+    class DeclaredElementType(ElementOfObject):
         """A generalized element of a tagged object; no local operation."""
 
     def __init__(self, diagram: Functor) -> None:
@@ -303,20 +348,35 @@ class CoproductCategory(Category[[MorphismOfCategory], []]):
         assert member_object in self.summand(tag), f"{member_object!r} is not an object of {self.summand(tag)!r}"
         key = (tag, member_object, self)
         if key not in self._objects:
-            self._objects[key] = self.ObjectType(self, tag, member_object)
+            self._objects[key] = self.ObjectType(category=self, data=TaggedObjectData(tag, member_object))
         return self._objects[key]
 
     def construct_morphism(self, domain: TaggedObject, codomain: TaggedObject, morphism: MorphismOfCategory) -> TaggedMorphism:
         assert domain.tag() is codomain.tag(), f"{domain!r} and {codomain!r} lie in different summands"
         assert morphism in self.summand(domain.tag()).morphism_category(1)(domain.member(), codomain.member())
-        return self.MorphismType(self.morphism_category(1), domain, codomain, morphism)
+        return self.MorphismType(
+            category=self.morphism_category(1),
+            domain=domain,
+            codomain=codomain,
+            data=TaggedMorphismData(morphism),
+        )
 
     def construct_identity(self, member_object: TaggedObject) -> TaggedMorphism:
-        return self.MorphismType(self.morphism_category(1), member_object, member_object, member_object.member().identity())
+        return self.MorphismType(
+            category=self.morphism_category(1),
+            domain=member_object,
+            codomain=member_object,
+            data=TaggedMorphismData(member_object.member().identity()),
+        )
 
     def composite(self, second: TaggedMorphism, first: TaggedMorphism) -> TaggedMorphism:
         assert first.codomain() is second.domain()
-        return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain(), second.morphism() * first.morphism())
+        return self.MorphismType(
+            category=self.morphism_category(1),
+            domain=first.domain(),
+            codomain=second.codomain(),
+            data=TaggedMorphismData(second.morphism() * first.morphism()),
+        )
 
     def __repr__(self) -> str:
         return f"Coproduct({self._diagram!r})"
@@ -349,13 +409,21 @@ def coproduct_of_categories(diagram: Functor) -> ObjectOfCategory:
 # -- the strict pullback ----------------------------------------------------------------
 
 
+@dataclass(frozen=True, eq=False, slots=True)
+class PairObjectData:
+    """The local state introduced by a pullback object."""
+
+    first: ObjectOfCategory
+    second: ObjectOfCategory
+
+
 class PairObject(ObjectOfCategory):
     """An object of a strict pullback: a pair ``(a, b)``."""
 
-    def __init__(self, category: Category, first: ObjectOfCategory, second: ObjectOfCategory) -> None:
-        ObjectOfCategory.__init__(self, category)
-        self._first = first
-        self._second = second
+    def __init__(self, data: PairObjectData) -> None:
+        self._first = data.first
+        self._second = data.second
+        super().__init__()
 
     def first(self) -> ObjectOfCategory:
         return self._first
@@ -367,13 +435,21 @@ class PairObject(ObjectOfCategory):
         return f"({self._first!r}, {self._second!r})"
 
 
+@dataclass(frozen=True, eq=False, slots=True)
+class PairMorphismData:
+    """The local state introduced by a pullback morphism."""
+
+    first: MorphismOfCategory
+    second: MorphismOfCategory
+
+
 class PairMorphism(MorphismOfCategory):
     """A morphism of a strict pullback: a pair of morphisms with identical images."""
 
-    def __init__(self, category: Category, domain: PairObject, codomain: PairObject, first: MorphismOfCategory, second: MorphismOfCategory) -> None:
-        MorphismOfCategory.__init__(self, category, domain, codomain)
-        self._first = first
-        self._second = second
+    def __init__(self, data: PairMorphismData) -> None:
+        self._first = data.first
+        self._second = data.second
+        super().__init__()
 
     def first(self) -> MorphismOfCategory:
         return self._first
@@ -401,10 +477,10 @@ images_agree.register_handler(_images_agree_by_equality)
 class PullbackCategory(Category[[tuple[MorphismOfCategory, MorphismOfCategory]], []]):
     """The strict pullback ``A *_C B`` of ``F: A -> C`` and ``G: B -> C``."""
 
-    ObjectType = PairObject
-    MorphismType = PairMorphism
+    DeclaredObjectType = PairObject
+    DeclaredMorphismType = PairMorphism
 
-    class ElementType(ElementOfObject):
+    class DeclaredElementType(ElementOfObject):
         """A generalized element of a pair; no local operation."""
 
     def __init__(self, first_functor: Functor, second_functor: Functor) -> None:
@@ -456,7 +532,7 @@ class PullbackCategory(Category[[tuple[MorphismOfCategory, MorphismOfCategory]],
             self._finite_data["object set"] = pairs.subset_from(agree)
         return self._finite_data["object set"]
 
-    def object_at(self, point: SetPoint) -> PairObject:
+    def object_at(self, point: SetElement) -> PairObject:
         self.object_set()
         pairs = self._finite_data["objects"]
         first, second = self._first_functor.domain(), self._second_functor.domain()
@@ -478,7 +554,7 @@ class PullbackCategory(Category[[tuple[MorphismOfCategory, MorphismOfCategory]],
             self._finite_data["morphism set"] = pairs.subset_from(agree)
         return self._finite_data["morphism set"]
 
-    def morphism_at(self, point: SetPoint) -> PairMorphism:
+    def morphism_at(self, point: SetElement) -> PairMorphism:
         pairs = self._finite_data["morphisms"]
         first, second = self._first_functor.domain(), self._second_functor.domain()
         left, right = first.morphism_at(pairs.product_projection(0)(point)), second.morphism_at(pairs.product_projection(1)(point))
@@ -497,7 +573,7 @@ class PullbackCategory(Category[[tuple[MorphismOfCategory, MorphismOfCategory]],
         assert first in self._first_functor.domain() and second in self._second_functor.domain()
         assert ask(self._first_functor.on_object(first) == self._second_functor.on_object(second)) is not False
         if pair not in self._pairs:
-            self._pairs[pair] = self.ObjectType(self, first, second)
+            self._pairs[pair] = self.ObjectType(category=self, data=PairObjectData(first, second))
         return self._pairs[pair]
 
     def construct_morphism(self, domain: PairObject, codomain: PairObject, pair: tuple[MorphismOfCategory, MorphismOfCategory]) -> PairMorphism:
@@ -505,14 +581,29 @@ class PullbackCategory(Category[[tuple[MorphismOfCategory, MorphismOfCategory]],
         assert first in self._first_functor.domain().morphism_category(1)(domain.first(), codomain.first())
         assert second in self._second_functor.domain().morphism_category(1)(domain.second(), codomain.second())
         assert ask(self._first_functor.on_morphism(first) == self._second_functor.on_morphism(second)) is not False
-        return self.MorphismType(self.morphism_category(1), domain, codomain, first, second)
+        return self.MorphismType(
+            category=self.morphism_category(1),
+            domain=domain,
+            codomain=codomain,
+            data=PairMorphismData(first, second),
+        )
 
     def construct_identity(self, member_object: PairObject) -> PairMorphism:
-        return self.MorphismType(self.morphism_category(1), member_object, member_object, member_object.first().identity(), member_object.second().identity())
+        return self.MorphismType(
+            category=self.morphism_category(1),
+            domain=member_object,
+            codomain=member_object,
+            data=PairMorphismData(member_object.first().identity(), member_object.second().identity()),
+        )
 
     def composite(self, second: PairMorphism, first: PairMorphism) -> PairMorphism:
         assert first.codomain() is second.domain()
-        return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain(), second.first() * first.first(), second.second() * first.second())
+        return self.MorphismType(
+            category=self.morphism_category(1),
+            domain=first.domain(),
+            codomain=second.codomain(),
+            data=PairMorphismData(second.first() * first.first(), second.second() * first.second()),
+        )
 
     def __repr__(self) -> str:
         return f"Pullback({self._first_functor!r}, {self._second_functor!r})"

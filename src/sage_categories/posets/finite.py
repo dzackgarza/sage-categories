@@ -34,17 +34,20 @@ from sage_categories.cat.diagrams import sequence_position
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.shapes import Discrete
+from sage_categories.kernel.construction import ElementConstructionInput, MorphismConstructionInput, ObjectConstructionInput
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import AppliedPredicate, ask
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role
 from sage_categories.posets import _finite_poset_sage as engine
-from sage_categories.posets.category import Poset, PosetElement
+from sage_categories.posets.category import MonotoneMap, Poset, PosetElement, PosetMorphismData, PosetObjectData
 from sage_categories.sets.cardinals import Cardinal, CardinalObject
-from sage_categories.sets.category import Sets
-from sage_categories.sets.maps import Rule
+from sage_categories.sets.category import SetObject, Sets
+from sage_categories.sets.elements import SetElement, SetElementData
+from sage_categories.sets.maps import Rule, SetMap, SetMorphismData
+from sage_categories.sets.objects import SetObjectData
 
-__all__ = ["FinitePosetRole", "FinitePosetsCategory", "GradedRole", "RankedRole", "WithBottomRole", "WithTopRole"]
+__all__ = ["FinitePosetsCategory"]
 
 
 class FinitePosetRole(ObjectOfCategory):
@@ -136,7 +139,7 @@ class FinitePosetRole(ObjectOfCategory):
         positions = {datum: position for position, datum in enumerate(engine.sage_poset(self).linear_extension())}
         carrier = posets.underlying_set_functor().on_object(self)
         extension = (carrier * carrier).subset_from(lambda pair: positions[pair(0)] <= positions[pair(1)])
-        return posets.TotallyOrdered()(posets._construct(carrier, extension))
+        return posets.TotallyOrdered()(posets._construct(extension))
 
 
 class WithBottomRole(ObjectOfCategory):
@@ -217,7 +220,30 @@ class FinitePosetsCategory(PropertySubcategory[[Rule], []]):
         """The inclusion into ``Posets()``, then ``U`` restricted to ``Sets().Finite()``."""
         if "underlying_finite_set" not in self._functors:
             underlying = self._ambient.underlying_set_functor()
-            self._functors["underlying_finite_set"] = Fun(self, Sets().Finite()).Faithful()(underlying.on_object, underlying.on_morphism)
+            finite_sets = Sets().Finite()
+            finite_underlying = Fun(self, finite_sets).Faithful()(underlying.on_object, underlying.on_morphism)
+
+            def object_input(
+                source: ObjectConstructionInput[Poset, PosetObjectData],
+            ) -> ObjectConstructionInput[SetObject, SetObjectData]:
+                target: ObjectConstructionInput[SetObject, SetObjectData] = underlying.object_constructor_input(source)
+                finite_sets(target.canonical_image)
+                return target
+
+            def element_input(
+                source: ElementConstructionInput[PosetElement, None],
+            ) -> ElementConstructionInput[SetElement, SetElementData]:
+                return underlying.element_constructor_input(source)
+
+            def morphism_input(
+                source: MorphismConstructionInput[MonotoneMap, PosetMorphismData],
+            ) -> MorphismConstructionInput[SetMap, SetMorphismData]:
+                return underlying.morphism_constructor_input(source)
+
+            finite_underlying.retain_object_constructor_conversion(object_input)
+            finite_underlying.retain_element_constructor_conversion(element_input)
+            finite_underlying.retain_morphism_constructor_conversion(morphism_input)
+            self._functors["underlying_finite_set"] = finite_underlying
         return (*super().structure_functors(), self._functors["underlying_finite_set"])
 
     def __call__(self, poset: Poset) -> Poset:

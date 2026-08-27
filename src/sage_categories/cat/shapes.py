@@ -25,6 +25,7 @@ constructed uniformly by ``Cat()(labels, generators, relations)``.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any
 
 from sage.structure.coerce_dict import MonoDict
@@ -37,7 +38,7 @@ from sage_categories.kernel.predicates import Predicate, Proposition, ask
 from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.category import Sets
-from sage_categories.sets.elements import SetPoint
+from sage_categories.sets.elements import SetElement
 from sage_categories.sets.maps import SetMap
 from sage_categories.sets.objects import SetObject
 
@@ -47,14 +48,21 @@ __all__ = ["Discrete", "DiscreteCategory", "Thin", "ThinCategory", "index_set_of
 # -- Discrete(S) ---------------------------------------------------------------------
 
 
+@dataclass(frozen=True, eq=False, slots=True)
+class DiscreteObjectData:
+    """The local state introduced by a discrete-category object."""
+
+    point: SetElement
+
+
 class DiscreteObject(ObjectOfCategory):
     """An object of ``Discrete(S)``: a classical point of ``S``."""
 
-    def __init__(self, category: Category, point: SetPoint) -> None:
-        super().__init__(category)
-        self._point = point
+    def __init__(self, data: DiscreteObjectData) -> None:
+        self._point = data.point
+        super().__init__()
 
-    def point(self) -> SetPoint:
+    def point(self) -> SetElement:
         """The point of the index set that this object is."""
         return self._point
 
@@ -72,10 +80,10 @@ class DiscreteIdentity(MorphismOfCategory):
 class DiscreteCategory(Category[[], []]):
     """The discrete category on a set."""
 
-    ObjectType = DiscreteObject
-    MorphismType = DiscreteIdentity
+    DeclaredObjectType = DiscreteObject
+    DeclaredMorphismType = DiscreteIdentity
 
-    class ElementType(ElementOfObject):
+    class DeclaredElementType(ElementOfObject):
         """A generalized element of a point; no local operation."""
 
     def __init__(self, index_set: SetObject) -> None:
@@ -92,27 +100,27 @@ class DiscreteCategory(Category[[], []]):
     def object_set(self) -> SetObject:
         return self._index_set
 
-    def object_at(self, point: SetPoint) -> DiscreteObject:
+    def object_at(self, point: SetElement) -> DiscreteObject:
         return self(point)
 
-    def object_point(self, member_object: DiscreteObject) -> SetPoint:
+    def object_point(self, member_object: DiscreteObject) -> SetElement:
         return member_object.point()
 
     def morphism_set(self) -> SetObject | UnknownClass:
         return self._index_set
 
-    def morphism_at(self, point: SetPoint) -> DiscreteIdentity:
+    def morphism_at(self, point: SetElement) -> DiscreteIdentity:
         return self(point).identity()
 
     def generating_morphisms(self) -> tuple[DiscreteIdentity, ...]:
         """No morphism beyond the identities: the empty generating family."""
         return ()
 
-    def __call__(self, point: SetPoint) -> DiscreteObject:
+    def __call__(self, point: SetElement) -> DiscreteObject:
         """The object of ``Discrete(S)`` at a point of ``S``, one object per retained point."""
         assert point in self._index_set, f"{point!r} is not a point of {self._index_set!r}"
         if point not in self._objects:
-            self._objects[point] = self.ObjectType(self, point)
+            self._objects[point] = self.ObjectType(category=self, data=DiscreteObjectData(point))
         return self._objects[point]
 
     def construct_morphism(self, domain: DiscreteObject, codomain: DiscreteObject) -> DiscreteIdentity:
@@ -185,14 +193,21 @@ def index_set_of(shape: Category) -> SetObject:
 # -- Thin(P, leq) --------------------------------------------------------------------
 
 
+@dataclass(frozen=True, eq=False, slots=True)
+class ThinObjectData:
+    """The local state introduced by a thin-category object."""
+
+    point: SetElement
+
+
 class ThinObject(ObjectOfCategory):
     """An object of ``Thin(P, leq)``: a point of ``P``."""
 
-    def __init__(self, category: Category, point: SetPoint) -> None:
-        super().__init__(category)
-        self._point = point
+    def __init__(self, data: ThinObjectData) -> None:
+        self._point = data.point
+        super().__init__()
 
-    def point(self) -> SetPoint:
+    def point(self) -> SetElement:
         return self._point
 
     def __repr__(self) -> str:
@@ -229,10 +244,10 @@ class ThinMorphisms(MorphismCategory[[], []]):
 class ThinCategory(Category[[], []]):
     """The thin category of a preorder ``(P, leq)``."""
 
-    ObjectType = ThinObject
-    MorphismType = Comparison
+    DeclaredObjectType = ThinObject
+    DeclaredMorphismType = Comparison
 
-    class ElementType(ElementOfObject):
+    class DeclaredElementType(ElementOfObject):
         """A generalized element of a point; no local operation."""
 
     def __init__(self, carrier: SetObject, order: Predicate) -> None:
@@ -257,17 +272,17 @@ class ThinCategory(Category[[], []]):
     def object_set(self) -> SetObject:
         return self._carrier
 
-    def object_at(self, point: SetPoint) -> ThinObject:
+    def object_at(self, point: SetElement) -> ThinObject:
         return self(point)
 
-    def object_point(self, member_object: ThinObject) -> SetPoint:
+    def object_point(self, member_object: ThinObject) -> SetElement:
         return member_object.point()
 
-    def __call__(self, point: SetPoint) -> ThinObject:
+    def __call__(self, point: SetElement) -> ThinObject:
         """The object at a point of ``P``, one object per retained point."""
         assert point in self._carrier, f"{point!r} is not a point of {self._carrier!r}"
         if point not in self._objects:
-            self._objects[point] = self.ObjectType(self, point)
+            self._objects[point] = self.ObjectType(category=self, data=ThinObjectData(point))
         return self._objects[point]
 
     def construct_morphism(self, domain: ThinObject, codomain: ThinObject) -> Comparison:

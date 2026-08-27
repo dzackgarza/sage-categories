@@ -1,21 +1,21 @@
-"""The kernel bases of the three implementation roles.
+"""The shared ``Cat().ElementType`` root and role-specific kernel classes.
 
-Every owned runtime value is an instance of exactly one of these bases
+Every owned runtime value has one role-specific path through these classes
 (architecture contract §2, §3):
 
 - ``ObjectOfCategory``: the base of every ``C.ObjectType``;
-- ``ElementOfObject``: the base of every ``C.ElementType`` (a generalized element
+- ``ElementOfObject``: the base of every ordinary ``C.ElementType`` (a generalized element
   ``t: T -> X``, represented by its defining morphism, POL-CAT-058);
 - ``MorphismOfCategory``: the base of every ``C.MorphismType``.
 
-All three refine ``CategoryPoint``, the role of ``Cat().ElementType``: a functor
-``T -> C``.  An object is a stage-``1`` point of its category and a morphism a
-stage-``[1]`` point (``specs/functor.md``, "Generalized elements").
+``CategoryPointKernel`` is the stable end of the role MRO.  The module preallocates
+the compiled ``Cat().ElementType`` class over it.  The object, ordinary-element, and
+morphism kernel classes then refine that one class at their stated stages
+(``specs/functor.md``, "Generalized elements").
 
 A leaf's local role class subclasses only the kernel base of its role
-(POL-CAT-053).  The universal operations that every value receives from its
-category live here and delegate to category-owned operations; the kernel never
-decides mathematics.
+(POL-CAT-053).  ``Cat().ObjectType`` and ``Cat().ElementType`` own the universal
+operators.  Their compiled roles supply those operators to descendants.
 """
 
 from __future__ import annotations
@@ -23,17 +23,21 @@ from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
+from sage.structure.dynamic_class import dynamic_class
+
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
     from sage_categories.kernel.predicates import AppliedPredicate, Proposition
 
 __all__ = [
     "CategoryPoint",
+    "CategoryPointKernel",
     "ElementOfObject",
     "MorphismOfCategory",
     "ObjectOfCategory",
     "Role",
     "category_of",
+    "cat_element_root",
     "kernel_base",
     "role_of",
 ]
@@ -45,43 +49,103 @@ class Role(Enum):
     MORPHISM = "MorphismType"
 
 
-def _universe() -> Category:
-    """``Cat()``, where the walking point and the walking arrow live.
+class CategoryPointKernel:
+    """The stable Python end of the compiled ``Cat().ElementType`` role."""
 
-    Read from the universe rather than from a value's placement: a placement can be a
-    subcategory of ``Cat()`` -- a point category is one -- and the shapes belong to
-    ``Cat()`` itself, not to whichever narrowing a value currently sits in.
-    """
-    from sage_categories.cat.category import Cat
+    def __init__(self) -> None:
+        from sage_categories.kernel.construction import active_construction_context
 
-    return Cat()
+        context = active_construction_context(self)
+        assert context is not None and context.canonical_image is self, (
+            "a category point requires its active construction context"
+        )
+        self._cat_element_identity = context.cat_element_identity
+        super().__init__()
+
+    def defining_morphism(self) -> MorphismOfCategory:
+        from sage_categories.kernel.construction import (
+            ArrowStageIdentity,
+            GeneralCategoryPointIdentity,
+            ObjectStageIdentity,
+        )
+
+        match self._cat_element_identity:
+            case GeneralCategoryPointIdentity(defining_morphism):
+                return defining_morphism
+            case ObjectStageIdentity(parent):
+                return parent.point_functor(self)
+            case ArrowStageIdentity(parent, _, _):
+                return parent.arrow_functor(self)
+        raise AssertionError(self._cat_element_identity)
+
+    def stage(self) -> ObjectOfCategory:
+        from sage_categories.cat.category import Cat
+        from sage_categories.kernel.construction import (
+            ArrowStageIdentity,
+            GeneralCategoryPointIdentity,
+            ObjectStageIdentity,
+        )
+
+        match self._cat_element_identity:
+            case GeneralCategoryPointIdentity(defining_morphism):
+                return defining_morphism.domain()
+            case ObjectStageIdentity():
+                return Cat().Terminal()
+            case ArrowStageIdentity():
+                return Cat().Simplex(1)
+        raise AssertionError(self._cat_element_identity)
+
+    def parent(self) -> ObjectOfCategory:
+        from sage_categories.kernel.construction import (
+            ArrowStageIdentity,
+            GeneralCategoryPointIdentity,
+            ObjectStageIdentity,
+        )
+
+        match self._cat_element_identity:
+            case GeneralCategoryPointIdentity(defining_morphism):
+                return defining_morphism.codomain()
+            case ObjectStageIdentity(parent) | ArrowStageIdentity(parent, _, _):
+                return parent
+        raise AssertionError(self._cat_element_identity)
+
+    def category(self) -> Category:
+        """The slice category of an ordinary generalized element."""
+        return self.parent().category().SliceOver(self.parent())
+
+    def __eq__(self, candidate: Any) -> AppliedPredicate:
+        return self.parent().category().equality()(self, candidate)
+
+    def __ne__(self, candidate: Any) -> Proposition:
+        return ~self.parent().category().equality()(self, candidate)
+
+    def __hash__(self) -> int:
+        return object.__hash__(self)
 
 
-class CategoryPoint:
-    """A generalized element ``T -> C`` of a category; ``Cat().ElementType``'s base.
+_CAT_ELEMENT_ROOT = dynamic_class("Cat.ElementType", (CategoryPointKernel,), cache=False)
+CategoryPoint = _CAT_ELEMENT_ROOT
 
-    Each role supplies ``stage()``, ``parent()``, and ``defining_morphism()``.
-    """
+
+def cat_element_root() -> type[CategoryPoint]:
+    """The preallocated compiled ``Cat().ElementType`` class."""
+    return _CAT_ELEMENT_ROOT
 
 
 class ObjectOfCategory(CategoryPoint):
     """An object of a category: a stage-``1`` point of it."""
 
-    def __init__(self, category: Category) -> None:
-        self._category = category
+    def __init__(self) -> None:
+        from sage_categories.kernel.construction import active_object_context
+
+        context = active_object_context()
+        assert context is not None and context.canonical_image is self, "object identity requires its active construction context"
+        self._category = context.identity.category
+        super().__init__()
 
     def category(self) -> Category:
         """The strongest category placement established for this object."""
         return self._category
-
-    def stage(self) -> ObjectOfCategory:
-        return _universe().Terminal()
-
-    def parent(self) -> Category:
-        return self._category
-
-    def defining_morphism(self) -> MorphismOfCategory:
-        return self._category.point_functor(self)
 
     def identity(self) -> MorphismOfCategory:
         return self._category.identity_morphism(self)
@@ -105,34 +169,6 @@ class ObjectOfCategory(CategoryPoint):
         """``C.CoveredObjects()(X)``: the pairs ``(Y, p: X -> Y)`` with ``p`` an epimorphism."""
         return self._category.CoveredObjects()(self)
 
-    # The universal binary operators, defined once and delegating to the
-    # category-owned constructions (POL-CAT-088).  The operand precondition is
-    # mathematical: the two categories have a least common ancestor along retained
-    # inclusion functors, and that ancestor owns the construction.  A finite set and
-    # an arbitrary set meet at ``Sets()``; a poset and a set meet nowhere, because
-    # the underlying-set functor is not an inclusion.
-
-    def _owner(self, other: ObjectOfCategory) -> Category:
-        from sage_categories.kernel.refinement import common_ancestor
-
-        return common_ancestor(self._category, other.category())
-
-    def __mul__(self, other: ObjectOfCategory) -> ObjectOfCategory:
-        """``X * Y = C.Products()((X, Y))`` for ``C`` the least common ancestor."""
-        return self._owner(other).Products()((self, other))
-
-    def __add__(self, other: ObjectOfCategory) -> ObjectOfCategory:
-        """``X + Y = C.Coproducts()((X, Y))`` for ``C`` the least common ancestor."""
-        return self._owner(other).Coproducts()((self, other))
-
-    def __matmul__(self, other: ObjectOfCategory) -> ObjectOfCategory:
-        """``X @ Y``: the biproduct, where the category declares one."""
-        return self._owner(other).biproduct(self, other)
-
-    def __pow__(self, exponent: ObjectOfCategory) -> ObjectOfCategory:
-        """``Y ** X``: the exponential object, where the category is declared cartesian closed."""
-        return self._owner(exponent).exponential(exponent, self)
-
     def __eq__(self, candidate: Any) -> AppliedPredicate:
         return self._category.equality()(self, candidate)
 
@@ -144,42 +180,23 @@ class ObjectOfCategory(CategoryPoint):
 
 
 class ElementOfObject(CategoryPoint):
-    """A generalized element ``t: T -> X`` of ``X in C``, given by ``t``."""
-
-    def __init__(self, defining_morphism: MorphismOfCategory) -> None:
-        self._defining_morphism = defining_morphism
-
-    def defining_morphism(self) -> MorphismOfCategory:
-        return self._defining_morphism
-
-    def stage(self) -> ObjectOfCategory:
-        return self._defining_morphism.domain()
-
-    def parent(self) -> ObjectOfCategory:
-        return self._defining_morphism.codomain()
-
-    def category(self) -> Category:
-        """``C.SliceOver(X)``, the pullback of ``ev_1`` along ``X: 1 -> C`` (POL-CAT-058); the slice construction is not yet owned."""
-        return self.parent().category().SliceOver(self.parent())
-
-    def __eq__(self, candidate: Any) -> AppliedPredicate:
-        return self.parent().category().equality()(self, candidate)
-
-    def __ne__(self, candidate: Any) -> Proposition:
-        return ~self.parent().category().equality()(self, candidate)
-
-    def __hash__(self) -> int:
-        return object.__hash__(self)
+    """The role-specific kernel class of an ordinary generalized element."""
 
 
 class MorphismOfCategory(CategoryPoint):
     """A morphism ``f: A -> B`` of ``C``: an object of ``Mor(C)``, a stage-``[1]`` point of ``C``."""
 
-    def __init__(self, category: Category, domain: ObjectOfCategory, codomain: ObjectOfCategory) -> None:
+    def __init__(self) -> None:
+        from sage_categories.kernel.construction import active_morphism_context
+
+        context = active_morphism_context()
+        assert context is not None and context.canonical_image is self, "morphism identity requires its active construction context"
+        identity = context.identity
         # ``category`` is the placement, a subcategory of ``Mor(C)``; ``C`` is its base.
-        self._category = category
-        self._domain = domain
-        self._codomain = codomain
+        self._category = identity.category
+        self._domain = identity.domain
+        self._codomain = identity.codomain
+        super().__init__()
 
     def category(self) -> Category:
         """The strongest placement established for this morphism as an object of ``Mor(C)``."""
@@ -194,15 +211,6 @@ class MorphismOfCategory(CategoryPoint):
 
     def codomain(self) -> ObjectOfCategory:
         return self._codomain
-
-    def stage(self) -> ObjectOfCategory:
-        return _universe().Simplex(1)
-
-    def parent(self) -> Category:
-        return self.base_category()
-
-    def defining_morphism(self) -> MorphismOfCategory:
-        return self.base_category().arrow_functor(self)
 
     def __mul__(self, first: MorphismOfCategory) -> MorphismOfCategory:
         """``self * first`` is ``self`` after ``first``: composition owned by ``C``.
@@ -252,10 +260,10 @@ def role_of(candidate: Any) -> Role | None:
     match candidate:
         case ObjectOfCategory():
             return Role.OBJECT
-        case ElementOfObject():
-            return Role.ELEMENT
         case MorphismOfCategory():
             return Role.MORPHISM
+        case CategoryPoint():
+            return Role.ELEMENT
     return None
 
 

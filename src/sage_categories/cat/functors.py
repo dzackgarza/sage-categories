@@ -12,9 +12,10 @@ ordinary property subcategories of ``Fun`` with no computational handlers
 (POL-CAT-090/091, Mathlib ``Functor.Full``, ``Functor.Faithful``,
 ``Functor.FullyFaithful``; inspected 2026-08-26).
 
-This module constructs ``Cat()`` at import (``category.bootstrap()``): the local
-``Cat().MorphismType`` role lives here, so the singleton exists once this module
-does.  ``Fun`` is then ``Mor(Cat())``.
+This module constructs ``Cat()`` at import (``category.bootstrap()``).  The local
+``Cat().MorphismType`` declaration lives here.  Bootstrap binds ``Functor`` to the
+compiled role, then constructs ``Fun = Mor(Cat())`` and binds
+``NaturalTransformation`` to ``Fun.MorphismType``.
 """
 
 from __future__ import annotations

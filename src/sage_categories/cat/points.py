@@ -1,14 +1,19 @@
 """The parameterized one-object categories ``Cat().Point(X)`` (POL-CAT-083).
 
-``Cat().Point(X)`` has the existing object ``X`` as its sole object and the
-existing identity ``1_X`` as its sole morphism.  It follows Mathlib's punctual
-category ``Discrete PUnit`` and ``Functor.fromPUnit``; the repository names the
-chosen object in the category itself instead of in a constant functor
+``Cat().Point(X)``, written ``{X}``, has the existing object ``X`` as its sole object
+and the existing identity ``1_X`` as its sole morphism.  It follows Mathlib's punctual
+category ``Discrete PUnit`` and ``Functor.fromPUnit``; the repository names the chosen
+object in the category itself instead of in a constant functor
 (``Mathlib/CategoryTheory/PUnit``, inspected 2026-08-27).
 
-The object and identity keep their established category placements.  Membership
-in the punctual category is therefore the exact identity statement owned by this
-construction.
+``{X}`` owns the declarations specific to ``X``.  It selects the inclusion into the
+category ``X`` was already placed in, then one **point functor** per target: the
+faithful inclusion ``{X} -> D`` stating one further placement of ``X`` as an object of
+``D`` (``specs/functor.md``, "Point categories and point functors").  ``{X}`` has one
+hom category, so every functor out of it is faithful.
+
+The member and its identity keep the placements they already have; membership in the
+punctual category is the exact identity statement owned by this construction.
 """
 
 from __future__ import annotations
@@ -30,13 +35,13 @@ point_identity = Predicate("point_identity", 2, False)
 def _point_object_by_identity(candidate: CategoryPoint, category: Category) -> Decision:
     if not isinstance(category, PointCategory):
         return Unknown
-    return candidate is category.distinguished_object()
+    return candidate is category.member()
 
 
 def _point_identity_by_identity(candidate: CategoryPoint, category: Category) -> Decision:
     if not isinstance(category, PointCategory):
         return Unknown
-    return candidate is category.identity_morphism(category.distinguished_object())
+    return candidate is category.identity_morphism(category.member())
 
 
 point_object.register_handler(_point_object_by_identity)
@@ -53,13 +58,36 @@ class PointMorphismCategory(MorphismCategory[[], []]):
 class PointCategory(Category[[], []]):
     """The one-object category on one existing object ``X``."""
 
-    def __init__(self, distinguished_object: CategoryPoint) -> None:
-        self._distinguished_object = distinguished_object
+    def __init__(self, member: CategoryPoint, targets: tuple[Category, ...]) -> None:
+        self._member = member
+        self._targets = targets
+        # The placement ``X`` already has: the inclusion into it is what makes ``{X}`` a
+        # subcategory, so refining ``X`` into ``{X}`` never weakens its placement
+        # (POL-CAT-074).
+        self._established = member.category()
         super().__init__()
 
-    def distinguished_object(self) -> CategoryPoint:
+    def member(self) -> CategoryPoint:
         """The sole object ``X``."""
-        return self._distinguished_object
+        return self._member
+
+    def targets(self) -> tuple[Category, ...]:
+        """The categories this point category places ``X`` in through its point functors."""
+        return self._targets
+
+    def structure_functors(self) -> tuple[MorphismOfCategory, ...]:
+        """The inclusion into ``X``'s established category, then one point functor per target.
+
+        Each is constructed through ``Fun``'s inclusion table, so ``Fun({X}, D)`` and
+        ``{X}.structure_functors()`` name one functor (POL-FUN-027).  ``{X}`` is not yet
+        an object of ``Cat()`` while its own declaration runs, which is why the table is
+        addressed directly rather than through ``Fun({X}, D).Faithful().inclusion()``.
+        """
+        functors = self.universe().morphism_category(1)
+        return (
+            functors.faithful_inclusion(self, self._established),
+            *(functors.faithful_inclusion(self, target) for target in self._targets),
+        )
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
         return empty_local_role(self, role)
@@ -72,30 +100,31 @@ class PointCategory(Category[[], []]):
 
     def __call__(self) -> CategoryPoint:
         """Return the sole object ``X``."""
-        return self._distinguished_object
+        return self._member
 
     def construct_morphism(self, domain: CategoryPoint, codomain: CategoryPoint) -> MorphismOfCategory:
         """Return ``1_X``, the sole morphism, for its unique endpoint pair."""
-        assert domain is self._distinguished_object and codomain is self._distinguished_object
-        return self.identity_morphism(self._distinguished_object)
+        assert domain is self._member and codomain is self._member
+        return self.identity_morphism(self._member)
 
     def construct_identity(self, member_object: CategoryPoint) -> MorphismOfCategory:
-        assert member_object is self._distinguished_object
-        return member_object.category().identity_morphism(member_object)
+        """``1_X`` is the identity ``X`` already has in the category it was placed in."""
+        assert member_object is self._member
+        return self._established.identity_morphism(member_object)
 
     def identity_morphism(self, member_object: CategoryPoint) -> MorphismOfCategory:
         """Return the existing identity of ``X``."""
         return self.construct_identity(member_object)
 
     def composite(self, second: MorphismOfCategory, first: MorphismOfCategory) -> MorphismOfCategory:
-        identity = self.identity_morphism(self._distinguished_object)
+        identity = self.identity_morphism(self._member)
         assert first is identity and second is identity
         return identity
 
     def inverse_morphism(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
-        identity = self.identity_morphism(self._distinguished_object)
+        identity = self.identity_morphism(self._member)
         assert morphism is identity
         return identity
 
     def __repr__(self) -> str:
-        return f"{{{self._distinguished_object!r}}}"
+        return f"{{{self._member!r}}}"

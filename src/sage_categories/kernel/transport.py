@@ -18,11 +18,11 @@ if TYPE_CHECKING:
     from sage_categories.cat.category import Category
     from sage_categories.kernel.construction import ElementConstructionInput, MorphismConstructionInput, ObjectConstructionInput
 
-__all__ = ["construction_input", "placement_node", "transport"]
+__all__ = ["construction_input", "placement_node", "role_node", "transport"]
 
 
 def placement_node(value: CategoryPoint) -> compiler.Node:
-    """The normalized role node in which ``value`` currently lives."""
+    """The narrowest node ``value`` is an object of: the node its placement category names."""
     match role_of(value):
         case Role.OBJECT | Role.MORPHISM:
             return compiler.node(value.category(), Role.OBJECT)
@@ -31,8 +31,28 @@ def placement_node(value: CategoryPoint) -> compiler.Node:
     raise AssertionError(f"{value!r} is not an owned value")
 
 
+def role_node(value: CategoryPoint) -> compiler.Node:
+    """The node of ``value`` in its own role: where a structural route out of it starts.
+
+    A morphism's placement can be a narrowing of ``Mor(C)`` -- a fixed-endpoint category
+    or a property subcategory -- and such a narrowing is the object node of its own
+    category, not a morphism node (``kernel/compiler.py``, ``_kernel_chain``).  The
+    morphism role it lives in is ``(C, morphism)``, the node its placement narrows, which
+    ``Category.base_category`` names.  Placement and role are two facts about one value
+    and neither replaces the other (POL-CAT-076).
+    """
+    match role_of(value):
+        case Role.OBJECT:
+            return compiler.node(value.category(), Role.OBJECT)
+        case Role.MORPHISM:
+            return compiler.node(value.base_category(), Role.MORPHISM)
+        case Role.ELEMENT:
+            return compiler.node(value.parent().category(), Role.ELEMENT)
+    raise AssertionError(f"{value!r} is not an owned value")
+
+
 def _route_name(route: compiler.Route) -> str:
-    return " then ".join(repr(functor) for functor, _ in route) or "the identity route"
+    return " then ".join(repr(step.functor) for step in route) or "the identity route"
 
 
 def _from_construction(placement: Category, constructed_in: Category) -> bool:
@@ -63,9 +83,11 @@ def _object_route[
     route: compiler.Route,
 ) -> ObjectConstructionInput[TargetValue, TargetDatum]:
     current = source
-    for functor, role in route:
-        assert role is Role.OBJECT
-        current = functor.object_constructor_input(current)
+    for step in route:
+        # A selected route keeps its role: a level shift changes it and ends in the
+        # element role, so it never occurs on a route between two object nodes.
+        assert step.source_role is Role.OBJECT and step.functor is not None
+        current = step.functor.object_constructor_input(current)
     return current
 
 
@@ -79,9 +101,11 @@ def _element_route[
     route: compiler.Route,
 ) -> ElementConstructionInput[TargetValue, TargetDatum]:
     current = source
-    for functor, role in route:
-        assert role is Role.ELEMENT
-        current = functor.element_constructor_input(current)
+    for step in route:
+        # A selected route keeps its role: a level shift changes it and ends in the
+        # element role, so it never occurs on a route between two element nodes.
+        assert step.source_role is Role.ELEMENT and step.functor is not None
+        current = step.functor.element_constructor_input(current)
     return current
 
 
@@ -95,9 +119,11 @@ def _morphism_route[
     route: compiler.Route,
 ) -> MorphismConstructionInput[TargetValue, TargetDatum]:
     current = source
-    for functor, role in route:
-        assert role is Role.MORPHISM
-        current = functor.morphism_constructor_input(current)
+    for step in route:
+        # A selected route keeps its role: a level shift changes it and ends in the
+        # element role, so it never occurs on a route between two morphism nodes.
+        assert step.source_role is Role.MORPHISM and step.functor is not None
+        current = step.functor.morphism_constructor_input(current)
     return current
 
 
@@ -226,7 +252,7 @@ def construction_input[
     """The retained input for the canonical image of ``value`` at ``target``."""
     if has_canonical_transport(value, target.category):
         return canonical_input(value, target.category)
-    source = placement_node(value)
+    source = role_node(value)
     assert source.role is target.role
 
     match role_of(value):

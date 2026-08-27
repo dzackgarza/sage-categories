@@ -23,15 +23,15 @@ from sage_categories.kernel import compiler
 class Marked(Category):
     """A target category declaring one operation on each of its three roles."""
 
-    class ObjectType(ObjectOfCategory):
+    class DeclaredObjectType(ObjectOfCategory):
         def object_mark(self) -> str:
             return "object"
 
-    class ElementType(ElementOfObject):
+    class DeclaredElementType(ElementOfObject):
         def element_mark(self) -> str:
             return "element"
 
-    class MorphismType(MorphismOfCategory):
+    class DeclaredMorphismType(MorphismOfCategory):
         def morphism_mark(self) -> str:
             return "morphism"
 

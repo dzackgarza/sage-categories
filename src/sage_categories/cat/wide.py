@@ -33,13 +33,29 @@ from __future__ import annotations
 
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor
-from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategory
 from sage_categories.kernel.compiler import empty_local_role
 from sage_categories.kernel.decisions import Decision
 from sage_categories.kernel.predicates import Proposition, ask
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory, Role
 
-__all__ = ["WideMorphismCategory", "WideSubcategory", "wide_subcategory"]
+__all__ = ["WideFixedEndpointCategory", "WideMorphismCategory", "WideSubcategory", "wide_subcategory"]
+
+
+class WideFixedEndpointCategory(FixedEndpointCategory):
+    """``Mor(W)(A, B)``: by definition the full subcategory ``Mor(C)(A, B).P()``.
+
+    The morphisms of ``W`` are the morphisms of ``C`` placed in ``P``, so these two
+    categories have the same objects and ``Mor(W)(A, B)(data)`` is the constructor
+    ``Mor(C)(A, B).P()(data)``.  The declared inclusion states that identity, so the
+    placement a value enters through either spelling is comparable with the other
+    (POL-CAT-068, POL-CAT-084).
+    """
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        wide = self.ambient().base_category()
+        endpoints = wide.morphism_property()(self.domain(), self.codomain())
+        return (*super().structure_functors(), Fun.full_inclusion(self, endpoints))
 
 
 class WideMorphismCategory(MorphismCategory):
@@ -47,6 +63,9 @@ class WideMorphismCategory(MorphismCategory):
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         return self._base.morphism_property().membership_proposition(candidate)
+
+    def fixed_endpoint_type(self) -> type[WideFixedEndpointCategory]:
+        return WideFixedEndpointCategory
 
 
 class WideSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, TwoMorphismData]):

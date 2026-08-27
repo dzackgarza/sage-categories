@@ -25,6 +25,7 @@ from sage_categories.cat.category import Category, member
 from sage_categories.cat.properties import FullSubcategory, PropertySubcategory
 from sage_categories.kernel.decisions import Decision, Unknown, decision_and
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask
+from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role
 
 if TYPE_CHECKING:
@@ -293,8 +294,20 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
         return ~inhabited(self)
 
     def __call__(self, *args: MorphismData.args, **kwargs: MorphismData.kwargs) -> MorphismOfCategory:
-        """``Mor(C)(A, B)(data)``: a morphism ``A -> B`` through ``C``'s constructor."""
-        return self.base_category().construct_morphism(self._domain_object, self._codomain_object, *args, **kwargs)
+        """``Mor(C)(A, B)(data)``: a morphism ``A -> B`` through ``C``'s constructor, placed here.
+
+        Calling a category constructs a value in it, so the result enters ``Mor(C)(A, B)``
+        (POL-CAT-068, POL-API-009).  The refinement is the same same-object narrowing a
+        property subcategory's constructor performs (``cat/properties.py``), and it is
+        what lets a functor whose domain is this category transport its own argument.
+
+        Placement follows the construction path the caller took: ``C.construct_morphism``,
+        ``C.composite``, and ``C.construct_identity`` called directly still place their
+        result in ``Mor(C)``.
+        """
+        morphism = self.base_category().construct_morphism(self._domain_object, self._codomain_object, *args, **kwargs)
+        refine(morphism, self)
+        return morphism
 
     def identity(self) -> MorphismOfCategory:
         assert self._domain_object is self._codomain_object, f"{self!r} has no identity: its endpoints differ"

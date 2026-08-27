@@ -62,9 +62,7 @@ from sage_categories.kernel.construction import (
     activate_element_context,
     activate_morphism_context,
     activate_object_context,
-    active_element_context,
-    active_morphism_context,
-    active_object_context,
+    active_construction_context,
     deactivate_element_context,
     deactivate_morphism_context,
     deactivate_object_context,
@@ -508,7 +506,7 @@ def _morphism_step[Datum](
     return initialize
 
 
-def _object_steps[RootDatum](current: Node, root: ObjectConstructionInput[RootDatum]) -> tuple[tuple[Category, Callable[[], None]], ...]:
+def _object_steps[RootDatum](current: Node, root: ObjectConstructionInput[RootDatum]) -> tuple[tuple[Node, Callable[[], None]], ...]:
     """Close each exact object input into one zero-argument C3 node step."""
     assert current.role is Role.OBJECT
     found: list[tuple[Node, int, ObjectOfCategory, Callable[[], None], Route]] = []
@@ -534,10 +532,10 @@ def _object_steps[RootDatum](current: Node, root: ObjectConstructionInput[RootDa
     visit(current, root, ())
     expected = reachable(current)
     assert all(any(same_node(owner, target) for owner, _, _, _, _ in found) for target in expected)
-    return tuple((target.category, next(step for owner, _, _, step, _ in found if same_node(owner, target))) for target in expected)
+    return tuple((target, next(step for owner, _, _, step, _ in found if same_node(owner, target))) for target in expected)
 
 
-def _element_steps[RootDatum](current: Node, root: ElementConstructionInput[RootDatum]) -> tuple[tuple[Category, Callable[[], None]], ...]:
+def _element_steps[RootDatum](current: Node, root: ElementConstructionInput[RootDatum]) -> tuple[tuple[Node, Callable[[], None]], ...]:
     """Close each exact element input into one zero-argument C3 node step."""
     assert current.role is Role.ELEMENT
     found: list[tuple[Node, int, ElementOfObject, Callable[[], None], Route]] = []
@@ -563,10 +561,10 @@ def _element_steps[RootDatum](current: Node, root: ElementConstructionInput[Root
     visit(current, root, ())
     expected = reachable(current)
     assert all(any(same_node(owner, target) for owner, _, _, _, _ in found) for target in expected)
-    return tuple((target.category, next(step for owner, _, _, step, _ in found if same_node(owner, target))) for target in expected)
+    return tuple((target, next(step for owner, _, _, step, _ in found if same_node(owner, target))) for target in expected)
 
 
-def _morphism_steps[RootDatum](current: Node, root: MorphismConstructionInput[RootDatum]) -> tuple[tuple[Category, Callable[[], None]], ...]:
+def _morphism_steps[RootDatum](current: Node, root: MorphismConstructionInput[RootDatum]) -> tuple[tuple[Node, Callable[[], None]], ...]:
     """Close each exact morphism input into one zero-argument C3 node step."""
     assert current.role is Role.MORPHISM
     found: list[tuple[Node, int, MorphismOfCategory, Callable[[], None], Route]] = []
@@ -592,7 +590,7 @@ def _morphism_steps[RootDatum](current: Node, root: MorphismConstructionInput[Ro
     visit(current, root, ())
     expected = reachable(current)
     assert all(any(same_node(owner, target) for owner, _, _, _, _ in found) for target in expected)
-    return tuple((target.category, next(step for owner, _, _, step, _ in found if same_node(owner, target))) for target in expected)
+    return tuple((target, next(step for owner, _, _, step, _ in found if same_node(owner, target))) for target in expected)
 
 
 def _construct_object_root[Datum](
@@ -606,7 +604,7 @@ def _construct_object_root[Datum](
     context = ObjectConstructionContext(root.canonical_image, root.identity, _object_steps(current, root))
     token = activate_object_context(context)
     try:
-        context.run(current.category)
+        context.run(current)
         context.assert_complete()
     finally:
         deactivate_object_context(token)
@@ -623,7 +621,7 @@ def _construct_element_root[Datum](
     context = ElementConstructionContext(root.canonical_image, root.identity, _element_steps(current, root))
     token = activate_element_context(context)
     try:
-        context.run(current.category)
+        context.run(current)
         context.assert_complete()
     finally:
         deactivate_element_context(token)
@@ -640,7 +638,7 @@ def _construct_morphism_root[Datum](
     context = MorphismConstructionContext(root.canonical_image, root.identity, _morphism_steps(current, root))
     token = activate_morphism_context(context)
     try:
-        context.run(current.category)
+        context.run(current)
         context.assert_complete()
     finally:
         deactivate_morphism_context(token)
@@ -653,10 +651,10 @@ def _object_wrapper(current: Node) -> FunctionType:
         category: Category | None = None,
         data: Datum | None = None,
     ) -> None:
-        active = active_object_context()
+        active = active_construction_context()
         if active is not None and active.canonical_image is instance:
             assert category is None and data is None, "an ancestor object constructor receives only its precomputed input"
-            active.run(current.category)
+            active.run(current)
             return
         if category is None:
             category = current.category
@@ -678,10 +676,10 @@ def _element_wrapper(current: Node) -> FunctionType:
         defining_morphism: MorphismOfCategory | None = None,
         data: Datum | None = None,
     ) -> None:
-        active = active_element_context()
+        active = active_construction_context()
         if active is not None and active.canonical_image is instance:
             assert defining_morphism is None and data is None, "an ancestor element constructor receives only its precomputed input"
-            active.run(current.category)
+            active.run(current)
             return
         assert defining_morphism is not None, "an element root constructor requires its defining morphism"
         identity = ElementRoleIdentity(defining_morphism)
@@ -703,12 +701,12 @@ def _morphism_wrapper(current: Node) -> FunctionType:
         codomain: ObjectOfCategory | None = None,
         data: Datum | None = None,
     ) -> None:
-        active = active_morphism_context()
+        active = active_construction_context()
         if active is not None and active.canonical_image is instance:
             assert category is None and domain is None and codomain is None and data is None, (
                 "an ancestor morphism constructor receives only its precomputed input"
             )
-            active.run(current.category)
+            active.run(current)
             return
         assert category is not None and domain is not None and codomain is not None, (
             "a morphism root constructor requires its category and endpoints"

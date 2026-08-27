@@ -19,6 +19,7 @@ from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, Ob
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
+    from sage_categories.kernel.compiler import Node
 
 __all__ = [
     "ElementConstructionContext",
@@ -34,6 +35,7 @@ __all__ = [
     "activate_morphism_context",
     "activate_object_context",
     "active_element_context",
+    "active_construction_context",
     "active_morphism_context",
     "active_object_context",
     "deactivate_element_context",
@@ -46,6 +48,10 @@ __all__ = [
     "retained_morphism_input",
     "retained_object_input",
 ]
+
+
+def _same_node(first: Node, second: Node) -> bool:
+    return first.category is second.category and first.role is second.role
 
 
 @dataclass(frozen=True, slots=True, eq=False)
@@ -151,18 +157,20 @@ class ObjectConstructionContext:
 
     canonical_image: ObjectOfCategory
     identity: ObjectRoleIdentity
-    steps: tuple[tuple[Category, Callable[[], None]], ...]
-    initialized: list[Category] = field(default_factory=list)
+    steps: tuple[tuple[Node, Callable[[], None]], ...]
+    initialized: list[Node] = field(default_factory=list)
 
-    def run(self, category: Category) -> None:
-        assert not any(owner is category for owner in self.initialized), f"the object role of {category!r} initialized twice"
-        step = next(initialize for owner, initialize in self.steps if owner is category)
-        self.initialized.append(category)
+    def run(self, node: Node) -> None:
+        assert not any(_same_node(owner, node) for owner in self.initialized), (
+            f"the {node.role.value} role of {node.category!r} initialized twice"
+        )
+        step = next(initialize for owner, initialize in self.steps if _same_node(owner, node))
+        self.initialized.append(node)
         step()
 
     def assert_complete(self) -> None:
-        missing = [owner for owner, _ in self.steps if not any(done is owner for done in self.initialized)]
-        assert not missing, f"the object constructor chain did not initialize {missing[0]!r}"
+        missing = [owner for owner, _ in self.steps if not any(_same_node(done, owner) for done in self.initialized)]
+        assert not missing, f"the constructor chain did not initialize {missing[0].category!r}.{missing[0].role.value}"
 
 
 @dataclass(slots=True)
@@ -171,18 +179,20 @@ class ElementConstructionContext:
 
     canonical_image: ElementOfObject
     identity: ElementRoleIdentity
-    steps: tuple[tuple[Category, Callable[[], None]], ...]
-    initialized: list[Category] = field(default_factory=list)
+    steps: tuple[tuple[Node, Callable[[], None]], ...]
+    initialized: list[Node] = field(default_factory=list)
 
-    def run(self, category: Category) -> None:
-        assert not any(owner is category for owner in self.initialized), f"the element role of {category!r} initialized twice"
-        step = next(initialize for owner, initialize in self.steps if owner is category)
-        self.initialized.append(category)
+    def run(self, node: Node) -> None:
+        assert not any(_same_node(owner, node) for owner in self.initialized), (
+            f"the {node.role.value} role of {node.category!r} initialized twice"
+        )
+        step = next(initialize for owner, initialize in self.steps if _same_node(owner, node))
+        self.initialized.append(node)
         step()
 
     def assert_complete(self) -> None:
-        missing = [owner for owner, _ in self.steps if not any(done is owner for done in self.initialized)]
-        assert not missing, f"the element constructor chain did not initialize {missing[0]!r}"
+        missing = [owner for owner, _ in self.steps if not any(_same_node(done, owner) for done in self.initialized)]
+        assert not missing, f"the constructor chain did not initialize {missing[0].category!r}.{missing[0].role.value}"
 
 
 @dataclass(slots=True)
@@ -191,18 +201,20 @@ class MorphismConstructionContext:
 
     canonical_image: MorphismOfCategory
     identity: MorphismRoleIdentity
-    steps: tuple[tuple[Category, Callable[[], None]], ...]
-    initialized: list[Category] = field(default_factory=list)
+    steps: tuple[tuple[Node, Callable[[], None]], ...]
+    initialized: list[Node] = field(default_factory=list)
 
-    def run(self, category: Category) -> None:
-        assert not any(owner is category for owner in self.initialized), f"the morphism role of {category!r} initialized twice"
-        step = next(initialize for owner, initialize in self.steps if owner is category)
-        self.initialized.append(category)
+    def run(self, node: Node) -> None:
+        assert not any(_same_node(owner, node) for owner in self.initialized), (
+            f"the {node.role.value} role of {node.category!r} initialized twice"
+        )
+        step = next(initialize for owner, initialize in self.steps if _same_node(owner, node))
+        self.initialized.append(node)
         step()
 
     def assert_complete(self) -> None:
-        missing = [owner for owner, _ in self.steps if not any(done is owner for done in self.initialized)]
-        assert not missing, f"the morphism constructor chain did not initialize {missing[0]!r}"
+        missing = [owner for owner, _ in self.steps if not any(_same_node(done, owner) for done in self.initialized)]
+        assert not missing, f"the constructor chain did not initialize {missing[0].category!r}.{missing[0].role.value}"
 
 
 _object_context: ContextVar[ObjectConstructionContext | None] = ContextVar("object construction context", default=None)
@@ -220,6 +232,17 @@ def active_element_context() -> ElementConstructionContext | None:
 
 def active_morphism_context() -> MorphismConstructionContext | None:
     return _morphism_context.get()
+
+
+def active_construction_context() -> ObjectConstructionContext | ElementConstructionContext | MorphismConstructionContext | None:
+    """The sole active role-construction context."""
+    contexts = tuple(
+        context
+        for context in (active_object_context(), active_element_context(), active_morphism_context())
+        if context is not None
+    )
+    assert len(contexts) <= 1, "one public value cannot have two active construction contexts"
+    return contexts[0] if contexts else None
 
 
 def activate_object_context(context: ObjectConstructionContext) -> Token[ObjectConstructionContext | None]:

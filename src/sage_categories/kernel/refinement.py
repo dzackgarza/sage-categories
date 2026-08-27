@@ -28,7 +28,7 @@ from sage_categories.kernel.transport import placement_node
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
 
-__all__ = ["common_ancestor", "is_placed", "is_retained_inclusion", "is_subcategory", "place", "refine"]
+__all__ = ["is_placed", "is_retained_inclusion", "is_subcategory", "place", "refine"]
 
 
 def is_retained_inclusion(functor: MorphismOfCategory) -> bool:
@@ -67,27 +67,6 @@ def is_subcategory(inner: Category, outer: Category) -> bool:
     """Whether ``inner`` is ``outer`` or a declared subcategory of it, through retained inclusions."""
     outer_node = compiler.node(outer, Role.OBJECT)
     return any(compiler.same_node(outer_node, found) for found in _included_in(compiler.node(inner, Role.OBJECT)))
-
-
-def common_ancestor(first: Category, second: Category) -> Category:
-    """The least category both include into along retained inclusions (POL-FUN-027, POL-CAT-088).
-
-    This is the precondition of the binary operators on objects: ``X * Y`` is
-    constructed by the category that owns both operands.  A finite set and an
-    arbitrary set meet at ``Sets()``; a poset and a set meet nowhere, because the
-    underlying-set functor is not an inclusion, and they do not combine.
-    """
-    shared = [
-        found.category
-        for found in _included_in(compiler.node(first, Role.OBJECT))
-        if is_subcategory(second, found.category)
-    ]
-    least = [candidate for candidate in shared if all(is_subcategory(candidate, other) for other in shared)]
-    assert len(least) == 1, (
-        f"{first!r} and {second!r} have no least common category along retained inclusions: "
-        f"{'they include into none' if not shared else 'the categories they both include into have no least element'}"
-    )
-    return least[0]
 
 
 def place(value: CategoryPoint, category: Category) -> None:

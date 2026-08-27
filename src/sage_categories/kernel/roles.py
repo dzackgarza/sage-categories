@@ -13,9 +13,8 @@ All three refine ``CategoryPoint``, the role of ``Cat().ElementType``: a functor
 stage-``[1]`` point (``specs/functor.md``, "Generalized elements").
 
 A leaf's local role class subclasses only the kernel base of its role
-(POL-CAT-053).  The universal operations that every value receives from its
-category live here and delegate to category-owned operations; the kernel never
-decides mathematics.
+(POL-CAT-053).  ``Cat().ObjectType`` and ``Cat().ElementType`` own the universal
+operators.  Their compiled roles supply those operators to descendants.
 """
 
 from __future__ import annotations
@@ -104,34 +103,6 @@ class ObjectOfCategory(CategoryPoint):
     def covered_objects(self) -> Category:
         """``C.CoveredObjects()(X)``: the pairs ``(Y, p: X -> Y)`` with ``p`` an epimorphism."""
         return self._category.CoveredObjects()(self)
-
-    # The universal binary operators, defined once and delegating to the
-    # category-owned constructions (POL-CAT-088).  The operand precondition is
-    # mathematical: the two categories have a least common ancestor along retained
-    # inclusion functors, and that ancestor owns the construction.  A finite set and
-    # an arbitrary set meet at ``Sets()``; a poset and a set meet nowhere, because
-    # the underlying-set functor is not an inclusion.
-
-    def _owner(self, other: ObjectOfCategory) -> Category:
-        from sage_categories.kernel.refinement import common_ancestor
-
-        return common_ancestor(self._category, other.category())
-
-    def __mul__(self, other: ObjectOfCategory) -> ObjectOfCategory:
-        """``X * Y = C.Products()((X, Y))`` for ``C`` the least common ancestor."""
-        return self._owner(other).Products()((self, other))
-
-    def __add__(self, other: ObjectOfCategory) -> ObjectOfCategory:
-        """``X + Y = C.Coproducts()((X, Y))`` for ``C`` the least common ancestor."""
-        return self._owner(other).Coproducts()((self, other))
-
-    def __matmul__(self, other: ObjectOfCategory) -> ObjectOfCategory:
-        """``X @ Y``: the biproduct, where the category declares one."""
-        return self._owner(other).biproduct(self, other)
-
-    def __pow__(self, exponent: ObjectOfCategory) -> ObjectOfCategory:
-        """``Y ** X``: the exponential object, where the category is declared cartesian closed."""
-        return self._owner(exponent).exponential(exponent, self)
 
     def __eq__(self, candidate: Any) -> AppliedPredicate:
         return self._category.equality()(self, candidate)

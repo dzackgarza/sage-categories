@@ -10,13 +10,37 @@ alone does not separate functors, ``[1]`` does.
 
 from __future__ import annotations
 
-from sage_categories.kernel.roles import ElementOfObject
+from sage_categories.kernel.roles import ElementOfObject, ObjectOfCategory
 
 __all__ = ["CategoryPoint"]
 
 
 class CategoryPointDeclaration(ElementOfObject):
     """The local ``Cat().ElementType`` declaration."""
+
+    def __mul__(self, other: ObjectOfCategory) -> ObjectOfCategory:
+        """``X * Y``: the product in their category."""
+        category = self.category()
+        assert category is other.category(), "object product operands must have one category"
+        return category.Products()((self, other))
+
+    def __add__(self, other: ObjectOfCategory) -> ObjectOfCategory:
+        """``X + Y``: the coproduct in their category."""
+        category = self.category()
+        assert category is other.category(), "object coproduct operands must have one category"
+        return category.Coproducts()((self, other))
+
+    def __matmul__(self, other: ObjectOfCategory) -> ObjectOfCategory:
+        """``X @ Y``: the biproduct in their category."""
+        category = self.category()
+        assert category is other.category(), "object biproduct operands must have one category"
+        return category.biproduct(self, other)
+
+    def __pow__(self, exponent: ObjectOfCategory) -> ObjectOfCategory:
+        """``Y ** X``: the exponential object in their category."""
+        category = self.category()
+        assert category is exponent.category(), "object exponential operands must have one category"
+        return category.exponential(exponent, self)
 
     def __repr__(self) -> str:
         return f"point of {self.parent()!r} at stage {self.stage()!r}"

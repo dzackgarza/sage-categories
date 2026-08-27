@@ -72,6 +72,20 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         super().__init__()
         self._initialize(Cat())
 
+    def __mul__(self, other: Category) -> Category:
+        """``C * D``: the product category."""
+        return Cat().Products()((self, other))
+
+    def __add__(self, other: Category) -> Category:
+        """``C + D``: the coproduct category."""
+        return Cat().Coproducts()((self, other))
+
+    def __pow__(self, exponent: Category) -> Category:
+        """``D ** C = Fun(C, D)``: the functor category."""
+        from sage_categories.cat.functors import Fun
+
+        return Fun(exponent, self)
+
     def _initialize(self, universe: Category[[OnObject, OnMorphism], [Assignment]]) -> None:
         self._morphism_categories: dict[int, MorphismCategory[MorphismData, TwoMorphismData]] = {}
         self._narrowings: dict[tuple[int, ...], Category[MorphismData, TwoMorphismData]] = {}

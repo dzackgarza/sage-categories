@@ -358,31 +358,29 @@ property category below, and the kernel trusts that declaration (`POL-CAT-069`).
 not infer the relation from Python inheritance, shared storage, or a cache of previously
 constructed functors.
 
-### Constructing one
+### Declaring one
 
-The package writes `inclusion()` for the monomorphism a leaf declares. That name is
-shorthand for the two conditions above and for nothing else.
-
-Such a functor `S -> T` is an object of the fixed-endpoint category `Fun(S, T)`. That
-category owns its constructor. A monomorphism of `Cat()` is faithful, so construct it in
-the established property category:
+`Fun.Monomorphisms()` and `Fun.Isofibrations()` are the two owned properties, so the
+declaration is an ordinary construction in the property category their intersection
+names:
 
 ```python
-iota = Fun(S, T).Faithful().inclusion()
+iota = Fun(S, T).Monomorphisms().Isofibrations()()
 ```
 
-The leaf writer states that `S` is a subcategory of `T` by choosing this constructor.
-The kernel does not compute that relation from Python inheritance or shared storage.
+The leaf writer states that `S` is a subcategory of `T` by constructing there. The kernel
+does not compute that relation from Python inheritance or shared storage, and it does not
+recognize the functor by consulting a table of ones it built earlier.
 
-For a full property subcategory `C.P()`, the canonical inclusion is:
+A full subcategory adds fullness, so a property subcategory `C.P()` declares:
 
 ```python
-iota = Fun(C.P(), C).FullyFaithful().inclusion()
+iota = Fun(C.P(), C).Monomorphisms().Isofibrations().Full()()
 ```
 
-The defining object predicate selects the objects. The morphism categories
-`Mor(C)(A, B)`, identities, and composition are inherited from `C`. The leaf records
-this theorem by constructing directly in `Fun(C.P(), C).FullyFaithful()`.
+The defining object predicate selects the objects, and it is an isomorphism invariant, so
+`C.P()` is replete and the functor is an isofibration. The morphism categories
+`Mor(C)(A, B)`, identities, and composition are inherited from `C`.
 
 Suppose predicates `P` and `Q` on `C` satisfy
 
@@ -390,15 +388,15 @@ Suppose predicates `P` and `Q` on `C` satisfy
 P(X)\Longrightarrow Q(X).
 \]
 
-The kernel records the implication as an inclusion of property subcategories:
+The implication is that same declaration between the two property subcategories:
 
 ```python
-iota = Fun(C.P(), C.Q()).FullyFaithful().inclusion()
+iota = Fun(C.P(), C.Q()).Monomorphisms().Isofibrations().Full()()
 ```
 
-The source property is stronger. The target property is weaker. The implication belongs
-to the property relation. Its fixed-endpoint functor category owns the inclusion
-constructor.
+The source property is stronger and the target property is weaker. The implication
+belongs to the property relation, and its fixed-endpoint functor category owns the
+construction.
 
 A wide subcategory retains every object and restricts morphisms by a multiplicative
 morphism predicate. Its inclusion is faithful by construction. A general subcategory

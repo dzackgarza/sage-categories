@@ -429,9 +429,12 @@ class ProductsCategory(ApexCategory):
         """``C.Products().ChosenSubobjects()``: the objects presented by a chosen monomorphism into a chosen product, with their derived component projections (POL-CAT-094).
 
         This is a different notion from ``C.Subobjects()``, which is the family of
-        monomorphism fibers: ``C.Subobjects()(x)`` collects every monomorphism into ``x``,
-        while an object here retains one chosen monomorphism into a chosen product, as a
-        chosen subset retains its inclusion (POL-API-011).
+        monomorphism fibers: ``C.Subobjects()(x)`` collects every monomorphism into ``x``
+        (POL-API-011).  "Chosen" names an act that cannot be derived: a subobject is an
+        isomorphism class of monomorphisms and no intrinsic representative of it exists, so
+        the presenting monomorphism is selected and retained (``specs/functor.md``,
+        "Monomorphisms of ``Cat()`` and placement"), as a chosen subset retains its
+        inclusion.
         """
         return ProductSubobjectsCategory(self)
 

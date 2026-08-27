@@ -815,9 +815,6 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         return "Fun"
 
 
-from sage_categories.cat import elements as _elements
-
-_elements.CategoryPoint = Cat().ElementType
 Fun: FunctorsCategory = Cat().morphism_category(1)
 NaturalTransformation = Fun.MorphismType
 _category.NaturalTransformation = NaturalTransformation

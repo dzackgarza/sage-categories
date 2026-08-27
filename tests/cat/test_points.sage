@@ -39,62 +39,35 @@ class Marked(Category):
         return "Marked"
 
 
-class Two(Category):
-    """A toy category with two objects and the morphisms between them."""
-
-    class ObjectType(ObjectOfCategory):
-        def __init__(self, category, name):
-            ObjectOfCategory.__init__(self, category)
-            self._name = name
-
-        def __repr__(self):
-            return self._name
-
-    class ElementType(ElementOfObject):
-        """No local operation."""
-
-    class MorphismType(MorphismOfCategory):
-        """No local operation."""
-
-    def __init__(self):
-        super().__init__()
-        self._objects = {}
-
-    def __call__(self, name):
-        # Built on demand: a point category on ``Two`` recompiles this category's roles,
-        # and an object built before that would carry the earlier class.
-        if name not in self._objects:
-            self._objects[name] = self.ObjectType(self, name)
-        return self._objects[name]
-
-    def construct_morphism(self, domain, codomain):
-        return self.MorphismType(self.morphism_category(int(1)), domain, codomain)
-
-    def construct_identity(self, member_object):
-        return self.MorphismType(self.morphism_category(int(1)), member_object, member_object)
-
-    def __repr__(self):
-        return "Two"
+# The subject is ``Cardinal()``: a category that selects a structure functor and whose
+# values already exist.  The mechanism exists for categories that take part in the
+# structural graph, so every row below is stated on one; a category selecting nothing
+# exercises neither the check on its own selection nor installation onto an already
+# compiled descendant.  ``Cardinal()`` is also the shape ``Ordinals()`` takes once it
+# declares its structure.
+#
+# One target and one point category, declared here: ``Cat()`` retains one point category
+# per object, so a second ``Cat().Point(subject, ...)`` with a different target returns
+# the retained one and ignores the new target.
+MARKED = Marked()
+SUBJECT = Cardinal()
+POINT = Cat().Point(SUBJECT, (MARKED,))
 
 
 def test_a_point_category_is_the_one_object_category_on_its_member() -> None:
     """``{X}`` has ``X`` as its sole object, and ``Cat()`` retains one per object."""
-    marked = Marked()
-    two = Two()
-    point = Cat().Point(two, (marked,))
+    marked, subject, point = MARKED, SUBJECT, POINT
 
-    assert point.member() is two
-    assert point() is two
-    assert Cat().Point(two) is point, "one point category per object, retained by identity"
-    assert Cat().retained_point(two) is point, "the same table, read from the member"
+    assert point.member() is subject
+    assert point() is subject
+    assert Cat().Point(subject) is point, "one point category per object, retained by identity"
+    assert Cat().retained_point(subject) is point, "the same table, read from the member"
     assert point is not Cat().Terminal(), "the terminal category's object is a vertex, not this member"
 
 
 def test_a_point_functor_is_the_faithful_inclusion_of_the_point_category() -> None:
     """``{X}`` selects one point functor per target, constructed through ``Fun({X}, D)``."""
-    marked = Marked()
-    two = Two()
-    point = Cat().Point(two, (marked,))
+    marked, subject, point = MARKED, SUBJECT, POINT
 
     selected = point.structure_functors()
     into_marked = [functor for functor in selected if functor.codomain() is marked]
@@ -106,34 +79,28 @@ def test_a_point_functor_is_the_faithful_inclusion_of_the_point_category() -> No
 
 def test_the_point_functor_supplies_the_object_surface_to_the_member_itself() -> None:
     """Level-shift row 1: ``D.ObjectType`` lands on the category ``C``, a ``Cat().ObjectType`` value."""
-    marked = Marked()
-    two = Two()
-    Cat().Point(two, (marked,))
+    subject = SUBJECT
 
-    assert two.object_mark() == "object"
+    assert subject.object_mark() == "object"
 
 
 def test_the_point_functor_supplies_the_element_surface_one_level_down() -> None:
     """Level-shift rows 2 and 3: ``D.ElementType`` reaches the objects of ``C`` at stage ``1`` and its morphisms at stage ``[1]``."""
-    marked = Marked()
-    two = Two()
-    Cat().Point(two, (marked,))
-    left, right = two("left"), two("right")
-    arrow = two.construct_morphism(left, right)
+    subject = SUBJECT
+    three = subject(int(3))
+    identity = three.identity()
 
-    assert left.element_mark() == "element", "an object of C is a stage-1 generalized element of C"
-    assert arrow.element_mark() == "element", "a morphism of C is a stage-[1] generalized element of C"
+    assert three.element_mark() == "element", "an object of C is a stage-1 generalized element of C"
+    assert identity.element_mark() == "element", "a morphism of C is a stage-[1] generalized element of C"
 
 
 def test_the_level_shift_applies_no_functor_and_is_split_by_stage() -> None:
     """The shift's step carries both roles and the stage it restricts to, and no functor acts."""
-    marked = Marked()
-    two = Two()
-    point = Cat().Point(two, (marked,))
+    marked, subject, point = MARKED, SUBJECT, POINT
     target = compiler.node(point, Role.ELEMENT)
 
-    from_objects = compiler.routes(compiler.node(two, Role.OBJECT), target)
-    from_morphisms = compiler.routes(compiler.node(two, Role.MORPHISM), target)
+    from_objects = compiler.routes(compiler.node(subject, Role.OBJECT), target)
+    from_morphisms = compiler.routes(compiler.node(subject, Role.MORPHISM), target)
     object_step = from_objects[int(0)][int(0)]
     morphism_step = from_morphisms[int(0)][int(0)]
 
@@ -146,9 +113,7 @@ def test_the_level_shift_applies_no_functor_and_is_split_by_stage() -> None:
 
 def test_the_level_shift_contributes_no_class_base() -> None:
     """A shift is not a subcategory relation, so ``C.ObjectType`` does not derive from ``{C}.ElementType``."""
-    marked = Marked()
-    two = Two()
-    point = Cat().Point(two, (marked,))
+    marked, subject, point = MARKED, SUBJECT, POINT
 
-    assert not issubclass(two.ObjectType, point.ElementType)
-    assert not issubclass(two.MorphismType, point.ElementType)
+    assert not issubclass(subject.ObjectType, point.ElementType)
+    assert not issubclass(subject.MorphismType, point.ElementType)

@@ -16,6 +16,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from sage_categories.cat.category import Category
+from sage_categories.kernel.caches import MonoDict
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
 
@@ -44,6 +45,7 @@ class PointCategory(Category[[], []]):
     def __init__(self, member: ObjectOfCategory, targets: tuple[Category, ...]) -> None:
         self._member = member
         self._targets = targets
+        self._elements: MonoDict = MonoDict()
         super().__init__()
         # ``{X}`` is the strongest established placement of ``X``: it is a subcategory of
         # ``X``'s own category, and its object surface is what a point functor supplies
@@ -64,6 +66,24 @@ class PointCategory(Category[[], []]):
             Fun(self, universe).Faithful().inclusion(),
             *(Fun(self, target).Faithful().inclusion() for target in self._targets),
         )
+
+    def element_from_defining_morphism(self, defining_morphism: Functor) -> ElementOfObject:
+        """The generalized element of the sole object named by a functor ``T -> X``, retained by identity.
+
+        Not the ambient's: ``{X}``'s elements are the generalized elements of ``X``, named
+        by functors into ``X``, while ``{X}``'s own only morphism is ``1_X``.
+
+        One value per defining functor.  Two selected routes to this node must produce
+        the same image, and a fresh element each call would make them differ
+        (POL-CAT-012); a morphism of ``X`` placed in several property subcategories is
+        reached by exactly such routes.
+        """
+        assert defining_morphism.codomain() is self._member, (
+            f"{defining_morphism!r} does not name a generalized element of {self._member!r}"
+        )
+        if defining_morphism not in self._elements:
+            self._elements[defining_morphism] = self.ElementType(defining_morphism)
+        return self._elements[defining_morphism]
 
     def member(self) -> ObjectOfCategory:
         """The distinguished object."""

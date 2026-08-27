@@ -151,7 +151,7 @@ def _shift(step: compiler.Step, value: CategoryPoint) -> CategoryPoint:
     assert value.stage() is step.stage, f"{value!r} is not a point of {step.stage!r}"
     from sage_categories.cat.category import Cat
 
-    return Cat().Point(value.parent()).ElementType(value.defining_morphism())
+    return Cat().Point(value.parent()).element_from_defining_morphism(value.defining_morphism())
 
 
 def _route_name(route: compiler.Route) -> str:

@@ -264,7 +264,7 @@ class FunctorProperty(FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]
 
     def inclusion(self) -> Functor:
         """The identity-on-value inclusion of the domain into the codomain, asserted to have ``P`` (POL-FUN-027, POL-MATH-037)."""
-        functors = self.category().morphism_category(1)
+        functors = self.universe().morphism_category(1)
         source, target = self._ambient.domain(), self._ambient.codomain()
         roots = self.narrowing_roots()
         if any(root is functors.FullyFaithful() for root in roots):

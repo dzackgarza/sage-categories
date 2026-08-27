@@ -95,6 +95,15 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
 
     # -- declarations read by the kernel --------------------------------------
 
+    def universe(self) -> CategoryOfCategories:
+        """``Cat()``, whose objects are the categories.
+
+        Not ``category()``: that is the strongest placement established for this
+        category, and a point category ``{self}`` narrows it (POL-CAT-083).  Anything
+        that means "the functor category" or "the shapes" wants this one.
+        """
+        return Cat()
+
     def ordinal(self) -> int:
         """The construction order of this category among all categories."""
         return self._ordinal
@@ -158,7 +167,7 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         """
         if self._ambient_inclusion is None:
             return False
-        return is_placed(self._ambient_inclusion, self.category().morphism_category(1).FullyFaithful())
+        return is_placed(self._ambient_inclusion, self.universe().morphism_category(1).FullyFaithful())
 
     def ambient(self) -> Category[MorphismData, TwoMorphismData]:
         """The category this one is a declared subcategory of, derived from the selected inclusions (POL-CAT-016, POL-FUN-027)."""
@@ -851,15 +860,9 @@ class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
         if member not in self._point_categories:
             self._point_categories[member] = PointCategory(member, targets)
             # ``{C}``'s elements are ``C``'s own objects and morphisms, so ``C``'s
-            # surface gains the level-shift route as soon as this table entry exists.
-            # ``C`` was compiled before that, and only recompiling it picks the route up.
-            # ponytail: values of ``C`` built before this keep their earlier classes;
-            # declare the point category with the theory of ``C``, ahead of its values.
-            # Reclassing live values would need a registry of them, which is a much
-            # larger change than this earns.
+            # surface gains the level shift as soon as this table entry exists.
             if isinstance(member, Category):
-                member.catalogues().clear()
-                compiler.compile_category(member, member.selected_functors())
+                compiler.install_level_shift(member)
         return self._point_categories[member]
 
     def retained_point(self, member: ObjectOfCategory) -> Category | None:

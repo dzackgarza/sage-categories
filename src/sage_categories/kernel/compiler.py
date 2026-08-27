@@ -307,6 +307,30 @@ def _chain_end_classes() -> tuple[type, ...]:
     return (Category, kernel_base(Role.OBJECT), kernel_base(Role.ELEMENT), kernel_base(Role.MORPHISM), CategoryPoint, Generic, object)
 
 
+def install_level_shift(member: Category) -> None:
+    """Install a point category's element surface on its member's objects and morphisms.
+
+    ``{C}`` is constructed after ``C``, so ``C``'s roles were compiled before the level
+    shift existed.  The shift only adds inherited spellings, so they go onto the classes
+    that are already there.  Recompiling ``C`` instead would build *new* role classes
+    while every already-compiled descendant kept the previous ones as bases, and those
+    would then stand for no node.
+
+    Installing rather than rebuilding also means the values of ``C`` that already exist
+    gain the surface, since they are instances of these very classes.
+    """
+    for role in (Role.OBJECT, Role.MORPHISM):
+        current = node(member, role)
+        current.category.catalogues().pop(current.role, None)
+        role_class = current.category.role_class(current.role)
+        for step, target in _level_shift(current):
+            for name, inherited in catalogue(target).items():
+                if name in vars(role_class):
+                    continue
+                entry = inherited._replace(route=(step, *inherited.route))
+                setattr(role_class, name, descriptors.forwarding_descriptor(entry))
+
+
 def _kernel_base_of(klass: type[CategoryPoint]) -> type[CategoryPoint]:
     """The kernel role class a role class stands on: the end of its chain."""
     return next(found for found in klass.__mro__ if found in _chain_end_classes())
@@ -505,7 +529,7 @@ def _assert_linearized(current: Node, compiled: type[CategoryPoint]) -> None:
 def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
     """Compile the three role classes of ``category`` from its local declarations and its selected functors."""
     for functor in functors:
-        functor_category = category.category().morphism_category(1)
+        functor_category = category.universe().morphism_category(1)
         assert functor in functor_category, f"{functor!r} is not an object of {functor_category!r}"
         assert functor.domain() is category, f"{functor!r} does not have domain {category!r}"
     assert all(first is not second for index, first in enumerate(functors) for second in functors[index + 1 :]), (

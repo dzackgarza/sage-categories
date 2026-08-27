@@ -268,7 +268,7 @@ class ApexCategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismDa
 
     def accepts(self, diagram: Functor, shape: Category) -> None:
         """A diagram of shape ``shape`` into ``C`` or into a subcategory of ``C`` (a diagram into ``Sets().Uncountable()`` is a diagram into ``Sets()``)."""
-        assert diagram in self.category().morphism_category(1) and diagram.domain() is shape, f"{diagram!r} is not a diagram of shape {shape!r}"
+        assert diagram in self.universe().morphism_category(1) and diagram.domain() is shape, f"{diagram!r} is not a diagram of shape {shape!r}"
         assert is_subcategory(diagram.codomain(), self._apex_category), f"{diagram!r} does not land in {self._apex_category!r}"
 
     def lowered(self, diagram: Functor) -> Functor:
@@ -381,7 +381,7 @@ class ProductsCategory(ApexCategory):
 
     def __call__(self, family: Functor | tuple[ObjectOfCategory, ...]) -> ObjectOfCategory:
         """``C.Products()(diagram)`` for a diagram over ``Discrete(S)``; ``C.Products()((X_0, ..., X_n))`` for the sequence form."""
-        diagram = family if family in self.category().morphism_category(1) else self._sequence_diagram(tuple(family))
+        diagram = family if family in self.universe().morphism_category(1) else self._sequence_diagram(tuple(family))
         shape = diagram.domain()
         assert is_discrete(shape), f"{shape!r} is not a discrete shape"
         self.accepts(diagram, shape)
@@ -531,7 +531,7 @@ class CoproductsCategory(ApexCategory):
 
     def __call__(self, family: Functor | tuple[ObjectOfCategory, ...]) -> ObjectOfCategory:
         """``C.Coproducts()(diagram)`` for a diagram over ``Discrete(S)``; ``C.Coproducts()((X_0, ..., X_n))`` for the sequence form."""
-        diagram = family if family in self.category().morphism_category(1) else self._sequence_diagram(tuple(family))
+        diagram = family if family in self.universe().morphism_category(1) else self._sequence_diagram(tuple(family))
         shape = diagram.domain()
         assert is_discrete(shape), f"{shape!r} is not a discrete shape"
         self.accepts(diagram, shape)

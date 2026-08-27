@@ -483,10 +483,16 @@ defines its own, and the compiler calls them to find a value's node, so a compil
 would call the accessor it is transporting for. `{C}`'s element node is the first to
 reach `Cat()`'s, where all three are declared.
 
-A point category changes the compiled surface of its own member, which was compiled
-before it existed, so constructing `{C}` recompiles `C`. Values of `C` built earlier keep
-their earlier classes: declare a point category with the theory of `C`, ahead of its
-values.
+`{C}` is constructed after `C`, so `C`'s roles were compiled before the shift existed.
+The shift adds inherited spellings and nothing else, so constructing `{C}` installs them
+on the role classes `C` already has. Rebuilding those classes instead would leave every
+already-compiled descendant holding the previous ones as bases, where they would stand
+for no node. Installing also gives the surface to the values of `C` that already exist,
+since they are instances of exactly these classes.
+
+`{C}` retains one generalized element per defining functor. Two selected routes to
+`({C}, element)` must produce the same image, and a morphism of `C` placed in several
+property subcategories is reached by exactly such routes.
 
 ### Ordinals as a semiring
 

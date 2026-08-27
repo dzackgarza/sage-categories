@@ -182,6 +182,14 @@ class SetsCategory(Category[[Rule], []]):
         return self._canonical_finite("simplex", (dimension,), range(dimension + 1))
 
     def classical_stages(self) -> tuple[SetObject, ...]:
+        """``G_Sets = 1``.  The writer asserts that ``1`` separates ``Sets()``, so ``Mor(Sets())(1, -)`` is faithful (POL-MATH-037).
+
+        nLab "separator", Definitions ("if ``f . e = g . e`` for every morphism
+        ``e: S -> X``, then ``f = g``") and Examples and applications ("In Set, any
+        inhabited set is a separator; in particular, the point is a separator");
+        inspected 2026-08-27.  Set membership, enumeration, and cardinality read
+        ``Mor(Sets())(1, X)`` through this stage.
+        """
         return (self.Terminal(),)
 
     @cached_method

@@ -139,6 +139,14 @@ class Functor(MorphismOfCategory):
         return self.on_morphism(value)
 
     # -- classical stages (``specs/functor.md``, "Structural inheritance") ----------------
+    #
+    # The retained morphism ``c: G_D -> F(G_C)`` is the whole datum of the classical
+    # transport.  By the covariant Yoneda lemma it *is* the natural transformation
+    # ``phi_F: U_C => U_D . F`` between the represented classical-element functors:
+    # Mathlib ``CategoryTheory.coyonedaEquiv : (coyoneda.obj (op X) ⟶ F) ≃ F.obj X``
+    # (inspected 2026-08-27) with ``X = G_C`` and the presheaf ``U_D . F``, whose value
+    # at ``G_C`` is ``Mor(D)(G_D, F(G_C))``.  The construction therefore retains the
+    # stage morphism and no natural-transformation carrier on ``F``.
 
     def retain_stage_comparison(self, comparison: MorphismOfCategory) -> None:
         """Retain ``c: G_D -> F(G_C)`` as the defining datum of this functor's classical transport (POL-LEAF-003)."""

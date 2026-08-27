@@ -99,7 +99,7 @@ type BoundMember = Any
 _ROLE_NAMES = frozenset(role.value for role in Role)
 
 _CLASS_HEADER = re.compile(r"^(?P<indent> *)class (?P<name>\w+)(?P<parameters>\[[^\]]*\])?(?:\((?P<bases>.*)\))?:(?P<body>\s*\.\.\.)?$")
-_ROLE_ATTRIBUTE = re.compile(r"^ +(?:ObjectType|ElementType|MorphismType)\s*[:=].*$")
+_ROLE_ATTRIBUTE = re.compile(r"^ +(?P<role>ObjectType|ElementType|MorphismType)\s*[:=].*$")
 _IMPORT = re.compile(r"^(?:from [\w.]+ import (?P<names>.*)|import (?P<module>[\w.]+)(?: as (?P<alias>\w+))?)$")
 
 _GENERIC_ROLE = {role: kernel_base(role) for role in Role}
@@ -373,13 +373,24 @@ def _role_references(category: Category | None, projections: Projections) -> tup
 
 
 def _category_classes(module: str, categories: tuple[Category, ...]) -> dict[str, Category | None]:
-    """The category classes a module declares: one live category each, or ``None`` for the root and every family."""
+    """The category classes whose role attributes the projection states.
+
+    A class standing for one live category states that category's role classes.
+    ``Category`` states the kernel bases, so every category has the three
+    attributes and each narrowing of them is a subtype.  A class standing for a
+    family -- a property subcategory, a presented shape -- states nothing and
+    keeps whatever its body writes: its instances have different role classes,
+    and a stub is not indexed by a runtime category value.
+    """
     found: dict[str, Category | None] = {}
     for name, value in vars(sys.modules[module]).items():
         if not isinstance(value, type) or not issubclass(value, Category) or value.__module__ != module:
             continue
         single = [category for category in categories if _declaring_class(category) is value]
-        found[name] = single[0] if len(single) == 1 else None
+        if len(single) == 1:
+            found[name] = single[0]
+        elif value is Category:
+            found[name] = None
     return found
 
 
@@ -405,11 +416,19 @@ def _resolved(references: set[Reference], module: str, lines: list[str]) -> tupl
 
 def _rewrite(text: str, module: str, categories: tuple[Category, ...], projections: Projections) -> str:
     """One module's stub, carrying the compiled bases and the role attributes."""
-    owned = {
-        projection.reference.name: projection
-        for projection in projections.values()
-        if projection.reference.module == module and projection.declared
-    }
+    owned: dict[str, RoleProjection] = {}
+    for projection in projections.values():
+        if projection.reference.module != module or not projection.declared:
+            continue
+        held = owned.setdefault(projection.reference.name, projection)
+        # One declaration serves every category of a presented family, and each of
+        # them compiles it against its own selected graph.  The stub has one class
+        # for the name, so the graphs must agree on its bases.
+        if held.bases != projection.bases:
+            raise StubGenerationError(
+                f"{projection.reference.name} is the {projection.role.value} of both {held.category!r} and "
+                f"{projection.category!r}, which reach different categories; a stub has one class for the name"
+            )
     generated = sorted(
         (projection for projection in projections.values() if projection.reference.module == module and not projection.declared),
         key=lambda projection: (projection.category.ordinal(), projection.role.value),
@@ -424,10 +443,14 @@ def _rewrite(text: str, module: str, categories: tuple[Category, ...], projectio
 
     result: list[str] = []
     enclosing: list[tuple[int, str]] = []
+    # The role attributes the projection restates, and therefore replaces, in the
+    # class body currently open.  A family class keeps the ones its body writes.
+    replaced: set[str] = set()
     for line in lines:
         match = _CLASS_HEADER.match(line)
         if match is None:
-            if not _ROLE_ATTRIBUTE.match(line):
+            attribute = _ROLE_ATTRIBUTE.match(line)
+            if attribute is None or attribute["role"] not in replaced:
                 result.append(line)
             continue
         indent = len(match["indent"])
@@ -436,6 +459,8 @@ def _rewrite(text: str, module: str, categories: tuple[Category, ...], projectio
         name, parameters = match["name"], match["parameters"] or ""
         qualified = ".".join([*(held for _, held in enclosing), name])
         enclosing.append((indent, name))
+        if indent == 0:
+            replaced = set()
         if qualified not in owned and qualified not in classes:
             result.append(line)
             continue
@@ -452,6 +477,7 @@ def _rewrite(text: str, module: str, categories: tuple[Category, ...], projectio
             for role, reference in zip(Role, _role_references(classes[qualified], projections)):
                 if reference.name == f"{qualified}.{role.value}":
                     continue
+                replaced.add(role.value)
                 body.append(f"{match['indent']}    @property")
                 body.append(f"{match['indent']}    def {role.value}(self) -> type[{spelling[reference]}]: ...")
         result.extend(body)

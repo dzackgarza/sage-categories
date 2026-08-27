@@ -58,9 +58,10 @@ class PointMorphismCategory(MorphismCategory[[], []]):
 class PointCategory(Category[[], []]):
     """The one-object category on one existing object ``X``."""
 
-    def __init__(self, member: CategoryPoint, targets: tuple[Category, ...]) -> None:
+    def __init__(self, member: CategoryPoint, targets: tuple[Category, ...], roles: dict[Role, type[CategoryPoint]]) -> None:
         self._member = member
         self._targets = targets
+        self._roles = roles
         # The placement ``X`` already has: the monomorphism into it is what makes ``{X}`` a
         # subcategory, so refining ``X`` into ``{X}`` never weakens its placement
         # (POL-CAT-074).
@@ -90,6 +91,15 @@ class PointCategory(Category[[], []]):
         )
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
+        """The declarations specific to ``X``, which ``{X}`` owns (POL-CAT-083).
+
+        A distinguished named object introduces operations no other object of its ambient
+        category has -- ``ZZ(n)`` selecting an integer, the spelling ``ZZ`` -- and ``{X}``
+        is where they are declared, because ``X`` is its sole object.  A role the caller
+        declares nothing for gets the empty local declaration.
+        """
+        if role in self._roles:
+            return self._roles[role]
         return empty_local_role(self, role)
 
     def morphism_category_type(self) -> type[PointMorphismCategory]:

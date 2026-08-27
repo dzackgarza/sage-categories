@@ -15,6 +15,8 @@ table in ``specs/functor.md``, "The level shift".  Toy categories live only in t
 (POL-TEST-006).
 """
 
+from sage.rings.integer_ring import ZZ as _integer_ring
+
 from sage_categories.all import *
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role
 from sage_categories.kernel import compiler
@@ -117,3 +119,54 @@ def test_the_level_shift_contributes_no_class_base() -> None:
 
     assert not issubclass(subject.ObjectType, point.ElementType)
     assert not issubclass(subject.MorphismType, point.ElementType)
+
+
+# -- a distinguished named object declared entirely by its point category (POL-CAT-083) --
+#
+# The even integers: a rule, a cited cardinality, a placement, and a point constructor.
+# Everything else -- the object, element, and morphism roles, the subcategory
+# monomorphism, the constructor returning the sole object -- comes from ``{X}``.
+
+
+def _is_even(datum) -> bool:
+    """Sage's exact integer ring decides membership and parity at the private boundary."""
+    return datum in _integer_ring and Integer(datum) % int(2) == int(0)
+
+
+class EvenIntegerSet(ObjectOfCategory):
+    """The declarations specific to ``2ZZ``: its point constructor and its name."""
+
+    def __call__(self, integer):
+        return self.point(Integer(integer))
+
+    def __repr__(self) -> str:
+        return "2ZZ"
+
+
+# #2ZZ = aleph0: the doubling bijection ZZ -> 2ZZ, with Mathlib ``Cardinal.mk_int``
+# (Mathlib.SetTheory.Cardinal.Basic; inspected 2026-08-26) for #ZZ = aleph0.
+EVEN_INTEGERS = Sets().with_cardinality(_is_even, aleph0)
+EVENS = Cat().Point(EVEN_INTEGERS, (Sets().Countable(),), {Role.OBJECT: EvenIntegerSet})
+
+
+def test_a_named_object_leaf_states_only_its_rule_cardinality_placement_and_constructor() -> None:
+    """``{X}`` owns the declarations specific to ``X`` and supplies the rest of the category (POL-CAT-083)."""
+    evens = EVEN_INTEGERS
+
+    assert EVENS() is evens, "the sole object of the point category"
+    assert evens.category() is EVENS, "the member is placed in its point category"
+    assert repr(evens) == "2ZZ", "the declared name reaches the value"
+    assert evens(int(6)) is evens.point(Integer(6)), "the declared point constructor is that of the sole object"
+    assert ask(evens.membership_proposition(evens(int(6)))) is True
+    assert ask(evens.membership_proposition(ZZ(int(3)))) is False
+
+
+def test_a_point_functor_carries_the_cited_placement_and_the_inherited_set_surface() -> None:
+    """The point functor places ``X`` in its target; the set surface is compiled from ``Sets()``, not declared."""
+    evens = EVEN_INTEGERS
+
+    assert evens in Sets().Countable(), "the placement the point functor installs"
+    assert evens in Sets(), "and therefore in the ambient"
+    assert ask(evens.cardinality() == aleph0) is True, "the recorded cardinal, read through the Sets() surface"
+    assert ask(evens.is_countable()) is True
+    assert ask(evens.is_finite()) is False

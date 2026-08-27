@@ -305,6 +305,12 @@ class FunctorDeclaration(MorphismOfCategory):
         assert retained_morphism_input(target.canonical_image) is target, f"{self!r} constructed a parallel morphism input"
         return target
 
+    def _assert_complete_constructor_conversions(self) -> None:
+        """Reject selection until all three role conversions are retained (POL-CAT-071)."""
+        assert self in _object_constructor_conversions, f"{self!r} retains no object constructor conversion"
+        assert self in _element_constructor_conversions, f"{self!r} retains no element constructor conversion"
+        assert self in _morphism_constructor_conversions, f"{self!r} retains no morphism constructor conversion"
+
     def _retain_identity_constructor_conversions(self) -> None:
         """Retain the identity conversions for an identity-on-value functor."""
         if self not in _object_constructor_conversions:

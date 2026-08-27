@@ -38,7 +38,7 @@ from sage_categories.sets.exponentials import Function, function_set
 from sage_categories.sets.maps import Rule, SetMap
 from sage_categories.sets.objects import MembershipRule, SetObject
 
-__all__ = ["PowerObjectRole", "PowerObjectsCategory"]
+__all__ = ["PowerObjectsCategory"]
 
 
 class PowerObjectRole(ObjectOfCategory):

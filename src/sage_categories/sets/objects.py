@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from sage_categories.sets.cardinals import CardinalObject
     from sage_categories.sets.category import SetObject, SetPoint
 
-__all__ = ["FiniteSetRole", "MembershipRule", "SetObjectData", "element_of"]
+__all__ = ["MembershipRule", "SetObjectData", "element_of"]
 
 logger = logging.getLogger("sage_categories")
 

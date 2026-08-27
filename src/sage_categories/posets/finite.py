@@ -47,7 +47,7 @@ from sage_categories.sets.elements import SetElementData
 from sage_categories.sets.maps import Rule, SetMorphismData
 from sage_categories.sets.objects import SetObjectData
 
-__all__ = ["FinitePosetRole", "FinitePosetsCategory", "GradedRole", "RankedRole", "WithBottomRole", "WithTopRole"]
+__all__ = ["FinitePosetsCategory"]
 
 
 class FinitePosetRole(ObjectOfCategory):

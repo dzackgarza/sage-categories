@@ -69,7 +69,7 @@ from sage_categories.sets.elements import Datum
 from sage_categories.sets.maps import Rule, SetMap
 from sage_categories.sets.objects import MembershipRule, SetObject
 
-__all__ = ["ChosenQuotientRole", "ChosenQuotientsCategory", "ChosenSubsetRole", "ChosenSubsetsCategory", "subset_of"]
+__all__ = ["ChosenQuotientsCategory", "ChosenSubsetsCategory", "subset_of"]
 
 # ``subset_of(A, B)``: every member of the chosen subset ``A`` is a member of the
 # chosen subset ``B`` of the same set.

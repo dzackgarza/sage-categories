@@ -97,7 +97,7 @@ if TYPE_CHECKING:
     from sage_categories.sets.maps import SetMap
     from sage_categories.sets.objects import SetObject
 
-__all__ = ["Cardinal", "CardinalMorphism", "CardinalObject", "aleph0", "cardinality_functor", "continuum", "representative_bijection"]
+__all__ = ["Cardinal", "CardinalityMorphism", "CardinalObject", "aleph0", "cardinality_functor", "continuum", "representative_bijection"]
 
 # A private expression key: nested tuples of strings and integers only, so caches
 # and hashes never compare owned values.
@@ -216,7 +216,7 @@ class CardinalMorphismDeclaration(MorphismOfCategory):
         super().__init__()
 
     def __repr__(self) -> str:
-        return f"CardinalMorphism({self.domain()!r} -> {self.codomain()!r})"
+        return f"CardinalityMorphism({self.domain()!r} -> {self.codomain()!r})"
 
 
 # ``less_than(kappa, lambda)``: ``kappa <= lambda`` and not ``kappa == lambda``.
@@ -408,7 +408,7 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
 
     # -- morphisms: functions between the representatives (``specs/cardinality.md``, "Cardinal morphisms") --
 
-    def construct_morphism(self, domain: CardinalObject, codomain: CardinalObject, set_map: SetMap) -> CardinalMorphism:
+    def construct_morphism(self, domain: CardinalObject, codomain: CardinalObject, set_map: SetMap) -> CardinalityMorphism:
         """``Mor(Cardinal())(kappa, lambda)(f)`` for a set map ``f: R_kappa -> R_lambda``."""
         assert domain in self and codomain in self
         assert set_map in _sets.Sets().morphism_category(1)(self.representative(domain), self.representative(codomain)), (
@@ -421,7 +421,7 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
             data=CardinalMorphismData(set_map=set_map),
         )
 
-    def construct_identity(self, cardinal: CardinalObject) -> CardinalMorphism:
+    def construct_identity(self, cardinal: CardinalObject) -> CardinalityMorphism:
         return self.MorphismType(
             category=self.morphism_category(1),
             domain=cardinal,
@@ -429,7 +429,7 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
             data=CardinalMorphismData(set_map=self.representative(cardinal).identity()),
         )
 
-    def composite(self, second: CardinalMorphism, first: CardinalMorphism) -> CardinalMorphism:
+    def composite(self, second: CardinalityMorphism, first: CardinalityMorphism) -> CardinalityMorphism:
         """Composition is the composition of the maps between representatives."""
         morphisms = self.morphism_category(1)
         assert first in morphisms and second in morphisms
@@ -441,7 +441,7 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
             data=CardinalMorphismData(set_map=second._set_map * first._set_map),
         )
 
-    def inverse_morphism(self, morphism: CardinalMorphism) -> CardinalMorphism:
+    def inverse_morphism(self, morphism: CardinalityMorphism) -> CardinalityMorphism:
         """The inverse of a cardinal isomorphism: the inverse of its map, an isomorphism of sets because the fully faithful representative functor reflects isomorphisms (Mathlib ``CategoryTheory.isIso_of_fully_faithful``; inspected 2026-08-27)."""
         if morphism not in self._inverses:
             set_map = _sets.Sets().morphism_category(1).Isomorphisms()(morphism._set_map)
@@ -572,7 +572,7 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
 
 _CARDINAL = CardinalCategory()
 CardinalObject = _CARDINAL.ObjectType
-CardinalMorphism = _CARDINAL.MorphismType
+CardinalityMorphism = _CARDINAL.MorphismType
 _sets.CardinalObject = CardinalObject
 _set_objects.CardinalObject = CardinalObject
 _ordinals.CardinalObject = CardinalObject
@@ -636,7 +636,7 @@ def cardinality_functor() -> Functor:
         assert cardinality is not Unknown, f"{member_object!r} has no known cardinality, so the cardinality functor has no executable value at it"
         return cardinality
 
-    def on_morphism(bijection: SetMap) -> CardinalMorphism:
+    def on_morphism(bijection: SetMap) -> CardinalityMorphism:
         source, target = bijection.domain(), bijection.codomain()
         conjugate = representative_bijection(target) * bijection * representative_bijection(source).inverse()
         return cardinals.morphism_category(1)(on_object(source), on_object(target)).Isomorphisms()(conjugate)

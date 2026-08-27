@@ -97,10 +97,6 @@ class PosetDeclaration(ObjectOfCategory):
         """The defining order relation ``R``, a chosen subset of ``X * X``."""
         return self._poset_object_data.relation
 
-    def point(self, datum: Datum) -> PosetElement:
-        """Construct the poset point over the inherited canonical set point."""
-        return self.element(super().point(datum))
-
     def element(self, point: SetElement) -> PosetElement:
         """The classical element over a point ``x: 1 -> U(P)``: the monotone map ``1 -> P`` under ``x``."""
         state = self._poset_object_data

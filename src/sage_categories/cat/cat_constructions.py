@@ -107,10 +107,10 @@ class FamilyMorphism(MorphismOfCategory):
 class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], []]):
     """The product of an ``S``-indexed family of categories."""
 
-    ObjectType = FamilyObject
-    MorphismType = FamilyMorphism
+    DeclaredObjectType = FamilyObject
+    DeclaredMorphismType = FamilyMorphism
 
-    class ElementType(ElementOfObject):
+    class DeclaredElementType(ElementOfObject):
         """A generalized element of a family; no local operation."""
 
     def __init__(self, diagram: Functor) -> None:
@@ -280,10 +280,10 @@ class TaggedMorphism(MorphismOfCategory):
 class CoproductCategory(Category[[MorphismOfCategory], []]):
     """The coproduct of an ``S``-indexed family of categories."""
 
-    ObjectType = TaggedObject
-    MorphismType = TaggedMorphism
+    DeclaredObjectType = TaggedObject
+    DeclaredMorphismType = TaggedMorphism
 
-    class ElementType(ElementOfObject):
+    class DeclaredElementType(ElementOfObject):
         """A generalized element of a tagged object; no local operation."""
 
     def __init__(self, diagram: Functor) -> None:
@@ -401,10 +401,10 @@ images_agree.register_handler(_images_agree_by_equality)
 class PullbackCategory(Category[[tuple[MorphismOfCategory, MorphismOfCategory]], []]):
     """The strict pullback ``A *_C B`` of ``F: A -> C`` and ``G: B -> C``."""
 
-    ObjectType = PairObject
-    MorphismType = PairMorphism
+    DeclaredObjectType = PairObject
+    DeclaredMorphismType = PairMorphism
 
-    class ElementType(ElementOfObject):
+    class DeclaredElementType(ElementOfObject):
         """A generalized element of a pair; no local operation."""
 
     def __init__(self, first_functor: Functor, second_functor: Functor) -> None:

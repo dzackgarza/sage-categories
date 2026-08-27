@@ -17,8 +17,8 @@ from sage_categories.kernel.roles import CategoryPoint as KernelCategoryPoint
 __all__ = ["CategoryPoint"]
 
 
-class CategoryPoint(KernelCategoryPoint):
-    """A functor ``T -> C`` regarded as a point of ``C`` at stage ``T``."""
+class CategoryPointDeclaration(KernelCategoryPoint):
+    """The local ``Cat().ElementType`` declaration."""
 
     def __init__(self, defining_functor: Functor) -> None:
         self._defining_functor = defining_functor
@@ -34,3 +34,7 @@ class CategoryPoint(KernelCategoryPoint):
 
     def __repr__(self) -> str:
         return f"point of {self.parent()!r} at stage {self.stage()!r}"
+
+
+# The bootstrap replaces this provisional name with ``Cat().ElementType``.
+CategoryPoint = CategoryPointDeclaration

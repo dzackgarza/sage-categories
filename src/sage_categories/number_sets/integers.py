@@ -46,12 +46,12 @@ class IntegerSet(ObjectOfCategory):
 class IntegersCategory(Category[[Rule], []]):
     """The one-object category of ``ZZ``, a full subcategory of ``Sets().Countable()``."""
 
-    ObjectType = IntegerSet
+    DeclaredObjectType = IntegerSet
 
-    class ElementType(ElementOfObject):
+    class DeclaredElementType(ElementOfObject):
         """A generalized element of ``ZZ``; no local operation."""
 
-    class MorphismType(MorphismOfCategory):
+    class DeclaredMorphismType(MorphismOfCategory):
         """A map ``ZZ -> ZZ``; no local operation."""
 
     def __init__(self) -> None:

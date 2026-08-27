@@ -72,10 +72,10 @@ class DiscreteIdentity(MorphismOfCategory):
 class DiscreteCategory(Category[[], []]):
     """The discrete category on a set."""
 
-    ObjectType = DiscreteObject
-    MorphismType = DiscreteIdentity
+    DeclaredObjectType = DiscreteObject
+    DeclaredMorphismType = DiscreteIdentity
 
-    class ElementType(ElementOfObject):
+    class DeclaredElementType(ElementOfObject):
         """A generalized element of a point; no local operation."""
 
     def __init__(self, index_set: SetObject) -> None:
@@ -229,10 +229,10 @@ class ThinMorphisms(MorphismCategory[[], []]):
 class ThinCategory(Category[[], []]):
     """The thin category of a preorder ``(P, leq)``."""
 
-    ObjectType = ThinObject
-    MorphismType = Comparison
+    DeclaredObjectType = ThinObject
+    DeclaredMorphismType = Comparison
 
-    class ElementType(ElementOfObject):
+    class DeclaredElementType(ElementOfObject):
         """A generalized element of a point; no local operation."""
 
     def __init__(self, carrier: SetObject, order: Predicate) -> None:

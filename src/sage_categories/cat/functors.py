@@ -83,8 +83,8 @@ _cocartesian_lifts: TripleDict = TripleDict(weak_values=False)
 _composite_factors: MonoDict = MonoDict()
 
 
-class Functor(MorphismOfCategory):
-    """The local ``Cat().MorphismType``: a functor ``C -> D`` from its total actions."""
+class FunctorDeclaration(MorphismOfCategory):
+    """The local ``Cat().MorphismType`` declaration."""
 
     def __init__(
         self,
@@ -220,8 +220,8 @@ class Functor(MorphismOfCategory):
         return f"Functor({self.domain()!r} -> {self.codomain()!r})"
 
 
-class NaturalTransformation(MorphismOfCategory):
-    """The local ``Fun.MorphismType``: ``eta: F => G`` from a component rule ``X |-> eta_X``.
+class NaturalTransformationDeclaration(MorphismOfCategory):
+    """The local ``Fun.MorphismType`` declaration.
 
     Its domain and codomain are the objects of ``Fun(I, C)`` as supplied (a functor,
     or the morphism of ``C`` it denotes when ``I = [1]``); the functors they denote
@@ -557,7 +557,27 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         return "Fun"
 
 
+Functor = FunctorDeclaration
+NaturalTransformation = NaturalTransformationDeclaration
+
 _category.bootstrap()
 Cat = _category.Cat
+Category = _category.Category
+Functor = Cat().MorphismType
+
+from sage_categories.cat import canonical as _canonical
+from sage_categories.cat import elements as _elements
+from sage_categories.cat import morphisms as _morphisms
+from sage_categories.cat import properties as _properties
+
+_canonical.Category = Category
+_elements.Category = Category
+_elements.Functor = Functor
+_elements.CategoryPoint = Cat().ElementType
+_morphisms.Category = Category
+_properties.Category = Category
+_category.Functor = Functor
 Fun: FunctorsCategory = Cat().morphism_category(1)
+NaturalTransformation = Fun.MorphismType
+_category.NaturalTransformation = NaturalTransformation
 Cat().equality().register_handler(_defining_functor_equal)

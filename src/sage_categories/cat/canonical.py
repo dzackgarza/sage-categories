@@ -85,10 +85,10 @@ class Path(MorphismOfCategory):
 class FinitePresentedCategory(Category[[Word], []]):
     """The category presented by finitely many vertices, generators, and rewriting relations."""
 
-    ObjectType = Vertex
-    MorphismType = Path
+    DeclaredObjectType = Vertex
+    DeclaredMorphismType = Path
 
-    class ElementType(ElementOfObject):
+    class DeclaredElementType(ElementOfObject):
         """A generalized element of a vertex; no local operation."""
 
     def __init__(self, name: str, labels: tuple[Hashable, ...], generators: tuple[Generator, ...], relations: tuple[Relation, ...]) -> None:

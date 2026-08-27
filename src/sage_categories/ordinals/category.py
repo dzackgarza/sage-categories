@@ -179,12 +179,12 @@ less_than = Predicate("ordinal_less_than", 2, True)
 class OrdinalsCategory(Category[[], []]):
     """The category of exact ordinal expressions."""
 
-    ObjectType = OrdinalObject
+    DeclaredObjectType = OrdinalObject
 
-    class ElementType(ElementOfObject):
+    class DeclaredElementType(ElementOfObject):
         """A generalized element of an ordinal; no local operation."""
 
-    class MorphismType(MorphismOfCategory):
+    class DeclaredMorphismType(MorphismOfCategory):
         """A morphism between ordinals; no local operation."""
 
     def __init__(self) -> None:

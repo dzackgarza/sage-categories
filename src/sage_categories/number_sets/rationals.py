@@ -45,12 +45,12 @@ class RationalSet(ObjectOfCategory):
 class RationalsCategory(Category[[Rule], []]):
     """The one-object category of ``QQ``, a full subcategory of ``Sets().Countable()``."""
 
-    ObjectType = RationalSet
+    DeclaredObjectType = RationalSet
 
-    class ElementType(ElementOfObject):
+    class DeclaredElementType(ElementOfObject):
         """A generalized element of ``QQ``; no local operation."""
 
-    class MorphismType(MorphismOfCategory):
+    class DeclaredMorphismType(MorphismOfCategory):
         """A map ``QQ -> QQ``; no local operation."""
 
     def __init__(self) -> None:

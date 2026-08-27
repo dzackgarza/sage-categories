@@ -54,12 +54,12 @@ class RealSet(ObjectOfCategory):
 class RealsCategory(Category[[Rule], []]):
     """The one-object category of ``RR``, a full subcategory of ``Sets().Uncountable()``."""
 
-    ObjectType = RealSet
+    DeclaredObjectType = RealSet
 
-    class ElementType(ElementOfObject):
+    class DeclaredElementType(ElementOfObject):
         """A generalized element of ``RR``; no local operation."""
 
-    class MorphismType(MorphismOfCategory):
+    class DeclaredMorphismType(MorphismOfCategory):
         """A map ``RR -> RR``; no local operation."""
 
     def __init__(self) -> None:

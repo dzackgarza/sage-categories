@@ -200,10 +200,10 @@ less_than = Predicate("cardinal_less_than", 2, True)
 class CardinalCategory(Category[[MorphismOfCategory], []]):
     """The skeletal category of cardinal representatives; its morphisms are the functions between representatives."""
 
-    ObjectType = CardinalObject
-    MorphismType = CardinalMorphism
+    DeclaredObjectType = CardinalObject
+    DeclaredMorphismType = CardinalMorphism
 
-    class ElementType(ElementOfObject):
+    class DeclaredElementType(ElementOfObject):
         """A generalized element of a cardinal; no local operation."""
 
     def __init__(self) -> None:

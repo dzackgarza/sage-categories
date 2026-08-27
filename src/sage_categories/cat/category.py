@@ -1,7 +1,9 @@
 """``Cat()``: the category of categories, and the universal category surface (POL-CAT-002, POL-CAT-050).
 
-``Category`` is the local ``Cat().ObjectType``: every category in this repository
-is constructed as an instance of a ``Category`` subclass, placed in ``Cat()``, and
+``CategoryDeclaration`` is the local ``Cat().ObjectType`` declaration.  After
+bootstrap, ``Category`` is bound to the compiled ``Cat().ObjectType``.  Every
+category in this repository is constructed as an instance of a ``Category``
+subclass, placed in ``Cat()``, and
 compiled by the kernel into its three role classes ``ObjectType``, ``ElementType``,
 and ``MorphismType`` (POL-CAT-002/057).  ``Category`` owns the universal surface:
 construction dispatch, membership, the ``Mor(n, C)`` tower, identities and
@@ -63,8 +65,8 @@ member = Predicate("member", 2, False)
 member.register_handler(is_placed)
 
 
-class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
-    """The local ``Cat().ObjectType``: the universal surface of every category."""
+class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
+    """The local ``Cat().ObjectType`` declaration."""
 
     def __init__(self) -> None:
         self._initialize(Cat())
@@ -92,6 +94,9 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         functors = tuple(self.structure_functors())
         self._ordinal = next(_category_ordinals)
         compiler.compile_category(self, functors)
+        from sage_categories.kernel.refinement import place
+
+        place(self, universe)
 
     # -- declarations read by the kernel --------------------------------------
 
@@ -111,11 +116,11 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         """The local role declaration: the nested class of this category's Python class."""
         match role:
             case Role.OBJECT:
-                return type(self).ObjectType
+                return type(self).DeclaredObjectType
             case Role.ELEMENT:
-                return type(self).ElementType
+                return type(self).DeclaredElementType
             case Role.MORPHISM:
-                return type(self).MorphismType
+                return type(self).DeclaredMorphismType
         raise AssertionError(role)
 
     def role_class(self, role: Role) -> type[CategoryPoint]:
@@ -677,7 +682,12 @@ class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         return NarrowedProperty
 
 
-class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
+# Core category classes import this provisional name while the mutually recursive
+# ``Cat`` cluster is defined.  ``bootstrap`` replaces it with the compiled role.
+Category = CategoryDeclaration
+
+
+class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignment]]):
     """The singleton ``Cat()``."""
 
     def __init__(self) -> None:
@@ -685,16 +695,16 @@ class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
         self._initialize(self)
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
-        from sage_categories.cat.elements import CategoryPoint as PointRole
-        from sage_categories.cat.functors import Functor
+        from sage_categories.cat.elements import CategoryPointDeclaration
+        from sage_categories.cat.functors import FunctorDeclaration
 
         match role:
             case Role.OBJECT:
-                return Category
+                return CategoryDeclaration
             case Role.ELEMENT:
-                return PointRole
+                return CategoryPointDeclaration
             case Role.MORPHISM:
-                return Functor
+                return FunctorDeclaration
         raise AssertionError(role)
 
     def morphism_category_type(self) -> type[FunctorsCategory]:
@@ -911,12 +921,15 @@ def bootstrap() -> None:
     bound once, to the class the cluster defines, and nothing looks a class up by
     string.
     """
-    global _CAT, FinitePresentedCategory, Functor, FunctorsCategory, MorphismCategory, NaturalTransformation
+    global _CAT, Category, FinitePresentedCategory, Functor, FunctorsCategory, MorphismCategory, NaturalTransformation
     from sage_categories.cat.canonical import FinitePresentedCategory
-    from sage_categories.cat.functors import Functor, FunctorsCategory, NaturalTransformation
+    from sage_categories.cat.functors import FunctorDeclaration, FunctorsCategory, NaturalTransformationDeclaration
     from sage_categories.cat.morphisms import MorphismCategory
 
     _CAT = CategoryOfCategories()
+    Category = _CAT.ObjectType
+    Functor = FunctorDeclaration
+    NaturalTransformation = NaturalTransformationDeclaration
 
 
 def Cat() -> CategoryOfCategories:

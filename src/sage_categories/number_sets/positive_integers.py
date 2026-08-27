@@ -46,12 +46,12 @@ class PositiveIntegerSet(ObjectOfCategory):
 class PositiveIntegersCategory(Category[[Rule], []]):
     """The one-object category of ``NN``, a full subcategory of ``Sets().Countable()``."""
 
-    ObjectType = PositiveIntegerSet
+    DeclaredObjectType = PositiveIntegerSet
 
-    class ElementType(ElementOfObject):
+    class DeclaredElementType(ElementOfObject):
         """A generalized element of ``NN``; no local operation."""
 
-    class MorphismType(MorphismOfCategory):
+    class DeclaredMorphismType(MorphismOfCategory):
         """A map ``NN -> NN``; no local operation."""
 
     def __init__(self) -> None:

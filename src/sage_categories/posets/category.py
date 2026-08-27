@@ -278,6 +278,7 @@ class PosetsCategory(Category[[Rule], []]):
         self._canonical: dict[tuple[str, int], Poset] = {}
         self._thin: MonoDict = MonoDict()
         self._subset_posets: MonoDict = MonoDict()
+        self._elements: MonoDict = MonoDict()
         super().__init__()
         self.underlying_set_functor().retain_cartesian_lifts(self._induced_order)
         self._equality.register_handler(self._equal)
@@ -410,12 +411,16 @@ class PosetsCategory(Category[[Rule], []]):
     # -- elements ---------------------------------------------------------------------------
 
     def element_from_defining_morphism(self, defining_morphism: MonotoneMap) -> PosetElement:
-        """The classical element over the point ``U(t)`` when ``t: 1 -> P``; the generalized element ``t`` otherwise."""
+        """The generalized element defined by ``T -> P``, retained by that exact map (POL-CAT-066).
+
+        A classical stage adds no local state: the underlying set point of ``t: 1 -> P``
+        is ``U(t)``, which the selected functor supplies on demand.  ``Poset.element``
+        owns the classical point of one carrier element; it reaches this constructor.
+        """
         assert defining_morphism in self.morphism_category(1)
-        if defining_morphism.domain() is self.Terminal():
-            set_map = self.underlying_set_functor().on_morphism(defining_morphism)
-            return defining_morphism.codomain().element(Sets().element_from_defining_morphism(set_map))
-        return defining_morphism.codomain().category().ElementType(defining_morphism, None)
+        if defining_morphism not in self._elements:
+            self._elements[defining_morphism] = defining_morphism.codomain().category().ElementType(defining_morphism, None)
+        return self._elements[defining_morphism]
 
     # -- morphisms ------------------------------------------------------------------------------
 

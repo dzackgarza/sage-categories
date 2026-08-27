@@ -452,6 +452,24 @@ def _method_provider(
     return provider
 
 
+def _kernel_chain(last: Node) -> tuple[type, ...]:
+    """The Python classes that follow the last node's compiled class in the MRO.
+
+    A chain ends on the kernel class its last node stands on, which is the last node's
+    role rather than the role the chain started in.  Two chains end elsewhere than on
+    their own role's kernel class:
+
+    * the shared ``Cat().ElementType`` root *is* its kernel class, so what follows it is
+      ``CategoryPointKernel`` alone;
+    * a full subcategory of ``Mor(C)`` keeps the object role -- it is not itself a
+      morphism category -- while its objects are the morphisms of ``C``, so its chain
+      runs through ``(C, morphism)`` and ends on ``MorphismOfCategory``.
+    """
+    if _is_cat_element_root(last):
+        return CategoryPointKernel.__mro__
+    return kernel_base(last.role).__mro__
+
+
 def _assert_linearized(current: Node, compiled: type[CategoryPoint]) -> None:
     """The MRO is the node linearization followed by exactly one kernel role chain.
 
@@ -470,12 +488,7 @@ def _assert_linearized(current: Node, compiled: type[CategoryPoint]) -> None:
         return
     order = [_nodes_by_key[key] for key in _linearize(current)[0]]
     classes = [found.category.role_class(found.role) for found in order]
-    # The chain ends on the kernel class of the *last* node, not of ``current``.  A
-    # full subcategory of ``Mor(C)`` keeps the object role -- it is not itself a
-    # morphism category -- while its objects are morphisms of ``C``, so its chain runs
-    # through ``(C, morphism)`` and ends on ``MorphismOfCategory``.
-    tail = order[-1].role if order else current.role
-    expected = (compiled, *classes, *kernel_base(tail).__mro__)
+    expected = (compiled, *classes, *_kernel_chain(order[-1] if order else current))
     actual = tuple(compiled.__mro__)
     assert actual == expected, (
         f"the {current.role.value} MRO of {current.category!r} is "

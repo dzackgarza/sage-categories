@@ -6,6 +6,11 @@ Toy categories live only in this file (POL-TEST-006): abelian groups with the ch
 modules included into them.  The module-to-group functor retains the stage comparison
 ``Z -> U(R)``, ``1 |-> 1``; the group-to-set functor retains ``1 -> ZZ``, ``* |-> 1``.
 
+Each toy declares only the roles whose mathematics it introduces, and each local
+constructor takes one exact typed datum (POL-KERNEL-028, POL-LEAF-047).  A selected
+functor retains its object and morphism construction-input conversions; the element
+conversion is derived from the morphism one (POL-FUN-002).
+
 Oracles: the definition of a generalized element and of its image under a functor
 (``F`` applied to the defining morphism); the definition of the stage comparison (the
 classical image is ``F(t)`` precomposed with ``G_D -> F(G_C)``); the sum in
@@ -16,12 +21,15 @@ of ``Cat()``.
 
 import functools
 import itertools
+from dataclasses import dataclass, field
 
 import pytest
+
 from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.all import *
 from sage_categories.kernel.compiler import StructuralImageMismatch
+from sage_categories.kernel.construction import retained_morphism_input, retained_object_input
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.elements import Datum
 from sage_categories.sets.maps import SetMap
@@ -36,62 +44,92 @@ def _datum_of(carrier, point):
 # -- toy abelian groups: carrier, addition, and integer multiples on data ------------------
 
 
-class ToyGroup(ObjectOfCategory):
-    def __init__(self, category, carrier, add, multiple):
-        ObjectOfCategory.__init__(self, category)
-        self._carrier = carrier
-        self._add = add
-        self._multiple = multiple
-        self._elements = {}
+@dataclass(eq=False, slots=True)
+class ToyGroupData:
+    """The carrier of an abelian group, its addition, and its integer multiples."""
+
+    carrier: SetObject
+    add: object
+    multiple: object
+    elements: dict = field(default_factory=dict)
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class ToyGroupHomData:
+    """The underlying set map of a group homomorphism."""
+
+    set_map: SetMap
+
+
+@dataclass(eq=False, slots=True)
+class ToyGroupElementData:
+    """The group a classical element belongs to and the carrier datum it selects."""
+
+    group: object
+    datum: Datum
+
+
+class ToyGroupDeclaration(ObjectOfCategory):
+    def __init__(self, data):
+        self._group_data = data
+        super().__init__()
 
     def carrier(self) -> SetObject:
-        return self._carrier
+        return self._group_data.carrier
 
-    def element(self, datum: Datum) -> ToyGroupElement:
+    def add(self, first: Datum, second: Datum) -> Datum:
+        return self._group_data.add(first, second)
+
+    def element(self, datum: Datum) -> object:
         """The classical element ``Z -> A``, ``k |-> k . datum``."""
-        if datum not in self._elements:
+        state = self._group_data
+        if datum not in state.elements:
             groups = ToyAbelianGroups()
-            hom = groups.MorphismType(Mor(groups), groups.integers(), self, Mor(Sets())(ZZ, self._carrier)(lambda k: self._multiple(k, datum)))
-            self._elements[datum] = self.category().ElementType(hom)
-        return self._elements[datum]
+            hom = Mor(groups)(groups.integers(), self)(lambda k: state.multiple(k, datum))
+            state.elements[datum] = self.category().ElementType(hom, ToyGroupElementData(self, datum))
+        return state.elements[datum]
 
     def __repr__(self):
-        return f"ToyGroup({self._carrier!r})"
+        return f"ToyGroup({self._group_data.carrier!r})"
 
 
-class ToyGroupElement(ElementOfObject):
-    def __init__(self, hom):
-        ElementOfObject.__init__(self, hom)
+class ToyGroupElementDeclaration(ElementOfObject):
+    def __init__(self, data):
+        self._group_element_data = data
+        super().__init__()
 
-    def __add__(self, other: ToyGroupElement) -> ToyGroupElement:
-        group = self.parent()
-        return group.element(group._add(_datum_of(group.carrier(), self.defining_morphism().set_map()(ZZ(int(1)))), _datum_of(group.carrier(), other.defining_morphism().set_map()(ZZ(int(1))))))
+    def __add__(self, other):
+        """``x + y`` in the group this element belongs to (POL-CAT-062: the result stays there)."""
+        state = self._group_element_data
+        group = state.group
+        return group.element(group.add(state.datum, other._group_element_data.datum))
 
     def __repr__(self):
         return f"point of {self.parent()!r} at stage {self.stage()!r}"
 
 
-class ToyGroupHom(MorphismOfCategory):
-    def __init__(self, category, domain, codomain, set_map):
-        MorphismOfCategory.__init__(self, category, domain, codomain)
-        self._set_map = set_map
+class ToyGroupHomDeclaration(MorphismOfCategory):
+    def __init__(self, data):
+        self._group_hom_data = data
+        super().__init__()
 
     def set_map(self) -> SetMap:
-        return self._set_map
+        return self._group_hom_data.set_map
 
     def __repr__(self):
         return f"ToyGroupHom({self.domain()!r} -> {self.codomain()!r})"
 
 
 class ToyAbelianGroupsCategory(Category):
-    ObjectType = ToyGroup
-    ElementType = ToyGroupElement
-    MorphismType = ToyGroupHom
+    DeclaredObjectType = ToyGroupDeclaration
+    DeclaredElementType = ToyGroupElementDeclaration
+    DeclaredMorphismType = ToyGroupHomDeclaration
 
     def __init__(self):
         self._functors = {}
+        self._generalized = MonoDict()
         super().__init__()
-        self._integers = self.ObjectType(self, ZZ, lambda a, b: a + b, lambda k, a: k * a)
+        self._integers = self.ObjectType(self, ToyGroupData(ZZ, lambda a, b: a + b, lambda k, a: k * a))
         # G_Sets = 1 -> U(Z) = ZZ selects 1: the stage comparison of the underlying-set functor.
         self.underlying_set_functor().retain_stage_comparison(ZZ(int(1)).defining_morphism())
 
@@ -106,28 +144,36 @@ class ToyAbelianGroupsCategory(Category):
 
     def underlying_set_functor(self):
         if "underlying_set" not in self._functors:
-            self._functors["underlying_set"] = Fun(self, Sets()).Faithful()(lambda group: group.carrier(), lambda hom: hom.set_map())
+            underlying = Fun(self, Sets()).Faithful()(lambda group: group.carrier(), lambda hom: hom.set_map())
+            underlying.retain_object_constructor_conversion(lambda source: retained_object_input(source.datum.carrier))
+            underlying.retain_morphism_constructor_conversion(lambda source: retained_morphism_input(source.datum.set_map))
+            self._functors["underlying_set"] = underlying
         return self._functors["underlying_set"]
 
     def cyclic(self, modulus):
         """``Z/n`` on the carrier ``{0, ..., n - 1}``."""
-        return self.ObjectType(self, Sets().Simplex(modulus - int(1)), lambda a, b: (a + b) % modulus, lambda k, a: (k * a) % modulus)
+        carrier = Sets().Simplex(modulus - int(1))
+        return self.ObjectType(self, ToyGroupData(carrier, lambda a, b: (a + b) % modulus, lambda k, a: (k * a) % modulus))
 
     def element_from_defining_morphism(self, hom):
+        """The one generalized element with this defining morphism, retained (POL-CAT-066)."""
         assert hom in Mor(self)
         if hom.domain() is self._integers:
             return hom.codomain().element(_datum_of(hom.codomain().carrier(), hom.set_map()(ZZ(int(1)))))
-        return hom.codomain().category().ElementType(hom)
+        if hom not in self._generalized:
+            self._generalized[hom] = self.ElementType(hom)
+        return self._generalized[hom]
 
     def construct_morphism(self, domain, codomain, rule):
-        return self.MorphismType(Mor(self), domain, codomain, Mor(Sets())(domain.carrier(), codomain.carrier())(rule))
+        set_map = Mor(Sets())(domain.carrier(), codomain.carrier())(rule)
+        return self.MorphismType(Mor(self), domain, codomain, ToyGroupHomData(set_map))
 
     def construct_identity(self, group):
-        return self.MorphismType(Mor(self), group, group, group.carrier().identity())
+        return self.MorphismType(Mor(self), group, group, ToyGroupHomData(group.carrier().identity()))
 
     def composite(self, second, first):
         assert first.codomain() is second.domain()
-        return self.MorphismType(Mor(self), first.domain(), second.codomain(), second.set_map() * first.set_map())
+        return self.MorphismType(Mor(self), first.domain(), second.codomain(), ToyGroupHomData(second.set_map() * first.set_map()))
 
     def __repr__(self):
         return "ToyAbelianGroups"
@@ -147,68 +193,77 @@ def _bits(rank):
     return Sets().Finite()(tuple(itertools.product((int(0), int(1)), repeat=rank)))
 
 
-class ToyModule(ObjectOfCategory):
-    def __init__(self, category, rank):
-        ObjectOfCategory.__init__(self, category)
-        self._rank = rank
-        self._carrier = _bits(rank)
-        self._elements = {}
-        self._additive_group = ToyAbelianGroups().ObjectType(
-            ToyAbelianGroups(),
-            self._carrier,
-            lambda v, w: tuple((a + b) % int(2) for a, b in zip(v, w)),
-            lambda k, v: tuple((k * a) % int(2) for a in v),
-        )
+@dataclass(eq=False, slots=True)
+class ToyModuleData:
+    """The rank of a free module, its carrier, and the additive group the functor returns."""
+
+    rank: int
+    carrier: SetObject
+    additive_group: object
+    elements: dict = field(default_factory=dict)
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class ToyLinearMapData:
+    """The underlying set map of a linear map and the group homomorphism it induces."""
+
+    set_map: SetMap
+    additive: object
+
+
+class ToyModuleDeclaration(ObjectOfCategory):
+    def __init__(self, data):
+        self._module_data = data
+        super().__init__()
 
     def carrier(self) -> SetObject:
-        return self._carrier
+        return self._module_data.carrier
 
-    def additive_group(self) -> ToyGroup:
-        return self._additive_group
+    def additive_group(self) -> object:
+        return self._module_data.additive_group
 
-    def element(self, vector: Datum) -> ToyModuleElement:
+    def element(self, vector: Datum) -> object:
         """The classical element ``R -> M``, ``r |-> r . vector``."""
-        if vector not in self._elements:
+        state = self._module_data
+        if vector not in state.elements:
             modules = ToyModules()
-            hom = modules.MorphismType(Mor(modules), modules.ring(), self, Mor(Sets())(modules.ring().carrier(), self._carrier)(lambda r: tuple((r[int(0)] * a) % int(2) for a in vector)))
-            self._elements[vector] = self.category().ElementType(hom)
-        return self._elements[vector]
+            hom = Mor(modules)(modules.ring(), self)(lambda r: tuple((r[int(0)] * a) % int(2) for a in vector))
+            state.elements[vector] = self.category().ElementType(hom)
+        return state.elements[vector]
 
     def __repr__(self):
-        return f"ToyModule(rank {self._rank})"
+        return f"ToyModule(rank {self._module_data.rank})"
 
 
-class ToyModuleElement(ElementOfObject):
+class ToyModuleElementDeclaration(ElementOfObject):
     """No local operation: addition arrives through the additive group."""
-
-    def __init__(self, hom):
-        ElementOfObject.__init__(self, hom)
 
     def __repr__(self):
         return f"point of {self.parent()!r} at stage {self.stage()!r}"
 
 
-class ToyLinearMap(MorphismOfCategory):
-    def __init__(self, category, domain, codomain, set_map):
-        MorphismOfCategory.__init__(self, category, domain, codomain)
-        self._set_map = set_map
+class ToyLinearMapDeclaration(MorphismOfCategory):
+    def __init__(self, data):
+        self._linear_map_data = data
+        super().__init__()
 
     def set_map(self) -> SetMap:
-        return self._set_map
+        return self._linear_map_data.set_map
 
     def __repr__(self):
         return f"ToyLinearMap({self.domain()!r} -> {self.codomain()!r})"
 
 
 class ToyModulesCategory(Category):
-    ObjectType = ToyModule
-    ElementType = ToyModuleElement
-    MorphismType = ToyLinearMap
+    DeclaredObjectType = ToyModuleDeclaration
+    DeclaredElementType = ToyModuleElementDeclaration
+    DeclaredMorphismType = ToyLinearMapDeclaration
 
     def __init__(self):
         self._functors = {}
+        self._generalized = MonoDict()
         super().__init__()
-        self._ring = self.ObjectType(self, int(1))
+        self._ring = self._module(int(1))
         groups = ToyAbelianGroups()
         # The stage comparison Z -> U(R), 1 |-> 1: the reduction homomorphism.
         self.additive_group_functor().retain_stage_comparison(Mor(groups)(groups.integers(), self._ring.additive_group())(lambda k: (k % int(2),)))
@@ -224,35 +279,65 @@ class ToyModulesCategory(Category):
 
     def additive_group_functor(self):
         if "additive_group" not in self._functors:
-            groups = ToyAbelianGroups()
-            retained = MonoDict()
-
-            def additive_hom(linear):
-                if linear not in retained:
-                    retained[linear] = groups.MorphismType(Mor(groups), linear.domain().additive_group(), linear.codomain().additive_group(), linear.set_map())
-                return retained[linear]
-
-            self._functors["additive_group"] = Fun(self, groups).Faithful()(lambda module: module.additive_group(), additive_hom)
+            additive = Fun(self, ToyAbelianGroups()).Faithful()(
+                lambda module: module.additive_group(),
+                lambda linear: linear._linear_map_data.additive,
+            )
+            additive.retain_object_constructor_conversion(lambda source: retained_object_input(source.datum.additive_group))
+            additive.retain_morphism_constructor_conversion(lambda source: retained_morphism_input(source.datum.additive))
+            self._functors["additive_group"] = additive
         return self._functors["additive_group"]
 
+    def _module(self, rank):
+        carrier = _bits(rank)
+        groups = ToyAbelianGroups()
+        additive_group = groups.ObjectType(
+            groups,
+            ToyGroupData(
+                carrier,
+                lambda v, w: tuple((a + b) % int(2) for a, b in zip(v, w)),
+                lambda k, v: tuple((k * a) % int(2) for a in v),
+            ),
+        )
+        return self.ObjectType(self, ToyModuleData(rank, carrier, additive_group))
+
     def __call__(self, rank):
-        return self.ObjectType(self, rank)
+        return self._module(rank)
 
     def element_from_defining_morphism(self, hom):
+        """The one generalized element with this defining morphism, retained (POL-CAT-066)."""
         assert hom in Mor(self)
         if hom.domain() is self._ring:
             return hom.codomain().element(_datum_of(hom.codomain().carrier(), hom.set_map()(self._ring.carrier().point((int(1),)))))
-        return hom.codomain().category().ElementType(hom)
+        if hom not in self._generalized:
+            self._generalized[hom] = self.ElementType(hom)
+        return self._generalized[hom]
 
     def construct_morphism(self, domain, codomain, rule):
-        return self.MorphismType(Mor(self), domain, codomain, Mor(Sets())(domain.carrier(), codomain.carrier())(rule))
+        set_map = Mor(Sets())(domain.carrier(), codomain.carrier())(rule)
+        groups = ToyAbelianGroups()
+        additive = groups.MorphismType(
+            Mor(groups),
+            domain.additive_group(),
+            codomain.additive_group(),
+            ToyGroupHomData(set_map),
+        )
+        return self.MorphismType(Mor(self), domain, codomain, ToyLinearMapData(set_map, additive))
 
     def construct_identity(self, module):
-        return self.MorphismType(Mor(self), module, module, module.carrier().identity())
+        return self.construct_morphism(module, module, lambda vector: vector)
 
     def composite(self, second, first):
         assert first.codomain() is second.domain()
-        return self.MorphismType(Mor(self), first.domain(), second.codomain(), second.set_map() * first.set_map())
+        set_map = second.set_map() * first.set_map()
+        groups = ToyAbelianGroups()
+        additive = groups.MorphismType(
+            Mor(groups),
+            first.domain().additive_group(),
+            second.codomain().additive_group(),
+            ToyGroupHomData(set_map),
+        )
+        return self.MorphismType(Mor(self), first.domain(), second.codomain(), ToyLinearMapData(set_map, additive))
 
     def __repr__(self):
         return "ToyModules"
@@ -273,26 +358,47 @@ def _two_generator_modules():
     return PropertySubcategory(ToyModules(), "TwoGenerator", {}, ())
 
 
+@dataclass(eq=False, slots=True)
+class RebuiltData:
+    """The members of a rebuilt object and the carrier its first route returns."""
+
+    members: tuple
+    carrier: SetObject
+
+
 class Rebuilt(Category):
     """A leaf whose second selected functor rebuilds the ancestor set instead of returning the retained one."""
 
-    class ObjectType(ObjectOfCategory):
-        def __init__(self, category, members):
-            ObjectOfCategory.__init__(self, category)
-            self._members = members
-            self._carrier = Sets().Finite()(members)
+    class DeclaredObjectType(ObjectOfCategory):
+        def __init__(self, data):
+            self._rebuilt_data = data
+            super().__init__()
 
-    class ElementType(ElementOfObject):
-        """No local operation."""
+    class DeclaredMorphismType(MorphismOfCategory):
+        def __init__(self, data):
+            self._rebuilt_map_data = data
+            super().__init__()
 
-    class MorphismType(MorphismOfCategory):
-        """No local operation."""
+    def __init__(self):
+        self._selected = {}
+        super().__init__()
 
     def structure_functors(self):
-        return (
-            Fun(self, Sets())(lambda member: member._carrier, lambda morphism: morphism),
-            Fun(self, Sets())(lambda member: Sets().Finite()(member._members), lambda morphism: morphism),
-        )
+        if "routes" not in self._selected:
+            retained = Fun(self, Sets())(lambda member: member._rebuilt_data.carrier, lambda morphism: morphism._rebuilt_map_data)
+            retained.retain_object_constructor_conversion(lambda source: retained_object_input(source.datum.carrier))
+            retained.retain_morphism_constructor_conversion(lambda source: retained_morphism_input(source.datum))
+            rebuilt = Fun(self, Sets())(
+                lambda member: Sets().Finite()(member._rebuilt_data.members),
+                lambda morphism: morphism._rebuilt_map_data,
+            )
+            rebuilt.retain_object_constructor_conversion(lambda source: retained_object_input(Sets().Finite()(source.datum.members)))
+            rebuilt.retain_morphism_constructor_conversion(lambda source: retained_morphism_input(source.datum))
+            self._selected["routes"] = (retained, rebuilt)
+        return self._selected["routes"]
+
+    def __call__(self, members):
+        return self.ObjectType(self, RebuiltData(members, Sets().Finite()(members)))
 
     def __repr__(self):
         return "Rebuilt"
@@ -385,18 +491,25 @@ def test_represented_concrete_structure_makes_classical_elements_the_stage_point
     assert as_element.stage() is not integers
 
 
-def test_the_stage_comparison_supplies_additive_element_inheritance() -> None:
+def test_the_public_element_image_keeps_the_source_stage_and_the_compiler_input_shifts_it() -> None:
+    """``F.on_element(t)`` is ``q = F(t)``; the classical compiler input is ``p = q . c_F`` (POL-FUN-002/035)."""
     modules, groups = ToyModules(), ToyAbelianGroups()
     additive = modules.structure_functors()[int(0)]
     plane = modules(int(2))
-    first, second = plane.element((int(1), int(0))), plane.element((int(0), int(1)))
+    first = plane.element((int(1), int(0)))
 
     comparison = additive.stage_comparison()
     assert comparison in Mor(groups)(groups.integers(), additive.on_object(modules.ring()))
     assert ask(comparison.set_map()(ZZ(int(3))) == modules.ring().carrier().point((int(1),))) is True
-    assert additive.on_element(first).stage() is additive.on_object(modules.ring())
 
-    total = first + second
+    # The public image is ``q``: its stage is ``F(G_C)``, not the target's own stage.
+    image = additive.on_element(first)
+    assert image.defining_morphism() is additive.on_morphism(first.defining_morphism())
+    assert image.stage() is additive.on_object(modules.ring())
+    assert image.stage() is not groups.integers()
+
+    # The inherited group operation reads the classical input ``p``, whose stage is ``Z``.
+    total = first + plane.element((int(0), int(1)))
     assert total.parent() is plane.additive_group()
     assert total.stage() is groups.integers()
     assert total is plane.additive_group().element((int(1), int(1)))
@@ -484,6 +597,5 @@ def test_an_unselected_functor_maps_generalized_points_and_contributes_no_operat
 
 def test_the_eager_check_raises_the_construction_defect_before_any_inherited_method_returns() -> None:
     rebuilt = Rebuilt()
-    member = rebuilt.ObjectType(rebuilt, (int(1), int(2)))
     with pytest.raises(StructuralImageMismatch):
-        member.cardinality()
+        rebuilt((int(1), int(2)))

@@ -128,6 +128,9 @@ A predicate handler is an exact computation or inference rule for specified sema
 | --- | --- |
 | `POL-ASSUME-005` | A predicate strictly generalizes a Boolean. Return a `bool` only for an implementation fact that is two-valued by construction -- established placement, a record of what was retained, the presence of a chosen enumeration. Every mathematical question that the available data and algorithms may fail to decide is a proposition, and `ask()` decides it as `True`, `False`, or `Unknown`. |
 | `POL-ASSUME-006` | Decide an equality with `ask(a == b)`. `==` on an owned value returns a proposition, so consuming its result as a truth value, comparing it by identity against `True`, `False`, or `Unknown`, or folding it through Python's `all`, `any`, `and`, `or`, or `not` does not decide it. A site whose operands happen to be engine values today is a latent defect, not a safe one: the datum type is fixed by nothing. "This comparison cannot be `Unknown` here" is a claim requiring evidence, never a default. |
+| `POL-ASSUME-012` | `bool(Unknown)` raises and a proposition's `__bool__` raises, so an unguarded `all`, `any`, `and`, `or`, or `not` over undecided answers fails loudly. The silent shapes are the ones to hunt: `(a == b) is True`, `is False`, `is Unknown`, and `is not Unknown` compare the proposition object itself and never match, so the branch is dead and the failure surfaces later with a message that blames something else. Python container and tuple equality is the same trap one level down, since it takes the truth value of each component. |
+| `POL-ASSUME-013` | Distinguish a handler that answers `False` because the proposition is false from one that answers `False` because its argument is outside the handler's domain. The second is a fabrication. A total classifier over an `Any` position may answer `False` for a value with no role (`POL-TYPE-004`); a rule that consults an engine answers `True` where the engine establishes membership and `Unknown` otherwise, and never reports `False` for a question the engine cannot decide. |
+| `POL-ASSUME-014` | Validate a constructor argument before normalizing it. Truncating, rounding, or coercing an argument first turns an ill-formed input into a well-formed wrong value, and a decision recorded about that value is cached and refines placement, so the error becomes permanent and invisible. |
 | `POL-ASSUME-001` | Give every assumable proposition an owned mathematical definition. Represent it by a property category or an owned predicate. |
 | `POL-ASSUME-002` | Use SymPy predicates or Sage and Maxima declarations for bespoke runtime assumptions. Do not implement an ad hoc assumption store. |
 | `POL-ASSUME-003` | In a SymPy backend, subclass `Predicate` and register the bespoke predicate on `Q`. Register typed handlers for exact evaluation. |
@@ -745,12 +748,18 @@ When an established finite algorithm requires a primitive loop bound, lower the 
 | `POL-SAGE-010` | Use Sage's exact algorithms before writing a parallel local implementation. |
 | `POL-SAGE-011` | Use Sage's exact linear-algebra algorithms only behind the tensor realization boundary. Do not expose Sage vectors or matrices as owned objects. |
 | `POL-SAGE-012` | Treat agreement with Sage or a Sage doctest as secondary evidence. It is not an independent mathematical oracle for owned behavior. |
+| `POL-SAGE-013` | Do not memoize an owned mathematical value with a hash-and-equality cache, `sage.misc.cachefunc.cached_method` included. `==` on an owned value returns a proposition and `bool()` on it raises, so such a cache degenerates to hashing alone and fails on the first collision. Retain owned values by identity. |
+| `POL-SAGE-014` | When one comparison operator is defined through another, state each from its own definition. Python tries the reflected operator first when the right operand's class is a proper subclass of the left's, and same-object refinement makes exactly that true, so `__ge__` written as `other <= self` calls itself without bound as soon as one operand is refined. |
+| `POL-SAGE-015` | Bind every public name in the module whose source declares it. Assigning into another module's namespace at import time produces a name no source writes, which the static projection cannot state and a reader cannot find. A provisional binding that a later import overwrites is the same defect. |
 
 ## Public API and types
 
 | ID | Policy |
 | --- | --- |
 | `POL-API-001` | Shape the API from the mathematics, not from current storage fields or Python classes. |
+| `POL-API-024` | Give two distinct notions two names, and never let one spelling carry a general meaning on one class and a narrower one on a subclass. The compiler's collision check sees declared roles, not a plain Python override, so such a clash is silent until a value whose placement is the overriding category reaches the general route. |
+| `POL-API-025` | Give the declared class and the compiled role class distinct names. Sage separates `ParentMethods` from `parent_class` for this reason: one name for both hides which of the two a site means, and a resolution defect behind that collapse costs several passes to locate. |
+| `POL-API-026` | Let a method's return annotation state what the body returns. A method annotated `-> Self` whose body returns retained state is not receiver-valued, and a reader, a reviewer, and a witness row will all take it for one. |
 | `POL-API-002` | Give each operation one owner, one named public entry point, and one public export. A standard operator invokes that same owned operation and adds no second implementation. `Fun` is the sole exported alias: it names `Mor(Cat())` because functor construction is the most frequent call. |
 | `POL-API-003` | Use standard mathematical and Sage syntax at call sites. |
 | `POL-API-004` | Use `as_*` only for an explicit conversion to another mathematical representation. |
@@ -915,6 +924,8 @@ Use the standard syntax directly.
 
 | ID | Policy |
 | --- | --- |
+| `POL-TEST-028` | A row that asserts a fabricated answer asserts the defect. Asserting `x not in X` immediately after establishing that the membership is `Unknown` records the flattening rather than the mathematics; state the proposition and its decision instead. |
+| `POL-TEST-029` | Give every test file a basename unique across the whole test tree. Under pytest's default import mode two files sharing a basename collide and the second is never collected, so it reports nothing while appearing to pass. |
 | `POL-TEST-001` | Read the repository test rules before editing a test file. |
 | `POL-TEST-002` | Make every assertion state a mathematical proposition or an essential type invariant. |
 | `POL-TEST-003` | Test the intended end-to-end behavior, not implementation layout or past defects. |

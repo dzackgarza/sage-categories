@@ -10,8 +10,10 @@ Toy categories live only in this file (POL-TEST-006).  Each declares
 ``DeclaredObjectType``, ``DeclaredElementType``, and ``DeclaredMorphismType``, whose
 local constructors take one exact typed datum (POL-KERNEL-028, POL-LEAF-047); the
 kernel compiles the public ``ObjectType``, ``ElementType``, and ``MorphismType`` from
-them.  Each selected functor retains its object and morphism construction-input
-conversions; the element conversion is derived from the morphism one (POL-FUN-002).
+them.  Each selected functor is declared by its two image rules, which read one node's
+local datum and return the value the toy's own constructor already made; the kernel
+derives the construction inputs and the public actions, and the element conversion from
+the morphism one (POL-FUN-002, POL-FUN-035).
 Each row states one property of an image, never a functor law (D14).
 
 Oracles: the definition of the canonical image (the value the selected functor's
@@ -29,7 +31,6 @@ from sage_categories.all import *
 from sage_categories.kernel import compiler
 
 from sage_categories.kernel.compiler import StructuralImageMismatch
-from sage_categories.kernel.construction import retained_morphism_input, retained_object_input
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role
 from sage_categories.kernel.transport import placement_node, role_node, transport
 
@@ -83,13 +84,10 @@ class Carrying(Category):
 
     def structure_functors(self):
         if "carrier" not in self._selected:
-            underlying = Fun(self, Sets()).Faithful()(
-                lambda member: member._carrier_data.carrier,
-                lambda morphism: morphism._carrier_map_data.set_map,
+            self._selected["carrier"] = Fun(self, Sets()).Faithful().structural(
+                lambda datum: datum.carrier,
+                lambda datum: datum.set_map,
             )
-            underlying.retain_object_constructor_conversion(lambda source: retained_object_input(source.datum.carrier))
-            underlying.retain_morphism_constructor_conversion(lambda source: retained_morphism_input(source.datum.set_map))
-            self._selected["carrier"] = underlying
         return (self._selected["carrier"],)
 
     def __call__(self, carrier):
@@ -161,18 +159,14 @@ class Ringlike(Category):
 
     def structure_functors(self):
         if "routes" not in self._selected:
-            to_additive = Fun(self, self._additive).Faithful()(
-                lambda member: member.additive_structure(),
-                lambda morphism: morphism._ringlike_map_data.additive,
+            to_additive = Fun(self, self._additive).Faithful().structural(
+                lambda datum: datum.additive,
+                lambda datum: datum.additive,
             )
-            to_additive.retain_object_constructor_conversion(lambda source: retained_object_input(source.datum.additive))
-            to_additive.retain_morphism_constructor_conversion(lambda source: retained_morphism_input(source.datum.additive))
-            to_multiplicative = Fun(self, self._multiplicative).Faithful()(
-                lambda member: member.multiplicative_structure(),
-                lambda morphism: morphism._ringlike_map_data.multiplicative,
+            to_multiplicative = Fun(self, self._multiplicative).Faithful().structural(
+                lambda datum: datum.multiplicative,
+                lambda datum: datum.multiplicative,
             )
-            to_multiplicative.retain_object_constructor_conversion(lambda source: retained_object_input(source.datum.multiplicative))
-            to_multiplicative.retain_morphism_constructor_conversion(lambda source: retained_morphism_input(source.datum.multiplicative))
             self._selected["routes"] = (to_additive, to_multiplicative)
         return self._selected["routes"]
 
@@ -250,6 +244,32 @@ def test_the_image_a_compiled_method_uses_is_the_image_the_selected_functor_retu
     assert ask(chain.cardinality() == int(3)) is True
     assert transport(chain, target) is underlying.on_object(chain)
     assert chain.cardinality() is underlying.on_object(chain).cardinality()
+
+
+def test_a_category_reads_the_image_of_a_descendant_value_in_itself() -> None:
+    """``C.image_of(x)`` is the image ``C``'s selected route retained: what a method ``C`` declares is about (POL-KERNEL-018)."""
+    chain = Posets().Simplex(int(2))
+    fixed = Mor(Posets())(chain, chain)(lambda point: point)
+    underlying = Posets().structure_functors()[int(0)]
+    carrier = underlying.on_object(chain)
+    zero = chain.element(carrier.point(int(0)))
+
+    assert Sets().image_of(chain) is carrier, "the underlying set of the poset, not the poset"
+    assert Sets().image_of(fixed) is underlying.on_morphism(fixed)
+    assert Sets().image_of(zero) is underlying.on_element(zero)
+
+    # A method ``Sets()`` declares reads the carrier's cardinality, which is the poset's.
+    assert ask(Sets().image_of(chain).cardinality() == chain.cardinality()) is True
+
+
+def test_a_category_reads_its_own_value_as_its_own_image() -> None:
+    """The route from a category to itself is empty, so ``C.image_of(x)`` is ``x`` for a value of ``C``."""
+    members = Sets().Finite()((int(0), int(1)))
+    identity = Mor(Sets())(members, members).identity()
+
+    assert Sets().image_of(members) is members
+    assert Sets().image_of(identity) is identity
+    assert Posets().image_of(Posets().Simplex(int(2))) is Posets().Simplex(int(2))
 
 
 def test_an_object_image_and_a_morphism_image_of_one_value_are_one_cache_entry() -> None:
@@ -363,15 +383,10 @@ def test_the_eager_check_names_both_routes_and_the_shared_category() -> None:
 
         def structure_functors(self):
             if "routes" not in self._selected:
-                retained = Fun(self, Sets())(lambda member: member._rebuilt_data.carrier, lambda morphism: morphism._rebuilt_map_data)
-                retained.retain_object_constructor_conversion(lambda source: retained_object_input(source.datum.carrier))
-                retained.retain_morphism_constructor_conversion(lambda source: retained_morphism_input(source.datum))
-                rebuilt = Fun(self, Sets())(
-                    lambda member: Sets().Finite()(member._rebuilt_data.members),
-                    lambda morphism: morphism._rebuilt_map_data,
-                )
-                rebuilt.retain_object_constructor_conversion(lambda source: retained_object_input(Sets().Finite()(source.datum.members)))
-                rebuilt.retain_morphism_constructor_conversion(lambda source: retained_morphism_input(source.datum))
+                retained = Fun(self, Sets()).structural(lambda datum: datum.carrier, lambda datum: datum)
+                # The second route builds a new set from the same members instead of
+                # returning the retained one, which is the defect this row states.
+                rebuilt = Fun(self, Sets()).structural(lambda datum: Sets().Finite()(datum.members), lambda datum: datum)
                 self._selected["routes"] = (retained, rebuilt)
             return self._selected["routes"]
 

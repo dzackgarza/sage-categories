@@ -115,8 +115,12 @@ def _identity_morphism_constructor_input[Value: MorphismOfCategory, Datum](
 class FunctorData:
     """The local state introduced by the functor role."""
 
-    on_object: OnObject
-    on_morphism: OnMorphism
+    # A structural functor whose images are values the domain's defining data already
+    # names has no value-level action of its own: its images exist before any value of the
+    # domain does, so the kernel builds them from construction inputs and never calls a
+    # callback (POL-FUN-035).  Its actions are ``None``.
+    on_object: OnObject | None
+    on_morphism: OnMorphism | None
 
 
 class FunctorDeclaration(MorphismOfCategory):
@@ -156,6 +160,7 @@ class FunctorDeclaration(MorphismOfCategory):
             source = construction_input(member_object, compiler.node(self.domain(), Role.OBJECT))
             return self.object_constructor_input(source).canonical_image
         assert member_object in self.domain(), f"{member_object!r} is not an object of {self.domain()!r}"
+        assert self._on_object is not None, f"{self!r} retains neither an object action nor an object constructor conversion"
         return self._on_object(member_object)
 
     def on_morphism(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
@@ -181,6 +186,7 @@ class FunctorDeclaration(MorphismOfCategory):
             source = construction_input(morphism, compiler.node(self.domain(), Role.MORPHISM))
             return self.morphism_constructor_input(source).canonical_image
         assert morphism in morphisms, f"{morphism!r} is not a morphism of {self.domain()!r}"
+        assert self._on_morphism is not None, f"{self!r} retains neither a morphism action nor a morphism constructor conversion"
         return self._on_morphism(morphism)
 
     def on_element(self, element: CategoryPoint) -> CategoryPoint:
@@ -283,6 +289,36 @@ class FunctorDeclaration(MorphismOfCategory):
         assert parameter.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
         assert self not in _morphism_constructor_conversions, f"{self!r} already retains a morphism constructor conversion"
         _morphism_constructor_conversions[self] = conversion
+
+    def retain_structural_images[ObjectDatum, MorphismDatum](
+        self,
+        object_image: Callable[[ObjectDatum], ObjectOfCategory],
+        morphism_image: Callable[[MorphismDatum], MorphismOfCategory],
+    ) -> None:
+        """Retain the structural action of a functor whose images are already-constructed values.
+
+        The usual selected functor forgets structure: the underlying set of a poset, the
+        representing set of a cardinal.  Its image is then not built at the moment the
+        functor is applied -- it is a value the domain's defining data already names, and
+        the domain's own constructor made it.  Each rule states that mathematics and
+        nothing else: it reads one node's local datum and returns the image value.  The
+        kernel supplies the construction inputs the compiler consumes and the public object
+        and morphism actions (POL-FUN-035, POL-LEAF-054).
+        """
+        from sage_categories.kernel.construction import retained_input
+
+        def object_conversion[Value: ObjectOfCategory](
+            source: ObjectConstructionInput[Value, ObjectDatum],
+        ) -> ObjectConstructionInput[ObjectOfCategory, object]:
+            return retained_input(object_image(source.datum))
+
+        def morphism_conversion[Value: MorphismOfCategory](
+            source: MorphismConstructionInput[Value, MorphismDatum],
+        ) -> MorphismConstructionInput[MorphismOfCategory, object]:
+            return retained_input(morphism_image(source.datum))
+
+        self.retain_object_constructor_conversion(object_conversion)
+        self.retain_morphism_constructor_conversion(morphism_conversion)
 
     def object_constructor_input[
         SourceValue: ObjectOfCategory,
@@ -555,6 +591,27 @@ class FunctorProperties:
 
     def Monomorphisms(self) -> Category:
         return self.property_subcategory(self.ambient().Monomorphisms())
+
+    def structural[ObjectDatum, MorphismDatum](
+        self,
+        object_image: Callable[[ObjectDatum], ObjectOfCategory],
+        morphism_image: Callable[[MorphismDatum], MorphismOfCategory],
+    ) -> Functor:
+        """``Fun(C, D).P().structural(object_image, morphism_image)``: the selected functor that forgets structure.
+
+        Its image of an object is a value ``C``'s own constructor already made and its
+        defining data already names -- the underlying set of a poset, the representing set
+        of a cardinal -- so each rule reads one local datum and returns that value.  The
+        functor has no other action: the kernel derives the construction inputs the
+        compiler consumes and the public ``on_object`` and ``on_morphism`` from these two
+        rules (POL-FUN-035).
+
+        A leaf declares a forgetful structural functor this way and writes no construction
+        input, no canonical image, and no transport (POL-LEAF-054).
+        """
+        functor = self.universe().construct_structural_functor(self.domain(), self.codomain(), object_image, morphism_image)
+        refine(functor, self)
+        return functor
 
 
 class FunctorProperty(FunctorProperties, FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]]):

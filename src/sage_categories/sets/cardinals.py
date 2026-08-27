@@ -68,6 +68,7 @@ are module attributes resolved on first access.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from sage.structure.coerce_dict import MonoDict
@@ -93,13 +94,28 @@ __all__ = ["Cardinal", "CardinalMorphism", "CardinalObject", "aleph0", "cardinal
 type Key = tuple[str | int | Key, ...]
 
 
+@dataclass(frozen=True, eq=False, slots=True)
+class CardinalObjectData:
+    """The normalized expression state introduced by ``Cardinal()``."""
+
+    key: Key
+    terms: tuple[CardinalObject, ...]
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class CardinalMorphismData:
+    """The set map state introduced by a morphism of ``Cardinal()``."""
+
+    set_map: SetMap
+
+
 class CardinalObject(ObjectOfCategory):
     """An exact cardinal, retained by its normalized expression."""
 
-    def __init__(self, category: Category, key: Key, terms: tuple[CardinalObject, ...]) -> None:
-        ObjectOfCategory.__init__(self, category)
-        self._key = key
-        self._terms = terms
+    def __init__(self, data: CardinalObjectData) -> None:
+        self._key = data.key
+        self._terms = data.terms
+        super().__init__()
 
     def _kind_(self) -> str:
         return self._key[0]
@@ -185,9 +201,9 @@ class CardinalObject(ObjectOfCategory):
 class CardinalMorphism(MorphismOfCategory):
     """A morphism ``kappa -> lambda`` of ``Cardinal()``: a function between the representatives, retained as a set map."""
 
-    def __init__(self, category: Category, domain: CardinalObject, codomain: CardinalObject, set_map: SetMap) -> None:
-        MorphismOfCategory.__init__(self, category, domain, codomain)
-        self._set_map = set_map
+    def __init__(self, data: CardinalMorphismData) -> None:
+        self._set_map = data.set_map
+        super().__init__()
 
     def __repr__(self) -> str:
         return f"CardinalMorphism({self.domain()!r} -> {self.codomain()!r})"
@@ -273,7 +289,7 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
 
     def _retain(self, key: Key, terms: tuple[CardinalObject, ...]) -> CardinalObject:
         if key not in self._cardinals:
-            self._cardinals[key] = self.ObjectType(self, key, terms)
+            self._cardinals[key] = self.ObjectType(category=self, data=CardinalObjectData(key=key, terms=terms))
         return self._cardinals[key]
 
     def __call__(self, value: CardinalObject | int) -> CardinalObject:
@@ -371,23 +387,44 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
         assert set_map in _sets.Sets().morphism_category(1)(self.representative(domain), self.representative(codomain)), (
             f"{set_map!r} is not a map from the representative of {domain!r} to the representative of {codomain!r}"
         )
-        return self.MorphismType(self.morphism_category(1), domain, codomain, set_map)
+        return self.MorphismType(
+            category=self.morphism_category(1),
+            domain=domain,
+            codomain=codomain,
+            data=CardinalMorphismData(set_map=set_map),
+        )
 
     def construct_identity(self, cardinal: CardinalObject) -> CardinalMorphism:
-        return self.MorphismType(self.morphism_category(1), cardinal, cardinal, self.representative(cardinal).identity())
+        return self.MorphismType(
+            category=self.morphism_category(1),
+            domain=cardinal,
+            codomain=cardinal,
+            data=CardinalMorphismData(set_map=self.representative(cardinal).identity()),
+        )
 
     def composite(self, second: CardinalMorphism, first: CardinalMorphism) -> CardinalMorphism:
         """Composition is the composition of the maps between representatives."""
         morphisms = self.morphism_category(1)
         assert first in morphisms and second in morphisms
         assert first.codomain() is second.domain(), f"{second!r} after {first!r} is not composable"
-        return self.MorphismType(morphisms, first.domain(), second.codomain(), second._set_map * first._set_map)
+        return self.MorphismType(
+            category=morphisms,
+            domain=first.domain(),
+            codomain=second.codomain(),
+            data=CardinalMorphismData(set_map=second._set_map * first._set_map),
+        )
 
     def inverse_morphism(self, morphism: CardinalMorphism) -> CardinalMorphism:
         """The inverse of a cardinal isomorphism: the inverse of its map, an isomorphism of sets because the fully faithful representative functor reflects isomorphisms (Mathlib ``CategoryTheory.isIso_of_fully_faithful``; inspected 2026-08-27)."""
         if morphism not in self._inverses:
             set_map = _sets.Sets().morphism_category(1).Isomorphisms()(morphism._set_map)
-            self.retain_inverses(morphism, self.MorphismType(self.morphism_category(1), morphism.codomain(), morphism.domain(), set_map.inverse()))
+            inverse = self.MorphismType(
+                category=self.morphism_category(1),
+                domain=morphism.codomain(),
+                codomain=morphism.domain(),
+                data=CardinalMorphismData(set_map=set_map.inverse()),
+            )
+            self.retain_inverses(morphism, inverse)
         return self._inverses[morphism]
 
     def hom_inhabited(self, hom_category: Category) -> Decision:

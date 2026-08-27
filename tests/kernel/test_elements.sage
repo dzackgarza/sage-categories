@@ -31,8 +31,8 @@ from sage_categories.all import *
 from sage_categories.kernel.compiler import StructuralImageMismatch
 from sage_categories.kernel.construction import retained_morphism_input, retained_object_input
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
+from sage_categories.sets.category import SetMap
 from sage_categories.sets.elements import Datum
-from sage_categories.sets.maps import SetMap
 from sage_categories.sets.objects import SetObject
 
 

@@ -7,7 +7,6 @@ from sage_categories.posets.category import PosetElementDeclaration as PosetElem
 from sage_categories.posets.category import Posets_Finite_ElementType as Posets_Finite_ElementType
 from sage_categories.posets.category import Posets_Finite_MorphismType as Posets_Finite_MorphismType
 from sage_categories.sets.cardinals import CardinalObjectDeclaration as CardinalObjectDeclaration
-from sage_categories.sets.maps import SetMapDeclaration as SetMapDeclaration
 from sage_categories.sets.objects import FiniteSetRole as FiniteSetRole
 from sage_categories.sets.objects import SetObjectDeclaration as SetObjectDeclaration
 from sage_categories.cat.category import Category as Category
@@ -22,8 +21,8 @@ from sage_categories.kernel.refinement import refine as refine
 from sage_categories.kernel.roles import CategoryPoint as CategoryPoint, ObjectOfCategory as ObjectOfCategory, Role as Role
 from sage_categories.posets.category import MonotoneMap as MonotoneMap, Poset as Poset, PosetElement as PosetElement, PosetMorphismData as PosetMorphismData, PosetObjectData as PosetObjectData
 from sage_categories.sets.cardinals import Cardinal as Cardinal, CardinalObject as CardinalObject
-from sage_categories.sets.category import SetObject as SetObject, Sets as Sets
-from sage_categories.sets.maps import Rule as Rule, SetMap as SetMap, SetMorphismData as SetMorphismData
+from sage_categories.sets.category import SetMap as SetMap, SetObject as SetObject, Sets as Sets
+from sage_categories.sets.maps import Rule as Rule, SetMorphismData as SetMorphismData
 from sage_categories.sets.objects import SetObjectData as SetObjectData
 
 class FinitePosetRole(PosetDeclaration, FiniteSetRole):

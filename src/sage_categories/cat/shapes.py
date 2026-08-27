@@ -26,7 +26,7 @@ constructed uniformly by ``Cat()(labels, generators, relations)``.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sage.structure.coerce_dict import MonoDict
 
@@ -39,8 +39,10 @@ from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.category import Sets
 from sage_categories.sets.elements import SetElement
-from sage_categories.sets.maps import SetMap
 from sage_categories.sets.objects import SetObject
+
+if TYPE_CHECKING:
+    from sage_categories.sets.category import SetMap
 
 __all__ = ["Discrete", "DiscreteCategory", "Thin", "ThinCategory", "index_set_of", "is_discrete", "omega"]
 

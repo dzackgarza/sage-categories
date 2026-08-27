@@ -37,7 +37,7 @@ from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory
 from sage_categories.sets.elements import Datum
 
 if TYPE_CHECKING:
-    from sage_categories.sets.category import SetElement, SetObject
+    from sage_categories.sets.category import SetElement, SetMap, SetObject
 
 __all__ = ["Rule", "SetMorphismData", "injective_on_finite_domain", "maps_equal", "surjective_on_finite_domain"]
 

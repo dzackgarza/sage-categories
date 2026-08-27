@@ -448,7 +448,6 @@ _set_objects.SetElement = SetElement
 _set_elements.SetElement = SetElement
 _set_maps.SetObject = SetObject
 _set_maps.SetElement = SetElement
-_set_maps.SetMap = SetMap
 
 
 def Sets() -> SetsCategory:

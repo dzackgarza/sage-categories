@@ -31,7 +31,7 @@ from sage_categories.cat import category as _category
 from sage_categories.cat.category import Assignment, Category, CategoryOfCategories, OnMorphism, OnObject
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask
-from sage_categories.kernel.refinement import is_placed, is_retained_inclusion, refine
+from sage_categories.kernel.refinement import is_placed, is_retained_inclusion, is_subcategory, refine
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory, Role, role_of
 
 if TYPE_CHECKING:
@@ -529,7 +529,11 @@ def _denotes_diagram_by_stage(candidate: CategoryPoint, functors: FunctorCategor
     if is_placed(candidate, functors.ambient()):
         return ask(endpoints(candidate, functors.domain(), functors.codomain()))
     if role_of(candidate) in (Role.OBJECT, Role.MORPHISM):
-        return candidate.stage() is functors.domain() and candidate.parent() is functors.codomain()
+        # The stage is one of the canonical shapes, compared by identity; the parent is a
+        # placement, so the question there is containment in the codomain, not identity
+        # (POL-CAT-068, POL-FUN-027): a set refined into ``Sets().Finite()`` is still a
+        # diagram of shape ``1`` in ``Sets()``.
+        return candidate.stage() is functors.domain() and is_subcategory(candidate.parent(), functors.codomain())
     return False
 
 

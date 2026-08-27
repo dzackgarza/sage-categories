@@ -23,7 +23,7 @@ from sage_categories.kernel.compiler import SemanticCollisionError
 from sage_categories.kernel.construction import retained_morphism_input, retained_object_input
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
-from sage_categories.sets.maps import SetMap
+from sage_categories.sets.category import SetMap
 
 
 def _enumeration(finite_set):
@@ -289,8 +289,8 @@ class SkeletalData:
 class Skeletal(Category):
     """A skeletal category of sets: one object per isomorphism class, so each object is its own chosen representative.
 
-    It declares the two result roles no category in ``src/`` currently declares: a
-    receiver-valued operation and a set-map-valued one.
+    It declares the two result roles no category in ``src/`` currently declares: an
+    operation valued in its own category and a set-map-valued one.
     """
 
     class DeclaredObjectType(ObjectOfCategory):
@@ -303,7 +303,13 @@ class Skeletal(Category):
             return self._skeletal_data.carrier
 
         def chosen_representative(self) -> Self:
-            """The representative of this object's isomorphism class: in a skeletal category, itself."""
+            """The representative of this object's isomorphism class: the object ``SkeletalData`` bound at its first construction.
+
+            The body reads stored state, not the receiver, so this declaration does not
+            witness the receiver-valued clause of ``D18``; the specimen for that clause,
+            whose body is literally ``return self``, is in
+            ``tests/cat/test_two_morphisms.sage``.
+            """
             return self._skeletal_data.canonical
 
         def carrier_identity(self) -> SetMap:
@@ -480,15 +486,16 @@ def test_incomparable_owners_of_one_morphism_spelling_are_a_semantic_collision()
         BothRoles(MorphismDegree(), MorphismOrder())
 
 
-def test_a_receiver_valued_and_a_map_valued_inherited_result_stay_in_the_declaring_category() -> None:
+def test_inherited_results_stay_in_their_declaring_category() -> None:
     """``X.f() := F(X).f()``: nothing is transported back (POL-CAT-062).
 
     ``Presented`` selects one forgetful functor into ``Skeletal``, so the image of a
     presented object is the skeletal object it presents, a different object.  The
-    receiver-valued declaration therefore returns that image, and the set-map-valued
-    declaration returns an object of ``Mor(Sets())``; neither result is lifted back into
-    ``Presented``.  ``Sets()`` declares no method of either result role, so the poset
-    specimen in ``tests/posets/test_posets.sage`` cannot state these two.
+    declaration valued in ``Skeletal`` returns the skeletal object its shared state binds,
+    and the set-map-valued declaration returns an object of ``Mor(Sets())``; neither
+    result is lifted back into ``Presented``.  ``Sets()`` declares no method of either
+    result role, so the poset specimen in ``tests/posets/test_posets.sage`` cannot state
+    these two.
     """
     skeletal = Skeletal()
     presented = Presented(skeletal)

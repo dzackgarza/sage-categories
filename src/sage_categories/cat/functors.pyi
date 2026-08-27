@@ -10,7 +10,7 @@ from sage_categories.cat.properties import FixedEndpointProperty as FixedEndpoin
 from sage_categories.kernel.construction import ElementConstructionInput as ElementConstructionInput, MorphismConstructionInput as MorphismConstructionInput, ObjectConstructionInput as ObjectConstructionInput
 from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown, UnknownClass as UnknownClass
 from sage_categories.kernel.predicates import AppliedPredicate as AppliedPredicate, Predicate as Predicate, Proposition as Proposition, ask as ask
-from sage_categories.kernel.refinement import is_placed as is_placed, is_retained_inclusion as is_retained_inclusion, refine as refine
+from sage_categories.kernel.refinement import is_placed as is_placed, is_retained_inclusion as is_retained_inclusion, is_subcategory as is_subcategory, refine as refine
 from sage_categories.kernel.roles import CategoryPoint as CategoryPoint, MorphismOfCategory as MorphismOfCategory, ObjectOfCategory as ObjectOfCategory, Role as Role, role_of as role_of
 from sage_categories.sets.elements import SetElement as SetElement
 from sage_categories.sets.objects import SetObject as SetObject

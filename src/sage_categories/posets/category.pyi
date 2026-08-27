@@ -22,9 +22,9 @@ from sage_categories.kernel.decisions import Decision as Decision, Unknown as Un
 from sage_categories.kernel.predicates import AppliedPredicate as AppliedPredicate, Predicate as Predicate, Proposition as Proposition, ask as ask
 from sage_categories.kernel.refinement import refine as refine
 from sage_categories.kernel.roles import CategoryPoint as CategoryPoint, ElementOfObject as ElementOfObject, MorphismOfCategory as MorphismOfCategory, ObjectOfCategory as ObjectOfCategory, Role as Role, role_of as role_of
-from sage_categories.sets.category import Sets as Sets
+from sage_categories.sets.category import SetMap as SetMap, Sets as Sets
 from sage_categories.sets.elements import Datum as Datum, SetElement as SetElement
-from sage_categories.sets.maps import Rule as Rule, SetMap as SetMap, SetMorphismData as SetMorphismData
+from sage_categories.sets.maps import Rule as Rule, SetMorphismData as SetMorphismData
 from sage_categories.sets.objects import MembershipRule as MembershipRule, SetObject as SetObject, SetObjectData as SetObjectData
 
 partial_order: Predicate

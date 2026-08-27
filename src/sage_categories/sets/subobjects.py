@@ -53,7 +53,7 @@ subset; it has no value at a datum whose membership is ``Unknown``.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sage.structure.coerce_dict import MonoDict
 
@@ -66,8 +66,11 @@ from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role
 from sage_categories.sets.cardinals import CardinalObject
 from sage_categories.sets.elements import Datum
-from sage_categories.sets.maps import Rule, SetMap
+from sage_categories.sets.maps import Rule
 from sage_categories.sets.objects import MembershipRule, SetObject
+
+if TYPE_CHECKING:
+    from sage_categories.sets.category import SetMap
 
 __all__ = ["ChosenQuotientsCategory", "ChosenSubsetsCategory", "subset_of"]
 

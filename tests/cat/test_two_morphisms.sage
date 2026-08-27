@@ -20,9 +20,19 @@ Oracles, all inspected 2026-08-27:
 Naturality, the interchange law, and the exponential's universal property are trusted
 declarations (POL-MATH-036, POL-MATH-037, POL-MATH-041).  Each test below witnesses one
 construction on one specimen; none of them proves a law.
+
+The file also carries the specimens for two further declared surfaces that no test
+exercised: the represented underlying functor ``U_C = Mor(C)(G_C, -)`` of a category with a
+classical stage, and the inherited execution of a receiver-valued declaration.  Toy
+categories for the latter live only in this file (POL-TEST-006).
 """
 
+from dataclasses import dataclass
+from typing import Self
+
 from sage_categories.all import *
+from sage_categories.kernel.construction import retained_morphism_input, retained_object_input
+from sage_categories.kernel.roles import MorphismOfCategory, ObjectOfCategory
 
 
 def test_the_two_whiskerings_have_their_stated_endpoints_and_components() -> None:
@@ -123,11 +133,18 @@ def test_the_exponential_acts_on_a_morphism_of_cat_and_keeps_one_value_per_morph
     assert action.on_object(collapse) is underlying.on_morphism(collapse)
     assert action.on_object(collapse) in Mor(Sets())(three, two)
 
+    # At stage ``1`` the points are the objects, including one refined into a property
+    # subcategory: ``chain`` is placed in ``FinitePosets()``, which is contained in
+    # ``Posets()``, so it is a diagram of shape ``1`` in ``Posets()``.
+    assert chain in FinitePosets()
+    assert chain in Fun(point, Posets())
+    assert Fun(point, underlying).on_object(chain) is underlying.on_object(chain)
+    assert Fun(point, underlying).on_object(chain) is three
+
     # On an object of ``Fun(I, Posets())`` that is a functor rather than a point, the same
     # action is the composite ``U . G``.
     constant = Fun(point, Posets()).constant(chain)
     assert Fun(point, underlying).on_object(constant).on_object(point(int(0))) is underlying.on_object(chain)
-    assert underlying.on_object(chain) is three
 
     # ``collapse . include = 1_pair``, so ``(include, collapse)`` is a commuting square
     # from ``include`` to ``collapse``; its image is the square of underlying set maps.
@@ -140,3 +157,119 @@ def test_the_exponential_acts_on_a_morphism_of_cat_and_keeps_one_value_per_morph
     assert whiskered.codomain() is action.on_object(collapse)
     assert whiskered.component(arrow(int(0))) is underlying.on_morphism(include)
     assert whiskered.component(arrow(int(1))) is underlying.on_morphism(collapse)
+
+
+@dataclass(eq=False, slots=True)
+class AnchorData:
+    """The carrier set of an anchored object."""
+
+    carrier: object
+
+
+class Anchored(Category):
+    """Objects named by a carrier set, with one receiver-valued declaration.
+
+    ``this_object`` is the declaration ``D18`` describes: its body is ``return self``, so
+    executing it on a descendant instance returns that descendant.
+    """
+
+    class DeclaredObjectType(ObjectOfCategory):
+        def __init__(self, data):
+            self._anchor_data = data
+            super().__init__()
+
+        def carrier(self) -> ObjectOfCategory:
+            return self._anchor_data.carrier
+
+        def this_object(self) -> Self:
+            return self
+
+    def __call__(self, carrier):
+        return self.ObjectType(self, AnchorData(carrier))
+
+    def __repr__(self):
+        return "Anchored"
+
+
+@dataclass(eq=False, slots=True)
+class LabelData:
+    """The anchored object a labelled object is built on."""
+
+    anchored: object
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class LabelMapData:
+    """The anchored morphism a labelled morphism is built on."""
+
+    underlying: object
+
+
+class Labelled(Category):
+    """Objects built on a chosen anchored object, related to it by a non-inclusion faithful functor.
+
+    The functor is not an inclusion, so the image of a labelled object is a different
+    object and an inherited result transported to the image would be visible.
+    """
+
+    class DeclaredObjectType(ObjectOfCategory):
+        def __init__(self, data):
+            self._label_data = data
+            super().__init__()
+
+        def anchored_object(self) -> ObjectOfCategory:
+            return self._label_data.anchored
+
+    class DeclaredMorphismType(MorphismOfCategory):
+        def __init__(self, data):
+            self._label_map_data = data
+            super().__init__()
+
+        def underlying_morphism(self) -> MorphismOfCategory:
+            return self._label_map_data.underlying
+
+    def __init__(self, anchored):
+        self._anchored = anchored
+        self._selected = {}
+        super().__init__()
+
+    def structure_functors(self):
+        if "forgetful" not in self._selected:
+            forgetful = Fun(self, self._anchored).Faithful()(
+                lambda member: member.anchored_object(),
+                lambda morphism: morphism.underlying_morphism(),
+            )
+            forgetful.retain_object_constructor_conversion(lambda source: retained_object_input(source.datum.anchored))
+            forgetful.retain_morphism_constructor_conversion(lambda source: retained_morphism_input(source.datum.underlying))
+            self._selected["forgetful"] = forgetful
+        return (self._selected["forgetful"],)
+
+    def __call__(self, anchored):
+        return self.ObjectType(self, LabelData(anchored))
+
+    def __repr__(self):
+        return "Labelled"
+
+
+def test_an_inherited_receiver_valued_method_returns_the_descendant() -> None:
+    """``X.f() := F(X).f()`` for a declaration whose body is ``return self`` returns ``X``, not ``F(X)``.
+
+    Every ancestor initializer stores its typed state on the descendant instance, so the
+    inherited method executes there (D18, POL-KERNEL-028).  This witnesses that on one
+    specimen through a selected functor that is not an inclusion, so the image is a
+    distinct object and a transported result would be visible.
+    """
+    anchored = Anchored()
+    labelled = Labelled(anchored)
+    carrier = Sets().Finite()((int(3), int(4)))
+    member = labelled(anchored(carrier))
+    image = labelled.structure_functors()[int(0)].on_object(member)
+
+    assert member in labelled
+    assert member not in anchored
+    assert image in anchored
+    assert image is not member
+
+    assert member.this_object() is member
+    assert image.this_object() is image
+    assert member.carrier() is carrier

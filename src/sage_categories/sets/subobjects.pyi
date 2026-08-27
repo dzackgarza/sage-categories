@@ -5,7 +5,6 @@ from sage_categories.sets.category import Sets_ChosenQuotients_ElementType as Se
 from sage_categories.sets.category import Sets_ChosenQuotients_MorphismType as Sets_ChosenQuotients_MorphismType
 from sage_categories.sets.category import Sets_ChosenSubsets_ElementType as Sets_ChosenSubsets_ElementType
 from sage_categories.sets.category import Sets_ChosenSubsets_MorphismType as Sets_ChosenSubsets_MorphismType
-from sage_categories.sets.maps import SetMapDeclaration as SetMapDeclaration
 from sage_categories.sets.objects import SetObjectDeclaration as SetObjectDeclaration
 from collections.abc import Callable
 from sage_categories.cat.category import Category as Category
@@ -15,8 +14,9 @@ from sage_categories.kernel.predicates import AppliedPredicate as AppliedPredica
 from sage_categories.kernel.refinement import refine as refine
 from sage_categories.kernel.roles import CategoryPoint as CategoryPoint, ObjectOfCategory as ObjectOfCategory, Role as Role
 from sage_categories.sets.cardinals import CardinalObject as CardinalObject
+from sage_categories.sets.category import SetMap as SetMap
 from sage_categories.sets.elements import Datum as Datum
-from sage_categories.sets.maps import Rule as Rule, SetMap as SetMap
+from sage_categories.sets.maps import Rule as Rule
 from sage_categories.sets.objects import MembershipRule as MembershipRule, SetObject as SetObject
 
 subset_of: Predicate

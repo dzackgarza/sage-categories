@@ -32,7 +32,7 @@ The structural functors form this commutative graph:
 \]
 
 Both routes from finite total orders to sets produce one canonical set image and the
-same set constructor datum by identity. The compiler runs each reachable role constructor
+same set construction input by identity. The compiler runs each reachable role constructor
 once. The common set role state is initialized once.
 
 Each category owns complete implementation roles:
@@ -50,14 +50,18 @@ cardinality, set maps, and set constructions.
 
 The selected functor from posets to sets retains three pure typed conversions:
 
-- its object conversion returns the datum retained by the canonical carrier;
-- its element conversion returns the datum retained by the canonical set point;
-- its morphism conversion returns the datum retained by the canonical set map.
+- its object conversion returns the input retained by the canonical carrier;
+- its element conversion uses the defining morphism and returns the input retained by
+  the canonical set point;
+- its morphism conversion uses the source endpoints and local map data, then returns the
+  input retained by the canonical set map.
 
 The poset object constructor accepts only its relation and initializes only poset state.
 The object conversion derives the carrier from that relation before initialization starts.
-Poset elements and monotone maps initialize only their new state. Their
-`super().__init__()` calls enter the compiled constructor chain.
+Poset elements add no local constructor state, so their generated wrapper advances to
+the next node. A monotone-map construction input supplies its underlying set morphism to
+the selected functor. The poset morphism node adds no duplicate state, so its generated
+wrapper also advances.
 
 ## Poset construction and its proposition
 
@@ -281,6 +285,12 @@ A monotone morphism induces the corresponding functor between thin categories.
 
 Set membership, iteration, cardinality, identity, composition, and universal set
 constructions arrive through structural inheritance.
+
+`Poset.point(datum)` is the source-category element constructor. It calls the inherited
+set point constructor on the same receiver, then constructs the corresponding
+`PosetElement`. Thus inherited finite-set iteration uses ordinary Python dispatch through
+`self.point(datum)` and yields elements of the ambient poset. The iterator itself remains
+the implementation inherited from `Sets().Finite()`.
 
 Each category-owned `ObjectType`, `ElementType`, and `MorphismType` is its implementation
 class. A leaf can use Sage or another engine through private helpers.

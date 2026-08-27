@@ -5,8 +5,9 @@ the discussion that separated structural inheritance from private computation.
 
 The central rule is:
 
-> `C.ObjectType`, `C.ElementType`, and `C.MorphismType` are the executable implementation
-> classes for `C`. The category declaration defines or links those exact classes.
+> `C.ObjectType`, `C.ElementType`, and `C.MorphismType` are the compiled executable
+> classes for `C`. The category defines or links the separate `DeclaredObjectType`,
+> `DeclaredElementType`, and `DeclaredMorphismType` local declarations.
 
 These classes are not interfaces for another implementation hierarchy. They are not
 method catalogues that a compiler matches against backend method names.
@@ -216,9 +217,9 @@ For a poset, an owned relation subobject
 R\hookrightarrow X\times X
 \]
 
-already determines `X`. The constructor extracts the two factors, verifies that they
-are the same set, and stores the defining pair `(X, R)`. Its selected set projection maps
-that pair to `X`. The relation projection is not selected for inheritance.
+already determines `X`. The constructor verifies that the two factors are the same set
+and stores only `R` as local state. The selected set projection derives `X` and supplies
+its exact set construction input. The relation projection is not selected for inheritance.
 
 Present this category as a subobject of the product of the set category and the relation
 category. Then `product_projection(0)` is the set functor and
@@ -279,17 +280,20 @@ It can instead link one imported class:
 
 ```python
 class LeafCategory(Category):
-    DeclaredObjectType = LeafObject
-    DeclaredElementType = LeafElement
-    DeclaredMorphismType = LeafMorphism
+    DeclaredObjectType = LeafObjectDeclaration
+    DeclaredElementType = LeafElementDeclaration
+    DeclaredMorphismType = LeafMorphismDeclaration
 ```
 
 Both forms have one local declaration for each mathematical role. The kernel constructs
 the three compiled public roles separately.
 
+The module then binds its semantic object, element, and morphism names to those compiled
+roles. These names are the nominal source and stub types.
+
 When the category links an imported class, the category module contains no duplicate
 method declarations, abstract stubs, or backend method map. The linked class is the
-canonical implementation.
+canonical local declaration.
 
 The link from the category to its local declaration is part of the categorical
 declaration. It does not replace the compiled public role.
@@ -335,15 +339,19 @@ The compiler acts on complete inherited role implementations.
 For each selected route, the compiler:
 
 - places the ancestor compiled role in the controlled C3 MRO;
-- copies the local declaration, including its constructor, into its own compiled role;
+- copies each local member except `__init__` into its own compiled role;
+- rebinds the local initializer and retains it as the node initializer;
+- installs one generated wrapper in the compiled role's `__init__` slot;
 - uses the functor's constructor conversion to initialize the ancestor state;
 - invokes inherited methods on the original structured value through ordinary Python
   method resolution;
 - initializes each common ancestor once across a diamond.
 
 The local constructor accepts only the leaf's new semantic data. It initializes that
-state and calls `super().__init__()` once. The selected functor supplies the data required
-by the next role constructor. The leaf does not add ancestor fields or ancestor arguments.
+state and calls `super().__init__()` once. A declaration can omit `__init__` when it adds
+no state. Its generated wrapper advances to the next C3 initializer. The selected functor
+supplies the input required by the next role constructor. The leaf does not add ancestor
+fields or ancestor arguments.
 
 The compiler never interprets a local decorator as an instruction to find another
 method body. It never pairs a leaf method with an engine method by name.
@@ -373,7 +381,7 @@ Both interpretations were wrong.
 
 The correct distinction is:
 
-- generic inheritance, constructor-data traversal, compiled class construction, and
+- generic inheritance, construction-input traversal, compiled class construction, and
   canonical functor images are kernel infrastructure;
 - a leaf-owned method's selected computation is part of that leaf's implementation;
 - lowering to Sage and reconstructing an owned result form a private computation
@@ -649,7 +657,7 @@ catalogues, the architecture is wrong.
 
 | Concern | Owner |
 | --- | --- |
-| Category-local operation name and signature | `ObjectType`, `ElementType`, or `MorphismType` |
+| Category-local operation name and signature | `DeclaredObjectType`, `DeclaredElementType`, or `DeclaredMorphismType` |
 | Category-local executable method body | The same implementation class |
 | Local role constructor and state | The same local implementation declaration |
 | Ancestor constructor conversion | Selected structural functor |

@@ -343,13 +343,14 @@ computational handlers. `ask()` returns `Unknown` unless category placement, an 
 assumption, a cached exact decision, or a categorical implication decides the predicate.
 
 Every functor is explicit.
-Only selected structural functors contribute methods to the public object surface.
+Only selected structural functors contribute compiled role implementations and
+construction-input conversions to the public surface.
 Ordinary mathematical functors remain available without changing public inheritance.
 
 For an object `x`, cache one canonical `F(x)` in each reachable category.
 Two structural routes to the same category must return the same object by identity.
 During construction, traverse every route to each reachable category in declaration order.
-Cache the first image and constructor datum. Assert that each later route supplies the same
+Cache the first image and construction input. Assert that each later route supplies the same
 objects by identity. If construction does not reach a node, perform this check at the first
 public functor application. A mismatch raises a construction-defect error naming both routes.
 
@@ -358,16 +359,21 @@ Compile the public method surface from category declarations:
 - local declarations take precedence;
 - routes to the same declaring category share one method owner;
 - unrelated declarations with the same name are errors;
-- each public role copies its complete local declaration onto the controlled compiled
-  ancestor roles;
+- each public role copies each local member except `__init__` onto the controlled
+  compiled ancestor roles;
 - copied `__class__` closures bind to the final compiled role;
+- the rebound local initializer is retained as the node initializer;
+- one generated `__init__` wrapper occupies each compiled class;
 - ordinary and special methods execute through the same compiled MRO.
 
 Each local role constructor initializes only its new state and calls `super().__init__()`
-once. Selected functors supply typed constructor-data conversions for object, element,
-and morphism roles. Compute one datum per reachable node before the C3 chain starts.
-Generated class wrappers read their node's datum, so adjacent C3 classes need not form a
-structural edge. The kernel base initializes the separate root identity.
+once. Selected functors supply typed construction-input conversions for object, element,
+and morphism roles. Allocate the public value first. Create the root input with that value
+as its canonical image. Each input contains a node identity and its local datum. Compute
+one input per reachable node before the C3 chain starts. Generated class wrappers pass
+only their node's datum to the local constructor. A node without an initializer advances
+to the next wrapper. Adjacent C3 classes need not form a structural edge. The kernel base
+initializes only the root input's identity.
 
 An inherited method executes on the original descendant. The declaring role's private
 state retains the canonical functor image. A method uses that image when its result or

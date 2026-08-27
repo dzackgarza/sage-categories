@@ -17,6 +17,12 @@ class SetsCategory(Category):
             """Return the finite-set membership proposition."""
             return Sets().Finite().membership_proposition(self)
 
+    class DeclaredElementType(Implementation):
+        pass
+
+    class DeclaredMorphismType(Implementation):
+        pass
+
     class Finite(Category):
         """The full property subcategory of finite sets."""
 
@@ -32,7 +38,7 @@ class SetsCategory(Category):
 
         def membership_proposition(
             self,
-            X: SetsCategory.ObjectType,
+            X: SetObject,
         ) -> Proposition:
             """Return the proposition that ``X`` has finite cardinality."""
             return self.applied_predicate(
@@ -51,11 +57,27 @@ class SetsCategory(Category):
                 """Return the proposition that the cardinality is even."""
                 return self.cardinality() % 2 == 0
 
+        class DeclaredElementType(Implementation):
+            pass
 
-FiniteSets = SetsCategory.Finite
+        class DeclaredMorphismType(Implementation):
+            pass
 
 
-def decide_finiteness(X: SetsCategory.ObjectType) -> Decision:
+_SETS = SetsCategory()
+SetObject = _SETS.ObjectType
+SetElement = _SETS.ElementType
+SetMorphism = _SETS.MorphismType
+FiniteSet = _SETS.Finite().ObjectType
+FiniteSetElement = _SETS.Finite().ElementType
+FiniteSetMorphism = _SETS.Finite().MorphismType
+
+
+def Sets() -> SetsCategory:
+    return _SETS
+
+
+def decide_finiteness(X: SetObject) -> Decision:
     """Return an exact decision for the supported private-backend cases.
 
     Put this entry point and its engine calls in a private set-computation module in the
@@ -71,7 +93,7 @@ def decide_finiteness(X: SetsCategory.ObjectType) -> Decision:
 
 
 Sets().Finite().register_exact_handler(
-    SetsCategory.ObjectType,
+    SetObject,
     decide_finiteness,
 )
 

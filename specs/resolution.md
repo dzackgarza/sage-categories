@@ -82,7 +82,7 @@ This framework compiles more than methods. A selected structural functor supplie
 - objects;
 - elements;
 - morphisms;
-- the constructor conversion for each state-bearing target role;
+- the construction-input conversion for each state-bearing target role;
 - the target implementation methods;
 - the morphisms in universal constructions.
 
@@ -375,8 +375,9 @@ The compiler distinguishes two kinds of duplicate names.
 ### One declaration reached twice
 
 If a method is owned by \(A\) and both branches reach \(A\), there is one mathematical
-declaration. The compiler selects the canonical \(A\)-image and installs that method
-once.
+declaration. The compiled role contains the \(A\) node once in its Python MRO. Object
+construction checks that both routes give the same canonical \(A\)-image. Method
+compilation installs no route wrapper.
 
 Membership on a ring is such a case. Both the additive and multiplicative branches reach
 sets. `Sets()` remains the sole owner of membership.
@@ -454,21 +455,23 @@ The architecture uses the following rules.
 9. Independent method declarations with different meanings require distinct names or an
    explicit mathematical operation at the common descendant.
 10. Method-resolution order never decides mathematical meaning.
-11. Each compiled role contains its local implementation and the compiled roles of every
+11. Each compiled role contains the copied local members and the compiled roles of every
     selected ancestor in controlled C3 order. Copied functions bind `__class__` to the
-    compiled role. Each local constructor initializes only its new state and calls
-    `super().__init__()` once.
-12. Before the C3 chain starts, each selected functor converts source constructor data
-    along structural edges. A generated class wrapper reads the datum for its own node.
-    Thus adjacent C3 classes need not be joined by a structural edge. The compiler
-    initializes every reachable role and every common ancestor once.
+    compiled role. The rebound local initializer remains separate from the generated
+    `__init__` wrapper.
+12. The kernel allocates the public value first. Before the C3 chain starts, each selected
+    functor converts complete typed construction inputs along structural edges. A generated
+    class wrapper reads the input for its own node and passes only its local datum to the
+    node initializer. Thus adjacent C3 classes need not be joined by a structural edge.
+    The compiler initializes every reachable role and every common ancestor once.
 13. A source value retains each ancestor value supplied as defining data. A derived
     ancestor image is constructed once and cached. A selected structural functor returns
     that retained value on every call and never reconstructs an equal or isomorphic
     replacement.
 14. During construction or the first public functor application, the compiler
-    traverses every route to that category in declaration order, stores the first image,
-    and asserts that each later image `is` the stored image. A mismatch raises a
+    traverses every route to that category in declaration order, stores the first image
+    and construction input, and asserts that each later route supplies those same objects
+    by identity. A mismatch raises a
     construction-defect error naming both routes and the shared ancestor.
 15. The compiler never asks whether two images are mathematically equal and performs no
     naturality or higher-categorical proof. Natural transformations are trusted

@@ -32,6 +32,10 @@ Category = Cat().ObjectType
 Thus `Sets()`, `Mor(C)`, and every property subcategory are instances of
 `Cat().ObjectType`. They do not form a second Python category hierarchy.
 
+Bootstrap follows the same local/public split. `CategoryDeclaration` supplies the local
+`Cat` object role. After the singleton is compiled, `Category` names
+`Cat().ObjectType`. The local declaration and public category class are distinct.
+
 `Cat` owns the same role types as every other category:
 
 - `Cat().ObjectType` implements categories;
@@ -374,37 +378,59 @@ are distinct classes:
   category's new methods and constructors;
 - `C.ObjectType`, `C.ElementType`, and `C.MorphismType` are the compiled public classes;
 - the compiled bases are the compiled roles of the selected target categories;
-- the kernel copies the complete local namespace onto those bases;
+- the kernel copies each local member except `__init__` onto those bases;
+- the kernel retains the rebound local initializer as the node initializer;
+- the kernel installs one generated `__init__` wrapper on each compiled class;
 - the kernel rebinds every copied `__class__` closure to the compiled class.
+
+After category construction, its module binds semantic public names to the compiled role
+classes. For example, `Poset`, `PosetElement`, and `MonotoneMap` name the three compiled
+roles of `PartiallyOrderedSets()`. Source annotations and generated stubs use these names.
 
 Each local constructor accepts one exact typed datum. That datum contains only the state
 introduced at its category. The constructor initializes that state and calls
-`super().__init__()` once. The root identity is separate. It records the object's
-category, the element's defining morphism, or the morphism's category and endpoints.
+`super().__init__()` once. A construction input can also carry exact semantic data used
+only to construct selected ancestor state. A node that retains none of that data has no
+local initializer, and its generated wrapper advances. Every role construction input
+keeps its datum separate from its identity. The identity records the object's category,
+the element's defining morphism, or the morphism's category and endpoints.
 
-A selected functor retains a pure typed conversion from its source datum to its target
-datum for each role. Thus a poset datum states only its order data. Its selected functor
-to `Sets()` supplies the set datum required by the set object constructor. The conversion
-does not inspect a partly initialized poset.
+A selected functor retains a pure typed conversion from its source construction input to
+its target construction input for each role. Thus a poset datum states only its order
+data. Its selected functor to `Sets()` uses the source identity and datum to return the
+input retained by the canonical set image. The conversion does not inspect a partly
+initialized poset.
 
-Before initialization, the kernel follows structural edges and computes one datum for
-each reachable node. It checks every route to a common node by canonical-image and datum
-identity. It then activates one role-specific construction context.
+The kernel allocates the compiled value first. It creates the root input with that value
+as its canonical image. It then follows structural edges and computes one construction
+input for each reachable node. It checks every route to a common node by canonical-image
+and input identity. Finally, it activates one role-specific construction context and
+starts initialization.
 
 The controlled C3 order can place unrelated branches next to each other. For example,
 the order for `D -> B -> A` and `D -> C -> A` is `D, B, C, A`. Generated wrappers do not
 interpret `B` followed by `C` as a structural edge. Each wrapper reads its own node's
-precomputed datum and invokes that node's local constructor. Literal `super()` enters the
-next wrapper. C3 therefore initializes `D`, `B`, `C`, and `A` once each.
+precomputed input and passes only its datum to that node's local constructor. Literal
+`super()` enters the next wrapper. C3 initializes `D`, `B`, `C`, and `A` once each.
 
 The raw declaration classes do not occur in the public MRO. Python functions copied from
 them retain a `__class__` closure. The compiler rebinds that closure to the final compiled
 class before it installs the function. This makes literal zero-argument `super()` enter
 the controlled compiled MRO.
 
-Constructor conversions are retained implementation data of the selected functor. They
-do not change its object or morphism action. Identity functors retain identity conversions.
-Composite functors retain the composites of their factors' conversions.
+Constructor conversions are retained implementation data of the selected functor. The
+target image retained by a conversion is the canonical `F(x)`. Public functor application
+returns that exact value. All routes to one node return the same image and construction
+input by identity. Identity functors retain identity conversions. Composite functors
+retain the composites of their factors' conversions.
+
+Each canonical public value retains one root construction input. A conversion returns
+the input retained by its canonical target image; it does not allocate a second input
+record. The conversion is the implementation of the corresponding object or morphism
+action. During source construction, it reads the source input's typed datum and identity,
+constructs the canonical target through the target category, and retains that image.
+Later public functor application reads the source value's retained input and calls the
+same conversion. It does not inspect fields of a partly initialized source value.
 
 An inherited method executes on the descendant. Its declaring role's private state
 retains the canonical functor image. A method that must supply an object, element, or
@@ -454,10 +480,14 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
 ```
 
 A point functor is a selected structural functor under exactly this declaration and
-under no other. Like every entry, it contributes compiled roles and constructor-data
+under no other. Like every entry, it contributes compiled roles and construction-input
 conversions through selection (`POL-FUN-003`). It is an ordinary object of `Fun`. Its
 generalized-element action is derived from its morphism action (`POL-FUN-002`). The
 compiler reaches it through composition in `Cat` with the rest of the structural graph.
+
+For `{C} -> D`, these conversions initialize `D.ObjectType` state on `C`,
+`D.ElementType` state on stage-`1` objects and stage-`[1]` morphisms, and
+`D.MorphismType` state on `1_C`.
 
 ### The level shift
 
@@ -807,9 +837,10 @@ The compiler uses `structure_functors()` as its sole structural graph. It must:
    mismatch; diamonds otherwise follow
    [resolution.md](resolution.md);
 9. canonicalize repeated construction of the same declared functor;
-10. build each public role from the complete local declaration and the controlled compiled
-    ancestor roles, then rebind copied `__class__` closures to that public role;
-11. compute one constructor datum per reachable node through structural edges, activate
+10. build each public role from the local members, retained node initializer, generated
+    initializer wrapper, and controlled compiled ancestor roles; then rebind copied
+    `__class__` closures to that public role;
+11. compute one construction input per reachable node through structural edges, activate
     the matching role context, and invoke each node's local constructor once through C3;
 12. derive subobject-of-product component functors by composition;
 13. install the compiled roles and initialized local state of a point category `{X}` on
@@ -927,5 +958,5 @@ is kernel infrastructure over already established mathematical functors.
 - A point functor is the inclusion `{X} -> D`, constructed through `Fun({X}, D)` and selected in `{X}.structure_functors()`.
 - A selected point functor `{C} -> D` supplies `D`'s object surface to the category `C`, and `D`'s element surface to `C.ObjectType` at stage `1` and `C.MorphismType` at stage `[1]`.
 - Every selected structural functor is an ordinary object of `Fun`.
-- `structure_functors()` determines compiled role bases and constructor-data conversions.
+- `structure_functors()` determines compiled role bases and construction-input conversions.
 - The compiler derives structural paths only through composition in `Cat`.

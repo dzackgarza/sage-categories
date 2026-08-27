@@ -5,7 +5,7 @@ relation ``R``. Its ambient product determines ``X``.
 
 The local object datum is ``R``. The selected set projection derives ``X`` from
 the two equal factors of ``R``. It supplies the inherited set surface and the set
-constructor datum. The relation remains the order data.
+construction input. The relation remains the order data.
 
 Both component projections are mathematical functors. Only the set projection
 is a structure functor. The relation projection remains an ordinary functor because
@@ -40,11 +40,21 @@ posets directly. Interactive code can use ``assume(proposition)`` or
 from __future__ import annotations
 
 
+SetRelation = Sets().Products().Subsets().ObjectType
+
+
 @dataclass(frozen=True, slots=True)
 class PosetObjectData:
     """The order data introduced by a partial order."""
 
-    relation: SetSubset
+    relation: SetRelation
+
+
+@dataclass(frozen=True, slots=True)
+class PosetMorphismData:
+    """The construction datum consumed by the selected set functor."""
+
+    set_map: SetMorphism
 
 
 class PartiallyOrderedSetsCategory(Category):
@@ -62,14 +72,26 @@ class PartiallyOrderedSetsCategory(Category):
             self._relation = relation
             super().__init__()
 
-        def order_relation(self) -> SetSubset:
+        def order_relation(self) -> SetRelation:
             """Return the defining subobject of ``X × X``."""
             return self._relation
 
+        def point(self, datum: Datum) -> PosetElement:
+            """Construct the poset element over the inherited set point."""
+            return self.element(super().point(datum))
+
+        def element(self, point: SetElement) -> PosetElement:
+            """Lift a canonical set point to the corresponding poset point."""
+            posets = self.category()
+            defining_morphism = Mor(posets)(posets.Terminal(), self)(
+                PosetMorphismData(point.defining_morphism()),
+            )
+            return posets.element_from_defining_morphism(defining_morphism)
+
         def elements_are_related(
             self,
-            left: PartiallyOrderedSetsCategory.ElementType,
-            right: PartiallyOrderedSetsCategory.ElementType,
+            left: PosetElement,
+            right: PosetElement,
         ) -> Proposition:
             """Return the proposition that ``(left, right)`` belongs to ``R``."""
             assert left.ambient_object() is self
@@ -81,18 +103,18 @@ class PartiallyOrderedSetsCategory(Category):
 
         def __le__(
             self,
-            other: PartiallyOrderedSetsCategory.ElementType,
+            other: PosetElement,
         ) -> Proposition:
             """Return the proposition that ``self <= other``."""
             return self.ambient_object().elements_are_related(self, other)
 
     class DeclaredMorphismType(Implementation):
-        """Implement monotone maps with the inherited arrow surface."""
+        """Add no state beyond the map retained by the selected set functor."""
 
     def __call__(
         self,
-        relation: SetSubset,
-    ) -> PartiallyOrderedSetsCategory.ObjectType:
+        relation: SetRelation,
+    ) -> Poset:
         """Construct the asserted partial order determined by ``relation``."""
         return self.ObjectType(
             category=self,
@@ -110,3 +132,9 @@ class PartiallyOrderedSetsCategory(Category):
         # The product projection retains the object, element, and morphism data
         # conversions supplied by the general product construction.
         return (self.product_projection(0),)
+
+
+_POSETS = PartiallyOrderedSetsCategory()
+Poset = _POSETS.ObjectType
+PosetElement = _POSETS.ElementType
+MonotoneMap = _POSETS.MorphismType

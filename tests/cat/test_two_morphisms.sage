@@ -273,3 +273,35 @@ def test_an_inherited_receiver_valued_method_returns_the_descendant() -> None:
     assert member.this_object() is member
     assert image.this_object() is image
     assert member.carrier() is carrier
+
+
+def test_the_chosen_classical_stage_represents_the_underlying_set_functor() -> None:
+    """``U_C = Mor(C)(G_C, -): C -> Sets()`` for ``C = Posets()``, whose stage is the one-point order.
+
+    The value at ``X`` is the set of morphisms ``G_C -> X`` and the value at ``f`` is
+    postcomposition.  Faithfulness of ``U_C`` follows from the writer's assertion that the
+    stage family separates and is a trusted declaration (POL-MATH-037); this specimen
+    witnesses the construction and proves no such property.
+    """
+    underlying_points = Posets().represented_functor()
+    (stage,) = Posets().classical_stages()
+    chain, pair = Posets().Simplex(int(2)), Posets().Simplex(int(1))
+    collapse = Mor(Posets())(chain, pair)(lambda datum: min(datum, int(1)))
+
+    assert underlying_points in Fun(Posets(), Sets())
+    assert underlying_points.domain() is Posets()
+    assert underlying_points.codomain() is Sets()
+
+    top = Mor(Posets())(stage, chain)(lambda datum: int(2))
+    assert underlying_points.on_object(chain) in Sets()
+    assert underlying_points.on_object(chain).point(top) in underlying_points.on_object(chain)
+    assert ask(underlying_points.on_object(chain).membership_proposition(collapse)) is False
+
+    image = collapse * top
+    assert image in Mor(Posets())(stage, pair)
+    postcomposition = underlying_points.on_morphism(collapse)
+    assert postcomposition in Mor(Sets())(underlying_points.on_object(chain), underlying_points.on_object(pair))
+    assert ask(postcomposition(underlying_points.on_object(chain).point(top)) == underlying_points.on_object(pair).point(image)) is True
+
+    identity = underlying_points.on_morphism(chain.identity())
+    assert ask(identity(underlying_points.on_object(chain).point(top)) == underlying_points.on_object(chain).point(chain.identity() * top)) is True

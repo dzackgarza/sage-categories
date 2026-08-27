@@ -94,6 +94,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         self._inverses: MonoDict = MonoDict()
         self._points: MonoDict = MonoDict()
         self._arrows: MonoDict = MonoDict()
+        self._represented: MonoDict = MonoDict()
         self._elements: MonoDict = MonoDict()
         self._catalogues: dict[Role, dict[str, compiler.Entry]] = {}
         self._limits: MonoDict = MonoDict()
@@ -465,6 +466,48 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
 
         self._arrows[morphism] = Fun(walking_arrow, self)(on_object, on_morphism)
         return self._arrows[morphism]
+
+    def represented_functor(self) -> Functor:
+        """``U_C = Mor(C)(G_C, -): C -> Sets()``, the functor represented by the chosen classical stage.
+
+        Its value at ``X`` is the set of morphisms ``G_C -> X``, whose points are exactly
+        the classical elements of ``X``; its value at ``f: X -> Y`` is postcomposition
+        ``u |-> f . u``.  This is Mathlib's co-Yoneda embedding at ``G_C``
+        (``Mathlib/CategoryTheory/Yoneda.lean:87-95``, inspected 2026-08-27: "The co-Yoneda
+        embedding, as a functor from ``Cᵒᵖ`` into co-presheaves on ``C``", with the
+        unification hint ``(coyoneda.obj (op X)).obj Y = X ⟶ Y``).
+
+        The writer's assertion that the chosen stage family separates is what makes ``U_C``
+        faithful (POL-MATH-037); this construction states the functor and not that
+        property.  A family of several stages represents ``coprod_j Mor(C)(G^j, -)``, the
+        coproduct of these sets, which this construction does not build.
+        """
+        from sage_categories.cat.functors import Fun
+        from sage_categories.sets.category import Sets
+
+        stages = self.classical_stages()
+        assert len(stages) == 1, (
+            f"{self!r} chooses {len(stages)} classical stages; the functor represented by a family of several is "
+            f"the coproduct coprod_j Mor(C)(G^j, -), which this construction does not build"
+        )
+        (stage,) = stages
+        if stage in self._represented:
+            return self._represented[stage]
+
+        images: MonoDict = MonoDict()
+
+        def hom_set(member_object: ObjectOfCategory) -> ObjectOfCategory:
+            if member_object not in images:
+                hom = self.morphism_category(1)(stage, member_object)
+                images[member_object] = Sets()(lambda datum: ask(hom.membership_proposition(datum)) if role_of(datum) is Role.MORPHISM else False)
+            return images[member_object]
+
+        def postcompose(morphism: MorphismOfCategory) -> MorphismOfCategory:
+            source, target = hom_set(morphism.domain()), hom_set(morphism.codomain())
+            return Sets().morphism_category(1)(source, target)(lambda datum: morphism * datum)
+
+        self._represented[stage] = Fun(self, Sets())(hom_set, postcompose)
+        return self._represented[stage]
 
     # -- universal constructions, defined once (POL-CAT-050/092, POL-CAT-093) --------
     #

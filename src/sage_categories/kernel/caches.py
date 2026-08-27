@@ -22,13 +22,12 @@ from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, Morphis
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
-    from sage_categories.kernel.construction import ElementConstruction, MorphismConstruction, ObjectConstruction
+    from sage_categories.kernel.construction import ElementConstructionInput, MorphismConstructionInput, ObjectConstructionInput
 
 __all__ = [
     "MonoDict",
     "SequenceTable",
     "TripleDict",
-    "canonical_image",
     "canonical_images",
     "canonical_input",
     "canonical_inputs",
@@ -72,42 +71,21 @@ def has_canonical_transport(source: CategoryPoint, target: Category) -> bool:
 
 
 @overload
-def canonical_image(source: ObjectOfCategory, target: Category) -> ObjectOfCategory: ...
+def canonical_input[Datum](source: ObjectOfCategory, target: Category) -> ObjectConstructionInput[Datum]: ...
 
 
 @overload
-def canonical_image(source: ElementOfObject, target: Category) -> ElementOfObject: ...
+def canonical_input[Datum](source: ElementOfObject, target: Category) -> ElementConstructionInput[Datum]: ...
 
 
 @overload
-def canonical_image(source: MorphismOfCategory, target: Category) -> MorphismOfCategory: ...
+def canonical_input[Datum](source: MorphismOfCategory, target: Category) -> MorphismConstructionInput[Datum]: ...
 
 
-def canonical_image(source: CategoryPoint, target: Category) -> CategoryPoint:
-    """The retained public functor image of ``source`` in ``target``."""
-    role = role_of(source)
-    assert role is not None
-    by_target = canonical_images[role]
-    assert target in by_target and _source_key(source) in by_target[target]
-    return by_target[target][_source_key(source)]
-
-
-@overload
-def canonical_input(source: ObjectOfCategory, target: Category) -> ObjectConstruction: ...
-
-
-@overload
-def canonical_input(source: ElementOfObject, target: Category) -> ElementConstruction: ...
-
-
-@overload
-def canonical_input(source: MorphismOfCategory, target: Category) -> MorphismConstruction: ...
-
-
-def canonical_input(
+def canonical_input[Datum](
     source: CategoryPoint,
     target: Category,
-) -> ObjectConstruction | ElementConstruction | MorphismConstruction:
+) -> ObjectConstructionInput[Datum] | ElementConstructionInput[Datum] | MorphismConstructionInput[Datum]:
     """The construction input retained with the canonical image at ``target``."""
     role = role_of(source)
     assert role is not None
@@ -117,37 +95,37 @@ def canonical_input(
 
 
 @overload
-def retain_canonical_transport(
+def retain_canonical_transport[Datum](
     source: ObjectOfCategory,
     target: Category,
     image: ObjectOfCategory,
-    construction: ObjectConstruction,
+    construction: ObjectConstructionInput[Datum],
 ) -> None: ...
 
 
 @overload
-def retain_canonical_transport(
+def retain_canonical_transport[Datum](
     source: ElementOfObject,
     target: Category,
     image: ElementOfObject,
-    construction: ElementConstruction,
+    construction: ElementConstructionInput[Datum],
 ) -> None: ...
 
 
 @overload
-def retain_canonical_transport(
+def retain_canonical_transport[Datum](
     source: MorphismOfCategory,
     target: Category,
     image: MorphismOfCategory,
-    construction: MorphismConstruction,
+    construction: MorphismConstructionInput[Datum],
 ) -> None: ...
 
 
-def retain_canonical_transport(
+def retain_canonical_transport[Datum](
     source: CategoryPoint,
     target: Category,
     image: CategoryPoint,
-    construction: ObjectConstruction | ElementConstruction | MorphismConstruction,
+    construction: ObjectConstructionInput[Datum] | ElementConstructionInput[Datum] | MorphismConstructionInput[Datum],
 ) -> None:
     """Retain one canonical image and its exact construction input by identity."""
     role = role_of(source)

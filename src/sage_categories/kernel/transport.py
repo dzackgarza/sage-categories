@@ -1,4 +1,4 @@
-"""Canonical structural images through functor-owned constructor conversions.
+"""Canonical structural inputs through functor-owned conversions.
 
 Selected functors supply the object, element, and morphism construction-input
 conversions.  This module composes those conversions along complete structural
@@ -11,18 +11,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, overload
 
 import sage_categories.kernel.compiler as compiler
-from sage_categories.kernel.caches import (
-    canonical_image,
-    canonical_input,
-    has_canonical_transport,
-    retain_canonical_transport,
-)
+from sage_categories.kernel.caches import canonical_input, has_canonical_transport, retain_canonical_transport
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, role_of
 
 if TYPE_CHECKING:
-    from sage_categories.kernel.construction import ElementConstruction, MorphismConstruction, ObjectConstruction
+    from sage_categories.kernel.construction import ElementConstructionInput, MorphismConstructionInput, ObjectConstructionInput
 
-__all__ = ["construction_input", "convert_construction_input", "placement_node", "transport"]
+__all__ = ["construction_input", "placement_node"]
 
 
 def placement_node(value: CategoryPoint) -> compiler.Node:
@@ -40,166 +35,142 @@ def _route_name(route: compiler.Route) -> str:
     return " then ".join(repr(functor) for functor, _ in route) or "the identity route"
 
 
-@overload
-def _apply_route(source: ObjectConstruction, route: compiler.Route, role: Role) -> ObjectConstruction: ...
+def _routes(source: compiler.Node, target: compiler.Node) -> tuple[compiler.Route, ...]:
+    assert source.role is target.role
+    routes = compiler.routes(source, target)
+    assert routes, f"{source.category!r} has no selected route to {target.category!r}"
+    return routes
 
 
-@overload
-def _apply_route(source: ElementConstruction, route: compiler.Route, role: Role) -> ElementConstruction: ...
-
-
-@overload
-def _apply_route(source: MorphismConstruction, route: compiler.Route, role: Role) -> MorphismConstruction: ...
-
-
-def _apply_route(
-    source: ObjectConstruction | ElementConstruction | MorphismConstruction,
+def _object_route[SourceDatum, TargetDatum](
+    source: ObjectConstructionInput[SourceDatum],
     route: compiler.Route,
-    role: Role,
-) -> ObjectConstruction | ElementConstruction | MorphismConstruction:
+) -> ObjectConstructionInput[TargetDatum]:
     current = source
-    for functor, step_role in route:
-        assert step_role is role
-        match role:
-            case Role.OBJECT:
-                current = functor.object_constructor_input(current)
-            case Role.ELEMENT:
-                current = functor.element_constructor_input(current)
-            case Role.MORPHISM:
-                current = functor.morphism_constructor_input(current)
+    for functor, role in route:
+        assert role is Role.OBJECT
+        current = functor.object_constructor_input(current)
     return current
 
 
-@overload
-def convert_construction_input(
-    source: ObjectConstruction,
+def _element_route[SourceDatum, TargetDatum](
+    source: ElementConstructionInput[SourceDatum],
+    route: compiler.Route,
+) -> ElementConstructionInput[TargetDatum]:
+    current = source
+    for functor, role in route:
+        assert role is Role.ELEMENT
+        current = functor.element_constructor_input(current)
+    return current
+
+
+def _morphism_route[SourceDatum, TargetDatum](
+    source: MorphismConstructionInput[SourceDatum],
+    route: compiler.Route,
+) -> MorphismConstructionInput[TargetDatum]:
+    current = source
+    for functor, role in route:
+        assert role is Role.MORPHISM
+        current = functor.morphism_constructor_input(current)
+    return current
+
+
+def _raise_mismatch(routes: tuple[compiler.Route, ...], route: compiler.Route, target: compiler.Node) -> None:
+    raise compiler.StructuralImageMismatch(
+        f"the route {_route_name(routes[0])} and the route {_route_name(route)} "
+        f"produce distinct construction inputs or images in {target.category!r}"
+    )
+
+
+def _object_input_at[SourceDatum, TargetDatum](
+    source: ObjectConstructionInput[SourceDatum],
     source_node: compiler.Node,
     target: compiler.Node,
-) -> ObjectConstruction: ...
+) -> ObjectConstructionInput[TargetDatum]:
+    assert compiler.same_node(compiler.node(source.identity.category, Role.OBJECT), source_node)
+    routes = _routes(source_node, target)
+    first = _object_route(source, routes[0])
+    for route in routes[1:]:
+        candidate = _object_route(source, route)
+        if candidate is not first or candidate.canonical_image is not first.canonical_image:
+            _raise_mismatch(routes, route, target)
+    return first
 
 
-@overload
-def convert_construction_input(
-    source: ElementConstruction,
+def _element_input_at[SourceDatum, TargetDatum](
+    source: ElementConstructionInput[SourceDatum],
     source_node: compiler.Node,
     target: compiler.Node,
-) -> ElementConstruction: ...
+) -> ElementConstructionInput[TargetDatum]:
+    category = source.identity.defining_morphism.codomain().category()
+    assert compiler.same_node(compiler.node(category, Role.ELEMENT), source_node)
+    routes = _routes(source_node, target)
+    first = _element_route(source, routes[0])
+    for route in routes[1:]:
+        candidate = _element_route(source, route)
+        if candidate is not first or candidate.canonical_image is not first.canonical_image:
+            _raise_mismatch(routes, route, target)
+    return first
 
 
-@overload
-def convert_construction_input(
-    source: MorphismConstruction,
+def _morphism_input_at[SourceDatum, TargetDatum](
+    source: MorphismConstructionInput[SourceDatum],
     source_node: compiler.Node,
     target: compiler.Node,
-) -> MorphismConstruction: ...
-
-
-def convert_construction_input(
-    source: ObjectConstruction | ElementConstruction | MorphismConstruction,
-    source_node: compiler.Node,
-    target: compiler.Node,
-) -> ObjectConstruction | ElementConstruction | MorphismConstruction:
-    """Convert one complete input to ``target`` through every selected route.
-
-    This is the pre-initialization boundary.  It reads only the supplied input and
-    functor conversions.  It does not inspect the allocated source value.
-    """
-    input_role = Role.OBJECT if source_node.role is Role.MORPHISM else source_node.role
-    assert compiler.same_node(compiler.node(source.category, input_role), source_node)
-    assert source_node.role is target.role
-    all_routes = compiler.routes(source_node, target)
-    assert all_routes, f"{source_node.category!r} has no selected route to {target.category!r}"
-    first = _apply_route(source, all_routes[0], source_node.role)
-    for route in all_routes[1:]:
-        candidate = _apply_route(source, route, source_node.role)
-        if candidate is first and candidate.canonical_image is first.canonical_image:
-            continue
-        raise compiler.StructuralImageMismatch(
-            f"the route {_route_name(all_routes[0])} and the route {_route_name(route)} "
-            f"produce distinct construction inputs or images in {target.category!r}"
-        )
+) -> MorphismConstructionInput[TargetDatum]:
+    assert compiler.same_node(compiler.node(source.identity.category, Role.OBJECT), source_node)
+    routes = _routes(source_node, target)
+    first = _morphism_route(source, routes[0])
+    for route in routes[1:]:
+        candidate = _morphism_route(source, route)
+        if candidate is not first or candidate.canonical_image is not first.canonical_image:
+            _raise_mismatch(routes, route, target)
     return first
 
 
 @overload
-def _input_of(value: ObjectOfCategory) -> ObjectConstruction: ...
+def construction_input[Datum](value: ObjectOfCategory, target: compiler.Node) -> ObjectConstructionInput[Datum]: ...
 
 
 @overload
-def _input_of(value: ElementOfObject) -> ElementConstruction: ...
+def construction_input[Datum](value: ElementOfObject, target: compiler.Node) -> ElementConstructionInput[Datum]: ...
 
 
 @overload
-def _input_of(value: MorphismOfCategory) -> MorphismConstruction: ...
+def construction_input[Datum](value: MorphismOfCategory, target: compiler.Node) -> MorphismConstructionInput[Datum]: ...
 
 
-def _input_of(
-    value: CategoryPoint,
-) -> ObjectConstruction | ElementConstruction | MorphismConstruction:
-    match role_of(value):
-        case Role.OBJECT:
-            from sage_categories.kernel.construction import input_of_object
-
-            assert isinstance(value, ObjectOfCategory)
-            return input_of_object(value)
-        case Role.ELEMENT:
-            from sage_categories.kernel.construction import input_of_element
-
-            assert isinstance(value, ElementOfObject)
-            return input_of_element(value)
-        case Role.MORPHISM:
-            from sage_categories.kernel.construction import input_of_morphism
-
-            assert isinstance(value, MorphismOfCategory)
-            return input_of_morphism(value)
-    raise AssertionError(f"{value!r} is not an owned value")
-
-
-@overload
-def construction_input(value: ObjectOfCategory, target: compiler.Node) -> ObjectConstruction: ...
-
-
-@overload
-def construction_input(value: ElementOfObject, target: compiler.Node) -> ElementConstruction: ...
-
-
-@overload
-def construction_input(value: MorphismOfCategory, target: compiler.Node) -> MorphismConstruction: ...
-
-
-def construction_input(
+def construction_input[Datum](
     value: CategoryPoint,
     target: compiler.Node,
-) -> ObjectConstruction | ElementConstruction | MorphismConstruction:
+) -> ObjectConstructionInput[Datum] | ElementConstructionInput[Datum] | MorphismConstructionInput[Datum]:
     """The retained input for the canonical image of ``value`` at ``target``."""
     source = placement_node(value)
     assert source.role is target.role
-    if compiler.same_node(source, target):
-        return _input_of(value)
     if has_canonical_transport(value, target.category):
         return canonical_input(value, target.category)
-    converted = convert_construction_input(_input_of(value), source, target)
+
+    match role_of(value):
+        case Role.OBJECT:
+            from sage_categories.kernel.construction import retained_object_input
+
+            assert isinstance(value, ObjectOfCategory)
+            root = retained_object_input(value)
+            converted = root if compiler.same_node(source, target) else _object_input_at(root, source, target)
+        case Role.ELEMENT:
+            from sage_categories.kernel.construction import retained_element_input
+
+            assert isinstance(value, ElementOfObject)
+            root = retained_element_input(value)
+            converted = root if compiler.same_node(source, target) else _element_input_at(root, source, target)
+        case Role.MORPHISM:
+            from sage_categories.kernel.construction import retained_morphism_input
+
+            assert isinstance(value, MorphismOfCategory)
+            root = retained_morphism_input(value)
+            converted = root if compiler.same_node(source, target) else _morphism_input_at(root, source, target)
+        case _:
+            raise AssertionError(f"{value!r} is not an owned value")
+
     retain_canonical_transport(value, target.category, converted.canonical_image, converted)
     return converted
-
-
-@overload
-def transport(value: ObjectOfCategory, target: compiler.Node) -> ObjectOfCategory: ...
-
-
-@overload
-def transport(value: ElementOfObject, target: compiler.Node) -> ElementOfObject: ...
-
-
-@overload
-def transport(value: MorphismOfCategory, target: compiler.Node) -> MorphismOfCategory: ...
-
-
-def transport(value: CategoryPoint, target: compiler.Node) -> CategoryPoint:
-    """The canonical public functor image of ``value`` at ``target``."""
-    source = placement_node(value)
-    if compiler.same_node(source, target):
-        return value
-    if has_canonical_transport(value, target.category):
-        return canonical_image(value, target.category)
-    return construction_input(value, target).canonical_image

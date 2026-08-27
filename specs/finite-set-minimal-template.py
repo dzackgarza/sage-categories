@@ -12,33 +12,26 @@ from __future__ import annotations
 
 
 class SetsCategory(Category):
-    class DeclaredObjectType(Implementation):
+    class ObjectType(Implementation):
         def is_finite(self) -> Proposition:
             """Return the finite-set membership proposition."""
             return Sets().Finite().membership_proposition(self)
 
-    class DeclaredElementType(Implementation):
-        pass
-
-    class DeclaredMorphismType(Implementation):
-        pass
-
     class Finite(Category):
         """The full property subcategory of finite sets."""
 
-        def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-            """Select the inclusion that supplies the inherited set implementation.
+        def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
+            """Select the inclusion that supplies the inherited set catalogue.
 
             This tuple is not a list of all functors from finite sets.
             The full-subcategory construction supplies its maps and constructs it in
             the fixed-endpoint functor category. Other functors remain in ``Fun``.
             """
-            # Same-object refinement preserves the initialized ambient role data.
             return (Fun(self, Sets()).FullyFaithful().inclusion(),)
 
         def membership_proposition(
             self,
-            X: SetObject,
+            X: SetsCategory.ObjectType,
         ) -> Proposition:
             """Return the proposition that ``X`` has finite cardinality."""
             return self.applied_predicate(
@@ -46,38 +39,22 @@ class SetsCategory(Category):
                 definition=X.cardinality() < ALEPH_ZERO,
             )
 
-        class DeclaredObjectType(Implementation):
+        class ObjectType(Implementation):
             """Implement only the operations introduced by known finiteness.
 
-            Same-object refinement keeps the set state already initialized by the
-            compiled ambient role.
+            No initializer repeats set construction. The kernel-owned inclusion
+            supplies the canonical ``Sets().ObjectType`` image.
             """
 
             def cardinality_parity(self) -> Proposition:
                 """Return the proposition that the cardinality is even."""
                 return self.cardinality() % 2 == 0
 
-        class DeclaredElementType(Implementation):
-            pass
 
-        class DeclaredMorphismType(Implementation):
-            pass
+FiniteSets = SetsCategory.Finite
 
 
-_SETS = SetsCategory()
-SetObject = _SETS.ObjectType
-SetElement = _SETS.ElementType
-SetMorphism = _SETS.MorphismType
-FiniteSet = _SETS.Finite().ObjectType
-FiniteSetElement = _SETS.Finite().ElementType
-FiniteSetMorphism = _SETS.Finite().MorphismType
-
-
-def Sets() -> SetsCategory:
-    return _SETS
-
-
-def decide_finiteness(X: SetObject) -> Decision:
+def decide_finiteness(X: SetsCategory.ObjectType) -> Decision:
     """Return an exact decision for the supported private-backend cases.
 
     Put this entry point and its engine calls in a private set-computation module in the
@@ -93,7 +70,7 @@ def decide_finiteness(X: SetObject) -> Decision:
 
 
 Sets().Finite().register_exact_handler(
-    SetObject,
+    SetsCategory.ObjectType,
     decide_finiteness,
 )
 

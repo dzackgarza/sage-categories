@@ -4,77 +4,43 @@ Replace each `Leaf`, `Base`, and `defining_data` name with its mathematical name
 Keep only methods introduced by the leaf structure.
 
 ```python
-from __future__ import annotations
-
-
-@dataclass(frozen=True, slots=True)
-class LeafObjectData:
-    defining_data: LeafDefiningData
-
-
-class LeafObjectDeclaration(MathematicalObject):
-    def __init__(self, data: LeafObjectData) -> None:
-        self._defining_data = data.defining_data
-        super().__init__()
+class LeafObject(MathematicalObject):
+    def __init__(
+        self,
+        *,
+        category: LeafCategory,
+        defining_data: LeafDefiningData,
+    ) -> None:
+        self._defining_data = defining_data
+        super().__init__(category=category)
 
     def leaf_operation(self) -> LeafResult:
         """Return the result of an operation introduced by this structure."""
         ...
 
 
-class LeafElementDeclaration(MathematicalElement):
-    pass
-
-
-class LeafMorphismDeclaration(MathematicalMorphism):
-    pass
-
-
 class LeafCategory(Category):
-    DeclaredObjectType = LeafObjectDeclaration
-    DeclaredElementType = LeafElementDeclaration
-    DeclaredMorphismType = LeafMorphismDeclaration
+    ObjectType = LeafObject
+    ElementType = LeafElement
 
     def __call__(self, defining_data: LeafDefiningData) -> LeafObject:
-        return self.ObjectType(
-            category=self,
-            data=LeafObjectData(defining_data),
-        )
+        return self.ObjectType(category=self, defining_data=defining_data)
 
     def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
         """Return the selected immediate structural functors."""
         ...
-
-
-_LEAF = LeafCategory()
-LeafObject = _LEAF.ObjectType
-LeafElement = _LEAF.ElementType
-LeafMorphism = _LEAF.MorphismType
 ```
-
-The `*Declaration` classes are local providers. The semantic names `LeafObject`,
-`LeafElement`, and `LeafMorphism` name the compiled public classes. Source annotations and
-generated stubs use those semantic names. They never use `Declared*` or a class-level
-`LeafCategory.ObjectType` spelling.
 
 `Category` is `Cat().ObjectType`. Each entry in `structure_functors()` is an explicitly
 constructed object of `Fun = Mor(Cat())`. Include only immediate functors whose target
 catalogue supplies the leaf's inherited public surface.
 
 For each inherited operation, the selected functor must construct every required object
-and morphism image. It must also retain the construction-input conversions required by
-its target implementation. The compiler does not invent missing maps or inputs.
+and morphism image. The compiler does not invent missing maps.
 
 The functor connects the category-owned implementation roles. Its object and morphism maps
-construct the corresponding target roles. Its three conversions map the complete typed
-source construction input to the exact input retained by the canonical target role. The
-element image remains derived from the morphism action.
-
-The compiled public constructor consumes `category` as the object identity. Its root
-wrapper passes `LeafObjectData` to the rebound
-`LeafObjectDeclaration.__init__` node initializer. It computes all ancestor inputs before
-it starts the `super()` chain. An element input keeps its defining morphism as identity.
-A morphism input keeps its category and endpoints as identity.
+construct the corresponding target roles. A concrete functor category can add an element
+action when its mathematics supplies one.
 
 An inclusion uses the constructor on its fixed-endpoint functor category. A product,
 pullback, comma, `Fun([1], C)`, or other category construction creates and retains its named
@@ -120,14 +86,13 @@ Bind computational procedures at the property-category integration site. Put the
 engine work in a private backend module:
 
 ```python
-CObject = C().ObjectType
-C().P().register_exact_handler(CObject, decide_P_for_C_objects)
+C().P().register_exact_handler(C.ObjectType, decide_P_for_C_objects)
 ```
 
 The backend entry point positively matches only the semantic cases that it supports:
 
 ```python
-def decide_P_for_C_objects(x: CObject) -> Decision:
+def decide_P_for_C_objects(x: C.ObjectType) -> Decision:
     match x:
         case SupportedConstruction(defining_data=data):
             return decide_supported_construction(data)

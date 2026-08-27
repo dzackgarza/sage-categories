@@ -32,10 +32,6 @@ Category = Cat().ObjectType
 Thus `Sets()`, `Mor(C)`, and every property subcategory are instances of
 `Cat().ObjectType`. They do not form a second Python category hierarchy.
 
-Bootstrap follows the same local/public split. `CategoryDeclaration` supplies the local
-`Cat` object role. After the singleton is compiled, `Category` names
-`Cat().ObjectType`. The local declaration and public category class are distinct.
-
 `Cat` owns the same role types as every other category:
 
 - `Cat().ObjectType` implements categories;
@@ -349,7 +345,7 @@ properties come first. For example, finite sets are a full subcategory of sets, 
 inclusion functor exists independently of method compilation.
 
 A category selects an immediate functor only when the functor states the mathematical
-change of structure that supplies an inherited implementation:
+change of structure that supplies inherited operations:
 
 ```python
 class FiniteSetsCategory(Category):
@@ -368,74 +364,34 @@ not change a functor's mathematical definition.
 Each category lists only immediate selected functors. The kernel obtains longer routes
 by composition and applies [resolution.md](resolution.md) to diamonds.
 
-### Role constructors
+### Compiled roles
 
-The compiled roles are full implementation classes. They contain executable methods and
-the instance state those methods use. A local declaration and its compiled public role
-are distinct classes:
+A local declaration and the compiled role built from it are distinct classes. The
+declaration owns the category's new methods. `C.ObjectType`, `C.ElementType`, and
+`C.MorphismType` are the compiled roles, and only they are public.
 
-- `DeclaredObjectType`, `DeclaredElementType`, and `DeclaredMorphismType` own the
-  category's new methods and constructors;
-- `C.ObjectType`, `C.ElementType`, and `C.MorphismType` are the compiled public classes;
-- the compiled bases are the compiled roles of the selected target categories;
-- the kernel copies each local member except `__init__` onto those bases;
-- the kernel retains the rebound local initializer as the node initializer;
-- the kernel installs one generated `__init__` wrapper on each compiled class;
-- the kernel rebinds every copied `__class__` closure to the compiled class.
+The bases of a compiled role are the compiled roles of the selected target categories,
+in the controlled order of [resolution.md](resolution.md). A role that reaches no other
+role stands on the kernel role class of its role: `Category` for the category role,
+otherwise the kernel base of objects, elements, or morphisms.
 
-After category construction, its module binds semantic public names to the compiled role
-classes. For example, `Poset`, `PosetElement`, and `MonotoneMap` name the three compiled
-roles of `PartiallyOrderedSets()`. Source annotations and generated stubs use these names.
+A declaration is not a base. The kernel copies its class body onto the compiled role and
+drops the declaration's own Python bases. A method declared with zero-argument `super()`
+closes over `__class__`, which Python bound to the declaration; the kernel rebinds that
+closure to the compiled role, so `super()` enters the compiled chain.
 
-Each local constructor accepts one exact typed datum. That datum contains only the state
-introduced at its category. The constructor initializes that state and calls
-`super().__init__()` once. A construction input can also carry exact semantic data used
-only to construct selected ancestor state. A node that retains none of that data has no
-local initializer, and its generated wrapper advances. Every role construction input
-keeps its datum separate from its identity. The identity records the object's category,
-the element's defining morphism, or the morphism's category and endpoints.
+One declaration is an exception, because it is the kernel role class the category role
+ends on. `Cat().ObjectType` stands on `Category`, which is the class every category is an
+instance of: a category is built from its own hand-written `Category` subclass, never
+from a compiled role, and only inheritance lets those subclasses override `Category`'s
+methods. A chain end is inherited, never copied.
 
-A selected functor retains a pure typed conversion from its source construction input to
-its target construction input for each role. Thus a poset datum states only its order
-data. Its selected functor to `Sets()` uses the source identity and datum to return the
-input retained by the canonical set image. The conversion does not inspect a partly
-initialized poset.
-
-The kernel allocates the compiled value first. It creates the root input with that value
-as its canonical image. It then follows structural edges and computes one construction
-input for each reachable node. It checks every route to a common node by canonical-image
-and input identity. Finally, it activates one role-specific construction context and
-starts initialization.
-
-The controlled C3 order can place unrelated branches next to each other. For example,
-the order for `D -> B -> A` and `D -> C -> A` is `D, B, C, A`. Generated wrappers do not
-interpret `B` followed by `C` as a structural edge. Each wrapper reads its own node's
-precomputed input and passes only its datum to that node's local constructor. Literal
-`super()` enters the next wrapper. C3 initializes `D`, `B`, `C`, and `A` once each.
-
-The raw declaration classes do not occur in the public MRO. Python functions copied from
-them retain a `__class__` closure. The compiler rebinds that closure to the final compiled
-class before it installs the function. This makes literal zero-argument `super()` enter
-the controlled compiled MRO.
-
-Constructor conversions are retained implementation data of the selected functor. The
-target image retained by a conversion is the canonical `F(x)`. Public functor application
-returns that exact value. All routes to one node return the same image and construction
-input by identity. Identity functors retain identity conversions. Composite functors
-retain the composites of their factors' conversions.
-
-Each canonical public value retains one root construction input. A conversion returns
-the input retained by its canonical target image; it does not allocate a second input
-record. The conversion is the implementation of the corresponding object or morphism
-action. During source construction, it reads the source input's typed datum and identity,
-constructs the canonical target through the target category, and retains that image.
-Later public functor application reads the source value's retained input and calls the
-same conversion. It does not inspect fields of a partly initialized source value.
-
-An inherited method executes on the descendant. Its declaring role's private state
-retains the canonical functor image. A method that must supply an object, element, or
-morphism in the declaring category uses that image. A method can inspect its declaring
-role's local state directly when no category-sensitive value crosses the call boundary.
+The rule is what makes the result linearizable. The controlled order ranks compiled
+roles. A declaration left in the bases is ranked by nothing, so Python places it wherever
+each separate class construction allows; two constructions then rank one pair of
+declarations opposite ways, and a role reaching both has no method resolution order at
+all. With declarations out of the bases, every class in a compiled role's method
+resolution order is a compiled role or a kernel role class.
 
 An element of `X in C` is a generalized element `t: T -> X`, an object of
 `C.SliceOver(X)`. `t.stage()` is `T` and `t.parent()` is its codomain `X`. Every
@@ -480,14 +436,10 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
 ```
 
 A point functor is a selected structural functor under exactly this declaration and
-under no other. Like every entry, it contributes compiled roles and construction-input
-conversions through selection (`POL-FUN-003`). It is an ordinary object of `Fun`. Its
+under no other. Like every entry, it contributes its compiled roles and inherited public
+methods through selection alone (`POL-FUN-003`), it is an ordinary object of `Fun`, and its
 generalized-element action is derived from its morphism action (`POL-FUN-002`). The
 compiler reaches it through composition in `Cat` with the rest of the structural graph.
-
-For `{C} -> D`, these conversions initialize `D.ObjectType` state on `C`,
-`D.ElementType` state on stage-`1` objects and stage-`[1]` morphisms, and
-`D.MorphismType` state on `1_C`.
 
 ### The level shift
 
@@ -829,22 +781,18 @@ The compiler uses `structure_functors()` as its sole structural graph. It must:
 6. derive each functor's generalized-element action from its morphism action, and
    precompose a retained stage comparison only for classical-stage methods;
 7. reject transport when the selected functor lacks a required mathematical map;
-8. detect a structural-image mismatch during construction or the first public functor
-   application of a value: traverse every
+8. detect a structural-image mismatch at the first transport of a value: traverse every
    route to a reachable category in declaration order, store the first image in the
    canonical cache, require each later image to be the same object by identity, and
    raise a construction-defect error naming both routes and the shared ancestor on a
-   mismatch; diamonds otherwise follow
+   mismatch; method compilation constructs no images; diamonds otherwise follow
    [resolution.md](resolution.md);
 9. canonicalize repeated construction of the same declared functor;
-10. build each public role from the local members, retained node initializer, generated
-    initializer wrapper, and controlled compiled ancestor roles; then rebind copied
-    `__class__` closures to that public role;
-11. compute one construction input per reachable node through structural edges, activate
-    the matching role context, and invoke each node's local constructor once through C3;
+10. build each compiled role on the controlled compiled ancestor roles, copy the local
+    declaration's class body onto it, and rebind copied `__class__` closures to it;
+11. derive inherited methods from these paths;
 12. derive subobject-of-product component functors by composition;
-13. install the compiled roles and initialized local state of a point category `{X}` on
-    its distinguished object:
+13. install the compiled roles of a point category `{X}` on its distinguished object:
     `{X}.ObjectType` on the value `X`, and `{X}.ElementType` on the generalized elements
     of `X`, which for a category `X = C` are `C.ObjectType` at stage `1` and
     `C.MorphismType` at stage `[1]`.
@@ -852,17 +800,15 @@ The compiler uses `structure_functors()` as its sole structural graph. It must:
 Natural transformations are trusted constructions, never compiler proofs. There is no
 route normalization, route scoring, or preservation registry.
 
-An inherited method is an ordinary method of an ancestor compiled role. It executes on the
-original descendant instance. The ancestor constructor has already initialized its state.
-Python passes arguments normally and returns the method's ordinary result. When the method
-needs a value in the ancestor category, it uses that state's canonical image. Public
-functor application remains separate and returns `F(X)`.
+The meaning of every inherited method is composition: `X.f() := F(X).f()`. The receiver
+and every mathematical argument are transported forward along the selected route; for a
+classical element the stage comparison is precomposed; the declaring method runs on the
+images; its value is returned exactly as `D` returned it.
 
 The public surface is dynamic inheritance in Sage's sense. The kernel builds
 `C.ObjectType`, `C.ElementType`, and `C.MorphismType` as dynamic classes carrying the
-linearized implementation of every selected route. A leaf writes no Python inheritance.
-It supplies only its local constructor and the constructor conversions on its selected
-functors.
+linearized surface of every selected route. A leaf writes no Python inheritance. A leaf
+that wants a source-category result overrides the inherited method or adds its own.
 
 The compiler does not infer a functor from a category pair. It does not infer fullness,
 faithfulness, or equivalence from a class name. It does not add computational routes to
@@ -958,5 +904,5 @@ is kernel infrastructure over already established mathematical functors.
 - A point functor is the inclusion `{X} -> D`, constructed through `Fun({X}, D)` and selected in `{X}.structure_functors()`.
 - A selected point functor `{C} -> D` supplies `D`'s object surface to the category `C`, and `D`'s element surface to `C.ObjectType` at stage `1` and `C.MorphismType` at stage `[1]`.
 - Every selected structural functor is an ordinary object of `Fun`.
-- `structure_functors()` determines compiled role bases and construction-input conversions.
+- `structure_functors()` determines compiled role bases and method compilation, nothing else.
 - The compiler derives structural paths only through composition in `Cat`.

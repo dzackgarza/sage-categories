@@ -77,13 +77,14 @@ parents and elements use a consistent method-resolution order.
 
 ## Why this framework has a stronger obligation
 
-This framework compiles more than methods. A selected structural functor supplies:
+This framework transports more than methods. A selected structural functor acts on:
 
 - objects;
 - elements;
 - morphisms;
-- the construction-input conversion for each state-bearing target role;
-- the target implementation methods;
+- method receivers;
+- mathematical arguments;
+- lazy mathematical collections;
 - the morphisms in universal constructions.
 
 The compiler also keeps canonical images in reachable categories. Therefore, a route
@@ -94,8 +95,8 @@ Two implementations can be mathematically isomorphic without being the same chos
 implementation. A tuple product and a vector-space product are a simple example. Their
 elements can use different parents. Their projections can have different exact domains.
 
-Thus, method order alone is insufficient. A route resolution must select or identify the
-complete mathematical image and initialize its role state, not only choose a method body.
+Thus, Python MRO alone is insufficient. A route resolution must select or identify the
+complete mathematical image, not only the method body.
 
 Implicit coherence is safe when both routes are strict in this framework. They must
 produce the same canonical object, element, and morphism images by identity. It is
@@ -146,7 +147,7 @@ the compiler applies this ownership rule:
 | \(D\) | Use the local declaration. |
 | \(B\) | Use the route \(D\to B\). |
 | \(C\) | Use the route \(D\to C\). |
-| \(A\) | Both routes return one canonical \(A\)-image by identity; the compiler initializes \(A\)'s role once. |
+| \(A\) | Both routes return one canonical \(A\)-image by identity; the compiler checks this at the first transport. |
 | Both \(B\) and \(C\) under one name | Require a mathematical resolution or reject compilation. |
 
 The public surface is the union of both branches. Route resolution applies only to
@@ -375,9 +376,8 @@ The compiler distinguishes two kinds of duplicate names.
 ### One declaration reached twice
 
 If a method is owned by \(A\) and both branches reach \(A\), there is one mathematical
-declaration. The compiled role contains the \(A\) node once in its Python MRO. Object
-construction checks that both routes give the same canonical \(A\)-image. Method
-compilation installs no route wrapper.
+declaration. The compiler selects the canonical \(A\)-image and installs that method
+once.
 
 Membership on a ring is such a case. Both the additive and multiplicative branches reach
 sets. `Sets()` remains the sole owner of membership.
@@ -415,8 +415,8 @@ cached for that source value. A selected structural functor returns that retaine
 cached ancestor value on every call and never reconstructs an equal or isomorphic
 replacement.
 
-The compiler checks the identity during construction. If no constructor reaches the
-target node, it checks at the first public functor application. It traverses every route in
+The compiler checks the identity eagerly. At the first structural transport of a value
+to any reachable category, it traverses every route to that category in
 `structure_functors()` declaration order, stores the first image in the canonical cache,
 and asserts that each later image `is` the stored image. On the first mismatch it raises
 a construction-defect error that names the source value's construction, the two routes,
@@ -447,7 +447,7 @@ The architecture uses the following rules.
 4. Two routes to the same declaring category return one canonical image by identity.
 5. Routine strictly coherent diamonds resolve automatically in the kernel.
 6. A leaf never traverses a route, normalizes to an ancestor, moves images, manages a
-   canonical-image cache, or installs inherited methods.
+   canonical-image cache, or installs forwarding methods.
 7. A genuine presentation or algorithm choice is a small mathematical declaration by
    the category that owns the choice. The kernel executes it.
 8. A choice of presentation includes objects, elements, morphisms, and universal data.
@@ -455,36 +455,26 @@ The architecture uses the following rules.
 9. Independent method declarations with different meanings require distinct names or an
    explicit mathematical operation at the common descendant.
 10. Method-resolution order never decides mathematical meaning.
-11. Each compiled role contains the copied local members and the compiled roles of every
-    selected ancestor in controlled C3 order. Copied functions bind `__class__` to the
-    compiled role. The rebound local initializer remains separate from the generated
-    `__init__` wrapper.
-12. The kernel allocates the public value first. Before the C3 chain starts, each selected
-    functor converts complete typed construction inputs along structural edges. A generated
-    class wrapper reads the input for its own node and passes only its local datum to the
-    node initializer. Thus adjacent C3 classes need not be joined by a structural edge.
-    The compiler initializes every reachable role and every common ancestor once.
-13. A source value retains each ancestor value supplied as defining data. A derived
+11. A source value retains each ancestor value supplied as defining data. A derived
     ancestor image is constructed once and cached. A selected structural functor returns
     that retained value on every call and never reconstructs an equal or isomorphic
     replacement.
-14. During construction or the first public functor application, the compiler
-    traverses every route to that category in declaration order, stores the first image
-    and construction input, and asserts that each later route supplies those same objects
-    by identity. A mismatch raises a
+12. At the first structural transport of a value to any reachable category, the compiler
+    traverses every route to that category in declaration order, stores the first image,
+    and asserts that each later image `is` the stored image. A mismatch raises a
     construction-defect error naming both routes and the shared ancestor.
-15. The compiler never asks whether two images are mathematically equal and performs no
+13. The compiler never asks whether two images are mathematically equal and performs no
     naturality or higher-categorical proof. Natural transformations are trusted
     constructions. A construction states each preservation or lift fact at that
     construction; the compiler has no preservation registry.
-16. A functor enters `structure_functors()` only when every shared-ancestor route through
+14. A functor enters `structure_functors()` only when every shared-ancestor route through
     it returns the retained canonical value by identity. A route pair that is only
     naturally isomorphic remains a pair of ordinary functors of `Fun`.
 
 The short form is:
 
-> Preserve every branch. Initialize every role once. Resolve only duplicate access to a
-> common owner. Identity holds by construction and is checked during construction. Ask a category for a choice
+> Preserve every branch. Resolve only duplicate access to a common owner. Identity holds
+> by construction and is checked at the first transport. Ask a category for a choice
 > only when the mathematics contains a real choice.
 
 ## Acceptance examples

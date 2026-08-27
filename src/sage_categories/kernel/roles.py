@@ -21,7 +21,7 @@ operators.  Their compiled roles supply those operators to descendants.
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, Any
 
 from sage.structure.dynamic_class import dynamic_class
 
@@ -135,20 +135,12 @@ def cat_element_root() -> type[CategoryPoint]:
 class ObjectOfCategory(CategoryPoint):
     """An object of a category: a stage-``1`` point of it."""
 
-    @overload
-    def __init__(self) -> None: ...
+    def __init__(self) -> None:
+        from sage_categories.kernel.construction import active_object_context
 
-    @overload
-    def __init__(self, category: Category) -> None: ...
-
-    def __init__(self, category: Category | None = None) -> None:
-        if category is None:
-            from sage_categories.kernel.construction import active_object_context
-
-            context = active_object_context()
-            assert context is not None and context.canonical_image is self, "object identity requires its active construction context"
-            category = context.identity.category
-        self._category = category
+        context = active_object_context()
+        assert context is not None and context.canonical_image is self, "object identity requires its active construction context"
+        self._category = context.identity.category
         super().__init__()
 
     def category(self) -> Category:
@@ -194,30 +186,16 @@ class ElementOfObject(CategoryPoint):
 class MorphismOfCategory(CategoryPoint):
     """A morphism ``f: A -> B`` of ``C``: an object of ``Mor(C)``, a stage-``[1]`` point of ``C``."""
 
-    @overload
-    def __init__(self) -> None: ...
+    def __init__(self) -> None:
+        from sage_categories.kernel.construction import active_morphism_context
 
-    @overload
-    def __init__(self, category: Category, domain: ObjectOfCategory, codomain: ObjectOfCategory) -> None: ...
-
-    def __init__(
-        self,
-        category: Category | None = None,
-        domain: ObjectOfCategory | None = None,
-        codomain: ObjectOfCategory | None = None,
-    ) -> None:
-        if category is None and domain is None and codomain is None:
-            from sage_categories.kernel.construction import active_morphism_context
-
-            context = active_morphism_context()
-            assert context is not None and context.canonical_image is self, "morphism identity requires its active construction context"
-            identity = context.identity
-            category, domain, codomain = identity.category, identity.domain, identity.codomain
-        assert category is not None and domain is not None and codomain is not None, "supply all morphism identity fields or use the active construction context"
+        context = active_morphism_context()
+        assert context is not None and context.canonical_image is self, "morphism identity requires its active construction context"
+        identity = context.identity
         # ``category`` is the placement, a subcategory of ``Mor(C)``; ``C`` is its base.
-        self._category = category
-        self._domain = domain
-        self._codomain = codomain
+        self._category = identity.category
+        self._domain = identity.domain
+        self._codomain = identity.codomain
         super().__init__()
 
     def category(self) -> Category:

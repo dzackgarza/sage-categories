@@ -69,14 +69,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     """The local ``Cat().ObjectType`` declaration."""
 
     def __init__(self, data: None = None) -> None:
-        from sage_categories.kernel.construction import active_construction_context
-
-        universe = Cat()
-        if active_construction_context(self) is None:
-            compiler.initialize_category_declaration(self, universe)
-        else:
-            super().__init__()
-        self._initialize(universe)
+        super().__init__()
+        self._initialize(self.category())
 
     def __mul__(self, other: Category) -> Category:
         """``C * D``: the product category."""
@@ -712,22 +706,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
     def __init__(self) -> None:
         self._canonical: dict[tuple[str, tuple[int, ...]], FinitePresentedCategory] = {}
-        from sage_categories.kernel.construction import (
-            ObjectConstructionContext,
-            ObjectRoleIdentity,
-            ObjectStageIdentity,
-            activate_object_context,
-            deactivate_object_context,
-        )
-
-        identity = ObjectRoleIdentity(self)
-        context = ObjectConstructionContext(self, identity, ObjectStageIdentity(self), ())
-        token = activate_object_context(context)
-        try:
-            ObjectOfCategory.__init__(self, self)
-        finally:
-            deactivate_object_context(token)
-        self._initialize(self)
+        super().__init__()
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
         from sage_categories.cat.elements import CategoryPointDeclaration
@@ -969,7 +948,7 @@ def bootstrap() -> None:
     global _CAT, Category, Functor
     from sage_categories.cat.functors import FunctorDeclaration
 
-    _CAT = CategoryOfCategories()
+    _CAT = compiler.construct_category_singleton(CategoryOfCategories)
     Category = _CAT.ObjectType
     Functor = _CAT.MorphismType
 

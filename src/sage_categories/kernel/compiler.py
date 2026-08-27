@@ -748,29 +748,28 @@ def _construct_morphism_root[Datum](
         deactivate_morphism_context(token)
 
 
-def initialize_category_declaration(instance: ObjectOfCategory, universe: Category) -> None:
-    """Initialize a category class defined before ``Category`` names ``Cat().ObjectType``.
-
-    Its Python base is the provisional local declaration, so the call is already inside
-    that node initializer.  This finite bootstrap path initializes the two remaining
-    classes in the exact public tail: ``ObjectOfCategory`` and ``Cat().ElementType``.
-    """
-    identity = ObjectRoleIdentity(universe)
+def construct_category_singleton[Value: ObjectOfCategory](category_type: type[Value]) -> Value:
+    """Allocate ``Cat()`` and start its provisional constructor chain inside its object context."""
+    instance = category_type.__new__(category_type)
+    identity = ObjectRoleIdentity(instance)
     root = ObjectConstructionInput(instance, identity, None)
     retain_object_input(root)
-    cat_element_identity = ObjectStageIdentity(universe)
+    cat_element_identity = ObjectStageIdentity(instance)
+    cat_element_input = ElementConstructionInput(instance, cat_element_identity, None)
+    retain_element_input(cat_element_input)
     context = ObjectConstructionContext(
         root.canonical_image,
         root.identity,
         cat_element_identity,
-        (_object_cat_element_step(root),),
+        (),
     )
     token = activate_object_context(context)
     try:
-        ObjectOfCategory.__init__(instance, universe)
+        category_type.__init__(instance)
         context.assert_complete()
     finally:
         deactivate_object_context(token)
+    return instance
 
 
 def _object_wrapper(current: Node) -> FunctionType:

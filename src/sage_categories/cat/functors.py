@@ -399,14 +399,32 @@ class FunctorDeclaration(MorphismOfCategory):
         assert retained_morphism_input(target.canonical_image) is target, f"{self!r} constructed a parallel morphism input"
         return target
 
-    def _assert_complete_constructor_conversions(self) -> None:
-        """Reject selection until the object and morphism conversions are retained (POL-CAT-071).
+    def _derive_selected_constructor_conversions(self) -> None:
+        """Read this functor's two rules as construction data, which is what selecting it means.
+
+        A functor is built once, by ``Fun(C, D)(object_rule, morphism_rule)``; selection is
+        compiler input and makes no second kind of functor (POL-CAT-085).  What selection
+        adds is the reading: the rules of a selected functor state how one of ``C``'s own
+        constructions produces the data ``D``'s constructor consumes, so each takes one
+        node's local datum and names the value ``D`` made from it (POL-LEAF-058).  The
+        kernel turns them into the construction inputs the compiler consumes and into the
+        public object and morphism actions (POL-FUN-035); the leaf names no canonical
+        image, construction input, or transport (POL-LEAF-054).
+
+        A functor that is never selected keeps its rules as its ordinary value-level
+        actions: the represented functor ``Mor(C)(G, -)``, a constant diagram, a Kan
+        extension.  A construction that retained its conversions already -- a subcategory
+        monomorphism, an identity, an explicit composite -- keeps them.
 
         The element conversion is derived from the morphism one (POL-FUN-002), so a
         retained morphism conversion already supplies the selected target element role.
         """
-        assert self in _object_constructor_conversions, f"{self!r} retains no object constructor conversion"
-        assert self in _morphism_constructor_conversions, f"{self!r} retains no morphism constructor conversion"
+        if self in _object_constructor_conversions and self in _morphism_constructor_conversions:
+            return
+        assert self._on_object is not None and self._on_morphism is not None, (
+            f"{self!r} states neither its two rules nor its constructor conversions, so it cannot be selected"
+        )
+        self.retain_structural_images(self._on_object, self._on_morphism)
 
     def _retain_identity_constructor_conversions(self) -> None:
         """Retain the identity conversions for an identity-on-value functor."""
@@ -591,27 +609,6 @@ class FunctorProperties:
 
     def Monomorphisms(self) -> Category:
         return self.property_subcategory(self.ambient().Monomorphisms())
-
-    def structural[ObjectDatum, MorphismDatum](
-        self,
-        object_image: Callable[[ObjectDatum], ObjectOfCategory],
-        morphism_image: Callable[[MorphismDatum], MorphismOfCategory],
-    ) -> Functor:
-        """``Fun(C, D).P().structural(object_image, morphism_image)``: the selected functor that forgets structure.
-
-        Its image of an object is a value ``C``'s own constructor already made and its
-        defining data already names -- the underlying set of a poset, the representing set
-        of a cardinal -- so each rule reads one local datum and returns that value.  The
-        functor has no other action: the kernel derives the construction inputs the
-        compiler consumes and the public ``on_object`` and ``on_morphism`` from these two
-        rules (POL-FUN-035).
-
-        A leaf declares a forgetful structural functor this way and writes no construction
-        input, no canonical image, and no transport (POL-LEAF-054).
-        """
-        functor = self.universe().construct_structural_functor(self.domain(), self.codomain(), object_image, morphism_image)
-        refine(functor, self)
-        return functor
 
 
 class FunctorProperty(FunctorProperties, FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]]):

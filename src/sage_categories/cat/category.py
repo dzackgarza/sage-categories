@@ -878,39 +878,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             )
         return by_morphism_action[on_morphism]
 
-    def construct_structural_functor[ObjectDatum, MorphismDatum](
-        self,
-        domain: Category,
-        codomain: Category,
-        object_image: Callable[[ObjectDatum], ObjectOfCategory],
-        morphism_image: Callable[[MorphismDatum], MorphismOfCategory],
-    ) -> Functor:
-        """The functor whose images are values ``domain``'s constructor already made, selected by its two image rules.
-
-        Such a functor has no value-level action: its image of an object exists before that
-        object does, so the kernel builds it from the construction input and derives the
-        public actions from the same rules (POL-FUN-035).  The rules are its identity
-        components, exactly as the object and morphism actions are for a functor that
-        constructs its images.
-        """
-        from sage_categories.cat.functors import FunctorData
-
-        assert domain in self and codomain in self
-        key = (domain, codomain, object_image)
-        if key not in self._declared_functors:
-            self._declared_functors[key] = MonoDict()
-        by_morphism_image = self._declared_functors[key]
-        if morphism_image not in by_morphism_image:
-            functor = self.MorphismType(
-                category=self.morphism_category(1),
-                domain=domain,
-                codomain=codomain,
-                data=FunctorData(None, None),
-            )
-            functor.retain_structural_images(object_image, morphism_image)
-            by_morphism_image[morphism_image] = functor
-        return by_morphism_image[morphism_image]
-
     def construct_identity(self, category: Category) -> Functor:
         from sage_categories.cat.functors import Fun
         from sage_categories.kernel.refinement import refine

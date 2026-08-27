@@ -46,20 +46,14 @@ from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.shapes import ThinCategory
 from sage_categories.kernel.caches import retained_method
-from sage_categories.kernel.construction import (
-    MorphismConstructionInput,
-    ObjectConstructionInput,
-    retained_morphism_input,
-    retained_object_input,
-)
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask, conjunction, disjunction, implication, negation
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, role_of
 from sage_categories.sets.category import Sets
 from sage_categories.sets.elements import Datum, SetElement
-from sage_categories.sets.maps import Rule, SetMorphismData
-from sage_categories.sets.objects import MembershipRule, SetObject, SetObjectData
+from sage_categories.sets.maps import Rule
+from sage_categories.sets.objects import MembershipRule, SetObject
 
 if TYPE_CHECKING:
     from sage_categories.sets.category import SetMap
@@ -84,7 +78,7 @@ class PosetObjectData:
 
 @dataclass(frozen=True, eq=False, slots=True)
 class PosetMorphismData:
-    """The source datum consumed by the selected underlying-set functor."""
+    """The construction datum of a monotone map: the set map it is (``specs/ordered-sets.md``)."""
 
     set_map: SetMap
 
@@ -301,26 +295,16 @@ class PosetsCategory(Category[[Rule], []]):
 
     @cached_method
     def underlying_set_functor(self) -> Functor:
-        """``U: Posets() -> Sets()``, retained once: the retained carrier and the retained set map."""
-        underlying = Fun(self, Sets()).Faithful()(
-            lambda poset: Sets().structural_image(poset),
-            lambda monotone: Sets().structural_image(monotone),
+        """``U: Posets() -> Sets()``, retained once: the carrier of the order, and the set map of a monotone map.
+
+        A poset is constructed from its relation ``R``, and the set ``Sets()`` made from
+        that construction is the carrier of ``R``; a monotone map is constructed from its
+        set map (POL-LEAF-058).
+        """
+        return Fun(self, Sets()).Faithful()(
+            lambda order: self.carrier(order.relation),
+            lambda monotone: monotone.set_map,
         )
-
-        def object_input(
-            source: ObjectConstructionInput[Poset, PosetObjectData],
-        ) -> ObjectConstructionInput[SetObject, SetObjectData]:
-            carrier = self._carrier(source.datum.relation)
-            return retained_object_input(carrier)
-
-        def morphism_input(
-            source: MorphismConstructionInput[MonotoneMap, PosetMorphismData],
-        ) -> MorphismConstructionInput[SetMap, SetMorphismData]:
-            return retained_morphism_input(source.datum.set_map)
-
-        underlying.retain_object_constructor_conversion(object_input)
-        underlying.retain_morphism_constructor_conversion(morphism_input)
-        return underlying
 
     def separating_family(self) -> tuple[Poset, ...]:
         return (self.Terminal(),)
@@ -330,11 +314,12 @@ class PosetsCategory(Category[[Rule], []]):
     def __call__(self, relation: SetObject) -> Poset:
         """``Posets()(R)``: the poset on the factor ``X`` of ``X * X`` that ``R`` is a subset of."""
         assert relation in Sets().ChosenSubsets(), f"{relation!r} is not a chosen subset"
-        self._carrier(relation)
+        self.carrier(relation)
         assert ask(self.is_partial_order(relation)) is not False, f"{relation!r} is not a partial order"
         return self._construct(relation)
 
-    def _carrier(self, relation: SetObject) -> SetObject:
+    def carrier(self, relation: SetObject) -> SetObject:
+        """``X``: the shared factor of the chosen product ``X * X`` that the order ``R`` is a subset of."""
         square = _square(relation)
         first, second = square.product_projection(0).codomain(), square.product_projection(1).codomain()
         assert first is second, f"{relation!r} is a subset of a product of two distinct sets"
@@ -342,7 +327,7 @@ class PosetsCategory(Category[[Rule], []]):
 
     def _construct(self, relation: SetObject) -> Poset:
         # A poset on a finite set is a finite poset by definition (POL-CAT-081).
-        underlying_set = self._carrier(relation)
+        underlying_set = self.carrier(relation)
         poset = self.ObjectType(self, PosetObjectData(relation))
         if underlying_set in Sets().Finite():
             self.Finite()(poset)

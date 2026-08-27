@@ -128,25 +128,33 @@ class FunctorDeclaration(MorphismOfCategory):
 
     def on_object(self, member_object: ObjectOfCategory) -> ObjectOfCategory:
         """The image of an object of the domain."""
-        assert is_placed(member_object, self.domain()) or member_object in self.domain(), f"{member_object!r} is not an object of {self.domain()!r}"
         if self in _object_constructor_conversions:
             from sage_categories.kernel import compiler
             from sage_categories.kernel.transport import construction_input
 
+            assert is_placed(member_object, self.domain()), (
+                f"{member_object!r} is placed in {member_object.category()!r}; {self!r} constructs its image from the "
+                f"placement {self.domain()!r}, which that placement does not reach"
+            )
             source = construction_input(member_object, compiler.node(self.domain(), Role.OBJECT))
             return self.object_constructor_input(source).canonical_image
+        assert member_object in self.domain(), f"{member_object!r} is not an object of {self.domain()!r}"
         return self._on_object(member_object)
 
     def on_morphism(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
         """The image of a morphism of the domain."""
         morphisms = self.domain().morphism_category(1)
-        assert is_placed(morphism, morphisms) or morphism in morphisms, f"{morphism!r} is not a morphism of {self.domain()!r}"
         if self in _morphism_constructor_conversions:
             from sage_categories.kernel import compiler
             from sage_categories.kernel.transport import construction_input
 
+            assert is_placed(morphism, morphisms), (
+                f"{morphism!r} is placed in {morphism.category()!r}; {self!r} constructs its image from the "
+                f"placement {morphisms!r}, which that placement does not reach"
+            )
             source = construction_input(morphism, compiler.node(self.domain(), Role.MORPHISM))
             return self.morphism_constructor_input(source).canonical_image
+        assert morphism in morphisms, f"{morphism!r} is not a morphism of {self.domain()!r}"
         return self._on_morphism(morphism)
 
     def on_element(self, element: CategoryPoint) -> CategoryPoint:
@@ -170,8 +178,6 @@ class FunctorDeclaration(MorphismOfCategory):
             assert is_placed(parent, self.domain()) or parent in self.domain(), f"{element!r} is not a generalized element in {self.domain()!r}"
             return element
         defining = element.defining_morphism()
-        morphisms = self.domain().morphism_category(1)
-        assert is_placed(defining, morphisms) or defining in morphisms, f"{element!r} is not a generalized element in {self.domain()!r}"
         image = self.on_morphism(defining)
         if image is defining:
             return element

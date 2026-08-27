@@ -1,3 +1,5 @@
+from sage_categories.cat.category import CategoryDeclaration as CategoryDeclaration
+from sage_categories.cat.elements import CategoryPointDeclaration as CategoryPointDeclaration
 from sage_categories.posets.category import Posets_TotallyOrdered_Finite_ElementType as Posets_TotallyOrdered_Finite_ElementType
 from sage_categories.posets.category import Posets_TotallyOrdered_Finite_MorphismType as Posets_TotallyOrdered_Finite_MorphismType
 from sage_categories.posets.category import Posets_TotallyOrdered_Finite_ObjectType as Posets_TotallyOrdered_Finite_ObjectType
@@ -8,7 +10,7 @@ from sage_categories.kernel.predicates import AppliedPredicate as AppliedPredica
 from sage_categories.kernel.refinement import is_subcategory as is_subcategory, refine as refine
 from sage_categories.kernel.roles import CategoryPoint as CategoryPoint, MorphismOfCategory as MorphismOfCategory, Role as Role
 
-class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, TwoMorphismData]):
+class FullSubcategory[**MorphismData, **TwoMorphismData](CategoryDeclaration[MorphismData, TwoMorphismData]):
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData]) -> None: ...
     def has_ambient(self) -> bool: ...
     def ambient(self) -> Category[MorphismData, TwoMorphismData]: ...

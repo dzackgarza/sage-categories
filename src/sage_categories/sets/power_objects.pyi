@@ -1,20 +1,24 @@
+from sage_categories.cat.category import CategoryDeclaration as CategoryDeclaration
 from sage_categories.sets.category import Sets_PowerObjects_ElementType as Sets_PowerObjects_ElementType
 from sage_categories.sets.category import Sets_PowerObjects_MorphismType as Sets_PowerObjects_MorphismType
+from sage_categories.sets.elements import SetElementDeclaration as SetElementDeclaration
+from sage_categories.sets.maps import SetMapDeclaration as SetMapDeclaration
+from sage_categories.sets.objects import SetObjectDeclaration as SetObjectDeclaration
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.properties import PropertySubcategory as PropertySubcategory
 from sage_categories.kernel.decisions import Decision as Decision
 from sage_categories.kernel.refinement import refine as refine
 from sage_categories.kernel.roles import ObjectOfCategory as ObjectOfCategory, Role as Role
-from sage_categories.sets.elements import Datum as Datum, SetPoint as SetPoint
+from sage_categories.sets.elements import Datum as Datum, SetElement as SetElement
 from sage_categories.sets.exponentials import Function as Function, function_set as function_set
 from sage_categories.sets.maps import Rule as Rule, SetMap as SetMap
 from sage_categories.sets.objects import MembershipRule as MembershipRule, SetObject as SetObject
 
-class PowerObjectRole(SetObject):
+class PowerObjectRole(SetObjectDeclaration):
     def base_set(self) -> SetObject: ...
     def from_predicate(self, predicate: MembershipRule) -> SetObject: ...
     def from_characteristic_morphism(self, characteristic: SetMap) -> SetObject: ...
-    def subset_named_by(self, point: SetPoint) -> SetObject: ...
+    def subset_named_by(self, point: SetElement) -> SetObject: ...
     def top(self) -> SetObject: ...
     def bottom(self) -> SetObject: ...
     def inverse_image_morphism(self, set_map: SetMap) -> SetMap: ...

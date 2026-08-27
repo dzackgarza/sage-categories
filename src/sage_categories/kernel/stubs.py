@@ -54,6 +54,9 @@ import inspect
 import re
 import sys
 import tempfile
+import types
+import typing
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, NamedTuple
 
@@ -62,7 +65,6 @@ from sage.misc.cachefunc import CachedFunction
 from sage_categories.cat.category import Category
 from sage_categories.kernel import compiler
 from sage_categories.kernel.roles import CategoryPoint, Role, kernel_base
-from sage_categories.kernel.signatures import declared_signature
 
 __all__ = ["Reference", "RoleProjection", "StubGenerationError", "generate_stubs", "main", "module_name"]
 
@@ -96,10 +98,23 @@ type Projections = dict[tuple[int, Role], RoleProjection]
 # named once here (POL-TYPE-004).
 type BoundMember = Any
 
-_ROLE_NAMES = frozenset(role.value for role in Role)
+# One annotation of a declaration as ``inspect`` evaluates it: a class, a union, a
+# generic alias, ``Self``, ``None``, a type parameter of the declaring class, a
+# parameter-list substitution for a ``ParamSpec``, or the ``...`` of
+# ``tuple[X, ...]``.  Python's own introspection admits every form, so the
+# ambiguity is genuine and named once here (POL-TYPE-004).
+type Annotation = Any
+
+# A namespace an annotation is evaluated in: the module-level bindings of the
+# generation set, which hold values of every kind.
+type Namespace = dict[str, Any]
+
+# The declarations whose ``candidate`` genuinely accepts every input (POL-TYPE-004).
+_CANDIDATE_METHODS = frozenset({"__contains__", "__eq__", "__ne__", "membership_proposition"})
 
 _CLASS_HEADER = re.compile(r"^(?P<indent> *)class (?P<name>\w+)(?P<parameters>\[[^\]]*\])?(?:\((?P<bases>.*)\))?:(?P<body>\s*\.\.\.)?$")
 _ROLE_ATTRIBUTE = re.compile(r"^ +(?P<role>ObjectType|ElementType|MorphismType)\s*[:=].*$")
+_MODULE_BINDING = re.compile(r"^(?P<name>\w+)\s*[:=].*$")
 _IMPORT = re.compile(r"^(?:from [\w.]+ import (?P<names>.*)|import (?P<module>[\w.]+)(?: as (?P<alias>\w+))?)$")
 
 _GENERIC_ROLE = {role: kernel_base(role) for role in Role}
@@ -169,9 +184,14 @@ def _constructed(category: Category) -> tuple[Category, ...]:
     """
     found: list[Category] = []
     for name in vars(_declaring_class(category)):
-        if not name[:1].isupper() or name in _ROLE_NAMES:
+        if not name[:1].isupper():
             continue
         member = getattr(category, name)
+        if isinstance(member, type) and issubclass(member, CategoryPoint):
+            # A role class the category carries -- ``DeclaredObjectType`` as its class
+            # writes it, ``ObjectType`` as the compiler installs it -- is a role of the
+            # category, not a category it constructs.
+            continue
         if not _takes_no_argument(member):
             continue
         value = member()
@@ -237,11 +257,19 @@ def _written(klass: type) -> bool:
     The compiler builds a role class for every node whose category declares none
     (``compiler.empty_local_role``), and ``Mor(C)`` builds its own element role the
     same way.  Such a class is bound nowhere, and a stub must never name one.
+
+    A qualified name a module writes runs through classes: ``Sets.ObjectType`` names a
+    nested class of a written class.  The compiler gives a compiled role the same shape
+    of name over the category *value* it installs it on -- ``Fun.MorphismType`` is
+    reached from the module-level ``Fun`` -- and that name is a runtime attribute path,
+    not a scope a stub can spell.  So every step but the last must itself be a class.
     """
-    found: object | None = sys.modules.get(klass.__module__)
+    found: BoundMember = sys.modules.get(klass.__module__)
     for part in klass.__qualname__.split("."):
-        found = getattr(found, part, None)
-        if found is None:
+        if found is None or part not in vars(found):
+            return False
+        found = vars(found)[part]
+        if not isinstance(found, type):
             return False
     return found is klass
 
@@ -268,19 +296,82 @@ def _role_reference(category: Category, role: Role) -> Reference:
     return Reference(_home(category), _generated_name(category, role))
 
 
-def _validate(category: Category, role: Role, local: type[CategoryPoint]) -> None:
+def _roles_named(annotation: Annotation, declaration: str) -> int:
+    """How many mathematical roles an annotation names; a broad annotation raises.
+
+    A role is a subclass of ``CategoryPoint``: the object, element, and morphism
+    classes all descend from it.  Everything else -- ``bool``, ``int``, ``None``, a
+    cardinal value, a decision, an exact callable -- is a plain value and names no
+    role, so a union with one of them stays exact (``CardinalObject | UnknownClass``).
+    """
+    if annotation is inspect.Parameter.empty:
+        raise StubGenerationError(f"{declaration}: every parameter and the result need an exact annotation")
+    if annotation is Any or annotation is object:
+        raise StubGenerationError(f"{declaration}: {annotation!r} is not an exact role")
+    if annotation is typing.Self:
+        return 1
+    if isinstance(annotation, typing.TypeAliasType):
+        return _roles_named(annotation.__value__, declaration)
+    origin = typing.get_origin(annotation)
+    if origin is types.UnionType or origin is typing.Union:
+        named = sum(_roles_named(member, declaration) for member in typing.get_args(annotation))
+        if named > 1:
+            raise StubGenerationError(f"{declaration}: a union of several mathematical roles is type erasure")
+        return named
+    if origin is Callable:
+        arguments, result = typing.get_args(annotation)
+        if arguments is Ellipsis:
+            raise StubGenerationError(f"{declaration}: {annotation!r} is not an exact callable type")
+        for argument in arguments:
+            _roles_named(argument, declaration)
+        _roles_named(result, declaration)
+        return 0
+    if origin is not None:
+        for argument in typing.get_args(annotation):
+            _roles_named(argument, declaration)
+        return 0
+    return 1 if isinstance(annotation, type) and issubclass(annotation, CategoryPoint) else 0
+
+
+def _generation_scope(modules: frozenset[str]) -> Namespace:
+    """Every name the modules of the generation set bind at module level.
+
+    A declaration annotates with names its module imports under ``TYPE_CHECKING``
+    only, which ``from __future__ import annotations`` leaves as strings at runtime.
+    The projection reads those annotations, and a stub may name only what the
+    generation set declares, so the set's own bindings are the scope to read them in.
+    """
+    return {name: value for module in sorted(modules) for name, value in vars(sys.modules[module]).items()}
+
+
+def _validate(category: Category, role: Role, local: type[CategoryPoint], scope: Namespace) -> None:
     """Every declaration states exact roles, or generation fails at it (POL-TYPE-028, POL-TYPE-029).
 
-    This is the check ``signatures.declared_signature`` makes when a descriptor is
-    built: a broad union, ``Any``, ``object``, ``Callable[..., Any]``, or an
-    unknown role is rejected at the declaration that carries it.
+    The stub restates a declaration's own signature, so an erased one would be
+    erased in the projection too and a checker would accept any role there.  ``Any``
+    is admitted only as the ``candidate`` of the comparison and membership
+    declarations, whose parameter genuinely accepts every input (POL-TYPE-004).
+
+    ``__init__`` is not among the declarations: the compiler copies every local
+    member except it, and installs a generated wrapper in its place
+    (POL-KERNEL-028).  Annotations are evaluated with the type parameters of the
+    declaring class in scope, since a generic class's methods name them
+    (``Category[MorphismData, TwoMorphismData]``).
     """
-    declarations: dict[str, compiler.DeclaredMethod] = compiler.local_methods(local)
-    for name, function in declarations.items():
-        try:
-            declared_signature(function, f"{category!r}.{role.value}.{name}", category, role)
-        except TypeError as broad:
-            raise StubGenerationError(str(broad)) from broad
+    type_parameters = {
+        parameter.__name__: parameter for klass in reversed(local.__mro__) for parameter in klass.__type_params__
+    }
+    for name, function in vars(local).items():
+        if not inspect.isfunction(function) or name == "__init__":
+            continue
+        declaration = f"{category!r}.{role.value}.{name}"
+        globals_ = {**scope, **vars(sys.modules[function.__module__])}
+        signature = inspect.signature(function, eval_str=True, globals=globals_, locals=type_parameters)
+        for index, (parameter_name, parameter) in enumerate(signature.parameters.items()):
+            if index == 0 or (parameter_name == "candidate" and name in _CANDIDATE_METHODS):
+                continue
+            _roles_named(parameter.annotation, declaration)
+        _roles_named(signature.return_annotation, declaration)
 
 
 def _require_in_set(klass: type, modules: frozenset[str], category: Category) -> None:
@@ -314,6 +405,7 @@ def _bases(category: Category, role: Role, modules: frozenset[str]) -> tuple[Ref
 def project(categories: tuple[Category, ...], modules: frozenset[str]) -> Projections:
     """The stub class of each role of each category, keyed by ordinal and role."""
     projections: Projections = {}
+    scope = _generation_scope(modules)
     for category in categories:
         _require_in_set(_declaring_class(category), modules, category)
         for role in Role:
@@ -323,7 +415,7 @@ def project(categories: tuple[Category, ...], modules: frozenset[str]) -> Projec
             if _declares(category, role):
                 local = category.local_role_class(role)
                 _require_in_set(local, modules, category)
-                _validate(category, role, local)
+                _validate(category, role, local, scope)
             projections[category.ordinal(), role] = RoleProjection(
                 category,
                 role,
@@ -394,6 +486,37 @@ def _category_classes(module: str, categories: tuple[Category, ...]) -> dict[str
     return found
 
 
+def _compiled_role_names(module: str, categories: tuple[Category, ...]) -> dict[str, Reference]:
+    """Each module-level name bound to a compiled role class, with the declaration that names it.
+
+    ``Category`` is ``Cat().ObjectType`` and ``SetMap`` is ``Sets().MorphismType``: the
+    compiler installs the class and the module binds it, so no source writes a class of
+    that name.  The declaration's name is the name of the compiled role, so the stub
+    binds the name to the declaration -- ``Category = CategoryDeclaration`` -- and
+    spells it that way in a base, where a checker reads a bare binding as a type alias
+    and refuses to subscript it.
+
+    The universe of each category joins the categories the stub projects: every module
+    that declares a category names ``Cat()``'s roles, and a downstream generation set
+    reaches ``Cat()`` no other way.
+    """
+    known = list(categories)
+    for category in categories:
+        universe = category.category()
+        if not any(universe is held for held in known):
+            known.append(universe)
+    declaring: dict[type, Reference] = {}
+    for category in known:
+        for role in Role:
+            current = compiler.node(category, role)
+            declaring[category.role_class(role)] = _role_reference(current.category, current.role)
+    return {
+        name: declaring[value]
+        for name, value in vars(sys.modules[module]).items()
+        if isinstance(value, type) and value in declaring and not _written(value)
+    }
+
+
 def _resolved(references: set[Reference], module: str, lines: list[str]) -> tuple[dict[Reference, str], list[str]]:
     """The spelling of each reference in this stub, with the imports it needs.
 
@@ -434,12 +557,18 @@ def _rewrite(text: str, module: str, categories: tuple[Category, ...], projectio
         key=lambda projection: (projection.category.ordinal(), projection.role.value),
     )
     classes = _category_classes(module, categories)
+    aliases = _compiled_role_names(module, categories)
     lines = text.splitlines()
     references = {base for projection in [*owned.values(), *generated] for base in projection.bases}
     references.update(
         reference for name, category in classes.items() for reference in _role_references(category, projections)
     )
+    references.update(aliases.values())
     spelling, imports = _resolved(references, module, lines)
+
+    def spelled(bases: str) -> str:
+        """A base list with each compiled-role name spelled as the declaration it stands for."""
+        return re.sub(r"\w+", lambda found: spelling[aliases[found[0]]] if found[0] in aliases else found[0], bases)
 
     result: list[str] = []
     enclosing: list[tuple[int, str]] = []
@@ -449,6 +578,10 @@ def _rewrite(text: str, module: str, categories: tuple[Category, ...], projectio
     for line in lines:
         match = _CLASS_HEADER.match(line)
         if match is None:
+            binding = _MODULE_BINDING.match(line)
+            if binding is not None and binding["name"] in aliases:
+                result.append(f"{binding['name']} = {spelling[aliases[binding['name']]]}")
+                continue
             attribute = _ROLE_ATTRIBUTE.match(line)
             if attribute is None or attribute["role"] not in replaced:
                 result.append(line)
@@ -461,15 +594,16 @@ def _rewrite(text: str, module: str, categories: tuple[Category, ...], projectio
         enclosing.append((indent, name))
         if indent == 0:
             replaced = set()
+        if qualified in owned:
+            bases_text = ", ".join(spelling[base] for base in owned[qualified].bases)
+        else:
+            bases_text = spelled(match["bases"]) if match["bases"] else None
+        header = f"{match['indent']}class {name}{parameters}" + (f"({bases_text}):" if bases_text else ":")
         if qualified not in owned and qualified not in classes:
-            result.append(line)
+            result.append(header + (match["body"] or ""))
             continue
         body: list[str] = []
-        if qualified in owned:
-            bases = ", ".join(spelling[base] for base in owned[qualified].bases)
-            result.append(f"{match['indent']}class {name}{parameters}({bases}):")
-        else:
-            result.append(f"{match['indent']}class {name}{parameters}({match['bases']}):" if match["bases"] else f"{match['indent']}class {name}{parameters}:")
+        result.append(header)
         # A category whose role is a nested class of its own body already names that
         # role: the nested class is the stub type, and a property of the same
         # spelling would shadow it.

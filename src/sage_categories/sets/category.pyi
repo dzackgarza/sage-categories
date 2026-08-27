@@ -1,3 +1,6 @@
+from sage_categories.cat.category import CategoryDeclaration as CategoryDeclaration
+from sage_categories.sets.cardinals import CardinalObjectDeclaration as CardinalObjectDeclaration
+from _typeshed import Incomplete
 from collections.abc import Callable, Iterable
 from sage.misc.cachefunc import cached_method
 from sage_categories.cat.category import Category as Category
@@ -7,11 +10,11 @@ from sage_categories.kernel.decisions import Decision as Decision, Unknown as Un
 from sage_categories.kernel.predicates import ask as ask
 from sage_categories.kernel.refinement import refine as refine
 from sage_categories.kernel.roles import Role as Role
-from sage_categories.sets.cardinals import Cardinal as Cardinal, CardinalObject as CardinalObject
-from sage_categories.sets.elements import Datum as Datum, SetPoint as SetPoint, points_equal as points_equal
+from sage_categories.sets.cardinals import CardinalObject as CardinalObject
+from sage_categories.sets.elements import Datum as Datum, SetElementData as SetElementData, SetElementDeclaration as SetElementDeclaration, SetPointData as SetPointData, points_equal as points_equal
 from sage_categories.sets.finite_subsets import FiniteSubsetsCategory as FiniteSubsetsCategory, FinitelySupportedFunctionsCategory as FinitelySupportedFunctionsCategory, SizedSubsetsCategory as SizedSubsetsCategory
-from sage_categories.sets.maps import Rule as Rule, SetMap as SetMap, bijective_on_finite_domain as bijective_on_finite_domain, injective_on_finite_domain as injective_on_finite_domain, maps_equal as maps_equal, surjective_on_finite_domain as surjective_on_finite_domain
-from sage_categories.sets.objects import FiniteSetRole as FiniteSetRole, MembershipRule as MembershipRule, SetObject as SetObject
+from sage_categories.sets.maps import Rule as Rule, SetMapDeclaration as SetMapDeclaration, SetMorphismData as SetMorphismData, bijective_on_finite_domain as bijective_on_finite_domain, injective_on_finite_domain as injective_on_finite_domain, maps_equal as maps_equal, surjective_on_finite_domain as surjective_on_finite_domain
+from sage_categories.sets.objects import FiniteSetRole as FiniteSetRole, MembershipRule as MembershipRule, SetObjectData as SetObjectData, SetObjectDeclaration as SetObjectDeclaration
 from sage_categories.sets.power_objects import PowerObjectsCategory as PowerObjectsCategory
 from sage_categories.sets.subobjects import ChosenQuotientsCategory as ChosenQuotientsCategory, ChosenSubsetsCategory as ChosenSubsetsCategory
 from typing import overload
@@ -28,13 +31,16 @@ class FiniteSets(PropertySubcategory[[Rule], []]):
     def has_chosen_enumeration(self, finite_set: SetObject) -> bool: ...
     def chosen_enumeration(self, finite_set: SetObject) -> tuple[Datum, ...]: ...
 
-class SetsCategory(Category[[Rule], []]):
+class SetsCategory(CategoryDeclaration[[Rule], []]):
     @property
-    def ObjectType(self) -> type[SetObject]: ...
+    def ObjectType(self) -> type[SetObjectDeclaration]: ...
     @property
-    def ElementType(self) -> type[SetPoint]: ...
+    def ElementType(self) -> type[SetElementDeclaration]: ...
     @property
-    def MorphismType(self) -> type[SetMap]: ...
+    def MorphismType(self) -> type[SetMapDeclaration]: ...
+    DeclaredObjectType = SetObjectDeclaration
+    DeclaredElementType = SetElementDeclaration
+    DeclaredMorphismType = SetMapDeclaration
     def __init__(self) -> None: ...
     def __call__(self, membership_rule: MembershipRule) -> SetObject: ...
     def with_cardinality(self, membership_rule: MembershipRule, cardinality: CardinalObject) -> SetObject: ...
@@ -54,7 +60,7 @@ class SetsCategory(Category[[Rule], []]):
     def classical_stages(self) -> tuple[SetObject, ...]: ...
     @cached_method
     def CardinalityFunctor(self) -> Functor: ...
-    def element_from_defining_morphism(self, defining_morphism: SetMap) -> SetPoint: ...
+    def element_from_defining_morphism(self, defining_morphism: SetMap) -> SetElement: ...
     @overload
     def construct_morphism(self, domain: SetObject, codomain: SetObject, rule: Rule) -> SetMap: ...
     @overload
@@ -73,72 +79,76 @@ class SetsCategory(Category[[Rule], []]):
     def SubsetsOfSize(self, size: int) -> SizedSubsetsCategory: ...
     @cached_method
     def FinitelySupportedFunctions(self) -> FinitelySupportedFunctionsCategory: ...
-    def name_of(self, set_map: SetMap) -> SetPoint: ...
+    def name_of(self, set_map: SetMap) -> SetElement: ...
     def evaluation(self, exponent: SetObject, base: SetObject) -> SetMap: ...
     def transpose(self, set_map: SetMap) -> SetMap: ...
     def hom_inhabited(self, hom_category: Category) -> Decision: ...
 
+SetObject = SetObjectDeclaration
+SetElement = SetElementDeclaration
+SetMap = SetMapDeclaration
+
 def Sets() -> SetsCategory: ...
 
-class Sets_Countable_ElementType(SetPoint):
+class Sets_Countable_ElementType(SetElementDeclaration):
     ...
 
-class Sets_Countable_MorphismType(SetMap):
+class Sets_Countable_MorphismType(SetMapDeclaration):
     ...
 
-class Sets_Countable_ObjectType(SetObject):
+class Sets_Countable_ObjectType(SetObjectDeclaration):
     ...
 
-class Sets_Infinite_ElementType(SetPoint):
+class Sets_Infinite_ElementType(SetElementDeclaration):
     ...
 
-class Sets_Infinite_MorphismType(SetMap):
+class Sets_Infinite_MorphismType(SetMapDeclaration):
     ...
 
-class Sets_Infinite_ObjectType(SetObject):
+class Sets_Infinite_ObjectType(SetObjectDeclaration):
     ...
 
-class Sets_Finite_ElementType(Sets_Countable_ElementType, SetPoint):
+class Sets_Finite_ElementType(Sets_Countable_ElementType, SetElementDeclaration):
     ...
 
-class Sets_Finite_MorphismType(Sets_Countable_MorphismType, SetMap):
+class Sets_Finite_MorphismType(Sets_Countable_MorphismType, SetMapDeclaration):
     ...
 
-class Sets_Uncountable_ElementType(Sets_Infinite_ElementType, SetPoint):
+class Sets_Uncountable_ElementType(Sets_Infinite_ElementType, SetElementDeclaration):
     ...
 
-class Sets_Uncountable_MorphismType(Sets_Infinite_MorphismType, SetMap):
+class Sets_Uncountable_MorphismType(Sets_Infinite_MorphismType, SetMapDeclaration):
     ...
 
-class Sets_Uncountable_ObjectType(Sets_Infinite_ObjectType, SetObject):
+class Sets_Uncountable_ObjectType(Sets_Infinite_ObjectType, SetObjectDeclaration):
     ...
 
-class Sets_ChosenSubsets_ElementType(SetPoint):
+class Sets_ChosenSubsets_ElementType(SetElementDeclaration):
     ...
 
-class Sets_ChosenSubsets_MorphismType(SetMap):
+class Sets_ChosenSubsets_MorphismType(SetMapDeclaration):
     ...
 
-class Sets_ChosenQuotients_ElementType(SetPoint):
+class Sets_ChosenQuotients_ElementType(SetElementDeclaration):
     ...
 
-class Sets_ChosenQuotients_MorphismType(SetMap):
+class Sets_ChosenQuotients_MorphismType(SetMapDeclaration):
     ...
 
-class Sets_PowerObjects_ElementType(SetPoint):
+class Sets_PowerObjects_ElementType(SetElementDeclaration):
     ...
 
-class Sets_PowerObjects_MorphismType(SetMap):
+class Sets_PowerObjects_MorphismType(SetMapDeclaration):
     ...
 
-class Sets_FiniteSubsets_ElementType(SetPoint):
+class Sets_FiniteSubsets_ElementType(SetElementDeclaration):
     ...
 
-class Sets_FiniteSubsets_MorphismType(SetMap):
+class Sets_FiniteSubsets_MorphismType(SetMapDeclaration):
     ...
 
-class Sets_FinitelySupportedFunctions_ElementType(SetPoint):
+class Sets_FinitelySupportedFunctions_ElementType(SetElementDeclaration):
     ...
 
-class Sets_FinitelySupportedFunctions_MorphismType(SetMap):
+class Sets_FinitelySupportedFunctions_MorphismType(SetMapDeclaration):
     ...

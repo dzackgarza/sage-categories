@@ -1,50 +1,72 @@
+from sage_categories.cat.category import CategoryDeclaration as CategoryDeclaration
+from sage_categories.cat.elements import CategoryPointDeclaration as CategoryPointDeclaration
+from sage_categories.cat.functors import FunctorDeclaration as FunctorDeclaration
 from sage_categories.posets.finite import FinitePosetRole as FinitePosetRole
 from sage_categories.sets.category import Sets_Finite_ElementType as Sets_Finite_ElementType
 from sage_categories.sets.category import Sets_Finite_MorphismType as Sets_Finite_MorphismType
+from sage_categories.sets.elements import SetElementDeclaration as SetElementDeclaration
+from sage_categories.sets.maps import SetMapDeclaration as SetMapDeclaration
+from sage_categories.sets.objects import SetObjectDeclaration as SetObjectDeclaration
+from _typeshed import Incomplete
+from dataclasses import dataclass, field
 from sage.misc.cachefunc import cached_method
+from sage.structure.coerce_dict import MonoDict
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.constructions import cone as cone
 from sage_categories.cat.diagrams import sequence_position as sequence_position
 from sage_categories.cat.functors import Fun as Fun, Functor as Functor
 from sage_categories.cat.properties import PropertySubcategory as PropertySubcategory
 from sage_categories.cat.shapes import ThinCategory as ThinCategory
+from sage_categories.kernel.construction import MorphismConstructionInput as MorphismConstructionInput, ObjectConstructionInput as ObjectConstructionInput, retained_morphism_input as retained_morphism_input, retained_object_input as retained_object_input
 from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown, decision_and as decision_and, decision_not as decision_not, decision_or as decision_or
 from sage_categories.kernel.predicates import AppliedPredicate as AppliedPredicate, Predicate as Predicate, Proposition as Proposition, ask as ask
+from sage_categories.kernel.refinement import refine as refine
 from sage_categories.kernel.roles import CategoryPoint as CategoryPoint, ElementOfObject as ElementOfObject, MorphismOfCategory as MorphismOfCategory, ObjectOfCategory as ObjectOfCategory, Role as Role, role_of as role_of
 from sage_categories.sets.category import Sets as Sets
-from sage_categories.sets.elements import Datum as Datum, SetPoint as SetPoint
-from sage_categories.sets.maps import Rule as Rule, SetMap as SetMap
-from sage_categories.sets.objects import MembershipRule as MembershipRule, SetObject as SetObject
+from sage_categories.sets.elements import Datum as Datum, SetElement as SetElement
+from sage_categories.sets.maps import Rule as Rule, SetMap as SetMap, SetMorphismData as SetMorphismData
+from sage_categories.sets.objects import MembershipRule as MembershipRule, SetObject as SetObject, SetObjectData as SetObjectData
 
 partial_order: Predicate
 order_preserving: Predicate
 type Relation = dict[tuple[int, int], Decision]
 
-class Poset(SetObject):
-    def __init__(self, category: Category, underlying_set: SetObject, relation: SetObject) -> None: ...
+@dataclass(eq=False, slots=True)
+class PosetObjectData:
+    relation: SetObject
+    elements: MonoDict = field(default_factory=MonoDict)
+
+@dataclass(frozen=True, eq=False, slots=True)
+class PosetMorphismData:
+    set_map: SetMap
+
+class PosetDeclaration(SetObjectDeclaration):
+    def __init__(self, data: PosetObjectData) -> None: ...
     def relation(self) -> SetObject: ...
-    def element(self, point: SetPoint) -> PosetElement: ...
+    def element(self, point: SetElement) -> PosetElement: ...
     def sub_poset(self, predicate: MembershipRule) -> Poset: ...
     def is_total(self) -> AppliedPredicate: ...
     def thin_category(self) -> ThinCategory: ...
 
-class PosetElement(SetPoint):
-    def __init__(self, defining_morphism: MonotoneMap) -> None: ...
+class PosetElementDeclaration(SetElementDeclaration):
     def __le__(self, other: PosetElement) -> AppliedPredicate: ...
     def __lt__(self, other: PosetElement) -> Proposition: ...
     def __ge__(self, other: PosetElement) -> AppliedPredicate: ...
     def __gt__(self, other: PosetElement) -> Proposition: ...
 
-class MonotoneMap(SetMap):
-    def __init__(self, category: Category, domain: Poset, codomain: Poset, set_map: SetMap) -> None: ...
+class MonotoneMapDeclaration(SetMapDeclaration):
+    ...
 
-class PosetsCategory(Category[[Rule], []]):
+class PosetsCategory(CategoryDeclaration[[Rule], []]):
     @property
-    def ObjectType(self) -> type[Poset]: ...
+    def ObjectType(self) -> type[PosetDeclaration]: ...
     @property
-    def ElementType(self) -> type[PosetElement]: ...
+    def ElementType(self) -> type[PosetElementDeclaration]: ...
     @property
-    def MorphismType(self) -> type[MonotoneMap]: ...
+    def MorphismType(self) -> type[MonotoneMapDeclaration]: ...
+    DeclaredObjectType = PosetDeclaration
+    DeclaredElementType = PosetElementDeclaration
+    DeclaredMorphismType = MonotoneMapDeclaration
     def __init__(self) -> None: ...
     def structure_functors(self) -> tuple[Functor, ...]: ...
     def underlying_set_functor(self) -> Functor: ...
@@ -64,24 +86,28 @@ class PosetsCategory(Category[[Rule], []]):
     def composite(self, second: MonotoneMap, first: MonotoneMap) -> MonotoneMap: ...
     def inverse_morphism(self, monotone: MonotoneMap) -> MonotoneMap: ...
 
+Poset = PosetDeclaration
+PosetElement = PosetElementDeclaration
+MonotoneMap = MonotoneMapDeclaration
+
 def Posets() -> PosetsCategory: ...
 def FinitePosets() -> Category[[Rule], []]: ...
 def TotallyOrderedSets() -> Category[[Rule], []]: ...
 def FiniteTotallyOrderedSets() -> Category[[Rule], []]: ...
 
-class Posets_TotallyOrdered_ElementType(PosetElement):
+class Posets_TotallyOrdered_ElementType(PosetElementDeclaration):
     ...
 
-class Posets_TotallyOrdered_MorphismType(MonotoneMap):
+class Posets_TotallyOrdered_MorphismType(MonotoneMapDeclaration):
     ...
 
-class Posets_TotallyOrdered_ObjectType(Poset):
+class Posets_TotallyOrdered_ObjectType(PosetDeclaration):
     ...
 
-class Posets_Finite_ElementType(PosetElement, Sets_Finite_ElementType):
+class Posets_Finite_ElementType(PosetElementDeclaration, Sets_Finite_ElementType):
     ...
 
-class Posets_Finite_MorphismType(MonotoneMap, Sets_Finite_MorphismType):
+class Posets_Finite_MorphismType(MonotoneMapDeclaration, Sets_Finite_MorphismType):
     ...
 
 class Posets_Finite_WithBottom_ElementType(Posets_Finite_ElementType):
@@ -108,11 +134,11 @@ class Posets_Finite_Graded_ElementType(Posets_Finite_Ranked_ElementType, Posets_
 class Posets_Finite_Graded_MorphismType(Posets_Finite_Ranked_MorphismType, Posets_Finite_MorphismType):
     ...
 
-class Posets_TotallyOrdered_Finite_ElementType(Posets_Finite_ElementType, Posets_TotallyOrdered_ElementType, PosetElement):
+class Posets_TotallyOrdered_Finite_ElementType(Posets_Finite_ElementType, Posets_TotallyOrdered_ElementType, PosetElementDeclaration):
     ...
 
-class Posets_TotallyOrdered_Finite_MorphismType(Posets_Finite_MorphismType, Posets_TotallyOrdered_MorphismType, MonotoneMap):
+class Posets_TotallyOrdered_Finite_MorphismType(Posets_Finite_MorphismType, Posets_TotallyOrdered_MorphismType, MonotoneMapDeclaration):
     ...
 
-class Posets_TotallyOrdered_Finite_ObjectType(FinitePosetRole, Posets_TotallyOrdered_ObjectType, Poset):
+class Posets_TotallyOrdered_Finite_ObjectType(FinitePosetRole, Posets_TotallyOrdered_ObjectType, PosetDeclaration):
     ...

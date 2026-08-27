@@ -66,7 +66,7 @@ class OrdinalObjectData:
     terms: tuple[OrdinalObject, ...]
 
 
-class OrdinalObject(ObjectOfCategory):
+class OrdinalObjectDeclaration(ObjectOfCategory):
     """An exact ordinal, retained by its normalized expression."""
 
     def __init__(self, data: OrdinalObjectData) -> None:
@@ -188,7 +188,7 @@ less_than = Predicate("ordinal_less_than", 2, True)
 class OrdinalsCategory(Category[[], []]):
     """The category of exact ordinal expressions."""
 
-    DeclaredObjectType = OrdinalObject
+    DeclaredObjectType = OrdinalObjectDeclaration
 
     class DeclaredElementType(ElementOfObject):
         """A generalized element of an ordinal; no local operation."""
@@ -363,6 +363,7 @@ class OrdinalsCategory(Category[[], []]):
 
 
 _ORDINALS = OrdinalsCategory()
+OrdinalObject = _ORDINALS.ObjectType
 
 
 def Ordinals() -> OrdinalsCategory:

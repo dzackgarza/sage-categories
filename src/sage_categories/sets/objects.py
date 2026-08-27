@@ -30,10 +30,10 @@ from sage_categories.cat.category import Category
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask
 from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role, role_of
-from sage_categories.sets.cardinals import Cardinal, CardinalObject
 from sage_categories.sets.elements import Datum
 
 if TYPE_CHECKING:
+    from sage_categories.sets.cardinals import CardinalObject
     from sage_categories.sets.category import SetObject, SetPoint
 
 __all__ = ["FiniteSetRole", "MembershipRule", "SetObjectData", "element_of"]
@@ -131,6 +131,8 @@ class SetObjectDeclaration(ObjectOfCategory):
 
     def cardinality(self) -> CardinalObject | UnknownClass:
         """The recorded exact cardinal; a set placed in both ``Countable()`` and ``Infinite()`` has ``aleph0`` (Mathlib ``Cardinal.mk_eq_aleph0``; inspected 2026-08-27)."""
+        from sage_categories.sets.cardinals import Cardinal
+
         sets = _sets.Sets()
         state = self._set_object_data
         if state.cardinality is Unknown and state.canonical in sets.Countable() and state.canonical in sets.Infinite():

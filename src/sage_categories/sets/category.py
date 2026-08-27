@@ -33,7 +33,6 @@ from sage_categories.kernel.predicates import ask
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import Role
 from sage_categories.kernel.decisions import UnknownClass
-from sage_categories.sets.cardinals import Cardinal, CardinalObject
 from sage_categories.sets.elements import Datum, SetElementData, SetPointDeclaration, points_equal
 from sage_categories.sets.maps import (
     Rule,
@@ -48,6 +47,7 @@ from sage_categories.sets.objects import FiniteSetRole, MembershipRule, SetObjec
 
 if TYPE_CHECKING:
     from sage_categories.cat.functors import Functor
+    from sage_categories.sets.cardinals import CardinalObject
     from sage_categories.sets.finite_subsets import FiniteSubsetsCategory, FinitelySupportedFunctionsCategory, SizedSubsetsCategory
     from sage_categories.sets.power_objects import PowerObjectsCategory
     from sage_categories.sets.subobjects import ChosenQuotientsCategory, ChosenSubsetsCategory
@@ -64,6 +64,8 @@ class FiniteSets(PropertySubcategory[[Rule], []]):
 
     def __call__(self, members: SetObject | Iterable[Datum]) -> SetObject:
         """Refine a set of ``Sets()``, or construct the finite set with the given enumeration."""
+        from sage_categories.sets.cardinals import Cardinal
+
         if members in self.ambient():
             refine(members, self)
             return members
@@ -128,6 +130,8 @@ class SetsCategory(Category[[Rule], []]):
 
     def with_cardinality(self, membership_rule: MembershipRule, cardinality: CardinalObject) -> SetObject:
         """The set defined by a membership rule whose exact cardinality a construction theorem supplies (POL-SET-031, POL-MATH-024)."""
+        from sage_categories.sets.cardinals import Cardinal
+
         assert cardinality in Cardinal(), f"{cardinality!r} is not a cardinal"
         return self.ObjectType(self, SetObjectData(membership_rule, cardinality))
 

@@ -2,13 +2,13 @@
 
 One export per owner (POL-API-002): ``Cat``, ``Mor``, ``Fun``, ``Category``, and the
 shape constructors ``Discrete`` and ``Thin`` from the theory of ``Cat()``; ``Sets``,
-``Cardinal``, ``aleph0``, and ``continuum`` from the theory of sets; ``Ordinals`` and
+``Cardinal``, ``aleph0``, ``continuum``, and ``generalized_continuum_hypothesis`` from the theory of sets; ``Ordinals`` and
 ``omega0`` from the theory of ordinals; ``NN``, ``ZZ``, ``QQ``, ``RR``, and ``Primes``
 from the owned number sets, which shadow Sage's names inside the package universe;
 ``Posets``, ``FinitePosets``, ``TotallyOrderedSets``, and ``FiniteTotallyOrderedSets`` from the
 theory of ordered sets;
-``ask``, ``assume``, ``Predicate``, ``Unknown``, and ``Decision`` from the kernel's
-predicate boundary.
+``ask``, ``assume``, ``retract``, ``Predicate``, ``Unknown``, and ``Decision`` from the
+kernel's predicate boundary.
 """
 
 from sage_categories import (
@@ -39,7 +39,9 @@ from sage_categories import (
     ask,
     assume,
     continuum,
+    generalized_continuum_hypothesis,
     omega0,
+    retract,
     version,
 )
 
@@ -71,6 +73,8 @@ __all__ = [
     "ask",
     "assume",
     "continuum",
+    "generalized_continuum_hypothesis",
     "omega0",
+    "retract",
     "version",
 ]

@@ -43,9 +43,22 @@ def _sequence(stage_sets, transitions):
     return Fun(shape, Sets())(on_object, on_morphism)
 
 
+def _natural(point):
+    """The ``k`` with ``point == NN(k)``, found by the owned equality predicate.
+
+    A classical element of a set is a morphism ``1 -> X``; the datum it selects is
+    engine state its owner keeps private.  A vertex of ``omega`` therefore names its
+    natural number the way any two elements are compared, through ``ask``.
+    """
+    position = int(1)
+    while ask(point == NN(position)) is not True:
+        position += int(1)
+    return position
+
+
 def _simplex_sequence():
     """The sequence ``[0] -> [1] -> [2] -> ...`` of inclusions ``d |-> d``."""
-    return _sequence(lambda point: Sets().Simplex(int(point._datum) - int(1)), lambda lower, upper: Mor(Sets())(Sets().Simplex(int(lower._datum) - int(1)), Sets().Simplex(int(upper._datum) - int(1)))(lambda datum: datum))
+    return _sequence(lambda point: Sets().Simplex(_natural(point) - int(1)), lambda lower, upper: Mor(Sets())(Sets().Simplex(_natural(lower) - int(1)), Sets().Simplex(_natural(upper) - int(1)))(lambda datum: datum))
 
 
 def test_set_limit_membership_is_the_compatibility_decision() -> None:
@@ -134,7 +147,7 @@ def test_the_limit_functor_maps_a_natural_transformation_to_the_induced_morphism
 
 def test_set_colimit_equality_over_omega_is_agreement_at_the_larger_stage() -> None:
     shape = omega()
-    sequence = _sequence(lambda point: NN, lambda lower, upper: Mor(Sets())(NN, NN)(lambda datum: datum + (upper._datum - lower._datum)))
+    sequence = _sequence(lambda point: NN, lambda lower, upper: Mor(Sets())(NN, NN)(lambda datum: datum + (_natural(upper) - _natural(lower))))
     colimit = Sets().Colimits(shape)(sequence)
     first, third = colimit.injection(shape(NN(int(1)))), colimit.injection(shape(NN(int(3))))
 
@@ -148,7 +161,7 @@ def test_set_colimit_equality_over_omega_is_agreement_at_the_larger_stage() -> N
     assert ask(third(NN(int(7))) == first(NN(int(5)))) is True
     assert colimit.cardinality() is Unknown
 
-    descend = cocone(sequence, ZZ, lambda vertex: Mor(Sets())(NN, ZZ)(lambda datum: datum - vertex.point()._datum))
+    descend = cocone(sequence, ZZ, lambda vertex: Mor(Sets())(NN, ZZ)(lambda datum: datum - _natural(vertex.point())))
     mediating = colimit.universal_morphism(descend)
     assert mediating in Mor(Sets())(colimit.apex(), ZZ)
     assert ask(mediating(third(NN(int(7)))) == ZZ(int(4))) is True
@@ -158,7 +171,7 @@ def test_set_colimit_equality_over_omega_is_agreement_at_the_larger_stage() -> N
 def test_the_colimit_functor_maps_a_natural_transformation_between_sequences() -> None:
     shape = omega()
     source = _simplex_sequence()
-    target = _sequence(lambda point: Sets().Simplex(int(point._datum)), lambda lower, upper: Mor(Sets())(Sets().Simplex(int(lower._datum)), Sets().Simplex(int(upper._datum)))(lambda datum: datum))
+    target = _sequence(lambda point: Sets().Simplex(_natural(point)), lambda lower, upper: Mor(Sets())(Sets().Simplex(_natural(lower)), Sets().Simplex(_natural(upper)))(lambda datum: datum))
     successor = Mor(Fun(shape, Sets()))(source, target)(lambda vertex: Mor(Sets())(source.on_object(vertex), target.on_object(vertex))(lambda datum: datum + int(1)))
     colimit = Sets().Colimits(shape).colimit_functor()
     lower, upper = Sets().Colimits(shape)(source), Sets().Colimits(shape)(target)

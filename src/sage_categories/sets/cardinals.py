@@ -199,7 +199,14 @@ class CardinalObjectDeclaration(ObjectOfCategory):
         return less_than(self, Cardinal()(other))
 
     def __ge__(self, other: CardinalObject | int) -> AppliedPredicate:
-        return Cardinal()(other) <= self
+        """``kappa >= lambda``: an injection ``R_lambda -> R_kappa`` exists (Mathlib ``Cardinal.le_def``).
+
+        Stated directly rather than as ``Cardinal()(other) <= self``.  A refined
+        cardinal's class is a proper subclass of a plain one's, and for those Python
+        tries the reflected operator first, so the two spellings called each other.
+        """
+        cardinals = Cardinal()
+        return cardinals.morphism_category(1).Monomorphisms()(cardinals(other), self).is_inhabited()
 
     def __gt__(self, other: CardinalObject | int) -> AppliedPredicate:
         return less_than(Cardinal()(other), self)

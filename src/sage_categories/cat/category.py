@@ -23,7 +23,6 @@ category, with no structural graph; its ``category()`` is itself.
 from __future__ import annotations
 
 import itertools
-import logging
 from collections.abc import Callable, Hashable
 from typing import TYPE_CHECKING, Any, Literal, overload
 
@@ -45,7 +44,6 @@ if TYPE_CHECKING:
 
 __all__ = ["Assignment", "Cat", "Category", "CategoryOfCategories", "OnMorphism", "OnObject", "member"]
 
-logger: logging.Logger = logging.getLogger("sage_categories")
 
 # The compilation order of categories: a category takes its ordinal after its
 # selected functors exist, so decreasing ordinal is a linear extension of the
@@ -225,10 +223,19 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         return member(candidate, self)
 
     def __contains__(self, candidate: Any) -> bool:
+        """``x in C``: established placement, which is two-valued (POL-CAT-068).
+
+        A value entered ``C`` or it did not, so ``member`` never returns ``Unknown``.  A
+        subcategory whose membership rests on a mathematical predicate rather than on
+        placement -- endpoint equality in ``Mor(C)(A, B)``, for one -- can be undecided,
+        and that case fails loudly here rather than being reported as non-membership.
+        ``ask(C.membership_proposition(x))`` is the three-valued question.
+        """
         decision = ask(self.membership_proposition(candidate))
-        if decision is Unknown:
-            logger.info("membership of %r in %r was not established", candidate, self)
-            return False
+        assert decision is not Unknown, (
+            f"membership of {candidate!r} in {self!r} is not established by the available data and algorithms; "
+            f"ask(this_category.membership_proposition(candidate)) for the three-valued answer"
+        )
         return decision is True
 
     # -- the Mor(n, C) tower ----------------------------------------------------

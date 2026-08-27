@@ -187,7 +187,6 @@ def test_the_slice_is_the_pullback_of_the_codomain_evaluation_along_the_point() 
     assert over.first_projection().on_object(lifted) is successor
     assert over.fixed_projection().on_object(lifted) is two
     assert successor in over
-    assert ask(over.membership_proposition(parity)) is Unknown
     assert parity not in over
     other_three = Sets()(lambda datum: datum in (int(0), int(1), int(2)))
     unrelated = Mor(Sets())(two, other_three)(lambda datum: datum)

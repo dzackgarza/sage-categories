@@ -7,8 +7,6 @@ from sage_categories.sets.category import SetElement as SetElement
 from typing import Any
 
 type Datum = Hashable
-def data_equal(first: Datum, second: Datum) -> Decision: ...
-
 @dataclass(eq=False, slots=True)
 class SetElementData:
     canonical: SetElement = field(init=False)

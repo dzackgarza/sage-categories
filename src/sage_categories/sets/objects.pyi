@@ -2,12 +2,11 @@ from sage_categories.cat.category import CategoryDeclaration as CategoryDeclarat
 from sage_categories.sets.cardinals import CardinalObjectDeclaration as CardinalObjectDeclaration
 from sage_categories.sets.category import Sets_Countable_ObjectType as Sets_Countable_ObjectType
 from sage_categories.sets.elements import SetElementDeclaration as SetElementDeclaration
-import logging
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from sage.structure.coerce_dict import MonoDict
 from sage_categories.cat.category import Category as Category
-from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown, UnknownClass as UnknownClass
+from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown, UnknownClass as UnknownClass, decision_and as decision_and, decision_or as decision_or
 from sage_categories.kernel.predicates import AppliedPredicate as AppliedPredicate, Predicate as Predicate, ask as ask
 from sage_categories.kernel.roles import CategoryPoint as CategoryPoint, ObjectOfCategory as ObjectOfCategory, Role as Role, role_of as role_of
 from sage_categories.sets.cardinals import CardinalObject as CardinalObject
@@ -15,9 +14,10 @@ from sage_categories.sets.category import SetElement as SetElement, SetObject as
 from sage_categories.sets.elements import Datum as Datum, SetPointData as SetPointData
 from typing import Any
 
-logger: logging.Logger
 type MembershipRule = Callable[[Datum], Decision]
 element_of: Predicate
+
+def sets_equal(first: CategoryPoint, candidate: Any) -> Decision: ...
 
 @dataclass(eq=False, slots=True)
 class SetObjectData:

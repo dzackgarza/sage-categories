@@ -43,7 +43,7 @@ from sage_categories.sets.maps import (
     maps_equal,
     surjective_on_finite_domain,
 )
-from sage_categories.sets.objects import FiniteSetRole, MembershipRule, SetObjectData, SetObjectDeclaration
+from sage_categories.sets.objects import FiniteSetRole, MembershipRule, SetObjectData, SetObjectDeclaration, sets_equal
 
 if TYPE_CHECKING:
     from sage_categories.cat.functors import Functor
@@ -111,6 +111,7 @@ class SetsCategory(Category[[Rule], []]):
         self._rule_valued: MonoDict = MonoDict()
         super().__init__()
         self._equality.register_handler(points_equal)
+        self._equality.register_handler(sets_equal)
         self._equality.register_handler(maps_equal)
         self._countable = PropertySubcategory(self, "Countable", {}, ())
         self._infinite = PropertySubcategory(self, "Infinite", {}, ())

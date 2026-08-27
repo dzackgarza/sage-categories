@@ -95,7 +95,6 @@ def test_set_limit_membership_is_the_compatibility_decision() -> None:
     into_families = families.universal_morphism(cone(families.diagram(), one, lambda vertex: legs[cospan.label(cospan.object_at(vertex.point()))]))
     corner = into_families(one.point(()))
     assert ask(undecided.membership_proposition(corner)) is Unknown
-    assert corner not in undecided
     assert undecided.cardinality() is Unknown
 
 

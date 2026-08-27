@@ -14,7 +14,7 @@ from sage_categories.sets.cardinals import CardinalObject as CardinalObject
 from sage_categories.sets.elements import Datum as Datum, SetElementData as SetElementData, SetElementDeclaration as SetElementDeclaration, SetPointData as SetPointData, points_equal as points_equal
 from sage_categories.sets.finite_subsets import FiniteSubsetsCategory as FiniteSubsetsCategory, FinitelySupportedFunctionsCategory as FinitelySupportedFunctionsCategory, SizedSubsetsCategory as SizedSubsetsCategory
 from sage_categories.sets.maps import Rule as Rule, SetMapDeclaration as SetMapDeclaration, SetMorphismData as SetMorphismData, bijective_on_finite_domain as bijective_on_finite_domain, injective_on_finite_domain as injective_on_finite_domain, maps_equal as maps_equal, surjective_on_finite_domain as surjective_on_finite_domain
-from sage_categories.sets.objects import FiniteSetRole as FiniteSetRole, MembershipRule as MembershipRule, SetObjectData as SetObjectData, SetObjectDeclaration as SetObjectDeclaration
+from sage_categories.sets.objects import FiniteSetRole as FiniteSetRole, MembershipRule as MembershipRule, SetObjectData as SetObjectData, SetObjectDeclaration as SetObjectDeclaration, sets_equal as sets_equal
 from sage_categories.sets.power_objects import PowerObjectsCategory as PowerObjectsCategory
 from sage_categories.sets.subobjects import ChosenQuotientsCategory as ChosenQuotientsCategory, ChosenSubsetsCategory as ChosenSubsetsCategory
 from typing import overload

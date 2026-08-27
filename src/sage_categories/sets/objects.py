@@ -18,7 +18,6 @@ which retains each inclusion (``sets/subobjects.py``).
 
 from __future__ import annotations
 
-import logging
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
@@ -27,7 +26,7 @@ from sage.structure.coerce_dict import MonoDict
 
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
-from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
+from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass, decision_and, decision_or
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask
 from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role, role_of
 from sage_categories.sets.elements import Datum, SetPointData
@@ -36,9 +35,8 @@ if TYPE_CHECKING:
     from sage_categories.sets.cardinals import CardinalObject
     from sage_categories.sets.category import SetElement, SetObject
 
-__all__ = ["MembershipRule", "SetObjectData", "element_of"]
+__all__ = ["MembershipRule", "SetObjectData", "element_of", "sets_equal"]
 
-logger: logging.Logger = logging.getLogger("sage_categories")
 
 type MembershipRule = Callable[[Datum], Decision]
 
@@ -64,6 +62,27 @@ def _element_of_by_rule(candidate: Any, ambient: SetObject) -> Decision:
 
 element_of.register_handler(_element_of_by_parent)
 element_of.register_handler(_element_of_by_rule)
+
+
+def sets_equal(first: CategoryPoint, candidate: Any) -> Decision:
+    """Two sets with chosen enumerations are equal exactly when they have the same members.
+
+    This is extensionality (Mathlib ``Set.ext_iff``, ``Mathlib/Data/Set/Defs.lean``:
+    ``a = b ↔ ∀ (x : α), x ∈ a ↔ x ∈ b``; inspected 2026-08-28).  The enumeration
+    constructor asserts that an enumeration lists exactly distinct data, so two
+    enumerations of one length list the same members exactly when every member of the
+    first is a member of the second.  Without a chosen enumeration on both sides the
+    members are not available and the handler decides nothing.
+    """
+    finite = _sets.Sets().Finite()
+    if role_of(first) is not Role.OBJECT or role_of(candidate) is not Role.OBJECT:
+        return Unknown
+    if not finite.has_chosen_enumeration(first) or not finite.has_chosen_enumeration(candidate):
+        return Unknown
+    left, right = finite.chosen_enumeration(first), finite.chosen_enumeration(candidate)
+    if len(left) != len(right):
+        return False
+    return decision_and(*(decision_or(*(ask(member == other) for other in right)) for member in left))
 
 
 @dataclass(eq=False, slots=True)
@@ -94,10 +113,19 @@ class SetObjectDeclaration(ObjectOfCategory):
         return element_of(candidate, self)
 
     def __contains__(self, candidate: Any) -> bool:
+        """``x in X``, for a set whose membership the available data decide.
+
+        Membership in a set is a mathematical predicate and can be undecided, while
+        ``__contains__`` must return a bool, so an undecided membership fails loudly
+        here rather than being reported as non-membership: ``Unknown`` is not ``False``.
+        The three-valued question is ``ask(X.membership_proposition(x))``, which every
+        caller that must handle the undecided case asks instead.
+        """
         decision = ask(element_of(candidate, self))
-        if decision is Unknown:
-            logger.info("membership of %r in %r was not established", candidate, self)
-            return False
+        assert decision is not Unknown, (
+            f"membership of {candidate!r} in {self!r} is not established by the available data and algorithms; "
+            f"ask(this_set.membership_proposition(candidate)) for the three-valued answer"
+        )
         return decision is True
 
     def point(self, datum: Datum) -> SetElement:

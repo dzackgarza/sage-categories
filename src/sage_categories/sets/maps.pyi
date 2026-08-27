@@ -5,9 +5,10 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from sage_categories.cat.category import Category as Category
 from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown, decision_and as decision_and, decision_not as decision_not, decision_or as decision_or
+from sage_categories.kernel.predicates import ask as ask
 from sage_categories.kernel.roles import CategoryPoint as CategoryPoint, MorphismOfCategory as MorphismOfCategory
 from sage_categories.sets.category import SetElement as SetElement, SetMap as SetMap, SetObject as SetObject
-from sage_categories.sets.elements import Datum as Datum, data_equal as data_equal
+from sage_categories.sets.elements import Datum as Datum
 from typing import Any
 
 type Rule = Callable[[Datum], Datum]

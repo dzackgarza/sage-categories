@@ -1,6 +1,5 @@
 from sage_categories.cat.functors import Fun_MorphismType as Fun_MorphismType
 from sage_categories.cat.functors import FunctorDeclaration as FunctorDeclaration
-import logging
 import sage_categories.kernel.compiler as compiler
 from collections.abc import Callable, Hashable as Hashable
 from sage.misc.cachefunc import cached_method
@@ -15,7 +14,6 @@ from sage_categories.kernel.refinement import is_placed as is_placed, is_retaine
 from sage_categories.kernel.roles import CategoryPoint as CategoryPoint, ElementOfObject as ElementOfObject, MorphismOfCategory as MorphismOfCategory, ObjectOfCategory as ObjectOfCategory, Role as Role, role_of as role_of
 from typing import Any, Literal, overload
 
-logger: logging.Logger
 type OnObject = Callable[[ObjectOfCategory], ObjectOfCategory]
 type OnMorphism = Callable[[MorphismOfCategory], MorphismOfCategory]
 type Assignment = Callable[[ObjectOfCategory], MorphismOfCategory]

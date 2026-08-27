@@ -264,8 +264,15 @@ def _ask_applied(proposition: AppliedPredicate) -> Decision:
     return Unknown
 
 
-def ask(proposition: Proposition) -> Decision:
-    """Decide ``proposition`` as ``True``, ``False``, or Sage ``Unknown``."""
+def ask(proposition: Decision | Proposition) -> Decision:
+    """Decide ``proposition`` as ``True``, ``False``, or Sage ``Unknown``.
+
+    ``ask`` is total on decisions as well: ``a == b`` returns a proposition for an owned
+    value and a decision for an engine value, and asking an already decided one is
+    idempotent, so a caller never inspects which of the two it holds (POL-MATH-034).
+    """
+    if proposition is True or proposition is False or proposition is Unknown:
+        return proposition
     match proposition:
         case AppliedPredicate():
             return _ask_applied(proposition)

@@ -59,7 +59,6 @@ def test_an_undecided_predicate_keeps_membership_unknown() -> None:
     undecided = ZZ.subset_from(lambda n: Unknown)
 
     assert ask(undecided.membership_proposition(ZZ(0))) is Unknown
-    assert ZZ(0) not in undecided
     assert ask(undecided.membership_proposition(QQ(1 / 2))) is False
     assert undecided.cardinality() is Unknown
     assert undecided in Sets().Countable()

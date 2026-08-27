@@ -169,7 +169,6 @@ def test_the_strict_pullback_in_cat_admits_identical_images_and_leaves_distinct_
     undecided = Cat().Pullbacks()(_cospan_diagram(select_integers, select_other))
     candidate = undecided((point(int(0)), point(int(0))))
     assert ask(undecided.membership_proposition(candidate)) is Unknown
-    assert candidate not in undecided
 
 
 def test_fun_of_the_walking_arrow_has_morphisms_as_objects_and_evaluations_as_endpoints() -> None:

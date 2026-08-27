@@ -67,11 +67,12 @@ class SetMapDeclaration(MorphismOfCategory):
 
     def __call__(self, element: SetElement) -> SetElement:
         """Compose with a generalized element; evaluate its datum at the classical stage (POL-CAT-040)."""
+        canonical_map = self._set_morphism_data.canonical
         canonical = element._set_element_data.canonical
-        assert canonical in self.domain(), f"{element!r} is not an element of {self.domain()!r}"
+        assert canonical in canonical_map.domain(), f"{element!r} is not an element of {self.domain()!r}"
         if canonical.stage() is _sets.Sets().Terminal():
-            return self.codomain().point(self._set_morphism_data.rule(canonical._classical_datum_()))
-        defining_morphism = self._set_morphism_data.canonical * canonical.defining_morphism()
+            return canonical_map.codomain().point(self._set_morphism_data.rule(canonical._classical_datum_()))
+        defining_morphism = canonical_map * canonical.defining_morphism()
         return _sets.Sets().element_from_defining_morphism(defining_morphism)
 
     def image(self) -> SetObject:

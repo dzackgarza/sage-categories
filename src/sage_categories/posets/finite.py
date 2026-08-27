@@ -40,11 +40,11 @@ from sage_categories.kernel.predicates import AppliedPredicate, ask
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role
 from sage_categories.posets import _finite_poset_sage as engine
-from sage_categories.posets.category import Poset, PosetElement, PosetMorphismData, PosetObjectData
+from sage_categories.posets.category import MonotoneMap, Poset, PosetElement, PosetMorphismData, PosetObjectData
 from sage_categories.sets.cardinals import Cardinal, CardinalObject
 from sage_categories.sets.category import SetObject, Sets
-from sage_categories.sets.elements import SetElementData
-from sage_categories.sets.maps import Rule, SetMorphismData
+from sage_categories.sets.elements import SetElementData, SetPoint
+from sage_categories.sets.maps import Rule, SetMap, SetMorphismData
 from sage_categories.sets.objects import SetObjectData
 
 __all__ = ["FinitePosetsCategory"]
@@ -230,10 +230,14 @@ class FinitePosetsCategory(PropertySubcategory[[Rule], []]):
                 finite_sets(target.canonical_image)
                 return target
 
-            def element_input(source: ElementConstructionInput[None]) -> ElementConstructionInput[SetElementData]:
+            def element_input(
+                source: ElementConstructionInput[PosetElement, None],
+            ) -> ElementConstructionInput[SetPoint, SetElementData]:
                 return underlying.element_constructor_input(source)
 
-            def morphism_input(source: MorphismConstructionInput[PosetMorphismData]) -> MorphismConstructionInput[SetMorphismData]:
+            def morphism_input(
+                source: MorphismConstructionInput[MonotoneMap, PosetMorphismData],
+            ) -> MorphismConstructionInput[SetMap, SetMorphismData]:
                 return underlying.morphism_constructor_input(source)
 
             finite_underlying.retain_object_constructor_conversion(object_input)

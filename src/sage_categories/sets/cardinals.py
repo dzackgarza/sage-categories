@@ -284,8 +284,8 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
                 return retained_object_input(self._representatives[cardinal])
 
             def morphism_input(
-                source: MorphismConstructionInput[CardinalMorphismData],
-            ) -> MorphismConstructionInput[SetMorphismData]:
+                source: MorphismConstructionInput[CardinalityMorphism, CardinalMorphismData],
+            ) -> MorphismConstructionInput[SetMap, SetMorphismData]:
                 return retained_morphism_input(source.datum.set_map)
 
             representative.retain_object_constructor_conversion(object_input)

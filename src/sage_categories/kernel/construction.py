@@ -87,19 +87,19 @@ class ObjectConstructionInput[Value: ObjectOfCategory, Datum]:
 
 
 @dataclass(frozen=True, slots=True, eq=False)
-class ElementConstructionInput[Datum]:
+class ElementConstructionInput[Value: ElementOfObject, Datum]:
     """The canonical generalized element, its identity, and one local datum."""
 
-    canonical_image: ElementOfObject
+    canonical_image: Value
     identity: ElementRoleIdentity
     datum: Datum
 
 
 @dataclass(frozen=True, slots=True, eq=False)
-class MorphismConstructionInput[Datum]:
+class MorphismConstructionInput[Value: MorphismOfCategory, Datum]:
     """The canonical morphism, its kernel identity, and one local datum."""
 
-    canonical_image: MorphismOfCategory
+    canonical_image: Value
     identity: MorphismRoleIdentity
     datum: Datum
 
@@ -120,7 +120,7 @@ def retain_object_input[Value: ObjectOfCategory, Datum](construction_input: Obje
     _object_inputs[value] = construction_input
 
 
-def retain_element_input[Datum](construction_input: ElementConstructionInput[Datum]) -> None:
+def retain_element_input[Value: ElementOfObject, Datum](construction_input: ElementConstructionInput[Value, Datum]) -> None:
     value = construction_input.canonical_image
     if value in _element_inputs:
         assert _element_inputs[value] is construction_input, f"{value!r} already retains a different element construction input"
@@ -128,7 +128,7 @@ def retain_element_input[Datum](construction_input: ElementConstructionInput[Dat
     _element_inputs[value] = construction_input
 
 
-def retain_morphism_input[Datum](construction_input: MorphismConstructionInput[Datum]) -> None:
+def retain_morphism_input[Value: MorphismOfCategory, Datum](construction_input: MorphismConstructionInput[Value, Datum]) -> None:
     value = construction_input.canonical_image
     if value in _morphism_inputs:
         assert _morphism_inputs[value] is construction_input, f"{value!r} already retains a different morphism construction input"
@@ -141,12 +141,12 @@ def retained_object_input[Value: ObjectOfCategory, Datum](value: Value) -> Objec
     return _object_inputs[value]
 
 
-def retained_element_input[Datum](value: ElementOfObject) -> ElementConstructionInput[Datum]:
+def retained_element_input[Value: ElementOfObject, Datum](value: Value) -> ElementConstructionInput[Value, Datum]:
     assert value in _element_inputs, f"{value!r} retains no element construction input"
     return _element_inputs[value]
 
 
-def retained_morphism_input[Datum](value: MorphismOfCategory) -> MorphismConstructionInput[Datum]:
+def retained_morphism_input[Value: MorphismOfCategory, Datum](value: Value) -> MorphismConstructionInput[Value, Datum]:
     assert value in _morphism_inputs, f"{value!r} retains no morphism construction input"
     return _morphism_inputs[value]
 

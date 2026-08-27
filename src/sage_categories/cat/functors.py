@@ -23,7 +23,7 @@ from __future__ import annotations
 import inspect
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, get_args, get_origin, get_type_hints
+from typing import TYPE_CHECKING, Any
 
 from sage.structure.coerce_dict import MonoDict, TripleDict
 
@@ -100,11 +100,15 @@ def _identity_object_constructor_input[Value: ObjectOfCategory, Datum](
     return source
 
 
-def _identity_element_constructor_input[Datum](source: ElementConstructionInput[Datum]) -> ElementConstructionInput[Datum]:
+def _identity_element_constructor_input[Value: ElementOfObject, Datum](
+    source: ElementConstructionInput[Value, Datum],
+) -> ElementConstructionInput[Value, Datum]:
     return source
 
 
-def _identity_morphism_constructor_input[Datum](source: MorphismConstructionInput[Datum]) -> MorphismConstructionInput[Datum]:
+def _identity_morphism_constructor_input[Value: MorphismOfCategory, Datum](
+    source: MorphismConstructionInput[Value, Datum],
+) -> MorphismConstructionInput[Value, Datum]:
     return source
 
 
@@ -226,9 +230,17 @@ class FunctorDeclaration(MorphismOfCategory):
         assert self not in _object_constructor_conversions, f"{self!r} already retains an object constructor conversion"
         _object_constructor_conversions[self] = conversion
 
-    def retain_element_constructor_conversion[SourceDatum, TargetDatum](
+    def retain_element_constructor_conversion[
+        SourceValue: ElementOfObject,
+        SourceDatum,
+        TargetValue: ElementOfObject,
+        TargetDatum,
+    ](
         self,
-        conversion: Callable[[ElementConstructionInput[SourceDatum]], ElementConstructionInput[TargetDatum]],
+        conversion: Callable[
+            [ElementConstructionInput[SourceValue, SourceDatum]],
+            ElementConstructionInput[TargetValue, TargetDatum],
+        ],
     ) -> None:
         """Retain the conversion that initializes the selected target element role (POL-FUN-002/035)."""
         from sage_categories.kernel.construction import ElementConstructionInput
@@ -237,17 +249,20 @@ class FunctorDeclaration(MorphismOfCategory):
         assert len(signature.parameters) == 1, "an element constructor conversion accepts one complete input"
         parameter = next(iter(signature.parameters.values()))
         assert parameter.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
-        annotations = get_type_hints(conversion, localns={"ElementConstructionInput": ElementConstructionInput})
-        source = annotations.get(parameter.name)
-        target = annotations.get("return")
-        assert get_origin(source) is ElementConstructionInput and len(get_args(source)) == 1, "an element conversion needs an exact source datum type"
-        assert get_origin(target) is ElementConstructionInput and len(get_args(target)) == 1, "an element conversion needs an exact target datum type"
         assert self not in _element_constructor_conversions, f"{self!r} already retains an element constructor conversion"
         _element_constructor_conversions[self] = conversion
 
-    def retain_morphism_constructor_conversion[SourceDatum, TargetDatum](
+    def retain_morphism_constructor_conversion[
+        SourceValue: MorphismOfCategory,
+        SourceDatum,
+        TargetValue: MorphismOfCategory,
+        TargetDatum,
+    ](
         self,
-        conversion: Callable[[MorphismConstructionInput[SourceDatum]], MorphismConstructionInput[TargetDatum]],
+        conversion: Callable[
+            [MorphismConstructionInput[SourceValue, SourceDatum]],
+            MorphismConstructionInput[TargetValue, TargetDatum],
+        ],
     ) -> None:
         """Retain the sole morphism-action implementation used by structural construction (POL-FUN-035)."""
         from sage_categories.kernel.construction import MorphismConstructionInput
@@ -256,11 +271,6 @@ class FunctorDeclaration(MorphismOfCategory):
         assert len(signature.parameters) == 1, "a morphism constructor conversion accepts one complete input"
         parameter = next(iter(signature.parameters.values()))
         assert parameter.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
-        annotations = get_type_hints(conversion, localns={"MorphismConstructionInput": MorphismConstructionInput})
-        source = annotations.get(parameter.name)
-        target = annotations.get("return")
-        assert get_origin(source) is MorphismConstructionInput and len(get_args(source)) == 1, "a morphism conversion needs an exact source datum type"
-        assert get_origin(target) is MorphismConstructionInput and len(get_args(target)) == 1, "a morphism conversion needs an exact target datum type"
         assert self not in _morphism_constructor_conversions, f"{self!r} already retains a morphism constructor conversion"
         _morphism_constructor_conversions[self] = conversion
 
@@ -281,10 +291,15 @@ class FunctorDeclaration(MorphismOfCategory):
         assert retained_object_input(target.canonical_image) is target, f"{self!r} constructed a parallel object input"
         return target
 
-    def element_constructor_input[SourceDatum, TargetDatum](
+    def element_constructor_input[
+        SourceValue: ElementOfObject,
+        SourceDatum,
+        TargetValue: ElementOfObject,
+        TargetDatum,
+    ](
         self,
-        source: ElementConstructionInput[SourceDatum],
-    ) -> ElementConstructionInput[TargetDatum]:
+        source: ElementConstructionInput[SourceValue, SourceDatum],
+    ) -> ElementConstructionInput[TargetValue, TargetDatum]:
         """Return the root input retained by this element's canonical functor image."""
         from sage_categories.kernel.construction import retained_element_input
 
@@ -293,10 +308,15 @@ class FunctorDeclaration(MorphismOfCategory):
         assert retained_element_input(target.canonical_image) is target, f"{self!r} constructed a parallel element input"
         return target
 
-    def morphism_constructor_input[SourceDatum, TargetDatum](
+    def morphism_constructor_input[
+        SourceValue: MorphismOfCategory,
+        SourceDatum,
+        TargetValue: MorphismOfCategory,
+        TargetDatum,
+    ](
         self,
-        source: MorphismConstructionInput[SourceDatum],
-    ) -> MorphismConstructionInput[TargetDatum]:
+        source: MorphismConstructionInput[SourceValue, SourceDatum],
+    ) -> MorphismConstructionInput[TargetValue, TargetDatum]:
         """Return the root input retained by this morphism's canonical functor image."""
         from sage_categories.kernel.construction import retained_morphism_input
 
@@ -341,17 +361,27 @@ class FunctorDeclaration(MorphismOfCategory):
             self.retain_object_constructor_conversion(object_conversion)
         if first in _element_constructor_conversions and second in _element_constructor_conversions:
 
-            def element_conversion[SourceDatum, TargetDatum](
-                source: ElementConstructionInput[SourceDatum],
-            ) -> ElementConstructionInput[TargetDatum]:
+            def element_conversion[
+                SourceValue: ElementOfObject,
+                SourceDatum,
+                TargetValue: ElementOfObject,
+                TargetDatum,
+            ](
+                source: ElementConstructionInput[SourceValue, SourceDatum],
+            ) -> ElementConstructionInput[TargetValue, TargetDatum]:
                 return second.element_constructor_input(first.element_constructor_input(source))
 
             self.retain_element_constructor_conversion(element_conversion)
         if first in _morphism_constructor_conversions and second in _morphism_constructor_conversions:
 
-            def morphism_conversion[SourceDatum, TargetDatum](
-                source: MorphismConstructionInput[SourceDatum],
-            ) -> MorphismConstructionInput[TargetDatum]:
+            def morphism_conversion[
+                SourceValue: MorphismOfCategory,
+                SourceDatum,
+                TargetValue: MorphismOfCategory,
+                TargetDatum,
+            ](
+                source: MorphismConstructionInput[SourceValue, SourceDatum],
+            ) -> MorphismConstructionInput[TargetValue, TargetDatum]:
                 return second.morphism_constructor_input(first.morphism_constructor_input(source))
 
             self.retain_morphism_constructor_conversion(morphism_conversion)

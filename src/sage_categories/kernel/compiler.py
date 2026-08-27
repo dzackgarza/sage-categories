@@ -471,9 +471,9 @@ def _object_step[Value: ObjectOfCategory, Datum](
     return initialize
 
 
-def _element_step[Datum](
+def _element_step[Value: ElementOfObject, Datum](
     current: Node,
-    construction_input: ElementConstructionInput[Datum],
+    construction_input: ElementConstructionInput[Value, Datum],
     instance: ElementOfObject,
 ) -> Callable[[], None]:
     runtime = _runtime(current)
@@ -487,9 +487,9 @@ def _element_step[Datum](
     return initialize
 
 
-def _morphism_step[Datum](
+def _morphism_step[Value: MorphismOfCategory, Datum](
     current: Node,
-    construction_input: MorphismConstructionInput[Datum],
+    construction_input: MorphismConstructionInput[Value, Datum],
     instance: MorphismOfCategory,
 ) -> Callable[[], None]:
     runtime = _runtime(current)
@@ -539,12 +539,19 @@ def _object_steps[RootValue: ObjectOfCategory, RootDatum](
     return tuple((target, next(step for owner, _, _, step, _ in found if same_node(owner, target))) for target in expected)
 
 
-def _element_steps[RootDatum](current: Node, root: ElementConstructionInput[RootDatum]) -> tuple[tuple[Node, Callable[[], None]], ...]:
+def _element_steps[RootValue: ElementOfObject, RootDatum](
+    current: Node,
+    root: ElementConstructionInput[RootValue, RootDatum],
+) -> tuple[tuple[Node, Callable[[], None]], ...]:
     """Close each exact element input into one zero-argument C3 node step."""
     assert current.role is Role.ELEMENT
     found: list[tuple[Node, int, ElementOfObject, Callable[[], None], Route]] = []
 
-    def visit[Datum](source: Node, source_input: ElementConstructionInput[Datum], route: Route) -> None:
+    def visit[Value: ElementOfObject, Datum](
+        source: Node,
+        source_input: ElementConstructionInput[Value, Datum],
+        route: Route,
+    ) -> None:
         known = next(((identity, image, first_route) for owner, identity, image, _, first_route in found if same_node(owner, source)), None)
         if known is None:
             retain_constructed_transport(root, source.category, source_input)
@@ -568,12 +575,19 @@ def _element_steps[RootDatum](current: Node, root: ElementConstructionInput[Root
     return tuple((target, next(step for owner, _, _, step, _ in found if same_node(owner, target))) for target in expected)
 
 
-def _morphism_steps[RootDatum](current: Node, root: MorphismConstructionInput[RootDatum]) -> tuple[tuple[Node, Callable[[], None]], ...]:
+def _morphism_steps[RootValue: MorphismOfCategory, RootDatum](
+    current: Node,
+    root: MorphismConstructionInput[RootValue, RootDatum],
+) -> tuple[tuple[Node, Callable[[], None]], ...]:
     """Close each exact morphism input into one zero-argument C3 node step."""
     assert current.role is Role.MORPHISM
     found: list[tuple[Node, int, MorphismOfCategory, Callable[[], None], Route]] = []
 
-    def visit[Datum](source: Node, source_input: MorphismConstructionInput[Datum], route: Route) -> None:
+    def visit[Value: MorphismOfCategory, Datum](
+        source: Node,
+        source_input: MorphismConstructionInput[Value, Datum],
+        route: Route,
+    ) -> None:
         known = next(((identity, image, first_route) for owner, identity, image, _, first_route in found if same_node(owner, source)), None)
         if known is None:
             retain_constructed_transport(root, source.category, source_input)

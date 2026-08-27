@@ -58,10 +58,15 @@ def _object_route[
     return current
 
 
-def _element_route[SourceDatum, TargetDatum](
-    source: ElementConstructionInput[SourceDatum],
+def _element_route[
+    SourceValue: ElementOfObject,
+    SourceDatum,
+    TargetValue: ElementOfObject,
+    TargetDatum,
+](
+    source: ElementConstructionInput[SourceValue, SourceDatum],
     route: compiler.Route,
-) -> ElementConstructionInput[TargetDatum]:
+) -> ElementConstructionInput[TargetValue, TargetDatum]:
     current = source
     for functor, role in route:
         assert role is Role.ELEMENT
@@ -69,10 +74,15 @@ def _element_route[SourceDatum, TargetDatum](
     return current
 
 
-def _morphism_route[SourceDatum, TargetDatum](
-    source: MorphismConstructionInput[SourceDatum],
+def _morphism_route[
+    SourceValue: MorphismOfCategory,
+    SourceDatum,
+    TargetValue: MorphismOfCategory,
+    TargetDatum,
+](
+    source: MorphismConstructionInput[SourceValue, SourceDatum],
     route: compiler.Route,
-) -> MorphismConstructionInput[TargetDatum]:
+) -> MorphismConstructionInput[TargetValue, TargetDatum]:
     current = source
     for functor, role in route:
         assert role is Role.MORPHISM
@@ -107,11 +117,16 @@ def _object_input_at[
     return first
 
 
-def _element_input_at[SourceDatum, TargetDatum](
-    source: ElementConstructionInput[SourceDatum],
+def _element_input_at[
+    SourceValue: ElementOfObject,
+    SourceDatum,
+    TargetValue: ElementOfObject,
+    TargetDatum,
+](
+    source: ElementConstructionInput[SourceValue, SourceDatum],
     source_node: compiler.Node,
     target: compiler.Node,
-) -> ElementConstructionInput[TargetDatum]:
+) -> ElementConstructionInput[TargetValue, TargetDatum]:
     category = source.identity.defining_morphism.codomain().category()
     assert compiler.same_node(compiler.node(category, Role.ELEMENT), source_node)
     routes = _routes(source_node, target)
@@ -123,11 +138,16 @@ def _element_input_at[SourceDatum, TargetDatum](
     return first
 
 
-def _morphism_input_at[SourceDatum, TargetDatum](
-    source: MorphismConstructionInput[SourceDatum],
+def _morphism_input_at[
+    SourceValue: MorphismOfCategory,
+    SourceDatum,
+    TargetValue: MorphismOfCategory,
+    TargetDatum,
+](
+    source: MorphismConstructionInput[SourceValue, SourceDatum],
     source_node: compiler.Node,
     target: compiler.Node,
-) -> MorphismConstructionInput[TargetDatum]:
+) -> MorphismConstructionInput[TargetValue, TargetDatum]:
     assert compiler.same_node(compiler.node(source.identity.category, Role.OBJECT), source_node)
     routes = _routes(source_node, target)
     first = _morphism_route(source, routes[0])
@@ -146,17 +166,28 @@ def construction_input[TargetValue: ObjectOfCategory, Datum](
 
 
 @overload
-def construction_input[Datum](value: ElementOfObject, target: compiler.Node) -> ElementConstructionInput[Datum]: ...
+def construction_input[TargetValue: ElementOfObject, Datum](
+    value: ElementOfObject,
+    target: compiler.Node,
+) -> ElementConstructionInput[TargetValue, Datum]: ...
 
 
 @overload
-def construction_input[Datum](value: MorphismOfCategory, target: compiler.Node) -> MorphismConstructionInput[Datum]: ...
+def construction_input[TargetValue: MorphismOfCategory, Datum](
+    value: MorphismOfCategory,
+    target: compiler.Node,
+) -> MorphismConstructionInput[TargetValue, Datum]: ...
 
 
-def construction_input[TargetValue: ObjectOfCategory, Datum](
+def construction_input[
+    ObjectValue: ObjectOfCategory,
+    ElementValue: ElementOfObject,
+    MorphismValue: MorphismOfCategory,
+    Datum,
+](
     value: CategoryPoint,
     target: compiler.Node,
-) -> ObjectConstructionInput[TargetValue, Datum] | ElementConstructionInput[Datum] | MorphismConstructionInput[Datum]:
+) -> ObjectConstructionInput[ObjectValue, Datum] | ElementConstructionInput[ElementValue, Datum] | MorphismConstructionInput[MorphismValue, Datum]:
     """The retained input for the canonical image of ``value`` at ``target``."""
     if has_canonical_transport(value, target.category):
         return canonical_input(value, target.category)

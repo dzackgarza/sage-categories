@@ -28,7 +28,7 @@ from collections.abc import Callable, Hashable
 from typing import TYPE_CHECKING, Any, Literal, overload
 
 from sage.misc.cachefunc import cached_method
-from sage.structure.coerce_dict import MonoDict
+from sage.structure.coerce_dict import MonoDict, TripleDict
 
 import sage_categories.kernel.compiler as compiler
 from sage_categories.cat.equality import equality_predicate
@@ -708,6 +708,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     def __init__(self) -> None:
         self._canonical: dict[tuple[str, tuple[int, ...]], FinitePresentedCategory] = {}
         self._point_categories: MonoDict = MonoDict()
+        self._declared_functors: TripleDict = TripleDict(weak_values=False)
         super().__init__()
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
@@ -740,16 +741,22 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         on_object: OnObject,
         on_morphism: OnMorphism,
     ) -> Functor:
-        """``Fun(C, D)(on_object, on_morphism)``: a functor from its total actions (POL-FUN-001)."""
+        """``Fun(C, D)(on_object, on_morphism)``: the functor selected by its four identity components (POL-FUN-001/027)."""
         from sage_categories.cat.functors import FunctorData
 
         assert domain in self and codomain in self
-        return self.MorphismType(
-            category=self.morphism_category(1),
-            domain=domain,
-            codomain=codomain,
-            data=FunctorData(on_object, on_morphism),
-        )
+        key = (domain, codomain, on_object)
+        if key not in self._declared_functors:
+            self._declared_functors[key] = MonoDict()
+        by_morphism_action = self._declared_functors[key]
+        if on_morphism not in by_morphism_action:
+            by_morphism_action[on_morphism] = self.MorphismType(
+                category=self.morphism_category(1),
+                domain=domain,
+                codomain=codomain,
+                data=FunctorData(on_object, on_morphism),
+            )
+        return by_morphism_action[on_morphism]
 
     def construct_identity(self, category: Category) -> Functor:
         from sage_categories.cat.functors import Fun

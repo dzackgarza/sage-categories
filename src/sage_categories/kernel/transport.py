@@ -145,10 +145,10 @@ def construction_input[Datum](
     target: compiler.Node,
 ) -> ObjectConstructionInput[Datum] | ElementConstructionInput[Datum] | MorphismConstructionInput[Datum]:
     """The retained input for the canonical image of ``value`` at ``target``."""
-    source = placement_node(value)
-    assert source.role is target.role
     if has_canonical_transport(value, target.category):
         return canonical_input(value, target.category)
+    source = placement_node(value)
+    assert source.role is target.role
 
     match role_of(value):
         case Role.OBJECT:

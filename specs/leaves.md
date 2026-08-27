@@ -228,14 +228,26 @@ category. Then `product_projection(0)` is the set functor and
 
 The same rule applies downstream:
 
-- An algebra structure morphism `R -> End(X)` determines both `R` and `X`.
-- A bilinear form `b` in `Mor(Modules(R))(TL[2], R)` determines its module `L` and base ring `R`.
+- Let \((\mathcal M,\odot,1)\) be monoidal, let \(\mathcal C\) be an
+  \(\mathcal M\)-actegory, and let \(A\) be a monoid object of \(\mathcal M\).
+  An object of `Modules(A, C)` retains \(X\in\mathcal C\) and its action
+  \(\rho:A\mathbin{\bullet}X\to X\), together with this ambient data.
+- When closed or enriched structure represents these actions by an internal
+  endomorphism monoid, the module structure is equivalently a monoid morphism
+  \(A\to\operatorname{End}_{\mathcal C}(X)\).
+- An object of `Algebras(R, C)` retains its base-relative presentation as a monoid
+  object in the supplied monoidal category `Modules(R, C)`. The general monoid
+  category owns its multiplication, unit, and laws.
+- In the ordinary commutative-ring specialization, a bilinear form \(b\) retains its
+  module \(L\), the tensor presentation \(L\otimes_R L\), and its codomain \(R\).
 - A lattice constructor can accept `b`, or the explicit pair `(L, b)` when that pair is
   the intended public presentation.
 
-A downstream leaf selects its immediate structural ancestor. It never reconstructs or
-requests an explicit underlying set. Some category on the inherited route already owns
-that construction and its selected route to `Sets()`.
+A downstream leaf selects its immediate structural ancestor. When its structural graph
+contains a selected route to `Sets()`, the category that owns that route supplies the
+underlying-set construction. With an arbitrary ambient category \(\mathcal C\), the
+leaf receives the capabilities owned by \(\mathcal C\); a set surface requires an
+explicit selected functor to `Sets()`.
 
 A source value retains each ancestor value supplied as defining data. A derived ancestor
 image is constructed once from retained data and cached for that source value. A
@@ -688,7 +700,18 @@ mathematical implementation hierarchy.
 
 ## The product algebra example
 
-The discussion also corrected the treatment of \(R^n\).
+This example uses the ordinary set-based specialization. Let
+
+\[
+\mathcal C=
+\operatorname{Groups}(\operatorname{Sets}_\times()).
+\operatorname{Additive}().\operatorname{Commutative}()
+\]
+
+with its tensor product. Let \(R\) be a commutative monoid object of \(\mathcal C\),
+so \(R\) is an ordinary commutative ring. The category `Modules(R, C)` is monoidal
+under \(\otimes_R\). Write `V_R` for that selected monoidal category.
+`Algebras(R, C)` is its base-relative monoid-object presentation.
 
 The canonical object
 
@@ -696,9 +719,8 @@ The canonical object
 R^n=\prod_{i=1}^{n}R
 \]
 
-is constructed as a product of rings. Under the repository's commutative-base
-convention, it is an \(R\)-algebra with coordinatewise operations and diagonal structure
-map
+is constructed as a product of ring objects in `Sets()`. It is an object of
+`Algebras(R, C)` with coordinatewise operations and diagonal structure map
 
 \[
 R\longrightarrow R^n,
@@ -706,31 +728,31 @@ R\longrightarrow R^n,
 r\longmapsto(r,\ldots,r).
 \]
 
-It therefore has structural routes through both rings and modules:
+Its selected structural chain is
 
 \[
-\operatorname{Algebras}(R)
+\operatorname{Algebras}(R,\mathcal C)
 \longrightarrow
-\operatorname{Rings}
+\operatorname{Monoids}(V_R)
 \longrightarrow
-\operatorname{Sets},
-\]
-
-and
-
-\[
-\operatorname{Algebras}(R)
+\operatorname{Magmas}(V_R)
 \longrightarrow
-\operatorname{Modules}(R)
+\operatorname{Modules}(R,\mathcal C)
+\longrightarrow
+\mathcal C
 \longrightarrow
 \operatorname{Sets}.
 \]
 
-Both routes reach the same underlying set:
+This chain reaches the underlying set
 
 \[
 U(R^n)=U(R)\times\cdots\times U(R).
 \]
+
+`Monoids(V_R)` supplies multiplication and one. `Modules(R, C)` supplies scalar
+action. The additive-group category supplies addition, zero, inverses, and subtraction.
+`Sets()` supplies its set operations.
 
 The construction must retain the strongest structure that it establishes:
 
@@ -740,8 +762,8 @@ The construction must retain the strongest structure that it establishes:
 - set operations;
 - finite-set operations when \(R\) and the index set are finite.
 
-The algebra does not add a direct structural functor to sets for convenience. Its set
-surface arrives through the mathematically meaningful intermediate categories.
+The algebra's complete surface is the union of the operations owned along this selected
+chain.
 
 For \(R=\mathbf F_p\), the finite product belongs to finite rings and hence finite sets.
 No exhaustive enumeration is required to establish finiteness.
@@ -759,8 +781,8 @@ it to sets.
 Structural diamonds preserve every branch. They resolve only duplicate access to a
 common owner. See [resolution.md](resolution.md) for the complete decision.
 
-For \(R^n\), the algebra-to-rings and algebra-to-modules routes introduce different
-applicable operations. Both later reach `Sets()`. The kernel preserves both catalogues.
+For this set-based \(R^n\), the algebra-to-rings and algebra-to-modules routes introduce
+different applicable operations. Both later reach `Sets()`. The kernel preserves both catalogues.
 Both routes return the one retained underlying set by identity, and the compiler checks
 that identity during construction. The common `Sets()` role constructor runs once.
 

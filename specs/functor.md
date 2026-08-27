@@ -519,19 +519,34 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
 ```
 
 A point functor is a selected structural functor under exactly this declaration and
-under no other. Like every entry, it contributes its compiled roles and inherited public
-methods through selection alone (`POL-FUN-003`), it is an ordinary object of `Fun`, and its
-generalized-element action is derived from its morphism action (`POL-FUN-002`). The
-compiler reaches it through composition in `Cat` with the rest of the structural graph.
+under no other. Like every selected functor, it contributes the target's compiled roles,
+typed construction-input conversions, canonical images, constructor chain, and inherited
+public methods (`POL-FUN-003`, `POL-FUN-035`). Its generalized-element action is derived
+from its morphism action (`POL-FUN-002`). The compiler reaches it through composition in
+`Cat` with the rest of the structural graph.
 
-The object-stage identity does not construct this functor during object initialization.
-`X.defining_morphism()` requests `C.point_functor(X)` only when a caller needs it. The
-new functor receives its own arrow-stage identity. Its construction therefore does not
-request its own arrow functor. The same rule applies to `C.arrow_functor(f)`.
+Before a point-inherited initializer runs, the kernel retains the point category, its
+selected point functors, and all required role conversions. The ordinary compiled C3
+chain then initializes each reachable target role once. A target constructor receives
+its exact converted datum and calls `super().__init__()`. Thus a point placement supplies
+the target role's state as well as its methods.
 
-For `{C} -> D`, these conversions initialize `D.ObjectType` state on `C`,
+One implementation choice remains open. A point placement can participate in the
+distinguished object's initial role compilation. It can instead use same-object Sage
+refinement that extends each affected compiled role without invalidating existing
+descendants or values, then runs every newly required initializer once. The selected
+design must support point categories formed from runtime objects, preserve role
+identities, and use no second inheritance registry.
+
+The defining morphism `1 -> C` used by an object-stage identity remains lazy. It is
+distinct from a selected inclusion `{X} -> D`. Laziness of the defining morphism does
+not delay the selected structural declaration or its construction-input conversions.
+The same separation applies to the defining functor `[1] -> C` of a morphism.
+
+For `{C} -> D`, the conversions initialize `D.ObjectType` state on `C`,
 `D.ElementType` state on stage-`1` objects and stage-`[1]` morphisms, and
 `D.MorphismType` state on `1_C`.
+
 ### The level shift
 
 Take the distinguished object to be a category `C`. Then `{C}` has one object at the
@@ -561,43 +576,56 @@ acts along it. The value of the step is the value's own defining morphism: an ob
 retains one point category per object; the compiler reads that retention to find `{C}`
 from `C`, and `C` records nothing.
 
-A shift contributes no class base. It runs from `C` to `{C}`, which is constructed later
-and therefore ranks below `C`, while a compiled role's bases must rank above it for the
-controlled merge of [resolution.md](resolution.md) to hold. A shift is not a subcategory
-relation either, so `C.ObjectType` does not derive from `{C}.ElementType`. Class bases
-come from the functor steps; the method catalogue follows both kinds.
+A level shift contributes the corresponding target compiled role to each affected
+compiled chain. The selected point functor supplies the exact construction-input
+conversion for that role. The same constructor chain therefore gives `C`, its objects,
+its morphisms, and `1_C` all state required by their target roles.
 
 `stage()`, `parent()`, and `defining_morphism()` never compile. Every kernel role class
 defines its own, and the compiler calls them to find a value's node, so a compiled copy
 would call the accessor it is transporting for. `{C}`'s element node is the first to
 reach `Cat()`'s, where all three are declared.
 
-`{C}` is constructed after `C`, so `C`'s roles were compiled before the shift existed.
-The shift adds inherited spellings and nothing else, so constructing `{C}` installs them
-on the role classes `C` already has. Rebuilding those classes instead would leave every
-already-compiled descendant holding the previous ones as bases, where they would stand
-for no node. Installing also gives the surface to the values of `C` that already exist,
-since they are instances of exactly these classes.
+The selected installation mechanism must preserve one compiled role identity and one
+constructor order for `C`, its descendants, and values that already exist when the
+placement becomes available.
 
 `{C}` retains one generalized element per defining functor. Two selected routes to
 `({C}, element)` must produce the same image, and a morphism of `C` placed in several
 property subcategories is reached by exactly such routes.
 
+### Ambient algebraic categories
+
+An algebraic category takes its ambient category as an argument. Thus `Semirings(A)`
+classifies semiring objects whose carrier, operations, units, and laws live in `A`.
+For example, `Semirings(Sets())` has set carriers and set maps. `Semirings(Cat())` has
+category carriers and functors. A category-valued distinguished object therefore uses a
+point functor into `Semirings(Cat())`.
+
+One definition remains open for the `Cat()` specialization. `Semirings(Cat())` can use
+strict internal semiring objects, where the laws are equalities of functors. It can
+instead use coherent rig categories, where associativity, units, symmetry, and
+distributivity are specified natural isomorphisms satisfying coherence diagrams. The
+selected convention must define one exact category. The point-functor and compiled-role
+contracts are the same for either convention.
+
 ### Ordinals as a semiring
 
 An ordinal is an object of `Ordinals()` ([ordinals.md](ordinals.md)). The commutative
 semiring of ordinals under the Hessenberg operations is the point functor of
-`Ordinals()` into `Semirings()`:
+`Ordinals()` into `Semirings(Cat())`:
 
 ```python
 # Cat().Point(Ordinals())
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (Fun(self, Semirings()).Faithful().inclusion(),)
+    return (Fun(self, Semirings(Cat())).Faithful().inclusion(),)
 ```
 
-`Semirings()` declares `zero()` and `one()` on its object surface and `+` and `*` on its
-element surface ([magmas-monoids-semirings.md](magmas-monoids-semirings.md)). The level
-shift places each one level down:
+`Semirings(Cat())` declares `zero()` and `one()` on its object surface and `+` and `*`
+on its element surface ([magmas-monoids-semirings.md](magmas-monoids-semirings.md)).
+Its constructors retain the two operation functors, the two unit objects, and the
+selected law data. The point functor converts these into the corresponding compiled
+state. The level shift places each public operation one level down:
 
 ```python
 Ordinals().zero()          # the object surface, on the category
@@ -859,15 +887,15 @@ class FiniteSetsCategory(Category):
 
 The inclusion is constructed directly in `Fun(self, Sets()).FullyFaithful()`.
 
-### Monoids
+### Monoid objects
 
-`Monoids()` is notation-neutral. It is a subcategory of `Magmas()` because its morphisms
-preserve all monoid structure:
+For a selected monoidal category `V`, `Monoids(V)` is notation-neutral. It is a
+subcategory of `Magmas(V)` because its morphisms preserve all monoid structure:
 
 ```python
 class MonoidsCategory(Category):
     def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-        return (Fun(self, Magmas()).Faithful().inclusion(),)
+        return (Fun(self, Magmas(V)).Faithful().inclusion(),)
 ```
 
 The additive and multiplicative refinements retain their selected operation roles.
@@ -1046,7 +1074,7 @@ is kernel infrastructure over already established mathematical functors.
 - Kan extensions retain their units, counits, and universally induced natural transformations.
 - `Cat().Point(X)`, written `{X}`, is the one-object category on a distinguished object `X`, retained once per `X`.
 - A point functor is the inclusion `{X} -> D`, constructed through `Fun({X}, D)` and selected in `{X}.structure_functors()`.
-- A selected point functor `{C} -> D` supplies `D`'s object surface to the category `C`, and `D`'s element surface to `C.ObjectType` at stage `1` and `C.MorphismType` at stage `[1]`.
+- A selected point functor `{C} -> D` supplies complete target roles, typed constructor conversions, state, and methods to `C`, `C.ObjectType` at stage `1`, and `C.MorphismType` at stage `[1]`.
 - Every selected structural functor is an ordinary object of `Fun`.
 - `structure_functors()` determines the structural graph, compiled role bases,
   construction-input conversions, canonical images, and inherited method surface.

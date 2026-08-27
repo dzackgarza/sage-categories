@@ -88,7 +88,22 @@ They should begin from a shipped category template, declare the new mathematical
 They should need to read only the mathematically relevant neighboring subtrees and their functor contracts.
 
 The compiler then supplies the complete inherited object, element, morphism, and construction interfaces.
-A specialized algebra category connected to `Algebras(R)`, modules, and sets receives their applicable operations without forwarding methods.
+Let \((\mathcal M,\odot,1)\) be monoidal, let \(\mathcal C\) be an
+\(\mathcal M\)-actegory, and let \(A\) be a monoid object of \(\mathcal M\).
+An object of [`Modules(A, C)`](specs/modules.md) is an object \(X\) of \(\mathcal C\) with an action
+\(A\mathbin{\bullet}X\to X\). The category retains the ambient monoidal category,
+the actegory, the acting monoid, and the action.
+
+When closed or enriched structure represents these actions by an internal
+endomorphism monoid, the same module structure is equivalently a monoid morphism
+\(A\to\operatorname{End}_{\mathcal C}(X)\). The action morphism is the general
+definition.
+
+[`Algebras(R, C)`](specs/algebras.md) is the base-relative presentation of the monoid
+objects in the supplied monoidal category `Modules(R, C)`. Its selected route through
+the general monoid, magma, and module categories supplies the applicable operations.
+A general module or algebra object reaches `Sets()` only through an explicit selected
+functor from its ambient category.
 Cardinality and other distant capabilities arrive through functor composition rather than leaf-specific code.
 
 For example, a researcher can add `FiniteSubsetsOfNN()` after the complete theory of sets exists.

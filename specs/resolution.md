@@ -13,7 +13,7 @@ satisfies the requirement.
 - [Why this framework has a stronger obligation](#why-this-framework-has-a-stronger-obligation)
 - [The first proposed resolution](#the-first-proposed-resolution)
 - [Preserve both branches](#preserve-both-branches)
-- [Rings as the basic diamond](#rings-as-the-basic-diamond)
+- [Ring objects as the basic diamond](#ring-objects-as-the-basic-diamond)
 - [Products in modules](#products-in-modules)
 - [Finite-rank free modules over finite fields](#finite-rank-free-modules-over-finite-fields)
 - [The actual product and coproduct boundary](#the-actual-product-and-coproduct-boundary)
@@ -107,7 +107,7 @@ The first proposed practical rule was:
 
 > Force a leaf to hand-pick a resolution through each diamond. The principal purpose is
 > to manage a catalogue of algorithms and methods by categorical placement. For a
-> product in `Modules(R)`, it is normally enough to select one implementation that has
+> product in `Modules(A, C)`, it is normally enough to select one implementation that has
 > the expected factors, projections or inclusions, mediating morphisms, and factoring
 > maps.
 
@@ -160,29 +160,32 @@ This distinction separates two different facts:
 The compiler preserves the intermediate operations. It deduplicates only the operation
 from the shared owner.
 
-## Rings as the basic diamond
+## Ring objects as the basic diamond
 
-A ring gives the clearest mathematical example:
+Let \(\mathcal C\) be a category with finite products.
+Write \(\mathcal C_\times\) for its specified cartesian monoidal structure.
+A ring object gives the clearest mathematical example:
 
 \[
-\operatorname{Rings}\longrightarrow
+\operatorname{Rings}(\mathcal C)\longrightarrow
 \begin{cases}
-\operatorname{AdditiveGroups},\\
-\operatorname{Monoids}
+\operatorname{Semirings}(\mathcal C),\\
+\operatorname{Groups}(\mathcal C_\times).\operatorname{Additive}().
+  \operatorname{Commutative}()
 \end{cases}
-\longrightarrow\operatorname{Sets}.
+\longrightarrow\mathcal C.
 \]
 
-The additive branch supplies addition, zero, and additive inverses. The multiplicative
-branch supplies multiplication, one, and powers. A ring must receive both catalogues.
+The semiring branch supplies addition, multiplication, zero, and one. The group branch
+supplies additive inverses and subtraction. A ring must receive both catalogues.
 
-Both branches reach the same underlying set. Membership or another method owned by
-sets needs one canonical route to that set. Selecting that route must not remove either
-the additive or multiplicative branch.
+Both branches reach the same additive monoid and the same object of \(\mathcal C\).
+Selecting either shared image must preserve the operations introduced on both branches.
 
-Sage's documented diamond uses sets, additive groups, multiplicative monoids, and rings
-as its model. The final category receives the methods introduced on every branch. C3
-only resolves a shared method name.
+For \(\mathcal C=\operatorname{Sets}()\), the shared object is the underlying set.
+Membership and other set-owned methods have one canonical route to that set. Sage's
+documented diamond is this specialization. The final category receives the methods
+introduced on every branch. C3 only resolves a shared method name.
 
 This is the correct general model for structural inheritance in this framework:
 
@@ -192,40 +195,56 @@ This is the correct general model for structural inheritance in this framework:
 
 ## Products in modules
 
-For a family \((M_i)_{i\in I}\) in \(\operatorname{Modules}(R)\), a chosen product
-contains:
+Let \((\mathcal M,\odot,1)\) be monoidal, let \(\mathcal C\) be an
+\(\mathcal M\)-actegory with action \(\bullet\), and let
+\(A\in\operatorname{Monoids}(\mathcal M)\). An object of `Modules(A, C)` is an
+object \(X\in\mathcal C\) with an action
+
+\[
+\rho:A\mathbin{\bullet}X\longrightarrow X
+\]
+
+that satisfies the unit and action diagrams. When closed or enriched structure
+represents these actions by an internal endomorphism monoid, this data is equivalently
+a monoid morphism \(A\to\operatorname{End}_{\mathcal C}(X)\).
+
+Assume that `Modules(A, C)` has the selected products below and that its structural
+functor to \(\mathcal C\) preserves them. For a family \((X_i)_{i\in I}\) in this
+category, a chosen product contains:
 
 - the module apex \(P\);
-- linear projections \(\pi_i:P\to M_i\);
-- the linear mediating morphism;
-- componentwise addition and scalar multiplication;
+- module morphisms \(\pi_i:P\to X_i\);
+- the module mediating morphism;
+- the induced \(A\)-action on \(P\);
 - its complete product universal property.
 
 Let the module presentation select a structural functor
 
 \[
-U:\operatorname{Modules}(R)\longrightarrow\operatorname{Sets}
+U:\operatorname{Modules}(A,\mathcal C)\longrightarrow\mathcal C.
 \]
 
-that preserves products. The set image of the module product is the product of the set
-images:
+The \(\mathcal C\)-image of the module product is the product of the
+\(\mathcal C\)-images:
 
 \[
-U\!\left(\prod_i M_i\right)
+U\!\left(\prod_i X_i\right)
 =
-\prod_i U(M_i),
+\prod_i U(X_i),
 \]
 
 after the framework chooses compatible product presentations.
 
-The module branch supplies linear structure and linear universal morphisms. The set branch
-supplies membership, elements, iteration when available, and cardinality. These are
-compatible capabilities. They are not competing product implementations.
+The module branch supplies the action and module universal morphisms. The
+\(\mathcal C\)-branch supplies the capabilities owned by \(\mathcal C\). When
+\(\mathcal C=\operatorname{Sets}()\), these include membership, elements, iteration
+when available, and cardinality. These are compatible capabilities. They are not
+competing product implementations.
 
-The module product must select one complete presentation. Its apex, projections,
-elements, mediating morphisms, and set image must belong to that presentation. The
-implementation must not take the apex from one presentation and projections or elements
-from another merely isomorphic presentation.
+The module product must select one complete presentation. Its apex, action, projections,
+mediating morphisms, and \(\mathcal C\)-image must belong to that presentation. The
+implementation must not combine an apex with universal data from another merely
+isomorphic presentation.
 
 If a specialized vector realization and a tuple realization are both useful, one is the
 chosen public presentation. The other remains an explicit realization functor or an
@@ -233,20 +252,28 @@ explicit isomorphic presentation. It does not become a second structural identit
 
 ## Finite-rank free modules over finite fields
 
-The discussion tested the rule on a finite-rank free module over a finite field:
+This example uses the ordinary set-based specialization. Let
 
-> Let the object be \(\mathbf F_p^n\). As a module, it reaches a product construction.
-> Each factor \(\mathbf F_p\) has underlying finite set
-> \(\{0,1,\ldots,p-1\}\). Products of finitely many finite sets are finite. A
-> correctly wired kernel should therefore resolve the object naturally into finite
-> sets. Is there a real conflict here?
+\[
+\mathcal C=
+\operatorname{Groups}(\operatorname{Sets}_\times()).
+\operatorname{Additive}().\operatorname{Commutative}()
+\]
 
-There is no genuine conflict in this example.
+with its tensor product, and regard \(\mathbf F_p\) as a commutative monoid object of
+\(\mathcal C\). The category `Modules(F_p, C)` is the ordinary category of
+\(\mathbf F_p\)-modules. Its selected route
 
-One correction is required. As a module, \(\mathbf F_p^n\) is a product in
-\(\operatorname{Modules}(\mathbf F_p)\), not a product in rings. Componentwise
-multiplication gives \(\mathbf F_p^n\) an additional product-ring structure, but module
-structure alone does not include multiplication.
+\[
+U:\operatorname{Modules}(\mathbf F_p,\mathcal C)
+\longrightarrow\mathcal C
+\longrightarrow\operatorname{Sets}
+\]
+
+is the ordinary underlying-set functor. The module structure places
+\(\mathbf F_p^n\) in a product construction in `Modules(F_p, C)`. Componentwise
+multiplication supplies an additional product-ring structure when that structure is
+retained by the construction.
 
 For the explicitly chosen product module
 
@@ -264,7 +291,8 @@ Each factor is finite. The index set is finite. Hence the resulting set is finit
 two relevant paths are
 
 \[
-M\longrightarrow\operatorname{Modules}(\mathbf F_p)
+M\longrightarrow\operatorname{Modules}(\mathbf F_p,\mathcal C)
+\longrightarrow\mathcal C
 \longrightarrow\operatorname{Sets},
 \]
 
@@ -282,7 +310,7 @@ enumeration. Neither path competes with the other.
 A correctly designed kernel derives this placement. The module leaf contains no route
 selection code. The kernel uses these mathematical facts:
 
-- the selected module-to-set structural functor preserves products;
+- the selected composite route from `Modules(F_p, C)` to `Sets()` preserves products;
 - a finite product of finite sets is finite;
 - both routes have one canonical set image;
 - methods from both category placements belong on the public object.
@@ -307,10 +335,19 @@ leaf-level route choice.
 
 ## The actual product and coproduct boundary
 
-Modules give a concrete case where an unjustified coherence assumption is false.
+The ordinary set-based module category gives a concrete boundary. Let
+\(\mathcal C=\operatorname{Groups}(\operatorname{Sets}_\times()).
+\operatorname{Additive}().\operatorname{Commutative}()\), let \(R\) be a ring
+object, and use the selected composite functor
 
-Finite products and finite coproducts agree in modules. Their common object is a
-biproduct:
+\[
+U:\operatorname{Modules}(R,\mathcal C)
+\longrightarrow\mathcal C
+\longrightarrow\operatorname{Sets}.
+\]
+
+Finite products and finite coproducts agree in this additive module category. Their
+common object is a biproduct:
 
 \[
 M\oplus N.
@@ -328,8 +365,8 @@ This set is not the set coproduct
 U(M)\sqcup U(N).
 \]
 
-The selected module-to-set structural functor preserves products. It does not preserve
-module coproducts as set coproducts.
+The selected composite route to `Sets()` preserves products. It does not preserve module
+coproducts as set coproducts.
 
 Therefore, the compiler must not assume that every structural functor preserves every
 universal construction. Construction preservation is separate mathematical data. A
@@ -379,8 +416,9 @@ declaration. The compiled role contains the \(A\) node once in its Python MRO. O
 construction checks that both routes give the same canonical \(A\)-image. Method
 compilation installs no route wrapper.
 
-Membership on a ring is such a case. Both the additive and multiplicative branches reach
-sets. `Sets()` remains the sole owner of membership.
+Membership on a ring object in `Sets()` is such a case. Both the additive and
+multiplicative branches reach the same object of `Sets()`. That category remains the
+sole owner of membership.
 
 ### Independent declarations with one spelling
 
@@ -423,8 +461,8 @@ a construction-defect error that names the source value's construction, the two 
 and the shared ancestor category. Nothing is repaired, replaced, or retried. The compiler
 never asks whether the two values are mathematically equal.
 
-Routine structural diamonds have this form. The two selected paths from a finite module
-to sets reach the same set object.
+Routine structural diamonds have this form. In the ordinary set-based specialization,
+the two selected paths from a finite module to sets reach the same set object.
 
 ### Merely isomorphic routes
 
@@ -498,9 +536,9 @@ The resolution design must support these examples.
 
 ### Ring inheritance
 
-A ring receives additive-group operations and multiplicative-monoid operations. Both
-routes reach one canonical underlying set. Set membership has one owner and one public
-implementation.
+A ring object in `Sets()` receives additive-group operations and multiplicative-monoid
+operations. Both routes reach one canonical underlying set. Set membership has one owner
+and one public implementation.
 
 ### Finite vector spaces
 
@@ -510,14 +548,16 @@ does not enumerate its \(p^n\) elements to establish finiteness.
 
 ### Module products
 
-A product in \(\operatorname{Modules}(R)\) retains its module apex, projections, and
-mediating morphism. Its underlying set is the chosen set product. Product elements belong
-to that exact apex.
+A product in `Modules(A, C)` retains its module apex, action, projections, and mediating
+morphism. When the selected functor to \(\mathcal C\) preserves products, its
+\(\mathcal C\)-image is the chosen product there. In the ordinary set-based
+specialization, the composite underlying-set image is the chosen set product.
 
 ### Module coproducts
 
-The underlying set of a module coproduct is not identified with the set coproduct. The
-compiler does not invent preservation of colimits by the selected structural functor.
+In the ordinary set-based specialization, the underlying set of a module coproduct is
+not identified with the set coproduct. The compiler uses only the construction
+preservation supplied by the selected structural functor.
 
 ### Algorithm selection
 

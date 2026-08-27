@@ -7,8 +7,9 @@ Ordinal operations specified as predicates follow the proposition interface in
 `ask()` returns its decision.
 
 The governing policies are `POL-MATH-022` through `POL-MATH-025`, `POL-MATH-034`,
-`POL-MATH-035`, `POL-CAT-001`, `POL-CAT-054`, `POL-CAT-060`, `POL-CAT-083`,
-`POL-CAT-085`, `POL-SET-025`, and `POL-SET-026`.
+`POL-MATH-035`, `POL-GEN-017`, `POL-CAT-001`, `POL-CAT-054`, `POL-CAT-060`, `POL-CAT-071`,
+`POL-CAT-083`, `POL-CAT-085`, `POL-FUN-002`, `POL-FUN-003`, `POL-FUN-035`,
+`POL-SET-025`, `POL-SET-026`, and `POL-DOC-010` through `POL-DOC-013`.
 
 ## Ordinal model
 
@@ -33,24 +34,30 @@ An expression that no normalization rule evaluates is retained exactly.
 ### The ordinal semiring
 
 The commutative semiring of ordinals under the Hessenberg operations is the point
-functor of `Ordinals()` into `Semirings()`
+functor of `Ordinals()` into `Semirings(Cat())`
 ([functor.md](functor.md#point-categories-and-point-functors)):
 
 ```python
 # Cat().Point(Ordinals())
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (Fun(self, Semirings()).Faithful().inclusion(),)
+    return (Fun(self, Semirings(Cat())).Faithful().inclusion(),)
 ```
 
-It regards the category `Ordinals()` as one object of `Semirings()`. Its additive monoid
-is the natural sum with unit `0`, its multiplicative monoid is the natural product with
-unit `1`, the product distributes over the sum, and the multiplication is commutative
-(Mathlib
+It regards the category `Ordinals()` as one object of `Semirings(Cat())`. Its additive
+operation functor is the natural sum with unit object `0`. Its multiplicative operation
+functor is the natural product with unit object `1`. The product distributes over the
+sum, and the multiplication is commutative (Mathlib
 [`NatOrdinal.instCommSemiring`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/SetTheory/Ordinal/NaturalOps.html),
 `SetTheory.Ordinal.NaturalOps`).
 
-The level shift supplies the public surface. `Semirings()` declares `zero()` and `one()`
-on its object surface and `+` and `*` on its element surface
+The exact `Cat()`-level law data follows the strict-or-coherent choice recorded in
+[functor.md](functor.md#ambient-algebraic-categories). The strict form retains equations
+between these functors. The coherent form retains the corresponding natural
+isomorphisms and coherence diagrams.
+
+The point functor supplies complete compiled roles and exact constructor conversions.
+Those constructors initialize the semiring state before they expose its methods. The
+level shift places `zero()` and `one()` on the category and `+` and `*` on its objects
 ([magmas-monoids-semirings.md](magmas-monoids-semirings.md)). One level down, the object
 surface belongs to the category `Ordinals()` and the element surface belongs to the
 objects of `Ordinals()`:

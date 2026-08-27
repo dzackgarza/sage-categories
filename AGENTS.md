@@ -567,8 +567,32 @@ Apply the functor before choosing bases and deriving a matrix in the new realiza
 ## Generality and hypotheses
 
 State the weakest algebraic hypotheses that make an operation valid.
-Parameterize the implementation by the base ring and its category.
+Parameterize every algebraic-object category by the complete ambient categorical data in its definition.
 Do not hard-code `ZZ` when the definition or algorithm works over a PID, integral domain, or commutative ring.
+
+For a tensor category `V`, `Magmas(V)` contains magma objects. For a monoidal category
+`V`, `Monoids(V)` contains monoid objects. For cartesian monoidal `V`, `Groups(V)`
+contains group objects. For a category `C` with the required product structure,
+`Semirings(C)` and `Rings(C)` contain internal semirings and rings. The specification
+for the ambient structure states each strictness or coherence requirement.
+
+Let `M` be monoidal, let `C` have a chosen left `M`-action, and let
+`A in Monoids(M)`. An object of `Modules(A, C)` is an object `X in C` with an action
+
+\[
+\rho:A\mathbin{\bullet}X\longrightarrow X
+\]
+
+that satisfies the unit and action diagrams. Retain `M`, `C`, the action functor, and
+`A`. Supply `C` independently from `A`. A monoid morphism
+`A -> End_C(X)` represents the same action only when the required closed or enriched
+structure supplies that correspondence.
+
+Define `Algebras(R, C)` only when `Modules(R, C)` has a supplied monoidal structure.
+It is the base-relative presentation category for the monoid objects in that module
+category. Its selected functor to the general monoid-object category supplies the
+multiplication, unit, and monoid laws. A noncommutative base instead requires a
+supplied monoidal category of `R`-bimodule objects.
 
 A lattice over `R` starts from a finitely generated projective `R`-module with the specified form.
 Free `ZZ`-modules are specimens of that notion, not its definition.
@@ -590,7 +614,7 @@ Therefore, neither `M.rank() == 0` nor `matrix(f).right_kernel().rank() == 0` pr
 Use the semantic zero-object or kernel predicate supported by the relevant category.
 
 The same Python realization can define different mathematical objects in different categories.
-For example, `QQ` in `Algebras(ZZ)` and `QQ` in `Algebras(QQ)` have different structure morphisms.
+For example, `QQ` over two base objects or in two ambient module categories has different structure morphisms.
 A scalar-change functor relates them.
 Do not erase the base category from the type, parent, or morphism data.
 

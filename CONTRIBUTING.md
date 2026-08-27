@@ -207,7 +207,7 @@ the rejected mirrored-surface design, and the required reconstruction of owned r
 
 | ID | Policy |
 | --- | --- |
-| `POL-GEN-001` | Parameterize each construction by its base ring and the category that supplies the required hypotheses. |
+| `POL-GEN-001` | Parameterize each algebraic-object category by all ambient categorical data in its definition. A typed base object supplies its owning category. It does not determine an independent actegory, action, tensor product, or coherence data. |
 | `POL-GEN-002` | Do not hard-code `ZZ` when the definition or algorithm works over a PID, integral domain, or commutative ring. |
 | `POL-GEN-003` | Select algorithms by proved ring properties, not by identity checks against `ZZ`, `QQ`, or another named ring. |
 | `POL-GEN-004` | Do not import vector-space equivalences into modules over a general ring. |
@@ -215,13 +215,17 @@ the rejected mirrored-surface design, and the required reconstruction of owned r
 | `POL-GEN-006` | Do not infer that `ker(f) = 0` from a zero matrix-nullspace rank; a nonzero torsion kernel can have rank zero. |
 | `POL-GEN-007` | Use matrix-rank criteria for injectivity, surjectivity, or exactness only when the required field hypotheses are established. |
 | `POL-GEN-008` | Use the semantic zero-object, kernel, cokernel, and exactness predicates supplied by the relevant category. |
-| `POL-GEN-009` | Treat `QQ` in `Algebras(ZZ)` and `QQ` in `Algebras(QQ)` as different algebra objects related by scalar change. |
+| `POL-GEN-009` | Treat one Python realization with different base objects, ambient categories, actions, or structure morphisms as different mathematical objects. Relate them through the applicable scalar-change functor. |
 | `POL-GEN-010` | Preserve infinite algebra-generation data. Do not force a finitely generated presentation onto an algebra such as `QQ` over `ZZ`. |
 | `POL-GEN-011` | Keep rank, dimension, cardinality, and minimum number of module generators distinct. Use each invariant only under its defining hypotheses. |
 | `POL-GEN-012` | Assume finiteness only when the mathematical definition or a selected property subcategory requires it. Define the arbitrary small indexed construction first and obtain its finite form by restriction. |
 | `POL-GEN-013` | Place a coefficient family with potentially infinite support in the appropriate formal power-series ring. Do not declare its sum to be a polynomial without established finite support. |
 | `POL-GEN-014` | Recover polynomials as the finitely supported elements of a formal power-series ring. Make polynomial-valued methods restrictions of the general power-series-valued construction. |
 | `POL-GEN-015` | Return a lazy iterator when a method enumerates a result family and materialization is not part of the mathematics. Do not encode an unproved finiteness assumption by returning a list or tuple. |
+| `POL-GEN-016` | For a supplied tensor category `V`, let `Magmas(V)` own magma objects. For a supplied monoidal category `V`, let `Monoids(V)` own monoid objects. When `V` is cartesian monoidal, let `Groups(V)` own group objects. The applicable tensor product, unit object, associator, unitors, and cartesian structure are part of `V`'s retained structure. |
+| `POL-GEN-017` | Let `Semirings(C)` and `Rings(C)` own the corresponding internal algebraic models in a supplied category `C`. The owning specification states the products or monoidal structures and every strictness or coherence requirement. `Semirings(Sets())` and `Semirings(Cat())` are different categories. |
+| `POL-GEN-018` | Given a monoidal category `M`, a chosen left `M`-actegory `C`, and `A in Monoids(M)`, let `Modules(A, C)` own pairs `(X, rho)` with `X in C` and `rho: A bullet X -> X` satisfying the unit and action diagrams. Retain `M`, `C`, the action functor, and `A`; never infer `C` from `A`. |
+| `POL-GEN-019` | Define `Algebras(R, C)` only when `Modules(R, C)` has a supplied monoidal structure `V_R`. Present it through a retained equivalence to `Monoids(V_R)`. The general monoid category owns multiplication, unit, and monoid laws. Reach the module carrier through the monoid and magma carrier functors. A noncommutative base requires a supplied monoidal category of bimodule objects. |
 
 For a family \((X_i)_{i\in I}\), the product \(\prod_{i\in I}X_i\) is the limit of the corresponding discrete diagram.
 The foundational product constructor therefore accepts an arbitrary small index set \(I\).
@@ -290,7 +294,7 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-036` | Use mathematically standard, total category constructors. Give genuinely different mathematical input forms their own explicit constructors and required inputs. Do not create constructor families merely to distinguish checked, assumed, or theorem-established evidence for one property. |
 | `POL-CAT-037` | Place each constructed result in every property subcategory established by that named route and its required inputs. |
 | `POL-CAT-038` | Make each property subcategory's constructor its standard public trust boundary. Choosing that constructor asserts the defining property and constructs or self-refines the same owned value in that subcategory. |
-| `POL-CAT-039` | Make each named construction route discoverable through standard categories such as `Sets()`, `Monoids()`, `Groups()`, `Rings()`, `Modules(R)`, and `Algebras(R)`. Keep route selection explicit at the call site. |
+| `POL-CAT-039` | Make each named construction route discoverable through its parameterized category, such as `Sets()`, `Monoids(V)`, `Semirings(C)`, `Rings(C)`, `Modules(A, C)`, and `Algebras(R, C)`. Keep every ambient category and route selection explicit at the call site. |
 | `POL-CAT-040` | For \(f:X\to Y\), evaluate `f` only on elements of `X` and return elements of `Y`. A morphism never accepts or returns an unowned Python value. |
 | `POL-CAT-041` | Construct or coerce raw representations into elements of the appropriate category objects before morphism evaluation. Keep this conversion outside the morphism. |
 | `POL-CAT-042` | Make the operations of `Mor(C)(X, Y)` verify that each element's owning object lies in the base category and that evaluation respects the declared domain and codomain. |
@@ -334,7 +338,7 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-080` | Before placing code in a leaf, trace the complete public call from its mathematical owner through construction or presentation categories, selected structural functors, compiled role inheritance, construction-input conversion, direct inherited execution, and the declared result. Perform this trace for objects, elements, and morphisms. A missing step is a foundational defect, not permission for a leaf implementation. |
 | `POL-CAT-081` | Construct every owned value in the strongest property-based subcategory established by its defining construction, exact computation, or trusted programmer assertion. Never construct it weakly and recompute a property already known at construction time. |
 | `POL-CAT-082` | Permit a category-owned predicate handler to return `True` when the construction or definition establishes that property for every value it builds. The public predicate still returns an applied proposition. The exact handler result invokes the same property-subcategory constructor; it is not a proof object, metadata field, or separate admission route. |
-| `POL-CAT-083` | Represent a distinguished named mathematical object by its parameterized one-object category. Let that category own the object-specific declarations and selected structural functors that place its sole object in all established ambient and property categories. |
+| `POL-CAT-083` | Represent a distinguished named mathematical object by its parameterized one-object category. Let that category own the object-specific declarations and selected structural functors that place its sole object in all established ambient and property categories. Each selected point functor supplies complete compiled roles, constructor conversions, and initialized ancestor state for its distinguished object. |
 | `POL-CAT-084` | If `C.P()` is a property subcategory and `D` has a selected structural inclusion into `C`, derive `D.P()` automatically as the corresponding narrowing of `D`. Define the property constructor once. Never require a descendant category to repeat its class, predicate, constructor, or transport wiring. |
 | `POL-CAT-085` | Replace Sage's category-only `super_categories()` edges with `structure_functors()`. Return the complete tuple of immediate objects of `Fun = Mor(Cat())` selected for inheritance. Each entry is constructed by the category's defining presentation or through `Fun(self, Target)`. Selection is compiler input and does not define another kind of functor. Endpoints and object fields never determine a selected entry. See `specs/functor.md`. |
 | `POL-CAT-086` | Make `Mor(C)(A, B)` a category for every `A, B in C`. Represent its inhabitation and emptiness as owned predicates. An unresolved decision leaves the morphism category symbolic; it never replaces that category with an empty category. |
@@ -385,7 +389,7 @@ Grounding examples:
 
 - Every `C in Cat` can form `C.Products()`.
   This subcategory can be empty, and its existence does not assert that `C` has all products.
-  Thus `Modules(R).Products()` requires no module-specific reconstruction of the generic product category.
+  Thus `Modules(A, C).Products()` requires no module-specific reconstruction of the generic product category.
 
 ## Leaf-category encapsulation
 
@@ -505,19 +509,20 @@ The result remains an `ObjectType`; it is not a plain value used to evade transp
 The same rule excludes mandatory `@transport_roles(...)`, `receiver=...`, empty
 `keyword=()`, and `variadic=None` declarations from every theory module.
 
-For example, a presentation of `Modules(R)` can use an action morphism
-\(\rho:R\to\operatorname{End}(X)\). The action-category construction retains its
-projection to the object \(X\) and its projection to \(\rho\). The module category
-selects the first route for inherited structure. The kernel does not recover \(X\) by
-inspecting the representation of \(\rho\).
+Given `A in Monoids(M)` and a chosen left `M`-actegory `C`, a presentation of
+`Modules(A, C)` retains an object `X in C` and an action morphism
+\(\rho:A\mathbin{\bullet}X\to X\). It also retains the unit and action equations.
+Its projection to `X` supplies the inherited `C` interface. When `C` has the required
+closed or enriched structure, the same action can correspond to a monoid morphism
+\(A\to\operatorname{End}_{C}(X)\).
 
-Present an \(R\)-lattice \(L=(M,b)\) as a subobject of a product category whose first factor is `Modules(R)`. Then `Lattices(R).product_projection(0)` supplies the module interface.
+Present an \(R\)-lattice \(L=(N,b)\) as a subobject of a product category whose first factor is the applicable `Modules(R, C)`. The corresponding product projection supplies the module interface.
 The lattice exposes `L.bilinear_form()` to return \(b\); it does not inherit the full interface of a bilinear-form morphism.
 An internal pair representation remains valid, but callers do not need `L.underlying_module()` to use \(L\) as a module.
-Cardinality then arrives through the existing functor chain from modules to sets.
+Cardinality then arrives through the selected carrier functor from `C` to `Sets()`.
 A lattice-specific cardinality implementation signals a missing or incorrect structural functor.
 
-If tensor products are introduced at `Modules(R)`, every structural descendant can form its tensor-product subcategory.
+If `Modules(R, C)` has a supplied monoidal structure, every structural descendant can form its tensor-product subcategory.
 For lattices, the leaf-specific lift is
 
 \[
@@ -525,7 +530,7 @@ For lattices, the leaf-specific lift is
 \]
 
 The module subtree owns the tensor-product objects, elements, morphisms, and universal property.
-The lattice subtree supplies only the induced bilinear form and its compatibility with `product_projection(0)` to `Modules(R)`.
+The lattice subtree supplies only the induced bilinear form and its compatibility with `product_projection(0)` to `Modules(R, C)`.
 
 A new specialized algebra category should start from the leaf template, declare its selected functors to nearby algebra and module categories, and add only its new algebraic methods.
 It receives distant operations such as cardinality through the resulting functor chain without importing or reimplementing them.
@@ -630,7 +635,7 @@ several projections with different codomains.
 
 For example, a presentation of a lattice as `(M, b)` has a projection to `M` and a
 projection to `b`. Neither projection follows from the word “forget.” A presentation of
-a module by an action morphism has projections and evaluations determined by that
+a module by `rho: A bullet X -> X` has projections and evaluations determined by that
 presentation. An equivalent presentation can expose different immediate projections.
 The kernel must not inspect tuple positions or fields to choose one.
 
@@ -696,7 +701,7 @@ The products category does not define a second set interface or an independent c
 | `POL-SET-022` | Support `X.cardinality() == 3`. Do not require `X.cardinality().value == 3`. |
 | `POL-SET-023` | Give every object of `Sets()` the complete `Sets.ObjectType` method surface, including products, coproducts, subsets, exponentials, and the morphism categories `Mor(Sets())(X, Y)`. |
 | `POL-SET-024` | Make set products and subsets delegate to the categorical product and subobject constructions instead of defining parallel APIs. |
-| `POL-SET-025` | Make `Cardinal()` the set-enriched skeletal category of cardinal representatives. Its morphism categories `Mor(Cardinal())(k, l)` are discrete on the function sets between the selected representatives. Cardinal order is the existence of an injective map, not mere inhabitation of `Mor(Cardinal())(k, l)`. Its categorical coproducts, products, and exponentials give cardinal addition, multiplication, and exponentiation. Cardinal objects form an ordered semiring of finite, infinite, and symbolic values, not integer wrappers. `Unknown` is a decision about a proposition, not a cardinal. |
+| `POL-SET-025` | Make `Cardinal()` the set-enriched skeletal category of cardinal representatives. Its morphism categories `Mor(Cardinal())(k, l)` are discrete on the function sets between the selected representatives. Cardinal order is the existence of an injective map, not mere inhabitation of `Mor(Cardinal())(k, l)`. Its categorical coproducts, products, and exponentials give cardinal addition, multiplication, and exponentiation. The selected point functor `{Cardinal()} -> Semirings(Cat())` supplies the category object with its semiring methods. Cardinal objects form an ordered semiring of finite, infinite, and symbolic values, not integer wrappers. `Unknown` is a decision about a proposition, not a cardinal. |
 | `POL-SET-026` | Let cardinal arithmetic return cardinal values. Let cardinal equality and order return applied propositions. `ask()` returns `Unknown` when available mathematics does not decide one of those propositions. |
 | `POL-SET-027` | Use `len()` only for a finite sequence whose order is part of its meaning. Use `cardinality()` for every mathematical set. |
 | `POL-SET-028` | When `rank()` or `ngens()` counts a mathematical set, return its cardinality rather than a sequence length. |
@@ -958,7 +963,7 @@ It remains a replaceable algorithm, not the representation or default structural
 | `POL-DOC-013` | Keep an executing plan limited to active decisions, fixed requirements and exclusions, dependency order, and acceptance conditions. Put completed work, archaeology, revision history, and provenance in a separate record. |
 
 For example, a lattice specification declares its selected functor to the appropriate formed-module category.
-It states that cardinality arrives through the existing functor chain from formed modules through modules to `Sets()`.
+When its ambient category has a selected carrier functor to `Sets()`, cardinality arrives through the composite route from formed modules through modules and that carrier functor.
 It does not list cardinality as a lattice-owned method or add a direct lattice-to-`Sets()` functor.
 
 ## Policy maintenance

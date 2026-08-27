@@ -1,19 +1,22 @@
 # Cardinalities and ordinals
 
 Cardinals are objects of a set-enriched skeletal category of cardinal representatives.
-Ordinals are objects of the skeletal category `Ordinals()`, which the point functor into
-`Semirings()` presents as the commutative semiring of ordinals under the Hessenberg
-operations. Both models retain exact expressions formed by their own arithmetic when no
-normalization rule applies.
+The point functor of `Cardinal()` into `Semirings(Cat())` presents its coproduct and
+product as cardinal addition and multiplication. Ordinals are objects of the skeletal
+category `Ordinals()`. Its point functor into `Semirings(Cat())` presents the Hessenberg
+operations as ordinal addition and multiplication. Both models retain exact expressions
+when no normalization rule applies.
 
 Cardinal and ordinal operations specified as predicates follow the proposition interface
 in [Property refinement](property-refinement.md). Applying one returns a proposition.
 Only `ask()` decides it as `True`, `False`, or `Unknown`.
 
 The governing policies are `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001`,
-`POL-CAT-021`, `POL-CAT-028`, `POL-CAT-083`, `POL-CAT-086`, `POL-CAT-088`,
-`POL-SET-009`, `POL-SET-010`, `POL-SET-025`, `POL-SET-026`,
-`POL-SET-033` through `POL-SET-035`, `POL-API-002`, and `POL-API-016`.
+`POL-GEN-017`, `POL-CAT-021`, `POL-CAT-028`, `POL-CAT-071`, `POL-CAT-083`, `POL-CAT-085`,
+`POL-CAT-086`, `POL-CAT-088`, `POL-FUN-002`, `POL-FUN-003`, `POL-FUN-035`,
+`POL-SET-009`, `POL-SET-010`, `POL-SET-025`, `POL-SET-026`, `POL-SET-033`
+through `POL-SET-035`, `POL-API-002`, `POL-API-016`, and `POL-DOC-010` through
+`POL-DOC-013`.
 
 ## Implementation ownership
 
@@ -52,6 +55,23 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
 The inclusion sends each cardinal to its selected representative. It sends a cardinal
 morphism to its retained set map. Thus a generalized element `t: T -> kappa` maps to the
 generalized set element `R(t): R_T -> R_kappa` through the same morphism action.
+
+This inclusion is the representative transport from cardinal objects to sets. The
+point category of `Cardinal()` owns its separate placement as a semiring object in
+`Cat()`:
+
+```python
+# Cat().Point(Cardinal())
+def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
+    return (Fun(self, Semirings(Cat())).Faithful().inclusion(),)
+```
+
+The additive operation functor is the categorical coproduct in `Cardinal()`, with unit
+object `0`. The multiplicative operation functor is the categorical product, with unit
+object `1`. The selected point functor supplies their complete compiled roles, exact
+constructor conversions, retained state, and public methods. The strict-or-coherent law
+data follows the open choice recorded in
+[functor.md](functor.md#ambient-algebraic-categories).
 
 For every pair of represented cardinals, `Mor(Cardinal())(kappa, lambda)` is the
 discrete category on the owned function set between their representatives:
@@ -187,7 +207,9 @@ n * kappa
 n ** kappa
 ```
 
-These are the inherited categorical constructions:
+The point functor exposes addition and multiplication from the internal semiring
+structure. Their operation functors are the inherited categorical coproduct and product
+constructions. Exponentiation remains the categorical exponential:
 
 \[
 \kappa+\lambda=\kappa\sqcup\lambda,
@@ -386,6 +408,10 @@ X.cardinality()
 Its morphism map accepts a set isomorphism. The construction retains a selected bijection
 between each set and its cardinal representative. It conjugates the set isomorphism by
 these selected bijections to construct the corresponding cardinal isomorphism.
+
+This functor has source `core(Sets())` and codomain `Cardinal()`. The semiring point
+functor has source `{Cardinal()}` and codomain `Semirings(Cat())`. Their distinct
+endpoints keep representative transport separate from algebraic placement.
 
 Public access is category-owned:
 

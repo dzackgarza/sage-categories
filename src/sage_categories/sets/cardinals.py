@@ -68,12 +68,14 @@ module attributes resolved on first access.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, cast
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any
 
 from sage.structure.coerce_dict import MonoDict
 
 import sage_categories.sets.category as _sets
+import sage_categories.sets.objects as _set_objects
+import sage_categories.ordinals.category as _ordinals
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.properties import PropertySubcategory
@@ -108,6 +110,12 @@ class CardinalObjectData:
 
     key: Key
     terms: tuple[CardinalObject, ...]
+    canonical: CardinalObject = field(init=False)
+
+    def bind(self, canonical: CardinalObject) -> None:
+        """Bind this state to its one public cardinal."""
+        if not hasattr(self, "canonical"):
+            self.canonical = canonical
 
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -121,6 +129,7 @@ class CardinalObjectDeclaration(ObjectOfCategory):
     """An exact cardinal, retained by its normalized expression."""
 
     def __init__(self, data: CardinalObjectData) -> None:
+        data.bind(self)
         self._key = data.key
         self._terms = data.terms
         super().__init__()
@@ -274,7 +283,8 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
             representative = Fun(self, _sets.Sets()).FullyFaithful()(self.representative, lambda morphism: morphism._set_map)
 
             def object_input(source: ObjectConstructionInput[CardinalObjectData]) -> ObjectConstructionInput[SetObjectData]:
-                cardinal = cast(CardinalObject, source.canonical_image)
+                cardinal = source.datum.canonical
+                assert source.canonical_image is cardinal
                 if cardinal not in self._representatives:
                     self._representatives[cardinal] = self._select_representative(cardinal, source.datum)
                 return retained_object_input(self._representatives[cardinal])
@@ -569,6 +579,9 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
 _CARDINAL = CardinalCategory()
 CardinalObject = _CARDINAL.ObjectType
 CardinalMorphism = _CARDINAL.MorphismType
+_sets.CardinalObject = CardinalObject
+_set_objects.CardinalObject = CardinalObject
+_ordinals.CardinalObject = CardinalObject
 
 
 def Cardinal() -> CardinalCategory:

@@ -74,7 +74,18 @@ def place(value: CategoryPoint, category: Category) -> None:
 
     The value keeps its own implementation class: an object of ``Cat()`` is an
     instance of its own ``Category`` subclass, so its refined class is the join of
-    the target role class with that class (POL-KERNEL-013, POL-CAT-074).
+    that class with the target role class (POL-KERNEL-013, POL-CAT-074).
+
+    The value's own class comes first.  It declares the mathematics this one value
+    owns; the role class supplies what every value of the category inherits, so the
+    declaration overrides the inherited method rather than the reverse.  This is
+    Sage's ``Parent._init_category_`` and ``Parent._refine_category_``, which build
+    ``dynamic_class(f"{type(self).__name__}_with_category", (type(self),
+    category.parent_class), doccls=type(self))`` (``sage/structure/parent.pyx``,
+    inspected 2026-08-27).  ``Cat()`` is the value that needs it: its declaration
+    ``CategoryOfCategories`` names the morphism and two-morphism types of ``Cat``,
+    while the compiled ``Cat().ObjectType`` carries the generic
+    ``CategoryDeclaration`` body every category inherits.
     """
     target = compiler.node(category, Role.OBJECT)
     role_class = target.category.role_class(target.role)
@@ -93,7 +104,13 @@ def place(value: CategoryPoint, category: Category) -> None:
     if issubclass(role_class, type(value)):
         value.__class__ = role_class
         return
-    value.__class__ = dynamic_class(role_class.__name__, (role_class, type(value)), prepend_cls_bases=False)
+    declared = type(value)
+    value.__class__ = dynamic_class(
+        f"{declared.__name__}_with_category",
+        (declared, role_class),
+        doccls=declared,
+        prepend_cls_bases=False,
+    )
 
 
 def _join(current: Category, target: Category) -> Category:

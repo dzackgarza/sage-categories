@@ -470,7 +470,12 @@ def _assert_linearized(current: Node, compiled: type[CategoryPoint]) -> None:
         return
     order = [_nodes_by_key[key] for key in _linearize(current)[0]]
     classes = [found.category.role_class(found.role) for found in order]
-    expected = (compiled, *classes, *kernel_base(current.role).__mro__)
+    # The chain ends on the kernel class of the *last* node, not of ``current``.  A
+    # full subcategory of ``Mor(C)`` keeps the object role -- it is not itself a
+    # morphism category -- while its objects are morphisms of ``C``, so its chain runs
+    # through ``(C, morphism)`` and ends on ``MorphismOfCategory``.
+    tail = order[-1].role if order else current.role
+    expected = (compiled, *classes, *kernel_base(tail).__mro__)
     actual = tuple(compiled.__mro__)
     assert actual == expected, (
         f"the {current.role.value} MRO of {current.category!r} is "

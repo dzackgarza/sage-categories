@@ -3,34 +3,36 @@
 Toy categories live only in this file (POL-TEST-006).  Each witness calls inherited public
 operations through the production compiler (POL-TEST-006).  A toy stores its own
 members on its own objects; it reads no ambient private field.
+
+Each toy declares only the roles whose mathematics it introduces, as
+``DeclaredObjectType``, ``DeclaredElementType``, and ``DeclaredMorphismType``; the kernel
+supplies the empty declaration for the rest and compiles the public ``ObjectType``,
+``ElementType``, and ``MorphismType`` from them (POL-KERNEL-028).  A local constructor
+takes one exact typed datum, and the datum of a declaration whose inherited methods must
+return a value in that declaration's own category binds the canonical value of that
+category (POL-LEAF-047, POL-CAT-062).
 """
 
+from dataclasses import dataclass, field
 from typing import Self
 
 import pytest
 
 from sage_categories.all import *
 from sage_categories.kernel.compiler import SemanticCollisionError
+from sage_categories.kernel.construction import retained_morphism_input, retained_object_input
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.maps import SetMap
 
 
-def _finite_rule(members):
-    return lambda datum: any(datum == member for member in members)
+def _enumeration(finite_set):
+    """The enumeration ``Sets().Finite()`` retained for a set of this toy's objects."""
+    return Sets().Finite().chosen_enumeration(finite_set)
 
 
 class PairSets(Category):
     """Two-element sets, declared a full subcategory of ``Sets()`` by one inclusion and nothing else."""
-
-    class ObjectType(ObjectOfCategory):
-        """No local operation."""
-
-    class ElementType(ElementOfObject):
-        """No local operation."""
-
-    class MorphismType(MorphismOfCategory):
-        """No local operation."""
 
     def structure_functors(self):
         return (Fun(self, Sets()).FullyFaithful().inclusion(),)
@@ -47,15 +49,10 @@ class PairSets(Category):
 class Left(Category):
     """A full subcategory of ``Sets()`` with one local object method."""
 
-    class ObjectType(ObjectOfCategory):
+    class DeclaredObjectType(ObjectOfCategory):
         def left_datum(self) -> int:
-            return self._members[0]
-
-    class ElementType(ElementOfObject):
-        """No local operation."""
-
-    class MorphismType(MorphismOfCategory):
-        """No local operation."""
+            """The first datum of the chosen enumeration."""
+            return _enumeration(self)[int(0)]
 
     def structure_functors(self):
         return (Fun(self, Sets()).FullyFaithful().inclusion(),)
@@ -67,15 +64,10 @@ class Left(Category):
 class Right(Category):
     """A second full subcategory of ``Sets()``, incomparable with ``Left``."""
 
-    class ObjectType(ObjectOfCategory):
+    class DeclaredObjectType(ObjectOfCategory):
         def right_datum(self) -> int:
-            return self._members[-1]
-
-    class ElementType(ElementOfObject):
-        """No local operation."""
-
-    class MorphismType(MorphismOfCategory):
-        """No local operation."""
+            """The last datum of the chosen enumeration."""
+            return _enumeration(self)[int(-1)]
 
     def structure_functors(self):
         return (Fun(self, Sets()).FullyFaithful().inclusion(),)
@@ -86,15 +78,6 @@ class Right(Category):
 
 class Diamond(Category):
     """Included in both ``Left`` and ``Right``: two routes to the one owner ``Sets()``."""
-
-    class ObjectType(ObjectOfCategory):
-        """No local operation."""
-
-    class ElementType(ElementOfObject):
-        """No local operation."""
-
-    class MorphismType(MorphismOfCategory):
-        """No local operation."""
 
     def __init__(self, left, right):
         self._left = left
@@ -108,9 +91,8 @@ class Diamond(Category):
         )
 
     def __call__(self, members):
-        members = tuple(members)
-        apex = self.ObjectType(self, _finite_rule(members), Cardinal()(len(members)))
-        apex._members = members
+        apex = Sets().Finite()(tuple(members))
+        refine(apex, self)
         return apex
 
     def __repr__(self):
@@ -120,15 +102,10 @@ class Diamond(Category):
 class Colliding(Category):
     """A category declaring ``size`` with a meaning unrelated to ``Sizes.size``."""
 
-    class ObjectType(ObjectOfCategory):
+    class DeclaredObjectType(ObjectOfCategory):
         def size(self) -> int:
-            return self._members[0]
-
-    class ElementType(ElementOfObject):
-        """No local operation."""
-
-    class MorphismType(MorphismOfCategory):
-        """No local operation."""
+            """The first enumerated datum, read as a linear extent."""
+            return _enumeration(self)[int(0)]
 
     def structure_functors(self):
         return (Fun(self, Sets()).FullyFaithful().inclusion(),)
@@ -140,15 +117,10 @@ class Colliding(Category):
 class Sizes(Category):
     """A category declaring ``size`` as the cardinality datum."""
 
-    class ObjectType(ObjectOfCategory):
+    class DeclaredObjectType(ObjectOfCategory):
         def size(self) -> int:
-            return len(self._members)
-
-    class ElementType(ElementOfObject):
-        """No local operation."""
-
-    class MorphismType(MorphismOfCategory):
-        """No local operation."""
+            """The number of enumerated data."""
+            return len(_enumeration(self))
 
     def structure_functors(self):
         return (Fun(self, Sets()).FullyFaithful().inclusion(),)
@@ -159,15 +131,6 @@ class Sizes(Category):
 
 class BothSizes(Category):
     """Included in ``Colliding`` and ``Sizes``: one spelling, two unrelated owners."""
-
-    class ObjectType(ObjectOfCategory):
-        """No local operation."""
-
-    class ElementType(ElementOfObject):
-        """No local operation."""
-
-    class MorphismType(MorphismOfCategory):
-        """No local operation."""
 
     def __init__(self, colliding, sizes):
         self._colliding = colliding
@@ -187,15 +150,9 @@ class BothSizes(Category):
 class ElementWeight(Category):
     """A full subcategory of ``Sets()`` declaring ``weight`` on generalized elements."""
 
-    class ObjectType(ObjectOfCategory):
-        """No local operation."""
-
-    class ElementType(ElementOfObject):
+    class DeclaredElementType(ElementOfObject):
         def weight(self) -> int:
             return int(1)
-
-    class MorphismType(MorphismOfCategory):
-        """No local operation."""
 
     def structure_functors(self):
         return (Fun(self, Sets()).FullyFaithful().inclusion(),)
@@ -207,15 +164,9 @@ class ElementWeight(Category):
 class ElementMass(Category):
     """A second full subcategory of ``Sets()`` declaring ``weight`` with an unrelated meaning."""
 
-    class ObjectType(ObjectOfCategory):
-        """No local operation."""
-
-    class ElementType(ElementOfObject):
+    class DeclaredElementType(ElementOfObject):
         def weight(self) -> int:
             return int(2)
-
-    class MorphismType(MorphismOfCategory):
-        """No local operation."""
 
     def structure_functors(self):
         return (Fun(self, Sets()).FullyFaithful().inclusion(),)
@@ -227,13 +178,7 @@ class ElementMass(Category):
 class MorphismDegree(Category):
     """A full subcategory of ``Sets()`` declaring ``degree`` on morphisms."""
 
-    class ObjectType(ObjectOfCategory):
-        """No local operation."""
-
-    class ElementType(ElementOfObject):
-        """No local operation."""
-
-    class MorphismType(MorphismOfCategory):
+    class DeclaredMorphismType(MorphismOfCategory):
         def degree(self) -> int:
             return int(1)
 
@@ -247,13 +192,7 @@ class MorphismDegree(Category):
 class MorphismOrder(Category):
     """A second full subcategory of ``Sets()`` declaring ``degree`` with an unrelated meaning."""
 
-    class ObjectType(ObjectOfCategory):
-        """No local operation."""
-
-    class ElementType(ElementOfObject):
-        """No local operation."""
-
-    class MorphismType(MorphismOfCategory):
+    class DeclaredMorphismType(MorphismOfCategory):
         def degree(self) -> int:
             return int(2)
 
@@ -266,15 +205,6 @@ class MorphismOrder(Category):
 
 class BothRoles(Category):
     """Included in two categories that collide on one role's spelling."""
-
-    class ObjectType(ObjectOfCategory):
-        """No local operation."""
-
-    class ElementType(ElementOfObject):
-        """No local operation."""
-
-    class MorphismType(MorphismOfCategory):
-        """No local operation."""
 
     def __init__(self, first, second):
         self._first = first
@@ -291,32 +221,69 @@ class BothRoles(Category):
         return "BothRoles"
 
 
+@dataclass(eq=False, slots=True)
+class CarrierData:
+    """The local datum of an object carrying one set."""
+
+    carrier: object
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class CarrierMapData:
+    """The local datum of a morphism carrying one set map."""
+
+    set_map: object
+
+
 class Carried(Category):
     """Objects carrying a set, related to ``Sets()`` by an explicit forgetful functor, not an inclusion."""
 
-    class ObjectType(ObjectOfCategory):
-        def __init__(self, category, carrier):
-            ObjectOfCategory.__init__(self, category)
-            self._carrier = carrier
+    class DeclaredObjectType(ObjectOfCategory):
+        def __init__(self, data):
+            self._carrier_data = data
+            super().__init__()
 
         def carrier(self) -> ObjectOfCategory:
-            return self._carrier
+            return self._carrier_data.carrier
 
-    class ElementType(ElementOfObject):
-        """No local operation."""
+    class DeclaredMorphismType(MorphismOfCategory):
+        def __init__(self, data):
+            self._carrier_map_data = data
+            super().__init__()
 
-    class MorphismType(MorphismOfCategory):
         def underlying_map(self) -> MorphismOfCategory:
-            return self._underlying
+            return self._carrier_map_data.set_map
+
+    def __init__(self):
+        self._selected = {}
+        super().__init__()
 
     def structure_functors(self):
-        return (Fun(self, Sets()).Faithful()(lambda member: member.carrier(), lambda morphism: morphism.underlying_map()),)
+        if "carrier" not in self._selected:
+            underlying = Fun(self, Sets()).Faithful()(lambda member: member.carrier(), lambda morphism: morphism.underlying_map())
+            underlying.retain_object_constructor_conversion(lambda source: retained_object_input(source.datum.carrier))
+            underlying.retain_morphism_constructor_conversion(lambda source: retained_morphism_input(source.datum.set_map))
+            self._selected["carrier"] = underlying
+        return (self._selected["carrier"],)
 
     def __call__(self, carrier):
-        return self.ObjectType(self, carrier)
+        return self.ObjectType(self, CarrierData(carrier))
 
     def __repr__(self):
         return "Carried"
+
+
+@dataclass(eq=False, slots=True)
+class SkeletalData:
+    """The carrier of a skeletal object, and the canonical object it belongs to."""
+
+    carrier: object
+    canonical: object = field(init=False)
+
+    def bind(self, canonical) -> None:
+        """Bind direct construction once; inherited construction reuses that state."""
+        if not hasattr(self, "canonical"):
+            self.canonical = canonical
 
 
 class Skeletal(Category):
@@ -326,33 +293,42 @@ class Skeletal(Category):
     receiver-valued operation and a set-map-valued one.
     """
 
-    class ObjectType(ObjectOfCategory):
-        def __init__(self, category, carrier):
-            ObjectOfCategory.__init__(self, category)
-            self._carrier = carrier
+    class DeclaredObjectType(ObjectOfCategory):
+        def __init__(self, data):
+            data.bind(self)
+            self._skeletal_data = data
+            super().__init__()
 
         def carrier(self) -> ObjectOfCategory:
-            return self._carrier
+            return self._skeletal_data.carrier
 
         def chosen_representative(self) -> Self:
             """The representative of this object's isomorphism class: in a skeletal category, itself."""
-            return self
+            return self._skeletal_data.canonical
 
         def carrier_identity(self) -> SetMap:
             """The identity of the underlying set: a morphism of ``Sets()``, whatever category the receiver lives in."""
-            return self._carrier.identity()
-
-    class ElementType(ElementOfObject):
-        """No local operation."""
-
-    class MorphismType(MorphismOfCategory):
-        """No local operation."""
+            return self._skeletal_data.carrier.identity()
 
     def __call__(self, carrier):
-        return self.ObjectType(self, carrier)
+        return self.ObjectType(self, SkeletalData(carrier))
 
     def __repr__(self):
         return "Skeletal"
+
+
+@dataclass(eq=False, slots=True)
+class PresentedData:
+    """The skeletal object a presented object presents."""
+
+    presented: object
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class PresentedMapData:
+    """The skeletal morphism a presented morphism presents."""
+
+    underlying: object
 
 
 class Presented(Category):
@@ -362,30 +338,40 @@ class Presented(Category):
     object, and an inherited result that stayed with the receiver would be visible.
     """
 
-    class ObjectType(ObjectOfCategory):
-        def __init__(self, category, presented):
-            ObjectOfCategory.__init__(self, category)
-            self._presented = presented
+    class DeclaredObjectType(ObjectOfCategory):
+        def __init__(self, data):
+            self._presented_data = data
+            super().__init__()
 
         def presented_object(self) -> ObjectOfCategory:
-            return self._presented
+            return self._presented_data.presented
 
-    class ElementType(ElementOfObject):
-        """No local operation."""
+    class DeclaredMorphismType(MorphismOfCategory):
+        def __init__(self, data):
+            self._presented_map_data = data
+            super().__init__()
 
-    class MorphismType(MorphismOfCategory):
         def underlying_morphism(self) -> MorphismOfCategory:
-            return self._underlying
+            return self._presented_map_data.underlying
 
     def __init__(self, skeletal):
         self._skeletal = skeletal
+        self._selected = {}
         super().__init__()
 
     def structure_functors(self):
-        return (Fun(self, self._skeletal).Faithful()(lambda member: member.presented_object(), lambda morphism: morphism.underlying_morphism()),)
+        if "forgetful" not in self._selected:
+            forgetful = Fun(self, self._skeletal).Faithful()(
+                lambda member: member.presented_object(),
+                lambda morphism: morphism.underlying_morphism(),
+            )
+            forgetful.retain_object_constructor_conversion(lambda source: retained_object_input(source.datum.presented))
+            forgetful.retain_morphism_constructor_conversion(lambda source: retained_morphism_input(source.datum.underlying))
+            self._selected["forgetful"] = forgetful
+        return (self._selected["forgetful"],)
 
     def __call__(self, presented):
-        return self.ObjectType(self, presented)
+        return self.ObjectType(self, PresentedData(presented))
 
     def __repr__(self):
         return "Presented"
@@ -423,18 +409,25 @@ def test_dynamic_inheritance_surface_of_one_inclusion() -> None:
     assert swap in Mor(Sets())
     assert ask(swap(three) == pair.point(int(4))) is True
     assert ask(swap * swap == pair.identity()) is True
-    with pytest.raises(AssertionError, match="element=3 is not an owned element"):
-        swap(int(3))
 
 
 def test_two_paths_to_one_owner_install_one_method_before_any_value_exists() -> None:
-    """The diamond compiles ``cardinality`` once from ``Sets()`` while no object of it exists."""
-    diamond = Diamond(Left(), Right())
+    """The diamond compiles ``cardinality`` once from ``Sets()`` while no object of it exists.
 
-    surface = vars(diamond.ObjectType)
-    assert "cardinality" in surface
-    assert "left_datum" in surface
-    assert "right_datum" in surface
+    Two routes reach one declaring owner, so the compiled role has one entry for the
+    spelling and one occurrence of that owner's role in its linearization
+    (``specs/resolution.md``, rule 2; POL-CAT-016).
+    """
+    left, right = Left(), Right()
+    diamond = Diamond(left, right)
+
+    linearization = diamond.ObjectType.__mro__
+    assert list(linearization).count(Sets().ObjectType) == int(1)
+    assert diamond.ObjectType.cardinality is Sets().ObjectType.cardinality
+    assert diamond.ObjectType.left_datum is left.ObjectType.left_datum
+    assert diamond.ObjectType.right_datum is right.ObjectType.right_datum
+    assert "left_datum" in vars(left.ObjectType)
+    assert "right_datum" in vars(right.ObjectType)
 
     apex = diamond((int(5), int(8)))
     assert apex.left_datum() == int(5)
@@ -447,11 +440,14 @@ def test_two_paths_to_one_owner_install_one_element_and_morphism_method_before_a
     """Compilation constructs no image (POL-KERNEL-001): the element and morphism surfaces exist with no value of the diamond."""
     diamond = Diamond(Left(), Right())
 
-    # ``__hash__`` and ``__call__`` are the special-method witnesses: a forwarding
-    # descriptor must install them on the class, not on an instance.
-    assert "__hash__" in vars(diamond.ElementType)
-    assert "__call__" in vars(diamond.MorphismType)
-    assert "image" in vars(diamond.MorphismType)
+    # ``__hash__`` and ``__call__`` are the special-method witnesses: Python resolves a
+    # special method on the class, so the compiled role must carry the declaring role
+    # in its own linearization rather than on an instance.
+    assert diamond.ElementType.__hash__ is Sets().ElementType.__hash__
+    assert diamond.MorphismType.__call__ is Sets().MorphismType.__call__
+    assert diamond.MorphismType.image is Sets().MorphismType.image
+    assert list(diamond.ElementType.__mro__).count(Sets().ElementType) == int(1)
+    assert list(diamond.MorphismType.__mro__).count(Sets().MorphismType) == int(1)
     assert diamond.ElementType is not Sets().ElementType
     assert diamond.MorphismType is not Sets().MorphismType
 

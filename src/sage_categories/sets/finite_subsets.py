@@ -169,7 +169,7 @@ class FiniteSubsetsCategory(PropertySubcategory[[Rule], []]):
             subsets = finite(tuple(frozenset(members) for members in engine))
             self._engines[subsets] = engine
         else:
-            base_rule = base_set._membership_rule
+            base_rule = base_set._set_object_data.membership_rule
 
             def membership_rule(datum: Datum) -> Decision:
                 match datum:
@@ -221,7 +221,7 @@ class FiniteSubsetsCategory(PropertySubcategory[[Rule], []]):
         assert point in subsets, f"{point!r} is not a point of {subsets!r}"
         if point not in self._subsets:
             sets = _sets.Sets()
-            base_set, members = self.retained_base_set(subsets), point._datum
+            base_set, members = self.retained_base_set(subsets), point._set_element_data.datum
             if sets.Finite().has_chosen_enumeration(base_set):
                 # The induced enumeration lists the members in the order of the base set's.
                 members = frozenset(datum for datum in sets.Finite().chosen_enumeration(base_set) if datum in members)
@@ -237,7 +237,7 @@ class FiniteSubsetsCategory(PropertySubcategory[[Rule], []]):
 
     def index(self, subsets: SetObject, subset: SetObject) -> CardinalObject:
         assert subsets in self._engines, f"{self.retained_base_set(subsets)!r} has no chosen enumeration, so {subsets!r} has no induced enumeration"
-        return Cardinal()(self._engines[subsets].rank(self.point_of(subsets, subset)._datum))
+        return Cardinal()(self._engines[subsets].rank(self.point_of(subsets, subset)._set_element_data.datum))
 
     def subset_at_position(self, subsets: SetObject, position: CardinalObject | int) -> SetObject:
         assert subsets in self._engines, f"{self.retained_base_set(subsets)!r} has no chosen enumeration, so {subsets!r} has no induced enumeration"

@@ -202,6 +202,18 @@ Predicates follow their definitions and their available algorithms.
 Return `Unknown` when the implementation cannot determine a result.
 Do not replace missing knowledge with a fabricated Boolean answer.
 
+A predicate strictly generalizes a Boolean, so a Boolean is honest only where the
+question is two-valued by construction: established placement, a record of what was
+retained, the presence of a chosen enumeration. Every other question is a proposition,
+and `ask()` decides it.
+
+Decide an equality with `ask(a == b)`. On an owned value `==` returns a proposition, so
+its result decides nothing when consumed as a truth value, compared by identity against
+`True`, `False`, or `Unknown`, or folded through `all`, `any`, `and`, `or`, or `not`. A
+site whose operands happen to be engine values today is a latent defect: nothing fixes
+the datum type. Treat "this comparison cannot be `Unknown` here" as a claim that needs
+evidence.
+
 Refine a result into a property subcategory only when an exact computation or a cited theorem establishes the property.
 Otherwise, return it in the strongest category that the available mathematics establishes.
 Do not create certificate classes, proof records, or prose fields to simulate this refinement.
@@ -322,6 +334,19 @@ The generic `MorphismType` stores its domain and codomain and exposes `domain()`
 If a morphism predicate names a subcategory, implement it as containment in that subcategory.
 For example, test `f in Mor(C).Monomorphisms()` instead of inspecting the Python class of `f`.
 Prefer a morphism or functor formulation when the mathematical definition names a relation or transport.
+
+A functor transports constructor data. Declaring a supercategory says nothing about how
+to build one of its objects or morphisms from one of yours, and supplying that is the
+leaf's work. The leaf knows the target's constructors, provides constructors on its own
+objects and morphisms, and states how one of its own constructions produces the data the
+target's constructor consumes. A module category whose constructor takes an action
+`rho: A bullet X -> X` teaches the repository to produce a set from a module by stating
+the data `Sets()` requires. Writing those two rules is leaf work. Naming canonical
+images, construction inputs, routes, or transport around them is not.
+
+Selecting a functor is not a property of it. A leaf builds an ordinary functor and
+declares it structural by returning it from `structure_functors()`; there is no separate
+kind of functor and no constructor that makes one.
 
 For each functor `F: C -> D`:
 

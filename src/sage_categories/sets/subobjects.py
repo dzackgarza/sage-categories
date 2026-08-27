@@ -90,8 +90,7 @@ def _subset_by_enumeration(first: CategoryPoint, candidate: Any) -> Decision:
         return Unknown
     if not finite.has_chosen_enumeration(first):
         return Unknown
-    rule = candidate._set_object_data.membership_rule
-    return decision_and(*(rule(datum) for datum in finite.chosen_enumeration(first)))
+    return decision_and(*(candidate._membership_rule(datum) for datum in finite.chosen_enumeration(first)))
 
 
 subset_of.register_handler(_subset_by_identity)
@@ -130,7 +129,7 @@ class ChosenSubsetRole(ObjectOfCategory):
         return self._combined(other, lambda in_first, in_second: decision_or(decision_and(in_first, decision_not(in_second)), decision_and(in_second, decision_not(in_first))))
 
     def complement(self) -> SetObject:
-        rule = self._set_object_data.membership_rule
+        rule = self._membership_rule
         return self.underlying_set().subset_from(lambda datum: decision_not(rule(datum)))
 
     def __or__(self, other: SetObject) -> SetObject:
@@ -142,8 +141,7 @@ class ChosenSubsetRole(ObjectOfCategory):
     def _combined(self, other: SetObject, combine: Callable[[Decision, Decision], Decision]) -> SetObject:
         """The chosen subset of ``X`` whose membership is the combination of the two membership decisions."""
         assert other in _sets.Sets().ChosenSubsets() and other.underlying_set() is self.underlying_set(), f"{other!r} is not a chosen subset of {self.underlying_set()!r}"
-        first_rule = self._set_object_data.membership_rule
-        second_rule = other._set_object_data.membership_rule
+        first_rule, second_rule = self._membership_rule, other._membership_rule
         return self.underlying_set().subset_from(lambda datum: combine(first_rule(datum), second_rule(datum)))
 
 
@@ -171,7 +169,7 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
         """The chosen subset ``{x in X : predicate(x)}`` whose exact cardinality a construction theorem supplies (POL-SET-031)."""
         sets = _sets.Sets()
         assert base_set in sets, f"{base_set!r} is not an object of {sets!r}"
-        base_rule = base_set._set_object_data.membership_rule
+        base_rule = base_set._membership_rule
 
         def rule(datum: Datum) -> Decision:
             in_base = base_rule(datum)
@@ -186,8 +184,7 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
         """The chosen subset of ``X`` with the given finite enumeration of member data, each admitted by ``X``."""
         sets = _sets.Sets()
         assert base_set in sets, f"{base_set!r} is not an object of {sets!r}"
-        base_rule = base_set._set_object_data.membership_rule
-        assert all(base_rule(member) is not False for member in members), f"{members!r} are not all members of {base_set!r}"
+        assert all(base_set._membership_rule(member) is not False for member in members), f"{members!r} are not all members of {base_set!r}"
         subset = sets.Finite()(members)
         refine(subset, self)
         return self._retain_inclusion(subset, base_set)
@@ -196,7 +193,7 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
         """``chi_A``, retained per chosen subset."""
         if subset not in self._characteristics:
             sets = _sets.Sets()
-            rule = subset._set_object_data.membership_rule
+            rule = subset._membership_rule
 
             def indicator(datum: Datum) -> Datum:
                 decision = rule(datum)
@@ -211,7 +208,7 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
         sets = _sets.Sets()
         assert base_set in sets, f"{base_set!r} is not an object of {sets!r}"
         finite = sets.Finite()
-        base_rule = base_set._set_object_data.membership_rule
+        base_rule = base_set._membership_rule
 
         def rule(datum: Datum) -> Decision:
             in_base = base_rule(datum)
@@ -244,10 +241,9 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
         if set_map in self._images:
             return self._images[set_map]
         domain, codomain = set_map.domain(), set_map.codomain()
-        codomain_rule = codomain._set_object_data.membership_rule
+        codomain_rule = codomain._membership_rule
         if finite.has_chosen_enumeration(domain):
-            rule = set_map._set_morphism_data.rule
-            images = tuple(rule(datum) for datum in finite.chosen_enumeration(domain))
+            images = tuple(set_map._rule(datum) for datum in finite.chosen_enumeration(domain))
             comparisons = tuple(images[i] == images[j] for i in range(len(images)) for j in range(i))
             if all(decision is not Unknown for decision in comparisons):
                 # The image of a finite set is finite (Mathlib ``Set.Finite.image``): the

@@ -120,7 +120,7 @@ class Family:
 
 
 def _index_datum(vertex: DiscreteObject) -> Datum:
-    return vertex.point()._set_element_data.datum
+    return vertex.point()._datum
 
 
 def _exact(cardinality: CardinalObject | UnknownClass) -> bool:
@@ -190,7 +190,7 @@ def product_of_sets(diagram: Functor) -> SetObject:
             case Family() if datum.index_set() is index_set:
                 if factors is Unknown:
                     return Unknown
-                return decision_and(*(factor._set_object_data.membership_rule(datum(index)) for index, factor in zip(finite.chosen_enumeration(index_set), factors)))
+                return decision_and(*(factor._membership_rule(datum(index)) for index, factor in zip(finite.chosen_enumeration(index_set), factors)))
             case _:
                 return False
 
@@ -216,10 +216,7 @@ def product_of_sets(diagram: Functor) -> SetObject:
         return sets.construct_morphism(
             source,
             apex,
-            lambda source_datum: Family(
-                index_set,
-                lambda index_datum: candidate_cone.component(shape(index_set.point(index_datum)))._set_morphism_data.rule(source_datum),
-            ),
+            lambda source_datum: Family(index_set, lambda index_datum: candidate_cone.component(shape(index_set.point(index_datum)))._rule(source_datum)),
         )
 
     lowered = sets.Products().lowered(diagram)
@@ -275,10 +272,10 @@ def coproduct_of_sets(diagram: Functor) -> SetObject:
     def membership_rule(datum: Datum) -> Decision:
         match datum:
             case (index_datum, value):
-                index_decision = index_set._set_object_data.membership_rule(index_datum)
+                index_decision = index_set._membership_rule(index_datum)
                 if index_decision is False:
                     return False
-                return decision_and(index_decision, cofactor(index_datum)._set_object_data.membership_rule(value))
+                return decision_and(index_decision, cofactor(index_datum)._membership_rule(value))
             case _:
                 return False
 
@@ -306,7 +303,7 @@ def coproduct_of_sets(diagram: Functor) -> SetObject:
         return sets.construct_morphism(
             apex,
             target,
-            lambda tagged: candidate_cocone.component(shape(index_set.point(tagged[0])))._set_morphism_data.rule(tagged[1]),
+            lambda tagged: candidate_cocone.component(shape(index_set.point(tagged[0])))._rule(tagged[1]),
         )
 
     lowered = sets.Coproducts().lowered(diagram)

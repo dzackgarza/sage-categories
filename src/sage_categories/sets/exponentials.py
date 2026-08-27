@@ -55,8 +55,7 @@ class Function:
         finite = _sets.Sets().Finite()
         if not finite.has_chosen_enumeration(self._map.domain()):
             return Unknown
-        rule = self._map._set_morphism_data.rule
-        return tuple(rule(datum) for datum in finite.chosen_enumeration(self._map.domain()))
+        return tuple(self._map._rule(datum) for datum in finite.chosen_enumeration(self._map.domain()))
 
     def __eq__(self, other: Any) -> Decision:
         match other:
@@ -111,7 +110,7 @@ def evaluation_morphism(exponent: SetObject, base: SetObject) -> SetMap:
     key = (exponent, base, sets)
     if key not in _evaluations:
         product = sets.Products()((function_set(exponent, base), exponent))
-        _evaluations[key] = sets.construct_morphism(product, base, lambda family: family(0).map()._set_morphism_data.rule(family(1)))
+        _evaluations[key] = sets.construct_morphism(product, base, lambda family: family(0).map()._rule(family(1)))
     return _evaluations[key]
 
 

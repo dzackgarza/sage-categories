@@ -194,17 +194,15 @@ class CosliceCategory(SliceLikeCategory):
 
 
 def slice_over(base: Category, fixed: ObjectOfCategory) -> SliceCategory:
-    """``C.SliceOver(x)`` with its pullback presentation retained in ``Cat().Pullbacks()``."""
+    """``C.SliceOver(x)``: the chosen pullback of its cospan, retained in ``Cat().Pullbacks()``."""
     apex = SliceCategory(base, fixed)
-    strict_pullback(cospan_diagram(Cat(), apex.first_functor(), apex.second_functor()), apex)
-    return apex
+    return strict_pullback(cospan_diagram(Cat(), apex.first_functor(), apex.second_functor()), apex)
 
 
 def coslice_under(base: Category, fixed: ObjectOfCategory) -> CosliceCategory:
-    """``C.CosliceUnder(x)`` with its pullback presentation retained in ``Cat().Pullbacks()``."""
+    """``C.CosliceUnder(x)``: the chosen pullback of its cospan, retained in ``Cat().Pullbacks()``."""
     apex = CosliceCategory(base, fixed)
-    strict_pullback(cospan_diagram(Cat(), apex.first_functor(), apex.second_functor()), apex)
-    return apex
+    return strict_pullback(cospan_diagram(Cat(), apex.first_functor(), apex.second_functor()), apex)
 
 
 # -- comma categories ------------------------------------------------------------------------
@@ -217,7 +215,7 @@ def _pair_functor(first: Functor, second: Functor) -> Functor:
     source = Cat().Products()((first.domain(), second.domain()))
     target = Cat().Products()((first.codomain(), second.codomain()))
     legs = {0: first * source.product_projection(0), 1: second * source.product_projection(1)}
-    return target.universal_morphism(cone(target.diagram(), source.apex(), lambda vertex: legs[sequence_position(vertex)]))
+    return target.universal_morphism(cone(target.diagram(), source, lambda vertex: legs[sequence_position(vertex)]))
 
 
 def _endpoint_functor(base: Category) -> Functor:
@@ -233,7 +231,7 @@ def comma_category(first: Functor, second: Functor) -> PullbackCategory:
     assert first.codomain() is second.codomain(), f"{first!r} and {second!r} have different codomains"
     key = (first, second, Cat())
     if key not in _commas:
-        _commas[key] = Cat().Pullbacks()(cospan_diagram(Cat(), _pair_functor(first, second), _endpoint_functor(first.codomain()))).apex()
+        _commas[key] = Cat().Pullbacks()(cospan_diagram(Cat(), _pair_functor(first, second), _endpoint_functor(first.codomain())))
     return _commas[key]
 
 

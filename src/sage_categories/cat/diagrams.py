@@ -227,17 +227,17 @@ def domain_lift(functors: FunctorCategory, morphism: MorphismOfCategory, member_
 # -- limits and colimits in ``Fun(I, C)``, pointwise (specs/functor.md, "Diagram shapes and universal constructions") -----------------------------------------
 
 
-def _leg(presentation: ObjectOfCategory, vertex: ObjectOfCategory) -> MorphismOfCategory:
+def _leg(constructed: ObjectOfCategory, vertex: ObjectOfCategory) -> MorphismOfCategory:
     """The cone component at ``vertex``: ``product_projection`` of a product, ``projection`` of a general limit."""
-    if is_discrete(presentation.index_category()):
-        return presentation.product_projection(vertex)
-    return presentation.projection(vertex)
+    if is_discrete(constructed.index_category()):
+        return constructed.product_projection(vertex)
+    return constructed.projection(vertex)
 
 
-def _coleg(presentation: ObjectOfCategory, vertex: ObjectOfCategory) -> MorphismOfCategory:
-    if is_discrete(presentation.index_category()):
-        return presentation.coproduct_injection(vertex)
-    return presentation.injection(vertex)
+def _coleg(constructed: ObjectOfCategory, vertex: ObjectOfCategory) -> MorphismOfCategory:
+    if is_discrete(constructed.index_category()):
+        return constructed.coproduct_injection(vertex)
+    return constructed.injection(vertex)
 
 
 def pointwise_limit(diagram: Functor) -> ObjectOfCategory:

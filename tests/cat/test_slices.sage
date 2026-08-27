@@ -237,7 +237,7 @@ def test_the_codomain_evaluation_lifts_a_map_by_pullback_with_both_projections()
     assert lift.component(arrow(int(1))) is include
     assert ask(residue * to_four == include * lifted) is True
     assert ask(lifted.domain().cardinality() == int(3)) is True
-    pullback = Sets().Pullbacks().canonical_presentation(lifted.domain())
+    pullback = lifted.domain()
     assert pullback in Sets().Pullbacks()
     assert pullback.diagram().on_object(cospan(int(0))) is four and pullback.diagram().on_object(cospan(int(1))) is two
     assert lifted is pullback.projection(cospan(int(1)))
@@ -279,9 +279,9 @@ def test_a_shared_carrier_pullback_accepts_one_carrier_and_rejects_two() -> None
     assert combined in Cat().Pullbacks()
     assert combined.projection(cospan(int(0))).codomain() is marked
     assert combined.projection(cospan(int(1))).codomain() is subsetted
-    pair = combined.apex()((marked(three, three.point(int(1))), subsetted(three, three.subset_from(lambda datum: datum > int(0)))))
-    assert pair in combined.apex()
+    pair = combined((marked(three, three.point(int(1))), subsetted(three, three.subset_from(lambda datum: datum > int(0)))))
+    assert pair in combined
     assert combined.projection(cospan(int(2))).on_object(pair) is three
     assert combined.projection(cospan(int(0))).on_object(pair).mark() is three.point(int(1))
     with pytest.raises(AssertionError):
-        combined.apex()((marked(three, three.point(int(1))), subsetted(other, other.subset_from(lambda datum: datum > int(0)))))
+        combined((marked(three, three.point(int(1))), subsetted(other, other.subset_from(lambda datum: datum > int(0)))))

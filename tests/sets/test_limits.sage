@@ -70,18 +70,18 @@ def test_set_limit_membership_is_the_compatibility_decision() -> None:
     first, second = pullback.projection(cospan(int(0))), pullback.projection(cospan(int(1)))
 
     assert pullback in Sets().Limits(cospan)
-    assert pullback.apex() in Sets().Finite()
+    assert pullback in Sets().Finite()
     assert ask(pullback.cardinality() == int(3)) is True
-    members = list(pullback.apex())
+    members = list(pullback)
     assert all(ask(include(first(member)) == residue(second(member))) is True for member in members)
     assert any(ask(second(member) == four.point(int(3))) is True for member in members)
-    assert pullback.apex() in Sets()
-    assert pullback.apex() in Sets().ChosenSubsets()
-    product = pullback.apex().underlying_set()
-    assert pullback.apex().inclusion() in Mor(Sets())(pullback.apex(), product).Monomorphisms()
-    assert Sets().Products().retains(product)
+    assert pullback in Sets()
+    assert pullback in Sets().ChosenSubsets()
+    product = pullback.underlying_set()
+    assert pullback.inclusion() in Mor(Sets())(pullback, product).Monomorphisms()
+    assert product in Sets().Products()
     assert ask(product.cardinality() == int(24)) is True
-    rejected = [point for point in product if point not in pullback.apex()]
+    rejected = [point for point in product if point not in pullback]
     assert len(rejected) == int(21)
     assert all(ask(pullback.membership_proposition(point)) is False for point in rejected)
 
@@ -90,12 +90,12 @@ def test_set_limit_membership_is_the_compatibility_decision() -> None:
     name, name_again = Sets().name_of(increment).defining_morphism(), Sets().name_of(increment_again).defining_morphism()
     undecided = Sets().Pullbacks()(cospan_diagram(Sets(), name, name_again))
     one = Sets().Terminal()
-    families = Sets().Products().canonical_presentation(undecided.apex().underlying_set())
+    families = undecided.underlying_set()
     legs = {int(0): one.identity(), int(1): one.identity(), int(2): name}
     into_families = families.universal_morphism(cone(families.diagram(), one, lambda vertex: legs[cospan.label(cospan.object_at(vertex.point()))]))
     corner = into_families(one.point(()))
     assert ask(undecided.membership_proposition(corner)) is Unknown
-    assert corner not in undecided.apex()
+    assert corner not in undecided
     assert undecided.cardinality() is Unknown
 
 
@@ -113,11 +113,11 @@ def test_mediator_equations_hold_on_a_finite_cone_and_a_non_cone_is_rejected() -
     candidate = cone(diagram, four, lambda vertex: legs[cospan.label(vertex)])
 
     mediating = pullback.universal_morphism(candidate)
-    assert mediating in Mor(Sets())(four, pullback.apex())
+    assert mediating in Mor(Sets())(four, pullback)
     assert ask(pullback.projection(cospan(int(0))) * mediating == parity) is True
     assert ask(pullback.projection(cospan(int(1))) * mediating == fold) is True
     assert ask(pullback.projection(cospan(int(1))) * mediating == flip) is False
-    assert mediating(four.point(int(3))) in pullback.apex()
+    assert mediating(four.point(int(3))) in pullback
     assert ask(pullback.projection(cospan(int(1)))(mediating(four.point(int(3)))) == four.point(int(1))) is True
 
     twisted = {int(0): parity, int(1): Mor(Sets())(four, four)(lambda datum: datum), int(2): include * parity}
@@ -138,9 +138,9 @@ def test_the_limit_functor_maps_a_natural_transformation_to_the_induced_morphism
     limit = Sets().Limits(cospan).limit_functor()
 
     assert limit in Fun(Fun(cospan, Sets()), Sets())
-    assert limit.on_object(source.diagram()) is source.apex()
+    assert limit.on_object(source.diagram()) is source
     induced = limit.on_morphism(transformation)
-    assert induced in Mor(Sets())(source.apex(), target.apex())
+    assert induced in Mor(Sets())(source, target)
     for vertex in (cospan(int(0)), cospan(int(1))):
         assert ask(target.projection(vertex) * induced == transformation.component(vertex) * source.projection(vertex)) is True
 
@@ -152,9 +152,9 @@ def test_set_colimit_equality_over_omega_is_agreement_at_the_larger_stage() -> N
     first, third = colimit.injection(shape(NN(int(1)))), colimit.injection(shape(NN(int(3))))
 
     assert colimit in Sets().Colimits(shape)
-    assert colimit.apex() in Sets().ChosenQuotients()
-    assert colimit.apex().quotient_map() in Mor(Sets())(colimit.apex().underlying_set(), colimit.apex()).Epimorphisms()
-    assert Sets().Coproducts().retains(colimit.apex().underlying_set())
+    assert colimit in Sets().ChosenQuotients()
+    assert colimit.quotient_map() in Mor(Sets())(colimit.underlying_set(), colimit).Epimorphisms()
+    assert colimit.underlying_set() in Sets().Coproducts()
     assert colimit.cocone() in Mor(Fun(shape, Sets()))
     assert ask(first(NN(int(5))) == third(NN(int(7)))) is True
     assert ask(first(NN(int(5))) == third(NN(int(8)))) is Unknown
@@ -163,7 +163,7 @@ def test_set_colimit_equality_over_omega_is_agreement_at_the_larger_stage() -> N
 
     descend = cocone(sequence, ZZ, lambda vertex: Mor(Sets())(NN, ZZ)(lambda datum: datum - _natural(vertex.point())))
     mediating = colimit.universal_morphism(descend)
-    assert mediating in Mor(Sets())(colimit.apex(), ZZ)
+    assert mediating in Mor(Sets())(colimit, ZZ)
     assert ask(mediating(third(NN(int(7)))) == ZZ(int(4))) is True
     assert ask(mediating(first(NN(int(5)))) == ZZ(int(4))) is True
 
@@ -176,9 +176,9 @@ def test_the_colimit_functor_maps_a_natural_transformation_between_sequences() -
     colimit = Sets().Colimits(shape).colimit_functor()
     lower, upper = Sets().Colimits(shape)(source), Sets().Colimits(shape)(target)
 
-    assert colimit.on_object(source) is lower.apex()
+    assert colimit.on_object(source) is lower
     induced = colimit.on_morphism(successor)
-    assert induced in Mor(Sets())(lower.apex(), upper.apex())
+    assert induced in Mor(Sets())(lower, upper)
     for stage in (shape(NN(int(2))), shape(NN(int(3)))):
         assert ask(induced * lower.injection(stage) == upper.injection(stage) * successor.component(stage)) is True
     assert ask(induced(lower.injection(shape(NN(int(2))))(Sets().Simplex(int(1)).point(int(1)))) == upper.injection(shape(NN(int(4))))(Sets().Simplex(int(4)).point(int(2)))) is True
@@ -194,16 +194,16 @@ def test_shape_indexed_limit_families_are_distinct_and_retain_their_universal_da
     include = Mor(Sets())(two, three)(lambda datum: datum)
     pullback = Sets().Pullbacks()(cospan_diagram(Sets(), include, include))
     lift = Fun(Cat().Simplex(int(1)), Sets()).evaluation(Cat().Simplex(int(1))(int(1))).cartesian_lift(include, include)
-    assert lift.domain().domain() is pullback.apex()
+    assert lift.domain().domain() is pullback
     assert pullback.cone() in Mor(Fun(cospan, Sets()))
-    assert pullback.projection(cospan(int(0))).domain() is pullback.apex()
+    assert pullback.projection(cospan(int(0))).domain() is pullback
     assert pullback.projection(cospan(int(1))).codomain() is two
     assert ask(pullback.cardinality() == int(2)) is True
 
     sequence = _simplex_sequence()
     colimit = Sets().Colimits(shape)(sequence)
     assert colimit.injection(shape(NN(int(2)))).domain() is Sets().Simplex(int(1))
-    assert colimit.injection(shape(NN(int(2)))).codomain() is colimit.apex()
+    assert colimit.injection(shape(NN(int(2)))).codomain() is colimit
     assert colimit.cardinality() is Unknown
 
     one = Sets().Terminal()
@@ -213,10 +213,10 @@ def test_shape_indexed_limit_families_are_distinct_and_retain_their_universal_da
     assert limit.cardinality() is Unknown
     select_zero = cone(sequence, one, lambda vertex: Mor(Sets())(one, sequence.on_object(vertex))(lambda star: int(0)))
     mediating = limit.universal_morphism(select_zero)
-    assert mediating in Mor(Sets())(one, limit.apex())
+    assert mediating in Mor(Sets())(one, limit)
     assert ask(limit.projection(shape(NN(int(3)))) * mediating == select_zero.component(shape(NN(int(3))))) is True
     assert ask(limit.projection(shape(NN(int(3))))(mediating(one.point(()))) == Sets().Simplex(int(2)).point(int(0))) is True
-    families = Sets().Products().canonical_presentation(limit.apex().underlying_set())
+    families = limit.underlying_set()
     into_families = families.universal_morphism(cone(families.diagram(), one, lambda vertex: select_zero.component(shape.object_at(vertex.point()))))
     assert ask(limit.membership_proposition(into_families(one.point(())))) is Unknown
 
@@ -232,7 +232,7 @@ def test_equalizers_coequalizers_and_pushouts_are_the_constructions_at_their_sha
 
     equalizer = Sets().Equalizers()(diagram)
     assert ask(equalizer.cardinality() == int(2)) is True
-    members = list(equalizer.apex())
+    members = list(equalizer)
     assert all(ask(parity(equalizer.projection(pair(int(0)))(member)) == zero(equalizer.projection(pair(int(0)))(member))) is True for member in members)
     assert all(ask(equalizer.projection(pair(int(0)))(member) == three.point(int(1))) is False for member in members)
 

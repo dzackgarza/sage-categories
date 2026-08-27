@@ -42,7 +42,7 @@ def test_the_comma_category_is_the_pullback_of_the_endpoint_functor_with_the_exp
     assert comma in Cat()
     assert comma_category(inclusion, triangle.point_functor(triangle(int(2)))) is comma
     assert comma.second_functor().domain() is Fun(arrow, triangle)
-    assert comma.first_functor().codomain() is Cat().Products()((triangle, triangle)).apex()
+    assert comma.first_functor().codomain() is Cat().Products()((triangle, triangle))
     objects = list(comma.object_set())
     assert ask(comma.object_set().cardinality() == int(2)) is True
     structures = [comma.object_at(point).second() for point in objects]

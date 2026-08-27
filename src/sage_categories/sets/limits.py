@@ -41,12 +41,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from sage.sets.disjoint_set import DisjointSet
-from sage.structure.coerce_dict import MonoDict
 
 import sage_categories.sets.category as _sets
 from sage_categories.cat.constructions import cocone, cocone_apex, cone, cone_apex
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.shapes import Discrete, omega
+from sage_categories.kernel.caches import retained_method
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import ask, conjunction
 from sage_categories.kernel.roles import ObjectOfCategory
@@ -87,12 +87,9 @@ def limit_of_sets(diagram: Functor) -> SetObject:
 
     apex = product.subset_from(compatible)
     into_product = apex.monomorphism()
-    projections: MonoDict = MonoDict()
-
+    @retained_method
     def projection(member_object: ObjectOfCategory) -> SetMap:
-        if member_object not in projections:
-            projections[member_object] = product.product_projection(vertex(member_object)) * into_product
-        return projections[member_object]
+        return product.product_projection(vertex(member_object)) * into_product
 
     def mediator(candidate_cone: NaturalTransformation) -> SetMap:
         """The map into the product; a candidate whose components decidedly fail a cone equation is rejected."""
@@ -249,12 +246,9 @@ def colimit_of_sets(diagram: Functor) -> SetObject:
     def vertex(member_object: ObjectOfCategory) -> ObjectOfCategory:
         return index_shape(shape.object_point(member_object))
 
-    injections: MonoDict = MonoDict()
-
+    @retained_method
     def injection(member_object: ObjectOfCategory) -> SetMap:
-        if member_object not in injections:
-            injections[member_object] = quotient_map * coproduct.coproduct_injection(vertex(member_object))
-        return injections[member_object]
+        return quotient_map * coproduct.coproduct_injection(vertex(member_object))
 
     def mediator(candidate_cocone: NaturalTransformation) -> SetMap:
         """The map out of the quotient; a candidate whose components decidedly fail a cocone equation is rejected."""

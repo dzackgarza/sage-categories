@@ -11,16 +11,13 @@ hashes by its datum, so equal points hash equal.
 from __future__ import annotations
 
 from collections.abc import Hashable
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from dataclasses import dataclass
+from typing import Any
 
 import sage_categories.sets.category as _sets
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import ask
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, Role, role_of
-
-if TYPE_CHECKING:
-    from sage_categories.sets.category import SetElement
 
 __all__ = ["Datum", "SetElementData", "SetPointData", "points_equal"]
 
@@ -30,13 +27,6 @@ type Datum = Hashable
 @dataclass(eq=False, slots=True)
 class SetElementData:
     """The private state used by the complete set-element implementation."""
-
-    canonical: SetElement = field(init=False)
-
-    def bind(self, canonical: SetElement) -> None:
-        """Bind direct construction once; inherited construction reuses that state."""
-        if not hasattr(self, "canonical"):
-            self.canonical = canonical
 
 
 @dataclass(eq=False, slots=True)
@@ -50,7 +40,6 @@ class SetElementDeclaration(ElementOfObject):
     """The local ``Sets().ElementType`` declaration."""
 
     def __init__(self, data: SetElementData) -> None:
-        data.bind(self)
         self._set_element_data = data
         super().__init__()
 

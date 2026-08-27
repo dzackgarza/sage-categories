@@ -45,6 +45,7 @@ from sage_categories.cat.diagrams import sequence_position
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.shapes import ThinCategory
+from sage_categories.kernel.caches import retained_method
 from sage_categories.kernel.construction import (
     MorphismConstructionInput,
     ObjectConstructionInput,
@@ -127,14 +128,12 @@ class PosetDeclaration(ObjectOfCategory):
         """Totality: any two elements are comparable."""
         return Posets().TotallyOrdered().predicate()(self)
 
+    @retained_method
     def thin_category(self) -> ThinCategory:
         """The thin category of ``P``: objects the points of ``U(P)``, one comparison per related pair; retained once."""
-        retained = Posets()._thin
-        if self not in retained:
-            order = Predicate("poset_order", 2, True)
-            order.register_handler(lambda left, right: ask(self.element(left) <= self.element(right)))
-            retained[self] = ThinCategory(Posets().underlying_set_functor().on_object(self), order)
-        return retained[self]
+        order = Predicate("poset_order", 2, True)
+        order.register_handler(lambda left, right: ask(self.element(left) <= self.element(right)))
+        return ThinCategory(Posets().underlying_set_functor().on_object(self), order)
 
     def _pair(self, left: SetElement, right: SetElement) -> SetElement:
         return _pair_point(_square(self._poset_object_data.relation), left, right)
@@ -287,8 +286,6 @@ class PosetsCategory(Category[[Rule], []]):
     DeclaredMorphismType = MonotoneMapDeclaration
 
     def __init__(self) -> None:
-        self._thin: MonoDict = MonoDict()
-        self._subset_posets: MonoDict = MonoDict()
         super().__init__()
         self.underlying_set_functor().retain_cartesian_lifts(self._induced_order)
         self._equality.register_handler(self._equal)
@@ -306,8 +303,8 @@ class PosetsCategory(Category[[Rule], []]):
     def underlying_set_functor(self) -> Functor:
         """``U: Posets() -> Sets()``, retained once: the retained carrier and the retained set map."""
         underlying = Fun(self, Sets()).Faithful()(
-            lambda poset: poset._set_object_data.canonical,
-            lambda monotone: monotone._set_morphism_data.canonical,
+            lambda poset: Sets().structural_image(poset),
+            lambda monotone: Sets().structural_image(monotone),
         )
 
         def object_input(
@@ -375,6 +372,7 @@ class PosetsCategory(Category[[Rule], []]):
         point = Sets().Terminal()
         return self.TotallyOrdered()(self._construct((point * point).subset_from(lambda pair: True)))
 
+    @retained_method
     def subset_poset(self, base_set: SetObject) -> Poset:
         """The power object ``2 ** X`` ordered by inclusion of the subsets its points name, retained per ``X``.
 
@@ -384,14 +382,12 @@ class PosetsCategory(Category[[Rule], []]):
         inspected 2026-08-27), so the poset is constructed directly (POL-MATH-037).
         ``2 ** X`` retains ``X`` as its base set (``sets/power_objects.py``).
         """
-        if base_set not in self._subset_posets:
-            power = Sets().Simplex(1) ** base_set
+        power = Sets().Simplex(1) ** base_set
 
-            def included(pair: Datum) -> Decision:
-                return ask(power.from_characteristic_morphism(pair(0).map()) <= power.from_characteristic_morphism(pair(1).map()))
+        def included(pair: Datum) -> Decision:
+            return ask(power.from_characteristic_morphism(pair(0).map()) <= power.from_characteristic_morphism(pair(1).map()))
 
-            self._subset_posets[base_set] = self._construct((power * power).subset_from(included))
-        return self._subset_posets[base_set]
+        return self._construct((power * power).subset_from(included))
 
     @cached_method
     def Finite(self) -> Category[[Rule], []]:

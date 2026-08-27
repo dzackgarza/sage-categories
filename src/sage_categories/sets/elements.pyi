@@ -1,16 +1,13 @@
 from collections.abc import Hashable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown
 from sage_categories.kernel.predicates import ask as ask
 from sage_categories.kernel.roles import CategoryPoint as CategoryPoint, ElementOfObject as ElementOfObject, Role as Role, role_of as role_of
-from sage_categories.sets.category import SetElement as SetElement
 from typing import Any
 
 type Datum = Hashable
 @dataclass(eq=False, slots=True)
-class SetElementData:
-    canonical: SetElement = field(init=False)
-    def bind(self, canonical: SetElement) -> None: ...
+class SetElementData: ...
 
 @dataclass(eq=False, slots=True)
 class SetPointData(SetElementData):

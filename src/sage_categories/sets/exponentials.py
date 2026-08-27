@@ -20,11 +20,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from sage.structure.coerce_dict import MonoDict, TripleDict
-
 import sage_categories.sets.category as _sets
 from sage_categories.cat.constructions import cone
 from sage_categories.cat.diagrams import sequence_position
+from sage_categories.kernel.caches import retained_method
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import ask
 from sage_categories.sets.elements import Datum, SetElement
@@ -77,29 +76,22 @@ class Function:
         return f"name of {self._map!r}"
 
 
-_function_sets: TripleDict = TripleDict(weak_values=False)
-_evaluations: TripleDict = TripleDict(weak_values=False)
-_transposes: MonoDict = MonoDict()
-
-
+@retained_method
 def function_set(exponent: SetObject, base: SetObject) -> SetObject:
     """``base ** exponent``: the set of maps ``exponent -> base``, retained per pair."""
     sets = _sets.Sets()
-    key = (exponent, base, sets)
-    if key not in _function_sets:
-        maps = sets.morphism_category(1)(exponent, base)
+    maps = sets.morphism_category(1)(exponent, base)
 
-        def membership_rule(datum: Datum) -> Decision:
-            match datum:
-                case Function():
-                    return ask(maps.membership_proposition(datum.map()))
-                case _:
-                    return False
+    def membership_rule(datum: Datum) -> Decision:
+        match datum:
+            case Function():
+                return ask(maps.membership_proposition(datum.map()))
+            case _:
+                return False
 
-        base_cardinality, exponent_cardinality = base.cardinality(), exponent.cardinality()
-        cardinality = base_cardinality**exponent_cardinality if base_cardinality is not Unknown and exponent_cardinality is not Unknown else Unknown
-        _function_sets[key] = sets.rule_valued(membership_rule, cardinality)
-    return _function_sets[key]
+    base_cardinality, exponent_cardinality = base.cardinality(), exponent.cardinality()
+    cardinality = base_cardinality**exponent_cardinality if base_cardinality is not Unknown and exponent_cardinality is not Unknown else Unknown
+    return sets.rule_valued(membership_rule, cardinality)
 
 
 def name_of(set_map: SetMap) -> SetElement:
@@ -107,16 +99,15 @@ def name_of(set_map: SetMap) -> SetElement:
     return function_set(set_map.domain(), set_map.codomain()).point(Function(set_map))
 
 
+@retained_method
 def evaluation_morphism(exponent: SetObject, base: SetObject) -> SetMap:
     """``ev: (Y ** X) * X -> Y``, retained per pair."""
     sets = _sets.Sets()
-    key = (exponent, base, sets)
-    if key not in _evaluations:
-        product = sets.Products()((function_set(exponent, base), exponent))
-        _evaluations[key] = sets.construct_morphism(product, base, lambda family: family(0).map()._set_morphism_data.rule(family(1)))
-    return _evaluations[key]
+    product = sets.Products()((function_set(exponent, base), exponent))
+    return sets.construct_morphism(product, base, lambda family: family(0).map()._set_morphism_data.rule(family(1)))
 
 
+@retained_method
 def transpose(set_map: SetMap) -> SetMap:
     """The transpose ``Z -> Y ** X`` of ``f: Z * X -> Y``, retained per map.
 
@@ -126,17 +117,15 @@ def transpose(set_map: SetMap) -> SetMap:
     exponential transpose; inspected 2026-08-27).
     """
     sets = _sets.Sets()
-    if set_map not in _transposes:
-        product, base = set_map.domain(), set_map.codomain()
-        assert product in sets.Products(), f"{product!r} is not a chosen product"
-        source, exponent = product.product_projection(0).codomain(), product.product_projection(1).codomain()
-        assert product is sets.Products()((source, exponent)), f"{product!r} is not the chosen binary product {source!r} * {exponent!r}"
+    product, base = set_map.domain(), set_map.codomain()
+    assert product in sets.Products(), f"{product!r} is not a chosen product"
+    source, exponent = product.product_projection(0).codomain(), product.product_projection(1).codomain()
+    assert product is sets.Products()((source, exponent)), f"{product!r} is not the chosen binary product {source!r} * {exponent!r}"
 
-        def transposed(source_datum: Datum) -> Function:
-            constant = sets.construct_morphism(exponent, source, lambda exponent_datum: source_datum)
-            legs = {0: constant, 1: exponent.identity()}
-            pairing = product.universal_morphism(cone(product.diagram(), exponent, lambda vertex: legs[sequence_position(vertex)]))
-            return Function(set_map * pairing)
+    def transposed(source_datum: Datum) -> Function:
+        constant = sets.construct_morphism(exponent, source, lambda exponent_datum: source_datum)
+        legs = {0: constant, 1: exponent.identity()}
+        pairing = product.universal_morphism(cone(product.diagram(), exponent, lambda vertex: legs[sequence_position(vertex)]))
+        return Function(set_map * pairing)
 
-        _transposes[set_map] = sets.construct_morphism(source, function_set(exponent, base), transposed)
-    return _transposes[set_map]
+    return sets.construct_morphism(source, function_set(exponent, base), transposed)

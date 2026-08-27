@@ -108,19 +108,12 @@ class SetObjectData:
     cardinality: CardinalObject | UnknownClass
     points: dict[Datum, SetElement] = field(default_factory=dict)
     rule_points: MonoDict = field(default_factory=MonoDict)
-    canonical: SetObject = field(init=False)
-
-    def bind(self, canonical: SetObject) -> None:
-        """Bind direct construction once; inherited construction reuses that state."""
-        if not hasattr(self, "canonical"):
-            self.canonical = canonical
 
 
 class SetObjectDeclaration(ObjectOfCategory):
     """The local ``Sets().ObjectType`` declaration."""
 
     def __init__(self, data: SetObjectData) -> None:
-        data.bind(self)
         self._set_object_data = data
         super().__init__()
 
@@ -150,7 +143,7 @@ class SetObjectDeclaration(ObjectOfCategory):
         ``rule_point``, since its data compare three-valued.
         """
         state = self._set_object_data
-        if _sets.Sets().points_by_rule(state.canonical):
+        if _sets.Sets().points_by_rule(_sets.Sets().structural_image(self)):
             return self.rule_point(datum)
         assert state.membership_rule(datum) is not False, f"{datum!r} is not a member of {self!r}"
         if datum not in state.points:
@@ -172,8 +165,8 @@ class SetObjectDeclaration(ObjectOfCategory):
 
     def _construct_point(self, datum: Datum) -> SetElement:
         sets = _sets.Sets()
-        canonical = self._set_object_data.canonical
-        return sets.element_from_defining_morphism(sets.construct_morphism(sets.Terminal(), canonical, lambda star: datum))
+        underlying = sets.structural_image(self)
+        return sets.element_from_defining_morphism(sets.construct_morphism(sets.Terminal(), underlying, lambda star: datum))
 
     def cardinality(self) -> CardinalObject | UnknownClass:
         """The recorded exact cardinal; a set placed in both ``Countable()`` and ``Infinite()`` has ``aleph0`` (Mathlib ``Cardinal.mk_eq_aleph0``; inspected 2026-08-27)."""
@@ -181,7 +174,8 @@ class SetObjectDeclaration(ObjectOfCategory):
 
         sets = _sets.Sets()
         state = self._set_object_data
-        if state.cardinality is Unknown and state.canonical in sets.Countable() and state.canonical in sets.Infinite():
+        underlying = sets.structural_image(self)
+        if state.cardinality is Unknown and underlying in sets.Countable() and underlying in sets.Infinite():
             return Cardinal().aleph(0)
         return state.cardinality
 
@@ -191,25 +185,25 @@ class SetObjectDeclaration(ObjectOfCategory):
         The predicate is a datum-level rule, the form of ``Sets()(rule)``; the
         construction is owned by ``Sets().ChosenSubsets()`` (``sets/subobjects.py``).
         """
-        return _sets.Sets().ChosenSubsets()(self._set_object_data.canonical, predicate)
+        return _sets.Sets().ChosenSubsets()(_sets.Sets().structural_image(self), predicate)
 
     def is_finite(self) -> AppliedPredicate:
-        return _sets.Sets().Finite().predicate()(self._set_object_data.canonical)
+        return _sets.Sets().Finite().predicate()(_sets.Sets().structural_image(self))
 
     def is_infinite(self) -> AppliedPredicate:
-        return _sets.Sets().Infinite().predicate()(self._set_object_data.canonical)
+        return _sets.Sets().Infinite().predicate()(_sets.Sets().structural_image(self))
 
     def is_countable(self) -> AppliedPredicate:
-        return _sets.Sets().Countable().predicate()(self._set_object_data.canonical)
+        return _sets.Sets().Countable().predicate()(_sets.Sets().structural_image(self))
 
     def is_uncountable(self) -> AppliedPredicate:
-        return _sets.Sets().Uncountable().predicate()(self._set_object_data.canonical)
+        return _sets.Sets().Uncountable().predicate()(_sets.Sets().structural_image(self))
 
     def __repr__(self) -> str:
         finite = _sets.Sets().Finite()
-        canonical = self._set_object_data.canonical
-        if finite.has_chosen_enumeration(canonical):
-            return "{" + ", ".join(map(repr, finite.chosen_enumeration(canonical))) + "}"
+        underlying = _sets.Sets().structural_image(self)
+        if finite.has_chosen_enumeration(underlying):
+            return "{" + ", ".join(map(repr, finite.chosen_enumeration(underlying))) + "}"
         return "Set(<rule>)"
 
 
@@ -217,5 +211,5 @@ class FiniteSetRole(ObjectOfCategory):
     """The local object role of ``Sets().Finite()``: the chosen enumeration supplies iteration."""
 
     def __iter__(self) -> Iterator[SetElement]:
-        canonical = self._set_object_data.canonical
-        return (self.point(datum) for datum in _sets.Sets().Finite().chosen_enumeration(canonical))
+        underlying = _sets.Sets().structural_image(self)
+        return (self.point(datum) for datum in _sets.Sets().Finite().chosen_enumeration(underlying))

@@ -8,7 +8,7 @@
 - [Canonical objects of `Cat`](#canonical-objects-of-cat)
 - [Functor property subcategories](#functor-property-subcategories)
 - [Property resolution](#property-resolution)
-- [Inclusion functors](#inclusion-functors)
+- [Monomorphisms of `Cat()` and placement](#monomorphisms-of-cat-and-placement)
 - [Structural inheritance](#structural-inheritance)
 - [Point categories and point functors](#point-categories-and-point-functors)
 - [Functor construction and presentation data](#functor-construction-and-presentation-data)
@@ -306,12 +306,12 @@ This rule is specific to categorical functor properties. Other owned predicates,
 as injectivity of a set map on a declared semantic domain, can register exact
 computational routes.
 
-## Inclusion functors
+## Monomorphisms of `Cat()` and placement
 
-### The two conditions an inclusion satisfies
+### The two conditions
 
-A subcategory of `T` is a subobject of `T` in `Cat()`: an isomorphism class of
-monomorphisms into `T` ([nLab, subobject](https://ncatlab.org/nlab/show/subobject),
+There is no separate notion of an inclusion functor. A subcategory of `T` is a subobject
+of `T` in `Cat()`: an isomorphism class of monomorphisms into `T` ([nLab, subobject](https://ncatlab.org/nlab/show/subobject),
 inspected 2026-08-28; "an isomorphism class of monomorphisms"). Two conditions apply,
 and the kernel needs both.
 
@@ -346,23 +346,26 @@ reason. A skeleton is the opposite extreme and is replete only when it is everyt
 ### Placement traces monic isofibrations
 
 `x in C` is established placement (`POL-CAT-068`). It propagates from `S` to `T` exactly
-along inclusions that are both monic and isofibrations. Monicity gives one value rather
+along a functor that is a monomorphism of `Cat()` and an isofibration. Monicity gives one value rather
 than a copy; repleteness makes the resulting membership statement invariant, so an object
 of `Sets().Finite()` is an object of `Sets()` while a cardinal is not a set.
 
 The choice is data. `Cardinal() -> Sets()` and `Sets().Finite() -> Sets()` are both monic,
 and nothing derives which one placement follows: nLab, *subobject*, states that for
 representatives of a subobject "there is no intrinsic way of defining such
-representatives". A leaf therefore declares its inclusion by constructing it in the
+representatives". A leaf therefore declares which monomorphism placement follows by constructing it in the
 property category below, and the kernel trusts that declaration (`POL-CAT-069`). It does
 not infer the relation from Python inheritance, shared storage, or a cache of previously
 constructed functors.
 
 ### Constructing one
 
-An inclusion `S -> T` is an object of the fixed-endpoint category `Fun(S, T)`. That
-category owns its constructor. A general subcategory inclusion is faithful, so construct
-it in the established property category:
+The package writes `inclusion()` for the monomorphism a leaf declares. That name is
+shorthand for the two conditions above and for nothing else.
+
+Such a functor `S -> T` is an object of the fixed-endpoint category `Fun(S, T)`. That
+category owns its constructor. A monomorphism of `Cat()` is faithful, so construct it in
+the established property category:
 
 ```python
 iota = Fun(S, T).Faithful().inclusion()

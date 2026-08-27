@@ -22,8 +22,8 @@ from typing import TYPE_CHECKING, Any
 from sage.structure.dynamic_class import dynamic_class
 
 import sage_categories.kernel.compiler as compiler
-from sage_categories.kernel.descriptors import placement_node
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, Role, role_of
+from sage_categories.kernel.transport import placement_node
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category

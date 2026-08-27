@@ -15,16 +15,7 @@ from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, Ob
 
 
 class Bare(Category):
-    """A category with three empty role declarations and no structural graph."""
-
-    class ObjectType(ObjectOfCategory):
-        """No local operation."""
-
-    class ElementType(ElementOfObject):
-        """No local operation."""
-
-    class MorphismType(MorphismOfCategory):
-        """No local operation."""
+    """A category that declares no role of its own and has no structural graph."""
 
     def __repr__(self):
         return "Bare"
@@ -49,12 +40,18 @@ def test_cat_is_unstratified_and_bootstrapped_first() -> None:
     # every later category is numbered against, ``Fun = Mor(Cat())`` included.
     assert Cat().ordinal() == int(0)
     assert Cat().ordinal() < min(Fun.ordinal(), Sets().ordinal(), Bare().ordinal())
-    # The objects of ``Cat()`` are implemented by ``Category`` itself, with no wrapper:
-    # that is the declared role class.  The compiled class every node gets is a subclass
-    # of it carrying no method of its own (Sage's ``ParentMethods`` versus ``parent_class``).
-    assert Cat().local_role_class(Role.OBJECT) is Category
-    assert issubclass(Cat().ObjectType, Category)
-    assert not [name for name in vars(Cat().ObjectType) if not name.startswith("_")]
+    # ``Category`` is the compiled object role of ``Cat()``: the class every object of
+    # ``Cat()`` is an instance of, with no wrapper (README, "Core model").  Its local
+    # declaration is a distinct class, and the compiler copies that class's body onto
+    # the compiled role rather than making it a base, so a declaration never appears in
+    # a compiled MRO (POL-KERNEL-028).  This is Sage's ``ParentMethods`` against
+    # ``parent_class``: two classes, two names.
+    assert Category is Cat().ObjectType
+    assert issubclass(Category, ObjectOfCategory)
+    declaration = Cat().local_role_class(Role.OBJECT)
+    assert declaration is not Category and declaration not in Category.__mro__
+    declared_names = set(name for name in vars(declaration) if not name.startswith("_"))
+    assert declared_names and declared_names.issubset(set(vars(Category)))
 
 
 def test_an_ordinary_category_is_an_object_of_cat() -> None:

@@ -66,9 +66,11 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (Fun(self, Semirings(Cat())).Faithful().inclusion(),)
 ```
 
-The additive operation functor is the categorical coproduct in `Cardinal()`, with unit
-object `0`. The multiplicative operation functor is the categorical product, with unit
-object `1`. The selected point functor supplies their complete compiled roles, exact
+The additive operation functor is cardinal addition, with unit object `0`. The
+multiplicative operation functor is cardinal multiplication, with unit object `1`. Each
+is a morphism `Cardinal() * Cardinal() -> Cardinal()` in `Cat()`, which is what makes
+`Cardinal()` a semiring object there; neither is a universal construction in
+`Cardinal()`. The selected point functor supplies their complete compiled roles, exact
 constructor conversions, retained state, and public methods. The law data is the
 equations between these functors ([functor.md](functor.md#ambient-algebraic-categories)).
 `Cardinal()` is skeletal, so each operation selects one representative and the laws hold
@@ -208,22 +210,39 @@ n * kappa
 n ** kappa
 ```
 
-The point functor exposes addition and multiplication from the internal semiring
-structure. Their operation functors are the inherited categorical coproduct and product
-constructions. Exponentiation remains the categorical exponential:
+Addition and multiplication are the semiring operations the point functor exposes. Each
+is a morphism out of a product,
 
 \[
-\kappa+\lambda=\kappa\sqcup\lambda,
-\qquad
-\kappa\lambda=\kappa\times\lambda,
-\qquad
-\lambda^\kappa=
-R_\lambda^{\,R_\kappa}.
+\alpha,\mu:\operatorname{Cardinal}()\times\operatorname{Cardinal}()
+\longrightarrow\operatorname{Cardinal}(),
 \]
 
-The coproduct and product retain their injections, projections, and universal maps. The
-function set retains the representative functions. Their cardinal objects are exactly
-cardinal addition, multiplication, and exponentiation.
+so applying one to a pair returns a cardinal and nothing else. Neither is a universal
+construction and neither carries a cone: `Cardinal()` owns no coproduct or product
+construction, and `Cardinal().Products()` has no diagram to present.
+
+What relates these operations to constructions is the cardinality functor. For
+`X, Y in core(Sets())`,
+
+\[
+\#(X\sqcup Y)=\#X+\#Y,
+\qquad
+\#(X\times Y)=\#X\cdot\#Y,
+\qquad
+\#\!\left(Y^{X}\right)=(\#Y)^{\#X},
+\]
+
+and the exponential of cardinals is the cardinal of the function set between the chosen
+representatives, \(\lambda^{\kappa}=\#\!\left(R_\lambda^{\,R_\kappa}\right)\). The
+coproduct, product and function set on the left are constructions in `Sets()` and retain
+their injections, projections and universal maps there. The operations on the right are
+the semiring operations, and the equalities are the statement that `#` carries one to the
+other.
+
+`Cardinal()` is skeletal, so these operations collapse: `c_2 * c_3` is `c_6`, and so is
+`c_6 * c_1`. An expression that no normalization rule below evaluates is retained
+exactly.
 
 The implementation normalizes these cases:
 

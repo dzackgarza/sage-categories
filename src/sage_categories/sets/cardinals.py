@@ -104,7 +104,7 @@ __all__ = ["Cardinal", "CardinalMorphism", "CardinalObject", "aleph0", "cardinal
 type Key = tuple[str | int | Key, ...]
 
 
-@dataclass(frozen=True, eq=False, slots=True)
+@dataclass(eq=False, slots=True)
 class CardinalObjectData:
     """The normalized expression state introduced by ``Cardinal()``."""
 

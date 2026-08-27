@@ -66,8 +66,8 @@ class ObjectOfCategory(CategoryPoint):
             from sage_categories.kernel.construction import active_object_context
 
             context = active_object_context()
-            assert context is not None and context.root.canonical_image is self, "object identity requires its active construction context"
-            category = context.root.identity.category
+            assert context is not None and context.canonical_image is self, "object identity requires its active construction context"
+            category = context.identity.category
         self._category = category
 
     def category(self) -> Category:
@@ -157,8 +157,8 @@ class ElementOfObject(CategoryPoint):
             from sage_categories.kernel.construction import active_element_context
 
             context = active_element_context()
-            assert context is not None and context.root.canonical_image is self, "element identity requires its active construction context"
-            defining_morphism = context.root.identity.defining_morphism
+            assert context is not None and context.canonical_image is self, "element identity requires its active construction context"
+            defining_morphism = context.identity.defining_morphism
         self._defining_morphism = defining_morphism
 
     def defining_morphism(self) -> MorphismOfCategory:
@@ -203,8 +203,8 @@ class MorphismOfCategory(CategoryPoint):
             from sage_categories.kernel.construction import active_morphism_context
 
             context = active_morphism_context()
-            assert context is not None and context.root.canonical_image is self, "morphism identity requires its active construction context"
-            identity = context.root.identity
+            assert context is not None and context.canonical_image is self, "morphism identity requires its active construction context"
+            identity = context.identity
             category, domain, codomain = identity.category, identity.domain, identity.codomain
         assert category is not None and domain is not None and codomain is not None, "supply all morphism identity fields or use the active construction context"
         # ``category`` is the placement, a subcategory of ``Mor(C)``; ``C`` is its base.

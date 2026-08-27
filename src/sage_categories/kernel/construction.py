@@ -2,12 +2,13 @@
 
 Each public value retains one root input.  The input keeps the role identity,
 the local typed datum, and the canonical public value as separate fields.
-During initialization, one role-specific context holds every input that the
-selected structural graph computed before the C3 constructor chain started.
+During initialization, one role-specific context holds one zero-argument step
+per node.  Each step closes over its exact typed input before the C3 chain starts.
 """
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from contextvars import ContextVar, Token
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
@@ -105,7 +106,7 @@ _element_inputs: MonoDict = MonoDict()
 _morphism_inputs: MonoDict = MonoDict()
 
 
-def retain_object_input(construction_input: ObjectConstructionInput) -> None:
+def retain_object_input[Datum](construction_input: ObjectConstructionInput[Datum]) -> None:
     value = construction_input.canonical_image
     if value in _object_inputs:
         assert _object_inputs[value] is construction_input, f"{value!r} already retains a different object construction input"
@@ -113,7 +114,7 @@ def retain_object_input(construction_input: ObjectConstructionInput) -> None:
     _object_inputs[value] = construction_input
 
 
-def retain_element_input(construction_input: ElementConstructionInput) -> None:
+def retain_element_input[Datum](construction_input: ElementConstructionInput[Datum]) -> None:
     value = construction_input.canonical_image
     if value in _element_inputs:
         assert _element_inputs[value] is construction_input, f"{value!r} already retains a different element construction input"
@@ -121,7 +122,7 @@ def retain_element_input(construction_input: ElementConstructionInput) -> None:
     _element_inputs[value] = construction_input
 
 
-def retain_morphism_input(construction_input: MorphismConstructionInput) -> None:
+def retain_morphism_input[Datum](construction_input: MorphismConstructionInput[Datum]) -> None:
     value = construction_input.canonical_image
     if value in _morphism_inputs:
         assert _morphism_inputs[value] is construction_input, f"{value!r} already retains a different morphism construction input"
@@ -129,84 +130,78 @@ def retain_morphism_input(construction_input: MorphismConstructionInput) -> None
     _morphism_inputs[value] = construction_input
 
 
-def retained_object_input(value: ObjectOfCategory) -> ObjectConstructionInput:
+def retained_object_input[Datum](value: ObjectOfCategory) -> ObjectConstructionInput[Datum]:
     assert value in _object_inputs, f"{value!r} retains no object construction input"
     return _object_inputs[value]
 
 
-def retained_element_input(value: ElementOfObject) -> ElementConstructionInput:
+def retained_element_input[Datum](value: ElementOfObject) -> ElementConstructionInput[Datum]:
     assert value in _element_inputs, f"{value!r} retains no element construction input"
     return _element_inputs[value]
 
 
-def retained_morphism_input(value: MorphismOfCategory) -> MorphismConstructionInput:
+def retained_morphism_input[Datum](value: MorphismOfCategory) -> MorphismConstructionInput[Datum]:
     assert value in _morphism_inputs, f"{value!r} retains no morphism construction input"
     return _morphism_inputs[value]
 
 
 @dataclass(slots=True)
 class ObjectConstructionContext:
-    """All precomputed object inputs for one C3 constructor chain."""
+    """One object identity and the closed node steps of its C3 constructor chain."""
 
-    root: ObjectConstructionInput
-    inputs: tuple[tuple[Category, ObjectConstructionInput], ...]
+    canonical_image: ObjectOfCategory
+    identity: ObjectRoleIdentity
+    steps: tuple[tuple[Category, Callable[[], None]], ...]
     initialized: list[Category] = field(default_factory=list)
 
-    def input_for(self, category: Category) -> ObjectConstructionInput:
-        return next(construction_input for owner, construction_input in self.inputs if owner is category)
-
-    def begin(self, category: Category) -> ObjectConstructionInput:
+    def run(self, category: Category) -> None:
         assert not any(owner is category for owner in self.initialized), f"the object role of {category!r} initialized twice"
-        construction_input = self.input_for(category)
+        step = next(initialize for owner, initialize in self.steps if owner is category)
         self.initialized.append(category)
-        return construction_input
+        step()
 
     def assert_complete(self) -> None:
-        missing = [owner for owner, _ in self.inputs if not any(done is owner for done in self.initialized)]
+        missing = [owner for owner, _ in self.steps if not any(done is owner for done in self.initialized)]
         assert not missing, f"the object constructor chain did not initialize {missing[0]!r}"
 
 
 @dataclass(slots=True)
 class ElementConstructionContext:
-    """All precomputed element inputs for one C3 constructor chain."""
+    """One element identity and the closed node steps of its C3 constructor chain."""
 
-    root: ElementConstructionInput
-    inputs: tuple[tuple[Category, ElementConstructionInput], ...]
+    canonical_image: ElementOfObject
+    identity: ElementRoleIdentity
+    steps: tuple[tuple[Category, Callable[[], None]], ...]
     initialized: list[Category] = field(default_factory=list)
 
-    def input_for(self, category: Category) -> ElementConstructionInput:
-        return next(construction_input for owner, construction_input in self.inputs if owner is category)
-
-    def begin(self, category: Category) -> ElementConstructionInput:
+    def run(self, category: Category) -> None:
         assert not any(owner is category for owner in self.initialized), f"the element role of {category!r} initialized twice"
-        construction_input = self.input_for(category)
+        step = next(initialize for owner, initialize in self.steps if owner is category)
         self.initialized.append(category)
-        return construction_input
+        step()
 
     def assert_complete(self) -> None:
-        missing = [owner for owner, _ in self.inputs if not any(done is owner for done in self.initialized)]
+        missing = [owner for owner, _ in self.steps if not any(done is owner for done in self.initialized)]
         assert not missing, f"the element constructor chain did not initialize {missing[0]!r}"
 
 
 @dataclass(slots=True)
 class MorphismConstructionContext:
-    """All precomputed morphism inputs for one C3 constructor chain."""
+    """One morphism identity and the closed node steps of its C3 constructor chain."""
 
-    root: MorphismConstructionInput
-    inputs: tuple[tuple[Category, MorphismConstructionInput], ...]
+    canonical_image: MorphismOfCategory
+    identity: MorphismRoleIdentity
+    steps: tuple[tuple[Category, Callable[[], None]], ...]
     initialized: list[Category] = field(default_factory=list)
 
-    def input_for(self, category: Category) -> MorphismConstructionInput:
-        return next(construction_input for owner, construction_input in self.inputs if owner is category)
-
-    def begin(self, category: Category) -> MorphismConstructionInput:
+    def run(self, category: Category) -> None:
         assert not any(owner is category for owner in self.initialized), f"the morphism role of {category!r} initialized twice"
-        construction_input = self.input_for(category)
+        step = next(initialize for owner, initialize in self.steps if owner is category)
         self.initialized.append(category)
-        return construction_input
+        step()
 
     def assert_complete(self) -> None:
-        missing = [owner for owner, _ in self.inputs if not any(done is owner for done in self.initialized)]
+        missing = [owner for owner, _ in self.steps if not any(done is owner for done in self.initialized)]
         assert not missing, f"the morphism constructor chain did not initialize {missing[0]!r}"
 
 

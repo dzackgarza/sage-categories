@@ -435,18 +435,85 @@ def _route_name(route: Route) -> str:
     return " then ".join(repr(functor) for functor, _ in route) or "the identity route"
 
 
-def _object_inputs(current: Node, root: ObjectConstructionInput) -> tuple[tuple[Category, ObjectConstructionInput], ...]:
-    """Precompute one object input per reachable node and check every route by identity."""
-    assert current.role is Role.OBJECT
-    found: list[tuple[Node, ObjectConstructionInput, Route]] = []
+class _NodeRuntime(NamedTuple):
+    initializer: FunctionType | None
+    cell: CellType
 
-    def visit(source: Node, source_input: ObjectConstructionInput, route: Route) -> None:
-        known = next(((held, first_route) for owner, held, first_route in found if same_node(owner, source)), None)
+
+_node_runtimes: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
+
+
+def _runtime(current: Node) -> _NodeRuntime:
+    table = _node_runtimes[current.role]
+    assert current.category in table, f"the {current.role.value} runtime of {current.category!r} is not compiled"
+    return table[current.category]
+
+
+def _advance(cell: CellType, instance: CategoryPoint) -> None:
+    """Enter the next generated wrapper, or the kernel role initializer."""
+    super(cell.cell_contents, instance).__init__()
+
+
+def _object_step[Datum](
+    current: Node,
+    construction_input: ObjectConstructionInput[Datum],
+    instance: ObjectOfCategory,
+) -> Callable[[], None]:
+    runtime = _runtime(current)
+
+    def initialize() -> None:
+        if runtime.initializer is None:
+            _advance(runtime.cell, instance)
+            return
+        runtime.initializer(instance, construction_input.datum)
+
+    return initialize
+
+
+def _element_step[Datum](
+    current: Node,
+    construction_input: ElementConstructionInput[Datum],
+    instance: ElementOfObject,
+) -> Callable[[], None]:
+    runtime = _runtime(current)
+
+    def initialize() -> None:
+        if runtime.initializer is None:
+            _advance(runtime.cell, instance)
+            return
+        runtime.initializer(instance, construction_input.datum)
+
+    return initialize
+
+
+def _morphism_step[Datum](
+    current: Node,
+    construction_input: MorphismConstructionInput[Datum],
+    instance: MorphismOfCategory,
+) -> Callable[[], None]:
+    runtime = _runtime(current)
+
+    def initialize() -> None:
+        if runtime.initializer is None:
+            _advance(runtime.cell, instance)
+            return
+        runtime.initializer(instance, construction_input.datum)
+
+    return initialize
+
+
+def _object_steps[RootDatum](current: Node, root: ObjectConstructionInput[RootDatum]) -> tuple[tuple[Category, Callable[[], None]], ...]:
+    """Close each exact object input into one zero-argument C3 node step."""
+    assert current.role is Role.OBJECT
+    found: list[tuple[Node, int, ObjectOfCategory, Callable[[], None], Route]] = []
+
+    def visit[Datum](source: Node, source_input: ObjectConstructionInput[Datum], route: Route) -> None:
+        known = next(((identity, image, first_route) for owner, identity, image, _, first_route in found if same_node(owner, source)), None)
         if known is None:
-            found.append((source, source_input, route))
+            found.append((source, id(source_input), source_input.canonical_image, _object_step(source, source_input, root.canonical_image), route))
         else:
-            held, first_route = known
-            if held is not source_input or held.canonical_image is not source_input.canonical_image:
+            identity, image, first_route = known
+            if identity != id(source_input) or image is not source_input.canonical_image:
                 raise StructuralImageMismatch(
                     f"the object routes {_route_name(first_route)} and {_route_name(route)} to "
                     f"{source.category!r} return distinct canonical images or construction inputs"
@@ -459,25 +526,22 @@ def _object_inputs(current: Node, root: ObjectConstructionInput) -> tuple[tuple[
 
     visit(current, root, ())
     expected = reachable(current)
-    assert all(any(same_node(owner, target) for owner, _, _ in found) for target in expected)
-    return tuple(
-        (target.category, next(construction_input for owner, construction_input, _ in found if same_node(owner, target)))
-        for target in expected
-    )
+    assert all(any(same_node(owner, target) for owner, _, _, _, _ in found) for target in expected)
+    return tuple((target.category, next(step for owner, _, _, step, _ in found if same_node(owner, target))) for target in expected)
 
 
-def _element_inputs(current: Node, root: ElementConstructionInput) -> tuple[tuple[Category, ElementConstructionInput], ...]:
-    """Precompute one element input per reachable node and check every route by identity."""
+def _element_steps[RootDatum](current: Node, root: ElementConstructionInput[RootDatum]) -> tuple[tuple[Category, Callable[[], None]], ...]:
+    """Close each exact element input into one zero-argument C3 node step."""
     assert current.role is Role.ELEMENT
-    found: list[tuple[Node, ElementConstructionInput, Route]] = []
+    found: list[tuple[Node, int, ElementOfObject, Callable[[], None], Route]] = []
 
-    def visit(source: Node, source_input: ElementConstructionInput, route: Route) -> None:
-        known = next(((held, first_route) for owner, held, first_route in found if same_node(owner, source)), None)
+    def visit[Datum](source: Node, source_input: ElementConstructionInput[Datum], route: Route) -> None:
+        known = next(((identity, image, first_route) for owner, identity, image, _, first_route in found if same_node(owner, source)), None)
         if known is None:
-            found.append((source, source_input, route))
+            found.append((source, id(source_input), source_input.canonical_image, _element_step(source, source_input, root.canonical_image), route))
         else:
-            held, first_route = known
-            if held is not source_input or held.canonical_image is not source_input.canonical_image:
+            identity, image, first_route = known
+            if identity != id(source_input) or image is not source_input.canonical_image:
                 raise StructuralImageMismatch(
                     f"the element routes {_route_name(first_route)} and {_route_name(route)} to "
                     f"{source.category!r} return distinct canonical images or construction inputs"
@@ -490,25 +554,22 @@ def _element_inputs(current: Node, root: ElementConstructionInput) -> tuple[tupl
 
     visit(current, root, ())
     expected = reachable(current)
-    assert all(any(same_node(owner, target) for owner, _, _ in found) for target in expected)
-    return tuple(
-        (target.category, next(construction_input for owner, construction_input, _ in found if same_node(owner, target)))
-        for target in expected
-    )
+    assert all(any(same_node(owner, target) for owner, _, _, _, _ in found) for target in expected)
+    return tuple((target.category, next(step for owner, _, _, step, _ in found if same_node(owner, target))) for target in expected)
 
 
-def _morphism_inputs(current: Node, root: MorphismConstructionInput) -> tuple[tuple[Category, MorphismConstructionInput], ...]:
-    """Precompute one morphism input per reachable node and check every route by identity."""
+def _morphism_steps[RootDatum](current: Node, root: MorphismConstructionInput[RootDatum]) -> tuple[tuple[Category, Callable[[], None]], ...]:
+    """Close each exact morphism input into one zero-argument C3 node step."""
     assert current.role is Role.MORPHISM
-    found: list[tuple[Node, MorphismConstructionInput, Route]] = []
+    found: list[tuple[Node, int, MorphismOfCategory, Callable[[], None], Route]] = []
 
-    def visit(source: Node, source_input: MorphismConstructionInput, route: Route) -> None:
-        known = next(((held, first_route) for owner, held, first_route in found if same_node(owner, source)), None)
+    def visit[Datum](source: Node, source_input: MorphismConstructionInput[Datum], route: Route) -> None:
+        known = next(((identity, image, first_route) for owner, identity, image, _, first_route in found if same_node(owner, source)), None)
         if known is None:
-            found.append((source, source_input, route))
+            found.append((source, id(source_input), source_input.canonical_image, _morphism_step(source, source_input, root.canonical_image), route))
         else:
-            held, first_route = known
-            if held is not source_input or held.canonical_image is not source_input.canonical_image:
+            identity, image, first_route = known
+            if identity != id(source_input) or image is not source_input.canonical_image:
                 raise StructuralImageMismatch(
                     f"the morphism routes {_route_name(first_route)} and {_route_name(route)} to "
                     f"{source.category!r} return distinct canonical images or construction inputs"
@@ -521,62 +582,62 @@ def _morphism_inputs(current: Node, root: MorphismConstructionInput) -> tuple[tu
 
     visit(current, root, ())
     expected = reachable(current)
-    assert all(any(same_node(owner, target) for owner, _, _ in found) for target in expected)
-    return tuple(
-        (target.category, next(construction_input for owner, construction_input, _ in found if same_node(owner, target)))
-        for target in expected
-    )
+    assert all(any(same_node(owner, target) for owner, _, _, _, _ in found) for target in expected)
+    return tuple((target.category, next(step for owner, _, _, step, _ in found if same_node(owner, target))) for target in expected)
 
 
-def _advance(cell: CellType, instance: CategoryPoint) -> None:
-    """Enter the next generated wrapper, or the kernel role initializer."""
-    super(cell.cell_contents, instance).__init__()
-
-
-def _initialize_object_node(
+def _construct_object_root[Datum](
     current: Node,
-    initializer: FunctionType | None,
-    cell: CellType,
     instance: ObjectOfCategory,
-    context: ObjectConstructionContext,
+    identity: ObjectRoleIdentity,
+    data: Datum,
 ) -> None:
-    construction_input = context.begin(current.category)
-    if initializer is None:
-        _advance(cell, instance)
-        return
-    initializer(instance, construction_input.datum)
+    root = ObjectConstructionInput(instance, identity, data)
+    retain_object_input(root)
+    context = ObjectConstructionContext(root.canonical_image, root.identity, _object_steps(current, root))
+    token = activate_object_context(context)
+    try:
+        context.run(current.category)
+        context.assert_complete()
+    finally:
+        deactivate_object_context(token)
 
 
-def _initialize_element_node(
+def _construct_element_root[Datum](
     current: Node,
-    initializer: FunctionType | None,
-    cell: CellType,
     instance: ElementOfObject,
-    context: ElementConstructionContext,
+    identity: ElementRoleIdentity,
+    data: Datum,
 ) -> None:
-    construction_input = context.begin(current.category)
-    if initializer is None:
-        _advance(cell, instance)
-        return
-    initializer(instance, construction_input.datum)
+    root = ElementConstructionInput(instance, identity, data)
+    retain_element_input(root)
+    context = ElementConstructionContext(root.canonical_image, root.identity, _element_steps(current, root))
+    token = activate_element_context(context)
+    try:
+        context.run(current.category)
+        context.assert_complete()
+    finally:
+        deactivate_element_context(token)
 
 
-def _initialize_morphism_node(
+def _construct_morphism_root[Datum](
     current: Node,
-    initializer: FunctionType | None,
-    cell: CellType,
     instance: MorphismOfCategory,
-    context: MorphismConstructionContext,
+    identity: MorphismRoleIdentity,
+    data: Datum,
 ) -> None:
-    construction_input = context.begin(current.category)
-    if initializer is None:
-        _advance(cell, instance)
-        return
-    initializer(instance, construction_input.datum)
+    root = MorphismConstructionInput(instance, identity, data)
+    retain_morphism_input(root)
+    context = MorphismConstructionContext(root.canonical_image, root.identity, _morphism_steps(current, root))
+    token = activate_morphism_context(context)
+    try:
+        context.run(current.category)
+        context.assert_complete()
+    finally:
+        deactivate_morphism_context(token)
 
 
-def _object_wrapper(current: Node, local: type[CategoryPoint], cell: CellType) -> FunctionType:
-    node_initializer = _local_initializer(local, cell)
+def _object_wrapper(current: Node) -> FunctionType:
 
     def initialize[Datum](
         instance: ObjectOfCategory,
@@ -584,27 +645,22 @@ def _object_wrapper(current: Node, local: type[CategoryPoint], cell: CellType) -
         data: Datum | None = None,
     ) -> None:
         active = active_object_context()
-        if active is not None and active.root.canonical_image is instance:
+        if active is not None and active.canonical_image is instance:
             assert category is None and data is None, "an ancestor object constructor receives only its precomputed input"
-            _initialize_object_node(current, node_initializer, cell, instance, active)
+            active.run(current.category)
             return
         assert category is not None, "an object root constructor requires its category"
-        root = ObjectConstructionInput(instance, ObjectRoleIdentity(category), data)
-        retain_object_input(root)
-        context = ObjectConstructionContext(root, _object_inputs(current, root))
-        token = activate_object_context(context)
-        try:
-            _initialize_object_node(current, node_initializer, cell, instance, context)
-            context.assert_complete()
-        finally:
-            deactivate_object_context(token)
+        identity = ObjectRoleIdentity(category)
+        if data is None:
+            _construct_object_root(current, instance, identity, None)
+            return
+        _construct_object_root(current, instance, identity, data)
 
     initialize.__name__ = "__init__"
     return initialize
 
 
-def _element_wrapper(current: Node, local: type[CategoryPoint], cell: CellType) -> FunctionType:
-    node_initializer = _local_initializer(local, cell)
+def _element_wrapper(current: Node) -> FunctionType:
 
     def initialize[Datum](
         instance: ElementOfObject,
@@ -612,27 +668,22 @@ def _element_wrapper(current: Node, local: type[CategoryPoint], cell: CellType) 
         data: Datum | None = None,
     ) -> None:
         active = active_element_context()
-        if active is not None and active.root.canonical_image is instance:
+        if active is not None and active.canonical_image is instance:
             assert defining_morphism is None and data is None, "an ancestor element constructor receives only its precomputed input"
-            _initialize_element_node(current, node_initializer, cell, instance, active)
+            active.run(current.category)
             return
         assert defining_morphism is not None, "an element root constructor requires its defining morphism"
-        root = ElementConstructionInput(instance, ElementRoleIdentity(defining_morphism), data)
-        retain_element_input(root)
-        context = ElementConstructionContext(root, _element_inputs(current, root))
-        token = activate_element_context(context)
-        try:
-            _initialize_element_node(current, node_initializer, cell, instance, context)
-            context.assert_complete()
-        finally:
-            deactivate_element_context(token)
+        identity = ElementRoleIdentity(defining_morphism)
+        if data is None:
+            _construct_element_root(current, instance, identity, None)
+            return
+        _construct_element_root(current, instance, identity, data)
 
     initialize.__name__ = "__init__"
     return initialize
 
 
-def _morphism_wrapper(current: Node, local: type[CategoryPoint], cell: CellType) -> FunctionType:
-    node_initializer = _local_initializer(local, cell)
+def _morphism_wrapper(current: Node) -> FunctionType:
 
     def initialize[Datum](
         instance: MorphismOfCategory,
@@ -642,37 +693,33 @@ def _morphism_wrapper(current: Node, local: type[CategoryPoint], cell: CellType)
         data: Datum | None = None,
     ) -> None:
         active = active_morphism_context()
-        if active is not None and active.root.canonical_image is instance:
+        if active is not None and active.canonical_image is instance:
             assert category is None and domain is None and codomain is None and data is None, (
                 "an ancestor morphism constructor receives only its precomputed input"
             )
-            _initialize_morphism_node(current, node_initializer, cell, instance, active)
+            active.run(current.category)
             return
         assert category is not None and domain is not None and codomain is not None, (
             "a morphism root constructor requires its category and endpoints"
         )
-        root = MorphismConstructionInput(instance, MorphismRoleIdentity(category, domain, codomain), data)
-        retain_morphism_input(root)
-        context = MorphismConstructionContext(root, _morphism_inputs(current, root))
-        token = activate_morphism_context(context)
-        try:
-            _initialize_morphism_node(current, node_initializer, cell, instance, context)
-            context.assert_complete()
-        finally:
-            deactivate_morphism_context(token)
+        identity = MorphismRoleIdentity(category, domain, codomain)
+        if data is None:
+            _construct_morphism_root(current, instance, identity, None)
+            return
+        _construct_morphism_root(current, instance, identity, data)
 
     initialize.__name__ = "__init__"
     return initialize
 
 
-def _constructor_wrapper(current: Node, local: type[CategoryPoint], cell: CellType) -> FunctionType:
+def _constructor_wrapper(current: Node) -> FunctionType:
     match current.role:
         case Role.OBJECT:
-            return _object_wrapper(current, local, cell)
+            return _object_wrapper(current)
         case Role.ELEMENT:
-            return _element_wrapper(current, local, cell)
+            return _element_wrapper(current)
         case Role.MORPHISM:
-            return _morphism_wrapper(current, local, cell)
+            return _morphism_wrapper(current)
     raise AssertionError(current.role)
 
 
@@ -709,7 +756,8 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
         local = category.local_role_class(role)
         bases = _base_classes(current)
         cell = CellType()
-        wrapper = _constructor_wrapper(current, local, cell)
+        node_initializer = _local_initializer(local, cell)
+        wrapper = _constructor_wrapper(current)
         provider = _method_provider(local, cell, wrapper)
         try:
             compiled = dynamic_class(
@@ -725,5 +773,6 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
                 f"{[klass.__name__ for klass in bases]}: {conflict}"
             ) from conflict
         cell.cell_contents = compiled
+        _node_runtimes[role][category] = _NodeRuntime(node_initializer, cell)
         setattr(category, role.value, compiled)
         _assert_linearized(current, compiled)

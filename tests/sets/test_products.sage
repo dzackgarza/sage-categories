@@ -5,7 +5,13 @@ Oracles: the definition of the product and coproduct of sets (Mathlib
 identities ``#(X x Y) = #X #Y``, ``#(X + Y) = #X + #Y``, ``#(Y^X) = (#Y)^(#X)``
 (POL-SET-020; Mathlib ``Cardinal.mk_pi``, ``mk_sigma``, ``power_def``);
 ``Cardinal.prod_const'`` and ``Cardinal.power_self_eq`` for the constant product
-over ``NN``; ``Cardinal.prod_eq_zero`` for an empty factor; ``Cardinal.prod_le_prod``
+over ``NN``; for factors that no enumeration reaches, ``Cardinal.mul_eq_max``
+(``Mathlib/SetTheory/Cardinal/Arithmetic.lean``, line 77: ``aleph0 <= a``,
+``aleph0 <= b`` give ``a * b = max a b``) and ``Cardinal.add_eq_max`` (same file,
+line 233) with ``Cardinal.aleph0_lt_continuum``
+(``Mathlib/SetTheory/Cardinal/Continuum.lean``, line 65) and ``Cardinal.mk_int``
+(``Mathlib/SetTheory/Cardinal/Basic.lean``, line 612), all inspected 2026-08-27;
+``Cardinal.prod_eq_zero`` for an empty factor; ``Cardinal.prod_le_prod``
 with ``Cardinal.cantor`` for the uncountable placement; ``instCountableForallOfFinite``
 for the countable placement; ``CategoryTheory.mono_iff_injective`` for the
 injectivity decision.  The mediator equations are decided by the finite set-map
@@ -119,6 +125,12 @@ def test_an_infinite_indexed_product_is_constructed_by_rule_and_its_projection_a
 
 def test_construction_cardinality_routes() -> None:
     two, three, four = Sets().Simplex(int(1)), Sets().Simplex(int(2)), Sets().Simplex(int(3))
+
+    assert (ZZ * ZZ).cardinality() is aleph0
+    assert (ZZ * RR).cardinality() is continuum
+    assert (ZZ + ZZ).cardinality() is aleph0
+    assert (ZZ + RR).cardinality() is continuum
+    assert (RR ** ZZ).cardinality() is continuum
 
     assert ask(Sets().Products()((two, three, four)).cardinality() == int(24)) is True
     assert ask(Sets().Products()((two, Sets().Empty())).cardinality() == int(0)) is True

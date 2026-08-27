@@ -65,9 +65,10 @@ def test_finite_set_map_equality_is_pointwise() -> None:
     assert ask(successor == successor_again) is True
     assert ask(successor == shifted) is False
 
-    integers = _integers()
-    increment = Mor(Sets())(integers, integers)(lambda datum: datum + int(1))
-    increment_again = Mor(Sets())(integers, integers)(lambda datum: datum + int(1))
+    increment = Mor(Sets())(ZZ, ZZ)(lambda datum: datum + int(1))
+    increment_again = Mor(Sets())(ZZ, ZZ)(lambda datum: datum + int(1))
+    assert ask(increment(ZZ(int(2))) == ZZ(int(3))) is True
+    assert ask(increment_again(ZZ(int(2))) == ZZ(int(3))) is True
     assert ask(increment == increment_again) is Unknown
     assert ask(increment == increment) is True
 

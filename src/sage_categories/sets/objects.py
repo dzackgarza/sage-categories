@@ -52,6 +52,21 @@ def _element_of_by_parent(candidate: Any, ambient: SetObject) -> Decision:
 
 
 def _element_of_by_rule(candidate: Any, ambient: SetObject) -> Decision:
+    """The membership rule decides a point of ``ambient`` on its datum; a candidate that is no element is none.
+
+    ``element_of(x, X)`` is the proposition "the point ``x`` lies in the set ``X``",
+    and an element of ``X`` is a morphism ``1 -> X``: "set membership, enumeration,
+    and cardinality use ``Mor(Sets())(1, X)`` through this separator"
+    (``specs/sets.md``, "Canonical objects").  So a raw datum is not an element of any
+    set, and ``False`` is that proposition's value rather than a missing decision:
+    ``2`` and ``X.point(2)`` are two values, and no algorithm turns the first into the
+    second.  This is the shape of ``is_placed`` (``kernel/refinement.py``), which
+    ``POL-TYPE-004`` authorizes for the same ``Any`` candidate position.  A datum's
+    own question is ``X.point(datum) in X``.
+
+    A generalized element at another stage carries no datum, so the rule cannot reach
+    it and the decision is ``Unknown``.
+    """
     if role_of(candidate) is not Role.ELEMENT:
         return False
     state = candidate._set_element_data

@@ -14,7 +14,7 @@ from sage_categories.kernel.construction import MorphismConstructionInput as Mor
 from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown
 from sage_categories.kernel.predicates import AppliedPredicate as AppliedPredicate, Predicate as Predicate, ask as ask, conjunction as conjunction, disjunction as disjunction, negation as negation
 from sage_categories.kernel.roles import CategoryPoint as CategoryPoint, ElementOfObject as ElementOfObject, MorphismOfCategory as MorphismOfCategory, ObjectOfCategory as ObjectOfCategory, role_of as role_of
-from sage_categories.ordinals.category import OrdinalObject as OrdinalObject, Ordinals as Ordinals, bind_cardinals as bind_cardinals
+from sage_categories.ordinals.category import OrdinalObject as OrdinalObject, Ordinals as Ordinals, bind_cardinals as bind_cardinals, is_natural_number as is_natural_number
 from sage_categories.sets.category import SetMap as SetMap
 from sage_categories.sets.elements import Datum as Datum
 from sage_categories.sets.maps import SetMorphismData as SetMorphismData

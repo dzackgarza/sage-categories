@@ -167,6 +167,31 @@ def test_set_colimit_equality_over_omega_is_agreement_at_the_larger_index() -> N
     assert ask(mediating(first(NN(int(5)))) == ZZ(int(4))) is True
 
 
+def test_a_colimit_over_omega_of_sets_whose_data_are_owned_points_decides_agreement() -> None:
+    """The tagged representatives of a colimit carry the diagram's data, which may be owned points.
+
+    Oracle: for the constant sequence at ``X`` with identity transitions, ``colim X``
+    is ``X`` (Mathlib ``Functor.const`` over a filtered shape; here directly, since
+    ``(m, x) ~ (n, x)`` for every ``m, n``), so two injections agree exactly on equal
+    points of ``X``.
+    """
+    shape = omega()
+    three = Sets().Simplex(int(2))
+    carrier = Sets().Finite()((three.point(int(0)), three.point(int(1))))
+    sequence = _sequence(lambda point: carrier, lambda lower, upper: carrier.identity())
+    colimit = Sets().Colimits(shape)(sequence)
+    first, second = colimit.injection(shape(NN(int(1)))), colimit.injection(shape(NN(int(2))))
+    left, right = carrier.point(three.point(int(0))), carrier.point(three.point(int(1)))
+
+    # The coproduct over omega has no chosen enumeration, so no finite partition
+    # decides these; the tagged representatives are compared directly.
+    assert colimit.cardinality() is Unknown
+    assert ask(first(left) == first(left)) is True
+    assert ask(first(left) == second(left)) is True
+    assert ask(second(right) == first(right)) is True
+    assert ask(first(left) == second(right)) is Unknown
+
+
 def test_the_colimit_functor_maps_a_natural_transformation_between_sequences() -> None:
     shape = omega()
     source = _simplex_sequence()

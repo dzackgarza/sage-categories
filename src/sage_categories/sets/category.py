@@ -74,15 +74,19 @@ class FiniteSets(PropertySubcategory[[Rule], []]):
 
     def _from_enumeration(self, enumeration: tuple[Datum, ...], cardinality: CardinalObject) -> SetObject:
         """Construct the finite set with this exact enumeration and cardinal."""
-        # An enumeration lists each member once: its length is the cardinality (POL-SET-011/027).
+        # An enumeration lists each member once: its length is the cardinality
+        # (POL-SET-011/027).  Both the distinctness precondition and the membership
+        # rule ask their comparisons: ``==`` on an owned datum returns a proposition,
+        # not a decision (POL-MATH-034/035), so an unasked comparison would neither
+        # certify distinctness nor answer membership.
         for position, first in enumerate(enumeration):
             for second in enumeration[position + 1 :]:
-                assert (first == second) is False, f"the enumeration lists {first!r} and {second!r}, which are not exactly distinct"
+                assert ask(first == second) is False, f"the enumeration lists {first!r} and {second!r}, which are not exactly distinct"
         ambient = self.ambient()
         finite_set = ambient.ObjectType(
             ambient,
             SetObjectData(
-                lambda datum: any(datum == member for member in enumeration),
+                lambda datum: ask(disjunction(datum == member for member in enumeration)),
                 cardinality,
             ),
         )

@@ -5,10 +5,15 @@ Mathlib ``Cardinal.mk_pnat``, ``Cardinal.mk_int``, ``Cardinal.mkRat``, and
 ``Cardinal.mk_real`` with ``Cardinal.continuum = 2 ^ aleph0``; the floor of ``7/2``
 is ``3`` by the definition of the floor (the greatest integer at most ``7/2``);
 equality of rationals is equality of reduced fractions; POL-MATH-034 for map equality on a
-rule-defined infinite domain.
+rule-defined infinite domain; the irrationality of ``sqrt(2)`` against the open
+rationality of Euler's constant ``gamma``, of which Weisstein, MathWorld,
+"Euler-Mascheroni Constant" states "It is not known if this constant is irrational,
+let alone transcendental" (inspected 2026-08-28).
 """
 
 import pytest
+from sage.rings.qqbar import AA
+from sage.symbolic.constants import euler_gamma
 
 from sage_categories.all import *
 
@@ -48,6 +53,25 @@ def test_membership_decides_exactly_for_supplied_data() -> None:
     assert RR(3) in RR
     assert ZZ(3).parent() is ZZ
     assert QQ(3).parent() is QQ
+
+
+def test_membership_is_unknown_where_no_exact_algorithm_decides_it() -> None:
+    # An algebraic number carries the negative decision: sqrt(2) is irrational, hence
+    # neither rational nor an integer.  Whether gamma is rational is an open problem,
+    # so its membership is undecided, and undecided is not non-membership.
+    root_two = RR.point(AA(sqrt(2)))
+    gamma = RR.point(euler_gamma)
+
+    assert ask(QQ.membership_proposition(root_two)) is False
+    assert ask(ZZ.membership_proposition(root_two)) is False
+    assert ask(NN.membership_proposition(root_two)) is False
+
+    assert ask(QQ.membership_proposition(gamma)) is Unknown
+    assert ask(ZZ.membership_proposition(gamma)) is Unknown
+    assert ask(NN.membership_proposition(gamma)) is Unknown
+
+    with pytest.raises(AssertionError):
+        gamma in QQ
 
 
 def test_points_of_one_set_compare_by_their_exact_data() -> None:

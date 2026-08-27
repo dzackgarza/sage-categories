@@ -189,17 +189,29 @@ class Quotient:
 
     def equivalent(self, first: Representative, second: Representative) -> Decision:
         left, right = first.tagged(), second.tagged()
-        if left[0] == right[0] and (left[1] == right[1]) is True:
+        if self._tagged_equal(left, right) is True:
             return True
         partition = self.partition()
         if partition is not Unknown:
-            return partition.find(left) == partition.find(right)
+            return self._tagged_equal(partition.find(left), partition.find(right))
         if self._shape is omega():
+            # The index data of ``omega = Thin(NN, natural_order)`` are the exact
+            # integers of ``NN``, so this order comparison is a decision.
             lower, upper = (left, right) if left[0] <= right[0] else (right, left)
             transported = self.transition(lower[0], upper[0])._set_morphism_data.rule(lower[1])
-            if (transported == upper[1]) is True:
+            if ask(transported == upper[1]) is True:
                 return True
         return Unknown
+
+    def _tagged_equal(self, left: tuple[Datum, Datum], right: tuple[Datum, Datum]) -> Decision:
+        """Two tagged data are equal when their tags and their values are.
+
+        Both parts are data of the diagram and can be owned mathematical values, whose
+        ``==`` is a proposition rather than a decision (POL-MATH-034/035), so the
+        conjunction is asked.  Python tuple equality would instead take the Boolean
+        value of each part, which an owned part does not have.
+        """
+        return ask(conjunction((left[0] == right[0], left[1] == right[1])))
 
     def hash_of(self, representative: Representative) -> int:
         partition = self.partition()

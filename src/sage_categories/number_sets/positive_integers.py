@@ -11,7 +11,6 @@ integer ``n``.
 from __future__ import annotations
 
 from sage.rings.integer import Integer
-from sage.rings.integer_ring import ZZ as _integer_ring
 
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor
@@ -19,6 +18,7 @@ from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import Predicate
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
+from sage_categories.number_sets.integers import _is_integer
 from sage_categories.sets.cardinals import aleph0
 from sage_categories.sets.category import Sets
 from sage_categories.sets.elements import Datum, SetElement
@@ -29,8 +29,18 @@ __all__ = ["NN", "PositiveIntegers", "PositiveIntegersCategory", "natural_order"
 
 
 def _is_positive_integer(datum: Datum) -> Decision:
-    """Sage's exact integer ring decides integrality; the exact order decides positivity."""
-    return datum in _integer_ring and datum > 0
+    """Integrality decides first; on an established integer the exact order decides positivity.
+
+    ``ZZ`` owns the integrality decision (``number_sets/integers.py``), so ``NN``
+    states only its new mathematics.  Positivity is asked only of a datum that ``ZZ``
+    admits, where ``>`` is the exact integer order; an undecided integrality leaves
+    membership undecided, since a datum not known to be an integer is not known to be
+    a positive integer (POL-MATH-042).
+    """
+    integrality = _is_integer(datum)
+    if integrality is not True:
+        return integrality
+    return bool(datum > 0)
 
 
 class PositiveIntegerSet(ObjectOfCategory):

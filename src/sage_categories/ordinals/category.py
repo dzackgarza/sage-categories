@@ -43,6 +43,8 @@ from dataclasses import dataclass
 from functools import reduce
 from typing import TYPE_CHECKING, Any
 
+from sage.rings.integer_ring import ZZ as _integer_ring
+
 from sage_categories.cat.category import Category
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask
@@ -51,7 +53,19 @@ from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, Morphis
 if TYPE_CHECKING:
     from sage_categories.sets.cardinals import CardinalObject
 
-__all__ = ["OrdinalObject", "Ordinals", "OrdinalsCategory", "bind_cardinals", "omega", "omega0", "ordinal"]
+__all__ = ["OrdinalObject", "Ordinals", "OrdinalsCategory", "bind_cardinals", "is_natural_number", "omega", "omega0", "ordinal"]
+
+
+def is_natural_number(value: Any) -> bool:
+    """Whether an unowned value denotes a natural number, at Sage's exact integer ring.
+
+    ``Ordinals()`` and ``Cardinal()`` both construct their finite objects from one.
+    Each states it as a constructor precondition and tests it before coercing an
+    equality candidate: an equality handler is total over an ``Any`` candidate
+    (POL-TYPE-004, POL-MATH-034), so a candidate denoting no object of the category
+    is undecided rather than a construction error.
+    """
+    return value in _integer_ring and value >= 0
 
 
 def bind_cardinals() -> None:
@@ -228,10 +242,16 @@ class OrdinalsCategory(Category[[], []]):
         return self._ordinals[key]
 
     def __call__(self, value: OrdinalObject | int) -> OrdinalObject:
-        """``Ordinals()(n)`` for a nonnegative integer; an ordinal is returned unchanged."""
+        """``Ordinals()(n)`` for a nonnegative integer; an ordinal is returned unchanged.
+
+        A finite ordinal is a natural number, so the constructor states integrality as
+        a precondition and Sage's exact integer ring decides it.  ``int()`` then only
+        normalizes an established integer to the Python integer that keys every finite
+        expression; it never truncates a value that is not one.
+        """
         if value in self:
             return value
-        assert value >= 0, f"{value!r} is not an ordinal"
+        assert is_natural_number(value), f"{value!r} is not an ordinal"
         return self._retain(("finite", int(value)), ())
 
     def omega(self, index: OrdinalObject | int) -> OrdinalObject:
@@ -343,7 +363,7 @@ class OrdinalsCategory(Category[[], []]):
             return Unknown
         if candidate in self:
             second = candidate
-        elif role_of(candidate) is None:
+        elif role_of(candidate) is None and is_natural_number(candidate):
             second = self(candidate)
         else:
             return Unknown

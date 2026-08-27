@@ -13,10 +13,11 @@ from __future__ import annotations
 
 from sage.rings.integer import Integer
 from sage.rings.integer_ring import ZZ as _integer_ring
+from sage.rings.qqbar import QQbar as _algebraic_numbers
 
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor
-from sage_categories.kernel.decisions import Decision
+from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.cardinals import aleph0
@@ -29,8 +30,20 @@ __all__ = ["ZZ", "Integers", "IntegersCategory"]
 
 
 def _is_integer(datum: Datum) -> Decision:
-    """Sage's exact integer ring decides membership of a datum at the private boundary."""
-    return datum in _integer_ring
+    """Sage's exact integer ring decides membership; the algebraic numbers carry the negative decision.
+
+    ``QQbar`` is the algebraic closure of ``QQ`` and "all computations are exact"
+    (``sage/rings/qqbar.py``, module docstring; inspected 2026-08-28), so an
+    algebraic number that ``ZZ`` does not admit is exactly not an integer.  That
+    field is the whole declared semantic domain of the negative decision: outside
+    it, whether a symbolic constant is an integer can be an open problem, and an
+    open problem is ``Unknown``, not ``False`` (POL-MATH-042).
+    """
+    if datum in _integer_ring:
+        return True
+    if datum in _algebraic_numbers:
+        return False
+    return Unknown
 
 
 class IntegerSet(ObjectOfCategory):

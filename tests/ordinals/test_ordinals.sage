@@ -11,7 +11,9 @@ equality no exact handler decides); ``Ordinal.opow_zero``, ``Ordinal.zero_opow``
 for the initial ordinal; ``Ordinal.card_omega0``, ``Ordinal.card_add``,
 ``Ordinal.card_mul``, and ``Ordinal.card_opow_eq_of_omega0_le_left`` /
 ``_right`` for cardinalities, with ``Cardinal.add_eq_max`` and ``Cardinal.mul_eq_max``
-for the cardinal arithmetic.
+for the cardinal arithmetic; the finite ordinals are the natural numbers
+(``Ordinal.natCast``, and ``5/2`` is not one), so no ordinal and no ordinal order
+relation is named by a value that is not a natural number.
 """
 
 import pytest
@@ -32,6 +34,21 @@ def test_ordinal_order_is_decided_by_exact_handlers() -> None:
     assert ask(omega0 <= omega0.ordinal_sum(int(1))) is not False
     with pytest.raises(TypeError):
         bool(omega0 < omega(int(1)))
+
+
+def test_a_value_that_is_not_a_natural_number_names_no_ordinal() -> None:
+    # 2 <= 5/2 <= 3 holds in the rationals, so a constructor that truncated to a
+    # finite ordinal would report 5/2 as the ordinal 2 and answer the order with it.
+    with pytest.raises(AssertionError):
+        ordinal(5 / 2)
+    with pytest.raises(AssertionError):
+        ask(ordinal(int(2)) <= 5 / 2)
+    with pytest.raises(AssertionError):
+        ask(ordinal(int(3)) > 5 / 2)
+
+    assert ordinal(int(2)) is ordinal(int(2))
+    assert ask(ordinal(int(2)) == int(2)) is True
+    assert ask(ordinal(int(2)) == int(3)) is False
 
 
 def test_natural_sum_is_commutative_and_ordinary_sum_retains_its_order() -> None:

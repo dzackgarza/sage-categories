@@ -4,15 +4,15 @@ Replace each `Leaf`, `Base`, and `defining_data` name with its mathematical name
 Keep only methods introduced by the leaf structure.
 
 ```python
+@dataclass(frozen=True, slots=True)
+class LeafObjectData:
+    defining_data: LeafDefiningData
+
+
 class LeafObject(MathematicalObject):
-    def __init__(
-        self,
-        *,
-        category: LeafCategory,
-        defining_data: LeafDefiningData,
-    ) -> None:
-        self._defining_data = defining_data
-        super().__init__(category=category)
+    def __init__(self, data: LeafObjectData) -> None:
+        self._defining_data = data.defining_data
+        super().__init__()
 
     def leaf_operation(self) -> LeafResult:
         """Return the result of an operation introduced by this structure."""
@@ -20,11 +20,15 @@ class LeafObject(MathematicalObject):
 
 
 class LeafCategory(Category):
-    ObjectType = LeafObject
-    ElementType = LeafElement
+    DeclaredObjectType = LeafObject
+    DeclaredElementType = LeafElement
+    DeclaredMorphismType = LeafMorphism
 
     def __call__(self, defining_data: LeafDefiningData) -> LeafObject:
-        return self.ObjectType(category=self, defining_data=defining_data)
+        return self.ObjectType(
+            category=self,
+            data=LeafObjectData(defining_data),
+        )
 
     def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
         """Return the selected immediate structural functors."""
@@ -36,11 +40,18 @@ constructed object of `Fun = Mor(Cat())`. Include only immediate functors whose 
 catalogue supplies the leaf's inherited public surface.
 
 For each inherited operation, the selected functor must construct every required object
-and morphism image. The compiler does not invent missing maps.
+and morphism image. It must also retain the role-constructor programs required by its
+target implementation. The compiler does not invent missing maps or constructor data.
 
 The functor connects the category-owned implementation roles. Its object and morphism maps
-construct the corresponding target roles. A concrete functor category can add an element
-action when its mathematics supplies one.
+construct the corresponding target roles. Its three role-constructor conversions map the
+source role data to the exact target role data. The element image remains derived from
+the morphism action.
+
+The compiled public constructor consumes `category` as the root object identity. It
+passes only `LeafObjectData` to `LeafObject.__init__`. It computes all ancestor data
+before it starts the `super()` chain. An element constructor keeps its defining morphism
+as root identity. A morphism constructor keeps its category and endpoints as root identity.
 
 An inclusion uses the constructor on its fixed-endpoint functor category. A product,
 pullback, comma, `Fun([1], C)`, or other category construction creates and retains its named

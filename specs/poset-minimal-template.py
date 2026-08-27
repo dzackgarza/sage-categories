@@ -3,9 +3,9 @@
 A poset object is a pair ``(X, R)``. The constructor accepts only the owned
 relation ``R``. Its ambient product determines ``X``.
 
-The private defining data is ``(X, R)``. The selected set projection maps this
-pair to ``X`` and supplies the inherited set surface. The other component remains
-the order data.
+The local object datum is ``R``. The selected set projection derives ``X`` from
+the two equal factors of ``R``. It supplies the inherited set surface and the set
+constructor datum. The relation remains the order data.
 
 Both component projections are mathematical functors. Only the set projection
 is a structure functor. The relation projection remains an ordinary functor because
@@ -40,29 +40,31 @@ posets directly. Interactive code can use ``assume(proposition)`` or
 from __future__ import annotations
 
 
+@dataclass(frozen=True, slots=True)
+class PosetObjectData:
+    """The order data introduced by a partial order."""
+
+    relation: SetSubset
+
+
 class PartiallyOrderedSetsCategory(Category):
     """The category of partially ordered sets and monotone maps."""
 
-    class ObjectType(Implementation):
+    class DeclaredObjectType(Implementation):
         """Implement the partial order determined by an owned relation."""
 
-        def __init__(
-            self,
-            *,
-            category: PartiallyOrderedSetsCategory,
-            relation: SetSubset,
-        ) -> None:
+        def __init__(self, data: PosetObjectData) -> None:
+            relation = data.relation
             assert relation in Sets().Products().Subsets()
             factors = relation.factors()
             assert ask(factors.cardinality() == 2) is True
-            underlying_set = factors[0]
-            assert factors[1] is underlying_set
-            self._defining_data = (underlying_set, relation)
-            super().__init__(category=category)
+            assert factors[1] is factors[0]
+            self._relation = relation
+            super().__init__()
 
         def order_relation(self) -> SetSubset:
             """Return the defining subobject of ``X × X``."""
-            return self._defining_data[1]
+            return self._relation
 
         def elements_are_related(
             self,
@@ -74,7 +76,7 @@ class PartiallyOrderedSetsCategory(Category):
             assert right.ambient_object() is self
             return self.order_relation().contains_pair(left, right)
 
-    class ElementType(Implementation):
+    class DeclaredElementType(Implementation):
         """Add order comparison to the inherited element implementation."""
 
         def __le__(
@@ -84,7 +86,7 @@ class PartiallyOrderedSetsCategory(Category):
             """Return the proposition that ``self <= other``."""
             return self.ambient_object().elements_are_related(self, other)
 
-    class ArrowType(Implementation):
+    class DeclaredMorphismType(Implementation):
         """Implement monotone maps with the inherited arrow surface."""
 
     def __call__(
@@ -92,9 +94,12 @@ class PartiallyOrderedSetsCategory(Category):
         relation: SetSubset,
     ) -> PartiallyOrderedSetsCategory.ObjectType:
         """Construct the asserted partial order determined by ``relation``."""
-        return self.ObjectType(category=self, relation=relation)
+        return self.ObjectType(
+            category=self,
+            data=PosetObjectData(relation),
+        )
 
-    def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
+    def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
         """Select the set projection used for inheritance."""
         # This tuple selects inheritance routes. It is not a list of all functors
         # from this category. Do not add the second product projection here.
@@ -102,4 +107,6 @@ class PartiallyOrderedSetsCategory(Category):
         # Projection to ``R`` would expose subset and product methods on posets.
         # That projection can still exist and be called as an ordinary functor.
         # Selecting only ``X`` mirrors Sage listing only ``Sets()`` as a supercategory.
+        # The product projection retains the object, element, and morphism data
+        # conversions supplied by the general product construction.
         return (self.product_projection(0),)

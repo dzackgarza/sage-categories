@@ -31,7 +31,9 @@ The structural functors form this commutative graph:
 \end{array}
 \]
 
-Both routes from finite total orders to sets produce one canonical set image.
+Both routes from finite total orders to sets produce one canonical set image and the
+same set constructor datum by identity. The compiler runs each reachable role constructor
+once. The common set role state is initialized once.
 
 Each category owns complete implementation roles:
 
@@ -45,6 +47,17 @@ algorithms and constructions that require finiteness.
 
 The relation presentation's `product_projection(0)` supplies membership, iteration,
 cardinality, set maps, and set constructions.
+
+The selected functor from posets to sets retains three pure typed conversions:
+
+- its object conversion returns the datum retained by the canonical carrier;
+- its element conversion returns the datum retained by the canonical set point;
+- its morphism conversion returns the datum retained by the canonical set map.
+
+The poset object constructor accepts only its relation and initializes only poset state.
+The object conversion derives the carrier from that relation before initialization starts.
+Poset elements and monotone maps initialize only their new state. Their
+`super().__init__()` calls enter the compiled constructor chain.
 
 ## Poset construction and its proposition
 
@@ -272,15 +285,15 @@ constructions arrive through structural inheritance.
 Each category-owned `ObjectType`, `ElementType`, and `MorphismType` is its implementation
 class. A leaf can use Sage or another engine through private helpers.
 
-Leaf methods remain ordinary typed mathematical methods. The compiler derives transport
-from those signatures and category declarations. Leaf code does not declare compiler
-roles or route metadata.
+Leaf methods remain ordinary typed mathematical methods. The compiler derives their
+inheritance from category declarations. Leaf code does not declare compiler roles or
+route metadata.
 
 See [Leaf category implementations](leaves.md) and [Structural resolution](resolution.md).
 
 The governing policies include `POL-MATH-001`, `POL-MATH-016` through `POL-MATH-035`,
 `POL-CAT-020`, `POL-CAT-061` through `POL-CAT-084`, `POL-LEAF-018` through
-`POL-LEAF-057`, and `POL-KERNEL-001` through `POL-KERNEL-026`.
+`POL-LEAF-057`, and `POL-KERNEL-001` through `POL-KERNEL-029`.
 
 ## Acceptance conditions
 

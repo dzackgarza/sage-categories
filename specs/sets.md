@@ -451,6 +451,22 @@ applicable cardinal formula without enumerating an infinite function set.
 
 ## Private computation engines
 
+Each compiled set role owns one private state record. The object record retains its
+canonical object of `Sets()`, membership rule, cardinality, and point caches. The
+element record retains its canonical set point, defining set morphism, and datum. The
+morphism record retains its canonical set map, set endpoints, and rule.
+
+A value constructed in `Sets()` retains an exact constructor datum. Its local constructor
+creates the state with that value as the canonical image. A selected functor converts the
+descendant datum to the datum retained by the canonical set image. The set constructor
+then assigns that same state record to the descendant. It does not copy individual fields.
+Thus an inherited set method executes on the descendant and uses the same set state as
+the public functor image.
+
+A set method that needs an object, point, or morphism of `Sets()` uses the canonical
+image in its private state. The descendant keeps its own category, parent, domain, and
+codomain as its public identity.
+
 `Sets.ObjectType` is the sole public implementation of a set. It can use Sage, SymPy,
 GAP, Julia packages, Singular, Macaulay2, or several engines together. These are private
 algorithm providers, not competing set implementations.

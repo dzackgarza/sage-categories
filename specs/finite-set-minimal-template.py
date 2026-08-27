@@ -12,7 +12,7 @@ from __future__ import annotations
 
 
 class SetsCategory(Category):
-    class ObjectType(Implementation):
+    class DeclaredObjectType(Implementation):
         def is_finite(self) -> Proposition:
             """Return the finite-set membership proposition."""
             return Sets().Finite().membership_proposition(self)
@@ -20,13 +20,14 @@ class SetsCategory(Category):
     class Finite(Category):
         """The full property subcategory of finite sets."""
 
-        def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
-            """Select the inclusion that supplies the inherited set catalogue.
+        def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
+            """Select the inclusion that supplies the inherited set implementation.
 
             This tuple is not a list of all functors from finite sets.
             The full-subcategory construction supplies its maps and constructs it in
             the fixed-endpoint functor category. Other functors remain in ``Fun``.
             """
+            # Same-object refinement preserves the initialized ambient role data.
             return (Fun(self, Sets()).FullyFaithful().inclusion(),)
 
         def membership_proposition(
@@ -39,11 +40,11 @@ class SetsCategory(Category):
                 definition=X.cardinality() < ALEPH_ZERO,
             )
 
-        class ObjectType(Implementation):
+        class DeclaredObjectType(Implementation):
             """Implement only the operations introduced by known finiteness.
 
-            No initializer repeats set construction. The kernel-owned inclusion
-            supplies the canonical ``Sets().ObjectType`` image.
+            Same-object refinement keeps the set state already initialized by the
+            compiled ambient role.
             """
 
             def cardinality_parity(self) -> Proposition:

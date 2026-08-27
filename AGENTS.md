@@ -348,22 +348,30 @@ Ordinary mathematical functors remain available without changing public inherita
 
 For an object `x`, cache one canonical `F(x)` in each reachable category.
 Two structural routes to the same category must return the same object by identity.
-At the first structural transport of a value to a reachable category, traverse every route
-to that category in declaration order, cache the first image, and assert that each later
-image `is` the cached one. A mismatch raises a construction-defect error naming both routes.
-Method compilation constructs no image and performs no such check.
+During construction, traverse every route to each reachable category in declaration order.
+Cache the first image and constructor datum. Assert that each later route supplies the same
+objects by identity. If construction does not reach a node, perform this check at the first
+public functor application. A mismatch raises a construction-defect error naming both routes.
 
 Compile the public method surface from category declarations:
 
 - local declarations take precedence;
 - routes to the same declaring category share one method owner;
 - unrelated declarations with the same name are errors;
-- forwarding descriptors expose inherited methods directly on the public object;
-- descriptor installation must support Python special methods.
+- each public role copies its complete local declaration onto the controlled compiled
+  ancestor roles;
+- copied `__class__` closures bind to the final compiled role;
+- ordinary and special methods execute through the same compiled MRO.
 
-An inherited method means `X.f() := F(X).f()` along the selected functor `F` and returns
-the declaring method's value. A leaf that wants a source-category result overrides the
-inherited method or adds its own.
+Each local role constructor initializes only its new state and calls `super().__init__()`
+once. Selected functors supply typed constructor-data conversions for object, element,
+and morphism roles. Compute one datum per reachable node before the C3 chain starts.
+Generated class wrappers read their node's datum, so adjacent C3 classes need not form a
+structural edge. The kernel base initializes the separate root identity.
+
+An inherited method executes on the original descendant. The declaring role's private
+state retains the canonical functor image. A method uses that image when its result or
+argument must belong to the declaring category.
 
 Derive supercategory information from structural functors.
 Do not maintain a second inheritance or propagation registry.

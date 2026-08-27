@@ -20,7 +20,7 @@ method catalogues that a compiler matches against backend method names.
 - [The leaf is the implementation firewall](#the-leaf-is-the-implementation-firewall)
 - [Category declarations define or link implementations](#category-declarations-define-or-link-implementations)
 - [Local methods are ordinary executable methods](#local-methods-are-ordinary-executable-methods)
-- [Inherited methods remain kernel-owned transport](#inherited-methods-remain-kernel-owned-transport)
+- [Inherited methods use compiled implementation inheritance](#inherited-methods-use-compiled-implementation-inheritance)
 - [The policy conflict that exposed the gap](#the-policy-conflict-that-exposed-the-gap)
 - [Rejected operation decorators](#rejected-operation-decorators)
 - [Rejected mirrored backend surfaces](#rejected-mirrored-backend-surfaces)
@@ -110,9 +110,9 @@ The architecture has two independent reuse mechanisms.
 
 ### Structural inheritance
 
-An operation already owned by a structural ancestor reaches the leaf through the
-selected structural functors. The kernel transports the receiver, arguments, and
-result.
+An implementation already owned by a structural ancestor reaches the leaf through the
+selected structural functors. The kernel compiles its methods and constructor into the
+descendant role class.
 
 Examples include:
 
@@ -146,8 +146,9 @@ executable bodies of mathematics newly introduced by a leaf.
 
 ## The implementation classes
 
-`ObjectType`, `ElementType`, and `MorphismType` have one precise meaning. They are the
-classes whose instances implement the corresponding mathematical roles.
+`ObjectType`, `ElementType`, and `MorphismType` are the compiled public classes. Their
+instances implement the corresponding mathematical roles. A category declares its local
+delta as `DeclaredObjectType`, `DeclaredElementType`, and `DeclaredMorphismType`.
 
 They are not:
 
@@ -159,8 +160,8 @@ They are not:
 - containers for annotations used by runtime dispatch.
 
 Each public operation has one executable declaration on its mathematical owner. A local
-operation on objects has its body on `C.ObjectType`. The same rule applies to elements
-and morphisms.
+object operation has its body on the category declaration's `DeclaredObjectType`. The
+kernel copies it into `C.ObjectType`. The same rule applies to elements and morphisms.
 
 The implementation class can call dependencies. Calling a dependency does not transfer
 ownership to that dependency.
@@ -269,7 +270,7 @@ A category declaration can define its implementation class locally:
 
 ```python
 class LeafCategory(Category):
-    class ObjectType(MathematicalObject):
+    class DeclaredObjectType(MathematicalObject):
         def leaf_operation(self) -> LeafResult:
             ...
 ```
@@ -278,19 +279,20 @@ It can instead link one imported class:
 
 ```python
 class LeafCategory(Category):
-    ObjectType = LeafObject
-    ElementType = LeafElement
-    MorphismType = LeafMorphism
+    DeclaredObjectType = LeafObject
+    DeclaredElementType = LeafElement
+    DeclaredMorphismType = LeafMorphism
 ```
 
-Both forms have one implementation class for each mathematical role.
+Both forms have one local declaration for each mathematical role. The kernel constructs
+the three compiled public roles separately.
 
 When the category links an imported class, the category module contains no duplicate
 method declarations, abstract stubs, or backend method map. The linked class is the
 canonical implementation.
 
-The link from the category to its implementation type is part of the categorical
-declaration. It is not a runtime implementation-routing mechanism.
+The link from the category to its local declaration is part of the categorical
+declaration. It does not replace the compiled public role.
 
 ## Local methods are ordinary executable methods
 
@@ -326,27 +328,29 @@ A short method can still be the correct owner. A semantic method that invokes a 
 algorithm is not a meaningless forwarding wrapper. It supplies the public mathematical
 contract and the private computation boundary.
 
-## Inherited methods remain kernel-owned transport
+## Inherited methods use compiled implementation inheritance
 
-The compiler acts only on inherited operations.
+The compiler acts on complete inherited role implementations.
 
-For a method declared by a structural ancestor, the compiler:
+For each selected route, the compiler:
 
-- selects the complete structural route to the declaring category;
-- transports the receiver and mathematical arguments;
-- invokes the ancestor's executable method;
-- returns the declaring method's value unchanged (`X.f() := F(X).f()`);
-- preserves exact ambient objects, domains, and codomains.
+- places the ancestor compiled role in the controlled C3 MRO;
+- copies the local declaration, including its constructor, into its own compiled role;
+- uses the functor's constructor conversion to initialize the ancestor state;
+- invokes inherited methods on the original structured value through ordinary Python
+  method resolution;
+- initializes each common ancestor once across a diamond.
 
-For a method declared locally by the leaf, the compiler does none of these operations.
-It keeps the ordinary local method body.
+The local constructor accepts only the leaf's new semantic data. It initializes that
+state and calls `super().__init__()` once. The selected functor supplies the data required
+by the next role constructor. The leaf does not add ancestor fields or ancestor arguments.
 
 The compiler never interprets a local decorator as an instruction to find another
 method body. It never pairs a leaf method with an engine method by name.
 
 This is the decisive boundary:
 
-> The kernel transports inherited mathematics. The leaf implements new mathematics.
+> The kernel composes inherited implementations. The leaf implements new mathematics.
 
 ## The policy conflict that exposed the gap
 
@@ -369,8 +373,8 @@ Both interpretations were wrong.
 
 The correct distinction is:
 
-- generic inheritance, route traversal, transport, and method installation are kernel
-  infrastructure;
+- generic inheritance, constructor-data traversal, compiled class construction, and
+  canonical functor images are kernel infrastructure;
 - a leaf-owned method's selected computation is part of that leaf's implementation;
 - lowering to Sage and reconstructing an owned result form a private computation
   boundary;
@@ -647,12 +651,11 @@ catalogues, the architecture is wrong.
 | --- | --- |
 | Category-local operation name and signature | `ObjectType`, `ElementType`, or `MorphismType` |
 | Category-local executable method body | The same implementation class |
-| Inherited method catalogue | Declaring structural ancestor |
-| Structural route discovery | Kernel |
-| Receiver and argument transport | Kernel |
-| Results and collections returned as the declaring method returned them | Kernel |
-| Canonical images and preimages | Kernel |
-| Dynamic descriptor installation for inherited methods | Kernel |
+| Local role constructor and state | The same local implementation declaration |
+| Ancestor constructor conversion | Selected structural functor |
+| Controlled role MRO and constructor composition | Kernel |
+| Inherited executable method | Declaring structural ancestor |
+| Public functor images and canonical route checks | Kernel |
 | Choice of exact leaf algorithm | Leaf implementation method |
 | Private lowering to Sage | Leaf implementation or private helper |
 | Sage algorithm execution | Sage, called through the private boundary |
@@ -742,9 +745,9 @@ common owner. See [resolution.md](resolution.md) for the complete decision.
 For \(R^n\), the algebra-to-rings and algebra-to-modules routes introduce different
 applicable operations. Both later reach `Sets()`. The kernel preserves both catalogues.
 Both routes return the one retained underlying set by identity, and the compiler checks
-that identity at the first transport.
+that identity during construction. The common `Sets()` role constructor runs once.
 
-This structural transport does not dispatch the algebra's local methods to Sage. The
+This structural inheritance does not dispatch the algebra's local methods to Sage. The
 two mechanisms remain separate:
 
 - category paths determine inherited operations;
@@ -827,9 +830,9 @@ not require every private engine value or algorithm call to enter the functor co
 
 A leaf implementation satisfies this specification when all these facts hold:
 
-- the category declaration defines or links one `ObjectType`, one `ElementType`, and one
-  `MorphismType`;
-- object, element, morphism, parameter, result, and transport roles follow from the
+- the category declaration defines or links one local object, element, and morphism
+  implementation, and the kernel exposes one compiled public type for each role;
+- object, element, morphism, parameter, result, and constructor roles follow from the
   category, operation, and functor definitions without another runtime carrier;
 - a theorem-backed named construction states its conclusion through the exact result
   category without an authority value, proof token, or metadata record;
@@ -837,6 +840,8 @@ A leaf implementation satisfies this specification when all these facts hold:
 - local methods are ordinary methods without computation-routing decorators;
 - no local method is an `assert False` declaration stub;
 - inherited methods arrive only through selected structural functors;
+- every selected ancestor's required state is initialized through its functor-owned
+  constructor conversion;
 - the compiler does not match local operation names to backend names;
 - no `SageXObject` or similar class mirrors the public method surface;
 - private engine helpers expose no public mathematical interface;

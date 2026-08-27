@@ -302,23 +302,12 @@ class PosetsCategory(Category[[Rule], []]):
                 carrier = self._carrier(source.datum.relation)
                 return retained_object_input(carrier)
 
-            def element_input(
-                source: ElementConstructionInput[PosetElement, None],
-            ) -> ElementConstructionInput[SetElement, SetElementData]:
-                defining: MorphismConstructionInput[MonotoneMap, PosetMorphismData] = retained_morphism_input(
-                    source.identity.defining_morphism,
-                )
-                set_morphism: MorphismConstructionInput[SetMap, SetMorphismData] = underlying.morphism_constructor_input(defining)
-                point = Sets().element_from_defining_morphism(set_morphism.canonical_image)
-                return retained_element_input(point)
-
             def morphism_input(
                 source: MorphismConstructionInput[MonotoneMap, PosetMorphismData],
             ) -> MorphismConstructionInput[SetMap, SetMorphismData]:
                 return retained_morphism_input(source.datum.set_map)
 
             underlying.retain_object_constructor_conversion(object_input)
-            underlying.retain_element_constructor_conversion(element_input)
             underlying.retain_morphism_constructor_conversion(morphism_input)
             self._functors["underlying_set"] = underlying
         return self._functors["underlying_set"]

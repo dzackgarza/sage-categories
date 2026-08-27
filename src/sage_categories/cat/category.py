@@ -137,15 +137,23 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         return ()
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
-        """The local role declaration: the nested class of this category's Python class."""
+        """The local role declaration: the nested class of this category's Python class.
+
+        A category states only the roles whose mathematics it introduces; a role it
+        declares nothing for gets the empty local declaration, which names this category
+        as the node's owner and stands on the role's kernel base (POL-KERNEL-028).
+        """
         match role:
             case Role.OBJECT:
-                return type(self).DeclaredObjectType
+                name = "DeclaredObjectType"
             case Role.ELEMENT:
-                return type(self).DeclaredElementType
+                name = "DeclaredElementType"
             case Role.MORPHISM:
-                return type(self).DeclaredMorphismType
-        raise AssertionError(role)
+                name = "DeclaredMorphismType"
+            case _:
+                raise AssertionError(role)
+        declared = getattr(type(self), name, None)
+        return declared if declared is not None else compiler.empty_local_role(self, role)
 
     def role_class(self, role: Role) -> type[CategoryPoint]:
         """The compiled role class installed on this category by the kernel."""

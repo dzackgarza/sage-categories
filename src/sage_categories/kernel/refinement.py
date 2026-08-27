@@ -28,7 +28,7 @@ from sage_categories.kernel.transport import placement_node
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
 
-__all__ = ["is_placed", "is_retained_inclusion", "is_subcategory", "place", "refine"]
+__all__ = ["common_ancestor", "is_placed", "is_retained_inclusion", "is_subcategory", "place", "refine"]
 
 
 def is_retained_inclusion(functor: MorphismOfCategory) -> bool:
@@ -67,6 +67,19 @@ def is_subcategory(inner: Category, outer: Category) -> bool:
     """Whether ``inner`` is ``outer`` or a declared subcategory of it, through retained inclusions."""
     outer_node = compiler.node(outer, Role.OBJECT)
     return any(compiler.same_node(outer_node, found) for found in _included_in(compiler.node(inner, Role.OBJECT)))
+
+
+def common_ancestor(first: Category, second: Category) -> Category | None:
+    """The narrowest category containing both, along retained inclusions, or ``None`` (POL-CAT-088, POL-FUN-027).
+
+    Narrowest is minimal in the inclusion order, not first in the walk: a category
+    declares its inclusions in its own preference order, so the walk can reach a wider
+    category before a narrower one.  A selected functor that is not a retained inclusion
+    changes structure and is not walked, so a poset and a set meet nowhere.  The caller
+    states the precondition, because only the caller knows the two values.
+    """
+    common = [reached.category for reached in _included_in(compiler.node(first, Role.OBJECT)) if is_subcategory(second, reached.category)]
+    return next((candidate for candidate in common if all(is_subcategory(candidate, other) for other in common)), None)
 
 
 def place(value: CategoryPoint, category: Category) -> None:

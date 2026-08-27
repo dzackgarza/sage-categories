@@ -310,7 +310,6 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
                 return retained_element_input(element)
 
             representative.retain_object_constructor_conversion(object_input)
-            representative.retain_element_constructor_conversion(element_input)
             representative.retain_morphism_constructor_conversion(morphism_input)
             self._functors["representative"] = representative
         return self._functors["representative"]

@@ -465,6 +465,29 @@ second inheritance mechanism, no route normalization, and no propagation registr
 remains an object of `Cat()`, `{C}` remains a distinct object of `Cat()`, and
 `C.structure_functors()` continues to state the structure of `C` as a category.
 
+The middle two rows are the one structural step whose two roles differ, and no functor
+acts along it. The value of the step is the value's own defining morphism: an object of
+`C` names the functor `1 -> C` that selects it, a morphism of `C` names the functor
+`[1] -> C`, and those are what the generalized elements of `C` are. `Cat().Point(C)`
+retains one point category per object; the compiler reads that retention to find `{C}`
+from `C`, and `C` records nothing.
+
+A shift contributes no class base. It runs from `C` to `{C}`, which is constructed later
+and therefore ranks below `C`, while a compiled role's bases must rank above it for the
+controlled merge of [resolution.md](resolution.md) to hold. A shift is not a subcategory
+relation either, so `C.ObjectType` does not derive from `{C}.ElementType`. Class bases
+come from the functor steps; the method catalogue follows both kinds.
+
+`stage()`, `parent()`, and `defining_morphism()` never compile. Every kernel role class
+defines its own, and the compiler calls them to find a value's node, so a compiled copy
+would call the accessor it is transporting for. `{C}`'s element node is the first to
+reach `Cat()`'s, where all three are declared.
+
+A point category changes the compiled surface of its own member, which was compiled
+before it existed, so constructing `{C}` recompiles `C`. Values of `C` built earlier keep
+their earlier classes: declare a point category with the theory of `C`, ahead of its
+values.
+
 ### Ordinals as a semiring
 
 An ordinal is an object of `Ordinals()` ([ordinals.md](ordinals.md)). The commutative

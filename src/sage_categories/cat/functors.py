@@ -122,9 +122,14 @@ class FunctorDeclaration(MorphismOfCategory):
         self._on_morphism = data.on_morphism
         super().__init__()
 
-    # A value whose placement already reaches the domain is accepted by that
-    # placement (a pure graph lookup); only an unplaced value has its membership
-    # proposition decided, since that decision may itself need this functor.
+    # The admission condition is the one the image construction needs.  A retained
+    # inclusion is the identity on the objects and morphisms of its domain
+    # (``specs/functor.md``, "Inclusion functors"), so it constructs nothing and
+    # admits exactly the members of its domain: a wide subcategory has every object of
+    # its ambient, and that is a membership fact its ambient decides, not a placement
+    # its objects ever entered through (POL-CAT-068, POL-FUN-027).  Every other functor
+    # builds its image from the domain's construction input, so it admits exactly the
+    # values whose placement reaches that node.
 
     def on_object(self, member_object: ObjectOfCategory) -> ObjectOfCategory:
         """The image of an object of the domain."""
@@ -132,10 +137,12 @@ class FunctorDeclaration(MorphismOfCategory):
             from sage_categories.kernel import compiler
             from sage_categories.kernel.transport import construction_input
 
-            assert is_placed(member_object, self.domain()), (
-                f"{member_object!r} is placed in {member_object.category()!r}; {self!r} constructs its image from the "
-                f"placement {self.domain()!r}, which that placement does not reach"
-            )
+            if not is_placed(member_object, self.domain()):
+                assert is_retained_inclusion(self) and member_object in self.domain(), (
+                    f"{member_object!r} is placed in {member_object.category()!r}; {self!r} constructs its image from the "
+                    f"placement {self.domain()!r}, which that placement does not reach"
+                )
+                return member_object
             source = construction_input(member_object, compiler.node(self.domain(), Role.OBJECT))
             return self.object_constructor_input(source).canonical_image
         assert member_object in self.domain(), f"{member_object!r} is not an object of {self.domain()!r}"
@@ -148,10 +155,12 @@ class FunctorDeclaration(MorphismOfCategory):
             from sage_categories.kernel import compiler
             from sage_categories.kernel.transport import construction_input
 
-            assert is_placed(morphism, morphisms), (
-                f"{morphism!r} is placed in {morphism.category()!r}; {self!r} constructs its image from the "
-                f"placement {morphisms!r}, which that placement does not reach"
-            )
+            if not is_placed(morphism, morphisms):
+                assert is_retained_inclusion(self) and morphism in morphisms, (
+                    f"{morphism!r} is placed in {morphism.category()!r}; {self!r} constructs its image from the "
+                    f"placement {morphisms!r}, which that placement does not reach"
+                )
+                return morphism
             source = construction_input(morphism, compiler.node(self.domain(), Role.MORPHISM))
             return self.morphism_constructor_input(source).canonical_image
         assert morphism in morphisms, f"{morphism!r} is not a morphism of {self.domain()!r}"

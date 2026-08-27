@@ -45,13 +45,21 @@ from sage_categories.cat.diagrams import sequence_position
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.shapes import ThinCategory
+from sage_categories.kernel.construction import (
+    ElementConstructionInput,
+    MorphismConstructionInput,
+    ObjectConstructionInput,
+    retained_element_input,
+    retained_morphism_input,
+    retained_object_input,
+)
 from sage_categories.kernel.decisions import Decision, Unknown, decision_and, decision_not, decision_or
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, role_of
 from sage_categories.sets.category import Sets
-from sage_categories.sets.elements import Datum, SetPoint
-from sage_categories.sets.maps import Rule, SetMap
-from sage_categories.sets.objects import MembershipRule, SetObject
+from sage_categories.sets.elements import Datum, SetElementData, SetPoint
+from sage_categories.sets.maps import Rule, SetMap, SetMorphismData
+from sage_categories.sets.objects import MembershipRule, SetObject, SetObjectData
 
 __all__ = ["FinitePosets", "FiniteTotallyOrderedSets", "MonotoneMap", "Poset", "PosetElement", "Posets", "PosetsCategory", "TotallyOrderedSets"]
 
@@ -67,9 +75,7 @@ type Relation = dict[tuple[int, int], Decision]
 class PosetObjectData:
     """The private state introduced by a partial order."""
 
-    underlying_set: SetObject
     relation: SetObject
-    square: SetObject
     elements: MonoDict = field(default_factory=MonoDict)
 
 
@@ -124,14 +130,14 @@ class PosetDeclaration(ObjectOfCategory):
         if self not in retained:
             order = Predicate("poset_order", 2, True)
             order.register_handler(lambda left, right: ask(self.element(left) <= self.element(right)))
-            retained[self] = ThinCategory(self._poset_object_data.underlying_set, order)
+            retained[self] = ThinCategory(self._set_object_data.canonical, order)
         return retained[self]
 
     def _pair(self, left: SetPoint, right: SetPoint) -> SetPoint:
-        return _pair_point(self._poset_object_data.square, left, right)
+        return _pair_point(self._poset_object_data.relation.underlying_set(), left, right)
 
     def __repr__(self) -> str:
-        return f"Poset({self._poset_object_data.underlying_set!r})"
+        return f"Poset({self._set_object_data.canonical!r})"
 
 
 class PosetElementDeclaration(ElementOfObject):
@@ -287,10 +293,28 @@ class PosetsCategory(Category[[Rule], []]):
     def underlying_set_functor(self) -> Functor:
         """``U: Posets() -> Sets()``, retained once: the retained carrier and the retained set map."""
         if "underlying_set" not in self._functors:
-            self._functors["underlying_set"] = Fun(self, Sets()).Faithful()(
-                lambda poset: poset._poset_object_data.underlying_set,
+            underlying = Fun(self, Sets()).Faithful()(
+                lambda poset: poset._set_object_data.canonical,
                 lambda monotone: monotone._set_morphism_data.canonical,
             )
+
+            def object_input(source: ObjectConstructionInput[PosetObjectData]) -> ObjectConstructionInput[SetObjectData]:
+                carrier = self._carrier(source.datum.relation)
+                return retained_object_input(carrier)
+
+            def element_input(source: ElementConstructionInput[None]) -> ElementConstructionInput[SetElementData]:
+                defining: MorphismConstructionInput[PosetMorphismData] = retained_morphism_input(source.identity.defining_morphism)
+                set_morphism: MorphismConstructionInput[SetMorphismData] = underlying.morphism_constructor_input(defining)
+                point = Sets().element_from_defining_morphism(set_morphism.canonical_image)
+                return retained_element_input(point)
+
+            def morphism_input(source: MorphismConstructionInput[PosetMorphismData]) -> MorphismConstructionInput[SetMorphismData]:
+                return retained_morphism_input(source.datum.set_map)
+
+            underlying.retain_object_constructor_conversion(object_input)
+            underlying.retain_element_constructor_conversion(element_input)
+            underlying.retain_morphism_constructor_conversion(morphism_input)
+            self._functors["underlying_set"] = underlying
         return self._functors["underlying_set"]
 
     def classical_stages(self) -> tuple[Poset, ...]:
@@ -301,9 +325,9 @@ class PosetsCategory(Category[[Rule], []]):
     def __call__(self, relation: SetObject) -> Poset:
         """``Posets()(R)``: the poset on the factor ``X`` of ``X * X`` that ``R`` is a subset of."""
         assert relation in Sets().ChosenSubsets(), f"{relation!r} is not a chosen subset"
-        underlying_set = self._carrier(relation)
+        self._carrier(relation)
         assert ask(self.is_partial_order(relation)) is not False, f"{relation!r} is not a partial order"
-        return self._construct(underlying_set, relation)
+        return self._construct(relation)
 
     def _carrier(self, relation: SetObject) -> SetObject:
         square = relation.underlying_set()
@@ -312,16 +336,10 @@ class PosetsCategory(Category[[Rule], []]):
         assert first is second, f"{relation!r} is a subset of a product of two distinct sets"
         return first
 
-    def _construct(self, underlying_set: SetObject, relation: SetObject) -> Poset:
+    def _construct(self, relation: SetObject) -> Poset:
         # A poset on a finite set is a finite poset by definition (POL-CAT-081).
-        poset = self.ObjectType(
-            category=self,
-            data=PosetObjectData(
-                underlying_set=underlying_set,
-                relation=relation,
-                square=Sets().Products()((underlying_set, underlying_set)),
-            ),
-        )
+        underlying_set = self._carrier(relation)
+        poset = self.ObjectType(self, PosetObjectData(relation))
         if underlying_set in Sets().Finite():
             self.Finite()(poset)
         return poset
@@ -342,14 +360,14 @@ class PosetsCategory(Category[[Rule], []]):
             usual_order = (simplex * simplex).subset_from(lambda pair: pair(0) <= pair(1))
             # The usual order on {0, ..., n} is a linear order: Mathlib ``Nat.instLinearOrder``
             # restricted along ``Subtype.instLinearOrder`` (inspected 2026-08-27).
-            self._canonical["simplex", dimension] = self.TotallyOrdered()(self._construct(simplex, usual_order))
+            self._canonical["simplex", dimension] = self.TotallyOrdered()(self._construct(usual_order))
         return self._canonical["simplex", dimension]
 
     def Terminal(self) -> Poset:
         """The one-point order on ``Sets().Terminal()``, the classical stage of ``Posets()``."""
         if ("terminal", 0) not in self._canonical:
             point = Sets().Terminal()
-            self._canonical["terminal", 0] = self.TotallyOrdered()(self._construct(point, (point * point).subset_from(lambda pair: True)))
+            self._canonical["terminal", 0] = self.TotallyOrdered()(self._construct((point * point).subset_from(lambda pair: True)))
         return self._canonical["terminal", 0]
 
     def subset_poset(self, base_set: SetObject) -> Poset:
@@ -367,7 +385,7 @@ class PosetsCategory(Category[[Rule], []]):
             def included(pair: Datum) -> Decision:
                 return ask(power.from_characteristic_morphism(pair(0).map()) <= power.from_characteristic_morphism(pair(1).map()))
 
-            self._subset_posets[base_set] = self._construct(power, (power * power).subset_from(included))
+            self._subset_posets[base_set] = self._construct((power * power).subset_from(included))
         return self._subset_posets[base_set]
 
     @cached_method
@@ -388,7 +406,7 @@ class PosetsCategory(Category[[Rule], []]):
         if defining_morphism.domain() is self.Terminal():
             set_map = self.underlying_set_functor().on_morphism(defining_morphism)
             return defining_morphism.codomain().element(Sets().element_from_defining_morphism(set_map))
-        return defining_morphism.codomain().category().ElementType(defining_morphism=defining_morphism)
+        return defining_morphism.codomain().category().ElementType(defining_morphism)
 
     # -- morphisms ------------------------------------------------------------------------------
 
@@ -402,12 +420,7 @@ class PosetsCategory(Category[[Rule], []]):
 
     def _construct_morphism(self, domain: Poset, codomain: Poset, set_map: SetMap) -> MonotoneMap:
         """Construct a monotone map whose supplied set map is established by its caller."""
-        return self.MorphismType(
-            category=self.morphism_category(1),
-            domain=domain,
-            codomain=codomain,
-            data=PosetMorphismData(set_map),
-        )
+        return self.MorphismType(self.morphism_category(1), domain, codomain, PosetMorphismData(set_map))
 
     def construct_identity(self, poset: Poset) -> MonotoneMap:
         # The identity is monotone: Mathlib ``OrderHom.id``.
@@ -444,7 +457,7 @@ class PosetsCategory(Category[[Rule], []]):
             left, right = monomorphism(subset.point(pair(0))), monomorphism(subset.point(pair(1)))
             return ask(target.relation().membership_proposition(target._pair(left, right)))
 
-        sub_poset = self._construct(subset, (subset * subset).subset_from(induced))
+        sub_poset = self._construct((subset * subset).subset_from(induced))
         return self._construct_morphism(sub_poset, target, monomorphism)
 
     # -- equality (POL-API-015, POL-SET-026) ----------------------------------------------------------------

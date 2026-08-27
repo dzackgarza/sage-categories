@@ -39,7 +39,7 @@ from sage_categories.sets.elements import Datum
 if TYPE_CHECKING:
     from sage_categories.sets.category import SetObject, SetPoint
 
-__all__ = ["Rule", "SetMapDeclaration", "SetMorphismData", "injective_on_finite_domain", "maps_equal", "surjective_on_finite_domain"]
+__all__ = ["Rule", "SetMorphismData", "injective_on_finite_domain", "maps_equal", "surjective_on_finite_domain"]
 
 type Rule = Callable[[Datum], Datum]
 

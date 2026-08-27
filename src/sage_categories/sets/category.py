@@ -124,12 +124,12 @@ class SetsCategory(Category[[Rule], []]):
 
     def __call__(self, membership_rule: MembershipRule) -> SetObject:
         """``Sets()(rule)``: the set defined by a membership rule on data, with no cardinal data."""
-        return self.ObjectType(category=self, data=SetObjectData(membership_rule, Unknown))
+        return self.ObjectType(self, SetObjectData(membership_rule, Unknown))
 
     def with_cardinality(self, membership_rule: MembershipRule, cardinality: CardinalObject) -> SetObject:
         """The set defined by a membership rule whose exact cardinality a construction theorem supplies (POL-SET-031, POL-MATH-024)."""
         assert cardinality in Cardinal(), f"{cardinality!r} is not a cardinal"
-        return self.ObjectType(category=self, data=SetObjectData(membership_rule, cardinality))
+        return self.ObjectType(self, SetObjectData(membership_rule, cardinality))
 
     def rule_valued(self, membership_rule: MembershipRule, cardinality: CardinalObject | UnknownClass) -> SetObject:
         """A set whose data are rules (families, names of maps): its points are retained per datum object.
@@ -138,7 +138,7 @@ class SetsCategory(Category[[Rule], []]):
         index, function sets, colimit representatives) construct their apex here, so
         ``X.point(datum)`` on it is ``X.rule_point(datum)``.
         """
-        rule_valued = self.ObjectType(category=self, data=SetObjectData(membership_rule, cardinality))
+        rule_valued = self.ObjectType(self, SetObjectData(membership_rule, cardinality))
         self._rule_valued[rule_valued] = rule_valued
         return rule_valued
 
@@ -205,8 +205,8 @@ class SetsCategory(Category[[Rule], []]):
         if defining_morphism not in self._classical_points:
             rule = defining_morphism._set_morphism_data.rule
             self._classical_points[defining_morphism] = defining_morphism.codomain().category().ElementType(
-                defining_morphism=defining_morphism,
-                data=SetElementData(rule(())),
+                defining_morphism,
+                SetElementData(rule(())),
             )
         return self._classical_points[defining_morphism]
 
@@ -222,22 +222,22 @@ class SetsCategory(Category[[Rule], []]):
         """``Mor(Sets())(X, Y)(rule)`` or, with an inverse rule, an isomorphism retaining its inverse."""
         assert domain in self and codomain in self
         morphisms = self.morphism_category(1)
-        forward = self.MorphismType(category=morphisms, domain=domain, codomain=codomain, data=SetMorphismData(rule))
+        forward = self.MorphismType(morphisms, domain, codomain, SetMorphismData(rule))
         if not inverse_rule:
             return forward
         (backward_rule,) = inverse_rule
         self.retain_inverses(
             forward,
-            self.MorphismType(category=morphisms, domain=codomain, codomain=domain, data=SetMorphismData(backward_rule)),
+            self.MorphismType(morphisms, codomain, domain, SetMorphismData(backward_rule)),
         )
         return forward
 
     def construct_identity(self, member_object: SetObject) -> SetMap:
         return self.MorphismType(
-            category=self.morphism_category(1),
-            domain=member_object,
-            codomain=member_object,
-            data=SetMorphismData(lambda datum: datum),
+            self.morphism_category(1),
+            member_object,
+            member_object,
+            SetMorphismData(lambda datum: datum),
         )
 
     def composite(self, second: SetMap, first: SetMap) -> SetMap:
@@ -247,10 +247,10 @@ class SetsCategory(Category[[Rule], []]):
         first_rule = first._set_morphism_data.rule
         second_rule = second._set_morphism_data.rule
         return self.MorphismType(
-            category=morphisms,
-            domain=first.domain(),
-            codomain=second.codomain(),
-            data=SetMorphismData(lambda datum: second_rule(first_rule(datum))),
+            morphisms,
+            first.domain(),
+            second.codomain(),
+            SetMorphismData(lambda datum: second_rule(first_rule(datum))),
         )
 
     def inverse_morphism(self, morphism: SetMap) -> SetMap:
@@ -264,10 +264,10 @@ class SetsCategory(Category[[Rule], []]):
             self.retain_inverses(
                 morphism,
                 self.MorphismType(
-                    category=self.morphism_category(1),
-                    domain=codomain,
-                    codomain=domain,
-                    data=SetMorphismData(lambda datum: preimages[datum]),
+                    self.morphism_category(1),
+                    codomain,
+                    domain,
+                    SetMorphismData(lambda datum: preimages[datum]),
                 ),
             )
         return super().inverse_morphism(morphism)

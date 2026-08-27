@@ -19,7 +19,7 @@ from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, Role, r
 if TYPE_CHECKING:
     from sage_categories.sets.category import SetPoint
 
-__all__ = ["Datum", "SetElementData", "SetPointDeclaration", "points_equal"]
+__all__ = ["Datum", "SetElementData", "points_equal"]
 
 type Datum = Hashable
 

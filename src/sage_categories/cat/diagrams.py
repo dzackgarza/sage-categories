@@ -40,6 +40,7 @@ from sage.structure.coerce_dict import MonoDict, TripleDict
 
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
+from sage_categories.cat.morphisms import endpoints
 from sage_categories.cat.shapes import Discrete, DiscreteObject, is_discrete
 from sage_categories.kernel.caches import SequenceTable
 from sage_categories.kernel.decisions import Decision
@@ -147,8 +148,12 @@ def square_set(functors: FunctorCategory) -> SetObject:
         def commutes(datum: Datum) -> Decision:
             point = quadruples.point(datum)
             f, g, a, b = (base.morphism_at(quadruples.product_projection(position)(point)) for position in range(4))
-            if not (a.domain() is f.domain() and a.codomain() is g.domain() and b.domain() is f.codomain() and b.codomain() is g.codomain()):
-                return False
+            # The corners are a guarded proposition: ``g * a`` and ``b * f`` exist only once
+            # the endpoints hold, so they are asked first and an undecided corner stays
+            # undecided rather than reporting the quadruple as no square.
+            corners = ask(endpoints(a, f.domain(), g.domain()) & endpoints(b, f.codomain(), g.codomain()))
+            if corners is not True:
+                return corners
             return ask(g * a == b * f)
 
         functors._finite_data["quadruples"] = quadruples

@@ -15,9 +15,8 @@ stated construction-defect messages (POL-CAT-012).
 import pytest
 
 from sage_categories.all import *
-from sage_categories.kernel import compiler
 from sage_categories.kernel.refinement import common_ancestor, is_placed, is_subcategory
-from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role
+from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
 
 
 class Plain(Category):
@@ -200,20 +199,29 @@ def test_a_cycle_in_the_selected_graph_fails_at_construction() -> None:
         SelfLooped()
 
 
-def test_the_routes_of_a_diamond_are_listed_in_declaration_order() -> None:
-    """``FinitePosets()`` declares the inclusion into ``Posets()`` first, so every route through it precedes the rest."""
-    source = compiler.node(FinitePosets(), Role.OBJECT)
-    target = compiler.node(Sets(), Role.OBJECT)
-    first_declared, second_declared = FinitePosets().structure_functors()
-    found = compiler.routes(source, target)
-    leading = [route[int(0)][int(0)] for route in found]
+def test_the_first_declared_functor_of_a_diamond_decides_the_ambient_category() -> None:
+    """``FinitePosets()`` declares the inclusion into ``Posets()`` first, so ``Posets()`` is its ambient (POL-CAT-016, POL-FUN-027).
 
-    assert len(found) > int(1)
-    assert leading[int(0)] is first_declared
-    assert leading == sorted(leading, key=lambda functor: int(0) if functor is first_declared else int(1))
-    assert set(map(id, leading)) == {id(first_declared), id(second_declared)}
-    assert all(step[int(1)] is Role.OBJECT for route in found for step in route)
-    assert all(route[-int(1)][int(0)].codomain() is Sets() for route in found)
+    Both declared functors of the diamond reach ``Sets()``, and the second reaches it in
+    one step where the first needs two.  The ambient is the codomain of the first
+    declared retained inclusion, so it is ``Posets()``.  The second functor is faithful
+    and not an inclusion: it places nothing and still acts.
+    """
+    finite_posets = FinitePosets()
+    first_declared, second_declared = finite_posets.structure_functors()
+    chain = Posets().Simplex(int(2))
+
+    assert first_declared.codomain() is Posets()
+    assert second_declared.codomain() is Sets().Finite()
+    assert finite_posets.ambient() is Posets()
+    assert Sets().Finite().ambient() is Sets()
+
+    assert chain in finite_posets
+    assert chain in Posets()
+    assert chain not in Sets().Finite()
+    assert first_declared.on_object(chain) is chain
+    assert second_declared.on_object(chain) in Sets().Finite()
+    assert ask(second_declared.on_object(chain).cardinality() == int(3)) is True
 
 
 def test_the_binary_operators_construct_in_the_least_common_ancestor() -> None:

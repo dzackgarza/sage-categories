@@ -15,22 +15,47 @@ finite set-map handler (``specs/sets.md``, "Equality").  No row proves a univers
 property or a fibration law (POL-MATH-036).
 """
 
+from dataclasses import dataclass
+
 import pytest
 
 from sage_categories.all import *
 from sage_categories.cat.cat_constructions import shared_carrier_pullback
 from sage_categories.cat.diagrams import cospan_diagram
+from sage_categories.kernel.construction import retained_morphism_input, retained_object_input
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class CarrierData:
+    """The local state of an object that carries a set with one piece of extra structure."""
+
+    carrier: object
+    structure: object
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class UnderlyingData:
+    """The local state of a morphism that carries one set map."""
+
+    underlying: object
+
+
+def _forgetful(functor):
+    """A faithful functor to ``Sets()`` with the two constructor conversions it must retain."""
+    functor.retain_object_constructor_conversion(lambda source: retained_object_input(source.datum.carrier))
+    functor.retain_morphism_constructor_conversion(lambda source: retained_morphism_input(source.datum.underlying))
+    return functor
 
 
 class MarkedSets(Category):
     """Sets with a marked point, projecting to ``Sets()`` by the explicit faithful functor ``(X, x) |-> X``."""
 
-    class ObjectType(ObjectOfCategory):
-        def __init__(self, category, carrier, mark):
-            ObjectOfCategory.__init__(self, category)
-            self._carrier = carrier
-            self._mark = mark
+    class DeclaredObjectType(ObjectOfCategory):
+        def __init__(self, data):
+            self._carrier = data.carrier
+            self._mark = data.structure
+            super().__init__()
 
         def carrier(self) -> ObjectOfCategory:
             return self._carrier
@@ -38,13 +63,13 @@ class MarkedSets(Category):
         def mark(self) -> ElementOfObject:
             return self._mark
 
-    class ElementType(ElementOfObject):
+    class DeclaredElementType(ElementOfObject):
         """No local operation."""
 
-    class MorphismType(MorphismOfCategory):
-        def __init__(self, category, domain, codomain, underlying):
-            MorphismOfCategory.__init__(self, category, domain, codomain)
-            self._underlying = underlying
+    class DeclaredMorphismType(MorphismOfCategory):
+        def __init__(self, data):
+            self._underlying = data.underlying
+            super().__init__()
 
         def underlying(self) -> MorphismOfCategory:
             return self._underlying
@@ -55,12 +80,15 @@ class MarkedSets(Category):
 
     def structure_functors(self):
         if "carrier" not in self._functors:
-            self._functors["carrier"] = Fun(self, Sets()).Faithful()(lambda marked: marked.carrier(), lambda morphism: morphism.underlying())
+            self._functors["carrier"] = _forgetful(Fun(self, Sets()).Faithful()(lambda marked: marked.carrier(), lambda morphism: morphism.underlying()))
         return (self._functors["carrier"],)
 
     def __call__(self, carrier, mark):
         assert mark in carrier
-        return self.ObjectType(self, carrier, mark)
+        return self.ObjectType(category=self, data=CarrierData(carrier, mark))
+
+    def construct_morphism(self, domain, codomain, underlying):
+        return self.MorphismType(category=self.morphism_category(1), domain=domain, codomain=codomain, data=UnderlyingData(underlying))
 
     def __repr__(self):
         return "MarkedSets"
@@ -69,11 +97,11 @@ class MarkedSets(Category):
 class SubsetSets(Category):
     """Sets with a chosen subset, projecting to ``Sets()`` by ``(X, A) |-> X``."""
 
-    class ObjectType(ObjectOfCategory):
-        def __init__(self, category, carrier, chosen):
-            ObjectOfCategory.__init__(self, category)
-            self._carrier = carrier
-            self._chosen = chosen
+    class DeclaredObjectType(ObjectOfCategory):
+        def __init__(self, data):
+            self._carrier = data.carrier
+            self._chosen = data.structure
+            super().__init__()
 
         def carrier(self) -> ObjectOfCategory:
             return self._carrier
@@ -81,13 +109,13 @@ class SubsetSets(Category):
         def chosen(self) -> ObjectOfCategory:
             return self._chosen
 
-    class ElementType(ElementOfObject):
+    class DeclaredElementType(ElementOfObject):
         """No local operation."""
 
-    class MorphismType(MorphismOfCategory):
-        def __init__(self, category, domain, codomain, underlying):
-            MorphismOfCategory.__init__(self, category, domain, codomain)
-            self._underlying = underlying
+    class DeclaredMorphismType(MorphismOfCategory):
+        def __init__(self, data):
+            self._underlying = data.underlying
+            super().__init__()
 
         def underlying(self) -> MorphismOfCategory:
             return self._underlying
@@ -98,12 +126,15 @@ class SubsetSets(Category):
 
     def structure_functors(self):
         if "carrier" not in self._functors:
-            self._functors["carrier"] = Fun(self, Sets()).Faithful()(lambda subsetted: subsetted.carrier(), lambda morphism: morphism.underlying())
+            self._functors["carrier"] = _forgetful(Fun(self, Sets()).Faithful()(lambda subsetted: subsetted.carrier(), lambda morphism: morphism.underlying()))
         return (self._functors["carrier"],)
 
     def __call__(self, carrier, chosen):
         assert chosen.underlying_set() is carrier
-        return self.ObjectType(self, carrier, chosen)
+        return self.ObjectType(category=self, data=CarrierData(carrier, chosen))
+
+    def construct_morphism(self, domain, codomain, underlying):
+        return self.MorphismType(category=self.morphism_category(1), domain=domain, codomain=codomain, data=UnderlyingData(underlying))
 
     def __repr__(self):
         return "SubsetSets"
@@ -248,9 +279,9 @@ def test_a_shared_carrier_pullback_accepts_one_carrier_and_rejects_two() -> None
     assert combined in Cat().Pullbacks()
     assert combined.projection(cospan(int(0))).codomain() is marked
     assert combined.projection(cospan(int(1))).codomain() is subsetted
-    pair = combined((marked(three, three.point(int(1))), subsetted(three, three.subset_from(lambda datum: datum > int(0)))))
-    assert pair in combined
+    pair = combined.apex()((marked(three, three.point(int(1))), subsetted(three, three.subset_from(lambda datum: datum > int(0)))))
+    assert pair in combined.apex()
     assert combined.projection(cospan(int(2))).on_object(pair) is three
     assert combined.projection(cospan(int(0))).on_object(pair).mark() is three.point(int(1))
     with pytest.raises(AssertionError):
-        combined((marked(three, three.point(int(1))), subsetted(other, other.subset_from(lambda datum: datum > int(0)))))
+        combined.apex()((marked(three, three.point(int(1))), subsetted(other, other.subset_from(lambda datum: datum > int(0)))))

@@ -70,7 +70,7 @@ def test_a_subobject_of_a_product_of_categories_derives_its_component_functors()
     product = Cat().Products()((arrow, Sets()))
     chosen = PropertySubcategory(product, "Chosen", {}, ())
     inclusion = chosen.selected_functors()[int(0)]
-    subobjects = Cat().Products().Subobjects()
+    subobjects = Cat().Products().ChosenSubobjects()
 
     presented = subobjects(inclusion)
     assert presented in subobjects

@@ -206,7 +206,7 @@ def test_the_codomain_evaluation_lifts_a_map_by_pullback_with_both_projections()
     assert lift.component(arrow(int(1))) is include
     assert ask(residue * to_four == include * lifted) is True
     assert ask(lifted.domain().cardinality() == int(3)) is True
-    pullback = lifted.domain()
+    pullback = Sets().Pullbacks().canonical_presentation(lifted.domain())
     assert pullback in Sets().Pullbacks()
     assert pullback.diagram().on_object(cospan(int(0))) is four and pullback.diagram().on_object(cospan(int(1))) is two
     assert lifted is pullback.projection(cospan(int(1)))

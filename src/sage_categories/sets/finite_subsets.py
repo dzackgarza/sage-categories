@@ -34,7 +34,7 @@ set are countable (``Finset.countable``), so the sets are placed in
 
 ``Sets().FinitelySupportedFunctions()(S, x0)`` for a point ``x0`` of ``X`` is the
 chosen subset ``X^(S)`` of the function set ``X ** S`` of the maps whose support
-``{s : f(s) != x0}`` is finite, retaining its inclusion, with ``index_set()``,
+``{s : f(s) != x0}`` is finite, retaining its monomorphism, with ``index_set()``,
 ``value_set()``, and ``basepoint()`` (Mathlib ``Finsupp``).  Its cardinality: for a
 finite index set every function is finitely supported, so ``(#X) ** (#S)``
 (``Cardinal.mk_finsupp_lift_of_fintype``); for an infinite index set and ``#X >= 2``,
@@ -221,7 +221,7 @@ class FiniteSubsetsCategory(PropertySubcategory[[Rule], []]):
         assert point in subsets, f"{point!r} is not a point of {subsets!r}"
         if point not in self._subsets:
             sets = _sets.Sets()
-            base_set, members = self.retained_base_set(subsets), point._classical_datum_()
+            base_set, members = self.retained_base_set(subsets), point._point_datum_()
             if sets.Finite().has_chosen_enumeration(base_set):
                 # The induced enumeration lists the members in the order of the base set's.
                 members = frozenset(datum for datum in sets.Finite().chosen_enumeration(base_set) if datum in members)
@@ -238,7 +238,7 @@ class FiniteSubsetsCategory(PropertySubcategory[[Rule], []]):
     def index(self, subsets: SetObject, subset: SetObject) -> CardinalObject:
         assert subsets in self._engines, f"{self.retained_base_set(subsets)!r} has no chosen enumeration, so {subsets!r} has no induced enumeration"
         # The engine returns a Sage ``Integer``; the owned cardinal is built from its exact value.
-        return Cardinal()(int(self._engines[subsets].rank(self.point_of(subsets, subset)._classical_datum_())))
+        return Cardinal()(int(self._engines[subsets].rank(self.point_of(subsets, subset)._point_datum_())))
 
     def subset_at_position(self, subsets: SetObject, position: CardinalObject | int) -> SetObject:
         assert subsets in self._engines, f"{self.retained_base_set(subsets)!r} has no chosen enumeration, so {subsets!r} has no induced enumeration"

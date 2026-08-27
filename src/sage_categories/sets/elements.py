@@ -64,9 +64,9 @@ class SetElementDeclaration(ElementOfObject):
             return f"{self._set_element_data.datum!r} in {self.parent()!r}"
         return f"{self.defining_morphism()!r} as a generalized element of {self.parent()!r}"
 
-    def _classical_datum_(self) -> Datum:
+    def _point_datum_(self) -> Datum:
         """The selected datum of this terminal-stage element."""
-        assert self.stage() is _sets.Sets().Terminal(), f"{self!r} is not a classical set element"
+        assert self.defining_morphism().domain() is _sets.Sets().Terminal(), f"{self!r} is not a classical set element"
         return self._set_element_data.datum
 
 
@@ -84,6 +84,6 @@ def points_equal(first: CategoryPoint, candidate: Any) -> Decision:
     if first.parent() is not candidate.parent():
         return Unknown
     classical = _sets.Sets().Terminal()
-    if first.stage() is not classical or candidate.stage() is not classical:
+    if first.defining_morphism().domain() is not classical or candidate.defining_morphism().domain() is not classical:
         return Unknown
-    return ask(first._classical_datum_() == candidate._classical_datum_())
+    return ask(first._point_datum_() == candidate._point_datum_())

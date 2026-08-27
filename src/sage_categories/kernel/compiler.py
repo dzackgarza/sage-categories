@@ -49,7 +49,8 @@ from sage.structure.dynamic_class import dynamic_class
 
 from sage_categories.kernel.caches import MonoDict, retain_constructed_transport
 from sage_categories.kernel.construction import (
-    ArrowStageIdentity,
+    CategoryArrowIdentity,
+    CategoryPointIdentity,
     ElementConstructionContext,
     ElementConstructionInput,
     ElementRoleIdentity,
@@ -60,7 +61,6 @@ from sage_categories.kernel.construction import (
     ObjectConstructionContext,
     ObjectConstructionInput,
     ObjectRoleIdentity,
-    ObjectStageIdentity,
     activate_element_context,
     activate_morphism_context,
     activate_object_context,
@@ -351,7 +351,7 @@ def controlled_bases(current: Node) -> tuple[Node, ...]:
 
     The common ``Cat().ElementType`` node is not among them.  It is the preallocated end
     of every element chain, reached through the role's kernel class, so a selected
-    functor into ``Cat()`` -- the inclusion a point category declares -- adds no base at
+    functor into ``Cat()`` -- the monomorphism a point category declares -- adds no base at
     the element role and would place the chain end above its own descendants.
     """
     found: list[Node] = []
@@ -704,8 +704,8 @@ def _object_cat_element_step[Value: ObjectOfCategory, Datum](
 ) -> tuple[Node, Callable[[], None]]:
     """The stage-``1`` input at the common ``Cat().ElementType`` MRO root."""
     target = node(root.identity.category.universe(), Role.ELEMENT)
-    stage_input = ElementConstructionInput(root.canonical_image, ObjectStageIdentity(root.identity.category), None)
-    return target, _element_step(target, stage_input, root.canonical_image)
+    point_input = ElementConstructionInput(root.canonical_image, CategoryPointIdentity(root.identity.category), None)
+    return target, _element_step(target, point_input, root.canonical_image)
 
 
 def _element_cat_element_step[Value: CategoryPoint, Datum](
@@ -714,8 +714,8 @@ def _element_cat_element_step[Value: CategoryPoint, Datum](
     """The defining-morphism input at the common ``Cat().ElementType`` MRO root."""
     assert isinstance(root.identity, GeneralCategoryPointIdentity)
     target = node(root.identity.defining_morphism.base_category().universe(), Role.ELEMENT)
-    stage_input = ElementConstructionInput(root.canonical_image, root.identity, None)
-    return target, _element_step(target, stage_input, root.canonical_image)
+    element_input = ElementConstructionInput(root.canonical_image, root.identity, None)
+    return target, _element_step(target, element_input, root.canonical_image)
 
 
 def _morphism_cat_element_step[Value: MorphismOfCategory, Datum](
@@ -724,9 +724,9 @@ def _morphism_cat_element_step[Value: MorphismOfCategory, Datum](
     """The stage-``[1]`` input at the common ``Cat().ElementType`` MRO root."""
     parent = root.identity.category.base_category()
     target = node(parent.universe(), Role.ELEMENT)
-    identity = ArrowStageIdentity(parent, root.identity.domain, root.identity.codomain)
-    stage_input = ElementConstructionInput(root.canonical_image, identity, None)
-    return target, _element_step(target, stage_input, root.canonical_image)
+    identity = CategoryArrowIdentity(parent, root.identity.domain, root.identity.codomain)
+    element_input = ElementConstructionInput(root.canonical_image, identity, None)
+    return target, _element_step(target, element_input, root.canonical_image)
 
 
 def _morphism_steps[RootValue: MorphismOfCategory, RootDatum](
@@ -773,7 +773,7 @@ def _construct_object_root[Datum](
 ) -> None:
     root = ObjectConstructionInput(instance, identity, data)
     retain_object_input(root)
-    cat_element_identity = ObjectStageIdentity(identity.category)
+    cat_element_identity = CategoryPointIdentity(identity.category)
     steps = (*_object_steps(current, root), _object_cat_element_step(root))
     context = ObjectConstructionContext(root.canonical_image, root.identity, cat_element_identity, steps)
     token = activate_object_context(context)
@@ -814,7 +814,7 @@ def _construct_morphism_root[Datum](
     root = MorphismConstructionInput(instance, identity, data)
     retain_morphism_input(root)
     parent = identity.category.base_category()
-    cat_element_identity = ArrowStageIdentity(parent, identity.domain, identity.codomain)
+    cat_element_identity = CategoryArrowIdentity(parent, identity.domain, identity.codomain)
     steps = (*_morphism_steps(current, root), _morphism_cat_element_step(root))
     context = MorphismConstructionContext(root.canonical_image, root.identity, cat_element_identity, steps)
     token = activate_morphism_context(context)
@@ -831,7 +831,7 @@ def construct_category_singleton[Value: ObjectOfCategory](category_type: type[Va
     identity = ObjectRoleIdentity(instance)
     root = ObjectConstructionInput(instance, identity, None)
     retain_object_input(root)
-    cat_element_identity = ObjectStageIdentity(instance)
+    cat_element_identity = CategoryPointIdentity(instance)
     cat_element_input = ElementConstructionInput(instance, cat_element_identity, None)
     retain_element_input(cat_element_input)
     context = ObjectConstructionContext(

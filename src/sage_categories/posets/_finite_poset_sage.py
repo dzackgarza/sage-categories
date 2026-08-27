@@ -58,7 +58,7 @@ def datum(poset: Poset, member: PosetElement) -> Datum:
 def data(poset: Poset, members: Poset) -> tuple[Datum, ...]:
     """The enumeration data of a sub-poset ``A`` of ``P``: ``U(A)`` is a chosen subset of ``U(P)``."""
     carrier = _carrier(members)
-    assert carrier.inclusion().codomain() is _carrier(poset), f"{members!r} is not a sub-poset of {poset!r}"
+    assert carrier.monomorphism().codomain() is _carrier(poset), f"{members!r} is not a sub-poset of {poset!r}"
     return Sets().Finite().chosen_enumeration(carrier)
 
 

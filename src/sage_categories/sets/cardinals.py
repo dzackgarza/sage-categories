@@ -18,10 +18,10 @@ functions ``R_kappa -> R_lambda``: a cardinal morphism retains that set map, and
 composition, identities, and inverses are those of the maps.  The one selected
 structural functor sends a cardinal to its representative and a cardinal
 morphism to its map; it is fully faithful because the hom categories are, by
-definition, the function sets (the inclusion of a skeleton, Mathlib
+definition, the function sets (the monomorphism of a skeleton, Mathlib
 ``CategoryTheory.fromSkeleton`` with ``fromSkeleton.isEquivalence``; inspected
 2026-08-27).  A cardinal is not placed in ``Sets()``: the functor is explicit, not
-an identity-on-value inclusion (``specs/functor.md``, "Inclusion functors").
+an identity-on-values monomorphism (``specs/functor.md``, "Inclusion functors").
 
 Cardinal order is the existence of an injection between the representatives:
 ``kappa <= lambda`` is ``Mor(Cardinal()).Monomorphisms()(kappa, lambda).is_inhabited()``
@@ -286,7 +286,7 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
         """The functor ``Cardinal() -> Sets()`` sending ``kappa`` to ``R_kappa`` and a cardinal morphism to its map, retained once.
 
         Fully faithful by the definition of the morphisms of ``Cardinal()``: the skeleton
-        inclusion (Mathlib ``CategoryTheory.fromSkeleton``, an equivalence; inspected 2026-08-27).
+        monomorphism (Mathlib ``CategoryTheory.fromSkeleton``, an equivalence; inspected 2026-08-27).
         """
         if "representative" not in self._functors:
             representative = Fun(self, _sets.Sets()).FullyFaithful()(self.representative, lambda morphism: morphism._set_map)

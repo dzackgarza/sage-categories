@@ -1,7 +1,7 @@
 """``ZZ``: the set of integers, the sole object of the named-object leaf ``Integers()``.
 
 ``Integers()`` is the one-object category of ``ZZ`` (POL-CAT-083): a full
-subcategory of ``Sets().Countable()`` whose one selected inclusion places ``ZZ``
+subcategory of ``Sets().Countable()`` whose one selected subcategory monomorphism places ``ZZ``
 there and supplies the complete set surface.  ``ZZ`` is rule-defined: a datum is a
 member exactly when Sage's exact integer ring admits it at the private boundary,
 and its cardinality ``aleph0`` is recorded at construction (POL-MATH-024,
@@ -61,7 +61,7 @@ class IntegersCategory(Category[[Rule], []]):
         refine(self._integers, self)
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        return (Fun(self, Sets().Countable()).FullyFaithful().inclusion(),)
+        return (Fun(self, Sets().Countable()).Monomorphisms().Isofibrations().Full()(),)
 
     def __call__(self) -> SetObject:
         """The sole object ``ZZ``, retained by identity."""

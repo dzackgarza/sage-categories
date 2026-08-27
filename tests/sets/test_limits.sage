@@ -78,7 +78,7 @@ def test_set_limit_membership_is_the_compatibility_decision() -> None:
     assert pullback in Sets()
     assert pullback in Sets().ChosenSubsets()
     product = pullback.underlying_set()
-    assert pullback.inclusion() in Mor(Sets())(pullback, product).Monomorphisms()
+    assert pullback.monomorphism() in Mor(Sets())(pullback, product).Monomorphisms()
     assert product in Sets().Products()
     assert ask(product.cardinality() == int(24)) is True
     rejected = [point for point in product if point not in pullback]
@@ -259,7 +259,7 @@ def test_an_image_is_the_chosen_subset_of_points_with_a_preimage() -> None:
     assert image in Sets().Finite()
     assert ask(image.cardinality() == int(3)) is True
     assert ask(collapsed.cardinality() == int(2)) is True
-    assert collapsed.inclusion() in Mor(Sets())(collapsed, three).Monomorphisms()
+    assert collapsed.monomorphism() in Mor(Sets())(collapsed, three).Monomorphisms()
     assert collapsed.underlying_set() is three
     assert three.point(int(1)) in collapsed
     assert three.point(int(2)) not in collapsed

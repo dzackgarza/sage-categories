@@ -72,13 +72,13 @@ class SetMapDeclaration(MorphismOfCategory):
         assert element in self.domain(), f"{element!r} is not an element of {self.domain()!r}"
         canonical_map = self._set_morphism_data.canonical
         canonical = element._set_element_data.canonical
-        if canonical.stage() is _sets.Sets().Terminal():
-            return canonical_map.codomain().point(self._set_morphism_data.rule(canonical._classical_datum_()))
+        if canonical.defining_morphism().domain() is _sets.Sets().Terminal():
+            return canonical_map.codomain().point(self._set_morphism_data.rule(canonical._point_datum_()))
         defining_morphism = canonical_map * canonical.defining_morphism()
         return _sets.Sets().element_from_defining_morphism(defining_morphism)
 
     def image(self) -> SetObject:
-        """The chosen subset of the codomain of the points with a preimage, with its inclusion (POL-ENGINE-004; ``sets/subobjects.py``)."""
+        """The chosen subset of the codomain of the points with a preimage, with its monomorphism (POL-ENGINE-004; ``sets/subobjects.py``)."""
         return _sets.Sets().ChosenSubsets().image_of(self._set_morphism_data.canonical)
 
     def __repr__(self) -> str:

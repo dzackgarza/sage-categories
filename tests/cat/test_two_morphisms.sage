@@ -284,7 +284,7 @@ def test_the_chosen_classical_stage_represents_the_underlying_set_functor() -> N
     witnesses the construction and proves no such property.
     """
     underlying_points = Posets().represented_functor()
-    (stage,) = Posets().classical_stages()
+    (stage,) = Posets().separating_family()
     chain, pair = Posets().Simplex(int(2)), Posets().Simplex(int(1))
     collapse = Mor(Posets())(chain, pair)(lambda datum: min(datum, int(1)))
 

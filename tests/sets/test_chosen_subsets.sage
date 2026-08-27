@@ -22,7 +22,7 @@ from sage_categories.all import *
 
 def test_a_predicate_subset_of_the_integers_retains_its_inclusion() -> None:
     even = ZZ.subset_from(lambda n: n % 2 == 0)
-    inclusion = even.inclusion()
+    inclusion = even.monomorphism()
 
     assert inclusion in Mor(Sets())(even, ZZ).Monomorphisms()
     assert inclusion in Mor(Sets()).Monomorphisms()
@@ -47,7 +47,7 @@ def test_the_primes_decide_membership_exactly() -> None:
     assert ZZ(-7) not in Primes
     assert QQ(1 / 2) not in Primes
     assert Primes.underlying_set() is ZZ
-    assert Primes.inclusion() in Mor(Sets())(Primes, ZZ).Monomorphisms()
+    assert Primes.monomorphism() in Mor(Sets())(Primes, ZZ).Monomorphisms()
     assert Primes in Sets().Countable()
     assert Primes in Sets().Infinite()
     assert Primes.cardinality() is aleph0
@@ -71,14 +71,14 @@ def test_a_subset_of_a_finite_enumerated_set_has_the_exact_count() -> None:
     assert odd in Sets().Finite()
     assert ask(odd.cardinality() == int(2)) is True
     assert odd.underlying_set() is triple
-    assert odd.inclusion() in Mor(Sets())(odd, triple).Monomorphisms()
+    assert odd.monomorphism() in Mor(Sets())(odd, triple).Monomorphisms()
     assert triple.point(int(1)) in odd
     assert triple.point(int(2)) not in odd
     points = list(odd)
     assert len(points) == int(2)
     assert all(any(ask(point == odd.point(datum)) is True for point in points) for datum in (int(1), int(3)))
-    assert ask(odd.inclusion()(odd.point(int(3))) == triple.point(int(3))) is True
-    assert odd.inclusion()(odd.point(int(3))).parent() is triple
+    assert ask(odd.monomorphism()(odd.point(int(3))) == triple.point(int(3))) is True
+    assert odd.monomorphism()(odd.point(int(3))).parent() is triple
 
     undecided = triple.subset_from(lambda datum: Unknown)
     assert undecided in Sets().Finite()

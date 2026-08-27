@@ -35,7 +35,7 @@ def _shared_category(first: ObjectOfCategory, second: ObjectOfCategory) -> Categ
     shared = common_ancestor(first.category(), second.category())
     assert shared is not None, (
         f"{first!r} in {first.category()!r} and {second!r} in {second.category()!r} "
-        f"have no least common category along retained inclusions"
+        f"have no least common category along subcategory monomorphisms"
     )
     return shared
 
@@ -60,4 +60,4 @@ class CategoryPointDeclaration(CategoryPointKernel):
         return _shared_category(self, exponent).exponential(exponent, self)
 
     def __repr__(self) -> str:
-        return f"point of {self.parent()!r} at stage {self.stage()!r}"
+        return f"point of {self.parent()!r} at stage {self.defining_morphism().domain()!r}"

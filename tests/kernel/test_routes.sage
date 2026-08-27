@@ -88,7 +88,7 @@ class Duplicated(Category):
     """A leaf that declares one functor twice."""
 
     def structure_functors(self):
-        inclusion = Fun(self, Sets()).FullyFaithful().inclusion()
+        inclusion = Fun(self, Sets()).Monomorphisms().Isofibrations().Full()()
         return (inclusion, inclusion)
 
     def __repr__(self):
@@ -264,7 +264,7 @@ def test_a_poset_and_a_set_have_no_common_ancestor_and_do_not_combine() -> None:
     assert not is_subcategory(chain.category(), Sets())
     assert not is_subcategory(carrier.category(), Posets())
     for combine in (lambda: chain * carrier, lambda: chain + carrier, lambda: carrier ** chain):
-        with pytest.raises(AssertionError, match="have no least common category along retained inclusions"):
+        with pytest.raises(AssertionError, match="have no least common category along subcategory monomorphisms"):
             combine()
 
     message = ""

@@ -153,7 +153,7 @@ DOWNSTREAM = '''
 
         def structure_functors(self) -> tuple[Functor, ...]:
             """The inclusion into the carrier category."""
-            return (Fun(self, Carrier()).FullyFaithful().inclusion(),)
+            return (Fun(self, Carrier()).Monomorphisms().Isofibrations().Full()(),)
 
         def __repr__(self) -> str:
             return "Additive"

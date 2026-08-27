@@ -144,7 +144,7 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
 
     # ``Mor(D)`` for ``D`` a declared subcategory of ``C`` is the full subcategory of
     # ``Mor(C)`` on the morphisms of ``D`` (Mathlib ``InducedCategory.Hom``); its
-    # inclusion is ``D``'s inclusion at the morphism role, which the node
+    # subcategory monomorphism is ``D``'s at the morphism role, which the node
     # normalization already places in the selected graph (POL-CAT-021, POL-CAT-087).
 
     def has_ambient(self) -> bool:

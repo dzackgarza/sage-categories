@@ -53,7 +53,7 @@ def test_the_core_retains_a_faithful_inclusion_acting_by_identity() -> None:
     swap = Mor(Sets())(two, two).Isomorphisms()(lambda datum: int(1) - datum, lambda datum: int(1) - datum)
     (inclusion,) = core.structure_functors()
 
-    assert inclusion is Fun(core, Sets()).Faithful().inclusion()
+    assert inclusion is Fun(core, Sets()).Monomorphisms().Isofibrations()()
     assert inclusion in Fun(core, Sets()).Faithful()
     assert inclusion in Fun.Faithful()
     assert inclusion not in Fun.FullyFaithful()

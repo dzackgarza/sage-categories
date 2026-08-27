@@ -16,17 +16,18 @@ def _integers():
     return Sets()(lambda datum: type(datum) is int)
 
 
-def test_finite_sets_declare_one_inclusion_and_receive_the_set_surface() -> None:
-    inclusion = Sets().Finite().structure_functors()[int(0)]
+def test_finite_sets_declare_one_subcategory_monomorphism_and_receive_the_set_surface() -> None:
+    into_sets = Sets().Finite().structure_functors()[int(0)]
     triple = Sets().Finite()((int(4), int(5), int(6)))
     five = triple.point(int(5))
     successor = Mor(Sets().Finite())(triple, triple)(lambda datum: int(4) + (datum - int(3)) % int(3))
 
-    assert inclusion in Fun(Sets().Finite(), Sets()).FullyFaithful()
-    assert inclusion is Fun(Sets().Finite(), Sets()).FullyFaithful().inclusion()
-    assert inclusion.on_object(triple) is triple
-    assert inclusion.on_morphism(successor) is successor
-    assert inclusion.on_element(five) is five
+    assert into_sets in Fun(Sets().Finite(), Sets()).Monomorphisms().Isofibrations().Full()
+    assert into_sets in Fun.Faithful()
+    assert into_sets is Fun(Sets().Finite(), Sets()).Monomorphisms().Isofibrations().Full()()
+    assert into_sets.on_object(triple) is triple
+    assert into_sets.on_morphism(successor) is successor
+    assert into_sets.on_element(five) is five
 
     assert triple in Sets().Finite()
     assert triple in Sets()

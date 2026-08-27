@@ -10,7 +10,7 @@ assumption context (POL-ASSUME-002/004): every proposition has an engine value
 (``specs/undecidable-properties.md``, "How ``ask()`` works"):
 
 1. category placement, which already includes the recorded implications because
-   an implication is a selected inclusion between property categories (POL-FUN-024);
+   an implication is a selected subcategory monomorphism between property categories (POL-FUN-024);
 2. the active assumption context;
 3. the exact decision cache;
 4. the registered exact handlers on their declared semantic domains (POL-MATH-042);

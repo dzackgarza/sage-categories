@@ -36,7 +36,7 @@ def test_the_finite_subsets_of_an_enumerated_set_are_enumerated_and_select_subob
     assert first.underlying_set() is five
     assert ask(first.cardinality() == int(0)) is True
     assert ask(last.cardinality() == int(5)) is True
-    assert last.inclusion() in Mor(Sets())(last, five).Monomorphisms()
+    assert last.monomorphism() in Mor(Sets())(last, five).Monomorphisms()
     assert ask(subsets.index(last) == int(31)) is True
     assert ask(subsets.index(first) == int(0)) is True
 
@@ -120,7 +120,7 @@ def test_finitely_supported_functions_retain_their_pointed_data_and_cardinalitie
     assert functions.value_set() is four
     assert functions.basepoint() is four.point(int(0))
     assert functions.underlying_set() is four ** three
-    assert functions.inclusion() in Mor(Sets())(functions, four ** three).Monomorphisms()
+    assert functions.monomorphism() in Mor(Sets())(functions, four ** three).Monomorphisms()
     assert ask(functions.cardinality() == int(64)) is True
     name = Sets().name_of(Mor(Sets())(three, four)(lambda datum: datum + int(1)))
     assert name in functions

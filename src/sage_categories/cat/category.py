@@ -33,7 +33,7 @@ import sage_categories.kernel.compiler as compiler
 from sage_categories.cat.equality import equality_predicate
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import Predicate, Proposition, ask
-from sage_categories.kernel.refinement import is_placed, is_retained_inclusion, is_subcategory
+from sage_categories.kernel.refinement import is_placed, is_subcategory, traces_placement
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, role_of
 
 if TYPE_CHECKING:
@@ -102,7 +102,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         self._wide: MonoDict = MonoDict()
         self._equality = equality_predicate()
         self._ambient_category: Category | None = None
-        self._ambient_inclusion: Functor | None = None
+        self._ambient_monomorphism: Functor | None = None
         # The selected functors are constructed before the ordinal is taken, so every
         # codomain (and every narrowing a declaration constructs) is older than this
         # category.
@@ -132,7 +132,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         """The selected structural graph: immediate functors, in preference order (POL-CAT-016, POL-FUN-003)."""
         return ()
 
-    def classical_stages(self) -> tuple[ObjectOfCategory, ...]:
+    def separating_family(self) -> tuple[ObjectOfCategory, ...]:
         """The chosen representing objects whose points are the classical elements; none by default."""
         return ()
 
@@ -173,33 +173,33 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         return self._catalogues
 
     def select_functors(self, functors: tuple[Functor, ...]) -> None:
-        """Record the compiled selection; the ambient is the codomain of its first retained inclusion (POL-CAT-016)."""
+        """Record the compiled selection; the ambient is the codomain of its first placement-tracing functor (POL-CAT-016)."""
         self._selected_functors = functors
-        self._ambient_inclusion = next((functor for functor in functors if is_retained_inclusion(functor)), None)
-        self._ambient_category = None if self._ambient_inclusion is None else self._ambient_inclusion.codomain()
+        self._ambient_monomorphism = next((functor for functor in functors if traces_placement(functor)), None)
+        self._ambient_category = None if self._ambient_monomorphism is None else self._ambient_monomorphism.codomain()
 
     def selected_functors(self) -> tuple[Functor, ...]:
         return self._selected_functors
 
     def has_ambient(self) -> bool:
-        """Whether this category is a declared subcategory: one selected functor is a retained inclusion."""
+        """Whether this category is a declared subcategory: one selected functor traces placement (POL-FUN-036)."""
         return self._ambient_category is not None
 
     def has_full_ambient(self) -> bool:
-        """Whether this category is a declared full subcategory: its retained inclusion is placed in ``Fun.FullyFaithful()``.
+        """Whether this category is a declared full subcategory: its subcategory monomorphism is also full.
 
         A full subcategory has the morphisms, identities, composites, and constructions
         of its ambient between its objects definitionally (POL-CAT-087); a wide
-        subcategory, whose inclusion is faithful only, owns its own
-        (``specs/functor.md``, "Inclusion functors").
+        subcategory, whose monomorphism is not full, owns its own
+        (``specs/functor.md``, "Monomorphisms of ``Cat()`` and placement").
         """
-        if self._ambient_inclusion is None:
+        if self._ambient_monomorphism is None:
             return False
-        return is_placed(self._ambient_inclusion, self.universe().morphism_category(1).FullyFaithful())
+        return is_placed(self._ambient_monomorphism, self.universe().morphism_category(1).Full())
 
     def ambient(self) -> Category[MorphismData, TwoMorphismData]:
-        """The category this one is a declared subcategory of, derived from the selected inclusions (POL-CAT-016, POL-FUN-027)."""
-        assert self._ambient_category is not None, f"{self!r} declares no inclusion into an ambient category"
+        """The category this one is a declared subcategory of, derived from the selected functors (POL-CAT-016, POL-FUN-036)."""
+        assert self._ambient_category is not None, f"{self!r} declares no monomorphism into an ambient category"
         return self._ambient_category
 
     def hom_inhabited(self, hom_category: Category) -> Decision:
@@ -292,9 +292,9 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     #
     # A full subcategory has exactly the morphisms, identities, and composites of its
     # ambient between its objects (Mathlib ``InducedCategory``): a category declared by
-    # ``Fun(self, T).FullyFaithful().inclusion()`` obtains them from ``T`` and refines
+    # ``Fun(self, T).Monomorphisms().Isofibrations().Full()()`` obtains them from ``T`` and refines
     # each into ``Mor(self)``.  Every other category, including a wide subcategory
-    # declared by a faithful inclusion (``cat/wide.py``), owns these constructions.
+    # declared by a subcategory monomorphism (``cat/wide.py``), owns these constructions.
 
     def identity_morphism(self, member_object: ObjectOfCategory) -> MorphismOfCategory:
         """The one identity morphism of an object, constructed once (POL-CAT-083).
@@ -492,7 +492,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         from sage_categories.cat.functors import Fun
         from sage_categories.sets.category import Sets
 
-        stages = self.classical_stages()
+        stages = self.separating_family()
         assert len(stages) == 1, (
             f"{self!r} chooses {len(stages)} classical stages; the functor represented by a family of several is "
             f"the coproduct coprod_j Mor(C)(G^j, -), which this construction does not build"
@@ -518,7 +518,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
 
     # -- universal constructions, defined once (POL-CAT-050/092, POL-CAT-093) --------
     #
-    # A full subcategory declared by an inclusion has the constructions of its
+    # A full subcategory declared by such a monomorphism has the constructions of its
     # ambient definitionally (POL-CAT-087); every other category owns its own families.
     # Each family exists for every supplied shape without asserting that the
     # category has those limits (POL-CAT-051): constructing an object needs an
@@ -1120,7 +1120,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             self._canonical["walking parallel pair", ()] = canonical.walking_parallel_pair()
         return self._canonical["walking parallel pair", ()]
 
-    def classical_stages(self) -> tuple[FinitePresentedCategory, ...]:
+    def separating_family(self) -> tuple[FinitePresentedCategory, ...]:
         """``{1, [1]}``.  The writer asserts that this family separates ``Cat()`` (POL-MATH-037).
 
         nLab "separator", Definitions: a family separates when ``f . e = g . e`` for every

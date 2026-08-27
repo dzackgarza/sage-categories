@@ -60,7 +60,7 @@ def _source_key(source: CategoryPoint) -> tuple[CategoryPoint, CategoryPoint, Ca
         case Role.OBJECT:
             return source, source, source
         case Role.ELEMENT:
-            return source.stage(), source.defining_morphism(), source.parent()
+            return source.defining_morphism().domain(), source.defining_morphism(), source.parent()
         case Role.MORPHISM:
             assert isinstance(source, MorphismOfCategory)
             return source.domain(), source.codomain(), source

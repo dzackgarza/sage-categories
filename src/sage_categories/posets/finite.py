@@ -4,7 +4,7 @@
 underlying set (``specs/ordered-sets.md``, "Category and role surface").  It is not a
 narrowing of ``Posets()`` by ``Sets().Finite()``: a poset is never placed in ``Sets()``
 or a subcategory of it, and POL-CAT-084 derives a narrowing only along a selected
-inclusion.  Its two selected functors are the inclusion into ``Posets()`` and the
+monomorphism.  Its two selected functors are the monomorphism into ``Posets()`` and the
 restriction of ``U`` to ``Sets().Finite()``, whose object action returns the very same
 retained underlying set; both routes to ``Sets()`` therefore return one value by
 identity (``specs/resolution.md``, "Finite-rank free modules over finite fields").  Its
@@ -220,7 +220,7 @@ class FinitePosetsCategory(PropertySubcategory[[Rule], []]):
         self._graded.predicate().register_handler(_decided_by(lambda finite_poset: finite_poset.is_graded()))
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        """The inclusion into ``Posets()``, then ``U`` restricted to ``Sets().Finite()``."""
+        """The monomorphism into ``Posets()``, then ``U`` restricted to ``Sets().Finite()``."""
         if "underlying_finite_set" not in self._functors:
             underlying = self._ambient.underlying_set_functor()
             finite_sets = Sets().Finite()

@@ -5,8 +5,8 @@ subcategory of ``C`` on the chosen limits of diagrams ``I -> C``.  Constructing
 one returns the limit itself: one value, an object of ``C``, carrying the whole
 surface of ``C`` and placed in the family.  A chosen set product is an object of
 ``Sets()`` and answers ``cardinality()`` with no product-specific method.  The
-one selected functor of the family is its retained inclusion
-``Fun(C.Limits(I), C).FullyFaithful().inclusion()``, identity on values, so
+one selected functor of the family is its subcategory monomorphism
+``Fun(C.Limits(I), C).Monomorphisms().Isofibrations().Full()()``, identity on values, so
 ``is_placed(X * Y, Sets())`` is ``True`` and the morphisms, identities, and
 composites of the family are those of ``C`` between its objects (POL-CAT-087).
 
@@ -261,7 +261,7 @@ class ApexCategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismDa
 
     Its objects are the constructed objects themselves and its morphisms are the
     morphisms of ``C`` between them; its one selected functor is the retained
-    inclusion ``Fun(P, C).FullyFaithful().inclusion()``, identity on values
+    monomorphism ``Fun(P, C).Monomorphisms().Isofibrations().Full()()``, identity on values
     (POL-CAT-046, POL-FUN-019).  The family retains the universal data of each
     diagram it constructed from.
     """
@@ -290,14 +290,14 @@ class ApexCategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismDa
         assert is_subcategory(diagram.codomain(), self.narrowing_base()), f"{diagram!r} does not land in {self.narrowing_base()!r}"
 
     def lowered(self, diagram: Functor) -> Functor:
-        """The diagram as a diagram in ``C``: itself, or its composite with the inclusion of its codomain, retained per diagram."""
+        """The diagram as a diagram in ``C``: itself, or its composite with the subcategory monomorphism of its codomain, retained per diagram."""
         ambient = self.narrowing_base()
         codomain = diagram.codomain()
         if codomain is ambient:
             return diagram
         assert is_subcategory(codomain, ambient), f"{codomain!r} is not a declared subcategory of {ambient!r}"
         if diagram not in self._lowered:
-            self._lowered[diagram] = Fun(codomain, ambient).FullyFaithful().inclusion() * diagram
+            self._lowered[diagram] = Fun(codomain, ambient).Monomorphisms().Isofibrations().Full()() * diagram
         return self._lowered[diagram]
 
     # -- the retained constructions ----------------------------------------------------
@@ -434,7 +434,7 @@ class ProductsCategory(ApexCategory):
         isomorphism class of monomorphisms and no intrinsic representative of it exists, so
         the presenting monomorphism is selected and retained (``specs/functor.md``,
         "Monomorphisms of ``Cat()`` and placement"), as a chosen subset retains its
-        inclusion.
+        monomorphism.
         """
         return ProductSubobjectsCategory(self)
 

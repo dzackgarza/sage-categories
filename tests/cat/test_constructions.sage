@@ -92,10 +92,10 @@ def test_a_category_product_has_projections_with_exact_endpoints_acting_componen
     assert second.on_morphism(morphism) is successor
 
     generalized = product.element_from_defining_morphism(morphism)
-    assert generalized.stage() is pair and generalized.parent() is other
+    assert generalized.defining_morphism().domain() is pair and generalized.parent() is other
     image = first.on_element(generalized)
     assert ask(image.defining_morphism() == arrow.generator("0->1")) is True
-    assert image.stage() is arrow(int(0)) and image.parent() is arrow(int(1))
+    assert image.defining_morphism().domain() is arrow(int(0)) and image.parent() is arrow(int(1))
 
 
 def test_a_category_coproduct_has_injections_that_tag() -> None:
@@ -117,7 +117,7 @@ def test_a_category_coproduct_has_injections_that_tag() -> None:
     # A generalized point follows the injection's morphism action.
     generalized = Sets().element_from_defining_morphism(successor)
     image = into_sets.on_element(generalized)
-    assert image.stage() is tagged
+    assert image.defining_morphism().domain() is tagged
     assert image.parent() is into_sets.on_object(three)
     assert image.defining_morphism().morphism() is successor
 

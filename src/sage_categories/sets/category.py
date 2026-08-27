@@ -6,12 +6,12 @@ points at the stage ``Sets().Terminal()`` (``sets/elements.py``), and its morphi
 are total maps by rule (``sets/maps.py``).  The property subcategories ``Finite()``,
 ``Infinite()``, ``Countable()``, and ``Uncountable()`` own the constructors that
 supply their cardinal data; ``Finite => Countable`` and ``Uncountable => Infinite``
-are their recorded inclusions.  The canonical objects ``Empty()``, ``Terminal()``,
+are their recorded subcategory monomorphisms.  The canonical objects ``Empty()``, ``Terminal()``,
 and ``Simplex(n)`` exist once by identity.
 
 Retained construction data, each keyed by identity at its owner: the chosen
 enumeration of a finite set at ``Sets().Finite()``; the inverse of an isomorphism
-at ``Sets()`` (``inverse_morphism``); the inclusion of a chosen subset at
+at ``Sets()`` (``inverse_morphism``); the presenting monomorphism of a chosen subset at
 ``Sets().ChosenSubsets()`` (``sets/subobjects.py``).
 """
 
@@ -172,7 +172,7 @@ class SetsCategory(Category[[Rule], []]):
 
     @cached_method
     def ChosenSubsets(self) -> ChosenSubsetsCategory:
-        """The construction family of chosen subsets, each retaining its inclusion (``sets/subobjects.py``)."""
+        """The construction family of chosen subsets, each retaining its monomorphism (``sets/subobjects.py``)."""
         from sage_categories.sets.subobjects import ChosenSubsetsCategory
 
         return ChosenSubsetsCategory(self)
@@ -218,7 +218,7 @@ class SetsCategory(Category[[Rule], []]):
         assert dimension >= 0
         return Cardinal().representative(Cardinal()(dimension + 1))
 
-    def classical_stages(self) -> tuple[SetObject, ...]:
+    def separating_family(self) -> tuple[SetObject, ...]:
         """``G_Sets = 1``.  The writer asserts that ``1`` separates ``Sets()``, so ``Mor(Sets())(1, -)`` is faithful (POL-MATH-037).
 
         nLab "separator", Definitions ("if ``f . e = g . e`` for every morphism

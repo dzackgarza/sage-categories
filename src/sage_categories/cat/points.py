@@ -6,9 +6,9 @@ category ``Discrete PUnit`` and ``Functor.fromPUnit``; the repository names the 
 object in the category itself instead of in a constant functor
 (``Mathlib/CategoryTheory/PUnit``, inspected 2026-08-27).
 
-``{X}`` owns the declarations specific to ``X``.  It selects the inclusion into the
+``{X}`` owns the declarations specific to ``X``.  It selects the monomorphism into the
 category ``X`` was already placed in, then one **point functor** per target: the
-faithful inclusion ``{X} -> D`` stating one further placement of ``X`` as an object of
+subcategory monomorphism ``{X} -> D`` stating one further placement of ``X`` as an object of
 ``D`` (``specs/functor.md``, "Point categories and point functors").  ``{X}`` has one
 hom category, so every functor out of it is faithful.
 
@@ -61,7 +61,7 @@ class PointCategory(Category[[], []]):
     def __init__(self, member: CategoryPoint, targets: tuple[Category, ...]) -> None:
         self._member = member
         self._targets = targets
-        # The placement ``X`` already has: the inclusion into it is what makes ``{X}`` a
+        # The placement ``X`` already has: the monomorphism into it is what makes ``{X}`` a
         # subcategory, so refining ``X`` into ``{X}`` never weakens its placement
         # (POL-CAT-074).
         self._established = member.category()
@@ -76,17 +76,17 @@ class PointCategory(Category[[], []]):
         return self._targets
 
     def structure_functors(self) -> tuple[MorphismOfCategory, ...]:
-        """The inclusion into ``X``'s established category, then one point functor per target.
+        """The monomorphism into ``X``'s established category, then one point functor per target.
 
-        Each is constructed through ``Fun``'s inclusion table, so ``Fun({X}, D)`` and
+        Each is constructed through ``Fun``'s table of subcategory monomorphisms, so ``Fun({X}, D)`` and
         ``{X}.structure_functors()`` name one functor (POL-FUN-027).  ``{X}`` is not yet
         an object of ``Cat()`` while its own declaration runs, which is why the table is
-        addressed directly rather than through ``Fun({X}, D).Faithful().inclusion()``.
+        addressed directly rather than through ``Fun({X}, D).Monomorphisms().Isofibrations()()``.
         """
         functors = self.universe().morphism_category(1)
         return (
-            functors.faithful_inclusion(self, self._established),
-            *(functors.faithful_inclusion(self, target) for target in self._targets),
+            functors.subcategory_monomorphism(self, self._established),
+            *(functors.subcategory_monomorphism(self, target) for target in self._targets),
         )
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:

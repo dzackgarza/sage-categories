@@ -16,7 +16,7 @@ For a map ``f: Y -> X``, ``inverse_image_morphism(f): 2 ** X -> 2 ** Y`` sends t
 name of ``chi`` to the name of ``chi * f``: ``chi_{f^-1(A)} = chi_A * f`` by the
 definition of the preimage (Mathlib ``Set.mem_preimage``).  For ``f: X -> Y``,
 ``direct_image_morphism(f): 2 ** X -> 2 ** Y`` sends the name of ``chi_A`` to the
-name of the characteristic morphism of ``(f * A.inclusion()).image()``, the image
+name of the characteristic morphism of ``(f * A.monomorphism()).image()``, the image
 ``f(A)`` (Mathlib ``Set.mem_image``; ``sets/subobjects.py``).  Both retained per map.
 
 The cardinality ``2 ** #X`` is the function-set case ``(#2) ** (#X)`` (Mathlib
@@ -54,7 +54,7 @@ class PowerObjectRole(ObjectOfCategory):
         return _sets.Sets().PowerObjects().retained_base_set(self)
 
     def from_predicate(self, predicate: MembershipRule) -> SetObject:
-        """The chosen subset ``{x in X : predicate(x)}`` with its inclusion."""
+        """The chosen subset ``{x in X : predicate(x)}`` with its monomorphism."""
         return self.base_set().subset_from(predicate)
 
     def from_characteristic_morphism(self, characteristic: SetMap) -> SetObject:
@@ -64,7 +64,7 @@ class PowerObjectRole(ObjectOfCategory):
     def subset_named_by(self, point: SetElement) -> SetObject:
         """The chosen subset whose characteristic morphism a point ``1 -> 2 ** X`` names: the inverse of ``Sets().name_of`` on chosen subsets."""
         assert point in self, f"{point!r} is not a point of {self!r}"
-        return self.from_characteristic_morphism(point._classical_datum_().map())
+        return self.from_characteristic_morphism(point._point_datum_().map())
 
     def top(self) -> SetObject:
         """``X`` as a chosen subset of itself."""
@@ -143,7 +143,7 @@ class PowerObjectsCategory(PropertySubcategory[[Rule], []]):
 
             def image_name(name: Datum) -> Datum:
                 subset = self.subset_of_characteristic_morphism(power, name.map())
-                return Function((set_map * subset.inclusion()).image().characteristic_morphism())
+                return Function((set_map * subset.monomorphism()).image().characteristic_morphism())
 
             self._direct_images[key] = sets.morphism_category(1)(power, self(set_map.codomain()))(image_name)
         return self._direct_images[key]

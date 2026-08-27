@@ -278,7 +278,7 @@ def test_elements_differing_in_their_stage_or_defining_morphism_do_not_share_an_
     zero, one = chain.element(carrier.point(int(0))), chain.element(carrier.point(int(1)))
 
     assert zero.parent() is one.parent()
-    assert zero.stage() is one.stage()
+    assert zero.defining_morphism().domain() is one.defining_morphism().domain()
     assert zero.defining_morphism() is not one.defining_morphism()
 
     first_image = transport(zero, compiler.node(Sets(), Role.ELEMENT))
@@ -293,13 +293,13 @@ def test_elements_differing_in_their_stage_or_defining_morphism_do_not_share_an_
     fixed = Mor(Posets())(chain, chain)(lambda point: point)
     at_the_chain = Posets().element_from_defining_morphism(fixed)
     assert at_the_chain.parent() is zero.parent()
-    assert at_the_chain.stage() is chain
-    assert at_the_chain.stage() is not zero.stage()
+    assert at_the_chain.defining_morphism().domain() is chain
+    assert at_the_chain.defining_morphism().domain() is not zero.defining_morphism().domain()
 
     stage_image = transport(at_the_chain, compiler.node(Sets(), Role.ELEMENT))
     assert stage_image is underlying.on_element(at_the_chain)
     assert stage_image is not first_image
-    assert stage_image.stage() is carrier
+    assert stage_image.defining_morphism().domain() is carrier
     assert stage_image.defining_morphism() is underlying.on_morphism(fixed)
 
     # One value transports once per target: ``Sets().Finite()`` is a full subcategory of

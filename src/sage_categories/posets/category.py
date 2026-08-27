@@ -121,7 +121,7 @@ class PosetDeclaration(ObjectOfCategory):
         cartesian lift retained by ``U`` supplies the induced order.
         """
         subset = self.subset_from(predicate)
-        return Posets().underlying_set_functor().cartesian_lift(subset.inclusion(), self).domain()
+        return Posets().underlying_set_functor().cartesian_lift(subset.monomorphism(), self).domain()
 
     def is_total(self) -> AppliedPredicate:
         """Totality: any two elements are comparable."""
@@ -164,7 +164,7 @@ class PosetElementDeclaration(ElementOfObject):
         return (other <= self) & (self != other)
 
     def __repr__(self) -> str:
-        return f"point of {self.parent()!r} at stage {self.stage()!r}"
+        return f"point of {self.parent()!r} at stage {self.defining_morphism().domain()!r}"
 
 
 class MonotoneMapDeclaration(MorphismOfCategory):
@@ -185,7 +185,7 @@ def _is_classical(candidate: Any) -> bool:
     (POL-TYPE-004).
     """
     posets = Posets()
-    return role_of(candidate) is Role.ELEMENT and candidate.parent() in posets and candidate.stage() is posets.Terminal()
+    return role_of(candidate) is Role.ELEMENT and candidate.parent() in posets and candidate.defining_morphism().domain() is posets.Terminal()
 
 
 def _enumerated_points(carrier: SetObject) -> tuple[SetElement, ...]:
@@ -328,7 +328,7 @@ class PosetsCategory(Category[[Rule], []]):
             self._functors["underlying_set"] = underlying
         return self._functors["underlying_set"]
 
-    def classical_stages(self) -> tuple[Poset, ...]:
+    def separating_family(self) -> tuple[Poset, ...]:
         return (self.Terminal(),)
 
     # -- construction (POL-CAT-069, POL-LEAF-002) ----------------------------------------

@@ -209,7 +209,7 @@ def test_a_generalized_element_is_an_object_of_the_slice_over_its_parent() -> No
 
     assert point.category() is over
     assert point in over
-    assert point.stage() is Sets().Terminal()
+    assert point.defining_morphism().domain() is Sets().Terminal()
     assert point.parent() is three
     assert over(point).first() is point.defining_morphism()
     assert over(point.defining_morphism()) is over(point)
@@ -219,7 +219,7 @@ def test_a_generalized_element_is_an_object_of_the_slice_over_its_parent() -> No
     two = Sets().Simplex(int(1))
     successor = Mor(Sets())(two, three)(lambda datum: datum + int(1))
     generalized = Sets().element_from_defining_morphism(successor)
-    assert generalized.stage() is two
+    assert generalized.defining_morphism().domain() is two
     assert generalized.parent() is three
     assert generalized.defining_morphism() is successor
     assert generalized.category() is over

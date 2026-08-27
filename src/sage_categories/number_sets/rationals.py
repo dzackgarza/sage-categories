@@ -60,7 +60,7 @@ class RationalsCategory(Category[[Rule], []]):
         refine(self._rationals, self)
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        return (Fun(self, Sets().Countable()).FullyFaithful().inclusion(),)
+        return (Fun(self, Sets().Countable()).Monomorphisms().Isofibrations().Full()(),)
 
     def __call__(self) -> SetObject:
         """The sole object ``QQ``, retained by identity."""

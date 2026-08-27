@@ -31,7 +31,7 @@ from sage_categories.cat import category as _category
 from sage_categories.cat.category import Assignment, Category, CategoryOfCategories, OnMorphism, OnObject
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask
-from sage_categories.kernel.refinement import is_placed, is_retained_inclusion, is_subcategory, refine
+from sage_categories.kernel.refinement import is_placed, is_subcategory, refine, traces_placement
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory, Role, role_of
 
 if TYPE_CHECKING:
@@ -43,7 +43,7 @@ __all__ = ["Fun", "Functor", "FunctorCategory", "FunctorProperty", "FunctorsCate
 
 
 def identity_on_values(value: CategoryPoint) -> CategoryPoint:
-    """The object and morphism action of every inclusion: the identity on the shared values (POL-FUN-027)."""
+    """The object and morphism action of every subcategory monomorphism: the identity on the shared values (POL-FUN-027)."""
     return value
 
 
@@ -56,16 +56,16 @@ def diagram_of(value: CategoryPoint) -> Functor:
 
 def _defining_functor_equal(first: CategoryPoint, candidate: Any) -> Decision:
     """A functor ``T -> C`` equals a point of ``C`` at stage ``T`` exactly when it is that point's retained defining functor."""
-    if is_placed(first, Fun) and not is_placed(candidate, Fun) and role_of(candidate) in (Role.OBJECT, Role.MORPHISM) and candidate.stage() is first.domain():
+    if is_placed(first, Fun) and not is_placed(candidate, Fun) and role_of(candidate) in (Role.OBJECT, Role.MORPHISM) and candidate.defining_morphism().domain() is first.domain():
         return first is candidate.defining_morphism()
-    if is_placed(candidate, Fun) and not is_placed(first, Fun) and role_of(first) in (Role.OBJECT, Role.MORPHISM) and first.stage() is candidate.domain():
+    if is_placed(candidate, Fun) and not is_placed(first, Fun) and role_of(first) in (Role.OBJECT, Role.MORPHISM) and first.defining_morphism().domain() is candidate.domain():
         return candidate is first.defining_morphism()
     return Unknown
 
 
 # The stage comparisons ``G_D -> F(G_C)`` retained by the constructions that own a
 # selected functor exposing classical element methods (POL-LEAF-003), keyed by the functor.
-_stage_comparisons: MonoDict = MonoDict()
+_separator_comparisons: MonoDict = MonoDict()
 
 # The lifts a functor ``p: E -> B`` retains over a stated class of morphisms of ``B``
 # (POL-FUN-029, ``specs/functor.md``, "Slices and coslices"): the owner of the
@@ -128,7 +128,7 @@ class FunctorDeclaration(MorphismOfCategory):
         super().__init__()
 
     # The admission condition is the one the image construction needs.  A retained
-    # inclusion is the identity on the objects and morphisms of its domain
+    # monomorphism is the identity on the objects and morphisms of its domain
     # (``specs/functor.md``, "Inclusion functors"), so it constructs nothing and
     # admits exactly the members of its domain: a wide subcategory has every object of
     # its ambient, and that is a membership fact its ambient decides, not a placement
@@ -143,7 +143,7 @@ class FunctorDeclaration(MorphismOfCategory):
             from sage_categories.kernel.transport import construction_input
 
             if not is_placed(member_object, self.domain()):
-                assert is_retained_inclusion(self) and member_object in self.domain(), (
+                assert traces_placement(self) and member_object in self.domain(), (
                     f"{member_object!r} is placed in {member_object.category()!r}; {self!r} constructs its image from the "
                     f"placement {self.domain()!r}, which that placement does not reach"
                 )
@@ -168,7 +168,7 @@ class FunctorDeclaration(MorphismOfCategory):
             from sage_categories.kernel.transport import construction_input
 
             if not is_placed(morphism, morphisms):
-                assert is_retained_inclusion(self) and morphism in morphisms, (
+                assert traces_placement(self) and morphism in morphisms, (
                     f"{morphism!r} is placed in {morphism.category()!r}; {self!r} constructs its image from the "
                     f"placement {morphisms!r}, which that placement does not reach"
                 )
@@ -188,13 +188,13 @@ class FunctorDeclaration(MorphismOfCategory):
         element keeps the stage ``F(G_C)`` rather than the target's classical stage
         (``specs/functor.md``, "Structural inheritance").
 
-        A retained inclusion is the identity on the objects and morphisms of its domain,
+        A subcategory monomorphism is the identity on the objects and morphisms of its domain,
         so it is the identity on ``t: T -> X`` as well (``specs/functor.md``, "Inclusion
         functors").  Its stage and defining morphism are those of the ambient, which no
         selected route reaches from the subcategory.
         """
         assert role_of(element) is Role.ELEMENT, f"{element!r} is not a generalized element"
-        if is_retained_inclusion(self):
+        if traces_placement(self):
             parent = element.parent()
             assert is_placed(parent, self.domain()) or parent in self.domain(), f"{element!r} is not a generalized element in {self.domain()!r}"
             return element
@@ -221,19 +221,19 @@ class FunctorDeclaration(MorphismOfCategory):
     # at ``G_C`` is ``Mor(D)(G_D, F(G_C))``.  The construction therefore retains the
     # stage morphism and no natural-transformation carrier on ``F``.
 
-    def retain_stage_comparison(self, comparison: MorphismOfCategory) -> None:
+    def retain_separator_comparison(self, comparison: MorphismOfCategory) -> None:
         """Retain ``c: G_D -> F(G_C)`` as the defining datum of this functor's classical transport (POL-LEAF-003)."""
-        (source_stage,) = self.domain().classical_stages()
-        (target_stage,) = self.codomain().classical_stages()
+        (source_stage,) = self.domain().separating_family()
+        (target_stage,) = self.codomain().separating_family()
         assert comparison in self.codomain().morphism_category(1)(target_stage, self.on_object(source_stage))
-        _stage_comparisons[self] = comparison
+        _separator_comparisons[self] = comparison
 
-    def stage_comparison(self) -> MorphismOfCategory:
+    def separator_comparison(self) -> MorphismOfCategory:
         """``G_D -> F(G_C)``: the retained comparison, or the identity when ``F(G_C) is G_D``."""
-        if self in _stage_comparisons:
-            return _stage_comparisons[self]
-        (source_stage,) = self.domain().classical_stages()
-        (target_stage,) = self.codomain().classical_stages()
+        if self in _separator_comparisons:
+            return _separator_comparisons[self]
+        (source_stage,) = self.domain().separating_family()
+        (target_stage,) = self.codomain().separating_family()
         assert self.on_object(source_stage) is target_stage, f"{self!r} retains no stage comparison"
         return target_stage.identity()
 
@@ -332,9 +332,9 @@ class FunctorDeclaration(MorphismOfCategory):
         assert isinstance(source.identity, GeneralCategoryPointIdentity)
         source_defining = source.identity.defining_morphism
         image = self.morphism_constructor_input(retained_morphism_input(source_defining)).canonical_image
-        stages = self.domain().classical_stages()
-        if self in _stage_comparisons and len(stages) == 1 and source_defining.domain() is stages[0]:
-            comparison = _stage_comparisons[self]
+        stages = self.domain().separating_family()
+        if self in _separator_comparisons and len(stages) == 1 and source_defining.domain() is stages[0]:
+            comparison = _separator_comparisons[self]
             if comparison is not comparison.domain().identity():
                 image = image * comparison
         if image is source_defining:
@@ -522,21 +522,63 @@ from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategor
 from sage_categories.cat.properties import FixedEndpointProperty, PropertySubcategory
 
 
-class FunctorProperty(FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]]):
-    """``Fun(C, D).P()``: functors ``C -> D`` with property ``P``; owns ``inclusion()`` and ``identity()``."""
+class FunctorProperties:
+    """The property subcategories of ``Fun``, narrowed to ``Fun(C, D)`` and to its own narrowings.
 
-    def inclusion(self) -> Functor:
-        """The identity-on-value inclusion of the domain into the codomain, asserted to have ``P`` (POL-FUN-027, POL-MATH-037)."""
+    ``Fun(C, D).Monomorphisms().Isofibrations().Full()`` is one category however it is
+    spelled (POL-CAT-084), so the same accessors sit on the fixed-endpoint category and on
+    each narrowing of it, and each narrows the placement it is called on.
+    """
+
+    def Full(self) -> Category:
+        return self.property_subcategory(self.ambient().Full())
+
+    def Faithful(self) -> Category:
+        return self.property_subcategory(self.ambient().Faithful())
+
+    def FullyFaithful(self) -> Category:
+        return self.property_subcategory(self.ambient().FullyFaithful())
+
+    def EssentiallySurjective(self) -> Category:
+        return self.property_subcategory(self.ambient().EssentiallySurjective())
+
+    def Equivalences(self) -> Category:
+        return self.property_subcategory(self.ambient().Equivalences())
+
+    def Isofibrations(self) -> Category:
+        return self.property_subcategory(self.ambient().Isofibrations())
+
+    def Monomorphisms(self) -> Category:
+        return self.property_subcategory(self.ambient().Monomorphisms())
+
+
+class FunctorProperty(FunctorProperties, FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]]):
+    """``Fun(C, D).P()``: functors ``C -> D`` with property ``P``; constructs one and owns ``identity()``."""
+
+    def __call__(self, *args: OnObject | OnMorphism, **kwargs: OnObject | OnMorphism) -> Functor:
+        """``Fun(S, T).P()(on_object, on_morphism)``, or ``Fun(S, T).P()()`` for the subcategory monomorphism.
+
+        With no data the constructed functor is the identity on the values ``S`` and ``T``
+        share, which is a functor exactly when ``S`` is a subcategory of ``T``.  That is
+        the declaration ``POL-FUN-036`` names: the leaf states the relation by
+        constructing in ``Fun(S, T).Monomorphisms().Isofibrations()``, and the kernel
+        trusts it (``specs/functor.md``, "Monomorphisms of Cat() and placement").
+        """
+        if args or kwargs:
+            return super().__call__(*args, **kwargs)
         functors = self.universe().morphism_category(1)
-        source, target = self._ambient.domain(), self._ambient.codomain()
         roots = self.narrowing_roots()
-        if any(root is functors.FullyFaithful() for root in roots):
-            inclusion = functors.full_inclusion(source, target)
+        assert any(root is functors.Monomorphisms() for root in roots), (
+            f"{self!r} takes a functor's object and morphism actions; only a monomorphism of Cat() is "
+            f"determined by its endpoints, as the identity on their shared values"
+        )
+        source, target = self._ambient.domain(), self._ambient.codomain()
+        if any(root is functors.Full() for root in roots):
+            functor = functors.full_subcategory_monomorphism(source, target)
         else:
-            assert any(root is functors.Faithful() for root in roots), f"an inclusion is faithful or fully faithful, not {self!r}"
-            inclusion = functors.faithful_inclusion(source, target)
-        refine(inclusion, self)
-        return inclusion
+            functor = functors.subcategory_monomorphism(source, target)
+        refine(functor, self)
+        return functor
 
 
 # ``denotes_diagram(x, Fun(I, C))``: ``x`` is a functor ``I -> C``, or a point of ``C`` at
@@ -555,7 +597,7 @@ def _denotes_diagram_by_stage(candidate: CategoryPoint, functors: FunctorCategor
         # placement, so the question there is containment in the codomain, not identity
         # (POL-CAT-068, POL-FUN-027): a set refined into ``Sets().Finite()`` is still a
         # diagram of shape ``1`` in ``Sets()``.
-        return candidate.stage() is functors.domain() and is_subcategory(candidate.parent(), functors.codomain())
+        return candidate.defining_morphism().domain() is functors.domain() and is_subcategory(candidate.parent(), functors.codomain())
     return False
 
 
@@ -569,13 +611,13 @@ denotes_functor: Predicate = Predicate("denotes_functor", 2, False)
 def _denotes_functor_by_stage(candidate: CategoryPoint, functors: FunctorsCategory) -> Decision:
     if is_placed(candidate, functors):
         return True
-    return role_of(candidate) in (Role.OBJECT, Role.MORPHISM) and candidate.stage() in Cat()
+    return role_of(candidate) in (Role.OBJECT, Role.MORPHISM) and candidate.defining_morphism().domain() in Cat()
 
 
 denotes_functor.register_handler(_denotes_functor_by_stage)
 
 
-class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]]):
+class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]]):
     """``Fun(C, D)``: functors ``C -> D`` and their natural transformations.
 
     As the category of diagrams of shape ``C`` in ``D`` it retains its evaluation
@@ -677,21 +719,6 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
 
     # -- functor properties (POL-FUN-024) -----------------------------------------------
 
-    def Full(self) -> Category:
-        return self.property_subcategory(self.ambient().Full())
-
-    def Faithful(self) -> Category:
-        return self.property_subcategory(self.ambient().Faithful())
-
-    def FullyFaithful(self) -> Category:
-        return self.property_subcategory(self.ambient().FullyFaithful())
-
-    def EssentiallySurjective(self) -> Category:
-        return self.property_subcategory(self.ambient().EssentiallySurjective())
-
-    def Equivalences(self) -> Category:
-        return self.property_subcategory(self.ambient().Equivalences())
-
     def narrowing_type(self) -> type[FunctorProperty]:
         return FunctorProperty
 
@@ -705,9 +732,14 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     def __init__(self, base: CategoryOfCategories) -> None:
         self._bootstrapping = False
         self._bootstrapped = False
-        # One inclusion per ``(source, target)``, constructed once and retained by
-        # identity (POL-FUN-027); "``F`` is an inclusion" is decided against this table.
-        self._inclusions: TripleDict = TripleDict(weak_values=False)
+        # The one identity-on-values functor per ``(source, target)``, constructed once
+        # and retained by identity (POL-FUN-027).  It is the kernel's own witness that
+        # ``source`` is a subcategory of ``target``; the declaration a leaf makes is
+        # placement in ``Fun(S, T).Monomorphisms().Isofibrations()``, and that placement,
+        # not this table, is what placement follows (POL-FUN-036).
+        self._shared_value_functors: TripleDict = TripleDict(weak_values=False)
+        self._pending: list[tuple[Functor, bool]] = []
+        self._declaring: MonoDict = MonoDict()
         super().__init__(base)
 
     def fixed_endpoint_type(self) -> type[FunctorCategory]:
@@ -744,10 +776,10 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     # -- the functor property categories (POL-FUN-024) -----------------------------------
 
     def _bootstrap(self) -> None:
-        """Build the five functor property categories once and place their inclusions.
+        """Build the functor property categories once and place the kernel's own subcategory monomorphisms.
 
-        Their own inclusions into ``Fun`` are constructed while the properties do not
-        yet exist, so they are placed in ``FullyFaithful()`` afterwards.
+        Those are constructed while the properties do not yet exist, so they are placed
+        afterwards, in the property category a full subcategory declares.
         """
         self._bootstrapping = True
         self._full = PropertySubcategory(self, "Full", {}, ())
@@ -758,11 +790,31 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         # ``Functor.FullyFaithful.faithful``, ``Functor.IsEquivalence``; inspected 2026-08-26).
         self._fully_faithful = PropertySubcategory(self, "FullyFaithful", {}, (self._full, self._faithful))
         self._equivalences = PropertySubcategory(self, "Equivalences", {}, (self._fully_faithful, self._essentially_surjective))
-        self._bootstrapping = False
+        # A subcategory of ``T`` is a subobject of ``T`` in ``Cat()``, and the two
+        # conditions on the monomorphism that presents it are monicity and repleteness of
+        # the image, which is exactly the isofibration condition (Kerodon, Example
+        # 4.4.1.12, https://kerodon.net/tag/01EX, inspected 2026-08-28; nLab, replete
+        # subcategory, inspected 2026-08-28).  Placement follows a functor with both, and
+        # no other (POL-FUN-036; ``specs/functor.md``, "Monomorphisms of Cat() and placement").
+        self._isofibrations = PropertySubcategory(self, "Isofibrations", {}, ())
+        # A monomorphism of ``Cat()`` is faithful and injective on objects, so
+        # faithfulness is a recorded implication (nLab, subcategory,
+        # https://ncatlab.org/nlab/show/subcategory, inspected 2026-08-28: "A functor is
+        # easily verified to be monic iff it is faithful and injective on objects").
+        self._monomorphisms = PropertySubcategory(self, "Monomorphisms", {}, (self._faithful,))
+        partial = self._monomorphisms.property_subcategory(self._isofibrations)
+        declared = {False: partial, True: partial.property_subcategory(self._full)}
         self._bootstrapped = True
-        for property_category in (self._full, self._faithful, self._essentially_surjective, self._fully_faithful, self._equivalences):
-            for inclusion in property_category.selected_functors():
-                refine(inclusion, self._fully_faithful)
+        # Placing a deferred functor can construct a further narrowing of ``Fun``, whose
+        # own subcategory monomorphisms defer in turn, so the queue is drained until it
+        # stays empty.  There are finitely many narrowings, so it does.
+        while self._pending:
+            batch, self._pending = self._pending, []
+            for functor, full in batch:
+                refine(functor, declared[full])
+        self._bootstrapping = False
+        self._isofibrations.predicate().register_handler(self._is_shared_value_functor)
+        self._monomorphisms.predicate().register_handler(self._is_shared_value_functor)
 
     def Full(self) -> Category:
         if not self._bootstrapped:
@@ -789,36 +841,89 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             self._bootstrap()
         return self._equivalences
 
-    # -- inclusions (POL-FUN-027) ---------------------------------------------------------
+    def Isofibrations(self) -> Category:
+        if not self._bootstrapped:
+            self._bootstrap()
+        return self._isofibrations
 
-    def _inclusion(self, source: Category, target: Category, placement: Callable[[], Category]) -> Functor:
-        """The one identity-on-value inclusion ``source -> target``, placed in the declared functor property."""
+    def Monomorphisms(self) -> Category:
+        """Monic functors: faithful and injective on objects, so ``Faithful`` is a recorded implication."""
+        if not self._bootstrapped:
+            self._bootstrap()
+        return self._monomorphisms
+
+    # -- subcategory monomorphisms (POL-FUN-027, POL-FUN-036) -----------------------------
+    #
+    # A leaf declares that ``S`` is a subcategory of ``T`` by constructing in
+    # ``Fun(S, T).Monomorphisms().Isofibrations()`` (``FunctorProperty.__call__``).  The
+    # kernel's own subcategories are built while those property categories do not yet
+    # exist, so they route through the two methods below, which construct the same one
+    # identity-on-values functor and place it once ``_bootstrap`` has run.
+
+    def _shared_value_functor(self, source: Category, target: Category, full: bool) -> Functor:
+        """The one identity-on-values functor ``source -> target``, placed in the declared property.
+
+        While ``_bootstrap`` runs, the property category to place it in does not exist yet
+        (or is itself under construction), so the placement is queued and ``_bootstrap``
+        drains the queue.
+        """
         if not self._bootstrapped and not self._bootstrapping:
             self._bootstrap()
         key = (source, target, self)
-        if key not in self._inclusions:
-            self._inclusions[key] = self._base.construct_morphism(source, target, identity_on_values, identity_on_values)
-            self._inclusions[key]._retain_identity_constructor_conversions()
-        inclusion = self._inclusions[key]
-        if self._bootstrapped:
-            refine(inclusion, placement())
-        return inclusion
+        if key not in self._shared_value_functors:
+            self._shared_value_functors[key] = self._base.construct_morphism(source, target, identity_on_values, identity_on_values)
+            self._shared_value_functors[key]._retain_identity_constructor_conversions()
+        functor = self._shared_value_functors[key]
+        if self._bootstrapping:
+            self._pending.append((functor, full))
+        else:
+            refine(functor, self._declared_subcategory(full))
+        return functor
 
-    def retains_inclusion(self, source: Category, target: Category) -> bool:
-        return (source, target, self) in self._inclusions
+    def _is_shared_value_functor(self, functor: Functor) -> Decision:
+        """The exact route for a functor the kernel itself built: it shares the values of its endpoints.
 
-    def inclusion_of(self, source: Category, target: Category) -> Functor:
-        """The retained inclusion ``source -> target``."""
-        assert (source, target, self) in self._inclusions, f"no inclusion {source!r} -> {target!r} was declared"
-        return self._inclusions[source, target, self]
+        Such a functor is injective on objects and on morphisms, hence monic
+        (nLab, subcategory, https://ncatlab.org/nlab/show/subcategory, inspected
+        2026-08-28: "A functor is easily verified to be monic iff it is faithful and
+        injective on objects"), and its image is everything the source has, so an
+        isomorphism of the target with one endpoint in the source is one of the source.
+        A functor the kernel did not build decides nothing here: the leaf declares it.
+        """
+        key = (functor.domain(), functor.codomain(), self)
+        if key in self._shared_value_functors and self._shared_value_functors[key] is functor:
+            return True
+        return Unknown
 
-    def full_inclusion(self, source: Category, target: Category) -> Functor:
-        """The inclusion of a full subcategory: fully faithful by construction (Mathlib ``ObjectProperty.ι``)."""
-        return self._inclusion(source, target, self.FullyFaithful)
+    def declares_subcategory(self, functor: Functor) -> bool:
+        """Whether ``functor`` is declared a monomorphism of ``Cat()`` and an isofibration (POL-FUN-036).
 
-    def faithful_inclusion(self, source: Category, target: Category) -> Functor:
-        """The inclusion of a subcategory: faithful by construction."""
-        return self._inclusion(source, target, self.Faithful)
+        Both conditions are read off the functor's own placement, which is what the leaf
+        stated by constructing in ``Fun(S, T).Monomorphisms().Isofibrations()``.  Before
+        those property categories exist no functor is placed in them, so none is declared.
+        """
+        if not self._bootstrapped:
+            return False
+        # The answer depends only on the placement, whose roots are fixed once the
+        # category exists, so it is decided once per placement rather than per functor.
+        placement = functor.category()
+        if placement not in self._declaring:
+            roots = placement.narrowing_roots()
+            self._declaring[placement] = any(root is self._monomorphisms for root in roots) and any(root is self._isofibrations for root in roots)
+        return self._declaring[placement]
+
+    def _declared_subcategory(self, full: bool) -> Category:
+        """``Fun.Monomorphisms().Isofibrations()``, with fullness for a full subcategory (POL-FUN-036)."""
+        declared = self.Monomorphisms().property_subcategory(self.Isofibrations())
+        return declared.property_subcategory(self.Full()) if full else declared
+
+    def subcategory_monomorphism(self, source: Category, target: Category) -> Functor:
+        """The monomorphism presenting ``source`` as a subcategory of ``target``, identity on the shared values."""
+        return self._shared_value_functor(source, target, False)
+
+    def full_subcategory_monomorphism(self, source: Category, target: Category) -> Functor:
+        """The same for a full subcategory, which adds fullness (Mathlib ``ObjectProperty.ι``)."""
+        return self._shared_value_functor(source, target, True)
 
     # -- limits and colimits of functors, pointwise (specs/functor.md, "Diagram shapes and universal constructions"; ``cat/diagrams.py``) -----------
 

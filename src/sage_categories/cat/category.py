@@ -94,6 +94,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         self._inverses: MonoDict = MonoDict()
         self._points: MonoDict = MonoDict()
         self._arrows: MonoDict = MonoDict()
+        self._represented: MonoDict = MonoDict()
         self._elements: MonoDict = MonoDict()
         self._catalogues: dict[Role, dict[str, compiler.Entry]] = {}
         self._limits: MonoDict = MonoDict()
@@ -466,6 +467,48 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         self._arrows[morphism] = Fun(walking_arrow, self)(on_object, on_morphism)
         return self._arrows[morphism]
 
+    def represented_functor(self) -> Functor:
+        """``U_C = Mor(C)(G_C, -): C -> Sets()``, the functor represented by the chosen classical stage.
+
+        Its value at ``X`` is the set of morphisms ``G_C -> X``, whose points are exactly
+        the classical elements of ``X``; its value at ``f: X -> Y`` is postcomposition
+        ``u |-> f . u``.  This is Mathlib's co-Yoneda embedding at ``G_C``
+        (``Mathlib/CategoryTheory/Yoneda.lean:87-95``, inspected 2026-08-27: "The co-Yoneda
+        embedding, as a functor from ``Cᵒᵖ`` into co-presheaves on ``C``", with the
+        unification hint ``(coyoneda.obj (op X)).obj Y = X ⟶ Y``).
+
+        The writer's assertion that the chosen stage family separates is what makes ``U_C``
+        faithful (POL-MATH-037); this construction states the functor and not that
+        property.  A family of several stages represents ``coprod_j Mor(C)(G^j, -)``, the
+        coproduct of these sets, which this construction does not build.
+        """
+        from sage_categories.cat.functors import Fun
+        from sage_categories.sets.category import Sets
+
+        stages = self.classical_stages()
+        assert len(stages) == 1, (
+            f"{self!r} chooses {len(stages)} classical stages; the functor represented by a family of several is "
+            f"the coproduct coprod_j Mor(C)(G^j, -), which this construction does not build"
+        )
+        (stage,) = stages
+        if stage in self._represented:
+            return self._represented[stage]
+
+        images: MonoDict = MonoDict()
+
+        def hom_set(member_object: ObjectOfCategory) -> ObjectOfCategory:
+            if member_object not in images:
+                hom = self.morphism_category(1)(stage, member_object)
+                images[member_object] = Sets()(lambda datum: ask(hom.membership_proposition(datum)) if role_of(datum) is Role.MORPHISM else False)
+            return images[member_object]
+
+        def postcompose(morphism: MorphismOfCategory) -> MorphismOfCategory:
+            source, target = hom_set(morphism.domain()), hom_set(morphism.codomain())
+            return Sets().morphism_category(1)(source, target)(lambda datum: morphism * datum)
+
+        self._represented[stage] = Fun(self, Sets())(hom_set, postcompose)
+        return self._represented[stage]
+
     # -- universal constructions, defined once (POL-CAT-050/092, POL-CAT-093) --------
     #
     # A full subcategory declared by an inclusion has the constructions of its
@@ -731,6 +774,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         self._canonical: dict[tuple[str, tuple[int, ...]], FinitePresentedCategory] = {}
         self._point_categories: MonoDict = MonoDict()
         self._declared_functors: TripleDict = TripleDict(weak_values=False)
+        self._exponential_actions: TripleDict = TripleDict(weak_values=False)
         super().__init__()
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
@@ -854,6 +898,65 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             lambda x: second.component(x) * first.component(x),
         )
 
+    # -- horizontal composition with 1-morphisms: whiskering (POL-CAT-021, POL-MATH-036) ---
+    #
+    # nLab "whiskering", Idea (inspected 2026-08-27): "In a 2-category, the horizontal
+    # composition of a 2-morphism with 1-morphisms is sometimes called whiskering."  Its
+    # Examples section states both operations in detail: "If F,G: C -> D and H: D -> E are
+    # functors and eta: F -> G is a natural transformation whose coordinate at any object
+    # A of C is eta_A, then whiskering H and eta yields the natural transformation
+    # H . eta: (H . F) -> (H . G) whose coordinate at A is H(eta_A)"; and "If F: C -> D and
+    # G,H: D -> E are functors and eta: G -> H is a natural transformation whose coordinate
+    # at A is eta_A, then whiskering eta and F yields the natural transformation
+    # eta . F: (G . F) -> (H . F) whose coordinate at A is eta_{F(A)}."
+    #
+    # Mathlib writes composition in the opposite order, so its ``whiskerRight alpha H``
+    # (``Mathlib/CategoryTheory/Whiskering.lean:56-58``: "has components ``F.map (α.app X)``")
+    # is the left whiskering here, and its ``whiskerLeft F alpha``
+    # (``Whiskering.lean:44-46``: "has components ``α.app (F.obj X)``") the right one; both
+    # inspected 2026-08-27.  Naturality of every result is a trusted declaration
+    # (POL-MATH-036), as is the interchange law that identifies the two builds of a
+    # horizontal composite.
+
+    def whisker_left(self, functor: Functor, transformation: NaturalTransformation) -> NaturalTransformation:
+        """``H . eta: H F => H G`` for ``eta: F => G`` in ``Fun(I, D)`` and ``H: D -> E``; its component at ``X`` is ``H(eta_X)``."""
+        source = transformation.source_functor()
+        assert source.codomain() is functor.domain()
+        images = self.exponential(source.domain(), functor.codomain())
+        return images.morphism_category(1)(
+            self.postcompose(functor, transformation.domain()),
+            self.postcompose(functor, transformation.codomain()),
+        )(lambda member_object: functor.on_morphism(transformation.component(member_object)))
+
+    def whisker_right(self, transformation: NaturalTransformation, functor: Functor) -> NaturalTransformation:
+        """``theta . F: H F => K F`` for ``theta: H => K`` in ``Fun(D, E)`` and ``F: I -> D``; its component at ``X`` is ``theta_{F(X)}``."""
+        source, target = transformation.source_functor(), transformation.target_functor()
+        assert functor.codomain() is source.domain()
+        images = self.exponential(functor.domain(), source.codomain())
+        return images.morphism_category(1)(
+            self.composite(source, functor),
+            self.composite(target, functor),
+        )(lambda member_object: transformation.component(functor.on_object(member_object)))
+
+    def horizontal_composite(self, second: NaturalTransformation, first: NaturalTransformation) -> NaturalTransformation:
+        """``theta * eta: H F => K G`` for ``eta: F => G`` in ``Fun(I, D)`` and ``theta: H => K`` in ``Fun(D, E)``.
+
+        Its component at ``X`` is ``K(eta_X) . theta_{F(X)}``: the component of the right
+        whiskering ``theta . F: H F => K F``, then that of the left whiskering
+        ``K . eta: K F => K G``, which is the vertical composite of the two.  Mathlib
+        ``NatTrans.hcomp`` (``Mathlib/CategoryTheory/Functor/Category.lean:122-131``;
+        inspected 2026-08-27) is this same component formula,
+        ``app := fun X => β.app (F.obj X) ≫ I.map (α.app X)``, in the opposite composition
+        order.  Its ``hcomp_app'`` gives the other build, ``theta_{G(X)} . H(eta_X)``; the
+        two agree by the interchange law (POL-MATH-036).
+        """
+        outer = self.whisker_right(second, first.source_functor())
+        inner = self.whisker_left(second.target_functor(), first)
+        images = self.exponential(first.source_functor().domain(), second.target_functor().codomain())
+        return images.morphism_category(1)(outer.domain(), inner.codomain())(
+            lambda member_object: inner.component(member_object) * outer.component(member_object)
+        )
+
     # -- the constructions Cat() owns (POL-CAT-050; ``cat/cat_constructions.py``) --------
 
     def limit_construction(self, shape: Category) -> Callable[[Functor], ObjectOfCategory]:
@@ -879,6 +982,43 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     def exponential(self, exponent: Category, base: Category) -> Category:
         """``D ** C = Fun(C, D)``: ``Cat()`` is cartesian closed (Mathlib ``Cat.exp_obj``; inspected 2026-08-26)."""
         return self.morphism_category(1)(exponent, base)
+
+    def postcompose(self, functor: Functor, diagram: CategoryPoint) -> CategoryPoint:
+        """``F . G`` for an object ``G`` of ``Fun(I, D)`` and ``F: D -> E``: the object action of ``Fun(I, F)``.
+
+        An object of ``Fun(I, D)`` is a functor ``I -> D`` or a point of ``D`` at stage
+        ``I`` denoting one (``specs/functor.md``, "The Mor(n, C) tower").  A point keeps
+        that spelling under the action: its image is the point image, so
+        ``Fun(1, F).on_object(x) is F.on_object(x)`` and
+        ``Fun([1], F).on_object(f) is F.on_morphism(f)``.
+        """
+        if is_placed(diagram, self.morphism_category(1)):
+            return self.composite(functor, diagram)
+        return functor(diagram)
+
+    def exponential_on_morphism(self, exponent: Category, functor: Functor) -> Functor:
+        """``Fun(I, F): Fun(I, D) -> Fun(I, E)`` for ``F: D -> E``: the action of ``(-) ** I`` on a morphism of ``Cat()``.
+
+        Post-composition with ``F``: a diagram ``G`` goes to ``F . G`` and a natural
+        transformation ``eta`` to the left whiskering ``F . eta``.  Mathlib
+        ``CategoryTheory.whiskeringRight`` (``Mathlib/CategoryTheory/Whiskering.lean:95-98``;
+        inspected 2026-08-27) is this functor: ``obj H := { obj := fun F => F ⋙ H,
+        map := fun α => whiskerRight α H }``, with "``(whiskeringRight.obj H).obj F``
+        evaluates to ``F ⋙ H``, and ``(whiskeringRight.obj H).map α`` produces
+        ``whiskerRight α H``" (``Whiskering.lean:91-92``).  One functor per
+        ``(exponent, functor)``, retained by identity.
+        """
+        assert functor in self.morphism_category(1)
+        key = (exponent, functor, self)
+        if key not in self._exponential_actions:
+            self._exponential_actions[key] = self.morphism_category(1)(
+                self.exponential(exponent, functor.domain()),
+                self.exponential(exponent, functor.codomain()),
+            )(
+                lambda diagram: self.postcompose(functor, diagram),
+                lambda transformation: self.whisker_left(functor, transformation),
+            )
+        return self._exponential_actions[key]
 
     # -- finite presented shapes and canonical objects (POL-CAT-083) ----------------
 

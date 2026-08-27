@@ -31,7 +31,7 @@ from sage_categories.cat import category as _category
 from sage_categories.cat.category import Assignment, Category, CategoryOfCategories, OnMorphism, OnObject
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask
-from sage_categories.kernel.refinement import is_placed, is_retained_inclusion, refine
+from sage_categories.kernel.refinement import is_placed, is_retained_inclusion, is_subcategory, refine
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory, Role, role_of
 
 if TYPE_CHECKING:
@@ -529,7 +529,11 @@ def _denotes_diagram_by_stage(candidate: CategoryPoint, functors: FunctorCategor
     if is_placed(candidate, functors.ambient()):
         return ask(endpoints(candidate, functors.domain(), functors.codomain()))
     if role_of(candidate) in (Role.OBJECT, Role.MORPHISM):
-        return candidate.stage() is functors.domain() and candidate.parent() is functors.codomain()
+        # The stage is one of the canonical shapes, compared by identity; the parent is a
+        # placement, so the question there is containment in the codomain, not identity
+        # (POL-CAT-068, POL-FUN-027): a set refined into ``Sets().Finite()`` is still a
+        # diagram of shape ``1`` in ``Sets()``.
+        return candidate.stage() is functors.domain() and is_subcategory(candidate.parent(), functors.codomain())
     return False
 
 
@@ -687,6 +691,18 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     def fixed_endpoint_type(self) -> type[FunctorCategory]:
         return FunctorCategory
 
+    def __call__(self, shape: ObjectOfCategory, target: ObjectOfCategory | Functor) -> FunctorCategory | Functor:
+        """``Fun(I, D)`` is the functor category; ``Fun(I, F)`` for a functor ``F: D -> E`` is ``(-) ** I`` applied to it.
+
+        The exponential ``D ** I = Fun(I, D)`` is a functor in ``D``, so the second
+        argument selects the action: a category selects the fixed-endpoint category, a
+        morphism of ``Cat()`` the morphism action ``Fun(I, D) -> Fun(I, E)``
+        (``Cat().exponential_on_morphism``).
+        """
+        if is_placed(target, self):
+            return self.base_category().exponential_on_morphism(shape, target)
+        return super().__call__(shape, target)
+
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         """A functor, or a point of a category at a categorical stage denoting its defining functor (specs/functor.md, "The Mor(n, C) tower", specs/functor.md, "Slices and coslices")."""
         return denotes_functor(candidate, self)
@@ -799,9 +815,6 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         return "Fun"
 
 
-from sage_categories.cat import elements as _elements
-
-_elements.CategoryPoint = Cat().ElementType
 Fun: FunctorsCategory = Cat().morphism_category(1)
 NaturalTransformation = Fun.MorphismType
 _category.NaturalTransformation = NaturalTransformation

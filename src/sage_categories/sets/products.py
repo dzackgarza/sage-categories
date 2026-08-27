@@ -47,7 +47,7 @@ from __future__ import annotations
 
 import itertools
 from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sage.structure.coerce_dict import MonoDict
 
@@ -60,8 +60,10 @@ from sage_categories.kernel.predicates import ask
 from sage_categories.kernel.refinement import is_subcategory, refine
 from sage_categories.sets.cardinals import Cardinal, CardinalObject
 from sage_categories.sets.elements import Datum
-from sage_categories.sets.maps import SetMap
 from sage_categories.sets.objects import SetObject
+
+if TYPE_CHECKING:
+    from sage_categories.sets.category import SetMap
 
 __all__ = ["Family", "coproduct_of_sets", "product_of_sets"]
 

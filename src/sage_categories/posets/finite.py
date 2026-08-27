@@ -25,6 +25,7 @@ ranked with all maximal chains of one length; inspected 2026-08-27).
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from sage.combinat.posets.posets import FinitePoset as SagePoset
 
@@ -43,8 +44,11 @@ from sage_categories.posets import _finite_poset_sage as engine
 from sage_categories.posets.category import MonotoneMap, Poset, PosetElement, PosetMorphismData, PosetObjectData
 from sage_categories.sets.cardinals import Cardinal, CardinalObject
 from sage_categories.sets.category import SetObject, Sets
-from sage_categories.sets.maps import Rule, SetMap, SetMorphismData
+from sage_categories.sets.maps import Rule, SetMorphismData
 from sage_categories.sets.objects import SetObjectData
+
+if TYPE_CHECKING:
+    from sage_categories.sets.category import SetMap
 
 __all__ = ["FinitePosetsCategory"]
 

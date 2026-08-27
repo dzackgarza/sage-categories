@@ -26,6 +26,15 @@ constructor (POL-MATH-037, POL-MATH-036).
 ``Cat().Limits(I)`` and ``Cat().Colimits(I)`` for any other shape exist
 (POL-CAT-051); constructing an object in them fails loudly, naming the missing
 owned construction.
+
+Each of these categories retains one object per construction datum -- one tagged
+object per ``(i, x)``, one family per rule, one pair per ``(a, b)`` -- because a
+category has one object per datum, and the structural transport caches identify
+images by it (POL-CAT-066).  Their morphisms are constructed on demand and are not
+retained, as ``Mor(Sets())(X, Y)(rule)`` is not: two calls with the same data give
+two morphisms, which the category's equality predicate compares (POL-MATH-034).  A
+component functor therefore returns one object image by identity and a fresh
+morphism image per call.
 """
 
 from __future__ import annotations

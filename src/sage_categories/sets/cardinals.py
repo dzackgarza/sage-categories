@@ -93,8 +93,8 @@ from sage_categories.sets.maps import SetMorphismData
 from sage_categories.sets.objects import SetObjectData
 
 if TYPE_CHECKING:
+    from sage_categories.sets.category import SetMap
     from sage_categories.sets.elements import Datum
-    from sage_categories.sets.maps import SetMap
     from sage_categories.sets.objects import SetObject
 
 __all__ = [

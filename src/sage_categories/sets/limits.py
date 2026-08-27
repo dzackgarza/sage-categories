@@ -38,7 +38,7 @@ enumerated.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sage.sets.disjoint_set import DisjointSet
 from sage.structure.coerce_dict import MonoDict
@@ -51,8 +51,10 @@ from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass, de
 from sage_categories.kernel.predicates import ask
 from sage_categories.kernel.roles import ObjectOfCategory
 from sage_categories.sets.elements import Datum
-from sage_categories.sets.maps import SetMap
 from sage_categories.sets.objects import SetObject
+
+if TYPE_CHECKING:
+    from sage_categories.sets.category import SetMap
 
 __all__ = ["Representative", "colimit_of_sets", "limit_of_sets"]
 

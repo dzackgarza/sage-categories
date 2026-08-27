@@ -830,7 +830,7 @@ is the full subcategory of `Cat()` on the chosen product categories. The index i
 and `Cat().Coproducts().ObjectType`. They return `Cat().MorphismType` values.
 
 Let `P` be a chosen product category. Let `j: S -> P` present `S` as a subcategory. The
-corresponding object of `Cat().Products().Subobjects()` retains `j` and reads `P` as its
+corresponding object of `Cat().Products().ChosenSubobjects()` retains `j` and reads `P` as its
 codomain. Its component functor is
 
 \[
@@ -1132,7 +1132,7 @@ is kernel infrastructure over already established mathematical functors.
 - Their objects own `product_projection(i)` and `coproduct_injection(i)` respectively.
 - A universal construction returns one value: the constructed object, an object of the ambient category, placed in the construction family and carrying its defining morphisms and universal maps.
 - A construction family is a full subcategory of its ambient category, reached by the retained identity-on-values inclusion, and retains the universal data of each diagram it constructed from.
-- Every object of `Cat().Products().Subobjects()` retains its presenting monomorphism into a chosen product, then derives its component functors by composition.
+- Every object of `Cat().Products().ChosenSubobjects()` retains its presenting monomorphism into a chosen product, then derives its component functors by composition.
 - Slice and coslice categories are pullbacks of `ev_1` and `ev_0` along the chosen object and retain their pullback projections.
 - Fibration and opfibration structure retains its cartesian or cocartesian lifts.
 - Kan extensions retain their units, counits, and universally induced natural transformations.

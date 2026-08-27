@@ -425,8 +425,17 @@ class ProductsCategory(ApexCategory):
         return self._retain(apex, UniversalData(apex, diagram, limiting_cone, mediator))
 
     @cached_method
-    def Subobjects(self) -> Category:
-        """``C.Products().Subobjects()``: the objects presented by a monomorphism into a chosen product, with their derived component projections (POL-CAT-094)."""
+    def ChosenSubobjects(self) -> Category:
+        """``C.Products().ChosenSubobjects()``: the objects presented by a chosen monomorphism into a chosen product, with their derived component projections (POL-CAT-094).
+
+        This is a different notion from ``C.Subobjects()``, which is the family of
+        monomorphism fibers: ``C.Subobjects()(x)`` collects every monomorphism into ``x``
+        (POL-API-011).  "Chosen" names an act that cannot be derived: a subobject is an
+        isomorphism class of monomorphisms and no intrinsic representative of it exists, so
+        the presenting monomorphism is selected and retained (``specs/functor.md``,
+        "Monomorphisms of ``Cat()`` and placement"), as a chosen subset retains its
+        inclusion.
+        """
         return ProductSubobjectsCategory(self)
 
     def name(self) -> str:
@@ -463,7 +472,7 @@ def product_subobject_role(family: ProductSubobjectsCategory) -> type[ObjectOfCa
 
 
 class ProductSubobjectsCategory(FullSubcategory[[MorphismOfCategory], []]):
-    """``C.Products().Subobjects()``: the full subcategory of ``C`` on the objects presented by a monomorphism into a chosen product.
+    """``C.Products().ChosenSubobjects()``: the full subcategory of ``C`` on the objects presented by a chosen monomorphism into a chosen product.
 
     The presenting monomorphism is retained by identity of its domain; the object
     itself is the domain ``S``, refined into this family (POL-FUN-013/014).
@@ -499,10 +508,10 @@ class ProductSubobjectsCategory(FullSubcategory[[MorphismOfCategory], []]):
         return subobject
 
     def name(self) -> str:
-        return "Products().Subobjects"
+        return "Products().ChosenSubobjects"
 
     def __repr__(self) -> str:
-        return f"{self._products!r}.Subobjects()"
+        return f"{self._products!r}.ChosenSubobjects()"
 
 
 class ColimitsCategory(ApexCategory):

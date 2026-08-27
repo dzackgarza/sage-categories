@@ -23,8 +23,6 @@ from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
-from sage.structure.dynamic_class import dynamic_class
-
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
     from sage_categories.kernel.predicates import AppliedPredicate, Proposition
@@ -123,13 +121,20 @@ class CategoryPointKernel:
         return object.__hash__(self)
 
 
-_CAT_ELEMENT_ROOT = dynamic_class("Cat.ElementType", (CategoryPointKernel,), cache=False)
-CategoryPoint = _CAT_ELEMENT_ROOT
+class CategoryPoint(CategoryPointKernel):
+    """The compiled ``Cat().ElementType`` class, preallocated over its kernel end.
+
+    Every other compiled role is built by ``dynamic_class`` from its node's declaration,
+    but this one is the root of every role chain and so must exist before any category
+    does.  The compiler installs ``Cat()``'s own element declaration onto this class in
+    place rather than deriving a new one, which is why it is a statement here and not a
+    dynamic class: a checker reads it as the type that every owned value has.
+    """
 
 
 def cat_element_root() -> type[CategoryPoint]:
     """The preallocated compiled ``Cat().ElementType`` class."""
-    return _CAT_ELEMENT_ROOT
+    return CategoryPoint
 
 
 class ObjectOfCategory(CategoryPoint):

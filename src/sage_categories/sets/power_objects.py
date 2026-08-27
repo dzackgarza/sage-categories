@@ -25,6 +25,8 @@ The cardinality ``2 ** #X`` is the function-set case ``(#2) ** (#X)`` (Mathlib
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from sage.structure.coerce_dict import MonoDict, TripleDict
 
 import sage_categories.sets.category as _sets
@@ -35,8 +37,11 @@ from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import ObjectOfCategory, Role
 from sage_categories.sets.elements import Datum, SetElement
 from sage_categories.sets.exponentials import Function, function_set
-from sage_categories.sets.maps import Rule, SetMap
+from sage_categories.sets.maps import Rule
 from sage_categories.sets.objects import MembershipRule, SetObject
+
+if TYPE_CHECKING:
+    from sage_categories.sets.category import SetMap
 
 __all__ = ["PowerObjectsCategory"]
 

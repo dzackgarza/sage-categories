@@ -188,7 +188,7 @@ Q.coproduct_injection(i)  # C_i -> Q
 ```
 
 If `S` is a subcategory of `P`, then `S` is an object of
-`Cat().Products().Subobjects()`. Its `product_projection(i)` is the subcategory inclusion
+`Cat().Products().ChosenSubobjects()`. Its `product_projection(i)` is the subcategory inclusion
 followed by the corresponding projection of `P`.
 
 `C.SliceOver(x)` is the pullback in `Cat()` of `ev_1: Fun([1], C) -> C` along `x: 1 -> C`;

@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sage_categories.kernel.roles import CategoryPointKernel, ObjectOfCategory
+from sage_categories.kernel.roles import CategoryPoint, CategoryPointKernel, ObjectOfCategory
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
@@ -61,7 +61,3 @@ class CategoryPointDeclaration(CategoryPointKernel):
 
     def __repr__(self) -> str:
         return f"point of {self.parent()!r} at stage {self.stage()!r}"
-
-
-# The bootstrap replaces this provisional name with ``Cat().ElementType``.
-CategoryPoint = CategoryPointDeclaration

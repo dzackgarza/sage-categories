@@ -1,5 +1,4 @@
 from sage_categories.cat.category import CategoryDeclaration as CategoryDeclaration
-from sage_categories.cat.elements import CategoryPointDeclaration as CategoryPointDeclaration
 from sage_categories.cat.functors import FunctorDeclaration as FunctorDeclaration
 from sage_categories.ordinals.category import OrdinalObjectDeclaration as OrdinalObjectDeclaration
 from sage_categories.sets.elements import SetElementDeclaration as SetElementDeclaration
@@ -15,8 +14,9 @@ from sage_categories.kernel.decisions import Decision as Decision, Unknown as Un
 from sage_categories.kernel.predicates import AppliedPredicate as AppliedPredicate, Predicate as Predicate, ask as ask
 from sage_categories.kernel.roles import CategoryPoint as CategoryPoint, ElementOfObject as ElementOfObject, MorphismOfCategory as MorphismOfCategory, ObjectOfCategory as ObjectOfCategory, role_of as role_of
 from sage_categories.ordinals.category import OrdinalObject as OrdinalObject, Ordinals as Ordinals, bind_cardinals as bind_cardinals
+from sage_categories.sets.category import SetMap as SetMap
 from sage_categories.sets.elements import Datum as Datum
-from sage_categories.sets.maps import SetMap as SetMap, SetMorphismData as SetMorphismData
+from sage_categories.sets.maps import SetMorphismData as SetMorphismData
 from sage_categories.sets.objects import SetObject as SetObject, SetObjectData as SetObjectData
 
 type Key = tuple[str | int | Key, ...]

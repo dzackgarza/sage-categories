@@ -34,7 +34,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict
@@ -57,8 +57,11 @@ from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, role_of
 from sage_categories.sets.category import Sets
 from sage_categories.sets.elements import Datum, SetElement
-from sage_categories.sets.maps import Rule, SetMap, SetMorphismData
+from sage_categories.sets.maps import Rule, SetMorphismData
 from sage_categories.sets.objects import MembershipRule, SetObject, SetObjectData
+
+if TYPE_CHECKING:
+    from sage_categories.sets.category import SetMap
 
 __all__ = ["FinitePosets", "FiniteTotallyOrderedSets", "MonotoneMap", "Poset", "PosetElement", "Posets", "PosetsCategory", "TotallyOrderedSets"]
 

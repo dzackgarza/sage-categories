@@ -15,14 +15,29 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from sage_categories.kernel.decisions import Decision, Unknown
+from sage_categories.kernel.predicates import ask
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, Role, role_of
 
 if TYPE_CHECKING:
     from sage_categories.sets.category import SetElement
 
-__all__ = ["Datum", "SetElementData", "SetPointData", "points_equal"]
+__all__ = ["Datum", "SetElementData", "SetPointData", "data_equal", "points_equal"]
 
 type Datum = Hashable
+
+
+def data_equal(first: Datum, second: Datum) -> Decision:
+    """The engine comparison of two data at the private boundary (POL-MATH-034).
+
+    Exact for an engine value, ``Unknown`` for a rule-defined family, and the decided
+    owned equality when either datum is an owned mathematical value: the data of the set
+    ``Mor(C)(G_C, X)`` represented by a classical stage are morphisms of ``C``, whose
+    ``==`` is their category's equality predicate.
+    """
+    comparison = first == second
+    if role_of(first) is None and role_of(second) is None:
+        return comparison
+    return ask(comparison)
 
 
 @dataclass(eq=False, slots=True)
@@ -79,4 +94,4 @@ def points_equal(first: CategoryPoint, candidate: Any) -> Decision:
     candidate_state = candidate._set_element_data
     if not isinstance(first_state, SetPointData) or not isinstance(candidate_state, SetPointData):
         return Unknown
-    return first_state.datum == candidate_state.datum
+    return data_equal(first_state.datum, candidate_state.datum)

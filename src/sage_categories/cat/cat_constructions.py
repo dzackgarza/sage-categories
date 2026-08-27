@@ -362,10 +362,10 @@ class CoproductCategory(Category[[MorphismOfCategory], []]):
         morphisms"; inspected 2026-08-28).
         """
         if first in self and candidate in self:
-            return first.tag() is candidate.tag() and ask(first.member() == candidate.member())
+            return ask((first.tag() == candidate.tag()) & (first.member() == candidate.member()))
         morphisms = self.morphism_category(1)
         if first in morphisms and candidate in morphisms:
-            return first.domain().tag() is candidate.domain().tag() and ask(first.morphism() == candidate.morphism())
+            return ask((first.domain().tag() == candidate.domain().tag()) & (first.morphism() == candidate.morphism()))
         return Unknown
 
     def __call__(self, index: ObjectOfCategory | Hashable, member_object: ObjectOfCategory) -> TaggedObject:

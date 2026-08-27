@@ -55,11 +55,16 @@ def diagram_of(value: CategoryPoint) -> Functor:
 
 
 def _defining_functor_equal(first: CategoryPoint, candidate: Any) -> Decision:
-    """A functor ``T -> C`` equals a point of ``C`` with domain ``T`` exactly when it is that point's retained defining functor."""
+    """A functor ``T -> C`` equals a point of ``C`` with domain ``T`` when it is that point's retained defining functor.
+
+    The retained functor is the exact positive route.  Another functor ``T -> C`` selects
+    some point of ``C``, and whether that point equals this one is the question ``Cat()``
+    has no further exact route for, so it stays ``Unknown``.
+    """
     if is_placed(first, Fun) and not is_placed(candidate, Fun) and role_of(candidate) in (Role.OBJECT, Role.MORPHISM) and candidate.defining_morphism().domain() is first.domain():
-        return first is candidate.defining_morphism()
+        return True if first is candidate.defining_morphism() else Unknown
     if is_placed(candidate, Fun) and not is_placed(first, Fun) and role_of(first) in (Role.OBJECT, Role.MORPHISM) and first.defining_morphism().domain() is candidate.domain():
-        return candidate is first.defining_morphism()
+        return True if candidate is first.defining_morphism() else Unknown
     return Unknown
 
 

@@ -78,10 +78,10 @@ class MorphismRoleIdentity:
 
 
 @dataclass(frozen=True, slots=True, eq=False)
-class ObjectConstructionInput[Datum]:
+class ObjectConstructionInput[Value: ObjectOfCategory, Datum]:
     """The canonical object, its kernel identity, and one node's local datum."""
 
-    canonical_image: ObjectOfCategory
+    canonical_image: Value
     identity: ObjectRoleIdentity
     datum: Datum
 
@@ -112,7 +112,7 @@ _element_inputs: MonoDict = MonoDict()
 _morphism_inputs: MonoDict = MonoDict()
 
 
-def retain_object_input[Datum](construction_input: ObjectConstructionInput[Datum]) -> None:
+def retain_object_input[Value: ObjectOfCategory, Datum](construction_input: ObjectConstructionInput[Value, Datum]) -> None:
     value = construction_input.canonical_image
     if value in _object_inputs:
         assert _object_inputs[value] is construction_input, f"{value!r} already retains a different object construction input"
@@ -136,7 +136,7 @@ def retain_morphism_input[Datum](construction_input: MorphismConstructionInput[D
     _morphism_inputs[value] = construction_input
 
 
-def retained_object_input[Datum](value: ObjectOfCategory) -> ObjectConstructionInput[Datum]:
+def retained_object_input[Value: ObjectOfCategory, Datum](value: Value) -> ObjectConstructionInput[Value, Datum]:
     assert value in _object_inputs, f"{value!r} retains no object construction input"
     return _object_inputs[value]
 

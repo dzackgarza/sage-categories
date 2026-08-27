@@ -63,8 +63,8 @@ def _source_key(source: CategoryPoint) -> tuple[CategoryPoint, CategoryPoint, Ca
     raise AssertionError(f"{source!r} is not an owned value")
 
 
-def _construction_key[Datum](
-    source: ObjectConstructionInput[Datum] | ElementConstructionInput[Datum] | MorphismConstructionInput[Datum],
+def _construction_key[ObjectValue: ObjectOfCategory, Datum](
+    source: ObjectConstructionInput[ObjectValue, Datum] | ElementConstructionInput[Datum] | MorphismConstructionInput[Datum],
 ) -> tuple[CategoryPoint, CategoryPoint, CategoryPoint]:
     """The source identity key before its public value has run its initializer."""
     if isinstance(source, ObjectConstructionInput):
@@ -75,12 +75,12 @@ def _construction_key[Datum](
     return source.identity.domain, source.identity.codomain, source.canonical_image
 
 
-def _retain_at_key[Datum](
+def _retain_at_key[ObjectValue: ObjectOfCategory, Datum](
     role: Role,
     key: tuple[CategoryPoint, CategoryPoint, CategoryPoint],
     target: Category,
     image: CategoryPoint,
-    construction: ObjectConstructionInput[Datum] | ElementConstructionInput[Datum] | MorphismConstructionInput[Datum],
+    construction: ObjectConstructionInput[ObjectValue, Datum] | ElementConstructionInput[Datum] | MorphismConstructionInput[Datum],
 ) -> None:
     images = _target_table(canonical_images, role, target)
     inputs = _target_table(canonical_inputs, role, target)
@@ -100,7 +100,10 @@ def has_canonical_transport(source: CategoryPoint, target: Category) -> bool:
 
 
 @overload
-def canonical_input[Datum](source: ObjectOfCategory, target: Category) -> ObjectConstructionInput[Datum]: ...
+def canonical_input[TargetValue: ObjectOfCategory, Datum](
+    source: ObjectOfCategory,
+    target: Category,
+) -> ObjectConstructionInput[TargetValue, Datum]: ...
 
 
 @overload
@@ -111,10 +114,10 @@ def canonical_input[Datum](source: ElementOfObject, target: Category) -> Element
 def canonical_input[Datum](source: MorphismOfCategory, target: Category) -> MorphismConstructionInput[Datum]: ...
 
 
-def canonical_input[Datum](
+def canonical_input[TargetValue: ObjectOfCategory, Datum](
     source: CategoryPoint,
     target: Category,
-) -> ObjectConstructionInput[Datum] | ElementConstructionInput[Datum] | MorphismConstructionInput[Datum]:
+) -> ObjectConstructionInput[TargetValue, Datum] | ElementConstructionInput[Datum] | MorphismConstructionInput[Datum]:
     """The construction input retained with the canonical image at ``target``."""
     role = role_of(source)
     assert role is not None
@@ -124,11 +127,11 @@ def canonical_input[Datum](
 
 
 @overload
-def retain_canonical_transport[Datum](
+def retain_canonical_transport[Value: ObjectOfCategory, Datum](
     source: ObjectOfCategory,
     target: Category,
-    image: ObjectOfCategory,
-    construction: ObjectConstructionInput[Datum],
+    image: Value,
+    construction: ObjectConstructionInput[Value, Datum],
 ) -> None: ...
 
 
@@ -142,7 +145,7 @@ def retain_canonical_transport[Datum](
 
 
 @overload
-def retain_canonical_transport[Datum](
+def retain_canonical_transport[ObjectValue: ObjectOfCategory, Datum](
     source: MorphismOfCategory,
     target: Category,
     image: MorphismOfCategory,
@@ -154,7 +157,7 @@ def retain_canonical_transport[Datum](
     source: CategoryPoint,
     target: Category,
     image: CategoryPoint,
-    construction: ObjectConstructionInput[Datum] | ElementConstructionInput[Datum] | MorphismConstructionInput[Datum],
+    construction: ObjectConstructionInput[ObjectValue, Datum] | ElementConstructionInput[Datum] | MorphismConstructionInput[Datum],
 ) -> None:
     """Retain one canonical image and its exact construction input by identity."""
     role = role_of(source)
@@ -163,10 +166,15 @@ def retain_canonical_transport[Datum](
 
 
 @overload
-def retain_constructed_transport[SourceDatum, TargetDatum](
-    source: ObjectConstructionInput[SourceDatum],
+def retain_constructed_transport[
+    SourceValue: ObjectOfCategory,
+    SourceDatum,
+    TargetValue: ObjectOfCategory,
+    TargetDatum,
+](
+    source: ObjectConstructionInput[SourceValue, SourceDatum],
     target: Category,
-    construction: ObjectConstructionInput[TargetDatum],
+    construction: ObjectConstructionInput[TargetValue, TargetDatum],
 ) -> None: ...
 
 
@@ -186,10 +194,17 @@ def retain_constructed_transport[SourceDatum, TargetDatum](
 ) -> None: ...
 
 
-def retain_constructed_transport[SourceDatum, TargetDatum](
-    source: ObjectConstructionInput[SourceDatum] | ElementConstructionInput[SourceDatum] | MorphismConstructionInput[SourceDatum],
+def retain_constructed_transport[
+    SourceValue: ObjectOfCategory,
+    SourceDatum,
+    TargetValue: ObjectOfCategory,
+    TargetDatum,
+](
+    source: ObjectConstructionInput[SourceValue, SourceDatum] | ElementConstructionInput[SourceDatum] | MorphismConstructionInput[SourceDatum],
     target: Category,
-    construction: ObjectConstructionInput[TargetDatum] | ElementConstructionInput[TargetDatum] | MorphismConstructionInput[TargetDatum],
+    construction: ObjectConstructionInput[TargetValue, TargetDatum]
+    | ElementConstructionInput[TargetDatum]
+    | MorphismConstructionInput[TargetDatum],
 ) -> None:
     """Retain an ancestor input before the source initializer starts (specs/resolution.md, final decision 14)."""
     if isinstance(source, ObjectConstructionInput):

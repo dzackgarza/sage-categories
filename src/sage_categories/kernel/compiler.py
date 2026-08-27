@@ -455,9 +455,9 @@ def _advance(cell: CellType, instance: CategoryPoint) -> None:
     super(cell.cell_contents, instance).__init__()
 
 
-def _object_step[Datum](
+def _object_step[Value: ObjectOfCategory, Datum](
     current: Node,
-    construction_input: ObjectConstructionInput[Datum],
+    construction_input: ObjectConstructionInput[Value, Datum],
     instance: ObjectOfCategory,
 ) -> Callable[[], None]:
     runtime = _runtime(current)
@@ -503,12 +503,19 @@ def _morphism_step[Datum](
     return initialize
 
 
-def _object_steps[RootDatum](current: Node, root: ObjectConstructionInput[RootDatum]) -> tuple[tuple[Node, Callable[[], None]], ...]:
+def _object_steps[RootValue: ObjectOfCategory, RootDatum](
+    current: Node,
+    root: ObjectConstructionInput[RootValue, RootDatum],
+) -> tuple[tuple[Node, Callable[[], None]], ...]:
     """Close each exact object input into one zero-argument C3 node step."""
     assert current.role is Role.OBJECT
     found: list[tuple[Node, int, ObjectOfCategory, Callable[[], None], Route]] = []
 
-    def visit[Datum](source: Node, source_input: ObjectConstructionInput[Datum], route: Route) -> None:
+    def visit[Value: ObjectOfCategory, Datum](
+        source: Node,
+        source_input: ObjectConstructionInput[Value, Datum],
+        route: Route,
+    ) -> None:
         known = next(((identity, image, first_route) for owner, identity, image, _, first_route in found if same_node(owner, source)), None)
         if known is None:
             retain_constructed_transport(root, source.category, source_input)

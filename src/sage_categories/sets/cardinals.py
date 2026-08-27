@@ -68,7 +68,7 @@ module attributes resolved on first access.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from sage.structure.coerce_dict import MonoDict
@@ -104,18 +104,12 @@ __all__ = ["Cardinal", "CardinalMorphism", "CardinalObject", "aleph0", "cardinal
 type Key = tuple[str | int | Key, ...]
 
 
-@dataclass(eq=False, slots=True)
+@dataclass(frozen=True, eq=False, slots=True)
 class CardinalObjectData:
     """The normalized expression state introduced by ``Cardinal()``."""
 
     key: Key
     terms: tuple[CardinalObject, ...]
-    canonical: CardinalObject = field(init=False)
-
-    def bind(self, canonical: CardinalObject) -> None:
-        """Bind this state to its one public cardinal."""
-        if not hasattr(self, "canonical"):
-            self.canonical = canonical
 
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -129,7 +123,6 @@ class CardinalObjectDeclaration(ObjectOfCategory):
     """An exact cardinal, retained by its normalized expression."""
 
     def __init__(self, data: CardinalObjectData) -> None:
-        data.bind(self)
         self._key = data.key
         self._terms = data.terms
         super().__init__()
@@ -282,9 +275,10 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
         if "representative" not in self._functors:
             representative = Fun(self, _sets.Sets()).FullyFaithful()(self.representative, lambda morphism: morphism._set_map)
 
-            def object_input(source: ObjectConstructionInput[CardinalObjectData]) -> ObjectConstructionInput[SetObjectData]:
-                cardinal = source.datum.canonical
-                assert source.canonical_image is cardinal
+            def object_input(
+                source: ObjectConstructionInput[CardinalObject, CardinalObjectData],
+            ) -> ObjectConstructionInput[SetObject, SetObjectData]:
+                cardinal = source.canonical_image
                 if cardinal not in self._representatives:
                     self._representatives[cardinal] = self._select_representative(cardinal, source.datum)
                 return retained_object_input(self._representatives[cardinal])

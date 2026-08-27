@@ -42,10 +42,15 @@ def _routes(source: compiler.Node, target: compiler.Node) -> tuple[compiler.Rout
     return routes
 
 
-def _object_route[SourceDatum, TargetDatum](
-    source: ObjectConstructionInput[SourceDatum],
+def _object_route[
+    SourceValue: ObjectOfCategory,
+    SourceDatum,
+    TargetValue: ObjectOfCategory,
+    TargetDatum,
+](
+    source: ObjectConstructionInput[SourceValue, SourceDatum],
     route: compiler.Route,
-) -> ObjectConstructionInput[TargetDatum]:
+) -> ObjectConstructionInput[TargetValue, TargetDatum]:
     current = source
     for functor, role in route:
         assert role is Role.OBJECT
@@ -82,11 +87,16 @@ def _raise_mismatch(routes: tuple[compiler.Route, ...], route: compiler.Route, t
     )
 
 
-def _object_input_at[SourceDatum, TargetDatum](
-    source: ObjectConstructionInput[SourceDatum],
+def _object_input_at[
+    SourceValue: ObjectOfCategory,
+    SourceDatum,
+    TargetValue: ObjectOfCategory,
+    TargetDatum,
+](
+    source: ObjectConstructionInput[SourceValue, SourceDatum],
     source_node: compiler.Node,
     target: compiler.Node,
-) -> ObjectConstructionInput[TargetDatum]:
+) -> ObjectConstructionInput[TargetValue, TargetDatum]:
     assert compiler.same_node(compiler.node(source.identity.category, Role.OBJECT), source_node)
     routes = _routes(source_node, target)
     first = _object_route(source, routes[0])
@@ -129,7 +139,10 @@ def _morphism_input_at[SourceDatum, TargetDatum](
 
 
 @overload
-def construction_input[Datum](value: ObjectOfCategory, target: compiler.Node) -> ObjectConstructionInput[Datum]: ...
+def construction_input[TargetValue: ObjectOfCategory, Datum](
+    value: ObjectOfCategory,
+    target: compiler.Node,
+) -> ObjectConstructionInput[TargetValue, Datum]: ...
 
 
 @overload
@@ -140,10 +153,10 @@ def construction_input[Datum](value: ElementOfObject, target: compiler.Node) -> 
 def construction_input[Datum](value: MorphismOfCategory, target: compiler.Node) -> MorphismConstructionInput[Datum]: ...
 
 
-def construction_input[Datum](
+def construction_input[TargetValue: ObjectOfCategory, Datum](
     value: CategoryPoint,
     target: compiler.Node,
-) -> ObjectConstructionInput[Datum] | ElementConstructionInput[Datum] | MorphismConstructionInput[Datum]:
+) -> ObjectConstructionInput[TargetValue, Datum] | ElementConstructionInput[Datum] | MorphismConstructionInput[Datum]:
     """The retained input for the canonical image of ``value`` at ``target``."""
     if has_canonical_transport(value, target.category):
         return canonical_input(value, target.category)

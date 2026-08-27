@@ -94,7 +94,9 @@ _element_constructor_conversions = MonoDict()
 _morphism_constructor_conversions = MonoDict()
 
 
-def _identity_object_constructor_input[Datum](source: ObjectConstructionInput[Datum]) -> ObjectConstructionInput[Datum]:
+def _identity_object_constructor_input[Value: ObjectOfCategory, Datum](
+    source: ObjectConstructionInput[Value, Datum],
+) -> ObjectConstructionInput[Value, Datum]:
     return source
 
 
@@ -204,22 +206,23 @@ class FunctorDeclaration(MorphismOfCategory):
 
     # -- composition data ------------------------------------------------------------------
 
-    def retain_object_constructor_conversion[SourceDatum, TargetDatum](
+    def retain_object_constructor_conversion[
+        SourceValue: ObjectOfCategory,
+        SourceDatum,
+        TargetValue: ObjectOfCategory,
+        TargetDatum,
+    ](
         self,
-        conversion: Callable[[ObjectConstructionInput[SourceDatum]], ObjectConstructionInput[TargetDatum]],
+        conversion: Callable[
+            [ObjectConstructionInput[SourceValue, SourceDatum]],
+            ObjectConstructionInput[TargetValue, TargetDatum],
+        ],
     ) -> None:
         """Retain the sole object-action implementation used by structural construction (POL-FUN-035)."""
-        from sage_categories.kernel.construction import ObjectConstructionInput
-
         signature = inspect.signature(conversion)
         assert len(signature.parameters) == 1, "an object constructor conversion accepts one complete input"
         parameter = next(iter(signature.parameters.values()))
         assert parameter.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
-        annotations = get_type_hints(conversion, localns={"ObjectConstructionInput": ObjectConstructionInput})
-        source = annotations.get(parameter.name)
-        target = annotations.get("return")
-        assert get_origin(source) is ObjectConstructionInput and len(get_args(source)) == 1, "an object conversion needs an exact source datum type"
-        assert get_origin(target) is ObjectConstructionInput and len(get_args(target)) == 1, "an object conversion needs an exact target datum type"
         assert self not in _object_constructor_conversions, f"{self!r} already retains an object constructor conversion"
         _object_constructor_conversions[self] = conversion
 
@@ -261,10 +264,15 @@ class FunctorDeclaration(MorphismOfCategory):
         assert self not in _morphism_constructor_conversions, f"{self!r} already retains a morphism constructor conversion"
         _morphism_constructor_conversions[self] = conversion
 
-    def object_constructor_input[SourceDatum, TargetDatum](
+    def object_constructor_input[
+        SourceValue: ObjectOfCategory,
+        SourceDatum,
+        TargetValue: ObjectOfCategory,
+        TargetDatum,
+    ](
         self,
-        source: ObjectConstructionInput[SourceDatum],
-    ) -> ObjectConstructionInput[TargetDatum]:
+        source: ObjectConstructionInput[SourceValue, SourceDatum],
+    ) -> ObjectConstructionInput[TargetValue, TargetDatum]:
         """Return the root input retained by this object's canonical functor image."""
         from sage_categories.kernel.construction import retained_object_input
 
@@ -314,9 +322,14 @@ class FunctorDeclaration(MorphismOfCategory):
 
         if first in _object_constructor_conversions and second in _object_constructor_conversions:
 
-            def object_conversion[SourceDatum, TargetDatum](
-                source: ObjectConstructionInput[SourceDatum],
-            ) -> ObjectConstructionInput[TargetDatum]:
+            def object_conversion[
+                SourceValue: ObjectOfCategory,
+                SourceDatum,
+                TargetValue: ObjectOfCategory,
+                TargetDatum,
+            ](
+                source: ObjectConstructionInput[SourceValue, SourceDatum],
+            ) -> ObjectConstructionInput[TargetValue, TargetDatum]:
                 return second.object_constructor_input(first.object_constructor_input(source))
 
             self.retain_object_constructor_conversion(object_conversion)

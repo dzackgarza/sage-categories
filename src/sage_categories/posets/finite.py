@@ -42,7 +42,7 @@ from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role
 from sage_categories.posets import _finite_poset_sage as engine
 from sage_categories.posets.category import Poset, PosetElement, PosetMorphismData, PosetObjectData
 from sage_categories.sets.cardinals import Cardinal, CardinalObject
-from sage_categories.sets.category import Sets
+from sage_categories.sets.category import SetObject, Sets
 from sage_categories.sets.elements import SetElementData
 from sage_categories.sets.maps import Rule, SetMorphismData
 from sage_categories.sets.objects import SetObjectData
@@ -223,8 +223,10 @@ class FinitePosetsCategory(PropertySubcategory[[Rule], []]):
             finite_sets = Sets().Finite()
             finite_underlying = Fun(self, finite_sets).Faithful()(underlying.on_object, underlying.on_morphism)
 
-            def object_input(source: ObjectConstructionInput[PosetObjectData]) -> ObjectConstructionInput[SetObjectData]:
-                target: ObjectConstructionInput[SetObjectData] = underlying.object_constructor_input(source)
+            def object_input(
+                source: ObjectConstructionInput[Poset, PosetObjectData],
+            ) -> ObjectConstructionInput[SetObject, SetObjectData]:
+                target: ObjectConstructionInput[SetObject, SetObjectData] = underlying.object_constructor_input(source)
                 finite_sets(target.canonical_image)
                 return target
 

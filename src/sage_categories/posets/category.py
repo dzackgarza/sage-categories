@@ -299,7 +299,9 @@ class PosetsCategory(Category[[Rule], []]):
                 lambda monotone: monotone._set_morphism_data.canonical,
             )
 
-            def object_input(source: ObjectConstructionInput[PosetObjectData]) -> ObjectConstructionInput[SetObjectData]:
+            def object_input(
+                source: ObjectConstructionInput[Poset, PosetObjectData],
+            ) -> ObjectConstructionInput[SetObject, SetObjectData]:
                 carrier = self._carrier(source.datum.relation)
                 return retained_object_input(carrier)
 

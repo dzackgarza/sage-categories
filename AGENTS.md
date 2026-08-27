@@ -110,8 +110,8 @@ general constructions.
 A short mathematical correction can expose a missing foundation rather than a missing method.
 Unfold the structure that makes the correction true before adding a local operation.
 
-For example, a product of sets must receive `cardinality()` because its apex is an object of `Sets()`.
-The product construction supplies projections and a structural route to that apex.
+For example, a product of sets must receive `cardinality()` because it is an object of `Sets()`.
+The product construction supplies its projections and its placement in `Sets()`.
 The method compiler then exposes the operation owned by the set implementation.
 
 Adding `cardinality()` directly to a product class would preserve the missing relation.
@@ -136,8 +136,8 @@ Trace the complete implementation path before editing any part of it.
 For a product, trace all of these parts:
 
 - the kernel definition of products and their universal data;
-- the construction and presentation categories;
-- the apex, projections, and universal maps;
+- the construction family and its inclusion into the ambient category;
+- the constructed object, its projections, and its universal maps;
 - propagation through structural functors;
 - method compilation and inherited public operations;
 - the leaf theorem or structure that adds the new mathematical delta.
@@ -296,19 +296,19 @@ Apply products and coproducts to `Cat()` itself. For a sequence of categories:
 ```python
 P = Cat().Products()((C_0, ..., C_n))
 Q = Cat().Coproducts()((C_0, ..., C_n))
-P.product_projection(i)   # A_P -> C_i
-Q.coproduct_injection(i)  # C_i -> A_Q
+P.product_projection(i)   # P -> C_i
+Q.coproduct_injection(i)  # C_i -> Q
 ```
 
-Here `A_P` and `A_Q` are the apex categories retained by `P` and `Q`. Each returned
+Here `P` and `Q` are the product and coproduct categories themselves. Each returned
 morphism is a functor and therefore a `Cat().MorphismType` value.
 
 The operators are defined once, in two roles. On categories: `C * D = Cat().Products()((C, D))`, `C + D = Cat().Coproducts()((C, D))`, and `D ** C = Fun(C, D)`. On objects `X, Y` of one category `C`: `X * Y = C.Products()((X, Y))`, `X + Y = C.Coproducts()((X, Y))`, and `Y ** X` the exponential object where `C` is declared cartesian closed; each takes its construction in the narrowest category containing both operands and asserts that such a category exists. An object refined into `C.P()` and an object of `C` are both objects of `C`; their product is the product in `C`. Operands with no common category, such as a set and a category, fail the assertion. An external pair is constructed explicitly as `(C * D)((X, Y))`; no operator casts an object into a product category.
 
-Let `P_D` be a product presentation with apex `A_D`. If `j: S -> A_D` presents a
-subcategory, the corresponding object of `Cat().Products().Subobjects()` retains both
-`P_D` and `j`. Its `product_projection(i)` is the composite of `j` with the
-corresponding projection retained by `P_D`.
+Let `P` be a chosen product category. If `j: S -> P` presents a subcategory, the
+corresponding object of `Cat().Products().Subobjects()` retains `j` and reads `P` as its
+codomain. Its `product_projection(i)` is the composite of `j` with the corresponding
+projection of `P`.
 
 The category whose objects are the morphisms of `C` and whose morphisms are commuting
 squares is the functor category `Fun([1], C)` from the walking arrow `[1]`. Its evaluation
@@ -393,10 +393,13 @@ Let each apex inherit methods from the category in which it lives.
 Use functor composition and natural transformations to move structure.
 Do not create a separate method-propagation system for constructions.
 
-For a construction functor `F: Diag(C) -> C`, construct a distinct presentation `P_D`
-for each diagram `D`. Retain `D`, the canonical apex `A_D = F(D)`, the defining
-morphisms, and the universal maps. The selected apex functor maps `P_D` to `A_D` in
-`C`. The immediate structural supercategory of the presentation category is `C`.
+For a construction functor `F: Diag(C) -> C`, the family `C.Products()`, `C.Limits(I)`,
+or its dual is the full subcategory of `C` on the constructed objects. Its one selected
+functor is the retained identity-on-values inclusion into `C`, so `F(D)` is an object of
+`C` with the whole surface of `C`. The construction returns that one value, placed in the
+family. The family retains the universal data of each diagram `D`: `D` itself, the
+defining morphisms, and the universal maps. Distinct diagrams keep distinct universal
+data, including when they construct one object.
 This applies to products, coproducts, limits, and colimits.
 
 A covering object of `Y` is a pair `(X, p: X -> Y)` with `p` an epimorphism.

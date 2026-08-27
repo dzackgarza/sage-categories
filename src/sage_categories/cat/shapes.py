@@ -25,6 +25,7 @@ constructed uniformly by ``Cat()(labels, generators, relations)``.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any
 
 from sage.structure.coerce_dict import MonoDict
@@ -47,12 +48,19 @@ __all__ = ["Discrete", "DiscreteCategory", "Thin", "ThinCategory", "index_set_of
 # -- Discrete(S) ---------------------------------------------------------------------
 
 
+@dataclass(frozen=True, eq=False, slots=True)
+class DiscreteObjectData:
+    """The local state introduced by a discrete-category object."""
+
+    point: SetPoint
+
+
 class DiscreteObject(ObjectOfCategory):
     """An object of ``Discrete(S)``: a classical point of ``S``."""
 
-    def __init__(self, category: Category, point: SetPoint) -> None:
-        super().__init__(category)
-        self._point = point
+    def __init__(self, data: DiscreteObjectData) -> None:
+        self._point = data.point
+        super().__init__()
 
     def point(self) -> SetPoint:
         """The point of the index set that this object is."""
@@ -112,7 +120,7 @@ class DiscreteCategory(Category[[], []]):
         """The object of ``Discrete(S)`` at a point of ``S``, one object per retained point."""
         assert point in self._index_set, f"{point!r} is not a point of {self._index_set!r}"
         if point not in self._objects:
-            self._objects[point] = self.ObjectType(self, point)
+            self._objects[point] = self.ObjectType(category=self, data=DiscreteObjectData(point))
         return self._objects[point]
 
     def construct_morphism(self, domain: DiscreteObject, codomain: DiscreteObject) -> DiscreteIdentity:
@@ -185,12 +193,19 @@ def index_set_of(shape: Category) -> SetObject:
 # -- Thin(P, leq) --------------------------------------------------------------------
 
 
+@dataclass(frozen=True, eq=False, slots=True)
+class ThinObjectData:
+    """The local state introduced by a thin-category object."""
+
+    point: SetPoint
+
+
 class ThinObject(ObjectOfCategory):
     """An object of ``Thin(P, leq)``: a point of ``P``."""
 
-    def __init__(self, category: Category, point: SetPoint) -> None:
-        super().__init__(category)
-        self._point = point
+    def __init__(self, data: ThinObjectData) -> None:
+        self._point = data.point
+        super().__init__()
 
     def point(self) -> SetPoint:
         return self._point
@@ -267,7 +282,7 @@ class ThinCategory(Category[[], []]):
         """The object at a point of ``P``, one object per retained point."""
         assert point in self._carrier, f"{point!r} is not a point of {self._carrier!r}"
         if point not in self._objects:
-            self._objects[point] = self.ObjectType(self, point)
+            self._objects[point] = self.ObjectType(category=self, data=ThinObjectData(point))
         return self._objects[point]
 
     def construct_morphism(self, domain: ThinObject, codomain: ThinObject) -> Comparison:

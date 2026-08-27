@@ -26,6 +26,7 @@ The canonical shapes (nLab "walking structure", Kerodon 1.1; inspected 2026-08-2
 from __future__ import annotations
 
 from collections.abc import Hashable
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from sage.structure.coerce_dict import MonoDict
@@ -55,23 +56,37 @@ type Generator = tuple[str, Hashable, Hashable]
 type Relation = tuple[Word, Word]
 
 
+@dataclass(frozen=True, eq=False, slots=True)
+class VertexData:
+    """The local state introduced by a finitely presented vertex."""
+
+    label: Hashable
+
+
 class Vertex(ObjectOfCategory):
     """An object of a finitely presented category: a named vertex, retained by identity."""
 
-    def __init__(self, category: Category, label: Hashable) -> None:
-        super().__init__(category)
-        self._label = label
+    def __init__(self, data: VertexData) -> None:
+        self._label = data.label
+        super().__init__()
 
     def __repr__(self) -> str:
         return f"{self._label!r} in {self.category()!r}"
 
 
+@dataclass(frozen=True, eq=False, slots=True)
+class PathData:
+    """The local state introduced by a path."""
+
+    word: Word
+
+
 class Path(MorphismOfCategory):
     """A morphism of a finitely presented category: a reduced word of generators, first generator first."""
 
-    def __init__(self, category: Category, domain: Vertex, codomain: Vertex, word: Word) -> None:
-        super().__init__(category, domain, codomain)
-        self._word = word
+    def __init__(self, data: PathData) -> None:
+        self._word = data.word
+        super().__init__()
 
     def word(self) -> Word:
         return self._word
@@ -102,7 +117,7 @@ class FinitePresentedCategory(Category[[Word], []]):
         self._object_set: MonoDict = MonoDict()
         self._morphism_set: MonoDict = MonoDict()
         super().__init__()
-        self._vertices = {label: self.ObjectType(self, label) for label in labels}
+        self._vertices = {label: self.ObjectType(category=self, data=VertexData(label)) for label in labels}
         self._equality.register_handler(self._equal)
 
     def __call__(self, label: Hashable) -> Vertex:
@@ -210,7 +225,12 @@ class FinitePresentedCategory(Category[[Word], []]):
         assert position == self.label(codomain), f"the path ends at {position!r}, not at {codomain!r}"
         key = (self.label(domain), self._reduce(word))
         if key not in self._paths:
-            path = self.MorphismType(self.morphism_category(1), domain, codomain, key[1])
+            path = self.MorphismType(
+                category=self.morphism_category(1),
+                domain=domain,
+                codomain=codomain,
+                data=PathData(key[1]),
+            )
             # A word in generators with declared two-sided inverses is invertible by construction.
             if path.word() and all(name in self._inverse_generators() for name in path.word()):
                 refine(path, self.morphism_category(1).Isomorphisms())

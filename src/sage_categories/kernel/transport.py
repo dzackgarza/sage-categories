@@ -58,9 +58,9 @@ def _object_route[
 
 
 def _element_route[
-    SourceValue: ElementOfObject,
+    SourceValue: CategoryPoint,
     SourceDatum,
-    TargetValue: ElementOfObject,
+    TargetValue: CategoryPoint,
     TargetDatum,
 ](
     source: ElementConstructionInput[SourceValue, SourceDatum],
@@ -117,9 +117,9 @@ def _object_input_at[
 
 
 def _element_input_at[
-    SourceValue: ElementOfObject,
+    SourceValue: CategoryPoint,
     SourceDatum,
-    TargetValue: ElementOfObject,
+    TargetValue: CategoryPoint,
     TargetDatum,
 ](
     source: ElementConstructionInput[SourceValue, SourceDatum],
@@ -181,9 +181,21 @@ def construction_input[TargetValue: MorphismOfCategory, Datum](
 ) -> MorphismConstructionInput[TargetValue, Datum]: ...
 
 
+@overload
 def construction_input[
     ObjectValue: ObjectOfCategory,
-    ElementValue: ElementOfObject,
+    ElementValue: CategoryPoint,
+    MorphismValue: MorphismOfCategory,
+    Datum,
+](
+    value: CategoryPoint,
+    target: compiler.Node,
+) -> ObjectConstructionInput[ObjectValue, Datum] | ElementConstructionInput[ElementValue, Datum] | MorphismConstructionInput[MorphismValue, Datum]: ...
+
+
+def construction_input[
+    ObjectValue: ObjectOfCategory,
+    ElementValue: CategoryPoint,
     MorphismValue: MorphismOfCategory,
     Datum,
 ](

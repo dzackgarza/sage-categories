@@ -24,7 +24,7 @@ from sage_categories.kernel.construction import (
     MorphismConstructionInput,
     ObjectConstructionInput,
 )
-from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory, Role, role_of
+from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, role_of
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
@@ -69,7 +69,7 @@ def _source_key(source: CategoryPoint) -> tuple[CategoryPoint, CategoryPoint, Ca
 
 def _construction_key[
     ObjectValue: ObjectOfCategory,
-    ElementValue: ElementOfObject,
+    ElementValue: CategoryPoint,
     MorphismValue: MorphismOfCategory,
     Datum,
 ](
@@ -89,7 +89,7 @@ def _construction_key[
 
 def _retain_at_key[
     ObjectValue: ObjectOfCategory,
-    ElementValue: ElementOfObject,
+    ElementValue: CategoryPoint,
     MorphismValue: MorphismOfCategory,
     Datum,
 ](
@@ -139,9 +139,21 @@ def canonical_input[TargetValue: MorphismOfCategory, Datum](
 ) -> MorphismConstructionInput[TargetValue, Datum]: ...
 
 
+@overload
 def canonical_input[
     ObjectValue: ObjectOfCategory,
-    ElementValue: ElementOfObject,
+    ElementValue: CategoryPoint,
+    MorphismValue: MorphismOfCategory,
+    Datum,
+](
+    source: CategoryPoint,
+    target: Category,
+) -> ObjectConstructionInput[ObjectValue, Datum] | ElementConstructionInput[ElementValue, Datum] | MorphismConstructionInput[MorphismValue, Datum]: ...
+
+
+def canonical_input[
+    ObjectValue: ObjectOfCategory,
+    ElementValue: CategoryPoint,
     MorphismValue: MorphismOfCategory,
     Datum,
 ](
@@ -183,9 +195,25 @@ def retain_canonical_transport[Value: MorphismOfCategory, Datum](
 ) -> None: ...
 
 
+@overload
 def retain_canonical_transport[
     ObjectValue: ObjectOfCategory,
-    ElementValue: ElementOfObject,
+    ElementValue: CategoryPoint,
+    MorphismValue: MorphismOfCategory,
+    Datum,
+](
+    source: CategoryPoint,
+    target: Category,
+    image: CategoryPoint,
+    construction: ObjectConstructionInput[ObjectValue, Datum]
+    | ElementConstructionInput[ElementValue, Datum]
+    | MorphismConstructionInput[MorphismValue, Datum],
+) -> None: ...
+
+
+def retain_canonical_transport[
+    ObjectValue: ObjectOfCategory,
+    ElementValue: CategoryPoint,
     MorphismValue: MorphismOfCategory,
     Datum,
 ](
@@ -217,9 +245,9 @@ def retain_constructed_transport[
 
 @overload
 def retain_constructed_transport[
-    SourceValue: ElementOfObject,
+    SourceValue: CategoryPoint,
     SourceDatum,
-    TargetValue: ElementOfObject,
+    TargetValue: CategoryPoint,
     TargetDatum,
 ](
     source: ElementConstructionInput[SourceValue, SourceDatum],
@@ -243,11 +271,11 @@ def retain_constructed_transport[
 
 def retain_constructed_transport[
     SourceObjectValue: ObjectOfCategory,
-    SourceElementValue: ElementOfObject,
+    SourceElementValue: CategoryPoint,
     SourceMorphismValue: MorphismOfCategory,
     SourceDatum,
     TargetObjectValue: ObjectOfCategory,
-    TargetElementValue: ElementOfObject,
+    TargetElementValue: CategoryPoint,
     TargetMorphismValue: MorphismOfCategory,
     TargetDatum,
 ](

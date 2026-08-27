@@ -586,7 +586,7 @@ def _object_steps[RootValue: ObjectOfCategory, RootDatum](
     return tuple((target, next(step for owner, _, _, step, _ in found if same_node(owner, target))) for target in expected)
 
 
-def _element_steps[RootValue: ElementOfObject, RootDatum](
+def _element_steps[RootValue: CategoryPoint, RootDatum](
     current: Node,
     root: ElementConstructionInput[RootValue, RootDatum],
 ) -> tuple[tuple[Node, Callable[[], None]], ...]:
@@ -594,7 +594,7 @@ def _element_steps[RootValue: ElementOfObject, RootDatum](
     assert current.role is Role.ELEMENT
     found: list[tuple[Node, int, CategoryPoint, Callable[[], None], Route]] = []
 
-    def visit[Value: ElementOfObject, Datum](
+    def visit[Value: CategoryPoint, Datum](
         source: Node,
         source_input: ElementConstructionInput[Value, Datum],
         route: Route,
@@ -631,7 +631,7 @@ def _object_cat_element_step[Value: ObjectOfCategory, Datum](
     return target, _element_step(target, stage_input, root.canonical_image)
 
 
-def _element_cat_element_step[Value: ElementOfObject, Datum](
+def _element_cat_element_step[Value: CategoryPoint, Datum](
     root: ElementConstructionInput[Value, Datum],
 ) -> tuple[Node, Callable[[], None]]:
     """The defining-morphism input at the common ``Cat().ElementType`` MRO root."""

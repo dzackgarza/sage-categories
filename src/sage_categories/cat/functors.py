@@ -32,7 +32,7 @@ from sage_categories.cat.category import Assignment, Category, CategoryOfCategor
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask
 from sage_categories.kernel.refinement import is_placed, is_retained_inclusion, refine
-from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, role_of
+from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory, Role, role_of
 
 if TYPE_CHECKING:
     from sage_categories.kernel.construction import ElementConstructionInput, MorphismConstructionInput, ObjectConstructionInput
@@ -98,7 +98,7 @@ def _identity_object_constructor_input[Value: ObjectOfCategory, Datum](
     return source
 
 
-def _identity_element_constructor_input[Value: ElementOfObject, Datum](
+def _identity_element_constructor_input[Value: CategoryPoint, Datum](
     source: ElementConstructionInput[Value, Datum],
 ) -> ElementConstructionInput[Value, Datum]:
     return source
@@ -153,7 +153,7 @@ class FunctorDeclaration(MorphismOfCategory):
             return self.morphism_constructor_input(source).canonical_image
         return self._on_morphism(morphism)
 
-    def on_element(self, element: ElementOfObject) -> ElementOfObject:
+    def on_element(self, element: CategoryPoint) -> CategoryPoint:
         """The image of a generalized element ``t: T -> X``: the element with defining morphism ``F(t)`` (POL-FUN-002).
 
         A classical element whose stage is not an object of the domain belongs to the
@@ -162,6 +162,7 @@ class FunctorDeclaration(MorphismOfCategory):
         without the ambient's stage receives classical element operations through the
         inclusion image).  No other functor has an action on it.
         """
+        assert role_of(element) is Role.ELEMENT, f"{element!r} is not a generalized element"
         defining = element.defining_morphism()
         if element.stage() not in self.domain():
             assert is_retained_inclusion(self), f"{element!r} is not a generalized element in {self.domain()!r}"
@@ -170,9 +171,11 @@ class FunctorDeclaration(MorphismOfCategory):
             assert is_placed(defining, morphisms) or defining in morphisms, f"{element!r} is not a generalized element in {self.domain()!r}"
         if self in _element_constructor_conversions:
             from sage_categories.kernel import compiler
+            from sage_categories.kernel.construction import ElementConstructionInput
             from sage_categories.kernel.transport import construction_input
 
             source = construction_input(element, compiler.node(self.domain(), Role.ELEMENT))
+            assert isinstance(source, ElementConstructionInput)
             return self.element_constructor_input(source).canonical_image
         if element.stage() not in self.domain():
             return element
@@ -229,9 +232,9 @@ class FunctorDeclaration(MorphismOfCategory):
         _object_constructor_conversions[self] = conversion
 
     def retain_element_constructor_conversion[
-        SourceValue: ElementOfObject,
+        SourceValue: CategoryPoint,
         SourceDatum,
-        TargetValue: ElementOfObject,
+        TargetValue: CategoryPoint,
         TargetDatum,
     ](
         self,
@@ -286,9 +289,9 @@ class FunctorDeclaration(MorphismOfCategory):
         return target
 
     def element_constructor_input[
-        SourceValue: ElementOfObject,
+        SourceValue: CategoryPoint,
         SourceDatum,
-        TargetValue: ElementOfObject,
+        TargetValue: CategoryPoint,
         TargetDatum,
     ](
         self,
@@ -356,9 +359,9 @@ class FunctorDeclaration(MorphismOfCategory):
         if first in _element_constructor_conversions and second in _element_constructor_conversions:
 
             def element_conversion[
-                SourceValue: ElementOfObject,
+                SourceValue: CategoryPoint,
                 SourceDatum,
-                TargetValue: ElementOfObject,
+                TargetValue: CategoryPoint,
                 TargetDatum,
             ](
                 source: ElementConstructionInput[SourceValue, SourceDatum],

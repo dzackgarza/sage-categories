@@ -960,11 +960,11 @@ def bootstrap() -> None:
     role and enter its generated constructor chain normally.  The kernel evaluates
     deferred signatures after the semantic names are bound (POL-KERNEL-021).
 
-    The theory is therefore one import layer with one entry point:
-    ``cat/__init__.py`` imports ``cat/functors.py``, whose last statement calls
-    this function, so the cluster is complete before any module in it is used.
-    Binding these names completes the bootstrap.  It does not create a lookup
-    registry.
+    The theory is therefore one import layer with one entry point.
+    ``cat/__init__.py`` imports ``cat/functors.py``.  That module defines the two
+    local roles, calls this function, and only then imports dependent category
+    classes.  Binding these names completes the bootstrap.  It does not create a
+    lookup registry.
     """
     global _CAT, Category, Functor
     from sage_categories.cat.functors import FunctorDeclaration

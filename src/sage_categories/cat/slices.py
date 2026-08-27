@@ -217,7 +217,7 @@ def _pair_functor(first: Functor, second: Functor) -> Functor:
     source = Cat().Products()((first.domain(), second.domain()))
     target = Cat().Products()((first.codomain(), second.codomain()))
     legs = {0: first * source.product_projection(0), 1: second * source.product_projection(1)}
-    return target.universal_morphism(cone(target.diagram(), source, lambda vertex: legs[sequence_position(vertex)]))
+    return target.universal_morphism(cone(target.diagram(), source.apex(), lambda vertex: legs[sequence_position(vertex)]))
 
 
 def _endpoint_functor(base: Category) -> Functor:
@@ -233,7 +233,7 @@ def comma_category(first: Functor, second: Functor) -> PullbackCategory:
     assert first.codomain() is second.codomain(), f"{first!r} and {second!r} have different codomains"
     key = (first, second, Cat())
     if key not in _commas:
-        _commas[key] = Cat().Pullbacks()(cospan_diagram(Cat(), _pair_functor(first, second), _endpoint_functor(first.codomain())))
+        _commas[key] = Cat().Pullbacks()(cospan_diagram(Cat(), _pair_functor(first, second), _endpoint_functor(first.codomain()))).apex()
     return _commas[key]
 
 

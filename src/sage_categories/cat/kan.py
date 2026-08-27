@@ -66,7 +66,7 @@ def _left_data(along: Functor, functor: Functor) -> tuple[Functor, NaturalTransf
 
     def unit_component(member_object: ObjectOfCategory) -> MorphismOfCategory:
         image = along.on_object(member_object)
-        return at(image).injection(comma(image)((product((member_object, _star())), image.identity())))
+        return at(image).injection(comma(image)((product.apex()((member_object, _star())), image.identity())))
 
     unit = Fun(source, values).morphism_category(1)(functor, extension * along)(unit_component)
     return extension, unit
@@ -98,7 +98,7 @@ def _right_data(along: Functor, functor: Functor) -> tuple[Functor, NaturalTrans
 
     def counit_component(member_object: ObjectOfCategory) -> MorphismOfCategory:
         image = along.on_object(member_object)
-        return at(image).projection(comma(image)((product((_star(), member_object)), image.identity())))
+        return at(image).projection(comma(image)((product.apex()((_star(), member_object)), image.identity())))
 
     counit = Fun(source, values).morphism_category(1)(extension * along, functor)(counit_component)
     return extension, counit

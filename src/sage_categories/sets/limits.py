@@ -83,7 +83,7 @@ def limit_of_sets(diagram: Functor) -> SetObject:
             )
         )
 
-    apex = product.subset_from(compatible)
+    apex = product.apex().subset_from(compatible)
     inclusion = apex.inclusion()
     projections: MonoDict = MonoDict()
 
@@ -220,8 +220,8 @@ def colimit_of_sets(diagram: Functor) -> SetObject:
     objects = shape.object_set()
     index_shape = Discrete(objects)
     coproduct = sets.Coproducts()(Fun(index_shape, sets).from_object_rule(lambda vertex: diagram.on_object(shape.object_at(vertex.point()))))
-    quotient = Quotient(diagram, coproduct)
-    coproduct_rule = coproduct._set_object_data.membership_rule
+    quotient = Quotient(diagram, coproduct.apex())
+    coproduct_rule = coproduct.apex()._set_object_data.membership_rule
 
     def membership_rule(datum: Datum) -> Decision:
         match datum:
@@ -230,7 +230,7 @@ def colimit_of_sets(diagram: Functor) -> SetObject:
             case _:
                 return False
 
-    apex = sets.ChosenQuotients()(coproduct, lambda tagged: Representative(quotient, tagged), membership_rule)
+    apex = sets.ChosenQuotients()(coproduct.apex(), lambda tagged: Representative(quotient, tagged), membership_rule)
     quotient_map = apex.quotient_map()
 
     def vertex(member_object: ObjectOfCategory) -> ObjectOfCategory:

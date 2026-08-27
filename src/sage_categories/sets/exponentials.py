@@ -111,7 +111,7 @@ def evaluation_morphism(exponent: SetObject, base: SetObject) -> SetMap:
     key = (exponent, base, sets)
     if key not in _evaluations:
         product = sets.Products()((function_set(exponent, base), exponent))
-        _evaluations[key] = sets.construct_morphism(product, base, lambda family: family(0).map()._set_morphism_data.rule(family(1)))
+        _evaluations[key] = sets.construct_morphism(product.apex(), base, lambda family: family(0).map()._set_morphism_data.rule(family(1)))
     return _evaluations[key]
 
 
@@ -125,10 +125,11 @@ def transpose(set_map: SetMap) -> SetMap:
     """
     sets = _sets.Sets()
     if set_map not in _transposes:
-        product, base = set_map.domain(), set_map.codomain()
-        assert product in sets.Products(), f"{product!r} is not a chosen product"
+        apex, base = set_map.domain(), set_map.codomain()
+        assert sets.Products().retains(apex), f"{apex!r} is not the apex of a chosen product"
+        product = sets.Products().canonical_presentation(apex)
         source, exponent = product.product_projection(0).codomain(), product.product_projection(1).codomain()
-        assert product is sets.Products()((source, exponent)), f"{product!r} is not the chosen binary product {source!r} * {exponent!r}"
+        assert product is sets.Products()((source, exponent)), f"{apex!r} is not the chosen binary product {source!r} * {exponent!r}"
 
         def transposed(source_datum: Datum) -> Function:
             constant = sets.construct_morphism(exponent, source, lambda exponent_datum: source_datum)

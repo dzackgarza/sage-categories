@@ -223,21 +223,33 @@ class FunctorDeclaration(MorphismOfCategory):
 
     def object_constructor_input(self, source: ObjectConstruction) -> ObjectConstruction:
         """Return the root input retained by this object's canonical functor image."""
+        from sage_categories.kernel.construction import input_of_object
+
         assert self in _object_constructor_conversions, f"{self!r} retains no object constructor conversion"
         conversion: Callable[[ObjectConstruction], ObjectConstruction] = _object_constructor_conversions[self]
-        return conversion(source)
+        target = conversion(source)
+        assert input_of_object(target.canonical_image) is target, f"{self!r} constructed a parallel object input"
+        return target
 
     def element_constructor_input(self, source: ElementConstruction) -> ElementConstruction:
         """Return the root input retained by this element's canonical functor image."""
+        from sage_categories.kernel.construction import input_of_element
+
         assert self in _element_constructor_conversions, f"{self!r} retains no element constructor conversion"
         conversion: Callable[[ElementConstruction], ElementConstruction] = _element_constructor_conversions[self]
-        return conversion(source)
+        target = conversion(source)
+        assert input_of_element(target.canonical_image) is target, f"{self!r} constructed a parallel element input"
+        return target
 
     def morphism_constructor_input(self, source: MorphismConstruction) -> MorphismConstruction:
         """Return the root input retained by this morphism's canonical functor image."""
+        from sage_categories.kernel.construction import input_of_morphism
+
         assert self in _morphism_constructor_conversions, f"{self!r} retains no morphism constructor conversion"
         conversion: Callable[[MorphismConstruction], MorphismConstruction] = _morphism_constructor_conversions[self]
-        return conversion(source)
+        target = conversion(source)
+        assert input_of_morphism(target.canonical_image) is target, f"{self!r} constructed a parallel morphism input"
+        return target
 
     def _retain_identity_constructor_conversions(self) -> None:
         """Retain the identity conversions for an identity-on-value functor."""

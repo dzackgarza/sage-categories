@@ -336,6 +336,12 @@ contract and the private computation boundary.
 
 The compiler acts on complete inherited role implementations.
 
+All three role families meet at the compiled `Cat().ElementType` implementation.
+Objects reach it through `ObjectOfCategory`. Morphisms reach it through
+`MorphismOfCategory`. Ordinary elements reach it through `ElementOfObject`. Thus an
+object or morphism receives the generalized-point surface by inheritance at its stated
+stage. Its MRO contains one path from the local role to that common implementation.
+
 For each selected route, the compiler:
 
 - places the ancestor compiled role in the controlled C3 MRO;
@@ -351,7 +357,9 @@ The local constructor accepts only the leaf's new semantic data. It initializes 
 state and calls `super().__init__()` once. A declaration can omit `__init__` when it adds
 no state. Its generated wrapper advances to the next C3 initializer. The selected functor
 supplies the input required by the next role constructor. The leaf does not add ancestor
-fields or ancestor arguments.
+fields or ancestor arguments. The object or morphism construction context supplies the
+common `Cat().ElementType` stage identity before this chain starts. The ordinary element
+context supplies its defining morphism.
 
 The compiler never interprets a local decorator as an instruction to find another
 method body. It never pairs a leaf method with an engine method by name.

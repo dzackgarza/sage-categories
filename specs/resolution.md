@@ -456,14 +456,19 @@ The architecture uses the following rules.
    explicit mathematical operation at the common descendant.
 10. Method-resolution order never decides mathematical meaning.
 11. Each compiled role contains the copied local members and the compiled roles of every
-    selected ancestor in controlled C3 order. Copied functions bind `__class__` to the
-    compiled role. The rebound local initializer remains separate from the generated
-    `__init__` wrapper.
+    selected ancestor in controlled C3 order. The object and morphism chains then join
+    the one compiled `Cat().ElementType` root through `ObjectOfCategory` or
+    `MorphismOfCategory`. An ordinary element chain joins it through `ElementOfObject`.
+    Copied functions bind `__class__` to the compiled role. The rebound local initializer
+    remains separate from the generated `__init__` wrapper.
 12. The kernel allocates the public value first. Before the C3 chain starts, each selected
-    functor converts complete typed construction inputs along structural edges. A generated
-    class wrapper reads the input for its own node and passes only its local datum to the
-    node initializer. Thus adjacent C3 classes need not be joined by a structural edge.
-    The compiler initializes every reachable role and every common ancestor once.
+    functor converts complete typed construction inputs along structural edges. The
+    object context adds `ObjectStageIdentity(C)`. The morphism context adds
+    `ArrowStageIdentity(C, A, B)`. An ordinary element keeps its defining morphism.
+    A generated class wrapper reads the input for its own node and passes only its local
+    datum to the node initializer. Thus adjacent C3 classes need not be joined by a
+    structural edge. The compiler initializes every reachable role and every common
+    ancestor once.
 13. A source value retains each ancestor value supplied as defining data. A derived
     ancestor image is constructed once and cached. A selected structural functor returns
     that retained value on every call and never reconstructs an equal or isomorphic

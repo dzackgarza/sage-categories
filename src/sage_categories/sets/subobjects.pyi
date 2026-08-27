@@ -8,7 +8,7 @@ from sage_categories.sets.objects import SetObjectDeclaration as SetObjectDeclar
 from collections.abc import Callable
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.properties import FullSubcategory as FullSubcategory
-from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown
+from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown, UnknownClass as UnknownClass
 from sage_categories.kernel.predicates import AppliedPredicate as AppliedPredicate, Predicate as Predicate, ask as ask, conjunction as conjunction, disjunction as disjunction, negation as negation
 from sage_categories.kernel.refinement import refine as refine
 from sage_categories.kernel.roles import CategoryPoint as CategoryPoint, ObjectOfCategory as ObjectOfCategory, Role as Role

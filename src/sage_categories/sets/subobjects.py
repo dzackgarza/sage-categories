@@ -60,7 +60,7 @@ from sage.structure.coerce_dict import MonoDict
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
 from sage_categories.cat.properties import FullSubcategory
-from sage_categories.kernel.decisions import Decision, Unknown
+from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask, conjunction, disjunction, negation
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role
@@ -77,6 +77,34 @@ __all__ = ["ChosenQuotientsCategory", "ChosenSubsetsCategory", "subset_of"]
 # ``subset_of(A, B)``: every member of the chosen subset ``A`` is a member of the
 # chosen subset ``B`` of the same set.
 subset_of: Predicate = Predicate("subset_of", 2, True)
+
+
+def _restricted_rule(base_set: SetObject, predicate: MembershipRule) -> MembershipRule:
+    """The membership rule of ``{x in X : predicate(x)}``: the rule of ``X`` conjoined with the predicate.
+
+    The predicate is applied only to data that ``X`` does not reject, so a predicate
+    written for the members of ``X`` never sees another datum.
+    """
+    base_rule = base_set._set_object_data.membership_rule
+
+    def rule(datum: Datum) -> Decision:
+        in_base = base_rule(datum)
+        if in_base is False:
+            return False
+        return ask(conjunction((in_base, predicate(datum))))
+
+    return rule
+
+
+def _distinct(data: tuple[Datum, ...]) -> tuple[Datum, ...] | UnknownClass:
+    """The exactly distinct members of a finite list of data, or ``Unknown`` when a pair does not compare.
+
+    An enumeration lists each member once (POL-SET-011/027), so an undecided pairwise
+    comparison leaves the list unusable as one and the caller keeps its set rule-defined.
+    """
+    if any((first == second) is Unknown for position, first in enumerate(data) for second in data[:position]):
+        return Unknown
+    return tuple(datum for position, datum in enumerate(data) if not any((datum == earlier) is True for earlier in data[:position]))
 
 
 def _subset_by_identity(first: CategoryPoint, candidate: Any) -> Decision:
@@ -174,15 +202,7 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
         """The chosen subset ``{x in X : predicate(x)}`` whose exact cardinality a construction theorem supplies (POL-SET-031)."""
         sets = _sets.Sets()
         assert base_set in sets, f"{base_set!r} is not an object of {sets!r}"
-        base_rule = base_set._set_object_data.membership_rule
-
-        def rule(datum: Datum) -> Decision:
-            in_base = base_rule(datum)
-            if in_base is False:
-                return False
-            return ask(conjunction((in_base, predicate(datum))))
-
-        subset = sets.with_cardinality(rule, cardinality)
+        subset = sets.with_cardinality(_restricted_rule(base_set, predicate), cardinality)
         refine(subset, self)
         return self._retain_monomorphism(subset, base_set)
 
@@ -215,21 +235,13 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
         sets = _sets.Sets()
         assert base_set in sets, f"{base_set!r} is not an object of {sets!r}"
         finite = sets.Finite()
-        base_rule = base_set._set_object_data.membership_rule
-
-        def rule(datum: Datum) -> Decision:
-            in_base = base_rule(datum)
-            if in_base is False:
-                return False
-            return ask(conjunction((in_base, predicate(datum))))
-
         if finite.has_chosen_enumeration(base_set):
             decided = tuple((datum, predicate(datum)) for datum in finite.chosen_enumeration(base_set))
             if all(decision is not Unknown for _, decision in decided):
                 subset = finite(tuple(datum for datum, decision in decided if decision is True))
                 refine(subset, self)
                 return self._retain_monomorphism(subset, base_set)
-        subset = sets(rule)
+        subset = sets(_restricted_rule(base_set, predicate))
         refine(subset, self)
         if base_set in finite:
             # A subset of a finite set is finite: Mathlib ``Set.Finite.subset``
@@ -253,11 +265,10 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
         if finite.has_chosen_enumeration(domain):
             rule = set_map._set_morphism_data.rule
             images = tuple(rule(datum) for datum in finite.chosen_enumeration(domain))
-            comparisons = tuple(images[i] == images[j] for i in range(len(images)) for j in range(i))
-            if all(decision is not Unknown for decision in comparisons):
+            distinct = _distinct(images)
+            if distinct is not Unknown:
                 # The image of a finite set is finite (Mathlib ``Set.Finite.image``): the
                 # distinct image data, each pairwise comparison exact.
-                distinct = tuple(image for position, image in enumerate(images) if not any((image == earlier) is True for earlier in images[:position]))
                 subset = finite(distinct)
                 refine(subset, self)
                 self._images[set_map] = self._retain_monomorphism(subset, codomain)
@@ -352,9 +363,8 @@ class ChosenQuotientsCategory(FullSubcategory[[Rule], []]):
         finite = sets.Finite()
         if finite.has_chosen_enumeration(base_set):
             classes = tuple(class_of(datum) for datum in finite.chosen_enumeration(base_set))
-            comparisons = tuple(classes[i] == classes[j] for i in range(len(classes)) for j in range(i))
-            if all(decision is not Unknown for decision in comparisons):
-                distinct = tuple(datum for position, datum in enumerate(classes) if not any((datum == earlier) is True for earlier in classes[:position]))
+            distinct = _distinct(classes)
+            if distinct is not Unknown:
                 quotient = finite(distinct)
                 refine(quotient, self)
                 return self._retain_quotient_map(base_set, quotient, class_of)

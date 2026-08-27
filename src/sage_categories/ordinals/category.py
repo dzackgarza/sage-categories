@@ -46,7 +46,7 @@ from typing import TYPE_CHECKING, Any
 from sage.rings.integer_ring import ZZ as _integer_ring
 
 from sage_categories.cat.category import Category
-from sage_categories.kernel.decisions import Decision, Unknown
+from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask, conjunction
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, role_of
 
@@ -153,6 +153,40 @@ class OrdinalObjectDeclaration(ObjectOfCategory):
                 return reduce(cardinals.product, (term.cardinality() for term in self._terms))
         base, exponent = self._terms
         return cardinals.supremum(base.cardinality(), exponent.cardinality())
+
+    def cofinality(self) -> CardinalObject | UnknownClass:
+        """``cf(alpha)``, the cofinality of this ordinal, as a cardinal (Mathlib ``Ordinal.cof``; inspected 2026-08-28).
+
+        Each rule is an inspected theorem: ``cof 0 = 0`` (``Ordinal.cof_zero``) and
+        ``cof (o + 1) = 1`` (``Ordinal.cof_add_one``), which covers a positive finite
+        ordinal and a natural sum with a nonzero finite term, since a natural sum with a
+        finite ordinal is the ordinary one (``Ordinal.nadd_nat``); ``cof omega_0 = aleph0``
+        (``Ordinal.cof_omega0``); ``aleph(b + 1)`` is regular
+        (``Cardinal.isRegular_aleph_add_one``), and a regular cardinal is the cofinality of
+        its own initial ordinal (``Cardinal.isRegular_iff`` with ``Ordinal.cof_le_card``),
+        so ``cof omega_n = aleph(n)`` for ``n >= 1``; and ``cof omega_b = cof b`` for a
+        limit index ``b`` (``Ordinal.cof_omega``), whose hypothesis an initial ordinal
+        satisfies by ``Cardinal.isSuccLimit_ord`` at ``aleph0 <= aleph(g)``.
+
+        Any other expression is ``Unknown``: the shape that would select a rule is not
+        established.
+        """
+        from sage_categories.sets.cardinals import Cardinal
+
+        cardinals = Cardinal()
+        match self._kind_():
+            case "finite":
+                return cardinals(0) if self._finite_value_() == 0 else cardinals(1)
+            case "natural_sum" if any(term._kind_() == "finite" for term in self._terms_()):
+                return cardinals(1)
+            case "initial":
+                index = self.initial_index()
+                match index._kind_():
+                    case "finite":
+                        return cardinals.aleph(0) if index._finite_value_() == 0 else cardinals.aleph(index)
+                    case "initial":
+                        return index.cofinality()
+        return Unknown
 
     def __add__(self, other: OrdinalObject | int) -> OrdinalObject:
         return Ordinals().natural_sum(self, Ordinals()(other))

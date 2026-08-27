@@ -8,7 +8,10 @@ commutative: ``omega0 + 1`` and ``1 + omega0`` are distinct expressions whose
 equality no exact handler decides); ``Ordinal.opow_zero``, ``Ordinal.zero_opow``,
 ``Ordinal.one_opow``, and finite evaluation; ``Cardinal.aleph_lt_aleph`` with
 ``Ordinal.natCast_lt_omega0`` for ``aleph(1) < aleph(omega0)``; ``Cardinal.ord_aleph``
-for the initial ordinal; ``Ordinal.card_omega0``, ``Ordinal.card_add``,
+for the initial ordinal; for cofinality (inspected 2026-08-28) ``Ordinal.cof_zero``,
+``Ordinal.cof_add_one``, ``Ordinal.cof_omega0``, ``Cardinal.isRegular_aleph_add_one``
+with ``Cardinal.isRegular_iff``, and ``Ordinal.cof_omega`` at a limit index;
+``Ordinal.card_omega0``, ``Ordinal.card_add``,
 ``Ordinal.card_mul``, and ``Ordinal.card_opow_eq_of_omega0_le_left`` /
 ``_right`` for cardinalities, with ``Cardinal.add_eq_max`` and ``Cardinal.mul_eq_max``
 for the cardinal arithmetic; the finite ordinals are the natural numbers
@@ -107,3 +110,18 @@ def test_ordinal_cardinalities() -> None:
     assert omega0.ordinal_power(omega0).cardinality() is aleph0
     assert omega(int(1)).ordinal_power(int(2)).cardinality() is Cardinal().aleph(int(1))
     assert omega(omega0).cardinality() is Cardinal().aleph(omega0)
+
+
+def test_ordinal_cofinalities() -> None:
+    cardinals = Cardinal()
+
+    assert ordinal(int(0)).cofinality() is cardinals(int(0))
+    assert ordinal(int(5)).cofinality() is cardinals(int(1))
+    assert (omega0 + int(1)).cofinality() is cardinals(int(1))
+    assert omega0.cofinality() is aleph0
+    assert omega(int(1)).cofinality() is cardinals.aleph(int(1))
+    assert omega(int(2)).cofinality() is cardinals.aleph(int(2))
+    # cf(omega_omega) = cf(omega) = aleph0: the singular case, and the one that makes
+    # aleph(omega) ** aleph0 the successor rather than aleph(omega) itself.
+    assert omega(omega0).cofinality() is aleph0
+    assert omega0.ordinal_power(omega0).cofinality() is Unknown

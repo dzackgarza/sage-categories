@@ -67,6 +67,7 @@ __all__ = [
     "established",
     "implication",
     "negation",
+    "retract",
 ]
 
 # What a predicate is applied to: owned values, and the integer convenience of the
@@ -410,3 +411,15 @@ def assume(proposition: Proposition) -> None:
             global_assumptions.add(proposition.engine_value())
     if isinstance(proposition, AppliedPredicate) and isinstance(proposition.predicate(), PropertyPredicate):
         refine(proposition.arguments()[0], proposition.predicate().category())
+
+
+def retract(proposition: AppliedPredicate) -> None:
+    """Withdraw ``proposition`` from the active session, so ``ask`` decides it from the mathematics alone.
+
+    This is the inverse of ``assume`` for a hypothesis that records no category
+    placement, which is what a global set-theoretic hypothesis such as the generalized
+    continuum hypothesis is.  A property assumption also refines its argument into the
+    property's category, and placement is permanent, so it does not retract.
+    """
+    assert not isinstance(proposition.predicate(), PropertyPredicate), f"{proposition!r} refined a category, which no retraction undoes"
+    global_assumptions.discard(proposition.engine_value())

@@ -7,10 +7,10 @@ from sage_categories.cat.functors import Cat, Fun
 from sage_categories.cat.morphisms import Mor
 from sage_categories.cat.shapes import Discrete, Thin
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
-from sage_categories.kernel.predicates import Predicate, ask, assume
+from sage_categories.kernel.predicates import Predicate, ask, assume, retract
 from sage_categories.sets.category import Sets
 from sage_categories.ordinals import Ordinals, omega0
-from sage_categories.sets.cardinals import Cardinal, aleph0, continuum
+from sage_categories.sets.cardinals import Cardinal, aleph0, continuum, generalized_continuum_hypothesis
 from sage_categories.number_sets import NN, QQ, RR, ZZ, Primes
 from sage_categories.posets import FinitePosets, FiniteTotallyOrderedSets, Posets, TotallyOrderedSets
 
@@ -42,7 +42,9 @@ __all__ = [
     "ask",
     "assume",
     "continuum",
+    "generalized_continuum_hypothesis",
     "omega0",
+    "retract",
     "version",
 ]
 

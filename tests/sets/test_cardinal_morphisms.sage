@@ -5,8 +5,9 @@ is the discrete category on the functions between the representatives
 (``specs/cardinality.md``, "Cardinal model"); a function ``A -> B`` exists exactly when
 ``A`` is empty or ``B`` is nonempty (Mathlib ``nonempty_fun``); ``kappa <= lambda`` is
 the existence of an injection (Mathlib ``Cardinal.le_def``) and ``kappa = lambda`` of a
-bijection (``Cardinal.eq``); ``aleph(1) <= 2 ** aleph0`` while their equality is the
-continuum hypothesis, undecided (``specs/cardinality.md``, "Cardinal expression forms");
+bijection (``Cardinal.eq``); ``2 ** aleph0 = aleph(1)`` under the continuum hypothesis,
+which this package assumes by default (``specs/cardinality.md``, "The continuum
+hypothesis"), so that hom category is inhabited and the one from ``aleph(2)`` is not;
 the cardinality functor sends a bijection to the conjugate by the selected bijections
 with the representatives (``specs/cardinality.md``, "Integration with ``Sets()``");
 finite set-map equality is decided pointwise (``specs/sets.md``, "Equality").
@@ -97,10 +98,10 @@ def test_inhabitation_of_cardinal_hom_categories_is_decided_by_cardinal_comparis
     assert not ask(Mor(cardinals).Monomorphisms()(aleph0, three).is_inhabited())
     assert ask(Mor(cardinals).Monomorphisms()(three, aleph0).is_inhabited())
     assert ask(Mor(cardinals).Monomorphisms()(aleph1, continuum).is_inhabited())
-    assert ask(Mor(cardinals).Monomorphisms()(continuum, aleph1).is_inhabited()) is Unknown
+    assert not ask(Mor(cardinals).Monomorphisms()(cardinals.aleph(int(2)), continuum).is_inhabited())
     assert not ask(Mor(cardinals).Isomorphisms()(three, five).is_inhabited())
     assert ask(Mor(cardinals).Isomorphisms()(three, three).is_inhabited())
-    assert ask(Mor(cardinals).Isomorphisms()(aleph1, continuum).is_inhabited()) is Unknown
+    assert ask(Mor(cardinals).Isomorphisms()(aleph1, continuum).is_inhabited())
     assert ask(Mor(cardinals).Epimorphisms()(five, three).is_inhabited()) is Unknown
 
 
@@ -116,7 +117,8 @@ def test_cardinal_order_is_the_inhabitation_of_the_monomorphism_category() -> No
     assert ask(int(5) >= three)
     assert ask(aleph0 <= continuum)
     assert ask(cardinals.aleph(int(1)) <= continuum)
-    assert ask(continuum <= cardinals.aleph(int(1))) is Unknown
+    assert ask(continuum <= cardinals.aleph(int(1)))
+    assert not ask(cardinals.aleph(int(2)) <= continuum)
     assert ask(three < five)
     assert not ask(five < three)
     with pytest.raises(TypeError):

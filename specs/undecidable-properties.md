@@ -19,6 +19,7 @@ It does not evaluate it.
 | `x.is_P()` | Apply the category-owned predicate to `x` | No | No |
 | `ask(C.P().membership_proposition(x))` | Determine \(P(x)\) | Only if needed | On exact `True` |
 | `assume(C.P().membership_proposition(x))` | Add \(P(x)\) to the global context | No | Immediately |
+| `retract(p)` | Withdraw \(p\) from the global context | No | No |
 | `C.P()(x)` | Construct or place `x` directly in \(C.P\) | No | Immediately |
 | `x in C.P()` | Ask the defining membership proposition | Possibly | On exact `True` |
 | A named construction returning `C.P()` | Apply its construction theorem | No | At construction |
@@ -40,6 +41,17 @@ The category constructor trusts the programmer assertion.
 It does not prove, certify, or validate the proposition.
 When the assertion uses a nontrivial theorem, cite the inspected source on the construction line or in its immediate documentation.
 The citation exists for human mathematical audit and never enters runtime state.
+
+### Global hypotheses
+
+A hypothesis of the ambient set theory names no owned value and refines no category.
+It is an owned predicate of arity zero, applied and recorded in the same active assumption state as any other proposition.
+`assume()` records it and `retract()` withdraws it.
+`retract()` applies only to a proposition that recorded no placement: category placement is permanent, so a property assumption does not retract.
+
+A theory module may record such a hypothesis at load, which makes it the package's default state.
+`POL-ASSUME-018` governs that case; `POL-ASSUME-011` continues to forbid `assume()` as the justification of a computed result.
+The generalized continuum hypothesis is the one such hypothesis this package declares; see [Cardinalities and ordinals](cardinality.md#the-continuum-hypothesis).
 
 ## Propositions and decisions
 

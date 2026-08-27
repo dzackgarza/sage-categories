@@ -145,6 +145,7 @@ A predicate handler is an exact computation or inference rule for specified sema
 | `POL-ASSUME-009` | Keep engine predicate representations inside the backend. Public APIs use owned categories, applied predicates, the standard session-level `assume()` operation, and `Decision`. |
 | `POL-ASSUME-010` | A construction-owned theorem does not enter the assumption state. Its implementation constructs directly in the property subcategory under `POL-MATH-028`. |
 | `POL-ASSUME-011` | Backend and theory code never call `assume()` to justify a result. They construct directly in the property subcategory already established by their computation, definition, or theorem. |
+| `POL-ASSUME-018` | A hypothesis of the ambient set theory is an owned predicate of arity zero that names no value and refines no category. A theory module may record one at load, which makes it the package's default state, and `retract()` withdraws it. This is the sole `assume()` a module performs on its own behalf: the hypothesis is declared, never derived, so it justifies no computed result and `POL-ASSUME-011` still forbids that use. State which hypothesis, what it decides, and what retracting it restores, in the specification that owns the affected mathematics. `retract()` applies only where nothing was refined, since placement is permanent. |
 
 For a semantic morphism $f:P\to Q$, `order_preserving(f)` states that $f$ preserves the two owned orders.
 A bare Python callable cannot state this proposition because it does not own the domain and codomain.

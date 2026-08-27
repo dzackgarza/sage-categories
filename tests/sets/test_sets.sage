@@ -189,7 +189,7 @@ def test_cardinal_arithmetic_and_order() -> None:
     assert ask(continuum ** int(2) == continuum)
     assert ask(aleph0 < continuum)
     assert ask(Cardinal().aleph(int(1)) <= continuum)
-    assert ask(Cardinal().aleph(int(1)) == continuum) is Unknown
+    assert Cardinal().aleph(int(1)) is continuum
     assert ask(continuum.is_uncountable())
     assert ask(aleph0.is_countable())
     assert ask(Cardinal()(int(3)) <= int(5))

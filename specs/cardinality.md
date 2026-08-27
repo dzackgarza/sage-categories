@@ -162,7 +162,8 @@ product(i in I, kappa_i)
 Finite suprema preserve unresolved relationships.
 For example, `Cardinal().aleph(2) + continuum` can remain a formal supremum.
 
-This avoids assuming the continuum hypothesis.
+These are the forms of the ZFC-only state, which [The continuum hypothesis](#the-continuum-hypothesis) describes.
+With the hypothesis assumed, exponentiation evaluates and these forms are reached only by an expression the hypothesis leaves open.
 
 ### `Cardinal()` API
 
@@ -260,6 +261,46 @@ The last rule uses:
 \quad\Longrightarrow\quad
 \kappa^\lambda=2^\lambda.
 \]
+
+### The continuum hypothesis
+
+The generalized continuum hypothesis is an assumable proposition, not an axiom of the arithmetic:
+
+```python
+generalized_continuum_hypothesis()
+```
+
+It is a proposition in the sense of [Property refinement](property-refinement.md) and `POL-ASSUME-004`.
+The active Sage or SymPy assumption state records it and `ask()` reads it.
+`assume()` records it and `retract()` withdraws it.
+`Cardinal()` records it when the package loads, so the package's own default state assumes it.
+
+It states that \(2^{\aleph_\alpha}=\aleph_{\alpha+1}\) for every ordinal \(\alpha\), and it thereby decides every infinite power.
+For ordinals \(\alpha\) and \(\beta\):
+
+\[
+\aleph_\alpha^{\aleph_\beta}=
+\begin{cases}
+\aleph_{\beta+1} & \alpha\leq\beta+1,\\
+\aleph_\alpha & \beta+1<\alpha \text{ and } \aleph_\beta<\operatorname{cf}(\aleph_\alpha),\\
+\aleph_{\alpha+1} & \beta+1<\alpha \text{ and } \aleph_\beta\geq\operatorname{cf}(\aleph_\alpha).
+\end{cases}
+\]
+
+A finite base \(n\geq 2\) has the power of two, so \(n^{\aleph_\beta}=2^{\aleph_\beta}=\aleph_{\beta+1}\).
+The cofinality is `alpha.initial_ordinal().cofinality()`; see [Cofinality](ordinals.md#cofinality).
+When the ordinal expression does not establish the cofinality, the power stays formal.
+
+Addition and multiplication are unchanged.
+They are already the maximum and do not depend on the hypothesis.
+
+Assumed, the normal form of an infinite cardinal is `aleph(alpha)`, so the formal powers and formal suprema are reached only where the expression escapes these rules.
+Retracted, they return: `Cardinal()(2) ** aleph0` is a formal power, neither order between it and `Cardinal().aleph(2)` is decided, and their sum is a formal supremum.
+Both states are exact.
+The hypothesis is a hypothesis in either.
+
+The cardinals constructed under one state persist under the other.
+Retracting the hypothesis does not rewrite a cardinal that was normalized while it held.
 
 ### Finite cardinal modulus
 
@@ -461,6 +502,7 @@ CardinalObject
 CardinalityMorphism
 aleph0
 continuum
+generalized_continuum_hypothesis
 
 Ordinals
 OrdinalObject

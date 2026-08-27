@@ -6,8 +6,13 @@ image is stored, and each later image must be the same object.  The node
 ``(Mor(C), object)`` *is* the node ``(C, morphism)`` (POL-CAT-021), so one morphism
 has one cache entry however it is addressed.
 
-Toy categories live only in this file (POL-TEST-006).  Each row states one property
-of an image, never a functor law (D14).
+Toy categories live only in this file (POL-TEST-006).  Each declares
+``DeclaredObjectType``, ``DeclaredElementType``, and ``DeclaredMorphismType``, whose
+local constructors take one exact typed datum (POL-KERNEL-028, POL-LEAF-047); the
+kernel compiles the public ``ObjectType``, ``ElementType``, and ``MorphismType`` from
+them.  Each selected functor retains its object and morphism construction-input
+conversions; the element conversion is derived from the morphism one (POL-FUN-002).
+Each row states one property of an image, never a functor law (D14).
 
 Oracles: the definition of the canonical image (the value the selected functor's
 own action returns); the identity of retained construction data (a chosen product
@@ -16,59 +21,94 @@ construction (the refined product is the same object of the ambient); the regist
 stated construction-defect error naming both routes (POL-CAT-012).
 """
 
+from dataclasses import dataclass
+
 import pytest
 
 from sage_categories.all import *
 from sage_categories.kernel import compiler
 from sage_categories.kernel.caches import canonical_images
 from sage_categories.kernel.compiler import StructuralImageMismatch
-from sage_categories.kernel.descriptors import placement_node, transport
+from sage_categories.kernel.construction import retained_morphism_input, retained_object_input
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role
+from sage_categories.kernel.transport import placement_node, transport
 
 
-def _finite_rule(members):
-    return lambda datum: any(datum == member for member in members)
+@dataclass(eq=False, slots=True)
+class CarrierData:
+    """The local datum of an object carrying one set."""
+
+    carrier: object
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class CarrierMapData:
+    """The local datum of a morphism carrying one set map."""
+
+    set_map: object
 
 
 # -- a ring-style toy: two routes to ``Sets()`` through an additive and a multiplicative leaf --
 #
 # Both leaves carry the same object with the same retained carrier, so the two
-# routes agree by identity.  ``Rebuilt`` in ``tests/kernel/test_elements.sage`` is the
-# leaf whose second route rebuilds the carrier instead; here the diamond agrees.
+# routes agree by identity.  ``Rebuilding`` below is the leaf whose second route
+# rebuilds the carrier instead; here the diamond agrees.
 
 
 class Carrying(Category):
     """A category of ``Sets()``-carrying objects with one explicit forgetful functor.
 
-    It declares no local operation: two of these are incomparable, so one shared
-    spelling would be a semantic collision (POL-CAT-011), which is a different row.
+    It declares no local operation beyond its retained data: two of these are
+    incomparable, so one shared spelling would be a semantic collision
+    (POL-CAT-011), which is a different row.
     """
 
-    class ObjectType(ObjectOfCategory):
-        def __init__(self, category, carrier):
-            ObjectOfCategory.__init__(self, category)
-            self._carrier = carrier
+    class DeclaredObjectType(ObjectOfCategory):
+        def __init__(self, data):
+            self._carrier_data = data
+            super().__init__()
 
-    class ElementType(ElementOfObject):
+        def carrier(self):
+            return self._carrier_data.carrier
+
+    class DeclaredElementType(ElementOfObject):
         """No local operation."""
 
-    class MorphismType(MorphismOfCategory):
-        """No local operation."""
+    class DeclaredMorphismType(MorphismOfCategory):
+        def __init__(self, data):
+            self._carrier_map_data = data
+            super().__init__()
+
+        def set_map(self):
+            return self._carrier_map_data.set_map
 
     def __init__(self, name):
         self._name = name
+        self._selected = {}
         super().__init__()
 
     def structure_functors(self):
-        if "carrier" not in self.__dict__.setdefault("_selected", {}):
-            self._selected["carrier"] = Fun(self, Sets()).Faithful()(lambda member: member._carrier, lambda morphism: morphism)
+        if "carrier" not in self._selected:
+            underlying = Fun(self, Sets()).Faithful()(lambda member: member.carrier(), lambda morphism: morphism.set_map())
+            underlying.retain_object_constructor_conversion(lambda source: retained_object_input(source.datum.carrier))
+            underlying.retain_morphism_constructor_conversion(lambda source: retained_morphism_input(source.datum.set_map))
+            self._selected["carrier"] = underlying
         return (self._selected["carrier"],)
 
     def __call__(self, carrier):
-        return self.ObjectType(self, carrier)
+        return self.ObjectType(self, CarrierData(carrier))
 
     def __repr__(self):
         return self._name
+
+
+@dataclass(eq=False, slots=True)
+class RinglikeData:
+    """One carrier and the two structures the selected functors return."""
+
+    carrier: object
+    additive: object
+    multiplicative: object
 
 
 class Ringlike(Category):
@@ -78,27 +118,31 @@ class Ringlike(Category):
     return the very same carrier, set map, and point (POL-FUN-029).
     """
 
-    class ObjectType(ObjectOfCategory):
-        def __init__(self, category, carrier):
-            ObjectOfCategory.__init__(self, category)
-            self._carrier = carrier
-            self._additive = category.additive()(carrier)
-            self._multiplicative = category.multiplicative()(carrier)
+    class DeclaredObjectType(ObjectOfCategory):
+        def __init__(self, data):
+            self._ringlike_data = data
+            super().__init__()
 
-        def additive_structure(self) -> ObjectOfCategory:
-            return self._additive
+        def carrier(self):
+            return self._ringlike_data.carrier
 
-        def multiplicative_structure(self) -> ObjectOfCategory:
-            return self._multiplicative
+        def additive_structure(self):
+            return self._ringlike_data.additive
 
-    class ElementType(ElementOfObject):
+        def multiplicative_structure(self):
+            return self._ringlike_data.multiplicative
+
+    class DeclaredElementType(ElementOfObject):
         """No local operation."""
 
-    class MorphismType(MorphismOfCategory):
-        """No local operation."""
+    class DeclaredMorphismType(MorphismOfCategory):
+        def __init__(self, data):
+            self._ringlike_map_data = data
+            super().__init__()
 
     def __init__(self, additive, multiplicative):
         self._additive, self._multiplicative = additive, multiplicative
+        self._selected = {}
         super().__init__()
 
     def additive(self):
@@ -108,15 +152,25 @@ class Ringlike(Category):
         return self._multiplicative
 
     def structure_functors(self):
-        if "routes" not in self.__dict__.setdefault("_selected", {}):
-            self._selected["routes"] = (
-                Fun(self, self._additive).Faithful()(lambda member: member.additive_structure(), lambda morphism: morphism),
-                Fun(self, self._multiplicative).Faithful()(lambda member: member.multiplicative_structure(), lambda morphism: morphism),
+        if "routes" not in self._selected:
+            to_additive = Fun(self, self._additive).Faithful()(
+                lambda member: member.additive_structure(),
+                lambda morphism: morphism._ringlike_map_data.additive,
             )
+            to_additive.retain_object_constructor_conversion(lambda source: retained_object_input(source.datum.additive))
+            to_additive.retain_morphism_constructor_conversion(lambda source: retained_morphism_input(source.datum.additive))
+            to_multiplicative = Fun(self, self._multiplicative).Faithful()(
+                lambda member: member.multiplicative_structure(),
+                lambda morphism: morphism._ringlike_map_data.multiplicative,
+            )
+            to_multiplicative.retain_object_constructor_conversion(lambda source: retained_object_input(source.datum.multiplicative))
+            to_multiplicative.retain_morphism_constructor_conversion(lambda source: retained_morphism_input(source.datum.multiplicative))
+            self._selected["routes"] = (to_additive, to_multiplicative)
         return self._selected["routes"]
 
     def __call__(self, members):
-        return self.ObjectType(self, Sets().Finite()(tuple(members)))
+        carrier = Sets().Finite()(tuple(members))
+        return self.ObjectType(self, RinglikeData(carrier, self._additive(carrier), self._multiplicative(carrier)))
 
     def __repr__(self):
         return "Ringlike"
@@ -130,7 +184,7 @@ def test_two_structural_routes_to_one_category_return_one_underlying_set_map_and
     ringlike = Ringlike(Carrying("Additive"), Carrying("Multiplicative"))
     member = ringlike((int(0), int(1)))
     additive, multiplicative = ringlike.structure_functors()
-    carrier = member._carrier
+    carrier = member.carrier()
 
     through_additive = ringlike.additive().structure_functors()[int(0)].on_object(additive.on_object(member))
     through_multiplicative = ringlike.multiplicative().structure_functors()[int(0)].on_object(multiplicative.on_object(member))
@@ -158,7 +212,7 @@ def test_the_finite_poset_diamond_returns_one_underlying_set_map_and_point() -> 
     assert transport(fixed, compiler.node(Sets(), Role.MORPHISM)) is underlying.on_morphism(fixed)
 
     one = chain.element(underlying.on_object(chain).point(int(1)))
-    assert transport(one, compiler.node(Sets(), Role.ELEMENT)) is restricted.on_element(one)
+    assert transport(one, compiler.node(Sets(), Role.ELEMENT)) is underlying.on_element(one)
 
 
 def test_the_image_a_compiled_method_uses_is_the_image_the_selected_functor_returns() -> None:
@@ -233,43 +287,61 @@ def test_two_routes_that_agree_by_identity_transport_without_error() -> None:
     target = compiler.node(Sets(), Role.OBJECT)
 
     assert len(compiler.routes(placement_node(member), target)) == int(2)
-    assert transport(member, target) is member._carrier
+    assert transport(member, target) is member.carrier()
     assert ask(member.cardinality() == int(3)) is True
 
 
 def test_the_eager_check_names_both_routes_and_the_shared_category() -> None:
     """A leaf whose second route rebuilds the ancestor fails at the first transport, naming both routes (POL-CAT-012)."""
 
+    @dataclass(eq=False, slots=True)
+    class RebuiltData:
+        members: tuple
+        carrier: object
+
     class Rebuilding(Category):
-        class ObjectType(ObjectOfCategory):
-            def __init__(self, category, members):
-                ObjectOfCategory.__init__(self, category)
-                self._members = members
-                self._carrier = Sets().Finite()(members)
+        class DeclaredObjectType(ObjectOfCategory):
+            def __init__(self, data):
+                self._rebuilt_data = data
+                super().__init__()
 
-        class ElementType(ElementOfObject):
+        class DeclaredElementType(ElementOfObject):
             """No local operation."""
 
-        class MorphismType(MorphismOfCategory):
-            """No local operation."""
+        class DeclaredMorphismType(MorphismOfCategory):
+            def __init__(self, data):
+                self._rebuilt_map_data = data
+                super().__init__()
+
+        def __init__(self):
+            self._selected = {}
+            super().__init__()
 
         def structure_functors(self):
-            if "routes" not in self.__dict__.setdefault("_selected", {}):
-                self._selected["routes"] = (
-                    Fun(self, Sets())(lambda member: member._carrier, lambda morphism: morphism),
-                    Fun(self, Sets())(lambda member: Sets().Finite()(member._members), lambda morphism: morphism),
+            if "routes" not in self._selected:
+                retained = Fun(self, Sets())(lambda member: member._rebuilt_data.carrier, lambda morphism: morphism._rebuilt_map_data)
+                retained.retain_object_constructor_conversion(lambda source: retained_object_input(source.datum.carrier))
+                retained.retain_morphism_constructor_conversion(lambda source: retained_morphism_input(source.datum))
+                rebuilt = Fun(self, Sets())(
+                    lambda member: Sets().Finite()(member._rebuilt_data.members),
+                    lambda morphism: morphism._rebuilt_map_data,
                 )
+                rebuilt.retain_object_constructor_conversion(lambda source: retained_object_input(Sets().Finite()(source.datum.members)))
+                rebuilt.retain_morphism_constructor_conversion(lambda source: retained_morphism_input(source.datum))
+                self._selected["routes"] = (retained, rebuilt)
             return self._selected["routes"]
+
+        def __call__(self, members):
+            return self.ObjectType(self, RebuiltData(members, Sets().Finite()(members)))
 
         def __repr__(self):
             return "Rebuilding"
 
     rebuilding = Rebuilding()
-    member = rebuilding.ObjectType(rebuilding, (int(8), int(9)))
     first, second = rebuilding.structure_functors()
 
     with pytest.raises(StructuralImageMismatch) as raised:
-        transport(member, compiler.node(Sets(), Role.OBJECT))
+        rebuilding((int(8), int(9)))
     message = str(raised.value)
     assert repr(first) in message
     assert repr(second) in message

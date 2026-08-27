@@ -4,7 +4,12 @@ Oracles: the definition of a subset ``{x in X : P(x)}`` and of its inclusion;
 monomorphisms of ``Sets()`` are the injective maps and an inclusion is injective
 (Mathlib ``CategoryTheory.mono_iff_injective``, ``Set.inclusion_injective``); a
 subset of a countable set is countable (Mathlib ``Set.Countable.mono``) and of a
-finite set finite (``Set.Finite.subset``); POL-ASSUME-004 for ``Unknown``
+finite set finite (``Set.Finite.subset``); Euclid's theorem on the infinitude of
+primes (Mathlib ``Nat.exists_infinite_primes``,
+``Mathlib/Data/Nat/Prime/Infinite.lean:31-33``; as a statement about the set,
+``Nat.infinite_setOfPred_prime``, ``Mathlib/Data/Nat/PrimeFin.lean:25-26``), with
+``#X = aleph_0`` for a countably infinite ``X`` (Mathlib ``Cardinal.mk_eq_aleph0``);
+POL-ASSUME-004 for ``Unknown``
 cardinality; the Kleene conjunction of decisions (POL-MATH-034) for ``Unknown``
 membership; the characteristic function of a subset takes ``1`` exactly on its
 members (nLab "subobject classifier" in ``Set``; Mathlib ``Set.mem_iff_boolIndicator``).
@@ -44,7 +49,10 @@ def test_the_primes_decide_membership_exactly() -> None:
     assert Primes.underlying_set() is ZZ
     assert Primes.inclusion() in Mor(Sets())(Primes, ZZ).Monomorphisms()
     assert Primes in Sets().Countable()
-    assert Primes.cardinality() is Unknown
+    assert Primes in Sets().Infinite()
+    assert Primes.cardinality() is aleph0
+    assert ask(Primes.is_infinite()) is True
+    assert ask(Primes.is_finite()) is False
 
 
 def test_an_undecided_predicate_keeps_membership_unknown() -> None:

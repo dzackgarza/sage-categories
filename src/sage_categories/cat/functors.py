@@ -687,6 +687,18 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     def fixed_endpoint_type(self) -> type[FunctorCategory]:
         return FunctorCategory
 
+    def __call__(self, shape: ObjectOfCategory, target: ObjectOfCategory | Functor) -> FunctorCategory | Functor:
+        """``Fun(I, D)`` is the functor category; ``Fun(I, F)`` for a functor ``F: D -> E`` is ``(-) ** I`` applied to it.
+
+        The exponential ``D ** I = Fun(I, D)`` is a functor in ``D``, so the second
+        argument selects the action: a category selects the fixed-endpoint category, a
+        morphism of ``Cat()`` the morphism action ``Fun(I, D) -> Fun(I, E)``
+        (``Cat().exponential_on_morphism``).
+        """
+        if is_placed(target, self):
+            return self.base_category().exponential_on_morphism(shape, target)
+        return super().__call__(shape, target)
+
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         """A functor, or a point of a category at a categorical stage denoting its defining functor (specs/functor.md, "The Mor(n, C) tower", specs/functor.md, "Slices and coslices")."""
         return denotes_functor(candidate, self)

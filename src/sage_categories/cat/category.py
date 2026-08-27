@@ -137,15 +137,19 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         """The chosen objects whose hom functors are jointly faithful; none by default (POL-MATH-037)."""
         return ()
 
-    def image_of(self, value: CategoryPoint) -> CategoryPoint:
+    def structural_image(self, value: CategoryPoint) -> CategoryPoint:
         """The image of ``value`` in this category under the selected structural route to it.
 
         A method declared by ``C`` runs on every structural descendant of ``C`` with the
         descendant as its receiver (POL-KERNEL-018), so inside a ``Sets()`` declaration
         ``self`` can be a poset while the method is about that poset's underlying set.
-        ``C.image_of(x)`` is the value such a method is about: the image the kernel
+        ``C.structural_image(x)`` is the value such a method is about: the image the kernel
         computed and retained when ``x`` was constructed (POL-KERNEL-029).  For a value of
         ``C`` itself it is that value.
+
+        This is the image under the composite of the selected functors, not the image of a
+        morphism: ``Sets().ChosenSubsets().image_of(f)`` is the set-theoretic image of a
+        map, a different operation with its own name (POL-CAT-011).
 
         This reads the retention.  It constructs nothing, chooses no route, and owns no
         table, so a leaf keeps none (``specs/resolution.md``, final decision 6).

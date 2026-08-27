@@ -246,30 +246,30 @@ def test_the_image_a_compiled_method_uses_is_the_image_the_selected_functor_retu
     assert chain.cardinality() is underlying.on_object(chain).cardinality()
 
 
-def test_a_category_reads_the_image_of_a_descendant_value_in_itself() -> None:
-    """``C.image_of(x)`` is the image ``C``'s selected route retained: what a method ``C`` declares is about (POL-KERNEL-018)."""
+def test_a_category_reads_the_structural_image_of_a_descendant_value() -> None:
+    """``C.structural_image(x)`` is the image ``C``'s selected route retained: what a method ``C`` declares is about (POL-KERNEL-018)."""
     chain = Posets().Simplex(int(2))
     fixed = Mor(Posets())(chain, chain)(lambda point: point)
     underlying = Posets().structure_functors()[int(0)]
     carrier = underlying.on_object(chain)
     zero = chain.element(carrier.point(int(0)))
 
-    assert Sets().image_of(chain) is carrier, "the underlying set of the poset, not the poset"
-    assert Sets().image_of(fixed) is underlying.on_morphism(fixed)
-    assert Sets().image_of(zero) is underlying.on_element(zero)
+    assert Sets().structural_image(chain) is carrier, "the underlying set of the poset, not the poset"
+    assert Sets().structural_image(fixed) is underlying.on_morphism(fixed)
+    assert Sets().structural_image(zero) is underlying.on_element(zero)
 
     # A method ``Sets()`` declares reads the carrier's cardinality, which is the poset's.
-    assert ask(Sets().image_of(chain).cardinality() == chain.cardinality()) is True
+    assert ask(Sets().structural_image(chain).cardinality() == chain.cardinality()) is True
 
 
 def test_a_category_reads_its_own_value_as_its_own_image() -> None:
-    """The route from a category to itself is empty, so ``C.image_of(x)`` is ``x`` for a value of ``C``."""
+    """The route from a category to itself is empty, so ``C.structural_image(x)`` is ``x`` for a value of ``C``."""
     members = Sets().Finite()((int(0), int(1)))
     identity = Mor(Sets())(members, members).identity()
 
-    assert Sets().image_of(members) is members
-    assert Sets().image_of(identity) is identity
-    assert Posets().image_of(Posets().Simplex(int(2))) is Posets().Simplex(int(2))
+    assert Sets().structural_image(members) is members
+    assert Sets().structural_image(identity) is identity
+    assert Posets().structural_image(Posets().Simplex(int(2))) is Posets().Simplex(int(2))
 
 
 def test_an_object_image_and_a_morphism_image_of_one_value_are_one_cache_entry() -> None:

@@ -68,8 +68,8 @@ The semiring projection supplies both operation roles and their unit points.
 The additive-group projection supplies inversion and subtraction.
 Both paths reach one canonical additive monoid and one canonical object of `C`.
 
-The `Cat()` specialization follows the same strict-versus-coherent ruling as
-`Semirings(Cat())` in
+The `Cat()` specialization states its laws as equalities of functors, as
+`Semirings(Cat())` does in
 [Magmas, monoids, and semirings](magmas-monoids-semirings.md#the-cat-specialization).
 
 ## Owned operations

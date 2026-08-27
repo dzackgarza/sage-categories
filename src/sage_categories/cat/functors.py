@@ -243,8 +243,6 @@ class FunctorDeclaration(MorphismOfCategory):
         ],
     ) -> None:
         """Retain the conversion that initializes the selected target element role (POL-FUN-002/035)."""
-        from sage_categories.kernel.construction import ElementConstructionInput
-
         signature = inspect.signature(conversion)
         assert len(signature.parameters) == 1, "an element constructor conversion accepts one complete input"
         parameter = next(iter(signature.parameters.values()))
@@ -265,8 +263,6 @@ class FunctorDeclaration(MorphismOfCategory):
         ],
     ) -> None:
         """Retain the sole morphism-action implementation used by structural construction (POL-FUN-035)."""
-        from sage_categories.kernel.construction import MorphismConstructionInput
-
         signature = inspect.signature(conversion)
         assert len(signature.parameters) == 1, "a morphism constructor conversion accepts one complete input"
         parameter = next(iter(signature.parameters.values()))

@@ -17,7 +17,7 @@ from sage.structure.coerce_dict import MonoDict
 
 import sage_categories.posets.category as _posets
 from sage_categories.kernel.decisions import Unknown
-from sage_categories.kernel.predicates import ask
+from sage_categories.kernel.predicates import ask, disjunction
 from sage_categories.posets.category import Poset, PosetElement
 from sage_categories.sets.category import Sets
 from sage_categories.sets.elements import Datum
@@ -68,9 +68,13 @@ def element(poset: Poset, value: Datum) -> PosetElement:
 
 
 def selecting(data: Iterable[Datum]) -> MembershipRule:
-    """The membership rule selecting finitely many enumeration data."""
+    """The membership rule selecting finitely many enumeration data.
+
+    The disjunction is asked: ``==`` on an owned datum returns a proposition, not a
+    decision (POL-MATH-034/035), and a ``MembershipRule`` returns a ``Decision``.
+    """
     selected = tuple(data)
-    return lambda candidate: any(candidate == value for value in selected)
+    return lambda candidate: ask(disjunction(candidate == value for value in selected))
 
 
 def count(value: Integer) -> int:

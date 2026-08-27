@@ -46,6 +46,32 @@ def test_a_finite_enumeration_lists_distinct_members() -> None:
         Sets().Finite()((int(1), int(1)))
 
 
+def test_a_finite_set_enumerated_by_owned_points_decides_membership_and_image() -> None:
+    """A datum may be an owned point, whose ``==`` is a proposition rather than a decision.
+
+    Oracles: distinct points of ``[2]`` are distinct members, so ``#{p_0, p_1} = 2``;
+    a constant map has a one-element image (``Set.image_const`` on a nonempty domain).
+    """
+    three = Sets().Simplex(int(2))
+    first, second, third = three.point(int(0)), three.point(int(1)), three.point(int(2))
+    pair = Sets().Finite()((first, second))
+
+    assert pair in Sets().Finite()
+    assert ask(pair.cardinality() == int(2)) is True
+    assert pair.point(first) in pair
+    assert ask(pair.membership_proposition(pair.point(second))) is True
+    with pytest.raises(AssertionError):
+        pair.point(third)
+
+    constant = Mor(Sets())(pair, pair)(lambda datum: first)
+    image = constant.image()
+
+    assert image in Sets().Finite()
+    assert ask(image.cardinality() == int(1)) is True
+    assert ask(image.membership_proposition(image.point(first))) is True
+    assert image.monomorphism() in Mor(Sets())(image, pair).Monomorphisms()
+
+
 def test_a_rule_defined_set_needs_no_enumeration_and_equals_itself_only() -> None:
     integers, other_integers = _integers(), _integers()
 

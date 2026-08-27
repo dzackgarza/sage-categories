@@ -9,7 +9,7 @@ from sage.rings.integer import Integer
 from sage.rings.rational import Rational
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.functors import Fun as Fun, Functor as Functor
-from sage_categories.kernel.decisions import Decision as Decision
+from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown
 from sage_categories.kernel.refinement import refine as refine
 from sage_categories.kernel.roles import ElementOfObject as ElementOfObject, MorphismOfCategory as MorphismOfCategory, ObjectOfCategory as ObjectOfCategory
 from sage_categories.sets.cardinals import aleph0 as aleph0

@@ -89,7 +89,7 @@ from sage_categories.kernel.construction import (
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask, conjunction, disjunction, negation
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, role_of
-from sage_categories.ordinals.category import OrdinalObject, Ordinals, bind_cardinals
+from sage_categories.ordinals.category import OrdinalObject, Ordinals, bind_cardinals, is_natural_number
 from sage_categories.sets.maps import SetMorphismData
 from sage_categories.sets.objects import SetObjectData
 
@@ -333,11 +333,16 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
         return self._cardinals[key]
 
     def __call__(self, value: CardinalObject | int) -> CardinalObject:
-        """``Cardinal()(n)`` for a nonnegative integer; a cardinal is returned unchanged."""
+        """``Cardinal()(n)`` for a nonnegative integer; a cardinal is returned unchanged.
+
+        A finite cardinal is a natural number, and its Python integer keys the
+        expression and sizes the representative, so the constructor states integrality
+        here instead of failing later at the representative.
+        """
         if value in self:
             return value
-        assert value >= 0, f"{value!r} is not a cardinal"
-        return self._retain(("finite", value), ())
+        assert is_natural_number(value), f"{value!r} is not a cardinal"
+        return self._retain(("finite", int(value)), ())
 
     def aleph(self, index: OrdinalObject | int) -> CardinalObject:
         """``aleph(alpha)`` for an ordinal index; an ``int`` is the finite-ordinal convenience (Mathlib ``Cardinal.aleph``)."""
@@ -521,7 +526,7 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
             return Unknown
         if candidate in self:
             second = candidate
-        elif role_of(candidate) is None:
+        elif role_of(candidate) is None and is_natural_number(candidate):
             second = self(candidate)
         else:
             return Unknown

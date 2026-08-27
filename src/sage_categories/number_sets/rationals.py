@@ -11,11 +11,12 @@ from __future__ import annotations
 
 from sage.rings.integer import Integer
 from sage.rings.rational import Rational
+from sage.rings.qqbar import QQbar as _algebraic_numbers
 from sage.rings.rational_field import QQ as _rational_field
 
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor
-from sage_categories.kernel.decisions import Decision
+from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.cardinals import aleph0
@@ -28,8 +29,20 @@ __all__ = ["QQ", "Rationals", "RationalsCategory"]
 
 
 def _is_rational(datum: Datum) -> Decision:
-    """Sage's exact rational field decides membership of a datum at the private boundary."""
-    return datum in _rational_field
+    """Sage's exact rational field decides membership; the algebraic numbers carry the negative decision.
+
+    ``QQbar`` is the algebraic closure of ``QQ`` and "all computations are exact"
+    (``sage/rings/qqbar.py``, module docstring; inspected 2026-08-28), so an
+    algebraic number that ``QQ`` does not admit is exactly irrational.  That field
+    is the whole declared semantic domain of the negative decision: outside it there
+    is no such algorithm, and the rationality of ``euler_gamma`` is an open problem.
+    An open problem is ``Unknown``, not ``False`` (POL-MATH-042).
+    """
+    if datum in _rational_field:
+        return True
+    if datum in _algebraic_numbers:
+        return False
+    return Unknown
 
 
 class RationalSet(ObjectOfCategory):

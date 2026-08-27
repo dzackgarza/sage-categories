@@ -192,13 +192,18 @@ class FiniteSubsetsCategory(PropertySubcategory[[Rule], []]):
         cardinals = Cardinal()
         if base_cardinality is Unknown:
             return Unknown
-        if ask(base_cardinality.is_finite()) is True:
+        finite = ask(base_cardinality.is_finite())
+        if finite is True:
             if size is Unknown:
                 # Finset.card_powerset, Cardinal.mk_set.
                 return cardinals(2) ** base_cardinality
             # Finset.card_powersetCard, Fintype.card_finset_len; the engine's integer is lowered to
             # the Python integer that keys every finite cardinal.
             return cardinals(int(binomial(base_cardinality._finite_value_(), size)))
+        if finite is not False:
+            # Every remaining theorem hypothesizes an infinite base set, which an
+            # undecided finiteness does not supply.
+            return Unknown
         if size is Unknown:
             # Cardinal.mk_finset_of_infinite.
             return base_cardinality
@@ -302,8 +307,9 @@ class FinitelySupportedFunctionsCategory(PropertySubcategory[[Rule], []]):
             # Cardinal.mk_finsupp_lift_of_fintype: every function on a finite index set is finitely supported.
             return value_cardinality**index_cardinality
         if ask(value_cardinality == 1) is True:
+            # The basepoint is the only value, so the constant function is the only one; no hypothesis on S.
             return Cardinal()(1)
-        if ask(value_cardinality >= 2) is True:
+        if ask(index_cardinality.is_infinite()) is True and ask(value_cardinality >= 2) is True:
             # Cardinal.mk_finsupp_of_infinite: #(S →₀ X) = max(#S, #X) for infinite S and nontrivial X.
             return Cardinal().supremum(index_cardinality, value_cardinality)
         return Unknown

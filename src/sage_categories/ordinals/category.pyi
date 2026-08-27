@@ -8,7 +8,9 @@ from sage_categories.kernel.decisions import Decision as Decision, Unknown as Un
 from sage_categories.kernel.predicates import AppliedPredicate as AppliedPredicate, Predicate as Predicate, ask as ask
 from sage_categories.kernel.roles import CategoryPoint as CategoryPoint, ElementOfObject as ElementOfObject, MorphismOfCategory as MorphismOfCategory, ObjectOfCategory as ObjectOfCategory, role_of as role_of
 from sage_categories.sets.cardinals import CardinalObject as CardinalObject
+from typing import Any
 
+def is_natural_number(value: Any) -> bool: ...
 def bind_cardinals() -> None: ...
 type Key = tuple[Hashable, ...]
 

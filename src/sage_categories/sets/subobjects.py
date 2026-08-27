@@ -101,10 +101,14 @@ def _distinct(data: tuple[Datum, ...]) -> tuple[Datum, ...] | UnknownClass:
 
     An enumeration lists each member once (POL-SET-011/027), so an undecided pairwise
     comparison leaves the list unusable as one and the caller keeps its set rule-defined.
+
+    Each comparison goes through ``ask``: ``==`` on an owned datum returns a
+    proposition, not a decision (POL-MATH-034/035), so only ``ask`` yields the
+    ``True``/``False``/``Unknown`` this deduplication branches on.
     """
-    if any((first == second) is Unknown for position, first in enumerate(data) for second in data[:position]):
+    if any(ask(first == second) is Unknown for position, first in enumerate(data) for second in data[:position]):
         return Unknown
-    return tuple(datum for position, datum in enumerate(data) if not any((datum == earlier) is True for earlier in data[:position]))
+    return tuple(datum for position, datum in enumerate(data) if not any(ask(datum == earlier) is True for earlier in data[:position]))
 
 
 def _subset_by_identity(first: CategoryPoint, candidate: Any) -> Decision:

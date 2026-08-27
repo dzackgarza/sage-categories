@@ -234,14 +234,16 @@ def active_morphism_context() -> MorphismConstructionContext | None:
     return _morphism_context.get()
 
 
-def active_construction_context() -> ObjectConstructionContext | ElementConstructionContext | MorphismConstructionContext | None:
-    """The sole active role-construction context."""
+def active_construction_context(
+    value: ObjectOfCategory | ElementOfObject | MorphismOfCategory,
+) -> ObjectConstructionContext | ElementConstructionContext | MorphismConstructionContext | None:
+    """The active role-construction context for ``value``."""
     contexts = tuple(
         context
         for context in (active_object_context(), active_element_context(), active_morphism_context())
-        if context is not None
+        if context is not None and context.canonical_image is value
     )
-    assert len(contexts) <= 1, "one public value cannot have two active construction contexts"
+    assert len(contexts) <= 1, f"{value!r} cannot have two active construction contexts"
     return contexts[0] if contexts else None
 
 

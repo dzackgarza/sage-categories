@@ -651,7 +651,7 @@ def _object_wrapper(current: Node) -> FunctionType:
         category: Category | None = None,
         data: Datum | None = None,
     ) -> None:
-        active = active_construction_context()
+        active = active_construction_context(instance)
         if active is not None and active.canonical_image is instance:
             assert category is None and data is None, "an ancestor object constructor receives only its precomputed input"
             active.run(current)
@@ -676,7 +676,7 @@ def _element_wrapper(current: Node) -> FunctionType:
         defining_morphism: MorphismOfCategory | None = None,
         data: Datum | None = None,
     ) -> None:
-        active = active_construction_context()
+        active = active_construction_context(instance)
         if active is not None and active.canonical_image is instance:
             assert defining_morphism is None and data is None, "an ancestor element constructor receives only its precomputed input"
             active.run(current)
@@ -701,7 +701,7 @@ def _morphism_wrapper(current: Node) -> FunctionType:
         codomain: ObjectOfCategory | None = None,
         data: Datum | None = None,
     ) -> None:
-        active = active_construction_context()
+        active = active_construction_context(instance)
         if active is not None and active.canonical_image is instance:
             assert category is None and domain is None and codomain is None and data is None, (
                 "an ancestor morphism constructor receives only its precomputed input"

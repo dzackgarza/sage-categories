@@ -104,7 +104,8 @@ class PosetDeclaration(ObjectOfCategory):
     def element(self, point: SetPoint) -> PosetElement:
         """The classical element over a point ``x: 1 -> U(P)``: the monotone map ``1 -> P`` under ``x``."""
         state = self._poset_object_data
-        assert point in state.underlying_set, f"{point!r} is not a point of {state.underlying_set!r}"
+        carrier = self._set_object_data.canonical
+        assert point in carrier, f"{point!r} is not a point of {carrier!r}"
         if point not in state.elements:
             posets = Posets()
             defining_morphism = posets._construct_morphism(posets.Terminal(), self, point.defining_morphism())

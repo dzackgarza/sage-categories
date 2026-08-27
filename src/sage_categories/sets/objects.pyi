@@ -25,8 +25,6 @@ class SetObjectData:
     cardinality: CardinalObject | UnknownClass
     points: dict[Datum, SetElement] = field(default_factory=dict)
     rule_points: MonoDict = field(default_factory=MonoDict)
-    canonical: SetObject = field(init=False)
-    def bind(self, canonical: SetObject) -> None: ...
 
 class SetObjectDeclaration(ObjectOfCategory):
     def __init__(self, data: SetObjectData) -> None: ...

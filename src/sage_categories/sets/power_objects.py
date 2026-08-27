@@ -27,11 +27,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sage.structure.coerce_dict import MonoDict, TripleDict
-
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
 from sage_categories.cat.properties import PropertySubcategory
+from sage_categories.kernel.caches import retained_method
 from sage_categories.kernel.decisions import Decision
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import ObjectOfCategory, Role
@@ -51,7 +50,7 @@ class PowerObjectRole(ObjectOfCategory):
 
     def base_set(self) -> SetObject:
         """``X``, retained at construction."""
-        return _sets.Sets().PowerObjects().retained_base_set(self)
+        return _sets.Sets().PowerObjects().retained_datum(self)
 
     def from_predicate(self, predicate: MembershipRule) -> SetObject:
         """The chosen subset ``{x in X : predicate(x)}`` with its monomorphism."""
@@ -87,12 +86,6 @@ class PowerObjectsCategory(PropertySubcategory[[Rule], []]):
     """``Sets().PowerObjects()``: the power objects ``2 ** X``, a narrowing of ``Sets()`` retaining each base set."""
 
     def __init__(self, ambient: Category[[Rule], []]) -> None:
-        self._base_sets: MonoDict = MonoDict()
-        self._subsets: MonoDict = MonoDict()
-        self._tops: MonoDict = MonoDict()
-        self._bottoms: MonoDict = MonoDict()
-        self._inverse_images: TripleDict = TripleDict(weak_values=False)
-        self._direct_images: TripleDict = TripleDict(weak_values=False)
         super().__init__(ambient, "PowerObjects", {Role.OBJECT: PowerObjectRole}, ())
 
     def __call__(self, base_set: SetObject) -> SetObject:
@@ -100,50 +93,39 @@ class PowerObjectsCategory(PropertySubcategory[[Rule], []]):
         sets = _sets.Sets()
         assert base_set in sets, f"{base_set!r} is not an object of {sets!r}"
         power = function_set(base_set, sets.Simplex(1))
-        if power not in self._base_sets:
-            self._base_sets[power] = base_set
+        if power not in self:
+            self.retain_datum(power, base_set)
             refine(power, self)
         return power
 
-    def retained_base_set(self, power: SetObject) -> SetObject:
-        assert power in self._base_sets, f"{power!r} retains no base set"
-        return self._base_sets[power]
-
+    @retained_method
     def subset_of_characteristic_morphism(self, power: SetObject, characteristic: SetMap) -> SetObject:
         sets = _sets.Sets()
-        base_set = self.retained_base_set(power)
+        base_set = self.retained_datum(power)
         assert characteristic in sets.morphism_category(1)(base_set, sets.Simplex(1)), f"{characteristic!r} is not a map {base_set!r} -> [1]"
-        if characteristic not in self._subsets:
-            rule = characteristic._set_morphism_data.rule
-            self._subsets[characteristic] = base_set.subset_from(lambda datum: rule(datum) == 1)
-        return self._subsets[characteristic]
+        rule = characteristic._set_morphism_data.rule
+        return base_set.subset_from(lambda datum: rule(datum) == 1)
 
+    @retained_method
     def extreme_subset(self, power: SetObject, whole: bool) -> SetObject:
         """The top (``whole``) or bottom chosen subset of the base set, retained per power object."""
-        table = self._tops if whole else self._bottoms
-        if power not in table:
-            table[power] = self.retained_base_set(power).subset_from(lambda datum: whole)
-        return table[power]
+        return self.retained_datum(power).subset_from(lambda datum: whole)
 
+    @retained_method
     def inverse_image_morphism(self, power: SetObject, set_map: SetMap) -> SetMap:
         sets = _sets.Sets()
-        base_set = self.retained_base_set(power)
+        base_set = self.retained_datum(power)
         assert set_map in sets.morphism_category(1) and set_map.codomain() is base_set, f"{set_map!r} does not end at {base_set!r}"
-        key = (power, set_map, self)
-        if key not in self._inverse_images:
-            self._inverse_images[key] = sets.morphism_category(1)(power, self(set_map.domain()))(lambda name: Function(name.map() * set_map))
-        return self._inverse_images[key]
+        return sets.morphism_category(1)(power, self(set_map.domain()))(lambda name: Function(name.map() * set_map))
 
+    @retained_method
     def direct_image_morphism(self, power: SetObject, set_map: SetMap) -> SetMap:
         sets = _sets.Sets()
-        base_set = self.retained_base_set(power)
+        base_set = self.retained_datum(power)
         assert set_map in sets.morphism_category(1) and set_map.domain() is base_set, f"{set_map!r} does not start at {base_set!r}"
-        key = (power, set_map, self)
-        if key not in self._direct_images:
 
-            def image_name(name: Datum) -> Datum:
-                subset = self.subset_of_characteristic_morphism(power, name.map())
-                return Function((set_map * subset.monomorphism()).image().characteristic_morphism())
+        def image_name(name: Datum) -> Datum:
+            subset = self.subset_of_characteristic_morphism(power, name.map())
+            return Function((set_map * subset.monomorphism()).image().characteristic_morphism())
 
-            self._direct_images[key] = sets.morphism_category(1)(power, self(set_map.codomain()))(image_name)
-        return self._direct_images[key]
+        return sets.morphism_category(1)(power, self(set_map.codomain()))(image_name)

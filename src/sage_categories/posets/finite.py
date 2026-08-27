@@ -36,17 +36,15 @@ from sage_categories.cat.diagrams import sequence_position
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.shapes import Discrete
-from sage_categories.kernel.construction import MorphismConstructionInput, ObjectConstructionInput
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import AppliedPredicate, ask
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role
 from sage_categories.posets import _finite_poset_sage as engine
-from sage_categories.posets.category import MonotoneMap, Poset, PosetElement, PosetMorphismData, PosetObjectData
+from sage_categories.posets.category import Poset, PosetElement, PosetMorphismData, PosetObjectData
 from sage_categories.sets.cardinals import Cardinal, CardinalObject
 from sage_categories.sets.category import SetObject, Sets
-from sage_categories.sets.maps import Rule, SetMorphismData
-from sage_categories.sets.objects import SetObjectData
+from sage_categories.sets.maps import Rule
 
 if TYPE_CHECKING:
     from sage_categories.sets.category import SetMap
@@ -221,28 +219,23 @@ class FinitePosetsCategory(PropertySubcategory[[Rule], []]):
 
     @cached_method
     def underlying_finite_set_functor(self) -> Functor:
-        """``U`` restricted to ``Sets().Finite()``, retained once: the very same underlying set and set map."""
-        underlying = self._ambient.underlying_set_functor()
+        """``U`` restricted to ``Sets().Finite()``, retained once: the very same carrier and set map, stated finite.
+
+        Both rules name the values ``U``'s rules name, so the two routes to ``Sets()``
+        return one value by identity.  The theorem each states is the one this category
+        trusts: the underlying set of a finite poset is finite, and so is the underlying
+        map of a monotone map between finite posets (POL-CAT-069).
+        """
         finite_sets = Sets().Finite()
-        finite_underlying = Fun(self, finite_sets).Faithful()(underlying.on_object, underlying.on_morphism)
 
-        def object_input(
-            source: ObjectConstructionInput[Poset, PosetObjectData],
-        ) -> ObjectConstructionInput[SetObject, SetObjectData]:
-            target: ObjectConstructionInput[SetObject, SetObjectData] = underlying.object_constructor_input(source)
-            finite_sets(target.canonical_image)
-            return target
+        def finite_carrier(order: PosetObjectData) -> SetObject:
+            return finite_sets(self._ambient.carrier(order.relation))
 
-        def morphism_input(
-            source: MorphismConstructionInput[MonotoneMap, PosetMorphismData],
-        ) -> MorphismConstructionInput[SetMap, SetMorphismData]:
-            target: MorphismConstructionInput[SetMap, SetMorphismData] = underlying.morphism_constructor_input(source)
-            refine(target.canonical_image, finite_sets.morphism_category(1))
-            return target
+        def finite_map(monotone: PosetMorphismData) -> SetMap:
+            refine(monotone.set_map, finite_sets.morphism_category(1))
+            return monotone.set_map
 
-        finite_underlying.retain_object_constructor_conversion(object_input)
-        finite_underlying.retain_morphism_constructor_conversion(morphism_input)
-        return finite_underlying
+        return Fun(self, finite_sets).Faithful()(finite_carrier, finite_map)
 
     def structure_functors(self) -> tuple[Functor, ...]:
         """The monomorphism into ``Posets()``, then ``U`` restricted to ``Sets().Finite()``."""

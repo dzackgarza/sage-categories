@@ -48,11 +48,12 @@ from __future__ import annotations
 
 from sage.arith.misc import binomial
 from sage.combinat.subset import Subsets
-from sage.structure.coerce_dict import MonoDict, TripleDict
+from sage.structure.coerce_dict import MonoDict
 
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
 from sage_categories.cat.properties import PropertySubcategory
+from sage_categories.kernel.caches import retained_method
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import ask, conjunction
 from sage_categories.kernel.refinement import refine
@@ -84,7 +85,7 @@ class FiniteSubsetsRole(ObjectOfCategory):
     """The local object role of ``Sets().FiniteSubsets()``: a set of finite subsets of a base set."""
 
     def base_set(self) -> SetObject:
-        return _sets.Sets().FiniteSubsets().retained_base_set(self)
+        return _sets.Sets().FiniteSubsets().retained_datum(self)
 
     def subset_at(self, point: SetElement) -> SetObject:
         """The finite chosen subobject of the base set that a point selects, retained per point."""
@@ -129,36 +130,29 @@ class FiniteSubsetsCategory(PropertySubcategory[[Rule], []]):
     """``Sets().FiniteSubsets()``: the sets of finite subsets of a set, a narrowing of ``Sets()``; owns their construction and enumeration engines."""
 
     def __init__(self, ambient: Category[[Rule], []]) -> None:
-        self._objects: MonoDict = MonoDict()
-        self._sized_objects: TripleDict = TripleDict(weak_values=False)
-        self._base_sets: MonoDict = MonoDict()
         self._engines: MonoDict = MonoDict()
         self._sizes: MonoDict = MonoDict()
-        self._subsets: MonoDict = MonoDict()
         super().__init__(ambient, "FiniteSubsets", {Role.OBJECT: FiniteSubsetsRole}, ())
 
     # -- construction -----------------------------------------------------------------
 
+    @retained_method
     def __call__(self, base_set: SetObject) -> SetObject:
         """The set of finite subsets of ``X``, retained per ``X``."""
         sets = _sets.Sets()
         assert base_set in sets, f"{base_set!r} is not an object of {sets!r}"
-        if base_set not in self._objects:
-            self._objects[base_set] = self._construct(base_set, Unknown)
-        return self._objects[base_set]
+        return self._construct(base_set, Unknown)
 
+    @retained_method
     def of_size(self, size: int, base_set: SetObject) -> SetObject:
         """``Sets().SubsetsOfSize(k)(X)``: the set of subsets of ``X`` of size ``k``, retained per pair."""
         sets = _sets.Sets()
         assert base_set in sets, f"{base_set!r} is not an object of {sets!r}"
         sized = sets.SubsetsOfSize(size)
-        key = (sized, base_set, self)
-        if key not in self._sized_objects:
-            subsets = self._construct(base_set, size)
-            self._sizes[subsets] = sized.size()
-            refine(subsets, sized)
-            self._sized_objects[key] = subsets
-        return self._sized_objects[key]
+        subsets = self._construct(base_set, size)
+        self._sizes[subsets] = sized.size()
+        refine(subsets, sized)
+        return subsets
 
     def _construct(self, base_set: SetObject, size: int | UnknownClass) -> SetObject:
         sets = _sets.Sets()
@@ -184,7 +178,7 @@ class FiniteSubsetsCategory(PropertySubcategory[[Rule], []]):
                 # Mathlib ``Finset.countable``: the finite subsets of a countable type are countable.
                 sets.Countable()(subsets)
         refine(subsets, self)
-        self._base_sets[subsets] = base_set
+        self.retain_datum(subsets, base_set)
         return subsets
 
     def _cardinality(self, base_cardinality: CardinalObject | UnknownClass, size: int | UnknownClass) -> CardinalObject | UnknownClass:
@@ -214,39 +208,34 @@ class FiniteSubsetsCategory(PropertySubcategory[[Rule], []]):
 
     # -- the retained data ------------------------------------------------------------
 
-    def retained_base_set(self, subsets: SetObject) -> SetObject:
-        assert subsets in self._base_sets, f"{subsets!r} retains no base set"
-        return self._base_sets[subsets]
-
     def retained_size(self, subsets: SetObject) -> CardinalObject:
         assert subsets in self._sizes, f"{subsets!r} retains no subset size"
         return self._sizes[subsets]
 
+    @retained_method
     def subset_at(self, subsets: SetObject, point: SetElement) -> SetObject:
         assert point in subsets, f"{point!r} is not a point of {subsets!r}"
-        if point not in self._subsets:
-            sets = _sets.Sets()
-            base_set, members = self.retained_base_set(subsets), point._point_datum_()
-            if sets.Finite().has_chosen_enumeration(base_set):
-                # The induced enumeration lists the members in the order of the base set's.
-                members = frozenset(datum for datum in sets.Finite().chosen_enumeration(base_set) if datum in members)
-            self._subsets[point] = sets.ChosenSubsets().from_enumeration(base_set, tuple(members))
-        return self._subsets[point]
+        sets = _sets.Sets()
+        base_set, members = self.retained_datum(subsets), point._point_datum_()
+        if sets.Finite().has_chosen_enumeration(base_set):
+            # The induced enumeration lists the members in the order of the base set's.
+            members = frozenset(datum for datum in sets.Finite().chosen_enumeration(base_set) if datum in members)
+        return sets.ChosenSubsets().from_enumeration(base_set, tuple(members))
 
     def point_of(self, subsets: SetObject, subset: SetObject) -> SetElement:
         sets = _sets.Sets()
-        base_set = self.retained_base_set(subsets)
+        base_set = self.retained_datum(subsets)
         assert subset in sets.ChosenSubsets() and subset.underlying_set() is base_set, f"{subset!r} is not a chosen subset of {base_set!r}"
         assert sets.Finite().has_chosen_enumeration(subset), f"{subset!r} has no chosen enumeration"
         return subsets.point(frozenset(sets.Finite().chosen_enumeration(subset)))
 
     def index(self, subsets: SetObject, subset: SetObject) -> CardinalObject:
-        assert subsets in self._engines, f"{self.retained_base_set(subsets)!r} has no chosen enumeration, so {subsets!r} has no induced enumeration"
+        assert subsets in self._engines, f"{self.retained_datum(subsets)!r} has no chosen enumeration, so {subsets!r} has no induced enumeration"
         # The engine returns a Sage ``Integer``; the owned cardinal is built from its exact value.
         return Cardinal()(int(self._engines[subsets].rank(self.point_of(subsets, subset)._point_datum_())))
 
     def subset_at_position(self, subsets: SetObject, position: CardinalObject | int) -> SetObject:
-        assert subsets in self._engines, f"{self.retained_base_set(subsets)!r} has no chosen enumeration, so {subsets!r} has no induced enumeration"
+        assert subsets in self._engines, f"{self.retained_datum(subsets)!r} has no chosen enumeration, so {subsets!r} has no induced enumeration"
         return self.subset_at(subsets, subsets.point(frozenset(self._engines[subsets].unrank(_position(position)))))
 
 
@@ -257,47 +246,43 @@ class FinitelySupportedFunctionsRole(ObjectOfCategory):
         return _sets.Sets().FinitelySupportedFunctions().retained_index_set(self)
 
     def value_set(self) -> SetObject:
-        return _sets.Sets().FinitelySupportedFunctions().retained_basepoint(self).parent()
+        return self.basepoint().parent()
 
     def basepoint(self) -> SetElement:
-        return _sets.Sets().FinitelySupportedFunctions().retained_basepoint(self)
+        return _sets.Sets().FinitelySupportedFunctions().retained_datum(self)
 
 
 class FinitelySupportedFunctionsCategory(PropertySubcategory[[Rule], []]):
     """``Sets().FinitelySupportedFunctions()``: the sets ``X^(S)`` of finitely supported maps, a narrowing of ``Sets()``; owns their construction."""
 
     def __init__(self, ambient: Category[[Rule], []]) -> None:
-        self._objects: TripleDict = TripleDict(weak_values=False)
         self._index_sets: MonoDict = MonoDict()
-        self._basepoints: MonoDict = MonoDict()
         super().__init__(ambient, "FinitelySupportedFunctions", {Role.OBJECT: FinitelySupportedFunctionsRole}, ())
 
+    @retained_method
     def __call__(self, index_set: SetObject, basepoint: SetElement) -> SetObject:
         """``X^(S)`` for the pointed set ``(X, x0)`` with ``x0`` a point of ``X``, retained per pair."""
         sets = _sets.Sets()
         assert index_set in sets, f"{index_set!r} is not an object of {sets!r}"
         value_set = basepoint.parent()
         assert basepoint in value_set, f"{basepoint!r} is not a point of {value_set!r}"
-        key = (index_set, basepoint, self)
-        if key not in self._objects:
-            function_set = value_set ** index_set
-            enumerated = sets.Finite().has_chosen_enumeration(index_set)
+        function_set = value_set ** index_set
+        enumerated = sets.Finite().has_chosen_enumeration(index_set)
 
-            def finitely_supported(datum: Datum) -> Decision:
-                match datum:
-                    case Function():
-                        return True if enumerated else Unknown
-                    case _:
-                        return False
+        def finitely_supported(datum: Datum) -> Decision:
+            match datum:
+                case Function():
+                    return True if enumerated else Unknown
+                case _:
+                    return False
 
-            cardinality = self._cardinality(index_set.cardinality(), value_set.cardinality())
-            chosen = sets.ChosenSubsets()
-            functions = chosen(function_set, finitely_supported) if cardinality is Unknown else chosen.with_cardinality(function_set, finitely_supported, cardinality)
-            refine(functions, self)
-            self._index_sets[functions] = index_set
-            self._basepoints[functions] = basepoint
-            self._objects[key] = functions
-        return self._objects[key]
+        cardinality = self._cardinality(index_set.cardinality(), value_set.cardinality())
+        chosen = sets.ChosenSubsets()
+        functions = chosen(function_set, finitely_supported) if cardinality is Unknown else chosen.with_cardinality(function_set, finitely_supported, cardinality)
+        refine(functions, self)
+        self._index_sets[functions] = index_set
+        self.retain_datum(functions, basepoint)
+        return functions
 
     def _cardinality(self, index_cardinality: CardinalObject | UnknownClass, value_cardinality: CardinalObject | UnknownClass) -> CardinalObject | UnknownClass:
         """The case tree of the module docstring."""
@@ -317,7 +302,3 @@ class FinitelySupportedFunctionsCategory(PropertySubcategory[[Rule], []]):
     def retained_index_set(self, functions: SetObject) -> SetObject:
         assert functions in self._index_sets, f"{functions!r} retains no index set"
         return self._index_sets[functions]
-
-    def retained_basepoint(self, functions: SetObject) -> SetElement:
-        assert functions in self._basepoints, f"{functions!r} retains no basepoint"
-        return self._basepoints[functions]

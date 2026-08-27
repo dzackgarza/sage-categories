@@ -943,7 +943,7 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
         functor_category = category.category().morphism_category(1)
         assert functor in functor_category, f"{functor!r} is not an object of {functor_category!r}"
         assert functor.domain() is category, f"{functor!r} does not have domain {category!r}"
-        functor._assert_complete_constructor_conversions()
+        functor._derive_selected_constructor_conversions()
     assert all(first is not second for index, first in enumerate(functors) for second in functors[index + 1 :]), (
         f"{category!r} selects one functor twice"
     )

@@ -55,11 +55,10 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from sage.structure.coerce_dict import MonoDict
-
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
 from sage_categories.cat.properties import FullSubcategory
+from sage_categories.kernel.caches import retained_method
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask, conjunction, disjunction, negation
 from sage_categories.kernel.refinement import refine
@@ -138,7 +137,7 @@ class ChosenSubsetRole(ObjectOfCategory):
 
     def monomorphism(self) -> SetMap:
         """The retained monomorphism ``A -> X`` that presents this subobject (POL-FUN-013)."""
-        return _sets.Sets().ChosenSubsets().presenting_monomorphism(self)
+        return _sets.Sets().ChosenSubsets().retained_datum(self)
 
     def underlying_set(self) -> SetObject:
         """``X``, read from the codomain of the presenting monomorphism (POL-FUN-014)."""
@@ -186,9 +185,6 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
     """``Sets().ChosenSubsets()``: the construction family of the chosen subsets; owns their construction and retains each presenting monomorphism."""
 
     def __init__(self, ambient: Category[[Rule], []]) -> None:
-        self._monomorphisms: MonoDict = MonoDict()
-        self._images: MonoDict = MonoDict()
-        self._characteristics: MonoDict = MonoDict()
         super().__init__(ambient)
 
     def name(self) -> str:
@@ -220,19 +216,18 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
         refine(subset, self)
         return self._retain_monomorphism(subset, base_set)
 
+    @retained_method
     def characteristic_morphism_of(self, subset: SetObject) -> SetMap:
         """``chi_A``, retained per chosen subset."""
-        if subset not in self._characteristics:
-            sets = _sets.Sets()
-            rule = subset._set_object_data.membership_rule
+        sets = _sets.Sets()
+        rule = subset._set_object_data.membership_rule
 
-            def indicator(datum: Datum) -> Datum:
-                decision = rule(datum)
-                assert decision is not Unknown, f"membership of {datum!r} in {subset!r} is not decided, so its characteristic morphism has no value there"
-                return 1 if decision is True else 0
+        def indicator(datum: Datum) -> Datum:
+            decision = rule(datum)
+            assert decision is not Unknown, f"membership of {datum!r} in {subset!r} is not decided, so its characteristic morphism has no value there"
+            return 1 if decision is True else 0
 
-            self._characteristics[subset] = sets.morphism_category(1)(subset.underlying_set(), sets.Simplex(1))(indicator)
-        return self._characteristics[subset]
+        return sets.morphism_category(1)(subset.underlying_set(), sets.Simplex(1))(indicator)
 
     def __call__(self, base_set: SetObject, predicate: MembershipRule) -> SetObject:
         """The chosen subset ``{x in X : predicate(x)}`` with its monomorphism into ``X``."""
@@ -257,13 +252,12 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
             sets.Countable()(subset)
         return self._retain_monomorphism(subset, base_set)
 
+    @retained_method
     def image_of(self, set_map: SetMap) -> SetObject:
         """``f.image()``: the chosen subset of the codomain of the points with a preimage, retained per map."""
         sets = _sets.Sets()
         finite, countable, monomorphisms = sets.Finite(), sets.Countable(), sets.morphism_category(1).Monomorphisms()
         assert set_map in sets.morphism_category(1), f"{set_map!r} is not a set map"
-        if set_map in self._images:
-            return self._images[set_map]
         domain, codomain = set_map.domain(), set_map.codomain()
         codomain_rule = codomain._set_object_data.membership_rule
         if finite.has_chosen_enumeration(domain):
@@ -275,8 +269,7 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
                 # distinct image data, each pairwise comparison exact.
                 subset = finite(distinct)
                 refine(subset, self)
-                self._images[set_map] = self._retain_monomorphism(subset, codomain)
-                return subset
+                return self._retain_monomorphism(subset, codomain)
 
             def has_preimage(datum: Datum) -> Decision:
                 in_codomain = codomain_rule(datum)
@@ -305,20 +298,14 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
             finite(subset)
         elif codomain in countable:
             countable(subset)
-        self._images[set_map] = self._retain_monomorphism(subset, codomain)
-        return subset
+        return self._retain_monomorphism(subset, codomain)
 
     def _retain_monomorphism(self, subset: SetObject, base_set: SetObject) -> SetObject:
         # The monomorphism of a subset is injective: Mathlib ``Set.inclusion_injective``
         # (Mathlib.Data.Set.Inclusion; inspected 2026-08-26).
         monomorphisms = _sets.Sets().morphism_category(1)(subset, base_set).Monomorphisms()
-        self._monomorphisms[subset] = monomorphisms(lambda datum: datum)
+        self.retain_datum(subset, monomorphisms(lambda datum: datum))
         return subset
-
-    def presenting_monomorphism(self, subset: SetObject) -> SetMap:
-        """The monomorphism this category retained for ``subset``."""
-        assert subset in self._monomorphisms, f"{subset!r} retains no presenting monomorphism"
-        return self._monomorphisms[subset]
 
 
 class ChosenQuotientRole(ObjectOfCategory):
@@ -326,7 +313,7 @@ class ChosenQuotientRole(ObjectOfCategory):
 
     def quotient_map(self) -> SetMap:
         """The retained quotient epimorphism ``X -> X/~``."""
-        return _sets.Sets().ChosenQuotients().retained_quotient_map(self)
+        return _sets.Sets().ChosenQuotients().retained_datum(self)
 
     def underlying_set(self) -> SetObject:
         """``X``, read from the domain of the quotient map."""
@@ -347,7 +334,6 @@ class ChosenQuotientsCategory(FullSubcategory[[Rule], []]):
     """
 
     def __init__(self, ambient: Category[[Rule], []]) -> None:
-        self._quotient_maps: MonoDict = MonoDict()
         super().__init__(ambient)
 
     def name(self) -> str:
@@ -378,10 +364,5 @@ class ChosenQuotientsCategory(FullSubcategory[[Rule], []]):
 
     def _retain_quotient_map(self, base_set: SetObject, quotient: SetObject, class_of: Callable[[Datum], Datum]) -> SetObject:
         epimorphisms = _sets.Sets().morphism_category(1)(base_set, quotient).Epimorphisms()
-        self._quotient_maps[quotient] = epimorphisms(class_of)
+        self.retain_datum(quotient, epimorphisms(class_of))
         return quotient
-
-    def retained_quotient_map(self, quotient: SetObject) -> SetMap:
-        """The quotient map this category retained for ``quotient``."""
-        assert quotient in self._quotient_maps, f"{quotient!r} retains no quotient map"
-        return self._quotient_maps[quotient]

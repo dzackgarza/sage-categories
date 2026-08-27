@@ -28,7 +28,7 @@ not a field of every map.
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 import sage_categories.sets.category as _sets
@@ -39,7 +39,7 @@ from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory
 from sage_categories.sets.elements import Datum
 
 if TYPE_CHECKING:
-    from sage_categories.sets.category import SetElement, SetMap, SetObject
+    from sage_categories.sets.category import SetElement, SetObject
 
 __all__ = ["Rule", "SetMorphismData", "injective_on_finite_domain", "maps_equal", "surjective_on_finite_domain"]
 
@@ -51,35 +51,28 @@ class SetMorphismData:
     """The private state used by the complete set-morphism implementation."""
 
     rule: Rule
-    canonical: SetMap = field(init=False)
-
-    def bind(self, canonical: SetMap) -> None:
-        """Bind direct construction once; inherited construction reuses that state."""
-        if not hasattr(self, "canonical"):
-            self.canonical = canonical
 
 
 class SetMapDeclaration(MorphismOfCategory):
     """The local ``Sets().MorphismType`` declaration."""
 
     def __init__(self, data: SetMorphismData) -> None:
-        data.bind(self)
         self._set_morphism_data = data
         super().__init__()
 
     def __call__(self, element: SetElement) -> SetElement:
         """Compose with a generalized element; evaluate its datum at the separator (POL-CAT-040)."""
         assert element in self.domain(), f"{element!r} is not an element of {self.domain()!r}"
-        canonical_map = self._set_morphism_data.canonical
-        canonical = element._set_element_data.canonical
-        if canonical.defining_morphism().domain() is _sets.Sets().Terminal():
-            return canonical_map.codomain().point(self._set_morphism_data.rule(canonical._point_datum_()))
-        defining_morphism = canonical_map * canonical.defining_morphism()
-        return _sets.Sets().element_from_defining_morphism(defining_morphism)
+        sets = _sets.Sets()
+        underlying_map = sets.structural_image(self)
+        underlying = sets.structural_image(element)
+        if underlying.defining_morphism().domain() is sets.Terminal():
+            return underlying_map.codomain().point(self._set_morphism_data.rule(underlying._point_datum_()))
+        return sets.element_from_defining_morphism(underlying_map * underlying.defining_morphism())
 
     def image(self) -> SetObject:
         """The chosen subset of the codomain of the points with a preimage, with its monomorphism (POL-ENGINE-004; ``sets/subobjects.py``)."""
-        return _sets.Sets().ChosenSubsets().image_of(self._set_morphism_data.canonical)
+        return _sets.Sets().ChosenSubsets().image_of(_sets.Sets().structural_image(self))
 
     def __repr__(self) -> str:
         return f"SetMap({self.domain()!r} -> {self.codomain()!r})"

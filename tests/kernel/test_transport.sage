@@ -84,7 +84,7 @@ class Carrying(Category):
 
     def structure_functors(self):
         if "carrier" not in self._selected:
-            self._selected["carrier"] = Fun(self, Sets()).Faithful().structural(
+            self._selected["carrier"] = Fun(self, Sets()).Faithful()(
                 lambda datum: datum.carrier,
                 lambda datum: datum.set_map,
             )
@@ -159,11 +159,11 @@ class Ringlike(Category):
 
     def structure_functors(self):
         if "routes" not in self._selected:
-            to_additive = Fun(self, self._additive).Faithful().structural(
+            to_additive = Fun(self, self._additive).Faithful()(
                 lambda datum: datum.additive,
                 lambda datum: datum.additive,
             )
-            to_multiplicative = Fun(self, self._multiplicative).Faithful().structural(
+            to_multiplicative = Fun(self, self._multiplicative).Faithful()(
                 lambda datum: datum.multiplicative,
                 lambda datum: datum.multiplicative,
             )
@@ -383,10 +383,10 @@ def test_the_eager_check_names_both_routes_and_the_shared_category() -> None:
 
         def structure_functors(self):
             if "routes" not in self._selected:
-                retained = Fun(self, Sets()).structural(lambda datum: datum.carrier, lambda datum: datum)
+                retained = Fun(self, Sets())(lambda datum: datum.carrier, lambda datum: datum)
                 # The second route builds a new set from the same members instead of
                 # returning the retained one, which is the defect this row states.
-                rebuilt = Fun(self, Sets()).structural(lambda datum: Sets().Finite()(datum.members), lambda datum: datum)
+                rebuilt = Fun(self, Sets())(lambda datum: Sets().Finite()(datum.members), lambda datum: datum)
                 self._selected["routes"] = (retained, rebuilt)
             return self._selected["routes"]
 

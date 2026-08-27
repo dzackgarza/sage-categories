@@ -354,7 +354,14 @@ def _decided(proposition: Decision | Proposition) -> Basic:
             return operator(*values)
         case AppliedPredicate():
             decision = _ask_applied(proposition)
-            return proposition.engine_value() if decision is Unknown else sympify(decision)
+            if decision is not Unknown:
+                return sympify(decision)
+            if not all(map(_representable, proposition.arguments())):
+                # An equality candidate may be neither owned nor an integer
+                # (``POL-TYPE-004``), and the session carries no symbol for it, so the
+                # leaf is undecided in the same way an ``Unknown`` part is.
+                return Dummy("undecided")
+            return proposition.engine_value()
     raise TypeError(f"{proposition!r} is not a proposition")
 
 

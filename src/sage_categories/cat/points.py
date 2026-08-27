@@ -6,11 +6,11 @@ category ``Discrete PUnit`` and ``Functor.fromPUnit``; the repository names the 
 object in the category itself instead of in a constant functor
 (``Mathlib/CategoryTheory/PUnit``, inspected 2026-08-27).
 
-``{X}`` owns the declarations specific to ``X``.  It selects the monomorphism into the
-category ``X`` was already placed in, then one **point functor** per target: the
-subcategory monomorphism ``{X} -> D`` stating one further placement of ``X`` as an object of
-``D`` (``specs/functor.md``, "Point categories and point functors").  ``{X}`` has one
-hom category, so every functor out of it is faithful.
+``{X}`` selects the monomorphism into the category ``X`` was already placed in, then one
+**point functor** per target: the subcategory monomorphism ``{X} -> D`` stating one
+further placement of ``X`` as an object of ``D`` (``specs/functor.md``, "Point categories
+and point functors").  ``{X}`` has one hom category, so every functor out of it is
+faithful.
 
 The member and its identity keep the placements they already have; membership in the
 punctual category is the exact identity statement owned by this construction.
@@ -20,10 +20,9 @@ from __future__ import annotations
 
 from sage_categories.cat.category import Category
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.kernel.compiler import empty_local_role
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import Predicate, Proposition
-from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, Role
+from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory
 
 __all__ = ["PointCategory", "PointMorphismCategory"]
 
@@ -58,10 +57,9 @@ class PointMorphismCategory(MorphismCategory[[], []]):
 class PointCategory(Category[[], []]):
     """The one-object category on one existing object ``X``."""
 
-    def __init__(self, member: CategoryPoint, targets: tuple[Category, ...], roles: dict[Role, type[CategoryPoint]]) -> None:
+    def __init__(self, member: CategoryPoint, targets: tuple[Category, ...]) -> None:
         self._member = member
         self._targets = targets
-        self._roles = roles
         # The placement ``X`` already has: the monomorphism into it is what makes ``{X}`` a
         # subcategory, so refining ``X`` into ``{X}`` never weakens its placement
         # (POL-CAT-074).
@@ -89,18 +87,6 @@ class PointCategory(Category[[], []]):
             functors.subcategory_monomorphism(self, self._established),
             *(functors.subcategory_monomorphism(self, target) for target in self._targets),
         )
-
-    def local_role_class(self, role: Role) -> type[CategoryPoint]:
-        """The declarations specific to ``X``, which ``{X}`` owns (POL-CAT-083).
-
-        A distinguished named object introduces operations no other object of its ambient
-        category has -- ``ZZ(n)`` selecting an integer, the spelling ``ZZ`` -- and ``{X}``
-        is where they are declared, because ``X`` is its sole object.  A role the caller
-        declares nothing for gets the empty local declaration.
-        """
-        if role in self._roles:
-            return self._roles[role]
-        return empty_local_role(self, role)
 
     def morphism_category_type(self) -> type[PointMorphismCategory]:
         return PointMorphismCategory

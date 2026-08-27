@@ -7,7 +7,7 @@ Ordinal operations specified as predicates follow the proposition interface in
 `ask()` returns its decision.
 
 The governing policies are `POL-MATH-022` through `POL-MATH-025`, `POL-MATH-034`,
-`POL-MATH-035`, `POL-GEN-017`, `POL-CAT-001`, `POL-CAT-054`, `POL-CAT-060`, `POL-CAT-071`,
+`POL-MATH-035`, `POL-GEN-017`, `POL-GEN-020`, `POL-GEN-021`, `POL-CAT-001`, `POL-CAT-054`, `POL-CAT-060`, `POL-CAT-071`,
 `POL-CAT-083`, `POL-CAT-085`, `POL-FUN-002`, `POL-FUN-003`, `POL-FUN-035`,
 `POL-SET-025`, `POL-SET-026`, and `POL-DOC-010` through `POL-DOC-013`.
 
@@ -43,22 +43,32 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (Fun(self, Semirings(Cat())).Faithful().inclusion(),)
 ```
 
-It regards the category `Ordinals()` as one object of `Semirings(Cat())`. Its additive
-operation functor is the natural sum with unit object `0`. Its multiplicative operation
-functor is the natural product with unit object `1`. The product distributes over the
-sum, and the multiplication is commutative (Mathlib
-[`NatOrdinal.instCommSemiring`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/SetTheory/Ordinal/NaturalOps.html),
-`SetTheory.Ordinal.NaturalOps`).
+It regards the category `Ordinals()` as one object of `Semirings(Cat())`. That
+category's objects, its two operation morphisms, its unit points, and its laws are
+defined in [Semirings](magmas-monoids-semirings.md#semirings). `Ordinals()` adds only
+which functors those are: its additive operation functor is the natural sum with unit
+object `0`, and its multiplicative operation functor is the natural product with unit
+object `1`.
+
+Mathlib establishes the semiring laws for these two operations. Its
+[`Mathlib/SetTheory/Ordinal/NaturalOps.lean`](https://github.com/leanprover-community/mathlib4/blob/v4.14.0/Mathlib/SetTheory/Ordinal/NaturalOps.lean)
+defines "natural addition and multiplication on ordinals, also known as the Hessenberg
+sum and product" and states that "they're commutative, associative, preserve order, have
+the usual `0` and `1` from ordinals, and distribute over one another". Its
+`OrderedCommSemiring NatOrdinal` instance supplies the two distributivity fields
+`left_distrib` and `right_distrib`, the two absorption fields `zero_mul` and `mul_zero`,
+and `mul_comm`.
 
 The `Cat()`-level law data is the equations between these functors
 ([functor.md](functor.md#ambient-algebraic-categories)). `Ordinals()` is skeletal, so the
 natural sum and the natural product each select one representative and the laws hold as
-equalities.
+equalities
+([Laws in the supplied ambient](magmas-monoids-semirings.md#laws-in-the-supplied-ambient)).
 
 The point functor supplies complete compiled roles and exact constructor conversions.
 Those constructors initialize the semiring state before they expose its methods. The
 level shift places `zero()` and `one()` on the category and `+` and `*` on its objects
-([magmas-monoids-semirings.md](magmas-monoids-semirings.md)). One level down, the object
+([Semirings](magmas-monoids-semirings.md#semirings)). One level down, the object
 surface belongs to the category `Ordinals()` and the element surface belongs to the
 objects of `Ordinals()`:
 
@@ -142,7 +152,14 @@ Reconstructing an equal expression returns the same ordinal object.
 ### Natural arithmetic
 
 Python `+` and `*` are the semiring operations: the Hessenberg natural sum and the
-Hessenberg natural product.
+Hessenberg natural product. Each is a morphism out of a product,
+
+\[
+\alpha,\mu:\operatorname{Ordinals}()\times\operatorname{Ordinals}()
+\longrightarrow\operatorname{Ordinals}(),
+\]
+
+so applying one to a pair returns an ordinal. It presents no diagram and carries no cone.
 
 ```python
 alpha + beta

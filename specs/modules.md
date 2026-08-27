@@ -5,7 +5,8 @@ The current implementation milestone remains `Sets()` and its universal construc
 Module objects are a later vertical acceptance target for that foundation.
 
 The governing policies are `POL-MATH-019`, `POL-MATH-022`, `POL-MATH-023`,
-`POL-GEN-001`, `POL-GEN-018`, `POL-CAT-027`, `POL-CAT-030`, `POL-CAT-031`,
+`POL-GEN-001`, `POL-GEN-018`, `POL-GEN-020`, `POL-CAT-027`, `POL-CAT-030`,
+`POL-CAT-031`,
 and `POL-DOC-003` through `POL-DOC-009`.
 
 ## Ambient categorical data
@@ -30,10 +31,22 @@ The category of `A` determines `M`, while the selected actegory data determines
 how `A` acts on objects of `C`.
 Two actions on the same underlying category give different module categories.
 
-The same-category case and its action diagrams follow the
-[nLab module-object definition](https://ncatlab.org/nlab/show/module%2Bobject).
-The actegory form replaces the tensor action on the carrier by the supplied functor
-`bullet` and uses its coherence isomorphisms.
+The four items above are the parameters of the definition. No ambient category supplies
+them by itself.
+
+The same-category case follows the
+[nLab module object](https://ncatlab.org/nlab/show/module%2Bobject) entry, section
+"Definition": "Given a monoidal category (C, (x), 1), and given (A, mu, e) a monoid in
+(C, (x), 1), then a left module object in (C, (x), 1) over (A, mu, e) is an object N in
+C and a morphism rho : A (x) N -> N (called the action)" with the stated unitality and
+action-property diagrams.
+
+The form used here is the same entry's section "Definition / Generalisation": "Given a
+monoidal category (M, o, 1) and an M-module (also called M-actegory) C (supported by the
+monoidal action . : M x C -> C), and given (A, mu, e) a monoid in (M, o, 1), then a left
+module object in C over (A, mu, e) is an object N in C and a morphism rho : A . N -> N".
+Its unitality diagram uses the unitor of `bullet` and its action property uses the actor
+of `bullet`.
 
 ## Objects and action laws
 
@@ -127,7 +140,7 @@ selected actegory action.
 All other capabilities come through the selected functor to `C` or through later
 property subcategories of `Modules(A, C)`.
 
-## Closed and enriched specialization
+## Closed and enriched presentation
 
 Assume the actegory is enriched and tensored over `M`.
 Assume it has an internal endomorphism object
@@ -146,9 +159,34 @@ actegory hypotheses.
 For ordinary left modules over a ring `R`, take `M = Ab`, regard `R` as a monoid
 object under tensor product, and use the standard `Ab`-action on `Ab`.
 
+## Instances
+
+An instance needs all four parameters. Naming one ambient category does not select them.
+
+At `M = Ab` with the tensor product of abelian groups, `C = Ab` with the standard
+action, and `A = R` a ring, an object is an ordinary left `R`-module. Sage's
+[`Modules`](https://doc.sagemath.org/html/en/reference/categories/sage/categories/modules.html)
+names the same objects: "The category of all modules over a base ring R."
+
+There is no module object in `Cat()` until `M`, the left `M`-action on `Cat()`, and
+`A in Monoids(M)` are supplied. Taking `M = Cat()` with its finite products, `Cat()`
+acting on itself by product, and `A` a strict monoidal category gives objects that are
+categories `X` with a functor `A x X -> X` whose unit and action laws are equalities of
+functors.
+
+The coherent version of that data is a different construction. The
+[nLab module object](https://ncatlab.org/nlab/show/module%2Bobject) entry, section
+"Examples", records it: "The notion of coherent action object in the 2-category Cat (of
+categories with functors and natural transformations) is a categorified notion of
+'action' (namely of monoidal categories), known as module categories (also:
+'actegories')." Those laws hold up to coherent isomorphism, not as equalities of
+functors, so they are not module objects in the ordinary category `Cat()`.
+
 ## Acceptance conditions
 
 - `Modules(A, C)` retains `A`, `C`, and the selected `M`-action.
+- An instance names `M`, the action, and `A`; an ambient category alone selects no
+  instance.
 - `A` is a monoid object of the acting monoidal category `M`.
 - A module carrier is an object of the supplied category `C`.
 - The action is a morphism `A bullet X -> X` in `C`.

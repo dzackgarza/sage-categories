@@ -55,6 +55,7 @@ from sage_categories.kernel.construction import (
 )
 from sage_categories.kernel.decisions import Decision, Unknown, decision_and, decision_not, decision_or
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask
+from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, role_of
 from sage_categories.sets.category import Sets
 from sage_categories.sets.elements import Datum, SetElement, SetElementData
@@ -103,9 +104,13 @@ class PosetDeclaration(ObjectOfCategory):
         carrier = Posets().underlying_set_functor().on_object(self)
         assert point in carrier, f"{point!r} is not a point of {carrier!r}"
         if point not in state.elements:
-            posets = Posets()
+            # The classical element of ``P`` is a morphism of the category ``P`` was
+            # placed in, not of ``Posets()``: a functor out of ``Posets().Finite()``
+            # transports a morphism of ``Mor(Posets().Finite())`` (POL-CAT-074).
+            posets, category = Posets(), self.category()
             defining_morphism = posets._construct_morphism(posets.Terminal(), self, point.defining_morphism())
-            state.elements[point] = posets.element_from_defining_morphism(defining_morphism)
+            refine(defining_morphism, category.morphism_category(1))
+            state.elements[point] = category.element_from_defining_morphism(defining_morphism)
         return state.elements[point]
 
     def sub_poset(self, predicate: MembershipRule) -> Poset:

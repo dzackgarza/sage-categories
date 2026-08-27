@@ -237,7 +237,8 @@ class FiniteSubsetsCategory(PropertySubcategory[[Rule], []]):
 
     def index(self, subsets: SetObject, subset: SetObject) -> CardinalObject:
         assert subsets in self._engines, f"{self.retained_base_set(subsets)!r} has no chosen enumeration, so {subsets!r} has no induced enumeration"
-        return Cardinal()(self._engines[subsets].rank(self.point_of(subsets, subset)._classical_datum_()))
+        # The engine returns a Sage ``Integer``; the owned cardinal is built from its exact value.
+        return Cardinal()(int(self._engines[subsets].rank(self.point_of(subsets, subset)._classical_datum_())))
 
     def subset_at_position(self, subsets: SetObject, position: CardinalObject | int) -> SetObject:
         assert subsets in self._engines, f"{self.retained_base_set(subsets)!r} has no chosen enumeration, so {subsets!r} has no induced enumeration"

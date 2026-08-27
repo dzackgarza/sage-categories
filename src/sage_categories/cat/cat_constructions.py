@@ -154,7 +154,7 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
         if "objects" not in self._finite_data:
             diagram = Fun(self.shape(), Sets()).from_object_rule(lambda vertex: self.factor(vertex).object_set())
             self._finite_data["objects"] = Sets().Products()(diagram)
-        return self._finite_data["objects"]
+        return self._finite_data["objects"].apex()
 
     def object_at(self, point: SetElement) -> FamilyObject:
         self.object_set()
@@ -168,7 +168,7 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
         if "morphisms" not in self._finite_data:
             diagram = Fun(self.shape(), Sets()).from_object_rule(lambda vertex: factor_morphisms[sequence_position(vertex)])
             self._finite_data["morphisms"] = Sets().Products()(diagram)
-        return self._finite_data["morphisms"]
+        return self._finite_data["morphisms"].apex()
 
     def morphism_at(self, point: SetElement) -> FamilyMorphism:
         product = self._finite_data["morphisms"]

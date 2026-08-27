@@ -46,18 +46,17 @@ from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.shapes import ThinCategory
 from sage_categories.kernel.construction import (
-    ElementConstructionInput,
     MorphismConstructionInput,
     ObjectConstructionInput,
-    retained_element_input,
     retained_morphism_input,
     retained_object_input,
 )
 from sage_categories.kernel.decisions import Decision, Unknown, decision_and, decision_not, decision_or
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask
+from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, role_of
 from sage_categories.sets.category import Sets
-from sage_categories.sets.elements import Datum, SetElement, SetElementData
+from sage_categories.sets.elements import Datum, SetElement
 from sage_categories.sets.maps import Rule, SetMap, SetMorphismData
 from sage_categories.sets.objects import MembershipRule, SetObject, SetObjectData
 
@@ -103,9 +102,13 @@ class PosetDeclaration(ObjectOfCategory):
         carrier = Posets().underlying_set_functor().on_object(self)
         assert point in carrier, f"{point!r} is not a point of {carrier!r}"
         if point not in state.elements:
-            posets = Posets()
+            # The classical element of ``P`` is a morphism of the category ``P`` was
+            # placed in, not of ``Posets()``: a functor out of ``Posets().Finite()``
+            # transports a morphism of ``Mor(Posets().Finite())`` (POL-CAT-074).
+            posets, category = Posets(), self.category()
             defining_morphism = posets._construct_morphism(posets.Terminal(), self, point.defining_morphism())
-            state.elements[point] = posets.element_from_defining_morphism(defining_morphism)
+            refine(defining_morphism, category.morphism_category(1))
+            state.elements[point] = category.element_from_defining_morphism(defining_morphism)
         return state.elements[point]
 
     def sub_poset(self, predicate: MembershipRule) -> Poset:
@@ -131,7 +134,7 @@ class PosetDeclaration(ObjectOfCategory):
         return retained[self]
 
     def _pair(self, left: SetElement, right: SetElement) -> SetElement:
-        return _pair_point(self._poset_object_data.relation.underlying_set(), left, right)
+        return _pair_point(_square(self._poset_object_data.relation), left, right)
 
     def __repr__(self) -> str:
         return f"Poset({Posets().underlying_set_functor().on_object(self)!r})"
@@ -219,13 +222,26 @@ def _partial_order_on_enumerated(relation: SetObject) -> Decision:
     sets = Sets()
     if relation not in sets.ChosenSubsets():
         return Unknown
-    square = relation.underlying_set()
+    square = _square(relation)
     carrier = square.product_projection(0).codomain()
     if not sets.Finite().has_chosen_enumeration(carrier):
         return Unknown
     points = _enumerated_points(carrier)
     pairs = _decided(lambda left, right: ask(relation.membership_proposition(_pair_point(square, left, right))), points)
     return decision_and(_reflexive(pairs, len(points)), _antisymmetric(pairs, len(points)), _transitive(pairs, len(points)))
+
+
+def _square(relation: SetObject) -> ObjectOfCategory:
+    """The product presentation ``X * X`` that ``relation`` is a chosen subset of.
+
+    A chosen subset retains its ambient object, which is the canonical apex of the
+    product; the projections and the mediator belong to the presentation the
+    product family retains for that apex (POL-CAT-046, POL-FUN-019).
+    """
+    apex = relation.underlying_set()
+    products = Sets().Products()
+    assert products.retains(apex), f"{relation!r} is not a chosen subset of the canonical apex of a chosen product"
+    return products.canonical_presentation(apex)
 
 
 def _pair_point(square: ObjectOfCategory, left: SetElement, right: SetElement) -> SetElement:
@@ -325,8 +341,7 @@ class PosetsCategory(Category[[Rule], []]):
         return self._construct(relation)
 
     def _carrier(self, relation: SetObject) -> SetObject:
-        square = relation.underlying_set()
-        assert square in Sets().Products(), f"{relation!r} is not a subset of a chosen product"
+        square = _square(relation)
         first, second = square.product_projection(0).codomain(), square.product_projection(1).codomain()
         assert first is second, f"{relation!r} is a subset of a product of two distinct sets"
         return first

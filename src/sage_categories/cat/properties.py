@@ -11,7 +11,7 @@ A property subcategory ``C.P()`` is the full subcategory on the objects satisfyi
 a predicate ``P``.  Its constructor is the trusted boundary of that property
 (POL-CAT-038/069): calling it on a value of ``C`` refines the same value in place.
 An implication ``P => Q`` is recorded as the subcategory monomorphism ``C.P() -> C.Q()``
-(``specs/functor.md``, "Inclusion functors").  A descendant ``D`` with a selected
+(``specs/functor.md``, "Monomorphisms of ``Cat()`` and placement").  A descendant ``D`` with a selected
 subcategory monomorphism into ``C`` derives ``D.P()`` as the narrowing of ``C.P()`` to ``D``
 (POL-CAT-084): a full subcategory of both, with the same predicate.
 """
@@ -89,8 +89,8 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
         return (_functors().full_subcategory_monomorphism(self, self._ambient),)
 
     def separating_family(self) -> tuple[CategoryPoint, ...]:
-        """The stages of the ambient that are objects of this subcategory: a subcategory monomorphism carries no stage data."""
-        return tuple(stage for stage in self._ambient.separating_family() if stage in self)
+        """The separators of the ambient that are objects of this subcategory: a subcategory monomorphism supplies none of its own."""
+        return tuple(separator for separator in self._ambient.separating_family() if separator in self)
 
     def element_from_defining_morphism(self, defining_morphism: MorphismOfCategory) -> CategoryPoint:
         """The elements of a full subcategory are those of its ambient on the shared values (POL-CAT-087)."""

@@ -1,9 +1,9 @@
-"""Generalized elements, stages, stage comparisons, and result transport (``specs/functor.md``, "Structural inheritance").
+"""Generalized elements, separators, separator comparisons, and result transport (``specs/functor.md``, "Structural inheritance").
 
-Toy categories live only in this file (POL-TEST-006): abelian groups with the chosen stage ``Z``
-(a classical element of ``A`` is a homomorphism ``Z -> A``, determined by the image of
-``1``), modules over ``R = Z/2`` with the chosen stage ``R``, and the two-generator free
-modules included into them.  The module-to-group functor retains the stage comparison
+Toy categories live only in this file (POL-TEST-006): abelian groups with the chosen separator ``Z``
+(a point of ``A`` is a homomorphism ``Z -> A``, determined by the image of
+``1``), modules over ``R = Z/2`` with the chosen separator ``R``, and the two-generator free
+modules included into them.  The module-to-group functor retains the separator comparison
 ``Z -> U(R)``, ``1 |-> 1``; the group-to-set functor retains ``1 -> ZZ``, ``* |-> 1``.
 
 Each toy declares only the roles whose mathematics it introduces, and each local
@@ -12,10 +12,10 @@ functor retains its object and morphism construction-input conversions; the elem
 conversion is derived from the morphism one (POL-FUN-002).
 
 Oracles: the definition of a generalized element and of its image under a functor
-(``F`` applied to the defining morphism); the definition of the stage comparison (the
+(``F`` applied to the defining morphism); the definition of the separator comparison (the
 classical image is ``F(t)`` precomposed with ``G_D -> F(G_C)``); the sum in
 ``(Z/2)^2``; POL-CAT-062 for the category of every inherited result; POL-CAT-012 for
-the construction-defect error; the classical stages ``1`` of ``Sets()`` and ``{1, [1]}``
+the construction-defect error; the separators ``1`` of ``Sets()`` and ``{1, [1]}``
 of ``Cat()``.
 """
 
@@ -63,7 +63,7 @@ class ToyGroupHomData:
 
 @dataclass(eq=False, slots=True)
 class ToyGroupElementData:
-    """The group a classical element belongs to and the carrier datum it selects."""
+    """The group a point belongs to and the carrier datum it selects."""
 
     group: object
     datum: Datum
@@ -81,7 +81,7 @@ class ToyGroupDeclaration(ObjectOfCategory):
         return self._group_data.add(first, second)
 
     def element(self, datum: Datum) -> object:
-        """The classical element ``Z -> A``, ``k |-> k . datum``."""
+        """The point ``Z -> A``, ``k |-> k . datum``."""
         state = self._group_data
         if datum not in state.elements:
             groups = ToyAbelianGroups()
@@ -105,7 +105,7 @@ class ToyGroupElementDeclaration(ElementOfObject):
         return group.element(group.add(state.datum, other._group_element_data.datum))
 
     def __repr__(self):
-        return f"point of {self.parent()!r} at stage {self.defining_morphism().domain()!r}"
+        return f"point of {self.parent()!r} with domain {self.defining_morphism().domain()!r}"
 
 
 class ToyGroupHomDeclaration(MorphismOfCategory):
@@ -130,7 +130,7 @@ class ToyAbelianGroupsCategory(Category):
         self._generalized = MonoDict()
         super().__init__()
         self._integers = self.ObjectType(self, ToyGroupData(ZZ, lambda a, b: a + b, lambda k, a: k * a))
-        # G_Sets = 1 -> U(Z) = ZZ selects 1: the stage comparison of the underlying-set functor.
+        # G_Sets = 1 -> U(Z) = ZZ selects 1: the separator comparison of the underlying-set functor.
         self.underlying_set_functor().retain_separator_comparison(ZZ(int(1)).defining_morphism())
 
     def integers(self):
@@ -223,7 +223,7 @@ class ToyModuleDeclaration(ObjectOfCategory):
         return self._module_data.additive_group
 
     def element(self, vector: Datum) -> object:
-        """The classical element ``R -> M``, ``r |-> r . vector``."""
+        """The point ``R -> M``, ``r |-> r . vector``."""
         state = self._module_data
         if vector not in state.elements:
             modules = ToyModules()
@@ -239,7 +239,7 @@ class ToyModuleElementDeclaration(ElementOfObject):
     """No local operation: addition arrives through the additive group."""
 
     def __repr__(self):
-        return f"point of {self.parent()!r} at stage {self.defining_morphism().domain()!r}"
+        return f"point of {self.parent()!r} with domain {self.defining_morphism().domain()!r}"
 
 
 class ToyLinearMapDeclaration(MorphismOfCategory):
@@ -265,7 +265,7 @@ class ToyModulesCategory(Category):
         super().__init__()
         self._ring = self._module(int(1))
         groups = ToyAbelianGroups()
-        # The stage comparison Z -> U(R), 1 |-> 1: the reduction homomorphism.
+        # The separator comparison Z -> U(R), 1 |-> 1: the reduction homomorphism.
         self.additive_group_functor().retain_separator_comparison(Mor(groups)(groups.integers(), self._ring.additive_group())(lambda k: (k % int(2),)))
 
     def ring(self):
@@ -420,7 +420,7 @@ def _thin_functor():
 # -- rows -------------------------------------------------------------------------------------
 
 
-def test_cat_elements_at_stage_one_select_objects_and_at_the_walking_arrow_select_morphisms() -> None:
+def test_cat_elements_with_domain_one_select_objects_and_at_the_walking_arrow_select_morphisms() -> None:
     walking_arrow = Cat().Simplex(int(1))
     identity = Fun(Sets(), Sets()).Equivalences().identity()
 
@@ -439,7 +439,7 @@ def test_cat_elements_at_stage_one_select_objects_and_at_the_walking_arrow_selec
     assert point.defining_morphism() is Sets().defining_morphism()
 
 
-def test_a_generalized_element_retains_its_stage_defining_morphism_and_parent() -> None:
+def test_a_generalized_element_retains_its_domain_defining_morphism_and_parent() -> None:
     modules = ToyModules()
     plane, line = modules(int(2)), modules.ring()
     first_coordinate = Mor(modules)(plane, line)(lambda v: (v[int(0)],))
@@ -471,7 +471,7 @@ def test_the_derived_element_action_applies_the_morphism_action_and_induces_the_
     assert image.defining_morphism().domain() is not groups.integers()
 
 
-def test_represented_concrete_structure_makes_classical_elements_the_stage_points() -> None:
+def test_represented_concrete_structure_makes_points_the_separator_points() -> None:
     groups = ToyAbelianGroups()
     integers, cyclic = groups.integers(), groups.cyclic(int(4))
     three = cyclic.element(int(3))
@@ -491,7 +491,7 @@ def test_represented_concrete_structure_makes_classical_elements_the_stage_point
     assert as_element.defining_morphism().domain() is not integers
 
 
-def test_the_public_element_image_keeps_the_source_stage_and_the_compiler_input_shifts_it() -> None:
+def test_the_public_element_image_keeps_the_source_separator_and_the_compiler_input_shifts_it() -> None:
     """``F.on_element(t)`` is ``q = F(t)``; the classical compiler input is ``p = q . c_F`` (POL-FUN-002/035)."""
     modules, groups = ToyModules(), ToyAbelianGroups()
     additive = modules.structure_functors()[int(0)]
@@ -502,13 +502,13 @@ def test_the_public_element_image_keeps_the_source_stage_and_the_compiler_input_
     assert comparison in Mor(groups)(groups.integers(), additive.on_object(modules.ring()))
     assert ask(comparison.set_map()(ZZ(int(3))) == modules.ring().carrier().point((int(1),))) is True
 
-    # The public image is ``q``: its stage is ``F(G_C)``, not the target's own stage.
+    # The public image is ``q``: its domain is ``F(G_C)``, not the target's own separator.
     image = additive.on_element(first)
     assert image.defining_morphism() is additive.on_morphism(first.defining_morphism())
     assert image.defining_morphism().domain() is additive.on_object(modules.ring())
     assert image.defining_morphism().domain() is not groups.integers()
 
-    # The inherited group operation reads the classical input ``p``, whose stage is ``Z``.
+    # The inherited group operation reads the point ``p``, whose domain is ``Z``.
     total = first + plane.element((int(0), int(1)))
     assert total.parent() is plane.additive_group()
     assert total.defining_morphism().domain() is groups.integers()
@@ -530,7 +530,7 @@ def test_the_element_path_to_sets_and_special_methods_through_a_length_two_route
     assert total.defining_morphism().domain() is ToyAbelianGroups().integers()
     # ``(1, 0) + (0, 1) = (1, 1)`` and ``(0, 1) + (0, 1) = (0, 0)`` in ``(Z/2)^2``: the
     # special method inherited over two edges returns those sums, not merely a value of
-    # the additive image at the target stage.
+    # the additive image at the target separator.
     assert total is plane.additive_group().element((int(1), int(1)))
     assert ask(total.defining_morphism().set_map()(ZZ(int(1))) == plane.carrier().point((int(1), int(1)))) is True
     assert (second + second) is plane.additive_group().element((int(0), int(0)))
@@ -560,7 +560,7 @@ def test_a_route_of_length_two_transports_one_object_element_and_morphism_to_exa
     assert image.defining_morphism().set_map() is first.defining_morphism().set_map()
 
 
-def test_product_stages_map_to_the_factor_stages_with_the_identity_comparison() -> None:
+def test_product_separators_map_to_the_factor_separators_with_the_identity_comparison() -> None:
     modules, groups = ToyModules(), ToyAbelianGroups()
     product = Cat().Products()((modules, groups))
     pair = product((modules.ring(), groups.integers()))

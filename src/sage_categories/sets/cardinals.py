@@ -21,7 +21,7 @@ morphism to its map; it is fully faithful because the hom categories are, by
 definition, the function sets (the monomorphism of a skeleton, Mathlib
 ``CategoryTheory.fromSkeleton`` with ``fromSkeleton.isEquivalence``; inspected
 2026-08-27).  A cardinal is not placed in ``Sets()``: the functor is explicit, not
-an identity-on-values monomorphism (``specs/functor.md``, "Inclusion functors").
+an identity-on-values monomorphism (``specs/functor.md``, "Monomorphisms of ``Cat()`` and placement").
 
 Cardinal order is the existence of an injection between the representatives:
 ``kappa <= lambda`` is ``Mor(Cardinal()).Monomorphisms()(kappa, lambda).is_inhabited()``

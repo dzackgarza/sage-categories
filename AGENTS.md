@@ -136,7 +136,7 @@ Trace the complete implementation path before editing any part of it.
 For a product, trace all of these parts:
 
 - the kernel definition of products and their universal data;
-- the construction family and its inclusion into the ambient category;
+- the construction family and its monomorphism into the ambient category;
 - the constructed object, its projections, and its universal maps;
 - propagation through structural functors;
 - method compilation and inherited public operations;
@@ -222,15 +222,15 @@ A functor constructs an implementation in another category.
 For each category `C`:
 
 - `C.ObjectType` implements objects of `C`.
-- `C.ElementType` implements generalized elements: an element of `X in C` is a morphism `t: T -> X`, an object of `C.SliceOver(X)`; `t.stage()` is `T` and `t.parent()` is the codomain `X`.
+- `C.ElementType` implements generalized elements: an element of `X in C` is a morphism `t: T -> X`, an object of `C.SliceOver(X)`; `T` is the domain of that morphism and `t.parent()` is its codomain `X`.
 - `C.MorphismType` implements morphisms of `C`.
 - `C(...)` is the category-owned constructor.
 
-A category may choose a classical stage `G_C`; `Sets()` chooses its terminal object `1`. A classical element is a generalized element at that stage. `F.on_element(t)` is derived from `F.on_morphism` applied to the defining morphism of `t`; it is not additional functor data.
+A category may choose a separator `G_C`; `Sets()` chooses its terminal object `1`. A point is a generalized element whose domain is that separator. `F.on_element(t)` is derived from `F.on_morphism` applied to the defining morphism of `t`; it is not additional functor data.
 
 The kernel owns `Cat`. Every category in this repository uses `Cat().ObjectType`.
 Every functor uses `Cat().MorphismType` and is an object of `Fun = Mor(Cat())`.
-`Cat().ElementType` is the role "generalized element of a category": a functor `T -> C`; its stage-`1` points are the objects of `C` and its stage-`[1]` points are the morphisms of `C`.
+`Cat().ElementType` is the role "generalized element of a category": a functor `T -> C`; its generalized points `1 -> C` are the objects of `C` and its generalized points `[1] -> C` are the morphisms of `C`.
 
 Size is outside the model. `Cat()` is an object of `Cat()` by runtime convention. No kernel operation quantifies over, enumerates, or scans the objects of `Cat()`.
 
@@ -266,12 +266,12 @@ Define `Fun = Mor(Cat())`. Thus `Fun(C, D)` owns construction of functors from `
 
 ```python
 Fun(C, D)(on_object, on_morphism)
-Fun(S, T).FullyFaithful().inclusion()
+Fun(S, T).Monomorphisms().Isofibrations().Full()()
 Fun(C, C).Equivalences().identity()
 ```
 
 A mathematical construction creates each named functor through this category. It retains
-all defining projections, evaluations, and inclusions. A leaf selects the functors that
+all defining projections, evaluations, and subcategory monomorphisms. A leaf selects the functors that
 supply its inherited public structure.
 
 The kernel does not inspect fields or tuple positions to choose a structure map. Product,
@@ -395,7 +395,7 @@ Do not create a separate method-propagation system for constructions.
 
 For a construction functor `F: Diag(C) -> C`, the family `C.Products()`, `C.Limits(I)`,
 or its dual is the full subcategory of `C` on the constructed objects. Its one selected
-functor is the retained identity-on-values inclusion into `C`, so `F(D)` is an object of
+functor is the retained identity-on-values monomorphism into `C`, so `F(D)` is an object of
 `C` with the whole surface of `C`. The construction returns that one value, placed in the
 family. The family retains the universal data of each diagram `D`: `D` itself, the
 defining morphisms, and the universal maps. Distinct diagrams keep distinct universal
@@ -429,9 +429,9 @@ Membership predicates can return `bool | Unknown`.
 `Unknown` means that the available data and algorithms do not supply an answer.
 It is not `False`.
 
-For a predicate on a set `B`, construct the selected subset `A` together with its inclusion `A -> B`.
+For a predicate on a set `B`, construct the selected subset `A` together with its monomorphism `A -> B`.
 The subset is an object of `Sets()`.
-The inclusion is a morphism in `Sets()`.
+That monomorphism is a morphism in `Sets()`.
 This must support infinite subobjects such as the even integers and prime integers inside `ZZ`.
 
 `Sets()` owns:
@@ -441,7 +441,7 @@ This must support infinite subobjects such as the even integers and prime intege
 - function sets and exponentials;
 - products and coproducts of arbitrary small families;
 - general limits and colimits;
-- predicate subobjects and their inclusion morphisms.
+- predicate subobjects and their monomorphisms.
 
 In `Sets()`, the function set and the exponential are one object `Y ** X`, and
 `Mor(Sets())(X, Y)` is the discrete category on its elements:
@@ -508,13 +508,13 @@ Keep these notions distinct:
 - an object and a presentation of it;
 - an element and its coordinates;
 - a morphism and a matrix representing it;
-- a subobject and its inclusion;
+- a subobject and its monomorphism;
 - a theorem and a runtime algorithm;
 - a mathematical result and an implementation-engine value.
 
 Represent a chosen subobject of `B` by a monomorphism `f: A -> B`.
 Obtain `B` from `f.codomain()`.
-Do not duplicate the codomain or inclusion data in storage fields.
+Do not duplicate the codomain or monomorphism data in storage fields.
 
 Implement the general mathematical notion.
 Recover special cases through restriction, category refinement, or specialized functors.
@@ -623,7 +623,7 @@ Do not erase the base category from the type, parent, or morphism data.
 
 ## Sage and external computation engines
 
-The owned framework defines the mathematical categories and their inclusions.
+The owned framework defines the mathematical categories and their subcategory monomorphisms.
 Native Sage categories do not define this package's mathematical supercategory graph.
 
 Sage is one private computation engine and runtime substrate. It is not the required

@@ -51,7 +51,7 @@ cardinality, set maps, and set constructions.
 A relation input is an owned subobject of `X × X`. A callable can be its private
 evaluator. The callable is not the public relation.
 
-The inclusion of the relation subobject into `X * X` determines `X`. Its
+The monomorphism of the relation subobject into `X * X` determines `X`. Its
 partial-order proposition is the conjunction of:
 
 \[

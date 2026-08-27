@@ -215,7 +215,7 @@ def test_a_generalized_element_is_an_object_of_the_slice_over_its_parent() -> No
     assert over(point.defining_morphism()) is over(point)
     assert over.fixed_projection().on_object(over(point)) is Sets().Terminal()
 
-    # A stage other than the classical one: ``t: T -> X`` for ``T`` a two-element set.
+    # A domain other than the separator: ``t: T -> X`` for ``T`` a two-element set.
     two = Sets().Simplex(int(1))
     successor = Mor(Sets())(two, three)(lambda datum: datum + int(1))
     generalized = Sets().element_from_defining_morphism(successor)

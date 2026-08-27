@@ -107,7 +107,7 @@ functor from its ambient category.
 Cardinality and other distant capabilities arrive through functor composition rather than leaf-specific code.
 
 For example, a researcher can add `FiniteSubsetsOfNN()` after the complete theory of sets exists.
-They declare its constructors, its inclusion functor into `Sets()`, and only its new methods, such as `minimal_element()` or `gcd_of_elements()`. The kernel constructs `FiniteSubsetsOfNN.ElementType` and supplies the full `Sets.ElementType` interface without a leaf-specific element class.
+They declare its constructors, its monomorphism into `Sets()`, and only its new methods, such as `minimal_element()` or `gcd_of_elements()`. The kernel constructs `FiniteSubsetsOfNN.ElementType` and supplies the full `Sets.ElementType` interface without a leaf-specific element class.
 The inherited set interface also makes products, coproducts, filtered limits, and other set constructions available without new implementations in the leaf.
 Each result remains an object of the category that owns the construction. The leaf returns it to `FiniteSubsetsOfNN()` by overriding the inherited construction and refining its result through the leaf's own constructor when the mathematics lands there.
 
@@ -166,7 +166,7 @@ particular functor.
 
 ```python
 Fun(C, D)(on_object, on_morphism)
-Fun(S, T).FullyFaithful().inclusion()
+Fun(S, T).Monomorphisms().Isofibrations().Full()()
 Fun(C, C).Equivalences().identity()
 ```
 
@@ -188,7 +188,7 @@ Q.coproduct_injection(i)  # C_i -> Q
 ```
 
 If `S` is a subcategory of `P`, then `S` is an object of
-`Cat().Products().ChosenSubobjects()`. Its `product_projection(i)` is the subcategory inclusion
+`Cat().Products().ChosenSubobjects()`. Its `product_projection(i)` is the subcategory monomorphism
 followed by the corresponding projection of `P`.
 
 `C.SliceOver(x)` is the pullback in `Cat()` of `ev_1: Fun([1], C) -> C` along `x: 1 -> C`;
@@ -276,7 +276,7 @@ Its design includes:
 
 - function sets and exponentials;
 
-- predicate-defined subsets with inclusion morphisms;
+- predicate-defined subsets with their monomorphisms;
 
 - products, coproducts, limits, and colimits of arbitrary small diagrams;
 
@@ -302,7 +302,7 @@ The subset
 A = \{x \in B \mid P(x)\}
 \]
 
-is an object of `Sets()` together with an inclusion morphism \(A \hookrightarrow B\).
+is an object of `Sets()` together with a monomorphism \(A \hookrightarrow B\).
 Examples include the even integers and the prime integers as subobjects of
 \(\mathbb{Z}\). `ask(P(x))` returns `True`, `False`, or Sage's `Unknown`. Python
 containment converts that decision to a Boolean admission result.

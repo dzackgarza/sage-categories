@@ -1,4 +1,4 @@
-"""Wide subcategories and cores (``specs/functor.md``, "Inclusion functors"; POL-CAT-054, POL-FUN-027, POL-MATH-037).
+"""Wide subcategories and cores (``specs/functor.md``, "Monomorphisms of ``Cat()`` and placement"; POL-CAT-054, POL-FUN-027, POL-MATH-037).
 
 A wide subcategory ``W = C.WideSubcategory(P)`` retains every object of ``C`` and
 restricts the morphisms to those placed in a property subcategory ``P`` of
@@ -91,7 +91,7 @@ class WideSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
         return WideMorphismCategory
 
     def separating_family(self) -> tuple[ObjectOfCategory, ...]:
-        """Every object of ``C`` is an object of ``W``, so the stages are those of ``C``."""
+        """Every object of ``C`` is an object of ``W``, so the separators are those of ``C``."""
         return self._ambient.separating_family()
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:

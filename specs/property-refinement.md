@@ -175,7 +175,7 @@ F:C\longrightarrow D,\qquad x\longmapsto F(x).
 
 That operation can require canonical images and preimages.
 
-Property refinement is an inclusion:
+Property refinement is a subcategory monomorphism:
 
 \[
 C_P\hookrightarrow C.

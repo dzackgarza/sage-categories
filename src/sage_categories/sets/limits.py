@@ -22,7 +22,7 @@ owns it and its quotient map, and the same object is refined into
 ``Sets().Colimits(I)``; its injections are the coproduct injections followed by
 the quotient map, and its element equality is
 an owned predicate whose exact routes are: two representatives with one index and
-equal values; for ``I = omega``, agreement at the larger of the two stages under
+equal values; for ``I = omega``, agreement at the larger of the two indices under
 the transition maps, else ``Unknown``; for a finitely generated shape whose
 coproduct is finite and enumerated, the connected components of the generating
 relation (a union-find over the finite coproduct, Sage ``DisjointSet``), which

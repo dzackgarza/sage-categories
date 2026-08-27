@@ -15,7 +15,7 @@ the finiteness proposition of ``U(P)``.
 
 The finite operations lower the poset to a Sage finite poset once
 (``_finite_poset_sage.py``, POL-LAYOUT-020) and reconstruct owned results
-(POL-LEAF-044): elements as classical elements, collections as sub-posets, counts as
+(POL-LEAF-044): elements as points, collections as sub-posets, counts as
 cardinals, properties as placements.  Bottom, top, and rank belong to the property
 subcategories that guarantee them (POL-API-019): ``WithBottom()``, ``WithTop()``,
 ``Ranked()``; ``Graded()`` implies ``Ranked()`` (Sage ``is_graded``: a graded poset is

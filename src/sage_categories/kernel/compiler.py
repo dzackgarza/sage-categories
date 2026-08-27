@@ -124,16 +124,16 @@ class Step(NamedTuple):
     """One directed edge of the compiled graph.
 
     A selected functor keeps the role it is followed at, so ``source_role`` and
-    ``target_role`` agree and ``stage`` is ``None``.  A level shift applies no functor
-    and changes the role: the objects of a category ``C`` are the stage-``1``
-    generalized elements of ``{C}`` and its morphisms the stage-``[1]`` ones
+    ``target_role`` agree and ``point_domain`` is ``None``.  A level shift applies no functor
+    and changes the role: the objects of a category ``C`` are the generalized points
+    ``1 -> {C}`` and its morphisms the generalized points ``[1] -> {C}``
     (``specs/functor.md``, "The level shift").
     """
 
     functor: Functor | None
     source_role: Role
     target_role: Role
-    stage: ObjectOfCategory | None
+    point_domain: ObjectOfCategory | None
 
 
 type Route = tuple[Step, ...]
@@ -231,8 +231,8 @@ def level_shift(current: Node) -> tuple[tuple[Step, Node], ...]:
     point = Cat().retained_point(current.category)
     if point is None:
         return ()
-    stage = Cat().Terminal() if current.role is Role.OBJECT else Cat().Simplex(1)
-    return ((Step(None, current.role, Role.ELEMENT, stage), node(point, Role.ELEMENT)),)
+    point_domain = Cat().Terminal() if current.role is Role.OBJECT else Cat().Simplex(1)
+    return ((Step(None, current.role, Role.ELEMENT, point_domain), node(point, Role.ELEMENT)),)
 
 
 def reachable(start: Node) -> tuple[Node, ...]:
@@ -702,7 +702,7 @@ def _element_steps[RootValue: CategoryPoint, RootDatum](
 def _object_cat_element_step[Value: ObjectOfCategory, Datum](
     root: ObjectConstructionInput[Value, Datum],
 ) -> tuple[Node, Callable[[], None]]:
-    """The stage-``1`` input at the common ``Cat().ElementType`` MRO root."""
+    """The generalized-point input at ``1`` at the common ``Cat().ElementType`` MRO root."""
     target = node(root.identity.category.universe(), Role.ELEMENT)
     point_input = ElementConstructionInput(root.canonical_image, CategoryPointIdentity(root.identity.category), None)
     return target, _element_step(target, point_input, root.canonical_image)
@@ -721,7 +721,7 @@ def _element_cat_element_step[Value: CategoryPoint, Datum](
 def _morphism_cat_element_step[Value: MorphismOfCategory, Datum](
     root: MorphismConstructionInput[Value, Datum],
 ) -> tuple[Node, Callable[[], None]]:
-    """The stage-``[1]`` input at the common ``Cat().ElementType`` MRO root."""
+    """The generalized-point input at ``[1]`` at the common ``Cat().ElementType`` MRO root."""
     parent = root.identity.category.base_category()
     target = node(parent.universe(), Role.ELEMENT)
     identity = CategoryArrowIdentity(parent, root.identity.domain, root.identity.codomain)
@@ -1005,8 +1005,8 @@ def install_level_shift(point: Category) -> None:
     """Install the point-inherited generalized-element surface on the roles of ``{C}``'s member.
 
     The member of a point category is a category ``C`` exactly when the level shift
-    applies.  ``{C}``'s generalized elements are then the objects of ``C`` at stage
-    ``1`` and its morphisms at stage ``[1]``, so the two roles that receive the point
+    applies.  ``{C}``'s generalized elements are then the objects of ``C`` with domain
+    ``1`` and its morphisms with domain ``[1]``, so the two roles that receive the point
     functors' element surface are ``C.ObjectType`` and ``C.MorphismType``
     (``specs/functor.md``, "The level shift").
 

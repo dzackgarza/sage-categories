@@ -2,7 +2,7 @@
 
 ``Sets()`` owns arbitrary sets and arbitrary functions.  Its objects are
 rule-defined (``sets/objects.py``), its elements are maps ``T -> X`` with classical
-points at the stage ``Sets().Terminal()`` (``sets/elements.py``), and its morphisms
+points with domain ``Sets().Terminal()`` (``sets/elements.py``), and its morphisms
 are total maps by rule (``sets/maps.py``).  The property subcategories ``Finite()``,
 ``Infinite()``, ``Countable()``, and ``Uncountable()`` own the constructors that
 supply their cardinal data; ``Finite => Countable`` and ``Uncountable => Infinite``
@@ -208,7 +208,7 @@ class SetsCategory(Category[[Rule], []]):
         return Cardinal().representative(Cardinal().zero())
 
     def Terminal(self) -> SetObject:
-        """The one-point set ``1 = {*}``, the classical stage of ``Sets()``."""
+        """The one-point set ``1 = {*}``, the separator of ``Sets()``."""
         return self._canonical_finite("terminal", (), ((),))
 
     def Simplex(self, dimension: int) -> SetObject:
@@ -225,7 +225,7 @@ class SetsCategory(Category[[Rule], []]):
         ``e: S -> X``, then ``f = g``") and Examples and applications ("In Set, any
         inhabited set is a separator; in particular, the point is a separator");
         inspected 2026-08-27.  Set membership, enumeration, and cardinality read
-        ``Mor(Sets())(1, X)`` through this stage.
+        ``Mor(Sets())(1, X)`` through this separator.
         """
         return (self.Terminal(),)
 

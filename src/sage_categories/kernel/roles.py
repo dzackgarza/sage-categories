@@ -10,7 +10,7 @@ Every owned runtime value has one role-specific path through these classes
 
 ``CategoryPointKernel`` is the stable end of the role MRO.  The module preallocates
 the compiled ``Cat().ElementType`` class over it.  The object, ordinary-element, and
-morphism kernel classes then refine that one class at their stated stages
+morphism kernel classes then refine that one class at their stated domains
 (``specs/functor.md``, "Generalized elements").
 
 A leaf's local role class subclasses only the kernel base of its role
@@ -121,7 +121,7 @@ def cat_element_root() -> type[CategoryPoint]:
 
 
 class ObjectOfCategory(CategoryPoint):
-    """An object of a category: a stage-``1`` point of it."""
+    """An object of a category: a generalized point ``1 -> C`` of it."""
 
     def __init__(self) -> None:
         from sage_categories.kernel.construction import active_object_context
@@ -172,7 +172,7 @@ class ElementOfObject(CategoryPoint):
 
 
 class MorphismOfCategory(CategoryPoint):
-    """A morphism ``f: A -> B`` of ``C``: an object of ``Mor(C)``, a stage-``[1]`` point of ``C``."""
+    """A morphism ``f: A -> B`` of ``C``: an object of ``Mor(C)``, a generalized point ``[1] -> C`` of ``C``."""
 
     def __init__(self) -> None:
         from sage_categories.kernel.construction import active_morphism_context

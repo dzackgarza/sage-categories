@@ -118,7 +118,7 @@ DOWNSTREAM = '''
             return self._translations[reduced]
 
         def element(self, residue: int) -> CarrierElement:
-            """The element of the given residue: the translation by it, at the stage of the carrier."""
+            """The element of the given residue: the translation by it, with the carrier as domain."""
             reduced = residue % 3
             if reduced not in self._residues:
                 self._residues[reduced] = self.ElementType(self.translation(reduced), reduced)

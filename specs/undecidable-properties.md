@@ -198,7 +198,7 @@ The implication
 \operatorname{Finite}(X)\Longrightarrow\operatorname{Countable}(X)
 \]
 
-becomes a category inclusion:
+becomes a subcategory monomorphism:
 
 ```text
 Sets().Finite() ⊆ Sets().Countable()
@@ -331,9 +331,9 @@ F = Mor(Cat()).Full()(F)  # Trusted property-category construction.
 assume(G.is_full())      # Interactive assumption and same-object refinement.
 ```
 
-An inclusion from a full subcategory is constructed as
-`Fun(Source, Target).FullyFaithful().inclusion()`. Full faithfulness then implies
-fullness and faithfulness through property-category inclusions.
+The monomorphism of a full subcategory is constructed as
+`Fun(Source, Target).Monomorphisms().Isofibrations().Full()()`.  Monicity then implies
+faithfulness through the recorded property implication.
 
 These property categories register no computational handlers. `ask(F.is_full())`
 returns `Unknown` unless category placement, an active assumption, a cached exact
@@ -821,7 +821,7 @@ For a general structural functor, the correct object is an inverse-image propert
 The kernel must derive:
 
 - `C.Finite()`;
-- its inclusion into `C`;
+- its monomorphism into `C`;
 - its structural functor into `Sets().Finite()`;
 - its membership proposition;
 - its role-class inheritance;

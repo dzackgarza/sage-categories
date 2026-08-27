@@ -42,7 +42,7 @@ The functor connects the category-owned implementation roles. Its object and mor
 construct the corresponding target roles. A concrete functor category can add an element
 action when its mathematics supplies one.
 
-An inclusion uses the constructor on its fixed-endpoint functor category. A product,
+A subcategory monomorphism uses the constructor on its fixed-endpoint functor category. A product,
 pullback, comma, `Fun([1], C)`, or other category construction creates and retains its named
 projection functors. A leaf reuses those exact objects.
 
@@ -132,7 +132,7 @@ The private SymPy procedure constructs the exact owned image and compares it wit
 to `Mor(Sets()).Epimorphisms()` because it decides surjectivity. An injectivity handler
 belongs to `Mor(Sets()).Monomorphisms()` and uses an exact injectivity procedure.
 
-See [functor.md](functor.md) for inclusion, projection, evaluation, and induced-functor
+See [functor.md](functor.md) for subcategory-monomorphism, projection, evaluation, and induced-functor
 declarations.
 
 See [finite-set-minimal-template.py](finite-set-minimal-template.py) for a property

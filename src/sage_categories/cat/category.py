@@ -133,7 +133,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         return ()
 
     def separating_family(self) -> tuple[ObjectOfCategory, ...]:
-        """The chosen representing objects whose points are the classical elements; none by default."""
+        """The chosen representing objects whose points are the points; none by default."""
         return ()
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
@@ -447,7 +447,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     # -- points of the category as Cat elements (POL-CAT-058), retained once (POL-CAT-083) --------
 
     def point_functor(self, member_object: ObjectOfCategory) -> Functor:
-        """The stage-``1`` point ``1 -> self`` selecting ``member_object``."""
+        """The generalized point ``1 -> C`` ``1 -> self`` selecting ``member_object``."""
         from sage_categories.cat.functors import Fun
 
         if member_object not in self._points:
@@ -455,7 +455,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         return self._points[member_object]
 
     def arrow_functor(self, morphism: MorphismOfCategory) -> Functor:
-        """The stage-``[1]`` point ``[1] -> self`` selecting ``morphism``."""
+        """The generalized point ``[1] -> C`` ``[1] -> self`` selecting ``morphism``."""
         from sage_categories.cat.functors import Fun
 
         if morphism in self._arrows:
@@ -475,37 +475,42 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         return self._arrows[morphism]
 
     def represented_functor(self) -> Functor:
-        """``U_C = Mor(C)(G_C, -): C -> Sets()``, the functor represented by the chosen classical stage.
+        """``U_C = Mor(C)(G_C, -): C -> Sets()``, the functor represented by the chosen separator.
 
         Its value at ``X`` is the set of morphisms ``G_C -> X``, whose points are exactly
-        the classical elements of ``X``; its value at ``f: X -> Y`` is postcomposition
+        the points of ``X``; its value at ``f: X -> Y`` is postcomposition
         ``u |-> f . u``.  This is Mathlib's co-Yoneda embedding at ``G_C``
         (``Mathlib/CategoryTheory/Yoneda.lean:87-95``, inspected 2026-08-27: "The co-Yoneda
         embedding, as a functor from ``Cᵒᵖ`` into co-presheaves on ``C``", with the
         unification hint ``(coyoneda.obj (op X)).obj Y = X ⟶ Y``).
 
-        The writer's assertion that the chosen stage family separates is what makes ``U_C``
+        The leaf's assertion that its separating family separates is what makes ``U_C``
         faithful (POL-MATH-037); this construction states the functor and not that
-        property.  A family of several stages represents ``coprod_j Mor(C)(G^j, -)``, the
-        coproduct of these sets, which this construction does not build.
+        property.  A separating family of several states that its hom functors
+        ``Mor(C)(G^j, -)`` are *jointly* faithful (nLab, separator,
+        https://ncatlab.org/nlab/show/separator, inspected 2026-08-28: "``S`` is a
+        separating family if the family of hom functors ``Hom(S_a, -) : C -> Set`` (for
+        ``a in A``) is jointly faithful"), which is a family of functors and not one
+        functor.  ``Cat()`` is the case in hand: its separating family is ``(1, [1])``,
+        so objects and morphisms separate functors jointly and no ``U_Cat`` exists.
         """
         from sage_categories.cat.functors import Fun
         from sage_categories.sets.category import Sets
 
-        stages = self.separating_family()
-        assert len(stages) == 1, (
-            f"{self!r} chooses {len(stages)} classical stages; the functor represented by a family of several is "
-            f"the coproduct coprod_j Mor(C)(G^j, -), which this construction does not build"
+        separators = self.separating_family()
+        assert len(separators) == 1, (
+            f"{self!r} chooses a separating family of {len(separators)}; such a family states that its hom functors "
+            f"Mor(C)(G^j, -) are jointly faithful, which is a family of functors and not one represented functor"
         )
-        (stage,) = stages
-        if stage in self._represented:
-            return self._represented[stage]
+        (separator,) = separators
+        if separator in self._represented:
+            return self._represented[separator]
 
         images: MonoDict = MonoDict()
 
         def hom_set(member_object: ObjectOfCategory) -> ObjectOfCategory:
             if member_object not in images:
-                hom = self.morphism_category(1)(stage, member_object)
+                hom = self.morphism_category(1)(separator, member_object)
                 images[member_object] = Sets()(lambda datum: ask(hom.membership_proposition(datum)) if role_of(datum) is Role.MORPHISM else False)
             return images[member_object]
 
@@ -513,8 +518,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
             source, target = hom_set(morphism.domain()), hom_set(morphism.codomain())
             return Sets().morphism_category(1)(source, target)(lambda datum: morphism * datum)
 
-        self._represented[stage] = Fun(self, Sets())(hom_set, postcompose)
-        return self._represented[stage]
+        self._represented[separator] = Fun(self, Sets())(hom_set, postcompose)
+        return self._represented[separator]
 
     # -- universal constructions, defined once (POL-CAT-050/092, POL-CAT-093) --------
     #
@@ -646,7 +651,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
             return self.ambient().CoveredObjects()
         return self._morphism_property_family("CoveredObjects", lambda morphisms: morphisms.Epimorphisms(), False)
 
-    # -- wide subcategories and the core (``specs/functor.md``, "Inclusion functors"; ``cat/wide.py``) --
+    # -- wide subcategories and the core (``specs/functor.md``, "Monomorphisms of ``Cat()`` and placement"; ``cat/wide.py``) --
 
     def WideSubcategory(self, morphism_property: Category) -> Category:
         """The wide subcategory on the morphisms placed in a property subcategory ``P`` of ``Mor(self)``, one per ``P``."""
@@ -875,7 +880,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         """``Mor(Fun(C, D))(F, G)(assignment)``: a natural transformation from a rule (POL-FUN-007).
 
         The endpoints are objects of ``Fun(C, D)``: functors, or the points of ``D``
-        at stage ``C`` that denote their defining functors (specs/functor.md, "The Mor(n, C) tower").
+        with domain ``C`` that denote their defining functors (specs/functor.md, "The Mor(n, C) tower").
         """
         from sage_categories.cat.functors import NaturalTransformationData, diagram_of
 
@@ -993,7 +998,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     def postcompose(self, functor: Functor, diagram: CategoryPoint) -> CategoryPoint:
         """``F . G`` for an object ``G`` of ``Fun(I, D)`` and ``F: D -> E``: the object action of ``Fun(I, F)``.
 
-        An object of ``Fun(I, D)`` is a functor ``I -> D`` or a point of ``D`` at stage
+        An object of ``Fun(I, D)`` is a functor ``I -> D`` or a point of ``D`` with domain
         ``I`` denoting one (``specs/functor.md``, "The Mor(n, C) tower").  A point keeps
         that spelling under the action: its image is the point image, so
         ``Fun(1, F).on_object(x) is F.on_object(x)`` and
@@ -1133,7 +1138,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         return (self.Terminal(), self.Simplex(1))
 
     def element_from_defining_morphism(self, defining_functor: Functor) -> CategoryPoint:
-        """The point of a category at the stage ``T`` given by a functor ``T -> C``."""
+        """The point of a category with domain ``T``, given by a functor ``T -> C``."""
         assert defining_functor in self.morphism_category(1)
         return self.ElementType(defining_functor)
 

@@ -5,8 +5,8 @@ a total order; the definition of the induced order on a subset, the ``U``-initia
 of its inclusion (Adamek, Herrlich, Strecker, Definition 10.41 and Example 10.42(6);
 Mathlib ``PartialOrder.lift``); POL-CAT-062 for the category of every inherited result
 (the declaring method's value in ``Sets()``); ``specs/functor.md`` for the classical
-stage, its identity comparison under ``U``, and the generalized elements at other
-stages; the usual order on ``{0, 1, 2}`` and divisibility on ``{1, 2, 3, 6}``.
+separator, its identity comparison under ``U``, and the generalized elements with other
+domains; the usual order on ``{0, 1, 2}`` and divisibility on ``{1, 2, 3, 6}``.
 """
 
 import pytest
@@ -183,7 +183,7 @@ def test_the_leaf_override_sub_poset_returns_the_induced_order_through_the_retai
         _underlying().cartesian_lift(collapse, divisibility)
 
 
-def test_the_classical_stage_is_the_one_point_order_with_the_identity_comparison() -> None:
+def test_the_separator_is_the_one_point_order_with_the_identity_comparison() -> None:
     divisibility = _divisibility()
     carrier = _underlying().on_object(divisibility)
     one_point = Posets().Terminal()

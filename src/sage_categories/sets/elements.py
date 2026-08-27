@@ -1,9 +1,9 @@
 """``Sets().ElementType``: generalized elements ``T -> X`` (POL-CAT-058, POL-FUN-002).
 
-A classical element of a set ``X`` is a generalized element whose stage is the
-classical stage ``Sets().Terminal()``: a point ``1 -> X``.  It retains its defining
+A point of a set ``X`` is a generalized element whose domain is the
+separator ``Sets().Terminal()``: a point ``1 -> X``.  It retains its defining
 morphism and, at the private computation boundary, the datum that the point
-selects.  A generalized element at another stage retains no point datum.  Two
+selects.  A generalized element with another domain retains no point datum.  Two
 classical points of one set are equal exactly when their data are equal; a point
 hashes by its datum, so equal points hash equal.
 """
@@ -41,7 +41,7 @@ class SetElementData:
 
 @dataclass(eq=False, slots=True)
 class SetPointData(SetElementData):
-    """The additional chosen datum of a terminal-stage set element."""
+    """The additional chosen datum of a point of a set."""
 
     datum: Datum
 
@@ -65,7 +65,7 @@ class SetElementDeclaration(ElementOfObject):
         return f"{self.defining_morphism()!r} as a generalized element of {self.parent()!r}"
 
     def _point_datum_(self) -> Datum:
-        """The selected datum of this terminal-stage element."""
+        """The selected datum of this point."""
         assert self.defining_morphism().domain() is _sets.Sets().Terminal(), f"{self!r} is not a classical set element"
         return self._set_element_data.datum
 
@@ -73,8 +73,8 @@ class SetElementDeclaration(ElementOfObject):
 def points_equal(first: CategoryPoint, candidate: Any) -> Decision:
     """Two classical points of one set are equal exactly when their data are.
 
-    A generalized element is classical exactly when its stage is the classical stage of
-    ``Sets()`` (POL-CAT-058); at any other stage this handler decides nothing.  The two
+    A generalized element is a point exactly when its domain is the separator of
+    ``Sets()`` (POL-CAT-058); with any other domain this handler decides nothing.  The two
     data compare at the private boundary, where ``==`` is exact for an engine value,
     ``Unknown`` for a rule-defined family, and a proposition for an owned mathematical
     value, so the comparison is asked rather than returned (POL-MATH-034).

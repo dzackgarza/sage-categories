@@ -13,10 +13,10 @@ The one selected structural functor is the underlying-set functor
 retained ``X`` of a poset and the retained set map of a monotone map, and it supplies
 the complete set surface: every inherited method returns the declaring method's value
 in ``Sets()`` (POL-CAT-062).  A poset is never placed in ``Sets()``; it reaches every
-set operation through ``U`` alone.  The classical stage is the one-point order
-``Posets().Terminal()``; ``U`` carries the identity stage comparison because the
+set operation through ``U`` alone.  The separator is the one-point order
+``Posets().Terminal()``; ``U`` carries the identity separator comparison because the
 underlying set of the one-point order is ``Sets().Terminal()`` by construction.  For
-classical elements ``x, y`` of ``P``, ``x <= y`` is the membership proposition of the
+points ``x, y`` of ``P``, ``x <= y`` is the membership proposition of the
 pair point ``(x, y): 1 -> X * X`` in ``R``.
 
 A monotone map ``Mor(Posets())(P, Q)(rule)`` retains its underlying set map; identities
@@ -100,12 +100,12 @@ class PosetDeclaration(ObjectOfCategory):
         return self._poset_object_data.relation
 
     def element(self, point: SetElement) -> PosetElement:
-        """The classical element over a point ``x: 1 -> U(P)``: the monotone map ``1 -> P`` under ``x``."""
+        """The point over a point ``x: 1 -> U(P)``: the monotone map ``1 -> P`` under ``x``."""
         state = self._poset_object_data
         carrier = Posets().underlying_set_functor().on_object(self)
         assert point in carrier, f"{point!r} is not a point of {carrier!r}"
         if point not in state.elements:
-            # The classical element of ``P`` is a morphism of the category ``P`` was
+            # The point of ``P`` is a morphism of the category ``P`` was
             # placed in, not of ``Posets()``: a functor out of ``Posets().Finite()``
             # transports a morphism of ``Mor(Posets().Finite())`` (POL-CAT-074).
             posets, category = Posets(), self.category()
@@ -149,7 +149,7 @@ class PosetElementDeclaration(ElementOfObject):
     def __le__(self, other: PosetElement) -> AppliedPredicate:
         """``x <= y``: the pair point ``(U(x), U(y))`` is a member of ``R``."""
         poset = self.parent()
-        assert _is_classical(self) and _is_classical(other), f"{self!r} <= {other!r} compares classical elements"
+        assert _is_classical(self) and _is_classical(other), f"{self!r} <= {other!r} compares points"
         assert other.parent() is poset, f"{other!r} is not an element of {poset!r}"
         underlying = Posets().underlying_set_functor()
         return poset.relation().membership_proposition(poset._pair(underlying.on_element(self), underlying.on_element(other)))
@@ -164,7 +164,7 @@ class PosetElementDeclaration(ElementOfObject):
         return (other <= self) & (self != other)
 
     def __repr__(self) -> str:
-        return f"point of {self.parent()!r} at stage {self.defining_morphism().domain()!r}"
+        return f"point of {self.parent()!r} with domain {self.defining_morphism().domain()!r}"
 
 
 class MonotoneMapDeclaration(MorphismOfCategory):
@@ -178,7 +178,7 @@ class MonotoneMapDeclaration(MorphismOfCategory):
 
 
 def _is_classical(candidate: Any) -> bool:
-    """Whether a candidate is a classical element of a poset.
+    """Whether a candidate is a point of a poset.
 
     A classifier of the equality candidate, like ``role_of`` and ``is_placed``: it
     receives exactly the second argument of ``_equal`` and must accept every input
@@ -374,7 +374,7 @@ class PosetsCategory(Category[[Rule], []]):
         return self._canonical["simplex", dimension]
 
     def Terminal(self) -> Poset:
-        """The one-point order on ``Sets().Terminal()``, the classical stage of ``Posets()``."""
+        """The one-point order on ``Sets().Terminal()``, the separator of ``Posets()``."""
         if ("terminal", 0) not in self._canonical:
             point = Sets().Terminal()
             self._canonical["terminal", 0] = self.TotallyOrdered()(self._construct((point * point).subset_from(lambda pair: True)))
@@ -413,7 +413,7 @@ class PosetsCategory(Category[[Rule], []]):
     def element_from_defining_morphism(self, defining_morphism: MonotoneMap) -> PosetElement:
         """The generalized element defined by ``T -> P``, retained by that exact map (POL-CAT-066).
 
-        A classical stage adds no local state: the underlying set point of ``t: 1 -> P``
+        A separator adds no local state: the underlying set point of ``t: 1 -> P``
         is ``U(t)``, which the selected functor supplies on demand.  ``Poset.element``
         owns the classical point of one carrier element; it reaches this constructor.
         """

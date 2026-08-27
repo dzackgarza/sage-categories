@@ -46,13 +46,13 @@ class are distinct.
 - `Cat().ObjectType` implements categories;
 - `Cat().MorphismType` implements functors;
 - `Cat().ElementType` is the role "generalized element of a category", a functor
-  `T -> C`; its stage-`1` points are the objects of `C` and its stage-`[1]` points are
-  the morphisms; every `C.ObjectType` refines it at stage `1`, every `C.MorphismType`
-  at stage `[1]`;
+  `T -> C`; its generalized points `1 -> C` are the objects of `C` and its generalized points `[1] -> C` are
+  the morphisms; every `C.ObjectType` refines it with domain `1`, every `C.MorphismType`
+  with domain `[1]`;
 - `Cat()(...)` constructs categories;
 - `Fun = Mor(Cat())` constructs the category whose objects are functors.
 
-These stage refinements use one Python inheritance root. The kernel compiles
+These domain refinements use one Python inheritance root. The kernel compiles
 `Cat().ElementType` first. A root object role continues through `ObjectOfCategory` to
 that compiled class. A root morphism role continues through `MorphismOfCategory` to the
 same class. Ordinary `C.ElementType` inheritance keeps its element-role graph and ends
@@ -199,7 +199,28 @@ subcategory `P` of `Mor(K)`: `P(A, B)` is `Mor(K)(A, B).P()`, one cached object.
 Two calls return one object by identity. No construction creates a second terminal
 object, simplex, or walking structure.
 
-Stages: `G_Sets = Sets().Terminal()`; `G_Cat = 1` for objects, with morphism stage `[1]`.
+### Separators and separating families
+
+A category may choose a family of objects whose generalized points determine its
+morphisms. [nLab, separator](https://ncatlab.org/nlab/show/separator) (inspected
+2026-08-28) names it: a family `S = (S_a)_{a in A}` is a "separating family or a
+generating family" when "for every pair of parallel morphisms `f, g : X -> Y`, if
+`f . e = g . e` for every `e : S_a -> X` sourced in the family, then `f = g`", and for
+locally small `C`, "`S` is a separating family if the family of hom functors
+`Hom(S_a, -) : C -> Set` (for `a in A`) is jointly faithful". The one-element case is a
+separator: "`S` is a separator if the hom functor `Hom(S, -) : C -> Set` is faithful."
+
+`Category.separating_family()` returns that family, and the leaf's declaration that it
+separates is trusted (`POL-MATH-037`). `Sets()` chooses `(1,)`, so its separator is the
+terminal object and its generalized points `1 -> X` are its elements. `Cat()` chooses
+`(1, [1])`: objects and morphisms jointly separate functors, so `Cat()` has a separating
+family of two rather than a single underlying-set functor, and none is built.
+
+A separating family of several is a family of hom functors that is jointly faithful. It
+is not one set-valued functor, and no coproduct of the hom-sets is formed:
+`Category.represented_functor()` therefore constructs `Mor(C)(G, -): C -> Sets()` for a
+single separator `G` and fails loudly for a larger family, naming the joint faithfulness
+that a family states instead.
 
 ## Functor property subcategories
 
@@ -260,7 +281,7 @@ Equivalence(F) implies FullyFaithful(F)
 Equivalence(F) implies EssentiallySurjective(F)
 ```
 
-These implications induce the corresponding inclusions between property subcategories.
+These implications induce the corresponding monomorphisms between property subcategories.
 
 ## Property resolution
 
@@ -286,7 +307,7 @@ assume(F.is_full())
 ```
 
 A code writer who knows a property from the defining construction places the result
-directly in the corresponding property category. For example, the inclusion of a full
+directly in the corresponding property category.  For example, the monomorphism of a full
 subcategory is constructed in `Fun(C, D).FullyFaithful()`.
 
 Put a citation on the construction line or in its immediate source documentation when
@@ -310,8 +331,8 @@ computational routes.
 
 ### The two conditions
 
-There is no separate notion of an inclusion functor. A subcategory of `T` is a subobject
-of `T` in `Cat()`: an isomorphism class of monomorphisms into `T` ([nLab, subobject](https://ncatlab.org/nlab/show/subobject),
+A subcategory of `T` is a subobject of `T` in `Cat()`: an isomorphism class of
+monomorphisms into `T` ([nLab, subobject](https://ncatlab.org/nlab/show/subobject),
 inspected 2026-08-28; "an isomorphism class of monomorphisms"). Two conditions apply,
 and the kernel needs both.
 
@@ -323,7 +344,7 @@ and injective on objects."
 2026-08-28) names the same class: "Embeddings in this sense are straightforwardly the
 same thing as monomorphisms in the 1-category `Cat`", and a full embedding is a
 monomorphism in `Cat` that is also full, hence fully faithful. So the owned property is
-`Fun.Monomorphisms()`, and a full subcategory inclusion is an object of
+`Fun.Monomorphisms()`, and the monomorphism of a full subcategory is an object of
 `Fun.Monomorphisms().Full()`. `Fun` needs no further property for this.
 
 **Replete.** Monicity alone is not enough, because a skeleton satisfies it. `Cardinal()`
@@ -333,7 +354,7 @@ The condition that separates them is repleteness of the image:
 [Kerodon, Example 4.4.1.12](https://kerodon.net/tag/01EX) (inspected 2026-08-28) states
 that a subcategory is replete exactly when an isomorphism of `C` with one endpoint in the
 subcategory has its other endpoint and itself in the subcategory, and that this holds
-exactly when **the inclusion is an isofibration**.
+exactly when **that monomorphism is an isofibration**.
 [nLab, replete subcategory](https://ncatlab.org/nlab/show/replete%2Bsubcategory)
 (inspected 2026-08-28) states why this is the right condition: a replete subcategory "is
 a subcategory for which the property of (strictly) belonging to it respects the principle
@@ -399,8 +420,8 @@ belongs to the property relation, and its fixed-endpoint functor category owns t
 construction.
 
 A wide subcategory retains every object and restricts morphisms by a multiplicative
-morphism predicate. Its inclusion is faithful by construction. A general subcategory
-inclusion is also faithful. Neither becomes full unless its mathematical definition
+morphism predicate.  Its monomorphism is faithful by construction.  A general subcategory
+monomorphism is also faithful.  Neither becomes full unless its mathematical definition
 establishes fullness.
 
 ## Structural inheritance
@@ -410,7 +431,7 @@ kind of functor and is not part of Mathlib's functor theory.
 
 Every entry is an ordinary owned object of `Fun`. Its mathematical existence and
 properties come first. For example, finite sets are a full subcategory of sets, so their
-inclusion functor exists independently of method compilation.
+subcategory monomorphism exists independently of method compilation.
 
 A category selects an immediate functor only when the functor states the mathematical
 change of structure that supplies inherited operations:
@@ -418,10 +439,10 @@ change of structure that supplies inherited operations:
 ```python
 class FiniteSetsCategory(Category):
     def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-        return (Fun(self, Sets()).FullyFaithful().inclusion(),)
+        return (Fun(self, Sets()).Monomorphisms().Isofibrations().Full()(),)
 ```
 
-The leaf explicitly constructs the inclusion and records full faithfulness through the
+The leaf explicitly constructs the monomorphism and records fullness through the
 selected property category. The tuple tells the compiler to include the compiled roles
 owned by `Sets()` through that functor.
 
@@ -467,7 +488,7 @@ ArrowStageIdentity(parent_category, domain, codomain)
 
 The general form is used by an ordinary generalized element. Its defining morphism is a
 functor only when the represented object is a category. The construction input
-already stores the canonical object or morphism for the two stage forms. Their local
+already stores the canonical object or morphism for the two forms. Their local
 `Cat().ElementType` datum is `None`.
 
 A selected functor retains a pure typed conversion from its source construction input to
@@ -518,26 +539,29 @@ morphism in the declaring category uses that image. A method can inspect its dec
 role's local state directly when no category-sensitive value crosses the call boundary.
 
 An element of `X in C` is a generalized element `t: T -> X`, an object of
-`C.SliceOver(X)`. `t.stage()` is `T` and `t.parent()` is its codomain `X`. Its general
+`C.SliceOver(X)` ([nLab, generalized element](https://ncatlab.org/nlab/show/generalized+element),
+inspected 2026-08-28: "a morphism `x : U -> X` a generalized element of `X`"). `T` is the
+domain of `t` and `t.parent()` is its codomain `X`, both read from the defining morphism;
+the repository adds no second accessor for either. Its general
 identity retains the defining morphism. An object `X in C` uses
-`ObjectStageIdentity(C)`: its stage is `Cat().Terminal()`, its parent is `C`, and
+`CategoryPointIdentity(C)`: its domain is `Cat().Terminal()`, its parent is `C`, and
 `X.defining_morphism()` lazily requests `C.point_functor(X)`. A morphism `f: A -> B` in
-`C` uses `ArrowStageIdentity(C, A, B)`: its stage is `Cat().Simplex(1)`, its parent is
+`C` uses `CategoryArrowIdentity(C, A, B)`: its domain is `Cat().Simplex(1)`, its parent is
 `C`, and `f.defining_morphism()` lazily requests `C.arrow_functor(f)`. Every `F: C -> D`
 induces `F/X: C/X -> D/F(X)`, sending `t` to the public image
 `q = F(t): F(T) -> F(X)` through `F.on_morphism`. This action requires no additional
 functor data. The canonical value `q` retains its own root construction input and cache
-identity. For a nonclassical source, the element conversion gives the compiler the input
+identity.  For a source whose domain is not the separator, the element conversion gives the compiler the input
 retained by `q`.
 
-A category may choose a classical stage `G_C`: `1` for `Sets()`; `Cat()` uses `1` for
-objects and `[1]` for morphisms. A classical element of `X` is a generalized element
-whose stage is exactly `G_C`. A selected structural functor that exposes the target's
-classical element methods retains a stage comparison `c_F: G_D -> F(G_C)`. For a
-classical `t: G_C -> X`, the compiler precomposes `q = F(t)` with `c_F` and obtains the
-classical input `p: G_D -> F(X)`. The element conversion gives the compiler the input
+A category may choose a separator `G_C`: `1` for `Sets()`; `Cat()` uses `1` for
+objects and `[1]` for morphisms. A point of `X` is a generalized element
+whose domain is exactly `G_C`. A selected structural functor that exposes the target's
+point methods retains a separator comparison `c_F: G_D -> F(G_C)`. For a
+a `t: G_C -> X` at the separator, the compiler precomposes `q = F(t)` with `c_F` and obtains the
+input `p: G_D -> F(X)` at the target separator.  The element conversion gives the compiler the input
 retained by `p`. The values `q` and `p` have separate identities and cache entries when
-their stages, defining morphisms, or codomains differ. For an identity functor,
+their domains, defining morphisms, or codomains differ. For an identity functor,
 \(c_{\mathrm{id}} = 1_G\). For composable `F: C -> D` and `H: D -> E`,
 \(c_{H \circ F} = H(c_F) \circ c_H\).
 
@@ -548,11 +572,11 @@ one-object category whose sole object is `X` and whose sole morphism is `1_X`. I
 object of `Cat()`, retained once per `X`, and it owns the declarations specific to `X`
 (`POL-CAT-083`).
 
-A **point functor** of `X` is the inclusion of `{X}` into a category `D` that has `X`
+A **point functor** of `X` is the monomorphism of `{X}` into a category `D` that has `X`
 among its objects:
 
 ```python
-iota = Fun(Cat().Point(X), D).Faithful().inclusion()
+iota = Fun(Cat().Point(X), D).Monomorphisms().Isofibrations()()
 ```
 
 `{X}` has one hom category, so every functor out of it is faithful. A point functor is
@@ -568,7 +592,7 @@ already has; each point functor states one further placement of `X` as an object
 ```python
 # Cat().Point(X)
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (Fun(self, D).Faithful().inclusion(),)
+    return (Fun(self, D).Monomorphisms().Isofibrations()(),)
 ```
 
 A point functor is a selected structural functor under exactly this declaration and
@@ -594,13 +618,13 @@ and `Ordinals()` are constructed before `Semirings(Cat())` exists, and each rece
 semiring surface when `Cat().Point(Cardinal())` and `Cat().Point(Ordinals())` declare
 their point functors. No construction order between the three is required.
 
-The defining morphism `1 -> C` used by an object-stage identity remains lazy. It is
-distinct from a selected inclusion `{X} -> D`. Laziness of the defining morphism does
+The defining morphism `1 -> C` used by an object-role identity remains lazy.  It is
+distinct from a selected monomorphism `{X} -> D`.  Laziness of the defining morphism does
 not delay the selected structural declaration or its construction-input conversions.
 The same separation applies to the defining functor `[1] -> C` of a morphism.
 
 For `{C} -> D`, the conversions initialize `D.ObjectType` state on `C`,
-`D.ElementType` state on stage-`1` objects and stage-`[1]` morphisms, and
+`D.ElementType` state on the objects and morphisms, and
 `D.MorphismType` state on `1_C`.
 
 ### The level shift
@@ -609,18 +633,18 @@ Take the distinguished object to be a category `C`. Then `{C}` has one object at
 `Cat()` level, while `C` has its own objects and morphisms one level below. The compiled
 surface follows that difference from `Cat().ElementType`, which is already the role
 "generalized element of a category": a functor `T -> C`, refined by `C.ObjectType` at
-stage `1` and by `C.MorphismType` at stage `[1]`.
+domain `1` and by `C.MorphismType` with domain `[1]`.
 
 A selected point functor `{C} -> D` therefore compiles as:
 
 | Surface of `D` | Surface it supplies |
 | --- | --- |
 | `D.ObjectType` | the category `C` itself, a `Cat().ObjectType` value |
-| `D.ElementType` at stage `1` | `C.ObjectType`, the objects of `C` |
-| `D.ElementType` at stage `[1]` | `C.MorphismType`, the morphisms of `C` |
+| `D.ElementType` with domain `1` | `C.ObjectType`, the objects of `C` |
+| `D.ElementType` with domain `[1]` | `C.MorphismType`, the morphisms of `C` |
 | `D.MorphismType` | `{C}.MorphismType`, whose sole value is `1_C` |
 
-The shift is the stage clause of `Cat().ElementType` applied to one object. It adds no
+The shift is the domain clause of `Cat().ElementType` applied to one object. It adds no
 second inheritance mechanism, no route normalization, and no propagation registry. `C`
 remains an object of `Cat()`, `{C}` remains a distinct object of `Cat()`, and
 `C.structure_functors()` continues to state the structure of `C` as a category.
@@ -637,7 +661,7 @@ compiled chain. The selected point functor supplies the exact construction-input
 conversion for that role. The same constructor chain therefore gives `C`, its objects,
 its morphisms, and `1_C` all state required by their target roles.
 
-`stage()`, `parent()`, and `defining_morphism()` never compile. Every kernel role class
+`parent()` and `defining_morphism()` never compile. Every kernel role class
 defines its own, and the compiler calls them to find a value's node, so a compiled copy
 would call the accessor it is transporting for. `{C}`'s element node is the first to
 reach `Cat()`'s, where all three are declared.
@@ -679,7 +703,7 @@ semiring of ordinals under the Hessenberg operations is the point functor of
 ```python
 # Cat().Point(Ordinals())
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (Fun(self, Semirings(Cat())).Faithful().inclusion(),)
+    return (Fun(self, Semirings(Cat())).Monomorphisms().Isofibrations()(),)
 ```
 
 `Semirings(Cat())` declares `zero()` and `one()` on its object surface and `+` and `*`
@@ -692,11 +716,11 @@ state. The level shift places each public operation one level down:
 Ordinals().zero()          # the object surface, on the category
 Ordinals().one()
 
-alpha + beta               # the element surface at stage 1, on objects of Ordinals()
+alpha + beta               # the element surface on the objects of Ordinals()
 alpha * beta
 ```
 
-At stage `[1]` the same element surface acts on the morphisms of `Ordinals()`, which is
+With domain `[1]` the same element surface acts on the morphisms of `Ordinals()`, which is
 the functorial action of the natural sum and natural product.
 
 ## Functor construction and presentation data
@@ -737,7 +761,7 @@ Each public functor must name its construction. The fundamental cases are:
 
 | Construction | Functor or morphism supplied |
 | --- | --- |
-| subcategory or property subcategory | its specified inclusion |
+| subcategory or property subcategory | its specified monomorphism |
 | product category | each `product_projection(i)` |
 | coproduct category | each `coproduct_injection(i)` |
 | functor category `Fun(I, C)` | each evaluation `ev_i: Fun(I, C) -> C`; for `Fun([1], C)`, `ev_0` and `ev_1` |
@@ -762,10 +786,10 @@ construction instead of defining an unnamed default.
 `Fun(C, C).Equivalences().identity()` constructs the identity functor on `C`. Functor
 composition uses the composition of morphisms owned by `Cat`.
 
-### Inclusions
+### Subcategory monomorphisms
 
-`Fun(S, T).Faithful().inclusion()` constructs an established subcategory inclusion.
-Use `Fun(S, T).FullyFaithful().inclusion()` when `S` is full in `T`.
+`Fun(S, T).Monomorphisms().Isofibrations()()` constructs an established subcategory monomorphism.
+Use `Fun(S, T).Monomorphisms().Isofibrations().Full()()` when `S` is full in `T`.
 
 ### Induced functors
 
@@ -798,11 +822,11 @@ components and ordinary composition.
 ### Essential images
 
 For `F: C -> D`, `F.essential_image()` is the full property subcategory of `D` on
-objects isomorphic to `F(X)` for some `X in C`. Its inclusion into `D` is fully faithful
+objects isomorphic to `F(X)` for some `X in C`.  Its monomorphism into `D` is fully faithful
 by construction. The original functor factors through this category.
 
 A universal-construction family has more data. `C.Products()` is the full subcategory
-of `C` on the chosen products, reached by its retained identity-on-values inclusion. It
+of `C` on the chosen products, reached by its retained identity-on-values monomorphism. It
 retains the universal data of each diagram `D`: `D` itself, its projections, and its
 universal maps. The essential image of the product functor records only which objects
 are isomorphic to chosen products.
@@ -883,7 +907,7 @@ and denotes the diagram over `Discrete([n])`.
 
 `C.Products()(diagram)` constructs one object of `C`, placed in `C.Products()`, with
 `product_projection(i)` indexed by `i in S` and the universal map. The selected functor
-of the family is its retained identity-on-values inclusion into `C`. `C.Coproducts()` is
+of the family is its retained identity-on-values monomorphism into `C`. `C.Coproducts()` is
 dual with `coproduct_injection(i)`. `X * Y` is `C.Products()((X, Y))`.
 
 `C.Limits(I)` and `C.Colimits(I)` are the general families for one supplied shape `I`.
@@ -944,10 +968,10 @@ isomorphism.
 ```python
 class FiniteSetsCategory(Category):
     def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-        return (Fun(self, Sets()).FullyFaithful().inclusion(),)
+        return (Fun(self, Sets()).Monomorphisms().Isofibrations().Full()(),)
 ```
 
-The inclusion is constructed directly in `Fun(self, Sets()).FullyFaithful()`.
+The functor is constructed directly in `Fun(self, Sets()).FullyFaithful()`.
 
 ### Monoid objects
 
@@ -957,7 +981,7 @@ subcategory of `Magmas(V)` because its morphisms preserve all monoid structure:
 ```python
 class MonoidsCategory(Category):
     def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-        return (Fun(self, Magmas(V)).Faithful().inclusion(),)
+        return (Fun(self, Magmas(V)).Monomorphisms().Isofibrations()(),)
 ```
 
 The additive and multiplicative refinements retain their selected operation roles.
@@ -992,7 +1016,7 @@ The compiler uses `structure_functors()` as its sole structural graph. It must:
 4. build longer paths through composition in `Cat`;
 5. preserve each functor's exact object and morphism maps;
 6. derive each functor's generalized-element action from its morphism action, and
-   precompose a retained stage comparison only for classical-stage methods;
+   precompose a retained separator comparison only for the methods at the separator;
 7. reject a selected edge when a target role needs construction input and the functor
    lacks an exact typed conversion;
 8. detect a structural-image or construction-input mismatch during construction or the
@@ -1008,14 +1032,14 @@ The compiler uses `structure_functors()` as its sole structural graph. It must:
     and controlled compiled ancestor roles; rebind copied `__class__` closures to that
     public role;
 11. compute one construction input per reachable node through structural edges; add the
-    one object-stage or arrow-stage `Cat().ElementType` input to an object or morphism
+    one object-role or arrow-role `Cat().ElementType` input to an object or morphism
     context; activate the matching role context and invoke each constructor once through
     C3;
 12. derive subobject-of-product component functors by composition;
 13. install the compiled roles of a point category `{X}` on its distinguished object:
     `{X}.ObjectType` on the value `X`, and `{X}.ElementType` on the generalized elements
-    of `X`, which for a category `X = C` are `C.ObjectType` at stage `1` and
-    `C.MorphismType` at stage `[1]`.
+    of `X`, which for a category `X = C` are `C.ObjectType` with domain `1` and
+    `C.MorphismType` with domain `[1]`.
 
 Natural transformations are trusted constructions, never compiler proofs. There is no
 route normalization, route scoring, or preservation registry.
@@ -1023,7 +1047,7 @@ route normalization, route scoring, or preservation registry.
 Every inherited method enters the descendant through the compiled role MRO. The declaring
 method runs on the original descendant instance with the supplied arguments. When it needs
 an object in its declaring category, it reads the canonical image retained in that role's
-private state. A classical element's construction input uses the retained stage comparison.
+private state. A point's construction input uses the retained separator comparison.
 The method's value is returned exactly as declared.
 
 The public surface is dynamic inheritance in Sage's sense. The kernel builds
@@ -1071,9 +1095,9 @@ transformations; here it is `Mor(Cat())(C, D)`. Repository endpoint application
 | `Functor.id C` | `Fun(C, C).Equivalences().identity()` |
 | `Functor.fromPUnit X` | the point functor of `X`, an object of `Fun(Cat().Point(X), D)` |
 | `ObjectProperty.FullSubcategory P` | the property subcategory `C.P()` |
-| `ObjectProperty.ι P` | `Fun(C.P(), C).FullyFaithful().inclusion()` |
-| inclusion induced by `P -> Q` | `Fun(C.P(), C.Q()).FullyFaithful().inclusion()` |
-| `wideSubcategoryInclusion P` | `Fun(Wide, C).Faithful().inclusion()` |
+| `ObjectProperty.ι P` | `Fun(C.P(), C).Monomorphisms().Isofibrations().Full()()` |
+| monomorphism induced by `P -> Q` | `Fun(C.P(), C.Q()).Monomorphisms().Isofibrations().Full()()` |
+| `wideSubcategoryInclusion P` | `Fun(Wide, C).Monomorphisms().Isofibrations()()` |
 | `ConcreteCategory.forget`, `HasForget₂.forget₂` | an extra structure containing one chosen functor and its required compatibility |
 | `Prod.fst`, `Prod.snd` | `product_projection(0)` and `product_projection(1)` |
 | `Arrow.leftFunc`, `Arrow.rightFunc` | `ev_0` and `ev_1` of `Fun([1], C)` |
@@ -1099,7 +1123,7 @@ chosen object, and `Functor.equiv` states the equivalence
 `(Discrete PUnit ⥤ C) ≌ C`. See
 [PUnit](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/PUnit.html).
 Here `Cat().Point(X)` names its sole object `X` and owns the declarations specific to
-`X`, so the corresponding functor is an inclusion rather than a constant functor from an
+`X`, so the corresponding functor is a subcategory monomorphism rather than a constant functor from an
 anonymous point.
 
 Mathlib defines `Prod.fst` and `Prod.snd` separately. See
@@ -1120,8 +1144,8 @@ is kernel infrastructure over already established mathematical functors.
 - Every functor predicate returns an applied `Predicate`.
 - Direct construction and assumptions use the general same-object refinement path.
 - Functor properties have no computational handlers.
-- Established property implications induce category inclusions.
-- A full-subcategory inclusion is fully faithful by construction.
+- Established property implications induce subcategory monomorphisms.
+- The monomorphism of a full subcategory is fully faithful by construction.
 - Every functor is constructed through `Fun(Source, Target)` or an established property subcategory.
 - A specialized constructor receives enough mathematical data to select one functor.
 - Endpoint categories and object fields never select a functor.
@@ -1131,14 +1155,14 @@ is kernel infrastructure over already established mathematical functors.
 - `Cat().Products()` and `Cat().Coproducts()` accept sequence-indexed category diagrams.
 - Their objects own `product_projection(i)` and `coproduct_injection(i)` respectively.
 - A universal construction returns one value: the constructed object, an object of the ambient category, placed in the construction family and carrying its defining morphisms and universal maps.
-- A construction family is a full subcategory of its ambient category, reached by the retained identity-on-values inclusion, and retains the universal data of each diagram it constructed from.
+- A construction family is a full subcategory of its ambient category, reached by the retained identity-on-values monomorphism, and retains the universal data of each diagram it constructed from.
 - Every object of `Cat().Products().ChosenSubobjects()` retains its presenting monomorphism into a chosen product, then derives its component functors by composition.
 - Slice and coslice categories are pullbacks of `ev_1` and `ev_0` along the chosen object and retain their pullback projections.
 - Fibration and opfibration structure retains its cartesian or cocartesian lifts.
 - Kan extensions retain their units, counits, and universally induced natural transformations.
 - `Cat().Point(X)`, written `{X}`, is the one-object category on a distinguished object `X`, retained once per `X`.
-- A point functor is the inclusion `{X} -> D`, constructed through `Fun({X}, D)` and selected in `{X}.structure_functors()`.
-- A selected point functor `{C} -> D` supplies complete target roles, typed constructor conversions, state, and methods to `C`, `C.ObjectType` at stage `1`, and `C.MorphismType` at stage `[1]`.
+- A point functor is the monomorphism `{X} -> D`, constructed through `Fun({X}, D)` and selected in `{X}.structure_functors()`.
+- A selected point functor `{C} -> D` supplies complete target roles, typed constructor conversions, state, and methods to `C`, `C.ObjectType` with domain `1`, and `C.MorphismType` with domain `[1]`.
 - Every selected structural functor is an ordinary object of `Fun`.
 - `structure_functors()` determines the structural graph, compiled role bases,
   construction-input conversions, canonical images, and inherited method surface.

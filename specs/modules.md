@@ -134,7 +134,7 @@ X.action()
 ```
 
 `action()` returns `rho_X` in `Mor(C)(A bullet X, X)`.
-At compatible point stages, scalar action evaluates this morphism through the
+At compatible point domains, scalar action evaluates this morphism through the
 selected actegory action.
 
 All other capabilities come through the selected functor to `C` or through later

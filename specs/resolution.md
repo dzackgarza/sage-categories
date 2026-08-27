@@ -108,7 +108,7 @@ The first proposed practical rule was:
 > Force a leaf to hand-pick a resolution through each diamond. The principal purpose is
 > to manage a catalogue of algorithms and methods by categorical placement. For a
 > product in `Modules(A, C)`, it is normally enough to select one implementation that has
-> the expected factors, projections or inclusions, mediating morphisms, and factoring
+> the expected factors, projections or injections, mediating morphisms, and factoring
 > maps.
 
 This remains valid for a genuine choice of presentation or algorithm. It is not valid

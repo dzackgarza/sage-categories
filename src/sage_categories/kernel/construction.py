@@ -79,14 +79,14 @@ ElementRoleIdentity = GeneralCategoryPointIdentity
 
 @dataclass(frozen=True, slots=True, eq=False)
 class CategoryPointIdentity:
-    """An object as a stage-``1`` generalized element of its category."""
+    """An object as a generalized point ``1 -> C`` of its category."""
 
     parent: Category
 
 
 @dataclass(frozen=True, slots=True, eq=False)
 class CategoryArrowIdentity:
-    """A morphism as a stage-``[1]`` generalized element of its category."""
+    """A morphism as a generalized point ``[1] -> C`` of its category."""
 
     parent: Category
     domain: ObjectOfCategory

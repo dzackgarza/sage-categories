@@ -4,7 +4,7 @@ Every canonical cache is a ``sage.structure.coerce_dict`` dictionary.  Keys use
 identity and values are retained strongly (POL-KERNEL-001).  The outer table is
 keyed by the target category.  The inner identity key is the exact public role
 data required by POL-CAT-066: ``(X, X, X)`` for an object,
-``(stage, defining morphism, codomain)`` for an element, and
+``(domain, defining morphism, codomain)`` for an element, and
 ``(domain, codomain, f)`` for a morphism.
 
 ``MonoDict`` silently fails for keys that do not support weak references

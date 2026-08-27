@@ -21,13 +21,13 @@ class SetsCategory(Category):
         """The full property subcategory of finite sets."""
 
         def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
-            """Select the inclusion that supplies the inherited set catalogue.
+            """Select the monomorphism that supplies the inherited set catalogue.
 
             This tuple is not a list of all functors from finite sets.
             The full-subcategory construction supplies its maps and constructs it in
             the fixed-endpoint functor category. Other functors remain in ``Fun``.
             """
-            return (Fun(self, Sets()).FullyFaithful().inclusion(),)
+            return (Fun(self, Sets()).Monomorphisms().Isofibrations().Full()(),)
 
         def membership_proposition(
             self,
@@ -42,7 +42,7 @@ class SetsCategory(Category):
         class ObjectType(Implementation):
             """Implement only the operations introduced by known finiteness.
 
-            No initializer repeats set construction. The kernel-owned inclusion
+            No initializer repeats set construction.  The kernel-owned monomorphism
             supplies the canonical ``Sets().ObjectType`` image.
             """
 

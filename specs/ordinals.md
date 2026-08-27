@@ -40,7 +40,7 @@ functor of `Ordinals()` into `Semirings(Cat())`
 ```python
 # Cat().Point(Ordinals())
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (Fun(self, Semirings(Cat())).Faithful().inclusion(),)
+    return (Fun(self, Semirings(Cat())).Monomorphisms().Isofibrations()(),)
 ```
 
 It regards the category `Ordinals()` as one object of `Semirings(Cat())`. That
@@ -80,7 +80,7 @@ alpha + beta
 alpha * beta
 ```
 
-At stage `[1]` the same element surface acts on the morphisms of `Ordinals()`, which is
+With domain `[1]` the same element surface acts on the morphisms of `Ordinals()`, which is
 the functorial action of the two natural operations.
 
 ### Public ordinal constructors

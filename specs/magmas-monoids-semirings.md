@@ -109,7 +109,7 @@ f.is_magma_homomorphism()
 ```
 
 `operation()` returns the morphism `mu_X:X tensor X -> X` in `C`.
-`combine(x, y)` applies that morphism through the selected point-stage map.
+`combine(x, y)` applies that morphism through the selected point map.
 The homomorphism method returns the owned preservation predicate.
 
 ## Additive and multiplicative operation roles
@@ -128,17 +128,17 @@ Their complete immediate structural tuples are
 ```python
 # Magmas(V).Additive()
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (Fun(self, Magmas(V)).FullyFaithful().inclusion(),)
+    return (Fun(self, Magmas(V)).Monomorphisms().Isofibrations().Full()(),)
 ```
 
 ```python
 # Magmas(V).Multiplicative()
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (Fun(self, Magmas(V)).FullyFaithful().inclusion(),)
+    return (Fun(self, Magmas(V)).Monomorphisms().Isofibrations().Full()(),)
 ```
 
 When `V` is monoidal, the selected roles expose `+`
-and `*` on unit-stage points.
+and `*` on the unit's points.
 For cartesian `V`, two generalized points `x,y:T -> X` combine through
 
 \[
@@ -188,7 +188,7 @@ Its immediate structural functor forgets associativity and the unit:
 
 ```python
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (Fun(self, Magmas(V)).Faithful().inclusion(),)
+    return (Fun(self, Magmas(V)).Monomorphisms().Isofibrations()(),)
 ```
 
 A notation-neutral monoid owns
@@ -215,8 +215,8 @@ Their complete immediate structural tuples preserve both category branches:
 # Monoids(V).Additive()
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (
-        Fun(self, Monoids(V)).FullyFaithful().inclusion(),
-        Fun(self, Magmas(V).Additive()).Faithful().inclusion(),
+        Fun(self, Monoids(V)).Monomorphisms().Isofibrations().Full()(),
+        Fun(self, Magmas(V).Additive()).Monomorphisms().Isofibrations()(),
     )
 ```
 
@@ -224,8 +224,8 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
 # Monoids(V).Multiplicative()
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (
-        Fun(self, Monoids(V)).FullyFaithful().inclusion(),
-        Fun(self, Magmas(V).Multiplicative()).Faithful().inclusion(),
+        Fun(self, Monoids(V)).Monomorphisms().Isofibrations().Full()(),
+        Fun(self, Magmas(V).Multiplicative()).Monomorphisms().Isofibrations()(),
     )
 ```
 
@@ -254,7 +254,7 @@ Its complete immediate structural tuple is
 
 ```python
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (Fun(self, Monoids(V)).FullyFaithful().inclusion(),)
+    return (Fun(self, Monoids(V)).Monomorphisms().Isofibrations().Full()(),)
 ```
 
 The selected functor supplies the monoid operation and unit. `Groups(V)` adds only
@@ -322,7 +322,7 @@ x + y
 x * y
 ```
 
-Here `X in Semirings(C)`. The points `x` and `y` have a stage on which the two
+Here `X in Semirings(C)`. The points `x` and `y` have a common domain on which the two
 operation morphisms can act. At `C = Cat()`, `X` is a category, `zero()` and `one()`
 return objects of `X`, and the two operators apply its addition and multiplication
 functors.
@@ -344,7 +344,7 @@ These formulas are consequences of the internal diagrams.
 Each selected functor acts on objects and morphisms.
 Its point action comes from its morphism action.
 
-The additive and multiplicative refinements use inclusions.
+The additive and multiplicative refinements use subcategory monomorphisms.
 The semiring component functors come from the generic subobject-of-product construction.
 Longer routes to `C` arise through the carrier projections of `C_x`.
 

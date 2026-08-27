@@ -1,10 +1,10 @@
 """``Cat().ElementType``: generalized elements of a category (POL-CAT-058).
 
 A generalized element of a category ``C`` is a functor ``T -> C``, a diagram of
-shape ``T`` in ``C``.  Its stage-``1`` points are the objects of ``C`` and its
-stage-``[1]`` points are the morphisms of ``C``; every ``C.ObjectType`` refines
-this role at stage ``1`` and every ``C.MorphismType`` at stage ``[1]``
-(``kernel/roles.py``).  ``{1, [1]}`` is the stage family of ``Cat()`` (``specs/functor.md``, "Generalized elements"): ``1``
+shape ``T`` in ``C``.  Its generalized points ``1 -> C`` are the objects of ``C`` and its
+generalized points ``[1] -> C`` are the morphisms of ``C``; every ``C.ObjectType`` refines
+this role with domain ``1`` and every ``C.MorphismType`` with domain ``[1]``
+(``kernel/roles.py``).  ``{1, [1]}`` is the separating family of ``Cat()`` (``specs/functor.md``, "Generalized elements"): ``1``
 alone does not separate functors, ``[1]`` does.
 """
 
@@ -60,4 +60,4 @@ class CategoryPointDeclaration(CategoryPointKernel):
         return _shared_category(self, exponent).exponential(exponent, self)
 
     def __repr__(self) -> str:
-        return f"point of {self.parent()!r} at stage {self.defining_morphism().domain()!r}"
+        return f"point of {self.parent()!r} with domain {self.defining_morphism().domain()!r}"

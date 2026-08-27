@@ -57,25 +57,29 @@ CardinalElement = Cardinal().ElementType
 CardinalityMorphism = Cardinal().MorphismType
 ```
 
-Its complete structural tuple selects the skeletal inclusion:
+Its complete structural tuple selects the representative functor:
 
 ```python
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (Fun(self, Sets()).FullyFaithful().inclusion(),)
+    return (Fun(self, Sets()).FullyFaithful()(self.representative, lambda morphism: morphism.set_map()),)
 ```
 
-The inclusion sends each cardinal to its selected representative. It sends a cardinal
-morphism to its retained set map. Thus a generalized element `t: T -> kappa` maps to the
-generalized set element `R(t): R_T -> R_kappa` through the same morphism action.
+It sends each cardinal to its selected representative, and a cardinal morphism to its
+retained set map. Thus a generalized element `t: T -> kappa` maps to the generalized set
+element `R(t): R_T -> R_kappa` through the same morphism action.
 
-This inclusion is the representative transport from cardinal objects to sets. The
+`Cardinal()` is a skeleton, so this functor is fully faithful and injective on objects,
+hence monic; it is not an isofibration, because a set isomorphic to a representative need
+not be one. Placement therefore does not follow it, and a cardinal is not a set
+(`specs/functor.md`, "Monomorphisms of `Cat()` and placement"). It is the representative
+transport from cardinal objects to sets. The
 point category of `Cardinal()` owns its separate placement as a semiring object in
 `Cat()`:
 
 ```python
 # Cat().Point(Cardinal())
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (Fun(self, Semirings(Cat())).Faithful().inclusion(),)
+    return (Fun(self, Semirings(Cat())).Monomorphisms().Isofibrations()(),)
 ```
 
 `Semirings(Cat())` is the general internal semiring category at ambient `Cat()`. Its

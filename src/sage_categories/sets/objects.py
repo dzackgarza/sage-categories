@@ -129,7 +129,7 @@ class SetObjectDeclaration(ObjectOfCategory):
         return decision is True
 
     def point(self, datum: Datum) -> SetElement:
-        """The classical element ``1 -> X`` selecting ``datum``, one point per datum value.
+        """The point ``1 -> X`` selecting ``datum``, one point per datum value.
 
         A set constructed through ``Sets().rule_valued`` routes every point through
         ``rule_point``, since its data compare three-valued.

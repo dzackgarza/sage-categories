@@ -48,14 +48,14 @@ def identity_on_values(value: CategoryPoint) -> CategoryPoint:
 
 
 def diagram_of(value: CategoryPoint) -> Functor:
-    """The functor that a value of ``Fun(I, C)`` denotes: a functor itself, or the retained defining functor of a point of ``C`` at stage ``I`` (specs/functor.md, "The Mor(n, C) tower", specs/functor.md, "Slices and coslices")."""
+    """The functor that a value of ``Fun(I, C)`` denotes: a functor itself, or the retained defining functor of a point of ``C`` with domain ``I`` (specs/functor.md, "The Mor(n, C) tower", specs/functor.md, "Slices and coslices")."""
     if is_placed(value, Fun):
         return value
     return value.defining_morphism()
 
 
 def _defining_functor_equal(first: CategoryPoint, candidate: Any) -> Decision:
-    """A functor ``T -> C`` equals a point of ``C`` at stage ``T`` exactly when it is that point's retained defining functor."""
+    """A functor ``T -> C`` equals a point of ``C`` with domain ``T`` exactly when it is that point's retained defining functor."""
     if is_placed(first, Fun) and not is_placed(candidate, Fun) and role_of(candidate) in (Role.OBJECT, Role.MORPHISM) and candidate.defining_morphism().domain() is first.domain():
         return first is candidate.defining_morphism()
     if is_placed(candidate, Fun) and not is_placed(first, Fun) and role_of(first) in (Role.OBJECT, Role.MORPHISM) and first.defining_morphism().domain() is candidate.domain():
@@ -63,8 +63,8 @@ def _defining_functor_equal(first: CategoryPoint, candidate: Any) -> Decision:
     return Unknown
 
 
-# The stage comparisons ``G_D -> F(G_C)`` retained by the constructions that own a
-# selected functor exposing classical element methods (POL-LEAF-003), keyed by the functor.
+# The separator comparisons ``G_D -> F(G_C)`` retained by the constructions that own a
+# selected functor exposing point methods (POL-LEAF-003), keyed by the functor.
 _separator_comparisons: MonoDict = MonoDict()
 
 # The lifts a functor ``p: E -> B`` retains over a stated class of morphisms of ``B``
@@ -129,7 +129,7 @@ class FunctorDeclaration(MorphismOfCategory):
 
     # The admission condition is the one the image construction needs.  A retained
     # monomorphism is the identity on the objects and morphisms of its domain
-    # (``specs/functor.md``, "Inclusion functors"), so it constructs nothing and
+    # (``specs/functor.md``, "Monomorphisms of ``Cat()`` and placement"), so it constructs nothing and
     # admits exactly the members of its domain: a wide subcategory has every object of
     # its ambient, and that is a membership fact its ambient decides, not a placement
     # its objects ever entered through (POL-CAT-068, POL-FUN-027).  Every other functor
@@ -185,12 +185,12 @@ class FunctorDeclaration(MorphismOfCategory):
         morphism of ``t``.  A functor retains no element callback and no element
         capability.  The element conversion a selected functor retains supplies compiler
         input only; it never answers this call, so the public image of a classical
-        element keeps the stage ``F(G_C)`` rather than the target's classical stage
+        element keeps the domain ``F(G_C)`` rather than the target's separator
         (``specs/functor.md``, "Structural inheritance").
 
         A subcategory monomorphism is the identity on the objects and morphisms of its domain,
         so it is the identity on ``t: T -> X`` as well (``specs/functor.md``, "Inclusion
-        functors").  Its stage and defining morphism are those of the ambient, which no
+        functors").  Its domain and defining morphism are those of the ambient, which no
         selected route reaches from the subcategory.
         """
         assert role_of(element) is Role.ELEMENT, f"{element!r} is not a generalized element"
@@ -211,7 +211,7 @@ class FunctorDeclaration(MorphismOfCategory):
         assert value in self.domain().morphism_category(1), f"{value!r} is neither an object nor a morphism of {self.domain()!r}"
         return self.on_morphism(value)
 
-    # -- classical stages (``specs/functor.md``, "Structural inheritance") ----------------
+    # -- separators (``specs/functor.md``, "Structural inheritance") ----------------
     #
     # The retained morphism ``c: G_D -> F(G_C)`` is the whole datum of the classical
     # transport.  By the covariant Yoneda lemma it *is* the natural transformation
@@ -219,23 +219,23 @@ class FunctorDeclaration(MorphismOfCategory):
     # Mathlib ``CategoryTheory.coyonedaEquiv : (coyoneda.obj (op X) ⟶ F) ≃ F.obj X``
     # (inspected 2026-08-27) with ``X = G_C`` and the presheaf ``U_D . F``, whose value
     # at ``G_C`` is ``Mor(D)(G_D, F(G_C))``.  The construction therefore retains the
-    # stage morphism and no natural-transformation carrier on ``F``.
+    # separator morphism and no natural-transformation carrier on ``F``.
 
     def retain_separator_comparison(self, comparison: MorphismOfCategory) -> None:
         """Retain ``c: G_D -> F(G_C)`` as the defining datum of this functor's classical transport (POL-LEAF-003)."""
-        (source_stage,) = self.domain().separating_family()
-        (target_stage,) = self.codomain().separating_family()
-        assert comparison in self.codomain().morphism_category(1)(target_stage, self.on_object(source_stage))
+        (source_separator,) = self.domain().separating_family()
+        (target_separator,) = self.codomain().separating_family()
+        assert comparison in self.codomain().morphism_category(1)(target_separator, self.on_object(source_separator))
         _separator_comparisons[self] = comparison
 
     def separator_comparison(self) -> MorphismOfCategory:
         """``G_D -> F(G_C)``: the retained comparison, or the identity when ``F(G_C) is G_D``."""
         if self in _separator_comparisons:
             return _separator_comparisons[self]
-        (source_stage,) = self.domain().separating_family()
-        (target_stage,) = self.codomain().separating_family()
-        assert self.on_object(source_stage) is target_stage, f"{self!r} retains no stage comparison"
-        return target_stage.identity()
+        (source_separator,) = self.domain().separating_family()
+        (target_separator,) = self.codomain().separating_family()
+        assert self.on_object(source_separator) is target_separator, f"{self!r} retains no separator comparison"
+        return target_separator.identity()
 
     # -- composition data ------------------------------------------------------------------
 
@@ -317,7 +317,7 @@ class FunctorDeclaration(MorphismOfCategory):
         element conversion of its own.
 
         A classical source ``t: G_C -> X`` instead supplies the target's classical
-        element methods, which read a point of the target's own classical stage.
+        element methods, which read a point of the target's own separator.
         Precomposing ``q`` with the retained comparison ``c_F: G_D -> F(G_C)`` produces
         that point ``p: G_D -> F(X)``.  When ``c_F`` is an identity, ``F(G_C)`` is
         ``G_D`` and ``p`` is ``q``: they then share one identity and one cache entry
@@ -332,8 +332,8 @@ class FunctorDeclaration(MorphismOfCategory):
         assert isinstance(source.identity, GeneralCategoryPointIdentity)
         source_defining = source.identity.defining_morphism
         image = self.morphism_constructor_input(retained_morphism_input(source_defining)).canonical_image
-        stages = self.domain().separating_family()
-        if self in _separator_comparisons and len(stages) == 1 and source_defining.domain() is stages[0]:
+        separators = self.domain().separating_family()
+        if self in _separator_comparisons and len(separators) == 1 and source_defining.domain() is separators[0]:
             comparison = _separator_comparisons[self]
             if comparison is not comparison.domain().identity():
                 image = image * comparison
@@ -582,18 +582,18 @@ class FunctorProperty(FunctorProperties, FixedEndpointProperty[[OnObject, OnMorp
 
 
 # ``denotes_diagram(x, Fun(I, C))``: ``x`` is a functor ``I -> C``, or a point of ``C`` at
-# stage ``I`` (specs/functor.md, "Slices and coslices": an object of ``C`` is a point at stage ``1`` and a morphism a point at
-# stage ``[1]``), whose defining functor is such a diagram.  Thus the objects of
+# domain ``I`` (specs/functor.md, "Slices and coslices": an object of ``C`` is a point with domain ``1`` and a morphism a point with
+# domain ``[1]``), whose defining functor is such a diagram.  Thus the objects of
 # ``Fun(1, C)`` are the objects of ``C`` and the objects of ``Fun([1], C)`` are the
 # morphisms of ``C`` (specs/functor.md, "The Mor(n, C) tower", specs/functor.md, "Canonical objects of Cat"): one value, denoting its retained defining functor.
 denotes_diagram: Predicate = Predicate("denotes_diagram", 2, False)
 
 
-def _denotes_diagram_by_stage(candidate: CategoryPoint, functors: FunctorCategory) -> Decision:
+def _denotes_diagram_by_domain(candidate: CategoryPoint, functors: FunctorCategory) -> Decision:
     if is_placed(candidate, functors.ambient()):
         return ask(endpoints(candidate, functors.domain(), functors.codomain()))
     if role_of(candidate) in (Role.OBJECT, Role.MORPHISM):
-        # The stage is one of the canonical shapes, compared by identity; the parent is a
+        # The domain is one of the canonical shapes, compared by identity; the parent is a
         # placement, so the question there is containment in the codomain, not identity
         # (POL-CAT-068, POL-FUN-027): a set refined into ``Sets().Finite()`` is still a
         # diagram of shape ``1`` in ``Sets()``.
@@ -601,20 +601,20 @@ def _denotes_diagram_by_stage(candidate: CategoryPoint, functors: FunctorCategor
     return False
 
 
-denotes_diagram.register_handler(_denotes_diagram_by_stage)
+denotes_diagram.register_handler(_denotes_diagram_by_domain)
 
 # ``denotes_functor(x, Fun)``: ``x`` is a functor by placement, or a point of a category
-# at a categorical stage, which denotes its defining functor (specs/functor.md, "Slices and coslices").
+# with a category as domain, which denotes its defining functor (specs/functor.md, "Slices and coslices").
 denotes_functor: Predicate = Predicate("denotes_functor", 2, False)
 
 
-def _denotes_functor_by_stage(candidate: CategoryPoint, functors: FunctorsCategory) -> Decision:
+def _denotes_functor_by_domain(candidate: CategoryPoint, functors: FunctorsCategory) -> Decision:
     if is_placed(candidate, functors):
         return True
     return role_of(candidate) in (Role.OBJECT, Role.MORPHISM) and candidate.defining_morphism().domain() in Cat()
 
 
-denotes_functor.register_handler(_denotes_functor_by_stage)
+denotes_functor.register_handler(_denotes_functor_by_domain)
 
 
 class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]]):
@@ -645,7 +645,7 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
         return denotes_diagram(candidate, self)
 
     def diagram(self, value: CategoryPoint) -> Functor:
-        """The functor ``I -> C`` that a value of this category denotes: itself, or the defining functor of a point of ``C`` at stage ``I``."""
+        """The functor ``I -> C`` that a value of this category denotes: itself, or the defining functor of a point of ``C`` with domain ``I``."""
         if is_placed(value, self.ambient()):
             return value
         assert value in self, f"{value!r} is not a diagram of shape {self.domain()!r} in {self.codomain()!r}"
@@ -758,7 +758,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         return super().__call__(shape, target)
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
-        """A functor, or a point of a category at a categorical stage denoting its defining functor (specs/functor.md, "The Mor(n, C) tower", specs/functor.md, "Slices and coslices")."""
+        """A functor, or a point of a category with a category as domain denoting its defining functor (specs/functor.md, "The Mor(n, C) tower", specs/functor.md, "Slices and coslices")."""
         return denotes_functor(candidate, self)
 
     # -- the functor property categories (POL-FUN-024) -----------------------------------

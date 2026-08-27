@@ -23,7 +23,7 @@ construction on one specimen; none of them proves a law.
 
 The file also carries the specimens for two further declared surfaces that no test
 exercised: the represented underlying functor ``U_C = Mor(C)(G_C, -)`` of a category with a
-classical stage, and the inherited execution of a receiver-valued declaration.  Toy
+separator, and the inherited execution of a receiver-valued declaration.  Toy
 categories for the latter live only in this file (POL-TEST-006).
 """
 
@@ -112,7 +112,7 @@ def test_the_horizontal_composite_has_the_component_its_two_whiskerings_give() -
 def test_the_exponential_acts_on_a_morphism_of_cat_and_keeps_one_value_per_morphism() -> None:
     """``Fun(I, U)`` for the underlying-set functor ``U: Posets() -> Sets()``: post-composition with ``U``.
 
-    Its object action keeps the spelling of a point of ``Posets()`` at stage ``I``, so a
+    Its object action keeps the spelling of a point of ``Posets()`` with domain ``I``, so a
     monotone map has one image whether it is read as a morphism of ``Posets()`` or as an
     object of ``Fun([1], Posets())``.  The exponential's universal property is a trusted
     declaration (POL-MATH-041) and is not proved here.
@@ -133,7 +133,7 @@ def test_the_exponential_acts_on_a_morphism_of_cat_and_keeps_one_value_per_morph
     assert action.on_object(collapse) is underlying.on_morphism(collapse)
     assert action.on_object(collapse) in Mor(Sets())(three, two)
 
-    # At stage ``1`` the points are the objects, including one refined into a property
+    # With domain ``1`` the points are the objects, including one refined into a property
     # subcategory: ``chain`` is placed in ``FinitePosets()``, which is contained in
     # ``Posets()``, so it is a diagram of shape ``1`` in ``Posets()``.
     assert chain in FinitePosets()
@@ -275,16 +275,16 @@ def test_an_inherited_receiver_valued_method_returns_the_descendant() -> None:
     assert member.carrier() is carrier
 
 
-def test_the_chosen_classical_stage_represents_the_underlying_set_functor() -> None:
-    """``U_C = Mor(C)(G_C, -): C -> Sets()`` for ``C = Posets()``, whose stage is the one-point order.
+def test_the_chosen_separator_represents_the_underlying_set_functor() -> None:
+    """``U_C = Mor(C)(G_C, -): C -> Sets()`` for ``C = Posets()``, whose separator is the one-point order.
 
     The value at ``X`` is the set of morphisms ``G_C -> X`` and the value at ``f`` is
     postcomposition.  Faithfulness of ``U_C`` follows from the writer's assertion that the
-    stage family separates and is a trusted declaration (POL-MATH-037); this specimen
+    separating family separates and is a trusted declaration (POL-MATH-037); this specimen
     witnesses the construction and proves no such property.
     """
     underlying_points = Posets().represented_functor()
-    (stage,) = Posets().separating_family()
+    (separator,) = Posets().separating_family()
     chain, pair = Posets().Simplex(int(2)), Posets().Simplex(int(1))
     collapse = Mor(Posets())(chain, pair)(lambda datum: min(datum, int(1)))
 
@@ -292,13 +292,13 @@ def test_the_chosen_classical_stage_represents_the_underlying_set_functor() -> N
     assert underlying_points.domain() is Posets()
     assert underlying_points.codomain() is Sets()
 
-    top = Mor(Posets())(stage, chain)(lambda datum: int(2))
+    top = Mor(Posets())(separator, chain)(lambda datum: int(2))
     assert underlying_points.on_object(chain) in Sets()
     assert underlying_points.on_object(chain).point(top) in underlying_points.on_object(chain)
     assert ask(underlying_points.on_object(chain).membership_proposition(collapse)) is False
 
     image = collapse * top
-    assert image in Mor(Posets())(stage, pair)
+    assert image in Mor(Posets())(separator, pair)
     postcomposition = underlying_points.on_morphism(collapse)
     assert postcomposition in Mor(Sets())(underlying_points.on_object(chain), underlying_points.on_object(pair))
     assert ask(postcomposition(underlying_points.on_object(chain).point(top)) == underlying_points.on_object(pair).point(image)) is True

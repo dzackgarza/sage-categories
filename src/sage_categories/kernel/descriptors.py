@@ -64,17 +64,23 @@ def placement_node(value: CategoryPoint) -> compiler.Node:
     raise AssertionError(f"{value!r} is not an owned value")
 
 
-def _declared[**P, R](receiver: CategoryPoint, name: str, declaring_class: type[CategoryPoint]) -> compiler.DeclaredMethod[P, R]:
-    """The method ``name`` as the receiver's own class realizes the declaration of ``declaring_class``.
+def _declared[**P, R](receiver: CategoryPoint, name: str, owner: Category, role: Role) -> compiler.DeclaredMethod[P, R]:
+    """The method ``name`` as the receiver's own class realizes the declaration of ``owner`` in ``role``.
 
-    The first class-body definition in the receiver's MRO below the declaring class
+    The first class-body definition in the receiver's MRO below the declaring owner
     that is not a forwarded descriptor: a refinement of the declaration by the
     receiver's placement wins over the declaration itself, and a forwarded copy of
     the declaration (which would transport the receiver again) is never chosen.
+
+    An owned value carries the owner's *compiled* class, which holds the copied
+    declaration; a category carries the owner's *declared* class instead, because a
+    category is an instance of its own ``Category`` subclass and not of
+    ``Cat().ObjectType``.  Either one places the receiver below the owner.
     """
+    below = (owner.role_class(role), owner.local_role_class(role))
     for klass in type(receiver).__mro__:
         declared = vars(klass).get(name)
-        if declared is not None and issubclass(klass, declaring_class) and not isinstance(declared, ForwardedMethod):
+        if declared is not None and issubclass(klass, below) and not isinstance(declared, ForwardedMethod):
             return declared
     raise AssertionError(f"{receiver!r} realizes no declaration of {name!r}")
 
@@ -88,7 +94,7 @@ def _action[**P, R](functor: Functor, name: str) -> compiler.DeclaredMethod[P, R
     selected functor, and an action declared by a property role of ``Fun`` would be
     chosen first.  No property role of ``Fun`` declares one today.
     """
-    return _declared(functor, name, functor.base_category().local_role_class(Role.MORPHISM))
+    return _declared(functor, name, functor.base_category(), Role.MORPHISM)
 
 
 def _apply(functor: Functor, step_role: Role, value: CategoryPoint) -> CategoryPoint:
@@ -245,7 +251,7 @@ def _implementation[**P, R](receiver: CategoryPoint, entry: compiler.Entry[P, R]
     refines the declarations of ``Cat().ObjectType``; ``F(X).f()`` for such an image
     is that refinement, not the base declaration.
     """
-    return _declared(receiver, entry.name, entry.owner.local_role_class(entry.role))
+    return _declared(receiver, entry.name, entry.owner, entry.role)
 
 
 class ForwardedMethod[**P, R]:

@@ -15,20 +15,32 @@ Method catalogue of a node (``specs/resolution.md``):
 3. comparable owners yield the most specific one;
 4. incomparable owners with one spelling raise ``SemanticCollisionError``.
 
-The compiled role class is a Sage dynamic class (``sage.structure.dynamic_class``):
-its bases are the local role class followed by the *controlled* direct bases that
-``sage.misc.c3_controlled.C3_sorted_merge`` returns for the node, and the surface
-holds one forwarding descriptor per inherited name.  Sage's algorithm builds the
-local information from the bare hierarchy so that Python's C3 never fails; hand-kept
-base orders do fail on a hierarchy this shape, which is the problem that module was
-written for.  Method compilation constructs no value image (POL-KERNEL-001).
+The compiled role class is a Sage dynamic class (``sage.structure.dynamic_class``).
+Its bases are exactly the *controlled* direct bases that
+``sage.misc.c3_controlled.C3_sorted_merge`` returns for the node: compiled classes of
+reachable nodes.  A node that reaches none ends its chain and takes its own
+declaration as its base, which is how the chain reaches a real class — ``Category``
+for the object node of ``Cat()``, the kernel role bases below the rest.
+
+Everywhere else the declaration is passed as ``cls``, so its methods are inserted into
+the compiled class and its own Python bases are dropped.  This is Sage's
+``Category._make_named_class``, which passes ``ParentMethods`` the same way and warns
+when a method provider has a super class at all.
+
+The distinction decides whether Python can linearize the result.  ``C3_sorted_merge``
+orders *nodes*; every class it never sees is unconstrained, and Python then places it
+wherever each individual class construction allows.  Those placements contradict each
+other across branches of a diamond, and the class has no MRO.  With declarations out
+of the bases, every class in every base's MRO is a node class and carries the node
+order.  Method compilation constructs no value image (POL-KERNEL-001).
 """
 
 from __future__ import annotations
 
 import inspect
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Concatenate, NamedTuple
+from types import CellType, FunctionType
+from typing import TYPE_CHECKING, Any, Concatenate, NamedTuple
 
 from sage.misc.c3_controlled import C3_sorted_merge
 from sage.structure.dynamic_class import dynamic_class
@@ -79,6 +91,11 @@ type Route = tuple[Step, ...]
 # (POL-CAT-075, POL-TYPE-028).
 type DeclaredMethod[**P, R] = Callable[Concatenate[CategoryPoint, P], R]
 
+# One entry of a class body: a function, a descriptor, a nested class, or a constant.
+# ``vars`` is Python's own introspection of a namespace and admits every value, so the
+# ambiguity is genuine and named once here (POL-TYPE-004).
+type ClassBodyValue = Any
+
 
 class Entry[**P, R](NamedTuple):
     """One compiled method: its declaring owner and role, its spelling, its declaration, and its execution route."""
@@ -100,9 +117,6 @@ _empty_local_roles: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
 # class is built from, keyed by the node's category; and the node of each node key.
 _linearizations: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
 _nodes_by_key: dict[int, Node] = {}
-
-# The node each declared role class stands for: one class, one node (POL-CAT-016).
-_class_owners: dict[type[CategoryPoint], Node] = {}
 
 _ROLE_POSITIONS: dict[Role, int] = {role: position for position, role in enumerate(Role)}
 
@@ -216,21 +230,33 @@ def catalogue[**P, R](current: Node) -> dict[str, Entry[P, R]]:
     return entries
 
 
+def _kernel_base_of(klass: type[CategoryPoint]) -> type[CategoryPoint]:
+    """The kernel role class of a role class: the end of every chain of that role.
+
+    ``Category`` ends the chain of the category role.  It is ``Cat().ObjectType``'s own
+    declaration and the class every category is an instance of: a category is built from
+    its own hand-written ``Category`` subclass and never from a compiled class
+    (``refinement.place``), so those subclasses must be able to override its methods,
+    which only inheritance gives them.  The three kernel role classes end the other
+    chains the same way.
+    """
+    from sage_categories.cat.category import Category
+
+    bases = (Category, kernel_base(Role.OBJECT), kernel_base(Role.ELEMENT), kernel_base(Role.MORPHISM), CategoryPoint)
+    return next(found for found in klass.__mro__ if found in bases)
+
+
 def empty_local_role(category: Category, role: Role) -> type[CategoryPoint]:
     """The local role class that declares nothing, on the kernel base of the ambient's role.
 
-    One class per category and role, retained: the compiled bases of a category list
-    the local class of every reachable node, and ``descriptors._declared`` finds a
-    declaring owner by class identity.  A second class with the same name would be a
-    second declaring owner of one node, and two of them in one base list have no
-    consistent linearization (POL-CAT-016, POL-CAT-011).
+    One class per category and role, retained: it names the declaring owner of the node
+    for ``descriptors._declared``, and a node that reaches no other node reads its
+    kernel base off it (POL-CAT-016, POL-CAT-011).
     """
     table = _empty_local_roles[role]
     if category not in table:
         ambient_node = node(category.ambient(), role)
-        ambient_class = ambient_node.category.role_class(ambient_node.role)
-        kernel_bases = (kernel_base(Role.OBJECT), kernel_base(Role.ELEMENT), kernel_base(Role.MORPHISM), CategoryPoint)
-        base = next(klass for klass in ambient_class.__mro__ if klass in kernel_bases)
+        base = _kernel_base_of(ambient_node.category.role_class(ambient_node.role))
         table[category] = type(f"{category!r}.{role.value}", (base,), {})
     return table[category]
 
@@ -298,7 +324,7 @@ def _linearize(current: Node) -> tuple[tuple[int, ...], tuple[int, ...]]:
 
 
 def _base_classes(current: Node, local: type[CategoryPoint]) -> tuple[type[CategoryPoint], ...]:
-    """The controlled direct bases of ``current``'s class, as role classes after ``local``.
+    """The controlled direct bases of ``current``'s class: compiled role classes only.
 
     The controlled list is passed through as it is.  Its entries are not only the
     direct targets: C3 adds the control edges that make the merge succeed, and
@@ -306,23 +332,24 @@ def _base_classes(current: Node, local: type[CategoryPoint]) -> tuple[type[Categ
     guarantee the algorithm provides.  Sage passes ``_super_categories_for_classes``
     to its class construction unchanged for the same reason.
 
-    Two adjustments are forced by Python rather than by the algorithm.  Several nodes
-    can share one role class — a category that declares nothing and inherits nothing
-    keeps the class it declares, and several categories declare one class, such as the
-    identity 2-cells of every 1-category.  A base list may not repeat a class, and the
-    shared class belongs at the *last* of its positions: it is an ancestor of whatever
-    the higher-ranked nodes contribute, so keeping an earlier occurrence would place it
-    above its own descendants.  Nothing is dropped, so every control edge survives.
+    One adjustment is forced by Python rather than by the algorithm.  Several nodes can
+    share one compiled class — the node ``(Mor(C), object)`` *is* the node
+    ``(C, morphism)``, and its class is installed on both categories.  A base list may
+    not repeat a class, and the shared class belongs at the *last* of its positions: it
+    is an ancestor of whatever the higher-ranked nodes contribute, so keeping an earlier
+    occurrence would place it above its own descendants.  Nothing is dropped, so every
+    control edge survives.
 
-    The local class is prepended only when no controlled base already derives from it:
-    a category that declares nothing at this role has the bare kernel base as its local
-    class, and prepending that would invert the order the same way.
+    A node that reaches no other node is the end of its chain, and its base is the kernel
+    role class its declaration stands on.  A declaration is never a base itself: it
+    belongs to one node, but two chain ends put two declarations directly above one
+    kernel role class, and nothing then orders those two against each other.
     """
     keys = _linearize(current)[1]
     classes = [_nodes_by_key[key].category.role_class(_nodes_by_key[key].role) for key in keys]
     bases = [klass for position, klass in enumerate(classes) if not any(later is klass for later in classes[position + 1 :])]
-    if not any(issubclass(klass, local) for klass in bases):
-        bases.insert(0, local)
+    if not bases:
+        bases = [_kernel_base_of(local)]
     inverted = [
         (earlier, later)
         for position, earlier in enumerate(bases)
@@ -336,23 +363,35 @@ def _base_classes(current: Node, local: type[CategoryPoint]) -> tuple[type[Categ
     return tuple(bases)
 
 
-def _declared_class(current: Node, local: type[CategoryPoint]) -> type[CategoryPoint]:
-    """The declaring class of ``current``, made its own.
+def _rebound(function: FunctionType, cell: CellType) -> FunctionType:
+    """A copy of ``function`` whose ``__class__`` closure cell is ``cell``.
 
-    Several categories inherit one nested declaration from a shared Python base -- the
-    identity 2-cells of every 1-category -- and a declared class sits in the compiled
-    MRO of every node that reaches it.  One class may stand for only one node
-    (POL-CAT-016): the compiled bases are node-ordered, and a class at two nodes would
-    have to hold both positions.  Sage's rule is the same, in
-    ``Category._make_named_class_key``: one key only for categories with one list of
-    super categories.  The first node keeps the declaration, so
-    ``Cat().ObjectType is Category``; a later node takes a subclass of it.
+    A method declared with zero-argument ``super()`` closes over ``__class__``, bound by
+    Python to the class whose body defined it.  That class is the declaration, which is
+    not in the compiled MRO, so the original closure would make ``super()`` reject its
+    own receiver.  Rebinding the cell to the compiled class makes ``super()`` enter the
+    compiled chain, which is the chain the call is about.  The function is copied rather
+    than mutated: one declaration can be compiled at several nodes.
     """
-    owner = _class_owners.get(local)
-    if owner is not None and not same_node(owner, current):
-        local = dynamic_class(f"{current.category!r}.{current.role.value}", (local,), prepend_cls_bases=False)
-    _class_owners.setdefault(local, current)
-    return local
+    position = function.__code__.co_freevars.index("__class__")
+    assert function.__closure__ is not None, function
+    closure = tuple(cell if index == position else held for index, held in enumerate(function.__closure__))
+    copy = FunctionType(function.__code__, function.__globals__, function.__name__, function.__defaults__, closure)
+    copy.__qualname__ = function.__qualname__
+    copy.__kwdefaults__ = function.__kwdefaults__
+    copy.__annotations__ = function.__annotations__
+    return copy
+
+
+def _declaration_methods(local: type[CategoryPoint], cell: CellType) -> dict[str, ClassBodyValue]:
+    """The complete class body of a local declaration, ready to be inserted into a compiled class."""
+    namespace: dict[str, ClassBodyValue] = {}
+    for name, value in vars(local).items():
+        if name in ("__dict__", "__weakref__", "__qualname__"):
+            continue
+        uses_super = isinstance(value, FunctionType) and "__class__" in value.__code__.co_freevars
+        namespace[name] = _rebound(value, cell) if uses_super else value
+    return namespace
 
 
 def _assert_linearized(current: Node, compiled: type[CategoryPoint]) -> None:
@@ -409,19 +448,26 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
         # Every node gets its own compiled class, including one that declares nothing
         # and inherits nothing: in Sage a category without ``ParentMethods`` still has
         # its own ``parent_class``, built from its super categories and adding no
-        # methods.  Installing the declaration itself instead would put one class at
-        # several nodes -- the bare kernel base is the declaration of every category
-        # that declares no role class -- and the compiled bases are node-ordered, so a
-        # class at two nodes would have to hold both positions (POL-CAT-016).
+        # methods.  The declaration supplies methods through ``cls`` and never becomes a
+        # base, so every class in the compiled MRO is a node class and carries the node
+        # order (POL-CAT-016).
         #
         # The declared class stays what it was: ``local_role_class`` reads the class
         # attribute, ``role_class`` the compiled instance attribute.
-        bases = _base_classes(current, _declared_class(current, category.local_role_class(role)))
+        local = category.local_role_class(role)
+        bases = _base_classes(current, local)
+        cell = CellType()
+        # The declaration supplies its methods by inheritance when it is the kernel role
+        # class that ends the chain, and by copy otherwise.  Copying ``Category`` onto
+        # ``Cat().ObjectType`` would shadow the overrides of its own Python subclasses,
+        # which are the classes categories are built from (``refinement.place``).
+        namespace = dict(surface) if local in bases else {**surface, **_declaration_methods(local, cell)}
         try:
             compiled = dynamic_class(
                 f"{category!r}.{role.value}",
                 bases,
-                cls=type("Surface", (), surface),
+                cls=type(local.__name__, (), namespace),
+                doccls=local,
                 prepend_cls_bases=False,
             )
         except TypeError as conflict:
@@ -429,5 +475,6 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
                 f"the {role.value} class of {category!r} has no linearization over "
                 f"{[klass.__name__ for klass in bases]}: {conflict}"
             ) from conflict
+        cell.cell_contents = compiled
         setattr(category, role.value, compiled)
         _assert_linearized(current, compiled)

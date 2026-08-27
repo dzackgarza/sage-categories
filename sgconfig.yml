@@ -12,4 +12,4 @@ ruleDirs:
 
 languageGlobs:
   python:
-    - "*.sage"
+    - '*.sage'

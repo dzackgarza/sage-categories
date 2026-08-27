@@ -42,7 +42,7 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Callable
-from types import CellType, FunctionType
+from types import CellType, FunctionType, GenericAlias
 from typing import TYPE_CHECKING, Concatenate, NamedTuple
 
 from sage.misc.c3_controlled import C3_sorted_merge
@@ -408,6 +408,12 @@ def _method_provider(
         if name in _CLASS_METADATA or name == "__init__":
             continue
         setattr(provider, name, _rebound_member(value, cell))
+    # PEP 695 adds ``typing.Generic`` below a parameterized declaration.  That raw
+    # base cannot enter the public role MRO (POL-KERNEL-028).  Preserve subscription
+    # with Python's standard generic-alias constructor instead.  The declaration's
+    # ``__type_params__`` and ``__parameters__`` were copied above.
+    if vars(local).get("__type_params__", ()) and "__class_getitem__" not in vars(local):
+        provider.__class_getitem__ = classmethod(GenericAlias)
     setattr(provider, "__init__", initializer)
     return provider
 

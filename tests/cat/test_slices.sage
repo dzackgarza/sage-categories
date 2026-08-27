@@ -216,6 +216,19 @@ def test_a_generalized_element_is_an_object_of_the_slice_over_its_parent() -> No
     assert over(point.defining_morphism()) is over(point)
     assert over.fixed_projection().on_object(over(point)) is Sets().Terminal()
 
+    # A stage other than the classical one: ``t: T -> X`` for ``T`` a two-element set.
+    two = Sets().Simplex(int(1))
+    successor = Mor(Sets())(two, three)(lambda datum: datum + int(1))
+    generalized = Sets().element_from_defining_morphism(successor)
+    assert generalized.stage() is two
+    assert generalized.parent() is three
+    assert generalized.defining_morphism() is successor
+    assert generalized.category() is over
+    assert generalized in over
+    assert over(generalized).first() is successor
+    assert over.fixed_projection().on_object(over(generalized)) is two
+    assert generalized is not point
+
 
 def test_the_codomain_evaluation_lifts_a_map_by_pullback_with_both_projections() -> None:
     two, three, four = Sets().Simplex(int(1)), Sets().Simplex(int(2)), Sets().Simplex(int(3))

@@ -528,6 +528,12 @@ def test_the_element_path_to_sets_and_special_methods_through_a_length_two_route
     total = first + second
     assert total.parent() is plane.additive_group()
     assert total.stage() is ToyAbelianGroups().integers()
+    # ``(1, 0) + (0, 1) = (1, 1)`` and ``(0, 1) + (0, 1) = (0, 0)`` in ``(Z/2)^2``: the
+    # special method inherited over two edges returns those sums, not merely a value of
+    # the additive image at the target stage.
+    assert total is plane.additive_group().element((int(1), int(1)))
+    assert ask(total.defining_morphism().set_map()(ZZ(int(1))) == plane.carrier().point((int(1), int(1)))) is True
+    assert (second + second) is plane.additive_group().element((int(0), int(0)))
 
     assert hash(first) == hash(plane.carrier().point((int(1), int(0))))
     assert first in plane

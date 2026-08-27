@@ -8,7 +8,7 @@
 - [Canonical objects of `Cat`](#canonical-objects-of-cat)
 - [Functor property subcategories](#functor-property-subcategories)
 - [Property resolution](#property-resolution)
-- [Inclusion functors](#inclusion-functors)
+- [Monomorphisms of `Cat()` and placement](#monomorphisms-of-cat-and-placement)
 - [Structural inheritance](#structural-inheritance)
 - [Point categories and point functors](#point-categories-and-point-functors)
 - [Functor construction and presentation data](#functor-construction-and-presentation-data)
@@ -306,11 +306,66 @@ This rule is specific to categorical functor properties. Other owned predicates,
 as injectivity of a set map on a declared semantic domain, can register exact
 computational routes.
 
-## Inclusion functors
+## Monomorphisms of `Cat()` and placement
 
-An inclusion `S -> T` is an object of the fixed-endpoint category `Fun(S, T)`. That
-category owns its constructor. A general subcategory inclusion is faithful, so construct
-it in the established property category:
+### The two conditions
+
+There is no separate notion of an inclusion functor. A subcategory of `T` is a subobject
+of `T` in `Cat()`: an isomorphism class of monomorphisms into `T` ([nLab, subobject](https://ncatlab.org/nlab/show/subobject),
+inspected 2026-08-28; "an isomorphism class of monomorphisms"). Two conditions apply,
+and the kernel needs both.
+
+**Monic.** [nLab, subcategory](https://ncatlab.org/nlab/show/subcategory) (inspected
+2026-08-28): "subcategories of a category `C` can be identified with isomorphism classes
+of monic functors into `C`. A functor is easily verified to be monic iff it is faithful
+and injective on objects."
+[nLab, full embedding](https://ncatlab.org/nlab/show/full+embedding) (inspected
+2026-08-28) names the same class: "Embeddings in this sense are straightforwardly the
+same thing as monomorphisms in the 1-category `Cat`", and a full embedding is a
+monomorphism in `Cat` that is also full, hence fully faithful. So the owned property is
+`Fun.Monomorphisms()`, and a full subcategory inclusion is an object of
+`Fun.Monomorphisms().Full()`. `Fun` needs no further property for this.
+
+**Replete.** Monicity alone is not enough, because a skeleton satisfies it. `Cardinal()`
+selects one representative set per cardinal; its functor to `Sets()` is fully faithful
+and injective on objects, hence monic, hence an embedding. A cardinal is still not a set.
+The condition that separates them is repleteness of the image:
+[Kerodon, Example 4.4.1.12](https://kerodon.net/tag/01EX) (inspected 2026-08-28) states
+that a subcategory is replete exactly when an isomorphism of `C` with one endpoint in the
+subcategory has its other endpoint and itself in the subcategory, and that this holds
+exactly when **the inclusion is an isofibration**.
+[nLab, replete subcategory](https://ncatlab.org/nlab/show/replete%2Bsubcategory)
+(inspected 2026-08-28) states why this is the right condition: a replete subcategory "is
+a subcategory for which the property of (strictly) belonging to it respects the principle
+of equivalence of categories."
+
+`Sets().Finite()` is replete: a set isomorphic to a finite set is finite. Every property
+subcategory whose defining predicate is an isomorphism invariant is replete for the same
+reason. A skeleton is the opposite extreme and is replete only when it is everything.
+
+### Placement traces monic isofibrations
+
+`x in C` is established placement (`POL-CAT-068`). It propagates from `S` to `T` exactly
+along a functor that is a monomorphism of `Cat()` and an isofibration. Monicity gives one value rather
+than a copy; repleteness makes the resulting membership statement invariant, so an object
+of `Sets().Finite()` is an object of `Sets()` while a cardinal is not a set.
+
+The choice is data. `Cardinal() -> Sets()` and `Sets().Finite() -> Sets()` are both monic,
+and nothing derives which one placement follows: nLab, *subobject*, states that for
+representatives of a subobject "there is no intrinsic way of defining such
+representatives". A leaf therefore declares which monomorphism placement follows by constructing it in the
+property category below, and the kernel trusts that declaration (`POL-CAT-069`). It does
+not infer the relation from Python inheritance, shared storage, or a cache of previously
+constructed functors.
+
+### Constructing one
+
+The package writes `inclusion()` for the monomorphism a leaf declares. That name is
+shorthand for the two conditions above and for nothing else.
+
+Such a functor `S -> T` is an object of the fixed-endpoint category `Fun(S, T)`. That
+category owns its constructor. A monomorphism of `Cat()` is faithful, so construct it in
+the established property category:
 
 ```python
 iota = Fun(S, T).Faithful().inclusion()

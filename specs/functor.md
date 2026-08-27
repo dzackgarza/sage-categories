@@ -376,7 +376,9 @@ role stands on the kernel role class of its role: `Category` for the category ro
 otherwise the kernel base of objects, elements, or morphisms.
 
 A declaration is not a base. The kernel copies its class body onto the compiled role and
-drops the declaration's own Python bases. A method declared with zero-argument `super()`
+drops the declaration's own Python bases. The copy carries a category's own declaration
+onto its own compiled role, which is class construction and not a second owner: no
+category acquires a method owned by another one this way (`POL-CAT-006`). A method declared with zero-argument `super()`
 closes over `__class__`, which Python bound to the declaration; the kernel rebinds that
 closure to the compiled role, so `super()` enters the compiled chain.
 

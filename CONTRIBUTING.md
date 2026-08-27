@@ -257,7 +257,7 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-003` | Apply the same inheritance mechanism to objects, elements, and morphisms. |
 | `POL-CAT-004` | A category level defines only the structure and operations introduced at that level. |
 | `POL-CAT-005` | A leaf category knows only itself and its immediate structural functors. |
-| `POL-CAT-006` | A category never redeclares a method owned by another category. The kernel copies an owning local declaration onto the one compiled role it declares, and rebinds copied `__class__` closures to that role; that copy is class construction, not a second owner. |
+| `POL-CAT-006` | Do not copy or forward methods already owned by another category. |
 | `POL-CAT-007` | Do not build a second Python class graph to duplicate the category graph. |
 | `POL-CAT-008` | Compile category declarations into the public method surface. Do not generate opaque method bodies. |
 | `POL-CAT-009` | Give a local declaration precedence over inherited declarations. |

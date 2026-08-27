@@ -59,10 +59,12 @@ def _left_data(along: Functor, functor: Functor) -> tuple[Functor, NaturalTransf
     def on_morphism(morphism: MorphismOfCategory) -> MorphismOfCategory:
         lower, upper = at(morphism.domain()), at(morphism.codomain())
         destination = comma(morphism.codomain())
-        induced = cocone(lower.diagram(), upper, lambda vertex: upper.injection(destination((vertex.first(), morphism * vertex.second()))))
+        induced = cocone(lower.diagram(), upper.apex(), lambda vertex: upper.injection(destination((vertex.first(), morphism * vertex.second()))))
         return lower.universal_morphism(induced)
 
-    extension = Fun(target, values)(lambda member_object: at(member_object), on_morphism)
+    # ``at`` retains the presentation, which owns the injections and the mediator; the
+    # extension is a functor into ``values``, so its object action is the apex.
+    extension = Fun(target, values)(lambda member_object: at(member_object).apex(), on_morphism)
 
     def unit_component(member_object: ObjectOfCategory) -> MorphismOfCategory:
         image = along.on_object(member_object)
@@ -91,10 +93,12 @@ def _right_data(along: Functor, functor: Functor) -> tuple[Functor, NaturalTrans
     def on_morphism(morphism: MorphismOfCategory) -> MorphismOfCategory:
         lower, upper = at(morphism.domain()), at(morphism.codomain())
         origin = comma(morphism.domain())
-        induced = cone(upper.diagram(), lower, lambda vertex: lower.projection(origin((vertex.first(), vertex.second() * morphism))))
+        induced = cone(upper.diagram(), lower.apex(), lambda vertex: lower.projection(origin((vertex.first(), vertex.second() * morphism))))
         return upper.universal_morphism(induced)
 
-    extension = Fun(target, values)(lambda member_object: at(member_object), on_morphism)
+    # ``at`` retains the presentation, which owns the projections and the mediator; the
+    # extension is a functor into ``values``, so its object action is the apex.
+    extension = Fun(target, values)(lambda member_object: at(member_object).apex(), on_morphism)
 
     def counit_component(member_object: ObjectOfCategory) -> MorphismOfCategory:
         image = along.on_object(member_object)

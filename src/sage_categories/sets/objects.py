@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable, Iterator
+from dataclasses import dataclass, field
 from typing import Any
 
 from sage.structure.coerce_dict import MonoDict
@@ -32,7 +33,7 @@ from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role, 
 from sage_categories.sets.cardinals import Cardinal, CardinalObject
 from sage_categories.sets.elements import Datum, SetPoint
 
-__all__ = ["FiniteSetRole", "MembershipRule", "SetObject", "element_of"]
+__all__ = ["FiniteSetRole", "MembershipRule", "SetObject", "SetObjectData", "element_of"]
 
 logger = logging.getLogger("sage_categories")
 
@@ -52,33 +53,36 @@ def _element_of_by_parent(candidate: Any, ambient: SetObject) -> Decision:
 def _element_of_by_rule(candidate: Any, ambient: SetObject) -> Decision:
     if role_of(candidate) is not Role.ELEMENT:
         return False
-    return ambient._membership_rule(candidate._datum)
+    return ambient._set_object_data.membership_rule(candidate._set_element_data.datum)
 
 
 element_of.register_handler(_element_of_by_parent)
 element_of.register_handler(_element_of_by_rule)
 
 
+@dataclass(eq=False, slots=True)
+class SetObjectData:
+    """The private state used by the complete set-object implementation."""
+
+    membership_rule: MembershipRule
+    cardinality: CardinalObject | UnknownClass
+    points: dict[Datum, SetPoint] = field(default_factory=dict)
+    rule_points: MonoDict = field(default_factory=MonoDict)
+    canonical: SetObject = field(init=False)
+
+    def bind(self, canonical: SetObject) -> None:
+        """Bind direct construction once; inherited construction reuses that state."""
+        if not hasattr(self, "canonical"):
+            self.canonical = canonical
+
+
 class SetObject(ObjectOfCategory):
     """A set given by a membership rule, with its cardinal data when known."""
 
-    def __init__(
-        self,
-        category: Category,
-        membership_rule: MembershipRule,
-        cardinality: CardinalObject | UnknownClass,
-    ) -> None:
-        super().__init__(category)
-        self._membership_rule = membership_rule
-        self._cardinality = cardinality
-        # One retained point per datum (POL-CAT-083): the datum is private computation
-        # data inside the set's boundary (POL-TYPE-012), so these tables never key on
-        # an owned value.  ``point`` keys the first table by datum value, for data whose
-        # engine equality is Boolean-exact; ``rule_point`` keys the second by datum
-        # identity, for the rule data of a set constructed through
-        # ``Sets().rule_valued`` (a rule-defined family, the name of a map).
-        self._points: dict[Datum, SetPoint] = {}
-        self._rule_points: MonoDict = MonoDict()
+    def __init__(self, data: SetObjectData) -> None:
+        data.bind(self)
+        self._set_object_data = data
+        super().__init__()
 
     def membership_proposition(self, candidate: CategoryPoint) -> AppliedPredicate:
         return element_of(candidate, self)
@@ -96,12 +100,13 @@ class SetObject(ObjectOfCategory):
         A set constructed through ``Sets().rule_valued`` routes every point through
         ``rule_point``, since its data compare three-valued.
         """
-        if _sets.Sets().points_by_rule(self):
+        state = self._set_object_data
+        if _sets.Sets().points_by_rule(state.canonical):
             return self.rule_point(datum)
-        assert self._membership_rule(datum) is not False, f"{datum!r} is not a member of {self!r}"
-        if datum not in self._points:
-            self._points[datum] = self._construct_point(datum)
-        return self._points[datum]
+        assert state.membership_rule(datum) is not False, f"{datum!r} is not a member of {self!r}"
+        if datum not in state.points:
+            state.points[datum] = self._construct_point(datum)
+        return state.points[datum]
 
     def rule_point(self, datum: Datum) -> SetPoint:
         """The point selecting a rule datum, one point per datum object.
@@ -110,21 +115,24 @@ class SetObject(ObjectOfCategory):
         (their data compare equal through the engine) and hash-equal (a point hashes
         by its datum, and equal rule data hash equal).
         """
-        assert self._membership_rule(datum) is not False, f"{datum!r} is not a member of {self!r}"
-        if datum not in self._rule_points:
-            self._rule_points[datum] = self._construct_point(datum)
-        return self._rule_points[datum]
+        state = self._set_object_data
+        assert state.membership_rule(datum) is not False, f"{datum!r} is not a member of {self!r}"
+        if datum not in state.rule_points:
+            state.rule_points[datum] = self._construct_point(datum)
+        return state.rule_points[datum]
 
     def _construct_point(self, datum: Datum) -> SetPoint:
         sets = _sets.Sets()
-        return sets.element_from_defining_morphism(sets.construct_morphism(sets.Terminal(), self, lambda star: datum))
+        canonical = self._set_object_data.canonical
+        return sets.element_from_defining_morphism(sets.construct_morphism(sets.Terminal(), canonical, lambda star: datum))
 
     def cardinality(self) -> CardinalObject | UnknownClass:
         """The recorded exact cardinal; a set placed in both ``Countable()`` and ``Infinite()`` has ``aleph0`` (Mathlib ``Cardinal.mk_eq_aleph0``; inspected 2026-08-27)."""
         sets = _sets.Sets()
-        if self._cardinality is Unknown and self in sets.Countable() and self in sets.Infinite():
+        state = self._set_object_data
+        if state.cardinality is Unknown and state.canonical in sets.Countable() and state.canonical in sets.Infinite():
             return Cardinal().aleph(0)
-        return self._cardinality
+        return state.cardinality
 
     def subset_from(self, predicate: MembershipRule) -> SetObject:
         """The chosen subset ``{x in X : predicate(x)}`` with its retained inclusion (POL-SET-007, POL-ENGINE-004).
@@ -132,36 +140,34 @@ class SetObject(ObjectOfCategory):
         The predicate is a datum-level rule, the form of ``Sets()(rule)``; the
         construction is owned by ``Sets().ChosenSubsets()`` (``sets/subobjects.py``).
         """
-        return _sets.Sets().ChosenSubsets()(self, predicate)
+        return _sets.Sets().ChosenSubsets()(self._set_object_data.canonical, predicate)
 
     def is_finite(self) -> AppliedPredicate:
-        return _sets.Sets().Finite().predicate()(self)
+        return _sets.Sets().Finite().predicate()(self._set_object_data.canonical)
 
     def is_infinite(self) -> AppliedPredicate:
-        return _sets.Sets().Infinite().predicate()(self)
+        return _sets.Sets().Infinite().predicate()(self._set_object_data.canonical)
 
     def is_countable(self) -> AppliedPredicate:
-        return _sets.Sets().Countable().predicate()(self)
+        return _sets.Sets().Countable().predicate()(self._set_object_data.canonical)
 
     def is_uncountable(self) -> AppliedPredicate:
-        return _sets.Sets().Uncountable().predicate()(self)
+        return _sets.Sets().Uncountable().predicate()(self._set_object_data.canonical)
 
     def __repr__(self) -> str:
         finite = _sets.Sets().Finite()
-        if finite.has_chosen_enumeration(self):
-            return "{" + ", ".join(map(repr, finite.chosen_enumeration(self))) + "}"
+        canonical = self._set_object_data.canonical
+        if finite.has_chosen_enumeration(canonical):
+            return "{" + ", ".join(map(repr, finite.chosen_enumeration(canonical))) + "}"
         return "Set(<rule>)"
 
 
 class FiniteSetRole(ObjectOfCategory):
     """The local object role of ``Sets().Finite()``: the chosen enumeration supplies iteration."""
 
-    def __init__(self, category: Category, members: tuple[Datum, ...]) -> None:
-        super().__init__(
-            category,
-            lambda datum: any(datum == member for member in members),
-            Cardinal()(len(members)),
-        )
+    def __init__(self, members: tuple[Datum, ...]) -> None:
+        super().__init__()
 
     def __iter__(self) -> Iterator[SetPoint]:
-        return (self.point(datum) for datum in _sets.Sets().Finite().chosen_enumeration(self))
+        canonical = self._set_object_data.canonical
+        return (self.point(datum) for datum in _sets.Sets().Finite().chosen_enumeration(canonical))

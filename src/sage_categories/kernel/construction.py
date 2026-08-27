@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING
 
 from sage.structure.coerce_dict import MonoDict
 
-from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory
+from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory, Role, role_of
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
@@ -49,6 +49,7 @@ __all__ = [
     "retain_morphism_input",
     "retain_object_input",
     "retained_element_input",
+    "retained_input",
     "retained_morphism_input",
     "retained_object_input",
 ]
@@ -176,6 +177,28 @@ def retained_element_input[Value: CategoryPoint, Datum](value: Value) -> Element
 def retained_morphism_input[Value: MorphismOfCategory, Datum](value: Value) -> MorphismConstructionInput[Value, Datum]:
     assert value in _morphism_inputs, f"{value!r} retains no morphism construction input"
     return _morphism_inputs[value]
+
+
+def retained_input[Value: CategoryPoint, Datum](
+    value: Value,
+) -> ObjectConstructionInput[Value, Datum] | ElementConstructionInput[Value, Datum] | MorphismConstructionInput[Value, Datum]:
+    """The root input ``value`` retains, in the role it was constructed in.
+
+    The node ``(Mor(C), object)`` *is* the node ``(C, morphism)`` (POL-CAT-021), so the
+    objects of a morphism category are morphisms and retain a morphism input.  A caller
+    that names a value rather than a node asks for it this way: the role of the value
+    selects the table, never the role of the node that asked.
+    """
+    match role_of(value):
+        case Role.OBJECT:
+            assert isinstance(value, ObjectOfCategory)
+            return retained_object_input(value)
+        case Role.MORPHISM:
+            assert isinstance(value, MorphismOfCategory)
+            return retained_morphism_input(value)
+        case Role.ELEMENT:
+            return retained_element_input(value)
+    raise AssertionError(f"{value!r} is not an owned value")
 
 
 @dataclass(slots=True)

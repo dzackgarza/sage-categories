@@ -54,8 +54,7 @@ from sage_categories.kernel.caches import SequenceTable
 from sage_categories.kernel.construction import (
     MorphismConstructionInput,
     ObjectConstructionInput,
-    retained_morphism_input,
-    retained_object_input,
+    retained_input,
 )
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import Predicate, Proposition, ask
@@ -417,10 +416,10 @@ class ApexCategory[**MorphismData, **TwoMorphismData](Category[[MorphismOfCatego
         )
 
         def object_input(source: ObjectConstructionInput) -> ObjectConstructionInput:
-            return retained_object_input(source.datum.apex)
+            return retained_input(source.datum.apex)
 
         def morphism_input(source: MorphismConstructionInput) -> MorphismConstructionInput:
-            return retained_morphism_input(source.datum.apex_morphism)
+            return retained_input(source.datum.apex_morphism)
 
         functor.retain_object_constructor_conversion(object_input)
         functor.retain_morphism_constructor_conversion(morphism_input)

@@ -235,11 +235,12 @@ def retain_constructed_transport[
     SourceValue: ObjectOfCategory,
     SourceDatum,
     TargetValue: ObjectOfCategory,
+    TargetMorphismValue: MorphismOfCategory,
     TargetDatum,
 ](
     source: ObjectConstructionInput[SourceValue, SourceDatum],
     target: Category,
-    construction: ObjectConstructionInput[TargetValue, TargetDatum],
+    construction: ObjectConstructionInput[TargetValue, TargetDatum] | MorphismConstructionInput[TargetMorphismValue, TargetDatum],
 ) -> None: ...
 
 
@@ -287,9 +288,15 @@ def retain_constructed_transport[
     | ElementConstructionInput[TargetElementValue, TargetDatum]
     | MorphismConstructionInput[TargetMorphismValue, TargetDatum],
 ) -> None:
-    """Retain an ancestor input before the source initializer starts (specs/resolution.md, final decision 14)."""
+    """Retain an ancestor input before the source initializer starts (specs/resolution.md, final decision 14).
+
+    The key takes the role of the source; the retained input takes the role of the node
+    it belongs to.  These differ where an object walk reaches ``(Mor(C), object)``, which
+    *is* the node ``(C, morphism)`` and whose values retain a morphism input
+    (POL-CAT-021).
+    """
     if isinstance(source, ObjectConstructionInput):
-        assert isinstance(construction, ObjectConstructionInput)
+        assert isinstance(construction, ObjectConstructionInput | MorphismConstructionInput)
         role = Role.OBJECT
     elif isinstance(source, ElementConstructionInput):
         assert isinstance(construction, ElementConstructionInput)

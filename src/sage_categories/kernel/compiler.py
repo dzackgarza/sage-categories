@@ -48,7 +48,7 @@ from typing import TYPE_CHECKING, Concatenate, NamedTuple
 from sage.misc.c3_controlled import C3_sorted_merge
 from sage.structure.dynamic_class import dynamic_class
 
-from sage_categories.kernel.caches import MonoDict
+from sage_categories.kernel.caches import MonoDict, retain_constructed_transport
 from sage_categories.kernel.construction import (
     ElementConstructionContext,
     ElementConstructionInput,
@@ -516,6 +516,7 @@ def _object_steps[RootDatum](current: Node, root: ObjectConstructionInput[RootDa
     def visit[Datum](source: Node, source_input: ObjectConstructionInput[Datum], route: Route) -> None:
         known = next(((identity, image, first_route) for owner, identity, image, _, first_route in found if same_node(owner, source)), None)
         if known is None:
+            retain_constructed_transport(root, source.category, source_input)
             found.append((source, id(source_input), source_input.canonical_image, _object_step(source, source_input, root.canonical_image), route))
         else:
             identity, image, first_route = known
@@ -544,6 +545,7 @@ def _element_steps[RootDatum](current: Node, root: ElementConstructionInput[Root
     def visit[Datum](source: Node, source_input: ElementConstructionInput[Datum], route: Route) -> None:
         known = next(((identity, image, first_route) for owner, identity, image, _, first_route in found if same_node(owner, source)), None)
         if known is None:
+            retain_constructed_transport(root, source.category, source_input)
             found.append((source, id(source_input), source_input.canonical_image, _element_step(source, source_input, root.canonical_image), route))
         else:
             identity, image, first_route = known
@@ -572,6 +574,7 @@ def _morphism_steps[RootDatum](current: Node, root: MorphismConstructionInput[Ro
     def visit[Datum](source: Node, source_input: MorphismConstructionInput[Datum], route: Route) -> None:
         known = next(((identity, image, first_route) for owner, identity, image, _, first_route in found if same_node(owner, source)), None)
         if known is None:
+            retain_constructed_transport(root, source.category, source_input)
             found.append((source, id(source_input), source_input.canonical_image, _morphism_step(source, source_input, root.canonical_image), route))
         else:
             identity, image, first_route = known

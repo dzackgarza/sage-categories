@@ -18,11 +18,11 @@ from typing import TYPE_CHECKING, overload
 
 from sage.structure.coerce_dict import MonoDict, TripleDict
 
+from sage_categories.kernel.construction import ElementConstructionInput, MorphismConstructionInput, ObjectConstructionInput
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, role_of
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
-    from sage_categories.kernel.construction import ElementConstructionInput, MorphismConstructionInput, ObjectConstructionInput
 
 __all__ = [
     "MonoDict",
@@ -33,6 +33,7 @@ __all__ = [
     "canonical_inputs",
     "has_canonical_transport",
     "retain_canonical_transport",
+    "retain_constructed_transport",
 ]
 
 # One target-indexed table per role.  Keeping the target outside the inner
@@ -60,6 +61,34 @@ def _source_key(source: CategoryPoint) -> tuple[CategoryPoint, CategoryPoint, Ca
             assert isinstance(source, MorphismOfCategory)
             return source.domain(), source.codomain(), source
     raise AssertionError(f"{source!r} is not an owned value")
+
+
+def _construction_key[Datum](
+    source: ObjectConstructionInput[Datum] | ElementConstructionInput[Datum] | MorphismConstructionInput[Datum],
+) -> tuple[CategoryPoint, CategoryPoint, CategoryPoint]:
+    """The source identity key before its public value has run its initializer."""
+    if isinstance(source, ObjectConstructionInput):
+        return source.canonical_image, source.canonical_image, source.canonical_image
+    if isinstance(source, ElementConstructionInput):
+        defining = source.identity.defining_morphism
+        return defining.domain(), defining, defining.codomain()
+    return source.identity.domain, source.identity.codomain, source.canonical_image
+
+
+def _retain_at_key[Datum](
+    role: Role,
+    key: tuple[CategoryPoint, CategoryPoint, CategoryPoint],
+    target: Category,
+    image: CategoryPoint,
+    construction: ObjectConstructionInput[Datum] | ElementConstructionInput[Datum] | MorphismConstructionInput[Datum],
+) -> None:
+    images = _target_table(canonical_images, role, target)
+    inputs = _target_table(canonical_inputs, role, target)
+    if key in images:
+        assert images[key] is image and inputs[key] is construction
+        return
+    images[key] = image
+    inputs[key] = construction
 
 
 def has_canonical_transport(source: CategoryPoint, target: Category) -> bool:
@@ -130,14 +159,49 @@ def retain_canonical_transport[Datum](
     """Retain one canonical image and its exact construction input by identity."""
     role = role_of(source)
     assert role is not None and role_of(image) is role
-    key = _source_key(source)
-    images = _target_table(canonical_images, role, target)
-    inputs = _target_table(canonical_inputs, role, target)
-    if key in images:
-        assert images[key] is image and inputs[key] is construction
-        return
-    images[key] = image
-    inputs[key] = construction
+    _retain_at_key(role, _source_key(source), target, image, construction)
+
+
+@overload
+def retain_constructed_transport[SourceDatum, TargetDatum](
+    source: ObjectConstructionInput[SourceDatum],
+    target: Category,
+    construction: ObjectConstructionInput[TargetDatum],
+) -> None: ...
+
+
+@overload
+def retain_constructed_transport[SourceDatum, TargetDatum](
+    source: ElementConstructionInput[SourceDatum],
+    target: Category,
+    construction: ElementConstructionInput[TargetDatum],
+) -> None: ...
+
+
+@overload
+def retain_constructed_transport[SourceDatum, TargetDatum](
+    source: MorphismConstructionInput[SourceDatum],
+    target: Category,
+    construction: MorphismConstructionInput[TargetDatum],
+) -> None: ...
+
+
+def retain_constructed_transport[SourceDatum, TargetDatum](
+    source: ObjectConstructionInput[SourceDatum] | ElementConstructionInput[SourceDatum] | MorphismConstructionInput[SourceDatum],
+    target: Category,
+    construction: ObjectConstructionInput[TargetDatum] | ElementConstructionInput[TargetDatum] | MorphismConstructionInput[TargetDatum],
+) -> None:
+    """Retain an ancestor input before the source initializer starts (specs/resolution.md, final decision 14)."""
+    if isinstance(source, ObjectConstructionInput):
+        assert isinstance(construction, ObjectConstructionInput)
+        role = Role.OBJECT
+    elif isinstance(source, ElementConstructionInput):
+        assert isinstance(construction, ElementConstructionInput)
+        role = Role.ELEMENT
+    else:
+        assert isinstance(construction, MorphismConstructionInput)
+        role = Role.MORPHISM
+    _retain_at_key(role, _construction_key(source), target, construction.canonical_image, construction)
 
 
 class _SequenceNode:

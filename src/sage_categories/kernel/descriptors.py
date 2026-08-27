@@ -137,9 +137,21 @@ def _apply_to_element(functor: Functor, element: ElementOfObject) -> ElementOfOb
 def _apply_route(value: CategoryPoint, route: compiler.Route) -> CategoryPoint:
     image = value
     for step in route:
-        assert step.functor is not None, step
-        image = _apply(step.functor, step.source_role, image)
+        image = _shift(step, image) if step.functor is None else _apply(step.functor, step.source_role, image)
     return image
+
+
+def _shift(step: compiler.Step, value: CategoryPoint) -> CategoryPoint:
+    """The level shift: an object or morphism of ``C`` as a generalized element of ``C``.
+
+    An object is the stage-``1`` element and a morphism the stage-``[1]`` one; both are
+    named by the defining morphism the value already retains, so the shift applies no
+    functor and constructs no image of its own (``specs/functor.md``, "The level shift").
+    """
+    assert value.stage() is step.stage, f"{value!r} is not a point of {step.stage!r}"
+    from sage_categories.cat.category import Cat
+
+    return Cat().Point(value.parent()).ElementType(value.defining_morphism())
 
 
 def _route_name(route: compiler.Route) -> str:

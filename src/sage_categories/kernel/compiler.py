@@ -124,7 +124,22 @@ class Entry[**P, R](NamedTuple):
     route: Route
 
 
-_IGNORED_NAMES = frozenset({"__init__", "__new__", "__repr__", "__init_subclass__", "__class_getitem__"})
+_IGNORED_NAMES = frozenset(
+    {
+        "__init__",
+        "__new__",
+        "__repr__",
+        "__init_subclass__",
+        "__class_getitem__",
+        # The role accessors.  Every kernel role class defines its own, and the compiler
+        # itself calls them to find a value's placement, so a forwarded copy would call
+        # the very accessor it is trying to transport for.  ``Cat().ElementType``
+        # declares all three, and its element node is reachable from a point category's.
+        "stage",
+        "parent",
+        "defining_morphism",
+    }
+)
 
 # The local role class of each category that declares none of its own, keyed by
 # identity: one declaring owner per node (POL-CAT-016).
@@ -162,10 +177,40 @@ def same_node(first: Node, second: Node) -> bool:
 
 
 def successors(current: Node) -> tuple[tuple[Step, Node], ...]:
+    return (*_functor_steps(current), *_level_shift(current))
+
+
+def _functor_steps(current: Node) -> tuple[tuple[Step, Node], ...]:
     return tuple(
         (Step(functor, current.role, current.role, None), node(functor.codomain(), current.role))
         for functor in current.category.selected_functors()
     )
+
+
+def _level_shift(current: Node) -> tuple[tuple[Step, Node], ...]:
+    """The step from a category's objects or morphisms to the elements of its point category.
+
+    ``{C}``'s sole object is the category ``C``, and its generalized elements are the
+    objects of ``C`` at stage ``1`` and the morphisms of ``C`` at stage ``[1]``
+    (``specs/functor.md``, "The level shift").  So a surface reaching ``{C}.ElementType``
+    reaches ``C.ObjectType`` and ``C.MorphismType``, split by stage.
+
+    No functor acts: the value of the step is the value's own defining morphism, which
+    the kernel already retains.  The step is therefore not a subcategory relation and
+    contributes no class base -- see ``_selected_targets``.
+    """
+    import sage_categories.cat.category as category_module
+
+    # ``Cat()`` compiles its own roles before the singleton is bound, and no point
+    # category can exist before it: the table is empty until then.
+    universe = category_module._CAT
+    if universe is None or current.role not in (Role.OBJECT, Role.MORPHISM):
+        return ()
+    point = universe.retained_point(current.category)
+    if point is None:
+        return ()
+    stage = universe.Terminal() if current.role is Role.OBJECT else universe.Simplex(1)
+    return ((Step(None, current.role, Role.ELEMENT, stage), node(point, Role.ELEMENT)),)
 
 
 def reachable(start: Node) -> tuple[Node, ...]:
@@ -289,10 +334,16 @@ def _selected_targets(current: Node) -> tuple[Node, ...]:
     declaration order: Sage sorts them the same way (``Category._super_categories``
     applies ``Category._sort``, decreasing in ``_cmp_key``).  A category's ambient is
     declared first and constructed first, so declaration order is the wrong one here.
+    Only the functor steps appear here.  A level shift is not a subcategory relation, so
+    it contributes no base; and it points from a category to its *newer* point category,
+    which would break the total order the controlled merge is built on -- a node must
+    rank strictly above every node it reaches.  The shift carries methods through the
+    catalogue instead, which needs no such order.
+
     Route order and catalogue precedence still read ``successors`` directly.
     """
     found: list[Node] = []
-    for _, target in successors(current):
+    for _, target in _functor_steps(current):
         if not any(same_node(target, known) for known in found):
             found.append(target)
     return tuple(sorted(found, key=node_key, reverse=True))

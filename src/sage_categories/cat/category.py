@@ -682,6 +682,9 @@ class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
 
     def __init__(self) -> None:
         self._canonical: dict[tuple[str, tuple[int, ...]], FinitePresentedCategory] = {}
+        # One point category per distinguished object, keyed by identity.  The compiler
+        # reads this table the other way, to find ``{X}`` from ``X`` (POL-CAT-083).
+        self._point_categories: MonoDict = MonoDict()
         self._initialize(self)
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
@@ -835,6 +838,34 @@ class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
     def Terminal(self) -> FinitePresentedCategory:
         return self.Simplex(0)
 
+    def Point(self, member: ObjectOfCategory, targets: tuple[Category, ...] = ()) -> Category:
+        """``{member}``: the one-object category on ``member``, retained once per object (POL-CAT-083).
+
+        ``targets`` are the categories that already have ``member`` among their objects;
+        ``{member}`` selects one point functor into each.  A later call returns the
+        retained category and ignores its ``targets``, because a category's selected
+        functors are fixed when it is compiled.
+        """
+        from sage_categories.cat.points import PointCategory
+
+        if member not in self._point_categories:
+            self._point_categories[member] = PointCategory(member, targets)
+            # ``{C}``'s elements are ``C``'s own objects and morphisms, so ``C``'s
+            # surface gains the level-shift route as soon as this table entry exists.
+            # ``C`` was compiled before that, and only recompiling it picks the route up.
+            # ponytail: values of ``C`` built before this keep their earlier classes;
+            # declare the point category with the theory of ``C``, ahead of its values.
+            # Reclassing live values would need a registry of them, which is a much
+            # larger change than this earns.
+            if isinstance(member, Category):
+                member.catalogues().clear()
+                compiler.compile_category(member, member.selected_functors())
+        return self._point_categories[member]
+
+    def retained_point(self, member: ObjectOfCategory) -> Category | None:
+        """The point category on ``member``, if one was constructed; the same table read the other way."""
+        return self._point_categories[member] if member in self._point_categories else None
+
     def Simplex(self, dimension: int) -> FinitePresentedCategory:
         from sage_categories.cat import canonical
 
@@ -888,6 +919,11 @@ class CategoryOfCategories(Category[[OnObject, OnMorphism], [Assignment]]):
 
     def __repr__(self) -> str:
         return "Cat"
+
+
+# The singleton, bound by ``bootstrap``.  It is ``None`` while ``Cat()`` compiles its own
+# roles, which is the one moment the kernel can reach this module before it exists.
+_CAT: CategoryOfCategories | None = None
 
 
 def bootstrap() -> None:

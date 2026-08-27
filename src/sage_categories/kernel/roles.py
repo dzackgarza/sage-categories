@@ -45,6 +45,18 @@ class Role(Enum):
     MORPHISM = "MorphismType"
 
 
+def _universe() -> Category:
+    """``Cat()``, where the walking point and the walking arrow live.
+
+    Read from the universe rather than from a value's placement: a placement can be a
+    subcategory of ``Cat()`` -- a point category is one -- and the shapes belong to
+    ``Cat()`` itself, not to whichever narrowing a value currently sits in.
+    """
+    from sage_categories.cat.category import Cat
+
+    return Cat()
+
+
 class CategoryPoint:
     """A generalized element ``T -> C`` of a category; ``Cat().ElementType``'s base.
 
@@ -63,7 +75,7 @@ class ObjectOfCategory(CategoryPoint):
         return self._category
 
     def stage(self) -> ObjectOfCategory:
-        return self._category.category().Terminal()
+        return _universe().Terminal()
 
     def parent(self) -> Category:
         return self._category
@@ -184,7 +196,7 @@ class MorphismOfCategory(CategoryPoint):
         return self._codomain
 
     def stage(self) -> ObjectOfCategory:
-        return self.base_category().category().Simplex(1)
+        return _universe().Simplex(1)
 
     def parent(self) -> Category:
         return self.base_category()

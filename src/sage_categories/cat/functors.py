@@ -154,7 +154,14 @@ class FunctorDeclaration(MorphismOfCategory):
         return self._on_morphism(morphism)
 
     def on_element(self, element: CategoryPoint) -> CategoryPoint:
-        """The image of a generalized element ``t: T -> X``: the element with defining morphism ``F(t)`` (POL-FUN-002).
+        """The image of a generalized element ``t: T -> X``: the element ``q = F(t): F(T) -> F(X)`` (POL-FUN-002).
+
+        This action is derived, never stored: it applies ``on_morphism`` to the defining
+        morphism of ``t``.  A functor retains no element callback and no element
+        capability.  The element conversion a selected functor retains supplies compiler
+        input only; it never answers this call, so the public image of a classical
+        element keeps the stage ``F(G_C)`` rather than the target's classical stage
+        (``specs/functor.md``, "Structural inheritance").
 
         A classical element whose stage is not an object of the domain belongs to the
         subcategory's objects only through its ambient; the retained inclusion maps
@@ -166,19 +173,9 @@ class FunctorDeclaration(MorphismOfCategory):
         defining = element.defining_morphism()
         if element.stage() not in self.domain():
             assert is_retained_inclusion(self), f"{element!r} is not a generalized element in {self.domain()!r}"
-        else:
-            morphisms = self.domain().morphism_category(1)
-            assert is_placed(defining, morphisms) or defining in morphisms, f"{element!r} is not a generalized element in {self.domain()!r}"
-        if self in _element_constructor_conversions:
-            from sage_categories.kernel import compiler
-            from sage_categories.kernel.construction import ElementConstructionInput
-            from sage_categories.kernel.transport import construction_input
-
-            source = construction_input(element, compiler.node(self.domain(), Role.ELEMENT))
-            assert isinstance(source, ElementConstructionInput)
-            return self.element_constructor_input(source).canonical_image
-        if element.stage() not in self.domain():
             return element
+        morphisms = self.domain().morphism_category(1)
+        assert is_placed(defining, morphisms) or defining in morphisms, f"{element!r} is not a generalized element in {self.domain()!r}"
         image = self.on_morphism(defining)
         if image is defining:
             return element
@@ -305,13 +302,31 @@ class FunctorDeclaration(MorphismOfCategory):
         self,
         source: ElementConstructionInput[SourceValue, SourceDatum],
     ) -> ElementConstructionInput[TargetValue, TargetDatum]:
-        """Return the root input retained by this element's canonical functor image."""
-        from sage_categories.kernel.construction import retained_element_input
+        """The compiler input for the image of ``t``: that of ``q = F(t)``, or of ``p = q . c_F`` for a classical ``t`` (POL-FUN-035).
+
+        The retained conversion returns the input of ``q: F(T) -> F(X)``, the same value
+        public element application returns.  A classical source ``t: G_C -> X`` supplies
+        the target's classical element methods instead, which read a point of the
+        target's own classical stage.  Precomposing ``q`` with the retained comparison
+        ``c_F: G_D -> F(G_C)`` produces that point ``p: G_D -> F(X)``.  When ``c_F`` is an
+        identity, ``F(G_C)`` is ``G_D`` and ``p`` is ``q``: they then share one identity
+        and one cache entry (POL-CAT-066).
+        """
+        from sage_categories.kernel.construction import GeneralCategoryPointIdentity, retained_element_input
 
         assert self in _element_constructor_conversions, f"{self!r} retains no element constructor conversion"
         target = _element_constructor_conversions[self](source)
         assert retained_element_input(target.canonical_image) is target, f"{self!r} constructed a parallel element input"
-        return target
+        stages = self.domain().classical_stages()
+        assert isinstance(source.identity, GeneralCategoryPointIdentity)
+        if len(stages) != 1 or source.identity.defining_morphism.domain() is not stages[0]:
+            return target
+        comparison = self.stage_comparison()
+        if comparison is comparison.domain().identity():
+            return target
+        assert isinstance(target.identity, GeneralCategoryPointIdentity)
+        classical = self.codomain().element_from_defining_morphism(target.identity.defining_morphism * comparison)
+        return retained_element_input(classical)
 
     def morphism_constructor_input[
         SourceValue: MorphismOfCategory,

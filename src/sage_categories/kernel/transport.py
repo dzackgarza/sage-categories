@@ -17,7 +17,7 @@ from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, Morphis
 if TYPE_CHECKING:
     from sage_categories.kernel.construction import ElementConstructionInput, MorphismConstructionInput, ObjectConstructionInput
 
-__all__ = ["construction_input", "placement_node"]
+__all__ = ["construction_input", "placement_node", "transport"]
 
 
 def placement_node(value: CategoryPoint) -> compiler.Node:
@@ -231,3 +231,8 @@ def construction_input[
 
     retain_canonical_transport(value, target.category, converted.canonical_image, converted)
     return converted
+
+
+def transport(value: CategoryPoint, target: compiler.Node) -> CategoryPoint:
+    """The canonical image of ``value`` at ``target``: the value its selected route constructs."""
+    return construction_input(value, target).canonical_image

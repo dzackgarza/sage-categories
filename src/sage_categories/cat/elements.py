@@ -10,37 +10,47 @@ alone does not separate functors, ``[1]`` does.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from sage_categories.kernel.roles import CategoryPointKernel, ObjectOfCategory
 
+if TYPE_CHECKING:
+    from sage_categories.cat.category import Category
+
 __all__ = ["CategoryPoint"]
+
+
+def _shared_category(first: ObjectOfCategory, second: ObjectOfCategory) -> Category:
+    """The one category that owns a binary construction on both operands (POL-CAT-088).
+
+    Both operands are objects of the least category receiving both, so that category
+    owns the construction.  It is the category of both operands when their placements
+    agree, and the least category receiving both otherwise.  No operator casts an
+    operand into a product category: an external pair is written ``(C * D)((X, Y))``.
+    """
+    from sage_categories.kernel.refinement import common_ancestor
+
+    return common_ancestor(first.category(), second.category())
 
 
 class CategoryPointDeclaration(CategoryPointKernel):
     """The local ``Cat().ElementType`` declaration."""
 
     def __mul__(self, other: ObjectOfCategory) -> ObjectOfCategory:
-        """``X * Y``: the product in their category."""
-        category = self.category()
-        assert category is other.category(), "object product operands must have one category"
-        return category.Products()((self, other))
+        """``X * Y``: the product in the least category receiving both."""
+        return _shared_category(self, other).Products()((self, other))
 
     def __add__(self, other: ObjectOfCategory) -> ObjectOfCategory:
-        """``X + Y``: the coproduct in their category."""
-        category = self.category()
-        assert category is other.category(), "object coproduct operands must have one category"
-        return category.Coproducts()((self, other))
+        """``X + Y``: the coproduct in the least category receiving both."""
+        return _shared_category(self, other).Coproducts()((self, other))
 
     def __matmul__(self, other: ObjectOfCategory) -> ObjectOfCategory:
-        """``X @ Y``: the biproduct in their category."""
-        category = self.category()
-        assert category is other.category(), "object biproduct operands must have one category"
-        return category.biproduct(self, other)
+        """``X @ Y``: the biproduct in the least category receiving both."""
+        return _shared_category(self, other).biproduct(self, other)
 
     def __pow__(self, exponent: ObjectOfCategory) -> ObjectOfCategory:
-        """``Y ** X``: the exponential object in their category."""
-        category = self.category()
-        assert category is exponent.category(), "object exponential operands must have one category"
-        return category.exponential(exponent, self)
+        """``Y ** X``: the exponential object in the least category receiving both."""
+        return _shared_category(self, exponent).exponential(exponent, self)
 
     def __repr__(self) -> str:
         return f"point of {self.parent()!r} at stage {self.stage()!r}"

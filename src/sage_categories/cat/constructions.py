@@ -52,10 +52,8 @@ from sage_categories.cat.properties import FullSubcategory
 from sage_categories.cat.shapes import index_set_of, is_discrete
 from sage_categories.kernel.caches import SequenceTable
 from sage_categories.kernel.construction import (
-    ElementConstructionInput,
     MorphismConstructionInput,
     ObjectConstructionInput,
-    retained_element_input,
     retained_morphism_input,
     retained_object_input,
 )
@@ -421,16 +419,10 @@ class ApexCategory[**MorphismData, **TwoMorphismData](Category[[MorphismOfCatego
         def object_input(source: ObjectConstructionInput) -> ObjectConstructionInput:
             return retained_object_input(source.datum.apex)
 
-        def element_input(source: ElementConstructionInput) -> ElementConstructionInput:
-            defining = retained_morphism_input(source.identity.defining_morphism)
-            image = functor.morphism_constructor_input(defining)
-            return retained_element_input(self._apex_category.element_from_defining_morphism(image.canonical_image))
-
         def morphism_input(source: MorphismConstructionInput) -> MorphismConstructionInput:
             return retained_morphism_input(source.datum.apex_morphism)
 
         functor.retain_object_constructor_conversion(object_input)
-        functor.retain_element_constructor_conversion(element_input)
         functor.retain_morphism_constructor_conversion(morphism_input)
         self._apex_functor[self] = functor
         return functor

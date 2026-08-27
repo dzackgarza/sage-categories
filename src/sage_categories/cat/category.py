@@ -706,7 +706,21 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
     def __init__(self) -> None:
         self._canonical: dict[tuple[str, tuple[int, ...]], FinitePresentedCategory] = {}
-        ObjectOfCategory.__init__(self, self)
+        from sage_categories.kernel.construction import (
+            ObjectConstructionContext,
+            ObjectRoleIdentity,
+            ObjectStageIdentity,
+            activate_object_context,
+            deactivate_object_context,
+        )
+
+        identity = ObjectRoleIdentity(self)
+        context = ObjectConstructionContext(self, identity, ObjectStageIdentity(self), ())
+        token = activate_object_context(context)
+        try:
+            ObjectOfCategory.__init__(self, self)
+        finally:
+            deactivate_object_context(token)
         self._initialize(self)
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:

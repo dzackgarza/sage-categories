@@ -49,15 +49,18 @@ from sage.structure.dynamic_class import dynamic_class
 
 from sage_categories.kernel.caches import MonoDict, retain_constructed_transport
 from sage_categories.kernel.construction import (
+    ArrowStageIdentity,
     ElementConstructionContext,
     ElementConstructionInput,
     ElementRoleIdentity,
+    GeneralCategoryPointIdentity,
     MorphismConstructionContext,
     MorphismConstructionInput,
     MorphismRoleIdentity,
     ObjectConstructionContext,
     ObjectConstructionInput,
     ObjectRoleIdentity,
+    ObjectStageIdentity,
     activate_element_context,
     activate_morphism_context,
     activate_object_context,
@@ -69,7 +72,15 @@ from sage_categories.kernel.construction import (
     retain_morphism_input,
     retain_object_input,
 )
-from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, kernel_base
+from sage_categories.kernel.roles import (
+    CategoryPoint,
+    CategoryPointKernel,
+    MorphismOfCategory,
+    ObjectOfCategory,
+    Role,
+    cat_element_root,
+    kernel_base,
+)
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
@@ -133,7 +144,13 @@ _empty_local_roles: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
 _linearizations: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
 _nodes_by_key: dict[int, Node] = {}
 
-_ROLE_POSITIONS: dict[Role, int] = {role: position for position, role in enumerate(Role)}
+_ROLE_POSITIONS: dict[Role, int] = {
+    Role.ELEMENT: 0,
+    Role.MORPHISM: 1,
+    Role.OBJECT: 2,
+}
+
+_COMPILE_ORDER = (Role.ELEMENT, Role.OBJECT, Role.MORPHISM)
 
 
 def node_key(current: Node) -> int:
@@ -157,6 +174,11 @@ def node(category: Category, role: Role) -> Node:
 
 def same_node(first: Node, second: Node) -> bool:
     return first.category is second.category and first.role is second.role
+
+
+def _is_cat_element_root(current: Node) -> bool:
+    """Whether ``current`` is the preallocated common ``Cat().ElementType`` node."""
+    return current.role is Role.ELEMENT and current.category.category() is current.category
 
 
 def successors(current: Node) -> tuple[tuple[Step, Node], ...]:
@@ -338,6 +360,8 @@ def _base_classes(current: Node) -> tuple[type[CategoryPoint], ...]:
     A node that reaches no other node ends on its role's kernel class.  A declaration is
     never a base: its members are copied into its one compiled node.
     """
+    if _is_cat_element_root(current):
+        return (CategoryPointKernel,)
     keys = _linearize(current)[1]
     classes = [_nodes_by_key[key].category.role_class(_nodes_by_key[key].role) for key in keys]
     bases = [klass for position, klass in enumerate(classes) if not any(later is klass for later in classes[position + 1 :])]
@@ -421,6 +445,14 @@ def _assert_linearized(current: Node, compiled: type[CategoryPoint]) -> None:
     compiled classes followed by the common Python chain end.  Raw declarations never
     occur in this order (POL-KERNEL-028).
     """
+    if _is_cat_element_root(current):
+        expected = (compiled, *CategoryPointKernel.__mro__)
+        actual = tuple(compiled.__mro__)
+        assert actual == expected, (
+            f"the Cat.ElementType MRO is {[klass.__name__ for klass in actual]}, expected "
+            f"{[klass.__name__ for klass in expected]}"
+        )
+        return
     order = [_nodes_by_key[key] for key in _linearize(current)[0]]
     classes = [found.category.role_class(found.role) for found in order]
     expected = (compiled, *classes, *kernel_base(current.role).__mro__)
@@ -471,10 +503,10 @@ def _object_step[Value: ObjectOfCategory, Datum](
     return initialize
 
 
-def _element_step[Value: ElementOfObject, Datum](
+def _element_step[Value: CategoryPoint, Datum](
     current: Node,
     construction_input: ElementConstructionInput[Value, Datum],
-    instance: ElementOfObject,
+    instance: Value,
 ) -> Callable[[], None]:
     runtime = _runtime(current)
 
@@ -545,7 +577,7 @@ def _element_steps[RootValue: ElementOfObject, RootDatum](
 ) -> tuple[tuple[Node, Callable[[], None]], ...]:
     """Close each exact element input into one zero-argument C3 node step."""
     assert current.role is Role.ELEMENT
-    found: list[tuple[Node, int, ElementOfObject, Callable[[], None], Route]] = []
+    found: list[tuple[Node, int, CategoryPoint, Callable[[], None], Route]] = []
 
     def visit[Value: ElementOfObject, Datum](
         source: Node,
@@ -573,6 +605,36 @@ def _element_steps[RootValue: ElementOfObject, RootDatum](
     expected = reachable(current)
     assert all(any(same_node(owner, target) for owner, _, _, _, _ in found) for target in expected)
     return tuple((target, next(step for owner, _, _, step, _ in found if same_node(owner, target))) for target in expected)
+
+
+def _object_cat_element_step[Value: ObjectOfCategory, Datum](
+    root: ObjectConstructionInput[Value, Datum],
+) -> tuple[Node, Callable[[], None]]:
+    """The stage-``1`` input at the common ``Cat().ElementType`` MRO root."""
+    target = node(root.identity.category.category(), Role.ELEMENT)
+    stage_input = ElementConstructionInput(root.canonical_image, ObjectStageIdentity(root.identity.category), None)
+    return target, _element_step(target, stage_input, root.canonical_image)
+
+
+def _element_cat_element_step[Value: ElementOfObject, Datum](
+    root: ElementConstructionInput[Value, Datum],
+) -> tuple[Node, Callable[[], None]]:
+    """The defining-morphism input at the common ``Cat().ElementType`` MRO root."""
+    assert isinstance(root.identity, GeneralCategoryPointIdentity)
+    target = node(root.identity.defining_morphism.base_category().category(), Role.ELEMENT)
+    stage_input = ElementConstructionInput(root.canonical_image, root.identity, None)
+    return target, _element_step(target, stage_input, root.canonical_image)
+
+
+def _morphism_cat_element_step[Value: MorphismOfCategory, Datum](
+    root: MorphismConstructionInput[Value, Datum],
+) -> tuple[Node, Callable[[], None]]:
+    """The stage-``[1]`` input at the common ``Cat().ElementType`` MRO root."""
+    parent = root.identity.category.base_category()
+    target = node(parent.category(), Role.ELEMENT)
+    identity = ArrowStageIdentity(parent, root.identity.domain, root.identity.codomain)
+    stage_input = ElementConstructionInput(root.canonical_image, identity, None)
+    return target, _element_step(target, stage_input, root.canonical_image)
 
 
 def _morphism_steps[RootValue: MorphismOfCategory, RootDatum](
@@ -619,7 +681,9 @@ def _construct_object_root[Datum](
 ) -> None:
     root = ObjectConstructionInput(instance, identity, data)
     retain_object_input(root)
-    context = ObjectConstructionContext(root.canonical_image, root.identity, _object_steps(current, root))
+    cat_element_identity = ObjectStageIdentity(identity.category)
+    steps = (*_object_steps(current, root), _object_cat_element_step(root))
+    context = ObjectConstructionContext(root.canonical_image, root.identity, cat_element_identity, steps)
     token = activate_object_context(context)
     try:
         context.run(current)
@@ -630,13 +694,17 @@ def _construct_object_root[Datum](
 
 def _construct_element_root[Datum](
     current: Node,
-    instance: ElementOfObject,
+    instance: CategoryPoint,
     identity: ElementRoleIdentity,
     data: Datum,
 ) -> None:
     root = ElementConstructionInput(instance, identity, data)
     retain_element_input(root)
-    context = ElementConstructionContext(root.canonical_image, root.identity, _element_steps(current, root))
+    steps = _element_steps(current, root)
+    cat_element_step = _element_cat_element_step(root)
+    if not any(same_node(owner, cat_element_step[0]) for owner, _ in steps):
+        steps = (*steps, cat_element_step)
+    context = ElementConstructionContext(root.canonical_image, root.identity, root.identity, steps)
     token = activate_element_context(context)
     try:
         context.run(current)
@@ -653,7 +721,10 @@ def _construct_morphism_root[Datum](
 ) -> None:
     root = MorphismConstructionInput(instance, identity, data)
     retain_morphism_input(root)
-    context = MorphismConstructionContext(root.canonical_image, root.identity, _morphism_steps(current, root))
+    parent = identity.category.base_category()
+    cat_element_identity = ArrowStageIdentity(parent, identity.domain, identity.codomain)
+    steps = (*_morphism_steps(current, root), _morphism_cat_element_step(root))
+    context = MorphismConstructionContext(root.canonical_image, root.identity, cat_element_identity, steps)
     token = activate_morphism_context(context)
     try:
         context.run(current)
@@ -690,7 +761,7 @@ def _object_wrapper(current: Node) -> FunctionType:
 def _element_wrapper(current: Node) -> FunctionType:
 
     def initialize[Datum](
-        instance: ElementOfObject,
+        instance: CategoryPoint,
         defining_morphism: MorphismOfCategory | None = None,
         data: Datum | None = None,
     ) -> None:
@@ -761,9 +832,9 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
         f"{category!r} selects one functor twice"
     )
     category.select_functors(functors)
-    for role in Role:
+    for role in _COMPILE_ORDER:
         _assert_acyclic(node(category, role), ())
-    for role in Role:
+    for role in _COMPILE_ORDER:
         current = node(category, role)
         _linearize(current)
         if current.category is not category:
@@ -787,19 +858,27 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
         node_initializer = _local_initializer(local, cell)
         wrapper = _constructor_wrapper(current)
         provider = _method_provider(local, cell, wrapper)
-        try:
-            compiled = dynamic_class(
-                f"{category!r}.{role.value}",
-                bases,
-                cls=provider,
-                doccls=local,
-                prepend_cls_bases=False,
-            )
-        except TypeError as conflict:
-            raise TypeError(
-                f"the {role.value} class of {category!r} has no linearization over "
-                f"{[klass.__name__ for klass in bases]}: {conflict}"
-            ) from conflict
+        if _is_cat_element_root(current):
+            compiled = cat_element_root()
+            assert compiled.__bases__ == bases
+            for name, value in vars(provider).items():
+                if name not in _CLASS_METADATA:
+                    setattr(compiled, name, value)
+            compiled.__doc__ = local.__doc__
+        else:
+            try:
+                compiled = dynamic_class(
+                    f"{category!r}.{role.value}",
+                    bases,
+                    cls=provider,
+                    doccls=local,
+                    prepend_cls_bases=False,
+                )
+            except TypeError as conflict:
+                raise TypeError(
+                    f"the {role.value} class of {category!r} has no linearization over "
+                    f"{[klass.__name__ for klass in bases]}: {conflict}"
+                ) from conflict
         cell.cell_contents = compiled
         _node_runtimes[role][category] = _NodeRuntime(node_initializer, cell)
         setattr(category, role.value, compiled)

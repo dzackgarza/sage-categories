@@ -26,7 +26,6 @@ def placement_node(value: CategoryPoint) -> compiler.Node:
         case Role.OBJECT | Role.MORPHISM:
             return compiler.node(value.category(), Role.OBJECT)
         case Role.ELEMENT:
-            assert isinstance(value, ElementOfObject)
             return compiler.node(value.parent().category(), Role.ELEMENT)
     raise AssertionError(f"{value!r} is not an owned value")
 
@@ -127,6 +126,9 @@ def _element_input_at[
     source_node: compiler.Node,
     target: compiler.Node,
 ) -> ElementConstructionInput[TargetValue, TargetDatum]:
+    from sage_categories.kernel.construction import GeneralCategoryPointIdentity
+
+    assert isinstance(source.identity, GeneralCategoryPointIdentity)
     category = source.identity.defining_morphism.codomain().category()
     assert compiler.same_node(compiler.node(category, Role.ELEMENT), source_node)
     routes = _routes(source_node, target)
@@ -204,7 +206,6 @@ def construction_input[
         case Role.ELEMENT:
             from sage_categories.kernel.construction import retained_element_input
 
-            assert isinstance(value, ElementOfObject)
             root = retained_element_input(value)
             converted = root if compiler.same_node(source, target) else _element_input_at(root, source, target)
         case Role.MORPHISM:

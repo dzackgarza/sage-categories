@@ -15,22 +15,26 @@ from typing import TYPE_CHECKING
 
 from sage.structure.coerce_dict import MonoDict
 
-from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
+from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
     from sage_categories.kernel.compiler import Node
 
 __all__ = [
+    "ArrowStageIdentity",
+    "CatElementRoleIdentity",
     "ElementConstructionContext",
     "ElementConstructionInput",
     "ElementRoleIdentity",
+    "GeneralCategoryPointIdentity",
     "MorphismConstructionContext",
     "MorphismConstructionInput",
     "MorphismRoleIdentity",
     "ObjectConstructionContext",
     "ObjectConstructionInput",
     "ObjectRoleIdentity",
+    "ObjectStageIdentity",
     "activate_element_context",
     "activate_morphism_context",
     "activate_object_context",
@@ -62,10 +66,33 @@ class ObjectRoleIdentity:
 
 
 @dataclass(frozen=True, slots=True, eq=False)
-class ElementRoleIdentity:
-    """The kernel identity of a generalized element."""
+class GeneralCategoryPointIdentity:
+    """A generalized element given by its defining morphism."""
 
     defining_morphism: MorphismOfCategory
+
+
+# The ordinary element constructor keeps this public name.
+ElementRoleIdentity = GeneralCategoryPointIdentity
+
+
+@dataclass(frozen=True, slots=True, eq=False)
+class ObjectStageIdentity:
+    """An object as a stage-``1`` generalized element of its category."""
+
+    parent: Category
+
+
+@dataclass(frozen=True, slots=True, eq=False)
+class ArrowStageIdentity:
+    """A morphism as a stage-``[1]`` generalized element of its category."""
+
+    parent: Category
+    domain: ObjectOfCategory
+    codomain: ObjectOfCategory
+
+
+type CatElementRoleIdentity = GeneralCategoryPointIdentity | ObjectStageIdentity | ArrowStageIdentity
 
 
 @dataclass(frozen=True, slots=True, eq=False)
@@ -87,11 +114,11 @@ class ObjectConstructionInput[Value: ObjectOfCategory, Datum]:
 
 
 @dataclass(frozen=True, slots=True, eq=False)
-class ElementConstructionInput[Value: ElementOfObject, Datum]:
+class ElementConstructionInput[Value: CategoryPoint, Datum]:
     """The canonical generalized element, its identity, and one local datum."""
 
     canonical_image: Value
-    identity: ElementRoleIdentity
+    identity: CatElementRoleIdentity
     datum: Datum
 
 
@@ -120,7 +147,7 @@ def retain_object_input[Value: ObjectOfCategory, Datum](construction_input: Obje
     _object_inputs[value] = construction_input
 
 
-def retain_element_input[Value: ElementOfObject, Datum](construction_input: ElementConstructionInput[Value, Datum]) -> None:
+def retain_element_input[Value: CategoryPoint, Datum](construction_input: ElementConstructionInput[Value, Datum]) -> None:
     value = construction_input.canonical_image
     if value in _element_inputs:
         assert _element_inputs[value] is construction_input, f"{value!r} already retains a different element construction input"
@@ -141,7 +168,7 @@ def retained_object_input[Value: ObjectOfCategory, Datum](value: Value) -> Objec
     return _object_inputs[value]
 
 
-def retained_element_input[Value: ElementOfObject, Datum](value: Value) -> ElementConstructionInput[Value, Datum]:
+def retained_element_input[Value: CategoryPoint, Datum](value: Value) -> ElementConstructionInput[Value, Datum]:
     assert value in _element_inputs, f"{value!r} retains no element construction input"
     return _element_inputs[value]
 
@@ -157,6 +184,7 @@ class ObjectConstructionContext:
 
     canonical_image: ObjectOfCategory
     identity: ObjectRoleIdentity
+    cat_element_identity: ObjectStageIdentity
     steps: tuple[tuple[Node, Callable[[], None]], ...]
     initialized: list[Node] = field(default_factory=list)
 
@@ -177,8 +205,9 @@ class ObjectConstructionContext:
 class ElementConstructionContext:
     """One element identity and the closed node steps of its C3 constructor chain."""
 
-    canonical_image: ElementOfObject
-    identity: ElementRoleIdentity
+    canonical_image: CategoryPoint
+    identity: GeneralCategoryPointIdentity
+    cat_element_identity: GeneralCategoryPointIdentity
     steps: tuple[tuple[Node, Callable[[], None]], ...]
     initialized: list[Node] = field(default_factory=list)
 
@@ -201,6 +230,7 @@ class MorphismConstructionContext:
 
     canonical_image: MorphismOfCategory
     identity: MorphismRoleIdentity
+    cat_element_identity: ArrowStageIdentity
     steps: tuple[tuple[Node, Callable[[], None]], ...]
     initialized: list[Node] = field(default_factory=list)
 
@@ -235,7 +265,7 @@ def active_morphism_context() -> MorphismConstructionContext | None:
 
 
 def active_construction_context(
-    value: ObjectOfCategory | ElementOfObject | MorphismOfCategory,
+    value: CategoryPoint,
 ) -> ObjectConstructionContext | ElementConstructionContext | MorphismConstructionContext | None:
     """The active role-construction context for ``value``."""
     contexts = tuple(

@@ -18,8 +18,13 @@ from typing import TYPE_CHECKING, overload
 
 from sage.structure.coerce_dict import MonoDict, TripleDict
 
-from sage_categories.kernel.construction import ElementConstructionInput, MorphismConstructionInput, ObjectConstructionInput
-from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, role_of
+from sage_categories.kernel.construction import (
+    ElementConstructionInput,
+    GeneralCategoryPointIdentity,
+    MorphismConstructionInput,
+    ObjectConstructionInput,
+)
+from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory, Role, role_of
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
@@ -55,7 +60,6 @@ def _source_key(source: CategoryPoint) -> tuple[CategoryPoint, CategoryPoint, Ca
         case Role.OBJECT:
             return source, source, source
         case Role.ELEMENT:
-            assert isinstance(source, ElementOfObject)
             return source.stage(), source.defining_morphism(), source.parent()
         case Role.MORPHISM:
             assert isinstance(source, MorphismOfCategory)
@@ -77,6 +81,7 @@ def _construction_key[
     if isinstance(source, ObjectConstructionInput):
         return source.canonical_image, source.canonical_image, source.canonical_image
     if isinstance(source, ElementConstructionInput):
+        assert isinstance(source.identity, GeneralCategoryPointIdentity)
         defining = source.identity.defining_morphism
         return defining.domain(), defining, defining.codomain()
     return source.identity.domain, source.identity.codomain, source.canonical_image

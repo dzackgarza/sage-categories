@@ -10,12 +10,12 @@ alone does not separate functors, ``[1]`` does.
 
 from __future__ import annotations
 
-from sage_categories.kernel.roles import ElementOfObject, ObjectOfCategory
+from sage_categories.kernel.roles import CategoryPointKernel, ObjectOfCategory
 
 __all__ = ["CategoryPoint"]
 
 
-class CategoryPointDeclaration(ElementOfObject):
+class CategoryPointDeclaration(CategoryPointKernel):
     """The local ``Cat().ElementType`` declaration."""
 
     def __mul__(self, other: ObjectOfCategory) -> ObjectOfCategory:

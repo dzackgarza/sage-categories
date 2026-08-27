@@ -270,8 +270,7 @@ The generalized continuum hypothesis is an assumable proposition, not an axiom o
 generalized_continuum_hypothesis()
 ```
 
-It is a proposition in the sense of [Property refinement](property-refinement.md) and `POL-ASSUME-004`.
-The active Sage or SymPy assumption state records it and `ask()` reads it.
+It is a proposition in the sense of [Property refinement](property-refinement.md) and `POL-ASSUME-004`. The active Sage or SymPy assumption state records it and `ask()` reads it.
 `assume()` records it and `retract()` withdraws it.
 `Cardinal()` records it when the package loads, so the package's own default state assumes it.
 
@@ -287,8 +286,7 @@ For ordinals \(\alpha\) and \(\beta\):
 \end{cases}
 \]
 
-A finite base \(n\geq 2\) has the power of two, so \(n^{\aleph_\beta}=2^{\aleph_\beta}=\aleph_{\beta+1}\).
-The cofinality is `alpha.initial_ordinal().cofinality()`; see [Cofinality](ordinals.md#cofinality).
+A finite base \(n\geq 2\) has the power of two, so \(n^{\aleph_\beta}=2^{\aleph_\beta}=\aleph_{\beta+1}\). The cofinality is `alpha.initial_ordinal().cofinality()`; see [Cofinality](ordinals.md#cofinality).
 When the ordinal expression does not establish the cofinality, the power stays formal.
 
 Addition and multiplication are unchanged.

@@ -308,8 +308,7 @@ It does not replace that expression with cardinal exponentiation.
 
 ## Cofinality
 
-`alpha.cofinality()` is \(\operatorname{cf}(\alpha)\), the cofinality of the ordinal, as a **cardinal**.
-This is the signature of Mathlib's [`Ordinal.cof`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/SetTheory/Cardinal/Cofinality/Ordinal.html#Ordinal.cof).
+`alpha.cofinality()` is \(\operatorname{cf}(\alpha)\), the cofinality of the ordinal, as a **cardinal**. This is the signature of Mathlib's [`Ordinal.cof`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/SetTheory/Cardinal/Cofinality/Ordinal.html#Ordinal.cof).
 
 The exact rules are:
 
@@ -327,10 +326,7 @@ The exact rules are:
 \operatorname{cf}(\omega_\beta)=\operatorname{cf}(\beta)\ (\beta\text{ a limit ordinal}).
 \]
 
-The first two are `Ordinal.cof_zero` and `Ordinal.cof_add_one`; they cover a positive finite ordinal and a natural sum with a nonzero finite term, since a natural sum with a finite ordinal is the ordinary one (`Ordinal.nadd_nat`).
-The third is `Ordinal.cof_omega0`.
-The fourth holds because \(\aleph_n\) is regular for \(n\geq 1\) (`Cardinal.isRegular_aleph_add_one` with `Cardinal.isRegular_iff`).
-The fifth is `Ordinal.cof_omega`, whose limit hypothesis an initial ordinal satisfies by `Cardinal.isSuccLimit_ord`.
+The first two are `Ordinal.cof_zero` and `Ordinal.cof_add_one`; they cover a positive finite ordinal and a natural sum with a nonzero finite term, since a natural sum with a finite ordinal is the ordinary one (`Ordinal.nadd_nat`). The third is `Ordinal.cof_omega0`. The fourth holds because \(\aleph_n\) is regular for \(n\geq 1\) (`Cardinal.isRegular_aleph_add_one` with `Cardinal.isRegular_iff`). The fifth is `Ordinal.cof_omega`, whose limit hypothesis an initial ordinal satisfies by `Cardinal.isSuccLimit_ord`.
 
 Any other expression returns `Unknown`: the shape that selects a rule is not established.
 Cofinality is what [the continuum hypothesis](cardinality.md#the-continuum-hypothesis) needs in order to decide a cardinal power.

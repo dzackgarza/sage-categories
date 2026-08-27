@@ -29,6 +29,8 @@ directly because a Sage axiom suite runs on a Sage parent; every other row uses 
 cardinal surface.
 """
 
+from collections.abc import Iterator
+
 import pytest
 from sage.all import TestSuite
 
@@ -39,7 +41,7 @@ from sage_categories.sets.cardinals import CardinalSemiring
 
 
 @pytest.fixture
-def zermelo_fraenkel_only():
+def zermelo_fraenkel_only() -> Iterator[None]:
     """The session with the continuum hypothesis withdrawn, restored for every later row."""
     retract(generalized_continuum_hypothesis())
     yield

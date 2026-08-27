@@ -114,6 +114,13 @@ def test_a_category_coproduct_has_injections_that_tag() -> None:
     with pytest.raises(AssertionError):
         Mor(coproduct)(tagged, into_cat.on_object(Sets()))(successor)
 
+    # A generalized point follows the injection's morphism action.
+    generalized = Sets().element_from_defining_morphism(successor)
+    image = into_sets.on_element(generalized)
+    assert image.stage() is tagged
+    assert image.parent() is into_sets.on_object(three)
+    assert image.defining_morphism().morphism() is successor
+
 
 def test_the_mediator_of_a_category_cone_lands_in_the_product() -> None:
     two = Sets().Simplex(int(1))

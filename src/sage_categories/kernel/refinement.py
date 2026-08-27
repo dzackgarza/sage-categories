@@ -72,21 +72,16 @@ def is_subcategory(inner: Category, outer: Category) -> bool:
 def common_ancestor(first: Category, second: Category) -> Category:
     """The least category receiving both, along retained inclusions (POL-CAT-088, POL-FUN-027).
 
-    ``_included_in`` walks the inclusion order breadth first, so the first category
-    receiving ``first`` that also receives ``second`` is minimal among the categories
-    receiving both.  A selected functor that is not a retained inclusion changes
-    structure and is not walked, so a poset and a set meet nowhere.
+    Least is minimal in the inclusion order, not first in the walk: a category that
+    receives ``first`` declares its inclusions in its own preference order, so the
+    walk can reach a wider category before a narrower one.  A selected functor that is
+    not a retained inclusion changes structure and is not walked, so a poset and a set
+    meet nowhere.
     """
-    found = next(
-        (
-            reached.category
-            for reached in _included_in(compiler.node(first, Role.OBJECT))
-            if is_subcategory(second, reached.category)
-        ),
-        None,
-    )
-    assert found is not None, f"{first!r} and {second!r} have no least common category along retained inclusions"
-    return found
+    common = [reached.category for reached in _included_in(compiler.node(first, Role.OBJECT)) if is_subcategory(second, reached.category)]
+    least = next((candidate for candidate in common if all(is_subcategory(candidate, other) for other in common)), None)
+    assert least is not None, f"{first!r} and {second!r} have no least common category along retained inclusions"
+    return least
 
 
 def place(value: CategoryPoint, category: Category) -> None:

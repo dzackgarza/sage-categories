@@ -27,7 +27,7 @@ import pytest
 
 from sage_categories.all import *
 from sage_categories.kernel import compiler
-from sage_categories.kernel.caches import canonical_images
+
 from sage_categories.kernel.compiler import StructuralImageMismatch
 from sage_categories.kernel.construction import retained_morphism_input, retained_object_input
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role
@@ -68,9 +68,6 @@ class Carrying(Category):
             self._carrier_data = data
             super().__init__()
 
-        def carrier(self):
-            return self._carrier_data.carrier
-
     class DeclaredElementType(ElementOfObject):
         """No local operation."""
 
@@ -79,9 +76,6 @@ class Carrying(Category):
             self._carrier_map_data = data
             super().__init__()
 
-        def set_map(self):
-            return self._carrier_map_data.set_map
-
     def __init__(self, name):
         self._name = name
         self._selected = {}
@@ -89,7 +83,10 @@ class Carrying(Category):
 
     def structure_functors(self):
         if "carrier" not in self._selected:
-            underlying = Fun(self, Sets()).Faithful()(lambda member: member.carrier(), lambda morphism: morphism.set_map())
+            underlying = Fun(self, Sets()).Faithful()(
+                lambda member: member._carrier_data.carrier,
+                lambda morphism: morphism._carrier_map_data.set_map,
+            )
             underlying.retain_object_constructor_conversion(lambda source: retained_object_input(source.datum.carrier))
             underlying.retain_morphism_constructor_conversion(lambda source: retained_morphism_input(source.datum.set_map))
             self._selected["carrier"] = underlying
@@ -203,7 +200,7 @@ def test_the_finite_poset_diamond_returns_one_underlying_set_map_and_point() -> 
     chain = Posets().Simplex(int(2))
     underlying = Posets().structure_functors()[int(0)]
     restricted = FinitePosets().structure_functors()[int(1)]
-    fixed = Mor(Posets())(chain, chain)(lambda point: point)
+    fixed = Mor(FinitePosets())(chain, chain)(lambda point: point)
 
     assert chain in FinitePosets()
     assert underlying.on_object(chain) is restricted.on_object(chain)
@@ -223,9 +220,8 @@ def test_the_image_a_compiled_method_uses_is_the_image_the_selected_functor_retu
 
     # ``chain.cardinality()`` is compiled from ``Sets()``: it runs on the transported image.
     assert ask(chain.cardinality() == int(3)) is True
-    assert (chain, chain, Sets()) in canonical_images[Role.OBJECT]
-    assert canonical_images[Role.OBJECT][chain, chain, Sets()] is underlying.on_object(chain)
     assert transport(chain, target) is underlying.on_object(chain)
+    assert chain.cardinality() is underlying.on_object(chain).cardinality()
 
 
 def test_an_object_image_and_a_morphism_image_of_one_value_are_one_cache_entry() -> None:
@@ -241,27 +237,29 @@ def test_an_object_image_and_a_morphism_image_of_one_value_are_one_cache_entry()
     as_object_of_mor = transport(fixed, compiler.node(Mor(Sets()), Role.OBJECT))
     assert as_morphism is as_object_of_mor
     assert as_morphism is underlying.on_morphism(fixed)
-    assert canonical_images[Role.MORPHISM][fixed, fixed, Sets()] is as_morphism
 
 
-def test_the_cache_key_separates_the_value_and_the_target_category() -> None:
-    """The key is ``(key, value, target category)``: two elements are two entries, and two targets are two entries."""
+def test_elements_differing_in_their_defining_morphism_do_not_share_an_image() -> None:
+    """POL-CAT-066: an element's image is keyed by its stage, defining morphism, and codomain."""
     chain = Posets().Simplex(int(2))
-    carrier = Posets().structure_functors()[int(0)].on_object(chain)
+    underlying = Posets().structure_functors()[int(0)]
+    carrier = underlying.on_object(chain)
     zero, one = chain.element(carrier.point(int(0))), chain.element(carrier.point(int(1)))
+
+    assert zero.parent() is one.parent()
+    assert zero.stage() is one.stage()
+    assert zero.defining_morphism() is not one.defining_morphism()
 
     first_image = transport(zero, compiler.node(Sets(), Role.ELEMENT))
     second_image = transport(one, compiler.node(Sets(), Role.ELEMENT))
     assert first_image is not second_image
-    assert canonical_images[Role.ELEMENT][zero.parent(), zero, Sets()] is first_image
-    assert canonical_images[Role.ELEMENT][one.parent(), one, Sets()] is second_image
+    assert first_image is carrier.point(int(0))
+    assert second_image is carrier.point(int(1))
 
-    # A second target category is a second entry even when the two images coincide,
-    # because ``Sets().Finite()`` is a full subcategory of ``Sets()`` on the same sets.
+    # One value transports once per target: ``Sets().Finite()`` is a full subcategory of
+    # ``Sets()`` on the same sets, so the two targets return the very same image.
     finite_node = compiler.node(Sets().Finite(), Role.OBJECT)
     assert transport(chain, compiler.node(Sets(), Role.OBJECT)) is transport(chain, finite_node)
-    assert (chain, chain, Sets()) in canonical_images[Role.OBJECT]
-    assert (chain, chain, Sets().Finite()) in canonical_images[Role.OBJECT]
 
 
 def test_a_lifted_product_reuses_the_retained_ancestor_apex_and_its_projections() -> None:
@@ -287,7 +285,7 @@ def test_two_routes_that_agree_by_identity_transport_without_error() -> None:
     target = compiler.node(Sets(), Role.OBJECT)
 
     assert len(compiler.routes(placement_node(member), target)) == int(2)
-    assert transport(member, target) is member.carrier()
+    assert transport(member, target) is member._ringlike_data.carrier
     assert ask(member.cardinality() == int(3)) is True
 
 

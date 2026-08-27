@@ -10,8 +10,7 @@ finite DAG, asserted at compile time (POL-CAT-012).
 Method catalogue of a node (``specs/resolution.md``):
 
 1. a local declaration takes precedence;
-2. one declaring owner reached by several routes supplies one entry whose execution
-   route is the first route in declaration order;
+2. one declaring owner reached by several routes supplies one entry;
 3. comparable owners yield the most specific one;
 4. incomparable owners with one spelling raise ``SemanticCollisionError``.
 
@@ -115,13 +114,12 @@ type Route = tuple[Step, ...]
 type DeclaredMethod[**P, R] = Callable[Concatenate[CategoryPoint, P], R]
 
 class Entry[**P, R](NamedTuple):
-    """One compiled method: its declaring owner and role, its spelling, its declaration, and its execution route."""
+    """One compiled method: its declaring owner and role, spelling, and declaration."""
 
     owner: Category
     role: Role
     name: str
     function: DeclaredMethod[P, R]
-    route: Route
 
 
 _IGNORED_NAMES = frozenset({"__init__", "__new__", "__repr__", "__init_subclass__", "__class_getitem__"})
@@ -234,15 +232,14 @@ def catalogue[**P, R](current: Node) -> dict[str, Entry[P, R]]:
         return catalogues[current.role]
     local_class = current.category.local_role_class(current.role)
     entries = {
-        name: Entry(current.category, current.role, name, function, ())
+        name: Entry(current.category, current.role, name, function)
         for name, function in _local_methods(local_class).items()
     }
-    for step, target in successors(current):
+    for _, target in successors(current):
         for name, inherited in catalogue(target).items():
-            if name in entries and not entries[name].route:
+            if name in entries and entries[name].owner is current.category:
                 continue
-            candidate = inherited._replace(route=(step, *inherited.route))
-            entries[name] = _merge(entries[name], candidate) if name in entries else candidate
+            entries[name] = _merge(entries[name], inherited) if name in entries else inherited
     catalogues[current.role] = entries
     return entries
 
@@ -266,7 +263,7 @@ def _selected_targets(current: Node) -> tuple[Node, ...]:
     declaration order: Sage sorts them the same way (``Category._super_categories``
     applies ``Category._sort``, decreasing in ``_cmp_key``).  A category's ambient is
     declared first and constructed first, so declaration order is the wrong one here.
-    Route order and catalogue precedence still read ``successors`` directly.
+    Constructor route order still reads ``successors`` directly.
     """
     found: list[Node] = []
     for _, target in successors(current):

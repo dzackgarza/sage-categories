@@ -83,6 +83,19 @@ def test_a_rule_defined_set_needs_no_enumeration_and_equals_itself_only() -> Non
     assert ask(integers.is_finite()) is Unknown
 
 
+def test_equality_with_a_candidate_outside_the_category_is_undecided() -> None:
+    """``ask`` is total over the equality candidate, which accepts every input (POL-TYPE-004).
+
+    A set and a real number are not equal by any algorithm the repository owns, and no
+    handler decides the pair, so the proposition is undecided rather than false or an
+    error (POL-ASSUME-004, POL-MATH-042).
+    """
+    assert ask(Sets().Terminal() == 2.5) is Unknown
+    assert ask(Sets().Terminal() == "1") is Unknown
+    assert ask(Sets().Simplex(int(1)).point(int(0)) == 2.5) is Unknown
+    assert ask(Sets().Terminal() == Sets().Terminal()) is True
+
+
 def test_finite_set_map_equality_is_pointwise() -> None:
     three, four = Sets().Simplex(int(2)), Sets().Simplex(int(3))
     successor = Mor(Sets())(three, four)(lambda datum: datum + int(1))

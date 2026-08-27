@@ -733,6 +733,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         from sage_categories.kernel.refinement import refine
 
         identity = self.construct_morphism(category, category, lambda x: x, lambda f: f)
+        identity._retain_identity_constructor_conversions()
         # The identity functor is an equivalence: Mathlib ``CategoryTheory.Functor.id``
         # with ``IsEquivalence`` of the identity (inspected 2026-08-26).
         refine(identity, Fun(category, category).Equivalences())

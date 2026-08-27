@@ -35,6 +35,7 @@ from sage_categories.kernel.refinement import is_placed, is_retained_inclusion, 
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, role_of
 
 if TYPE_CHECKING:
+    from sage_categories.kernel.construction import ElementConstruction, MorphismConstruction, ObjectConstruction
     from sage_categories.sets.elements import SetPoint
     from sage_categories.sets.objects import SetObject
 
@@ -83,6 +84,25 @@ _cocartesian_lifts: TripleDict = TripleDict(weak_values=False)
 # "Structural inheritance": a selected composite retains its factor functors).
 _composite_factors: MonoDict = MonoDict()
 
+# A selected functor owns the three conversions that construct its codomain role
+# state.  They are retained on the functor itself, not in a compiler registry
+# (POL-FUN-003/035).  Ordinary mathematical functors need no such conversions.
+_object_constructor_conversions: MonoDict = MonoDict()
+_element_constructor_conversions: MonoDict = MonoDict()
+_morphism_constructor_conversions: MonoDict = MonoDict()
+
+
+def _identity_object_constructor_input(source: ObjectConstruction) -> ObjectConstruction:
+    return source
+
+
+def _identity_element_constructor_input(source: ElementConstruction) -> ElementConstruction:
+    return source
+
+
+def _identity_morphism_constructor_input(source: MorphismConstruction) -> MorphismConstruction:
+    return source
+
 
 class FunctorDeclaration(MorphismOfCategory):
     """The local ``Cat().MorphismType`` declaration."""
@@ -106,12 +126,24 @@ class FunctorDeclaration(MorphismOfCategory):
     def on_object(self, member_object: ObjectOfCategory) -> ObjectOfCategory:
         """The image of an object of the domain."""
         assert is_placed(member_object, self.domain()) or member_object in self.domain(), f"{member_object!r} is not an object of {self.domain()!r}"
+        if self in _object_constructor_conversions:
+            from sage_categories.kernel import compiler
+            from sage_categories.kernel.transport import construction_input
+
+            source = construction_input(member_object, compiler.node(self.domain(), Role.OBJECT))
+            return self.object_constructor_input(source).canonical_image
         return self._on_object(member_object)
 
     def on_morphism(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
         """The image of a morphism of the domain."""
         morphisms = self.domain().morphism_category(1)
         assert is_placed(morphism, morphisms) or morphism in morphisms, f"{morphism!r} is not a morphism of {self.domain()!r}"
+        if self in _morphism_constructor_conversions:
+            from sage_categories.kernel import compiler
+            from sage_categories.kernel.transport import construction_input
+
+            source = construction_input(morphism, compiler.node(self.domain(), Role.MORPHISM))
+            return self.morphism_constructor_input(source).canonical_image
         return self._on_morphism(morphism)
 
     def on_element(self, element: ElementOfObject) -> ElementOfObject:
@@ -123,6 +155,12 @@ class FunctorDeclaration(MorphismOfCategory):
         without the ambient's stage receives classical element operations through the
         inclusion image).  No other functor has an action on it.
         """
+        if self in _element_constructor_conversions:
+            from sage_categories.kernel import compiler
+            from sage_categories.kernel.transport import construction_input
+
+            source = construction_input(element, compiler.node(self.domain(), Role.ELEMENT))
+            return self.element_constructor_input(source).canonical_image
         defining = element.defining_morphism()
         if element.stage() not in self.domain():
             assert is_retained_inclusion(self), f"{element!r} is not a generalized element in {self.domain()!r}"
@@ -159,11 +197,81 @@ class FunctorDeclaration(MorphismOfCategory):
 
     # -- composition data ------------------------------------------------------------------
 
+    def retain_object_constructor_conversion(
+        self,
+        conversion: Callable[[ObjectConstruction], ObjectConstruction],
+    ) -> None:
+        """Retain the sole object-action implementation used by structural construction (POL-FUN-035)."""
+        assert self not in _object_constructor_conversions, f"{self!r} already retains an object constructor conversion"
+        _object_constructor_conversions[self] = conversion
+
+    def retain_element_constructor_conversion(
+        self,
+        conversion: Callable[[ElementConstruction], ElementConstruction],
+    ) -> None:
+        """Retain the conversion that initializes the selected target element role (POL-FUN-002/035)."""
+        assert self not in _element_constructor_conversions, f"{self!r} already retains an element constructor conversion"
+        _element_constructor_conversions[self] = conversion
+
+    def retain_morphism_constructor_conversion(
+        self,
+        conversion: Callable[[MorphismConstruction], MorphismConstruction],
+    ) -> None:
+        """Retain the sole morphism-action implementation used by structural construction (POL-FUN-035)."""
+        assert self not in _morphism_constructor_conversions, f"{self!r} already retains a morphism constructor conversion"
+        _morphism_constructor_conversions[self] = conversion
+
+    def object_constructor_input(self, source: ObjectConstruction) -> ObjectConstruction:
+        """Return the root input retained by this object's canonical functor image."""
+        assert self in _object_constructor_conversions, f"{self!r} retains no object constructor conversion"
+        conversion: Callable[[ObjectConstruction], ObjectConstruction] = _object_constructor_conversions[self]
+        return conversion(source)
+
+    def element_constructor_input(self, source: ElementConstruction) -> ElementConstruction:
+        """Return the root input retained by this element's canonical functor image."""
+        assert self in _element_constructor_conversions, f"{self!r} retains no element constructor conversion"
+        conversion: Callable[[ElementConstruction], ElementConstruction] = _element_constructor_conversions[self]
+        return conversion(source)
+
+    def morphism_constructor_input(self, source: MorphismConstruction) -> MorphismConstruction:
+        """Return the root input retained by this morphism's canonical functor image."""
+        assert self in _morphism_constructor_conversions, f"{self!r} retains no morphism constructor conversion"
+        conversion: Callable[[MorphismConstruction], MorphismConstruction] = _morphism_constructor_conversions[self]
+        return conversion(source)
+
+    def _retain_identity_constructor_conversions(self) -> None:
+        """Retain the identity conversions for an identity-on-value functor."""
+        if self not in _object_constructor_conversions:
+            self.retain_object_constructor_conversion(_identity_object_constructor_input)
+        if self not in _element_constructor_conversions:
+            self.retain_element_constructor_conversion(_identity_element_constructor_input)
+        if self not in _morphism_constructor_conversions:
+            self.retain_morphism_constructor_conversion(_identity_morphism_constructor_input)
+
     def retain_factors(self, first: Functor, second: Functor) -> None:
         """Retain that this functor is the composite ``second * first``."""
         assert self not in _composite_factors, f"{self!r} already retains its factors"
         assert first.codomain() is second.domain() and self.domain() is first.domain() and self.codomain() is second.codomain()
         _composite_factors[self] = (first, second)
+
+        if first in _object_constructor_conversions and second in _object_constructor_conversions:
+
+            def object_conversion(source: ObjectConstruction) -> ObjectConstruction:
+                return second.object_constructor_input(first.object_constructor_input(source))
+
+            self.retain_object_constructor_conversion(object_conversion)
+        if first in _element_constructor_conversions and second in _element_constructor_conversions:
+
+            def element_conversion(source: ElementConstruction) -> ElementConstruction:
+                return second.element_constructor_input(first.element_constructor_input(source))
+
+            self.retain_element_constructor_conversion(element_conversion)
+        if first in _morphism_constructor_conversions and second in _morphism_constructor_conversions:
+
+            def morphism_conversion(source: MorphismConstruction) -> MorphismConstruction:
+                return second.morphism_constructor_input(first.morphism_constructor_input(source))
+
+            self.retain_morphism_constructor_conversion(morphism_conversion)
 
     def factors(self) -> tuple[Functor, Functor]:
         """The retained factors ``(first, second)`` of an explicit composite ``second * first``, in categorical order."""
@@ -520,6 +628,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         key = (source, target, self)
         if key not in self._inclusions:
             self._inclusions[key] = self._base.construct_morphism(source, target, identity_on_values, identity_on_values)
+            self._inclusions[key]._retain_identity_constructor_conversions()
         inclusion = self._inclusions[key]
         if self._bootstrapped:
             refine(inclusion, placement())

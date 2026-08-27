@@ -165,9 +165,6 @@ class SetObject(ObjectOfCategory):
 class FiniteSetRole(ObjectOfCategory):
     """The local object role of ``Sets().Finite()``: the chosen enumeration supplies iteration."""
 
-    def __init__(self, members: tuple[Datum, ...]) -> None:
-        super().__init__()
-
     def __iter__(self) -> Iterator[SetPoint]:
         canonical = self._set_object_data.canonical
         return (self.point(datum) for datum in _sets.Sets().Finite().chosen_enumeration(canonical))

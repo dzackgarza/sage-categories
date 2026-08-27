@@ -69,7 +69,11 @@ class FiniteSets(PropertySubcategory[[Rule], []]):
         for position, first in enumerate(enumeration):
             for second in enumeration[position + 1 :]:
                 assert (first == second) is False, f"the enumeration lists {first!r} and {second!r}, which are not exactly distinct"
-        finite_set = self.ObjectType(category=self, data=enumeration)
+        finite_set = _sets.Sets().with_cardinality(
+            lambda datum: any(datum == member for member in enumeration),
+            Cardinal()(len(enumeration)),
+        )
+        refine(finite_set, self)
         self._enumerations[finite_set] = enumeration
         return finite_set
 

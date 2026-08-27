@@ -67,7 +67,7 @@ from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role
 from sage_categories.sets.cardinals import CardinalObject
 from sage_categories.sets.elements import Datum
 from sage_categories.sets.maps import Rule, SetMap
-from sage_categories.sets.objects import MembershipRule, SetObject, SetObjectData
+from sage_categories.sets.objects import MembershipRule, SetObject
 
 __all__ = ["ChosenQuotientRole", "ChosenQuotientsCategory", "ChosenSubsetRole", "ChosenSubsetsCategory", "subset_of"]
 
@@ -179,7 +179,8 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
                 return False
             return decision_and(in_base, predicate(datum))
 
-        subset = self.ObjectType(category=self, data=SetObjectData(rule, cardinality))
+        subset = sets.with_cardinality(rule, cardinality)
+        refine(subset, self)
         return self._retain_inclusion(subset, base_set)
 
     def from_enumeration(self, base_set: SetObject, members: tuple[Datum, ...]) -> SetObject:
@@ -225,7 +226,8 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
                 subset = finite(tuple(datum for datum, decision in decided if decision is True))
                 refine(subset, self)
                 return self._retain_inclusion(subset, base_set)
-        subset = self.ObjectType(category=self, data=SetObjectData(rule, Unknown))
+        subset = sets(rule)
+        refine(subset, self)
         if base_set in finite:
             # A subset of a finite set is finite: Mathlib ``Set.Finite.subset``
             # (Mathlib.Data.Set.Finite.Basic; inspected 2026-08-26).
@@ -273,7 +275,8 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
                 return Unknown
 
         cardinality = domain.cardinality() if set_map in monomorphisms else Unknown
-        subset = self.ObjectType(category=self, data=SetObjectData(has_preimage, cardinality))
+        subset = sets(has_preimage) if cardinality is Unknown else sets.with_cardinality(has_preimage, cardinality)
+        refine(subset, self)
         if domain in finite:
             # Mathlib ``Set.Finite.image`` (Mathlib.Data.Set.Finite.Basic; inspected 2026-08-27).
             finite(subset)

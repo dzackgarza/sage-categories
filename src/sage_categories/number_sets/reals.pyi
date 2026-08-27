@@ -1,7 +1,6 @@
 from sage_categories.sets.category import Sets_Uncountable_ElementType as Sets_Uncountable_ElementType
 from sage_categories.sets.category import Sets_Uncountable_MorphismType as Sets_Uncountable_MorphismType
 from sage_categories.sets.category import Sets_Uncountable_ObjectType as Sets_Uncountable_ObjectType
-from _typeshed import Incomplete
 from sage.rings.integer import Integer
 from sage.rings.qqbar import AlgebraicReal
 from sage.rings.rational import Rational
@@ -31,4 +30,4 @@ class RealsCategory(Category[[Rule], []]):
 
 def Reals() -> RealsCategory: ...
 
-RR: Incomplete
+RR: SetObject

@@ -86,4 +86,4 @@ def Reals() -> RealsCategory:
     return _REALS
 
 
-RR = Reals()()
+RR: SetObject = Reals()()

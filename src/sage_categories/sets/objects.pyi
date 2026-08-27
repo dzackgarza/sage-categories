@@ -1,5 +1,5 @@
 from sage_categories.sets.category import Sets_Countable_ObjectType as Sets_Countable_ObjectType
-from _typeshed import Incomplete
+import logging
 from collections.abc import Callable, Iterator
 from sage_categories.cat.category import Category as Category
 from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown, UnknownClass as UnknownClass
@@ -9,9 +9,9 @@ from sage_categories.sets.cardinals import Cardinal as Cardinal, CardinalObject 
 from sage_categories.sets.elements import Datum as Datum, SetPoint as SetPoint
 from typing import Any
 
-logger: Incomplete
+logger: logging.Logger
 type MembershipRule = Callable[[Datum], Decision]
-element_of: Incomplete
+element_of: Predicate
 
 class SetObject(ObjectOfCategory):
     def __init__(self, category: Category, membership_rule: MembershipRule, cardinality: CardinalObject | UnknownClass) -> None: ...

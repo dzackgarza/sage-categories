@@ -77,4 +77,4 @@ def Integers() -> IntegersCategory:
     return _INTEGERS
 
 
-ZZ = Integers()()
+ZZ: SetObject = Integers()()

@@ -1,4 +1,3 @@
-from _typeshed import Incomplete
 from collections.abc import Hashable
 from sage_categories.cat.category import Category as Category
 from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown
@@ -27,9 +26,9 @@ class OrdinalObject(ObjectOfCategory):
     def __gt__(self, other: OrdinalObject | int) -> AppliedPredicate: ...
     def __hash__(self) -> int: ...
 
-initial: Incomplete
-at_most: Incomplete
-less_than: Incomplete
+initial: Predicate
+at_most: Predicate
+less_than: Predicate
 
 class OrdinalsCategory(Category[[], []]):
     @property
@@ -53,4 +52,4 @@ def Ordinals() -> OrdinalsCategory: ...
 def ordinal(value: OrdinalObject | int) -> OrdinalObject: ...
 def omega(index: OrdinalObject | int) -> OrdinalObject: ...
 
-omega0: Incomplete
+omega0: OrdinalObject

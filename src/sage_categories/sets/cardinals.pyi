@@ -1,5 +1,4 @@
 from sage_categories.sets.elements import SetPoint as SetPoint
-from _typeshed import Incomplete
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.functors import Fun as Fun, Functor as Functor
 from sage_categories.cat.properties import PropertySubcategory as PropertySubcategory
@@ -36,7 +35,7 @@ class CardinalObject(SetObject):
 class CardinalMorphism(SetMap):
     def __init__(self, category: Category, domain: CardinalObject, codomain: CardinalObject, set_map: SetMap) -> None: ...
 
-less_than: Incomplete
+less_than: Predicate
 
 class CardinalCategory(Category[[MorphismOfCategory], []]):
     @property

@@ -1,4 +1,3 @@
-from _typeshed import Incomplete
 from collections.abc import Callable
 from sage_categories.cat.category import Assignment as Assignment, Category as Category, CategoryOfCategories as CategoryOfCategories, OnMorphism as OnMorphism, OnObject as OnObject
 from sage_categories.cat.morphisms import FixedEndpointCategory as FixedEndpointCategory, MorphismCategory as MorphismCategory, endpoints as endpoints
@@ -49,8 +48,8 @@ class FunctorProperty(FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]
     def MorphismType(self) -> type[MorphismOfCategory]: ...
     def inclusion(self) -> Functor: ...
 
-denotes_diagram: Incomplete
-denotes_functor: Incomplete
+denotes_diagram: Predicate
+denotes_functor: Predicate
 
 class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]]):
     @property
@@ -101,7 +100,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     def limit_construction(self, shape: Category) -> Callable[[Functor], ObjectOfCategory]: ...
     def colimit_construction(self, shape: Category) -> Callable[[Functor], ObjectOfCategory]: ...
 
-Cat: Incomplete
+Cat: Callable[[], CategoryOfCategories]
 Fun: FunctorsCategory
 
 class Fun_ElementType(ElementOfObject):

@@ -281,7 +281,7 @@ class FunctorProperty(FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]
 # stage ``[1]``), whose defining functor is such a diagram.  Thus the objects of
 # ``Fun(1, C)`` are the objects of ``C`` and the objects of ``Fun([1], C)`` are the
 # morphisms of ``C`` (specs/functor.md, "The Mor(n, C) tower", specs/functor.md, "Canonical objects of Cat"): one value, denoting its retained defining functor.
-denotes_diagram = Predicate("denotes_diagram", 2, False)
+denotes_diagram: Predicate = Predicate("denotes_diagram", 2, False)
 
 
 def _denotes_diagram_by_stage(candidate: CategoryPoint, functors: FunctorCategory) -> Decision:
@@ -296,7 +296,7 @@ denotes_diagram.register_handler(_denotes_diagram_by_stage)
 
 # ``denotes_functor(x, Fun)``: ``x`` is a functor by placement, or a point of a category
 # at a categorical stage, which denotes its defining functor (specs/functor.md, "Slices and coslices").
-denotes_functor = Predicate("denotes_functor", 2, False)
+denotes_functor: Predicate = Predicate("denotes_functor", 2, False)
 
 
 def _denotes_functor_by_stage(candidate: CategoryPoint, functors: FunctorsCategory) -> Decision:
@@ -558,6 +558,6 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
 
 
 _category.bootstrap()
-Cat = _category.Cat
+Cat: Callable[[], CategoryOfCategories] = _category.Cat
 Fun: FunctorsCategory = Cat().morphism_category(1)
 Cat().equality().register_handler(_defining_functor_equal)

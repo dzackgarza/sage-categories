@@ -76,4 +76,4 @@ def Rationals() -> RationalsCategory:
     return _RATIONALS
 
 
-QQ = Rationals()()
+QQ: SetObject = Rationals()()

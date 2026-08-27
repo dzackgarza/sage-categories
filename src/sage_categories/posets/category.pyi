@@ -1,7 +1,6 @@
 from sage_categories.posets.finite import FinitePosetRole as FinitePosetRole
 from sage_categories.sets.category import Sets_Finite_ElementType as Sets_Finite_ElementType
 from sage_categories.sets.category import Sets_Finite_MorphismType as Sets_Finite_MorphismType
-from _typeshed import Incomplete
 from sage.misc.cachefunc import cached_method
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.constructions import cone as cone
@@ -17,8 +16,8 @@ from sage_categories.sets.elements import Datum as Datum, SetPoint as SetPoint
 from sage_categories.sets.maps import Rule as Rule, SetMap as SetMap
 from sage_categories.sets.objects import MembershipRule as MembershipRule, SetObject as SetObject
 
-partial_order: Incomplete
-order_preserving: Incomplete
+partial_order: Predicate
+order_preserving: Predicate
 type Relation = dict[tuple[int, int], Decision]
 
 class Poset(SetObject):

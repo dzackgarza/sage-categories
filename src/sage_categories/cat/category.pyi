@@ -1,6 +1,6 @@
 from sage_categories.cat.elements import CategoryPoint as CategoryPoint_elements
+import logging
 import sage_categories.kernel.compiler as compiler
-from _typeshed import Incomplete
 from collections.abc import Callable, Hashable as Hashable
 from sage.misc.cachefunc import cached_method
 from sage_categories.cat.canonical import FinitePresentedCategory as FinitePresentedCategory
@@ -13,11 +13,11 @@ from sage_categories.kernel.refinement import is_placed as is_placed, is_retaine
 from sage_categories.kernel.roles import CategoryPoint as CategoryPoint, ElementOfObject as ElementOfObject, MorphismOfCategory as MorphismOfCategory, ObjectOfCategory as ObjectOfCategory, Role as Role
 from typing import Any, Literal, overload
 
-logger: Incomplete
+logger: logging.Logger
 type OnObject = Callable[[ObjectOfCategory], ObjectOfCategory]
 type OnMorphism = Callable[[MorphismOfCategory], MorphismOfCategory]
 type Assignment = Callable[[ObjectOfCategory], MorphismOfCategory]
-member: Incomplete
+member: Predicate
 
 class Category[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     @property

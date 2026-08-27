@@ -1,7 +1,6 @@
 from sage_categories.sets.category import Sets_Countable_ElementType as Sets_Countable_ElementType
 from sage_categories.sets.category import Sets_Countable_MorphismType as Sets_Countable_MorphismType
 from sage_categories.sets.category import Sets_Countable_ObjectType as Sets_Countable_ObjectType
-from _typeshed import Incomplete
 from sage.rings.integer import Integer
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.functors import Fun as Fun, Functor as Functor
@@ -29,4 +28,4 @@ class IntegersCategory(Category[[Rule], []]):
 
 def Integers() -> IntegersCategory: ...
 
-ZZ: Incomplete
+ZZ: SetObject

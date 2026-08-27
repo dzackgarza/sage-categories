@@ -67,6 +67,7 @@ def bind_cardinals() -> None:
 
     from sage_categories.sets.cardinals import CardinalObject
 
+
 # A private expression key: nested tuples of strings and integers only, so caches
 # and hashes never compare owned values.
 type Key = tuple[Hashable, ...]
@@ -184,11 +185,11 @@ class OrdinalObject(ObjectOfCategory):
 
 
 # ``initial(alpha)``: ``alpha`` is an initial ordinal ``omega(beta)``.
-initial = Predicate("ordinal_initial", 1, True)
+initial: Predicate = Predicate("ordinal_initial", 1, True)
 # ``at_most(alpha, beta)``: ``alpha <= beta`` in the ordinal order.
-at_most = Predicate("ordinal_at_most", 2, True)
+at_most: Predicate = Predicate("ordinal_at_most", 2, True)
 # ``less_than(alpha, beta)``: ``alpha < beta``.
-less_than = Predicate("ordinal_less_than", 2, True)
+less_than: Predicate = Predicate("ordinal_less_than", 2, True)
 
 
 class OrdinalsCategory(Category[[], []]):
@@ -386,4 +387,4 @@ def omega(index: OrdinalObject | int) -> OrdinalObject:
     return Ordinals().omega(index)
 
 
-omega0 = omega(0)
+omega0: OrdinalObject = omega(0)

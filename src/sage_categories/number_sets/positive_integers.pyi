@@ -1,7 +1,6 @@
 from sage_categories.sets.category import Sets_Countable_ElementType as Sets_Countable_ElementType
 from sage_categories.sets.category import Sets_Countable_MorphismType as Sets_Countable_MorphismType
 from sage_categories.sets.category import Sets_Countable_ObjectType as Sets_Countable_ObjectType
-from _typeshed import Incomplete
 from sage.rings.integer import Integer
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.functors import Fun as Fun, Functor as Functor
@@ -28,8 +27,8 @@ class PositiveIntegersCategory(Category[[Rule], []]):
     def structure_functors(self) -> tuple[Functor, ...]: ...
     def __call__(self) -> SetObject: ...
 
-natural_order: Incomplete
+natural_order: Predicate
 
 def PositiveIntegers() -> PositiveIntegersCategory: ...
 
-NN: Incomplete
+NN: SetObject

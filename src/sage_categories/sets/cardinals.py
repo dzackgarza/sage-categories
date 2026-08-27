@@ -194,7 +194,7 @@ class CardinalMorphism(MorphismOfCategory):
 
 
 # ``less_than(kappa, lambda)``: ``kappa <= lambda`` and not ``kappa == lambda``.
-less_than = Predicate("cardinal_less_than", 2, True)
+less_than: Predicate = Predicate("cardinal_less_than", 2, True)
 
 
 class CardinalCategory(Category[[MorphismOfCategory], []]):

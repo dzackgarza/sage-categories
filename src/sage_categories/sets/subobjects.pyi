@@ -2,7 +2,6 @@ from sage_categories.sets.category import Sets_ChosenQuotients_ElementType as Se
 from sage_categories.sets.category import Sets_ChosenQuotients_MorphismType as Sets_ChosenQuotients_MorphismType
 from sage_categories.sets.category import Sets_ChosenSubsets_ElementType as Sets_ChosenSubsets_ElementType
 from sage_categories.sets.category import Sets_ChosenSubsets_MorphismType as Sets_ChosenSubsets_MorphismType
-from _typeshed import Incomplete
 from collections.abc import Callable
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.properties import FullSubcategory as FullSubcategory
@@ -15,7 +14,7 @@ from sage_categories.sets.elements import Datum as Datum
 from sage_categories.sets.maps import Rule as Rule, SetMap as SetMap
 from sage_categories.sets.objects import MembershipRule as MembershipRule, SetObject as SetObject
 
-subset_of: Incomplete
+subset_of: Predicate
 
 class ChosenSubsetRole(SetObject):
     def inclusion(self) -> SetMap: ...

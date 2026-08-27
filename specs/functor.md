@@ -426,9 +426,10 @@ retain the composites of their factors' conversions.
 
 Each canonical public value retains one root construction input. A conversion returns
 the input retained by its canonical target image; it does not allocate a second input
-record. The conversion is the implementation of the corresponding object or morphism
-action. During source construction, it reads the source input's typed datum and identity,
-constructs the canonical target through the target category, and retains that image.
+record. The input type names its exact canonical role value and local datum. The
+conversion is the implementation of the corresponding object or morphism action. During
+source construction, it reads the source input's typed datum and identity, constructs the
+canonical target through the target category, and retains that image.
 Later public functor application reads the source value's retained input and calls the
 same conversion. It does not inspect fields of a partly initialized source value.
 

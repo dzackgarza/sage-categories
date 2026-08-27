@@ -37,7 +37,7 @@ from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory
 from sage_categories.sets.elements import Datum
 
 if TYPE_CHECKING:
-    from sage_categories.sets.category import SetObject, SetPoint
+    from sage_categories.sets.category import SetElement, SetObject
 
 __all__ = ["Rule", "SetMorphismData", "injective_on_finite_domain", "maps_equal", "surjective_on_finite_domain"]
 
@@ -65,11 +65,14 @@ class SetMapDeclaration(MorphismOfCategory):
         self._set_morphism_data = data
         super().__init__()
 
-    def __call__(self, element: SetPoint) -> SetPoint:
-        """The image of a point of the domain: a point of the codomain (POL-CAT-040)."""
-        assert element in self.domain(), f"{element!r} is not an element of {self.domain()!r}"
-        datum = element._set_element_data.datum
-        return self.codomain().point(self._set_morphism_data.rule(datum))
+    def __call__(self, element: SetElement) -> SetElement:
+        """Compose with a generalized element; evaluate its datum at the classical stage (POL-CAT-040)."""
+        canonical = element._set_element_data.canonical
+        assert canonical in self.domain(), f"{element!r} is not an element of {self.domain()!r}"
+        if canonical.stage() is _sets.Sets().Terminal():
+            return self.codomain().point(self._set_morphism_data.rule(canonical._classical_datum_()))
+        defining_morphism = self._set_morphism_data.canonical * canonical.defining_morphism()
+        return _sets.Sets().element_from_defining_morphism(defining_morphism)
 
     def image(self) -> SetObject:
         """The chosen subset of the codomain of the points with a preimage, with its inclusion (POL-ENGINE-004; ``sets/subobjects.py``)."""

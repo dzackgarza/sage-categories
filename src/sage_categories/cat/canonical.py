@@ -37,7 +37,7 @@ from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
 
 if TYPE_CHECKING:
-    from sage_categories.sets.elements import SetPoint
+    from sage_categories.sets.elements import SetElement
     from sage_categories.sets.objects import SetObject
 
 __all__ = [
@@ -155,10 +155,10 @@ class FinitePresentedCategory(Category[[Word], []]):
             self._object_set[self] = Sets().Finite()(self._labels)
         return self._object_set[self]
 
-    def object_at(self, point: SetPoint) -> Vertex:
+    def object_at(self, point: SetElement) -> Vertex:
         return self(enumerated_datum(self.object_set(), point))
 
-    def object_point(self, vertex: Vertex) -> SetPoint:
+    def object_point(self, vertex: Vertex) -> SetElement:
         return self.object_set().point(self.label(vertex))
 
     def _has_directed_cycle(self) -> bool:
@@ -192,7 +192,7 @@ class FinitePresentedCategory(Category[[Word], []]):
             self._morphism_set[self] = Sets().Finite()(words)
         return self._morphism_set[self]
 
-    def morphism_at(self, point: SetPoint) -> Path:
+    def morphism_at(self, point: SetElement) -> Path:
         source, word = enumerated_datum(self.morphism_set(), point)
         target = source if not word else self._generator_endpoints[word[-1]][1]
         return self.construct_morphism(self(source), self(target), word)
@@ -271,7 +271,7 @@ class FinitePresentedCategory(Category[[Word], []]):
         return self._name
 
 
-def enumerated_datum(finite_set: SetObject, point: SetPoint) -> Hashable:
+def enumerated_datum(finite_set: SetObject, point: SetElement) -> Hashable:
     """The datum of a point of a finite enumerated set, read through the chosen enumeration."""
     from sage_categories.kernel.predicates import ask
     from sage_categories.sets.category import Sets

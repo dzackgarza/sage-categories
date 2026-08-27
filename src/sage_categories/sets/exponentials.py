@@ -27,7 +27,7 @@ from sage_categories.cat.constructions import cone
 from sage_categories.cat.diagrams import sequence_position
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import ask
-from sage_categories.sets.elements import Datum, SetPoint
+from sage_categories.sets.elements import Datum, SetElement
 from sage_categories.sets.maps import SetMap
 from sage_categories.sets.objects import SetObject
 
@@ -100,7 +100,7 @@ def function_set(exponent: SetObject, base: SetObject) -> SetObject:
     return _function_sets[key]
 
 
-def name_of(set_map: SetMap) -> SetPoint:
+def name_of(set_map: SetMap) -> SetElement:
     """The point ``1 -> Y ** X`` naming a map ``X -> Y``."""
     return function_set(set_map.domain(), set_map.codomain()).point(Function(set_map))
 

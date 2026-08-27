@@ -47,7 +47,7 @@ from sage_categories.kernel.predicates import Predicate, Proposition, ask
 from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.category import Sets
-from sage_categories.sets.elements import SetPoint
+from sage_categories.sets.elements import SetElement
 from sage_categories.sets.objects import SetObject
 
 __all__ = [
@@ -156,7 +156,7 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
             self._finite_data["objects"] = Sets().Products()(diagram)
         return self._finite_data["objects"]
 
-    def object_at(self, point: SetPoint) -> FamilyObject:
+    def object_at(self, point: SetElement) -> FamilyObject:
         self.object_set()
         product = self._finite_data["objects"]
         return self(tuple(self.factor(position).object_at(product.product_projection(position)(point)) for position in self._positions()))
@@ -170,7 +170,7 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
             self._finite_data["morphisms"] = Sets().Products()(diagram)
         return self._finite_data["morphisms"]
 
-    def morphism_at(self, point: SetPoint) -> FamilyMorphism:
+    def morphism_at(self, point: SetElement) -> FamilyMorphism:
         product = self._finite_data["morphisms"]
         components = tuple(self.factor(position).morphism_at(product.product_projection(position)(point)) for position in self._positions())
         return self.construct_morphism(
@@ -532,7 +532,7 @@ class PullbackCategory(Category[[tuple[MorphismOfCategory, MorphismOfCategory]],
             self._finite_data["object set"] = pairs.subset_from(agree)
         return self._finite_data["object set"]
 
-    def object_at(self, point: SetPoint) -> PairObject:
+    def object_at(self, point: SetElement) -> PairObject:
         self.object_set()
         pairs = self._finite_data["objects"]
         first, second = self._first_functor.domain(), self._second_functor.domain()
@@ -554,7 +554,7 @@ class PullbackCategory(Category[[tuple[MorphismOfCategory, MorphismOfCategory]],
             self._finite_data["morphism set"] = pairs.subset_from(agree)
         return self._finite_data["morphism set"]
 
-    def morphism_at(self, point: SetPoint) -> PairMorphism:
+    def morphism_at(self, point: SetElement) -> PairMorphism:
         pairs = self._finite_data["morphisms"]
         first, second = self._first_functor.domain(), self._second_functor.domain()
         left, right = first.morphism_at(pairs.product_projection(0)(point)), second.morphism_at(pairs.product_projection(1)(point))

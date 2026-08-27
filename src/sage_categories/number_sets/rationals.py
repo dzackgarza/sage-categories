@@ -20,7 +20,7 @@ from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.cardinals import aleph0
 from sage_categories.sets.category import Sets
-from sage_categories.sets.elements import Datum, SetPoint
+from sage_categories.sets.elements import Datum, SetElement
 from sage_categories.sets.maps import Rule
 from sage_categories.sets.objects import SetObject
 
@@ -35,7 +35,7 @@ def _is_rational(datum: Datum) -> Decision:
 class RationalSet(ObjectOfCategory):
     """The local object role of ``Rationals()``: ``QQ(q)`` is the point selecting ``q``."""
 
-    def __call__(self, rational: int | Integer | Rational) -> SetPoint:
+    def __call__(self, rational: int | Integer | Rational) -> SetElement:
         return self.point(Rational(rational))
 
     def __repr__(self) -> str:

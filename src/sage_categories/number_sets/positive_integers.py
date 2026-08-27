@@ -21,7 +21,7 @@ from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.cardinals import aleph0
 from sage_categories.sets.category import Sets
-from sage_categories.sets.elements import Datum, SetPoint
+from sage_categories.sets.elements import Datum, SetElement
 from sage_categories.sets.maps import Rule
 from sage_categories.sets.objects import SetObject
 
@@ -36,7 +36,7 @@ def _is_positive_integer(datum: Datum) -> Decision:
 class PositiveIntegerSet(ObjectOfCategory):
     """The local object role of ``PositiveIntegers()``: ``NN(n)`` is the point selecting ``n``."""
 
-    def __call__(self, integer: int | Integer) -> SetPoint:
+    def __call__(self, integer: int | Integer) -> SetElement:
         return self.point(Integer(integer))
 
     def __repr__(self) -> str:
@@ -81,7 +81,7 @@ natural_order = Predicate("natural_order", 2, True)
 def _natural_order_by_integer_comparison(first: CategoryPoint, second: CategoryPoint) -> Decision:
     if first not in _POSITIVE_INTEGERS() or second not in _POSITIVE_INTEGERS():
         return Unknown
-    return bool(first._set_element_data.datum <= second._set_element_data.datum)
+    return bool(first._classical_datum_() <= second._classical_datum_())
 
 
 natural_order.register_handler(_natural_order_by_integer_comparison)

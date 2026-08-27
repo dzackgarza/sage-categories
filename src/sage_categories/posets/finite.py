@@ -43,7 +43,7 @@ from sage_categories.posets import _finite_poset_sage as engine
 from sage_categories.posets.category import MonotoneMap, Poset, PosetElement, PosetMorphismData, PosetObjectData
 from sage_categories.sets.cardinals import Cardinal, CardinalObject
 from sage_categories.sets.category import SetObject, Sets
-from sage_categories.sets.elements import SetElementData, SetPoint
+from sage_categories.sets.elements import SetElement, SetElementData
 from sage_categories.sets.maps import Rule, SetMap, SetMorphismData
 from sage_categories.sets.objects import SetObjectData
 
@@ -232,7 +232,7 @@ class FinitePosetsCategory(PropertySubcategory[[Rule], []]):
 
             def element_input(
                 source: ElementConstructionInput[PosetElement, None],
-            ) -> ElementConstructionInput[SetPoint, SetElementData]:
+            ) -> ElementConstructionInput[SetElement, SetElementData]:
                 return underlying.element_constructor_input(source)
 
             def morphism_input(

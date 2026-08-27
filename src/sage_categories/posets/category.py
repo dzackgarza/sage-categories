@@ -57,7 +57,7 @@ from sage_categories.kernel.decisions import Decision, Unknown, decision_and, de
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, role_of
 from sage_categories.sets.category import Sets
-from sage_categories.sets.elements import Datum, SetElementData, SetPoint
+from sage_categories.sets.elements import Datum, SetElement, SetElementData
 from sage_categories.sets.maps import Rule, SetMap, SetMorphismData
 from sage_categories.sets.objects import MembershipRule, SetObject, SetObjectData
 
@@ -101,7 +101,7 @@ class PosetDeclaration(ObjectOfCategory):
         """Construct the poset point over the inherited canonical set point."""
         return self.element(super().point(datum))
 
-    def element(self, point: SetPoint) -> PosetElement:
+    def element(self, point: SetElement) -> PosetElement:
         """The classical element over a point ``x: 1 -> U(P)``: the monotone map ``1 -> P`` under ``x``."""
         state = self._poset_object_data
         carrier = self._set_object_data.canonical
@@ -134,7 +134,7 @@ class PosetDeclaration(ObjectOfCategory):
             retained[self] = ThinCategory(self._set_object_data.canonical, order)
         return retained[self]
 
-    def _pair(self, left: SetPoint, right: SetPoint) -> SetPoint:
+    def _pair(self, left: SetElement, right: SetElement) -> SetElement:
         return _pair_point(self._poset_object_data.relation.underlying_set(), left, right)
 
     def __repr__(self) -> str:
@@ -186,12 +186,12 @@ def _is_classical(candidate: Any) -> bool:
     return role_of(candidate) is Role.ELEMENT and candidate.parent() in posets and candidate.stage() is posets.Terminal()
 
 
-def _enumerated_points(carrier: SetObject) -> tuple[SetPoint, ...]:
+def _enumerated_points(carrier: SetObject) -> tuple[SetElement, ...]:
     assert Sets().Finite().has_chosen_enumeration(carrier)
     return tuple(carrier)
 
 
-def _decided(decide: Callable[[SetPoint, SetPoint], Decision], points: tuple[SetPoint, ...]) -> Relation:
+def _decided(decide: Callable[[SetElement, SetElement], Decision], points: tuple[SetElement, ...]) -> Relation:
     """The relation on ``points`` decided pairwise, memoized by position."""
     return {(i, j): decide(left, right) for i, left in enumerate(points) for j, right in enumerate(points)}
 
@@ -232,14 +232,14 @@ def _partial_order_on_enumerated(relation: SetObject) -> Decision:
     return decision_and(_reflexive(pairs, len(points)), _antisymmetric(pairs, len(points)), _transitive(pairs, len(points)))
 
 
-def _pair_point(square: ObjectOfCategory, left: SetPoint, right: SetPoint) -> SetPoint:
+def _pair_point(square: ObjectOfCategory, left: SetElement, right: SetElement) -> SetElement:
     """The point ``(left, right): 1 -> X * X``: the mediator of the cone with these legs."""
     legs = (left.defining_morphism(), right.defining_morphism())
     pairing = cone(square.diagram(), Sets().Terminal(), lambda vertex: legs[sequence_position(vertex)])
     return Sets().element_from_defining_morphism(square.universal_morphism(pairing))
 
 
-def _order_relation(poset: Poset, points: tuple[SetPoint, ...]) -> Relation:
+def _order_relation(poset: Poset, points: tuple[SetElement, ...]) -> Relation:
     return _decided(lambda left, right: ask(poset.element(left) <= poset.element(right)), points)
 
 
@@ -307,7 +307,7 @@ class PosetsCategory(Category[[Rule], []]):
 
             def element_input(
                 source: ElementConstructionInput[PosetElement, None],
-            ) -> ElementConstructionInput[SetPoint, SetElementData]:
+            ) -> ElementConstructionInput[SetElement, SetElementData]:
                 defining: MorphismConstructionInput[MonotoneMap, PosetMorphismData] = retained_morphism_input(
                     source.identity.defining_morphism,
                 )

@@ -38,7 +38,7 @@ from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, Morphis
 
 if TYPE_CHECKING:
     from sage_categories.kernel.construction import ElementConstructionInput, MorphismConstructionInput, ObjectConstructionInput
-    from sage_categories.sets.elements import SetPoint
+    from sage_categories.sets.elements import SetElement
     from sage_categories.sets.objects import SetObject
 
 __all__ = ["Fun", "Functor", "FunctorCategory", "FunctorProperty", "FunctorsCategory", "NaturalTransformation"]
@@ -610,7 +610,7 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
         assert morphisms is not Unknown, f"{self.codomain()!r} chooses no finite set of morphisms"
         return morphisms
 
-    def object_at(self, point: SetPoint) -> MorphismOfCategory:
+    def object_at(self, point: SetElement) -> MorphismOfCategory:
         assert self.domain() is Cat().Simplex(1), f"{self!r} declares no set of objects"
         return self.codomain().morphism_at(point)
 
@@ -622,7 +622,7 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
             return Unknown
         return square_set(self)
 
-    def morphism_at(self, point: SetPoint) -> NaturalTransformation:
+    def morphism_at(self, point: SetElement) -> NaturalTransformation:
         from sage_categories.cat.diagrams import square_at
 
         return square_at(self, point)

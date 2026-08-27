@@ -160,7 +160,7 @@ class Quotient:
         self._partition: MonoDict = MonoDict()
 
     def index_datum(self, member_object: ObjectOfCategory) -> Datum:
-        return self._shape.object_point(member_object)._set_element_data.datum
+        return self._shape.object_point(member_object)._classical_datum_()
 
     def object_at(self, index_datum: Datum) -> ObjectOfCategory:
         return self._shape.object_at(self._objects.point(index_datum))

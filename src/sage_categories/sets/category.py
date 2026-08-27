@@ -1,9 +1,9 @@
 """``Sets()``: the category of sets and total maps (POL-SET-002, POL-CAT-083, POL-SET-013, POL-SET-026).
 
 ``Sets()`` owns arbitrary sets and arbitrary functions.  Its objects are
-rule-defined (``sets/objects.py``), its elements are points ``1 -> X`` at the
-classical stage ``Sets().Terminal()`` (``sets/elements.py``), and its morphisms are
-total maps by rule (``sets/maps.py``).  The property subcategories ``Finite()``,
+rule-defined (``sets/objects.py``), its elements are maps ``T -> X`` with classical
+points at the stage ``Sets().Terminal()`` (``sets/elements.py``), and its morphisms
+are total maps by rule (``sets/maps.py``).  The property subcategories ``Finite()``,
 ``Infinite()``, ``Countable()``, and ``Uncountable()`` own the constructors that
 supply their cardinal data; ``Finite => Countable`` and ``Uncountable => Infinite``
 are their recorded inclusions.  The canonical objects ``Empty()``, ``Terminal()``,
@@ -33,7 +33,7 @@ from sage_categories.kernel.predicates import ask
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import Role
 from sage_categories.kernel.decisions import UnknownClass
-from sage_categories.sets.elements import Datum, SetElementData, SetPointDeclaration, points_equal
+from sage_categories.sets.elements import Datum, SetElementData, SetElementDeclaration, SetPointData, points_equal
 from sage_categories.sets.maps import (
     Rule,
     SetMorphismData,
@@ -52,7 +52,7 @@ if TYPE_CHECKING:
     from sage_categories.sets.power_objects import PowerObjectsCategory
     from sage_categories.sets.subobjects import ChosenQuotientsCategory, ChosenSubsetsCategory
 
-__all__ = ["SetMap", "SetObject", "SetPoint", "Sets", "SetsCategory"]
+__all__ = ["SetElement", "SetMap", "SetObject", "Sets", "SetsCategory"]
 
 
 class FiniteSets(PropertySubcategory[[Rule], []]):
@@ -103,13 +103,13 @@ class SetsCategory(Category[[Rule], []]):
     """The category of sets."""
 
     DeclaredObjectType = SetObjectDeclaration
-    DeclaredElementType = SetPointDeclaration
+    DeclaredElementType = SetElementDeclaration
     DeclaredMorphismType = SetMapDeclaration
 
     def __init__(self) -> None:
         self._canonical: dict[tuple[str, tuple[int, ...]], SetObject] = {}
         self._rule_valued: MonoDict = MonoDict()
-        self._classical_points: MonoDict = MonoDict()
+        self._elements: MonoDict = MonoDict()
         super().__init__()
         self._equality.register_handler(points_equal)
         self._equality.register_handler(maps_equal)
@@ -223,16 +223,16 @@ class SetsCategory(Category[[Rule], []]):
 
         return cardinality_functor()
 
-    def element_from_defining_morphism(self, defining_morphism: SetMap) -> SetPoint:
-        """The classical element whose defining morphism is the point ``1 -> X``, one element per point (POL-CAT-066)."""
-        assert defining_morphism.domain() is self.Terminal(), f"{defining_morphism!r} is not a point at the classical stage"
-        if defining_morphism not in self._classical_points:
-            rule = defining_morphism._set_morphism_data.rule
-            self._classical_points[defining_morphism] = defining_morphism.codomain().category().ElementType(
-                defining_morphism,
-                SetElementData(rule(())),
-            )
-        return self._classical_points[defining_morphism]
+    def element_from_defining_morphism(self, defining_morphism: SetMap) -> SetElement:
+        """The generalized element defined by ``T -> X``, retained by that exact map (POL-CAT-066)."""
+        assert defining_morphism in self.morphism_category(1), f"{defining_morphism!r} is not a set morphism"
+        if defining_morphism not in self._elements:
+            if defining_morphism.domain() is self.Terminal():
+                state = SetPointData(defining_morphism._set_morphism_data.rule(()))
+            else:
+                state = SetElementData()
+            self._elements[defining_morphism] = defining_morphism.codomain().category().ElementType(defining_morphism, state)
+        return self._elements[defining_morphism]
 
     # -- morphisms ----------------------------------------------------------------------
 
@@ -361,7 +361,7 @@ class SetsCategory(Category[[Rule], []]):
 
         return FinitelySupportedFunctionsCategory(self)
 
-    def name_of(self, set_map: SetMap) -> SetPoint:
+    def name_of(self, set_map: SetMap) -> SetElement:
         """The point of ``Y ** X`` naming a map ``X -> Y``."""
         from sage_categories.sets.exponentials import name_of
 
@@ -428,14 +428,14 @@ class SetsCategory(Category[[Rule], []]):
 
 _SETS = SetsCategory()
 SetObject = _SETS.ObjectType
-SetPoint = _SETS.ElementType
+SetElement = _SETS.ElementType
 SetMap = _SETS.MorphismType
 
 _set_objects.SetObject = SetObject
-_set_objects.SetPoint = SetPoint
-_set_elements.SetPoint = SetPoint
+_set_objects.SetElement = SetElement
+_set_elements.SetElement = SetElement
 _set_maps.SetObject = SetObject
-_set_maps.SetPoint = SetPoint
+_set_maps.SetElement = SetElement
 _set_maps.SetMap = SetMap
 
 

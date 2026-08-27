@@ -27,7 +27,7 @@ from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.cardinals import continuum
 from sage_categories.sets.category import Sets
-from sage_categories.sets.elements import Datum, SetPoint
+from sage_categories.sets.elements import Datum, SetElement
 from sage_categories.sets.maps import Rule
 from sage_categories.sets.objects import SetObject
 
@@ -44,7 +44,7 @@ def _is_real(datum: Datum) -> Decision:
 class RealSet(ObjectOfCategory):
     """The local object role of ``Reals()``: ``RR(x)`` is the point selecting ``AA(x)``."""
 
-    def __call__(self, real: int | Integer | Rational | AlgebraicReal) -> SetPoint:
+    def __call__(self, real: int | Integer | Rational | AlgebraicReal) -> SetElement:
         return self.point(_real_algebraic_field(real))
 
     def __repr__(self) -> str:

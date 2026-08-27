@@ -21,7 +21,7 @@ from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.cardinals import aleph0
 from sage_categories.sets.category import Sets
-from sage_categories.sets.elements import Datum, SetPoint
+from sage_categories.sets.elements import Datum, SetElement
 from sage_categories.sets.maps import Rule
 from sage_categories.sets.objects import SetObject
 
@@ -36,7 +36,7 @@ def _is_integer(datum: Datum) -> Decision:
 class IntegerSet(ObjectOfCategory):
     """The local object role of ``Integers()``: ``ZZ(n)`` is the point selecting ``n``."""
 
-    def __call__(self, integer: int | Integer) -> SetPoint:
+    def __call__(self, integer: int | Integer) -> SetElement:
         return self.point(Integer(integer))
 
     def __repr__(self) -> str:

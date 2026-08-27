@@ -30,11 +30,11 @@ from sage_categories.cat.category import Category
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask
 from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role, role_of
-from sage_categories.sets.elements import Datum
+from sage_categories.sets.elements import Datum, SetPointData
 
 if TYPE_CHECKING:
     from sage_categories.sets.cardinals import CardinalObject
-    from sage_categories.sets.category import SetObject, SetPoint
+    from sage_categories.sets.category import SetElement, SetObject
 
 __all__ = ["MembershipRule", "SetObjectData", "element_of"]
 
@@ -56,7 +56,10 @@ def _element_of_by_parent(candidate: Any, ambient: SetObject) -> Decision:
 def _element_of_by_rule(candidate: Any, ambient: SetObject) -> Decision:
     if role_of(candidate) is not Role.ELEMENT:
         return False
-    return ambient._set_object_data.membership_rule(candidate._set_element_data.datum)
+    state = candidate._set_element_data
+    if not isinstance(state, SetPointData):
+        return Unknown
+    return ambient._set_object_data.membership_rule(state.datum)
 
 
 element_of.register_handler(_element_of_by_parent)
@@ -69,7 +72,7 @@ class SetObjectData:
 
     membership_rule: MembershipRule
     cardinality: CardinalObject | UnknownClass
-    points: dict[Datum, SetPoint] = field(default_factory=dict)
+    points: dict[Datum, SetElement] = field(default_factory=dict)
     rule_points: MonoDict = field(default_factory=MonoDict)
     canonical: SetObject = field(init=False)
 
@@ -97,7 +100,7 @@ class SetObjectDeclaration(ObjectOfCategory):
             return False
         return decision is True
 
-    def point(self, datum: Datum) -> SetPoint:
+    def point(self, datum: Datum) -> SetElement:
         """The classical element ``1 -> X`` selecting ``datum``, one point per datum value.
 
         A set constructed through ``Sets().rule_valued`` routes every point through
@@ -111,7 +114,7 @@ class SetObjectDeclaration(ObjectOfCategory):
             state.points[datum] = self._construct_point(datum)
         return state.points[datum]
 
-    def rule_point(self, datum: Datum) -> SetPoint:
+    def rule_point(self, datum: Datum) -> SetElement:
         """The point selecting a rule datum, one point per datum object.
 
         Two distinct-but-equal rule data yield two points that are ``True``-equal
@@ -124,7 +127,7 @@ class SetObjectDeclaration(ObjectOfCategory):
             state.rule_points[datum] = self._construct_point(datum)
         return state.rule_points[datum]
 
-    def _construct_point(self, datum: Datum) -> SetPoint:
+    def _construct_point(self, datum: Datum) -> SetElement:
         sets = _sets.Sets()
         canonical = self._set_object_data.canonical
         return sets.element_from_defining_morphism(sets.construct_morphism(sets.Terminal(), canonical, lambda star: datum))
@@ -170,6 +173,6 @@ class SetObjectDeclaration(ObjectOfCategory):
 class FiniteSetRole(ObjectOfCategory):
     """The local object role of ``Sets().Finite()``: the chosen enumeration supplies iteration."""
 
-    def __iter__(self) -> Iterator[SetPoint]:
+    def __iter__(self) -> Iterator[SetElement]:
         canonical = self._set_object_data.canonical
         return (self.point(datum) for datum in _sets.Sets().Finite().chosen_enumeration(canonical))

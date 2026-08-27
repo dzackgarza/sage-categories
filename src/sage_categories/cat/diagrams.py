@@ -49,7 +49,7 @@ from sage_categories.sets.category import Sets
 
 if TYPE_CHECKING:
     from sage_categories.cat.functors import FunctorCategory
-    from sage_categories.sets.elements import Datum, SetPoint
+    from sage_categories.sets.elements import Datum, SetElement
     from sage_categories.sets.objects import SetObject
 
 __all__ = [
@@ -156,7 +156,7 @@ def square_set(functors: FunctorCategory) -> SetObject:
     return functors._finite_data["squares"]
 
 
-def square_at(functors: FunctorCategory, point: SetPoint) -> NaturalTransformation:
+def square_at(functors: FunctorCategory, point: SetElement) -> NaturalTransformation:
     """The square selected by a point of ``square_set``."""
     square_set(functors)
     base, quadruples = functors.codomain(), functors._finite_data["quadruples"]

@@ -20,12 +20,14 @@ through `POL-SET-036`, and `POL-API-009`, `POL-API-010`, `POL-API-015`, and
 `Sets()` owns three implementation types:
 
 - `Sets.ObjectType` implements set objects.
-- `Sets.ElementType` implements elements with an ambient set.
+- `Sets.ElementType` implements generalized elements `t: T -> X` with codomain `X`.
 - `Sets.MorphismType` implements total functions with a domain and codomain.
 
-An owned element is a point `1 -> X` at the classical stage `Sets().Terminal()`; its
-parent is its codomain `X`. Transport preserves that codomain. The same mathematical
-value can produce distinct owned elements in distinct sets.
+An owned element is a set map `t: T -> X`. Its stage is `T`, and its parent is its
+codomain `X`. A classical element is the special case `1 -> X` at the stage
+`Sets().Terminal()`. A functor sends its stage and codomain to `F(T)` and `F(X)` through
+its morphism action. The same classical datum can produce distinct owned elements in
+distinct sets.
 
 Private representations can include Sage parents, predicates, symbolic expressions,
 finite collections, indexed families, tagged values, or universal-construction data.
@@ -114,8 +116,10 @@ f.codomain()
 f.image()
 ```
 
-Evaluation requires `x in f.domain()`. It returns an owned element of `f.codomain()`.
-Identity and composition arrive through inherited morphism operations.
+Evaluation requires `x in f.domain()`. For a generalized element `t: T -> X`, `f(t)` is
+the composite `f * t: T -> Y`. At the classical stage, it evaluates the retained rule on
+the selected datum. Identity and composition arrive through inherited morphism
+operations.
 
 The exponential object is:
 
@@ -452,10 +456,11 @@ applicable cardinal formula without enumerating an infinite function set.
 ## Private computation engines
 
 Each compiled set role owns one private state record. The object record retains its
-canonical object of `Sets()`, membership rule, cardinality, and point caches. The
-element record retains its canonical set point and datum. The morphism record retains
-its canonical set map and rule. The element's defining morphism and the morphism's
-category and endpoints remain in the kernel role identity.
+canonical object of `Sets()`, membership rule, cardinality, and point caches. Every
+element record retains its canonical generalized set element. A classical-point record
+also retains its selected datum. The morphism record retains its canonical set map and
+rule. The element's defining morphism and the morphism's category and endpoints remain
+in the kernel role identity.
 
 The local datum of each set role is that role's private state record. After allocation,
 direct `Sets()` construction creates the record with the new public value as its canonical
@@ -464,9 +469,9 @@ the input retained by the canonical set image. The set initializer assigns that 
 to the descendant. Thus an inherited set method executes on the descendant and uses the
 same set state as the public functor image.
 
-A set method that needs an object, point, or morphism of `Sets()` uses the canonical
-image in its private state. The descendant keeps its own category, parent, domain, and
-codomain as its public identity.
+A set method that needs an object, element, or morphism of `Sets()` uses the canonical
+image in its private state. The descendant keeps its own category, stage, parent,
+domain, and codomain as its public identity.
 
 `Sets.ObjectType` is the sole public implementation of a set. It can use Sage, SymPy,
 GAP, Julia packages, Singular, Macaulay2, or several engines together. These are private
@@ -617,16 +622,17 @@ The applied predicate defines `__bool__` to raise. The mature references are Sym
 loudly, and repository code writes `ask(a == b) is True`. Containment (`in`) remains the
 one Boolean boundary.
 
-`__hash__` is defined explicitly on every owned value. Objects and morphisms hash by
-identity. A classical element hashes by its chosen datum, so two elements whose equality
-is `True` hash equal.
+`__hash__` is defined explicitly on every owned value. Objects, morphisms, and
+nonclassical generalized elements hash by identity. A classical element hashes by its
+chosen datum, so two classical elements whose equality is `True` hash equal.
 
 For two classical elements of one set, the exact handler compares their chosen data
-through the private computation boundary. For two rule-defined sets, equality is
-`Unknown` unless identity or a cited exact handler decides it; no handler inspects
-contents. For two set maps with one finite enumerable domain, the exact handler compares
-images pointwise over that domain's enumeration; two maps with a rule-defined infinite
-domain compare by identity only and are otherwise `Unknown`.
+through the private computation boundary. Two nonclassical generalized elements compare
+by identity unless an exact handler for their defining maps decides equality. For two
+rule-defined sets, equality is `Unknown` unless identity or a cited exact handler decides
+it; no handler inspects contents. For two set maps with one finite enumerable domain, the
+exact handler compares images pointwise over that domain's enumeration; two maps with a
+rule-defined infinite domain compare by identity only and are otherwise `Unknown`.
 
 ## Acceptance conditions
 

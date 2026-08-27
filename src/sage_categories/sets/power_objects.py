@@ -33,7 +33,7 @@ from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.decisions import Decision
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import ObjectOfCategory, Role
-from sage_categories.sets.elements import Datum, SetPoint
+from sage_categories.sets.elements import Datum, SetElement
 from sage_categories.sets.exponentials import Function, function_set
 from sage_categories.sets.maps import Rule, SetMap
 from sage_categories.sets.objects import MembershipRule, SetObject
@@ -56,10 +56,10 @@ class PowerObjectRole(ObjectOfCategory):
         """The chosen subset ``{x in X : chi(x) = 1}`` of a map ``chi: X -> 2``, retained per map."""
         return _sets.Sets().PowerObjects().subset_of_characteristic_morphism(self, characteristic)
 
-    def subset_named_by(self, point: SetPoint) -> SetObject:
+    def subset_named_by(self, point: SetElement) -> SetObject:
         """The chosen subset whose characteristic morphism a point ``1 -> 2 ** X`` names: the inverse of ``Sets().name_of`` on chosen subsets."""
         assert point in self, f"{point!r} is not a point of {self!r}"
-        return self.from_characteristic_morphism(point._set_element_data.datum.map())
+        return self.from_characteristic_morphism(point._classical_datum_().map())
 
     def top(self) -> SetObject:
         """``X`` as a chosen subset of itself."""

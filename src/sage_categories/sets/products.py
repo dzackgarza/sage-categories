@@ -120,7 +120,7 @@ class Family:
 
 
 def _index_datum(vertex: DiscreteObject) -> Datum:
-    return vertex.point()._set_element_data.datum
+    return vertex.point()._classical_datum_()
 
 
 def _exact(cardinality: CardinalObject | UnknownClass) -> bool:

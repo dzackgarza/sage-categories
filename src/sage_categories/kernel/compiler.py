@@ -64,7 +64,9 @@ __all__ = [
     "StructuralImageMismatch",
     "catalogue",
     "compile_category",
+    "controlled_bases",
     "empty_local_role",
+    "local_methods",
     "node",
     "reachable",
     "routes",
@@ -246,7 +248,7 @@ def _assert_acyclic(start: Node, stack: tuple[Node, ...]) -> None:
         _assert_acyclic(target, (*stack, start))
 
 
-def _local_methods[**P, R](local_class: type[CategoryPoint]) -> dict[str, DeclaredMethod[P, R]]:
+def local_methods[**P, R](local_class: type[CategoryPoint]) -> dict[str, DeclaredMethod[P, R]]:
     """The methods declared on the class body of a local role class; the catalogue is heterogeneous in ``P`` and ``R``."""
     return {
         name: function
@@ -280,7 +282,7 @@ def catalogue[**P, R](current: Node) -> dict[str, Entry[P, R]]:
     local_class = current.category.local_role_class(current.role)
     entries = {
         name: Entry(current.category, current.role, name, function, ())
-        for name, function in _local_methods(local_class).items()
+        for name, function in local_methods(local_class).items()
     }
     for step, target in successors(current):
         for name, inherited in catalogue(target).items():
@@ -417,6 +419,18 @@ def _linearize(current: Node) -> tuple[tuple[int, ...], tuple[int, ...]]:
             assert sorted(merged, reverse=True) == merged, _out_of_order(current, merged)
         table[current.category] = (tuple(merged), tuple(bases))
     return table[current.category]
+
+
+def controlled_bases(current: Node) -> tuple[Node, ...]:
+    """The nodes whose classes are the direct bases of ``current``'s compiled class.
+
+    The controlled list ``C3_sorted_merge`` returns: the selected targets together
+    with whatever control edges the merge needed, in the order Python must see
+    them.  Declaration order is not that order -- a category's ambient is declared
+    first and constructed first, so a base list in declaration order can put a
+    class above its own descendant, which has no linearization at all.
+    """
+    return tuple(_nodes_by_key[key] for key in _linearize(current)[1])
 
 
 def _base_classes(current: Node, local: type[CategoryPoint]) -> tuple[type[CategoryPoint], ...]:

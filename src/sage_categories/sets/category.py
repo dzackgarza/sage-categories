@@ -23,6 +23,9 @@ from typing import TYPE_CHECKING, overload
 from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict
 
+from sage_categories.sets import elements as _set_elements
+from sage_categories.sets import maps as _set_maps
+from sage_categories.sets import objects as _set_objects
 from sage_categories.cat.category import Category
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.decisions import Decision, Unknown, decision_not, decision_or
@@ -31,17 +34,17 @@ from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import Role
 from sage_categories.kernel.decisions import UnknownClass
 from sage_categories.sets.cardinals import Cardinal, CardinalObject
-from sage_categories.sets.elements import Datum, SetElementData, SetPoint, points_equal
+from sage_categories.sets.elements import Datum, SetElementData, SetPointDeclaration, points_equal
 from sage_categories.sets.maps import (
     Rule,
-    SetMap,
     SetMorphismData,
+    SetMapDeclaration,
     bijective_on_finite_domain,
     injective_on_finite_domain,
     maps_equal,
     surjective_on_finite_domain,
 )
-from sage_categories.sets.objects import FiniteSetRole, MembershipRule, SetObject, SetObjectData
+from sage_categories.sets.objects import FiniteSetRole, MembershipRule, SetObjectData, SetObjectDeclaration
 
 if TYPE_CHECKING:
     from sage_categories.cat.functors import Functor
@@ -49,7 +52,7 @@ if TYPE_CHECKING:
     from sage_categories.sets.power_objects import PowerObjectsCategory
     from sage_categories.sets.subobjects import ChosenQuotientsCategory, ChosenSubsetsCategory
 
-__all__ = ["Sets", "SetsCategory"]
+__all__ = ["SetMap", "SetObject", "SetPoint", "Sets", "SetsCategory"]
 
 
 class FiniteSets(PropertySubcategory[[Rule], []]):
@@ -89,9 +92,9 @@ class FiniteSets(PropertySubcategory[[Rule], []]):
 class SetsCategory(Category[[Rule], []]):
     """The category of sets."""
 
-    ObjectType = SetObject
-    ElementType = SetPoint
-    MorphismType = SetMap
+    DeclaredObjectType = SetObjectDeclaration
+    DeclaredElementType = SetPointDeclaration
+    DeclaredMorphismType = SetMapDeclaration
 
     def __init__(self) -> None:
         self._canonical: dict[tuple[str, tuple[int, ...]], SetObject] = {}
@@ -400,6 +403,16 @@ class SetsCategory(Category[[Rule], []]):
 
 
 _SETS = SetsCategory()
+SetObject = _SETS.ObjectType
+SetPoint = _SETS.ElementType
+SetMap = _SETS.MorphismType
+
+_set_objects.SetObject = SetObject
+_set_objects.SetPoint = SetPoint
+_set_elements.SetPoint = SetPoint
+_set_maps.SetObject = SetObject
+_set_maps.SetPoint = SetPoint
+_set_maps.SetMap = SetMap
 
 
 def Sets() -> SetsCategory:

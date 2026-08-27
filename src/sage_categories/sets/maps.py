@@ -28,16 +28,18 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
 from sage_categories.kernel.decisions import Decision, Unknown, decision_and, decision_not, decision_or
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory
-from sage_categories.sets.elements import Datum, SetPoint
-from sage_categories.sets.objects import SetObject
+from sage_categories.sets.elements import Datum
 
-__all__ = ["Rule", "SetMap", "SetMorphismData", "injective_on_finite_domain", "maps_equal", "surjective_on_finite_domain"]
+if TYPE_CHECKING:
+    from sage_categories.sets.category import SetObject, SetPoint
+
+__all__ = ["Rule", "SetMapDeclaration", "SetMorphismData", "injective_on_finite_domain", "maps_equal", "surjective_on_finite_domain"]
 
 type Rule = Callable[[Datum], Datum]
 
@@ -55,8 +57,8 @@ class SetMorphismData:
             self.canonical = canonical
 
 
-class SetMap(MorphismOfCategory):
-    """A total map ``X -> Y`` given by a rule on data."""
+class SetMapDeclaration(MorphismOfCategory):
+    """The local ``Sets().MorphismType`` declaration."""
 
     def __init__(self, data: SetMorphismData) -> None:
         data.bind(self)

@@ -21,7 +21,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sage.structure.coerce_dict import MonoDict
 
@@ -31,9 +31,12 @@ from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask
 from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role, role_of
 from sage_categories.sets.cardinals import Cardinal, CardinalObject
-from sage_categories.sets.elements import Datum, SetPoint
+from sage_categories.sets.elements import Datum
 
-__all__ = ["FiniteSetRole", "MembershipRule", "SetObject", "SetObjectData", "element_of"]
+if TYPE_CHECKING:
+    from sage_categories.sets.category import SetObject, SetPoint
+
+__all__ = ["FiniteSetRole", "MembershipRule", "SetObjectData", "SetObjectDeclaration", "element_of"]
 
 logger = logging.getLogger("sage_categories")
 
@@ -76,8 +79,8 @@ class SetObjectData:
             self.canonical = canonical
 
 
-class SetObject(ObjectOfCategory):
-    """A set given by a membership rule, with its cardinal data when known."""
+class SetObjectDeclaration(ObjectOfCategory):
+    """The local ``Sets().ObjectType`` declaration."""
 
     def __init__(self, data: SetObjectData) -> None:
         data.bind(self)

@@ -17,9 +17,9 @@ from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, Role, role_of
 
 if TYPE_CHECKING:
-    from sage_categories.kernel.roles import MorphismOfCategory
+    from sage_categories.sets.category import SetPoint
 
-__all__ = ["Datum", "SetElementData", "SetPoint", "points_equal"]
+__all__ = ["Datum", "SetElementData", "SetPointDeclaration", "points_equal"]
 
 type Datum = Hashable
 
@@ -37,8 +37,8 @@ class SetElementData:
             self.canonical = canonical
 
 
-class SetPoint(ElementOfObject):
-    """A point ``1 -> X`` of a set, selecting the private datum ``datum``."""
+class SetPointDeclaration(ElementOfObject):
+    """The local ``Sets().ElementType`` declaration."""
 
     def __init__(self, data: SetElementData) -> None:
         data.bind(self)

@@ -80,8 +80,8 @@ class PosetMorphismData:
     set_map: SetMap
 
 
-class Poset(ObjectOfCategory):
-    """A partially ordered set ``(X, R)``; the set surface arrives through ``U``."""
+class PosetDeclaration(ObjectOfCategory):
+    """The local ``Posets().ObjectType`` declaration."""
 
     def __init__(self, data: PosetObjectData) -> None:
         self._poset_object_data = data
@@ -134,8 +134,8 @@ class Poset(ObjectOfCategory):
         return f"Poset({self._poset_object_data.underlying_set!r})"
 
 
-class PosetElement(ElementOfObject):
-    """A generalized element ``t: T -> P``; the order compares classical elements."""
+class PosetElementDeclaration(ElementOfObject):
+    """The local ``Posets().ElementType`` declaration."""
 
     def __le__(self, other: PosetElement) -> AppliedPredicate:
         """``x <= y``: the pair point ``(U(x), U(y))`` is a member of ``R``."""
@@ -158,8 +158,8 @@ class PosetElement(ElementOfObject):
         return f"point of {self.parent()!r} at stage {self.stage()!r}"
 
 
-class MonotoneMap(MorphismOfCategory):
-    """A monotone map ``P -> Q`` with its set-map state inherited through ``U``."""
+class MonotoneMapDeclaration(MorphismOfCategory):
+    """The local monotone-map declaration; set-map state arrives through ``U``."""
 
     def __repr__(self) -> str:
         return f"MonotoneMap({self.domain()!r} -> {self.codomain()!r})"
@@ -262,9 +262,9 @@ def _order_preserving_on_enumerated(source: Poset, target: Poset, set_map: SetMa
 class PosetsCategory(Category[[Rule], []]):
     """The category of partially ordered sets and monotone maps."""
 
-    ObjectType = Poset
-    ElementType = PosetElement
-    MorphismType = MonotoneMap
+    DeclaredObjectType = PosetDeclaration
+    DeclaredElementType = PosetElementDeclaration
+    DeclaredMorphismType = MonotoneMapDeclaration
 
     def __init__(self) -> None:
         self._functors: dict[str, Functor] = {}
@@ -465,6 +465,9 @@ class PosetsCategory(Category[[Rule], []]):
 
 
 _POSETS = PosetsCategory()
+Poset = _POSETS.ObjectType
+PosetElement = _POSETS.ElementType
+MonotoneMap = _POSETS.MorphismType
 
 
 def Posets() -> PosetsCategory:

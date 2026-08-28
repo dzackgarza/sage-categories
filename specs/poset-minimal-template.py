@@ -1,5 +1,9 @@
 """Minimal structured leaf for ``PartiallyOrderedSets()``.
 
+This file is design pseudocode (``POL-LEAF-014``). It shows the shape and the
+simplicity a leaf must have. It is never imported, executed, or type-checked, and
+its identifiers are illustrative rather than normative.
+
 A poset object is a pair ``(X, R)``. The constructor accepts only the owned
 relation ``R``. Its ambient product determines ``X``.
 

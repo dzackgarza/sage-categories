@@ -5,13 +5,16 @@ Date: 2026-08-28
 ## Verdict
 
 The active kernel plan is incomplete.
-It also violates the rules for an executing plan.
+Its step-10 phase also lacks a status field and names two files that no longer exist.
 
 The current leaf methods often state their mathematics clearly.
 The surrounding category code still contains kernel refinement, role, cache, and type-construction work.
 
-One mathematical contradiction is more serious than the leaf wiring.
-The cardinality functor cannot act on every object in its declared domain.
+Two defects are more serious than that wiring.
+The cardinality functor cannot act on every object in its declared domain (V2).
+Category-owned methods resolve a structural route to reach state that should already be on
+their receiver, which is the cause of the leaf wiring rather than another instance of it
+(V10).
 
 ## Review boundary
 
@@ -37,36 +40,41 @@ The listed violations already disprove full plan and leaf compliance.
 
 ## Violations
 
-### V1. The active plan is incomplete and stale
+### V1. The active plan is incomplete
 
 Severity: Blocking
 
 - Searched: the complete active plan, its complete step-10 phase, and each live source named below.
 - Found: the plan remains `in-progress` and leaves two completion conditions open.
 - Found: the step-10 phase has unresolved success criteria and no status field.
-- Found: five listed defects are already corrected in current source.
-- Conclusion: I conclude that the plan is neither complete nor normalized to the current tree.
+- Found: the phase names two files that no longer exist.
+- Found: five of the nine listed defects are corrected in current source. These are the plan working. A defect register records what the plan set out to remediate, so an entry repaired in the tree is the intended end state, not a disagreement with it. The reviewable question is which entries remain open.
+- Conclusion: I conclude that the plan is incomplete: register entries remain open, and the phase carries unresolved criteria, a missing status field, and two dead file references.
 - Confidence: High.
 - Gaps: this review did not inspect remote pull-request state.
 
-Evidence:
+Evidence. The plan's own state is open:
 
 - The plan declares `status: in-progress` at
   `.agents/plans/features/FEATURE-functor-owned-category-framework/plans/PLAN-pr-8-functorial-kernel-completion/PLAN-pr-8-functorial-kernel-completion.md:8`.
 - The owner review and public witness matrix remain open at the same file, lines 1248-1249.
-- The plan still reports an identity comparison in `denotes_diagram` at line 1260.
-  Current code uses category containment at `src/sage_categories/cat/functors.py:651`.
-- The plan reports no represented functor at line 1262.
-  Current code defines it at `src/sage_categories/cat/category.py:519`.
-- The plan reports a dynamic `CategoryPoint` alias at line 1264.
-  Current code declares a static class at `src/sage_categories/kernel/roles.py:107`.
-- The plan reports a `Subobjects()` name collision at line 1265.
-  Current code uses `ChosenSubobjects()` at `src/sage_categories/cat/constructions.py:428`.
-- The plan reports no receiver-valued witness at line 1267.
-  Current code has one at `tests/cat/test_two_morphisms.sage:254`.
 - The phase still names absent files at
   `.agents/plans/features/FEATURE-functor-owned-category-framework/plans/PLAN-pr-8-functorial-kernel-completion/PHASE-pr-8-step-10-reconciliation/PHASE-pr-8-step-10-reconciliation.md:42`
   and line 99.
+
+These five register entries are remediated and need only to be marked closed:
+
+- The `denotes_diagram` entry at line 1260. Current code uses category containment at
+  `src/sage_categories/cat/functors.py:651`.
+- The represented-functor entry at line 1262. Current code defines it at
+  `src/sage_categories/cat/category.py:519`.
+- The `CategoryPoint` entry at line 1264. Current code declares a static class at
+  `src/sage_categories/kernel/roles.py:107`.
+- The `Subobjects()` name-collision entry at line 1265. Current code uses
+  `ChosenSubobjects()` at `src/sage_categories/cat/constructions.py:428`.
+- The receiver-valued witness entry at line 1267. Current code has one at
+  `tests/cat/test_two_morphisms.sage:254`. The witness itself is a separate defect: it
+  declares `this_object()` returning `self`, which states no mathematical proposition.
 
 Governing sources:
 
@@ -76,9 +84,12 @@ Governing sources:
 
 Required correction:
 
-- Rewrite the executing plan from the current tree.
+- Mark the five remediated register entries closed. Do not rewrite the register on the
+  ground that it lists them.
+- Convert each entry that is still open into an active requirement with an owner and
+  acceptance statement.
+- Give the step-10 phase a status field and remove its two dead file references.
 - Keep completed work and provenance in the existing provenance phase.
-- Convert each live gap into an active requirement with an owner and acceptance statement.
 
 ### V2. The cardinality functor is not a functor on its declared domain
 
@@ -176,7 +187,12 @@ Governing sources:
 
 Required correction:
 
-- Make each property category declare its local role classes directly.
+- Make each property subcategory an ordinary category class, so that it has somewhere to
+  declare `DeclaredObjectType`, `DeclaredElementType`, and `DeclaredMorphismType`. A
+  category built by calling a constructor has nowhere to put them, which is why the role
+  map exists. Follow Sage's general axiom mechanism: declare the axiom once, define the
+  implementing class independently, and wire the two with one declared field, as
+  `_base_category_class_and_axiom` does (`POL-LEAF-059`).
 - Make the generic property owner read those declarations without a leaf role map.
 
 ### V5. `Posets()` owns generic element, cache, and inverse machinery
@@ -347,6 +363,38 @@ Required correction:
 
 - Add each still-required surface to active dependency order and acceptance.
 - Remove stale phase entries only after live source satisfies their specifications.
+
+### V10. Category-owned methods resolve a route to reach their own state
+
+Severity: Blocking
+
+- Searched: `cat/category.py`, `cat/functors.py`, and every call site under `src/sage_categories/sets`.
+- Found: a category exposes `structural_image(value)`, an image operation owned by a category rather than by a functor.
+- Found: thirteen `Sets()`-owned methods open by calling it on their own receiver.
+- Found: the functor API used by the leaves hands the kernel an already-constructed target object instead of construction data for the target's constructor.
+- Conclusion: I conclude that the compiled class hierarchy and the retained data disagree. A poset is a Python subclass of the compiled `Sets()` object class, but its set state was never initialized from its own construction data, so each `Sets()` method bridges the gap by hand.
+- Confidence: High.
+- Gaps: this review did not enumerate the change set in `cat/` needed to move every functor onto the constructor-conversion path.
+
+Evidence:
+
+- `Category.structural_image` is at `src/sage_categories/cat/category.py:140`.
+- Ten call sites are in `src/sage_categories/sets/objects.py`; three are in `src/sage_categories/sets/maps.py`.
+- `Functor.retain_object_constructor_conversion` at `src/sage_categories/cat/functors.py:253` is the constructor-threading path. One call site uses it, at `src/sage_categories/sets/cardinals.py:759`.
+- `Functor.retain_structural_images` at `src/sage_categories/cat/functors.py:293` is the path the rest use. Its conversion wraps a value the domain's defining data already names.
+
+Governing sources:
+
+- `POL-KERNEL-018` makes `X.f() == F(X).f()` true by threading construction data through ancestor initializers, so a declaring method reads its own state on the receiver.
+- `POL-CAT-096` states that a functor has an image and a category does not.
+- `POL-CAT-062` and `POL-LEAF-038` forbid fetching a second value to stand for the receiver.
+- `POL-LEAF-052` treats one non-mathematical step repeated across methods as a missing kernel derivation.
+- `specs/resolution.md`, decision 6.
+
+Required correction:
+
+- Make each selected structural functor state its target's construction data, not an already-built target object, and let the kernel thread it through the ancestor initializers.
+- Delete `Category.structural_image` and the thirteen call sites together with it.
 
 ## Leaf assessment
 

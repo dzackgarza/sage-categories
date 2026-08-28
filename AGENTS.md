@@ -203,9 +203,18 @@ Return `Unknown` when the implementation cannot determine a result.
 Do not replace missing knowledge with a fabricated Boolean answer.
 
 A predicate strictly generalizes a Boolean, so a Boolean is honest only where the
-question is two-valued by construction: established placement, a record of what was
-retained, the presence of a chosen enumeration. Every other question is a proposition,
-and `ask()` decides it.
+question is two-valued by construction: a record of what was retained, the presence of a
+chosen enumeration. Every other question is a proposition, and `ask()` decides it.
+
+Category containment owns predicate evaluation. `is_finite()` is declared once, on
+`Sets()`, and the proposition it applies is membership in `Sets().Finite()`. The class
+that implements `Sets().Finite()` supplies the defining predicate of that membership,
+`cardinality() < aleph_0`. Every category with a selected functor to `Sets()` receives
+`is_finite()` from that one declaration, and a poset is finite exactly when its underlying
+set is. Placement in the subcategory is a fast positive route, because a value that entered
+through the property constructor already satisfies the predicate. Placement is never the
+definition of membership. Ask containment; do not reach for a category's predicate object
+and apply it at a use site.
 
 Decide an equality with `ask(a == b)`. On an owned value `==` returns a proposition, so
 its result decides nothing when consumed as a truth value, compared by identity against
@@ -373,12 +382,18 @@ Every functor is explicit.
 Only selected structural functors contribute compiled roles and methods to the public object surface.
 Ordinary mathematical functors remain available without changing public inheritance.
 
-For an object `x`, cache one canonical `F(x)` in each reachable category.
-Two structural routes to the same category must return the same object by identity.
-At the first structural transport of a value to a reachable category, traverse every route
-to that category in declaration order, cache the first image, and assert that each later
-image `is` the cached one. A mismatch raises a construction-defect error naming both routes.
-Method compilation constructs no image and performs no such check.
+A functor has an image; a category does not. The image of `x` under the named functor `F`
+is `F.on_object(x)`. There is no operation that asks a category for "the image of `x` at
+`C`". A leaf can declare several functors into one target, so naming only the target leaves
+the functor unstated. You should rarely apply a functor by hand; when you do, you get
+exactly what you programmed it to construct.
+
+Two selected structural routes to the same category must return the same object by
+identity. At the first structural transport of a value to a reachable category, traverse
+every route to that category in declaration order, cache the first image, and assert that
+each later image `is` the cached one. A mismatch raises a construction-defect error naming
+both routes. This agreement is a fact about those functors. It creates no image operation
+on the target category. Method compilation constructs no image and performs no such check.
 
 Compile the public method surface from category declarations:
 
@@ -392,12 +407,33 @@ Compile the public method surface from category declarations:
   rebinds copied `__class__` closures to that role, so a declaration is not a base;
 - a declaration that is itself the chain's kernel role class is inherited, not copied,
   so that its Python subclasses can still override it;
-- forwarding descriptors expose inherited methods directly on the public object;
-- descriptor installation must support Python special methods.
+- an inherited method reaches the public object by ordinary attribute lookup along that
+  MRO, Python special methods included; there is no per-method forwarding descriptor.
 
-An inherited method means `X.f() := F(X).f()` along the selected functor `F` and returns
-the declaring method's value. A leaf that wants a source-category result overrides the
-inherited method or adds its own.
+An inherited method means `X.f() := F(X).f()` along the selected functor `F`, and returns
+the declaring method's value. That equation states the mathematics. Ordinary Python
+inheritance is the mechanism that makes it true:
+
+- for each selected functor `F: C -> D`, the kernel makes `C.ObjectType` a Python subclass
+  of `D.ObjectType`, so an object of `C` is an object of `D` at the Python level as well;
+- `F` states how the construction data of `C` produces the data that `D`'s constructor
+  consumes;
+- the kernel uses that statement to thread a leaf constructor's arguments through the
+  ancestor initializers, so the object carries `D`'s state itself, methods and data alike;
+- `D.f` then runs on the original object, reads that state, and returns its declared value.
+
+The receiver is never replaced, and the method fetches no second object. `self` is the
+value the caller supplied: a poset stays a poset. An object is not "read at the level of"
+another category, because no value can be read in two categories at once.
+
+Stating the conversion once, as the functor, is the point of the mechanism. Without it a
+leaf would repeat that same conversion inside a hand-written `__init__` that threads
+`super()` arguments itself.
+
+A leaf that wants a source-category result overrides the inherited method or adds its own.
+Lifting an ancestor result back is leaf work. `Sets()` can construct the product of the
+underlying sets; supplying the module structure on that product is the module category's
+mathematical delta. Nothing at `Sets()` knows what a module is.
 
 Derive supercategory information from structural functors.
 Do not maintain a second inheritance or propagation registry.
@@ -429,6 +465,13 @@ This applies to products, coproducts, limits, and colimits.
 
 A covering object of `Y` is a pair `(X, p: X -> Y)` with `p` an epimorphism.
 It is not the morphism `p` alone.
+
+A diagram is indexed by a family, and that index need not be an ordered set. Never reorder
+a supplied family: `B * A` does not become `A * B` because `"A" <= "B"` in some order.
+Where an operation is commutative and associative and a canonical form does order its
+terms, order them by an owned mathematical key. Never order by `repr`, `str`, or another
+printed presentation. A printer is a presentation, so ordering by it makes object identity
+depend on display text.
 
 Implement constructions for arbitrary small diagrams.
 Finite diagrams are specimens, not the general interface.

@@ -461,8 +461,14 @@ The compiler must not use arbitrary route order to decide a semantic collision.
 
 ## Strict equality and natural isomorphism
 
-For each public value and each reachable category, the kernel keeps one canonical image.
+Applying two selected routes to one value must give the same image.
 A diamond can satisfy this rule in either of two ways.
+
+This section is about applying a named functor. It is not about how an inherited method
+runs. An inherited method runs on the receiver the caller supplied and reads the declaring
+category's state on that receiver, because the kernel initialized that state from the
+leaf's construction data through the selected functor's conversion (`POL-KERNEL-018`).
+Nothing in this section licenses a method that resolves a route to fetch a second value.
 
 ### Strictly coherent routes
 
@@ -508,7 +514,8 @@ The architecture uses the following rules.
 
 5. Routine strictly coherent diamonds resolve automatically in the kernel.
 
-6. A leaf never traverses a route, normalizes to an ancestor, moves images, manages a canonical-image cache, or installs inherited methods.
+6. No theory code traverses a route, normalizes a receiver to an ancestor value, moves images, manages a canonical-image cache, or installs inherited methods.
+   This binds a category-owned method as much as a leaf method. A `Sets()` method whose receiver is a poset reads its own state on that poset; it does not resolve a route to `Sets()` first.
 
 7. A genuine presentation or algorithm choice is a small mathematical declaration by the category that owns the choice.
    The kernel executes it.

@@ -578,6 +578,15 @@ The repository should retain these parts of Sage’s model:
 Sage supports separate and nested implementations of a category with an axiom.
 It also canonicalizes forms such as `FiniteSets()` and `Sets().Finite()`. [Sage `CategoryWithAxiom` documentation](https://doc.sagemath.org/html/en/reference/categories/sage/categories/category_with_axiom.html)
 
+Take the separate form as the model, not the nested one. `Sets().Infinite()` is an axiom
+applied to `Sets()`; it is not a class nested inside `Sets`. The axiom is declared once,
+the implementing class is defined independently anywhere, and one declared field wires
+that class to its ambient category and axiom, as Sage's `_base_category_class_and_axiom`
+does. A property subcategory is therefore an ordinary category class and declares its own
+`DeclaredObjectType`, `DeclaredElementType`, and `DeclaredMorphismType` like any other
+(`POL-LEAF-059`). Building it by calling a constructor and handing it a dictionary of role
+classes leaves it with nowhere to declare them.
+
 The repository must not retain the bare-string semantics:
 
 ```python

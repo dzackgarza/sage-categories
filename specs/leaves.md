@@ -280,12 +280,17 @@ A downstream leaf selects its immediate structural ancestor.
 When its structural graph contains a selected route to `Sets()`, the category that owns that route supplies the underlying-set construction.
 With an arbitrary ambient category \(\mathcal C\), the leaf receives the capabilities owned by \(\mathcal C\); a set surface requires an explicit selected functor to `Sets()`.
 
+These sentences describe applying a selected functor, which a leaf rarely does.
 A source value retains each ancestor value supplied as defining data.
 A derived ancestor image is constructed once from retained data and cached for that source value.
 A selected structural functor returns that retained or cached ancestor value on every call and never reconstructs an equal or isomorphic replacement.
 A construction lift adds structure to the chosen ancestor value.
 
-A category that combines two structures on one carrier is their pullback over the shared ancestor.
+None of this applies to calling an inherited method.
+An inherited method runs on the value the caller supplied and reads the declaring category's state on that same value (`POL-KERNEL-018`).
+A leaf method that starts by resolving a route to an ancestor is a kernel defect, not a leaf idiom.
+
+A category that combines two structures on one shared ancestor object is their pullback over that ancestor.
 Its constructor asserts with `is` that both projections return the same ancestor object.
 The pullback object retains that shared ancestor once with both defining structures.
 

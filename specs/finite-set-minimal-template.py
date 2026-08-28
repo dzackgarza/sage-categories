@@ -1,5 +1,9 @@
 """Minimal leaf for the property category ``Sets().Finite()``.
 
+This file is design pseudocode (``POL-LEAF-014``). It shows the shape and the
+simplicity a leaf must have. It is never imported, executed, or type-checked, and
+its identifiers are illustrative rather than normative.
+
 See ``specs/functor.md`` for structural-functor declarations.
 
 The leaf constructs the finiteness proposition. A private set backend decides only its

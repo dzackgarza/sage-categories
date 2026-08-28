@@ -534,15 +534,16 @@ Python requires set and category containment to be Boolean, and a bool cannot ca
 Consequently:
 
 ```python
-X.is_finite()               # proposition
+X.is_finite()               # proposition: X in Sets().Finite()
 ask(X.is_finite())          # True, False, or Unknown
-X in Sets().Finite()        # established placement, two-valued
+X in Sets().Finite()        # the same proposition, forced to a Boolean
 ```
 
-Placement in a property subcategory is two-valued: `X` entered `Sets().Finite()` or it did not (`POL-CAT-068`). `X not in Sets().Finite()` means that current knowledge does not place `X` in that category; it does not establish the negated property, and the kernel does not cache a negative decision, infer the negated property, or construct a complementary category from this boundary result.
+`X.is_finite()` and `X in Sets().Finite()` are one question asked twice. The first returns the proposition, the second asks it and must answer with a Boolean.
 
-Where membership rests on a mathematical predicate rather than on placement — the membership rule of a rule-defined set, or endpoint equality in `Mor(C)(A, B)` — that predicate can be undecided, and the assertion catches it.
-Ask the proposition instead.
+Placement is a positive shortcut inside that one question, not a second notion of membership. A value that entered through the property constructor already satisfies the defining predicate, so `ask()` answers `True` from placement without recomputing (`POL-CAT-068`). A value that never entered still gets the defining predicate evaluated. Never split the mathematics off into a handler registered beside a placement-only membership proposition; that makes `X in Sets().Finite()` report `False` for a finite set that happens to have been constructed weakly.
+
+`X not in Sets().Finite()` therefore reports that the defining predicate decided `False`. The undecided case never reaches this boundary: the assertion above raises, because `Unknown` is not `False`. Ask the proposition instead when a decision may be unavailable. A negative decision is retained as itself; the kernel constructs no complementary category from it.
 
 Compound property categories use the same rule.
 For example, membership in `Fields().Countable().PartiallyOrdered()` asks one conjunction built from the defining propositions.

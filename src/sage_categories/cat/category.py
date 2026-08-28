@@ -22,8 +22,10 @@ category, with no structural graph; its ``category()`` is itself.
 
 from __future__ import annotations
 
+import inspect
 import itertools
 from collections.abc import Callable, Hashable
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, overload
 
 from sage.misc.cachefunc import cached_method
@@ -32,15 +34,24 @@ from sage.structure.coerce_dict import MonoDict, TripleDict
 import sage_categories.kernel.compiler as compiler
 from sage_categories.cat.equality import equality_predicate
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
-from sage_categories.kernel.predicates import Predicate, Proposition, ask
-from sage_categories.kernel.refinement import is_placed, is_subcategory, traces_placement
-from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, role_of
+from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask
+from sage_categories.kernel.refinement import is_placed, is_subcategory, refine, traces_placement
+from sage_categories.kernel.roles import (
+    CategoryPoint,
+    CategoryPointKernel,
+    ElementOfObject,
+    MorphismOfCategory,
+    ObjectOfCategory,
+    Role,
+    role_of,
+)
 
 if TYPE_CHECKING:
     from sage_categories.cat.canonical import FinitePresentedCategory
-    from sage_categories.cat.functors import Functor, FunctorsCategory, NaturalTransformation
+    from sage_categories.cat.functors import Fun, Functor, FunctorsCategory, NaturalTransformation
     from sage_categories.cat.morphisms import MorphismCategory
     from sage_categories.cat.points import PointCategory
+    from sage_categories.kernel.construction import ElementConstructionInput, MorphismConstructionInput, ObjectConstructionInput
 
 __all__ = ["Assignment", "Cat", "Category", "CategoryOfCategories", "OnMorphism", "OnObject", "member"]
 
@@ -814,8 +825,509 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
 Category = CategoryDeclaration
 
 
+def _shared_category(first: ObjectOfCategory, second: ObjectOfCategory) -> Category:
+    """The narrowest category containing both operands, which owns their construction (POL-CAT-088).
+
+    An object refined into ``C.P()`` and an object of ``C`` are both objects of ``C``,
+    so their construction is the one in ``C``.  Identity of the two strongest recorded
+    placements is an implementation fact, not this precondition (POL-CAT-073).  Operands
+    with no common category, such as a set and a category, fail the assertion.  No
+    operator casts an operand into a product category: an external pair is written
+    ``(C * D)((X, Y))``.
+    """
+    from sage_categories.kernel.refinement import common_ancestor
+
+    shared = common_ancestor(first.category(), second.category())
+    assert shared is not None, (
+        f"{first!r} in {first.category()!r} and {second!r} in {second.category()!r} "
+        f"have no least common category along subcategory monomorphisms"
+    )
+    return shared
+
+
+# The separator comparisons ``G_D -> F(G_C)`` retained by the constructions that own a
+# selected functor exposing point methods (POL-LEAF-003), keyed by the functor.
+_separator_comparisons: MonoDict = MonoDict()
+
+# The lifts a functor ``p: E -> B`` retains over a stated class of morphisms of ``B``
+# (POL-FUN-029, ``specs/functor.md``, "Slices and coslices"): the owner of the
+# functor registers one rule per direction, and each lift is constructed once per
+# ``(morphism, object)`` and retained by identity.  The rule states the class of
+# morphisms it lifts and fails loudly outside it.
+type LiftRule = Callable[[MorphismOfCategory, CategoryPoint], MorphismOfCategory]
+
+_cartesian_rules: MonoDict = MonoDict()
+_cocartesian_rules: MonoDict = MonoDict()
+_cartesian_lifts: TripleDict = TripleDict(weak_values=False)
+_cocartesian_lifts: TripleDict = TripleDict(weak_values=False)
+
+# The factors ``(first, second)`` of every composite ``second * first`` constructed by
+# ``Cat()``: an explicit composite names its construction (``specs/functor.md``,
+# "Structural inheritance": a selected composite retains its factor functors).
+_composite_factors: MonoDict = MonoDict()
+
+# A selected functor owns the object and morphism conversions that construct its
+# codomain role state.  They are retained on the functor itself, not in a compiler
+# registry (POL-FUN-003/035).  There is no third, element conversion: the element
+# action is derived from the morphism action (POL-FUN-002), so a functor stores no
+# element callback and a leaf declares none.  Ordinary mathematical functors need no
+# conversions at all.
+_object_constructor_conversions = MonoDict()
+_morphism_constructor_conversions = MonoDict()
+
+
+def _identity_object_constructor_input[Value: ObjectOfCategory, Datum](
+    source: ObjectConstructionInput[Value, Datum],
+) -> ObjectConstructionInput[Value, Datum]:
+    return source
+
+
+def _identity_morphism_constructor_input[Value: MorphismOfCategory, Datum](
+    source: MorphismConstructionInput[Value, Datum],
+) -> MorphismConstructionInput[Value, Datum]:
+    return source
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class FunctorData:
+    """The local state introduced by the functor role."""
+
+    # A structural functor whose images are values the domain's defining data already
+    # names has no value-level action of its own: its images exist before any value of the
+    # domain does, so the kernel builds them from construction inputs and never calls a
+    # callback (POL-FUN-035).  Its actions are ``None``.
+    on_object: OnObject | None
+    on_morphism: OnMorphism | None
+
+
 class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignment]]):
     """The singleton ``Cat()``."""
+
+    # The three classes ``Cat()`` writes.  ``ObjectType`` is a statement rather than a
+    # nested class because ``Cat()`` is an object of ``Cat()``: this class is itself a
+    # ``CategoryDeclaration``, and Python evaluates a base before the body that would
+    # nest it.
+    ObjectType = CategoryDeclaration
+
+    class ElementType(CategoryPointKernel):
+        """A point ``* -> C`` of a category, whose value is an object of ``C`` (POL-CAT-058)."""
+
+        def __mul__(self, other: ObjectOfCategory) -> ObjectOfCategory:
+            """``X * Y``: the product in the least category receiving both."""
+            return _shared_category(self, other).Products()((self, other))
+
+        def __add__(self, other: ObjectOfCategory) -> ObjectOfCategory:
+            """``X + Y``: the coproduct in the least category receiving both."""
+            return _shared_category(self, other).Coproducts()((self, other))
+
+        def __matmul__(self, other: ObjectOfCategory) -> ObjectOfCategory:
+            """``X @ Y``: the biproduct in the least category receiving both."""
+            return _shared_category(self, other).biproduct(self, other)
+
+        def __pow__(self, exponent: ObjectOfCategory) -> ObjectOfCategory:
+            """``Y ** X``: the exponential object in the least category receiving both."""
+            return _shared_category(self, exponent).exponential(exponent, self)
+
+        def __repr__(self) -> str:
+            return f"point of {self.parent()!r}"
+
+    class MorphismType(MorphismOfCategory):
+        """A functor: a morphism of ``Cat()`` with a domain, a codomain, and total object and morphism actions."""
+
+        def __init__(self, data: FunctorData) -> None:
+            self._on_object = data.on_object
+            self._on_morphism = data.on_morphism
+            # ``F(f)`` is one morphism, not a fresh one per call: a functor assigns each
+            # morphism of its domain a single image (POL-CAT-012, POL-FUN-001).  The object
+            # action is canonical already, through the construction that retains one object
+            # per construction datum and through the transport caches.
+            self._morphism_images: MonoDict = MonoDict()
+            super().__init__()
+
+        # The admission condition is the one the image construction needs.  A retained
+        # monomorphism is the identity on the objects and morphisms of its domain
+        # (``specs/functor.md``, "Monomorphisms of ``Cat()`` and placement"), so it constructs nothing and
+        # admits exactly the members of its domain: a wide subcategory has every object of
+        # its ambient, and that is a membership fact its ambient decides, not a placement
+        # its objects ever entered through (POL-CAT-068, POL-FUN-027).  Every other functor
+        # builds its image from the domain's construction input, so it admits exactly the
+        # values whose placement reaches that node.
+
+        def on_object(self, member_object: ObjectOfCategory) -> ObjectOfCategory:
+            """The image of an object of the domain."""
+            if self in _object_constructor_conversions:
+                from sage_categories.kernel import compiler
+                from sage_categories.kernel.transport import construction_input
+
+                if not is_placed(member_object, self.domain()):
+                    assert traces_placement(self) and member_object in self.domain(), (
+                        f"{member_object!r} is placed in {member_object.category()!r}; {self!r} constructs its image from the "
+                        f"placement {self.domain()!r}, which that placement does not reach"
+                    )
+                    return member_object
+                source = construction_input(member_object, compiler.node(self.domain(), Role.OBJECT))
+                return self.object_constructor_input(source).canonical_image
+            assert member_object in self.domain(), f"{member_object!r} is not an object of {self.domain()!r}"
+            assert self._on_object is not None, f"{self!r} retains neither an object action nor an object constructor conversion"
+            return self._on_object(member_object)
+
+        def on_morphism(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
+            """The image of a morphism of the domain, one value per morphism."""
+            if morphism in self._morphism_images:
+                return self._morphism_images[morphism]
+            image = self._construct_morphism_image(morphism)
+            self._morphism_images[morphism] = image
+            return image
+
+        def _construct_morphism_image(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
+            morphisms = self.domain().morphism_category(1)
+            if self in _morphism_constructor_conversions:
+                from sage_categories.kernel import compiler
+                from sage_categories.kernel.transport import construction_input
+
+                if not is_placed(morphism, morphisms):
+                    assert traces_placement(self) and morphism in morphisms, (
+                        f"{morphism!r} is placed in {morphism.category()!r}; {self!r} constructs its image from the "
+                        f"placement {morphisms!r}, which that placement does not reach"
+                    )
+                    return morphism
+                source = construction_input(morphism, compiler.node(self.domain(), Role.MORPHISM))
+                return self.morphism_constructor_input(source).canonical_image
+            assert morphism in morphisms, f"{morphism!r} is not a morphism of {self.domain()!r}"
+            assert self._on_morphism is not None, f"{self!r} retains neither a morphism action nor a morphism constructor conversion"
+            return self._on_morphism(morphism)
+
+        def on_element(self, element: CategoryPoint) -> CategoryPoint:
+            """The image of a point ``t: 1_C -> X``: the element ``q = F(t): F(1_C) -> F(X)`` (POL-FUN-002).
+
+            This action is derived, never stored: it applies ``on_morphism`` to the defining
+            morphism of ``t``.  A functor retains no element callback and no element
+            capability.  The element conversion a selected functor retains supplies compiler
+            input only; it never answers this call, so the public image keeps the domain
+            ``F(1_C)`` rather than the target's separator (``specs/functor.md``, "Structural
+            inheritance").
+
+            A subcategory monomorphism is the identity on the objects and morphisms of its domain,
+            so it is the identity on ``t: 1_C -> X`` as well (``specs/functor.md``, "Inclusion
+            functors").  Its domain and defining morphism are those of the ambient, which no
+            selected route reaches from the subcategory.
+            """
+            assert role_of(element) is Role.ELEMENT, f"{element!r} is not a point of an object"
+            if traces_placement(self):
+                parent = element.parent()
+                assert is_placed(parent, self.domain()) or parent in self.domain(), f"{element!r} is not a point of an object of {self.domain()!r}"
+                return element
+            defining = element.defining_morphism()
+            image = self.on_morphism(defining)
+            if image is defining:
+                return element
+            return self.codomain().element_from_defining_morphism(image)
+
+        def __call__(self, value: CategoryPoint) -> CategoryPoint:
+            """Apply the functor to an object or a morphism of its domain."""
+            if value in self.domain():
+                return self.on_object(value)
+            assert value in self.domain().morphism_category(1), f"{value!r} is neither an object nor a morphism of {self.domain()!r}"
+            return self.on_morphism(value)
+
+        # -- separators (``specs/functor.md``, "Structural inheritance") ----------------
+        #
+        # The retained morphism ``c: G_D -> F(G_C)`` is the whole datum of the separator
+        # transport.  By the covariant Yoneda lemma it *is* the natural transformation
+        # ``phi_F: U_C => U_D . F`` between the represented point functors:
+        # Mathlib ``CategoryTheory.coyonedaEquiv : (coyoneda.obj (op X) ⟶ F) ≃ F.obj X``
+        # (inspected 2026-08-27) with ``X = G_C`` and the presheaf ``U_D . F``, whose value
+        # at ``G_C`` is ``Mor(D)(G_D, F(G_C))``.  The construction therefore retains the
+        # separator morphism and no natural-transformation carrier on ``F``.
+
+        def retain_separator_comparison(self, comparison: MorphismOfCategory) -> None:
+            """Retain ``c: G_D -> F(G_C)`` as the defining datum of this functor's transport at the separator (POL-LEAF-003)."""
+            (source_separator,) = self.domain().separating_family()
+            (target_separator,) = self.codomain().separating_family()
+            assert comparison in self.codomain().morphism_category(1)(target_separator, self.on_object(source_separator))
+            _separator_comparisons[self] = comparison
+
+        def separator_comparison(self) -> MorphismOfCategory:
+            """``G_D -> F(G_C)``: the retained comparison, or the identity when ``F(G_C) is G_D``."""
+            if self in _separator_comparisons:
+                return _separator_comparisons[self]
+            (source_separator,) = self.domain().separating_family()
+            (target_separator,) = self.codomain().separating_family()
+            assert self.on_object(source_separator) is target_separator, f"{self!r} retains no separator comparison"
+            return target_separator.identity()
+
+        # -- composition data ------------------------------------------------------------------
+
+        def retain_object_constructor_conversion[
+            SourceValue: ObjectOfCategory,
+            SourceDatum,
+            TargetValue: ObjectOfCategory,
+            TargetDatum,
+        ](
+            self,
+            conversion: Callable[
+                [ObjectConstructionInput[SourceValue, SourceDatum]],
+                ObjectConstructionInput[TargetValue, TargetDatum],
+            ],
+        ) -> None:
+            """Retain the sole object-action implementation used by structural construction (POL-FUN-035)."""
+            signature = inspect.signature(conversion)
+            assert len(signature.parameters) == 1, "an object constructor conversion accepts one complete input"
+            parameter = next(iter(signature.parameters.values()))
+            assert parameter.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+            assert self not in _object_constructor_conversions, f"{self!r} already retains an object constructor conversion"
+            _object_constructor_conversions[self] = conversion
+
+        def retain_morphism_constructor_conversion[
+            SourceValue: MorphismOfCategory,
+            SourceDatum,
+            TargetValue: MorphismOfCategory,
+            TargetDatum,
+        ](
+            self,
+            conversion: Callable[
+                [MorphismConstructionInput[SourceValue, SourceDatum]],
+                MorphismConstructionInput[TargetValue, TargetDatum],
+            ],
+        ) -> None:
+            """Retain the sole morphism-action implementation used by structural construction (POL-FUN-035)."""
+            signature = inspect.signature(conversion)
+            assert len(signature.parameters) == 1, "a morphism constructor conversion accepts one complete input"
+            parameter = next(iter(signature.parameters.values()))
+            assert parameter.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+            assert self not in _morphism_constructor_conversions, f"{self!r} already retains a morphism constructor conversion"
+            _morphism_constructor_conversions[self] = conversion
+
+        def retain_structural_images[ObjectDatum, MorphismDatum](
+            self,
+            object_image: Callable[[ObjectDatum], ObjectOfCategory],
+            morphism_image: Callable[[MorphismDatum], MorphismOfCategory],
+        ) -> None:
+            """Retain the structural action of a functor whose images are already-constructed values.
+
+            The usual selected functor forgets structure: the underlying set of a poset, the
+            representing set of a cardinal.  Its image is then not built at the moment the
+            functor is applied -- it is a value the domain's defining data already names, and
+            the domain's own constructor made it.  Each rule states that mathematics and
+            nothing else: it reads one node's local datum and returns the image value.  The
+            kernel supplies the construction inputs the compiler consumes and the public object
+            and morphism actions (POL-FUN-035, POL-LEAF-054).
+            """
+            from sage_categories.kernel.construction import retained_input
+
+            def object_conversion[Value: ObjectOfCategory](
+                source: ObjectConstructionInput[Value, ObjectDatum],
+            ) -> ObjectConstructionInput[ObjectOfCategory, object]:
+                return retained_input(object_image(source.datum))
+
+            def morphism_conversion[Value: MorphismOfCategory](
+                source: MorphismConstructionInput[Value, MorphismDatum],
+            ) -> MorphismConstructionInput[MorphismOfCategory, object]:
+                return retained_input(morphism_image(source.datum))
+
+            self.retain_object_constructor_conversion(object_conversion)
+            self.retain_morphism_constructor_conversion(morphism_conversion)
+
+        def object_constructor_input[
+            SourceValue: ObjectOfCategory,
+            SourceDatum,
+            TargetValue: ObjectOfCategory,
+            TargetDatum,
+        ](
+            self,
+            source: ObjectConstructionInput[SourceValue, SourceDatum],
+        ) -> ObjectConstructionInput[TargetValue, TargetDatum]:
+            """Return the root input retained by this object's canonical functor image.
+
+            The image is read in its own role: the objects of a morphism category are the
+            morphisms of its base and retain a morphism input (POL-CAT-021).
+            """
+            from sage_categories.kernel.construction import retained_input
+
+            assert self in _object_constructor_conversions, f"{self!r} retains no object constructor conversion"
+            target = _object_constructor_conversions[self](source)
+            assert retained_input(target.canonical_image) is target, f"{self!r} constructed a parallel object input"
+            return target
+
+        def element_constructor_input[
+            SourceValue: CategoryPoint,
+            SourceDatum,
+            TargetValue: CategoryPoint,
+            TargetDatum,
+        ](
+            self,
+            source: ElementConstructionInput[SourceValue, SourceDatum],
+        ) -> ElementConstructionInput[TargetValue, TargetDatum]:
+            """The compiler input for the image of ``t``: that of ``q = F(t)``, or of ``p = q . c_F`` for a ``t`` at the separator (POL-FUN-002/035).
+
+            Applying the morphism conversion to the defining morphism of ``t`` gives the
+            defining morphism of ``q: F(T) -> F(X)``, the value public element application
+            returns.  This derivation is the whole element action; the functor retains no
+            element conversion of its own.
+
+            A source ``t: G_C -> X`` at the separator instead supplies the target's
+            element methods, which read a point of the target's own separator.
+            Precomposing ``q`` with the retained comparison ``c_F: G_D -> F(G_C)`` produces
+            that point ``p: G_D -> F(X)``.  When ``c_F`` is an identity, ``F(G_C)`` is
+            ``G_D`` and ``p`` is ``q``: they then share one identity and one cache entry
+            (POL-CAT-066).
+            """
+            from sage_categories.kernel.construction import (
+                ElementRoleIdentity,
+                retained_element_input,
+                retained_morphism_input,
+            )
+
+            assert isinstance(source.identity, ElementRoleIdentity)
+            source_defining = source.identity.defining_morphism
+            image = self.morphism_constructor_input(retained_morphism_input(source_defining)).canonical_image
+            separators = self.domain().separating_family()
+            if self in _separator_comparisons and len(separators) == 1 and source_defining.domain() is separators[0]:
+                comparison = _separator_comparisons[self]
+                if comparison is not comparison.domain().identity():
+                    image = image * comparison
+            if image is source_defining:
+                return source
+            return retained_element_input(self.codomain().element_from_defining_morphism(image))
+
+        def morphism_constructor_input[
+            SourceValue: MorphismOfCategory,
+            SourceDatum,
+            TargetValue: MorphismOfCategory,
+            TargetDatum,
+        ](
+            self,
+            source: MorphismConstructionInput[SourceValue, SourceDatum],
+        ) -> MorphismConstructionInput[TargetValue, TargetDatum]:
+            """Return the root input retained by this morphism's canonical functor image."""
+            from sage_categories.kernel.construction import retained_morphism_input
+
+            assert self in _morphism_constructor_conversions, f"{self!r} retains no morphism constructor conversion"
+            target = _morphism_constructor_conversions[self](source)
+            assert retained_morphism_input(target.canonical_image) is target, f"{self!r} constructed a parallel morphism input"
+            return target
+
+        def _derive_selected_constructor_conversions(self) -> None:
+            """Read this functor's two rules as construction data, which is what selecting it means.
+
+            A functor is built once, by ``Fun(C, D)(object_rule, morphism_rule)``; selection is
+            compiler input and makes no second kind of functor (POL-CAT-085).  What selection
+            adds is the reading: the rules of a selected functor state how one of ``C``'s own
+            constructions produces the data ``D``'s constructor consumes, so each takes one
+            node's local datum and names the value ``D`` made from it (POL-LEAF-058).  The
+            kernel turns them into the construction inputs the compiler consumes and into the
+            public object and morphism actions (POL-FUN-035); the leaf names no canonical
+            image, construction input, or transport (POL-LEAF-054).
+
+            A functor that is never selected keeps its rules as its ordinary value-level
+            actions: the represented functor ``Mor(C)(G, -)``, a constant diagram, a Kan
+            extension.  A construction that retained its conversions already -- a subcategory
+            monomorphism, an identity, an explicit composite -- keeps them.
+
+            The element conversion is derived from the morphism one (POL-FUN-002), so a
+            retained morphism conversion already supplies the selected target element role.
+            """
+            if self in _object_constructor_conversions and self in _morphism_constructor_conversions:
+                return
+            assert self._on_object is not None and self._on_morphism is not None, (
+                f"{self!r} states neither its two rules nor its constructor conversions, so it cannot be selected"
+            )
+            self.retain_structural_images(self._on_object, self._on_morphism)
+
+        def _retain_identity_constructor_conversions(self) -> None:
+            """Retain the identity conversions for an identity-on-value functor."""
+            if self not in _object_constructor_conversions:
+                self.retain_object_constructor_conversion(_identity_object_constructor_input)
+            if self not in _morphism_constructor_conversions:
+                self.retain_morphism_constructor_conversion(_identity_morphism_constructor_input)
+
+        def retain_factors(self, first: Functor, second: Functor) -> None:
+            """Retain that this functor is the composite ``second * first``."""
+            assert self not in _composite_factors, f"{self!r} already retains its factors"
+            assert first.codomain() is second.domain() and self.domain() is first.domain() and self.codomain() is second.codomain()
+            _composite_factors[self] = (first, second)
+
+            if first in _object_constructor_conversions and second in _object_constructor_conversions:
+
+                def object_conversion[
+                    SourceValue: ObjectOfCategory,
+                    SourceDatum,
+                    TargetValue: ObjectOfCategory,
+                    TargetDatum,
+                ](
+                    source: ObjectConstructionInput[SourceValue, SourceDatum],
+                ) -> ObjectConstructionInput[TargetValue, TargetDatum]:
+                    return second.object_constructor_input(first.object_constructor_input(source))
+
+                self.retain_object_constructor_conversion(object_conversion)
+            if first in _morphism_constructor_conversions and second in _morphism_constructor_conversions:
+
+                def morphism_conversion[
+                    SourceValue: MorphismOfCategory,
+                    SourceDatum,
+                    TargetValue: MorphismOfCategory,
+                    TargetDatum,
+                ](
+                    source: MorphismConstructionInput[SourceValue, SourceDatum],
+                ) -> MorphismConstructionInput[TargetValue, TargetDatum]:
+                    return second.morphism_constructor_input(first.morphism_constructor_input(source))
+
+                self.retain_morphism_constructor_conversion(morphism_conversion)
+
+        def factors(self) -> tuple[Functor, Functor]:
+            """The retained factors ``(first, second)`` of an explicit composite ``second * first``, in categorical order."""
+            assert self in _composite_factors, f"{self!r} is not a retained composite"
+            return _composite_factors[self]
+
+        # -- fibration and opfibration lifts (POL-FUN-029) ------------------------------------
+
+        def retain_cartesian_lifts(self, rule: LiftRule) -> None:
+            """Retain the rule constructing the cartesian lift of ``f: y -> p(e)`` at ``e`` over the class of morphisms the owner states."""
+            assert self not in _cartesian_rules, f"{self!r} already retains its cartesian lifts"
+            _cartesian_rules[self] = rule
+
+        def retain_cocartesian_lifts(self, rule: LiftRule) -> None:
+            """Retain the rule constructing the cocartesian lift of ``f: p(e) -> y`` at ``e`` over the class of morphisms the owner states."""
+            assert self not in _cocartesian_rules, f"{self!r} already retains its cocartesian lifts"
+            _cocartesian_rules[self] = rule
+
+        def cartesian_lift(self, morphism: MorphismOfCategory, member_object: CategoryPoint) -> MorphismOfCategory:
+            """The cartesian lift of ``morphism: y -> p(e)`` at ``e``: a morphism of the domain ending at ``e`` over ``morphism``, retained once per pair."""
+            assert self in _cartesian_rules, f"{self!r} retains no cartesian lifts"
+            assert morphism in self.codomain().morphism_category(1), f"{morphism!r} is not a morphism of {self.codomain()!r}"
+            assert morphism.codomain() is self.on_object(member_object), f"{morphism!r} does not end at the image of {member_object!r}"
+            key = (morphism, member_object, self)
+            if key not in _cartesian_lifts:
+                _cartesian_lifts[key] = _cartesian_rules[self](morphism, member_object)
+            return _cartesian_lifts[key]
+
+        def cocartesian_lift(self, morphism: MorphismOfCategory, member_object: CategoryPoint) -> MorphismOfCategory:
+            """The cocartesian lift of ``morphism: p(e) -> y`` at ``e``: a morphism of the domain starting at ``e`` over ``morphism``, retained once per pair."""
+            assert self in _cocartesian_rules, f"{self!r} retains no cocartesian lifts"
+            assert morphism in self.codomain().morphism_category(1), f"{morphism!r} is not a morphism of {self.codomain()!r}"
+            assert morphism.domain() is self.on_object(member_object), f"{morphism!r} does not start at the image of {member_object!r}"
+            key = (morphism, member_object, self)
+            if key not in _cocartesian_lifts:
+                _cocartesian_lifts[key] = _cocartesian_rules[self](morphism, member_object)
+            return _cocartesian_lifts[key]
+
+        def is_full(self) -> AppliedPredicate:
+            return Fun.Full().predicate()(self)
+
+        def is_faithful(self) -> AppliedPredicate:
+            return Fun.Faithful().predicate()(self)
+
+        def is_fully_faithful(self) -> AppliedPredicate:
+            return Fun.FullyFaithful().predicate()(self)
+
+        def is_essentially_surjective(self) -> AppliedPredicate:
+            return Fun.EssentiallySurjective().predicate()(self)
+
+        def is_equivalence(self) -> AppliedPredicate:
+            return Fun.Equivalences().predicate()(self)
+
+        def __repr__(self) -> str:
+            return f"Functor({self.domain()!r} -> {self.codomain()!r})"
 
     def __init__(self) -> None:
         self._canonical: dict[tuple[str, tuple[int, ...]], FinitePresentedCategory] = {}
@@ -823,19 +1335,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         self._declared_functors: TripleDict = TripleDict(weak_values=False)
         self._exponential_actions: TripleDict = TripleDict(weak_values=False)
         super().__init__()
-
-    def local_role_class(self, role: Role) -> type[CategoryPoint]:
-        from sage_categories.cat.elements import CategoryPointDeclaration
-        from sage_categories.cat.functors import FunctorDeclaration
-
-        match role:
-            case Role.OBJECT:
-                return CategoryDeclaration
-            case Role.ELEMENT:
-                return CategoryPointDeclaration
-            case Role.MORPHISM:
-                return FunctorDeclaration
-        raise AssertionError(role)
 
     def morphism_category_type(self) -> type[FunctorsCategory]:
         from sage_categories.cat.functors import FunctorsCategory
@@ -850,8 +1349,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         on_morphism: OnMorphism,
     ) -> Functor:
         """``Fun(C, D)(on_object, on_morphism)``: the functor selected by its four identity components (POL-FUN-001/027)."""
-        from sage_categories.cat.functors import FunctorData
-
         assert domain in self and codomain in self
         key = (domain, codomain, on_object)
         if key not in self._declared_functors:
@@ -1200,8 +1697,6 @@ def bootstrap() -> None:
     lookup registry.
     """
     global _CAT, Category, Functor
-    from sage_categories.cat.functors import FunctorDeclaration
-
     _CAT = compiler.construct_category_singleton(CategoryOfCategories)
     Category = _CAT.ObjectType
     Functor = _CAT.MorphismType

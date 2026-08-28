@@ -338,7 +338,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     # each into ``Mor(self)``.  Every other category, including a wide subcategory
     # declared by a subcategory monomorphism (``cat/wide.py``), owns these constructions.
 
-    def identity_morphism(self, member_object: ObjectOfCategory) -> MorphismOfCategory:
+    def identity_morphism(self, member_object: CategoryPoint) -> MorphismOfCategory:
         """The one identity morphism of an object, constructed once (POL-CAT-083).
 
         An identity is its own inverse and an endomorphism: it retains itself as its
@@ -488,16 +488,22 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
 
     # -- points of the category as Cat elements (POL-CAT-058), retained once (POL-CAT-083) --------
 
-    def point_functor(self, member_object: ObjectOfCategory) -> Functor:
-        """The generalized point ``1 -> C`` ``1 -> self`` selecting ``member_object``."""
+    def point_functor(self, member_object: CategoryPoint) -> Functor:
+        """The point ``* -> self`` selecting the object ``member_object``.
+
+        The objects of ``Mor(C)`` are the morphisms of ``C``, so ``member_object`` is a
+        morphism there and its identity is the one ``Mor(C)`` supplies (POL-CAT-021).
+        """
         from sage_categories.cat.functors import Fun
 
         if member_object not in self._points:
-            self._points[member_object] = Fun(Cat().Terminal(), self)(lambda vertex: member_object, lambda path: member_object.identity())
+            self._points[member_object] = Fun(Cat().Terminal(), self)(
+                lambda vertex: member_object, lambda path: self.identity_morphism(member_object)
+            )
         return self._points[member_object]
 
     def arrow_functor(self, morphism: MorphismOfCategory) -> Functor:
-        """The generalized point ``[1] -> C`` ``[1] -> self`` selecting ``morphism``."""
+        """The diagram ``[1] -> self`` of shape the walking arrow that ``morphism`` denotes."""
         from sage_categories.cat.functors import Fun
 
         if morphism in self._arrows:

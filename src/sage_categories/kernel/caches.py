@@ -21,7 +21,7 @@ from sage.structure.coerce_dict import MonoDict, TripleDict
 
 from sage_categories.kernel.construction import (
     ElementConstructionInput,
-    GeneralCategoryPointIdentity,
+    ElementRoleIdentity,
     MorphismConstructionInput,
     ObjectConstructionInput,
 )
@@ -89,7 +89,7 @@ def _construction_key[
     if isinstance(source, ObjectConstructionInput):
         return source.canonical_image, source.canonical_image, source.canonical_image
     if isinstance(source, ElementConstructionInput):
-        assert isinstance(source.identity, GeneralCategoryPointIdentity)
+        assert isinstance(source.identity, ElementRoleIdentity)
         defining = source.identity.defining_morphism
         return defining.domain(), defining, defining.codomain()
     return source.identity.domain, source.identity.codomain, source.canonical_image

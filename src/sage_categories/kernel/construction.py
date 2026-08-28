@@ -23,12 +23,10 @@ if TYPE_CHECKING:
 
 __all__ = [
     "CatElementRoleIdentity",
-    "CategoryArrowIdentity",
     "CategoryPointIdentity",
     "ElementConstructionContext",
     "ElementConstructionInput",
     "ElementRoleIdentity",
-    "GeneralCategoryPointIdentity",
     "MorphismConstructionContext",
     "MorphismConstructionInput",
     "MorphismRoleIdentity",
@@ -67,33 +65,20 @@ class ObjectRoleIdentity:
 
 
 @dataclass(frozen=True, slots=True, eq=False)
-class GeneralCategoryPointIdentity:
-    """A generalized element given by its defining morphism."""
+class ElementRoleIdentity:
+    """A point ``1_C -> X`` of an object, retained by its defining morphism (D16)."""
 
     defining_morphism: MorphismOfCategory
 
 
-# The ordinary element constructor keeps this public name.
-ElementRoleIdentity = GeneralCategoryPointIdentity
-
-
 @dataclass(frozen=True, slots=True, eq=False)
 class CategoryPointIdentity:
-    """An object as a generalized point ``1 -> C`` of its category."""
+    """A point ``* -> C``: an object of ``C``, or a morphism of ``C`` as an object of ``Mor(C)``."""
 
     parent: Category
 
 
-@dataclass(frozen=True, slots=True, eq=False)
-class CategoryArrowIdentity:
-    """A morphism as a generalized point ``[1] -> C`` of its category."""
-
-    parent: Category
-    domain: ObjectOfCategory
-    codomain: ObjectOfCategory
-
-
-type CatElementRoleIdentity = GeneralCategoryPointIdentity | CategoryPointIdentity | CategoryArrowIdentity
+type CatElementRoleIdentity = ElementRoleIdentity | CategoryPointIdentity
 
 
 @dataclass(frozen=True, slots=True, eq=False)
@@ -229,8 +214,8 @@ class ElementConstructionContext:
     """One element identity and the closed node steps of its C3 constructor chain."""
 
     canonical_image: CategoryPoint
-    identity: GeneralCategoryPointIdentity
-    cat_element_identity: GeneralCategoryPointIdentity
+    identity: ElementRoleIdentity
+    cat_element_identity: ElementRoleIdentity
     steps: tuple[tuple[Node, Callable[[], None]], ...]
     initialized: list[Node] = field(default_factory=list)
 
@@ -253,7 +238,7 @@ class MorphismConstructionContext:
 
     canonical_image: MorphismOfCategory
     identity: MorphismRoleIdentity
-    cat_element_identity: CategoryArrowIdentity
+    cat_element_identity: CategoryPointIdentity
     steps: tuple[tuple[Node, Callable[[], None]], ...]
     initialized: list[Node] = field(default_factory=list)
 

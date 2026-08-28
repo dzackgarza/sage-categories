@@ -48,23 +48,32 @@ def identity_on_values(value: CategoryPoint) -> CategoryPoint:
 
 
 def diagram_of(value: CategoryPoint) -> Functor:
-    """The functor that a value of ``Fun(I, C)`` denotes: a functor itself, or the retained defining functor of a point of ``C`` with domain ``I`` (specs/functor.md, "The Mor(n, C) tower", specs/functor.md, "Slices and coslices")."""
+    """The functor that a value of ``Fun(I, C)`` denotes (specs/functor.md, "The Mor(n, C) tower", specs/functor.md, "Slices and coslices").
+
+    A functor denotes itself.  An object of ``C`` is a point ``* -> C`` and denotes that
+    point.  A morphism of ``C`` is an object of ``Mor(C)``, so the point it retains is
+    ``* -> Mor(C)``; the diagram it denotes in ``C`` is the arrow functor ``[1] -> C``,
+    which is how the objects of ``Fun([1], C)`` are the morphisms of ``C``.
+    """
     if is_placed(value, Fun):
         return value
+    if role_of(value) is Role.MORPHISM:
+        return value.base_category().arrow_functor(value)
     return value.defining_morphism()
 
 
 def _defining_functor_equal(first: CategoryPoint, candidate: Any) -> Decision:
-    """A functor ``T -> C`` equals a point of ``C`` with domain ``T`` when it is that point's retained defining functor.
+    """A functor ``I -> C`` equals a value of ``Fun(I, C)`` when it is the diagram that value denotes.
 
-    The retained functor is the exact positive route.  Another functor ``T -> C`` selects
-    some point of ``C``, and whether that point equals this one is the question ``Cat()``
-    has no further exact route for, so it stays ``Unknown``.
+    The retained diagram is the exact positive route, and ``diagram_of`` is its one owner:
+    the point ``* -> C`` of an object, the arrow functor ``[1] -> C`` of a morphism.
+    Another functor ``I -> C`` selects some value, and whether that value equals this one
+    is the question ``Cat()`` has no further exact route for, so it stays ``Unknown``.
     """
-    if is_placed(first, Fun) and not is_placed(candidate, Fun) and role_of(candidate) in (Role.OBJECT, Role.MORPHISM) and candidate.defining_morphism().domain() is first.domain():
-        return True if first is candidate.defining_morphism() else Unknown
-    if is_placed(candidate, Fun) and not is_placed(first, Fun) and role_of(first) in (Role.OBJECT, Role.MORPHISM) and first.defining_morphism().domain() is candidate.domain():
-        return True if candidate is first.defining_morphism() else Unknown
+    if is_placed(first, Fun) and not is_placed(candidate, Fun) and role_of(candidate) in (Role.OBJECT, Role.MORPHISM):
+        return True if first is diagram_of(candidate) else Unknown
+    if is_placed(candidate, Fun) and not is_placed(first, Fun) and role_of(first) in (Role.OBJECT, Role.MORPHISM):
+        return True if candidate is diagram_of(first) else Unknown
     return Unknown
 
 
@@ -190,24 +199,24 @@ class FunctorDeclaration(MorphismOfCategory):
         return self._on_morphism(morphism)
 
     def on_element(self, element: CategoryPoint) -> CategoryPoint:
-        """The image of a generalized element ``t: T -> X``: the element ``q = F(t): F(T) -> F(X)`` (POL-FUN-002).
+        """The image of a point ``t: 1_C -> X``: the element ``q = F(t): F(1_C) -> F(X)`` (POL-FUN-002).
 
         This action is derived, never stored: it applies ``on_morphism`` to the defining
         morphism of ``t``.  A functor retains no element callback and no element
         capability.  The element conversion a selected functor retains supplies compiler
-        input only; it never answers this call, so the public image of a point
-        element keeps the domain ``F(G_C)`` rather than the target's separator
-        (``specs/functor.md``, "Structural inheritance").
+        input only; it never answers this call, so the public image keeps the domain
+        ``F(1_C)`` rather than the target's separator (``specs/functor.md``, "Structural
+        inheritance").
 
         A subcategory monomorphism is the identity on the objects and morphisms of its domain,
-        so it is the identity on ``t: T -> X`` as well (``specs/functor.md``, "Inclusion
+        so it is the identity on ``t: 1_C -> X`` as well (``specs/functor.md``, "Inclusion
         functors").  Its domain and defining morphism are those of the ambient, which no
         selected route reaches from the subcategory.
         """
-        assert role_of(element) is Role.ELEMENT, f"{element!r} is not a generalized element"
+        assert role_of(element) is Role.ELEMENT, f"{element!r} is not a point of an object"
         if traces_placement(self):
             parent = element.parent()
-            assert is_placed(parent, self.domain()) or parent in self.domain(), f"{element!r} is not a generalized element in {self.domain()!r}"
+            assert is_placed(parent, self.domain()) or parent in self.domain(), f"{element!r} is not a point of an object of {self.domain()!r}"
             return element
         defining = element.defining_morphism()
         image = self.on_morphism(defining)
@@ -365,12 +374,12 @@ class FunctorDeclaration(MorphismOfCategory):
         (POL-CAT-066).
         """
         from sage_categories.kernel.construction import (
-            GeneralCategoryPointIdentity,
+            ElementRoleIdentity,
             retained_element_input,
             retained_morphism_input,
         )
 
-        assert isinstance(source.identity, GeneralCategoryPointIdentity)
+        assert isinstance(source.identity, ElementRoleIdentity)
         source_defining = source.identity.defining_morphism
         image = self.morphism_constructor_input(retained_morphism_input(source_defining)).canonical_image
         separators = self.domain().separating_family()
@@ -640,23 +649,27 @@ class FunctorProperty(FunctorProperties, FixedEndpointProperty[[OnObject, OnMorp
         return functor
 
 
-# ``denotes_diagram(x, Fun(I, C))``: ``x`` is a functor ``I -> C``, or a point of ``C`` at
-# domain ``I`` (specs/functor.md, "Slices and coslices": an object of ``C`` is a point with domain ``1`` and a morphism a point with
-# domain ``[1]``), whose defining functor is such a diagram.  Thus the objects of
-# ``Fun(1, C)`` are the objects of ``C`` and the objects of ``Fun([1], C)`` are the
-# morphisms of ``C`` (specs/functor.md, "The Mor(n, C) tower", specs/functor.md, "Canonical objects of Cat"): one value, denoting its retained defining functor.
+# ``denotes_diagram(x, Fun(I, C))``: ``x`` is a functor ``I -> C``, or a value that denotes
+# one.  The objects of ``Fun(1, K)`` are the objects of ``K``, each a point ``* -> K``, and
+# the objects of ``Fun([1], C)`` are the morphisms of ``C``, each an object of ``Mor(C)``
+# (specs/functor.md, "The Mor(n, C) tower", specs/functor.md, "Canonical objects of Cat"): one value, denoting one diagram.
 denotes_diagram: Predicate = Predicate("denotes_diagram", 2, False)
 
 
 def _denotes_diagram_by_domain(candidate: CategoryPoint, functors: FunctorCategory) -> Decision:
     if is_placed(candidate, functors.ambient()):
         return ask(endpoints(candidate, functors.domain(), functors.codomain()))
+    if role_of(candidate) is Role.MORPHISM and functors.domain() is Cat().Simplex(1):
+        # A morphism of ``C`` is an object of ``Mor(C)``, and the diagram it denotes is its
+        # arrow functor ``[1] -> C``: this is how the objects of ``Fun([1], C)`` are the
+        # morphisms of ``C``.
+        return is_subcategory(candidate.base_category(), functors.codomain())
     if role_of(candidate) in (Role.OBJECT, Role.MORPHISM):
-        # The domain is one of the canonical shapes, compared by identity; the parent is a
+        # Every object of a category ``K`` is a point ``* -> K``.  The parent is a
         # placement, so the question there is containment in the codomain, not identity
         # (POL-CAT-068, POL-FUN-027): a set refined into ``Sets().Finite()`` is still a
         # diagram of shape ``1`` in ``Sets()``.
-        return candidate.defining_morphism().domain() is functors.domain() and is_subcategory(candidate.parent(), functors.codomain())
+        return functors.domain() is Cat().Terminal() and is_subcategory(candidate.parent(), functors.codomain())
     return False
 
 
@@ -704,11 +717,13 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
         return denotes_diagram(candidate, self)
 
     def diagram(self, value: CategoryPoint) -> Functor:
-        """The functor ``I -> C`` that a value of this category denotes: itself, or the defining functor of a point of ``C`` with domain ``I``."""
+        """The functor ``I -> C`` that a value of this category denotes: its point for ``I = *``, else ``diagram_of``."""
         if is_placed(value, self.ambient()):
             return value
         assert value in self, f"{value!r} is not a diagram of shape {self.domain()!r} in {self.codomain()!r}"
-        return value.defining_morphism()
+        if self.domain() is Cat().Terminal():
+            return value.defining_morphism()
+        return diagram_of(value)
 
     def construct_morphism(self, source: CategoryPoint, target: CategoryPoint, assignment: Assignment) -> NaturalTransformation:
         """``Mor(Fun(I, C))(F, G)(assignment)``; for ``I = [1]`` the two components must form a commuting square."""

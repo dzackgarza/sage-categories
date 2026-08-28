@@ -49,12 +49,10 @@ from sage.structure.dynamic_class import dynamic_class
 
 from sage_categories.kernel.caches import MonoDict, retain_constructed_transport
 from sage_categories.kernel.construction import (
-    CategoryArrowIdentity,
     CategoryPointIdentity,
     ElementConstructionContext,
     ElementConstructionInput,
     ElementRoleIdentity,
-    GeneralCategoryPointIdentity,
     MorphismConstructionContext,
     MorphismConstructionInput,
     MorphismRoleIdentity,
@@ -124,16 +122,14 @@ class Step(NamedTuple):
     """One directed edge of the compiled graph.
 
     A selected functor keeps the role it is followed at, so ``source_role`` and
-    ``target_role`` agree and ``point_domain`` is ``None``.  A level shift applies no functor
-    and changes the role: the objects of a category ``C`` are the generalized points
-    ``1 -> {C}`` and its morphisms the generalized points ``[1] -> {C}``
-    (``specs/functor.md``, "The level shift").
+    ``target_role`` agree.  A level shift applies no functor and changes the role: the
+    objects of a category ``C`` are the points ``* -> C`` and its morphisms the points
+    ``* -> Mor(C)`` (``specs/functor.md``, "The level shift").
     """
 
     functor: Functor | None
     source_role: Role
     target_role: Role
-    point_domain: ObjectOfCategory | None
 
 
 type Route = tuple[Step, ...]
@@ -210,7 +206,7 @@ def _is_cat_element_root(current: Node) -> bool:
 def successors(current: Node) -> tuple[tuple[Step, Node], ...]:
     """The selected functor steps out of ``current``; each keeps the role it starts in."""
     return tuple(
-        (Step(functor, current.role, current.role, None), node(functor.codomain(), current.role))
+        (Step(functor, current.role, current.role), node(functor.codomain(), current.role))
         for functor in current.category.selected_functors()
     )
 
@@ -220,8 +216,8 @@ def level_shift(current: Node) -> tuple[tuple[Step, Node], ...]:
 
     ``Cat().Point(C)`` retains one point category per object; the compiler reads that
     retention to find ``{C}`` from ``C``, and ``C`` records nothing.  The step applies no
-    functor: its value is the value's own defining morphism, an object of ``C`` naming
-    the functor ``1 -> C`` that selects it and a morphism naming ``[1] -> C``
+    functor: its value is the value's own defining morphism, the point ``* -> C`` that
+    selects an object of ``C`` and the point ``* -> Mor(C)`` that selects a morphism
     (``specs/functor.md``, "The level shift").
     """
     from sage_categories.cat.category import Cat
@@ -231,8 +227,7 @@ def level_shift(current: Node) -> tuple[tuple[Step, Node], ...]:
     point = Cat().retained_point(current.category)
     if point is None:
         return ()
-    point_domain = Cat().Terminal() if current.role is Role.OBJECT else Cat().Simplex(1)
-    return ((Step(None, current.role, Role.ELEMENT, point_domain), node(point, Role.ELEMENT)),)
+    return ((Step(None, current.role, Role.ELEMENT), node(point, Role.ELEMENT)),)
 
 
 def reachable(start: Node) -> tuple[Node, ...]:
@@ -699,10 +694,15 @@ def _element_steps[RootValue: CategoryPoint, RootDatum](
     return tuple((target, next(step for owner, _, _, step, _ in found if same_node(owner, target))) for target in expected)
 
 
-def _object_cat_element_step[Value: ObjectOfCategory, Datum](
-    root: ObjectConstructionInput[Value, Datum],
+def _cat_element_step[Datum](
+    root: ObjectConstructionInput[ObjectOfCategory, Datum] | MorphismConstructionInput[MorphismOfCategory, Datum],
 ) -> tuple[Node, Callable[[], None]]:
-    """The generalized-point input at ``1`` at the common ``Cat().ElementType`` MRO root."""
+    """The point input ``* -> K`` at the common ``Cat().ElementType`` MRO root.
+
+    A morphism of ``C`` is an object of ``Mor(C)`` and ``root.identity.category`` is that
+    placement, so the object and morphism roles state one point (``specs/functor.md``,
+    "Compiled implementation classes").
+    """
     target = node(root.identity.category.universe(), Role.ELEMENT)
     point_input = ElementConstructionInput(root.canonical_image, CategoryPointIdentity(root.identity.category), None)
     return target, _element_step(target, point_input, root.canonical_image)
@@ -712,20 +712,9 @@ def _element_cat_element_step[Value: CategoryPoint, Datum](
     root: ElementConstructionInput[Value, Datum],
 ) -> tuple[Node, Callable[[], None]]:
     """The defining-morphism input at the common ``Cat().ElementType`` MRO root."""
-    assert isinstance(root.identity, GeneralCategoryPointIdentity)
+    assert isinstance(root.identity, ElementRoleIdentity)
     target = node(root.identity.defining_morphism.base_category().universe(), Role.ELEMENT)
     element_input = ElementConstructionInput(root.canonical_image, root.identity, None)
-    return target, _element_step(target, element_input, root.canonical_image)
-
-
-def _morphism_cat_element_step[Value: MorphismOfCategory, Datum](
-    root: MorphismConstructionInput[Value, Datum],
-) -> tuple[Node, Callable[[], None]]:
-    """The generalized-point input at ``[1]`` at the common ``Cat().ElementType`` MRO root."""
-    parent = root.identity.category.base_category()
-    target = node(parent.universe(), Role.ELEMENT)
-    identity = CategoryArrowIdentity(parent, root.identity.domain, root.identity.codomain)
-    element_input = ElementConstructionInput(root.canonical_image, identity, None)
     return target, _element_step(target, element_input, root.canonical_image)
 
 
@@ -774,7 +763,7 @@ def _construct_object_root[Datum](
     root = ObjectConstructionInput(instance, identity, data)
     retain_object_input(root)
     cat_element_identity = CategoryPointIdentity(identity.category)
-    steps = (*_object_steps(current, root), _object_cat_element_step(root))
+    steps = (*_object_steps(current, root), _cat_element_step(root))
     context = ObjectConstructionContext(root.canonical_image, root.identity, cat_element_identity, steps)
     token = activate_object_context(context)
     try:
@@ -813,9 +802,8 @@ def _construct_morphism_root[Datum](
 ) -> None:
     root = MorphismConstructionInput(instance, identity, data)
     retain_morphism_input(root)
-    parent = identity.category.base_category()
-    cat_element_identity = CategoryArrowIdentity(parent, identity.domain, identity.codomain)
-    steps = (*_morphism_steps(current, root), _morphism_cat_element_step(root))
+    cat_element_identity = CategoryPointIdentity(identity.category)
+    steps = (*_morphism_steps(current, root), _cat_element_step(root))
     context = MorphismConstructionContext(root.canonical_image, root.identity, cat_element_identity, steps)
     token = activate_morphism_context(context)
     try:
@@ -1005,10 +993,9 @@ def install_level_shift(point: Category) -> None:
     """Install the point-inherited generalized-element surface on the roles of ``{C}``'s member.
 
     The member of a point category is a category ``C`` exactly when the level shift
-    applies.  ``{C}``'s generalized elements are then the objects of ``C`` with domain
-    ``1`` and its morphisms with domain ``[1]``, so the two roles that receive the point
-    functors' element surface are ``C.ObjectType`` and ``C.MorphismType``
-    (``specs/functor.md``, "The level shift").
+    applies.  ``{C}``'s points are then the objects of ``C`` and, through ``Mor(C)``, its
+    morphisms, so the two roles that receive the point functors' element surface are
+    ``C.ObjectType`` and ``C.MorphismType`` (``specs/functor.md``, "The level shift").
 
     Both classes already exist and already have descendants and live values, so the
     shift writes the point-inherited spellings onto those exact classes.  It adds no

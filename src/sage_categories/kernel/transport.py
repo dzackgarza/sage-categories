@@ -167,9 +167,9 @@ def _element_input_at[
     source_node: compiler.Node,
     target: compiler.Node,
 ) -> ElementConstructionInput[TargetValue, TargetDatum]:
-    from sage_categories.kernel.construction import GeneralCategoryPointIdentity
+    from sage_categories.kernel.construction import ElementRoleIdentity
 
-    assert isinstance(source.identity, GeneralCategoryPointIdentity)
+    assert isinstance(source.identity, ElementRoleIdentity)
     category = source.identity.defining_morphism.codomain().category()
     assert _from_construction(source_node.category, category), (
         f"{source.canonical_image!r} is placed in {source_node.category!r}, which is not the category "

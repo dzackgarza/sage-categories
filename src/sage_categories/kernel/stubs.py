@@ -26,9 +26,9 @@ The projection of one category ``C`` and one role:
 
 The level shift is outside the projection, and so is the point category it comes
 from.  ``{X}`` is built by ``Cat().Point(X)`` from a value, at any moment in a
-session; ``{C}``'s generalized elements are then the objects of ``C`` with domain
-``1`` and its morphisms with domain ``[1]``, and ``compiler.install_level_shift``
-writes those spellings straight onto the classes ``C``'s roles already are.  That
+session; ``{C}``'s points are then the objects of ``C`` and, through ``Mor(C)``,
+its morphisms, and ``compiler.install_level_shift`` writes those spellings
+straight onto the classes ``C``'s roles already are.  That
 is a runtime refinement of the compiled graph, not a declaration: a stub that
 carried it would describe whichever point categories one session happened to
 build, and the same declarations would project differently in the next.  So the

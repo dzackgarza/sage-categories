@@ -4,14 +4,15 @@ Every owned runtime value has one role-specific path through these classes
 (architecture contract §2, §3):
 
 - ``ObjectOfCategory``: the base of every ``C.ObjectType``;
-- ``ElementOfObject``: the base of every ordinary ``C.ElementType`` (a generalized element
-  ``t: T -> X``, represented by its defining morphism, POL-CAT-058);
+- ``ElementOfObject``: the base of every ordinary ``C.ElementType`` (a point
+  ``1_C -> X``, represented by its defining morphism, POL-CAT-058);
 - ``MorphismOfCategory``: the base of every ``C.MorphismType``.
 
 ``CategoryPointKernel`` is the stable end of the role MRO.  The module preallocates
-the compiled ``Cat().ElementType`` class over it.  The object, ordinary-element, and
-morphism kernel classes then refine that one class at their stated domains
-(``specs/functor.md``, "Generalized elements").
+the compiled ``Cat().ElementType`` class over it.  An object of ``C`` and a morphism of
+``C`` are both points ``* -> K`` of a category, at ``K = C`` and ``K = Mor(C)``; a
+``C.ElementType`` value is a point of an object (``specs/functor.md``, "Compiled
+implementation classes").
 
 A leaf's local role class subclasses only the kernel base of its role
 (POL-CAT-053).  ``Cat().ObjectType`` and ``Cat().ElementType`` own the universal
@@ -61,37 +62,27 @@ class CategoryPointKernel:
         super().__init__()
 
     def defining_morphism(self) -> MorphismOfCategory:
-        from sage_categories.kernel.construction import (
-            CategoryArrowIdentity,
-            GeneralCategoryPointIdentity,
-            CategoryPointIdentity,
-        )
+        from sage_categories.kernel.construction import CategoryPointIdentity, ElementRoleIdentity
 
         match self._cat_element_identity:
-            case GeneralCategoryPointIdentity(defining_morphism):
+            case ElementRoleIdentity(defining_morphism):
                 return defining_morphism
             case CategoryPointIdentity(parent):
                 return parent.point_functor(self)
-            case CategoryArrowIdentity(parent, _, _):
-                return parent.arrow_functor(self)
         raise AssertionError(self._cat_element_identity)
 
     def parent(self) -> ObjectOfCategory:
-        from sage_categories.kernel.construction import (
-            CategoryArrowIdentity,
-            GeneralCategoryPointIdentity,
-            CategoryPointIdentity,
-        )
+        from sage_categories.kernel.construction import CategoryPointIdentity, ElementRoleIdentity
 
         match self._cat_element_identity:
-            case GeneralCategoryPointIdentity(defining_morphism):
+            case ElementRoleIdentity(defining_morphism):
                 return defining_morphism.codomain()
-            case CategoryPointIdentity(parent) | CategoryArrowIdentity(parent, _, _):
+            case CategoryPointIdentity(parent):
                 return parent
         raise AssertionError(self._cat_element_identity)
 
     def category(self) -> Category:
-        """The slice category of an ordinary generalized element."""
+        """The slice category of a point ``1_C -> X`` of an object."""
         return self.parent().category().SliceOver(self.parent())
 
     def __eq__(self, candidate: Any) -> AppliedPredicate:
@@ -121,7 +112,7 @@ def cat_element_root() -> type[CategoryPoint]:
 
 
 class ObjectOfCategory(CategoryPoint):
-    """An object of a category: a generalized point ``1 -> C`` of it."""
+    """An object of a category: a point ``* -> C`` of it."""
 
     def __init__(self) -> None:
         from sage_categories.kernel.construction import active_object_context
@@ -168,11 +159,11 @@ class ObjectOfCategory(CategoryPoint):
 
 
 class ElementOfObject(CategoryPoint):
-    """The role-specific kernel class of an ordinary generalized element."""
+    """The role-specific kernel class of a point ``1_C -> X`` of an object."""
 
 
 class MorphismOfCategory(CategoryPoint):
-    """A morphism ``f: A -> B`` of ``C``: an object of ``Mor(C)``, a generalized point ``[1] -> C`` of ``C``."""
+    """A morphism ``f: A -> B`` of ``C``: an object of ``Mor(C)``, and so a point ``* -> Mor(C)``."""
 
     def __init__(self) -> None:
         from sage_categories.kernel.construction import active_morphism_context

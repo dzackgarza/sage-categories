@@ -6,10 +6,11 @@ P:\operatorname{Ob}(C)\to\operatorname{Prop},
 C.P=\{x\in C\mid P(x)\}.
 \]
 
+The axiom `P` declares the functorial construction `C |-> C.P()`.
+Each result retains its monomorphism `C.P() -> C`.
 `C.P().membership_proposition(x)`, containment, assumptions, computation, and refinement must all derive from this equation.
 
-Every property declaration supplies its predicate name to the kernel.
-The kernel derives the standard ambient application, such as `x.is_P()`, from the category-owned containment predicate.
+The kernel derives the standard ambient application, such as `x.is_P()`, from the axiom declaration and the category-owned containment proposition.
 It does not evaluate it.
 
 ## Public paths
@@ -431,18 +432,21 @@ No finite-poset leaf implements:
 
 - an assumption method.
 
-## Template for a new property
+## Template for a predicate-backed axiom implementation
 
-A new property leaf supplies its base category and one category-owned membership proposition.
+An axiom makes `C.P()` available without requiring a decision procedure.
+A concrete category can register itself as that same `C.P()` through Sage's axiom mechanism.
+When it supports computed refinement, it inherits `PredicateSubcategory` and implements
+the private abstract `_predicate()` contract.
 
 Conceptually:
 
 ```python
-class PObjects(PropertySubcategoryOfC):
-    base_category = C()
+class PObjects(PredicateSubcategory):
+    _base_category_class_and_axiom = (CClass, "P")
 
-    def membership_proposition(self, x: C.ObjectType) -> Proposition:
-        return self.applied_predicate(x, definition=property_formula(x))
+    def _predicate(self, x: C.ObjectType) -> Proposition:
+        return property_formula(x)
 
     class ObjectType:
         # Only operations introduced by P.
@@ -452,10 +456,17 @@ class PObjects(PropertySubcategoryOfC):
 The exact syntax can differ.
 The semantic requirements cannot.
 
-The category-owned predicate has private identity in the proposition engine.
-The compiler must not infer its meaning from the category name or a method name.
+The registered class is `C.P()` itself. It is not a second category.
+`PredicateSubcategory` defines the containment proposition from ambient membership and
+the implemented predicate. The predicate has private identity in the proposition engine.
+The `_base_category_class_and_axiom = (CClass, "P")` registration identifies the axiom.
+The kernel converts that registered CamelCase axiom identifier to snake case and prefixes
+`is_`: `"Finite"` becomes `is_finite()`, `"FullyFaithful"` becomes
+`is_fully_faithful()`, and `"OfCardinalityExactlyFour"` becomes
+`is_of_cardinality_exactly_four()`. This conversion supplies only the public spelling.
+The private `_predicate()` method supplies the mathematical meaning.
 
-From that property declaration, the kernel generates:
+From the axiom declaration and optional registered implementation, the kernel supplies:
 
 - `C.P()`;
 
@@ -483,9 +494,8 @@ C.P().membership_proposition(x).assume()
 
 That operation uses the global mathematical context and the proposition's category owner.
 
-The largest meaningful ambient category owns the generated predicate application.
-Its value is `C().P().membership_proposition(self)`.
-The property declaration fixes the public predicate name and its category owner.
+The ambient category that declares the axiom owns the generated predicate application.
+Its value is `C.P().membership_proposition(self)`.
 
 ## Where computation handlers belong
 
@@ -588,7 +598,7 @@ It cannot define the mathematics.
 
 ## What an owned property axiom means
 
-The owned declaration must bind two things:
+The axiom and its optional predicate-backed implementation are separate declarations:
 
 \[
 \operatorname{Finite}:
@@ -602,24 +612,27 @@ The owned declaration must bind two things:
 \mathbf{FiniteSet}.\operatorname{membership\_proposition}(X)\}.
 \]
 
-Conceptually, the declaration has this shape:
+Conceptually, the declarations have this shape:
 
 ```python
 class SetsCategory(Category):
-    class Finite(PropertySubcategory):
-        def membership_proposition(self, X: SetObject) -> Proposition:
-            return self.applied_predicate(
-                X,
-                definition=X.cardinality() < aleph0,
-            )
+    Finite = Axiom()
 
-        class ObjectType:
-            # Only mathematics available for known finite sets.
-            ...
+
+class FiniteSets(PredicateSubcategory):
+    _base_category_class_and_axiom = (SetsCategory, "Finite")
+
+    def _predicate(self, X: Sets().ObjectType) -> Proposition:
+        return X.cardinality() < aleph0
+
+    class ObjectType:
+        # Only mathematics available for known finite sets.
+        ...
 ```
 
-This is a conceptual interface.
-The property category owns the proposition and its private predicate identity.
+The axiom gives the kernel `C |-> C.Finite()` and its monomorphisms.
+Sage registration makes `FiniteSets()` the implementation of `Sets().Finite()`.
+The private `_predicate()` method gives `PredicateSubcategory` the defining proposition.
 
 The kernel must not infer the definition from either string:
 
@@ -965,19 +978,19 @@ Only the first class receives automatic `ask()`, `assume()`, and property refine
 
 ## The exact architectural rule
 
-A property axiom declaration supplies:
+A property axiom declaration and its optional concrete implementation supply:
 
-1. Its largest meaningful base category.
+1. The axiom `P` on its ambient category `C`.
 
-2. Its property-subcategory implementation.
+2. The functorial construction `C |-> C.P()` and each monomorphism `C.P() -> C`.
 
-3. Its category-owned membership proposition.
+3. The concrete category registered as `C.P()`, when one exists.
 
-4. The property subcategories it is a full subcategory of.
+4. The private `_predicate()` method required when that category inherits `PredicateSubcategory`.
 
-5. Exact decision handlers, when available.
+5. The property subcategories it is a full subcategory of.
 
-6. Its public predicate name and largest meaningful ambient owner.
+6. Exact decision handlers, when available.
 
 The kernel derives the standard `is_P()` application from that declaration.
 It returns the membership proposition.
@@ -1058,19 +1071,15 @@ The category declaration supplies:
 Conceptually:
 
 ```python
-class OfCardinalityExactlyFour(PropertySubcategory):
-    predicate_name = "is_cardinality_exactly_four"
-    predicate_owner = SetsCategory.ObjectType
+class OfCardinalityExactlyFour(PredicateSubcategory):
+    _base_category_class_and_axiom = (SetsClass, "OfCardinalityExactlyFour")
 
-    def membership_proposition(self, X: SetObject) -> Proposition:
-        return self.applied_predicate(
-            X,
-            definition=X.cardinality() == 4,
-        )
+    def _predicate(self, X: Sets().ObjectType) -> Proposition:
+        return X.cardinality() == 4
 ```
 
-The property also declares its exact public predicate name and ambient owner.
-The kernel derives the application from `FourSets.membership_proposition(X)`.
+The axiom supplies the generated application name. The registered implementation supplies
+its meaning. The kernel derives the application from `FourSets.membership_proposition(X)`.
 
 The user can then write:
 
@@ -1083,7 +1092,7 @@ FourSets(X)
 X in FourSets
 ```
 
-The property declaration supplies the exact predicate name and ambient owner.
+The axiom supplies the application name. Its declaring category is the ambient owner.
 The kernel compiles that application and rejects a name collision.
 
 ### The corrected property template
@@ -1092,32 +1101,24 @@ A property leaf requires:
 
 1. The ambient category.
 
-2. The property-subcategory implementation.
+2. The concrete category registered as the implementation of `C.P()`, when one exists.
 
-3. Its membership proposition.
+3. Its `PredicateSubcategory` base and private `_predicate()` method, when computed refinement is supported.
 
 4. The property subcategories it is a full subcategory of.
 
 5. Its decision procedures, when available.
 
-6. Its public predicate name and largest meaningful ambient owner.
-
-The property leaf does not require a global predicate function, a Boolean override, or a decorator on an ambient mathematical method.
+A predicate-backed implementation supplies the private `_predicate()` method and its category-specific operations.
 
 Conceptually:
 
 ```python
-class OfCardinalityExactlyFour(PropertySubcategory):
-    base_category = Sets()
-    predicate_name = "is_cardinality_exactly_four"
-    predicate_owner = SetsCategory.ObjectType
+class OfCardinalityExactlyFour(PredicateSubcategory):
+    _base_category_class_and_axiom = (SetsClass, "OfCardinalityExactlyFour")
 
-    def membership_proposition(self, X: SetObject) -> Proposition:
-        return self.applied_predicate(
-            X,
-            definition=X.cardinality() == 4,
-        )
-
+    def _predicate(self, X: Sets().ObjectType) -> Proposition:
+        return X.cardinality() == 4
 ```
 
 `applied_predicate` here means the category-owned proposition mechanism.
@@ -1419,11 +1420,9 @@ The final model is:
 
 - Its private predicate object belongs to that category.
 
-- No standalone global predicate function duplicates it.
+- The public property application is the method generated from the axiom declaration.
 
-- Every property declares its ambient predicate name and owner.
-
-- The kernel derives its standard application at the largest meaningful ambient category owner.
+- The category that declares the axiom receives the generated application on its compiled class.
 
 - `ask()` invokes the canonical automatic decision route.
 
@@ -1431,6 +1430,6 @@ The final model is:
 
 - Every exact positive decision invokes the same category refinement.
 
-`Sets().OfCardinalityExactlyFour()` remains the predicate owner.
-Its generated ambient application returns that predicate.
+`Sets().OfCardinalityExactlyFour()` owns the containment proposition.
+Its generated application returns that proposition.
 Surjectivity can still use several private computational routes.

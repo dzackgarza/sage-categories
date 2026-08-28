@@ -30,9 +30,10 @@ class LeafCategory(Category):
 
 `Category` is `Cat().ObjectType`. Each entry in `structure_functors()` is an explicitly constructed object of `Fun = Mor(Cat())`. Include only immediate functors whose target catalogue supplies the leaf's inherited public surface.
 
-For each inherited operation, the structure functor supplies one pure conversion from source construction data to target constructor data.
-The functor uses that conversion for its public image.
-The kernel uses the same conversion to initialize the target class on the source instance.
+For each target class contributed by a selected structure functor, the leaf states which
+target constructor consumes the converted source construction data. The target category can
+have many constructors. The kernel uses the selected functor's construction rule to
+initialize the target class on the source instance.
 Point actions derive from morphism actions and the declared terminal-object comparison.
 
 A leaf specification links each inherited construction to its generic specification.
@@ -55,16 +56,30 @@ This selection has the same purpose as Sage's `super_categories()` declaration.
 
 ## Property subcategories and predicate handlers
 
-A property subcategory owns its membership predicate.
-It declares the exact public spelling and the largest `C.ObjectType`, `C.ElementType`, or `C.MorphismType` on which the predicate has meaning:
+A category declares an axiom `P` to make the functorial construction `C |-> C.P()`
+available. The kernel constructs the monomorphism `C.P() -> C` and generates `is_P()`
+on `C.ObjectType`.
+
+A concrete category can register itself as the implementation of `C.P()` through Sage's
+axiom mechanism. If it supports computed refinement, inherit `PredicateSubcategory` and
+implement its private abstract `_predicate()` method:
 
 ```python
-predicate_name = "is_P"
-predicate_owner = C.ObjectType
+class PObjects(PredicateSubcategory):
+    _base_category_class_and_axiom = (CClass, "P")
+
+    def _predicate(self, x: C.ObjectType) -> Proposition:
+        return property_formula(x)
 ```
 
-The kernel derives the standard `is_P()` application from that declaration.
-Its result is `C().P().membership_proposition(self)`.
+The registration string supplies `P` in the generated `is_P()` spelling. The kernel
+converts CamelCase to snake case and prefixes `is_`. The concrete category does not name
+that public method separately.
+
+The generic base defines the containment proposition from membership in `C` and this
+predicate. The registered class is `C.P()` itself. It is not a second category.
+Descendants receive `is_P()` through compiled inheritance. The leaf declares no ambient
+method.
 
 Use the same proposition for decisions and interactive assumptions:
 

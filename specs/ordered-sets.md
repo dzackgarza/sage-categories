@@ -62,8 +62,9 @@ x\leq y\land y\leq x\Rightarrow x=y,
 x\leq y\land y\leq z\Rightarrow x\leq z.
 \]
 
-The containment predicate of `PartiallyOrderedSets()` returns this proposition without deciding it.
-Its relation-property declaration uses `predicate_name = "is_partial_order"` and `predicate_owner = Sets().Subobjects(X * X).ObjectType`.
+The registered `PartiallyOrderedSets()` implementation inherits `PredicateSubcategory` and
+implements this proposition as its private `_predicate()` method. The axiom declaration makes
+the subcategory available and generates `is_partial_order()` on the ambient relation class.
 `ask()` can use an exhaustive finite algorithm or another exact handler.
 Exact `True` refines the relation into `PartiallyOrderedSets()`.
 `False` disproves admission.
@@ -100,8 +101,10 @@ The containment predicate of `TotallyOrderedSets()` is the proposition:
 \forall x,y,\qquad x\leq y\lor y\leq x.
 \]
 
-This property declares `predicate_name = "is_total"` and `predicate_owner = PartiallyOrderedSetsCategory.ObjectType`.
-The standard property application returns this proposition, and `ask()` returns its decision.
+The registered `TotallyOrderedSets()` implementation inherits `PredicateSubcategory` and
+implements this proposition as its private `_predicate()` method. The axiom generates
+`is_total()` on `PartiallyOrderedSets().ObjectType`. The application returns this proposition,
+and `ask()` returns its decision.
 Exact `True` refines the object into `TotallyOrderedSets()`.
 An active assumption and a named mathematical construction establish the same placement without exhaustive checking.
 `False` and `Unknown` keep the object in its previously established category.
@@ -151,10 +154,10 @@ A reversing map on the two-element chain fails checked admission.
 Its underlying set morphism remains valid.
 
 Order preservation, order reflection, order embedding, and order isomorphism use their morphism-property subcategories.
-Each subcategory owns its containment predicate.
-Their `predicate_name` values are `is_order_preserving`, `is_order_reflecting`, `is_order_embedding`, and `is_order_isomorphism`.
-For fixed `P, Q`, each uses `predicate_owner = Mor(Sets())(P, Q).ObjectType`.
-The kernel derives the standard property application.
+Each predicate-backed implementation inherits `PredicateSubcategory` and implements its
+private `_predicate()` method. Their axioms generate `is_order_preserving()`,
+`is_order_reflecting()`, `is_order_embedding()`, and `is_order_isomorphism()` on the
+ambient set-map class. The kernel derives each standard property application.
 Admission makes the preservation proposition evaluate to `True`.
 The other propositions remain available for assumption or exact evaluation.
 

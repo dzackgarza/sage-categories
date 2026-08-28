@@ -237,26 +237,30 @@ A recursion, type error, slow path, or failing test is a fact about the implemen
 Fix that implementation fact without moving an operation to the wrong object or weakening its type.
 
 Predicates follow their definitions and their available algorithms.
-Return `Unknown` when the implementation cannot determine a result.
-Do not replace missing knowledge with a fabricated Boolean answer.
+Every public mathematical truth question returns an applied proposition.
+Only `ask()` returns `True`, `False`, or `Unknown`.
+A forced Python protocol boundary can coerce that decision to `bool`; no mathematical
+method can.
 
-A predicate strictly generalizes a Boolean, so a Boolean is honest only where the
-question is two-valued by construction: a record of what was retained, the presence of a
-chosen enumeration. Every other question is a proposition, and `ask()` decides it.
-
-Category containment owns predicate evaluation. The finite property is declared once on
-`Sets()`, and the kernel derives `is_finite()` from membership in `Sets().Finite()`. The class
-that implements `Sets().Finite()` supplies the defining predicate of that membership,
-`cardinality() < aleph_0`. Every category with a selected functor to `Sets()` receives
-`is_finite()` from that one declaration, and a poset is finite exactly when its underlying
+Category containment owns predicate evaluation. The `Finite` axiom declares the functorial
+construction `C |-> C.Finite()` and each resulting monomorphism `C.Finite() -> C`.
+Sage's axiom registration connects the concrete `FiniteSets` category to `Sets().Finite()`.
+Because `FiniteSets` chooses predicate-backed refinement, it inherits `PredicateSubcategory`
+and implements that base's private abstract `_predicate()` contract with `cardinality() < aleph_0`.
+The kernel generates `is_finite()` once on `Sets().ObjectType` from the axiom declaration.
+Every category with a selected functor to
+`Sets()` receives it through compiled inheritance, and a poset is finite exactly when its underlying
 set is. Placement in the subcategory is a fast positive route, because construction or
 same-object refinement already established the predicate. Placement is never the
 definition of membership. Ask containment; do not reach for a category's predicate object
 and apply it at a use site.
 
 The same rule applies to every `is_X()` question that names a property subcategory.
-The property declaration owns its containment predicate, `predicate_name`, and `predicate_owner`.
-The kernel derives the application on the largest meaningful ambient implementation class.
+The axiom declaration gives the kernel the property name and its ambient category.
+The kernel generates the method on that category's compiled class. The method returns the
+property subcategory's containment proposition and reaches descendants through compiled
+classes. A predicate-backed concrete implementation supplies only the private abstract
+`_predicate()` method required by `PredicateSubcategory`.
 
 Every positive property decision uses the kernel's same-object refinement mechanism.
 This mechanism does not limit a property's constructors from mathematical or engine representations.

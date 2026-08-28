@@ -29,7 +29,9 @@ The defining property category adds real mathematics.
 Its implementation classes can add operations valid under the property.
 They never replace the defining proposition with a Boolean method.
 Membership in `Mor(Sets()).Monomorphisms()` makes `ask()` return `True` through category entailment.
-Its set-map specialization declares `predicate_name = "is_injective"` and `predicate_owner = SetsCategory.MorphismType`.
+The `Monomorphisms` axiom makes that subcategory available and the kernel generates
+`Sets().MorphismType.is_injective()`. A registered predicate-backed implementation supplies
+the injectivity predicate through the abstract `PredicateSubcategory` contract.
 
 ### Durable refinement
 
@@ -240,7 +242,7 @@ There is no separate ambient implementation.
 There is no property-refinement image cache.
 
 After refinement, the property category contributes only the operations valid under its defining mathematics.
-The generated `is_X()` application still returns the category-owned proposition.
+A kernel-generated property application still returns the category-owned proposition.
 
 ### Strongest property placement and one-object categories
 
@@ -250,7 +252,7 @@ This is a mathematical assertion in the implementation.
 It does not require the general decision procedure to recompute the property.
 
 A named-object construction places its result directly in every property category established by the construction.
-The generated property application then reads the same containment proposition through category placement.
+The kernel-generated property application then reads the same containment proposition through category placement.
 
 Property refinements must propagate through the category graph.
 If a category `C` defines a property subcategory `C.P()` and `D` is structurally a subcategory of `C`, the kernel must derive `D.P()` as the corresponding narrowing of `D`. A leaf must not define another property class, refinement mechanism, predicate, or transport route.
@@ -279,7 +281,7 @@ Likewise, `{FF_p}` is a one-object category parameterized by the prime `p`. Its 
 It never derives finiteness by enumeration, cardinality computation, or backend inspection.
 It constructs `FF_p` directly in the finite property subcategory.
 
-For an interactive claim not owned by a construction, the user can apply the sanctioned global assumption operation, such as `assume(Sets().Finite().membership_proposition(X))`. The kernel-derived property application permits `assume(X.is_finite())`. Both forms use the same kernel refinement.
+For an interactive claim not owned by a construction, the user can apply the sanctioned global assumption operation, such as `assume(Sets().Finite().membership_proposition(X))`. The kernel-generated property application permits `assume(X.is_finite())`. Both forms use the same kernel refinement.
 Backend and theory code still construct directly in the category they establish; they do not call `assume()`.
 
 ## Proposition interface
@@ -347,9 +349,7 @@ FaithfulFunctors = Mor(Cat()).Faithful()
 FullyFaithfulFunctors = Mor(Cat()).FullyFaithful()
 ```
 
-These declarations use `predicate_owner = Cat().MorphismType`.
-Their `predicate_name` values supply the spellings below.
-The kernel derives their standard applications:
+The kernel generates the standard applications on `Cat().MorphismType` from these axiom declarations:
 
 ```python
 F.is_full()
@@ -376,10 +376,8 @@ In the absence of category placement, an active assumption, or a declared contai
 For every category `C` and objects `A, B in C`, `Mor(C)(A, B)` is a category.
 Its existence does not depend on a decision about its objects.
 
-`Cat().Inhabited()` declares `predicate_name = "is_inhabited"`.
-`Cat().Empty()` declares `predicate_name = "is_empty"`.
-Both declare `predicate_owner = Cat().ObjectType`.
-Their containment predicates generate these applications on every category object:
+The `Inhabited` and `Empty` axioms make `Cat().Inhabited()` and `Cat().Empty()` available.
+The kernel generates both applications on `Cat().ObjectType`. Each returns the corresponding containment proposition:
 
 ```python
 H = Mor(C)(A, B)
@@ -497,7 +495,7 @@ membership_proposition = C.membership_proposition(X)
 assume(membership_proposition)
 ```
 
-The kernel-derived property application provides the standard user syntax:
+The kernel-generated method from the axiom declaration provides the standard user syntax:
 
 ```python
 assume(X.is_finite())
@@ -510,21 +508,21 @@ A property category declares the predicate that defines the property.
 A category formed from several properties declares the conjunction of the relevant propositions.
 The declaration occurs once; `__contains__()` never reimplements the mathematics.
 
-For example, the finite-set category owns its membership proposition.
-The kernel derives `X.is_finite()` as the standard application of that predicate.
+For example, the `Finite` axiom makes `Sets().Finite()` available and generates
+`Sets().ObjectType.is_finite()`. The registered `FiniteSets` category inherits
+`PredicateSubcategory` and implements its private abstract `_predicate()` method.
 Conceptually:
 
 ```python
-class FiniteSetsCategory:
-    def membership_proposition(self, X: SetObject) -> Proposition:
-        return self.applied_predicate(
-            X,
-            definition=(
-                Sets().membership_proposition(X)
-                & (X.cardinality() < aleph0)
-            ),
-        )
+class FiniteSets(PredicateSubcategory):
+    _base_category_class_and_axiom = (SetsClass, "Finite")
+
+    def _predicate(self, X: Sets().ObjectType) -> Proposition:
+        return X.cardinality() < aleph0
 ```
+
+`PredicateSubcategory` combines ambient membership with that predicate to define the
+containment proposition.
 
 The kernel supplies the Boolean protocol:
 

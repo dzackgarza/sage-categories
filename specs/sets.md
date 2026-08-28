@@ -16,14 +16,14 @@ The governing policies are `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001`, `POL-C
 
 `Sets()` owns three implementation types:
 
-- `Sets.ObjectType` implements set objects.
+- `Sets().ObjectType` implements set objects.
 
-- `Sets.ElementType` implements points `t: 1 -> X`, the actual elements of `X`.
+- `Sets().ElementType` implements points `t: 1 -> X`, the actual elements of `X`.
 
-- `Sets.MorphismType` implements total functions with a domain and codomain.
+- `Sets().MorphismType` implements total functions with a domain and codomain.
 
 An owned element is a point `t: 1 -> X`, and its parent is `X`.
-A generalized element `T -> X` with nonterminal domain is an ordinary morphism in `Sets()`, not a `Sets.ElementType` value.
+A generalized element `T -> X` with nonterminal domain is an ordinary morphism in `Sets()`, not a `Sets().ElementType` value.
 The same point datum can produce distinct owned elements in distinct sets.
 
 Private representations can include Sage parents, predicates, symbolic expressions, finite collections, indexed families, tagged pairs, or universal-construction data.
@@ -219,18 +219,19 @@ They do not enumerate an infinite base set.
 
 The cardinal and ordinal APIs are specified in [cardinality.md](cardinality.md).
 
-The set property subcategories and their exact public predicate names are:
+The set axioms generate these public applications on `Sets().ObjectType`:
 
-| Property subcategory | `predicate_name` |
+| Property subcategory | Generated application |
 | --- | --- |
-| `Sets().Empty()` | `is_empty` |
-| `Sets().Inhabited()` | `is_inhabited` |
-| `Sets().Finite()` | `is_finite` |
-| `Sets().Infinite()` | `is_infinite` |
-| `Sets().Countable()` | `is_countable` |
-| `Sets().Uncountable()` | `is_uncountable` |
+| `Sets().Empty()` | `is_empty()` |
+| `Sets().Inhabited()` | `is_inhabited()` |
+| `Sets().Finite()` | `is_finite()` |
+| `Sets().Infinite()` | `is_infinite()` |
+| `Sets().Countable()` | `is_countable()` |
+| `Sets().Uncountable()` | `is_uncountable()` |
 
-Each declares `predicate_owner = SetsCategory.ObjectType` and its membership proposition once.
+Each method returns its property subcategory's containment proposition.
+Every category whose compiled object class inherits `Sets().ObjectType` receives these methods.
 The kernel implements `__contains__()` by calling `ask()` on that proposition.
 An `Unknown` decision fails loudly there, since a bool cannot carry it; ask the proposition when the undecided case must be handled.
 A trusted category constructor or named mathematical construction places a set directly in the property category.
@@ -301,11 +302,11 @@ The element record retains its selected point datum.
 The morphism record retains its domain, codomain, and rule.
 
 Direct `Sets()` construction initializes this state on the new set value.
-A structure functor's pure conversion supplies the data required by the target constructor on a structured source instance.
+A selected structure functor states which `Sets().ObjectType` constructor consumes its converted source construction data.
 Thus an inherited set method reads set state directly on the value to which it applies.
 Public `F(x)` remains a separate set image owned by the named functor.
 
-`Sets.ObjectType` is the sole public implementation of a set.
+`Sets().ObjectType` is the sole public implementation of a set.
 It can use Sage, SymPy, GAP, Julia packages, Singular, Macaulay2, or several engines together.
 These are private algorithm providers, not competing set implementations.
 

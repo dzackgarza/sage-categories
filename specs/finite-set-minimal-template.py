@@ -1,9 +1,9 @@
-"""Minimal property category for finite sets.
+"""Minimal predicate-backed category for finite sets.
 
 This file is design pseudocode (``POL-LEAF-014``). The shape is what it teaches:
-nested implementation classes, one axiom field, one predicate declaration, one
-membership proposition, and one structure functor. Its identifiers are illustrative
-and define no second framework API.
+nested implementation classes, Sage axiom registration, and the one private abstract predicate
+required by ``PredicateSubcategory``. The kernel owns the subcategory monomorphism,
+ambient predicate application, and refinement machinery.
 """
 
 from __future__ import annotations
@@ -20,12 +20,10 @@ class SetsCategory(Category):
         """Implement total set maps."""
 
 
-class FiniteSets(CategoryWithAxiom):
+class FiniteSets(PredicateSubcategory):
     """The full property subcategory of finite sets."""
 
     _base_category_class_and_axiom = (SetsCategory, "Finite")
-    predicate_name = "is_finite"
-    predicate_owner = SetsCategory.ObjectType
 
     class ObjectType:
         """Inherit the set surface under established finiteness."""
@@ -36,22 +34,15 @@ class FiniteSets(CategoryWithAxiom):
     class MorphismType:
         """Add no data to a map between finite sets."""
 
-    def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-        """Select the full subcategory monomorphism into ``Sets()``."""
-        return (Fun(self, Sets()).Monomorphisms().Isofibrations().Full()(),)
-
-    def membership_proposition(
+    def _predicate(
         self,
-        X: SetsCategory.ObjectType,
+        X: Sets().ObjectType,
     ) -> Proposition:
         """Return the proposition that ``X`` has finite cardinality."""
-        return self.applied_predicate(
-            X,
-            definition=X.cardinality() < ALEPH_ZERO,
-        )
+        return X.cardinality() < ALEPH_ZERO
 
 
-def decide_finiteness(X: SetsCategory.ObjectType) -> Decision:
+def decide_finiteness(X: Sets().ObjectType) -> Decision:
     """Return an exact decision for supported private-engine cases."""
     match X:
         case ExplicitFiniteSet():
@@ -63,6 +54,6 @@ def decide_finiteness(X: SetsCategory.ObjectType) -> Decision:
 
 
 FiniteSets().register_exact_handler(
-    SetsCategory.ObjectType,
+    Sets().ObjectType,
     decide_finiteness,
 )

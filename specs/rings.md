@@ -37,7 +37,7 @@ These morphisms make `(R, +, 0, -)` an object of
 `Groups(C_x).Additive().Commutative()`.
 They make `(R, multiplication, 1)` an object of `Monoids(C_x).Multiplicative()`.
 
-Each operation is a morphism out of a product in `C`, in the sense stated by
+Each chosen addition or multiplication law is a morphism out of a product in `C`, in the sense stated by
 [Magmas, monoids, and semirings](magmas-monoids-semirings.md#magmas).
 `(R, +, 0, multiplication, 1)` is then an object of `Semirings(C)`, which owns the
 distributivity and absorption diagrams
@@ -106,7 +106,7 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     )
 ```
 
-The semiring projection supplies both operation classes and their unit points.
+The semiring projection supplies the additive and multiplicative element interfaces and their unit points.
 The additive-group projection supplies inversion and subtraction.
 Both paths supply the same additive-monoid and underlying-object constructor data.
 

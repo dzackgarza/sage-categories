@@ -257,6 +257,10 @@ The same rule applies to every `is_X()` question that names a property subcatego
 The property declaration owns its containment predicate, `predicate_name`, and `predicate_owner`.
 The kernel derives the application on the largest meaningful ambient implementation class.
 
+A property subcategory has one trusted same-object refinement route.
+This does not limit its ordinary constructors from mathematical or engine representations.
+Keep explicit prohibitions that exclude known architectural failure patterns.
+
 Decide an equality with `ask(a == b)`. On an owned value `==` returns a proposition, so
 its result decides nothing when consumed as a truth value, compared by identity against
 `True`, `False`, or `Unknown`, or folded through `all`, `any`, `and`, `or`, or `not`. A
@@ -750,6 +754,10 @@ For a tensor category `V`, `Magmas(V)` contains magma objects. For a monoidal ca
 contains group objects. For a category `C` with the required product structure,
 `Semirings(C)` and `Rings(C)` contain internal semirings and rings. The specification
 for the ambient structure states each strictness or coherence requirement.
+
+A magma constructor receives its chosen binary law.
+The additive and multiplicative subcategories expose that law through `+` and `*`.
+Do not require a public object accessor for the stored law or specify its private representation.
 
 Let `M` be monoidal, let `C` have a chosen left `M`-action, and let
 `A in Monoids(M)`. An object of `Modules(A, C)` is an object `X in C` with an action

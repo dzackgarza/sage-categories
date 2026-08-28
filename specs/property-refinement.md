@@ -253,8 +253,11 @@ A named-object construction places its result directly in every property categor
 The generated property application then reads the same containment proposition through category placement.
 
 Property refinements must propagate through the category graph.
-If a category `C` defines a property subcategory `C.P()` and `D` is structurally a subcategory of `C`, the kernel must derive `D.P()` as the corresponding narrowing of `D`. A leaf must not define another property class, constructor, predicate, or transport route.
+If a category `C` defines a property subcategory `C.P()` and `D` is structurally a subcategory of `C`, the kernel must derive `D.P()` as the corresponding narrowing of `D`. A leaf must not define another property class, refinement constructor, predicate, or transport route.
 Sage's `with_axiom` mechanism is the design precedent: a property constructor defined once becomes available on descendant categories.
+
+This uniqueness concerns same-object property refinement only.
+A property category can have many ordinary constructors from supported mathematical and engine representations.
 
 Thus an expression such as
 

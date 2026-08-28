@@ -659,7 +659,7 @@ It must not create:
 
 - a second implementation hierarchy;
 
-- a second object constructor;
+- a parallel same-object refinement constructor;
 
 - a second defining predicate.
 
@@ -669,6 +669,16 @@ It must not create:
 
 The kernel derives the ambient predicate application from the property declaration.
 For finite sets its value is `Sets().Finite().membership_proposition(self)` and its return type is `Proposition`.
+
+`FiniteSets.ObjectType` must not replace it with a Boolean override:
+
+```python
+def is_finite(self) -> bool:
+    return True
+```
+
+The kernel must not inject that override.
+No standalone public `finite(X)` function duplicates the generated application.
 
 A finite set inherits that same method.
 Calling it still produces the category-owned membership proposition.
@@ -839,6 +849,7 @@ Sets().Finite().register_exact_handler(
 ```
 
 This registration is private predicate-engine integration.
+It is not a decorator on `is_finite()` or another public mathematical application.
 
 A handler:
 
@@ -994,6 +1005,8 @@ Its category declaration can bind decision procedures for the ambient membership
 
 ## Addendum: property-owned predicates and decision procedures
 
+No standalone public `finite(X)` function exists.
+
 The property category owns the predicate.
 The kernel derives `X.is_finite()` as its public application on set objects.
 
@@ -1088,6 +1101,8 @@ A property leaf requires:
 5. Its decision procedures, when available.
 
 6. Its public predicate name and largest meaningful ambient owner.
+
+The property leaf does not require a global predicate function, a Boolean override, or a decorator on an ambient mathematical method.
 
 Conceptually:
 
@@ -1403,6 +1418,8 @@ The final model is:
 - The property category owns its membership proposition.
 
 - Its private predicate object belongs to that category.
+
+- No standalone global predicate function duplicates it.
 
 - Every property declares its ambient predicate name and owner.
 

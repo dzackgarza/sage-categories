@@ -36,8 +36,8 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (Fun(self, Semirings(Cat())).Monomorphisms().Isofibrations()(),)
 ```
 
-It regards the category `Ordinals()` as one object of `Semirings(Cat())`. That category's objects, its two operation morphisms, its unit points, and its laws are defined in [Semirings](magmas-monoids-semirings.md#semirings).
-`Ordinals()` adds only which functors those are: its additive operation functor is the natural sum with unit object `0`, and its multiplicative operation functor is the natural product with unit object `1`.
+It regards the category `Ordinals()` as one object of `Semirings(Cat())`. That category's objects, its addition and multiplication functors, its zero and one points, and its laws are defined in [Semirings](magmas-monoids-semirings.md#semirings).
+`Ordinals()` supplies natural sum with zero and natural product with one.
 
 Mathlib establishes the semiring laws for these two operations.
 Its [`Mathlib/SetTheory/Ordinal/NaturalOps.lean`](https://github.com/leanprover-community/mathlib4/blob/v4.14.0/Mathlib/SetTheory/Ordinal/NaturalOps.lean) defines "natural addition and multiplication on ordinals, also known as the Hessenberg sum and product" and states that "they're commutative, associative, preserve order, have the usual `0` and `1` from ordinals, and distribute over one another".

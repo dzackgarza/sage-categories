@@ -64,7 +64,7 @@ The definitions use morphisms and commutative diagrams in `C`. They remain meani
 
 ## Magmas
 
-An object of `Magmas(V)` is an object `X in C` with a multiplication morphism
+An object of `Magmas(V)` is an object `X in C` with a chosen binary law
 
 \[
 \mu_X:X\otimes X\longrightarrow X.
@@ -87,13 +87,13 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (self.product_projection(0),)
 ```
 
-The operation projection to `Mor(C)` remains an ordinary retained functor.
+The projection to the chosen binary-law morphism remains an ordinary retained functor.
 It does not contribute the morphism category's public method surface.
 
 `mu_X` is a morphism out of a tensor product.
 It presents no diagram and carries no cone, injection, or projection.
 An object with a magma structure needs no product or coproduct construction of its own.
-Every operation of every family below has this form.
+Every chosen binary law below has this form.
 
 At `V = Sets()` with the cartesian product, an object is a set with a binary operation: an ordinary magma.
 At `V = Cat()` with the cartesian product, an object is a category `X` with a functor
@@ -104,14 +104,9 @@ At `V = Cat()` with the cartesian product, an object is a category `X` with a fu
 
 and no law.
 
-`Magmas(V)` owns the operation-neutral interface:
-
-```python
-M.operation()
-```
-
-`operation()` returns the morphism `mu_X:X tensor X -> X` in `C`.
-The fixed-endpoint magma-morphism category owns the operation-preservation containment predicate.
+`mu_X` is constructor data retained by the magma implementation.
+`Magmas(V)` requires no public object accessor for it.
+The fixed-endpoint magma-morphism category owns the binary-law-preservation containment predicate.
 The kernel derives its standard property application.
 
 ## Additive and multiplicative forms
@@ -123,8 +118,9 @@ Magmas(V).Additive()
 Magmas(V).Multiplicative()
 ```
 
-They retain the same underlying object, multiplication morphism, and morphisms.
-Each selects one standard operation spelling.
+They retain the same underlying object, binary law, and morphisms.
+The additive subcategory exposes `+` on points.
+The multiplicative subcategory exposes `*` on points.
 Their complete immediate structural tuples are
 
 ```python
@@ -186,15 +182,8 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (Fun(self, Magmas(V)).Monomorphisms().Isofibrations()(),)
 ```
 
-A notation-neutral monoid owns
-
-```python
-M.operation()
-M.unit_morphism()
-```
-
-Here `unit_morphism()` returns `eta_X:I -> X`.
-It is a point only when `I` is terminal.
+`mu_X` and `eta_X` are constructor data retained by the monoid implementation.
+The notation-neutral category requires no public accessors for them.
 
 The notation subcategories are
 
@@ -249,7 +238,7 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (Fun(self, Monoids(V)).Monomorphisms().Isofibrations().Full()(),)
 ```
 
-The selected functor supplies the monoid operation and unit.
+The selected functor supplies the chosen binary law and unit data required by the monoid constructor.
 `Groups(V)` adds only the inversion morphism and its laws.
 
 At `V = Sets()`, an object is an ordinary group.
@@ -270,7 +259,7 @@ A strict internal semiring object in `C` consists of one object `X in C` with:
 
 - left and right zero-absorption diagrams.
 
-Both monoid structures use the cartesian product of `C`. Each operation is a morphism `X * X -> X`, in the sense stated under [Magmas](#magmas).
+Both monoid structures use the cartesian product of `C`. Addition and multiplication are morphisms `X * X -> X`, in the sense stated under [Magmas](#magmas).
 A semiring morphism is a morphism in `C` that preserves both structures.
 
 At `C = Sets()`, an object is an ordinary semiring.
@@ -296,7 +285,7 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     )
 ```
 
-Both paths supply the same constructor datum for the underlying object of `C`. The structural diamond supplies both operation classes.
+Both paths supply the same constructor datum for the underlying object of `C`. The structural diamond supplies both additive and multiplicative element interfaces.
 
 `Semirings(C)` owns the compatibility laws and the combined additive and multiplicative surface.
 Its object interface exposes both unit points.
@@ -309,7 +298,7 @@ x + y
 x * y
 ```
 
-Here `X in Semirings(C)`. The points `x` and `y` have a common domain on which the two operation morphisms can act.
+Here `X in Semirings(C)`. The points `x` and `y` have a common domain on which the addition and multiplication morphisms can act.
 At `C = Cat()`, `X` is a category, `zero()` and `one()` return objects of `X`, and the two operators apply its addition and multiplication functors.
 
 For `C = Sets()`, the diagrams give the familiar formulas
@@ -337,10 +326,10 @@ Longer routes to `C` arise through the projections of `C_x`.
 
 | Category | New public mathematics |
 | --- | --- |
-| `Magmas(V)` | Multiplication morphism and operation-preservation predicate. |
-| `Magmas(V).Additive()` | Additive operation spelling. |
-| `Magmas(V).Multiplicative()` | Multiplicative operation spelling. |
-| `Monoids(V)` | Associativity, unit point, and unit-preserving morphisms. |
+| `Magmas(V)` | Binary-law preservation predicate on morphisms. |
+| `Magmas(V).Additive()` | `+` on points. |
+| `Magmas(V).Multiplicative()` | `*` on points. |
+| `Monoids(V)` | Associativity, unit laws, and unit-preserving morphisms. |
 | `Monoids(V).Additive()` | `zero()` when the monoidal unit is terminal. |
 | `Monoids(V).Multiplicative()` | `one()` when the monoidal unit is terminal. |
 | `Groups(V)` | Inversion and the inverse laws. |
@@ -360,7 +349,7 @@ At `C = Cat()` the morphisms are functors, so each law is an equality of functor
 This is why `Monoids(Cat())` gives strict monoidal categories and not monoidal categories.
 
 `Cardinal()` and `Ordinals()` satisfy the equalities at `C = Cat()` because both are skeletal.
-Each operation selects one representative, so `(a + b) + c` and `a + (b + c)` name one object.
+Addition and multiplication each select one representative, so `(a + b) + c` and `a + (b + c)` name one object.
 
 `Rings(C)` uses the same rule; see [Ring objects](rings.md).
 
@@ -409,7 +398,7 @@ The notation subcategories use the Sage reference sections for [magmas](https://
 
 - Deeper inherited operations arrive through functor composition.
 
-- Every operation is a morphism out of a tensor or cartesian product, never a universal construction.
+- Each chosen binary law is a morphism out of a tensor or cartesian product.
 
 - Every law is an equation between morphisms of the supplied ambient.
 

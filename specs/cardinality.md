@@ -32,7 +32,7 @@ Its construction selects one representative set \(R_\kappa\) for each cardinal \
 \#\alpha^{\#\beta}=\#(\beta\to\alpha).
 \]
 
-Each operation acts on cardinals.
+Addition, multiplication, and exponentiation act on cardinals.
 The sum, product, and function type on the right are constructions on types.
 `Sets()` constructions register the corresponding exact cardinality-predicate cases; see [Cardinal arithmetic](#cardinal-arithmetic).
 
@@ -64,9 +64,9 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (Fun(self, Semirings(Cat())).Monomorphisms().Isofibrations()(),)
 ```
 
-`Semirings(Cat())` is the general internal semiring category at ambient `Cat()`. Its objects, its two operation morphisms, its unit points, and its laws are defined in [Semirings](magmas-monoids-semirings.md#semirings).
-`Cardinal()` adds only which functors those are: the additive operation functor is cardinal addition, with unit object `0`, and the multiplicative operation functor is cardinal multiplication, with unit object `1`. The selected point functor supplies their complete compiled classes, exact constructor conversions, retained state, and public methods.
-The law data is the equations between these functors ([functor.md](functor.md#ambient-algebraic-categories)). `Cardinal()` is skeletal, so each operation selects one representative and the laws hold as equalities ([Laws in the supplied ambient](magmas-monoids-semirings.md#laws-in-the-supplied-ambient)).
+`Semirings(Cat())` is the general internal semiring category at ambient `Cat()`. Its objects, its addition and multiplication functors, its zero and one points, and its laws are defined in [Semirings](magmas-monoids-semirings.md#semirings).
+`Cardinal()` supplies cardinal addition with zero and cardinal multiplication with one. The selected point functor supplies their complete compiled classes, exact constructor conversions, retained state, and public methods.
+The law data is the equations between these functors ([functor.md](functor.md#ambient-algebraic-categories)). `Cardinal()` is skeletal, so each binary law selects one representative and the laws hold as equalities ([Laws in the supplied ambient](magmas-monoids-semirings.md#laws-in-the-supplied-ambient)).
 
 For every pair of represented cardinals, `Mor(Cardinal())(kappa, lambda)` is the discrete category on the owned function set between their representatives:
 

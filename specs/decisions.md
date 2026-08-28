@@ -399,6 +399,12 @@ Every declaration is a functor into `Cat()`, and the parameter it takes is that 
 
 **D89 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T19:51Z). Property applications come from property subcategories.** When `is_X()` asks whether a value has property `X`, the property subcategory owns the containment predicate. Its `predicate_name` gives the exact public spelling, and its `predicate_owner` gives the largest meaningful ambient implementation class. The kernel derives the public application from that declaration. A leaf or operation specification does not define a second method contract for the same question.
 
+**D90 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T20:21Z). Algebraic structures expose their standard mathematical syntax.** A magma constructor receives its chosen binary law. The public element surface applies that law through `+` in the additive subcategory or `*` in the multiplicative subcategory. The specification does not require an object-level accessor for the stored law or prescribe its private representation. A module action is different: the action morphism is mathematical data that applications can construct and inspect.
+
+**D91 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T20:21Z). Property refinement and representation construction are distinct.** One property subcategory has one trusted same-object refinement route. This does not limit its ordinary constructors. A finite-set category can accept lists, tuples, Python sets, SymPy sets, Julia sets, GAP sets, and other supported representations through as many exact constructor routes as its mathematics requires.
+
+**D92 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T20:21Z). Active prohibitions remain explicit.** A specification keeps prohibitions that exclude known architectural failure patterns. Such a prohibition is a current contract, not a record of removed implementation history.
+
 **D77 (08-28). The leaf writer's contract is a closed list.** The kernel exists to make this list short, so anything a leaf must supply beyond it is a kernel defect, not a leaf obligation.
 
 1. `ObjectType`, `ElementType`, and `MorphismType`, as nested classes.

@@ -631,7 +631,7 @@ Two selected paths to one target class must produce the same constructor datum.
 ### Ambient algebraic categories
 
 An algebraic category takes its ambient category as an argument.
-Thus `Semirings(A)` classifies semiring objects whose underlying objects, operations, units, and laws live in `A`. For example, `Semirings(Sets())` has underlying sets and set maps.
+Thus `Semirings(A)` classifies semiring objects whose underlying objects, addition, multiplication, zero, one, and laws live in `A`. For example, `Semirings(Sets())` has underlying sets and set maps.
 `Semirings(Cat())` has underlying categories and functors.
 A category-valued distinguished object therefore uses a point functor into `Semirings(Cat())`.
 
@@ -640,7 +640,7 @@ Associativity, units, symmetry, distributivity, and absorption are equalities of
 `Cat()` supplies the finite products those functors are formed over.
 
 Its two consumers satisfy that strictness by construction.
-`Cardinal()` and `Ordinals()` are skeletal (`POL-SET-025`), so each operation selects one representative and `(a + b) + c` and `a + (b + c)` are one object.
+`Cardinal()` and `Ordinals()` are skeletal (`POL-SET-025`), so addition and multiplication each select one representative and `(a + b) + c` and `a + (b + c)` are one object.
 The equality of functors therefore holds on objects and on morphisms.
 
 A category-valued semiring whose underlying category is not skeletal is outside this definition.
@@ -655,9 +655,9 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (Fun(self, Semirings(Cat())).Monomorphisms().Isofibrations()(),)
 ```
 
-`Semirings(Cat())` declares `zero()` and `one()` on its object surface and `+` and `*` on its element surface ([magmas-monoids-semirings.md](magmas-monoids-semirings.md)). Its constructors retain the two operation functors, the two unit objects, and the selected law data.
+`Semirings(Cat())` declares `zero()` and `one()` on its object surface and `+` and `*` on its element surface ([magmas-monoids-semirings.md](magmas-monoids-semirings.md)). Its constructors retain the addition and multiplication functors, the zero and one objects, and the selected law data.
 The point functor converts these into the corresponding compiled state.
-The level shift places each public operation one level down:
+The level shift places each public symbol one level down:
 
 ```python
 Ordinals().zero()          # the object surface, on the category
@@ -936,7 +936,7 @@ class MonoidsCategory(Category):
         return (Fun(self, Magmas(V)).Monomorphisms().Isofibrations()(),)
 ```
 
-The additive and multiplicative refinements retain their selected operation classes.
+The additive and multiplicative refinements retain their selected element interfaces.
 
 ### Pointed sets
 

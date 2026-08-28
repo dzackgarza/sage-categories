@@ -56,16 +56,17 @@ Module loading preallocates `Cat().ElementType` over that class.
 
 - `Cat().MorphismType` implements functors;
 
-- `Cat().ElementType` implements a generalized element of a category, a functor `T -> C`;
+- `Cat().ElementType` implements an actual object of a category;
 
 - `Cat()(...)` constructs categories;
 
 - `Fun = Mor(Cat())` constructs the category whose objects are functors.
 
-The generalized points `1 -> C` are the objects of `C`.
-The generalized points `[1] -> C` are the morphisms of `C`.
-Thus `C.ObjectType` and `C.MorphismType` also inherit `Cat().ElementType` with those defining morphisms.
-An ordinary `C.ElementType` retains its defining morphism `T -> X`.
+Every `C.ObjectType` inherits `Cat().ElementType` and has parent `C`.
+`C.ElementType` implements actual elements of objects of `C`.
+`C.MorphismType` is `Mor(C).ObjectType`, because a morphism of `C` is an object of the morphism category.
+Neither class identifies an element with a functor.
+`Fun(*, C)`, with terminal category `*`, constructs the functor presentation of objects of `C` separately.
 
 The kernel also supplies the uniform categorical constructions, defined once at the `Cat()` level and applicable to every category:
 
@@ -429,10 +430,10 @@ All selected paths to one target class must produce the same datum.
 Each generated constructor wrapper passes only that class's datum to its local initializer.
 C3 initializes each reachable class once.
 
-The common `Cat().ElementType` state uses the actual defining morphism.
-An object uses its generalized point `1 -> C`.
-A morphism uses its generalized point `[1] -> C`.
-An ordinary generalized element retains its defining morphism `T -> X`.
+Every object-class constructor initializes `Cat().ElementType` with its parent category.
+Thus `C.ObjectType` uses parent `C`.
+A morphism uses the same object rule through `Mor(C).ObjectType`, with parent `Mor(C)`.
+An actual `C.ElementType` uses its parent object `X in C` and has no `Cat().ElementType` base from that fact alone.
 
 The named functor uses the same conversion for its public action.
 Public `F(x)` constructs and returns the separate image owned by `F`.
@@ -444,22 +445,18 @@ The target constructor already initialized the state that the method reads on th
 Thus `x.f()` and `F(x).f()` have the same mathematical value.
 The equality is semantic; method dispatch does not replace `x` with `F(x)`.
 
-For a generalized element `t: T -> X`, public action is the morphism `F(t): F(T) -> F(X)`.
 Identity functors use identity conversions.
 Composite functors compose the conversions of their factors.
 
-An element of `X in C` is a generalized element `t: T -> X`, an object of `C.SliceOver(X)` ([nLab, generalized element](https://ncatlab.org/nlab/show/generalized+element), inspected 2026-08-28: "a morphism `x : U -> X` a generalized element of `X`"). `T` is the domain of `t` and `t.parent()` is its codomain `X`, both read from the defining morphism.
-An object `X in C` has the defining morphism `1 -> C` that selects `X`.
-A morphism `f: A -> B` in `C` has the defining morphism `[1] -> C` that selects `f`.
-Every `F: C -> D` induces `F/X: C/X -> D/F(X)` through `F.on_morphism`.
-It sends `t` to `F(t): F(T) -> F(X)` and needs no additional element action.
+An actual element `x in X` is a `C.ElementType` value with `x.parent() is X`.
+A general functor `F: C -> D` maps objects and morphisms. It has no general action on such elements.
+If a selected structural declaration supplies inherited target element methods, it also supplies an exact element-constructor conversion.
+That conversion is additional structural data, not part of the mathematical functor.
 
-A category may choose a separator `G_C`: `1` for `Sets()`; `Cat()` uses `1` for objects and `[1]` for morphisms.
-A point of `X` is a generalized element whose domain is exactly `G_C`.
-A selected functor can supply a morphism `c_F: G_D -> F(G_C)`.
-For `t: G_C -> X`, composition gives the point `G_D -> F(X)` used to initialize the target point class.
-The public functor action remains `F(t): F(G_C) -> F(X)`.
-For an identity functor, \(c_{\mathrm{id}} = 1_G\). For composable `F: C -> D` and `H: D -> E`, \(c_{H \circ F} = H(c_F) \circ c_H\).
+The category `Fun(*, C)` models generalized elements of `C`.
+Its objects are functors from the terminal category and correspond to the objects of `C`.
+The category `Fun([1], C)` models arrows of `C` separately.
+Neither construction changes the meaning of `Cat().ElementType`.
 
 ## Point categories and point functors
 

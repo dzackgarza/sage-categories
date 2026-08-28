@@ -100,8 +100,8 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
 
 `monoid_presentation()` is the retained object of
 `Fun(Algebras(R, C), Monoids(V_R)).Equivalences()` created by the algebra
-construction. The module carrier is reached by composing the general monoid and
-magma carrier functors:
+construction. The underlying module is reached by composing the general monoid and
+magma projections:
 
 \[
 \operatorname{Algebras}(R,C)
@@ -123,7 +123,7 @@ B.unit()
 ```
 
 The module action and every operation owned by `C` arrive through the composite
-carrier route above. No algebra constructor repeats those operations.
+composite above. No algebra constructor repeats those operations.
 
 The same Python realization in `Algebras(R, C)` and `Algebras(S, C)` represents
 different algebra objects when the scalar structure morphisms differ.
@@ -165,7 +165,7 @@ The module action contract is stated once, in
 
 - `Algebras(R, C)` retains the selected monoidal structure on `Modules(R, C)`.
 - An instance names `V_R`; an ambient category alone selects no instance.
-- An algebra carrier is a module object in that supplied category.
+- The underlying object of an algebra is a module object in that supplied category.
 - Multiplication and unit are morphisms in the module category.
 - Algebra morphisms preserve both structure morphisms.
 - The equivalence to `Monoids(V_R)` is the sole immediate declared functor.

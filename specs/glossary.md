@@ -29,7 +29,7 @@ appear in permanent documentation, and the row states what replaces it.
 
 | Term | Write instead | Reference |
 | --- | --- | --- |
-| `carrier` | the underlying object, or the underlying set, with the functor that produces it named | `POL-MATH-046` |
+| `carrier`, `carrier set` | the underlying object, or the underlying set, with the functor that produces it named | `POL-MATH-046`; `specs/decisions.md` D57 |
 | `receiver` | the value the operation applies to | `POL-MATH-047` |
 | `role`, for a Python class | the compiled class; or name it, `C.ObjectType` | `POL-MATH-048` |
 | `role`, for a mathematical kind | the exact mathematical type | `POL-MATH-048` |
@@ -37,7 +37,10 @@ appear in permanent documentation, and the row states what replaces it.
 | `structural_image` | nothing replaces it; a category has no image operation | `POL-CAT-096` |
 | `this_object` | nothing replaces it; it states no proposition | `POL-MATH-047` |
 | `DeclaredObjectType`, `DeclaredElementType`, `DeclaredMorphismType` | `ObjectType`, `ElementType`, `MorphismType` | `POL-KERNEL-028` |
-| `structural functor`, `structure functor` | declared functor | `POL-FUN-028` |
+| `structural functor`, `structure functor` | declared functor | `POL-FUN-028`; `specs/decisions.md` D12 |
+| `stage` | generalized element, or generalized point | `specs/decisions.md` D62 |
+| `symbolic cardinal` | a cardinal when the answer is known, `Unknown` when it is not | `specs/decisions.md` D64 |
+| `Ar(C)`, `Hom(C)`, arrow notation | `Mor(n, C)` | `specs/decisions.md` D55 |
 
 A functor does not know that it is structural. A category builds an ordinary functor and
 declares it by returning it from `structure_functors()`, so the adjective belongs to the
@@ -64,14 +67,16 @@ These terms are in use and have no complete row. Each is either completed or rem
 | route | a composite of declared functors; either cite "composite" and use it, or define |
 | transport | overlaps transport of structure along an isomorphism, which is not the sense used |
 | descendant | a category with a declared functor to another; needs a definition or a plainer phrase |
-| stage | appears in `ObjectStageIdentity` and `ArrowStageIdentity` with no stated meaning |
 | firewall | metaphor for the implementation class boundary in `POL-LEAF-041` |
 
 ## Defined
 
 | Term | Definition |
 | --- | --- |
-| declared functor | An ordinary functor a category returns from `structure_functors()`. `AGENTS.md`, "Core categorical architecture". |
+| declared functor | An ordinary functor a category returns from `structure_functors()`. `AGENTS.md`, "Core categorical architecture"; `specs/decisions.md` D12. |
+| generalized element, generalized point | `p: T -> X`. Taking `T = *` gives a point when `X` is discrete and an object when `X` is a category. `specs/decisions.md` D16, D62. |
+| point functor | The inclusion of the one-object category `{C}` into `D`, which regards `C` as an object of `D`. `specs/decisions.md` D57; `specs/functor.md`, "Point categories and point functors". |
+| underlying object | The image of an object under a named projection, as in `underlying_object_projection()` for modules. Never "the" underlying object of a category with several projections. `specs/decisions.md` D09, D32. |
 | compiled class | The class `dynamic_class` builds for `C.ObjectType`, `C.ElementType`, or `C.MorphismType`. `AGENTS.md`, "Core categorical architecture". |
 
 ## Cited
@@ -82,7 +87,6 @@ These terms are in use and have no complete row. Each is either completed or rem
 | `Category.parent_class`, `_make_named_class` | Sage, `src/sage/categories/category.py:1498` and `:1670`. Builds `parent_class` from `ParentMethods`, `element_class` from `ElementMethods`, `morphism_class` from `MorphismMethods`. |
 | separator | open |
 | replete | open |
-| generalized element | open |
 
 Each source cell above is open work. Fill it by inspecting the source (`POL-MATH-040`), or
 remove the term.

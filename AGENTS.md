@@ -248,15 +248,15 @@ A functor constructs an implementation in another category.
 For each category `C`:
 
 - `C.ObjectType` implements objects of `C`.
-- `C.ElementType` implements generalized elements: an element of `X in C` is a morphism `t: T -> X`, an object of `C.SliceOver(X)`; `T` is the domain of that morphism and `t.parent()` is its codomain `X`.
+- `C.ElementType` implements actual elements of objects of `C`; for `x in X`, `x.parent()` is `X`.
 - `C.MorphismType` implements morphisms of `C`.
 - `C(...)` is the category-owned constructor.
 
-A category may choose a separator `G_C`; `Sets()` chooses its terminal object `1`. A point is a generalized element whose domain is that separator. `F.on_element(t)` is derived from `F.on_morphism` applied to the defining morphism of `t`; it is not additional functor data.
-
 The kernel owns `Cat`. Every category in this repository uses `Cat().ObjectType`.
 Every functor uses `Cat().MorphismType` and is an object of `Fun = Mor(Cat())`.
-`Cat().ElementType` implements a generalized element of a category: a functor `T -> C`. Its generalized points `1 -> C` are the objects of `C`. Its generalized points `[1] -> C` are the morphisms of `C`.
+`Cat().ElementType` implements actual objects of categories. Every `C.ObjectType` inherits it, and its parent is `C`.
+It does not implement functors. `Fun(*, C)`, with `* = Cat().Terminal()`, constructs the generalized elements of `C` separately.
+`C.MorphismType` is `Mor(C).ObjectType`: a morphism of `C` is an object of the morphism category, not an element of `C`.
 
 Size is outside the model. `Cat()` is an object of `Cat()` by runtime convention. No kernel operation quantifies over, enumerates, or scans the objects of `Cat()`.
 
@@ -368,7 +368,9 @@ For each functor `F: C -> D`:
 - `F.codomain()` is `D`.
 - `F.on_object()` constructs the image of an object.
 - `F.on_morphism()` constructs the image of a morphism.
-- `F.on_element()` applies `F.on_morphism()` to the defining morphism of a generalized element.
+
+A general functor has no action on actual elements.
+A selected structural functor supplies an element-constructor conversion only when its mathematics defines one.
 
 Functor properties are ordinary property subcategories:
 
@@ -419,10 +421,11 @@ What must then hold, whatever the kernel does to achieve it:
 - local declarations win; two declared functors reaching one declaring category share one
   method owner; unrelated declarations sharing a name are an error.
 
-There is one chain per kind, and the four kinds propagate down from `Cat`. Every category is
-a `Cat().ObjectType`. Every object of a category is a `Cat().ElementType`. Every `X in C` is
-a `C.ObjectType`, and that propagates along the declared functors; elements and morphisms
-follow the same rule. The lineage is as straightforward as Sage's `Parent` and `Element`.
+There is one chain per mathematical kind. Every category is a `Cat().ObjectType`.
+Every object of a category is a `Cat().ElementType` and a `C.ObjectType`.
+Every actual element of `X in C` is a `C.ElementType` with parent `X`.
+Every morphism of `C` is a `C.MorphismType` and a `Mor(C).ObjectType`.
+Selected functors contribute only the class conversions that their mathematics supplies.
 
 Sage's dynamic classes already carry inherited methods; what they do not carry is the
 private data those methods need. Supplying that is the kernel's work, and the declared
@@ -533,7 +536,7 @@ This must support infinite subobjects such as the even integers and prime intege
 `Sets()` owns:
 
 - membership and iteration when available;
-- cardinality, including finite, infinite, symbolic, and unknown results;
+- cardinality, which is a cardinal when it is known and `Unknown` when it is not;
 - function sets and exponentials;
 - products and coproducts of arbitrary small families;
 - general limits and colimits;
@@ -569,9 +572,19 @@ The cardinality functor transports those results; it does not contain constructi
 Write `X.cardinality() == 3`.
 Do not write `X.cardinality().value == 3`.
 
-Cardinalities are elements of an ordered semiring, not integer wrappers.
-Their addition, multiplication, exponentiation, equality, and order can produce finite, infinite, symbolic, or unknown results.
-Preserve an unknown comparison as `Unknown`; do not throw an exception or select a Boolean value.
+Cardinals form a semiring with a poset structure, not integer wrappers. The poset
+is what records that `2 ** aleph_0` is incomparable to most `aleph_i` in ZFC.
+There is no separate symbolic cardinal, and cardinals implement no `Unknown`
+handling of their own: `cardinality()` uses the same `ask`/`assume` machinery as
+every other operation undecidable in full generality, returning a cardinal when the
+answer is known and `Unknown` when it is not. Preserve an unknown comparison as
+`Unknown`; do not throw an exception or select a Boolean value.
+
+Build cardinals on Sage's existing semiring and poset support rather than hand-rolling
+the algebra: a semiring for the finite part, a semiring for the aleph part, and one
+that delegates to both and states the mixed cases and the exponential. Defining a
+semiring means defining its operations, so an idempotent `x + x = x` is a definition,
+not a defect.
 
 Use `cardinality()` for a mathematical set, including a set of module elements or module generators.
 Use `len()` only for a finite ordered Python sequence whose sequence length is the stated concept.

@@ -108,12 +108,12 @@ composites of these. Follow Mathlib's treatment.
 `ProductProjectionFunctor(i)`, and their relatives are kernel-owned precisely so that
 leaves need no boilerplate. A leaf writing a page of functor code is a kernel defect.
 
-**D11 (08-25). `Fun := Ar(Cat)`, and every leaf constructs its functors explicitly.** Not
-`self.inclusion(D)`. A leaf constructs `Fun(self, D).inclusion()`, or
+**D11 (08-25, superseded in spelling by D55). Every leaf constructs its functors
+explicitly.** Not `self.inclusion(D)`. A leaf constructs `Fun(self, D).inclusion()`, or
 `Fun(self, D).Full().inclusion()`, so that a known theorem appears as part of the
-construction of the functor. Nothing is computed; the leaf writer is trusted. The
-equivalent spellings `self.Hom(D)`, `Ar(Cat())(self, D)`, and `Cat().Hom(self, D)` all
-remain valid — `Fun` is an additional name, not the sole one.
+construction of the functor. Nothing is computed; the leaf writer is trusted. Several
+equivalent spellings of the functor category remain valid; `Fun` is an additional name, not
+the sole one. The `Ar` and `Hom` spellings used on 08-25 were dropped on 08-26; see D55.
 
 **D12 (08-26). A functor does not know it is structural.** Leaves construct ordinary
 functors and *declare* them, by returning them from `structure_functors()`. There is no
@@ -133,6 +133,52 @@ leaf constructor never accumulates a field for every ancestor category.
 `Cat().ObjectType`; every object of a category is a `Cat().ElementType`; every `X in C` is
 a `C.ObjectType`, and that propagates along the declared functors; elements and morphisms
 follow the same rule. The lineage is as straightforward as Sage's `Parent` and `Element`.
+
+**D55 (08-26). Drop `Ar(C)` and every arrow and hom spelling.** Define `Mor(n, C)` as the
+category of `n`-morphisms of `C`. Almost every category here is a 1-category, so
+`Mor(0, C) = C` with `C.ObjectType`, and `Mor(1, C) = Mor(C)` with `C.MorphismType`. Hence
+categories are `Mor(0, Cat)`, functors are `Mor(1, Cat)`, and natural transformations are
+`Mor(2, Cat) = Mor(1, Fun)`. `Mor(C)` is always a category: its objects are the
+1-morphisms of `C` and its morphisms are the 2-morphisms. Drop hom and arrow notation
+everywhere. This supersedes the `Ar`/`Hom` spellings of D11.
+
+**D56 (08-26). Eager, and fail fast and loudly.** Declaration order in
+`structure_functors()` controls preference.
+
+**D57 (08-26). The point functor regards a category as an object.** It is the inclusion of
+the one-object category `{C}` into `D`. Its semantics: `D`'s object methods propagate to
+the *category* `C` itself, `D`'s element methods become `C`'s object methods, and morphisms
+shift accordingly. This is how `Ordinals()` receives semiring operations. Nothing here
+needs a carrier set — there is no such thing. In background theory a category is a functor
+`* -> Cat` and the point functor is the corresponding map of points; that framing is not
+needed by the implementation.
+
+**D58 (08-27). What a functor is for.** In Sage you declare your supercategories but never
+say *how* to construct an object or morphism of a supercategory from one of yours. That is
+the entire purpose of a functor: it transports literal constructor data. You choose the
+categories you map into, you understand exactly their constructors, you supply constructors
+on your own objects and morphisms, and then it is your job as the leaf writer to take one
+of your constructions and produce the data one of the target's constructors consumes. If
+your modules are built from `rho: R -> End_Set(X)` and you want set operations, you write
+the functor that takes your `M` and produces the data the `Sets()` constructor accepts. The
+leaf teaches the repository how to produce a set from a module.
+
+**D59 (08-26). Morphism properties, not arrow properties.** `Mor(C).Monomorphisms()` and
+its relatives. For `C = Cat` you need at least `Mor(Cat).Full()` and `Mor(Cat).Faithful()`,
+so that a downstream category can declare minimal wiring — `FiniteSets` defines one standard
+inclusion into `Sets()` for its `structure_functors()`, doing what Sage's `super_categories`
+would do.
+
+**D60 (08-26). A natural transformation's components are an indexed family.** Almost every
+category in use is infinite, so a tuple of components is absurd. Model it as an assignment
+`X |-> eta_X`.
+
+**D61 (08-27). Name the functor property that licenses common-ancestor tracing, and cite
+it.** There is a property `P` of functors along which tracing a common ancestor is allowed,
+and it must be the well-known citable one, not a heuristic recorded after the fact.
+"Embedding" is colloquial with no formalized definition. "Subcategory" is colloquial too:
+if the intended notion is a monomorphism, say so. "Inclusion functor" is not a term. Record
+the precise citable definitions and the decisions that follow from them.
 
 ## Elements
 
@@ -159,6 +205,10 @@ comes from the arrow action. The onus is on the leaf writer to construct the fun
 inherit `__add__` on your elements, supply a functor to `Magmas().Additive()`, which reaches
 sets because magmas are concrete. Every category *gets* the implementation classes; new
 methods arrive by wiring functors out of it.
+
+**D62 (08-27). "Stage" is a parenthetical.** The standard parlance is generalized element,
+or in modern usage generalized point, `p: T -> X`. Taking `T = *` yields a point when `X` is
+a discrete category, and an object when `X` is a category.
 
 ## Predicates, containment, and assumption
 
@@ -219,6 +269,10 @@ homotopy theory — nLab, the Stacks Project, Kerodon, textbooks, arXiv papers �
 mathematically legible. A code writer forms constructions into the correct subcategory as
 the way of asserting a theorem, with a citation on the construction line.
 
+**D63 (08-26). `__eq__` returns a predicate.** So `a == b` can evaluate to `Unknown`, and
+that is fine. Where a Boolean is forced, repository code writes
+`decision = ask(x == y); assert decision is not Unknown`. Points are chosen data `x: 1 -> X`.
+
 ## Cardinality
 
 **D27 (08-22). Never enumerate a set to compute a property.** Always consider what happens
@@ -231,14 +285,43 @@ in a specific algorithm, but it does not belong on a main path and should warn l
 **D28 (08-22, 08-23). Cardinals compare by ordinary syntax.** `==`, `<=`, and the rest,
 against ordinary integers. You never extract a cardinal's "value".
 
-**D29 (08-24). `cardinality()` always returns a cardinal.** Possibly an unknown one.
-Representing unknown mathematics by `None` is a defect. An image receives the domain's
-cardinality only when the map is established injective; a constant function is the
-counterexample.
+**D29 (08-24, amended by D62). `cardinality()` never uses absence for unknown
+mathematics.** Representing an undecided cardinality by `None` is a defect. An image
+receives the domain's cardinality only when the map is established injective; a constant
+function is the counterexample.
 
 **D30 (08-25). Cardinal arithmetic is the categorical operation.** The coproduct in the
 category of cardinals is exactly cardinal addition; the product is exactly cardinal
 multiplication.
+
+**D64 (08-26). There is no symbolic cardinal.** `X.cardinality()` uses the
+`ask`/`assume`/`.assume()` machinery in the obvious way: when the answer is known you get a
+cardinality, and when it is not you get `Unknown`. This is uniform across every method
+undecidable in full generality, and cardinals implement no separate `Unknown` handling of
+their own. This amends D29.
+
+**D65 (08-27). Cardinals are a semiring with a poset structure.** "Linearly ordered
+carrier" is nonsense: the poset is exactly what records that `2 ** aleph_0`, and most
+cardinal exponentials, are incomparable to `aleph_i` in ZFC. There are two totally ordered
+infinite sets of formal symbols, `{0, 1, ...}` and `{aleph_0, aleph_1, ...}`, and the
+algebra must take arbitrary sums, products, and formal exponentials of them.
+
+Do not hand-roll that algebra. Build on Sage, which already supports semirings and posets:
+one semiring for the finite part, one for the aleph part, and a new one that delegates to
+both for the pure cases, states the mixed cases, and defines the exponential — extending
+Sage's semiring and poset classes, or at minimum composing them and declaring itself into
+Sage's categories. When you define a semiring you *define* its operations, so an idempotent
+`x + x = x` is a definition and not a defect. Look for prior art before inventing an
+encoding.
+
+**D66 (08-27). Sets of the same cardinality are never identified; cardinals of the same
+value always are.** `[2] * [3]` is not `[6]` in `Sets()`: the left side is a set of ordered
+pairs. Identifying `{1, 2, 3}` with `{a, b, c}` would render a computer algebra system
+useless. In `Cardinal()`, by contrast, `c_2 * c_3` *is* `c_6`, because a skeletal category
+that is a semiring object has a multiplication `C * C -> C` along which products collapse.
+A cardinal may still be *represented* as a product, as `aleph_0 ** 2` may be represented by
+the pair, but finite with finite, finite with infinite, and infinite with infinite all
+collapse.
 
 ## Universal constructions
 
@@ -279,6 +362,41 @@ projections of `Ar(C)` gives the rest.
 
 **D35 (08-25). The operators are defined once.** `Y ** X` is `Hom_C(X, Y)`, `X * Y` the
 product, `X + Y` the coproduct, `X @ Y` the biproduct.
+
+**D67 (08-26). Scope of the kernel work.** `Cat`, the functorial constructions, and the
+limits and colimits — products, coproducts, fibre products, slices — reaching two or three
+hops from `Sets()`. Sets, finite sets, posets, finite posets, magmas, semirings, and
+monoids are within scope. Tests may use clearly toy models of more structured categories,
+but those do not enter the corpus as real categories until the foundation is in. There is
+no cap on the `Cat`-level and functorial constructions: do whatever it takes to make the
+kernel correct, principled, and immediately useful. Kan extensions are in scope if needed;
+excluding a construction today only to hit it tomorrow for modules, algebras, schemes, or
+sheaves is pointless.
+
+**D68 (08-26). Diagram categories are the workhorse.** Provide machinery for finite
+diagram categories, specializing to filtered ones such as explicit sequences, since ninety
+percent of downstream code writes `X * Y` or a product over a list. Do not over-specialize:
+finite sequence-indexed products alone hit a wall at the adeles. Do not over-generalize
+either: ten times the code for the ten percent needing arbitrary diagrams is the opposite
+error. Convenience methods for the special cases, such as indexing a product's factors by
+integers, are the right shape.
+
+**D69 (08-26). The binary operators live at the `Cat` level.** For categories they do the
+obvious thing through `ObjectType`; objects of categories receive defaults through
+`Cat().ElementType`, deferring to their own category for its products and coproducts. That
+is where the assertion that both operands lie in the same category belongs. `X * Y` is
+never silently cast into a product category: when you want that, call the product's own
+constructor, `(C * D)(X, Y)`.
+
+**D70 (08-27). `X ** Y := Hom_C(Y, X)`, always, and `Cat` owns it.** Not `Sets()`. The same
+way `X * Y` is always a product in `C`. Common-ancestor tracing has to be resolved by a
+named mechanism: `{1, 2}` is in `Sets().Finite()` and `ZZ` is in
+`Sets().Countable().TotallyOrdered()`, so a result may trace as far back as `Sets()` and may
+refine again.
+
+**D71 (08-26). Canonical objects are included.** `1 = *`, the empty object, simple horns
+with their boundaries, simplices, and walking structures in `Cat`; the empty set and `[n]`
+in `Sets()`. Any canonical representing object the constructions need.
 
 ## Diamonds and identity
 
@@ -364,6 +482,12 @@ which objects own theorems, how calls work, and what methods must exist. Trace t
 implementation path: how the kernel defines products, how they propagate through categories
 and presentations and declared functors, so that the leaf supplies only its delta.
 
+**D72 (08-27). Categories of structured objects are parameterized by another category.**
+`Semirings`, `Magmas`, `Monoids`, `Rings`, `Modules`, and `Algebras` all take an ambient
+category. The point is only to endow objects with the corresponding methods. Sage's monoids
+are monoid objects in sets; taking the ambient category as a parameter is the
+generalization, not a specialization to `Cat`.
+
 ## Types and style
 
 **D46 (08-22). Everything is a tensor.** The package departs from Sage's linear-algebra
@@ -407,6 +531,18 @@ out.
 **D53 (08-23). Prefer the mathematically flavoured construction.** `pairwise` over `zip`,
 and generally: look for packages and dependencies that improve the mathematical flavour of
 the code, and propose them when the idea surfaces.
+
+
+## Open, not yet decided
+
+These are naming or modeling choices an agent made that no session ratifies. They stand in
+the repository today and each needs a ruling.
+
+- `Cat().Products().ChosenSubobjects()`. The decision of 08-25 says
+  `Cat().Products().Subobjects()`. The longer name was introduced to break a collision with
+  `C.Subobjects()`. Neither the collision nor the rename has a ruling, and "subcategory" and
+  "inclusion functor" were both called colloquial on 08-27 (D61), so the whole family may
+  need citable names rather than a longer one.
 
 ## What the documents are for
 

@@ -125,7 +125,7 @@ For a general `C`, the morphisms and diagrams above remain the public definition
 
 ## Acceptance conditions
 
-- `Rings(C)` retains one carrier object in `C`.
+- `Rings(C)` retains one underlying object in `C`.
 - Its structure maps are morphisms in `C`.
 - Its axioms are commutative diagrams in `C`.
 - Its declared functors target `Semirings(C)` and

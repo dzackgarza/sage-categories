@@ -91,7 +91,7 @@ Composition and identities come from `C`. The action-preservation equation is st
 
 ## Structural functor
 
-The construction retains the faithful carrier projection
+The construction retains the faithful projection
 
 \[
 U_A:\operatorname{Modules}(A,C)\longrightarrow C.
@@ -101,10 +101,10 @@ It sends `(X, rho_X)` to `X` and sends each module morphism to its morphism in `
 
 ```python
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (self.carrier_projection(),)
+    return (self.underlying_object_projection(),)
 ```
 
-`carrier_projection()` is the retained object of `Fun(Modules(A, C), C).Faithful()` created by the module construction.
+`underlying_object_projection()` is the retained object of `Fun(Modules(A, C), C).Faithful()` created by the module construction. It is named for what it constructs (`POL-FUN-028`).
 It supplies the complete public surface owned by `C`.
 
 ## Owned operations
@@ -156,13 +156,13 @@ The [nLab module object](https://ncatlab.org/nlab/show/module%2Bobject) entry, s
 
 - `A` is a monoid object of the acting monoidal category `M`.
 
-- A module carrier is an object of the supplied category `C`.
+- The underlying object of a module is an object of the supplied category `C`.
 
 - The action is a morphism `A bullet X -> X` in `C`.
 
 - Module morphisms are morphisms in `C` that preserve the action.
 
-- The faithful carrier projection to `C` is the sole immediate declared functor.
+- That faithful projection to `C` is the sole immediate declared functor.
 
 - The enriched map to `End_C(X)` appears when the stated adjunction exists.
 

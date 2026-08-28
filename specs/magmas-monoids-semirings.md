@@ -78,7 +78,7 @@ f\circ\mu_X=\mu_Y\circ(f\otimes f).
 
 `Magmas(V)` is the category of these objects and morphisms.
 Its defining presentation retains `X`, `mu_X`, and their endpoint equation.
-The carrier projection is the declared functor to `C`:
+The projection to the underlying object is the declared functor to `C`:
 
 ```python
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
@@ -90,7 +90,7 @@ It does not contribute the morphism category's public method surface.
 
 `mu_X` is a morphism out of a tensor product.
 It presents no diagram and carries no cone, injection, or projection.
-A carrier with a magma structure needs no product or coproduct construction of its own.
+An object with a magma structure needs no product or coproduct construction of its own.
 Every operation of every family below has this form.
 
 At `V = Sets()` with the cartesian product, an object is a set with a binary operation: an ordinary magma.
@@ -122,7 +122,7 @@ Magmas(V).Additive()
 Magmas(V).Multiplicative()
 ```
 
-They retain the same carrier, multiplication morphism, and morphisms.
+They retain the same underlying object, multiplication morphism, and morphisms.
 Each selects one standard operation role.
 Their complete immediate structural tuples are
 
@@ -282,7 +282,7 @@ At `C = Cat()`, an object is a category `X` with two functors
 two functors `1 -> X` that select the zero object and the one object, and every law an equality of functors.
 `Cardinal()` and `Ordinals()` are the objects of `Semirings(Cat())` that this package constructs; see [Cardinalities and ordinals](cardinality.md) and [Ordinals](ordinals.md).
 
-The strict internal category is the subcategory of `Monoids(C_x).Additive().Commutative() * Monoids(C_x).Multiplicative()` whose two carrier images agree and whose distributivity and absorption diagrams commute.
+The strict internal category is the subcategory of `Monoids(C_x).Additive().Commutative() * Monoids(C_x).Multiplicative()` whose two underlying objects agree and whose distributivity and absorption diagrams commute.
 Its defining presentation retains both component projections.
 
 The complete immediate structural tuple is
@@ -330,7 +330,7 @@ Its point action comes from its morphism action.
 
 The additive and multiplicative refinements use subcategory monomorphisms.
 The semiring component functors come from the generic subobject-of-product construction.
-Longer routes to `C` arise through the carrier projections of `C_x`.
+Longer routes to `C` arise through the projections of `C_x`.
 
 ## Owned operations
 
@@ -384,7 +384,7 @@ A semiring object drops the additive inversion and keeps the four conditions tha
 
 That microcosm definition uses a bimonoidal ambient, where the two operations come from the ambient's own two monoidal structures.
 It is a different construction, and the same entry states its `Cat` case separately: "A rig in (Cats, ∐,×, ∅_(cat), pt) is a strict monoidal category".
-`Semirings(C)` instead takes both monoid structures over the finite products of `C`, as the traditional definition does, so both operations come from the carrier.
+`Semirings(C)` instead takes both monoid structures over the finite products of `C`, as the traditional definition does, so both operations come from the underlying object.
 
 The notation-role catalogues use the Sage reference sections for [magmas](https://doc.sagemath.org/html/en/reference/categories/sage/categories/magmas.html) ("A magma is a set with a binary operation"), [additive monoids](https://doc.sagemath.org/html/en/reference/categories/sage/categories/additive_monoids.html), [monoids](https://doc.sagemath.org/html/en/reference/categories/sage/categories/monoids.html), [groups](https://doc.sagemath.org/html/en/reference/categories/sage/categories/groups.html) ("The category of (multiplicative) groups, i.e. monoids with inverses"), and [semirings](https://doc.sagemath.org/html/en/reference/categories/sage/categories/semirings.html) ("it is a combination of a commutative additive monoid (S, +) and a multiplicative monoid (S, *), where * distributes over +").
 

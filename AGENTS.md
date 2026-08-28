@@ -870,6 +870,26 @@ Keep code direct:
 Do not add compatibility layers, fallbacks, migrations, obsolete aliases, or parallel implementations.
 Fail loudly when required mathematical structure or a dependency is absent.
 
+Reading a method costs short-term memory, and a reader holds five to seven things at once
+([Google Testing Blog, "Write Clean Code to Reduce Cognitive Load"](https://testing.googleblog.com/2023/11/write-clean-code-to-reduce-cognitive.html),
+2023-11-06). A method that requires tracking more than that cannot be compared with its
+definition, which is the audit this repository is built for. Treat the count as the test:
+if reading the body means holding more live facts than a definition would, the method is
+carrying something that belongs to its owner.
+
+Let the code state the mathematics and use a comment for what the code cannot say
+([Google Testing Blog, "Let Code Speak for Itself"](https://testing.googleblog.com/2023/12/let-code-speak-for-itself.html),
+2023-12-12). Names carry the meaning; a comment that restates the line is a maintenance
+cost with no reader. Here the "why" a comment is for is the mathematics: the theorem the
+construction asserts, the citation supporting it, or the reason an engine was chosen.
+
+Where an engine can raise, wrap only the operation that raises, and catch only the type it
+raises ([Google Testing Blog, "Exceptional Exception Handling"](https://testing.googleblog.com/2023/12/exceptional-exception-handling.html),
+2023-12-05). A broad `try` around a block swallows failures it was never meant to handle,
+and catching a general exception at an engine boundary will silently absorb a genuine
+mathematical error. When re-raising, preserve the original cause. None of this licenses a
+recovery branch: a violated mathematical precondition still fails loudly.
+
 Do not use `setattr` to assemble or modify the mathematical API.
 Do not use `hasattr` to guess which mathematical interface an object supports.
 Do not recover mathematical structure from storage fields.
@@ -938,6 +958,16 @@ First make ownership, category paths, dependency direction, and public semantics
 to those specifications. Run the real suites once the architecture is coherent and
 complete.
 
+One piece of common advice does not apply here yet.
+[Google Testing Blog, "Clean Up Code Cruft"](https://testing.googleblog.com/2023/11/clean-up-code-cruft.html)
+(2023-11-28) recommends leaving each area cleaner than you found it — renaming, fixing lint
+warnings, extracting duplication as you pass through — and leans on unit tests to make
+refactoring safe. Its advice to send cleanups as separate small changes matches the
+focused-commit rule and stands. The rest does not: fixing lint warnings inside a refactor is
+the gradient this section forbids, and unit tests are not this repository's safety net for
+structural change, since agreement with the specifications is. Clean up when the
+architecture is settled, not while it is moving.
+
 Every assertion must state a mathematical proposition or an essential type invariant.
 Test the real category compiler and public API.
 
@@ -975,6 +1005,21 @@ Do not replace a mathematical equality with a numerical tolerance.
 For an ambiguous computation, combine a cited fixture with an independent formula, construction, or representation.
 
 Use the smallest specimen that distinguishes correct behavior from a plausible failure.
+
+Put only the details the proposition needs into the test body
+([Google Testing Blog, "Include Only Relevant Details In Tests"](https://testing.googleblog.com/2023/10/include-only-relevant-details-in-tests.html),
+2023-10-30). Strip setup data, object fields, and context that do not affect the assertion.
+This is the same audit standard as the implementation: a test should read as the
+mathematical statement it makes, and irrelevant detail both hides that statement and makes
+a failure harder to place.
+
+Choose values that a broken implementation would not produce by accident
+([Google Testing Blog, "Choosing Values for Robust Tests"](https://testing.googleblog.com/2026/06/choosing-values-for-robust-tests.html),
+2026-06).
+A test passes vacuously when the expected value coincides with a default: zero, an empty
+collection, the first enumeration case. Give each parameter a distinct value so that a
+swapped or reused argument shows up. This is the concrete form of the standing rule that an
+assertion which would pass on a plausibly broken implementation is inadmissible.
 Use a real Sage process for Sage behavior.
 
 Do not test implementation layout, diagnostic totals, source text, caches, or correction history.

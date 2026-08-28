@@ -1013,6 +1013,22 @@ This is the same audit standard as the implementation: a test should read as the
 mathematical statement it makes, and irrelevant detail both hides that statement and makes
 a failure harder to place.
 
+Let each test construct what it asserts about, so that the effect immediately follows the
+cause ([Google Testing Blog, "Testing on the Toilet: Keep Cause and Effect Clear"](https://testing.googleblog.com/2017/01/testing-on-toilet-keep-cause-and-effect.html),
+2017-01). A shared fixture that builds objects far from the assertion hides what the
+assertion is about: "The cause is hidden far away from the effect." Each test sets its own
+input and verifies its own expected output.
+
+This matters more here than in ordinary code, because the construction is part of the
+mathematical statement. "The product of these two sets has this cardinality" is not a claim
+a reader can check when the two sets were built in a fixture. Write the construction in the
+test.
+
+Do not factor a construction out of a test body to avoid repetition. The author's own rule
+is "Relevant? In (don't worry about DRY). Irrelevant? Out." Category theory is this
+repository's DRY mechanism for the mathematics; a test body is not where that applies, and
+irrelevant boilerplate is the only thing a helper should hold.
+
 Choose values that a broken implementation would not produce by accident
 ([Google Testing Blog, "Choosing Values for Robust Tests"](https://testing.googleblog.com/2026/06/choosing-values-for-robust-tests.html),
 2026-06).

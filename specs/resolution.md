@@ -132,12 +132,16 @@ The first proposed practical rule was:
 This remains valid for a genuine choice of presentation or algorithm.
 It is not valid as a rule that discards an entire branch of the category graph.
 
-A category can make a small mathematical declaration that selects one coherent presentation.
+A category can make a small mathematical declaration that selects one presentation: one
+apex together with its universal data.
 The kernel must execute that declaration.
 The leaf must not traverse routes, move values, manage caches, or install methods.
 
-General higher-coherence machinery is not required only because a diamond exists.
-It becomes necessary only if one public object must expose operations from several nonidentical presentations at the same time.
+A diamond needs no coherence machinery. The condition is equality of the two composites,
+checked by identity of the constructor data they supply, and a failure is a defect in the
+construction rather than a case for a comparison isomorphism. A public object that would
+have to expose operations from two nonidentical presentations at once has not chosen its
+presentation; choosing is the fix.
 
 ## Preserve both branches
 
@@ -199,7 +203,12 @@ The semiring branch supplies addition, multiplication, zero, and one.
 The group branch supplies additive inverses and subtraction.
 A ring must receive both catalogues.
 
-Both branches reach the same additive monoid and the same object of \(\mathcal C\). Selecting either shared image must preserve the operations introduced on both branches.
+Both branches reach the same additive monoid and the same object of \(\mathcal C\). The
+requirement is that the square of selected functors commutes on the nose: the two
+composites `Rings(C) -> Semirings(C) -> C` and
+`Rings(C) -> Groups(C_x).Additive().Commutative() -> C` are equal as functors, not merely
+naturally isomorphic. Equality of functors is what makes one shared image, and one
+initialization, correct for both branches.
 
 For \(\mathcal C=\operatorname{Sets}()\), the shared object is the underlying set.
 Membership and other set-owned methods have one canonical route to that set.
@@ -226,7 +235,15 @@ Let \((\mathcal M,\odot,1)\) be monoidal, let \(\mathcal C\) be an \(\mathcal M\
 that satisfies the unit and action diagrams.
 When closed or enriched structure represents these actions by an internal endomorphism monoid, this data is equivalently a monoid morphism \(A\to\operatorname{End}_{\mathcal C}(X)\).
 
-Assume that `Modules(A, C)` has the selected products below and that its selected functor to \(\mathcal C\) preserves them.
+Assume that `Modules(A, C)` has the selected products below, and that its selected functor
+to \(\mathcal C\) carries the chosen product to the chosen product on the nose.
+That is stronger than preservation of products. A functor `U` preserves a product when the
+canonical comparison morphism `U(prod X_i) -> prod U(X_i)`, induced by the cone
+`(U(pi_i))`, is an isomorphism. The kernel needs that comparison to be the identity,
+because sameness here is identity and never isomorphism.
+It is the identity by construction rather than by theorem: the module product is lifted
+from the ambient product, so its apex is the ambient apex and its projections are the
+ambient projections carrying the induced action.
 For a family \((X_i)_{i\in I}\) in this category, a product contains:
 
 - the module apex \(P\);
@@ -245,7 +262,8 @@ Let the module presentation select a functor
 U:\operatorname{Modules}(A,\mathcal C)\longrightarrow\mathcal C.
 \]
 
-The \(\mathcal C\)-image of the module product is the product of the \(\mathcal C\)-images:
+The \(\mathcal C\)-image of the module product is then literally the product of the
+\(\mathcal C\)-images:
 
 \[
 U\!\left(\prod_i X_i\right)
@@ -253,7 +271,8 @@ U\!\left(\prod_i X_i\right)
 \prod_i U(X_i),
 \]
 
-after the framework chooses compatible product presentations.
+with equality rather than a comparison isomorphism, because the module construction was
+built on that ambient product.
 
 The module branch supplies the action and module universal morphisms.
 The \(\mathcal C\)-branch supplies the capabilities owned by \(\mathcal C\). When \(\mathcal C=\operatorname{Sets}()\), these include membership, elements, iteration when available, and cardinality.
@@ -288,7 +307,9 @@ U:\operatorname{Modules}(\mathbf F_p,\mathcal C)
 \]
 
 is the ordinary underlying-set functor.
-The module structure places \(\mathbf F_p^n\) in a product construction in `Modules(F_p, C)`. Componentwise multiplication supplies an additional product-ring structure when that structure is retained by the construction.
+The module structure places \(\mathbf F_p^n\) in a product construction in `Modules(F_p, C)`. Taking the same product in `Rings` supplies the componentwise product-ring structure,
+since a product of rings is a ring. Which structure the object has follows from where its
+product was taken, not from what the construction happened to keep.
 
 For the explicitly chosen product module
 

@@ -176,16 +176,13 @@ C.zero()
 C.one()
 
 C.supremum(cardinals)
-
-C.Coproducts()(diagram)
-C.Products()(diagram)
 ```
 
 `supremum()` accepts a nonempty finite indexed family.
 
-The indexed coproduct and product constructors accept an owned diagram.
-They retain their injections and projections, as every universal construction does.
-Their apexes are the indexed cardinal sum and the indexed cardinal product, which Mathlib defines as "the cardinality of the corresponding sigma type" and "the cardinality of the corresponding pi type".
+`Cardinal()` inherits the indexed product and coproduct constructions specified in [Diagram shapes and universal constructions](functor.md#diagram-shapes-and-universal-constructions).
+Its delta makes their apexes the indexed cardinal product and indexed cardinal sum.
+Mathlib defines these as the cardinalities of the corresponding pi type and sigma type.
 A finite diagram can normalize by iteration.
 An infinite diagram produces a formal indexed expression when no stronger normalization is available.
 

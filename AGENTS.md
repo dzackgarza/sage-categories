@@ -191,6 +191,10 @@ Stop local work when a leaf contains generic reflection, dispatch, route travers
 Treat that wiring as a kernel or backend-boundary defect.
 Repair the owning foundation instead of polishing, moving, or preserving the wiring in a leaf workaround.
 
+A leaf specification of an inherited categorical construction links to the `Cat` contract and states only its mathematical delta.
+`Cat` owns the shape, index, diagram, cone or cocone, defining morphisms, universal morphism, and presentation operations.
+The leaf states its added structure, predicates, algorithms, and private engine realizations.
+
 The category-owned implementation class is a polyglot algorithm firewall.
 Its ordinary method can use one private engine, several engines, or an imported research
 program. It can select an exact algorithm from the semantic construction and combine
@@ -583,14 +587,13 @@ The subset is an object of `Sets()`.
 That monomorphism is a morphism in `Sets()`.
 This must support infinite subobjects such as the even integers and prime integers inside `ZZ`.
 
-`Sets()` owns:
+`Sets()` adds:
 
 - membership and iteration when available;
 - cardinality, which is a cardinal when it is known and `Unknown` when it is not;
-- function sets and exponentials;
-- products and coproducts of arbitrary small families;
-- general limits and colimits;
-- predicate subobjects and their monomorphisms.
+- the set realization of inherited exponentials as function sets;
+- the set realization of inherited products, coproducts, limits, and colimits;
+- predicate comprehension for inherited subobjects.
 
 In `Sets()`, the function set and the exponential are one object `Y ** X`, and
 `Mor(Sets())(X, Y)` is the discrete category on its elements:

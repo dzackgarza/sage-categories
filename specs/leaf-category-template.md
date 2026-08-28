@@ -35,6 +35,10 @@ The functor uses that conversion for its public image.
 The kernel uses the same conversion to initialize the target class on the source instance.
 Point actions derive from morphism actions and the declared terminal-object comparison.
 
+A leaf specification links each inherited construction to its generic specification.
+Its construction section states only the added leaf structure, predicates, exact algorithms, and private engine realizations.
+The generic specification owns the shape, index, diagram, cone or cocone, defining morphisms, universal morphism, and presentation operations.
+
 A subcategory monomorphism uses the constructor on its fixed-endpoint functor category.
 A product, pullback, comma, `Fun([1], C)`, or other category construction creates and retains its named projection functors.
 A leaf reuses those exact objects.

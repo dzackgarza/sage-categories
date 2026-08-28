@@ -826,6 +826,9 @@ The same rule handles repeated codomains.
 ## Diagram shapes and universal constructions
 
 A shape is an object of `Cat()`. A diagram of shape `I` in `C` is an object of `Fun(I, C)`, constructed from an object rule and a morphism rule like every functor.
+For `D: I -> C`, the index category is exactly `I = D.domain()`.
+The construction retains `I` and `D`; every descendant category inherits that presentation.
+For a discrete diagram on `S`, the retained `Discrete(S)` construction supplies the index set `S`.
 
 The kernel supplies these shape constructors:
 
@@ -841,6 +844,10 @@ A discrete diagram needs only its object rule `i |-> X_i`. The rule is an assign
 
 `C.Products()(diagram)` constructs one object of `C`, placed in `C.Products()`, with `product_projection(i)` indexed by `i in S` and the universal map.
 The selected functor of the family is its retained identity-on-values monomorphism into `C`. `C.Coproducts()` is dual with `coproduct_injection(i)`. `X * Y` is `C.Products()((X, Y))`.
+
+For a point `x: 1_C -> P` of a product `P`, its component at `i` is the composite
+`P.product_projection(i) after x`.
+This construction belongs to the generic product presentation.
 
 `C.Limits(I)` and `C.Colimits(I)` are the general families for one supplied shape `I`. The named conveniences are instances:
 

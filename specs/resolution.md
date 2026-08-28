@@ -220,6 +220,8 @@ This is the correct general model for structural inheritance in this framework:
 
 ## Products in modules
 
+The generic product contract is specified in [Products, coproducts, and component functors](functor.md#products-coproducts-and-component-functors).
+
 Let \((\mathcal M,\odot,1)\) be monoidal, let \(\mathcal C\) be an \(\mathcal M\)-actegory with action \(\bullet\), and let \(A\in\operatorname{Monoids}(\mathcal M)\). An object of `Modules(A, C)` is an object \(X\in\mathcal C\) with an action
 
 \[
@@ -229,22 +231,17 @@ Let \((\mathcal M,\odot,1)\) be monoidal, let \(\mathcal C\) be an \(\mathcal M\
 that satisfies the unit and action diagrams.
 When closed or enriched structure represents these actions by an internal endomorphism monoid, this data is equivalently a monoid morphism \(A\to\operatorname{End}_{\mathcal C}(X)\).
 
-Assume that `Modules(A, C)` has the selected products below, and that its selected functor to \(\mathcal C\) carries the chosen product to the chosen product on the nose.
-That is stronger than preservation of products.
-A functor `U` preserves a product when the canonical comparison morphism `U(prod X_i) -> prod U(X_i)`, induced by the cone `(U(pi_i))`, is an isomorphism.
-The kernel needs that comparison to be the identity, because sameness here is identity and never isomorphism.
-It is the identity by construction rather than by theorem: the module product is lifted from the ambient product, so its apex is the ambient apex and its projections are the ambient projections carrying the induced action.
-For a family \((X_i)_{i\in I}\) in this category, a product contains:
+For a family \((X_i,\rho_i)_{i\in I}\), the module delta places the induced action \(\rho_P\) on the chosen ambient product \(P\).
+It is characterized by
 
-- the module apex \(P\);
+\[
+\pi_i\circ\rho_P
+=
+\rho_i\circ(1_A\mathbin{\bullet}\pi_i)
+\]
 
-- module morphisms \(\pi_i:P\to X_i\);
-
-- the module mediating morphism;
-
-- the induced \(A\)-action on \(P\);
-
-- its complete product universal property.
+for every `i`.
+This theorem makes the inherited projections and universal morphism module morphisms.
 
 Let the module presentation select a functor
 
@@ -252,28 +249,16 @@ Let the module presentation select a functor
 U:\operatorname{Modules}(A,\mathcal C)\longrightarrow\mathcal C.
 \]
 
-The \(\mathcal C\)-image of the module product is then literally the product of the \(\mathcal C\)-images:
+The selected functor carries the module product to the chosen ambient product on the nose:
 
 \[
 U\!\left(\prod_i X_i\right)
 =
-\prod_i U(X_i),
+\prod_i U(X_i).
 \]
 
-with equality rather than a comparison isomorphism, because the module construction was built on that ambient product.
-
-The module branch supplies the action and module universal morphisms.
-The \(\mathcal C\)-branch supplies the capabilities owned by \(\mathcal C\). When \(\mathcal C=\operatorname{Sets}()\), these include membership, elements, iteration when available, and cardinality.
-These are compatible capabilities.
-They are not competing product implementations.
-
-The module product must select one complete presentation.
-Its apex, action, projections, mediating morphisms, and \(\mathcal C\)-image must belong to that presentation.
-The implementation must not combine an apex with universal data from another merely isomorphic presentation.
-
-If a specialized vector realization and a tuple realization are both useful, one is the chosen public presentation.
-The other remains an explicit realization functor or an explicit isomorphic presentation.
-It does not become a second structural identity.
+The module specification supplies the action and this equality.
+All product presentation data remains owned by the inherited construction.
 
 ## Finite-rank free modules over finite fields
 

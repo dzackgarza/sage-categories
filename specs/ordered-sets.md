@@ -165,31 +165,17 @@ Poset theory adds only the theorem-backed admission needed to preserve monotonic
 
 ## Products
 
-The poset product constructor starts from the chosen set-product presentation.
-It keeps that set apex and installs the componentwise order:
+The generic product contract is specified in [Products, coproducts, and component functors](functor.md#products-coproducts-and-component-functors).
+The poset delta uses the chosen set-product apex and installs the componentwise order:
 
 \[
 x\leq y\quad\Longleftrightarrow\quad
 \forall i,\ x_i\leq_i y_i.
 \]
 
-The result retains:
-
-- the original diagram;
-
-- the chosen set-product apex;
-
-- monotone projections;
-
-- the universal monotone map;
-
-- the underlying set cone.
-
-The coordinatewise theorem admits the order and all product morphisms.
-The constructor does not enumerate the product.
-
-The set-projection square to the chosen set product commutes.
-Product elements remain owned by the product poset and pass set membership through that projection.
+The coordinatewise theorem admits this order.
+It also establishes that every inherited product projection is monotone and that the inherited universal morphism is monotone.
+The selected functor to `Sets()` maps the poset product to the chosen set product on the nose.
 
 The product of total orders need not be total.
 In a product of two nontrivial chains, the two crossed elements are incomparable.

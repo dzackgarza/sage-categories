@@ -394,6 +394,8 @@ Every declaration is a functor into `Cat()`, and the parameter it takes is that 
 
 **D85 (08-29, corrected 08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T18:48Z, 2026-08-28T18:49Z, 2026-08-28T19:05Z, 2026-08-28T19:09Z). Uniform category operations are inherited methods.** `Cat().ObjectType` defines each method once, and every category inherits it through the implementation-class hierarchy. In particular, its fixed-object methods return the monomorphism or epimorphism property subcategories of slices and coslices. A leaf supplies only its specialization, realization, and new mathematical constructors. Receiver-specific and leaf-specific convenience aliases begin after version 1.
 
+**D87 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T19:25Z). A construction specification follows the category graph.** `Cat` owns the shape, index, diagram, cone or cocone, defining morphisms, universal morphism, and every operation determined by that categorical construction. A leaf specification links to that contract and states its mathematical delta: the added leaf structure, its membership and equality predicates, its cardinality or other leaf operations, its exact algorithms, and its private engine realizations. A public name identifies the exact mathematical object or morphism it returns. One generic construction has one inherited public surface.
+
 **D77 (08-28). The leaf writer's contract is a closed list.** The kernel exists to make this list short, so anything a leaf must supply beyond it is a kernel defect, not a leaf obligation.
 
 1. `ObjectType`, `ElementType`, and `MorphismType`, as nested classes.
@@ -501,9 +503,9 @@ Sage's own case shows the subtlety — its `ModulesWithBasis` morphisms are ordi
 Two places the pattern does not reach.
 There is no bare object to equip when the object is already the pair: a subobject is an object together with a monomorphism, so `Subobjects(X)` is the name (D74). And a construction family that already retains its construction is the equipped form, so it needs no adjective — that, and not an absence of alternatives, is why an extra product-family adjective was redundant, since a product has many isomorphic siblings and the repository simply keeps the one it built.
 
-**D74 (08-26, corrected 08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T18:48Z). A subobject is an object with a monomorphism, and restricting structure to one is leaf work.** There is no second notion and no separate name for a representative; the equivalence class matters only when deciding whether two subobjects are equal, which is a predicate. For `X in C`, the one fixed-object category is `C.Subobjects(X)`.
+**D74 (08-26, corrected 08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T18:48Z, 2026-08-28T19:25Z). A subobject is an object with a monomorphism, and restricting structure to one is leaf work.** There is no second notion and no separate name for a representative; the equivalence class matters only when deciding whether two subobjects are equal, which is a predicate. For `X in C`, the one fixed-object category is `C.Subobjects(X)`.
 
-For a poset `P` presented by `(X, R)`, `Sets().Subobjects(X).from_predicate(predicate)` constructs only a set subobject. `PartiallyOrderedSets().Subobjects(P)` owns poset subobjects and retains their restricted order and monomorphism in `PartiallyOrderedSets()`. The ordering subtree decides the strongest established order category of the result.
+For a poset `P` presented by `(X, R)`, `Sets().Subobjects(X).from_predicate(predicate)` constructs only a set subobject. `PartiallyOrderedSets().Subobjects(P)` specializes the inherited subobject construction by retaining the restricted order and monomorphism in `PartiallyOrderedSets()`. The ordering subtree decides the strongest established order category of the result.
 
 The theorem that transports a monomorphism between the set and poset categories belongs to the leaf that states it. The compiler supplies only the generic construction and inherited category structure.
 

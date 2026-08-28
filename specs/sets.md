@@ -26,10 +26,10 @@ An owned element is a point `t: 1 -> X`, and its parent is `X`.
 A generalized element `T -> X` with nonterminal domain is an ordinary morphism in `Sets()`, not a `Sets.ElementType` value.
 The same point datum can produce distinct owned elements in distinct sets.
 
-Private representations can include Sage parents, predicates, symbolic expressions, finite collections, indexed families, tagged values, or universal-construction data.
+Private representations can include Sage parents, predicates, symbolic expressions, finite collections, indexed families, tagged pairs, or universal-construction data.
 No private representation becomes another public owner.
 
-The `Sets()` subtree owns:
+The `Sets()` subtree adds:
 
 - membership and available iteration;
 
@@ -37,11 +37,11 @@ The `Sets()` subtree owns:
 
 - cardinality;
 
-- subobjects and images;
+- the set structure on inherited subobjects and images;
 
-- function sets and exponentials;
+- the set structure on inherited exponentials;
 
-- products, coproducts, limits, and colimits.
+- the set structure, predicates, cardinality cases, and private engines for inherited universal constructions.
 
 Property subcategories add only their stated property.
 They inherit all set operations.
@@ -137,49 +137,33 @@ It satisfies both inverse equations.
 
 ## Products
 
-`Cat` defines the product construction for every category as the limit of a discrete diagram.
-`Sets()` realizes that inherited construction as the set of indexed families.
-The diagram is given by its object rule `i |-> X_i` on `S`.
-The inherited diagram, projection, and universal-map contract is specified in [Products, coproducts, and component functors](functor.md#products-coproducts-and-component-functors).
+The inherited product contract is specified in [Products, coproducts, and component functors](functor.md#products-coproducts-and-component-functors).
+For a diagram `i |-> X_i` on `S`, `Sets()` constructs the owned set
 
-```python
-P = Sets().Products()(diagram)
-```
+\[
+\prod_{i\in S} X_i=\{(x_i)_{i\in S}\mid x_i\in X_i\text{ for every }i\in S\}.
+\]
 
-The inherited product functor maps diagram morphisms to the induced product morphisms.
-
-A product element is an indexed family:
-
-```python
-x[i]
-x.components()
-iter(x)  # only when the index set has a chosen finite enumeration
-```
-
-The specialization adds `cardinality()` and `factor_cardinalities()` to the inherited product object.
-Its cardinality predicate uses the computational cases in [Cardinality and enumeration](#cardinality-and-enumeration).
+Membership is the conjunction of the component membership propositions.
+Equality is the conjunction of the component equality propositions.
+`ask()` evaluates either proposition when the retained diagram and the selected set engines supply an exact algorithm.
+The set implementation selects a private exact representation from the retained diagram.
+The membership and equality predicates use the components obtained through the inherited projections.
+The cardinality predicate uses the computational cases in [Cardinality and enumeration](#cardinality-and-enumeration).
 
 ## Coproducts
 
-`Cat` defines the coproduct construction for every category as the colimit of a discrete diagram.
-`Sets()` realizes that inherited construction as the set of tagged elements.
-The inherited diagram, injection, and universal-map contract is specified in [Products, coproducts, and component functors](functor.md#products-coproducts-and-component-functors).
+The inherited coproduct contract is specified in [Products, coproducts, and component functors](functor.md#products-coproducts-and-component-functors).
+For a diagram `i |-> X_i` on `S`, `Sets()` constructs an owned set `Q` whose inherited injections
 
-```python
-Q = Sets().Coproducts()(diagram)
-```
+\[
+\iota_i:X_i\longrightarrow Q
+\]
 
-The inherited coproduct functor maps diagram morphisms to the induced coproduct morphisms.
-
-A coproduct element is a tagged element:
-
-```python
-x.index()
-x.value()
-```
-
-The specialization adds `cardinality()` and `cofactor_cardinalities()` to the inherited coproduct object.
-Its cardinality predicate uses the computational cases in [Cardinality and enumeration](#cardinality-and-enumeration).
+are injective, have pairwise disjoint images, and have images whose union is `Q`.
+Membership and equality are the owned set propositions determined by this disjoint-union structure.
+The set implementation selects a private exact representation from the retained diagram.
+The cardinality predicate uses the computational cases in [Cardinality and enumeration](#cardinality-and-enumeration).
 
 ## General limits and colimits
 
@@ -187,15 +171,10 @@ Its cardinality predicate uses the computational cases in [Cardinality and enume
 The specialization supplies the following set-valued realizations.
 
 The limit of `D: I -> Sets()` is the predicate subset of the product `prod_{i in Ob(I)} D(i)` cut out by compatibility. A family's membership proposition is the conjunction of `D(u)(x_i) == x_j` over every generating morphism `u: i -> j` of `I`. `ask()` decides this proposition when `I` is finitely presented and every generating equality decides; otherwise it returns `Unknown`.
-The projections are the restricted product projections.
-The mediating map of a cone is its map into the product.
 
-The colimit of `D` is the quotient of the coproduct `coprod_i D(i)` by the equivalence relation generated by `(i, x) ~ (j, D(u)(x))`. Its injections are the coproduct injections followed by the quotient map.
+The colimit of `D` is the quotient of the coproduct `coprod_i D(i)` by the equivalence relation generated by `(i, x) ~ (j, D(u)(x))`.
 Its element equality is an owned predicate.
 For `I = omega`, the exact handler decides `True` when two representatives agree at the larger of their two indices under the transition maps and returns `Unknown` otherwise; for every other infinite shape it returns `Unknown`.
-
-Products, coproducts, pullbacks, pushouts, equalizers, and coequalizers use the methods inherited from `Cat().ObjectType`, specified in [Functors, `Cat`, and structural inheritance](functor.md#diagram-shapes-and-universal-constructions).
-`Sets()` supplies their set-valued apexes, defining maps, and universal maps.
 
 ## Subobjects, images, and power objects
 
@@ -206,60 +185,18 @@ It lifts no additional structure: when a poset is presented as `(X, R)`, this co
 The predicate returns the membership proposition for a candidate element.
 `ask()` can evaluate that proposition as `True`, `False`, or `Unknown`.
 
-A subset supplies:
-
-```python
-A.monomorphism()
-A.characteristic_morphism()
-A.cardinality()
-```
-
-`A` is itself an object of `Sets()`, and the set it sits inside is
-`A.monomorphism().codomain()`.
-A generic accessor that omits the named functor would choose a codomain silently (`POL-FUN-037`).
-
-An abstract subobject is represented by a monomorphism.
-Its image supplies the corresponding subset.
-The chosen monomorphism remains part of the subobject data.
+The inherited subobject retains its monomorphism.
+Its codomain is the containing set.
+Its placement in `Sets()` supplies cardinality and the other set operations.
+The set-specific characteristic morphism maps the selected subset to `1 in 2` and its complement to `0 in 2`.
 
 `f.image()` constructs an owned subobject of `f.codomain()`. It does not require source enumeration.
 Image membership remains a proposition when no handler can decide it.
 
 `2 ** X`, with `2 = [1] = Sets().Simplex(1)`, constructs the power object of `X`. It is the function set from `X` to `2`.
-
-The power object supplies:
-
-```python
-P.base_set()
-P.from_predicate(predicate)
-P.from_characteristic_morphism(chi)
-P.top()
-P.bottom()
-P.inverse_image_morphism(f)
-P.direct_image_morphism(f)
-P.cardinality()
-```
-
-Its elements supply:
-
-```python
-x in A
-A <= B
-A.union(B)
-A.intersection(B)
-A.difference(B)
-A.symmetric_difference(B)
-A.complement()
-
-A | B
-A & B
-```
-
-These operations return owned subsets or applied propositions.
-They do not return Python containers.
-
-`X.subset_poset()` orders the same subset objects by inclusion.
-The result belongs to the owned poset category and retains `X` as its base set.
+Its points are characteristic morphisms and therefore correspond to the objects of `Sets().Subobjects(X)`.
+Set inclusion is an applied proposition.
+The set operations on these subobjects construct owned set subobjects.
 
 ## Finite and fixed-cardinality subsets
 
@@ -272,24 +209,8 @@ Sets().SubsetsOfSize(k)(X)
 
 Their elements are owned finite subobjects of `X`.
 
-If `X` has a chosen enumeration, these constructions can derive a chosen enumeration.
+If `X` has a chosen enumeration, these constructions can derive a chosen enumeration and inherit its indexing operations.
 Countability alone does not select one.
-
-With an induced enumeration, `Sets().FiniteSubsets()(X)` supplies:
-
-```python
-S.cardinality()
-S.index(subset)
-S[n]
-```
-
-With an induced enumeration, `Sets().SubsetsOfSize(k)(X)` supplies:
-
-```python
-S.subset_cardinality()
-S.cardinality()
-S[n]
-```
 
 The cardinality methods use cardinal arithmetic.
 They do not enumerate an infinite base set.

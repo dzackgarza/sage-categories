@@ -15,21 +15,22 @@ Method catalogue of a node (``specs/resolution.md``):
 4. incomparable owners with one spelling raise ``SemanticCollisionError``.
 
 The compiled role class is a Sage dynamic class (``sage.structure.dynamic_class``).
-Its bases are exactly the *controlled* direct bases that
-``sage.misc.c3_controlled.C3_sorted_merge`` returns for the node: compiled classes of
-reachable nodes.  A node that reaches none ends its chain on its kernel role class.
+After the class the node's category wrote, its bases are exactly the *controlled* direct
+bases that ``sage.misc.c3_controlled.C3_sorted_merge`` returns for the node: compiled
+classes of reachable nodes.  A node that reaches none ends its chain on its kernel role
+class.
 
-A declaration is never a base.  It is passed as ``cls``, so its methods are inserted
-into the compiled class and its own Python bases are dropped.  This is Sage's
-``Category._make_named_class``, which passes ``ParentMethods`` the same way and warns
-when a method provider has a super class at all.
+The class a category writes is the first base of its node's compiled class, so the
+written body runs on the value unchanged and a zero-argument ``super()`` in a written
+method closes over a class that is in the receiver's MRO.  Sage builds a parent's class
+the same way, from ``(type(self), self._category.parent_class)``
+(``Parent._init_category_``, ``sage/structure/parent.pyx``, inspected 2026-08-29).
 
-That is what lets Python linearize the result.  ``C3_sorted_merge`` orders *nodes*;
-every class it never sees is unconstrained, and Python then places it wherever each
-individual class construction allows.  Two constructions rank one such pair opposite
-ways, and a node reaching both has no MRO at all.  With declarations out of the bases,
-every class in every compiled MRO is a node class or its role's kernel chain end, and
-carries the node order; ``_assert_linearized`` holds that.
+``C3_sorted_merge`` orders *nodes*, and a declaration it never sees is unconstrained.
+A declaration constrains only the classes it was written over, which are the role kernel
+classes at the end of every chain, so each one lands directly below its own node.
+``_assert_linearized`` holds that: the MRO is the node linearization with each node's
+compiled class followed by the class that node's category wrote.
 
 Each compiled node owns one generated constructor wrapper.  Before that wrapper starts
 the local ``super()`` chain, every selected functor converts the complete source input
@@ -41,8 +42,8 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Callable
-from types import CellType, FunctionType, GenericAlias
-from typing import TYPE_CHECKING, Concatenate, NamedTuple
+from types import FunctionType
+from typing import TYPE_CHECKING, Concatenate, Generic, NamedTuple
 
 from sage.misc.c3_controlled import C3_sorted_merge
 from sage.structure.dynamic_class import dynamic_class
@@ -328,7 +329,8 @@ def empty_local_role(category: Category, role: Role) -> type[CategoryPoint]:
     """The local role declaration that introduces no members or state.
 
     One class per category and role, retained: it names the declaring owner of the node
-    and stands directly on the role's kernel base (POL-CAT-053, POL-KERNEL-028).
+    and stands directly on the role's kernel base (POL-CAT-053, POL-KERNEL-028).  It has
+    no body, so ``_declared`` leaves it out of the compiled bases.
     """
     table = _empty_local_roles[role]
     if category not in table:
@@ -445,69 +447,10 @@ def _base_classes(current: Node) -> tuple[type[CategoryPoint], ...]:
     return tuple(bases)
 
 
-def _rebound(function: FunctionType, cell: CellType) -> FunctionType:
-    """A copy of ``function`` whose ``__class__`` closure cell is ``cell``.
-
-    A method declared with zero-argument ``super()`` closes over ``__class__``, bound by
-    Python to the class whose body defined it.  That class is the declaration, which is
-    not in the compiled MRO, so the original closure would make ``super()`` reject its
-    own receiver.  Rebinding the cell to the compiled class makes ``super()`` enter the
-    compiled chain, which is the chain the call is about.  The function is copied rather
-    than mutated: one declaration can be compiled at several nodes.
-    """
-    position = function.__code__.co_freevars.index("__class__")
-    assert function.__closure__ is not None, function
-    closure = tuple(cell if index == position else held for index, held in enumerate(function.__closure__))
-    copy = FunctionType(function.__code__, function.__globals__, function.__name__, function.__defaults__, closure)
-    copy.__qualname__ = function.__qualname__
-    copy.__kwdefaults__ = function.__kwdefaults__
-    copy.__annotations__ = function.__annotations__
-    return copy
-
-
-_CLASS_METADATA = frozenset({"__dict__", "__weakref__", "__qualname__", "__classcell__"})
-
-
-def _rebound_member(value, cell: CellType):
-    # Python wraps ``__init_subclass__`` and ``__class_getitem__`` in ``classmethod`` when
-    # it creates the declaring class, so a zero-argument ``super()`` inside one closes over
-    # ``__class__`` the same way an ordinary method does and needs the same rebinding.  Left
-    # unbound, the copy's ``super()`` finds the copy again through the declaration still in
-    # the receiver's MRO, and the call recurses.
-    if isinstance(value, classmethod):
-        rebound = _rebound_member(value.__func__, cell)
-        return value if rebound is value.__func__ else classmethod(rebound)
-    uses_super = isinstance(value, FunctionType) and "__class__" in value.__code__.co_freevars
-    return _rebound(value, cell) if uses_super else value
-
-
-def _local_initializer(local: type[CategoryPoint], cell: CellType) -> FunctionType | None:
-    """The declaration's initializer, rebound to its compiled node and kept out of the copied members."""
+def _local_initializer(local: type[CategoryPoint]) -> FunctionType | None:
+    """The declaration's own initializer, which the generated wrapper on its node calls."""
     initializer = vars(local).get("__init__")
-    if not isinstance(initializer, FunctionType):
-        return None
-    return _rebound_member(initializer, cell)
-
-
-def _method_provider(
-    local: type[CategoryPoint],
-    cell: CellType,
-    initializer: FunctionType,
-) -> type:
-    """A Sage method provider containing local members and the generated wrapper."""
-    provider = type(local.__name__, (), {})
-    for name, value in vars(local).items():
-        if name in _CLASS_METADATA or name == "__init__":
-            continue
-        setattr(provider, name, _rebound_member(value, cell))
-    # PEP 695 adds ``typing.Generic`` below a parameterized declaration.  That raw
-    # base cannot enter the public role MRO (POL-KERNEL-028).  Preserve subscription
-    # with Python's standard generic-alias constructor instead.  The declaration's
-    # ``__type_params__`` and ``__parameters__`` were copied above.
-    if vars(local).get("__type_params__", ()) and "__class_getitem__" not in vars(local):
-        provider.__class_getitem__ = classmethod(GenericAlias)
-    setattr(provider, "__init__", initializer)
-    return provider
+    return initializer if isinstance(initializer, FunctionType) else None
 
 
 def _kernel_chain(last: Node) -> tuple[type, ...]:
@@ -528,26 +471,40 @@ def _kernel_chain(last: Node) -> tuple[type, ...]:
     return kernel_base(last.role).__mro__
 
 
+def _written_role_class(category: Category, role: Role) -> type[CategoryPoint] | None:
+    """The class ``category`` wrote for ``role``, or ``None`` when it wrote none.
+
+    A written class is the first base of its node's compiled class, so the body runs on
+    the value and a zero-argument ``super()`` inside it enters the compiled chain.  The
+    empty declaration has no body to preserve and stays out of the bases.
+    """
+    local = category.local_role_class(role)
+    return None if local is empty_local_role(category, role) else local
+
+
+def _declared(current: Node) -> tuple[type[CategoryPoint], ...]:
+    written = _written_role_class(current.category, current.role)
+    return () if written is None else (written,)
+
+
 def _assert_linearized(current: Node, compiled: type[CategoryPoint]) -> None:
-    """The MRO is the node linearization followed by exactly one kernel role chain.
+    """The MRO is the node linearization, each node followed by the class it wrote.
 
     Sage states the same invariant in ``Category._test_category_graph``
     (``sage/categories/category.py``): ``parent_class.mro()`` is the ancestors'
-    compiled classes followed by the common Python chain end.  Raw declarations never
-    occur in this order (POL-KERNEL-028).
+    compiled classes followed by the common Python chain end.  A written class ranks
+    with the one node it belongs to, directly below it (POL-KERNEL-028).
+
+    PEP 695 puts ``typing.Generic`` in the bases of a parameterized declaration.  It
+    names no node and carries no mathematics, so the order is read without it.
     """
-    if _is_cat_element_root(current):
-        expected = (compiled, *CategoryPointKernel.__mro__)
-        actual = tuple(compiled.__mro__)
-        assert actual == expected, (
-            f"the Cat.ElementType MRO is {[klass.__name__ for klass in actual]}, expected "
-            f"{[klass.__name__ for klass in expected]}"
-        )
-        return
-    order = [_nodes_by_key[key] for key in _linearize(current)[0]]
-    classes = [found.category.role_class(found.role) for found in order]
-    expected = (compiled, *classes, *_kernel_chain(order[-1] if order else current))
-    actual = tuple(compiled.__mro__)
+    order = [] if _is_cat_element_root(current) else [_nodes_by_key[key] for key in _linearize(current)[0]]
+    expected = [compiled, *_declared(current)]
+    for found in order:
+        expected.append(found.category.role_class(found.role))
+        expected.extend(_declared(found))
+    expected.extend(_kernel_chain(order[-1] if order else current))
+    actual = [klass for klass in compiled.__mro__ if klass is not Generic]
     assert actual == expected, (
         f"the {current.role.value} MRO of {current.category!r} is "
         f"{[klass.__name__ for klass in actual]}, expected "
@@ -561,7 +518,7 @@ def _route_name(route: Route) -> str:
 
 class _NodeRuntime(NamedTuple):
     initializer: FunctionType | None
-    cell: CellType
+    owner: type[CategoryPoint]
 
 
 _node_runtimes: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
@@ -573,9 +530,9 @@ def _runtime(current: Node) -> _NodeRuntime:
     return table[current.category]
 
 
-def _advance(cell: CellType, instance: CategoryPoint) -> None:
+def _advance(owner: type[CategoryPoint], instance: CategoryPoint) -> None:
     """Enter the next generated wrapper, or the kernel role initializer."""
-    super(cell.cell_contents, instance).__init__()
+    super(owner, instance).__init__()
 
 
 def _object_step[Value: ObjectOfCategory, Datum](
@@ -587,7 +544,7 @@ def _object_step[Value: ObjectOfCategory, Datum](
 
     def initialize() -> None:
         if runtime.initializer is None:
-            _advance(runtime.cell, instance)
+            _advance(runtime.owner, instance)
             return
         runtime.initializer(instance, construction_input.datum)
 
@@ -603,7 +560,7 @@ def _element_step[Value: CategoryPoint, Datum](
 
     def initialize() -> None:
         if runtime.initializer is None:
-            _advance(runtime.cell, instance)
+            _advance(runtime.owner, instance)
             return
         runtime.initializer(instance, construction_input.datum)
 
@@ -619,7 +576,7 @@ def _morphism_step[Value: MorphismOfCategory, Datum](
 
     def initialize() -> None:
         if runtime.initializer is None:
-            _advance(runtime.cell, instance)
+            _advance(runtime.owner, instance)
             return
         runtime.initializer(instance, construction_input.datum)
 
@@ -967,42 +924,42 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
         # Every node gets its own compiled class, including one that declares nothing
         # and inherits nothing: in Sage a category without ``ParentMethods`` still has
         # its own ``parent_class``, built from its super categories and adding no
-        # methods.  The declaration supplies methods through ``cls`` and never becomes a
-        # base, so every class in the compiled MRO is a node class and carries the node
-        # order (POL-CAT-016).
+        # methods.  The class the category wrote is the first base, so its body runs on
+        # the value and its ``super()`` calls enter the compiled chain (POL-CAT-016).
         #
         # One name per kind (POL-KERNEL-028): the declaration is ``ObjectType`` on the
         # category's Python class and the compiled class is ``ObjectType`` on the
         # category value, which shadows it.
         local = category.local_role_class(role)
-        bases = _base_classes(current)
-        cell = CellType()
-        node_initializer = _local_initializer(local, cell)
+        bases = (*_declared(current), *_base_classes(current))
+        node_initializer = _local_initializer(local)
         wrapper = _constructor_wrapper(current)
-        provider = _method_provider(local, cell, wrapper)
         if _is_cat_element_root(current):
             compiled = cat_element_root()
-            assert compiled.__bases__ == bases
-            for name, value in vars(provider).items():
-                if name not in _CLASS_METADATA:
-                    setattr(compiled, name, value)
+            compiled.__bases__ = bases
             compiled.__doc__ = local.__doc__
         else:
             try:
                 compiled = dynamic_class(
                     f"{category!r}.{role.value}",
                     bases,
-                    cls=provider,
                     doccls=local,
-                    prepend_cls_bases=False,
+                    cache=False,
                 )
             except TypeError as conflict:
                 raise TypeError(
                     f"the {role.value} class of {category!r} has no linearization over "
                     f"{[klass.__name__ for klass in bases]}: {conflict}"
                 ) from conflict
-        cell.cell_contents = compiled
-        _node_runtimes[role][category] = _NodeRuntime(node_initializer, cell)
+        compiled.__init__ = wrapper
+        # ``Generic.__init_subclass__`` reads a class's parameters off its own
+        # ``__orig_bases__``.  The compiled class states bases without them, so the hook
+        # clears what the declaration recorded; restoring it keeps a parameterized
+        # declaration subscriptable, as ``Category[[Rule], []]``.
+        parameters = vars(local).get("__parameters__", ())
+        if parameters:
+            compiled.__parameters__ = parameters
+        _node_runtimes[role][category] = _NodeRuntime(node_initializer, compiled)
         setattr(category, role.value, compiled)
         _assert_linearized(current, compiled)
 

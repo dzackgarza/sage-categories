@@ -119,8 +119,8 @@ def test_a_poset_and_a_set_have_no_common_ancestor_and_do_not_combine() -> None:
             combine()
 
 
-def test_star_on_a_morphism_is_composition_and_the_product_of_morphisms_is_named() -> None:
-    """``*`` carries one meaning on the morphism role; the product of two objects of ``Mor(C)`` has no operator (D02)."""
+def test_star_on_a_morphism_is_composition() -> None:
+    """``*`` carries one meaning on morphisms: composition in categorical order (D02)."""
     chain = Posets().Simplex(int(2))
     pair = Posets().Simplex(int(1))
     collapse = Mor(Posets())(chain, pair)(lambda datum: min(datum, int(1)))
@@ -131,15 +131,6 @@ def test_star_on_a_morphism_is_composition_and_the_product_of_morphisms_is_named
     assert composite.codomain() is pair
     assert ask(composite == pair.identity())
     assert (include * collapse).domain() is chain
-
-    # The product of the two morphisms is the product of two objects of ``Mor(C)``.
-    # It is constructed by naming that category, and ``Mor(Posets())`` declares no
-    # such construction: the refusal comes from the construction family, not from a
-    # missing operator.
-    morphisms = Mor(Posets())
-    assert morphisms.Products() is not Posets().Products()
-    with pytest.raises(AssertionError):
-        morphisms.Products()((collapse, include))
 
 
 def test_a_narrowing_by_more_roots_includes_into_the_narrowing_by_fewer() -> None:

@@ -14,11 +14,11 @@ They are not method catalogues that a compiler matches against backend method na
 
 - [Intended architecture](#intended-architecture)
 
-- [Standard mathematics determines the implementation classes](#standard-mathematics-determines-the-implementation-classes)
+- [Standard mathematics determines the three classes](#standard-mathematics-determines-the-three-classes)
 
 - [Two different forms of reuse](#two-different-forms-of-reuse)
 
-- [The implementation classes](#the-implementation-classes)
+- [`C.ObjectType`, `C.ElementType`, and `C.MorphismType`](#cobjecttype-celementtype-and-cmorphismtype)
 
 - [The leaf is the implementation firewall](#the-leaf-is-the-implementation-firewall)
 
@@ -26,7 +26,7 @@ They are not method catalogues that a compiler matches against backend method na
 
 - [Local methods are ordinary executable methods](#local-methods-are-ordinary-executable-methods)
 
-- [Inherited methods use compiled implementation inheritance](#inherited-methods-use-compiled-implementation-inheritance)
+- [Selected functors determine class inheritance](#selected-functors-determine-class-inheritance)
 
 - [The policy conflict that exposed the gap](#the-policy-conflict-that-exposed-the-gap)
 
@@ -83,7 +83,7 @@ It does not require the leaf to contain no computation code.
 Leaf purity is semantic purity.
 It is not implementation abstinence.
 
-## Standard mathematics determines the implementation classes
+## Standard mathematics determines the three classes
 
 This repository uses the ordinary mathematical meanings of category, object, element, morphism, functor, construction, and theorem.
 The Python implementation does not define new meanings for these terms.
@@ -177,11 +177,11 @@ Sage performs selected computations, but Sage does not own the public operation.
 Implementation compression applies to inherited boilerplate.
 It does not remove the executable bodies of mathematics newly introduced by a leaf.
 
-## The implementation classes
+## `C.ObjectType`, `C.ElementType`, and `C.MorphismType`
 
-`ObjectType`, `ElementType`, and `MorphismType` are the executable classes.
-Their instances implement the corresponding exact mathematical types.
-A category writes its local delta into those same three names, and the kernel compiles each in place.
+`C.ObjectType`, `C.ElementType`, and `C.MorphismType` are the executable classes for `C`.
+A category specifies its new mathematics under those exact names.
+The kernel constructs each class dynamically from that specification and the selected functors.
 
 They are not:
 
@@ -198,9 +198,9 @@ They are not:
 - containers for annotations used by runtime dispatch.
 
 Each public operation has one executable declaration on its mathematical owner.
-A local object operation has its body on the category's written `ObjectType`. The kernel compiles that class in place. The same rule applies to elements and morphisms.
+A local object operation has its body on `C.ObjectType`. The same rule applies to `C.ElementType` and `C.MorphismType`.
 
-The implementation class can call dependencies.
+Each of these classes can call dependencies.
 Calling a dependency does not transfer ownership to that dependency.
 
 ## The leaf is the implementation firewall
@@ -308,9 +308,9 @@ If this implementation becomes sufficiently large or dominated by Python, foreig
 The category implementation class remains the sole public owner.
 The helpers remain computation details and never become another method surface.
 
-## Category declarations define implementations
+## A category specifies its three classes
 
-A category declares its three implementation classes directly:
+A category specifies `C.ObjectType`, `C.ElementType`, and `C.MorphismType` directly:
 
 ```python
 class LeafCategory(Category):
@@ -325,8 +325,9 @@ class LeafCategory(Category):
         ...
 ```
 
-The kernel fills the bases of these same classes from selected functors.
-These names are both the declarations and the public implementation types.
+The kernel constructs these classes dynamically from selected functors.
+For each selected `F: C -> D`, `C.ObjectType` inherits `D.ObjectType`.
+The element and morphism classes follow the same rule when `F` supplies their conversions.
 
 ## Local methods are ordinary executable methods
 
@@ -364,24 +365,24 @@ A short method can still be the correct owner.
 A semantic method that invokes a mature algorithm is not a meaningless forwarding wrapper.
 It supplies the public mathematical contract and the private computation boundary.
 
-## Inherited methods use compiled implementation inheritance
+## Selected functors determine class inheritance
 
-The compiler acts on complete inherited implementation classes.
+The kernel constructs `C.ObjectType`, `C.ElementType`, and `C.MorphismType` from complete selected-functor paths.
 
 `C.ObjectType` inherits `Cat().ElementType` because an object of `C` is a point `* -> C`.
 `C.ElementType` implements points `1_C -> X` of objects `X in C`.
 `C.MorphismType` is `Mor(C).ObjectType`.
 A generalized element `T -> X` remains separate from `ElementType` unless `T = 1_C`.
 
-For each selected route, the compiler:
+For each selected `F: C -> D`, the kernel:
 
-- places the ancestor compiled class in the controlled C3 MRO;
+- places `D.ObjectType`, `D.ElementType`, or `D.MorphismType` in the corresponding class MRO when `F` supplies the required conversion;
 
-- copies each local member except `__init__` into its own compiled class;
+- preserves each member specified for the corresponding class of `C`, except `__init__`;
 
 - rebinds the local initializer and retains it as the node initializer;
 
-- installs one generated wrapper in the compiled class's `__init__` slot;
+- installs one generated wrapper in the corresponding class's `__init__` slot;
 
 - uses the functor's constructor conversion to initialize the ancestor state;
 
@@ -958,7 +959,7 @@ It does not require every private engine value or algorithm call to enter the fu
 
 A leaf implementation satisfies this specification when all these facts hold:
 
-- the category declares one nested `ObjectType`, `ElementType`, and `MorphismType`, and the kernel fills the bases of those same public classes;
+- the category specifies `C.ObjectType`, `C.ElementType`, and `C.MorphismType`, and the kernel constructs their required dynamic inheritance;
 
 - exact object, element, morphism, parameter, result, and constructor types follow from the category, operation, and functor definitions;
 

@@ -414,21 +414,17 @@ It does not change a functor's mathematical definition.
 Each category lists only immediate selected functors.
 The kernel obtains longer routes by composition and applies [resolution.md](resolution.md) to diamonds.
 
-### Compiled implementation classes
+### `C.ObjectType`, `C.ElementType`, and `C.MorphismType`
 
-A category declares `ObjectType`, `ElementType`, and `MorphismType` directly as nested classes.
-The kernel compiles the effective `C.ObjectType` and exposes it under that same name, so the
-declaration and the public API use one name for each mathematical kind. The compiled class
-inherits `C`'s local declaration and inherits `F(C).ObjectType` for each selected functor
-`F`. Whether it is a new dynamic class or the declaration itself is an implementation
-choice, and one declaration serving a parameterized family of categories is why a new class
-is often the right one (`POL-KERNEL-028`, `POL-DOC-017`). A leaf never builds this
-inheritance.
-The kernel fills their bases from the corresponding classes at the targets of selected functors.
-A class with no selected target uses the kernel base for its mathematical kind.
+A category specifies `C.ObjectType`, `C.ElementType`, and `C.MorphismType` directly.
+The kernel constructs these classes dynamically from the selected functors.
+For each selected `F: C -> D`, `C.ObjectType` inherits `D.ObjectType`.
+`C.ElementType` and `C.MorphismType` inherit the corresponding target classes when `F`
+supplies the required conversions. A class with no selected target inherits the kernel
+base for its mathematical kind. A leaf never constructs this inheritance.
 
-The kernel preserves each written class body while it fills the bases.
-Each category therefore has one public class for each mathematical kind.
+The kernel preserves the body specified for each class. Each category has exactly one
+`C.ObjectType`, one `C.ElementType`, and one `C.MorphismType`.
 
 Each local constructor accepts only the exact data introduced by its category.
 It initializes that state and calls `super().__init__()` once.

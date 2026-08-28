@@ -56,7 +56,7 @@ This selection has the same purpose as Sage's `super_categories()` declaration.
 ## Property subcategories and predicate handlers
 
 A property subcategory owns its membership predicate.
-It declares the exact public spelling and ambient implementation class:
+It declares the exact public spelling and the largest `C.ObjectType`, `C.ElementType`, or `C.MorphismType` on which the predicate has meaning:
 
 ```python
 predicate_name = "is_P"

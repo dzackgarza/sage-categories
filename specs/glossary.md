@@ -41,7 +41,7 @@ Do not remove a row after the source becomes clean (`POL-MATH-051`).
 | Morphism of `C` | An object of `Mor(C)`. Thus `C.MorphismType = Mor(C).ObjectType`. |
 | Functor | An ordinary object of `Fun(C, D)`. A category can name many functors with the same endpoints. |
 | Inheritance selection | `structure_functors()` selects ordinary functors. Selection adds no new mathematical kind. |
-| Category-owned implementation | The category declares nested `ObjectType`, `ElementType`, and `MorphismType` classes directly. The kernel fills their bases. |
+| Classes specified by a category `C` | The category specifies `C.ObjectType`, `C.ElementType`, and `C.MorphismType` directly. The kernel constructs them dynamically from selected functors. |
 | Public functor image | The named functor owns `F.on_object(x)`, `F.on_morphism(f)`, and its image cache. |
 | Inherited execution | The selected target class is in the source class MRO. Its method runs on the initialized source instance. |
 | Constructor conversion | A selected functor converts source construction data to the exact data required by its target constructor. |

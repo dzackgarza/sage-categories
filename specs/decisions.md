@@ -509,6 +509,12 @@ Tests are for regressions and end-to-end behaviour. They are not for internal co
 
 Until then the arbiter is agreement with the plans, the specifications, and the transcripts. Establishing that agreement takes intelligent, dynamic, adversarial review, for which subagents are appropriate: alignment with the stated architecture, contradictions between documents, abstraction leaking across the kernel and leaf boundary, and drift from what was actually decided. A green suite is evidence of none of it.
 
+**D79 (08-28, session `be8d8a9e` 2026-08-28T15:50Z). Do not build automated enforcement before 1.0.** Adding a lint rule, an `ast-grep` rule, a CI gate, a hook, or a checker to police a convention is the same gradient error as `D78`, one step earlier. It turns a judgement that belongs to review into a check that can be satisfied, and it fixes a convention's current wording into machinery while the architecture that gave the convention its meaning is still moving. The wording then cannot change without changing the machinery, so the machinery starts deciding the architecture.
+
+Observing that nothing enforces a rule is not a finding, and it is not a reason to write the enforcement. The absence is the design. A rule is carried by the documents an agent reads before working and by review that reads them. Where a rule is being broken, the finding is the breach and its repair.
+
+This does not retract `D51`. Static projection of the declared architecture - stub generation, the category type-checker plugin - states what the code already declares, enforces no convention, and stays.
+
 **D46 (08-22). Everything is a tensor.** The package departs from Sage's linear-algebra primitives: not vectors as internal representations of module elements and matrices as internal representations of module morphisms, but `(p, q)`-tensors throughout, encoded at the module `ElementType` level.
 A bilinear form is a Gram tensor, not a Gram matrix.
 `vector()` and `matrix()` shadow a `tensor()` constructor taking `(p, q)` shapes, base rings, and multi-indexable data.

@@ -975,6 +975,24 @@ subagents for it — looking for alignment with the stated architecture, contrad
 between documents, abstraction leaking across the kernel and leaf boundary, and drift from
 what was actually decided. A green suite is evidence of none of those.
 
+Do not build new automated enforcement before 1.0. Adding a lint rule, an `ast-grep` rule,
+a CI gate, a hook, or a checker to police a convention is the same gradient error as
+running the existing ones against an incomplete architecture, one step earlier. It turns a
+judgement that belongs to review into a check that can be satisfied, and it fixes a
+convention's current wording into machinery while the architecture that gave the
+convention its meaning is still moving. Then the wording cannot change without changing
+the machinery, so the machinery starts deciding the architecture.
+
+Observing that nothing enforces a rule is therefore not a finding, and it is not a reason
+to write the enforcement. The absence is the design. A rule is carried by the documents an
+agent reads before working — this file, `CONTRIBUTING.md`, and `specs/` — and by review
+that reads them. If a rule is being broken, the finding is the breach and its repair, not
+the missing checker.
+
+This does not retract `D51`. Static projection of the declared architecture — stub
+generation, the category type-checker plugin — states what the code already declares. It
+enforces no convention, and it stays.
+
 Compare each issue directly with the governing specifications and inspect the code itself.
 First make ownership, category paths, dependency direction, and public semantics converge
 to those specifications. Run the real suites once the architecture is coherent and

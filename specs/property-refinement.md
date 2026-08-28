@@ -359,11 +359,11 @@ F = Fun(C, D)(on_object, on_morphism)
 assume(F.is_full())
 ```
 
-The kernel also applies established implications.
-Placement in `Mor(Cat()).FullyFaithful()` entails both fullness and faithfulness.
+The kernel also reads the declared containments.
+`Mor(Cat()).FullyFaithful()` is a full subcategory of `Mor(Cat()).Full()` and of `Mor(Cat()).Faithful()`, so placement in it is placement in both (D83).
 
 These functor predicates have no computational routes.
-In the absence of category placement, an active assumption, or an applicable implication, `ask(F.is_full())` returns `Unknown`.
+In the absence of category placement, an active assumption, or a declared containment, `ask(F.is_full())` returns `Unknown`.
 
 ### Fixed-endpoint predicates
 

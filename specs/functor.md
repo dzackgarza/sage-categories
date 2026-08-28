@@ -169,7 +169,7 @@ Mor(C).Automorphisms()
 ```
 
 Each is a property subcategory of an owned morphism category.
-Each property has its owned predicate, trusted constructor, assumption route, implication rules, and optional computational routes.
+Each property has its owned predicate, trusted constructor, assumption route, the property subcategories it is a full subcategory of, and optional computational routes.
 Fixed endpoints use the same dispatch for every property subcategory `P` of `Mor(K)`: `P(A, B)` is `Mor(K)(A, B).P()`, one cached object.
 
 ## Canonical objects of `Cat`
@@ -258,17 +258,22 @@ For `F: C -> D`:
 These definitions introduce no selected witnesses.
 A separate construction can select a preimage morphism, inverse functor, unit, or counit when an operation requires that data.
 
-The kernel records the categorical implications:
+These property subcategories contain one another, and each containment is the
+monomorphism presenting it (D83):
 
 ```text
-FullyFaithful(F) implies Full(F)
-FullyFaithful(F) implies Faithful(F)
-Full(F) and Faithful(F) imply FullyFaithful(F)
-Equivalence(F) implies FullyFaithful(F)
-Equivalence(F) implies EssentiallySurjective(F)
+Fun.FullyFaithful() is a full subcategory of Fun.Full()
+Fun.FullyFaithful() is a full subcategory of Fun.Faithful()
+Fun.Full().Faithful() is Fun.FullyFaithful()
+Fun.Equivalences() is a full subcategory of Fun.FullyFaithful()
+Fun.Equivalences() is a full subcategory of Fun.EssentiallySurjective()
 ```
 
-These implications induce the corresponding monomorphisms between property subcategories.
+The containment is the statement, and nothing induces it from a relation between
+predicates. `Fun.Equivalences()` is a full subcategory of `Fun.FullyFaithful()` the same
+way `Sets().Finite()` is one of `Sets().Countable()`; "fully faithful implies full" is
+set-theoretic logic and has no category-theoretic formulation. `Axiom`'s
+`full_subcategory_of` is where a category states it (`cat/properties.py`).
 
 ## Property resolution
 
@@ -307,7 +312,7 @@ Therefore:
 ask(F.is_full())
 ```
 
-uses category placement, active assumptions, and categorical implications.
+uses category placement, active assumptions, and declared subcategory containments.
 It returns `Unknown` when none establishes the proposition.
 
 This rule is specific to categorical functor properties.
@@ -361,20 +366,17 @@ iota = Fun(C.P(), C).Monomorphisms().Isofibrations().Full()()
 The defining object predicate selects the objects, and it is an isomorphism invariant, so `C.P()` is replete and the functor is an isofibration.
 The morphism categories `Mor(C)(A, B)`, identities, and composition are inherited from `C`.
 
-Suppose predicates `P` and `Q` on `C` satisfy
-
-\[
-P(X)\Longrightarrow Q(X).
-\]
-
-The implication is that same declaration between the two property subcategories:
+A property subcategory can be contained in another, `C.P()` in `C.Q()`. That containment
+is the same declaration between them (D83):
 
 ```python
 iota = Fun(C.P(), C.Q()).Monomorphisms().Isofibrations().Full()()
 ```
 
-The source property is stronger and the target property is weaker.
-The implication belongs to the property relation, and its fixed-endpoint functor category owns the construction.
+The containment is the statement. Nothing induces it from a relation between the
+predicates, and `P(X) ⟹ Q(X)` is set-theoretic logic with no category-theoretic
+formulation. `Axiom`'s `full_subcategory_of` is where `C` states it, and its
+fixed-endpoint functor category owns the construction.
 
 A wide subcategory retains every object and restricts morphisms by a multiplicative morphism predicate.
 Its monomorphism is faithful by construction.
@@ -1007,7 +1009,7 @@ Mathlib's arrow category has morphisms as objects and commuting squares as morph
 
 Mathlib uses propositions and typeclasses to carry established facts.
 This repository uses owned predicates, `ask()`, assumptions, direct property construction, and same-object refinement.
-The mathematical definitions and implications remain the same.
+The mathematical definitions and the declared containments remain the same.
 
 Mathlib's `ConcreteCategory` contains a fixed faithful functor to `Type` as extra structure.
 Its `HasForget₂ C D` class also contains a chosen functor `C -> D`; it does not derive one from the endpoints.
@@ -1043,7 +1045,7 @@ It is kernel infrastructure over already established mathematical functors.
 
 - Functor properties have no computational handlers.
 
-- Established property implications induce subcategory monomorphisms.
+- A declared containment between property subcategories is its monomorphism.
 
 - The monomorphism of a full subcategory is fully faithful by construction.
 

@@ -100,20 +100,18 @@ For an atomic proposition \(P(x)\), `ask()` uses this order.
 
    `assume(P(x))` establishes the proposition without computation.
 
-3. Apply categorical implications.
+3. Read the declared subcategory containments.
 
    Examples include:
 
-   \[
-   \mathrm{Finite}\Longrightarrow\mathrm{Countable},
-   \]
+   ```text
+   Sets().Finite() ⊆ Sets().Countable()
+   Mor(C).Isomorphisms() ⊆ Mor(C).Monomorphisms()
+   Mor(C).Isomorphisms() ⊆ Mor(C).Epimorphisms()
+   ```
 
-   and
-
-   \[
-   \mathrm{Isomorphism}\Longrightarrow
-   \mathrm{Monomorphism}\land\mathrm{Epimorphism}.
-   \]
+   The isomorphisms are a full subcategory of each of the other two simultaneously; that
+   is the statement, and there is no conjunction of predicates underneath it (D83).
 
 4. Evaluate images owned by selected functors.
 
@@ -195,7 +193,7 @@ The kernel derives:
 
 - assumption-driven refinement;
 
-- category implications;
+- declared subcategory containments;
 
 - descendant propagation.
 
@@ -226,17 +224,16 @@ Sets().Finite()
 Sets().Countable()
 ```
 
-The implication
-
-\[
-\operatorname{Finite}(X)\Longrightarrow\operatorname{Countable}(X)
-\]
-
-becomes a subcategory monomorphism:
+One is a full subcategory of the other, and the monomorphism presenting it is the whole
+statement (D83):
 
 ```text
 Sets().Finite() ⊆ Sets().Countable()
 ```
+
+"Finite implies countable" is set-theoretic logic and has no category-theoretic
+formulation. `Sets()` states the containment through `Axiom`'s `full_subcategory_of`,
+and nothing derives it from a relation between the two predicates.
 
 Thus `ask(X.is_countable())` returns `True` immediately when `X` already belongs to `Sets().Finite()`.
 
@@ -368,10 +365,10 @@ F = Mor(Cat()).Full()(F)  # Trusted property-category construction.
 assume(G.is_full())      # Interactive assumption and same-object refinement.
 ```
 
-The monomorphism of a full subcategory is constructed as `Fun(Source, Target).Monomorphisms().Isofibrations().Full()()`.  Monicity then implies faithfulness through the recorded property implication.
+The monomorphism of a full subcategory is constructed as `Fun(Source, Target).Monomorphisms().Isofibrations().Full()()`.  `Fun.Monomorphisms()` is declared a full subcategory of `Fun.Faithful()`, so a monomorphism is placed in both (D83).
 
 These property categories register no computational handlers.
-`ask(F.is_full())` returns `Unknown` unless category placement, an active assumption, a cached exact decision, or a categorical implication decides it.
+`ask(F.is_full())` returns `Unknown` unless category placement, an active assumption, a cached exact decision, or a declared subcategory containment decides it.
 
 ## Finite posets
 
@@ -475,7 +472,7 @@ From that property declaration, the kernel generates:
 
 - structural propagation;
 
-- implication closure.
+- the declared subcategory containments.
 
 The leaf does not define `assume()` on `ObjectType`. The membership proposition already supports:
 
@@ -531,7 +528,7 @@ Each handler positively matches the semantic cases it can decide.
 The final wildcard case returns `Unknown`. Add a new supported procedure by adding a new `case`. Do not encode applicability as an `if` cascade over unsupported cases.
 
 No handler is required.
-Without one, `ask(PObjects().membership_proposition(x))` can still succeed from placement, assumptions, implications, or images owned by selected functors.
+Without one, `ask(PObjects().membership_proposition(x))` can still succeed from placement, assumptions, declared containments, or images owned by selected functors.
 
 ## The main boundary
 
@@ -985,7 +982,7 @@ A property axiom declaration supplies:
 
 3. Its category-owned membership proposition.
 
-4. Its categorical implication rules.
+4. The property subcategories it is a full subcategory of.
 
 5. Exact decision handlers, when available.
 
@@ -1120,7 +1117,7 @@ A property leaf requires:
 
 3. Its membership proposition.
 
-4. Its category implications.
+4. The property subcategories it is a full subcategory of.
 
 5. Its decision procedures, when available.
 

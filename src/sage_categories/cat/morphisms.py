@@ -21,16 +21,16 @@ from typing import TYPE_CHECKING, Literal, overload
 from sage.structure.coerce_dict import TripleDict
 
 from sage_categories.cat.category import Category, member
-from sage_categories.cat.properties import Axiom, FullSubcategory, PropertySubcategory
-from sage_categories.kernel.decisions import Decision, Unknown
-from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask
+from sage_categories.cat.properties import FullSubcategory, PropertySubcategory
+from sage_categories.kernel.decisions import Decision
+from sage_categories.kernel.predicates import Axiom, Predicate, Proposition, ask
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory, Role
 
 if TYPE_CHECKING:
     from sage_categories.cat.properties import FixedEndpointProperty
 
-__all__ = ["EndomorphismsCategory", "FixedEndpointCategory", "IsomorphismsCategory", "Mor", "MorphismCategory", "inhabited"]
+__all__ = ["EndomorphismsCategory", "FixedEndpointCategory", "IsomorphismsCategory", "Mor", "MorphismCategory", "hom_inhabitation"]
 
 
 @overload
@@ -93,28 +93,18 @@ def _endpoints_in_by_membership(morphism: MorphismOfCategory, subcategory: Categ
 
 endpoints_in.register_handler(_endpoints_in_by_membership)
 
-# ``inhabited(H)``: the fixed-endpoint category ``H = Mor(C)(A, B)``, or a property
-# narrowing of it, has an object (POL-CAT-086; ``specs/property-refinement.md``,
-# "Fixed-endpoint predicates").  A constructed object establishes inhabitation, so
-# the decision is not a permanent fact of ``H`` and is never cached.  The exact
-# routes: the identity of ``A`` when ``A is B`` and it is a member; then the decision
-# the base category owns for its hom categories (``Category.hom_inhabited``).
-inhabited = Predicate("inhabited", 1, False)
+def hom_inhabitation(hom_category: Category) -> Decision:
+    """The exact cases of ``H.is_inhabited()`` for ``H = Mor(C)(A, B)`` or a property narrowing of it (POL-CAT-086).
 
-
-def _inhabited_by_identity(hom_category: Category) -> Decision:
+    A constructed object establishes inhabitation, so the decision is not a permanent
+    fact of ``H`` and ``Cat().Inhabited()`` caches none.  The identity of ``A`` is the
+    exact route when ``A is B`` and it is a member of the narrowing; otherwise the base
+    category supplies the decision it owns for its hom categories.
+    """
     base = hom_category.narrowing_base()
-    if base.domain() is not base.codomain():
-        return Unknown
-    return True if base.domain().identity() in hom_category else Unknown
-
-
-def _inhabited_by_base_category(hom_category: Category) -> Decision:
-    return hom_category.narrowing_base().base_category().hom_inhabited(hom_category)
-
-
-inhabited.register_handler(_inhabited_by_identity)
-inhabited.register_handler(_inhabited_by_base_category)
+    if base.domain() is base.codomain() and base.domain().identity() in hom_category:
+        return True
+    return base.base_category()._chosen_hom_inhabited(hom_category)
 
 
 class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismData, []]):
@@ -289,13 +279,8 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
         """A morphism of ``Mor(C)`` with these endpoints (POL-CAT-087: the ambient decides which values are its morphisms)."""
         return self.ambient().membership_proposition(candidate) & endpoints(candidate, self._domain_object, self._codomain_object)
 
-    def is_inhabited(self) -> AppliedPredicate:
-        """The proposition that some morphism ``A -> B`` exists (POL-CAT-086)."""
-        return inhabited(self)
-
-    def is_empty(self) -> Proposition:
-        """The negation of ``is_inhabited()``: the two propositions are mutually negated by construction."""
-        return ~inhabited(self)
+    def _chosen_inhabitation(self) -> Decision:
+        return hom_inhabitation(self)
 
     def __call__(self, *args: MorphismData.args, **kwargs: MorphismData.kwargs) -> MorphismOfCategory:
         """``Mor(C)(A, B)(data)``: a morphism ``A -> B`` through ``C``'s constructor, placed here.

@@ -15,7 +15,9 @@ ordinary property subcategories of ``Fun`` with no computational handlers
 This module constructs ``Cat()`` at import (``category.bootstrap()``).  The local
 ``Cat().MorphismType`` declaration lives here.  Bootstrap binds ``Functor`` to the
 compiled role, then constructs ``Fun = Mor(Cat())`` and binds
-``NaturalTransformation`` to ``Fun.MorphismType``.
+``NaturalTransformation`` to ``Fun.MorphismType``.  ``Fun._bootstrap()`` then builds the
+two property categories every subcategory monomorphism is placed in, and places the ones
+built before they existed.
 """
 
 from __future__ import annotations
@@ -30,7 +32,7 @@ from sage.structure.coerce_dict import MonoDict, TripleDict
 from sage_categories.cat import category as _category
 from sage_categories.cat.category import Assignment, Category, CategoryOfCategories, OnMorphism, OnObject
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
-from sage_categories.kernel.predicates import Predicate, Proposition, ask
+from sage_categories.kernel.predicates import Axiom, Predicate, Proposition, ask
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, role_of
 
@@ -341,7 +343,9 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             return f"NaturalTransformation({self.domain()!r} => {self.codomain()!r})"
 
     def __init__(self, base: CategoryOfCategories) -> None:
-        self._bootstrapping = False
+        # Until ``_bootstrap`` runs, at the foot of this module, ``Fun`` has no property
+        # category to place a subcategory monomorphism in, so every placement queues.
+        self._bootstrapping = True
         self._bootstrapped = False
         # The one identity-on-values functor per ``(source, target)``, constructed once
         # and retained by identity (POL-FUN-027).  It is the kernel's own witness that
@@ -384,23 +388,37 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         source, target = transformation.domain(), transformation.codomain()
         return self.morphism_category(1)(target, source).Isomorphisms()(lambda member_object: transformation.component(member_object).inverse())
 
-    # -- the functor property categories (POL-FUN-024) -----------------------------------
+    # -- the functor property categories (POL-FUN-024, POL-CAT-090) ----------------------
+
+    # The five properties of functors, each an ordinary property axiom of ``Fun``
+    # (POL-CAT-090).  ``predicate_name`` and ``predicate_owner`` are the declaration
+    # POL-CAT-060 requires: the one public spelling of the application, and the largest
+    # role class on which the question has meaning, which for a property of functors is
+    # ``Cat().MorphismType``.  The kernel compiles ``F.is_full()`` and its four siblings
+    # from these five lines, and no category writes one (``Axiom._derive_application``).
+    #
+    # FullyFaithful is a full subcategory of Full and of Faithful; Equivalences of
+    # FullyFaithful and of EssentiallySurjective (Mathlib ``Functor.FullyFaithful.full``,
+    # ``Functor.FullyFaithful.faithful``, ``Functor.IsEquivalence``; inspected 2026-08-26).
+    #
+    # None of the five registers a computational handler (POL-CAT-091): ``ask`` answers
+    # from placement, an active assumption, or a declared containment, and returns
+    # ``Unknown`` otherwise.
+    Full = Axiom(predicate_name="is_full", predicate_owner=CategoryOfCategories.MorphismType)
+    Faithful = Axiom(predicate_name="is_faithful", predicate_owner=CategoryOfCategories.MorphismType)
+    EssentiallySurjective = Axiom(predicate_name="is_essentially_surjective", predicate_owner=CategoryOfCategories.MorphismType)
+    FullyFaithful = Axiom(full_subcategory_of=(Full, Faithful), predicate_name="is_fully_faithful", predicate_owner=CategoryOfCategories.MorphismType)
+    Equivalences = Axiom(full_subcategory_of=(FullyFaithful, EssentiallySurjective), predicate_name="is_equivalence", predicate_owner=CategoryOfCategories.MorphismType)
 
     def _bootstrap(self) -> None:
-        """Build the functor property categories once and place the kernel's own subcategory monomorphisms.
+        """Build the two property categories placement itself reads, and place the deferred monomorphisms.
 
-        Those are constructed while the properties do not yet exist, so they are placed
-        afterwards, in the property category a full subcategory declares.
+        Every subcategory monomorphism is placed in a property category of ``Fun``, and
+        the monomorphism presenting one of those property categories as a subcategory of
+        ``Fun`` is one of them, so the placements are queued until this runs and this
+        drains the queue (``_shared_value_functor``).  It runs once, when this module
+        constructs ``Fun``.
         """
-        self._bootstrapping = True
-        self._full = PropertySubcategory(self, "Full", ())
-        self._faithful = PropertySubcategory(self, "Faithful", ())
-        self._essentially_surjective = PropertySubcategory(self, "EssentiallySurjective", ())
-        # FullyFaithful is a full subcategory of Full and of Faithful; Equivalences of
-        # FullyFaithful and of EssentiallySurjective (Mathlib ``Functor.FullyFaithful.full``,
-        # ``Functor.FullyFaithful.faithful``, ``Functor.IsEquivalence``; inspected 2026-08-26).
-        self._fully_faithful = PropertySubcategory(self, "FullyFaithful", (self._full, self._faithful))
-        self._equivalences = PropertySubcategory(self, "Equivalences", (self._fully_faithful, self._essentially_surjective))
         # A subcategory of ``T`` is a subobject of ``T`` in ``Cat()``, and the two
         # conditions on the monomorphism that presents it are monicity and repleteness of
         # the image, which is exactly the isofibration condition (Kerodon, Example
@@ -412,9 +430,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         # ``Monomorphisms`` is a full subcategory of ``Faithful`` (nLab, subcategory,
         # https://ncatlab.org/nlab/show/subcategory, inspected 2026-08-28: "A functor is
         # easily verified to be monic iff it is faithful and injective on objects").
-        self._monomorphisms = PropertySubcategory(self, "Monomorphisms", (self._faithful,))
-        partial = self._monomorphisms.property_subcategory(self._isofibrations)
-        declared = {False: partial, True: partial.property_subcategory(self._full)}
+        self._monomorphisms = PropertySubcategory(self, "Monomorphisms", (self.Faithful(),))
         self._bootstrapped = True
         # Placing a deferred functor can construct a further narrowing of ``Fun``, whose
         # own subcategory monomorphisms defer in turn, so the queue is drained until it
@@ -422,45 +438,16 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         while self._pending:
             batch, self._pending = self._pending, []
             for functor, full in batch:
-                refine(functor, declared[full])
+                refine(functor, self._declared_subcategory(full))
         self._bootstrapping = False
         self._isofibrations.predicate().register_handler(self._is_shared_value_functor)
         self._monomorphisms.predicate().register_handler(self._is_shared_value_functor)
 
-    def Full(self) -> Category:
-        if not self._bootstrapped:
-            self._bootstrap()
-        return self._full
-
-    def Faithful(self) -> Category:
-        if not self._bootstrapped:
-            self._bootstrap()
-        return self._faithful
-
-    def FullyFaithful(self) -> Category:
-        if not self._bootstrapped:
-            self._bootstrap()
-        return self._fully_faithful
-
-    def EssentiallySurjective(self) -> Category:
-        if not self._bootstrapped:
-            self._bootstrap()
-        return self._essentially_surjective
-
-    def Equivalences(self) -> Category:
-        if not self._bootstrapped:
-            self._bootstrap()
-        return self._equivalences
-
     def Isofibrations(self) -> Category:
-        if not self._bootstrapped:
-            self._bootstrap()
         return self._isofibrations
 
     def Monomorphisms(self) -> Category:
         """Monic functors: faithful and injective on objects, so this is a full subcategory of ``Faithful()``."""
-        if not self._bootstrapped:
-            self._bootstrap()
         return self._monomorphisms
 
     # -- subcategory monomorphisms (POL-FUN-027, POL-FUN-036) -----------------------------
@@ -474,12 +461,10 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     def _shared_value_functor(self, source: Category, target: Category, full: bool) -> Functor:
         """The one identity-on-values functor ``source -> target``, placed in the declared property.
 
-        While ``_bootstrap`` runs, the property category to place it in does not exist yet
-        (or is itself under construction), so the placement is queued and ``_bootstrap``
-        drains the queue.
+        Until ``_bootstrap`` has finished, the property category to place it in does not
+        exist yet (or is itself under construction), so the placement is queued and
+        ``_bootstrap`` drains the queue.
         """
-        if not self._bootstrapped and not self._bootstrapping:
-            self._bootstrap()
         key = (source, target, self)
         if key not in self._shared_value_functors:
             self._shared_value_functors[key] = self._base.construct_morphism(source, target, identity_on_values, identity_on_values)
@@ -557,4 +542,12 @@ Fun: FunctorsCategory = Cat().morphism_category(1)
 NaturalTransformation = Fun.MorphismType
 _category.Fun = Fun
 _category.NaturalTransformation = NaturalTransformation
+Fun._bootstrap()
 Cat().equality().register_handler(_defining_functor_equal)
+# The two property subcategories of ``Cat()`` are constructed here, after ``Fun`` exists to
+# supply their subcategory monomorphisms.  ``Inhabited`` reads the exact case a category
+# owns, in the shape ``morphism_set()`` uses; ``Empty`` is its negation, the one route
+# ``Sets()`` uses for a complementary pair (``sets/category.py``).  Neither decides
+# inhabitation itself (POL-CAT-091).
+Cat().Inhabited().predicate().register_handler(lambda category: category._chosen_inhabitation())
+Cat().Empty().predicate().register_handler(lambda category: ask(~category.is_inhabited()))

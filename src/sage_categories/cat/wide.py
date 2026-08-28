@@ -113,7 +113,7 @@ class WideSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
     def retain_inverses(self, forward: MorphismOfCategory, backward: MorphismOfCategory) -> None:
         self._ambient.retain_inverses(forward, backward)
 
-    def hom_inhabited(self, hom_category: Category) -> Decision:
+    def _chosen_hom_inhabited(self, hom_category: Category) -> Decision:
         """``Mor(W)(A, B)`` narrowed by roots is inhabited exactly when ``Mor(C)(A, B).P()`` narrowed by the same roots is."""
         base = hom_category.narrowing_base()
         target = self._ambient.morphism_category(1)(base.domain(), base.codomain()).property_subcategory(self._morphism_property)

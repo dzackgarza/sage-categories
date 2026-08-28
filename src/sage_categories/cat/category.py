@@ -36,8 +36,8 @@ import sage_categories.kernel.compiler as compiler
 from sage_categories.cat.equality import equality_predicate
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import (
-    AppliedPredicate,
     AppliedValuedPredicate,
+    Axiom,
     Predicate,
     Proposition,
     ValuedPredicate,
@@ -274,14 +274,24 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         assert self._ambient_category is not None, f"{self!r} declares no monomorphism into an ambient category"
         return self._ambient_category
 
-    def hom_inhabited(self, hom_category: Category) -> Decision:
+    def _chosen_inhabitation(self) -> Decision:
+        """The exact evaluation case of ``is_inhabited()``, which a category owning one overrides.
+
+        This is the one handler of ``Cat().Inhabited()``, in the shape
+        ``_chosen_morphism_set`` already uses for ``morphism_set()``: the public method
+        returns the containment proposition and never a ``Decision``, and the exact case a
+        category owns is a private hook its subclasses implement (POL-CAT-086).
+        """
+        return Unknown
+
+    def _chosen_hom_inhabited(self, hom_category: Category) -> Decision:
         """The exact decision this category owns for the inhabitation of one of its fixed-endpoint categories ``Mor(self)(A, B)`` or a property narrowing of it (POL-CAT-086, POL-MATH-042).
 
         A full subcategory has the morphism categories of its ambient (POL-CAT-087); every
         other category decides nothing by default.
         """
         if self.has_full_ambient():
-            return self.ambient().hom_inhabited(hom_category)
+            return self.ambient()._chosen_hom_inhabited(hom_category)
         return Unknown
 
     # -- membership and equality ----------------------------------------------
@@ -940,6 +950,18 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     # nest it.
     ObjectType = CategoryDeclaration
 
+    # Inhabitation and emptiness of a category, as the two property subcategories
+    # POL-CAT-086 names, with the predicate declaration POL-CAT-060 requires: the public
+    # spelling of each application and ``Cat().ObjectType`` as its owner, so every
+    # category receives ``is_inhabited()`` and ``is_empty()`` from these two lines.  They
+    # state mutually negated propositions and both can stay unresolved
+    # (``specs/property-refinement.md``, "Fixed-endpoint predicates").
+    #
+    # ``Cat().Empty()`` is this property subcategory; the empty category itself is the
+    # object ``Cat().Initial()`` (``specs/functor.md``, "Canonical objects of Cat").
+    Inhabited = Axiom(predicate_name="is_inhabited", predicate_owner=CategoryDeclaration)
+    Empty = Axiom(predicate_name="is_empty", predicate_owner=CategoryDeclaration)
+
     class ElementType(CategoryPoint):
         """A point ``* -> C`` of a category, whose value is an object of ``C`` (POL-CAT-058)."""
 
@@ -1386,21 +1408,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
                 _cocartesian_lifts[key] = _cocartesian_rules[self](morphism, member_object)
             return _cocartesian_lifts[key]
 
-        def is_full(self) -> AppliedPredicate:
-            return Fun.Full().predicate()(self)
-
-        def is_faithful(self) -> AppliedPredicate:
-            return Fun.Faithful().predicate()(self)
-
-        def is_fully_faithful(self) -> AppliedPredicate:
-            return Fun.FullyFaithful().predicate()(self)
-
-        def is_essentially_surjective(self) -> AppliedPredicate:
-            return Fun.EssentiallySurjective().predicate()(self)
-
-        def is_equivalence(self) -> AppliedPredicate:
-            return Fun.Equivalences().predicate()(self)
-
         def __repr__(self) -> str:
             return f"Functor({self.domain()!r} -> {self.codomain()!r})"
 
@@ -1713,7 +1720,8 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
         return canonical.FinitePresentedCategory(f"Presented{tuple(labels)!r}", tuple(labels), tuple(generators), tuple(relations))
 
-    def Empty(self) -> FinitePresentedCategory:
+    def Initial(self) -> FinitePresentedCategory:
+        """The empty category, the initial object of ``Cat()`` (``specs/functor.md``, "Canonical objects of Cat")."""
         from sage_categories.cat import canonical
 
         if ("empty", ()) not in self._canonical:

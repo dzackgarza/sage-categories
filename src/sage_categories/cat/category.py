@@ -663,6 +663,15 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         """The owned construction of ``I``-colimits, when this category declares one."""
         raise AssertionError(f"{self!r} owns no {shape!r}-colimit construction; supply universal data")
 
+    def presenting_diagrams(self, constructed: ObjectOfCategory) -> tuple[Functor, ...]:
+        """The diagrams this category constructed ``constructed`` from; a category that constructs nothing retains none.
+
+        A construction family retains them per object (``cat/constructions.py``), and this
+        is how an apex finds the family it was refined into among the roots of its
+        placement.
+        """
+        return ()
+
     # -- slices, coslices, and the categories of subobjects (POL-FUN-029, POL-CAT-095, POL-SCOPE-003) --
 
     def SliceOver(self, member_object: ObjectOfCategory) -> Category:

@@ -58,7 +58,7 @@ from sage_categories.kernel.caches import SequenceTable
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import Predicate, Proposition
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
-from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory, Role
+from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory
 
 __all__ = [
     "ApexCategory",
@@ -74,6 +74,7 @@ __all__ = [
     "cone",
     "cone_apex",
     "limits",
+    "presenting_family",
     "vertex_of",
 ]
 
@@ -128,128 +129,28 @@ class UniversalData(NamedTuple):
     mediator: Mediator
 
 
-# -- the object roles of the construction families -----------------------------------------
-#
-# A family is a full subcategory of ``C``, so its compiled object role stands on
-# ``C.ObjectType`` and adds the universal surface of the construction.  Each role
-# reads the universal data through the family, which retains it per diagram
-# (POL-CAT-046, POL-FUN-019).  The compiler copies a declaration's own class body
-# onto the compiled role, so each family's role states its complete surface.
+def presenting_family(constructed: ObjectOfCategory) -> Category:
+    """The construction family that retains the universal data of ``constructed``.
 
-
-def chosen_limit_role(family: ApexCategory) -> type[ObjectOfCategory]:
-    class ChosenLimit(ObjectOfCategory):
-        """A chosen limit: an object of ``C`` whose family retains its diagram, limiting cone, and mediator rule."""
-
-        def diagram(self) -> Functor:
-            return family.presentation(self).diagram
-
-        def index_category(self) -> Category:
-            return family.presentation(self).diagram.domain()
-
-        def cone(self) -> NaturalTransformation:
-            """The limiting cone ``constant(self) => diagram``."""
-            return family.presentation(self).transformation
-
-        def projection(self, index: ObjectOfCategory) -> MorphismOfCategory:
-            """The cone component ``self -> D(i)``."""
-            return family.presentation(self).transformation.component(index)
-
-        def universal_morphism(self, candidate_cone: NaturalTransformation) -> MorphismOfCategory:
-            """The mediating morphism from the apex of another cone over the same diagram."""
-            data = family.presentation(self)
-            assert candidate_cone.codomain() is data.diagram, f"{candidate_cone!r} is not a cone over {data.diagram!r}"
-            return data.mediator(candidate_cone)
-
-    return ChosenLimit
-
-
-def chosen_product_role(family: ApexCategory) -> type[ObjectOfCategory]:
-    class ChosenProduct(ObjectOfCategory):
-        """A chosen product over a discrete shape: an object of ``C`` with its projections and mediator rule."""
-
-        def product_factors(self) -> Functor:
-            """The retained indexed family ``i |-> X_i`` (``specs/functor.md``, "Diagram shapes and universal constructions")."""
-            return family.presentation(self).diagram
-
-        def index_category(self) -> Category:
-            return family.presentation(self).diagram.domain()
-
-        def cone(self) -> NaturalTransformation:
-            """The product cone ``constant(self) => diagram``, whose components are the projections."""
-            return family.presentation(self).transformation
-
-        def product_projection(self, index: ObjectOfCategory | Hashable) -> MorphismOfCategory:
-            """``pi_i: self -> X_i`` for ``i`` an object of the index category or a datum of the index set (POL-CAT-093)."""
-            data = family.presentation(self)
-            return data.transformation.component(vertex_of(data.diagram.domain(), index))
-
-        def universal_morphism(self, candidate_cone: NaturalTransformation) -> MorphismOfCategory:
-            """The mediating morphism from the apex of another cone over the same diagram."""
-            data = family.presentation(self)
-            assert candidate_cone.codomain() is data.diagram, f"{candidate_cone!r} is not a cone over {data.diagram!r}"
-            return data.mediator(candidate_cone)
-
-    return ChosenProduct
-
-
-def chosen_colimit_role(family: ApexCategory) -> type[ObjectOfCategory]:
-    class ChosenColimit(ObjectOfCategory):
-        """A chosen colimit: an object of ``C`` whose family retains its diagram, colimiting cocone, and mediator rule."""
-
-        def diagram(self) -> Functor:
-            return family.presentation(self).diagram
-
-        def index_category(self) -> Category:
-            return family.presentation(self).diagram.domain()
-
-        def cocone(self) -> NaturalTransformation:
-            """The colimiting cocone ``diagram => constant(self)``."""
-            return family.presentation(self).transformation
-
-        def injection(self, index: ObjectOfCategory) -> MorphismOfCategory:
-            """The cocone component ``D(i) -> self``."""
-            return family.presentation(self).transformation.component(index)
-
-        def universal_morphism(self, candidate_cocone: NaturalTransformation) -> MorphismOfCategory:
-            """The mediating morphism to the apex of another cocone under the same diagram."""
-            data = family.presentation(self)
-            assert candidate_cocone.domain() is data.diagram, f"{candidate_cocone!r} is not a cocone under {data.diagram!r}"
-            return data.mediator(candidate_cocone)
-
-    return ChosenColimit
-
-
-def chosen_coproduct_role(family: ApexCategory) -> type[ObjectOfCategory]:
-    class ChosenCoproduct(ObjectOfCategory):
-        """A chosen coproduct over a discrete shape: an object of ``C`` with its injections and mediator rule."""
-
-        def coproduct_summands(self) -> Functor:
-            """The retained indexed family ``i |-> X_i`` (``specs/functor.md``, "Diagram shapes and universal constructions")."""
-            return family.presentation(self).diagram
-
-        def index_category(self) -> Category:
-            return family.presentation(self).diagram.domain()
-
-        def cocone(self) -> NaturalTransformation:
-            """The coproduct cocone ``diagram => constant(self)``, whose components are the injections."""
-            return family.presentation(self).transformation
-
-        def coproduct_injection(self, index: ObjectOfCategory | Hashable) -> MorphismOfCategory:
-            """``iota_i: X_i -> self`` for ``i`` an object of the index category or a datum of the index set (POL-CAT-093)."""
-            data = family.presentation(self)
-            return data.transformation.component(vertex_of(data.diagram.domain(), index))
-
-        def universal_morphism(self, candidate_cocone: NaturalTransformation) -> MorphismOfCategory:
-            """The mediating morphism to the apex of another cocone under the same diagram."""
-            data = family.presentation(self)
-            assert candidate_cocone.domain() is data.diagram, f"{candidate_cocone!r} is not a cocone under {data.diagram!r}"
-            return data.mediator(candidate_cocone)
-
-    return ChosenCoproduct
+    A family refines its apex into itself, so the family is the apex's placement, or one
+    of that placement's narrowing roots when the apex was also refined into a property
+    (``kernel/refinement.py``).  Two incomparable construction families reaching one value
+    is a name collision the compiler already rejects, so at most one root presents it.
+    """
+    placement = constructed.category()
+    for candidate in (placement, *placement.narrowing_roots()):
+        if candidate.presenting_diagrams(constructed):
+            return candidate
+    raise AssertionError(f"{constructed!r} is in no construction family of {placement!r}")
 
 
 # -- construction families --------------------------------------------------------------------
+#
+# A family is a full subcategory of ``C``, so its object declaration compiles onto
+# ``C.ObjectType`` and adds the universal surface of the construction.  Each
+# declaration reads the universal data through the family, which retains it per
+# diagram (POL-CAT-046, POL-FUN-019).  One declaration serves every ambient ``C``,
+# and the kernel compiles a class per family (POL-API-025, POL-KERNEL-028).
 
 
 class ApexCategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):
@@ -267,16 +168,7 @@ class ApexCategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismDa
         self._constructed: MonoDict = MonoDict()
         self._source_diagrams: MonoDict = MonoDict()
         self._lowered: MonoDict = MonoDict()
-        self._object_role = self.chosen_role()
         super().__init__(ambient)
-
-    def chosen_role(self) -> type[ObjectOfCategory]:
-        raise AssertionError(f"{self!r} declares no object role")
-
-    def local_role_class(self, role: Role) -> type[CategoryPoint]:
-        if role is Role.OBJECT:
-            return self._object_role
-        return super().local_role_class(role)
 
     # -- the diagrams this family accepts ----------------------------------------------
 
@@ -312,9 +204,8 @@ class ApexCategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismDa
         return self._data[diagram]
 
     def presenting_diagrams(self, constructed: ObjectOfCategory) -> tuple[Functor, ...]:
-        """The diagrams this family constructed ``constructed`` from, in construction order."""
-        assert constructed in self._source_diagrams, f"{self!r} constructed no object {constructed!r}"
-        return self._source_diagrams[constructed]
+        """The diagrams this family constructed ``constructed`` from, in construction order; none for an object it did not construct."""
+        return self._source_diagrams[constructed] if constructed in self._source_diagrams else ()
 
     def presentation(self, constructed: ObjectOfCategory) -> UniversalData:
         """The universal data of the one diagram ``constructed`` presents.
@@ -324,6 +215,7 @@ class ApexCategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismDa
         it means.
         """
         diagrams = self.presenting_diagrams(constructed)
+        assert diagrams, f"{self!r} constructed no object {constructed!r}"
         assert len(diagrams) == 1, (
             f"{self!r} constructed {constructed!r} from {' and from '.join(repr(diagram) for diagram in diagrams)}; "
             "read the universal data at the diagram whose cone you want"
@@ -355,13 +247,33 @@ class ApexCategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismDa
 class LimitsCategory(ApexCategory):
     """``C.Limits(I)``: chosen limits of diagrams of one shape ``I``."""
 
+    class ObjectType(ObjectOfCategory):
+        """A chosen limit: an object of ``C`` whose family retains its diagram, limiting cone, and mediator rule."""
+
+        def diagram(self) -> Functor:
+            return presenting_family(self).presentation(self).diagram
+
+        def index_category(self) -> Category:
+            return presenting_family(self).presentation(self).diagram.domain()
+
+        def cone(self) -> NaturalTransformation:
+            """The limiting cone ``constant(self) => diagram``."""
+            return presenting_family(self).presentation(self).transformation
+
+        def projection(self, index: ObjectOfCategory) -> MorphismOfCategory:
+            """The cone component ``self -> D(i)``."""
+            return presenting_family(self).presentation(self).transformation.component(index)
+
+        def universal_morphism(self, candidate_cone: NaturalTransformation) -> MorphismOfCategory:
+            """The mediating morphism from the apex of another cone over the same diagram."""
+            data = presenting_family(self).presentation(self)
+            assert candidate_cone.codomain() is data.diagram, f"{candidate_cone!r} is not a cone over {data.diagram!r}"
+            return data.mediator(candidate_cone)
+
     def __init__(self, ambient: Category, shape: Category) -> None:
         self._shape = shape
         self._limit_functor: MonoDict = MonoDict()
         super().__init__(ambient)
-
-    def chosen_role(self) -> type[ObjectOfCategory]:
-        return chosen_limit_role(self)
 
     def shape(self) -> Category:
         return self._shape
@@ -396,12 +308,34 @@ class LimitsCategory(ApexCategory):
 class ProductsCategory(ApexCategory):
     """``C.Products()``: chosen products over every discrete shape (POL-CAT-093)."""
 
+    class ObjectType(ObjectOfCategory):
+        """A chosen product over a discrete shape: an object of ``C`` with its projections and mediator rule."""
+
+        def product_factors(self) -> Functor:
+            """The retained indexed family ``i |-> X_i`` (``specs/functor.md``, "Diagram shapes and universal constructions")."""
+            return presenting_family(self).presentation(self).diagram
+
+        def index_category(self) -> Category:
+            return presenting_family(self).presentation(self).diagram.domain()
+
+        def cone(self) -> NaturalTransformation:
+            """The product cone ``constant(self) => diagram``, whose components are the projections."""
+            return presenting_family(self).presentation(self).transformation
+
+        def product_projection(self, index: ObjectOfCategory | Hashable) -> MorphismOfCategory:
+            """``pi_i: self -> X_i`` for ``i`` an object of the index category or a datum of the index set (POL-CAT-093)."""
+            data = presenting_family(self).presentation(self)
+            return data.transformation.component(vertex_of(data.diagram.domain(), index))
+
+        def universal_morphism(self, candidate_cone: NaturalTransformation) -> MorphismOfCategory:
+            """The mediating morphism from the apex of another cone over the same diagram."""
+            data = presenting_family(self).presentation(self)
+            assert candidate_cone.codomain() is data.diagram, f"{candidate_cone!r} is not a cone over {data.diagram!r}"
+            return data.mediator(candidate_cone)
+
     def __init__(self, ambient: Category) -> None:
         self._sequences = SequenceTable()
         super().__init__(ambient)
-
-    def chosen_role(self) -> type[ObjectOfCategory]:
-        return chosen_product_role(self)
 
     def diagrams(self, shape: Category) -> Category:
         assert is_discrete(shape), f"{shape!r} is not a discrete shape"
@@ -441,13 +375,33 @@ class ProductsCategory(ApexCategory):
 class ColimitsCategory(ApexCategory):
     """``C.Colimits(I)``: chosen colimits of diagrams of one shape ``I``."""
 
+    class ObjectType(ObjectOfCategory):
+        """A chosen colimit: an object of ``C`` whose family retains its diagram, colimiting cocone, and mediator rule."""
+
+        def diagram(self) -> Functor:
+            return presenting_family(self).presentation(self).diagram
+
+        def index_category(self) -> Category:
+            return presenting_family(self).presentation(self).diagram.domain()
+
+        def cocone(self) -> NaturalTransformation:
+            """The colimiting cocone ``diagram => constant(self)``."""
+            return presenting_family(self).presentation(self).transformation
+
+        def injection(self, index: ObjectOfCategory) -> MorphismOfCategory:
+            """The cocone component ``D(i) -> self``."""
+            return presenting_family(self).presentation(self).transformation.component(index)
+
+        def universal_morphism(self, candidate_cocone: NaturalTransformation) -> MorphismOfCategory:
+            """The mediating morphism to the apex of another cocone under the same diagram."""
+            data = presenting_family(self).presentation(self)
+            assert candidate_cocone.domain() is data.diagram, f"{candidate_cocone!r} is not a cocone under {data.diagram!r}"
+            return data.mediator(candidate_cocone)
+
     def __init__(self, ambient: Category, shape: Category) -> None:
         self._shape = shape
         self._colimit_functor: MonoDict = MonoDict()
         super().__init__(ambient)
-
-    def chosen_role(self) -> type[ObjectOfCategory]:
-        return chosen_colimit_role(self)
 
     def shape(self) -> Category:
         return self._shape
@@ -482,12 +436,34 @@ class ColimitsCategory(ApexCategory):
 class CoproductsCategory(ApexCategory):
     """``C.Coproducts()``: chosen coproducts over every discrete shape (POL-CAT-093)."""
 
+    class ObjectType(ObjectOfCategory):
+        """A chosen coproduct over a discrete shape: an object of ``C`` with its injections and mediator rule."""
+
+        def coproduct_summands(self) -> Functor:
+            """The retained indexed family ``i |-> X_i`` (``specs/functor.md``, "Diagram shapes and universal constructions")."""
+            return presenting_family(self).presentation(self).diagram
+
+        def index_category(self) -> Category:
+            return presenting_family(self).presentation(self).diagram.domain()
+
+        def cocone(self) -> NaturalTransformation:
+            """The coproduct cocone ``diagram => constant(self)``, whose components are the injections."""
+            return presenting_family(self).presentation(self).transformation
+
+        def coproduct_injection(self, index: ObjectOfCategory | Hashable) -> MorphismOfCategory:
+            """``iota_i: X_i -> self`` for ``i`` an object of the index category or a datum of the index set (POL-CAT-093)."""
+            data = presenting_family(self).presentation(self)
+            return data.transformation.component(vertex_of(data.diagram.domain(), index))
+
+        def universal_morphism(self, candidate_cocone: NaturalTransformation) -> MorphismOfCategory:
+            """The mediating morphism to the apex of another cocone under the same diagram."""
+            data = presenting_family(self).presentation(self)
+            assert candidate_cocone.domain() is data.diagram, f"{candidate_cocone!r} is not a cocone under {data.diagram!r}"
+            return data.mediator(candidate_cocone)
+
     def __init__(self, ambient: Category) -> None:
         self._sequences = SequenceTable()
         super().__init__(ambient)
-
-    def chosen_role(self) -> type[ObjectOfCategory]:
-        return chosen_coproduct_role(self)
 
     def diagrams(self, shape: Category) -> Category:
         assert is_discrete(shape), f"{shape!r} is not a discrete shape"

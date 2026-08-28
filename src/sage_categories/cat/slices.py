@@ -33,17 +33,25 @@ decision.
 
 ``C.Subobjects(x)`` is ``C.SliceOver(x).Monomorphisms()``: the property subcategory
 ``Mor(C).Monomorphisms()`` pulled back along the retained defining-arrow functor of the
-slice, which is its pullback projection to ``Fun([1], C)`` (POL-CAT-092, POL-FUN-013/014).
-A full subcategory is identity on values, so that pullback is the full subcategory of the
-slice on the objects whose defining arrow has the property.  ``C.CoveringObjects(y)`` uses
-epimorphisms: a covering object of ``y`` is the pair ``(X, p: X -> y)``, not ``p`` alone
-(POL-CAT-026).  ``C.Superobjects(x)`` and ``C.CoveredObjects(x)`` are the coslice duals.
-The ambient category named in the call fixes the role of ``x``, which is why these are
-methods of a category and not of the object.
+slice, which is its pullback projection to the category of arrows (POL-CAT-092,
+POL-FUN-013/014).  A full subcategory is identity on values, so that pullback is the full
+subcategory of the slice on the objects whose defining arrow has the property
+(``specs/functor.md``, "Fixed-object construction categories"), and ``SliceProperty``
+retains both projections of the square.  Whether an arrow has the property is the
+containment question ``Mor(C).Monomorphisms()`` declares, asked of that arrow; nothing
+here reaches for that category's predicate object (POL-CAT-043, POL-CAT-044).
+``C.CoveringObjects(y)`` uses epimorphisms: a covering object of ``y`` is the pair
+``(X, p: X -> y)``, not ``p`` alone (POL-CAT-026).  ``C.Superobjects(x)`` and
+``C.CoveredObjects(x)`` are the coslice duals.  The ambient category named in the call
+fixes the role of ``x``, which is why these are methods of a category and not of the
+object.
 
-For a product ``P``, an object of ``C.Subobjects(P)`` retains its monomorphism ``j`` and
-reads each component as ``P.product_projection(i) after j``, so a subobject of a product
-has every component without a leaf repeating those maps (POL-CAT-094).
+``C.Subobjects(P)`` for a product ``P`` is ``SubobjectsOfProduct``, whose objects read
+each component as ``P.product_projection(i) after j`` through their own monomorphism
+``j``, so a subobject of a product has every component without a leaf repeating those
+maps (POL-CAT-094).  The slice names that class when its fixed object is a product, so
+the method exists exactly where it applies and no subobject asserts its own
+applicability (POL-KERNEL-025).
 """
 
 from __future__ import annotations
@@ -67,6 +75,7 @@ __all__ = [
     "CosliceCategory",
     "SliceCategory",
     "SliceProperty",
+    "SubobjectsOfProduct",
     "comma_category",
     "coslice_under",
     "slice_over",
@@ -148,14 +157,14 @@ class SliceLikeCategory(PullbackCategory):
             return morphism
         return self.defining_arrow().on_object(candidate)
 
-    def property_object_role(self, property_category: Category) -> type[CategoryPoint] | None:
-        """The object role that one of this slice's property subcategories declares; none by default."""
-        return None
+    def property_type(self, property_category: Category) -> type[SliceProperty]:
+        """The class that implements one of this slice's property subcategories."""
+        return SliceProperty
 
     def _property(self, property_category: Category) -> Category:
         """The pullback of a property subcategory of ``Mor(C)`` along the defining-arrow functor, retained per property."""
         if property_category not in self._properties:
-            self._properties[property_category] = SliceProperty(self, property_category)
+            self._properties[property_category] = self.property_type(property_category)(self, property_category)
         return self._properties[property_category]
 
     def Monomorphisms(self) -> Category:
@@ -191,11 +200,12 @@ class SliceCategory(SliceLikeCategory):
     def __init__(self, base: Category, fixed: ObjectOfCategory) -> None:
         super().__init__(base, fixed, 1)
 
-    def property_object_role(self, property_category: Category) -> type[CategoryPoint] | None:
-        """The subobjects of ``x`` state their components: for a product they are the projections after the monomorphism (POL-CAT-094)."""
-        if property_category is self._base_of_slice.morphism_category(1).Monomorphisms():
-            return subobject_of_product_role
-        return None
+    def property_type(self, property_category: Category) -> type[SliceProperty]:
+        """The subobjects of a product state their components; the subobjects of any other object have no such method (POL-CAT-094)."""
+        monomorphisms = self._base_of_slice.morphism_category(1).Monomorphisms()
+        if property_category is monomorphisms and self._fixed in self._base_of_slice.Products():
+            return SubobjectsOfProduct
+        return SliceProperty
 
     def retain_lifts(self, fixed_projection: Functor) -> None:
         fixed_projection.retain_cartesian_lifts(self._precomposition_lift)
@@ -277,30 +287,17 @@ def comma_category(first: Functor, second: Functor) -> PullbackCategory:
 
 # -- the fixed-object construction categories (POL-CAT-092/094, POL-CAT-026, POL-FUN-013) ----
 
-# ``has_morphism_property(x, S)``: the defining arrow of ``x`` lies in the property
-# subcategory of ``Mor(C)`` that ``S`` pulls back.
+# ``has_morphism_property(x, S)``: the defining arrow of ``x`` is an object of the
+# property subcategory of ``Mor(C)`` that ``S`` pulls back.
 has_morphism_property = Predicate("has_morphism_property", 2, False)
 
 
 def _has_morphism_property(candidate: CategoryPoint, family: Category) -> Decision:
-    return ask(family.property_category().predicate()(family.defining_arrow_of(candidate)))
+    """The containment question the property subcategory declares, asked of the defining arrow (POL-CAT-043, POL-CAT-044)."""
+    return ask(family.property_category().membership_proposition(family.defining_arrow_of(candidate)))
 
 
 has_morphism_property.register_handler(_has_morphism_property)
-
-
-def subobject_of_product_role(family: SliceProperty) -> type[ObjectOfCategory]:
-    class Subobject(ObjectOfCategory):
-        """An object of ``C.Subobjects(x)``: the monomorphism ``j`` it retains, composed with the structure of ``x``."""
-
-        def product_projection(self, index: ObjectOfCategory | Hashable) -> MorphismOfCategory:
-            """``P.product_projection(i) after j`` for a product ``P``, so a subobject of a product has every component (POL-CAT-094)."""
-            monomorphism = family.defining_arrow_of(self)
-            product = monomorphism.codomain()
-            assert product in family.base_of_slice().Products(), f"{product!r} is not a product of {family.base_of_slice()!r}"
-            return product.product_projection(index) * monomorphism
-
-    return Subobject
 
 
 class SliceProperty(FullSubcategory[[tuple[MorphismOfCategory, MorphismOfCategory]], []]):
@@ -308,13 +305,15 @@ class SliceProperty(FullSubcategory[[tuple[MorphismOfCategory, MorphismOfCategor
 
     The property subcategory is identity on values, so the pullback is the full
     subcategory of the slice or coslice on the objects whose defining arrow has the
-    property (POL-CAT-092).
+    property (POL-CAT-092, ``specs/functor.md``, "Fixed-object construction
+    categories").  It retains both projections of that square: the subcategory
+    monomorphism into the slice, and ``defining_arrow()``, the composite carrying an
+    object to its arrow.
     """
 
     def __init__(self, ambient: SliceLikeCategory, property_category: Category) -> None:
         self._property_category = property_category
-        declared = ambient.property_object_role(property_category)
-        self._object_role = None if declared is None else declared(self)
+        self._retained: MonoDict = MonoDict()
         super().__init__(ambient)
 
     def property_category(self) -> Category:
@@ -323,14 +322,19 @@ class SliceProperty(FullSubcategory[[tuple[MorphismOfCategory, MorphismOfCategor
     def base_of_slice(self) -> Category:
         return self._ambient.base_of_slice()
 
+    def subcategory_monomorphism(self) -> Functor:
+        """This pullback's projection to the slice: the identity-on-values monomorphism, retained once."""
+        (monomorphism,) = self.structure_functors()
+        return monomorphism
+
+    def defining_arrow(self) -> Functor:
+        """This pullback's projection to the arrows: the slice's defining-arrow functor after the subcategory monomorphism, retained once."""
+        if self not in self._retained:
+            self._retained[self] = self._ambient.defining_arrow() * self.subcategory_monomorphism()
+        return self._retained[self]
+
     def defining_arrow_of(self, candidate: CategoryPoint) -> MorphismOfCategory:
         return self._ambient.defining_arrow_of(candidate)
-
-    def local_role_class(self, role: Role) -> type[CategoryPoint]:
-        """The object role the slice declares for this property, when it declares one."""
-        if role is Role.OBJECT and self._object_role is not None:
-            return self._object_role
-        return super().local_role_class(role)
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         return self._ambient.membership_proposition(candidate) & has_morphism_property(candidate, self)
@@ -345,3 +349,20 @@ class SliceProperty(FullSubcategory[[tuple[MorphismOfCategory, MorphismOfCategor
 
     def __repr__(self) -> str:
         return f"{self._ambient!r}.{self._property_category.name()}()"
+
+
+class SubobjectsOfProduct(SliceProperty):
+    """``C.Subobjects(P)`` for a product ``P``: the subobjects that read ``P``'s components through their own monomorphism.
+
+    ``SliceCategory.property_type`` names this class exactly when the fixed object is a
+    product, so the method belongs to the subobjects of a product and to no other
+    subobject (POL-CAT-094, POL-KERNEL-025).
+    """
+
+    class ObjectType(ObjectOfCategory):
+        """A subobject ``j: S -> P`` of a product: its components are ``P``'s projections after ``j``."""
+
+        def product_projection(self, index: ObjectOfCategory | Hashable) -> MorphismOfCategory:
+            """``P.product_projection(i) after j``, so a subobject of a product has every component (POL-CAT-094)."""
+            monomorphism = self.category().narrowing_base().defining_arrow_of(self)
+            return monomorphism.codomain().product_projection(index) * monomorphism

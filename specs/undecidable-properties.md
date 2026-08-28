@@ -115,7 +115,7 @@ For an atomic proposition \(P(x)\), `ask()` uses this order.
    \mathrm{Monomorphism}\land\mathrm{Epimorphism}.
    \]
 
-4. Evaluate structural images.
+4. Evaluate images owned by selected functors.
 
    If \(D.P\) is induced through \(F:D\to C\), evaluate \(P(F(x))\).
 
@@ -531,7 +531,7 @@ Each handler positively matches the semantic cases it can decide.
 The final wildcard case returns `Unknown`. Add a new supported procedure by adding a new `case`. Do not encode applicability as an `if` cascade over unsupported cases.
 
 No handler is required.
-Without one, `ask(PObjects().membership_proposition(x))` can still succeed from placement, assumptions, implications, or structural images.
+Without one, `ask(PObjects().membership_proposition(x))` can still succeed from placement, assumptions, implications, or images owned by selected functors.
 
 ## The main boundary
 
@@ -543,7 +543,7 @@ The ownership split is:
 
 - The repository kernel connects positive propositions to category refinement.
 
-- Structural functors propagate properties between categories.
+- Selected functors propagate properties between categories.
 
 - Computation engines supply exact decision procedures.
 

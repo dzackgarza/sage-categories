@@ -1,98 +1,66 @@
-# Glossary
+# Vocabulary contract
 
-Every technical term used in permanent documentation has a row here (`POL-MATH-050`).
+This file is the deterministic vocabulary contract for agent-facing documentation.
+Read it before writing or editing that documentation (`POL-MATH-050`).
 
-A row is complete when it carries one of:
+Use the required wording in the second column.
+Do not decide from familiarity, repository frequency, or nearby source.
+A prohibited term can occur only in the first column of this table and in Git history.
 
-- **cited** — an inspected external source with an exact locator: theorem, definition,
-  section, page, tag, or stable link;
-- **defined** — one plain-English definition, and the file and heading that states it;
-- **removed** — the phrase to write instead.
+When a user correction or accepted review prohibits another term, add one row with its exact replacement.
+Do not remove a row after the source becomes clean (`POL-MATH-051`).
 
-Writing a term with no complete row is the defect. The repair is to complete the row, or
-to rewrite the sentence without the term. Do not ask whether a term was invented; look it
-up here.
+## Forbidden vocabulary
 
-Presence of a term in this repository's source, tests, plans, reports, or earlier policy
-rows is not evidence that it has a meaning, and is never the content of a row
-(`POL-MATH-051`). When no external source names the thing and no plain definition fits it,
-the thing is an implementation artifact: report the missing construction and open no row
-(`POL-MATH-052`).
-
-A plain descriptive phrase is not a term and needs no row (`POL-MATH-053`). "The class
-compiled for objects of `C`" is admissible as written; "the object role" is a term.
-
-The removed rows keep their words on purpose. They are the check: a removed term must not
-appear in permanent documentation, and the row states what replaces it.
-
-## Removed
-
-| Term | Write instead | Reference |
-| --- | --- | --- |
-| `carrier`, `carrier set` | apply a functor named with both endpoints; there is no accessor | `POL-MATH-046`, `POL-FUN-037`; `specs/decisions.md` D57 |
-| `carrier_projection`, `underlying_object_projection`, `underlying_set` | apply a functor named with both endpoints; there is no accessor | `POL-FUN-037` |
-| `receiver` | the value the operation applies to | `POL-MATH-047` |
-| `role`, for a Python class | the compiled class; or name it, `C.ObjectType` | `POL-MATH-048` |
-| `role`, for a mathematical kind | the exact mathematical type | `POL-MATH-048` |
-| `canonical image` | the image `F.on_object(x)` under a named functor `F` | `POL-CAT-096` |
-| `structural_image` | nothing replaces it; a category has no image operation | `POL-CAT-096` |
-| `this_object` | nothing replaces it; it states no proposition | `POL-MATH-047` |
-| `DeclaredObjectType`, `DeclaredElementType`, `DeclaredMorphismType` | `ObjectType`, `ElementType`, `MorphismType` | `POL-KERNEL-028` |
-| `structural functor`, `structure functor` | declared functor | `POL-FUN-028`; `specs/decisions.md` D12 |
-| `stage` | generalized element, or generalized point | `specs/decisions.md` D62 |
-| `symbolic cardinal` | a cardinal when the answer is known, `Unknown` when it is not | `specs/decisions.md` D64 |
-| `Ar(C)`, `Hom(C)`, arrow notation | `Mor(n, C)` | `specs/decisions.md` D55 |
-| `Chosen<Anything>`, and `With<Datum>` used as if it were a construction | name the fibration that forgets the datum, its fibre, and its morphisms | `POL-CAT-098`; `specs/decisions.md` D75 |
-| `ChosenSubobjects`, `chosen subobject` | `Subobjects()`; a subobject is an object with a monomorphism | `POL-CAT-094`; `specs/decisions.md` D74 |
-| `carrier_projection`, `underlying_object_projection`, `underlying_set` | apply a functor named with both endpoints; there is no accessor | `POL-FUN-037` |
-
-A functor does not know that it is structural. A category builds an ordinary functor and
-declares it by returning it from `structure_functors()`, so the adjective belongs to the
-declaration and never to the functor. There is no kind of functor here and no constructor
-that makes one.
-
-One name exists per mathematical kind. A category writes `ObjectType` and the kernel
-compiles that same class, as Sage compiles a written `ParentMethods` into a dynamic class
-without a second name. The two-name split in source names no mathematical object and has
-no external source, so it is an implementation artifact (`POL-MATH-052`); removing it is
-kernel work, and the source keeps the names until then (`POL-MATH-049`).
-
-Source occurrences of a removed term stay until the model that produced them is repaired
-(`POL-MATH-049`). This section governs permanent documentation.
-
-## Open
-
-These terms are in use and have no complete row. Each is either completed or removed.
-
-| Term | Why it is open |
+| Prohibited term | Required wording |
 | --- | --- |
-| leaf category | used throughout as the opposite of kernel; needs one definition or a plainer phrase |
-| construction input | described across `POL-KERNEL-029` and `POL-LEAF-047`; needs one definition |
-| route | a composite of declared functors; either cite "composite" and use it, or define |
-| transport | overlaps transport of structure along an isomorphism, which is not the sense used |
-| descendant | a category with a declared functor to another; needs a definition or a plainer phrase |
-| firewall | metaphor for the implementation class boundary in `POL-LEAF-041` |
+| `DeclaredObjectType`, `DeclaredElementType`, `DeclaredMorphismType` | `ObjectType`, `ElementType`, `MorphismType` |
+| `declared functor`, `selected declared functor` | `named functor`; use `selected functor` only when `structure_functors()` selects it for inheritance |
+| `structural functor`, `structure functor` | `named functor` or `selected functor`, as specified above |
+| `role`, `role class`, `role-class`, `object role`, `element role`, `morphism role` | the exact class name, such as `C.ObjectType`, or “the class compiled for objects of `C`” |
+| `role state`, `role node`, `role map`, `role metadata` | the exact class, constructor datum, selected functor, or class graph that the sentence means |
+| `carrier`, `carrier set`, `carrier surface` | the image under a named functor with stated endpoints |
+| `carrier_projection`, `underlying_object_projection`, `underlying_set`, a generic `underlying_*()` accessor | construct and apply the named functor with stated endpoints |
+| `canonical image`, `canonical ancestor image`, `canonical target image` | `F.on_object(x)` or `F.on_morphism(f)` for the named functor `F` |
+| `structural image`, `structural_image` | the image owned by the named functor `F`; a category has no image operation |
+| `receiver`, `receiver-valued`, `this_object` | the source instance, or the value to which the method applies |
+| `stage`, `stage comparison`, `stage identity`, `ObjectStageIdentity`, `ArrowStageIdentity`, `stage_comparison` | the exact point, generalized element, terminal-object comparison, or constructor conversion |
+| `generalized point` | `generalized element` for `T -> X`; use `point` only for `1_C -> X` |
+| `Ar(C)`, `Hom(C)`, arrow-category or hom-category aliases | `Mor(C)` or `Mor(C)(A, B)` |
+| `ChosenSubobjects`, `chosen subobject` | `Subobjects()`; a subobject is an object with its monomorphism |
+| `Chosen<Anything>` | `With<Datum>` only when the object retains chosen data; otherwise use the mathematical construction name |
+| generic `_construct` | the exact named constructor for the mathematical construction |
 
-## Defined
+## Required distinctions
 
-| Term | Definition |
+| Concept | Required statement |
 | --- | --- |
-| declared functor | An ordinary functor a category returns from `structure_functors()`. `AGENTS.md`, "Core categorical architecture"; `specs/decisions.md` D12. |
-| generalized element, generalized point | `p: T -> X`. Taking `T = *` gives a point when `X` is discrete and an object when `X` is a category. `specs/decisions.md` D16, D62. |
-| point functor | The inclusion of the one-object category `{C}` into `D`, which regards `C` as an object of `D`. `specs/decisions.md` D57; `specs/functor.md`, "Point categories and point functors". |
-| underlying object | The image `U(X)` of an object under a functor `U` named with both its endpoints. There is no "the" underlying object and no accessor for one: several functors may leave the same category. `specs/decisions.md` D09, D32; `POL-FUN-037`. |
-| compiled class | The class `dynamic_class` builds for `C.ObjectType`, `C.ElementType`, or `C.MorphismType`. `AGENTS.md`, "Core categorical architecture". |
+| Point of `X in C` | A morphism `1_C -> X`. This is an actual element of `X` and a `C.ElementType` value. |
+| Point of `C in Cat()` | A functor `* -> C`. This is an actual object of `C` and a `Cat().ElementType` value. |
+| Generalized element of `X` | A morphism `T -> X`. It is not an `ElementType` value unless `T = 1_C`. |
+| Morphism of `C` | An object of `Mor(C)`. Thus `C.MorphismType = Mor(C).ObjectType`. |
+| Functor | An ordinary object of `Fun(C, D)`. A category can name many functors with the same endpoints. |
+| Inheritance selection | `structure_functors()` selects ordinary functors. Selection adds no new mathematical kind. |
+| Category-owned implementation | The category declares nested `ObjectType`, `ElementType`, and `MorphismType` classes directly. The kernel fills their bases. |
+| Public functor image | The named functor owns `F.on_object(x)`, `F.on_morphism(f)`, and its image cache. |
+| Inherited execution | The selected target class is in the source class MRO. Its method runs on the initialized source instance. |
+| Constructor conversion | A selected functor converts source construction data to the exact data required by its target constructor. |
 
-## Cited
+The point and generalized-element distinction follows the nLab entry
+[generalized element](https://ncatlab.org/nlab/show/generalized+element), including its “Global elements” section.
+
+## Inspected sources
+
+Every term below was checked against the cited source before it was recorded
+(`POL-MATH-040`). A term with no source and no plain definition names an implementation
+artifact: report the missing construction rather than opening a row (`POL-MATH-052`).
 
 | Term | Source |
 | --- | --- |
+| separator | [nLab, "separator"](https://ncatlab.org/nlab/show/separator): an object `S` such that for every parallel pair `f, g: X -> Y`, if `f . e = g . e` for every `e: S -> X` then `f = g`. Also called a generator, separating object, or generating object. In a locally small category this says `Hom(S, -)` is faithful. |
+| replete | [nLab, "replete subcategory"](https://ncatlab.org/nlab/show/replete+subcategory): a subcategory `D` of `C` such that for any object `x` of `D` and any isomorphism `f: x -> y` in `C`, both `y` and `f` lie in `D`. Equivalently the inclusion `D -> C` is an isofibration, which is what makes strict membership respect the principle of equivalence. |
+| fibred category | [Stacks Project, Categories, Definition 4.33.5, tag 02XJ](https://stacks.math.columbia.edu/tag/02XJ): "We say `S` is a fibred category over `C` if given any `x` in `Ob(S)` lying over `U` in `Ob(C)` and any morphism `f: V -> U` of `C`, there exists a strongly cartesian morphism `f^*x -> x` lying over `f`." Lemma 4.33.7 gives the pseudofunctor from `C^opp` to the (2,1)-category of categories once pullbacks are chosen. |
+| Grothendieck construction | [nLab, "Grothendieck construction"](https://ncatlab.org/nlab/show/Grothendieck+construction): for a pseudofunctor `F: C^op -> Cat`, the category `∫F` has as objects the pairs `(c, a)` with `c` in `Ob(C)` and `a` in `Ob(F(c))`, and as morphisms `(c, a) -> (c', a')` the pairs of `f: c -> c'` in `C` and `phi: a -> F(f)(a')` in `F(c)`. The projection `p: ∫F -> C` takes a pair to its first component, and `∫` is an equivalence of 2-categories between pseudofunctors `C^op -> Cat` and Grothendieck fibrations over `C`. This is the construction behind every category of objects carrying a chosen datum (`POL-CAT-098`). |
 | `dynamic_class(name, bases, cls)` | Sage, `src/sage/structure/dynamic_class.py:128`. With `cls` given, its methods are inserted into the built class and its bases are prepended. |
 | `Category.parent_class`, `_make_named_class` | Sage, `src/sage/categories/category.py:1498` and `:1670`. Builds `parent_class` from `ParentMethods`, `element_class` from `ElementMethods`, `morphism_class` from `MorphismMethods`. |
-| `ModulesWithBasis` | Sage, `src/sage/categories/modules_with_basis.py:179`: "The category of modules with a distinguished basis." A name for the phenomenon, on the same axiom machinery as `Finite`. Its morphisms are ordinary module morphisms while its homset reads a matrix in the distinguished bases (`:47`), so the name settles neither the fibration nor the morphisms. |
-| Grothendieck construction, straightening | The passage between a functor `C^op -> Cat` assigning to each object its category of choices, and the fibration `p: E -> C` whose total category has those choices as objects. open: cite Kerodon or the Stacks Project. |
-| separator | open |
-| replete | open |
-
-Each source cell above is open work. Fill it by inspecting the source (`POL-MATH-040`), or
-remove the term.
+| `ModulesWithBasis` | Sage, `src/sage/categories/modules_with_basis.py:179`: "The category of modules with a distinguished basis." A name for the phenomenon on the same axiom machinery as `Finite`. Its morphisms are ordinary module morphisms while its homset reads a matrix in the distinguished bases (`:47`), so the name settles neither the fibration nor the morphisms. |

@@ -766,7 +766,7 @@ Use Sage for:
 - established exact algorithms.
 
 Cross into Sage through an explicit realization functor or owned computation boundary.
-A Sage realization is not a selected structural functor.
+A Sage realization is not selected for inheritance.
 Its Python methods must not enter the public mathematical API by accident.
 
 Apply the same boundary to every external engine. Keep each engine value private.

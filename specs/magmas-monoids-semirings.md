@@ -20,7 +20,7 @@ The governing policies are `POL-MATH-019`, `POL-MATH-022`, `POL-MATH-023`, `POL-
 
 - [Semirings](#semirings)
 
-- [Structural functors](#structural-functors)
+- [Selected functors](#selected-functors)
 
 - [Owned operations](#owned-operations)
 
@@ -326,7 +326,7 @@ x(y+z)=xy+xz,
 
 These formulas are consequences of the internal diagrams.
 
-## Structural functors
+## Selected functors
 
 Each selected functor acts on objects and morphisms.
 Its point action comes from its morphism action and terminal-object comparison.

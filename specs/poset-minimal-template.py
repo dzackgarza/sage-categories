@@ -6,7 +6,7 @@ required contract. They do not define a second framework API.
 A public call accepts a plain Python set ``X_prime`` and an order callable.
 It constructs the poset ``(X, R)``, where ``X = Sets()(X_prime)`` and ``R`` is
 the relation defined by the callable. The named projection ``(X, R) |-> X`` is
-an ordinary functor. It is the only selected structural functor.
+an ordinary functor. It is the only selected functor.
 """
 
 from __future__ import annotations
@@ -86,7 +86,7 @@ class PartiallyOrderedSetsCategory(Category):
         # action and the kernel's ``Sets.ObjectType`` initialization both use it.
         return Fun(self, Sets())(
             object_constructor_input=set_constructor_input,
-            on_morphism=underlying_set_map,
+            on_morphism=set_projection_on_morphism,
             terminal_comparison=terminal_point_comparison,
         )
 

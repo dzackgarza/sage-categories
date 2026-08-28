@@ -8,7 +8,7 @@ The active kernel plan is incomplete.
 Its step-10 phase also lacks a status field and names two files that no longer exist.
 
 The current leaf methods often state their mathematics clearly.
-The surrounding category code still contains kernel refinement, role, cache, and type-construction work.
+The surrounding category code still contains kernel refinement, cache, class-compilation, and type-construction work.
 
 Two defects are more serious than that wiring.
 The cardinality functor cannot act on every object in its declared domain (V2).
@@ -70,8 +70,8 @@ These five register entries are remediated and need only to be marked closed:
   `src/sage_categories/cat/category.py:519`.
 - The `CategoryPoint` entry at line 1264. Current code declares a static class in
   `src/sage_categories/kernel/`.
-- The `Subobjects()` name-collision entry at line 1265. Current code uses
-  `ChosenSubobjects()` at `src/sage_categories/cat/constructions.py:428`.
+- The `Subobjects()` name-collision entry at line 1265. Current code uses an extra-named
+  product-subobject family at `src/sage_categories/cat/constructions.py:428`.
 - The identity-only witness entry at line 1267. Current code has one at
   `tests/cat/test_two_morphisms.sage:254`. It states no mathematical proposition.
 
@@ -304,7 +304,7 @@ Required correction:
 Severity: High
 
 - Searched: the complete step-10 witness-debt section and its named current tests.
-- Found: current tests still assert on compiler nodes, routes, transport, classes, and role tables.
+- Found: current tests still assert on compiler nodes, routes, transport, classes, and class tables.
 - Found: the active plan still leaves the public witness matrix incomplete.
 - Conclusion: I conclude that these checks cannot discharge the public acceptance rows.
 - Confidence: High.
@@ -390,7 +390,7 @@ Governing sources:
 
 Required correction:
 
-- Make each selected structural functor state its target's construction data, not an already-built target object, and let the kernel thread it through the ancestor initializers.
+- Make each selected functor state its target's construction data, not an already-built target object, and let the kernel thread it through the ancestor initializers.
 - Delete the category-level image accessor and its thirteen call sites together.
 
 ## Leaf assessment
@@ -400,7 +400,7 @@ The number-set predicates use exact Sage decisions and preserve `Unknown`.
 Finite-poset operations use one fixed private Sage helper and reconstruct owned results.
 
 The main defect is architectural.
-Leaves must still know how refinement, role selection, cache retention, and compiled types work.
+Leaves must still know how refinement, class selection, cache retention, and compiled types work.
 That is the work the kernel exists to remove.
 
 SLOP-REPORT-COMPLIANCE: I hereby assert that the above report is formatted in compliance with all slop report requirements.

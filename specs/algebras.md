@@ -83,7 +83,7 @@ f\circ u_B=u_D.
 Thus every algebra morphism is already a module morphism in the supplied module
 category.
 
-## Structural functor
+## Selected functor
 
 The construction retains its base-relative presentation functor
 

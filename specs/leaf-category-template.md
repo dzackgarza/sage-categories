@@ -24,7 +24,7 @@ class LeafCategory(Category):
         return self.ObjectType(defining_data)
 
     def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-        """Return the selected immediate structural functors."""
+        """Return the selected immediate functors."""
         ...
 ```
 

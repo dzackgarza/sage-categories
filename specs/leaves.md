@@ -297,7 +297,7 @@ The kernel constructs that exact category-owned element type with its ambient ob
 Each named projection separately constructs its element image through its morphism action.
 The element remains a `C.ElementType`, not an ancestor element type.
 
-The category layer constructs and selects each immediate structural functor.
+The category layer constructs and selects each immediate named functor.
 A leaf that is a subobject of a product uses `product_projection(i)`. Otherwise, it reuses the exact functors retained by its defining category construction.
 
 A leaf selects the strongest established property subcategory.

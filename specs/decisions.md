@@ -643,6 +643,15 @@ the datum; the pairs are the objects of the total category, obtained by the Grot
 construction from the assignment `M |-> {choices for M}`. Straightening and unstraightening
 are the two directions of that correspondence.
 
+The citations, inspected: the Grothendieck construction `∫F` of a pseudofunctor
+`F: C^op -> Cat` has as objects the pairs `(c, a)` and as morphisms the pairs `(f, phi)`
+with `f: c -> c'` in `C` and `phi: a -> F(f)(a')` in `F(c)`, with `p: ∫F -> C` the first
+projection, and `∫` is an equivalence of 2-categories onto the fibrations over `C`
+([nLab, "Grothendieck construction"](https://ncatlab.org/nlab/show/Grothendieck+construction)).
+A fibred category is one where every morphism of the base lifts to a strongly cartesian
+morphism ([Stacks Project, Categories, Definition 4.33.5, tag 02XJ](https://stacks.math.columbia.edu/tag/02XJ),
+with Lemma 4.33.7 giving the pseudofunctor once pullbacks are chosen).
+
 The datum is itself a morphism, which is why one construction covers the whole family. A
 generating set `S` for `M` is an epimorphism `Free_R(S) ->> M`. A finite presentation is a
 length-two resolution `Free_R(X_1) -> Free_R(X_0) -> M`. A resolution of any length is the

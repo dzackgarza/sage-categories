@@ -89,7 +89,7 @@ f\circ\rho_X=\rho_Y\circ(A\bullet f).
 
 Composition and identities come from `C`. The action-preservation equation is stable under both.
 
-## Structural functor
+## Selected functor
 
 The construction retains the faithful projection
 

@@ -75,7 +75,7 @@ The refinement must preserve:
 
 - the private engine representations;
 
-- existing structural images.
+- images owned by existing named functors.
 
 It changes the strongest known category and the resulting public method surface.
 
@@ -98,7 +98,7 @@ This is a shortcut for constructing the same rule in the property category:
 f = Mor(Sets()).Monomorphisms()(A, B)(rule)
 ```
 
-The kernel reuses the existing domain, codomain, rule, private engine representation, and structural images.
+The kernel reuses the existing domain, codomain, rule, private engine representation, and images owned by existing named functors.
 It does not recompute injectivity.
 It changes the owned morphism's category and dynamic class.
 
@@ -232,7 +232,7 @@ Refinement preserves:
 
 - private engine representations;
 
-- existing structural images.
+- images owned by existing named functors.
 
 There is no target wrapper.
 There is no separate ambient implementation.

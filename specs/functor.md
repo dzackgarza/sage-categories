@@ -198,11 +198,11 @@ No construction creates a second terminal object, simplex, or walking structure.
 
 ### Separators and separating families
 
-A category may choose a family of objects whose generalized points determine its morphisms.
+A category may choose a family of objects whose generalized elements determine its morphisms.
 [nLab, separator](https://ncatlab.org/nlab/show/separator) (inspected 2026-08-28) names it: a family `S = (S_a)_{a in A}` is a "separating family or a generating family" when "for every pair of parallel morphisms `f, g : X -> Y`, if `f . e = g . e` for every `e : S_a -> X` sourced in the family, then `f = g`", and for locally small `C`, "`S` is a separating family if the family of hom functors `Hom(S_a, -) : C -> Set` (for `a in A`) is jointly faithful".
 The one-element case is a separator: "`S` is a separator if the hom functor `Hom(S, -) : C -> Set` is faithful."
 
-`Category.separating_family()` returns that family, and the leaf's declaration that it separates is trusted (`POL-MATH-037`). `Sets()` chooses `(1,)`, so its separator is the terminal object and its generalized points `1 -> X` are its elements.
+`Category.separating_family()` returns that family, and the leaf's declaration that it separates is trusted (`POL-MATH-037`). `Sets()` chooses `(1,)`, so its separator is the terminal object and its generalized elements `1 -> X` are its points.
 `Cat()` chooses `(1, [1])`: objects and morphisms jointly separate functors, so `Cat()` has a separating family of two rather than a single underlying-set functor, and none is built.
 
 A separating family of several is a family of hom functors that is jointly faithful.
@@ -986,7 +986,7 @@ It is kernel infrastructure over already established mathematical functors.
 
 - A selected point functor `{C} -> D` supplies target object state to `C` and target element state to `C.ObjectType`, the points of `C`.
 
-- Every selected structural functor is an ordinary object of `Fun`.
+- Every selected functor is an ordinary object of `Fun`.
 
 - `structure_functors()` determines the structural graph, compiled class bases, constructor conversions, and inherited method surface. Each named functor owns its public images.
 

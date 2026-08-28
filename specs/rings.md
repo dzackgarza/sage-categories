@@ -91,7 +91,7 @@ instance there is the strict 2-group
 `Cardinal()` and `Ordinals()` are not objects of `Rings(Cat())`. Neither addition admits
 an inversion functor, so both stay in `Semirings(Cat())`.
 
-## Structural functors
+## Selected functors
 
 `Rings(C)` is the subobject of
 `Semirings(C) * Groups(C_x).Additive().Commutative()` whose two additive-monoid

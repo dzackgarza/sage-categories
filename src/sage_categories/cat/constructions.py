@@ -12,14 +12,15 @@ composites of the family are those of ``C`` between its objects (POL-CAT-087).
 
 The universal data belongs to the diagram.  For each diagram ``D`` the family
 retains ``D``, the limiting cone (a natural transformation from the constant
-diagram at the constructed object), and the mediator rule (POL-FUN-008).
-Distinct diagrams have distinct universal data even when they construct one
-object: a skeletal ambient identifies the products of ``(c_2, c_3)`` and
-``(c_6, c_1)``, and the cone of each diagram is still exact.  The object-level
-accessors ``product_projection``, ``projection``, ``cone``, and
-``universal_morphism`` read the data of the one diagram the object was
-constructed from; ``_retain`` rejects a second diagram onto one object, naming
-both, so that assumption fails loudly at the construction.
+diagram at the constructed object), and the mediator rule (POL-FUN-008), read
+back by ``universal_data(D)``.  Distinct diagrams have distinct universal data
+even when they construct one object: a divisibility ambient constructs ``1`` as
+the product of ``(2, 3)`` and again as the product of ``(1, 6)``, and the cone of
+each diagram is still exact.  The object-level accessors ``product_projection``,
+``projection``, ``cone``, and ``universal_morphism`` read ``presentation``, the
+data of the one diagram the object presents; an object two diagrams constructed
+has no one cone, so ``presentation`` fails loudly there, naming both diagrams,
+and the caller reads the data it means at that diagram.
 
 ``C.Products()`` is the family of chosen products over every discrete shape, with
 the sequence convenience ``(X_0, ..., X_n)`` and ``product_projection(i)``
@@ -46,7 +47,6 @@ from __future__ import annotations
 from collections.abc import Callable, Hashable
 from typing import NamedTuple
 
-from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.cat.category import Category, member
@@ -56,7 +56,7 @@ from sage_categories.cat.properties import FullSubcategory
 from sage_categories.cat.shapes import index_set_of, is_discrete
 from sage_categories.kernel.caches import SequenceTable
 from sage_categories.kernel.decisions import Decision, Unknown
-from sage_categories.kernel.predicates import Predicate, Proposition, ask
+from sage_categories.kernel.predicates import Predicate, Proposition
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory, Role
 
@@ -142,22 +142,22 @@ def chosen_limit_role(family: ApexCategory) -> type[ObjectOfCategory]:
         """A chosen limit: an object of ``C`` whose family retains its diagram, limiting cone, and mediator rule."""
 
         def diagram(self) -> Functor:
-            return family.universal_data(self).diagram
+            return family.presentation(self).diagram
 
         def index_category(self) -> Category:
-            return family.universal_data(self).diagram.domain()
+            return family.presentation(self).diagram.domain()
 
         def cone(self) -> NaturalTransformation:
             """The limiting cone ``constant(self) => diagram``."""
-            return family.universal_data(self).transformation
+            return family.presentation(self).transformation
 
         def projection(self, index: ObjectOfCategory) -> MorphismOfCategory:
             """The cone component ``self -> D(i)``."""
-            return family.universal_data(self).transformation.component(index)
+            return family.presentation(self).transformation.component(index)
 
         def universal_morphism(self, candidate_cone: NaturalTransformation) -> MorphismOfCategory:
             """The mediating morphism from the apex of another cone over the same diagram."""
-            data = family.universal_data(self)
+            data = family.presentation(self)
             assert candidate_cone.codomain() is data.diagram, f"{candidate_cone!r} is not a cone over {data.diagram!r}"
             return data.mediator(candidate_cone)
 
@@ -168,32 +168,27 @@ def chosen_product_role(family: ApexCategory) -> type[ObjectOfCategory]:
     class ChosenProduct(ObjectOfCategory):
         """A chosen product over a discrete shape: an object of ``C`` with its projections and mediator rule."""
 
-        def diagram(self) -> Functor:
-            return family.universal_data(self).diagram
+        def product_factors(self) -> Functor:
+            """The retained indexed family ``i |-> X_i`` (``specs/functor.md``, "Diagram shapes and universal constructions")."""
+            return family.presentation(self).diagram
 
         def index_category(self) -> Category:
-            return family.universal_data(self).diagram.domain()
+            return family.presentation(self).diagram.domain()
 
         def cone(self) -> NaturalTransformation:
             """The product cone ``constant(self) => diagram``, whose components are the projections."""
-            return family.universal_data(self).transformation
+            return family.presentation(self).transformation
 
         def product_projection(self, index: ObjectOfCategory | Hashable) -> MorphismOfCategory:
             """``pi_i: self -> X_i`` for ``i`` an object of the index category or a datum of the index set (POL-CAT-093)."""
-            data = family.universal_data(self)
+            data = family.presentation(self)
             return data.transformation.component(vertex_of(data.diagram.domain(), index))
 
         def universal_morphism(self, candidate_cone: NaturalTransformation) -> MorphismOfCategory:
             """The mediating morphism from the apex of another cone over the same diagram."""
-            data = family.universal_data(self)
+            data = family.presentation(self)
             assert candidate_cone.codomain() is data.diagram, f"{candidate_cone!r} is not a cone over {data.diagram!r}"
             return data.mediator(candidate_cone)
-
-        def subobject_projection(self, monomorphism: MorphismOfCategory, index: ObjectOfCategory | Hashable) -> MorphismOfCategory:
-            """The component ``pi_i after j`` of a subobject ``j: S -> self``: the composition rule of POL-CAT-094."""
-            assert monomorphism.codomain() is self, f"{monomorphism!r} does not present a subobject of {self!r}"
-            assert monomorphism in family.narrowing_base().morphism_category(1).Monomorphisms(), f"{monomorphism!r} is not a monomorphism"
-            return self.product_projection(index) * monomorphism
 
     return ChosenProduct
 
@@ -203,22 +198,22 @@ def chosen_colimit_role(family: ApexCategory) -> type[ObjectOfCategory]:
         """A chosen colimit: an object of ``C`` whose family retains its diagram, colimiting cocone, and mediator rule."""
 
         def diagram(self) -> Functor:
-            return family.universal_data(self).diagram
+            return family.presentation(self).diagram
 
         def index_category(self) -> Category:
-            return family.universal_data(self).diagram.domain()
+            return family.presentation(self).diagram.domain()
 
         def cocone(self) -> NaturalTransformation:
             """The colimiting cocone ``diagram => constant(self)``."""
-            return family.universal_data(self).transformation
+            return family.presentation(self).transformation
 
         def injection(self, index: ObjectOfCategory) -> MorphismOfCategory:
             """The cocone component ``D(i) -> self``."""
-            return family.universal_data(self).transformation.component(index)
+            return family.presentation(self).transformation.component(index)
 
         def universal_morphism(self, candidate_cocone: NaturalTransformation) -> MorphismOfCategory:
             """The mediating morphism to the apex of another cocone under the same diagram."""
-            data = family.universal_data(self)
+            data = family.presentation(self)
             assert candidate_cocone.domain() is data.diagram, f"{candidate_cocone!r} is not a cocone under {data.diagram!r}"
             return data.mediator(candidate_cocone)
 
@@ -229,24 +224,25 @@ def chosen_coproduct_role(family: ApexCategory) -> type[ObjectOfCategory]:
     class ChosenCoproduct(ObjectOfCategory):
         """A chosen coproduct over a discrete shape: an object of ``C`` with its injections and mediator rule."""
 
-        def diagram(self) -> Functor:
-            return family.universal_data(self).diagram
+        def coproduct_summands(self) -> Functor:
+            """The retained indexed family ``i |-> X_i`` (``specs/functor.md``, "Diagram shapes and universal constructions")."""
+            return family.presentation(self).diagram
 
         def index_category(self) -> Category:
-            return family.universal_data(self).diagram.domain()
+            return family.presentation(self).diagram.domain()
 
         def cocone(self) -> NaturalTransformation:
             """The coproduct cocone ``diagram => constant(self)``, whose components are the injections."""
-            return family.universal_data(self).transformation
+            return family.presentation(self).transformation
 
         def coproduct_injection(self, index: ObjectOfCategory | Hashable) -> MorphismOfCategory:
             """``iota_i: X_i -> self`` for ``i`` an object of the index category or a datum of the index set (POL-CAT-093)."""
-            data = family.universal_data(self)
+            data = family.presentation(self)
             return data.transformation.component(vertex_of(data.diagram.domain(), index))
 
         def universal_morphism(self, candidate_cocone: NaturalTransformation) -> MorphismOfCategory:
             """The mediating morphism to the apex of another cocone under the same diagram."""
-            data = family.universal_data(self)
+            data = family.presentation(self)
             assert candidate_cocone.domain() is data.diagram, f"{candidate_cocone!r} is not a cocone under {data.diagram!r}"
             return data.mediator(candidate_cocone)
 
@@ -269,7 +265,7 @@ class ApexCategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismDa
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData]) -> None:
         self._data: MonoDict = MonoDict()
         self._constructed: MonoDict = MonoDict()
-        self._source_diagram: MonoDict = MonoDict()
+        self._source_diagrams: MonoDict = MonoDict()
         self._lowered: MonoDict = MonoDict()
         self._object_role = self.chosen_role()
         super().__init__(ambient)
@@ -310,15 +306,29 @@ class ApexCategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismDa
         assert diagram in self._constructed, f"{self!r} constructed nothing for {diagram!r}"
         return self._constructed[diagram]
 
-    def universal_data(self, constructed: ObjectOfCategory) -> UniversalData:
-        """The universal data of the diagram ``constructed`` was constructed from.
+    def universal_data(self, diagram: Functor) -> UniversalData:
+        """The universal data retained for ``diagram``: its diagram, cone or cocone, and mediator rule."""
+        assert diagram in self._data, f"{self!r} retains no construction of {diagram!r}"
+        return self._data[diagram]
 
-        Exact because ``_retain`` admits one diagram per constructed object; the
-        authority is the diagram-keyed table, and this is the derived reading that
-        an object-level accessor needs.
+    def presenting_diagrams(self, constructed: ObjectOfCategory) -> tuple[Functor, ...]:
+        """The diagrams this family constructed ``constructed`` from, in construction order."""
+        assert constructed in self._source_diagrams, f"{self!r} constructed no object {constructed!r}"
+        return self._source_diagrams[constructed]
+
+    def presentation(self, constructed: ObjectOfCategory) -> UniversalData:
+        """The universal data of the one diagram ``constructed`` presents.
+
+        A cone belongs to its diagram, so an object that two diagrams construct answers no
+        one cone: this names both and the caller reads ``universal_data`` at the diagram
+        it means.
         """
-        assert constructed in self._source_diagram, f"{self!r} constructed no object {constructed!r}"
-        return self._data[self._source_diagram[constructed]]
+        diagrams = self.presenting_diagrams(constructed)
+        assert len(diagrams) == 1, (
+            f"{self!r} constructed {constructed!r} from {' and from '.join(repr(diagram) for diagram in diagrams)}; "
+            "read the universal data at the diagram whose cone you want"
+        )
+        return self._data[diagrams[0]]
 
     def chosen(self, diagram: Functor, construction: Construction) -> ObjectOfCategory:
         """The constructed object of ``diagram``, constructed once; a diagram and its lowering share it."""
@@ -334,13 +344,10 @@ class ApexCategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismDa
         ambient = self.narrowing_base()
         assert constructed in ambient, f"{constructed!r} is not an object of {ambient!r}"
         assert data.diagram not in self._data, f"{self!r} already retains the construction of {data.diagram!r}"
-        assert constructed not in self._source_diagram, (
-            f"{self!r} constructed {constructed!r} from {self._source_diagram[constructed]!r} and again from {data.diagram!r}; "
-            "one object cannot answer the projections of two diagrams"
-        )
+        retained = self._source_diagrams[constructed] if constructed in self._source_diagrams else ()
         self._data[data.diagram] = data
         self._constructed[data.diagram] = constructed
-        self._source_diagram[constructed] = data.diagram
+        self._source_diagrams[constructed] = (*retained, data.diagram)
         refine(constructed, self)
         return constructed
 
@@ -424,94 +431,11 @@ class ProductsCategory(ApexCategory):
         assert limiting_cone in diagrams.morphism_category(1)(diagrams.constant(apex), diagram)
         return self._retain(apex, UniversalData(apex, diagram, limiting_cone, mediator))
 
-    @cached_method
-    def ChosenSubobjects(self) -> Category:
-        """``C.Products().ChosenSubobjects()``: the objects presented by a chosen monomorphism into a chosen product, with their derived component projections (POL-CAT-094).
-
-        This is a different notion from ``C.Subobjects()``, which is the family of
-        monomorphism fibers: ``C.Subobjects()(x)`` collects every monomorphism into ``x``
-        (POL-API-011).  "Chosen" names an act that cannot be derived: a subobject is an
-        isomorphism class of monomorphisms and no intrinsic representative of it exists, so
-        the presenting monomorphism is selected and retained (``specs/functor.md``,
-        "Monomorphisms of ``Cat()`` and placement"), as a chosen subset retains its
-        monomorphism.
-        """
-        return ProductSubobjectsCategory(self)
-
     def name(self) -> str:
         return "Products"
 
     def __repr__(self) -> str:
         return f"{self.narrowing_base()!r}.Products()"
-
-
-def product_subobject_role(family: ProductSubobjectsCategory) -> type[ObjectOfCategory]:
-    class ProductSubobject(ObjectOfCategory):
-        """An object ``S`` presented by a monomorphism ``j: S -> P`` into a chosen product: each ``product_projection(i)`` is ``pi_i * j``."""
-
-        def monomorphism(self) -> MorphismOfCategory:
-            """The presenting monomorphism ``j: S -> P`` (POL-FUN-013)."""
-            return family.presenting_monomorphism(self)
-
-        def product(self) -> ObjectOfCategory:
-            """The chosen product ``P``: the codomain of ``j`` (POL-FUN-014, POL-CAT-094)."""
-            return family.presenting_monomorphism(self).codomain()
-
-        def diagram(self) -> Functor:
-            return self.product().diagram()
-
-        def index_category(self) -> Category:
-            return self.product().index_category()
-
-        def product_projection(self, index: ObjectOfCategory | Hashable) -> MorphismOfCategory:
-            """``P.product_projection(i) after j``: the component of the subobject (POL-CAT-094)."""
-            monomorphism = family.presenting_monomorphism(self)
-            return monomorphism.codomain().subobject_projection(monomorphism, index)
-
-    return ProductSubobject
-
-
-class ProductSubobjectsCategory(FullSubcategory[[MorphismOfCategory], []]):
-    """``C.Products().ChosenSubobjects()``: the full subcategory of ``C`` on the objects presented by a chosen monomorphism into a chosen product.
-
-    The presenting monomorphism is retained by identity of its domain; the object
-    itself is the domain ``S``, refined into this family (POL-FUN-013/014).
-    """
-
-    def __init__(self, products: ProductsCategory) -> None:
-        self._products = products
-        self._monomorphisms: MonoDict = MonoDict()
-        self._object_role = product_subobject_role(self)
-        super().__init__(products.narrowing_base())
-
-    def local_role_class(self, role: Role) -> type[CategoryPoint]:
-        if role is Role.OBJECT:
-            return self._object_role
-        return super().local_role_class(role)
-
-    def presenting_monomorphism(self, member_object: ObjectOfCategory) -> MorphismOfCategory:
-        """The monomorphism ``j: S -> P`` retained for ``S``."""
-        assert member_object in self._monomorphisms, f"{self!r} retains no presenting monomorphism for {member_object!r}"
-        return self._monomorphisms[member_object]
-
-    def __call__(self, monomorphism: MorphismOfCategory) -> ObjectOfCategory:
-        """The object ``S`` presented by ``j: S -> P`` for a chosen product ``P``: the trusted constructor of ``Monomorphisms()`` on ``j`` (POL-MATH-037), rejected only when decided false."""
-        morphisms = self._ambient.morphism_category(1)
-        assert monomorphism in morphisms, f"{monomorphism!r} is not a morphism of {self._ambient!r}"
-        assert monomorphism.codomain() in self._products, f"{monomorphism.codomain()!r} is not a chosen product of {self._products!r}"
-        assert ask(monomorphism.is_monomorphism()) is not False, f"{monomorphism!r} is not a monomorphism"
-        subobject = monomorphism.domain()
-        if subobject not in self._monomorphisms:
-            morphisms.Monomorphisms()(monomorphism)
-            self._monomorphisms[subobject] = monomorphism
-            refine(subobject, self)
-        return subobject
-
-    def name(self) -> str:
-        return "Products().ChosenSubobjects"
-
-    def __repr__(self) -> str:
-        return f"{self._products!r}.ChosenSubobjects()"
 
 
 class ColimitsCategory(ApexCategory):
@@ -607,7 +531,8 @@ indexed_by = Predicate("indexed_by", 2, False)
 def _indexed_by_shape(constructed: CategoryPoint, family: Category) -> Decision:
     if not is_placed(constructed, family.ambient()):
         return Unknown
-    return constructed.diagram().domain() is family.shape()
+    diagrams = family.ambient().presenting_diagrams(constructed)
+    return any(diagram.domain() is family.shape() for diagram in diagrams)
 
 
 indexed_by.register_handler(_indexed_by_shape)
@@ -629,6 +554,18 @@ class DiscreteLimits(FullSubcategory[[MorphismOfCategory], []]):
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         return member(candidate, self._ambient) & indexed_by(candidate, self)
+
+    def lowered(self, diagram: Functor) -> Functor:
+        return self._ambient.lowered(diagram)
+
+    def universal_data(self, diagram: Functor) -> UniversalData:
+        return self._ambient.universal_data(diagram)
+
+    def presenting_diagrams(self, constructed: ObjectOfCategory) -> tuple[Functor, ...]:
+        return self._ambient.presenting_diagrams(constructed)
+
+    def presentation(self, constructed: ObjectOfCategory) -> UniversalData:
+        return self._ambient.presentation(constructed)
 
     def __call__(self, diagram: Functor) -> ObjectOfCategory:
         self._ambient.accepts(diagram, self._shape)
@@ -672,6 +609,18 @@ class DiscreteColimits(FullSubcategory[[MorphismOfCategory], []]):
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         return member(candidate, self._ambient) & indexed_by(candidate, self)
 
+    def lowered(self, diagram: Functor) -> Functor:
+        return self._ambient.lowered(diagram)
+
+    def universal_data(self, diagram: Functor) -> UniversalData:
+        return self._ambient.universal_data(diagram)
+
+    def presenting_diagrams(self, constructed: ObjectOfCategory) -> tuple[Functor, ...]:
+        return self._ambient.presenting_diagrams(constructed)
+
+    def presentation(self, constructed: ObjectOfCategory) -> UniversalData:
+        return self._ambient.presentation(constructed)
+
     def __call__(self, diagram: Functor) -> ObjectOfCategory:
         self._ambient.accepts(diagram, self._shape)
         constructed = self._ambient(diagram)
@@ -700,18 +649,30 @@ class DiscreteColimits(FullSubcategory[[MorphismOfCategory], []]):
 # -- the construction functors -------------------------------------------------------------
 
 
+def constructed_data(family: Category, diagram: Functor) -> UniversalData:
+    """The universal data of ``diagram`` in ``family``, constructing it if this is its first call.
+
+    The construction functor acts on the two diagrams a morphism of diagrams connects, so
+    it reads their data at the diagrams: one object can present several of them.
+    """
+    family(diagram)
+    return family.universal_data(family.lowered(diagram))
+
+
 def induced_limit_morphism(family: Category, transformation: NaturalTransformation) -> MorphismOfCategory:
     """``Lim(eta): L_D -> L_D'`` for ``eta: D => D'``: the mediator of the cone ``eta_i after pi_i``."""
-    source, target = family(transformation.domain()), family(transformation.codomain())
-    induced_cone = cone(transformation.codomain(), source, lambda vertex: transformation.component(vertex) * source.cone().component(vertex))
-    return target.universal_morphism(induced_cone)
+    source = constructed_data(family, transformation.domain())
+    target = constructed_data(family, transformation.codomain())
+    induced_cone = cone(target.diagram, source.constructed, lambda vertex: transformation.component(vertex) * source.transformation.component(vertex))
+    return target.mediator(induced_cone)
 
 
 def induced_colimit_morphism(family: Category, transformation: NaturalTransformation) -> MorphismOfCategory:
     """``Colim(eta): L_D -> L_D'`` for ``eta: D => D'``: the mediator of the cocone ``iota'_i after eta_i``."""
-    source, target = family(transformation.domain()), family(transformation.codomain())
-    induced_cocone = cocone(transformation.domain(), target, lambda vertex: target.cocone().component(vertex) * transformation.component(vertex))
-    return source.universal_morphism(induced_cocone)
+    source = constructed_data(family, transformation.domain())
+    target = constructed_data(family, transformation.codomain())
+    induced_cocone = cocone(source.diagram, target.constructed, lambda vertex: target.transformation.component(vertex) * transformation.component(vertex))
+    return source.mediator(induced_cocone)
 
 
 def limit_functor(family: Category) -> Functor:

@@ -31,17 +31,24 @@ architecture"): a morphism ``t: T -> x`` or an element with that defining
 morphism is accepted as the object ``(t, *)``, and is a member by the same
 decision.
 
-``C.Subobjects()`` is the full subcategory of ``Fun([1], C)`` on the monomorphisms,
-decided through ``Mor(C).Monomorphisms()``; ``C.Subobjects()(x)`` is its fiber over
-``x``, the full subcategory of ``C.SliceOver(x)`` on ``(m, *)`` with ``m`` a
-monomorphism (POL-FUN-013/014).  ``CoveringObjects()`` uses epimorphisms: a
-covering object of ``y`` is the pair ``(X, p: X -> y)``, not ``p`` alone
-(POL-CAT-026).  ``Superobjects()`` and ``CoveredObjects()`` are the coslice duals.
+``C.Subobjects(x)`` is ``C.SliceOver(x).Monomorphisms()``: the property subcategory
+``Mor(C).Monomorphisms()`` pulled back along the retained defining-arrow functor of the
+slice, which is its pullback projection to ``Fun([1], C)`` (POL-CAT-092, POL-FUN-013/014).
+A full subcategory is identity on values, so that pullback is the full subcategory of the
+slice on the objects whose defining arrow has the property.  ``C.CoveringObjects(y)`` uses
+epimorphisms: a covering object of ``y`` is the pair ``(X, p: X -> y)``, not ``p`` alone
+(POL-CAT-026).  ``C.Superobjects(x)`` and ``C.CoveredObjects(x)`` are the coslice duals.
+The ambient category named in the call fixes the role of ``x``, which is why these are
+methods of a category and not of the object.
+
+For a product ``P``, an object of ``C.Subobjects(P)`` retains its monomorphism ``j`` and
+reads each component as ``P.product_projection(i) after j``, so a subobject of a product
+has every component without a leaf repeating those maps (POL-CAT-094).
 """
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Hashable
 
 from sage.structure.coerce_dict import MonoDict, TripleDict
 
@@ -53,14 +60,13 @@ from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformatio
 from sage_categories.cat.properties import FullSubcategory
 from sage_categories.kernel.decisions import Decision
 from sage_categories.kernel.predicates import Predicate, Proposition, ask
-from sage_categories.kernel.refinement import is_placed
+from sage_categories.kernel.refinement import is_placed, refine
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory, Role, role_of
 
 __all__ = [
     "CosliceCategory",
-    "MorphismPropertyFamily",
-    "MorphismPropertyFiber",
     "SliceCategory",
+    "SliceProperty",
     "comma_category",
     "coslice_under",
     "slice_over",
@@ -105,6 +111,7 @@ class SliceLikeCategory(PullbackCategory):
         self._base_of_slice = base
         self._fixed = fixed
         self._fixed_label = fixed_label
+        self._properties: MonoDict = MonoDict()
         squares = Fun(_walking_arrow(), base)
         super().__init__(squares.evaluation(_walking_arrow()(fixed_label)), base.point_functor(fixed))
         self._fixed_projection = squares.evaluation(_walking_arrow()(1 - fixed_label)) * self.first_projection()
@@ -129,6 +136,33 @@ class SliceLikeCategory(PullbackCategory):
     def fixed_projection(self) -> Functor:
         """The fixed projection to ``C``: the evaluation at the varying end after the pullback projection to ``Fun([1], C)``, retained once."""
         return self._fixed_projection
+
+    def defining_arrow(self) -> Functor:
+        """The retained functor to ``Fun([1], C)`` returning the defining morphism of an object: the pullback projection (POL-CAT-092)."""
+        return self.first_projection()
+
+    def defining_arrow_of(self, candidate: CategoryPoint) -> MorphismOfCategory:
+        """The defining morphism of a slice object, of a morphism of ``C``, or of a generalized element denoting one."""
+        morphism = _denoted_morphism(candidate)
+        if morphism in self._base_of_slice.morphism_category(1):
+            return morphism
+        return self.defining_arrow().on_object(candidate)
+
+    def property_object_role(self, property_category: Category) -> type[CategoryPoint] | None:
+        """The object role that one of this slice's property subcategories declares; none by default."""
+        return None
+
+    def _property(self, property_category: Category) -> Category:
+        """The pullback of a property subcategory of ``Mor(C)`` along the defining-arrow functor, retained per property."""
+        if property_category not in self._properties:
+            self._properties[property_category] = SliceProperty(self, property_category)
+        return self._properties[property_category]
+
+    def Monomorphisms(self) -> Category:
+        return self._property(self._base_of_slice.morphism_category(1).Monomorphisms())
+
+    def Epimorphisms(self) -> Category:
+        return self._property(self._base_of_slice.morphism_category(1).Epimorphisms())
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         return slice_member(candidate, self)
@@ -156,6 +190,12 @@ class SliceCategory(SliceLikeCategory):
 
     def __init__(self, base: Category, fixed: ObjectOfCategory) -> None:
         super().__init__(base, fixed, 1)
+
+    def property_object_role(self, property_category: Category) -> type[CategoryPoint] | None:
+        """The subobjects of ``x`` state their components: for a product they are the projections after the monomorphism (POL-CAT-094)."""
+        if property_category is self._base_of_slice.morphism_category(1).Monomorphisms():
+            return subobject_of_product_role
+        return None
 
     def retain_lifts(self, fixed_projection: Functor) -> None:
         fixed_projection.retain_cartesian_lifts(self._precomposition_lift)
@@ -215,7 +255,7 @@ def _pair_functor(first: Functor, second: Functor) -> Functor:
     source = Cat().Products()((first.domain(), second.domain()))
     target = Cat().Products()((first.codomain(), second.codomain()))
     legs = {0: first * source.product_projection(0), 1: second * source.product_projection(1)}
-    return target.universal_morphism(cone(target.diagram(), source, lambda vertex: legs[sequence_position(vertex)]))
+    return target.universal_morphism(cone(target.product_factors(), source, lambda vertex: legs[sequence_position(vertex)]))
 
 
 def _endpoint_functor(base: Category) -> Functor:
@@ -223,7 +263,7 @@ def _endpoint_functor(base: Category) -> Functor:
     squares = Fun(_walking_arrow(), base)
     target = Cat().Products()((base, base))
     legs = {0: squares.evaluation(_walking_arrow()(0)), 1: squares.evaluation(_walking_arrow()(1))}
-    return target.universal_morphism(cone(target.diagram(), squares, lambda vertex: legs[sequence_position(vertex)]))
+    return target.universal_morphism(cone(target.product_factors(), squares, lambda vertex: legs[sequence_position(vertex)]))
 
 
 def comma_category(first: Functor, second: Functor) -> PullbackCategory:
@@ -235,95 +275,73 @@ def comma_category(first: Functor, second: Functor) -> PullbackCategory:
     return _commas[key]
 
 
-# -- the subobject families (POL-SCOPE-003, POL-CAT-026, POL-FUN-013) ------------------------
+# -- the fixed-object construction categories (POL-CAT-092/094, POL-CAT-026, POL-FUN-013) ----
 
-# ``has_morphism_property(x, S)``: the morphism that ``x`` denotes in the family ``S``
-# lies in the property subcategory of ``Mor(C)`` that ``S`` selects.
+# ``has_morphism_property(x, S)``: the defining arrow of ``x`` lies in the property
+# subcategory of ``Mor(C)`` that ``S`` pulls back.
 has_morphism_property = Predicate("has_morphism_property", 2, False)
 
 
 def _has_morphism_property(candidate: CategoryPoint, family: Category) -> Decision:
-    return ask(family.property_category().predicate()(family.morphism_of(candidate)))
+    return ask(family.property_category().predicate()(family.defining_arrow_of(candidate)))
 
 
 has_morphism_property.register_handler(_has_morphism_property)
 
-class MorphismPropertyFamily(FullSubcategory[[NaturalTransformation], []]):
-    """``C.Subobjects()`` and its three relatives: the full subcategory of ``Fun([1], C)`` on the morphisms with the selected property.
 
-    ``property_of`` selects the property subcategory of ``Mor(C)`` (monomorphisms or
-    epimorphisms); ``over`` says whether the fibers live in slices or in coslices.
+def subobject_of_product_role(family: SliceProperty) -> type[ObjectOfCategory]:
+    class Subobject(ObjectOfCategory):
+        """An object of ``C.Subobjects(x)``: the monomorphism ``j`` it retains, composed with the structure of ``x``."""
+
+        def product_projection(self, index: ObjectOfCategory | Hashable) -> MorphismOfCategory:
+            """``P.product_projection(i) after j`` for a product ``P``, so a subobject of a product has every component (POL-CAT-094)."""
+            monomorphism = family.defining_arrow_of(self)
+            product = monomorphism.codomain()
+            assert product in family.base_of_slice().Products(), f"{product!r} is not a product of {family.base_of_slice()!r}"
+            return product.product_projection(index) * monomorphism
+
+    return Subobject
+
+
+class SliceProperty(FullSubcategory[[tuple[MorphismOfCategory, MorphismOfCategory]], []]):
+    """``C.SliceOver(x).Monomorphisms()`` and its relatives: a property subcategory of ``Mor(C)`` pulled back along the defining-arrow functor.
+
+    The property subcategory is identity on values, so the pullback is the full
+    subcategory of the slice or coslice on the objects whose defining arrow has the
+    property (POL-CAT-092).
     """
 
-    def __init__(self, base: Category, name: str, property_of: Callable[[Category], Category], over: bool) -> None:
-        self._base_of_family = base
-        self._name = name
-        self._property_of = property_of
-        self._over = over
-        self._fibers: MonoDict = MonoDict()
-        super().__init__(Fun(_walking_arrow(), base))
-
-    def base_of_family(self) -> Category:
-        return self._base_of_family
-
-    def over(self) -> bool:
-        """Whether the fibers live in slices (over) rather than coslices (under)."""
-        return self._over
+    def __init__(self, ambient: SliceLikeCategory, property_category: Category) -> None:
+        self._property_category = property_category
+        declared = ambient.property_object_role(property_category)
+        self._object_role = None if declared is None else declared(self)
+        super().__init__(ambient)
 
     def property_category(self) -> Category:
-        return self._property_of(self._base_of_family.morphism_category(1))
+        return self._property_category
 
-    def morphism_of(self, candidate: CategoryPoint) -> MorphismOfCategory:
-        """The morphism of ``C`` that an object of ``Fun([1], C)`` denotes."""
-        if candidate in self._base_of_family.morphism_category(1):
-            return candidate
-        return self._ambient.diagram(candidate).on_morphism(_walking_arrow().generator("0->1"))
+    def base_of_slice(self) -> Category:
+        return self._ambient.base_of_slice()
 
-    def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
-        return self._ambient.membership_proposition(candidate) & has_morphism_property(candidate, self)
+    def defining_arrow_of(self, candidate: CategoryPoint) -> MorphismOfCategory:
+        return self._ambient.defining_arrow_of(candidate)
 
-    def __call__(self, value: CategoryPoint) -> CategoryPoint:
-        """``C.Subobjects()(x)`` is the fiber over (or under) the object ``x``; on a morphism, the trusted constructor of the property (POL-MATH-037)."""
-        if value in self._base_of_family:
-            if value not in self._fibers:
-                fiber_ambient = self._base_of_family.SliceOver(value) if self.over() else self._base_of_family.CosliceUnder(value)
-                self._fibers[value] = MorphismPropertyFiber(self, fiber_ambient)
-            return self._fibers[value]
-        assert ask(has_morphism_property(value, self)) is not False, f"{value!r} is not in {self.property_category()!r}"
-        return self.property_category()(self.morphism_of(value))
-
-    def __repr__(self) -> str:
-        return f"{self._base_of_family!r}.{self._name}()"
-
-
-class MorphismPropertyFiber(FullSubcategory[[tuple[MorphismOfCategory, MorphismOfCategory]], []]):
-    """``C.Subobjects()(x)``: the full subcategory of ``C.SliceOver(x)`` (or of the coslice) on the pairs whose morphism has the property."""
-
-    def __init__(self, family: MorphismPropertyFamily, fiber_ambient: Category) -> None:
-        self._family = family
-        super().__init__(fiber_ambient)
-
-    def family(self) -> MorphismPropertyFamily:
-        return self._family
-
-    def property_category(self) -> Category:
-        return self._family.property_category()
-
-    def morphism_of(self, candidate: CategoryPoint) -> MorphismOfCategory:
-        """The morphism of ``C`` that a slice object, a morphism of ``C``, or a generalized element denotes."""
-        morphism = _denoted_morphism(candidate)
-        if morphism in self._family.base_of_family().morphism_category(1):
-            return morphism
-        return candidate.first()
+    def local_role_class(self, role: Role) -> type[CategoryPoint]:
+        """The object role the slice declares for this property, when it declares one."""
+        if role is Role.OBJECT and self._object_role is not None:
+            return self._object_role
+        return super().local_role_class(role)
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         return self._ambient.membership_proposition(candidate) & has_morphism_property(candidate, self)
 
     def __call__(self, value: CategoryPoint) -> PullbackCategory.ObjectType:
         """The pair ``(m, *)`` of a morphism with the property: the trusted constructor of the property on ``m`` (POL-MATH-037), rejected only when decided false."""
-        assert ask(has_morphism_property(value, self)) is not False, f"{value!r} is not in {self.property_category()!r}"
-        self.property_category()(self.morphism_of(value))
-        return self._ambient(value)
+        assert ask(has_morphism_property(value, self)) is not False, f"{value!r} is not in {self._property_category!r}"
+        self._property_category(self.defining_arrow_of(value))
+        member_object = self._ambient(value)
+        refine(member_object, self)
+        return member_object
 
     def __repr__(self) -> str:
-        return f"{self._family!r}({self._ambient.fixed_object()!r})"
+        return f"{self._ambient!r}.{self._property_category.name()}()"

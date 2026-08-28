@@ -121,25 +121,6 @@ class ObjectOfCategory(CategoryPoint):
     def identity(self) -> MorphismOfCategory:
         return self._category.identity_morphism(self)
 
-    # The fibers over and under this object of the four morphism-property families,
-    # constructed by the category's slice constructions (POL-FUN-029, POL-CAT-026).
-
-    def subobjects(self) -> Category:
-        """``C.Subobjects()(X)``: the monomorphisms into ``X`` as objects of ``C.SliceOver(X)``."""
-        return self._category.Subobjects()(self)
-
-    def superobjects(self) -> Category:
-        """``C.Superobjects()(X)``: the monomorphisms out of ``X`` as objects of ``C.CosliceUnder(X)``."""
-        return self._category.Superobjects()(self)
-
-    def covering_objects(self) -> Category:
-        """``C.CoveringObjects()(X)``: the pairs ``(Y, p: Y -> X)`` with ``p`` an epimorphism."""
-        return self._category.CoveringObjects()(self)
-
-    def covered_objects(self) -> Category:
-        """``C.CoveredObjects()(X)``: the pairs ``(Y, p: X -> Y)`` with ``p`` an epimorphism."""
-        return self._category.CoveredObjects()(self)
-
     def __eq__(self, candidate: Any) -> AppliedPredicate:
         return self._category.equality()(self, candidate)
 

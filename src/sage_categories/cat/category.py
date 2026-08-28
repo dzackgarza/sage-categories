@@ -664,41 +664,25 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
             self._coslices[member_object] = coslice_under(self, member_object)
         return self._coslices[member_object]
 
-    # Each family is retained by the method that names it (Sage ``cached_method``):
-    # the spelling is the method, not a key in a registry (POL-CAT-083).
+    # The four fixed-object construction categories, defined once here so that every
+    # category inherits them (POL-CAT-092).  The ambient named in the call fixes the role
+    # of ``X``: an object of two categories gives two of these calls, not one.
 
-    def _morphism_property_family(self, name: str, property_of: Callable[[Category], Category], over: bool) -> Category:
-        from sage_categories.cat.slices import MorphismPropertyFamily
+    def Subobjects(self, member_object: ObjectOfCategory) -> Category:
+        """``C.Subobjects(X) = C.SliceOver(X).Monomorphisms()``: the monomorphisms into ``X`` with their domains."""
+        return self.SliceOver(member_object).Monomorphisms()
 
-        return MorphismPropertyFamily(self, name, property_of, over)
+    def Superobjects(self, member_object: ObjectOfCategory) -> Category:
+        """``C.Superobjects(X) = C.CosliceUnder(X).Monomorphisms()``."""
+        return self.CosliceUnder(member_object).Monomorphisms()
 
-    @cached_method
-    def Subobjects(self) -> Category:
-        """The monomorphisms of ``C`` as objects of ``Fun([1], C)``; ``C.Subobjects()(x)`` is the fiber over ``x`` in ``C.SliceOver(x)``."""
-        if self.has_full_ambient():
-            return self.ambient().Subobjects()
-        return self._morphism_property_family("Subobjects", lambda morphisms: morphisms.Monomorphisms(), True)
+    def CoveringObjects(self, member_object: ObjectOfCategory) -> Category:
+        """``C.CoveringObjects(X) = C.SliceOver(X).Epimorphisms()``: the pairs ``(Y, p: Y -> X)`` with ``p`` an epimorphism (POL-CAT-026)."""
+        return self.SliceOver(member_object).Epimorphisms()
 
-    @cached_method
-    def Superobjects(self) -> Category:
-        """The monomorphisms of ``C``; ``C.Superobjects()(x)`` is the fiber under ``x`` in ``C.CosliceUnder(x)``."""
-        if self.has_full_ambient():
-            return self.ambient().Superobjects()
-        return self._morphism_property_family("Superobjects", lambda morphisms: morphisms.Monomorphisms(), False)
-
-    @cached_method
-    def CoveringObjects(self) -> Category:
-        """The epimorphisms of ``C``; ``C.CoveringObjects()(y)`` is the fiber over ``y``: pairs ``(X, p: X -> y)`` (POL-CAT-026)."""
-        if self.has_full_ambient():
-            return self.ambient().CoveringObjects()
-        return self._morphism_property_family("CoveringObjects", lambda morphisms: morphisms.Epimorphisms(), True)
-
-    @cached_method
-    def CoveredObjects(self) -> Category:
-        """The epimorphisms of ``C``; ``C.CoveredObjects()(x)`` is the fiber under ``x`` in ``C.CosliceUnder(x)``."""
-        if self.has_full_ambient():
-            return self.ambient().CoveredObjects()
-        return self._morphism_property_family("CoveredObjects", lambda morphisms: morphisms.Epimorphisms(), False)
+    def CoveredObjects(self, member_object: ObjectOfCategory) -> Category:
+        """``C.CoveredObjects(X) = C.CosliceUnder(X).Epimorphisms()``."""
+        return self.CosliceUnder(member_object).Epimorphisms()
 
     # -- wide subcategories and the core (``specs/functor.md``, "Monomorphisms of ``Cat()`` and placement"; ``cat/wide.py``) --
 

@@ -170,7 +170,7 @@ P.product_projection(i)   # P -> C_i
 Q.coproduct_injection(i)  # C_i -> Q
 ```
 
-If `S` is a subcategory of `P`, then `S` is an object of `Cat().Products().ChosenSubobjects()`. Its `product_projection(i)` is the subcategory monomorphism followed by the corresponding projection of `P`.
+If `S` is a subcategory of `P`, then `S` is an object of `Cat().Products().Subobjects()`. Its `product_projection(i)` is the subcategory monomorphism followed by the corresponding projection of `P`.
 
 `C.SliceOver(x)` is the pullback in `Cat()` of `ev_1: Fun([1], C) -> C` along `x: 1 -> C`; `C.CosliceUnder(x)` is the pullback of `ev_0`. Each retains its pullback projections; the varying object is the composite with `ev_0` or `ev_1`.
 

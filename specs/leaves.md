@@ -71,7 +71,7 @@ Its implementation types are part of that ownership:
 
 - the category declaration identifies those implementation types;
 
-- declared functors supply inherited operations.
+- selected functors supply inherited operations.
 
 A leaf category introduces only its new mathematics.
 However, introducing a new operation includes implementing that operation.
@@ -98,7 +98,7 @@ The standard definitions already determine the implementation classes:
 
 - an operation's mathematical signature determines the exact type of the value it applies to, of each parameter, and of its result;
 
-- a declared functor determines the compiled ancestor class and its exact construction-input conversion;
+- a selected functor determines the compiled ancestor class and its exact construction-input conversion;
 
 - an element's ambient mathematical object determines its exact element type;
 
@@ -114,7 +114,7 @@ A theorem does not become applicable through an authority token.
 
 Use the following meanings throughout this specification:
 
-- **explicit** means present in the semantic API as an exact type, category placement, defining morphism, declared functor, named construction, predicate result, or hypothesis;
+- **explicit** means present in the semantic API as an exact type, category placement, defining morphism, named functor, named construction, predicate result, or hypothesis;
 
 - **owner** means the category, object, morphism, functor, or universal construction whose mathematical definition states the operation or fact;
 
@@ -137,7 +137,7 @@ The architecture has two independent reuse mechanisms.
 
 ### Structural inheritance
 
-An implementation already owned by a structural ancestor reaches the leaf through the declared functors.
+An implementation already owned by a structural ancestor reaches the leaf through the selected functors.
 The kernel compiles its methods and constructor into the descendant class class.
 
 Examples include:
@@ -608,7 +608,7 @@ The word “realization” must distinguish two different notions.
 A realization functor is appropriate when the project models an actual mathematical functor between categories.
 It has object and morphism maps and can be used explicitly.
 
-Such a functor does not contribute methods through structural inheritance unless the category deliberately selects it as a declared functor.
+Such a functor does not contribute methods through structural inheritance unless the category selects it in `structure_functors()`.
 
 ### Private computation representation
 
@@ -756,7 +756,7 @@ If changing one mathematical operation requires synchronized edits to two method
 | Category-local operation name and signature | `ObjectType`, `ElementType`, or `MorphismType` |
 | Category-local executable method body | The same implementation class |
 | Local constructor and state | The same local implementation class |
-| Ancestor constructor conversion | Selected declared functor |
+| Ancestor constructor conversion | Selected functor |
 | Controlled class MRO and constructor composition | Kernel |
 | Inherited executable method | Declaring structural ancestor |
 | Public functor images and canonical route checks | Kernel |
@@ -970,7 +970,7 @@ A leaf implementation satisfies this specification when all these facts hold:
 
 - no local method is an `assert False` declaration stub;
 
-- inherited methods arrive only through declared functors;
+- inherited methods arrive only through selected functors;
 
 - every selected ancestor's required state is initialized through its functor-owned constructor conversion;
 

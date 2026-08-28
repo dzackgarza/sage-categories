@@ -458,7 +458,7 @@ Public access is category-owned:
 Sets().CardinalityFunctor()
 ```
 
-For a category \(\mathbf C\) with selected set-valued declared functor \(U_{\mathbf C}:\mathbf C\to\mathbf{Sets}\), the composite
+For a category \(\mathbf C\) with selected set-valued functor \(U_{\mathbf C}:\mathbf C\to\mathbf{Sets}\), the composite
 
 \[
 \#\circ\operatorname{core}(U_{\mathbf C})

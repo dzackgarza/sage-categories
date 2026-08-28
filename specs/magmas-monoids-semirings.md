@@ -78,7 +78,7 @@ f\circ\mu_X=\mu_Y\circ(f\otimes f).
 
 `Magmas(V)` is the category of these objects and morphisms.
 Its defining presentation retains `X`, `mu_X`, and their endpoint equation.
-`Magmas(V)` presents its objects as pairs, so the declared functor to `C` is the
+`Magmas(V)` presents its objects as pairs, so the selected functor to `C` is the
 first product projection, whose index names it and whose codomain is fixed by the
 product:
 
@@ -180,7 +180,7 @@ I\otimes A=A=A\otimes I,
 
 and the matching three equations on morphisms of `X`.
 
-Its immediate declared functor forgets associativity and the unit:
+Its immediate selected functor forgets associativity and the unit:
 
 ```python
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
@@ -251,7 +251,7 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (Fun(self, Monoids(V)).Monomorphisms().Isofibrations().Full()(),)
 ```
 
-The declared functor supplies the monoid operation and unit.
+The selected functor supplies the monoid operation and unit.
 `Groups(V)` adds only the inversion morphism and its laws.
 
 At `V = Sets()`, an object is an ordinary group.

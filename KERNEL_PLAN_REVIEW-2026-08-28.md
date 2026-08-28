@@ -104,7 +104,7 @@ Severity: Critical
 
 Evidence:
 
-- The declared functor appears at `specs/cardinality.md:435`.
+- The functor appears at `specs/cardinality.md:435`.
 - Unknown cardinalities are required at `specs/cardinality.md:470` and `CONTRIBUTING.md:703`.
 - `cardinality_functor()` asserts exact cardinality at
   `src/sage_categories/sets/cardinals.py:993`.
@@ -115,7 +115,7 @@ Governing sources:
 
 - `POL-SET-010` permits `Cardinal | UnknownClass` as a set cardinality.
 - `POL-SET-025` excludes `Unknown` from `Cardinal()`.
-- `specs/functor.md:983` requires every declared functor to satisfy the functor model.
+- `specs/functor.md:983` requires every functor to satisfy the functor model.
 
 Required correction:
 

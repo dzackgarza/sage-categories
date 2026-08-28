@@ -167,7 +167,7 @@ Leaves never implement `__contains__` on a category.
 
 ## Property propagation
 
-Suppose \(P\) is defined at category \(C\). Let \(F:D\to C\) be the declared functor.
+Suppose \(P\) is defined at category \(C\). Let \(F:D\to C\) be the selected functor.
 
 The kernel defines:
 
@@ -189,7 +189,7 @@ The kernel derives:
 
 - the membership proposition;
 
-- the declared functor \(D.P\to C.P\);
+- the selected functor \(D.P\to C.P\);
 
 - the refined object, element, and morphism types;
 
@@ -207,7 +207,7 @@ Subcategories then inherit refinements such as `Groups().Finite()`. [Sage catego
 The repository should retain that mathematics.
 It should not copy Sage’s string-based axiom registry or method-name discovery.
 
-A derived property needs a declared functor.
+A derived property needs a selected functor.
 If two routes give different meanings, the category must select one route explicitly.
 
 ## `Finite` and `Countable`
@@ -240,7 +240,7 @@ Sets().Finite() ⊆ Sets().Countable()
 
 Thus `ask(X.is_countable())` returns `True` immediately when `X` already belongs to `Sets().Finite()`.
 
-For a category \(C\) with a selected set-valued declared functor
+For a category \(C\) with a selected set-valued functor
 
 \[
 U:C\to\mathbf{Set},
@@ -916,7 +916,7 @@ Let
 U:C\to\mathbf{Sets}
 \]
 
-be the declared functor.
+be the selected functor.
 
 The kernel defines:
 
@@ -928,7 +928,7 @@ C.\operatorname{Finite}
 
 For an owned subcategory of `Sets()`, Sage's axiom-join machinery can help construct this category and its dynamic implementation classes.
 
-For a general declared functor, the correct object is an inverse-image property category.
+For a general selected functor, the correct object is an inverse-image property category.
 It is not only a Python class join.
 
 The kernel must derive:
@@ -937,7 +937,7 @@ The kernel must derive:
 
 - its monomorphism into `C`;
 
-- its declared functor into `Sets().Finite()`;
+- its selected functor into `Sets().Finite()`;
 
 - its membership proposition;
 
@@ -949,7 +949,7 @@ The kernel must derive:
 
 The descendant leaf supplies none of this.
 
-If several declared functors give different meanings to “finite,” the category must select the intended functor.
+If several selected functors give different meanings to “finite,” the category must select the intended functor.
 The kernel must not infer a route from method names.
 
 ## Property axioms and structure additions differ

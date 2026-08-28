@@ -42,7 +42,7 @@ appear in permanent documentation, and the row states what replaces it.
 | `stage` | generalized element, or generalized point | `specs/decisions.md` D62 |
 | `symbolic cardinal` | a cardinal when the answer is known, `Unknown` when it is not | `specs/decisions.md` D64 |
 | `Ar(C)`, `Hom(C)`, arrow notation | `Mor(n, C)` | `specs/decisions.md` D55 |
-| `Chosen<Anything>` | `With<Datum>` when objects carry a choice, otherwise no adjective | `POL-CAT-098`; `specs/decisions.md` D75 |
+| `Chosen<Anything>`, and `With<Datum>` used as if it were a construction | name the fibration that forgets the datum, its fibre, and its morphisms | `POL-CAT-098`; `specs/decisions.md` D75 |
 | `ChosenSubobjects`, `chosen subobject` | `Subobjects()`; a subobject is an object with a monomorphism | `POL-CAT-094`; `specs/decisions.md` D74 |
 | `carrier_projection`, `underlying_object_projection`, `underlying_set` | apply a functor named with both endpoints; there is no accessor | `POL-FUN-037` |
 
@@ -89,7 +89,8 @@ These terms are in use and have no complete row. Each is either completed or rem
 | --- | --- |
 | `dynamic_class(name, bases, cls)` | Sage, `src/sage/structure/dynamic_class.py:128`. With `cls` given, its methods are inserted into the built class and its bases are prepended. |
 | `Category.parent_class`, `_make_named_class` | Sage, `src/sage/categories/category.py:1498` and `:1670`. Builds `parent_class` from `ParentMethods`, `element_class` from `ElementMethods`, `morphism_class` from `MorphismMethods`. |
-| `ModulesWithBasis` | Sage, `src/sage/categories/modules_with_basis.py:179`: "The category of modules with a distinguished basis." The naming pattern for objects carrying a choice, on the same axiom machinery as `Finite`. |
+| `ModulesWithBasis` | Sage, `src/sage/categories/modules_with_basis.py:179`: "The category of modules with a distinguished basis." A name for the phenomenon, on the same axiom machinery as `Finite`. Its morphisms are ordinary module morphisms while its homset reads a matrix in the distinguished bases (`:47`), so the name settles neither the fibration nor the morphisms. |
+| Grothendieck construction, straightening | The passage between a functor `C^op -> Cat` assigning to each object its category of choices, and the fibration `p: E -> C` whose total category has those choices as objects. open: cite Kerodon or the Stacks Project. |
 | separator | open |
 | replete | open |
 

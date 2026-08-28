@@ -1,7 +1,7 @@
 # Sets specification
 
 `Sets()` owns the public algorithms for sets, set elements, and total functions.
-Categories with a declared functor to `Sets()` inherit this API.
+Categories with a selected functor to `Sets()` inherit this API.
 
 Standard set theory and category theory are assumed.
 This specification fixes API ownership, constructors, algorithms, result categories, and exact failure states.

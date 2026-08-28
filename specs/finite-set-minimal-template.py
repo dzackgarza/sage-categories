@@ -2,7 +2,7 @@
 
 This file is design pseudocode (``POL-LEAF-014``). The shape is what it teaches:
 nested implementation classes, one axiom field, one membership proposition, one
-declared functor. Its identifiers are illustrative and define no second framework
+selected functor. Its identifiers are illustrative and define no second framework
 API.
 """
 

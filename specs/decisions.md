@@ -582,7 +582,7 @@ automatic; you write wiring only when you are adding mathematics.
 makes every leaf state only its new mathematics?" Only that determines where code lives,
 which objects own theorems, how calls work, and what methods must exist. Trace the whole
 implementation path: how the kernel defines products, how they propagate through categories
-and presentations and declared functors, so that the leaf supplies only its delta.
+and presentations and selected functors, so that the leaf supplies only its delta.
 
 **D73 (08-28). Every method makes its choices explicit.** A method that returns the image
 of a value in another category names the functor and both its endpoints. A name that does
@@ -628,25 +628,44 @@ coercion, a default ambient category, or a walk to a "common ancestor" is the sa
 wherever it silently selects a category — which is why common-ancestor tracing has to run
 along a named, citable property of functors and never a heuristic (D61).
 
-**D75 (08-28). A category of objects carrying a choice is named for the datum, following
-Sage's `WithBasis`.** The pattern is real and has prior art: `Modules(R).WithBasis()` is
-"the category of modules with a distinguished basis"
-(`sage/categories/modules_with_basis.py:179`), alongside `AlgebrasWithBasis`,
-`WithRealizations` (`sage/categories/with_realizations.py`), and the `FinitelyGenerated`
-family, all on the same axiom machinery as `Finite`. Write `With<Datum>` and never
-`Chosen<Anything>`.
+**D75 (08-28). Objects carrying a choice form the total category of a fibration over the
+base, and the choice is usually a morphism.** Sage names the phenomenon —
+`Modules(R).WithBasis()` is "the category of modules with a distinguished basis"
+(`sage/categories/modules_with_basis.py:179`), with `AlgebrasWithBasis`,
+`WithRealizations`, and the `FinitelyGenerated` family beside it, all on the same axiom
+machinery as `Finite`. Taking the name is not taking the construction, and the construction
+is what has to be stated.
 
-It applies when the choice is retained data the public surface uses: a basis gives
-coordinates, an enumeration gives indexing, a generating set gives generators. Then the
-subcategory is genuine structure rather than a property, and its constructor takes the
-datum.
+`Modules(R)` and the category of pairs `(M, S)` with `S` a chosen generating set are
+completely different categories. The relation between them is a fibration `p: E -> Modules(R)`
+whose fibre over `M` is the category of choices for `M`, with `p` the functor that forgets
+the datum; the pairs are the objects of the total category, obtained by the Grothendieck
+construction from the assignment `M |-> {choices for M}`. Straightening and unstraightening
+are the two directions of that correspondence.
 
-It does not apply when there is no bare object to equip. A subobject is an object together
-with a monomorphism, not an object that was later given one, so `Subobjects()` is the name.
-Nor does it apply to a construction family that already retains its construction: every one
-here does, so the family is the equipped form and needs no adjective. That, and not an
-absence of alternatives, is why `chosen product` was redundant — a product has many
-isomorphic siblings, and the repository simply keeps the one it built.
+The datum is itself a morphism, which is why one construction covers the whole family. A
+generating set `S` for `M` is an epimorphism `Free_R(S) ->> M`. A finite presentation is a
+length-two resolution `Free_R(X_1) -> Free_R(X_0) -> M`. A resolution of any length is the
+general case. So these are categories of diagrams over `M`, expressible with machinery this
+repository already owns: `C.SliceOver(M)`, `Fun([1], C)` and its evaluations, and `Fun(I, C)`
+for a shape `I` (D34, D68). `WithBasis`, `WithGeneratingSet`, and `FinitelyPresented` are one
+construction at different shapes, not a family of separate axioms — which is the whole point,
+since one mechanism stated once is what the framework buys (see the Philosophy).
+
+The name also hides a real choice about morphisms, which the construction has to make
+explicit: whether a morphism of the total category is required to respect the datum, and
+whether it is cartesian over the base. Sage's own case shows the subtlety — its
+`ModulesWithBasis` morphisms are ordinary module morphisms, while the homset uses the
+distinguished bases to read a matrix as a morphism
+(`sage/categories/modules_with_basis.py:47`). That is a decision, not a detail, and
+`With<Datum>` states none of it.
+
+Two places the pattern does not reach. There is no bare object to equip when the object is
+already the pair: a subobject is an object together with a monomorphism, so `Subobjects()`
+is the name (D74). And a construction family that already retains its construction is
+the equipped form, so it needs no adjective — that, and not an absence of alternatives, is
+why `chosen product` was redundant, since a product has many isomorphic siblings and the
+repository simply keeps the one it built.
 
 **D74 (08-26). A subobject is an object with a monomorphism, and restricting structure to
 one is leaf work.** There is no second notion and no separate name for a representative;
@@ -742,7 +761,7 @@ examples, and may hold specific observed antipatterns once they recur enough to 
 
 Specifications are forward-facing. They catalogue the desired functionality, nail down the
 public API, and may hint at internal strategies. A specification must be explicit about the
-expected declared functors — whatever stands in for `super_categories`. It separates, and
+expected selected functors — whatever stands in for `super_categories`. It separates, and
 does not repeat, the methods expected to arrive by inheritance, keeping one source of truth,
 though naming a few to ground an example is fine. A lattice specification should say that it
 mentions no cardinality, and that cardinality arrives compositionally along a chain of

@@ -95,7 +95,7 @@ Its controlled order ensures that parents and elements use a consistent method-r
 ## Why this framework has a stronger obligation
 
 This framework compiles more than methods.
-A declared functor supplies:
+A selected functor supplies:
 
 - objects;
 
@@ -226,7 +226,7 @@ Let \((\mathcal M,\odot,1)\) be monoidal, let \(\mathcal C\) be an \(\mathcal M\
 that satisfies the unit and action diagrams.
 When closed or enriched structure represents these actions by an internal endomorphism monoid, this data is equivalently a monoid morphism \(A\to\operatorname{End}_{\mathcal C}(X)\).
 
-Assume that `Modules(A, C)` has the selected products below and that its declared functor to \(\mathcal C\) preserves them.
+Assume that `Modules(A, C)` has the selected products below and that its selected functor to \(\mathcal C\) preserves them.
 For a family \((X_i)_{i\in I}\) in this category, a product contains:
 
 - the module apex \(P\);
@@ -239,7 +239,7 @@ For a family \((X_i)_{i\in I}\) in this category, a product contains:
 
 - its complete product universal property.
 
-Let the module presentation select a declared functor
+Let the module presentation select a functor
 
 \[
 U:\operatorname{Modules}(A,\mathcal C)\longrightarrow\mathcal C.
@@ -296,7 +296,7 @@ For the explicitly chosen product module
 M=\prod_{i=1}^{n}\mathbf F_p,
 \]
 
-the declared functor gives
+the selected functor gives
 
 \[
 U(M)=\prod_{i=1}^{n}U(\mathbf F_p).
@@ -371,7 +371,7 @@ Their common object is a biproduct:
 M\oplus N.
 \]
 
-After applying the declared functor to sets,
+After applying the selected functor to sets,
 
 \[
 U(M\oplus N)=U(M)\times U(N).
@@ -386,7 +386,7 @@ U(M)\sqcup U(N).
 The selected composite route to `Sets()` preserves products.
 It does not preserve module coproducts as set coproducts.
 
-Therefore, the compiler must not assume that every declared functor preserves every universal construction.
+Therefore, the compiler must not assume that every selected functor preserves every universal construction.
 Construction preservation is separate mathematical data.
 A functor can preserve limits without preserving colimits.
 
@@ -418,7 +418,7 @@ The choice includes:
 
 - mediating and factoring morphisms;
 
-- the image under every declared functor.
+- the image under every selected functor.
 
 This choice does not remove algorithms associated with another category branch.
 It only selects the representation of one mathematical construction.
@@ -546,13 +546,13 @@ It does not enumerate its \(p^n\) elements to establish finiteness.
 ### Module products
 
 A product in `Modules(A, C)` retains its module apex, action, projections, and mediating morphism.
-When the declared functor to \(\mathcal C\) preserves products, its \(\mathcal C\)-image is the chosen product there.
+When the selected functor to \(\mathcal C\) preserves products, its \(\mathcal C\)-image is the chosen product there.
 At the ambient `Sets()`, the composite underlying-set image is the set product.
 
 ### Module coproducts
 
 At the ambient `Sets()`, the underlying set of a module coproduct is not identified with the set coproduct.
-The compiler uses only the construction preservation supplied by the declared functor.
+The compiler uses only the construction preservation supplied by the selected functor.
 
 ### Algorithm selection
 

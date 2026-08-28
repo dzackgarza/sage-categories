@@ -501,6 +501,12 @@ Sage's monoids are monoid objects in sets; taking the ambient category as a para
 
 ## Types and style
 
+**D78 (08-28, session `353b942d`). Automated checks are not the arbiter of correctness before 1.0.** Never run a test suite, type checker, linter, formatter, or diagnostic sweep against an incomplete or incorrect architecture, and never chase test or lint correctness mid-refactor. The reason is the gradient it sets, not the timing: it polishes intermediate code the refactor will delete or obviate; it rewards golfing that code until the checks pass, which optimizes the checker rather than the architecture; it implicitly protects the old code the refactor exists to replace, because breaking it registers as a failure; and it can derail the refactor outright, turning a structural change into a sequence of local repairs that keep the checks green.
+
+Tests are for regressions and end-to-end behaviour. They are not for internal consistency, they are not unit tests, and they are not a way to lock in current behaviour. A one-off test is fine, and so is adding a test and running it on its own while working - as a feedback signal, never as a correctness signal. Lean on red commits until a 1.0 milestone.
+
+Until then the arbiter is agreement with the plans, the specifications, and the transcripts. Establishing that agreement takes intelligent, dynamic, adversarial review, for which subagents are appropriate: alignment with the stated architecture, contradictions between documents, abstraction leaking across the kernel and leaf boundary, and drift from what was actually decided. A green suite is evidence of none of it.
+
 **D46 (08-22). Everything is a tensor.** The package departs from Sage's linear-algebra primitives: not vectors as internal representations of module elements and matrices as internal representations of module morphisms, but `(p, q)`-tensors throughout, encoded at the module `ElementType` level.
 A bilinear form is a Gram tensor, not a Gram matrix.
 `vector()` and `matrix()` shadow a `tensor()` constructor taking `(p, q)` shapes, base rings, and multi-indexable data.

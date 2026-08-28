@@ -902,14 +902,41 @@ A targeted Python test needed during implementation is the only routine manual e
 Read `justfile` before running it.
 Use the Sage-aware route defined there instead of guessing a plain Python command.
 
-Do not test or type-check an incomplete or known-broken architecture.
-This restriction includes targeted tests, lints, formatters, and diagnostic sweeps.
-These checks measure a transient local state and give false confidence in small patches.
-They encourage greedy local repairs that move the code away from the required architecture.
+Never run a test suite, type checker, linter, formatter, or diagnostic sweep against an
+incomplete or incorrect architecture. Never chase test, lint, or type-check correctness in
+the middle of a refactor. This is not a matter of timing or tidiness; it sets the wrong
+gradient in four ways:
+
+- it polishes intermediate code that the refactor is going to delete or obviate;
+- it rewards golfing that code until the checks pass, which is optimizing the checker
+  rather than the architecture;
+- it implicitly protects old code that the refactor exists to replace, because breaking it
+  now registers as a failure;
+- it can derail the refactor outright, by turning a structural change into a sequence of
+  local repairs that keep the checks green.
+
+Tests here are for regressions and end-to-end behaviour. They are not for internal
+consistency, not unit tests, and not a way to lock in current behaviour. Writing a one-off
+test is fine, and so is adding a new test and running it on its own while you work — as a
+feedback signal, never as a correctness signal.
+
+Until a 1.0 milestone, lean on red commits:
+
+```bash
+ai-review-ci red-commit --issue <owning-issue> -m "<message>"
+```
+
+Until then the arbiter of correctness is not an automated check. It is agreement with the
+plans, the specifications, and the transcripts (`specs/decisions.md`, `POL-DOC-018`).
+Establishing that agreement takes intelligent, dynamic, adversarial review — dispatch
+subagents for it — looking for alignment with the stated architecture, contradictions
+between documents, abstraction leaking across the kernel and leaf boundary, and drift from
+what was actually decided. A green suite is evidence of none of those.
+
 Compare each issue directly with the governing specifications and inspect the code itself.
-First make ownership, category paths, dependency direction, and public semantics converge to those specifications.
-Run real tests and type checks only after the architecture is coherent and complete.
-Until then, checkpoint necessary intermediate states through the red-commit pathway.
+First make ownership, category paths, dependency direction, and public semantics converge
+to those specifications. Run the real suites once the architecture is coherent and
+complete.
 
 Every assertion must state a mathematical proposition or an essential type invariant.
 Test the real category compiler and public API.

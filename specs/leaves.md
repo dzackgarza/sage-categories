@@ -14,7 +14,7 @@ They are not method catalogues that a compiler matches against backend method na
 
 - [Intended architecture](#intended-architecture)
 
-- [Standard mathematics determines the software roles](#standard-mathematics-determines-the-software-roles)
+- [Standard mathematics determines the implementation classes](#standard-mathematics-determines-the-implementation-classes)
 
 - [Two different forms of reuse](#two-different-forms-of-reuse)
 
@@ -83,16 +83,16 @@ It does not require the leaf to contain no computation code.
 Leaf purity is semantic purity.
 It is not implementation abstinence.
 
-## Standard mathematics determines the software roles
+## Standard mathematics determines the implementation classes
 
 This repository uses the ordinary mathematical meanings of category, object, element, morphism, functor, construction, and theorem.
 The Python implementation does not define new meanings for these terms.
 
-The standard definitions already determine the software roles:
+The standard definitions already determine the implementation classes:
 
 - a category determines what its objects and morphisms are;
 
-- `C.ObjectType` and `C.MorphismType` implement those roles;
+- `C.ObjectType` and `C.MorphismType` implement those mathematical kinds;
 
 - `C.ElementType` implements the elements of represented objects when the theory has them;
 
@@ -100,7 +100,7 @@ The standard definitions already determine the software roles:
 
 - a declared functor determines the compiled ancestor class and its exact construction-input conversion;
 
-- an element's ambient mathematical object determines its element role;
+- an element's ambient mathematical object determines its exact element type;
 
 - a named construction owns the theorem used by that construction;
 
@@ -122,7 +122,7 @@ Use the following meanings throughout this specification:
 
 - **construction authority** means that the named construction establishes its typed result by its defining theorem.
 
-These words never request another metadata carrier, decorator, annotation payload, registry, marker type, wrapper, or authority object.
+These words request no parallel metadata, decorator, annotation payload, registry, marker type, wrapper, or authority object.
 
 A compiler error, import error, or type error can show that the current Python encoding is wrong.
 It cannot select a new mathematical model.
@@ -278,17 +278,15 @@ The same rule applies downstream:
 
 A downstream leaf selects its immediate structural ancestor.
 When its structural graph contains a selected route to `Sets()`, the category that owns that route supplies the underlying-set construction.
-With an arbitrary ambient category \(\mathcal C\), the leaf receives the capabilities owned by \(\mathcal C\); a set surface requires an explicit declared functor to `Sets()`.
+With an arbitrary ambient category \(\mathcal C\), the leaf receives the capabilities owned by \(\mathcal C\); a set surface requires an explicit selected functor to `Sets()`.
 
-These sentences describe applying a declared functor, which a leaf rarely does.
-A source value retains each ancestor value supplied as defining data.
-A derived ancestor image is constructed once from retained data and cached for that source value.
-A declared functor returns that retained or cached ancestor value on every call and never reconstructs an equal or isomorphic replacement.
-A construction lift adds structure to the chosen ancestor value.
+Each named functor owns its public image of a source value.
+It constructs that image from its pure conversion and returns the same image on repeated calls.
+Different functors with the same endpoints remain independent.
 
-None of this applies to calling an inherited method.
-An inherited method runs on the value the caller supplied and reads the declaring category's state on that same value (`POL-KERNEL-018`).
-A leaf method that starts by resolving a route to an ancestor is a kernel defect, not a leaf idiom.
+An inherited method runs on the structured source value.
+The selected functor's conversion initialized the declaring category's state on that same instance (`POL-KERNEL-018`).
+The method reads that state through ordinary Python inheritance.
 
 A category that combines two structures on one shared ancestor object is their pullback over that ancestor.
 Its constructor asserts with `is` that both projections return the same ancestor object.
@@ -296,10 +294,10 @@ The pullback object retains that shared ancestor once with both defining structu
 
 When added structure does not add element data, the leaf `ElementType` declares no constructor.
 The kernel constructs that exact category-owned element type with its ambient object.
-It also retains the canonical element image under each selected projection.
+Each named projection separately constructs its element image through its morphism action.
 The element remains a `C.ElementType`, not an ancestor element type.
 
-The category layer constructs and selects each immediate declared functor.
+The category layer constructs and selects each immediate structural functor.
 A leaf that is a subobject of a product uses `product_projection(i)`. Otherwise, it reuses the exact functors retained by its defining category construction.
 
 A leaf selects the strongest established property subcategory.
@@ -310,37 +308,25 @@ If this implementation becomes sufficiently large or dominated by Python, foreig
 The category implementation class remains the sole public owner.
 The helpers remain computation details and never become another method surface.
 
-## Category declarations define or link implementations
+## Category declarations define implementations
 
-A category declaration can define its implementation class locally:
+A category declares its three implementation classes directly:
 
 ```python
 class LeafCategory(Category):
     class ObjectType(MathematicalObject):
         def leaf_operation(self) -> LeafResult:
             ...
+
+    class ElementType(MathematicalElement):
+        ...
+
+    class MorphismType(MathematicalMorphism):
+        ...
 ```
 
-It can instead link one imported class:
-
-```python
-class LeafCategory(Category):
-    ObjectType = LeafObjectClass
-    ElementType = LeafElementClass
-    MorphismType = LeafMorphismClass
-```
-
-Both forms have one local declaration for each exact mathematical type.
-The kernel constructs the three compiled public classes separately.
-
-The module then binds its semantic object, element, and morphism names to those compiled classes.
-These names are the nominal source and stub types.
-
-When the category links an imported class, the category module contains no duplicate method declarations, abstract stubs, or backend method map.
-The linked class is the canonical local declaration.
-
-The link from the category to its local declaration is part of the categorical declaration.
-It does not replace the compiled public class.
+The kernel fills the bases of these same classes from selected functors.
+These names are both the declarations and the public implementation types.
 
 ## Local methods are ordinary executable methods
 
@@ -380,11 +366,12 @@ It supplies the public mathematical contract and the private computation boundar
 
 ## Inherited methods use compiled implementation inheritance
 
-The compiler acts on complete inherited role implementations.
+The compiler acts on complete inherited implementation classes.
 
-All three role families meet at the compiled `Cat().ElementType` implementation.
-Objects reach it through `ObjectOfCategory`. Morphisms reach it through `MorphismOfCategory`. Ordinary elements reach it through `ElementOfObject`. Thus an object or morphism receives the generalized-point surface by inheritance at its stated generalized-point root.
-Its MRO contains one path from the local role to that common implementation.
+`ObjectType`, `ElementType`, and `MorphismType` meet at `Cat().ElementType`.
+An object is the generalized point `1 -> C`.
+A morphism is the generalized point `[1] -> C`.
+An ordinary generalized element retains its defining morphism `T -> X`.
 
 For each selected route, the compiler:
 
@@ -406,7 +393,7 @@ The local constructor accepts only the leaf's new semantic data.
 It initializes that state and calls `super().__init__()` once.
 A declaration can omit `__init__` when it adds no state.
 Its generated wrapper advances to the next C3 initializer.
-The declared functor supplies the input required by the next role constructor.
+The selected functor supplies the input required by the next class constructor.
 The leaf does not add ancestor fields or ancestor arguments.
 The object or morphism construction context supplies the common `Cat().ElementType` generalized-point identity before this chain starts.
 The ordinary element context supplies its defining morphism.
@@ -444,7 +431,9 @@ Both interpretations were wrong.
 
 The correct distinction is:
 
-- generic inheritance, construction-input traversal, compiled class construction, and canonical functor images are kernel infrastructure;
+- generic inheritance, construction-input traversal, and compiled class construction are kernel infrastructure;
+
+- each named functor owns its public images;
 
 - a leaf-owned method's selected computation is part of that leaf's implementation;
 
@@ -607,7 +596,7 @@ A Sage subset is not an owned subobject.
 The method reconstructs the semantic result before returning.
 
 The reconstruction remains explicit when different methods return different mathematical kinds.
-A generic backend dispatcher cannot infer these roles from method names.
+A generic backend dispatcher cannot infer these mathematical result types from method names.
 
 ## Realization functors and private representations
 
@@ -755,7 +744,7 @@ The following shapes indicate a second source of truth:
 
 - public stubs paired with private executable methods;
 
-- separate result-role declarations for one method.
+- separate result-type declarations for one method.
 
 If changing one mathematical operation requires synchronized edits to two method catalogues, the architecture is wrong.
 
@@ -765,7 +754,7 @@ If changing one mathematical operation requires synchronized edits to two method
 | --- | --- |
 | Category-local operation name and signature | `ObjectType`, `ElementType`, or `MorphismType` |
 | Category-local executable method body | The same implementation class |
-| Local role constructor and state | The same local implementation declaration |
+| Local constructor and state | The same local implementation class |
 | Ancestor constructor conversion | Selected declared functor |
 | Controlled class MRO and constructor composition | Kernel |
 | Inherited executable method | Declaring structural ancestor |
@@ -872,7 +861,7 @@ See [resolution.md](resolution.md) for the complete decision.
 For this set-based \(R^n\), the algebra-to-rings and algebra-to-modules routes introduce different applicable operations.
 Both later reach `Sets()`. The kernel preserves both catalogues.
 Both routes return the one retained underlying set by identity, and the compiler checks that identity during construction.
-The common `Sets()` role constructor runs once.
+The common `Sets()` constructor runs once.
 
 This structural inheritance does not dispatch the algebra's local methods to Sage.
 The two mechanisms remain separate:
@@ -912,7 +901,7 @@ This bans:
 
 - route traversal;
 
-- compiled-role construction;
+- compiled-class construction;
 
 - canonical-image management;
 
@@ -968,9 +957,9 @@ It does not require every private engine value or algorithm call to enter the fu
 
 A leaf implementation satisfies this specification when all these facts hold:
 
-- the category declaration defines or links one local object, element, and morphism implementation, and the kernel exposes one compiled public type for each role;
+- the category declares one nested `ObjectType`, `ElementType`, and `MorphismType`, and the kernel fills the bases of those same public classes;
 
-- object, element, morphism, parameter, result, and constructor roles follow from the category, operation, and functor definitions without another runtime carrier;
+- exact object, element, morphism, parameter, result, and constructor types follow from the category, operation, and functor definitions;
 
 - a theorem-backed named construction states its conclusion through the exact result category without an authority value, proof token, or metadata record;
 

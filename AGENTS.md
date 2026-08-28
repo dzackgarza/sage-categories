@@ -9,6 +9,11 @@ These files govern substantive work. Read the relevant sections for the active t
 
 - `README.md` defines the goal and mathematical philosophy.
 - `CONTRIBUTING.md` is the coding-policy index. Its `POL-*` identifiers are stable review references.
+- `specs/decisions.md` records the architectural decisions the owner stated in working
+  sessions, with dates. It is the source of the architecture. When a specification, a
+  policy row, a plan, or a report disagrees with it, that other artifact is the defect.
+  Read it before proposing an architecture, and never re-derive a decision from source
+  code: the source was written by the process those decisions correct.
 
 ## Policy and specification traceability
 
@@ -251,7 +256,7 @@ A category may choose a separator `G_C`; `Sets()` chooses its terminal object `1
 
 The kernel owns `Cat`. Every category in this repository uses `Cat().ObjectType`.
 Every functor uses `Cat().MorphismType` and is an object of `Fun = Mor(Cat())`.
-`Cat().ElementType` is the role "generalized element of a category": a functor `T -> C`; its generalized points `1 -> C` are the objects of `C` and its generalized points `[1] -> C` are the morphisms of `C`.
+`Cat().ElementType` implements a generalized element of a category: a functor `T -> C`. Its generalized points `1 -> C` are the objects of `C`. Its generalized points `[1] -> C` are the morphisms of `C`.
 
 Size is outside the model. `Cat()` is an object of `Cat()` by runtime convention. No kernel operation quantifies over, enumerates, or scans the objects of `Cat()`.
 
@@ -324,7 +329,7 @@ Q.coproduct_injection(i)  # C_i -> Q
 Here `P` and `Q` are the product and coproduct categories themselves. Each returned
 morphism is a functor and therefore a `Cat().MorphismType` value.
 
-The operators are defined once, in two roles. On categories: `C * D = Cat().Products()((C, D))`, `C + D = Cat().Coproducts()((C, D))`, and `D ** C = Fun(C, D)`. On objects `X, Y` of one category `C`: `X * Y = C.Products()((X, Y))`, `X + Y = C.Coproducts()((X, Y))`, and `Y ** X` the exponential object where `C` is declared cartesian closed; each takes its construction in the narrowest category containing both operands and asserts that such a category exists. An object refined into `C.P()` and an object of `C` are both objects of `C`; their product is the product in `C`. Operands with no common category, such as a set and a category, fail the assertion. An external pair is constructed explicitly as `(C * D)((X, Y))`; no operator casts an object into a product category.
+The operators are defined once in two contexts. On categories: `C * D = Cat().Products()((C, D))`, `C + D = Cat().Coproducts()((C, D))`, and `D ** C = Fun(C, D)`. On objects `X, Y` of one category `C`: `X * Y = C.Products()((X, Y))`, `X + Y` their coproduct, and `Y ** X` the exponential object where `C` is declared cartesian closed. Each takes its construction in the narrowest category containing both operands. An object refined into `C.P()` and an object of `C` are both objects of `C`. Their product is the product in `C`. Operands with no common category fail the assertion. Construct an external pair explicitly as `(C * D)((X, Y))`.
 
 Let `P` be a chosen product category. If `j: S -> P` presents a subcategory, the
 corresponding object of `Cat().Products().ChosenSubobjects()` retains `j` and reads `P` as its

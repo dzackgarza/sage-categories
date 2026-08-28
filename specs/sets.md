@@ -46,32 +46,18 @@ The `Sets()` subtree owns:
 Property subcategories add only their stated property.
 They inherit all set operations.
 
-## Set-object API
+## Sets-owned operations
 
-Every object of `Sets()` supplies these operations when their input data exists:
+`Sets()` adds the operations whose mathematics is specific to sets:
 
 ```python
 X.cardinality()
-Mor(Sets())(X, Y)
-Mor(Sets())(X, X)
-Mor(Sets())(X, X).Automorphisms()
-Mor(Sets())(X, Y).Isomorphisms()
-Mor(Sets())(X, Y).Monomorphisms()
-Mor(Sets())(X, Y).Epimorphisms()
-
-Sets().Subobjects(X)
-Sets().Superobjects(X)
-Sets().CoveringObjects(X)
-Sets().CoveredObjects(X)
 Sets().Subobjects(X).from_predicate(predicate)
-
-Y ** X
-X * Y
-X + Y
 ```
 
-Generic categorical methods come from the category foundation.
-`Sets()` supplies set-specific realizations and algorithms to those owners.
+Morphism categories, fixed-object methods, universal-construction methods, and operators are inherited from `Cat().ObjectType`.
+Their contract is in [Functors, `Cat`, and structural inheritance](functor.md).
+`Sets()` supplies only their set-specific realizations and algorithms.
 
 `X.cardinality()` returns an applied predicate with result category `Cardinal()`.
 `ask(X.cardinality())` returns an owned cardinal or Sage `Unknown`.
@@ -94,7 +80,9 @@ Generic categorical methods come from the category foundation.
 
 `Mor(Sets())(X, Y)` is the discrete category on the total set maps from `X` to `Y`. It exists for every pair `X, Y in Sets()`. Its inhabitation and emptiness are owned predicates.
 
-The function set `Y ** X` is the exponential object of `Sets()`. It is a distinct owned object: `Mor(Sets())(X, Y)` is the discrete category on the elements of `Y ** X`.
+The generic exponential construction comes from `Cat`.
+Its realization in `Sets()` is the function set from `X` to `Y`.
+It is a distinct owned object, and `Mor(Sets())(X, Y)` is the discrete category on its elements.
 
 `Mor(Sets())(X, Y)(rule)` constructs a set map.
 The rule can be a callable or explicit mapping as its private rule.
@@ -121,13 +109,7 @@ Evaluation requires `x in f.domain()` and evaluates the retained rule on the poi
 For a generalized element `t: T -> X`, morphism composition gives `f * t: T -> Y`.
 Identity and composition arrive through inherited morphism operations.
 
-The exponential object is:
-
-```python
-Y ** X
-```
-
-This object is (Y^X). It retains the evaluation morphism.
+The realized exponential retains the evaluation morphism.
 Its currying operation returns the unique morphism required by the exponential universal property.
 
 Function rules need no enumeration.
@@ -155,30 +137,16 @@ It satisfies both inverse equations.
 
 ## Products
 
-The product construction accepts a discrete diagram over `Discrete(S)` for `S in Sets()` through its category-owned constructor.
-The diagram is given by its object rule `i |-> X_i`; it never requires a finite tuple.
-A Python sequence `(X_0, ..., X_n)` is the convenience form and denotes the diagram over `Discrete([n])`.
+`Cat` defines the product construction for every category as the limit of a discrete diagram.
+`Sets()` realizes that inherited construction as the set of indexed families.
+The diagram is given by its object rule `i |-> X_i` on `S`.
+The inherited diagram, projection, and universal-map contract is specified in [Products, coproducts, and component functors](functor.md#products-coproducts-and-component-functors).
 
 ```python
 P = Sets().Products()(diagram)
-P2 = X * Y
 ```
 
-`X * Y` is `Sets().Products()((X, Y))`. The product functor maps diagram morphisms to the induced product morphisms.
-
-A product presentation retains:
-
-```python
-P.diagram()
-P.index_category()
-P.product_projection(i)
-P.universal_morphism(cone)
-P.cardinality()
-P.factor_cardinalities()
-```
-
-`P.product_projection(i)` and `P.universal_morphism(cone)` are owned set morphisms.
-They satisfy the product equations.
+The inherited product functor maps diagram morphisms to the induced product morphisms.
 
 A product element is an indexed family:
 
@@ -188,30 +156,20 @@ x.components()
 iter(x)  # only when the index set has a chosen finite enumeration
 ```
 
-`P.cardinality()` is the computational case tree owned by the product implementation (see [Cardinality and enumeration](#cardinality-and-enumeration)).
+The specialization adds `cardinality()` and `factor_cardinalities()` to the inherited product object.
+Its cardinality predicate uses the computational cases in [Cardinality and enumeration](#cardinality-and-enumeration).
 
 ## Coproducts
 
-The coproduct construction uses the dual category-owned interface:
+`Cat` defines the coproduct construction for every category as the colimit of a discrete diagram.
+`Sets()` realizes that inherited construction as the set of tagged elements.
+The inherited diagram, injection, and universal-map contract is specified in [Products, coproducts, and component functors](functor.md#products-coproducts-and-component-functors).
 
 ```python
 Q = Sets().Coproducts()(diagram)
-Q2 = X + Y
 ```
 
-`X + Y` is `Sets().Coproducts()((X, Y))`. The diagram is a discrete diagram over `Discrete(S)` given by rule, as for products.
-The coproduct functor maps diagram morphisms to the induced coproduct morphisms.
-
-A coproduct presentation retains:
-
-```python
-Q.diagram()
-Q.index_category()
-Q.coproduct_injection(i)
-Q.universal_morphism(cocone)
-Q.cardinality()
-Q.cofactor_cardinalities()
-```
+The inherited coproduct functor maps diagram morphisms to the induced coproduct morphisms.
 
 A coproduct element is a tagged element:
 
@@ -220,47 +178,29 @@ x.index()
 x.value()
 ```
 
-`Q.cardinality()` is the computational case tree owned by the coproduct implementation (see [Cardinality and enumeration](#cardinality-and-enumeration)).
+The specialization adds `cardinality()` and `cofactor_cardinalities()` to the inherited coproduct object.
+Its cardinality predicate uses the computational cases in [Cardinality and enumeration](#cardinality-and-enumeration).
 
 ## General limits and colimits
 
-`Sets().Limits(I)` and `Sets().Colimits(I)` are indexed by one supplied shape `I in Cat()`. A diagram of shape `I` is an object of `Fun(I, Sets())`. The limit constructor accepts such a diagram `D`. Its result retains:
-
-- the diagram;
-
-- the limiting cone;
-
-- every cone component;
-
-- the universal map from another cone.
+`Sets()` inherits `Limits(I)` and `Colimits(I)` with the complete retained-data contract in [Diagram shapes and universal constructions](functor.md#diagram-shapes-and-universal-constructions).
+The specialization supplies the following set-valued realizations.
 
 The limit of `D: I -> Sets()` is the predicate subset of the product `prod_{i in Ob(I)} D(i)` cut out by compatibility. A family's membership proposition is the conjunction of `D(u)(x_i) == x_j` over every generating morphism `u: i -> j` of `I`. `ask()` decides this proposition when `I` is finitely presented and every generating equality decides; otherwise it returns `Unknown`.
 The projections are the restricted product projections.
 The mediating map of a cone is its map into the product.
 
-The colimit constructor also accepts a diagram of shape `I`. Its result retains:
-
-- the diagram;
-
-- the colimiting cocone;
-
-- every cocone component;
-
-- the universal map to another cocone.
-
 The colimit of `D` is the quotient of the coproduct `coprod_i D(i)` by the equivalence relation generated by `(i, x) ~ (j, D(u)(x))`. Its injections are the coproduct injections followed by the quotient map.
 Its element equality is an owned predicate.
 For `I = omega`, the exact handler decides `True` when two representatives agree at the larger of their two indices under the transition maps and returns `Unknown` otherwise; for every other infinite shape it returns `Unknown`.
 
-Products and coproducts are these constructions at discrete shapes.
-Pullbacks, pushouts, equalizers, and coequalizers are these constructions at their named shapes: `Sets().Pullbacks() = Sets().Limits(L(2, 2))`, `Sets().Pushouts() = Sets().Colimits(L(2, 0))`, `Sets().Equalizers() = Sets().Limits(WalkingParallelPair)`, and `Sets().Coequalizers() = Sets().Colimits(WalkingParallelPair)`. Each retains its named projections and injections.
+Products, coproducts, pullbacks, pushouts, equalizers, and coequalizers use the methods inherited from `Cat().ObjectType`, specified in [Functors, `Cat`, and structural inheritance](functor.md#diagram-shapes-and-universal-constructions).
+`Sets()` supplies their set-valued apexes, defining maps, and universal maps.
 
 ## Subobjects, images, and power objects
 
-`Sets().Subobjects(X)` is the full subcategory of `Sets().SliceOver(X)` on monomorphisms.
-Its objects are pairs `(A, i)` with `i: A -> X` a monomorphism.
-Its morphisms from `(A, i)` to `(B, j)` are maps `f: A -> B` with `j compose f = i`.
-
+The inherited fixed-object method is specified in [Fixed-object construction categories](functor.md#fixed-object-construction-categories).
+Its specialization to `Sets()` identifies subobjects with subsets of `X` together with their inclusion monomorphisms.
 `Sets().Subobjects(X).from_predicate(predicate)` constructs the selected subset and its monomorphism into `X`.
 It lifts no additional structure: when a poset is presented as `(X, R)`, this construction returns a set subobject (`POL-LEAF-060`).
 The predicate returns the membership proposition for a candidate element.
@@ -275,7 +215,7 @@ A.cardinality()
 ```
 
 `A` is itself an object of `Sets()`, and the set it sits inside is
-`A.monomorphism().codomain()`. Neither needs an accessor, and a name such as
+`A.monomorphism().codomain()`.
 A generic accessor that omits the named functor would choose a codomain silently (`POL-FUN-037`).
 
 An abstract subobject is represented by a monomorphism.

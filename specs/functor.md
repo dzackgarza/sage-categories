@@ -879,13 +879,17 @@ They are not runtime decisions.
 For `X in C`, the ambient category in the call fixes the role of `X`:
 
 ```python
-C.Subobjects(X)
-C.Superobjects(X)
-C.CoveringObjects(X)
-C.CoveredObjects(X)
+C.Subobjects(X)       = C.SliceOver(X).Monomorphisms()
+C.Superobjects(X)     = C.CosliceUnder(X).Monomorphisms()
+C.CoveringObjects(X)  = C.SliceOver(X).Epimorphisms()
+C.CoveredObjects(X)   = C.CosliceUnder(X).Epimorphisms()
 ```
 
-`C.Subobjects(X)` is the full subcategory of `C.SliceOver(X)` on monomorphisms.
+`Cat().ObjectType` defines these methods once, and every category inherits them.
+The slice or coslice retains a functor to `Mor(C)` that returns its defining arrow.
+`Monomorphisms()` and `Epimorphisms()` pull back the corresponding property subcategory of `Mor(C)` along that functor.
+
+Thus `C.Subobjects(X)` is the full subcategory of `C.SliceOver(X)` on monomorphisms.
 Its objects are pairs `(A, i)` with `i: A -> X` monic.
 A morphism `(A, i) -> (B, j)` is a morphism `f: A -> B` with `j compose f = i`.
 

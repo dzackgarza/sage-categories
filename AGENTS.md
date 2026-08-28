@@ -348,6 +348,16 @@ The `Cat` level supplies the uniform category constructors:
 
 For `X in C`, the fixed-object construction categories are `C.Subobjects(X)`,
 `C.Superobjects(X)`, `C.CoveringObjects(X)`, and `C.CoveredObjects(X)`.
+Define these methods once on `Cat().ObjectType`; every category inherits them:
+
+```python
+C.Subobjects(X)       = C.SliceOver(X).Monomorphisms()
+C.Superobjects(X)     = C.CosliceUnder(X).Monomorphisms()
+C.CoveringObjects(X)  = C.SliceOver(X).Epimorphisms()
+C.CoveredObjects(X)   = C.CosliceUnder(X).Epimorphisms()
+```
+
+The property subcategory applies to the retained defining arrow in `C`.
 The ambient category in the call fixes the role of `X` when `X` belongs to more than one
 category. `Sets().Subobjects(X).from_predicate(predicate)` constructs the set subobject
 selected by a predicate.
@@ -823,8 +833,9 @@ Shape every API from the mathematics.
 Do not derive it from current class layouts, storage fields, or available method names.
 
 Use one owner, one public name, and one public export for each operation.
-During version 1, expose only that canonical spelling. Add no forwarding method or
-secondary constructor spelling.
+Define every uniform category method once on `Cat().ObjectType`.
+Let every category inherit it through the ordinary implementation-class hierarchy.
+During version 1, add no receiver-specific or leaf-specific convenience spelling.
 Use established mathematical and Sage terminology.
 Name an accessor for the exact object or morphism that it returns.
 

@@ -373,6 +373,12 @@ Its construction obligation is only that every selected path to one target class
 
 ## Leaf discipline
 
+**D80 (08-28, `77631b59` 2026-08-28T17:35:47Z). `Cat` declares; a downstream category implements.** `Cat` declares points. It declares `Sets`. It declares constructions such as magma objects in a category. A downstream category then *is* the implementation of a category the kernel declared.
+This is D77.6 generalized. `FiniteSets` already declares itself the implementation of `Sets().Finite()`; the same connection carries a leaf declaring itself the implementation of a kernel-declared base category. Declaring a category and implementing it are two acts, and only the second is a leaf's.
+
+**D81 (08-28, `77631b59` 2026-08-28T17:35:47Z). Imports flow from the kernel into the leaves, never backwards.** No kernel module imports a leaf module.
+This is the executable form of the Philosophy's information-flow rule, and it is what D80 is for: a generic construction stated over `Sets` uses the declaration the kernel holds, and never reaches into the set implementation to obtain it. A kernel module that imports a leaf has taken that leaf's mathematics into the kernel, which is the defect the rule names whether or not the result works.
+
 **D77 (08-28). The leaf writer's contract is a closed list.** The kernel exists to make this list short, so anything a leaf must supply beyond it is a kernel defect, not a leaf obligation.
 
 1. `ObjectType`, `ElementType`, and `MorphismType`, as nested classes.

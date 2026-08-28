@@ -49,6 +49,29 @@ decisions, apply `POL-DOC-012`. Apply `POL-DOC-013` to every executing plan.
 If no policy or specification governs a material decision, surface that documentation
 gap. Do not invent a local convention and present it as repository architecture.
 
+## Grounding a new policy or specification
+
+Every new policy row and every substantive specification edit is grounded in the
+transcripts, and specifically in the user's own words. Agent reasoning, a review finding,
+a plan, and the existing source are not grounds: each rebuild of this repository invented
+architecture that looked reasonable and drifted, and the transcripts are the only record
+of what was actually decided.
+
+Cite the session and the message. Sessions live at
+`~/.claude/projects/-home-dzack-gitclones-sage-categories/<uuid>.jsonl` and
+`~/.codex/sessions/<date>/rollout-<timestamp>-<uuid>.jsonl`; quote the session identifier
+and the message timestamp, as `4544eba5 2026-08-28T12:00Z`, so a reader can retrieve the
+statement. Record the decision itself in [specs/decisions.md](specs/decisions.md), which
+is where provenance lives, and let the policy row or specification state the consequence.
+
+When you cannot find user feedback that grounds a rule you believe is needed, that
+absence is the finding. Surface it and ask. Writing the rule anyway is how the coinages
+and the wrong models got in, every previous time.
+
+An exception, narrow: a rule that only records an inspected external source — a
+definition from nLab, the Stacks Project, Kerodon, Mathlib, or Sage — needs that source's
+locator instead, under `POL-MATH-040`.
+
 The package owns its mathematical category graph and public API.
 Its category-owned implementation classes can combine Sage, SymPy, GAP, Julia packages,
 Singular, Macaulay2, Cython, shell programs, imported research software, and bespoke

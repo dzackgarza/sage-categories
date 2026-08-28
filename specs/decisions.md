@@ -11,6 +11,35 @@ When a specification, a policy row, a plan, or a report disagrees with an entry 
 Read this before proposing an architecture.
 Do not re-derive a decision from source code: the source was written by the same process these decisions correct.
 
+Cite the session identifier and the message timestamp when adding an entry, as
+`4544eba5 2026-08-28T12:00Z`, so a reader can retrieve the statement (`POL-DOC-018`).
+Entries below carry dates; the sessions they were read from are listed under
+[Sources](#sources).
+
+## Sources
+
+This record was built by reading the user's messages in the Claude and Codex sessions for
+this repository between 2026-08-22 and 2026-08-28: 208 messages across 99 session files,
+under `~/.claude/projects/-home-dzack-gitclones-sage-categories/` and
+`~/.codex/sessions/`. The sessions carrying the most decisions were, in order:
+
+| Session | Messages |
+| --- | --- |
+| `rollout-2026-08-24T18-54-56-01a03368` | 49 |
+| `rollout-2026-08-23T00-58-03-01a02a68` | 24 |
+| `b55dc6aa` | 23 |
+| `rollout-2026-08-25T13-22-02-01a0375e` | 13 |
+| `5df9424f` | 12 |
+| `rollout-2026-08-24T03-46-01-01a03028` | 10 |
+| `rollout-2026-08-25T00-27-59-01a03499` | 9 |
+| `rollout-2026-08-26T12-53-54-01a03c6a` | 8 |
+| `1c1a3599` | 8 |
+| `ee78124f` | 7 |
+| `rollout-2026-08-22T22-55-29-01a029f8` | 7 |
+
+Entries added later should name their own session and timestamp inline rather than
+relying on this table.
+
 ## Contents
 
 - [Philosophy](#philosophy)
@@ -86,21 +115,15 @@ An ordered pair is a fine private representation and an unacceptable public one,
 **Depth in the graph bounds vocabulary.** A leaf mentioning cardinality in a lattice subtree is a red flag, not because of layering discipline but because cardinality is not part of what a lattice is.
 Vocabulary that leaks across the graph is a mathematical error before it is a structural one.
 
-**The kernel is a black box, and no mathematician ever audits it.** The split is between a
-mathematical declaration and the wiring that realizes it, never between general and
-specific mathematics. `Cat`, `Mor(n, C)`, `Fun(C, D)`, the property subcategories, and
-`Sets()` are all objects this repository defines, and all of them are read as mathematics.
-The kernel is what takes those plain declarations and performs the Python wiring behind
-them: class building, linearization, constructor threading, caches, descriptors,
-refinement mechanics. That is what nobody reads.
+**The kernel is a black box, and no mathematician ever audits it.** The split is between a mathematical declaration and the wiring that realizes it, never between general and specific mathematics.
+`Cat`, `Mor(n, C)`, `Fun(C, D)`, the property subcategories, and `Sets()` are all objects this repository defines, and all of them are read as mathematics.
+The kernel is what takes those plain declarations and performs the Python wiring behind them: class building, linearization, constructor threading, caches, descriptors, refinement mechanics.
+That is what nobody reads.
 
-So the kernel exists to give a leaf writer an interface that reads and writes like standard
-mathematics. It should adhere to precise mathematics where it can, but that is an aid and
-never its acceptance criterion. Holding it to the theory layer's standard is what produced
-universes, straightening machinery, and three coherence subsystems, each built to exhibit
-category theory to a reader who was never going to look. Ordinary Python lives there,
-engine boundaries are quarantined in their own subtrees, and the layout tells a reader
-where mathematics stops.
+So the kernel exists to give a leaf writer an interface that reads and writes like standard mathematics.
+It should adhere to precise mathematics where it can, but that is an aid and never its acceptance criterion.
+Holding it to the theory layer's standard is what produced universes, straightening machinery, and three coherence subsystems, each built to exhibit category theory to a reader who was never going to look.
+Ordinary Python lives there, engine boundaries are quarantined in their own subtrees, and the layout tells a reader where mathematics stops.
 
 **The user should not need to know the framework.** Nobody writes `FiniteSet({1, 2, 3})`; `Sets({1, 2, 3})` routes.
 A small number of high-level endpoints are the interface, and discoverability comes from names mathematicians already know.
@@ -235,12 +258,14 @@ The functor carries no independent element callback.
 **D20 (08-24). Every propositional method returns a proposition.** Never a bool, never an `Unknown` in its place.
 Anything that would need `Unknown` routes through `assume`/`ask`/`.assume()`. Containment in a category is always a possibly compound proposition, declared once as part of the category's definition — the kernel wires `FiniteSets` to be reachable as `Sets().Finite()` and lets it declare a membership proposition, and `__contains__` follows from that.
 
-**D21 (08-24, corrected 08-28). Construct into the strongest subcategory you can.** A named construction can return its result through the strongest property-subcategory constructor that its mathematics establishes. The public predicate remains proposition-valued and keeps its one category-owned definition.
+**D21 (08-24, corrected 08-28). Construct into the strongest subcategory you can.** A named construction can return its result through the strongest property-subcategory constructor that its mathematics establishes.
+The public predicate remains proposition-valued and keeps its one category-owned definition.
 Individual named objects are one-object categories: `QQ` is `{QQ}` with functors into countable sets, posets, and fields.
 `Fields().Countable().PartiallyOrdered()` should be nearly automatic, with Sage's `with_axiom` as the model: if any category defines a property subcategory, any subcategory can narrow itself the same way.
 Defining `FF_p` as a one-object category parameterized by `p` must never require proving finiteness by enumeration.
 
-**D22 (08-24, corrected 08-28). Assumption is a shortcut for construction.** `assume(X.is_finite())` and `assume(f.is_injective())` refine into the corresponding property category. Python containment asks the same proposition and returns its Boolean decision, so it is not the proposition passed to `assume()`.
+**D22 (08-24, corrected 08-28). Assumption is a shortcut for construction.** `assume(X.is_finite())` and `assume(f.is_injective())` refine into the corresponding property category.
+Python containment asks the same proposition and returns its Boolean decision, so it is not the proposition passed to `assume()`.
 
 **D23 (08-24). Property refinement strengthens the category of the same value.** It is not transport into a second implementation, and it is not a family of admission constructors.
 Each property category owns one constructor that trusts its defining property.
@@ -312,10 +337,9 @@ General projections exist for any subcategory of a product category, `proj_i: (X
 
 **D35 (08-25). The operators are defined once.** `Y ** X` is `Hom_C(X, Y)`, `X * Y` the product, `X + Y` the coproduct, `X @ Y` the biproduct.
 
-**D67 (08-26). Scope of the kernel work.** `Cat`, the functorial constructions, and the limits and colimits — products, coproducts, fibre products, slices — reaching two or three hops from `Sets()`. Sets, finite sets, posets, finite posets, magmas, semirings, and monoids are within scope.
-Tests may use clearly toy models of more structured categories, but those do not enter the corpus as real categories until the foundation is in.
-There is no cap on the `Cat`-level and functorial constructions: do whatever it takes to make the kernel correct, principled, and immediately useful.
-Kan extensions are in scope if needed; excluding a construction today only to hit it tomorrow for modules, algebras, schemes, or sheaves is pointless.
+**D67 (08-26, corrected 08-28). Scope of the current foundation.** Complete `Cat`, functor categories, the `Mor(n, C)` tower, universal constructions, the method compiler, and the owned `Sets()` category before adding later theories.
+Tests can use small vertical examples to establish this foundation.
+Those examples do not add their theories to the implementation surface.
 
 **D68 (08-26). Diagram categories are the workhorse.** Provide machinery for finite diagram categories, specializing to filtered ones such as explicit sequences, since ninety percent of downstream code writes `X * Y` or a product over a list.
 Do not over-specialize: finite sequence-indexed products alone hit a wall at the adeles.
@@ -336,13 +360,16 @@ That is where the assertion that both operands lie in the same category belongs.
 This is an engineering convenience to be formalized later.
 The point is that `Monoids * Rings`, `Fun(Monoids, Sets) * Fun(Rings, Graphs)`, and `X * Y` for two sets all use one interface and one semantics.
 
-**D37 (08-26, corrected 08-28). A structured source instance carries one initialized state for each inherited target class.** For almost every algebraic category there is one set from which the structured object is built. Every selected path to `Sets()` must supply that same set as constructor data for the inherited `Sets().ObjectType` state.
+**D37 (08-26, corrected 08-28). A structured source instance carries one initialized state for each inherited target class.** For almost every algebraic category there is one set from which the structured object is built.
+Every selected path to `Sets()` must supply that same set as constructor data for the inherited `Sets().ObjectType` state.
 `Free_R({1, 2})` and `Free_R({a, b})` are distinct modules and must never be identified: the second's generators are formal symbols while the first's inherit structure as ring elements.
-This constructor agreement does not identify functor images. Each named functor constructs and caches its own public image, and two functors with the same endpoints can return different objects.
+This constructor agreement does not identify functor images.
+Each named functor constructs and caches its own public image, and two functors with the same endpoints can return different objects.
 
 **D38 (08-26, corrected 08-28). Set equality is a proposition, not a procedure.** The image in `Sets()` of `Free_R(S)` can be created by fiat, from a membership rule and a cardinality rule; nothing enumerates it and there is no extensional description to compare.
 `X == Y` is `True` by identity and otherwise `Unknown`, unless a cited theorem or an exact computation decides it.
-The compiler never uses set equality to merge public functor images. Its construction obligation is only that every selected path to one target class supplies the same constructor datum.
+The compiler never uses set equality to merge public functor images.
+Its construction obligation is only that every selected path to one target class supplies the same constructor datum.
 
 ## Leaf discipline
 
@@ -352,15 +379,20 @@ The compiler never uses set equality to merge public functor images. Its constru
 
 2. Constructors: how another mathematician builds objects of your category, in the terms your mathematics uses.
 
-3. Functors: how one of your constructions produces the data another category's constructor consumes. This is what replaces `super_categories`, and it is where you say which structure you inherit.
+3. Functors: how one of your constructions produces the data another category's constructor consumes.
+   This is what replaces `super_categories`, and it is where you say which structure you inherit.
 
-4. Which axiomatic subcategories are available. Finiteness is declared once as `C.Finite()`, and any category `D` with a functor into `C` can then declare `D.Finite()`, exactly as Sage's `with_axiom` propagates an axiom down the graph.
+4. Which axiomatic subcategories are available.
+   Finiteness is declared once as `C.Finite()`, and any category `D` with a functor into `C` can then declare `D.Finite()`, exactly as Sage's `with_axiom` propagates an axiom down the graph.
 
-5. For a property-based subcategory, its containment predicate. That predicate is the whole declaration; membership, refinement, and `ask()` follow from it.
+5. For a property-based subcategory, its containment predicate.
+   That predicate is the whole declaration; membership, refinement, and `ask()` follow from it.
 
-6. The wiring that makes a category the concrete implementation of such a subcategory. `FiniteSets` declares itself the implementation of `Sets().Finite()` and adds the methods that finiteness makes available; that is Sage's `_base_category_class_and_axiom` shape (D55, `POL-LEAF-059`).
+6. The wiring that makes a category the concrete implementation of such a subcategory.
+   `FiniteSets` declares itself the implementation of `Sets().Finite()` and adds the methods that finiteness makes available; that is Sage's `_base_category_class_and_axiom` shape (D55, `POL-LEAF-059`).
 
-The list is what a mathematician writes. Everything else - inheritance, dispatch, construction threading, caches, class building - is the kernel's, and it is the kernel's precisely so that this list stays this short (D04).
+The list is what a mathematician writes.
+Everything else - inheritance, dispatch, construction threading, caches, class building - is the kernel's, and it is the kernel's precisely so that this list stays this short (D04).
 
 **D39 (08-22). What a leaf implementer supplies.** Functors to known categories that show how to feed the new category's objects into an old category's constructor, plus a constructor for the minimal delta that defines the leaf.
 `Modules(R)` built from an action `rho: R -> End(X)` declaring `Sets` as a supercategory needs only the functor that uses `rho` to extract `X` and feed it to the `Sets` constructor.
@@ -376,8 +408,10 @@ Engine boundaries — Sage, SymPy — should be quarantined in their own subtree
 The naming is the tell: `PropertySet` is engineering-brained.
 Track construction provenance privately if you need it.
 
-**D42 (08-22, corrected 08-24). The user should not need to know the category graph.** Nobody should write `FiniteSet({1, 2, 3})`; `Sets({1, 2, 3})` uses the total constructor selected by that datum. Additional construction data or asserted properties use separate, specifically named constructors, never optional claims or flags.
-A small number of high-level endpoints are the primary construction interface. Specific named constructors state any stronger construction.
+**D42 (08-22, corrected 08-24). The user should not need to know the category graph.** Nobody should write `FiniteSet({1, 2, 3})`; `Sets({1, 2, 3})` uses the total constructor selected by that datum.
+Additional construction data or established properties select separate, specifically named total constructors.
+A small number of high-level endpoints are the primary construction interface.
+Specific named constructors state any stronger construction.
 Usability comes from discoverability through well-known names: `Sets`, `Monoids`, `Groups`, `Rings`, `Modules(R)`, `Algebras(R)`.
 
 **D43 (08-24). The leaf class is the implementation, and it is the firewall.** There is never more than one choice of implementation: Sage already lets competing implementations proliferate, with three different free modules carrying different operations and inconsistent inherited surfaces.
@@ -422,9 +456,12 @@ Reading an accessor that omits the functor endpoints requires opening the implem
 The same philosophy governs every other implicit choice, not just this accessor.
 A coercion, a default ambient category, or a walk to a "common ancestor" is the same defect wherever it silently selects a category — which is why common-ancestor tracing has to run along a named, citable property of functors and never a heuristic (D61).
 
-**D76 (08-28, corrected 08-28). Distinguish preservation from equality on the nose.** A functor `U` preserves a product when the canonical comparison morphism `U(prod X_i) -> prod U(X_i)`, induced by the cone `(U(pi_i))`, is an isomorphism. A lifted construction can require more: its chosen apex and defining morphisms can map to the chosen ambient construction on the nose. State that stronger equality where the construction needs it.
+**D76 (08-28, corrected 08-28). Distinguish preservation from equality on the nose.** A functor `U` preserves a product when the canonical comparison morphism `U(prod X_i) -> prod U(X_i)`, induced by the cone `(U(pi_i))`, is an isomorphism.
+A lifted construction can require more: its chosen apex and defining morphisms can map to the chosen ambient construction on the nose.
+State that stronger equality where the construction needs it.
 
-This construction-level equality does not identify the public images of arbitrary named functors. Inheritance requires only that selected paths to one target class supply the same constructor datum (D37, D38). A leaf that lifts an ambient construction builds on the ambient apex and retains its defining morphisms; the compiler has no preservation registry.
+This construction-level equality does not identify the public images of arbitrary named functors.
+Inheritance requires only that selected paths to one target class supply the same constructor datum (D37, D38). A leaf that lifts an ambient construction builds on the ambient apex and retains its defining morphisms; the compiler has no preservation registry.
 
 **D75 (08-28). Objects carrying a choice form the total category of a fibration over the base, and the choice is usually a morphism.** Sage names the phenomenon — `Modules(R).WithBasis()` is "the category of modules with a distinguished basis" (`sage/categories/modules_with_basis.py:179`), with `AlgebrasWithBasis`, `WithRealizations`, and the `FinitelyGenerated` family beside it, all on the same axiom machinery as `Finite`. Taking the name is not taking the construction, and the construction is what has to be stated.
 

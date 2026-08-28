@@ -1,6 +1,6 @@
-# Resolution of structural-functor diamonds
+# Resolution of selected-functor diamonds
 
-This specification records the architectural decision for diamonds in the selected structural-functor graph.
+This specification records the architectural decision for diamonds in the selected-functor graph.
 It preserves the discussion that established the decision.
 
 This is a forward requirement.
@@ -30,7 +30,7 @@ It does not claim that the current implementation satisfies the requirement.
 
 - [Method-name collisions](#method-name-collisions)
 
-- [Strict equality and natural isomorphism](#strict-equality-and-natural-isomorphism)
+- [Constructor agreement and functor images](#constructor-agreement-and-functor-images)
 
 - [Final decision](#final-decision)
 
@@ -132,16 +132,13 @@ The first proposed practical rule was:
 This remains valid for a genuine choice of presentation or algorithm.
 It is not valid as a rule that discards an entire branch of the category graph.
 
-A category can make a small mathematical declaration that selects one presentation: one
-apex together with its universal data.
+A category can make a small mathematical declaration that selects one presentation: one apex together with its universal data.
 The kernel must execute that declaration.
 The leaf must not traverse routes, move values, manage caches, or install methods.
 
-A diamond needs no coherence machinery. The condition is equality of the two composites,
-checked by identity of the constructor data they supply, and a failure is a defect in the
-construction rather than a case for a comparison isomorphism. A public object that would
-have to expose operations from two nonidentical presentations at once has not chosen its
-presentation; choosing is the fix.
+A diamond needs no coherence machinery.
+The condition is equality of the two composites, checked by identity of the constructor data they supply, and a failure is a defect in the construction rather than a case for a comparison isomorphism.
+A public object that would have to expose operations from two nonidentical presentations at once has not chosen its presentation; choosing is the fix.
 
 ## Preserve both branches
 
@@ -203,14 +200,12 @@ The semiring branch supplies addition, multiplication, zero, and one.
 The group branch supplies additive inverses and subtraction.
 A ring must receive both catalogues.
 
-Both branches reach the same additive monoid and the same object of \(\mathcal C\).
-Their selected paths must supply the same constructor datum for the inherited
-\(\mathcal C\) class. The compiler can then initialize that class once on the ring
-instance. The two composite functors keep their independent public actions and images.
+Both branches reach the same additive monoid and the same object of \(\mathcal C\). Their selected paths must supply the same constructor datum for the inherited \(\mathcal C\) class.
+The compiler can then initialize that class once on the ring instance.
+The two composite functors keep their independent public actions and images.
 
-For \(\mathcal C=\operatorname{Sets}()\), both paths supply the set from which the ring
-was constructed. Membership and other set-owned methods occur once in the compiled MRO
-and read the initialized set state on the ring instance.
+For \(\mathcal C=\operatorname{Sets}()\), both paths supply the set from which the ring was constructed.
+Membership and other set-owned methods occur once in the compiled MRO and read the initialized set state on the ring instance.
 Sage's documented diamond is this specialization.
 The final category receives the methods introduced on every branch.
 C3 only resolves a shared method name.
@@ -234,15 +229,11 @@ Let \((\mathcal M,\odot,1)\) be monoidal, let \(\mathcal C\) be an \(\mathcal M\
 that satisfies the unit and action diagrams.
 When closed or enriched structure represents these actions by an internal endomorphism monoid, this data is equivalently a monoid morphism \(A\to\operatorname{End}_{\mathcal C}(X)\).
 
-Assume that `Modules(A, C)` has the selected products below, and that its selected functor
-to \(\mathcal C\) carries the chosen product to the chosen product on the nose.
-That is stronger than preservation of products. A functor `U` preserves a product when the
-canonical comparison morphism `U(prod X_i) -> prod U(X_i)`, induced by the cone
-`(U(pi_i))`, is an isomorphism. The kernel needs that comparison to be the identity,
-because sameness here is identity and never isomorphism.
-It is the identity by construction rather than by theorem: the module product is lifted
-from the ambient product, so its apex is the ambient apex and its projections are the
-ambient projections carrying the induced action.
+Assume that `Modules(A, C)` has the selected products below, and that its selected functor to \(\mathcal C\) carries the chosen product to the chosen product on the nose.
+That is stronger than preservation of products.
+A functor `U` preserves a product when the canonical comparison morphism `U(prod X_i) -> prod U(X_i)`, induced by the cone `(U(pi_i))`, is an isomorphism.
+The kernel needs that comparison to be the identity, because sameness here is identity and never isomorphism.
+It is the identity by construction rather than by theorem: the module product is lifted from the ambient product, so its apex is the ambient apex and its projections are the ambient projections carrying the induced action.
 For a family \((X_i)_{i\in I}\) in this category, a product contains:
 
 - the module apex \(P\);
@@ -261,8 +252,7 @@ Let the module presentation select a functor
 U:\operatorname{Modules}(A,\mathcal C)\longrightarrow\mathcal C.
 \]
 
-The \(\mathcal C\)-image of the module product is then literally the product of the
-\(\mathcal C\)-images:
+The \(\mathcal C\)-image of the module product is then literally the product of the \(\mathcal C\)-images:
 
 \[
 U\!\left(\prod_i X_i\right)
@@ -270,8 +260,7 @@ U\!\left(\prod_i X_i\right)
 \prod_i U(X_i),
 \]
 
-with equality rather than a comparison isomorphism, because the module construction was
-built on that ambient product.
+with equality rather than a comparison isomorphism, because the module construction was built on that ambient product.
 
 The module branch supplies the action and module universal morphisms.
 The \(\mathcal C\)-branch supplies the capabilities owned by \(\mathcal C\). When \(\mathcal C=\operatorname{Sets}()\), these include membership, elements, iteration when available, and cardinality.
@@ -306,9 +295,8 @@ U:\operatorname{Modules}(\mathbf F_p,\mathcal C)
 \]
 
 is the ordinary underlying-set functor.
-The module structure places \(\mathbf F_p^n\) in a product construction in `Modules(F_p, C)`. Taking the same product in `Rings` supplies the componentwise product-ring structure,
-since a product of rings is a ring. Which structure the object has follows from where its
-product was taken, not from what the construction happened to keep.
+The module structure places \(\mathbf F_p^n\) in a product construction in `Modules(F_p, C)`. Taking the same product in `Rings` supplies the componentwise product-ring structure, since a product of rings is a ring.
+Which structure the object has follows from where its product was taken, not from what the construction happened to keep.
 
 For the explicitly chosen product module
 
@@ -349,8 +337,7 @@ A correctly designed kernel derives this placement.
 The module leaf contains no route selection code.
 The kernel uses these mathematical facts:
 
-- the selected composite functor from `Modules(F_p, C)` to `Sets()` carries the chosen
-  product to the chosen set product on the nose;
+- the selected composite functor from `Modules(F_p, C)` to `Sets()` carries the chosen product to the chosen set product on the nose;
 
 - a finite product of finite sets is finite;
 
@@ -404,8 +391,7 @@ This set is not the set coproduct
 U(M)\sqcup U(N).
 \]
 
-The selected composite functor to `Sets()` carries the chosen module product to the
-chosen set product on the nose.
+The selected composite functor to `Sets()` carries the chosen module product to the chosen set product on the nose.
 It does not preserve module coproducts as set coproducts.
 
 Therefore, the compiler must not assume that every selected functor preserves every universal construction.
@@ -507,8 +493,7 @@ The architecture uses the following rules.
 
 4. Two selected paths to the same target class supply one exact constructor datum.
 
-5. Repeated selected paths to one target class resolve from their constructor-data
-   agreement.
+5. Repeated selected paths to one target class resolve from their constructor-data agreement.
 
 6. A category-owned method reads its initialized state on the structured source instance through direct Python MRO.
 
@@ -523,13 +508,10 @@ The architecture uses the following rules.
 10. Method-resolution order never decides mathematical meaning.
 
 11. Each written class contains its local members and receives the classes of every selected target in controlled C3 order.
-    `C.ObjectType` also inherits `Cat().ElementType`, which models points `* -> C`.
-    `C.MorphismType` is `Mor(C).ObjectType`.
-    `C.ElementType` models points `1_C -> X` and does not share the `Cat().ElementType` base for that reason.
+    `C.ObjectType` also inherits `Cat().ElementType`, which models points `* -> C`. `C.MorphismType` is `Mor(C).ObjectType`. `C.ElementType` models points `1_C -> X` and does not share the `Cat().ElementType` base for that reason.
 
 12. Each selected functor converts complete typed construction data for its target classes, and every reachable class and common ancestor is initialized exactly once.
-    The object context supplies the point `* -> C`; the element context supplies the point `1_C -> X`.
-    Allocation and initialization order are implementation choices (`POL-DOC-017`).
+    The object context supplies the point `* -> C`; the element context supplies the point `1_C -> X`. Allocation and initialization order are implementation choices (`POL-DOC-017`).
 
 13. Each named functor owns and caches its public images.
     Different functors with the same endpoints remain independent.
@@ -569,14 +551,14 @@ It does not enumerate its \(p^n\) elements to establish finiteness.
 ### Module products
 
 A product in `Modules(A, C)` retains its module apex, action, projections, and mediating morphism.
-When the selected functor to \(\mathcal C\) carries the chosen product to the chosen
-product on the nose, its \(\mathcal C\)-image is that chosen product.
-At the ambient `Sets()`, the composite underlying-set image is the set product.
+When the selected functor to \(\mathcal C\) carries the chosen product to the chosen product on the nose, its \(\mathcal C\)-image is that chosen product.
+At `Sets()`, the image under the selected composite functor is the set product.
 
 ### Module coproducts
 
-At the ambient `Sets()`, the underlying set of a module coproduct is not identified with the set coproduct.
-A construction supplies each required lift or equality. The compiler infers neither.
+At `Sets()`, the image of a module coproduct is not identified with the set coproduct.
+A construction supplies each required lift or equality.
+The compiler infers neither.
 
 ### Algorithm selection
 

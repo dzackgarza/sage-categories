@@ -46,14 +46,11 @@ Do not remove a row after the source becomes clean (`POL-MATH-051`).
 | Inherited execution | The selected target class is in the source class MRO. Its method runs on the initialized source instance. |
 | Constructor conversion | A selected functor converts source construction data to the exact data required by its target constructor. |
 
-The point and generalized-element distinction follows the nLab entry
-[generalized element](https://ncatlab.org/nlab/show/generalized+element), including its “Global elements” section.
+The point and generalized-element distinction follows the nLab entry [generalized element](https://ncatlab.org/nlab/show/generalized+element), including its “Global elements” section.
 
 ## Inspected sources
 
-Every term below was checked against the cited source before it was recorded
-(`POL-MATH-040`). A term with no source and no plain definition names an implementation
-artifact: report the missing construction rather than opening a row (`POL-MATH-052`).
+Every term below was checked against the cited source before it was recorded (`POL-MATH-040`). A term with no source and no plain definition names an implementation artifact: report the missing construction rather than opening a row (`POL-MATH-052`).
 
 | Term | Source |
 | --- | --- |

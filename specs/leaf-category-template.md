@@ -56,12 +56,15 @@ This selection has the same purpose as Sage's `super_categories()` declaration.
 ## Property subcategories and predicate handlers
 
 A property subcategory owns its membership predicate.
-The ambient object method only constructs that proposition:
+It declares the exact public spelling and ambient implementation class:
 
 ```python
-def is_P(self) -> Proposition:
-    return C().P().membership_proposition(self)
+predicate_name = "is_P"
+predicate_owner = C.ObjectType
 ```
+
+The kernel derives the standard `is_P()` application from that declaration.
+Its result is `C().P().membership_proposition(self)`.
 
 Use the same proposition for decisions and interactive assumptions:
 

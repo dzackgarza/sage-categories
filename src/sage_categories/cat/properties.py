@@ -31,7 +31,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 from sage.structure.coerce_dict import MonoDict
 
-from sage_categories.cat.category import Category, member
+from sage_categories.cat.category import Category
 from sage_categories.kernel.predicates import AppliedPredicate, PropertyPredicate, Proposition
 from sage_categories.kernel.refinement import is_subcategory, refine
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory
@@ -236,8 +236,19 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
             *(functors.full_subcategory_monomorphism(self, containing) for containing in self._full_subcategory_of),
         )
 
-    # Membership in a property subcategory is established placement (POL-CAT-043/044):
-    # ``x in C.P()`` asks whether ``x`` already entered ``C.P()``; ``ask(x.is_P())`` computes.
+    def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
+        """Membership in the ambient and the property's own predicate.
+
+        ``x in C.P()`` and ``ask(x.is_P())`` are one question asked twice
+        (``specs/property-refinement.md``, "Category membership is proposition-backed
+        Boolean admission").  Placement is a positive evaluation case inside that one
+        question -- a value that entered through the constructor already satisfies the
+        predicate, so ``ask`` answers ``True`` from placement without recomputing -- and
+        it is never the definition of membership.  A value that never entered still gets
+        the defining predicate evaluated, and an undecided answer fails loudly at
+        ``__contains__`` rather than being reported as non-membership.
+        """
+        return self._ambient.membership_proposition(candidate) & self._predicate(candidate)
 
     def __call__(self, *arguments: CategoryPoint) -> CategoryPoint:
         """The trusted constructor: refine a value of the ambient; or dispatch endpoints ``P(A, B)``."""
@@ -291,10 +302,15 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
         return tuple(_functors().full_subcategory_monomorphism(self, target) for target in distinct)
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
-        """Membership in the ambient together with established placement in every root."""
+        """Membership in the ambient together with membership in every root.
+
+        Each root states its own membership: a property subcategory asks its predicate,
+        and a construction family asks established placement, which is what membership in
+        it means (``FullSubcategory``).
+        """
         proposition = self._ambient.membership_proposition(candidate)
         for root in self._roots:
-            proposition = proposition & member(candidate, root)
+            proposition = proposition & root.membership_proposition(candidate)
         return proposition
 
     def __call__(self, value: CategoryPoint) -> CategoryPoint:
@@ -331,7 +347,8 @@ class FixedEndpointProperty[**MorphismData, **TwoMorphismData](NarrowedProperty[
         refine(morphism, self)
         return morphism
 
-    def identity(self) -> MorphismOfCategory:
-        identity = self._ambient.identity()
+    def multiplicative_identity(self) -> MorphismOfCategory:
+        """``1_X`` with this property: the unit of ``End_C(X)`` refined into the narrowing (D86)."""
+        identity = self._ambient.multiplicative_identity()
         refine(identity, self)
         return identity

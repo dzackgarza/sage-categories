@@ -94,7 +94,7 @@ Mere inhabitation of the unrestricted morphism category does not define cardinal
 
 ```python
 Cardinal()(value)
-Cardinal().aleph(index)
+Aleph.on_object(index)
 aleph0
 continuum
 ```
@@ -114,15 +114,19 @@ Examples:
 Cardinal()(0)
 Cardinal()(5)
 
-Cardinal().aleph(0)
-Cardinal().aleph(1)
-Cardinal().aleph(Ordinals().omega(1))
+Aleph.on_object(Ordinals().zero())
+Aleph.on_object(Ordinals().one())
+Aleph.on_object(InitialOrdinal.on_object(Aleph.on_object(Ordinals().one())))
 
 aleph0
 continuum           # Cardinal()(2) ** aleph0
 ```
 
-`aleph0` is `Cardinal().aleph(0)`. `continuum` is `Cardinal()(2) ** aleph0`.
+`Aleph: Ordinals() -> Cardinal()` is the named functor from an ordinal index to its aleph cardinal.
+`InitialOrdinal: Cardinal() -> Ordinals()` is the named functor from a cardinal to its initial ordinal representative.
+Both act on morphisms through monotonicity.
+`aleph0` is `Aleph.on_object(Ordinals().zero())`.
+`continuum` is `Cardinal()(2) ** aleph0`.
 
 Negative integers are rejected.
 Use `aleph0` for countable infinity.
@@ -152,7 +156,7 @@ Conceptually:
 
 ```python
 n
-Cardinal().aleph(alpha)
+Aleph.on_object(alpha)
 kappa ** lambda
 sup(kappa_1, ..., kappa_n)
 sum(i in I, kappa_i)
@@ -160,7 +164,7 @@ product(i in I, kappa_i)
 ```
 
 Finite suprema preserve unresolved relationships.
-For example, `Cardinal().aleph(2) + continuum` can remain a formal supremum.
+For example, `Aleph.on_object(Ordinals()(2)) + continuum` can remain a formal supremum.
 
 These are the forms of the ZFC-only state, which [The continuum hypothesis](#the-continuum-hypothesis) describes.
 With the hypothesis assumed, exponentiation evaluates and these forms are reached only by an expression the hypothesis leaves open.
@@ -174,11 +178,9 @@ C = Cardinal()
 
 C.zero()
 C.one()
-
-C.supremum(cardinals)
 ```
 
-`supremum()` accepts a nonempty finite indexed family.
+Use the standard finite `sup(cardinals)` operation for a nonempty finite indexed family.
 
 `Cardinal()` inherits the indexed product and coproduct constructions specified in [Diagram shapes and universal constructions](functor.md#diagram-shapes-and-universal-constructions).
 Its delta makes their apexes the indexed cardinal product and indexed cardinal sum.
@@ -283,14 +285,14 @@ For ordinals \(\alpha\) and \(\beta\):
 \end{cases}
 \]
 
-A finite base \(n\geq 2\) has the power of two, so \(n^{\aleph_\beta}=2^{\aleph_\beta}=\aleph_{\beta+1}\). The cofinality is `alpha.initial_ordinal().cofinality()`; see [Cofinality](ordinals.md#cofinality).
+A finite base \(n\geq 2\) has the power of two, so \(n^{\aleph_\beta}=2^{\aleph_\beta}=\aleph_{\beta+1}\). The cofinality is `InitialOrdinal.on_object(Aleph.on_object(alpha)).cofinality()`; see [Cofinality](ordinals.md#cofinality).
 When the ordinal expression does not establish the cofinality, the power stays formal.
 
 Addition and multiplication are unchanged.
 They are already the maximum and do not depend on the hypothesis.
 
-Assumed, the normal form of an infinite cardinal is `aleph(alpha)`, so the formal powers and formal suprema are reached only where the expression escapes these rules.
-Retracted, they return: `Cardinal()(2) ** aleph0` is a formal power, neither order between it and `Cardinal().aleph(2)` is decided, and their sum is a formal supremum.
+Assumed, the normal form of an infinite cardinal is `Aleph.on_object(alpha)`, so the formal powers and formal suprema are reached only where the expression escapes these rules.
+Retracted, they return: `Cardinal()(2) ** aleph0` is a formal power, neither order between it and `Aleph.on_object(Ordinals()(2))` is decided, and their sum is a formal supremum.
 Both states are exact.
 The hypothesis is a hypothesis in either.
 
@@ -320,25 +322,15 @@ The result is the cardinal `r`. Thus a finite-cardinal predicate can state `kapp
 
 ### Cardinal object API
 
-Every cardinal supplies:
+`Cardinal().ImagesOfFunctor(Aleph)` is the property subcategory of aleph cardinals.
+The retained equivalence from `Ordinals()` to this image supplies its inverse functor.
+Apply that inverse to obtain an aleph index.
+Apply `InitialOrdinal.on_object(kappa)` to obtain the initial ordinal representative of any cardinal.
 
-```python
-kappa.cardinality()
-
-kappa.is_finite()
-kappa.is_infinite()
-kappa.is_aleph()
-kappa.is_continuum()
-kappa.is_countable()
-kappa.is_uncountable()
-kappa.is_countably_infinite()
-kappa.is_uncountably_infinite()
-
-kappa.aleph_index()
-kappa.initial_ordinal()
-```
-
-Every `is_*()` call in this surface returns an applied proposition.
+Unary cardinal properties use the property-subcategory contract in [Property refinement](property-refinement.md).
+The inverse images of the corresponding `Sets()` property subcategories along the representative functor own finiteness and countability.
+The kernel-derived property applications return those containment predicates.
+Specific-cardinal queries use equality and order directly; countable infinity is `kappa == aleph0`, uncountability is `aleph0 < kappa`, and the continuum query is `kappa == continuum`.
 Equality and order operations also return propositions.
 Use `ask()` when a decision is required.
 
@@ -351,12 +343,6 @@ kappa < lambda
 kappa <= lambda
 kappa > lambda
 kappa >= lambda
-```
-
-A cardinal has itself as its cardinality:
-
-```python
-kappa.cardinality() is kappa
 ```
 
 ### Cardinal representations
@@ -407,6 +393,7 @@ H.is_inhabited()
 H.is_empty()
 ```
 
+These are the applications generated by `Cat().Inhabited()` and `Cat().Empty()`.
 Objects of `H` are functions from the selected representative of `kappa` to the selected representative of `lambda`. Exact `True` for `ask(H.is_empty())` establishes that no such function exists.
 `Unknown` preserves `H` without either conclusion.
 

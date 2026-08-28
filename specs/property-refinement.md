@@ -29,6 +29,7 @@ The defining property category adds real mathematics.
 Its implementation classes can add operations valid under the property.
 They never replace the defining proposition with a Boolean method.
 Membership in `Mor(Sets()).Monomorphisms()` makes `ask()` return `True` through category entailment.
+Its set-map specialization declares `predicate_name = "is_injective"` and `predicate_owner = SetsCategory.MorphismType`.
 
 ### Durable refinement
 
@@ -239,7 +240,7 @@ There is no separate ambient implementation.
 There is no property-refinement image cache.
 
 After refinement, the property category contributes only the operations valid under its defining mathematics.
-The ambient `is_X()` predicate still returns the category-owned proposition.
+The generated `is_X()` application still returns the category-owned proposition.
 
 ### Strongest property placement and one-object categories
 
@@ -249,7 +250,7 @@ This is a mathematical assertion in the implementation.
 It does not require the general decision procedure to recompute the property.
 
 A named-object construction places its result directly in every property category established by the construction.
-It does not override a predicate method or run the general decision procedure.
+The generated property application then reads the same containment proposition through category placement.
 
 Property refinements must propagate through the category graph.
 If a category `C` defines a property subcategory `C.P()` and `D` is structurally a subcategory of `C`, the kernel must derive `D.P()` as the corresponding narrowing of `D`. A leaf must not define another property class, constructor, predicate, or transport route.
@@ -275,7 +276,7 @@ Likewise, `{FF_p}` is a one-object category parameterized by the prime `p`. Its 
 It never derives finiteness by enumeration, cardinality computation, or backend inspection.
 It constructs `FF_p` directly in the finite property subcategory.
 
-For an interactive claim not owned by a construction, the user can apply the sanctioned global assumption operation, such as `assume(Sets().Finite().membership_proposition(X))`. The owned predicate method permits `assume(X.is_finite())`. Both forms invoke the same property-category constructor.
+For an interactive claim not owned by a construction, the user can apply the sanctioned global assumption operation, such as `assume(Sets().Finite().membership_proposition(X))`. The kernel-derived property application permits `assume(X.is_finite())`. Both forms invoke the same property-category constructor.
 Backend and theory code still construct directly in the category they establish; they do not call `assume()`.
 
 ## Proposition interface
@@ -343,7 +344,9 @@ FaithfulFunctors = Mor(Cat()).Faithful()
 FullyFaithfulFunctors = Mor(Cat()).FullyFaithful()
 ```
 
-The owning methods return applied predicates:
+These declarations use `predicate_owner = Cat().MorphismType`.
+Their `predicate_name` values supply the spellings below.
+The kernel derives their standard applications:
 
 ```python
 F.is_full()
@@ -370,7 +373,10 @@ In the absence of category placement, an active assumption, or a declared contai
 For every category `C` and objects `A, B in C`, `Mor(C)(A, B)` is a category.
 Its existence does not depend on a decision about its objects.
 
-The fixed-endpoint category owns these predicates:
+`Cat().Inhabited()` declares `predicate_name = "is_inhabited"`.
+`Cat().Empty()` declares `predicate_name = "is_empty"`.
+Both declare `predicate_owner = Cat().ObjectType`.
+Their containment predicates generate these applications on every category object:
 
 ```python
 H = Mor(C)(A, B)
@@ -488,7 +494,7 @@ membership_proposition = C.membership_proposition(X)
 assume(membership_proposition)
 ```
 
-An owned property method can provide the standard user syntax:
+The kernel-derived property application provides the standard user syntax:
 
 ```python
 assume(X.is_finite())
@@ -502,7 +508,7 @@ A category formed from several properties declares the conjunction of the releva
 The declaration occurs once; `__contains__()` never reimplements the mathematics.
 
 For example, the finite-set category owns its membership proposition.
-Its `X.is_finite()` method applies that predicate.
+The kernel derives `X.is_finite()` as the standard application of that predicate.
 Conceptually:
 
 ```python
@@ -512,7 +518,7 @@ class FiniteSetsCategory:
             X,
             definition=(
                 Sets().membership_proposition(X)
-                & X.cardinality().is_finite()
+                & (X.cardinality() < aleph0)
             ),
         )
 ```

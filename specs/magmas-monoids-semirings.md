@@ -108,12 +108,11 @@ and no law.
 
 ```python
 M.operation()
-M.combine(x, y)
-f.is_magma_homomorphism()
 ```
 
-`operation()` returns the morphism `mu_X:X tensor X -> X` in `C`. `combine(x, y)` applies that morphism through the selected point map.
-The homomorphism method returns the owned preservation predicate.
+`operation()` returns the morphism `mu_X:X tensor X -> X` in `C`.
+The fixed-endpoint magma-morphism category owns the operation-preservation containment predicate.
+The kernel derives its standard property application.
 
 ## Additive and multiplicative forms
 
@@ -192,7 +191,6 @@ A notation-neutral monoid owns
 ```python
 M.operation()
 M.unit_morphism()
-M.combine(x, y)
 ```
 
 Here `unit_morphism()` returns `eta_X:I -> X`.

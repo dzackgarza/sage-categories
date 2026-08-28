@@ -53,13 +53,17 @@ if TYPE_CHECKING:
     from sage_categories.cat.category import Category
 
 __all__ = [
+    "Answer",
+    "Applied",
     "AppliedPredicate",
+    "AppliedValuedPredicate",
     "Argument",
     "Connective",
     "EqualityPredicate",
     "Predicate",
     "PropertyPredicate",
     "Proposition",
+    "ValuedPredicate",
     "ask",
     "assume",
     "conjunction",
@@ -75,9 +79,15 @@ __all__ = [
 # through ``EqualityPredicate`` alone (POL-TYPE-004).
 type Argument = CategoryPoint | int
 
-# An exact decision procedure on a declared semantic domain; its arity is the
+# What ``ask`` returns: a decision for a proposition, and an owned object of the
+# declared result category for a valued predicate such as ``cardinality()``.  Sage
+# ``Unknown`` is the one unresolved answer of both and is an object of neither result
+# category (``specs/cardinality.md``, "Integration with ``Sets()``").
+type Answer = Decision | CategoryPoint
+
+# An exact evaluation case on a declared semantic domain; its arity is the
 # predicate's, and each owning category declares its exact parameter types.
-type Handler = Callable[..., Decision]
+type Handler = Callable[..., Answer]
 
 
 class OwnedPropertyPredicate(EnginePredicate):
@@ -172,13 +182,43 @@ class PropertyPredicate(Predicate):
         return self._category
 
 
-class Proposition:
-    """A proposition whose truth is obtained only through ``ask()``."""
+class ValuedPredicate(Predicate):
+    """A predicate whose answer is an owned object rather than a truth value.
+
+    ``cardinality()`` and ``cofinality()`` are the two current cases: they are not total
+    and exact on their full declared domain, so they use this interface rather than
+    returning a value directly (``specs/cardinality.md``, "Integration with ``Sets()``").
+    The predicate declares one exact mathematical result category; an exact evaluation
+    case returns an object of it, and ``ask`` returns Sage ``Unknown`` when none applies.
+
+    An operation that can always construct an exact symbolic result is total.  It returns
+    that result directly and does not use this interface.
+    """
+
+    def __init__(self, name: str, arity: int, records_decisions: bool, result_category: Category) -> None:
+        super().__init__(name, arity, records_decisions)
+        self._result_category = result_category
+
+    def result_category(self) -> Category:
+        """The category whose objects are the exact answers of this predicate."""
+        return self._result_category
+
+    def __call__(self, *arguments: Argument) -> AppliedValuedPredicate:
+        assert len(arguments) == self.arity(), f"{self.name()} has arity {self.arity()}"
+        return AppliedValuedPredicate(self, arguments)
+
+
+class Applied:
+    """A predicate applied to its arguments, whose answer is obtained only through ``ask()``."""
 
     def __bool__(self) -> bool:
-        # SymPy ``Relational.__bool__`` is the mature reference: a proposition has no
-        # Python truth value (POL-MATH-035).
+        # SymPy ``Relational.__bool__`` is the mature reference: an applied predicate has
+        # no Python truth value (POL-MATH-035).
         raise TypeError(f"cannot determine truth value of {self!r}; use ask()")
+
+
+class Proposition(Applied):
+    """An applied predicate whose answer is a truth value."""
 
     def __invert__(self) -> Connective:
         return Connective(Not, (self,))
@@ -211,6 +251,27 @@ class AppliedPredicate(Proposition):
 
     def engine_value(self) -> EngineApplied:
         return Q.owned_property(self._predicate._symbol, *map(_engine_symbol, self._arguments))
+
+    def __repr__(self) -> str:
+        return f"{self._predicate}({', '.join(map(repr, self._arguments))})"
+
+
+class AppliedValuedPredicate(Applied):
+    """One valued predicate applied to its arguments; ``ask`` evaluates it.
+
+    It carries no engine expression: an owned cardinal is not a truth value, so no
+    assumption context holds it and the boolean algebra does not compose it.
+    """
+
+    def __init__(self, predicate: ValuedPredicate, arguments: tuple[Argument, ...]) -> None:
+        self._predicate = predicate
+        self._arguments = arguments
+
+    def predicate(self) -> ValuedPredicate:
+        return self._predicate
+
+    def arguments(self) -> tuple[Argument, ...]:
+        return self._arguments
 
     def __repr__(self) -> str:
         return f"{self._predicate}({', '.join(map(repr, self._arguments))})"
@@ -289,8 +350,8 @@ def _session_decision(proposition: AppliedPredicate) -> Decision:
     return Unknown
 
 
-def _cache_key(proposition: AppliedPredicate) -> tuple[Predicate, CategoryPoint, CategoryPoint] | None:
-    """The identity key of a recordable decision: the predicate and its one or two owned arguments."""
+def _cache_key(proposition: AppliedPredicate | AppliedValuedPredicate) -> tuple[Predicate, CategoryPoint, CategoryPoint] | None:
+    """The identity key of a recordable answer: the predicate and its one or two owned arguments."""
     arguments = proposition.arguments()
     if not proposition.predicate().records_decisions():
         return None
@@ -367,13 +428,43 @@ def _decided(proposition: Decision | Proposition) -> Basic:
     raise TypeError(f"{proposition!r} is not a proposition")
 
 
-def ask(proposition: Decision | Proposition) -> Decision:
-    """Decide ``proposition`` as ``True``, ``False``, or Sage ``Unknown``.
+def _ask_valued(applied: AppliedValuedPredicate) -> Answer:
+    """The first exact case that answers ``applied``, else Sage ``Unknown``.
+
+    The cases are the same ones a proposition uses, minus the two that only a truth value
+    can take: no assumption context and no category placement hold an owned cardinal.
+    What remains is the cached exact answer and the exact evaluation cases the operation
+    owner registered (``specs/undecidable-properties.md``, "How ``ask()`` works").
+    """
+    predicate = applied.predicate()
+    key = _cache_key(applied)
+    if key is not None and key in _decisions:
+        return _decisions[key]
+    for handler in predicate.handlers():
+        value = handler(*applied.arguments())
+        if value is Unknown:
+            continue
+        assert value in predicate.result_category(), (
+            f"an exact case answered {applied!r} with {value!r}, which is not an object of {predicate.result_category()!r}"
+        )
+        if key is not None:
+            _decisions[key] = value
+        return value
+    return Unknown
+
+
+def ask(proposition: Decision | Proposition | AppliedValuedPredicate) -> Answer:
+    """Answer ``proposition``: ``True``, ``False``, an owned object, or Sage ``Unknown``.
+
+    A proposition is decided as ``True``, ``False``, or ``Unknown``; a valued predicate
+    answers with an object of its declared result category or ``Unknown``.
 
     ``ask`` is total on decisions as well: ``a == b`` returns a proposition for an owned
     value and a decision for an engine value, and asking an already decided one is
     idempotent, so a caller never inspects which of the two it holds (POL-MATH-034).
     """
+    if isinstance(proposition, AppliedValuedPredicate):
+        return _ask_valued(proposition)
     value = _decided(proposition)
     if value is S.true:
         return True

@@ -64,15 +64,13 @@ Their contract is in [Functors, `Cat`, and structural inheritance](functor.md).
 
 ## Canonical objects and the separator
 
-`Sets()` owns these objects, each constructed once and retained by identity:
+`Sets()` realizes these inherited constructions, each retained by identity:
 
-- `Sets().Empty()`, the empty set `{}`;
+- `Sets().Initial()`, the empty set `{}`;
 
-- `Sets().Terminal()`, the one-point set `1 = {*}`;
+- `Sets().Terminal()`, the one-point set `1 = {*}`.
 
-- `Sets().Simplex(n)`, the set `[n] = {0, ..., n}` for `n >= 0`.
-
-`[1] = {0, 1}` is the object `2` of the power object `2 ** X`.
+The coproduct `1 + 1` is the two-element set `2` used in the power object `2 ** X`.
 
 `G_Sets = Sets().Terminal()` is the separator of `Sets()`. A point of `X` is a point `1 -> X`. Set membership, enumeration, and cardinality use `Mor(Sets())(1, X)` through this separator.
 
@@ -193,42 +191,45 @@ The set-specific characteristic morphism maps the selected subset to `1 in 2` an
 `f.image()` constructs an owned subobject of `f.codomain()`. It does not require source enumeration.
 Image membership remains a proposition when no handler can decide it.
 
-`2 ** X`, with `2 = [1] = Sets().Simplex(1)`, constructs the power object of `X`. It is the function set from `X` to `2`.
+`2 ** X`, with `2 = 1 + 1`, constructs the power object of `X`. It is the function set from `X` to `2`.
 Its points are characteristic morphisms and therefore correspond to the objects of `Sets().Subobjects(X)`.
 Set inclusion is an applied proposition.
 The set operations on these subobjects construct owned set subobjects.
 
 ## Finite and fixed-cardinality subsets
 
-The public constructors are:
+Let `U_X: Sets().Subobjects(X) -> Sets()` be the inherited varying-object functor.
+The inverse image of `Sets().Finite()` along `U_X` is:
 
 ```python
-Sets().FiniteSubsets()(X)
-Sets().SubsetsOfSize(k)(X)
+Sets().Subobjects(X).Finite()
 ```
 
-Their elements are owned finite subobjects of `X`.
+Its objects are the finite subobjects of `X`.
+The parameterized property category `Sets().OfCardinality(k)` has containment predicate `A.cardinality() == k`.
+The inherited narrowing `Sets().Subobjects(X).OfCardinality(k)` contains the subobjects of cardinality `k`.
 
-If `X` has a chosen enumeration, these constructions can derive a chosen enumeration and inherit its indexing operations.
+If `X` has a chosen enumeration, these constructions can retain a derived enumeration isomorphism.
 Countability alone does not select one.
 
-The cardinality methods use cardinal arithmetic.
-They do not enumerate an infinite base set.
+Their category-owned implementations register exact cardinality cases from cardinal arithmetic.
 
 ## Cardinality and enumeration
 
 The cardinal and ordinal APIs are specified in [cardinality.md](cardinality.md).
 
-The cardinality property subcategories are:
+The set property subcategories and their exact public predicate names are:
 
-```python
-Sets().Finite()
-Sets().Infinite()
-Sets().Countable()
-Sets().Uncountable()
-```
+| Property subcategory | `predicate_name` |
+| --- | --- |
+| `Sets().Empty()` | `is_empty` |
+| `Sets().Inhabited()` | `is_inhabited` |
+| `Sets().Finite()` | `is_finite` |
+| `Sets().Infinite()` | `is_infinite` |
+| `Sets().Countable()` | `is_countable` |
+| `Sets().Uncountable()` | `is_uncountable` |
 
-Each category declares its membership proposition once.
+Each declares `predicate_owner = SetsCategory.ObjectType` and its membership proposition once.
 The kernel implements `__contains__()` by calling `ask()` on that proposition.
 An `Unknown` decision fails loudly there, since a bool cannot carry it; ask the proposition when the undecided case must be handled.
 A trusted category constructor or named mathematical construction places a set directly in the property category.
@@ -243,7 +244,7 @@ X.cardinality()  # applied predicate with result category Cardinal()
 
 `ask(X.cardinality())` returns an object of `Cardinal()` or the Sage `Unknown` singleton.
 
-A cardinal is an exact value: a finite cardinal, `aleph(alpha)`, `2 ** aleph(0)`, or another value formed by exact cardinal arithmetic.
+A cardinal is an exact value: a finite cardinal, `Aleph.on_object(alpha)`, `2 ** Aleph.on_object(Ordinals().zero())`, or another value formed by exact cardinal arithmetic.
 There is no placeholder cardinal, no unknown cardinal kind, and no symbolic "cardinality of X" value.
 
 Cardinal arithmetic, equality, and order are defined on cardinals only.
@@ -265,21 +266,15 @@ If the image morphism is monic, the construction theorem gives
 
 If neither route applies, `ask(X.cardinality())` returns `Unknown`.
 
-`X.is_finite()`, `X.is_countable()`, and the other cardinal property methods return applied predicates.
+Each cardinal property subcategory owns one containment predicate.
+The kernel-derived `X.is_finite()`, `X.is_countable()`, and related property applications return those propositions.
 `ask()` decides them from category placement, active assumptions, and the routes the owning implementation registers: a known cardinality decides finiteness and countability, and a `Sets()` construction registers the case routes that external mathematics supplies for it.
 `assume(X.is_finite())` and the property subcategory constructors `Sets().Finite()`, `Sets().Countable()`, and `Sets().Uncountable()` are the positive routes.
 
 Countability does not select an enumeration.
-A chosen enumeration adds:
-
-```python
-X[n]
-X.position(x)
-X.enumeration_injection()
-```
-
-The enumeration is owned structure.
-Its inverse is the stated injection into the index set.
+A chosen enumeration retains an owned index subobject `I -> NN` and an isomorphism `e: I -> X`.
+The isomorphism is the defining structure.
+Use `e(n)` for the element at `n` and `e.inverse()(x)` for the index of `x`.
 
 ## Ordered sets
 
@@ -292,17 +287,10 @@ Cardinality and enumeration remain independent structures.
 
 ## Finitely supported function sets
 
-For a pointed set `(X, x0)` and index set `S`, the constructor for (X^{(S)}) retains:
-
-```python
-A.index_set()
-A.value_set()
-A.basepoint()
-A.cardinality()
-```
-
-Its elements are owned functions with finite support.
-The cardinality method uses the applicable cardinal formula without enumerating an infinite function set.
+For a pointed set `(X, x0)` and index set `S`, construct (X^{(S)}) as the predicate subobject of `X ** S` whose functions have finite support relative to `x0`.
+The generic subobject retains its monomorphism into the function set.
+Its placement in `Sets()` supplies cardinality and the complete set surface.
+The category-owned implementation registers applicable cardinal formulas from the retained construction data.
 
 ## Private computation engines
 
@@ -434,7 +422,7 @@ See the [SymPy sets documentation](https://docs.sympy.org/latest/modules/sets.ht
 
 ## Unknown and partial algorithms
 
-Membership, subset order, set equality, cardinal comparisons, and cardinal property methods return propositions.
+Membership, subset order, set equality, cardinal comparisons, and generated cardinal-property applications return propositions.
 Their handlers can be exact, partial, or unavailable.
 
 The `ask()` contract is:

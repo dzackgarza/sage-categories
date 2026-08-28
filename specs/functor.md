@@ -115,7 +115,7 @@ F(1_X)=1_{F(X)},\qquad F(g\circ f)=F(g)\circ F(f).
 \]
 
 A point `t: 1_C -> X` is represented by its defining morphism.
-`F.on_element(t)` applies `F.on_morphism` and precomposes the declared morphism `1_D -> F(1_C)`. A generalized element `T -> X` maps through `F.on_morphism` and remains a generalized element with domain `F(T)`. The functor stores no independent element callback.
+For a point `t: 1_C -> X`, compose the declared morphism `1_D -> F(1_C)` with `F.on_morphism(t)`. A generalized element `T -> X` maps through `F.on_morphism` and remains a generalized element with domain `F(T)`.
 
 For fixed `C, D in Cat()`, the functor category is endpoint application to `Mor(Cat())`:
 
@@ -178,7 +178,7 @@ Fixed endpoints use the same dispatch for every property subcategory `P` of `Mor
 
 `Cat()` owns these objects, each constructed once and retained by identity:
 
-- `Cat().Empty()`: the empty category;
+- `Cat().Initial()`: the empty category;
 
 - `Cat().Terminal()`, written `1` and equal to `[0]`;
 
@@ -233,7 +233,9 @@ Fun(C, D).FullyFaithful() is Fun.FullyFaithful()(C, D)
 Each identity denotes one cached property subcategory.
 A constructor called through it returns a functor with endpoints `C, D` and the selected trusted property.
 
-Their predicates have the standard public form:
+Each property declaration uses `predicate_owner = Cat().MorphismType`.
+Its `predicate_name` is the corresponding spelling below.
+The kernel derives these applications:
 
 ```python
 F.is_full()
@@ -243,7 +245,7 @@ F.is_essentially_surjective()
 F.is_equivalence()
 ```
 
-Each call returns an applied `Predicate`. It does not return a Boolean.
+Each call returns the containment proposition of its property subcategory.
 
 For `F: C -> D`:
 
@@ -447,7 +449,7 @@ The equality is semantic; method dispatch does not replace `x` with `F(x)`.
 Identity functors use identity conversions.
 Composite functors compose the conversions of their factors.
 
-A point `x: 1_C -> X` is a `C.ElementType` value with `x.parent() is X`. For `F: C -> D`, `F.on_morphism(x)` gives `F(1_C) -> F(X)`. A supplied morphism `c_F: 1_D -> F(1_C)` gives the point `F.on_element(x): 1_D -> F(X)` by composition.
+A point `x: 1_C -> X` is a `C.ElementType` value with `x.parent() is X`. For `F: C -> D`, `F.on_morphism(x)` gives `F(1_C) -> F(X)`. Composing it with the supplied morphism `c_F: 1_D -> F(1_C)` gives the point `1_D -> F(X)`.
 
 A generalized element `t: T -> X` maps to `F(t): F(T) -> F(X)`. It remains separate from `ElementType` unless its domain is the terminal object.
 For a category `C`, `Fun(*, C)` models its points and `Fun(T, C)` models its generalized elements with domain `T`. The category `Fun([1], C)` models arrows of `C` separately.
@@ -762,7 +764,7 @@ A later structural route uses their functor components and ordinary composition.
 
 ### Essential images
 
-For `F: C -> D`, `F.essential_image()` is the full property subcategory of `D` on objects isomorphic to `F(X)` for some `X in C`.  Its monomorphism into `D` is fully faithful by construction.
+For `F: C -> D`, `D.ImagesOfFunctor(F)` is the full property subcategory of `D` on objects isomorphic to `F(X)` for some `X in C`. Its monomorphism into `D` is fully faithful by construction.
 The original functor factors through this category.
 
 A universal-construction family has more data.
@@ -836,7 +838,7 @@ The kernel supplies these shape constructors:
 
 - the canonical objects of `Cat` above;
 
-- `Thin(P)` for a preordered set `P`: the thin category of `P`; `omega = Thin(NN)` with its natural order is the sequential shape;
+- `Thin.on_object(P)` for a preordered set `P`: the thin category of `P`; `omega = Thin.on_object(NN)` with its natural order is the sequential shape;
 
 - finite presented shapes: a finite set of objects, a finite set of generating morphisms, and a finite set of relations between composable words.
 

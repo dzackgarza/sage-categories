@@ -39,16 +39,6 @@ class PartiallyOrderedSetsCategory(Category):
             """Return the defining subobject of ``X * X``."""
             return self._order_relation
 
-        def elements_are_related(
-            self,
-            left: PartiallyOrderedSetsCategory.ElementType,
-            right: PartiallyOrderedSetsCategory.ElementType,
-        ) -> Proposition:
-            """Return the proposition ``left R right``."""
-            assert left.parent() is self
-            assert right.parent() is self
-            return self.order_relation().contains_pair(left, right)
-
     class ElementType:
         """Add order comparison to points of a poset."""
 
@@ -57,7 +47,8 @@ class PartiallyOrderedSetsCategory(Category):
             other: PartiallyOrderedSetsCategory.ElementType,
         ) -> Proposition:
             """Return the proposition ``self <= other``."""
-            return self.parent().elements_are_related(self, other)
+            assert other.parent() is self.parent()
+            return self.parent().order_relation().contains_pair(self, other)
 
     class MorphismType:
         """Implement monotone maps."""

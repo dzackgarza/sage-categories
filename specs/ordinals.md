@@ -65,7 +65,7 @@ The two natural operations act on morphisms through their ordinary functor actio
 Ordinals()
 
 Ordinals()(value)
-Ordinals().omega(index)
+InitialOrdinal.on_object(Aleph.on_object(index))
 
 omega0
 ```
@@ -76,7 +76,7 @@ omega0
 
 - A nonnegative Python `int`.
 
-`Ordinals().omega(index)` constructs the initial ordinal \(\omega_{\text{index}}\).
+The composite `InitialOrdinal.on_object(Aleph.on_object(index))` constructs \(\omega_{\text{index}}\).
 
 Examples:
 
@@ -84,9 +84,9 @@ Examples:
 Ordinals()(0)
 Ordinals()(5)
 
-Ordinals().omega(0)       # omega0
-Ordinals().omega(1)
-Ordinals().omega(Ordinals().omega(1))
+InitialOrdinal.on_object(Aleph.on_object(Ordinals().zero()))       # omega0
+InitialOrdinal.on_object(Aleph.on_object(Ordinals().one()))
+InitialOrdinal.on_object(Aleph.on_object(InitialOrdinal.on_object(Aleph.on_object(Ordinals().one()))))
 ```
 
 Negative finite ordinals raise `ValueError`.
@@ -111,16 +111,8 @@ The private expression model supports:
 
 ### `Ordinals()` API
 
-The category supplies the two variadic natural operations:
-
-```python
-O = Ordinals()
-
-O.natural_sum(*ordinals)
-O.natural_product(*ordinals)
-```
-
-`O.zero()` and `O.one()` arrive on the same surface through the point functor.
+`Ordinals().zero()` and `Ordinals().one()` arrive through the point functor.
+Finite natural sums and products fold the object operations `+` and `*` from those units at the call site.
 
 `Ordinals()` is one cached category.
 Construction is cached by expression.
@@ -203,11 +195,14 @@ Other cases remain symbolic.
 
 ### Ordinal object API
 
+`Ordinals().ImagesOfFunctor(InitialOrdinal)` is the property subcategory of initial ordinals.
+It owns the initiality containment predicate and the retained equivalence from `Cardinal()`.
+The kernel derives the standard `alpha.is_initial()` application.
+Apply the inverse of that equivalence to obtain the cardinal index of an initial ordinal.
+
 Every ordinal supplies:
 
 ```python
-alpha.is_initial()
-alpha.initial_index()
 alpha.cardinality()
 alpha.cofinality()
 ```

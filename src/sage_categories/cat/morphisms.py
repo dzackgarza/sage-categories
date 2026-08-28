@@ -129,6 +129,13 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
     def __init__(self, base: Category[MorphismData, TwoMorphismData]) -> None:
         self._base = base
         self._fixed_endpoints: TripleDict = TripleDict(weak_values=False)
+        if base.has_ambient():
+            # ``Mor(D)`` for a declared subcategory ``D`` of ``C`` is a subcategory of
+            # ``Mor(C)``, and this category derives that ambient rather than receiving it
+            # as construction data.  Constructing it here keeps the ordinal invariant a
+            # category with an ambient otherwise gets for free: every category a category
+            # selects a functor into is older than it (``Category._initialize``).
+            base.ambient().morphism_category(1)
         super().__init__()
 
     def base_category(self) -> Category[MorphismData, TwoMorphismData]:
@@ -296,8 +303,19 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
         refine(morphism, self)
         return morphism
 
-    def identity(self) -> MorphismOfCategory:
-        assert self._domain_object is self._codomain_object, f"{self!r} has no identity: its endpoints differ"
+    def multiplicative_identity(self) -> MorphismOfCategory:
+        """``1_X``, the unit of the endomorphism monoid ``End_C(X) = Mor(C)(X, X)`` (D86).
+
+        Composition makes ``Mor(C)(X, X)`` a monoid, ``compose`` is its multiplication,
+        and this is its multiplicative identity: ``f * 1_X`` and ``1_X * f`` are ``f`` for
+        every endomorphism ``f`` of ``X`` (``specs/functor.md``, "Identity and
+        composition").  An identity is named by the operation it is an identity for, so
+        the unqualified ``identity()`` on this category is the identity *functor* it
+        receives as an object of ``Cat()``.
+        """
+        assert self._domain_object is self._codomain_object, (
+            f"{self!r} is not an endomorphism monoid: its endpoints differ, so it has no multiplication"
+        )
         return self.base_category().identity_morphism(self._domain_object)
 
     def compose(self, second: MorphismOfCategory, first: MorphismOfCategory) -> MorphismOfCategory:

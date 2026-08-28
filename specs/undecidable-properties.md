@@ -8,7 +8,8 @@ C.P=\{x\in C\mid P(x)\}.
 
 `C.P().membership_proposition(x)`, containment, assumptions, computation, and refinement must all derive from this equation.
 
-Every property declaration includes its ambient predicate method, such as `x.is_P()`. The method applies the category-owned predicate.
+Every property declaration supplies its predicate name to the kernel.
+The kernel derives the standard ambient application, such as `x.is_P()`, from the category-owned containment predicate.
 It does not evaluate it.
 
 ## Public paths
@@ -61,7 +62,7 @@ A property category constructs its membership proposition:
 proposition = Sets().Finite().membership_proposition(x)
 ```
 
-The owned predicate method `x.is_finite()` returns that same proposition.
+The kernel-derived application `x.is_finite()` returns that same proposition.
 
 It never returns `True`, `False`, or `Unknown`.
 
@@ -482,19 +483,13 @@ C.P().membership_proposition(x).assume()
 
 That operation uses the global mathematical context and the proposition's category owner.
 
-The largest meaningful ambient category owns the predicate method:
-
-```python
-def is_P(self) -> Proposition:
-    return C().P().membership_proposition(self)
-```
-
-The property declaration is incomplete without this method.
-A property leaf does not inject it into an unrelated implementation class.
+The largest meaningful ambient category owns the generated predicate application.
+Its value is `C().P().membership_proposition(self)`.
+The property declaration fixes the public predicate name and its category owner.
 
 ## Where computation handlers belong
 
-`membership_proposition()` and `is_P()` do not contain the algorithm.
+`membership_proposition()` and its generated public application contain no algorithm.
 
 The property category owns the decision surface.
 Backend-specific procedures may live behind private engine boundaries.
@@ -615,7 +610,7 @@ class SetsCategory(Category):
         def membership_proposition(self, X: SetObject) -> Proposition:
             return self.applied_predicate(
                 X,
-                definition=X.cardinality().is_finite(),
+                definition=X.cardinality() < aleph0,
             )
 
         class ObjectType:
@@ -670,28 +665,14 @@ It must not create:
 
 `Sets().Finite()` must resolve to the owned `FiniteSets` category implementation.
 
-## No predicate override
+## Predicate application
 
-`FiniteSets.ObjectType` must not implement this:
-
-```python
-def is_finite(self) -> bool:
-    return True
-```
-
-The kernel must not inject such an override either.
-
-The ambient predicate method has one owner and one return contract:
-
-```python
-def is_finite(self) -> Proposition:
-    return Sets().Finite().membership_proposition(self)
-```
+The kernel derives the ambient predicate application from the property declaration.
+For finite sets its value is `Sets().Finite().membership_proposition(self)` and its return type is `Proposition`.
 
 A finite set inherits that same method.
 Calling it still produces the category-owned membership proposition.
 
-No standalone public `finite(X)` function exists.
 Category placement supplies an entailment rule:
 
 \[
@@ -858,7 +839,6 @@ Sets().Finite().register_exact_handler(
 ```
 
 This registration is private predicate-engine integration.
-It is not a decorator on `is_finite()` or another ambient mathematical method.
 
 A handler:
 
@@ -986,8 +966,10 @@ A property axiom declaration supplies:
 
 5. Exact decision handlers, when available.
 
-The owned ambient `is_P()` method is part of the property declaration.
-It applies the membership predicate and returns its proposition.
+6. Its public predicate name and largest meaningful ambient owner.
+
+The kernel derives the standard `is_P()` application from that declaration.
+It returns the membership proposition.
 
 The kernel supplies:
 
@@ -1012,10 +994,8 @@ Its category declaration can bind decision procedures for the ambient membership
 
 ## Addendum: property-owned predicates and decision procedures
 
-No public standalone `finite(X)` should exist.
-
 The property category owns the predicate.
-`X.is_finite()` is its required public application on set objects.
+The kernel derives `X.is_finite()` as its public application on set objects.
 
 ### One source of truth
 
@@ -1031,19 +1011,7 @@ This produces the proposition:
 X\in\mathbf{Sets.Finite}.
 \]
 
-The owned predicate method delegates to that category:
-
-```python
-class SetsObject:
-    def is_finite(self) -> Proposition:
-        return Sets().Finite().membership_proposition(self)
-```
-
-There is no public:
-
-```python
-finite(X)
-```
+The kernel derives the owned predicate application from that category declaration.
 
 The assumption engine still needs a predicate object internally.
 That object belongs privately to the `Sets().Finite()` category singleton.
@@ -1054,7 +1022,7 @@ Thus:
 
 - `membership_proposition(X)` is the category-owned definition.
 
-- `X.is_finite()` is its public application on set objects.
+- The kernel derives `X.is_finite()` as its public application on set objects.
 
 - The private SymPy or Sage predicate does not enter the global namespace.
 
@@ -1078,6 +1046,9 @@ Conceptually:
 
 ```python
 class OfCardinalityExactlyFour(PropertySubcategory):
+    predicate_name = "is_cardinality_exactly_four"
+    predicate_owner = SetsCategory.ObjectType
+
     def membership_proposition(self, X: SetObject) -> Proposition:
         return self.applied_predicate(
             X,
@@ -1085,13 +1056,8 @@ class OfCardinalityExactlyFour(PropertySubcategory):
         )
 ```
 
-The property also declares the exact public method name at the ambient owner:
-
-```python
-class SetsObject:
-    def is_cardinality_exactly_four(self) -> Proposition:
-        return Sets().OfCardinalityExactlyFour().membership_proposition(self)
-```
+The property also declares its exact public predicate name and ambient owner.
+The kernel derives the application from `FourSets.membership_proposition(X)`.
 
 The user can then write:
 
@@ -1104,8 +1070,8 @@ FourSets(X)
 X in FourSets
 ```
 
-The author defines this ordinary method at `Sets.ObjectType`. The compiler rejects a name collision.
-The kernel does not infer predicate names from category names.
+The property declaration supplies the exact predicate name and ambient owner.
+The kernel compiles that application and rejects a name collision.
 
 ### The corrected property template
 
@@ -1121,21 +1087,15 @@ A property leaf requires:
 
 5. Its decision procedures, when available.
 
-6. Its ambient `is_P()` method at the largest meaningful base category.
-
-It does not require:
-
-- a global predicate function;
-
-- an override returning `True`;
-
-- a decorator on ambient mathematical methods;
+6. Its public predicate name and largest meaningful ambient owner.
 
 Conceptually:
 
 ```python
 class OfCardinalityExactlyFour(PropertySubcategory):
     base_category = Sets()
+    predicate_name = "is_cardinality_exactly_four"
+    predicate_owner = SetsCategory.ObjectType
 
     def membership_proposition(self, X: SetObject) -> Proposition:
         return self.applied_predicate(
@@ -1143,9 +1103,6 @@ class OfCardinalityExactlyFour(PropertySubcategory):
             definition=X.cardinality() == 4,
         )
 
-class SetsObject:
-    def is_cardinality_exactly_four(self) -> Proposition:
-        return Sets().OfCardinalityExactlyFour().membership_proposition(self)
 ```
 
 `applied_predicate` here means the category-owned proposition mechanism.
@@ -1208,7 +1165,7 @@ The canonical proposition is:
 Mor(Sets()).Epimorphisms().membership_proposition(f)
 ```
 
-The owned predicate method is:
+The generated property application is:
 
 ```python
 f.is_surjective()
@@ -1447,11 +1404,9 @@ The final model is:
 
 - Its private predicate object belongs to that category.
 
-- No standalone global predicate function is required.
+- Every property declares its ambient predicate name and owner.
 
-- Every property declares its ambient `is_P()` predicate method.
-
-- The method lives at the largest meaningful ambient category owner.
+- The kernel derives its standard application at the largest meaningful ambient category owner.
 
 - `ask()` invokes the canonical automatic decision route.
 
@@ -1460,5 +1415,5 @@ The final model is:
 - Every exact positive decision invokes the same category refinement.
 
 `Sets().OfCardinalityExactlyFour()` remains the predicate owner.
-Its ambient method only applies that predicate.
+Its generated ambient application returns that predicate.
 Surjectivity can still use several private computational routes.

@@ -593,6 +593,13 @@ def _assert_linearized(current: Node, compiled: type[CategoryPoint]) -> None:
 
     PEP 695 puts ``typing.Generic`` in the bases of a parameterized declaration.  It
     names no node and carries no mathematics, so the order is read without it.
+
+    One declaration can be both the class a node stands on and the class a later node
+    compiled: ``Mor(K)`` writes one ``MorphismType`` for every ``K``, the ``Mor(K)``
+    with no ambient compiles it, and a ``Mor(D)`` over a declared subcategory stands on
+    it.  A Python MRO holds each class once, at the last of its positions, which is
+    where the bases put the shared class (``_base_classes``), so the expectation is read
+    the same way.
     """
     order = [] if _is_cat_element_root(current) else [_nodes_by_key[key] for key in _linearize(current)[0]]
     expected = [compiled, *_written_base(current)]
@@ -600,6 +607,7 @@ def _assert_linearized(current: Node, compiled: type[CategoryPoint]) -> None:
         expected.append(found.category.role_class(found.role))
         expected.extend(_written_base(found))
     expected.extend(_kernel_chain(order[-1] if order else current))
+    expected = [klass for position, klass in enumerate(expected) if not any(later is klass for later in expected[position + 1 :])]
     actual = [klass for klass in compiled.__mro__ if klass is not Generic]
     assert actual == expected, (
         f"the {current.role.value} MRO of {current.category!r} is "

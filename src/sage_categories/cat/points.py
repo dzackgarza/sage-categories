@@ -22,7 +22,7 @@ from sage_categories.cat.category import Category
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import Predicate, Proposition
-from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory
+from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory
 
 __all__ = ["PointCategory", "PointMorphismCategory"]
 
@@ -108,7 +108,7 @@ class PointCategory(Category[[], []]):
         assert member_object is self._member
         return self._established.identity_morphism(member_object)
 
-    def identity_morphism(self, member_object: CategoryPoint) -> MorphismOfCategory:
+    def identity_morphism(self, member_object: ObjectOfCategory) -> MorphismOfCategory:
         """Return the existing identity of ``X``."""
         return self.construct_identity(member_object)
 

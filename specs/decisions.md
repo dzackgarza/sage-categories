@@ -253,7 +253,7 @@ The functor carries no independent element callback.
 
 **D18 (08-22, corrected 08-28). There is no decidability boundary.** Every mathematical truth question returns an applied proposition. Every other mathematical query that is not total and exact on its full declared domain returns an applied predicate with an exact result category. Only `ask()` returns `True`, `False`, an owned result, or Sage `Unknown` (`01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T17:24Z, 2026-08-28T17:25Z).
 
-**D19 (08-22, corrected 08-28). Category containment and the public predicate method ask one proposition.** `X.is_finite()` returns the proposition owned by `Sets().Finite()`. `ask(X.is_finite())` evaluates it. Python containment asks the same proposition and is only a forced two-valued admission boundary (`4544eba5` 2026-08-28T12:00Z).
+**D19 (08-22, corrected 08-29). Category containment and the public predicate application ask one proposition.** The kernel derives `X.is_finite()` from the property declaration owned by `Sets().Finite()`. It returns that category's containment proposition. `ask(X.is_finite())` evaluates it. Python containment asks the same proposition and is only a forced two-valued admission boundary (`4544eba5` 2026-08-28T12:00Z; `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T19:51Z).
 
 **D20 (08-24). Every propositional method returns a proposition.** Never a bool, never an `Unknown` in its place.
 Anything that would need `Unknown` routes through `assume`/`ask`/`.assume()`. Containment in a category is always a possibly compound proposition, declared once as part of the category's definition — the kernel wires `FiniteSets` to be reachable as `Sets().Finite()` and lets it declare a membership proposition, and `__contains__` follows from that.
@@ -344,7 +344,6 @@ Those examples do not add their theories to the implementation surface (`01a029f
 **D68 (08-26). Diagram categories are the workhorse.** Provide machinery for finite diagram categories, specializing to filtered ones such as explicit sequences, since ninety percent of downstream code writes `X * Y` or a product over a list.
 Do not over-specialize: finite sequence-indexed products alone hit a wall at the adeles.
 Do not over-generalize either: ten times the code for the ten percent needing arbitrary diagrams is the opposite error.
-Convenience methods for the special cases, such as indexing a product's factors by integers, are the right shape.
 
 **D69 (08-26). The binary operators live at the `Cat` level.** For categories they do the obvious thing through `ObjectType`; objects of categories receive defaults through `Cat().ElementType`, deferring to their own category for its products and coproducts.
 That is where the assertion that both operands lie in the same category belongs.
@@ -396,7 +395,9 @@ Every declaration is a functor into `Cat()`, and the parameter it takes is that 
 
 **D87 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T19:25Z). A construction specification follows the category graph.** `Cat` owns the shape, index, diagram, cone or cocone, defining morphisms, universal morphism, and every operation determined by that categorical construction. A leaf specification links to that contract and states its mathematical delta: the added leaf structure, its membership and equality predicates, its cardinality or other leaf operations, its exact algorithms, and its private engine realizations. A public name identifies the exact mathematical object or morphism it returns. One generic construction has one inherited public surface.
 
-**D88 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T19:38Z). Version 1 exposes defining data and composes public operations.** A construction supplies its retained mathematical data, such as the indexed family returned by `P.product_factors()`. A derived query uses ordinary composition: apply `X_i.cardinality()` to those factors. An operation expressible as one or two lines of public compositional code receives no additional method in version 1.
+**D88 (08-29, corrected 08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T19:38Z). Version 1 exposes defining data and composes public operations.** A construction supplies its retained mathematical data, such as the indexed family returned by `P.product_factors()`. A derived query uses ordinary composition: apply `X_i.cardinality()` to those factors. This rule applies to the complete specification surface, not only to construction queries. An operation expressible as one or two lines of public compositional code receives no additional method in version 1.
+
+**D89 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T19:51Z). Property applications come from property subcategories.** When `is_X()` asks whether a value has property `X`, the property subcategory owns the containment predicate. Its `predicate_name` gives the exact public spelling, and its `predicate_owner` gives the largest meaningful ambient implementation class. The kernel derives the public application from that declaration. A leaf or operation specification does not define a second method contract for the same question.
 
 **D77 (08-28). The leaf writer's contract is a closed list.** The kernel exists to make this list short, so anything a leaf must supply beyond it is a kernel defect, not a leaf obligation.
 

@@ -1,9 +1,9 @@
 """Minimal property category for finite sets.
 
 This file is design pseudocode (``POL-LEAF-014``). The shape is what it teaches:
-nested implementation classes, one axiom field, one membership proposition, one
-selected functor. Its identifiers are illustrative and define no second framework
-API.
+nested implementation classes, one axiom field, one predicate declaration, one
+membership proposition, and one selected functor. Its identifiers are illustrative
+and define no second framework API.
 """
 
 from __future__ import annotations
@@ -11,9 +11,7 @@ from __future__ import annotations
 
 class SetsCategory(Category):
     class ObjectType:
-        def is_finite(self) -> Proposition:
-            """Return membership in the finite-set property category."""
-            return FiniteSets().membership_proposition(self)
+        """Implement sets."""
 
     class ElementType:
         """Implement points ``1 -> X`` of sets."""
@@ -26,13 +24,11 @@ class FiniteSets(CategoryWithAxiom):
     """The full property subcategory of finite sets."""
 
     _base_category_class_and_axiom = (SetsCategory, "Finite")
+    predicate_name = "is_finite"
+    predicate_owner = SetsCategory.ObjectType
 
     class ObjectType:
-        """Add operations valid for known finite sets."""
-
-        def cardinality_parity(self) -> Proposition:
-            """Return the proposition that the cardinality is even."""
-            return self.cardinality() % 2 == 0
+        """Inherit the set surface under established finiteness."""
 
     class ElementType:
         """Add no data to a point of a finite set."""

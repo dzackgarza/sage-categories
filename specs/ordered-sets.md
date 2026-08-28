@@ -62,7 +62,8 @@ x\leq y\land y\leq x\Rightarrow x=y,
 x\leq y\land y\leq z\Rightarrow x\leq z.
 \]
 
-The owned method returns this proposition without deciding it.
+The containment predicate of `PartiallyOrderedSets()` returns this proposition without deciding it.
+Its relation-property declaration uses `predicate_name = "is_partial_order"` and `predicate_owner = Sets().Subobjects(X * X).ObjectType`.
 `ask()` can use an exhaustive finite algorithm or another exact handler.
 Exact `True` invokes the trusted `PartiallyOrderedSets()` constructor.
 `False` disproves admission.
@@ -74,7 +75,7 @@ Selecting the property-category constructor directly asserts the laws:
 PartiallyOrderedSets()(relation)
 ```
 
-An interactive user can instead call `assume(relation.is_partial_order())`. A named mathematical construction returns through the same property-category constructor.
+Its standard property application can be passed to `assume()`. A named mathematical construction returns through the same property-category constructor.
 There are no checked, hypothesis-backed, or theorem-backed constructor families.
 
 Named constructors include:
@@ -93,13 +94,14 @@ An infinite relation can enter `PartiallyOrderedSets()` through its trusted cons
 
 ## Total-order refinement
 
-The method `P.is_total()` returns the proposition:
+The containment predicate of `TotallyOrderedSets()` is the proposition:
 
 \[
 \forall x,y,\qquad x\leq y\lor y\leq x.
 \]
 
-`ask(P.is_total())` returns the decision.
+This property declares `predicate_name = "is_total"` and `predicate_owner = PartiallyOrderedSetsCategory.ObjectType`.
+The standard property application returns this proposition, and `ask()` returns its decision.
 Exact `True` invokes the trusted total-order constructor.
 An active assumption and a named mathematical construction invoke the same constructor without exhaustive checking.
 `False` and `Unknown` keep the object in its previously established category.
@@ -132,13 +134,13 @@ They return directly in the strongest established total-order category.
 A candidate poset morphism starts as an owned set morphism between the underlying sets.
 A bare callable can only be the private rule of that set morphism.
 
-The owned method `f.is_order_preserving()` returns the proposition:
+The containment predicate for the fixed-endpoint poset-morphism category is the proposition:
 
 \[
 x\leq_P y\Rightarrow f(x)\leq_Q f(y).
 \]
 
-For a represented finite source, exhaustive pair checking is one exact handler for `ask(f.is_order_preserving())`. A witnessed violation makes `ask()` return `False`. An unresolved evaluation makes it return `Unknown`. Exact `True` invokes the poset morphism constructor `Mor(PartiallyOrderedSets())(P, Q)`. Direct property construction, an active assumption, and a named mathematical construction use that same constructor.
+For a represented finite source, exhaustive pair checking is one exact handler for `ask()`. A witnessed violation makes `ask()` return `False`. An unresolved evaluation makes it return `Unknown`. Exact `True` invokes the poset morphism constructor `Mor(PartiallyOrderedSets())(P, Q)`. Direct property construction, an active assumption, and a named mathematical construction use that same constructor.
 
 Named theorem-backed routes include identities, composites, product projections, and product mediating morphisms.
 
@@ -148,17 +150,13 @@ It does not enumerate `NN`.
 A reversing map on the two-element chain fails checked admission.
 Its underlying set morphism remains valid.
 
-An admitted poset morphism supplies:
-
-```python
-f.is_order_preserving()
-f.is_order_reflecting()
-f.is_order_embedding()
-f.is_order_isomorphism()
-```
-
-Every call returns an applied proposition.
-Morphism admission makes `ask(f.is_order_preserving())` return `True`. The other propositions remain available for assumption or exact evaluation.
+Order preservation, order reflection, order embedding, and order isomorphism use their morphism-property subcategories.
+Each subcategory owns its containment predicate.
+Their `predicate_name` values are `is_order_preserving`, `is_order_reflecting`, `is_order_embedding`, and `is_order_isomorphism`.
+For fixed `P, Q`, each uses `predicate_owner = Mor(Sets())(P, Q).ObjectType`.
+The kernel derives the standard property application.
+Admission makes the preservation proposition evaluate to `True`.
+The other propositions remain available for assumption or exact evaluation.
 
 Identity and composition arrive through inherited morphism operations.
 Poset theory adds only the theorem-backed admission needed to preserve monotonicity.
@@ -183,30 +181,35 @@ Such a product remains a poset.
 
 ## Finite-poset API
 
+`PartiallyOrderedSets().Subobjects(P).from_predicate(predicate)` constructs the induced subposet, its restricted order, and its monomorphism into `P`.
 Finite-poset algorithms use owned poset elements and owned finite subobjects.
-They do not expose backend elements, Python iterators, or built-in containers.
+They expose these primitive operations:
 
 | Operation | Public result |
 | --- | --- |
-| `covers(lower, upper)` | Exact decision for the cover relation. |
-| `lower_covers(x)` | Finite subobject of the ambient poset. |
-| `upper_covers(x)` | Finite subobject of the ambient poset. |
-| `common_lower_covers(A)` | Finite subobject for an owned finite subobject `A`. |
-| `common_upper_covers(A)` | Finite subobject for an owned finite subobject `A`. |
-| `open_interval(x, y)` | Finite subobject of the ambient poset. |
-| `closed_interval(x, y)` | Finite subobject of the ambient poset. |
-| `principal_order_ideal(x)` | Finite subobject of the ambient poset. |
-| `principal_order_filter(x)` | Finite subobject of the ambient poset. |
-| `order_ideal(A)` | Finite subobject generated by an owned finite subobject `A`. |
-| `order_filter(A)` | Finite subobject generated by an owned finite subobject `A`. |
-| `minimal_elements()` | Finite subobject of the ambient poset. |
-| `maximal_elements()` | Finite subobject of the ambient poset. |
+| `covers(lower, upper)` | Applied proposition for the cover relation. |
 | `height()` | Cardinality of a largest chain. |
 | `width()` | Cardinality of a largest antichain. |
-| `is_chain()` | Exact decision for the whole poset. |
-| `is_chain_of_poset(A)` | Exact decision for an owned finite subobject `A`. |
-| `is_antichain_of_poset(A)` | Exact decision for an owned finite subobject `A`. |
 | `linear_extension()` | Finite total order on the same underlying set. |
+
+Derived finite subobjects use `from_predicate()` at the call site.
+
+| Selected subobject | Defining predicate on `z` |
+| --- | --- |
+| Lower covers of `x` | `covers(z, x)` |
+| Upper covers of `x` | `covers(x, z)` |
+| Open interval from `x` to `y` | Proposition conjunction of `x < z` and `z < y` |
+| Closed interval from `x` to `y` | Proposition conjunction of `x <= z` and `z <= y` |
+| Principal order ideal of `x` | `z <= x` |
+| Principal order filter of `x` | `x <= z` |
+
+Finite conjunctions over an owned subobject give common covers.
+Finite existential predicates give the order ideal or filter generated by that subobject.
+Minimal and maximal elements use the corresponding strict-order predicates.
+
+Chainhood is totality of the induced subposet.
+Antichainhood is equality of its induced order with its discrete order.
+Both use the existing property and equality predicates.
 
 Height counts elements.
 The empty poset has height and width zero.
@@ -219,11 +222,10 @@ Ranked finite posets add:
 | Operation | Public result |
 | --- | --- |
 | `rank_of_element(x)` | Owned natural cardinal. |
-| `level_sets()` | Discrete indexed family of finite subobjects. |
-| `rank()` | Owned natural cardinal for a nonempty ranked poset. |
 
-Graded finite posets refine ranked finite posets.
-`is_ranked()` and `is_graded()` are property decisions on the appropriate candidate category.
+Each level set is the predicate subobject selected by `rank_of_element(x) == r`.
+The rank of a nonempty finite ranked poset is the maximum element rank.
+Ranked and graded finite posets are property subcategories with their owned containment predicates.
 
 `linear_extension()` uses the finite linear-extension algorithm.
 It reconstructs a finite total-order object on the same set.
@@ -234,12 +236,8 @@ Each public method lowers semantic inputs and reconstructs the owned result befo
 
 ## Thin category
 
-Every poset supplies:
-
-```python
-P.thin_category()
-```
-
+The named functor `Thin: PartiallyOrderedSets() -> Cat()` constructs the thin category of a poset.
+Apply it as `Thin.on_object(P)`.
 The result is an owned category.
 Its objects are the owned elements of `P`. Its fixed-endpoint category `Mor(-)(x, y)` is terminal when `x <= y` and empty otherwise.
 

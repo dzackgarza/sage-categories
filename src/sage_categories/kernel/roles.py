@@ -99,12 +99,20 @@ class ObjectOfCategory(CategoryPoint):
     """An object of a category: a point ``* -> C`` of it."""
 
     def __init__(self) -> None:
+        self._initialize_placement()
+        super().__init__()
+
+    def _initialize_placement(self) -> None:
+        """Read the object construction context, which is the one an object is built in.
+
+        Each role reads its own context and no other, so an object never sees a morphism
+        input and a morphism never sees an object input.
+        """
         from sage_categories.kernel.construction import active_object_context
 
         context = active_object_context()
         assert context is not None and context.canonical_image is self, "object identity requires its active construction context"
         self._category = context.identity.category
-        super().__init__()
 
     def category(self) -> Category:
         """The strongest category placement established for this object."""
@@ -146,10 +154,17 @@ class ElementOfObject(CategoryPoint):
     """The role-specific kernel class of a point ``1_C -> X`` of an object."""
 
 
-class MorphismOfCategory(CategoryPoint):
-    """A morphism ``f: A -> B`` of ``C``: an object of ``Mor(C)``, and so a point ``* -> Mor(C)``."""
+class MorphismOfCategory(ObjectOfCategory):
+    """A morphism ``f: A -> B`` of ``C``: an object of ``Mor(C)``, and so a point ``* -> Mor(C)``.
 
-    def __init__(self) -> None:
+    ``Mor(n, C).ObjectType`` *is* ``Mor(n-1, C).MorphismType`` (``specs/functor.md``, "The
+    ``Mor(n, C)`` tower"), so a morphism is an object and this class states that: the
+    object surface applies to it at its own placement, ``Mor(C)``.  Its construction
+    context is the morphism one, which carries the two endpoints the object context does
+    not.
+    """
+
+    def _initialize_placement(self) -> None:
         from sage_categories.kernel.construction import active_morphism_context
 
         context = active_morphism_context()
@@ -159,7 +174,6 @@ class MorphismOfCategory(CategoryPoint):
         self._category = identity.category
         self._domain = identity.domain
         self._codomain = identity.codomain
-        super().__init__()
 
     def category(self) -> Category:
         """The strongest placement established for this morphism as an object of ``Mor(C)``."""
@@ -225,18 +239,22 @@ def install_cat_element_root(root: type[CategoryPoint]) -> None:
     statements here and exist before any category does.  ``Cat().ElementType`` is the
     class ``Cat()`` writes and the first class the compiler compiles: this fills in the
     one link that makes every owned value a point ``* -> K`` of a category.
+
+    ``MorphismOfCategory`` stands on ``ObjectOfCategory`` and reaches the root through it,
+    so only the classes standing directly on ``CategoryPoint`` are rebased.
     """
     for base in _BASES.values():
-        base.__bases__ = (root,)
+        if base.__bases__ == (CategoryPoint,):
+            base.__bases__ = (root,)
 
 
 def role_of(candidate: Any) -> Role | None:
     """The implementation role of a candidate value, or ``None`` for an unowned candidate (POL-TYPE-004)."""
     match candidate:
-        case ObjectOfCategory():
-            return Role.OBJECT
         case MorphismOfCategory():
             return Role.MORPHISM
+        case ObjectOfCategory():
+            return Role.OBJECT
         case CategoryPoint():
             return Role.ELEMENT
     return None

@@ -243,8 +243,8 @@ A predicate strictly generalizes a Boolean, so a Boolean is honest only where th
 question is two-valued by construction: a record of what was retained, the presence of a
 chosen enumeration. Every other question is a proposition, and `ask()` decides it.
 
-Category containment owns predicate evaluation. `is_finite()` is declared once, on
-`Sets()`, and the proposition it applies is membership in `Sets().Finite()`. The class
+Category containment owns predicate evaluation. The finite property is declared once on
+`Sets()`, and the kernel derives `is_finite()` from membership in `Sets().Finite()`. The class
 that implements `Sets().Finite()` supplies the defining predicate of that membership,
 `cardinality() < aleph_0`. Every category with a selected functor to `Sets()` receives
 `is_finite()` from that one declaration, and a poset is finite exactly when its underlying
@@ -252,6 +252,10 @@ set is. Placement in the subcategory is a fast positive route, because a value t
 through the property constructor already satisfies the predicate. Placement is never the
 definition of membership. Ask containment; do not reach for a category's predicate object
 and apply it at a use site.
+
+The same rule applies to every `is_X()` question that names a property subcategory.
+The property declaration owns its containment predicate, `predicate_name`, and `predicate_owner`.
+The kernel derives the application on the largest meaningful ambient implementation class.
 
 Decide an equality with `ask(a == b)`. On an owned value `==` returns a proposition, so
 its result decides nothing when consumed as a truth value, compared by identity against
@@ -421,8 +425,8 @@ For each functor `F: C -> D`:
 - `F.on_object()` constructs the image of an object.
 - `F.on_morphism()` constructs the image of a morphism.
 
-For `F: C -> D`, `F.on_element(t)` derives from `F.on_morphism(t)`.
-If `t: 1_C -> X` is a point, a supplied morphism `1_D -> F(1_C)` makes the result a point of `F(X)`.
+For `F: C -> D` and a point `t: 1_C -> X`, compose `F.on_morphism(t)` with the supplied morphism `1_D -> F(1_C)`.
+The result is a point of `F(X)`.
 A generalized element `t: T -> X` maps to `F(t): F(T) -> F(X)` without becoming an `ElementType` value.
 
 Functor properties are ordinary property subcategories:
@@ -433,7 +437,7 @@ Functor properties are ordinary property subcategories:
 - `Mor(Cat()).EssentiallySurjective()`;
 - `Mor(Cat()).Equivalences()`.
 
-Their `is_*()` methods return applied predicates. Direct property construction and
+Their kernel-derived `is_*()` applications return applied predicates. Direct property construction and
 `assume()` refine the same owned functor. These properties currently have no
 computational handlers. `ask()` returns `Unknown` unless category placement, an active
 assumption, a cached exact decision, or a categorical implication decides the predicate.

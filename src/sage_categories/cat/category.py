@@ -339,7 +339,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     # each into ``Mor(self)``.  Every other category, including a wide subcategory
     # declared by a subcategory monomorphism (``cat/wide.py``), owns these constructions.
 
-    def identity_morphism(self, member_object: CategoryPoint) -> MorphismOfCategory:
+    def identity_morphism(self, member_object: ObjectOfCategory) -> MorphismOfCategory:
         """The one identity morphism of an object, constructed once (POL-CAT-083).
 
         An identity is its own inverse and an endomorphism: it retains itself as its
@@ -489,7 +489,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
 
     # -- points of the category as Cat elements (POL-CAT-058), retained once (POL-CAT-083) --------
 
-    def point_functor(self, member_object: CategoryPoint) -> Functor:
+    def point_functor(self, member_object: ObjectOfCategory) -> Functor:
         """The point ``* -> self`` selecting the object ``member_object``.
 
         The objects of ``Mor(C)`` are the morphisms of ``C``, so ``member_object`` is a

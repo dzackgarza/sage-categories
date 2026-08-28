@@ -116,12 +116,8 @@ whose factors are:
 
 `Algebras(R, C)` owns the base-relative placement and its scalar-change functors.
 `Monoids(V_R)` owns the multiplication morphism, unit morphism, associativity, and
-unit laws. The selected presentation functor supplies its object surface:
-
-```python
-B.multiplication()
-B.unit()
-```
+unit laws. The selected presentation functor supplies `operation()` and
+`unit_morphism()` from that owner.
 
 The module action and every operation owned by `C` arrive along `U_R`. No algebra
 constructor repeats those operations, and no accessor stands in for the composite

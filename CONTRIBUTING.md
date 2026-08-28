@@ -85,7 +85,7 @@ The package must absorb the elliptic-curve construction before claiming that wor
 | `POL-MATH-036` | Treat Sage as an implementation and computation system, not as a proof assistant for category theory or homotopy theory. The repository never tries to prove or certify categorical laws, universal properties, coherence, equivalences, or property implications. |
 | `POL-MATH-037` | Trust the code writer to choose the correct category or property subcategory from external mathematics. Constructing a value directly in that category is the repository assertion of the stated theorem. The constructor performs no proof, certification, search, or validation of that theorem. |
 | `POL-MATH-038` | Express every categorical-core requirement through standard category theory or homotopy theory before choosing a Python mechanism. Use named categories, functors, natural transformations, fibrations, Kan extensions, universal constructions, and their compositions. Do not replace a missing mathematical construction with a verifier or certificate system. |
-| `POL-MATH-039` | Make the categorical core independently auditable by mathematicians. Theory code must expose the standard definition, its defining data, and the construction line that asserts each nontrivial categorical property. Keep reflection, dispatch, transport, and computation representations outside that mathematical reading path. |
+| `POL-MATH-039` | The theory layer is what a mathematician audits, and the kernel is not. Theory code must expose the standard definition, its defining data, and the construction line that asserts each nontrivial categorical property, and must keep reflection, dispatch, transport, and computation representations outside that reading path. The kernel is a black box: it should adhere to precise mathematics where it can, but it is judged only by whether the leaf surface reads and writes like standard mathematics, never by exhibiting category theory to a reviewer. Do not hold kernel code to the theory layer's standard, and do not build machinery to make it meet one (`POL-MATH-036`). |
 | `POL-MATH-040` | Support each nontrivial categorical declaration with an inspected external source. Use an exact theorem, definition, section, page, tag, or stable link from a textbook, a relevant item in the local Zotero library, nLab, the Stacks Project, Kerodon, or a primary paper. Put the citation on the construction line or in its immediate source documentation. |
 | `POL-MATH-041` | Treat citations, tests, runtime checks, and successful computations as aids to human audit. None certifies the categorical mathematics. The typed construction records what the writer asserts; the source lets a mathematician audit that assertion. |
 | `POL-MATH-042` | Register a computational route only for a predicate with an exact algorithm on its declared semantic domain. Never add a route that purports to prove a general category-theoretic property. Keep unsupported decisions `Unknown`. |
@@ -122,10 +122,11 @@ reference on that construction line or in its immediate documentation. Suitable 
 include textbooks and papers in the local Zotero library, nLab, the Stacks Project,
 Kerodon, and primary arXiv papers. Inspect the cited statement before using it.
 
-A mathematician audits the core by comparing its categories, morphisms, functors, natural
-transformations, universal data, and compositions with those sources. Keep the code in
-that order. Do not insert certification machinery between the mathematical definition
-and its typed construction.
+A mathematician audits the theory layer by comparing its categories, morphisms, functors,
+natural transformations, universal data, and compositions with those sources. Keep that
+code in that order. Do not insert certification machinery between the mathematical
+definition and its typed construction. None of this applies to the kernel, which no
+mathematician reads.
 
 ## Predicates, hypotheses, and assumptions
 

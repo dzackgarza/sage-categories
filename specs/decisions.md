@@ -86,9 +86,14 @@ An ordered pair is a fine private representation and an unacceptable public one,
 **Depth in the graph bounds vocabulary.** A leaf mentioning cardinality in a lattice subtree is a red flag, not because of layering discipline but because cardinality is not part of what a lattice is.
 Vocabulary that leaks across the graph is a mathematical error before it is a structural one.
 
-**Auditability is achieved by concentrating violations, not by forbidding them.** The kernel subtree is where ordinary Python lives, and that is the firewall.
-Engine boundaries are quarantined in their own subtrees, where repository rules may be broken out of necessity.
-The purpose is that every other subtree can then be read as mathematics, and a reader knows by location where to expect something else.
+**The kernel is a black box, and no mathematician ever audits it.** The theory layer is
+what gets read. The kernel exists so that a leaf writer receives an interface that reads
+and writes like standard mathematics; it should adhere to precise mathematics where it
+can, but that is an aid and never its acceptance criterion. Holding kernel code to the
+theory layer's standard is what produced universes, straightening machinery, and three
+coherence subsystems, each built to exhibit category theory to a reader who was never
+going to look. Ordinary Python lives there, engine boundaries are quarantined in their
+own subtrees, and the layout tells a reader where mathematics stops.
 
 **The user should not need to know the framework.** Nobody writes `FiniteSet({1, 2, 3})`; `Sets({1, 2, 3})` routes.
 A small number of high-level endpoints are the interface, and discoverability comes from names mathematicians already know.
@@ -333,6 +338,22 @@ No case in this repository needs anything weaker than identity, so route agreeme
 So the compiler's route check cannot compare images; identity is the only decidable option.
 
 ## Leaf discipline
+
+**D77 (08-28). The leaf writer's contract is a closed list.** The kernel exists to make this list short, so anything a leaf must supply beyond it is a kernel defect, not a leaf obligation.
+
+1. `ObjectType`, `ElementType`, and `MorphismType`, as nested classes.
+
+2. Constructors: how another mathematician builds objects of your category, in the terms your mathematics uses.
+
+3. Functors: how one of your constructions produces the data another category's constructor consumes. This is what replaces `super_categories`, and it is where you say which structure you inherit.
+
+4. Which axiomatic subcategories are available. Finiteness is declared once as `C.Finite()`, and any category `D` with a functor into `C` can then declare `D.Finite()`, exactly as Sage's `with_axiom` propagates an axiom down the graph.
+
+5. For a property-based subcategory, its containment predicate. That predicate is the whole declaration; membership, refinement, and `ask()` follow from it.
+
+6. The wiring that makes a category the concrete implementation of such a subcategory. `FiniteSets` declares itself the implementation of `Sets().Finite()` and adds the methods that finiteness makes available; that is Sage's `_base_category_class_and_axiom` shape (D55, `POL-LEAF-059`).
+
+The list is what a mathematician writes. Everything else - inheritance, dispatch, construction threading, caches, class building - is the kernel's, and it is the kernel's precisely so that this list stays this short (D04).
 
 **D39 (08-22). What a leaf implementer supplies.** Functors to known categories that show how to feed the new category's objects into an old category's constructor, plus a constructor for the minimal delta that defines the leaf.
 `Modules(R)` built from an action `rho: R -> End(X)` declaring `Sets` as a supercategory needs only the functor that uses `rho` to extract `X` and feed it to the `Sets` constructor.

@@ -53,10 +53,6 @@ def role_node(value: CategoryPoint) -> compiler.Node:
     raise AssertionError(f"{value!r} is not an owned value")
 
 
-def _route_name(route: compiler.Route) -> str:
-    return " then ".join(repr(step.functor) for step in route) or "the identity route"
-
-
 def _from_construction(placement: Category, constructed_in: Category) -> bool:
     """Whether ``placement`` is the category a value was constructed in, or a refinement of it.
 
@@ -129,20 +125,6 @@ def _morphism_route[
     return current
 
 
-def _disagree(first: object, second: object) -> bool:
-    """Whether two routes decidedly supply different constructor data (``specs/resolution.md``, final decision 4)."""
-    from sage_categories.kernel.predicates import ask
-
-    return ask(first == second) is False
-
-
-def _raise_mismatch(routes: tuple[compiler.Route, ...], route: compiler.Route, target: compiler.Node) -> None:
-    raise compiler.ConstructorDataMismatch(
-        f"the route {_route_name(routes[0])} and the route {_route_name(route)} "
-        f"supply distinct constructor data in {target.category!r}"
-    )
-
-
 def _object_input_at[
     SourceValue: ObjectOfCategory,
     SourceDatum,
@@ -161,8 +143,7 @@ def _object_input_at[
     first = _object_route(source, routes[0])
     for route in routes[1:]:
         candidate = _object_route(source, route)
-        if _disagree(candidate.datum, first.datum):
-            _raise_mismatch(routes, route, target)
+        compiler.assert_data_agree("object", (first.datum, routes[0]), (candidate.datum, route), target)
     return first
 
 
@@ -188,8 +169,7 @@ def _element_input_at[
     first = _element_route(source, routes[0])
     for route in routes[1:]:
         candidate = _element_route(source, route)
-        if _disagree(candidate.datum, first.datum):
-            _raise_mismatch(routes, route, target)
+        compiler.assert_data_agree("element", (first.datum, routes[0]), (candidate.datum, route), target)
     return first
 
 
@@ -211,8 +191,7 @@ def _morphism_input_at[
     first = _morphism_route(source, routes[0])
     for route in routes[1:]:
         candidate = _morphism_route(source, route)
-        if _disagree(candidate.datum, first.datum):
-            _raise_mismatch(routes, route, target)
+        compiler.assert_data_agree("morphism", (first.datum, routes[0]), (candidate.datum, route), target)
     return first
 
 

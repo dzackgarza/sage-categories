@@ -73,6 +73,7 @@ from sage_categories.kernel.construction import (
     retain_morphism_input,
     retain_object_input,
 )
+from sage_categories.kernel.decisions import Unknown
 from sage_categories.kernel.roles import (
     CategoryPoint,
     MorphismOfCategory,
@@ -94,6 +95,7 @@ __all__ = [
     "Route",
     "SemanticCollisionError",
     "Step",
+    "assert_data_agree",
     "catalogue",
     "compile_category",
     "controlled_bases",
@@ -687,23 +689,30 @@ def _morphism_step[Value: MorphismOfCategory, Datum](
     return initialize
 
 
-def _assert_data_agree(role: str, known: tuple[object, Route], datum: object, source: Node, route: Route) -> None:
+def assert_data_agree(role: str, known: tuple[object, Route], candidate: tuple[object, Route], target: Node) -> None:
     """Two selected routes to one target class supply one constructor datum (``specs/resolution.md``, final decision 4/14).
 
     The comparison is of the data, never of the public images: two named functors reaching
     one class own separate images by construction, and identifying them is not what
     agreement means (``specs/resolution.md``, "Constructor agreement and functor images").
-    A datum that is an owned mathematical value compares as a proposition, so the
-    disagreement that raises is a decided one.
+
+    A datum that is an owned mathematical value compares as a proposition, so agreement is
+    the decided ``True`` and nothing else (POL-ASSUME-006/012).  The two ways to fail state
+    different facts and are different failures.  ``ConstructorDataMismatch`` states a fact
+    about the two declarations: they decidedly disagree, so the category owning them
+    selects one presentation or declares the resolution.  An undecided comparison states no
+    such fact -- the data may well be equal -- and what fails is this construction's
+    requirement for a decided answer, which the assertion documents (POL-ASSUME-014).
     """
     from sage_categories.kernel.predicates import ask
 
     first, first_route = known
-    if ask(first == datum) is False:
-        raise ConstructorDataMismatch(
-            f"the {role} routes {_route_name(first_route)} and {_route_name(route)} to "
-            f"{source.category!r} supply the distinct constructor data {first!r} and {datum!r}"
-        )
+    datum, route = candidate
+    routes = f"the {role} routes {_route_name(first_route)} and {_route_name(route)} to {target.category!r}"
+    decision = ask(first == datum)
+    assert decision is not Unknown, f"{routes} supply the constructor data {first!r} and {datum!r}, whose equality is not decided"
+    if not decision:
+        raise ConstructorDataMismatch(f"{routes} supply the distinct constructor data {first!r} and {datum!r}")
 
 
 def _ordered_steps[Datum](
@@ -734,7 +743,7 @@ def _object_steps[RootValue: ObjectOfCategory, RootDatum](
             retain_constructed_transport(root, source.category, source_input)
             found.append((source, source_input.datum, _object_step(source, source_input, root.canonical_image), route))
         else:
-            _assert_data_agree("object", known, source_input.datum, source, route)
+            assert_data_agree("object", known, (source_input.datum, route), source)
         for step, target in successors(source):
             assert step.functor is not None
             target_input = step.functor.object_constructor_input(source_input)
@@ -768,7 +777,7 @@ def _element_steps[RootValue: CategoryPoint, RootDatum](
             retain_constructed_transport(root, source.category, source_input)
             found.append((source, source_input.datum, _element_step(source, source_input, root.canonical_image), route))
         else:
-            _assert_data_agree("element", known, source_input.datum, source, route)
+            assert_data_agree("element", known, (source_input.datum, route), source)
         for step, target in successors(source):
             assert step.functor is not None
             target_input = step.functor.element_constructor_input(source_input)
@@ -821,7 +830,7 @@ def _morphism_steps[RootValue: MorphismOfCategory, RootDatum](
             retain_constructed_transport(root, source.category, source_input)
             found.append((source, source_input.datum, _morphism_step(source, source_input, root.canonical_image), route))
         else:
-            _assert_data_agree("morphism", known, source_input.datum, source, route)
+            assert_data_agree("morphism", known, (source_input.datum, route), source)
         for step, target in successors(source):
             assert step.functor is not None
             target_input = step.functor.morphism_constructor_input(source_input)

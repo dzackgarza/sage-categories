@@ -30,6 +30,8 @@
 
 - [Slices and coslices](#slices-and-coslices)
 
+- [Fixed-object construction categories](#fixed-object-construction-categories)
+
 - [Examples](#examples)
 
 - [Compiler contract](#compiler-contract)
@@ -791,7 +793,7 @@ These methods come from `Cat().Products().ObjectType` and `Cat().Coproducts().Ob
 
 Let `P` be a product category.
 Let `j: S -> P` present `S` as a subcategory.
-The corresponding object of `Cat().Products().Subobjects()` retains `j` and reads `P` as its codomain.
+The corresponding object of `Cat().Subobjects(P)` retains `j` and reads `P` as its codomain.
 Its component functor is
 
 \[
@@ -871,6 +873,26 @@ The fiber of `ev_1` over `x` is `C.SliceOver(x)`. The total category `Fun([1], C
 Dually, `ev_0` is an opfibration when `C` has pushouts, with cocartesian lifts by pushout, and the fixed coslice projection `C.CosliceUnder(x) -> C` is a discrete opfibration with cocartesian lifts by postcomposition.
 These properties come from the construction theorems.
 They are not runtime decisions.
+
+## Fixed-object construction categories
+
+For `X in C`, the ambient category in the call fixes the role of `X`:
+
+```python
+C.Subobjects(X)
+C.Superobjects(X)
+C.CoveringObjects(X)
+C.CoveredObjects(X)
+```
+
+`C.Subobjects(X)` is the full subcategory of `C.SliceOver(X)` on monomorphisms.
+Its objects are pairs `(A, i)` with `i: A -> X` monic.
+A morphism `(A, i) -> (B, j)` is a morphism `f: A -> B` with `j compose f = i`.
+
+`C.Superobjects(X)` is the full subcategory of `C.CosliceUnder(X)` on monomorphisms.
+`C.CoveringObjects(X)` is the full subcategory of `C.SliceOver(X)` on epimorphisms.
+`C.CoveredObjects(X)` is the full subcategory of `C.CosliceUnder(X)` on epimorphisms.
+Every object retains its defining morphism.
 
 ## Examples
 
@@ -1071,7 +1093,7 @@ It is kernel infrastructure over already established mathematical functors.
 
 - A construction family is a full subcategory of its ambient category, reached by the retained identity-on-values monomorphism, and retains the universal data of each diagram it constructed from.
 
-- Every object of `Cat().Products().Subobjects()` retains its presenting monomorphism into a product, then derives its component functors by composition.
+- Every object of `Cat().Subobjects(P)` for a product category `P` retains its presenting monomorphism, then derives its component functors by composition.
 
 - Slice and coslice categories are pullbacks of `ev_1` and `ev_0` along the chosen object and retain their pullback projections.
 

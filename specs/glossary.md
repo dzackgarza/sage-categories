@@ -27,7 +27,7 @@ Do not remove a row after the source becomes clean (`POL-MATH-051`).
 | `point stage`, `object stage`, `arrow stage`, `classical stage`, `product stage`, `stage comparison`, `stage identity`, `ObjectStageIdentity`, `ArrowStageIdentity`, `stage_comparison` | the exact point, generalized element, terminal-object comparison, or constructor conversion |
 | `generalized point` | `generalized element` for `T -> X`; use `point` only for `1_C -> X` |
 | `Ar(C)`, `Hom(C)`, arrow-category or hom-category aliases | `Mor(C)` or `Mor(C)(A, B)` |
-| `ChosenSubobjects`, `chosen subobject` | `Subobjects()`; a subobject is an object with its monomorphism |
+| `ChosenSubobjects`, `chosen subobject` | `Subobjects(X)`; a subobject is an object with its monomorphism into `X` |
 | `Chosen<Anything>` | `With<Datum>` only when the object retains chosen data; otherwise use the mathematical construction name |
 | generic `_construct` | the exact named constructor for the mathematical construction |
 

@@ -332,7 +332,7 @@ Ordered pairs are fine as private representations.
 
 **D33 (08-24). A poset product just is the set product with an order on it.** It needs to do nothing to construct its projections or its mediating morphisms.
 
-**D34 (08-25). The `Cat` level owns the construction vocabulary.** `Cat().Subobjects()`, `Cat().Products()`, `Cat().Coproducts()`, so that `Cat().Products().Subobjects()` can be stated and its objects answer `product_projection(i)`. Slice and coslice categories and their fibrations to the underlying object follow from that.
+**D34 (08-25, corrected 08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T18:48Z). The `Cat` level owns the construction vocabulary.** It supplies `C.Subobjects(X)`, `C.Superobjects(X)`, `C.CoveringObjects(X)`, and `C.CoveredObjects(X)` for every `X in C`, together with `C.Products()`, `C.Coproducts()`, `C.Limits(I)`, and `C.Colimits(I)`. For a product category `P`, an object of `Cat().Subobjects(P)` answers `product_projection(i)`. Slice and coslice categories and their fibrations to the varying object supply the fixed-object constructions.
 General projections exist for any subcategory of a product category, `proj_i: (X_1, ..., X_n) |-> X_i`; a coslice has projections to both `X in C` and `f in Ar(C)`, and composing with the source and target projections of `Ar(C)` gives the rest.
 
 **D35 (08-25). The operators are defined once.** `Y ** X` is `Hom_C(X, Y)`, `X * Y` the product, `X + Y` the coproduct, `X @ Y` the biproduct.
@@ -379,6 +379,10 @@ This is D77.6 generalized. `FiniteSets` already declares itself the implementati
 **D81 (08-28, `77631b59` 2026-08-28T17:35:47Z). Imports flow from the kernel into the leaves, never backwards.** No kernel module imports a leaf module.
 This is the executable form of the Philosophy's information-flow rule, and it is what D80 is for: a generic construction stated over `Sets` uses the declaration the kernel holds, and never reaches into the set implementation to obtain it. A kernel module that imports a leaf has taken that leaf's mathematics into the kernel, which is the defect the rule names whether or not the result works.
 
+**D84 (08-28, `77631b59` 2026-08-28T19:03:51Z). An identity is named by the operation it is an identity for.** `identity()` unqualified says nothing: `ZZ.identity()` could be `0` or `1`. An algebraic identity comes from the magmatic structure, which splits into the additive and multiplicative axiomatic subcategories, so the names are `additive_identity()` and `multiplicative_identity()`.
+Sage draws the same split with the same mechanism: `AdditiveMagmas.AdditiveUnital` supplies `zero()` and `Magmas.Unital` supplies `one()` (`sage/categories/additive_magmas.py:599,696`, `sage/categories/magmas.py:461,482`, inspected 2026-08-29).
+This is separate from the identity morphism `1_X`, which is not an algebraic identity at all: it is the unit of the endomorphism monoid `Mor(C)(X, X)`, reached through the monoid structure D82 puts on `Cat`'s planning surface. An object carries no bare `identity()` for either notion.
+
 **D83 (08-28, `77631b59` 2026-08-28T18:10:28Z). A property subcategory contained in another is a subcategory, not an implication.** `Mor(C).Isomorphisms()` is a full subcategory of `Mor(C).Monomorphisms()` and of `Mor(C).Epimorphisms()` simultaneously, the same way `Sets().Finite()` is a full subcategory of `Sets().Countable()`. "Finite implies countable" is set-theoretic logic and has no category-theoretic formulation.
 The containment is the statement, and the monomorphism presenting it is what the declaration records. Nothing induces it from a relation between predicates.
 This corrects the existing vocabulary rather than adding to it. `specs/functor.md` currently makes the implication primary — "These implications induce the corresponding monomorphisms between property subcategories" — and `POL-CAT-090`, `POL-CAT-091`, and `specs/undecidable-properties.md` carry the same wording where they mean containment. Propositional implication remains what it is for ordinary propositions, which compose through SymPy; it is not what relates two property subcategories.
@@ -386,7 +390,9 @@ This corrects the existing vocabulary rather than adding to it. `specs/functor.m
 **D82 (08-28, `77631b59` 2026-08-28T18:00:33Z). `Cat` holds a mathematical planning surface.** It declares the categories the repository expects: points such as `Sets`, `Posets`, `NN`, and `ZZ`; construction functors such as `MagmaObjects(C)`, `MonoidObjects(C)`, and `RingObjects(C)`; and the specializations those give, `Monoids := MonoidObjects(Sets())`.
 Every declaration is a functor into `Cat()`, and the parameter it takes is that functor's domain; a category with no parameter is the terminal-domain case. A declaration no leaf implements is a work queue for leaf writers, auditable against, and never a check that fails a build (`AGENTS.md`, "Tests"). [Declared categories and their implementations](functor.md#declared-categories-and-their-implementations) states the mechanism.
 
-**D84 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T18:36Z). Identity morphisms and object-dependent constructions keep their mathematical owners.** For `X in C`, the identity morphism is `End_C(X).one()`, the unit of the endomorphism monoid on `Mor(C)(X, X)` under composition. The generic fixed-object construction categories are `C.Subobjects()(X)`, `C.Superobjects()(X)`, `C.CoveringObjects()(X)`, and `C.CoveredObjects()(X)`. The set-specific operation `X.subset_from(predicate)` constructs an object of `Sets().Subobjects()(X)`.
+**D84 (08-29, corrected 08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T18:36Z, 2026-08-28T18:48Z). Identity morphisms and object-dependent constructions keep their mathematical owners.** For `X in C`, the identity morphism is `End_C(X).one()`, the unit of the endomorphism monoid on `Mor(C)(X, X)` under composition. The generic fixed-object construction categories are `C.Subobjects(X)`, `C.Superobjects(X)`, `C.CoveringObjects(X)`, and `C.CoveredObjects(X)`. The ambient category in the call fixes the role of `X`; the same value can occur in more than one category. `Sets().Subobjects(X).from_predicate(predicate)` constructs the set subobject selected by a predicate.
+
+**D85 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T18:48Z, 2026-08-28T18:49Z). Version 1 exposes the mathematical ontology before ergonomic shorthand.** Each operation has one mathematical owner and one canonical public spelling. Public methods declared on owned implementation types are the operations themselves. Standard mathematical operators use the same owned implementation. Secondary convenience names and forwarding entry points begin after version 1.
 
 **D77 (08-28). The leaf writer's contract is a closed list.** The kernel exists to make this list short, so anything a leaf must supply beyond it is a kernel defect, not a leaf obligation.
 
@@ -493,22 +499,13 @@ The name also hides a real choice about morphisms, which the construction has to
 Sage's own case shows the subtlety — its `ModulesWithBasis` morphisms are ordinary module morphisms, while the homset uses the distinguished bases to read a matrix as a morphism (`sage/categories/modules_with_basis.py:47`). That is a decision, not a detail, and `With<Datum>` states none of it.
 
 Two places the pattern does not reach.
-There is no bare object to equip when the object is already the pair: a subobject is an object together with a monomorphism, so `Subobjects()` is the name (D74). And a construction family that already retains its construction is the equipped form, so it needs no adjective — that, and not an absence of alternatives, is why an extra product-family adjective was redundant, since a product has many isomorphic siblings and the repository simply keeps the one it built.
+There is no bare object to equip when the object is already the pair: a subobject is an object together with a monomorphism, so `Subobjects(X)` is the name (D74). And a construction family that already retains its construction is the equipped form, so it needs no adjective — that, and not an absence of alternatives, is why an extra product-family adjective was redundant, since a product has many isomorphic siblings and the repository simply keeps the one it built.
 
-**D74 (08-26). A subobject is an object with a monomorphism, and restricting structure to one is leaf work.** There is no second notion and no separate name for a representative; the equivalence class matters only when deciding whether two subobjects are equal, which is a predicate.
-The one family is `Subobjects()`.
+**D74 (08-26, corrected 08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T18:48Z). A subobject is an object with a monomorphism, and restricting structure to one is leaf work.** There is no second notion and no separate name for a representative; the equivalence class matters only when deciding whether two subobjects are equal, which is a predicate. For `X in C`, the one fixed-object category is `C.Subobjects(X)`.
 
-The real question the coinage grew out of is who restricts the structure.
-If `P` is a poset presented as `(X, R)`, then `P.subset(...)` returns a subset of `X` and assumes or lifts no other structure.
-Expecting a poset back would require a set-level method to know how to handle posets, which reverses the flow of ownership: in the ideal case you write `Sets()` once and never touch it again, and every downstream category encapsulates its own concerns.
+For a poset `P` presented by `(X, R)`, `Sets().Subobjects(X).from_predicate(predicate)` constructs only a set subobject. `PartiallyOrderedSets().Subobjects(P)` owns poset subobjects and retains their restricted order and monomorphism in `PartiallyOrderedSets()`. The ordering subtree decides the strongest established order category of the result.
 
-A leaf that wants subobjects in its own category declares its own method, `X.sub_poset(...)`, or overrides the inherited one — calling `super()` for the set and then restricting the order itself.
-It is the poset leaf's job to know everything about applying a partial order to a set, including lifting or rewrapping categories further up the graph.
-Whether the result lands in `PartiallyOrderedSets()` or `TotallyOrderedSets()` is that subtree's decision, taken by refining inside `sub_poset()` or by offering a second method.
-Neighbouring subtrees may let concerns flow both ways; a general subtree never carries a specific one's.
-
-The categorical fact underneath — that the adjunction between posets and sets preserves monomorphisms, which is where "restrict structure to a subset gives a subobject" comes from — belongs to the leaf that states it.
-It is not something the compiler can infer in any useful generality, and a compiler that ensures subsets of a poset are posets with no mechanism that generalizes beyond posets is defective even when it works.
+The theorem that transports a monomorphism between the set and poset categories belongs to the leaf that states it. The compiler supplies only the generic construction and inherited category structure.
 
 **D72 (08-27). Categories of structured objects are parameterized by another category.** `Semirings`, `Magmas`, `Monoids`, `Rings`, `Modules`, and `Algebras` all take an ambient category.
 The point is only to endow objects with the corresponding methods.

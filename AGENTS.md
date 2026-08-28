@@ -344,12 +344,13 @@ The `Cat` level supplies the uniform category constructors:
 
 - `Mor(n, C)` for every `n`;
 - the property subcategories `Mor(C).Monomorphisms()`, `.Epimorphisms()`, `.Isomorphisms()`, `.Endomorphisms()`, and `.Automorphisms()`, and for `Fun` also `.Full()`, `.Faithful()`, `.FullyFaithful()`, `.EssentiallySurjective()`, and `.Equivalences()`, with endpoint dispatch `P(A, B) = Mor(K)(A, B).P()` for every property subcategory `P` of `Mor(K)`;
-- `Products()`, `Coproducts()`, `Limits(I)`, and `Colimits(I)` for a supplied shape `I in Cat()`, and `Subobjects()`.
+- `Products()`, `Coproducts()`, `Limits(I)`, and `Colimits(I)` for a supplied shape `I in Cat()`, and the fixed-object categories `Subobjects(X)`, `Superobjects(X)`, `CoveringObjects(X)`, and `CoveredObjects(X)`.
 
-The fixed-object construction categories are `C.Subobjects()(X)`,
-`C.Superobjects()(X)`, `C.CoveringObjects()(X)`, and `C.CoveredObjects()(X)`.
-The set-specific operation `X.subset_from(predicate)` constructs an object of
-`Sets().Subobjects()(X)`.
+For `X in C`, the fixed-object construction categories are `C.Subobjects(X)`,
+`C.Superobjects(X)`, `C.CoveringObjects(X)`, and `C.CoveredObjects(X)`.
+The ambient category in the call fixes the role of `X` when `X` belongs to more than one
+category. `Sets().Subobjects(X).from_predicate(predicate)` constructs the set subobject
+selected by a predicate.
 
 Apply products and coproducts to `Cat()` itself. For a sequence of categories:
 
@@ -366,7 +367,7 @@ morphism is a functor and therefore a `Cat().MorphismType` value.
 The operators are defined once in two contexts. On categories: `C * D = Cat().Products()((C, D))`, `C + D = Cat().Coproducts()((C, D))`, and `D ** C = Fun(C, D)`. On objects `X, Y` of one category `C`: `X * Y = C.Products()((X, Y))`, `X + Y` their coproduct, and `Y ** X` the exponential object where `C` is declared cartesian closed. Each takes its construction in the narrowest category containing both operands. An object refined into `C.P()` and an object of `C` are both objects of `C`. Their product is the product in `C`. Operands with no common category fail the assertion. Construct an external pair explicitly as `(C * D)((X, Y))`.
 
 Let `P` be a product category. If `j: S -> P` presents a subcategory, the
-corresponding object of `Cat().Products().Subobjects()` retains `j` and reads `P` as its
+corresponding object of `Cat().Subobjects(P)` retains `j` and reads `P` as its
 codomain. Its `product_projection(i)` is the composite of `j` with the corresponding
 projection of `P`.
 
@@ -822,6 +823,8 @@ Shape every API from the mathematics.
 Do not derive it from current class layouts, storage fields, or available method names.
 
 Use one owner, one public name, and one public export for each operation.
+During version 1, expose only that canonical spelling. Add no forwarding method or
+secondary constructor spelling.
 Use established mathematical and Sage terminology.
 Name an accessor for the exact object or morphism that it returns.
 

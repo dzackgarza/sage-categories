@@ -10,7 +10,7 @@ Every set operation specified as a predicate follows the interface in [Property 
 Applying it returns a proposition.
 Only `ask()` decides that proposition as `True`, `False`, or `Unknown`.
 
-The governing policies are `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001`, `POL-CAT-021`, `POL-CAT-028`, `POL-CAT-086`, `POL-CAT-088`, `POL-SET-001` through `POL-SET-036`, and `POL-API-009`, `POL-API-010`, `POL-API-015`, and `POL-API-016`.
+The governing policies are `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001`, `POL-CAT-021`, `POL-CAT-028`, `POL-CAT-086`, `POL-CAT-088`, `POL-CAT-092` through `POL-CAT-095`, `POL-SET-001` through `POL-SET-036`, and `POL-API-002`, `POL-API-009`, `POL-API-010`, `POL-API-015`, and `POL-API-016`.
 
 ## Owned API classes
 
@@ -59,11 +59,11 @@ Mor(Sets())(X, Y).Isomorphisms()
 Mor(Sets())(X, Y).Monomorphisms()
 Mor(Sets())(X, Y).Epimorphisms()
 
-Sets().Subobjects()(X)
-Sets().Superobjects()(X)
-Sets().CoveringObjects()(X)
-Sets().CoveredObjects()(X)
-X.subset_from(predicate)
+Sets().Subobjects(X)
+Sets().Superobjects(X)
+Sets().CoveringObjects(X)
+Sets().CoveredObjects(X)
+Sets().Subobjects(X).from_predicate(predicate)
 
 Y ** X
 X * Y
@@ -257,7 +257,13 @@ Pullbacks, pushouts, equalizers, and coequalizers are these constructions at the
 
 ## Subobjects, images, and power objects
 
-`X.subset_from(predicate)` constructs a subset with its monomorphism into `X`. It returns a subset of `X` and lifts no other structure: when `P` is a poset presented as `(X, R)`, asking `Sets()` for a subset gives a set, never a poset (`POL-LEAF-060`). The predicate returns the membership proposition for a candidate element.
+`Sets().Subobjects(X)` is the full subcategory of `Sets().SliceOver(X)` on monomorphisms.
+Its objects are pairs `(A, i)` with `i: A -> X` a monomorphism.
+Its morphisms from `(A, i)` to `(B, j)` are maps `f: A -> B` with `j compose f = i`.
+
+`Sets().Subobjects(X).from_predicate(predicate)` constructs the selected subset and its monomorphism into `X`.
+It lifts no additional structure: when a poset is presented as `(X, R)`, this construction returns a set subobject (`POL-LEAF-060`).
+The predicate returns the membership proposition for a candidate element.
 `ask()` can evaluate that proposition as `True`, `False`, or `Unknown`.
 
 A subset supplies:

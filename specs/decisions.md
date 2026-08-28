@@ -86,14 +86,21 @@ An ordered pair is a fine private representation and an unacceptable public one,
 **Depth in the graph bounds vocabulary.** A leaf mentioning cardinality in a lattice subtree is a red flag, not because of layering discipline but because cardinality is not part of what a lattice is.
 Vocabulary that leaks across the graph is a mathematical error before it is a structural one.
 
-**The kernel is a black box, and no mathematician ever audits it.** The theory layer is
-what gets read. The kernel exists so that a leaf writer receives an interface that reads
-and writes like standard mathematics; it should adhere to precise mathematics where it
-can, but that is an aid and never its acceptance criterion. Holding kernel code to the
-theory layer's standard is what produced universes, straightening machinery, and three
-coherence subsystems, each built to exhibit category theory to a reader who was never
-going to look. Ordinary Python lives there, engine boundaries are quarantined in their
-own subtrees, and the layout tells a reader where mathematics stops.
+**The kernel is a black box, and no mathematician ever audits it.** The split is between a
+mathematical declaration and the wiring that realizes it, never between general and
+specific mathematics. `Cat`, `Mor(n, C)`, `Fun(C, D)`, the property subcategories, and
+`Sets()` are all objects this repository defines, and all of them are read as mathematics.
+The kernel is what takes those plain declarations and performs the Python wiring behind
+them: class building, linearization, constructor threading, caches, descriptors,
+refinement mechanics. That is what nobody reads.
+
+So the kernel exists to give a leaf writer an interface that reads and writes like standard
+mathematics. It should adhere to precise mathematics where it can, but that is an aid and
+never its acceptance criterion. Holding it to the theory layer's standard is what produced
+universes, straightening machinery, and three coherence subsystems, each built to exhibit
+category theory to a reader who was never going to look. Ordinary Python lives there,
+engine boundaries are quarantined in their own subtrees, and the layout tells a reader
+where mathematics stops.
 
 **The user should not need to know the framework.** Nobody writes `FiniteSet({1, 2, 3})`; `Sets({1, 2, 3})` routes.
 A small number of high-level endpoints are the interface, and discoverability comes from names mathematicians already know.

@@ -17,7 +17,7 @@ Do not reuse a retired identifier.
 | `POL-SCOPE-005` | Treat the full owned `Sets()` category as foundational work, not as a finite-set helper library. |
 | `POL-SCOPE-006` | Use algebra cardinality and the path from lattice isometries through module homs to set homs only as vertical acceptance examples. Do not implement those higher categories yet. |
 | `POL-SCOPE-007` | Judge the project by categorical uniformity, explicit mathematical ownership, functorial reuse, and legibility. Successful computation or compilation alone does not satisfy its purpose. |
-| `POL-SCOPE-008` | Make every theory subtree outside the implementation kernel auditable by a mathematician with little programming experience. Keep compiled structural inheritance and dynamic-class construction in the kernel. Keep engine representations behind private computation boundaries while permitting category-owned methods to invoke a fixed engine directly. |
+| `POL-SCOPE-008` | Make every mathematical declaration auditable by a mathematician with little programming experience, `Cat` and the functor categories included. The kernel is the wiring that realizes those declarations, not the general mathematics itself. Keep compiled structural inheritance and dynamic-class construction in the kernel. Keep engine representations behind private computation boundaries while permitting category-owned methods to invoke a fixed engine directly. |
 | `POL-SCOPE-009` | Judge an architectural claim from the live method owners, named functors, selected inheritance graph, construction-input conversions, constructor obligations, and universal data. Agent reports, passing tests, route metadata, generated type identities, and runtime output cannot replace that inspection. |
 | `POL-SCOPE-010` | Theory code declares categories and implements their objects, elements, morphisms, functors, constructions, and mathematical operations. |
 | `POL-SCOPE-011` | Leaf code is theory code for one category. It states only that category's new data, operations, selected functors, constructors, and lifts. |
@@ -85,7 +85,7 @@ The package must absorb the elliptic-curve construction before claiming that wor
 | `POL-MATH-036` | Treat Sage as an implementation and computation system, not as a proof assistant for category theory or homotopy theory. The repository never tries to prove or certify categorical laws, universal properties, coherence, equivalences, or property implications. |
 | `POL-MATH-037` | Trust the code writer to choose the correct category or property subcategory from external mathematics. Constructing a value directly in that category is the repository assertion of the stated theorem. The constructor performs no proof, certification, search, or validation of that theorem. |
 | `POL-MATH-038` | Express every categorical-core requirement through standard category theory or homotopy theory before choosing a Python mechanism. Use named categories, functors, natural transformations, fibrations, Kan extensions, universal constructions, and their compositions. Do not replace a missing mathematical construction with a verifier or certificate system. |
-| `POL-MATH-039` | The theory layer is what a mathematician audits, and the kernel is not. Theory code must expose the standard definition, its defining data, and the construction line that asserts each nontrivial categorical property, and must keep reflection, dispatch, transport, and computation representations outside that reading path. The kernel is a black box: it should adhere to precise mathematics where it can, but it is judged only by whether the leaf surface reads and writes like standard mathematics, never by exhibiting category theory to a reviewer. Do not hold kernel code to the theory layer's standard, and do not build machinery to make it meet one (`POL-MATH-036`). |
+| `POL-MATH-039` | Every mathematical declaration is audited by a mathematician, and the kernel is not. The split is between a declaration and the wiring that realizes it, never between general and specific mathematics: `Cat`, `Mor(n, C)`, `Fun(C, D)`, the property subcategories, and `Sets()` are all mathematical objects this repository defines, and all are read as theory. What no mathematician reads is the machinery that turns those declarations into working Python - class building, linearization, constructor threading, caches, descriptors, refinement mechanics. Theory code must expose the standard definition, its defining data, and the construction line that asserts each nontrivial categorical property, and must keep reflection, dispatch, transport, and computation representations outside that reading path. The kernel should adhere to precise mathematics where it can, but it is judged only by whether the declarations above read and write like standard mathematics; do not hold it to the theory layer's standard and do not build machinery to make it meet one (`POL-MATH-036`). |
 | `POL-MATH-040` | Support each nontrivial categorical declaration with an inspected external source. Use an exact theorem, definition, section, page, tag, or stable link from a textbook, a relevant item in the local Zotero library, nLab, the Stacks Project, Kerodon, or a primary paper. Put the citation on the construction line or in its immediate source documentation. |
 | `POL-MATH-041` | Treat citations, tests, runtime checks, and successful computations as aids to human audit. None certifies the categorical mathematics. The typed construction records what the writer asserts; the source lets a mathematician audit that assertion. |
 | `POL-MATH-042` | Register a computational route only for a predicate with an exact algorithm on its declared semantic domain. Never add a route that purports to prove a general category-theoretic property. Keep unsupported decisions `Unknown`. |
@@ -122,11 +122,13 @@ reference on that construction line or in its immediate documentation. Suitable 
 include textbooks and papers in the local Zotero library, nLab, the Stacks Project,
 Kerodon, and primary arXiv papers. Inspect the cited statement before using it.
 
-A mathematician audits the theory layer by comparing its categories, morphisms, functors,
-natural transformations, universal data, and compositions with those sources. Keep that
-code in that order. Do not insert certification machinery between the mathematical
-definition and its typed construction. None of this applies to the kernel, which no
-mathematician reads.
+A mathematician audits every mathematical declaration by comparing its categories,
+morphisms, functors, natural transformations, universal data, and compositions with those
+sources. `Cat` and the functor categories are included: they are objects this repository
+defines and they read as mathematics. Keep that code in that order, and do not insert
+certification machinery between the mathematical definition and its typed construction.
+None of it applies to the wiring that realizes those declarations, which no mathematician
+reads.
 
 ## Predicates, hypotheses, and assumptions
 

@@ -254,7 +254,9 @@ For each category `C`:
 - `C.MorphismType` implements morphisms of `C`.
 - `C(...)` is the category-owned constructor.
 
-The kernel owns `Cat`. Every category in this repository uses `Cat().ObjectType`.
+`Cat` is defined by this repository and is read as mathematics like every other category;
+the kernel implements it and no leaf redefines it. Every category in this repository uses
+`Cat().ObjectType`.
 Every functor uses `Cat().MorphismType` and is an object of `Fun = Mor(Cat())`.
 `Cat().ElementType` implements points `* -> C`, where `* = Cat().Terminal()`. These points are the actual objects of `C`, so every `C.ObjectType` inherits it.
 A generalized element of `C` has the form `T -> C` and is an object of `Fun(T, C)`. It is not a `Cat().ElementType` unless `T = *`.

@@ -2,7 +2,7 @@
 
 ## Contents
 
-- [Kernel ownership](#kernel-ownership)
+- [`Cat` and its implementation](#cat-and-its-implementation)
 
 - [Functors as morphisms of `Cat`](#functors-as-morphisms-of-cat)
 
@@ -36,9 +36,11 @@
 
 - [Acceptance conditions](#acceptance-conditions)
 
-## Kernel ownership
+## `Cat` and its implementation
 
-The kernel owns `Cat`, the category of categories.
+`Cat`, the category of categories, is defined by this repository and is read as
+mathematics. The kernel implements it and no leaf redefines it; the kernel is the wiring,
+not the mathematics.
 Every category in this repository is an object of `Cat` and uses its implementation type:
 
 ```python

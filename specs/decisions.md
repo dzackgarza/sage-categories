@@ -482,6 +482,13 @@ which objects own theorems, how calls work, and what methods must exist. Trace t
 implementation path: how the kernel defines products, how they propagate through categories
 and presentations and declared functors, so that the leaf supplies only its delta.
 
+**D73 (08-28). Every method makes its choices explicit.** A method that returns the image
+of a value in another category names the functor and both its endpoints. A name that does
+not determine the codomain chooses silently, whatever noun it uses: a module's object could
+be asked for as an object of `C`, as an abelian group, or as a ring when it happens to be
+one. So there is no accessor standing in for a functor. If you want to project to sets, you
+construct that functor and apply it.
+
 **D72 (08-27). Categories of structured objects are parameterized by another category.**
 `Semirings`, `Magmas`, `Monoids`, `Rings`, `Modules`, and `Algebras` all take an ambient
 category. The point is only to endow objects with the corresponding methods. Sage's monoids

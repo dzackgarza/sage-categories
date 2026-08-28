@@ -97,15 +97,26 @@ The construction retains the faithful projection
 U_A:\operatorname{Modules}(A,C)\longrightarrow C.
 \]
 
-It sends `(X, rho_X)` to `X` and sends each module morphism to its morphism in `C`. The complete immediate structural tuple is
+It sends `(X, rho_X)` to `X` and sends each module morphism to its morphism in `C`.
+
+The construction builds `U_A` with both endpoints written out, retains it, and
+returns it as the complete immediate declared tuple:
 
 ```python
+U_A = Fun(Modules(A, C), C).Faithful()(on_object, on_morphism)
+
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (self.underlying_object_projection(),)
+    return (self._U_A,)
 ```
 
-`underlying_object_projection()` is the retained object of `Fun(Modules(A, C), C).Faithful()` created by the module construction. It is named for what it constructs (`POL-FUN-028`).
-It supplies the complete public surface owned by `C`.
+There is no accessor standing in for `U_A`, and no method named for a direction
+rather than a codomain (`POL-FUN-037`). A module's object in `C` could equally be
+asked for as a set, an abelian group, or a ring when it happens to be one, so any
+name that does not say which category is making the choice silently. Code that
+wants an object of `C` applies `U_A`; code that wants a set constructs and applies
+the functor into `Sets()`.
+
+`U_A` supplies the complete public surface owned by `C`.
 
 ## Owned operations
 
@@ -162,7 +173,7 @@ The [nLab module object](https://ncatlab.org/nlab/show/module%2Bobject) entry, s
 
 - Module morphisms are morphisms in `C` that preserve the action.
 
-- That faithful projection to `C` is the sole immediate declared functor.
+- `U_A` is the sole immediate declared functor, and it is applied by name.
 
 - The enriched map to `End_C(X)` appears when the stated adjunction exists.
 

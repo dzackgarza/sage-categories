@@ -100,8 +100,9 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
 
 `monoid_presentation()` is the retained object of
 `Fun(Algebras(R, C), Monoids(V_R)).Equivalences()` created by the algebra
-construction. The underlying module is reached by composing the general monoid and
-magma projections:
+construction. The module object is the image under the named composite
+`U_R := U_{Modules} after U_{Magmas} after U_{Monoids} after monoid_presentation()`,
+whose factors are:
 
 \[
 \operatorname{Algebras}(R,C)
@@ -122,8 +123,9 @@ B.multiplication()
 B.unit()
 ```
 
-The module action and every operation owned by `C` arrive through the composite
-composite above. No algebra constructor repeats those operations.
+The module action and every operation owned by `C` arrive along `U_R`. No algebra
+constructor repeats those operations, and no accessor stands in for the composite
+(`POL-FUN-037`).
 
 The same Python realization in `Algebras(R, C)` and `Algebras(S, C)` represents
 different algebra objects when the scalar structure morphisms differ.

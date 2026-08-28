@@ -29,7 +29,8 @@ appear in permanent documentation, and the row states what replaces it.
 
 | Term | Write instead | Reference |
 | --- | --- | --- |
-| `carrier`, `carrier set` | the underlying object, or the underlying set, with the functor that produces it named | `POL-MATH-046`; `specs/decisions.md` D57 |
+| `carrier`, `carrier set` | apply a functor named with both endpoints; there is no accessor | `POL-MATH-046`, `POL-FUN-037`; `specs/decisions.md` D57 |
+| `carrier_projection`, `underlying_object_projection`, `underlying_set` | apply a functor named with both endpoints; there is no accessor | `POL-FUN-037` |
 | `receiver` | the value the operation applies to | `POL-MATH-047` |
 | `role`, for a Python class | the compiled class; or name it, `C.ObjectType` | `POL-MATH-048` |
 | `role`, for a mathematical kind | the exact mathematical type | `POL-MATH-048` |
@@ -76,7 +77,7 @@ These terms are in use and have no complete row. Each is either completed or rem
 | declared functor | An ordinary functor a category returns from `structure_functors()`. `AGENTS.md`, "Core categorical architecture"; `specs/decisions.md` D12. |
 | generalized element, generalized point | `p: T -> X`. Taking `T = *` gives a point when `X` is discrete and an object when `X` is a category. `specs/decisions.md` D16, D62. |
 | point functor | The inclusion of the one-object category `{C}` into `D`, which regards `C` as an object of `D`. `specs/decisions.md` D57; `specs/functor.md`, "Point categories and point functors". |
-| underlying object | The image of an object under a named projection, as in `underlying_object_projection()` for modules. Never "the" underlying object of a category with several projections. `specs/decisions.md` D09, D32. |
+| underlying object | The image `U(X)` of an object under a functor `U` named with both its endpoints. There is no "the" underlying object and no accessor for one: several functors may leave the same category. `specs/decisions.md` D09, D32; `POL-FUN-037`. |
 | compiled class | The class `dynamic_class` builds for `C.ObjectType`, `C.ElementType`, or `C.MorphismType`. `AGENTS.md`, "Core categorical architecture". |
 
 ## Cited

@@ -261,10 +261,13 @@ A chosen subset supplies:
 
 ```python
 A.monomorphism()
-A.underlying_set()
 A.characteristic_morphism()
 A.cardinality()
 ```
+
+`A` is itself an object of `Sets()`, and the set it sits inside is
+`A.monomorphism().codomain()`. Neither needs an accessor, and a name such as
+`underlying_set()` would choose a codomain silently (`POL-FUN-037`).
 
 An abstract subobject is represented by a monomorphism.
 Its image supplies the canonical chosen subset representative.

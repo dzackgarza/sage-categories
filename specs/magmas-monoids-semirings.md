@@ -78,7 +78,9 @@ f\circ\mu_X=\mu_Y\circ(f\otimes f).
 
 `Magmas(V)` is the category of these objects and morphisms.
 Its defining presentation retains `X`, `mu_X`, and their endpoint equation.
-The projection to the underlying object is the declared functor to `C`:
+`Magmas(V)` presents its objects as pairs, so the declared functor to `C` is the
+first product projection, whose index names it and whose codomain is fixed by the
+product:
 
 ```python
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:

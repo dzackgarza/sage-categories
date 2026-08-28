@@ -248,15 +248,15 @@ A functor constructs an implementation in another category.
 For each category `C`:
 
 - `C.ObjectType` implements objects of `C`.
-- `C.ElementType` implements actual elements of objects of `C`; for `x in X`, `x.parent()` is `X`.
+- `C.ElementType` implements points of objects of `C`. An element of `X` is a morphism `* -> X` from the chosen terminal object, and `x.parent()` is `X`.
 - `C.MorphismType` implements morphisms of `C`.
 - `C(...)` is the category-owned constructor.
 
 The kernel owns `Cat`. Every category in this repository uses `Cat().ObjectType`.
 Every functor uses `Cat().MorphismType` and is an object of `Fun = Mor(Cat())`.
-`Cat().ElementType` implements actual objects of categories. Every `C.ObjectType` inherits it, and its parent is `C`.
-It does not implement functors. `Fun(*, C)`, with `* = Cat().Terminal()`, constructs the generalized elements of `C` separately.
-`C.MorphismType` is `Mor(C).ObjectType`: a morphism of `C` is an object of the morphism category, not an element of `C`.
+`Cat().ElementType` implements points `* -> C`, where `* = Cat().Terminal()`. These points are the actual objects of `C`, so every `C.ObjectType` inherits it.
+A generalized element of `C` has the form `T -> C` and is an object of `Fun(T, C)`. It is not a `Cat().ElementType` unless `T = *`.
+`C.MorphismType` is `Mor(C).ObjectType`: a morphism of `C` is an object of the morphism category, not a point of `C`.
 
 Size is outside the model. `Cat()` is an object of `Cat()` by runtime convention. No kernel operation quantifies over, enumerates, or scans the objects of `Cat()`.
 
@@ -369,8 +369,9 @@ For each functor `F: C -> D`:
 - `F.on_object()` constructs the image of an object.
 - `F.on_morphism()` constructs the image of a morphism.
 
-A general functor has no action on actual elements.
-A selected structural functor supplies an element-constructor conversion only when its mathematics defines one.
+For `F: C -> D`, `F.on_element(t)` derives from `F.on_morphism(t)`.
+If `t: 1_C -> X` is a point, a supplied morphism `1_D -> F(1_C)` makes the result a point of `F(X)`.
+A generalized element `t: T -> X` maps to `F(t): F(T) -> F(X)` without becoming an `ElementType` value.
 
 Functor properties are ordinary property subcategories:
 
@@ -423,7 +424,7 @@ What must then hold, whatever the kernel does to achieve it:
 
 There is one chain per mathematical kind. Every category is a `Cat().ObjectType`.
 Every object of a category is a `Cat().ElementType` and a `C.ObjectType`.
-Every actual element of `X in C` is a `C.ElementType` with parent `X`.
+Every point `* -> X` of `X in C` is a `C.ElementType` with parent `X`.
 Every morphism of `C` is a `C.MorphismType` and a `Mor(C).ObjectType`.
 Selected functors contribute only the class conversions that their mathematics supplies.
 

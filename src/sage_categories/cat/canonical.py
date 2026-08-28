@@ -34,6 +34,7 @@ from sage.structure.coerce_dict import MonoDict
 from sage_categories.cat.category import Category
 from sage_categories.cat.declarations import Sets
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
+from sage_categories.kernel.predicates import ask
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
 
@@ -161,7 +162,7 @@ class FinitePresentedCategory(Category[[Word], []]):
 
         return any(reaches(label, (label,)) for label in self._labels)
 
-    def morphism_set(self) -> ObjectOfCategory | UnknownClass:
+    def _chosen_morphism_set(self) -> ObjectOfCategory | UnknownClass:
         """The finite set of morphisms, as data ``(source label, reduced word)``, when the quiver is acyclic."""
         if self._has_directed_cycle():
             return Unknown
@@ -181,7 +182,7 @@ class FinitePresentedCategory(Category[[Word], []]):
         return self._morphism_set[self]
 
     def morphism_at(self, point: ElementOfObject) -> FinitePresentedCategory.MorphismType:
-        source, word = enumerated_datum(self.morphism_set(), point)
+        source, word = enumerated_datum(ask(self.morphism_set()), point)
         target = source if not word else self._generator_endpoints[word[-1]][1]
         return self.construct_morphism(self(source), self(target), word)
 
@@ -261,8 +262,6 @@ class FinitePresentedCategory(Category[[Word], []]):
 
 def enumerated_datum(finite_set: ObjectOfCategory, point: ElementOfObject) -> Hashable:
     """The datum of a point of a finite enumerated set, read through the chosen enumeration."""
-    from sage_categories.kernel.predicates import ask
-
     assert point in finite_set, f"{point!r} is not a point of {finite_set!r}"
     return next(datum for datum in Sets.Finite().chosen_enumeration(finite_set) if ask(finite_set.point(datum) == point))
 

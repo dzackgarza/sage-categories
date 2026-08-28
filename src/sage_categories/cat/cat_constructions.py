@@ -163,8 +163,8 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
         product = self._finite_data["objects"]
         return self(tuple(self.factor(position).object_at(product.product_projection(position)(point)) for position in self._positions()))
 
-    def morphism_set(self) -> ObjectOfCategory | UnknownClass:
-        factor_morphisms = tuple(self.factor(position).morphism_set() for position in self._positions())
+    def _chosen_morphism_set(self) -> ObjectOfCategory | UnknownClass:
+        factor_morphisms = tuple(ask(self.factor(position).morphism_set()) for position in self._positions())
         if any(morphisms is Unknown for morphisms in factor_morphisms):
             return Unknown
         if "morphisms" not in self._finite_data:
@@ -547,12 +547,13 @@ class PullbackCategory(Category[[tuple[MorphismOfCategory, MorphismOfCategory]],
         first, second = self._first_functor.domain(), self._second_functor.domain()
         return self((first.object_at(pairs.product_projection(0)(point)), second.object_at(pairs.product_projection(1)(point))))
 
-    def morphism_set(self) -> ObjectOfCategory | UnknownClass:
+    def _chosen_morphism_set(self) -> ObjectOfCategory | UnknownClass:
         first, second = self._first_functor.domain(), self._second_functor.domain()
-        if first.morphism_set() is Unknown or second.morphism_set() is Unknown:
+        first_morphisms, second_morphisms = ask(first.morphism_set()), ask(second.morphism_set())
+        if first_morphisms is Unknown or second_morphisms is Unknown:
             return Unknown
         if "morphisms" not in self._finite_data:
-            pairs = Sets.Products()((first.morphism_set(), second.morphism_set()))
+            pairs = Sets.Products()((first_morphisms, second_morphisms))
 
             def agree(datum: Datum) -> Decision:
                 point = pairs.point(datum)

@@ -180,18 +180,6 @@ class MorphismOfCategory(ObjectOfCategory):
         """
         return self.base_category().compose_morphisms(self, first)
 
-    def is_monomorphism(self) -> AppliedPredicate:
-        return self.base_category().morphism_category(1).Monomorphisms().predicate()(self)
-
-    def is_epimorphism(self) -> AppliedPredicate:
-        return self.base_category().morphism_category(1).Epimorphisms().predicate()(self)
-
-    def is_isomorphism(self) -> AppliedPredicate:
-        return self.base_category().morphism_category(1).Isomorphisms().predicate()(self)
-
-    def is_endomorphism(self) -> AppliedPredicate:
-        return self.base_category().morphism_category(1).Endomorphisms().predicate()(self)
-
     def __eq__(self, candidate: Any) -> AppliedPredicate:
         return self.base_category().equality()(self, candidate)
 

@@ -216,8 +216,14 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
     # of both ``Mor(C).Monomorphisms()`` and ``Mor(C).Epimorphisms()``
     # (``specs/undecidable-properties.md``, "How ask() works"; D83).
 
-    Monomorphisms = Axiom()
-    Epimorphisms = Axiom()
+    # Each of the four declares the one public spelling of its application and the largest
+    # role class on which it has meaning, which for a property of morphisms is every
+    # morphism of every category (POL-CAT-060); the kernel compiles ``f.is_monomorphism()``
+    # and its three siblings from those declarations.  Two are written here, and the two
+    # with an implementation class write them in its body instead.
+
+    Monomorphisms = Axiom(predicate_name="is_monomorphism", predicate_owner=MorphismOfCategory)
+    Epimorphisms = Axiom(predicate_name="is_epimorphism", predicate_owner=MorphismOfCategory)
     Isomorphisms = Axiom(full_subcategory_of=(Monomorphisms, Epimorphisms))
     Endomorphisms = Axiom()
 
@@ -233,6 +239,8 @@ class IsomorphismsCategory[**MorphismData, **TwoMorphismData](PropertySubcategor
     """``Mor(C).Isomorphisms()``: the implementation of the ``Isomorphisms`` axiom of ``Mor(C)``."""
 
     _base_category_class_and_axiom = (MorphismCategory, "Isomorphisms")
+    predicate_name = "is_isomorphism"
+    predicate_owner = MorphismOfCategory
 
     class ObjectType(MorphismOfCategory):
         """An isomorphism of ``C``: the isomorphism category owns inversion (POL-CAT-079)."""
@@ -246,6 +254,8 @@ class EndomorphismsCategory[**MorphismData, **TwoMorphismData](PropertySubcatego
     """``Mor(C).Endomorphisms()``: the implementation of the ``Endomorphisms`` axiom of ``Mor(C)``."""
 
     _base_category_class_and_axiom = (MorphismCategory, "Endomorphisms")
+    predicate_name = "is_endomorphism"
+    predicate_owner = MorphismOfCategory
 
     def __init__(self, ambient: Category, name: str, full_subcategory_of: tuple[Category, ...]) -> None:
         super().__init__(ambient, name, full_subcategory_of)
@@ -331,6 +341,9 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
 
     def Isomorphisms(self) -> Category:
         return self.property_subcategory(self.ambient().Isomorphisms())
+
+    def Endomorphisms(self) -> Category:
+        return self.property_subcategory(self.ambient().Endomorphisms())
 
     def narrowing_type(self) -> type[FixedEndpointProperty[MorphismData, TwoMorphismData]]:
         from sage_categories.cat.properties import FixedEndpointProperty

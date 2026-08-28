@@ -269,7 +269,7 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
     def object_set(self) -> ObjectOfCategory:
         """For ``I = [1]``: the morphism set of ``C``, since the objects are the morphisms of ``C``."""
         assert self.domain() is Cat().Simplex(1), f"{self!r} declares no set of objects"
-        morphisms = self.codomain().morphism_set()
+        morphisms = ask(self.codomain().morphism_set())
         assert morphisms is not Unknown, f"{self.codomain()!r} chooses no finite set of morphisms"
         return morphisms
 
@@ -277,11 +277,11 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
         assert self.domain() is Cat().Simplex(1), f"{self!r} declares no set of objects"
         return self.codomain().morphism_at(point)
 
-    def morphism_set(self) -> ObjectOfCategory | UnknownClass:
+    def _chosen_morphism_set(self) -> ObjectOfCategory | UnknownClass:
         """For ``I = [1]``: the finite set of commuting squares, when ``C`` chooses a finite set of morphisms."""
         from sage_categories.cat.diagrams import square_set
 
-        if self.domain() is not Cat().Simplex(1) or self.codomain().morphism_set() is Unknown:
+        if self.domain() is not Cat().Simplex(1) or ask(self.codomain().morphism_set()) is Unknown:
             return Unknown
         return square_set(self)
 

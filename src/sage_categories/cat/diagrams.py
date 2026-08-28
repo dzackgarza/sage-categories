@@ -143,7 +143,7 @@ def square_set(functors: FunctorCategory) -> ObjectOfCategory:
     """The finite set of commuting squares ``(f, g, a, b)`` with ``g * a == b * f`` in ``C``, when ``C`` chooses a finite set of morphisms."""
     base = functors.codomain()
     if "squares" not in functors._finite_data:
-        morphisms = base.morphism_set()
+        morphisms = ask(base.morphism_set())
         quadruples = Sets.Products()((morphisms, morphisms, morphisms, morphisms))
 
         def commutes(datum: Datum) -> Decision:

@@ -26,6 +26,7 @@ import inspect
 import itertools
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
+from functools import cache
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, overload
 
 from sage.misc.cachefunc import cached_method
@@ -34,7 +35,14 @@ from sage.structure.coerce_dict import MonoDict, TripleDict
 import sage_categories.kernel.compiler as compiler
 from sage_categories.cat.equality import equality_predicate
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
-from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask
+from sage_categories.kernel.predicates import (
+    AppliedPredicate,
+    AppliedValuedPredicate,
+    Predicate,
+    Proposition,
+    ValuedPredicate,
+    ask,
+)
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine, traces_placement
 from sage_categories.kernel.roles import (
     CategoryPoint,
@@ -73,6 +81,21 @@ type Assignment = Callable[[ObjectOfCategory], MorphismOfCategory]
 # property subcategory conjoins its own predicate (``cat/properties.py``).
 member: Predicate = Predicate("member", 2, False)
 member.register_handler(is_placed)
+
+
+@cache
+def _morphism_set() -> ValuedPredicate:
+    """``morphism_set(C)``: the set of morphisms of ``C``, whose one exact case is the enumeration ``C`` chooses.
+
+    Its result category is ``Sets()``, which ``Cat`` declares, so the kernel names it
+    without reaching into the implementation (``cat/declarations.py``, D81).  The
+    declaration is constructed on first use because that module stands on this one.
+    """
+    from sage_categories.cat.declarations import Sets
+
+    predicate = ValuedPredicate("morphism_set", 1, False, Sets)
+    predicate.register_handler(lambda category: category._chosen_morphism_set())
+    return predicate
 
 
 class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
@@ -720,8 +743,17 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         """The point of ``object_set()`` selecting an object: the one whose object equals it."""
         return next(point for point in self.object_set() if ask(self.object_at(point) == member_object))
 
-    def morphism_set(self) -> ObjectOfCategory | UnknownClass:
-        """The set of morphisms as a finite enumerated object of ``Sets()``, or ``Unknown`` when none is chosen."""
+    def morphism_set(self) -> AppliedValuedPredicate:
+        """The set of morphisms of this category, an object of ``Sets()`` (POL-API-020).
+
+        The operation is not total: a category that chooses no enumeration of its
+        morphisms supplies no exact case, so it is an applied predicate and ``ask()``
+        answers it with the set or with Sage ``Unknown``.
+        """
+        return _morphism_set()(self)
+
+    def _chosen_morphism_set(self) -> ObjectOfCategory | UnknownClass:
+        """The exact evaluation case of ``morphism_set()``, which a category that chooses a finite enumeration of its morphisms overrides."""
         return Unknown
 
     def morphism_at(self, point: ElementOfObject) -> MorphismOfCategory:
@@ -733,7 +765,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
 
         The default is every morphism when the morphism set is finite and enumerated.
         """
-        morphisms = self.morphism_set()
+        morphisms = ask(self.morphism_set())
         if morphisms is Unknown:
             return Unknown
         return tuple(self.morphism_at(point) for point in morphisms)

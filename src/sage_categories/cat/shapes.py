@@ -101,7 +101,7 @@ class DiscreteCategory(Category[[], []]):
     def object_point(self, member_object: DiscreteCategory.ObjectType) -> ElementOfObject:
         return member_object.point()
 
-    def morphism_set(self) -> ObjectOfCategory | UnknownClass:
+    def _chosen_morphism_set(self) -> ObjectOfCategory | UnknownClass:
         return self._index_set
 
     def morphism_at(self, point: ElementOfObject) -> DiscreteCategory.MorphismType:

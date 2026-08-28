@@ -34,7 +34,7 @@ from sage.structure.coerce_dict import MonoDict
 from sage_categories.cat.category import Category
 from sage_categories.kernel.predicates import AppliedPredicate, PropertyPredicate, Proposition
 from sage_categories.kernel.refinement import is_subcategory, refine
-from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory
+from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, category_of, role_of
 
 if TYPE_CHECKING:
     from sage_categories.cat.functors import Functor, FunctorsCategory
@@ -116,6 +116,13 @@ class Axiom:
     its ambient, by their axioms; each is recorded on the constructed subcategory as the
     monomorphism ``C.P() -> C.Q()`` (D83).
 
+    ``predicate_name`` and ``predicate_owner`` are the predicate declaration POL-CAT-060
+    requires: the one public spelling of the application and the largest role class on
+    which it has meaning.  An axiom whose subcategory needs no implementation class
+    carries them here; an axiom with one reads them off that class instead
+    (``implemented_by``).  Either way ``_derive_application`` compiles ``x.is_P()`` from
+    them, and no category writes that method.
+
     A separate class implements the generated subcategory by naming the declaring
     category class and the axiom in ``_base_category_class_and_axiom``, exactly as Sage
     links ``FiniteSets`` back to ``(Sets, 'Finite')``
@@ -131,14 +138,31 @@ class Axiom:
     ``"is_finite"`` by name matching, so the link is always the field.
     """
 
-    def __init__(self, full_subcategory_of: tuple[Axiom, ...] = ()) -> None:
+    def __init__(
+        self,
+        full_subcategory_of: tuple[Axiom, ...] = (),
+        predicate_name: str | None = None,
+        predicate_owner: type[CategoryPoint] | None = None,
+    ) -> None:
         self._full_subcategory_of = full_subcategory_of
         self._implementation: type[PropertySubcategory] = PropertySubcategory
         self._constructed: MonoDict = MonoDict()
+        self._predicate_name = predicate_name
+        self._predicate_owner = predicate_owner
 
     def __set_name__(self, declaring_class: type[Category], name: str) -> None:
         self._declaring_class = declaring_class
         self._name = name
+        if self._predicate_name is not None:
+            _derive_application(self)
+
+    def predicate_name(self) -> str | None:
+        """The one public spelling of this property's application, ``"is_P"`` (POL-CAT-060)."""
+        return self._predicate_name
+
+    def predicate_owner(self) -> type[CategoryPoint] | None:
+        """The largest role class on which that predicate has meaning (POL-CAT-060)."""
+        return self._predicate_owner
 
     def __get__(self, category: Category | None, owner: type[Category]) -> Axiom | Callable[[], Category]:
         """``C.P`` on a category value is its accessor; on the class it is the declaration."""
@@ -150,11 +174,21 @@ class Axiom:
         return self._name
 
     def implemented_by(self, implementation: type[PropertySubcategory]) -> None:
-        """Record the class that implements this axiom's subcategory; one axiom has one."""
+        """Record the class that implements this axiom's subcategory; one axiom has one.
+
+        The implementation is the other place the predicate declaration can be written,
+        and the one every specification example uses (``specs/leaf-category-template.md``,
+        "Property subcategories and predicate handlers").  The axiom holds it either way,
+        so the derivation reads one field.
+        """
         assert self._implementation is PropertySubcategory or self._implementation is implementation, (
             f"{self!r} is already implemented by {self._implementation.__name__}, not {implementation.__name__}"
         )
         self._implementation = implementation
+        if implementation.predicate_name is not None:
+            self._predicate_name = implementation.predicate_name
+            self._predicate_owner = implementation.predicate_owner
+            _derive_application(self)
 
     def subcategory(self, category: Category) -> Category:
         """``category.P()``: one property subcategory per category value."""
@@ -167,7 +201,11 @@ class Axiom:
         if category.has_ambient():
             return category.property_subcategory(self._declared_on(category.ambient()))
         containing = tuple(axiom._declared_on(category) for axiom in self._full_subcategory_of)
-        return self._implementation(category, self._name, containing)
+        constructed = self._implementation(category, self._name, containing)
+        if constructed.predicate_name is None:
+            constructed.predicate_name = self._predicate_name
+            constructed.predicate_owner = self._predicate_owner
+        return constructed
 
     def _declared_on(self, category: Category) -> Category:
         """``category.P()``, through the accessor that category declares for this axiom.
@@ -184,6 +222,48 @@ class Axiom:
         return f"{self._declaring_class.__name__}.{self._name}"
 
 
+# The axiom each derived application was compiled from, by the class and name it was
+# installed under.  A second axiom reaching one spelling on one owner is the collision
+# ``specs/undecidable-properties.md`` requires the kernel to reject.
+_derived_applications: dict[tuple[type[CategoryPoint], str], Axiom] = {}
+
+
+def _derive_application(axiom: Axiom) -> None:
+    """Compile ``x.is_P()`` onto the declared predicate owner (POL-CAT-060, D89).
+
+    The application returns the containment proposition and evaluates nothing; a leaf
+    writes no such method and forwards none (``specs/undecidable-properties.md``,
+    "The exact architectural rule").
+
+    Which property subcategory it asks is read off the value's own placement.  The
+    narrowing base of that placement is the category the axiom is declared on, so a set
+    reaches ``Sets().Finite()`` and a morphism ``Mor(C).Isomorphisms()`` from the one
+    declaration, and a value already refined into a property reaches the same one
+    (POL-CAT-084).  A base that is itself a full subcategory -- ``Mor(C)(A, B)`` is the
+    one -- returns a narrowing there, and the property owning the predicate is its root,
+    which is what the predicate names.
+    """
+    name, owner = axiom.predicate_name(), axiom.predicate_owner()
+    assert owner is not None, f"{axiom!r} declares the predicate name {name!r} and no predicate owner"
+
+    def application(value: CategoryPoint) -> Proposition:
+        placement = category_of(value, role_of(value)).narrowing_base()
+        return axiom._declared_on(placement).predicate().category().membership_proposition(value)
+
+    application.__name__ = name
+    application.__qualname__ = f"{owner.__name__}.{name}"
+    application.__doc__ = f"The proposition that this value is an object of ``{axiom!r}()`` (POL-CAT-060)."
+    known = _derived_applications.get((owner, name))
+    assert known is None or known is axiom, f"{known!r} and {axiom!r} both spell their application {owner.__name__}.{name}; name the two properties distinctly"
+    assert known is not None or name not in vars(owner), (
+        f"{owner.__name__} declares {name!r} itself, so {axiom!r} cannot compile its application there"
+    )
+    _derived_applications[(owner, name)] = axiom
+    # The kernel writes the compiled method onto the role class, as ``install_level_shift``
+    # writes the point-inherited spellings onto theirs (``kernel/compiler.py``).
+    setattr(owner, name, application)
+
+
 class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):
     """``C.P()``: the full subcategory of ``C`` on the objects satisfying ``P``.
 
@@ -195,6 +275,13 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
     """
 
     _base_category_class_and_axiom: ClassVar[tuple[type[Category], str]]
+
+    # The predicate declaration (POL-CAT-060): the one public spelling of this property's
+    # application, and the largest role class on which it has meaning.  A subclass writes
+    # them in its body; an axiom with no implementation class carries them itself and
+    # fills them in on the value it constructs.
+    predicate_name: str | None = None
+    predicate_owner: type[CategoryPoint] | None = None
 
     def __init_subclass__(cls) -> None:
         """Record this class on the axiom it names: the declaration is the one place the link lives."""

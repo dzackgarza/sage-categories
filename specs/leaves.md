@@ -368,10 +368,10 @@ It supplies the public mathematical contract and the private computation boundar
 
 The compiler acts on complete inherited implementation classes.
 
-`ObjectType`, `ElementType`, and `MorphismType` meet at `Cat().ElementType`.
-An object is the generalized point `1 -> C`.
-A morphism is the generalized point `[1] -> C`.
-An ordinary generalized element retains its defining morphism `T -> X`.
+`C.ObjectType` inherits `Cat().ElementType` because an object of `C` is a point `* -> C`.
+`C.ElementType` implements points `1_C -> X` of objects `X in C`.
+`C.MorphismType` is `Mor(C).ObjectType`.
+A generalized element `T -> X` remains separate from `ElementType` unless `T = 1_C`.
 
 For each selected route, the compiler:
 
@@ -395,8 +395,9 @@ A declaration can omit `__init__` when it adds no state.
 Its generated wrapper advances to the next C3 initializer.
 The selected functor supplies the input required by the next class constructor.
 The leaf does not add ancestor fields or ancestor arguments.
-The object or morphism construction context supplies the common `Cat().ElementType` generalized-point identity before this chain starts.
-The ordinary element context supplies its defining morphism.
+An object construction supplies its point `* -> C` to `Cat().ElementType`.
+A morphism follows the object construction of `Mor(C)`.
+An element construction supplies its point `1_C -> X`.
 
 The compiler never interprets a local decorator as an instruction to find another method body.
 It never pairs a leaf method with an engine method by name.

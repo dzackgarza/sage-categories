@@ -390,6 +390,18 @@ Every functor is explicit.
 Only declared functors contribute compiled classes and methods to the public object surface.
 Ordinary mathematical functors remain available without changing public inheritance.
 
+A relation between two categories exists only as an arrow. An object does not carry its
+underlying set the way a record carries a field: there is nothing inside a module that is
+the set, only a functor whose image at that module is a set. So every operation that crosses
+categories names its functor and both endpoints, and no accessor stands in for one.
+`C.structural_image(x)` names a target and hides the functor; `X.underlying_set()` names a
+direction and hides it; both turn an arrow into a noun. The choice is real — `R^n` reaches
+sets through rings because it is a product of rings, a lattice `(L, b)` projects to `L` and
+to `b` with equal right, and a simplicial set has three different functors to `Sets()` — so
+hiding it asserts mathematics where no reader can see the claim. `specs/decisions.md` D73
+gives the full reasoning, including why an accessor also bypasses the mechanism the whole
+design rests on.
+
 A functor has an image; a category does not. The image of `x` under the named functor `F`
 is `F.on_object(x)`. There is no operation that asks a category for "the image of `x` at
 `C`". A leaf can declare several functors into one target, so naming only the target leaves

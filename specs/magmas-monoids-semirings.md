@@ -140,8 +140,8 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (Fun(self, Magmas(V)).Monomorphisms().Isofibrations().Full()(),)
 ```
 
-When `V` is monoidal, the selected roles expose `+` and `*` on the unit's points.
-For cartesian `V`, two generalized points `x,y:T -> X` combine through
+When `V` is monoidal, the selected additive and multiplicative classes expose their operations on applicable elements.
+For cartesian `V`, two generalized elements `x,y:T -> X` combine through
 
 \[
 T\xrightarrow{\Delta_T}T\times T
@@ -195,7 +195,7 @@ M.identity_element()
 M.combine(x, y)
 ```
 
-Here `identity_element()` returns the generalized point `eta_X:I -> X`.
+Here `identity_element()` returns the unit morphism `eta_X:I -> X`.
 
 The operation-role subcategories are
 

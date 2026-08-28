@@ -12,17 +12,18 @@ Only `ask()` decides that proposition as `True`, `False`, or `Unknown`.
 
 The governing policies are `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001`, `POL-CAT-021`, `POL-CAT-028`, `POL-CAT-086`, `POL-CAT-088`, `POL-SET-001` through `POL-SET-036`, and `POL-API-009`, `POL-API-010`, `POL-API-015`, and `POL-API-016`.
 
-## Owned API roles
+## Owned API classes
 
 `Sets()` owns three implementation types:
 
 - `Sets.ObjectType` implements set objects.
 
-- `Sets.ElementType` implements generalized elements `t: T -> X` with codomain `X`.
+- `Sets.ElementType` implements points `t: 1 -> X`, the actual elements of `X`.
 
 - `Sets.MorphismType` implements total functions with a domain and codomain.
 
-An owned element is a set map `t: T -> X`. Its domain is `T`, and its parent is its codomain `X`. A point is the special case `1 -> X`, with domain `Sets().Terminal()`. A functor sends its domain and codomain to `F(T)` and `F(X)` through its morphism action.
+An owned element is a point `t: 1 -> X`, and its parent is `X`.
+A generalized element `T -> X` with nonterminal domain is an ordinary morphism in `Sets()`, not a `Sets.ElementType` value.
 The same point datum can produce distinct owned elements in distinct sets.
 
 Private representations can include Sage parents, predicates, symbolic expressions, finite collections, indexed families, tagged values, or universal-construction data.
@@ -115,7 +116,8 @@ f.codomain()
 f.image()
 ```
 
-Evaluation requires `x in f.domain()`. For a generalized element `t: T -> X`, `f(t)` is the composite `f * t: T -> Y`. At the separator, it evaluates the retained rule on the selected datum.
+Evaluation requires `x in f.domain()` and evaluates the retained rule on the point datum.
+For a generalized element `t: T -> X`, morphism composition gives `f * t: T -> Y`.
 Identity and composition arrive through inherited morphism operations.
 
 The exponential object is:
@@ -433,22 +435,15 @@ The cardinality method uses the applicable cardinal formula without enumerating 
 
 ## Private computation engines
 
-Each compiled set role owns one private state record.
-The object record retains its canonical object of `Sets()`, membership rule, cardinality, and point caches.
-Every element record retains its canonical generalized set element.
-A point record also retains its selected datum.
-The morphism record retains its canonical set map and rule.
-The element's defining morphism and the morphism's category and endpoints remain in the kernel class identity.
+Each compiled set class owns one private state record.
+The object record retains its membership rule and cardinality.
+The element record retains its selected point datum.
+The morphism record retains its domain, codomain, and rule.
 
-The local datum of each set role is that role's private state record.
-After allocation, direct `Sets()` construction creates the record with the new public value as its canonical image.
-The local initializer assigns the record to that value.
-A declared functor returns the input retained by the canonical set image.
-The set initializer assigns that same record to the descendant.
-Thus an inherited set method executes on the descendant and uses the same set state as the public functor image.
-
-A set method that needs an object, element, or morphism of `Sets()` uses the canonical image in its private state.
-The descendant keeps its own category, domain, parent, domain, and codomain as its public identity.
+Direct `Sets()` construction initializes this state on the new set value.
+A selected functor's pure conversion supplies the same constructor data to the `Sets()` initializer on a structured source instance.
+Thus an inherited set method reads set state directly on the value to which it applies.
+Public `F(x)` remains a separate set image owned by the named functor.
 
 `Sets.ObjectType` is the sole public implementation of a set.
 It can use Sage, SymPy, GAP, Julia packages, Singular, Macaulay2, or several engines together.
@@ -600,11 +595,11 @@ The applied predicate defines `__bool__` to raise.
 The mature references are SymPy `Relational.__bool__` and Sage `UnknownClass.__bool__`. Therefore `if a == b:` fails loudly, and repository code writes `ask(a == b) is True`. Containment (`in`) remains the one Boolean boundary.
 
 `__hash__` is defined explicitly on every owned value.
-Objects, morphisms, and generalized elements at other domains hash by identity.
+Objects, morphisms, and generalized elements with nonterminal domains hash by identity.
 A point hashes by its chosen datum, so two points whose equality is `True` hash equal.
 
 For two points of one set, the exact handler compares their chosen data through the private computation boundary.
-Two generalized elements at other domains compare by identity unless an exact handler for their defining maps decides equality.
+Two generalized elements with nonterminal domains compare by identity unless an exact handler for their defining maps decides equality.
 For two rule-defined sets, equality is `Unknown` unless identity or a cited exact handler decides it; no handler inspects contents.
 For two set maps with one finite enumerable domain, the exact handler compares images pointwise over that domain's enumeration; two maps with a rule-defined infinite domain compare by identity only and are otherwise `Unknown`.
 

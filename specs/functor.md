@@ -111,9 +111,10 @@ The maps preserve identities and composition:
 F(1_X)=1_{F(X)},\qquad F(g\circ f)=F(g)\circ F(f).
 \]
 
-Every generalized element is represented by its defining morphism.
-`F.on_element(t)` applies `F.on_morphism` to that morphism.
-The functor stores no element callback, element functor, or element capability.
+A point `t: 1_C -> X` is represented by its defining morphism.
+`F.on_element(t)` applies `F.on_morphism` and precomposes the declared morphism `1_D -> F(1_C)`.
+A generalized element `T -> X` maps through `F.on_morphism` and remains a generalized element with domain `F(T)`.
+The functor stores no independent element callback.
 
 For fixed `C, D in Cat()`, the functor category is endpoint application to `Mor(Cat())`:
 
@@ -833,7 +834,7 @@ It must:
 
 5. preserve each functor's exact object and morphism maps;
 
-6. derive each functor's generalized-element action from its morphism action, and precompose a retained separator comparison only for the methods at the separator;
+6. derive each point action from the morphism action and the declared terminal-object comparison; map all other generalized elements through the morphism action alone;
 
 7. reject a selected edge when a target class needs construction input and the functor lacks an exact typed conversion;
 
@@ -841,20 +842,20 @@ It must:
 
 9. retain one object of `Fun(C, D)` for each named functor construction;
 
-10. complete the preallocated `Cat().ElementType` root first, then fill the bases of each written public class from its selected targets;
+10. complete the preallocated `Cat().ElementType` point class first, then fill the bases of each written public class from its selected targets;
 
-11. compute one construction input per reachable class; initialize `Cat().ElementType` from the defining morphism; and invoke each constructor once through C3;
+11. compute one construction input per reachable class; initialize `Cat().ElementType` from each point `* -> C`; and invoke each constructor once through C3;
 
 12. derive subobject-of-product component functors by composition;
 
-13. install the compiled classes of a point category `{X}` on its distinguished object: `{X}.ObjectType` on the value `X`, and `{X}.ElementType` on the generalized elements of `X`, which for a category `X = C` are `C.ObjectType` with domain `1` and `C.MorphismType` with domain `[1]`.
+13. install the compiled classes of a point category `{X}` on its distinguished object: `{X}.ObjectType` on `X`, and `{X}.ElementType` on the points of `X`; for a category `X = C`, these points are `C.ObjectType`.
 
 Natural transformations are trusted constructions, never compiler proofs.
 There is no route normalization, route scoring, or preservation registry.
 
 Every inherited method enters the descendant through the compiled class MRO. The declaring method runs on the original descendant instance with the supplied arguments.
 It reads the declaring category's state directly on that instance. Each selected functor states how the descendant's construction data produces the data its target constructor consumes. The kernel uses that statement to thread the arguments through the superclass initializers.
-A point's construction input uses the retained separator comparison.
+A point's construction input uses the declared terminal-object comparison.
 The method's value is returned exactly as declared.
 
 The public surface is dynamic inheritance in Sage's sense.
@@ -868,11 +869,11 @@ The MROs have these forms:
 C.ObjectType, selected target ObjectType classes,
 Cat().ElementType, object kernel class
 
-C.MorphismType, selected target MorphismType classes,
-Cat().ElementType, morphism kernel class
+C.MorphismType = Mor(C).ObjectType,
+selected target MorphismType classes, morphism kernel class
 
 C.ElementType, selected target ElementType classes,
-Cat().ElementType, element kernel class
+element kernel class
 ```
 
 The compiler does not infer a functor from a category pair.
@@ -983,7 +984,7 @@ It is kernel infrastructure over already established mathematical functors.
 
 - A point functor is the monomorphism `{X} -> D`, constructed through `Fun({X}, D)` and selected in `{X}.structure_functors()`.
 
-- A selected point functor `{C} -> D` supplies complete target classes, typed constructor conversions, state, and methods to `C`, `C.ObjectType` with domain `1`, and `C.MorphismType` with domain `[1]`.
+- A selected point functor `{C} -> D` supplies target object state to `C` and target element state to `C.ObjectType`, the points of `C`.
 
 - Every selected structural functor is an ordinary object of `Fun`.
 

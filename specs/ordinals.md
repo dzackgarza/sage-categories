@@ -57,7 +57,7 @@ alpha + beta
 alpha * beta
 ```
 
-With domain `[1]` the same element surface acts on the morphisms of `Ordinals()`, which is the functorial action of the two natural operations.
+The two natural operations act on morphisms through their ordinary functor actions.
 
 ### Public ordinal constructors
 

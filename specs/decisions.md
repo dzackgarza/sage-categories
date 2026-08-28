@@ -489,6 +489,45 @@ be asked for as an object of `C`, as an abelian group, or as a ring when it happ
 one. So there is no accessor standing in for a functor. If you want to project to sets, you
 construct that functor and apply it.
 
+The rule is a consequence, and the reason it keeps having to be restated is that only the
+rule was ever written down.
+
+*A relation between two categories exists only as an arrow.* An object does not carry its
+underlying set the way a record carries a field. There is nothing inside a module that is
+the set; there is a functor whose image at that module is a set. So `X.underlying_set()`
+asserts that the relation is a property of `X` alone, and it is not — it is a property of a
+map somebody chose. This is `C.structural_image(x)` one level down: that spelling names a
+target and hides the functor, this one names a direction and hides the functor, and both
+turn an arrow into a noun. The mistake recurs because the surrounding programming model
+always offers "get the part", and mathematics offers only "apply the map you named".
+
+*The choice is real, so hiding it asserts mathematics.* `R^n` does not project directly to
+sets: it is an `R`-algebra because it is a product of rings, so it reaches sets through
+rings, and its object there is `U(R) * ... * U(R)`. A lattice `(L, b)` projects to `L` and
+to `b` with equal right. A simplicial set has `X_0`, the disjoint union of its `X_n`, and
+`pi_0`, three functors to `Sets()` carrying different mathematics. An implicit choice is not
+merely underspecified: it silently claims that one of several genuinely different
+constructions is the canonical one, and it makes that claim in a place where no reader can
+see it.
+
+*The arrow is where the leaf writer's work lives.* Everything the framework supplies is a
+consequence of stating the map: the inheritance, the constructor threading, the
+construction lifts. An accessor that hands back an ancestor value is a way to obtain that
+value without stating the map — so the mechanism never runs, and the leaf ends up
+reimplementing what it should have received. That is not imprecision. It is a bypass around
+the one mechanism the design rests on, and it is exactly what the `structural_image` call
+sites were.
+
+*And it is what makes the code auditable.* A mathematician can read `U_A(M)` and check it
+against the definition. Reading `M.underlying_object_projection()`, they would have to open
+the implementation to find out which category was meant, which is programming rather than
+mathematics, and it forfeits the reason the layer exists at all (D03).
+
+The same philosophy governs every other implicit choice, not just this accessor. A
+coercion, a default ambient category, or a walk to a "common ancestor" is the same defect
+wherever it silently selects a category — which is why common-ancestor tracing has to run
+along a named, citable property of functors and never a heuristic (D61).
+
 **D72 (08-27). Categories of structured objects are parameterized by another category.**
 `Semirings`, `Magmas`, `Monoids`, `Rings`, `Modules`, and `Algebras` all take an ambient
 category. The point is only to endow objects with the corresponding methods. Sage's monoids

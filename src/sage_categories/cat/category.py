@@ -222,12 +222,18 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         writes for that mathematical kind (POL-KERNEL-028), so this reads the one
         declaration the architecture fixes, not a capability discovered by probing.
 
-        A category states only the roles whose mathematics it introduces; a role it
-        declares nothing for gets the empty local declaration, which names this category
-        as the node's owner and stands on the role's kernel base (POL-KERNEL-028).
+        Every category writes all three (POL-CAT-057).  A category that introduces no new
+        mathematics at a role still writes the class, and its empty body is that
+        statement; the kernel compiles what a category wrote and supplies nothing in its
+        place.  A category class inherits the declaration of the category class it
+        specializes, which states that the two share the mathematical kind.
         """
         declared = getattr(type(self), role.value, None)
-        return declared if declared is not None else compiler.empty_local_role(self, role)
+        assert declared is not None, (
+            f"{type(self).__name__} writes no {role.value} declaration, and no category class it derives from "
+            f"writes one; give it one (POL-CAT-057)"
+        )
+        return declared
 
     def role_class(self, role: Role) -> type[CategoryPoint]:
         """The compiled role class the kernel installed on this category value.
@@ -1436,9 +1442,10 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         and a declaration with no ``domain`` is the terminal-domain case: the point
         ``* -> Cat()``, whose value is a category.  That value is constructed now and is
         the final object -- it takes its ordinal, it is placed in ``Cat()``, and its three
-        implementation classes are the empty ones a category declaring nothing already
-        receives.  A parameterized family has no category to return until an
-        implementation supplies its object and morphism actions.
+        implementation classes are compiled from ``DeclaredCategory``'s declarations,
+        which name the three kinds and no operation on any of them.  A parameterized
+        family has no category to return until an implementation supplies its object and
+        morphism actions.
 
         A declaration no implementation claims is open work, readable through
         ``declarations()``.  It is never a check that fails a build.

@@ -31,7 +31,7 @@ from sage_categories.cat.category import Category
 from sage_categories.kernel.decisions import Decision
 from sage_categories.kernel.predicates import Axiom, PropertyPredicate, Proposition
 from sage_categories.kernel.refinement import is_subcategory, refine
-from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory
+from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
 
 if TYPE_CHECKING:
     from sage_categories.cat.functors import Functor, FunctorsCategory
@@ -69,6 +69,35 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
     construction family is placement by construction; only a property
     subcategory owns a predicate.
     """
+
+    class ObjectType(ObjectOfCategory):
+        """An object of the ambient that this subcategory contains: the same value, and the ambient's whole surface.
+
+        The monomorphism is identity on values, so a full subcategory introduces no
+        object of its own and no operation on one.  A subcategory whose property makes a
+        new operation available writes it here, as ``Mor(C).Isomorphisms()`` writes
+        ``inverse()`` (POL-CAT-079).
+        """
+
+    class ElementType(ElementOfObject):
+        """A point ``1_C -> X`` of an object of this subcategory: the point the ambient owns (POL-CAT-087).
+
+        A point belongs to its parent, and only objects and morphisms are placed
+        (``kernel/refinement.py``, ``refine``), so a full subcategory never builds a point
+        of its own: ``element_from_defining_morphism`` returns the ambient's.  This class
+        is therefore reached as a base, by a descendant that is not itself a full
+        subcategory -- a concrete implementation of a property subcategory writing its own
+        points.  A method written here runs on those and on nothing else.
+        """
+
+    class MorphismType(MorphismOfCategory):
+        """A morphism of the ambient between two of these objects.
+
+        Fullness is exactly this: the hom of the subcategory is the hom of the ambient
+        (Mathlib ``CategoryTheory.ObjectProperty.FullSubcategory``, whose ``Hom`` is the
+        ambient's), so identities and composites are the ambient's and nothing new is
+        stated here.
+        """
 
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData]) -> None:
         self._ambient = ambient

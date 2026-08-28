@@ -25,7 +25,7 @@ from sage_categories.cat.properties import FullSubcategory, PropertySubcategory
 from sage_categories.kernel.decisions import Decision
 from sage_categories.kernel.predicates import Axiom, Predicate, Proposition, ask
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory, Role
+from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role
 
 if TYPE_CHECKING:
     from sage_categories.cat.properties import FixedEndpointProperty
@@ -115,6 +115,15 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
 
         def __repr__(self) -> str:
             return f"identity of {self.domain()!r}"
+
+    class ElementType(ElementOfObject):
+        """A generalized element ``t: T -> f`` of a morphism of ``C``, read in ``Mor(C)``.
+
+        ``Mor(C).ObjectType`` is ``C.MorphismType``, so the object this is a point of is a
+        morphism of ``C``, and ``t`` is a 2-morphism into it.  For a 1-category every
+        2-morphism is an identity, so the only such ``t`` is ``1_f``; a 2-category
+        supplies the rest through its own ``Mor(C)``.
+        """
 
     def __init__(self, base: Category[MorphismData, TwoMorphismData]) -> None:
         self._base = base

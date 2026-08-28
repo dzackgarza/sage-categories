@@ -233,11 +233,12 @@ def _reference(klass: type) -> Reference:
 
 
 def _generated_name(category: Category, role: Role) -> str:
-    """The stub name of a role class the category declares none of its own for.
+    """The stub name of a compiled role class that is bound nowhere in a module's source.
 
-    A category that declares no role class is reached by one spelling through the
-    declarations -- ``Sets().Countable()``, ``Mor(Sets())`` -- and its ``repr`` is
-    that spelling.  The name is that spelling with the punctuation of a call
+    Such a category shares its declaration with a family, so the compiled class is built
+    over that declaration and carries no written name.  The category is reached by one
+    spelling through the declarations -- ``Sets().Countable()``, ``Mor(Sets())`` -- and its
+    ``repr`` is that spelling.  The name is that spelling with the punctuation of a call
     removed, so it is the same name on every run over the same declarations.
     """
     return f"{re.sub(r'_+', '_', re.sub(r'\W', '_', repr(category))).strip('_')}_{role.value}"
@@ -254,9 +255,9 @@ def _home(category: Category) -> str:
 def _written(klass: type) -> bool:
     """Whether a class is one a module's source writes, rather than one built at runtime.
 
-    The compiler builds a role class for every node whose category declares none
-    (``compiler.empty_local_role``), and ``Mor(C)`` builds its own element role the
-    same way.  Such a class is bound nowhere, and a stub must never name one.
+    The compiler builds a class over the written declaration at every node whose category
+    shares that declaration with a family (``compiler._derived_class``).  Such a class is
+    bound nowhere, and a stub must never name one.
 
     A qualified name a module writes runs through classes: ``Sets.ObjectType`` names a
     nested class of a written class.  The compiler gives a compiled role the same shape

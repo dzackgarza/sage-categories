@@ -94,7 +94,6 @@ __all__ = [
     "compile_category",
     "controlled_bases",
     "element_inputs",
-    "empty_local_role",
     "install_level_shift",
     "morphism_inputs",
     "node",
@@ -129,10 +128,6 @@ class Entry[**P, R](NamedTuple):
 
 
 _IGNORED_NAMES = frozenset({"__init__", "__new__", "__repr__", "__init_subclass__", "__class_getitem__"})
-
-# The local role class of each category that declares none of its own, keyed by
-# identity: one declaring owner per node (POL-CAT-016).
-_empty_local_roles: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
 
 # Per role: the C3 linearization of each node and the controlled direct bases its
 # class is built from, keyed by the node's category; and the node of each node key.
@@ -271,19 +266,6 @@ def catalogue[**P, R](current: Node) -> dict[str, Entry[P, R]]:
             entries[name] = _merge(entries[name], inherited) if name in entries else inherited
     catalogues[current.role] = entries
     return entries
-
-
-def empty_local_role(category: Category, role: Role) -> type[CategoryPoint]:
-    """The local role declaration that introduces no members or state.
-
-    One class per category and role, retained: it names the declaring owner of the node
-    and stands directly on the role's kernel base (POL-CAT-053, POL-KERNEL-028).  It has
-    no body, and it belongs to its one node, so its node always compiles it.
-    """
-    table = _empty_local_roles[role]
-    if category not in table:
-        table[category] = type(f"{category!r}.{role.value}", (kernel_base(role),), {})
-    return table[category]
 
 
 def controlled_bases(current: Node) -> tuple[Node, ...]:
@@ -454,11 +436,8 @@ def _declaration_is_the_class(current: Node) -> bool:
     ``Mor(K).Monomorphisms()``; filling the declaration for one ``K`` would put that
     ``K``'s ancestry into the class every other ``K`` reads.
 
-    The empty declaration belongs to its node alone and is always the node's class.
-    Every other family must agree, and ``_claim`` asserts that it does.
+    A family whose members do agree shares one class, and ``_claim`` asserts that they do.
     """
-    if current.category.local_role_class(current.role) is empty_local_role(current.category, current.role):
-        return True
     return not current.category.has_ambient()
 
 
@@ -505,13 +484,20 @@ def _derived_class(current: Node, local: type[CategoryPoint], bases: tuple[type[
     receiver's MRO.  Sage builds a parent's class the same way, from
     ``(type(self), self._category.parent_class)`` (``Parent._init_category_``,
     ``sage/structure/parent.pyx``, inspected 2026-08-29).
+
+    One declaration serves a whole family, so a family member can stand over another:
+    every full subcategory reads ``FullSubcategory``'s declaration, and
+    ``Fun.Monomorphisms()`` stands over ``Fun.Faithful()``.  The body is then already in
+    the MRO through that base, at the one position C3 admits, and naming it again in
+    front would ask for it above its own descendant.
     """
+    written = () if any(issubclass(base, local) for base in bases) else (local,)
     try:
-        compiled = dynamic_class(f"{current.category!r}.{current.role.value}", (local, *bases), doccls=local, cache=False)
+        compiled = dynamic_class(f"{current.category!r}.{current.role.value}", (*written, *bases), doccls=local, cache=False)
     except TypeError as conflict:
         raise TypeError(
             f"the {current.role.value} class of {current.category!r} has no linearization over "
-            f"{[klass.__name__ for klass in (local, *bases)]}: {conflict}"
+            f"{[klass.__name__ for klass in (*written, *bases)]}: {conflict}"
         ) from conflict
     # ``Generic.__init_subclass__`` reads a class's parameters off its own
     # ``__orig_bases__``.  The derived class states bases without them, so the hook
@@ -994,7 +980,7 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
         catalogue(current)
         # The class the category wrote is the class the node compiles, so its body runs
         # on the value and its ``super()`` calls enter the compiled chain (POL-CAT-016).
-        # A category that declares nothing still compiles a class of its own: in Sage a
+        # A declaration with an empty body still compiles a class of its own: in Sage a
         # category without ``ParentMethods`` still has its own ``parent_class``, built
         # from its super categories and adding no methods.
         #

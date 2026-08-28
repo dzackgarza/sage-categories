@@ -304,6 +304,13 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
 class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     """``Fun = Mor(Cat())``."""
 
+    class ElementType(ElementOfObject):
+        """A generalized element ``t: T -> F`` of a functor: a natural transformation into it.
+
+        ``Cat()`` is the one category here whose 2-morphisms are not all identities, so
+        these are the substantive points of a morphism category (``MorphismCategory.ElementType``).
+        """
+
     class MorphismType(MorphismOfCategory):
         """A natural transformation: the 2-morphisms of ``Cat()``.
 

@@ -36,7 +36,7 @@ from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategory
 from sage_categories.kernel.decisions import Decision
 from sage_categories.kernel.predicates import Proposition, ask
-from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory
+from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
 
 __all__ = ["WideFixedEndpointCategory", "WideMorphismCategory", "WideSubcategory", "wide_subcategory"]
 
@@ -69,6 +69,15 @@ class WideMorphismCategory(MorphismCategory):
 
 class WideSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, TwoMorphismData]):
     """The wide subcategory of ``C`` on the morphisms of a multiplicative property subcategory ``P`` of ``Mor(C)``."""
+
+    class ObjectType(ObjectOfCategory):
+        """An object of ``C``: wideness is exactly that ``W`` has every one of them, as the same value."""
+
+    class ElementType(ElementOfObject):
+        """A generalized element ``t: T -> X`` whose defining morphism lies in ``P``, since those are the morphisms of ``W``."""
+
+    class MorphismType(MorphismOfCategory):
+        """A morphism of ``C`` placed in ``P``: ``W`` narrows the morphisms and nothing else."""
 
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData], morphism_property: Category) -> None:
         assert morphism_property.narrowing_base() is ambient.morphism_category(1), f"{morphism_property!r} is not a property subcategory of {ambient.morphism_category(1)!r}"

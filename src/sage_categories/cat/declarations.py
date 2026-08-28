@@ -9,8 +9,9 @@ Every declaration is a functor into ``Cat()``, and the parameter it takes is tha
 functor's domain.  A category with no parameter is the terminal-domain case: the point
 ``* -> Cat()``, whose value is a category.  ``Cat`` constructs that value when it declares
 it, so it is an object of ``Cat()`` from that moment -- it takes its ordinal, it is placed,
-and its three implementation classes are the empty ones a category declaring nothing
-already receives.  A parameterized family instead awaits the object and morphism actions
+and its three implementation classes are compiled from ``DeclaredCategory``'s
+declarations, which name the three kinds and no operation on any of them.  A parameterized
+family instead awaits the object and morphism actions
 its implementation supplies, exactly as ``Discrete`` states them.
 
 An implementation does not construct a second category.  It names this one in its own
@@ -30,6 +31,7 @@ from typing import TYPE_CHECKING
 # ``Cat`` and the compiled ``Cat().ObjectType`` come from the module that bootstraps
 # them, so this one holds the compiled class whatever imports it first.
 from sage_categories.cat.functors import Cat, Category
+from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
 
 if TYPE_CHECKING:
     from sage_categories.cat.functors import Functor
@@ -54,12 +56,30 @@ __all__ = [
 class DeclaredCategory(Category[[], []]):
     """A category ``Cat`` declared, before an implementation claims it (D80).
 
-    It declares no nested classes and selects no functors, so it compiles exactly as any
-    category that declares nothing does.  ``implemented_by`` completes the connection on
-    this one object: the class is strengthened in place -- the same in-place strengthening
-    every value receives when its placement improves -- and the roles are compiled again
-    onto it, keeping the ordinal declaration gave it.
+    Declaring says that the category exists and says nothing about its mathematics, so
+    the three classes below name the three kinds and no operation on any of them.  That
+    is the whole content of a declaration, and it is why implementing is a second act.
+    ``implemented_by`` completes the connection on this one object: the class is
+    strengthened in place -- the same in-place strengthening every value receives when its
+    placement improves -- and the roles are compiled again from the implementation's own
+    declarations, keeping the ordinal declaration gave it.
+
+    These three bodies are empty, and writing them is not the same as the kernel filling
+    the gap.  Written, they are a statement ``Cat`` makes on its own authority about a
+    category it has only declared, and the author of every role is known before and after
+    ``implemented_by``: ``Cat`` here, the implementation afterwards.  A class the kernel
+    supplied is nobody's statement, and under it a category that is deliberately silent
+    and one whose author forgot a declaration are the same category (POL-CAT-057).
     """
+
+    class ObjectType(ObjectOfCategory):
+        """An object of a category whose mathematics no implementation has stated yet."""
+
+    class ElementType(ElementOfObject):
+        """A generalized element of such an object."""
+
+    class MorphismType(MorphismOfCategory):
+        """A morphism between two such objects."""
 
     def __init__(self, name: str) -> None:
         self._name = name

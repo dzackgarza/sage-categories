@@ -22,7 +22,7 @@ from sage_categories.cat.category import Category
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import Predicate, Proposition
-from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory
+from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
 
 __all__ = ["PointCategory", "PointMorphismCategory"]
 
@@ -56,6 +56,20 @@ class PointMorphismCategory(MorphismCategory[[], []]):
 
 class PointCategory(Category[[], []]):
     """The one-object category on one existing object ``X``."""
+
+    class ObjectType(ObjectOfCategory):
+        """The sole object ``X``: the value its established category already holds.
+
+        The monomorphism into that category is identity on values, so ``{X}`` constructs
+        no object.  It is where a declaration specific to ``X`` belongs (POL-CAT-083):
+        ``{NN}`` owns what is true of the natural numbers and of no other set.
+        """
+
+    class ElementType(ElementOfObject):
+        """A generalized element ``t: T -> X`` in ``{X}``: the identity, since ``1_X`` is the only morphism."""
+
+    class MorphismType(MorphismOfCategory):
+        """``1_X``, the sole morphism of ``{X}``: the identity ``X`` already has where it was placed."""
 
     def __init__(self, member: CategoryPoint, targets: tuple[Category, ...]) -> None:
         self._member = member

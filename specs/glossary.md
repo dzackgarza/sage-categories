@@ -43,7 +43,7 @@ Do not remove a row after the source becomes clean (`POL-MATH-051`).
 | Structure functor | An ordinary functor returned by `C.structure_functors()` and used by the kernel to construct inherited class surfaces and constructor conversions. It need not be a subcategory monomorphism. |
 | Subcategory relation | A declared subcategory monomorphism. Python class inheritance and selection as a structure functor do not establish it. |
 | Classes specified by a category `C` | The category specifies `C.ObjectType`, `C.ElementType`, and `C.MorphismType` directly. The kernel constructs them dynamically from structure functors. |
-| Public functor image | The named functor owns `F.on_object(x)`, `F.on_morphism(f)`, and its image cache. |
+| Public functor image | The image constructed by the named action `F.on_object(x)` or `F.on_morphism(f)`. |
 | Inherited execution | A structure-functor target class is in the source class MRO. Its method runs on the initialized source instance. |
 | Constructor conversion | A structure functor converts source construction data to the exact data required by its target constructor. |
 

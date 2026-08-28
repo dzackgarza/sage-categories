@@ -277,11 +277,12 @@ The same rule applies downstream:
 - A lattice constructor can accept `b`, or the explicit pair `(L, b)` when that pair is the intended public presentation.
 
 A downstream leaf returns its immediate structure functors.
-When their target classes inherit the `Sets()` surface through C3, the functor that first enters `Sets()` supplies the required set construction data.
+Each functor supplies the construction data required by its immediate target class.
+Sage's controlled linearization orders those classes and places each shared ancestor once.
 With an arbitrary ambient category \(\mathcal C\), the leaf receives the capabilities owned by \(\mathcal C\); a set surface requires an explicit structure functor to `Sets()`.
 
 Each named functor owns its public image of a source value.
-It constructs that image from its pure conversion and returns the same image on repeated calls.
+It constructs that image through its specified object or morphism action.
 Different functors with the same endpoints remain independent.
 
 An inherited method runs on the structured source value.
@@ -369,7 +370,6 @@ It supplies the public mathematical contract and the private computation boundar
 
 The kernel constructs `C.ObjectType`, `C.ElementType`, and `C.MorphismType` dynamically from the immediate targets of `C.structure_functors()`.
 Sage dynamic classes and Sage's controlled linearization resolve the resulting inheritance graph.
-The kernel does not enumerate complete functor paths or compare constructor data from different paths.
 
 `C.ObjectType` inherits `Cat().ElementType` because an object of `C` is a point `* -> C`.
 `C.ElementType` implements points `1_C -> X` of objects `X in C`.
@@ -395,7 +395,7 @@ For each structure functor `F: C -> D`, the kernel:
 The local constructor accepts only the leaf's new semantic data.
 It initializes that state and calls `super().__init__()` once.
 A declaration can omit `__init__` when it adds no state.
-Its generated wrapper advances to the next C3 initializer.
+Its generated wrapper advances to the next initializer in Sage's MRO.
 The structure functor supplies the input required by the next class constructor.
 The leaf does not add ancestor fields or ancestor arguments.
 An object construction supplies its point `* -> C` to `Cat().ElementType`.
@@ -762,7 +762,7 @@ If changing one mathematical operation requires synchronized edits to two method
 | Ancestor constructor conversion | Structure functor |
 | Controlled class MRO and constructor composition | Kernel |
 | Inherited executable method | Declaring target category |
-| Public functor images and canonical route checks | Kernel |
+| Object and morphism images | The named functor |
 | Choice of exact leaf algorithm | Leaf implementation method |
 | Private lowering to Sage | Leaf implementation or private helper |
 | Sage algorithm execution | Sage, called through the private boundary |

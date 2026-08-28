@@ -277,7 +277,7 @@ The implementation satisfies this specification when the public API establishes 
 
 - total-order elements use inherited poset comparison;
 
-- all inherited set operations work through the C3 class graph;
+- all inherited set operations work through Sage's controlled class linearization;
 
 - iteration returns elements owned by the public ambient poset;
 

@@ -463,10 +463,11 @@ is `F.on_object(x)`. There is no operation that asks a category for "the image o
 the functor unstated. You should rarely apply a functor by hand; when you do, you get
 exactly what you programmed it to construct.
 
-Two selected paths to the same target class must supply the same constructor datum for
-that class. The kernel checks this agreement while it constructs the structured source
-instance. Each named functor still constructs and caches its own public images. Selection
-does not identify those images, and method compilation constructs no image.
+The kernel constructs each compiled class from the immediate targets of its selected
+structure functors. Sage's controlled linearization places a shared target class once,
+and cooperative initialization initializes that class once. Each named functor constructs
+the object and morphism images specified by its own action. Selection does not identify
+those images with the source value or with another functor's images.
 
 From the leaf writer's side this is ordinary Python inheritance, and that is the whole
 requirement. What a leaf writes:

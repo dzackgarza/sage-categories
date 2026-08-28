@@ -437,10 +437,8 @@ Each structure functor retains one pure conversion from source construction data
 The conversion reads no partly initialized value.
 
 The structured source instance carries the state required by every class in Sage's MRO.
-A shared ancestor occurs once and its initializer runs once. The kernel follows that MRO;
-it does not enumerate functor paths, create competing constructor data for one class, or
-compare such data. Each local constructor receives only its own datum and contributes its
-state once.
+A shared ancestor occurs once and its initializer runs once. Each local constructor
+receives only its own datum and contributes its state once.
 
 Every object-class constructor initializes `Cat().ElementType` with its point into the parent category.
 Thus `C.ObjectType` represents a point `* -> C`. A morphism uses the same object rule through `Mor(C).ObjectType`, as a point `* -> Mor(C)`. A `C.ElementType` represents a point `1_C -> X` with parent `X in C`.
@@ -981,7 +979,7 @@ It must:
 
 7. reject a structure functor when a target class needs construction input and the functor lacks an exact typed conversion;
 
-8. initialize each class in Sage's MRO once, without enumerating paths to that class or comparing constructor data across paths; each public functor action remains independent;
+8. initialize each class in Sage's MRO once; each public functor action remains independent;
 
 9. retain one object of `Fun(C, D)` for each named functor construction;
 

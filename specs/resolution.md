@@ -94,8 +94,7 @@ rule.
 Dynamic inheritance and functor application are different operations.
 
 For a named functor `F: C -> D`, `F.on_object(x)` constructs the object of `D` defined by
-`F`. The functor owns and caches that public image. Two named functors with the same
-endpoints can construct different images.
+`F`. Two named functors with the same endpoints can construct different images.
 
 An inherited method does not call `F.on_object(x)`. It runs on `x` through the compiled
 MRO. Thus Python inheritance does not identify `x` with `F(x)` and does not establish
@@ -140,12 +139,9 @@ The kernel acceptance suite must establish these facts for objects, elements, an
 
 5. A shared target class occurs once in Sage's MRO and initializes once.
 
-6. Construction performs no equality call and no comparison of path-specific constructor
-   data.
-
-7. A public call to a named functor returns its separate image, while an inherited method
+6. A public call to a named functor returns its separate image, while an inherited method
    runs on the original source instance.
 
-8. Unrelated declarations with one public name fail as a semantic collision.
+7. Unrelated declarations with one public name fail as a semantic collision.
 
 The same rules apply to `ObjectType`, `ElementType`, and `MorphismType`.

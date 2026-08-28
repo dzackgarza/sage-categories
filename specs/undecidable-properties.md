@@ -583,9 +583,7 @@ applied to `Sets()`; it is not a class nested inside `Sets`. The axiom is declar
 the implementing class is defined independently anywhere, and one declared field wires
 that class to its ambient category and axiom, as Sage's `_base_category_class_and_axiom`
 does. A property subcategory is therefore an ordinary category class and declares its own
-`ObjectType`, `ElementType`, and `MorphismType` like any other
-(`POL-LEAF-059`). Building it by calling a constructor and handing it a dictionary of role
-classes leaves it with nowhere to declare them.
+`ObjectType`, `ElementType`, and `MorphismType` like any other (`POL-LEAF-059`).
 
 The repository must not retain the bare-string semantics:
 
@@ -928,7 +926,7 @@ C.\operatorname{Finite}
 \{X\in C\mid U(X)\in\mathbf{Sets.Finite}\}.
 \]
 
-For an owned subcategory of `Sets()`, Sage’s axiom-join machinery can help construct this category and its dynamic role classes.
+For an owned subcategory of `Sets()`, Sage's axiom-join machinery can help construct this category and its dynamic implementation classes.
 
 For a general declared functor, the correct object is an inverse-image property category.
 It is not only a Python class join.
@@ -943,7 +941,7 @@ The kernel must derive:
 
 - its membership proposition;
 
-- its role-class inheritance;
+- its compiled-class inheritance;
 
 - its trusted constructor;
 
@@ -1008,11 +1006,11 @@ The kernel supplies:
 
 6. Positive self-refinement.
 
-7. Dynamic role-class refinement.
+7. Dynamic class refinement.
 
 8. Canonical category joins.
 
-The property category's role implementations supply only operations valid because \(P\) is known.
+The property category's implementation classes supply only operations valid because \(P\) is known.
 Its category declaration can bind decision procedures for the ambient membership proposition.
 
 ## Addendum: property-owned predicates and decision procedures

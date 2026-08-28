@@ -1,7 +1,9 @@
 """Minimal property category for finite sets.
 
-This file is design pseudocode (``POL-LEAF-014``). Its identifiers show the
-required contract. They do not define a second framework API.
+This file is design pseudocode (``POL-LEAF-014``). The shape is what it teaches:
+nested implementation classes, one axiom field, one membership proposition, one
+declared functor. Its identifiers are illustrative and define no second framework
+API.
 """
 
 from __future__ import annotations

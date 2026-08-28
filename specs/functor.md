@@ -335,7 +335,7 @@ A skeleton is the opposite extreme and is replete only when it is everything.
 
 ### Placement traces monic isofibrations
 
-`x in C` is established placement (`POL-CAT-068`). It propagates from `S` to `T` exactly along a functor that is a monomorphism of `Cat()` and an isofibration.
+`x in C` asks `C`'s membership proposition (`POL-CAT-043`, `POL-CAT-044`). Placement is a positive shortcut inside that one question: a value that entered through the property constructor already satisfies the defining predicate, so `ask()` answers from placement without recomputing (`POL-CAT-068`). Placement propagates from `S` to `T` exactly along a functor that is a monomorphism of `Cat()` and an isofibration.
 Monicity gives one value rather than a copy; repleteness makes the resulting membership statement invariant, so an object of `Sets().Finite()` is an object of `Sets()` while a cardinal is not a set.
 
 The choice is data.

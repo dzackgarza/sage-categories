@@ -164,7 +164,7 @@ the compiler applies this ownership rule:
 | \(D\) | Use the local declaration. |
 | \(B\) | Use the route \(D\to B\). |
 | \(C\) | Use the route \(D\to C\). |
-| \(A\) | Both routes return one canonical \(A\)-image by identity; the compiler initializes \(A\)'s role once. |
+| \(A\) | Both routes supply the same \(A\) constructor datum; the compiler initializes \(A\)'s class once. |
 | Both \(B\) and \(C\) under one name | Require a mathematical resolution or reject compilation. |
 
 The public surface is the union of both branches.
@@ -320,7 +320,7 @@ M\longrightarrow\operatorname{FiniteSets}
 \longrightarrow\operatorname{Sets}.
 \]
 
-Both paths reach the same canonical underlying set.
+Both paths supply the same underlying-set constructor datum.
 The module placement supplies linear operations.
 The finite-set placement supplies finite cardinality and finite enumeration.
 Neither path competes with the other.
@@ -333,7 +333,7 @@ The kernel uses these mathematical facts:
 
 - a finite product of finite sets is finite;
 
-- both routes have one canonical set image;
+- both paths supply one set constructor datum;
 
 - methods from both category placements belong on the public object.
 
@@ -436,7 +436,7 @@ The compiler distinguishes two kinds of duplicate names.
 ### One declaration reached twice
 
 If a method is owned by \(A\) and both branches reach \(A\), there is one mathematical declaration.
-The compiled class contains the \(A\) node once in its Python MRO. Object construction checks that both routes give the same canonical \(A\)-image.
+The compiled class contains the \(A\) class once in its Python MRO. Construction checks that both paths supply the same \(A\) constructor datum.
 Method compilation installs no route wrapper.
 
 Membership on a ring object in `Sets()` is such a case.
@@ -456,63 +456,38 @@ Sage's `FiniteCoxeterGroups.some_elements()` is the grounding example.
 
 The compiler must not use arbitrary route order to decide a semantic collision.
 
-## Strict equality and natural isomorphism
+## Constructor coherence and functor images
 
-Applying two selected routes to one value must give the same image.
-A diamond can satisfy this rule in either of two ways.
+Each named functor constructs and caches its own public images.
+Two functors with the same endpoints can return different objects.
+Selection in `structure_functors()` does not change this mathematical action.
 
-This section is about applying a named functor. It is not about how an inherited method
-runs. An inherited method applies to the value it was called on and reads the declaring
-category's state there, because the kernel initialized that state from the leaf's
-construction data through the declared functor's conversion (`POL-KERNEL-018`).
-Nothing in this section licenses a method that resolves a route to fetch a second value.
+An inherited method does not run on a public functor image.
+It runs on the structured source instance after the selected conversions initialize every target class in its MRO.
 
-### Strictly coherent routes
+When two selected paths reach one target class, they must supply the same exact constructor datum for that class.
+The kernel compares those data during source construction and raises a construction-defect error on disagreement.
+It names both paths and the common target class.
 
-Both routes return the same selected image by identity.
-The object image, element image, morphism image, parents, domains, and codomains are the same objects.
-The compiler deduplicates the routes.
-
-This identity holds by construction.
-A source value retains each ancestor value supplied as defining data.
-A derived ancestor image is constructed once from retained data and cached for that source value.
-A declared functor returns that retained or cached ancestor value on every call and never reconstructs an equal or isomorphic replacement.
-
-The compiler checks the identity during construction.
-If no constructor reaches the target node, it checks at the first public functor application.
-It traverses every route in `structure_functors()` declaration order, stores the first image in the canonical cache, and asserts that each later image `is` the stored image.
-On the first mismatch it raises a construction-defect error that names the source value's construction, the two routes, and the shared ancestor category.
-Nothing is repaired, replaced, or retried.
-The compiler never asks whether the two values are mathematically equal.
-
-Routine structural diamonds have this form.
-At the ambient `Sets()`, the two selected paths from a finite module to sets reach the same set object.
-
-### Merely isomorphic routes
-
-A functor enters `structure_functors()` only when every shared-ancestor route through it returns the retained canonical value by identity.
-Two routes that construct different presentations connected by a natural isomorphism are therefore never both selected.
-The second presentation remains an ordinary functor of `Fun` or an explicit isomorphism.
-
-Natural transformations are trusted constructions.
-They never rewrite, normalize, or identify structural routes, and the compiler performs no naturality or higher-categorical proof.
+This check does not compare, merge, or replace public functor images.
+A natural isomorphism between two images also does not identify their constructor data.
+If two presentations require different target state, the category selects one presentation or declares a separate mathematical resolution.
 
 ## Final decision
 
 The architecture uses the following rules.
 
-1. Selected declared functors form the complete inheritance graph.
+1. Functors selected by `structure_functors()` form the complete inheritance graph.
 
 2. The compiler collects methods from every reachable branch.
 
 3. A branch-specific method remains available on every structural descendant.
 
-4. Two routes to the same declaring category return one canonical image by identity.
+4. Two selected paths to the same target class supply one exact constructor datum.
 
 5. Routine strictly coherent diamonds resolve automatically in the kernel.
 
-6. No theory code traverses a route, obtains a second value standing for the one it was applied to, moves images, manages a canonical-image cache, or installs inherited methods.
-   This binds a category-owned method as much as a leaf method. A `Sets()` method applied to a poset reads its own state on that poset; it does not resolve a route to `Sets()` first.
+6. A category-owned method reads its initialized state on the structured source instance through direct Python MRO.
 
 7. A genuine presentation or algorithm choice is a small mathematical declaration by the category that owns the choice.
    The kernel executes it.
@@ -524,37 +499,32 @@ The architecture uses the following rules.
 
 10. Method-resolution order never decides mathematical meaning.
 
-11. Each compiled class contains the copied local members and the compiled classes of every selected ancestor in controlled C3 order.
-    The object and morphism chains then join the one compiled `Cat().ElementType` root through `ObjectOfCategory` or `MorphismOfCategory`. An ordinary element chain joins it through `ElementOfObject`. Copied functions bind `__class__` to the compiled class.
-    The rebound local initializer remains separate from the generated `__init__` wrapper.
+11. Each written class contains its local members and receives the classes of every selected target in controlled C3 order.
+    `C.ObjectType` also inherits `Cat().ElementType`, which models points `* -> C`.
+    `C.MorphismType` is `Mor(C).ObjectType`.
+    `C.ElementType` models points `1_C -> X` and does not share the `Cat().ElementType` base for that reason.
 
-12. The kernel allocates the public value first.
-    Before the C3 chain starts, each declared functor converts complete typed construction inputs along structural edges.
-    The object context adds `ObjectStageIdentity(C)`. The morphism context adds `ArrowStageIdentity(C, A, B)`. An ordinary element keeps its defining morphism.
-    A generated class wrapper reads the input for its own node and passes only its local datum to the node initializer.
-    Thus adjacent C3 classes need not be joined by a structural edge.
-    The compiler initializes every reachable class and every common ancestor once.
+12. Each selected functor converts complete typed construction data for its target classes, and every reachable class and common ancestor is initialized exactly once.
+    The object context supplies the point `* -> C`; the element context supplies the point `1_C -> X`.
+    Allocation and initialization order are implementation choices (`POL-DOC-017`).
 
-13. A source value retains each ancestor value supplied as defining data.
-    A derived ancestor image is constructed once and cached.
-    A declared functor returns that retained value on every call and never reconstructs an equal or isomorphic replacement.
+13. Each named functor owns and caches its public images.
+    Different functors with the same endpoints remain independent.
 
-14. During construction or the first public functor application, the compiler traverses every route to that category in declaration order, stores the first image and construction input, and asserts that each later route supplies those same objects by identity.
-    A mismatch raises a construction-defect error naming both routes and the shared ancestor.
+14. During source construction, the compiler compares the target constructor data from all selected paths to one class.
+    A mismatch raises a construction-defect error naming both paths and the target class.
 
-15. The compiler never asks whether two images are mathematically equal and performs no naturality or higher-categorical proof.
-    Natural transformations are trusted constructions.
-    A construction states each preservation or lift fact at that construction; the compiler has no preservation registry.
+15. The compiler never identifies public functor images or proves naturality.
+    Natural transformations remain trusted mathematical constructions.
 
-16. A functor enters `structure_functors()` only when every shared-ancestor route through it returns the retained canonical value by identity.
-    A route pair that is only naturally isomorphic remains a pair of ordinary functors of `Fun`.
+16. A functor enters `structure_functors()` only when its conversions are coherent with every other selected path to the same target class.
 
 The short form is:
 
 > Preserve every branch.
-> Initialize every role once.
+> Initialize every class once.
 > Resolve only duplicate access to a common owner.
-> Identity holds by construction and is checked during construction.
+> Constructor data agree by construction.
 > Ask a category for a choice only when the mathematics contains a real choice.
 
 ## Acceptance examples
@@ -564,7 +534,7 @@ The resolution design must support these examples.
 ### Ring inheritance
 
 A ring object in `Sets()` receives additive-group operations and multiplicative-monoid operations.
-Both routes reach one canonical underlying set.
+Both paths supply one underlying-set constructor datum.
 Set membership has one owner and one public implementation.
 
 ### Finite vector spaces

@@ -26,7 +26,7 @@ For a property \(P\) with property subcategory \(C_P\), use this order:
 | Available algorithms cannot decide | `Unknown` | Keep the current category |
 
 The defining property category adds real mathematics.
-Its role implementations can add operations valid under the property.
+Its implementation classes can add operations valid under the property.
 They never replace the defining proposition with a Boolean method.
 Membership in `Mor(Sets()).Monomorphisms()` makes `ask()` return `True` through category entailment.
 
@@ -111,7 +111,7 @@ There are three routes to the same placement:
 - An exact computation establishes the property.
 
 The routes differ only in how the property becomes established.
-They must use the same kernel refinement operation and produce the same canonical owned morphism.
+They must use the same kernel refinement operation and refine the same owned morphism.
 
 The active Sage or SymPy session remains the mathematical context.
 A consumer does not maintain a separate assumption-context object.
@@ -201,7 +201,7 @@ A declared functor can create another owned implementation:
 F:C\longrightarrow D,\qquad x\longmapsto F(x).
 \]
 
-That operation can require canonical images and preimages.
+That operation can require images and preimages under named functors.
 
 Property refinement is a subcategory monomorphism:
 

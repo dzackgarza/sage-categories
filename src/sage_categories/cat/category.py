@@ -174,29 +174,6 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         """The chosen objects whose hom functors are jointly faithful; none by default (POL-MATH-037)."""
         return ()
 
-    def structural_image(self, value: CategoryPoint) -> CategoryPoint:
-        """The image of ``value`` in this category under the selected structural route to it.
-
-        A method declared by ``C`` runs on every structural descendant of ``C`` with the
-        descendant as its receiver (POL-KERNEL-018), so inside a ``Sets()`` declaration
-        ``self`` can be a poset while the method is about that poset's underlying set.
-        ``C.structural_image(x)`` is the value such a method is about: the image the kernel
-        computed and retained when ``x`` was constructed (POL-KERNEL-029).  For a value of
-        ``C`` itself it is that value.
-
-        This is the image under the composite of the selected functors, not the image of a
-        morphism: ``Sets().ChosenSubsets().image_of(f)`` is the set-theoretic image of a
-        map, a different operation with its own name (POL-CAT-011).
-
-        This reads the retention.  It constructs nothing, chooses no route, and owns no
-        table, so a leaf keeps none (``specs/resolution.md``, final decision 6).
-        """
-        from sage_categories.kernel.transport import transport
-
-        role = role_of(value)
-        assert role is not None, f"{value!r} is not an owned value"
-        return transport(value, compiler.node(self, role))
-
     def retain_datum[Datum](self, value: CategoryPoint, datum: Datum) -> None:
         """Retain the datum ``value`` was constructed with as an object of this category.
 
@@ -966,10 +943,12 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         def __init__(self, data: FunctorData) -> None:
             self._on_object = data.on_object
             self._on_morphism = data.on_morphism
-            # ``F(f)`` is one morphism, not a fresh one per call: a functor assigns each
-            # morphism of its domain a single image (POL-CAT-012, POL-FUN-001).  The object
-            # action is canonical already, through the construction that retains one object
-            # per construction datum and through the transport caches.
+            # ``F(X)`` and ``F(f)`` are one value each, not a fresh one per call: a functor
+            # assigns each object and each morphism of its domain a single image
+            # (POL-CAT-012, POL-FUN-001).  The images belong to this functor, so two
+            # functors with the same endpoints keep separate ones (``specs/resolution.md``,
+            # "Constructor agreement and functor images").
+            self._object_images: MonoDict = MonoDict()
             self._morphism_images: MonoDict = MonoDict()
             super().__init__()
 
@@ -983,7 +962,14 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         # values whose placement reaches that node.
 
         def on_object(self, member_object: ObjectOfCategory) -> ObjectOfCategory:
-            """The image of an object of the domain."""
+            """The image of an object of the domain, one value per object."""
+            if member_object in self._object_images:
+                return self._object_images[member_object]
+            image = self._construct_object_image(member_object)
+            self._object_images[member_object] = image
+            return image
+
+        def _construct_object_image(self, member_object: ObjectOfCategory) -> ObjectOfCategory:
             if self in _object_constructor_conversions:
                 from sage_categories.kernel import compiler
                 from sage_categories.kernel.transport import construction_input
@@ -1127,35 +1113,69 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             assert self not in _morphism_constructor_conversions, f"{self!r} already retains a morphism constructor conversion"
             _morphism_constructor_conversions[self] = conversion
 
-        def retain_structural_images[ObjectDatum, MorphismDatum](
+        def retain_constructor_data[SourceObjectDatum, TargetObjectDatum, SourceMorphismDatum, TargetMorphismDatum](
             self,
-            object_image: Callable[[ObjectDatum], ObjectOfCategory],
-            morphism_image: Callable[[MorphismDatum], MorphismOfCategory],
+            object_datum: Callable[[SourceObjectDatum], TargetObjectDatum],
+            morphism_datum: Callable[[SourceMorphismDatum], TargetMorphismDatum],
         ) -> None:
-            """Retain the structural action of a functor whose images are already-constructed values.
+            """Retain the two rules of a selected functor: source construction data to target constructor data.
 
-            The usual selected functor forgets structure: the underlying set of a poset, the
-            representing set of a cardinal.  Its image is then not built at the moment the
-            functor is applied -- it is a value the domain's defining data already names, and
-            the domain's own constructor made it.  Each rule states that mathematics and
-            nothing else: it reads one node's local datum and returns the image value.  The
-            kernel supplies the construction inputs the compiler consumes and the public object
-            and morphism actions (POL-FUN-035, POL-LEAF-054).
+            A selected functor states how one of its domain's own constructions produces the
+            data its codomain's constructor consumes -- the underlying set of a poset, the
+            set a cardinal represents (POL-FUN-035, POL-LEAF-058).  Each rule reads one
+            node's local datum and returns the datum of the target, and nothing else: it
+            names no image, no construction input, and no route (POL-LEAF-054).
+
+            The kernel does the rest.  The datum initializes the target's class on the
+            structured source instance, and the same datum constructs this functor's own
+            public image (``specs/functor.md``, "Structural inheritance": the named functor
+            uses the same conversion for its public action).
             """
-            from sage_categories.kernel.construction import retained_input
+            from sage_categories.kernel.construction import retained_morphism_input, retained_object_input
 
             def object_conversion[Value: ObjectOfCategory](
-                source: ObjectConstructionInput[Value, ObjectDatum],
-            ) -> ObjectConstructionInput[ObjectOfCategory, object]:
-                return retained_input(object_image(source.datum))
+                source: ObjectConstructionInput[Value, SourceObjectDatum],
+            ) -> ObjectConstructionInput[ObjectOfCategory, TargetObjectDatum]:
+                return retained_object_input(self._image_from_object_data(source, object_datum(source.datum)))
 
             def morphism_conversion[Value: MorphismOfCategory](
-                source: MorphismConstructionInput[Value, MorphismDatum],
-            ) -> MorphismConstructionInput[MorphismOfCategory, object]:
-                return retained_input(morphism_image(source.datum))
+                source: MorphismConstructionInput[Value, SourceMorphismDatum],
+            ) -> MorphismConstructionInput[MorphismOfCategory, TargetMorphismDatum]:
+                return retained_morphism_input(self._image_from_morphism_data(source, morphism_datum(source.datum)))
 
             self.retain_object_constructor_conversion(object_conversion)
             self.retain_morphism_constructor_conversion(morphism_conversion)
+
+        def _image_from_object_data[Value: ObjectOfCategory, SourceDatum, TargetDatum](
+            self,
+            source: ObjectConstructionInput[Value, SourceDatum],
+            datum: TargetDatum,
+        ) -> ObjectOfCategory:
+            """This functor's image of an object, constructed once from the target constructor datum."""
+            if source.canonical_image in self._object_images:
+                return self._object_images[source.canonical_image]
+            target = self.codomain()
+            image = target.role_class(Role.OBJECT)(category=target, data=datum)
+            self._object_images[source.canonical_image] = image
+            return image
+
+        def _image_from_morphism_data[Value: MorphismOfCategory, SourceDatum, TargetDatum](
+            self,
+            source: MorphismConstructionInput[Value, SourceDatum],
+            datum: TargetDatum,
+        ) -> MorphismOfCategory:
+            """This functor's image of a morphism, constructed once between the images of its endpoints."""
+            if source.canonical_image in self._morphism_images:
+                return self._morphism_images[source.canonical_image]
+            target = self.codomain()
+            image = target.role_class(Role.MORPHISM)(
+                target.morphism_category(1),
+                self.on_object(source.identity.domain),
+                self.on_object(source.identity.codomain),
+                datum,
+            )
+            self._morphism_images[source.canonical_image] = image
+            return image
 
         def object_constructor_input[
             SourceValue: ObjectOfCategory,
@@ -1243,10 +1263,11 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             compiler input and makes no second kind of functor (POL-CAT-085).  What selection
             adds is the reading: the rules of a selected functor state how one of ``C``'s own
             constructions produces the data ``D``'s constructor consumes, so each takes one
-            node's local datum and names the value ``D`` made from it (POL-LEAF-058).  The
-            kernel turns them into the construction inputs the compiler consumes and into the
-            public object and morphism actions (POL-FUN-035); the leaf names no canonical
-            image, construction input, or transport (POL-LEAF-054).
+            node's local datum and returns the target's constructor datum (POL-LEAF-058).
+            The kernel turns them into the construction inputs the compiler consumes and into
+            the public object and morphism actions (POL-FUN-035); the leaf constructs no
+            target value and names no canonical image, construction input, or transport
+            (POL-LEAF-054).
 
             A functor that is never selected keeps its rules as its ordinary value-level
             actions: the represented functor ``Mor(C)(G, -)``, a constant diagram, a Kan
@@ -1261,7 +1282,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             assert self._on_object is not None and self._on_morphism is not None, (
                 f"{self!r} states neither its two rules nor its constructor conversions, so it cannot be selected"
             )
-            self.retain_structural_images(self._on_object, self._on_morphism)
+            self.retain_constructor_data(self._on_object, self._on_morphism)
 
         def _retain_identity_constructor_conversions(self) -> None:
             """Retain the identity conversions for an identity-on-value functor."""

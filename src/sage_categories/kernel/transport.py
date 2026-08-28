@@ -2,8 +2,10 @@
 
 Selected functors supply the object, element, and morphism construction-input
 conversions.  This module composes those conversions along complete structural
-routes and checks diamonds by image and input identity (POL-CAT-061/066/071,
-POL-FUN-003/035).  It never participates in inherited method dispatch.
+routes and checks diamonds by their constructor data, never by their public
+images (POL-CAT-061/066/071, POL-FUN-003/035; ``specs/resolution.md``,
+"Constructor agreement and functor images").  It never participates in inherited
+method dispatch.
 """
 
 from __future__ import annotations
@@ -18,7 +20,7 @@ if TYPE_CHECKING:
     from sage_categories.cat.category import Category
     from sage_categories.kernel.construction import ElementConstructionInput, MorphismConstructionInput, ObjectConstructionInput
 
-__all__ = ["construction_input", "placement_node", "role_node", "transport"]
+__all__ = ["construction_input", "placement_node", "role_node"]
 
 
 def placement_node(value: CategoryPoint) -> compiler.Node:
@@ -127,10 +129,17 @@ def _morphism_route[
     return current
 
 
+def _disagree(first: object, second: object) -> bool:
+    """Whether two routes decidedly supply different constructor data (``specs/resolution.md``, final decision 4)."""
+    from sage_categories.kernel.predicates import ask
+
+    return ask(first == second) is False
+
+
 def _raise_mismatch(routes: tuple[compiler.Route, ...], route: compiler.Route, target: compiler.Node) -> None:
-    raise compiler.StructuralImageMismatch(
+    raise compiler.ConstructorDataMismatch(
         f"the route {_route_name(routes[0])} and the route {_route_name(route)} "
-        f"produce distinct construction inputs or images in {target.category!r}"
+        f"supply distinct constructor data in {target.category!r}"
     )
 
 
@@ -152,7 +161,7 @@ def _object_input_at[
     first = _object_route(source, routes[0])
     for route in routes[1:]:
         candidate = _object_route(source, route)
-        if candidate is not first or candidate.canonical_image is not first.canonical_image:
+        if _disagree(candidate.datum, first.datum):
             _raise_mismatch(routes, route, target)
     return first
 
@@ -179,7 +188,7 @@ def _element_input_at[
     first = _element_route(source, routes[0])
     for route in routes[1:]:
         candidate = _element_route(source, route)
-        if candidate is not first or candidate.canonical_image is not first.canonical_image:
+        if _disagree(candidate.datum, first.datum):
             _raise_mismatch(routes, route, target)
     return first
 
@@ -202,7 +211,7 @@ def _morphism_input_at[
     first = _morphism_route(source, routes[0])
     for route in routes[1:]:
         candidate = _morphism_route(source, route)
-        if candidate is not first or candidate.canonical_image is not first.canonical_image:
+        if _disagree(candidate.datum, first.datum):
             _raise_mismatch(routes, route, target)
     return first
 
@@ -278,8 +287,3 @@ def construction_input[
 
     retain_canonical_transport(value, target.category, converted.canonical_image, converted)
     return converted
-
-
-def transport(value: CategoryPoint, target: compiler.Node) -> CategoryPoint:
-    """The canonical image of ``value`` at ``target``: the value its selected route constructs."""
-    return construction_input(value, target).canonical_image

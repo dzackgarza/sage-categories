@@ -87,12 +87,12 @@ if TYPE_CHECKING:
     from sage_categories.cat.functors import Functor
 
 __all__ = [
+    "ConstructorDataMismatch",
     "DeclaredMethod",
     "Entry",
     "Node",
     "Route",
     "SemanticCollisionError",
-    "StructuralImageMismatch",
     "Step",
     "catalogue",
     "compile_category",
@@ -112,8 +112,8 @@ class SemanticCollisionError(Exception):
     """Two incomparable owners declare one method spelling (POL-CAT-011, POL-API-011)."""
 
 
-class StructuralImageMismatch(Exception):
-    """Two selected routes produced distinct images of one value (POL-CAT-012)."""
+class ConstructorDataMismatch(Exception):
+    """Two selected routes to one target class supplied distinct constructor data (POL-CAT-012)."""
 
 
 class Node(NamedTuple):
@@ -679,30 +679,54 @@ def _morphism_step[Value: MorphismOfCategory, Datum](
     return initialize
 
 
+def _assert_data_agree(role: str, known: tuple[object, Route], datum: object, source: Node, route: Route) -> None:
+    """Two selected routes to one target class supply one constructor datum (``specs/resolution.md``, final decision 4/14).
+
+    The comparison is of the data, never of the public images: two named functors reaching
+    one class own separate images by construction, and identifying them is not what
+    agreement means (``specs/resolution.md``, "Constructor agreement and functor images").
+    A datum that is an owned mathematical value compares as a proposition, so the
+    disagreement that raises is a decided one.
+    """
+    from sage_categories.kernel.predicates import ask
+
+    first, first_route = known
+    if ask(first == datum) is False:
+        raise ConstructorDataMismatch(
+            f"the {role} routes {_route_name(first_route)} and {_route_name(route)} to "
+            f"{source.category!r} supply the distinct constructor data {first!r} and {datum!r}"
+        )
+
+
+def _ordered_steps[Datum](
+    current: Node,
+    found: list[tuple[Node, Datum, Callable[[], None], Route]],
+) -> tuple[tuple[Node, Callable[[], None]], ...]:
+    """The one step per reachable node, in the order the linearization visits them."""
+    expected = reachable(current)
+    assert all(any(same_node(owner, target) for owner, _, _, _ in found) for target in expected)
+    return tuple((target, next(step for owner, _, step, _ in found if same_node(owner, target))) for target in expected)
+
+
 def _object_steps[RootValue: ObjectOfCategory, RootDatum](
     current: Node,
     root: ObjectConstructionInput[RootValue, RootDatum],
 ) -> tuple[tuple[Node, Callable[[], None]], ...]:
     """Close each exact object input into one zero-argument C3 node step."""
     assert current.role is Role.OBJECT
-    found: list[tuple[Node, int, ObjectOfCategory, Callable[[], None], Route]] = []
+    found: list[tuple[Node, object, Callable[[], None], Route]] = []
 
     def visit[Value: ObjectOfCategory, Datum](
         source: Node,
         source_input: ObjectConstructionInput[Value, Datum],
         route: Route,
     ) -> None:
-        known = next(((identity, image, first_route) for owner, identity, image, _, first_route in found if same_node(owner, source)), None)
+        known = next(((datum, first_route) for owner, datum, _, first_route in found if same_node(owner, source)), None)
         if known is None:
             retain_constructed_transport(root, source.category, source_input)
-            found.append((source, id(source_input), source_input.canonical_image, _object_step(source, source_input, root.canonical_image), route))
+            found.append((source, source_input.datum, _object_step(source, source_input, root.canonical_image), route))
         else:
-            identity, image, first_route = known
-            if identity != id(source_input) or image is not source_input.canonical_image:
-                raise StructuralImageMismatch(
-                    f"the object routes {_route_name(first_route)} and {_route_name(route)} to "
-                    f"{source.category!r} return distinct canonical images or construction inputs"
-                )
+            _assert_data_agree("object", known, source_input.datum, source, route)
         for step, target in successors(source):
             assert step.functor is not None
             target_input = step.functor.object_constructor_input(source_input)
@@ -715,9 +739,7 @@ def _object_steps[RootValue: ObjectOfCategory, RootDatum](
             visit(target, target_input, (*route, step))
 
     visit(current, root, ())
-    expected = reachable(current)
-    assert all(any(same_node(owner, target) for owner, _, _, _, _ in found) for target in expected)
-    return tuple((target, next(step for owner, _, _, step, _ in found if same_node(owner, target))) for target in expected)
+    return _ordered_steps(current, found)
 
 
 def _element_steps[RootValue: CategoryPoint, RootDatum](
@@ -726,24 +748,19 @@ def _element_steps[RootValue: CategoryPoint, RootDatum](
 ) -> tuple[tuple[Node, Callable[[], None]], ...]:
     """Close each exact element input into one zero-argument C3 node step."""
     assert current.role is Role.ELEMENT
-    found: list[tuple[Node, int, CategoryPoint, Callable[[], None], Route]] = []
+    found: list[tuple[Node, object, Callable[[], None], Route]] = []
 
     def visit[Value: CategoryPoint, Datum](
         source: Node,
         source_input: ElementConstructionInput[Value, Datum],
         route: Route,
     ) -> None:
-        known = next(((identity, image, first_route) for owner, identity, image, _, first_route in found if same_node(owner, source)), None)
+        known = next(((datum, first_route) for owner, datum, _, first_route in found if same_node(owner, source)), None)
         if known is None:
             retain_constructed_transport(root, source.category, source_input)
-            found.append((source, id(source_input), source_input.canonical_image, _element_step(source, source_input, root.canonical_image), route))
+            found.append((source, source_input.datum, _element_step(source, source_input, root.canonical_image), route))
         else:
-            identity, image, first_route = known
-            if identity != id(source_input) or image is not source_input.canonical_image:
-                raise StructuralImageMismatch(
-                    f"the element routes {_route_name(first_route)} and {_route_name(route)} to "
-                    f"{source.category!r} return distinct canonical images or construction inputs"
-                )
+            _assert_data_agree("element", known, source_input.datum, source, route)
         for step, target in successors(source):
             assert step.functor is not None
             target_input = step.functor.element_constructor_input(source_input)
@@ -751,9 +768,7 @@ def _element_steps[RootValue: CategoryPoint, RootDatum](
             visit(target, target_input, (*route, step))
 
     visit(current, root, ())
-    expected = reachable(current)
-    assert all(any(same_node(owner, target) for owner, _, _, _, _ in found) for target in expected)
-    return tuple((target, next(step for owner, _, _, step, _ in found if same_node(owner, target))) for target in expected)
+    return _ordered_steps(current, found)
 
 
 def _cat_element_step[Datum](
@@ -786,24 +801,19 @@ def _morphism_steps[RootValue: MorphismOfCategory, RootDatum](
 ) -> tuple[tuple[Node, Callable[[], None]], ...]:
     """Close each exact morphism input into one zero-argument C3 node step."""
     assert current.role is Role.MORPHISM
-    found: list[tuple[Node, int, MorphismOfCategory, Callable[[], None], Route]] = []
+    found: list[tuple[Node, object, Callable[[], None], Route]] = []
 
     def visit[Value: MorphismOfCategory, Datum](
         source: Node,
         source_input: MorphismConstructionInput[Value, Datum],
         route: Route,
     ) -> None:
-        known = next(((identity, image, first_route) for owner, identity, image, _, first_route in found if same_node(owner, source)), None)
+        known = next(((datum, first_route) for owner, datum, _, first_route in found if same_node(owner, source)), None)
         if known is None:
             retain_constructed_transport(root, source.category, source_input)
-            found.append((source, id(source_input), source_input.canonical_image, _morphism_step(source, source_input, root.canonical_image), route))
+            found.append((source, source_input.datum, _morphism_step(source, source_input, root.canonical_image), route))
         else:
-            identity, image, first_route = known
-            if identity != id(source_input) or image is not source_input.canonical_image:
-                raise StructuralImageMismatch(
-                    f"the morphism routes {_route_name(first_route)} and {_route_name(route)} to "
-                    f"{source.category!r} return distinct canonical images or construction inputs"
-                )
+            _assert_data_agree("morphism", known, source_input.datum, source, route)
         for step, target in successors(source):
             assert step.functor is not None
             target_input = step.functor.morphism_constructor_input(source_input)
@@ -811,9 +821,7 @@ def _morphism_steps[RootValue: MorphismOfCategory, RootDatum](
             visit(target, target_input, (*route, step))
 
     visit(current, root, ())
-    expected = reachable(current)
-    assert all(any(same_node(owner, target) for owner, _, _, _, _ in found) for target in expected)
-    return tuple((target, next(step for owner, _, _, step, _ in found if same_node(owner, target))) for target in expected)
+    return _ordered_steps(current, found)
 
 
 def _construct_object_root[Datum](

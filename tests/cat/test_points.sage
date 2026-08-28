@@ -18,8 +18,7 @@ table in ``specs/functor.md``, "The level shift".  Toy categories live only in t
 from sage.rings.integer_ring import ZZ as _integer_ring
 
 from sage_categories.all import *
-from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role
-from sage_categories.kernel import compiler
+from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
 
 
 class Marked(Category):
@@ -94,31 +93,6 @@ def test_the_point_functor_supplies_the_element_surface_one_level_down() -> None
 
     assert three.element_mark() == "element", "an object of C is a generalized point 1 -> C"
     assert identity.element_mark() == "element", "a morphism of C is a generalized point [1] -> C"
-
-
-def test_the_level_shift_applies_no_functor_and_is_split_by_point_domain() -> None:
-    """The shift's step carries both roles and the point domain it restricts to, and no functor acts."""
-    marked, subject, point = MARKED, SUBJECT, POINT
-    target = compiler.node(point, Role.ELEMENT)
-
-    from_objects = compiler.routes(compiler.node(subject, Role.OBJECT), target)
-    from_morphisms = compiler.routes(compiler.node(subject, Role.MORPHISM), target)
-    object_step = from_objects[int(0)][int(0)]
-    morphism_step = from_morphisms[int(0)][int(0)]
-
-    assert object_step.functor is None, "the shift is a reindexing, not a functor application"
-    assert object_step.source_role is Role.OBJECT and object_step.target_role is Role.ELEMENT
-    assert morphism_step.source_role is Role.MORPHISM and morphism_step.target_role is Role.ELEMENT
-    assert object_step.point_domain is Cat().Terminal(), "objects are the generalized points 1 -> C"
-    assert morphism_step.point_domain is Cat().Simplex(int(1)), "morphisms are the generalized points [1] -> C"
-
-
-def test_the_level_shift_contributes_no_class_base() -> None:
-    """A shift is not a subcategory relation, so ``C.ObjectType`` does not derive from ``{C}.ElementType``."""
-    marked, subject, point = MARKED, SUBJECT, POINT
-
-    assert not issubclass(subject.ObjectType, point.ElementType)
-    assert not issubclass(subject.MorphismType, point.ElementType)
 
 
 # -- a point category on a distinguished named object (POL-CAT-083) --

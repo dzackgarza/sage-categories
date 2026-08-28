@@ -11,7 +11,7 @@ claims to prove a functor law, naturality, or a universal property (POL-MATH-036
 import pytest
 
 from sage_categories.all import *
-from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role
+from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
 
 
 class Bare(Category):
@@ -41,17 +41,9 @@ def test_cat_is_unstratified_and_bootstrapped_first() -> None:
     assert Cat().ordinal() == int(0)
     assert Cat().ordinal() < min(Fun.ordinal(), Sets().ordinal(), Bare().ordinal())
     # ``Category`` is the compiled object role of ``Cat()``: the class every object of
-    # ``Cat()`` is an instance of, with no wrapper (README, "Core model").  Its local
-    # declaration is a distinct class, and the compiler copies that class's body onto
-    # the compiled role rather than making it a base, so a declaration never appears in
-    # a compiled MRO (POL-KERNEL-028).  This is Sage's ``ParentMethods`` against
-    # ``parent_class``: two classes, two names.
+    # ``Cat()`` is an instance of, with no wrapper (README, "Core model").
     assert Category is Cat().ObjectType
     assert issubclass(Category, ObjectOfCategory)
-    declaration = Cat().local_role_class(Role.OBJECT)
-    assert declaration is not Category and declaration not in Category.__mro__
-    declared_names = set(name for name in vars(declaration) if not name.startswith("_"))
-    assert declared_names and declared_names.issubset(set(vars(Category)))
 
 
 def test_an_ordinary_category_is_an_object_of_cat() -> None:

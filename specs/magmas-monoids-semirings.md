@@ -64,7 +64,7 @@ The definitions use morphisms and commutative diagrams in `C`. They remain meani
 
 ## Magmas
 
-An object of `Magmas(V)` is an object `X in C` with a chosen binary law
+An object of `Magmas(V)` is an object `X in C` with a chosen multiplication morphism
 
 \[
 \mu_X:X\otimes X\longrightarrow X.
@@ -87,13 +87,13 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (self.product_projection(0),)
 ```
 
-The projection to the chosen binary-law morphism remains an ordinary retained functor.
+The projection to the multiplication morphism remains an ordinary retained functor.
 It does not contribute the morphism category's public method surface.
 
 `mu_X` is a morphism out of a tensor product.
 It presents no diagram and carries no cone, injection, or projection.
 An object with a magma structure needs no product or coproduct construction of its own.
-Every chosen binary law below has this form.
+Every multiplication morphism below has this form.
 
 At `V = Sets()` with the cartesian product, an object is a set with a binary operation: an ordinary magma.
 At `V = Cat()` with the cartesian product, an object is a category `X` with a functor
@@ -104,9 +104,10 @@ At `V = Cat()` with the cartesian product, an object is a category `X` with a fu
 
 and no law.
 
-`mu_X` is constructor data retained by the magma implementation.
-`Magmas(V)` requires no public object accessor for it.
-The fixed-endpoint magma-morphism category owns the binary-law-preservation containment predicate.
+The constructor receives or defines `mu_X`.
+The specification does not prescribe its private storage.
+The public surface has no generic `operation()` or `combine()` alias.
+The fixed-endpoint magma-morphism category owns the operation-preservation containment predicate.
 The kernel derives its standard property application.
 
 ## Additive and multiplicative forms
@@ -118,7 +119,7 @@ Magmas(V).Additive()
 Magmas(V).Multiplicative()
 ```
 
-They retain the same underlying object, binary law, and morphisms.
+They retain the same underlying object, multiplication morphism, and morphisms.
 The additive subcategory exposes `+` on points.
 The multiplicative subcategory exposes `*` on points.
 Their complete immediate structural tuples are
@@ -182,8 +183,15 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (Fun(self, Magmas(V)).Monomorphisms().Isofibrations()(),)
 ```
 
-`mu_X` and `eta_X` are constructor data retained by the monoid implementation.
-The notation-neutral category requires no public accessors for them.
+The constructor receives or defines `mu_X` and `eta_X`.
+The notation-neutral category exposes the unit morphism:
+
+```python
+M.unit_morphism()
+```
+
+`unit_morphism()` returns `eta_X:I -> X`.
+It is a point only when `I` is terminal.
 
 The notation subcategories are
 
@@ -238,7 +246,7 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (Fun(self, Monoids(V)).Monomorphisms().Isofibrations().Full()(),)
 ```
 
-The selected functor supplies the chosen binary law and unit data required by the monoid constructor.
+The selected functor supplies the multiplication morphism and unit data required by the monoid constructor.
 `Groups(V)` adds only the inversion morphism and its laws.
 
 At `V = Sets()`, an object is an ordinary group.
@@ -326,7 +334,7 @@ Longer routes to `C` arise through the projections of `C_x`.
 
 | Category | New public mathematics |
 | --- | --- |
-| `Magmas(V)` | Binary-law preservation predicate on morphisms. |
+| `Magmas(V)` | Operation-preservation predicate on morphisms. |
 | `Magmas(V).Additive()` | `+` on points. |
 | `Magmas(V).Multiplicative()` | `*` on points. |
 | `Monoids(V)` | Associativity, unit laws, and unit-preserving morphisms. |
@@ -398,7 +406,7 @@ The notation subcategories use the Sage reference sections for [magmas](https://
 
 - Deeper inherited operations arrive through functor composition.
 
-- Each chosen binary law is a morphism out of a tensor or cartesian product.
+- Each multiplication morphism has domain a tensor or cartesian product.
 
 - Every law is an equation between morphisms of the supplied ambient.
 

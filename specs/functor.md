@@ -171,7 +171,7 @@ Mor(C).Automorphisms()
 ```
 
 Each is a property subcategory of an owned morphism category.
-Each property has its owned predicate, trusted constructor, assumption route, the property subcategories it is a full subcategory of, and optional computational routes.
+Each property has its owned predicate, construction dispatcher, assumption route, the property subcategories it is a full subcategory of, and optional computational routes.
 Fixed endpoints use the same dispatch for every property subcategory `P` of `Mor(K)`: `P(A, B)` is `Mor(K)(A, B).P()`, one cached object.
 
 ## Canonical objects of `Cat`
@@ -291,8 +291,8 @@ F = Fun(C, D)(on_object, on_morphism)
 F = Fun(C, D).Full()(F)
 ```
 
-This is the property category's trusted constructor.
-The code writer uses external mathematics to select `Fun(C, D).Full()`. The constructor records that assertion and refines the same owned functor.
+This category call asserts the property and supplies an existing owned functor.
+The code writer uses external mathematics to select `Fun(C, D).Full()`. The kernel records that assertion by refining the same owned functor.
 It does not prove, certify, or check fullness.
 
 An interactive assumption uses the same predicate and refinement:
@@ -343,7 +343,7 @@ A skeleton is the opposite extreme and is replete only when it is everything.
 
 ### Placement traces monic isofibrations
 
-`x in C` asks `C`'s membership proposition (`POL-CAT-043`, `POL-CAT-044`). Placement is a positive shortcut inside that one question: a value that entered through the property constructor already satisfies the defining predicate, so `ask()` answers from placement without recomputing (`POL-CAT-068`). Placement propagates from `S` to `T` exactly along a functor that is a monomorphism of `Cat()` and an isofibration.
+`x in C` asks `C`'s membership proposition (`POL-CAT-043`, `POL-CAT-044`). Placement is a positive shortcut inside that one question: construction or same-object refinement into the property category already established the defining predicate, so `ask()` answers from placement without recomputing (`POL-CAT-068`). Placement propagates from `S` to `T` exactly along a functor that is a monomorphism of `Cat()` and an isofibration.
 Monicity gives one value rather than a copy; repleteness makes the resulting membership statement invariant, so an object of `Sets().Finite()` is an object of `Sets()` while a cardinal is not a set.
 
 The choice is data.
@@ -655,7 +655,7 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (Fun(self, Semirings(Cat())).Monomorphisms().Isofibrations()(),)
 ```
 
-`Semirings(Cat())` declares `zero()` and `one()` on its object surface and `+` and `*` on its element surface ([magmas-monoids-semirings.md](magmas-monoids-semirings.md)). Its constructors retain the addition and multiplication functors, the zero and one objects, and the selected law data.
+`Semirings(Cat())` declares `zero()` and `one()` on its object surface and `+` and `*` on its element surface ([magmas-monoids-semirings.md](magmas-monoids-semirings.md)). Its construction receives or defines the addition and multiplication functors, the zero and one objects, and their equations.
 The point functor converts these into the corresponding compiled state.
 The level shift places each public symbol one level down:
 

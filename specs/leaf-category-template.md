@@ -77,7 +77,7 @@ proposition.assume()
 
 The leaf does not implement `ask()`, `assume()`, or `Proposition.assume()`. The kernel implements them.
 Direct construction in `C().P()` asserts the property.
-An exact `True` decision or a positive assumption refines the same owned object through that property-category constructor.
+An exact `True` decision or a positive assumption refines the same owned object through the kernel mechanism.
 
 Bind computational procedures at the property-category integration site.
 Put their engine work in a private backend module:

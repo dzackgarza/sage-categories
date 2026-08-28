@@ -66,7 +66,7 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
 
 `Semirings(Cat())` is the general internal semiring category at ambient `Cat()`. Its objects, its addition and multiplication functors, its zero and one points, and its laws are defined in [Semirings](magmas-monoids-semirings.md#semirings).
 `Cardinal()` supplies cardinal addition with zero and cardinal multiplication with one. The selected point functor supplies their complete compiled classes, exact constructor conversions, retained state, and public methods.
-The law data is the equations between these functors ([functor.md](functor.md#ambient-algebraic-categories)). `Cardinal()` is skeletal, so each binary law selects one representative and the laws hold as equalities ([Laws in the supplied ambient](magmas-monoids-semirings.md#laws-in-the-supplied-ambient)).
+The law data is the equations between these functors ([functor.md](functor.md#ambient-algebraic-categories)). `Cardinal()` is skeletal, so each binary operation selects one representative and the laws hold as equalities ([Laws in the supplied ambient](magmas-monoids-semirings.md#laws-in-the-supplied-ambient)).
 
 For every pair of represented cardinals, `Mor(Cardinal())(kappa, lambda)` is the discrete category on the owned function set between their representatives:
 

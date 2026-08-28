@@ -248,8 +248,8 @@ Category containment owns predicate evaluation. The finite property is declared 
 that implements `Sets().Finite()` supplies the defining predicate of that membership,
 `cardinality() < aleph_0`. Every category with a selected functor to `Sets()` receives
 `is_finite()` from that one declaration, and a poset is finite exactly when its underlying
-set is. Placement in the subcategory is a fast positive route, because a value that entered
-through the property constructor already satisfies the predicate. Placement is never the
+set is. Placement in the subcategory is a fast positive route, because construction or
+same-object refinement already established the predicate. Placement is never the
 definition of membership. Ask containment; do not reach for a category's predicate object
 and apply it at a use site.
 
@@ -257,8 +257,8 @@ The same rule applies to every `is_X()` question that names a property subcatego
 The property declaration owns its containment predicate, `predicate_name`, and `predicate_owner`.
 The kernel derives the application on the largest meaningful ambient implementation class.
 
-A property subcategory has one trusted same-object refinement route.
-This does not limit its ordinary constructors from mathematical or engine representations.
+Every positive property decision uses the kernel's same-object refinement mechanism.
+This mechanism does not limit a property's constructors from mathematical or engine representations.
 Keep explicit prohibitions that exclude known architectural failure patterns.
 
 Decide an equality with `ask(a == b)`. On an owned value `==` returns a proposition, so
@@ -755,9 +755,9 @@ contains group objects. For a category `C` with the required product structure,
 `Semirings(C)` and `Rings(C)` contain internal semirings and rings. The specification
 for the ambient structure states each strictness or coherence requirement.
 
-A magma constructor receives its chosen binary law.
-The additive and multiplicative subcategories expose that law through `+` and `*`.
-Do not require a public object accessor for the stored law or specify its private representation.
+A magma constructor receives or defines its multiplication morphism.
+The additive and multiplicative subcategories expose the corresponding binary operation through `+` and `*`.
+Do not define public `operation()` or `combine()` aliases or specify the private representation.
 
 Let `M` be monoidal, let `C` have a chosen left `M`-action, and let
 `A in Monoids(M)`. An object of `Modules(A, C)` is an object `X in C` with an action

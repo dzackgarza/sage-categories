@@ -267,9 +267,9 @@ Defining `FF_p` as a one-object category parameterized by `p` must never require
 **D22 (08-24, corrected 08-28). Assumption is a shortcut for construction.** `assume(X.is_finite())` and `assume(f.is_injective())` refine into the corresponding property category.
 Python containment asks the same proposition and returns its Boolean decision, so it is not the proposition passed to `assume()` (`4544eba5 2026-08-28T12:00Z`).
 
-**D23 (08-24). Property refinement strengthens the category of the same value.** It is not transport into a second implementation, and it is not a family of admission constructors.
-Each property category owns one constructor that trusts its defining property.
-These APIs must not exist: `monos.checked(...)`, `monos.from_hypothesis(...)`, `monos.from_theorem(...)`, `construct(..., check=True)`. Direct construction, global assumption, exact computation, and construction-owned mathematics all converge on that one constructor.
+**D23 (08-24, corrected 08-29). Property refinement strengthens the category of the same value.** It is not transport into a second implementation, and it is not a family of admission APIs.
+Direct property construction, global assumption, exact computation, and construction-owned mathematics use the kernel's same-object refinement mechanism.
+These APIs must not exist: `monos.checked(...)`, `monos.from_hypothesis(...)`, `monos.from_theorem(...)`, `construct(..., check=True)`. A property category can still provide every constructor required by its supported mathematical and engine representations (`01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T20:21Z).
 
 **D24 (08-24). Backend code does not call `assume()`.** The Sage or SymPy session owns the global assumption context, and a notebook user may write into it.
 Internal code already knows the category in which to construct its result, and constructs there.
@@ -399,9 +399,9 @@ Every declaration is a functor into `Cat()`, and the parameter it takes is that 
 
 **D89 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T19:51Z). Property applications come from property subcategories.** When `is_X()` asks whether a value has property `X`, the property subcategory owns the containment predicate. Its `predicate_name` gives the exact public spelling, and its `predicate_owner` gives the largest meaningful ambient implementation class. The kernel derives the public application from that declaration. A leaf or operation specification does not define a second method contract for the same question.
 
-**D90 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T20:21Z). Algebraic structures expose their standard mathematical syntax.** A magma constructor receives its chosen binary law. The public element surface applies that law through `+` in the additive subcategory or `*` in the multiplicative subcategory. The specification does not require an object-level accessor for the stored law or prescribe its private representation. A module action is different: the action morphism is mathematical data that applications can construct and inspect.
+**D90 (08-29, corrected 08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T20:21Z). Algebraic structures expose their standard mathematical syntax.** A magma constructor receives or defines its multiplication morphism. The additive and multiplicative subcategories expose the corresponding binary operation through `+` and `*`. The public API has no generic `operation()` or `combine()` alias. The specification does not prescribe private storage. Accessors for other chosen structures require their own mathematical contract.
 
-**D91 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T20:21Z). Property refinement and representation construction are distinct.** One property subcategory has one trusted same-object refinement route. This does not limit its ordinary constructors. A finite-set category can accept lists, tuples, Python sets, SymPy sets, Julia sets, GAP sets, and other supported representations through as many exact constructor routes as its mathematics requires.
+**D91 (08-29, corrected 08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T20:21Z). Property refinement and representation construction are distinct.** Positive property evidence uses the kernel's same-object refinement mechanism. This does not limit the property's constructors. A finite-set category can accept lists, tuples, Python sets, SymPy sets, Julia sets, GAP sets, and other supported representations through as many exact constructor routes as its mathematics requires.
 
 **D92 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T20:21Z). Active prohibitions remain explicit.** A specification keeps prohibitions that exclude known architectural failure patterns. Such a prohibition is a current contract, not a record of removed implementation history.
 

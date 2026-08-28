@@ -91,7 +91,7 @@ A raw rule determines propositions stating totality and codomain closure.
 Exact `True` invokes the owned morphism constructor.
 Exact `False` rejects admission.
 `Unknown` leaves the rule outside the set-morphism category.
-The trusted morphism constructor, an active assumption, exact positive evaluation, and a named mathematical construction all use the same category constructor.
+Direct construction, an active assumption, exact positive evaluation, and a named mathematical construction all establish the same morphism placement.
 A callable does not establish totality by itself.
 
 After admission, a set morphism supplies:
@@ -128,7 +128,7 @@ In `Sets()`:
 
 A morphism-property predicate returns its applied proposition.
 `ask()` evaluates it.
-A property constructor refines a morphism only after an exact result, scoped hypothesis, or named theorem establishes the property.
+The kernel refines a morphism only after an exact result, scoped hypothesis, or named theorem establishes the property.
 
 An inverse of an isomorphism is an owned set morphism.
 It satisfies both inverse equations.
@@ -213,6 +213,7 @@ If `X` has a chosen enumeration, these constructions can retain a derived enumer
 Countability alone does not select one.
 
 Their category-owned implementations register exact cardinality cases from cardinal arithmetic.
+They do not enumerate an infinite base set.
 
 ## Cardinality and enumeration
 

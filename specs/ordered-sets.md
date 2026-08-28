@@ -65,7 +65,7 @@ x\leq y\land y\leq z\Rightarrow x\leq z.
 The containment predicate of `PartiallyOrderedSets()` returns this proposition without deciding it.
 Its relation-property declaration uses `predicate_name = "is_partial_order"` and `predicate_owner = Sets().Subobjects(X * X).ObjectType`.
 `ask()` can use an exhaustive finite algorithm or another exact handler.
-Exact `True` invokes the trusted `PartiallyOrderedSets()` constructor.
+Exact `True` refines the relation into `PartiallyOrderedSets()`.
 `False` disproves admission.
 `Unknown` leaves the relation in its ambient category.
 
@@ -75,7 +75,7 @@ Selecting the property-category constructor directly asserts the laws:
 PartiallyOrderedSets()(relation)
 ```
 
-Its standard property application can be passed to `assume()`. A named mathematical construction returns through the same property-category constructor.
+Its standard property application can be passed to `assume()`. A named mathematical construction returns its result already placed in the property category.
 There are no checked, hypothesis-backed, or theorem-backed constructor families.
 
 Named constructors include:
@@ -90,7 +90,7 @@ They do not repeat exhaustive checks.
 For example, the usual order on `{1, ..., 10^10}` must use its construction theorem.
 Its constructor must not enumerate all pairs or triples.
 
-An infinite relation can enter `PartiallyOrderedSets()` through its trusted constructor, an active assumption, exact positive evaluation, or a named mathematical construction.
+An infinite relation can enter `PartiallyOrderedSets()` through direct construction, an active assumption, exact positive evaluation, or a named mathematical construction.
 
 ## Total-order refinement
 
@@ -102,8 +102,8 @@ The containment predicate of `TotallyOrderedSets()` is the proposition:
 
 This property declares `predicate_name = "is_total"` and `predicate_owner = PartiallyOrderedSetsCategory.ObjectType`.
 The standard property application returns this proposition, and `ask()` returns its decision.
-Exact `True` invokes the trusted total-order constructor.
-An active assumption and a named mathematical construction invoke the same constructor without exhaustive checking.
+Exact `True` refines the object into `TotallyOrderedSets()`.
+An active assumption and a named mathematical construction establish the same placement without exhaustive checking.
 `False` and `Unknown` keep the object in its previously established category.
 
 Finite totality can use exhaustive pair checks.
@@ -140,7 +140,7 @@ The containment predicate for the fixed-endpoint poset-morphism category is the 
 x\leq_P y\Rightarrow f(x)\leq_Q f(y).
 \]
 
-For a represented finite source, exhaustive pair checking is one exact handler for `ask()`. A witnessed violation makes `ask()` return `False`. An unresolved evaluation makes it return `Unknown`. Exact `True` invokes the poset morphism constructor `Mor(PartiallyOrderedSets())(P, Q)`. Direct property construction, an active assumption, and a named mathematical construction use that same constructor.
+For a represented finite source, exhaustive pair checking is one exact handler for `ask()`. A witnessed violation makes `ask()` return `False`. An unresolved evaluation makes it return `Unknown`. Exact `True` refines the morphism into `Mor(PartiallyOrderedSets())(P, Q)`. Direct property construction, an active assumption, and a named mathematical construction establish the same placement.
 
 Named theorem-backed routes include identities, composites, product projections, and product mediating morphisms.
 
@@ -183,6 +183,7 @@ Such a product remains a poset.
 
 `PartiallyOrderedSets().Subobjects(P).from_predicate(predicate)` constructs the induced subposet, its restricted order, and its monomorphism into `P`.
 Finite-poset algorithms use owned poset elements and owned finite subobjects.
+They do not expose backend elements, Python iterators, or built-in containers.
 They expose these primitive operations:
 
 | Operation | Public result |

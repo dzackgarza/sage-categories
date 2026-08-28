@@ -145,28 +145,28 @@ Property refinement is not transport into a second implementation.
 It is not a family of admission constructors.
 It strengthens the category of the same owned value.
 
-### One constructor per property category
+### Property refinement convergence
 
-For a property \(P\) defining \(C_P\), the property category owns the trusted constructor:
+For a property \(P\) defining \(C_P\), direct construction can assert the property:
 
 ```python
 f = Mor(Sets()).Monomorphisms()(A, B)(rule)
 ```
 
-That constructor accepts the semantic data needed for a monomorphism.
 Choosing the category asserts injectivity.
-The evidence source does not change the constructor.
+The category can accept each supported mathematical or engine representation through an exact constructor.
+The number of such constructors is not part of the refinement contract.
 
 The four public routes are:
 
 | Route | Operation |
 | --- | --- |
-| Direct property construction | Call the \(C_P\) constructor |
-| Interactive assumption | `assume(C_P.membership_proposition(f))` invokes the same \(C_P\) refinement |
-| Exact computation | A `True` result invokes the same \(C_P\) refinement |
-| Named mathematical construction | Return directly through the \(C_P\) constructor |
+| Direct property construction | Construct a value already placed in \(C_P\) |
+| Interactive assumption | `assume(C_P.membership_proposition(f))` refines the same value into \(C_P\) |
+| Exact computation | A `True` result refines the same value into \(C_P\) |
+| Named mathematical construction | Construct its result already placed in \(C_P\) |
 
-A named mathematical construction can still have its own API because it accepts different mathematical data.
+A named mathematical construction can have its own API because it accepts different mathematical data.
 It does not exist merely to select “the theorem route.”
 
 ### Backend code does not call `assume()`
@@ -245,7 +245,7 @@ The generated `is_X()` application still returns the category-owned proposition.
 ### Strongest property placement and one-object categories
 
 Construct each owned value in the strongest property-based subcategory established by its construction.
-A programmer can establish a property by selecting that trusted subcategory constructor.
+A programmer can establish a property by constructing directly in that subcategory.
 This is a mathematical assertion in the implementation.
 It does not require the general decision procedure to recompute the property.
 
@@ -253,8 +253,8 @@ A named-object construction places its result directly in every property categor
 The generated property application then reads the same containment proposition through category placement.
 
 Property refinements must propagate through the category graph.
-If a category `C` defines a property subcategory `C.P()` and `D` is structurally a subcategory of `C`, the kernel must derive `D.P()` as the corresponding narrowing of `D`. A leaf must not define another property class, refinement constructor, predicate, or transport route.
-Sage's `with_axiom` mechanism is the design precedent: a property constructor defined once becomes available on descendant categories.
+If a category `C` defines a property subcategory `C.P()` and `D` is structurally a subcategory of `C`, the kernel must derive `D.P()` as the corresponding narrowing of `D`. A leaf must not define another property class, refinement mechanism, predicate, or transport route.
+Sage's `with_axiom` mechanism is the design precedent: the property category and its refinement behavior become available on descendant categories.
 
 This uniqueness concerns same-object property refinement only.
 A property category can have many ordinary constructors from supported mathematical and engine representations.
@@ -279,7 +279,7 @@ Likewise, `{FF_p}` is a one-object category parameterized by the prime `p`. Its 
 It never derives finiteness by enumeration, cardinality computation, or backend inspection.
 It constructs `FF_p` directly in the finite property subcategory.
 
-For an interactive claim not owned by a construction, the user can apply the sanctioned global assumption operation, such as `assume(Sets().Finite().membership_proposition(X))`. The kernel-derived property application permits `assume(X.is_finite())`. Both forms invoke the same property-category constructor.
+For an interactive claim not owned by a construction, the user can apply the sanctioned global assumption operation, such as `assume(Sets().Finite().membership_proposition(X))`. The kernel-derived property application permits `assume(X.is_finite())`. Both forms use the same kernel refinement.
 Backend and theory code still construct directly in the category they establish; they do not call `assume()`.
 
 ## Proposition interface
@@ -431,9 +431,9 @@ proposition.assume()
 They do not evaluate a Boolean-returning method first.
 They record the proposition with its semantic argument intact.
 
-If the proposition defines a property subcategory, a positive assumption invokes that subcategory's trusted constructor and self-refines the same owned value.
-An exact `True` result from `ask()` invokes the same constructor.
-Direct construction and named mathematical construction already enter through that constructor.
+If the proposition defines a property subcategory, a positive assumption self-refines the same owned value into that subcategory.
+An exact `True` result from `ask()` uses the same kernel refinement.
+Direct construction and named mathematical construction already return values with that placement.
 
 Thus these routes still converge:
 
@@ -473,7 +473,7 @@ The evaluation order is:
 
 4. Run the owned exact handlers and engine algorithms.
 
-5. On exact `True`, invoke the property-category constructor and return `True`.
+5. On exact `True`, refine the same owned value into the property category and return `True`.
 
 6. On exact `False`, retain the negative decision and return `False`.
 
@@ -547,7 +547,7 @@ X in Sets().Finite()        # the same proposition, forced to a Boolean
 
 `X.is_finite()` and `X in Sets().Finite()` are one question asked twice. The first returns the proposition, the second asks it and must answer with a Boolean.
 
-Placement is a positive shortcut inside that one question, not a second notion of membership. A value that entered through the property constructor already satisfies the defining predicate, so `ask()` answers `True` from placement without recomputing (`POL-CAT-068`). A value that never entered still gets the defining predicate evaluated. Never split the mathematics off into a handler registered beside a placement-only membership proposition; that makes `X in Sets().Finite()` report `False` for a finite set that happens to have been constructed weakly.
+Placement is a positive shortcut inside that one question, not a second notion of membership. Construction or same-object refinement into the property category establishes the defining predicate, so `ask()` answers `True` from placement without recomputing (`POL-CAT-068`). A value without that placement still gets the defining predicate evaluated. Never split the mathematics off into a handler registered beside a placement-only membership proposition; that makes `X in Sets().Finite()` report `False` for a finite set that happens to have been constructed weakly.
 
 `X not in Sets().Finite()` therefore reports that the defining predicate decided `False`. The undecided case never reaches this boundary: the assertion above raises, because `Unknown` is not `False`. Ask the proposition instead when a decision may be unavailable. A negative decision is retained as itself; the kernel constructs no complementary category from it.
 

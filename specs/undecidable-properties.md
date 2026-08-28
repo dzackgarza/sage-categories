@@ -158,7 +158,7 @@ def __contains__(self, candidate: Any) -> bool:
 `Unknown` is not `False`, and a bool cannot carry it, so the undecided case fails loudly rather than being reported as non-membership.
 The three-valued question is `ask(C.membership_proposition(x))`, which every caller that must handle the undecided case asks instead.
 
-Placement is a positive shortcut inside that one question, not a second notion of membership: a value that entered through the property constructor already satisfies the defining predicate, so step 1 answers `True` without recomputing (`POL-CAT-068`). A value that never entered still has the defining predicate evaluated, and that predicate can be undecided. Endpoint equality in `Mor(C)(A, B)` and the membership rule of a rule-defined set are the same case. Those are what the assertion catches.
+Placement is a positive shortcut inside that one question, not a second notion of membership: construction or same-object refinement into the property category already established the defining predicate, so step 1 answers `True` without recomputing (`POL-CAT-068`). A value without that placement still has the defining predicate evaluated, and that predicate can be undecided. Endpoint equality in `Mor(C)(A, B)` and the membership rule of a rule-defined set are the same case. Those are what the assertion catches.
 
 The kernel must not cache `Unknown` as mathematical falsity.
 
@@ -326,7 +326,7 @@ ask(f.is_injective())       # May compute or return Unknown.
 g = Mor(Sets()).Monomorphisms()(X, Y)(rule)
 ask(g.is_injective())       # True from category placement.
 
-assume(f.is_injective())    # Refines f through the same property constructor.
+assume(f.is_injective())    # Refines f through the kernel's same-object mechanism.
 ```
 
 An identity map constructs directly into `D.Isomorphisms()`. It never runs injectivity or surjectivity algorithms.
@@ -459,7 +459,7 @@ From that property declaration, the kernel generates:
 
 - `C.P()`;
 
-- its constructor;
+- its category-owned construction dispatcher;
 
 - its membership proposition;
 
@@ -659,7 +659,7 @@ It must not create:
 
 - a second implementation hierarchy;
 
-- a parallel same-object refinement constructor;
+- a parallel same-object refinement mechanism;
 
 - a second defining predicate.
 
@@ -931,7 +931,7 @@ The kernel must derive:
 
 - its compiled-class inheritance;
 
-- its trusted constructor;
+- its category-owned construction dispatcher;
 
 - its refinement behavior.
 
@@ -1409,7 +1409,7 @@ Direct construction also refines without computation:
 f = Mor(Sets()).Epimorphisms()(A, B)(rule)
 ```
 
-All positive routes invoke the same property-category constructor.
+All positive routes establish the same category placement through the kernel's refinement mechanism.
 
 ### The clean ownership rule
 

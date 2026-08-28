@@ -18,6 +18,8 @@
 
 - [Structural inheritance](#structural-inheritance)
 
+- [Declared categories and their implementations](#declared-categories-and-their-implementations)
+
 - [Point categories and point functors](#point-categories-and-point-functors)
 
 - [Functor construction and presentation data](#functor-construction-and-presentation-data)
@@ -445,6 +447,118 @@ A point `x: 1_C -> X` is a `C.ElementType` value with `x.parent() is X`. For `F:
 
 A generalized element `t: T -> X` maps to `F(t): F(T) -> F(X)`. It remains separate from `ElementType` unless its domain is the terminal object.
 For a category `C`, `Fun(*, C)` models its points and `Fun(T, C)` models its generalized elements with domain `T`. The category `Fun([1], C)` models arrows of `C` separately.
+
+## Declared categories and their implementations
+
+`Cat` declares the categories the repository expects to exist. A downstream category is
+then the implementation of one it declared (D80). Declaring and implementing are two acts,
+and only the second belongs to a leaf, which is what lets information flow from the kernel
+into the leaves and never back (D81): a kernel construction stated over `Sets` uses the
+declaration `Cat` holds, and never reaches into the set implementation to obtain it.
+
+A declaration that no implementation meets is open work, and the list of them is the work
+queue for leaf writers. It is a surface to read, never a check that fails a build.
+
+### A declaration is a functor into `Cat()`
+
+Every declaration is a functor into `Cat()`, and the parameter it takes is that functor's
+domain. A category with no parameter is the case where the domain is the terminal category:
+
+| Declared | Functor | Parameter |
+| --- | --- | --- |
+| `Sets`, `Posets`, `TotallyOrderedSets` | `* -> Cat()` | none |
+| `NN`, `ZZ` | `* -> Cat()` | none; the value is a one-object category |
+| `FF` | `Discrete(Primes) -> Cat()` | a prime of `ZZ` |
+| `MagmaObjects`, `MonoidObjects`, `SemiringObjects`, `RingObjects` | `Cat() -> Cat()` | a category |
+| `ModuleObjects(C)` | `Monoids(M) -> Cat()` | a monoid object |
+
+`Discrete: Sets() -> Cat()` is already built this way, so a family of categories indexed by
+something is a functor into `Cat()` before this section adds anything.
+
+```python
+Sets          = Cat().declare("Sets")
+ZZ            = Cat().declare("ZZ")
+FF            = Cat().declare("FF", Discrete(Primes))
+MonoidObjects = Cat().declare("MonoidObjects", Cat())
+```
+
+Each declaration is an object of `Fun(domain, Cat())`. A declaration with the terminal
+domain is a point `* -> Cat()`, and its value is a category.
+
+`Monoids := MonoidObjects(Sets())`, `Magmas := MagmaObjects(Sets())`, and `Modules(R)`
+declare nothing. They are applications of a declared family to a declared point, and they
+exist exactly when both are implemented. Functor application retains one image per
+argument (`POL-CAT-066`), so `MonoidObjects(Sets())` is one category however often it is
+written.
+
+### The declared object is the final object
+
+`Cat` constructs the category when it declares it. It is an object of `Cat()` from that
+moment: it takes its ordinal, it is placed in `Cat()`, and its three implementation classes
+are the empty ones a category that declares nothing already receives.
+
+The kernel then names that object:
+
+```python
+Discrete = Fun(Sets, Cat())(on_object, on_morphism)
+```
+
+An implementation does not construct a second category. It declares itself the
+implementation of the one already there:
+
+```python
+class SetsCategory(Category[[Rule], []]):
+    _implements = "Sets"
+
+    class ObjectType(...): ...
+    class ElementType(...): ...
+    class MorphismType(...): ...
+
+    def structure_functors(self): ...
+```
+
+This is `_base_category_class_and_axiom` generalized from an axiom subcategory to a
+declared base category, which is what D80 states: `FiniteSets` already declares itself the
+implementation of `Sets().Finite()`.
+
+The kernel completes the connection on the one object: it strengthens the declared
+category's class to the implementing class, the same in-place strengthening every value
+receives when its placement improves, then reads the now-present nested classes and
+selected functors and compiles them onto it.
+
+**The ordinal is not retaken.** It stays the one from declaration, which is when the
+category entered `Cat()`. That is what keeps every codomain older than the category
+selecting it. Because the object never changes identity, every reference written against
+the declaration uses the implementation the moment it lands, with no edit and no
+resolution pass.
+
+### What each kind of implementation supplies
+
+A category with no parameter supplies the implementing category class, connected as above.
+
+A one-object category, `NN` or `ZZ`, supplies its distinguished object and the point
+functors placing it in each target; `{X}` is the construction, and the next section states
+it. Its implementation therefore waits on `Sets`, which is an ordering on the work queue
+and not a difficulty.
+
+A parameterized family supplies `on_object` and `on_morphism`, exactly as `Discrete` does,
+and connects the same way.
+
+### Failing loudly
+
+Naming a declared category as a functor's **domain** is always safe, and it is what lets
+the kernel state `Fun(Sets, Cat())` against the declaration alone.
+
+These fail:
+
+- selecting a functor whose **codomain** is declared and not implemented, because the
+  descendant would compile the empty implementation classes into its own linearization;
+
+- applying a declared family that is not implemented, because it has no category to
+  return and an empty one would put a category with no mathematics into `Cat()`;
+
+- two implementations claiming one declaration, or an implementation naming a declaration
+  that was never made.
 
 ## Point categories and point functors
 

@@ -379,6 +379,9 @@ This is D77.6 generalized. `FiniteSets` already declares itself the implementati
 **D81 (08-28, `77631b59` 2026-08-28T17:35:47Z). Imports flow from the kernel into the leaves, never backwards.** No kernel module imports a leaf module.
 This is the executable form of the Philosophy's information-flow rule, and it is what D80 is for: a generic construction stated over `Sets` uses the declaration the kernel holds, and never reaches into the set implementation to obtain it. A kernel module that imports a leaf has taken that leaf's mathematics into the kernel, which is the defect the rule names whether or not the result works.
 
+**D82 (08-28, `77631b59` 2026-08-28T18:00:33Z). `Cat` holds a mathematical planning surface.** It declares the categories the repository expects: points such as `Sets`, `Posets`, `NN`, and `ZZ`; construction functors such as `MagmaObjects(C)`, `MonoidObjects(C)`, and `RingObjects(C)`; and the specializations those give, `Monoids := MonoidObjects(Sets())`.
+Every declaration is a functor into `Cat()`, and the parameter it takes is that functor's domain; a category with no parameter is the terminal-domain case. A declaration no leaf implements is a work queue for leaf writers, auditable against, and never a check that fails a build (`AGENTS.md`, "Tests"). [Declared categories and their implementations](functor.md#declared-categories-and-their-implementations) states the mechanism.
+
 **D77 (08-28). The leaf writer's contract is a closed list.** The kernel exists to make this list short, so anything a leaf must supply beyond it is a kernel defect, not a leaf obligation.
 
 1. `ObjectType`, `ElementType`, and `MorphismType`, as nested classes.

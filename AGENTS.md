@@ -556,9 +556,9 @@ The framework must represent maps such as:
 
 Here \(\mathbb{N}\) excludes zero.
 
-Membership predicates can return `bool | Unknown`.
-`Unknown` means that the available data and algorithms do not supply an answer.
-It is not `False`.
+Membership methods return applied propositions.
+`ask()` returns `True`, `False`, or Sage `Unknown`.
+`Unknown` means that the available data and algorithms do not supply an answer; it is not `False`.
 
 For a predicate on a set `B`, construct the selected subset `A` together with its monomorphism `A -> B`.
 The subset is an object of `Sets()`.
@@ -600,16 +600,16 @@ They must satisfy, when the cardinal arithmetic is known,
 \#(Y^X)=(\#Y)^{\#X}.
 \]
 
-The cardinality functor transports those results; it does not contain construction-specific cases.
-Write `X.cardinality() == 3`.
-Do not write `X.cardinality().value == 3`.
+Each set construction registers these exact cases for the category-owned cardinality predicate.
+Write `kappa = ask(X.cardinality())`, require `kappa is not Unknown`, and then use the ordinary cardinal operations on `kappa`.
+Never expose or inspect a cardinal engine value.
 
 Cardinals form a semiring with a poset structure, not integer wrappers. The poset
 is what records that `2 ** aleph_0` is incomparable to most `aleph_i` in ZFC.
 There is no separate symbolic cardinal, and cardinals implement no `Unknown`
-handling of their own: `cardinality()` uses the same `ask`/`assume` machinery as
-every other operation undecidable in full generality, returning a cardinal when the
-answer is known and `Unknown` when it is not. Preserve an unknown comparison as
+handling of their own: `cardinality()` returns an applied predicate with result category
+`Cardinal()`. `ask(X.cardinality())` returns an owned cardinal when an exact route applies
+and `Unknown` when none applies. Preserve an unknown comparison as
 `Unknown`; do not throw an exception or select a Boolean value.
 
 Build cardinals on Sage's existing semiring and poset support rather than hand-rolling

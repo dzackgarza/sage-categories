@@ -282,13 +282,9 @@ Backend and theory code still construct directly in the category they establish;
 
 ### Predicates return propositions
 
-Most mathematical truth-valued operations are owned predicates.
+Every mathematical truth-valued operation is an owned predicate.
 Applying one returns an unevaluated proposition.
 It does not return `True`, `False`, `Decision`, or `Unknown`.
-
-A specification can instead declare a direct decision when an exact total algorithm is part of that operation's public meaning.
-This is an explicit exception.
-It does not change the default predicate contract.
 
 This rule applies to:
 
@@ -404,11 +400,12 @@ An assertion states that its condition is known to be true.
 Therefore, an assertion on an applied predicate must ask it:
 
 ```python
-assert ask(proposition) is True
+decision = ask(proposition)
+assert decision is not Unknown
+assert decision
 ```
 
 Do not rely on the proposition's Python truth value.
-A direct exact decision can appear in an assertion without another `ask()` call.
 
 ### Assumption and decision use one proposition
 

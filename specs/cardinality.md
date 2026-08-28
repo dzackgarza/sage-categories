@@ -34,7 +34,7 @@ Its construction selects one representative set \(R_\kappa\) for each cardinal \
 
 Each operation acts on cardinals.
 The sum, product, and function type on the right are constructions on types.
-`Cardinal()` states the same relation through the cardinality functor; see [Cardinal arithmetic](#cardinal-arithmetic).
+`Sets()` constructions register the corresponding exact cardinality-predicate cases; see [Cardinal arithmetic](#cardinal-arithmetic).
 
 A cardinal is an object of this category:
 
@@ -214,7 +214,7 @@ so applying one to a pair returns a cardinal.
 It presents no diagram, retains no injection or projection, and carries no cone.
 The indexed constructions `Cardinal().Coproducts()` and `Cardinal().Products()` are separate operations with their own presentations; see [`Cardinal()` API](#cardinal-api).
 
-What relates these operations to constructions is the cardinality functor.
+The `Sets()` implementations of these constructions register the corresponding exact cardinality-predicate cases.
 For `X, Y in core(Sets())`,
 
 \[
@@ -428,49 +428,23 @@ kappa.identity() in Mor(Cardinal())(kappa, kappa)
 
 Inherited base-category composition is ordinary function composition.
 The coproduct, product, and function set of `Sets()` act on the representative functions through their universal constructions there.
-The cardinality functor carries those actions to `Cardinal()`, which is what makes addition, multiplication, and exponentiation act on cardinal morphisms.
+Addition, multiplication, and exponentiation act on cardinal morphisms through the universal constructions of `Cardinal()` itself.
 
 The ordinal model is specified in [`ordinals.md`](ordinals.md).
 
 ## Integration with `Sets()`
 
-The cardinality functor is:
+`X.cardinality()` returns an applied predicate with result category `Cardinal()`.
+`ask(X.cardinality())` returns an owned cardinal when an exact evaluation case applies and Sage `Unknown` otherwise.
 
-\[
-\#:\operatorname{core}(\mathbf{Sets})\longrightarrow\mathbf{Cardinal}.
-\]
+The category-owned `Sets()` implementation declares the predicate.
+Each set construction registers its exact cases from retained construction data.
+An inherited call on a structured object uses the same predicate on that original object.
+A selected functor to `Sets()` supplies the set constructor data used by these cases; it does not replace predicate evaluation with a separate image lookup.
 
-Its object map calls:
-
-```python
-X.cardinality()
-```
-
-Its morphism map accepts a set isomorphism.
-The construction retains a selected bijection between each set and its cardinal representative.
-It conjugates the set isomorphism by these selected bijections to construct the corresponding cardinal isomorphism.
-
-This functor has source `core(Sets())` and codomain `Cardinal()`. The semiring point functor has source `{Cardinal()}` and codomain `Semirings(Cat())`. Their distinct endpoints keep representative transport separate from algebraic placement.
-
-Public access is category-owned:
-
-```python
-Sets().CardinalityFunctor()
-```
-
-For a category \(\mathbf C\) with selected set-valued functor \(U_{\mathbf C}:\mathbf C\to\mathbf{Sets}\), the composite
-
-\[
-\#\circ\operatorname{core}(U_{\mathbf C})
-\]
-
-supplies cardinality.
-A constructor can pass known cardinality data to its underlying-set constructor.
-
-A set construction's `cardinality()` is a computational case tree owned by the `Sets()` implementation of that construction.
-It routes on the data the construction retains: the index set's cardinality, the retained diagram's codomain placement (`Sets().Finite()`, `Sets().Countable()`, `Sets().Uncountable()`), a retained constant diagram, and the factor cardinalities when the index is finite.
+The registered cases route on the index set's cardinality, the retained diagram's codomain placement (`Sets().Finite()`, `Sets().Countable()`, `Sets().Uncountable()`), a retained constant diagram, and finite factor cardinalities.
 Each case cites the theorem that decides it.
-When no case applies, `cardinality()` returns `Unknown`. The cases are:
+When no case applies, `ask()` returns `Unknown`. The cases are:
 
 - Products over a finite index with every factor exact use the exact product; a finite index with an empty factor gives \(0\); the constant diagram at \(X\) over \(S\) gives \(|X|^{|S|}\); an infinite index with codomain `Sets().Uncountable()` places the product in `Sets().Uncountable()`; a finite index with codomain `Sets().Countable()` places the product in `Sets().Countable()`.
 
@@ -506,5 +480,4 @@ Ordinals
 OrdinalObject
 omega0
 
-CardinalityFunctor
 ```

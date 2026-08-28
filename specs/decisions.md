@@ -251,9 +251,9 @@ The functor carries no independent element callback.
 
 ## Predicates, containment, and assumption
 
-**D18 (08-22). There is no decidability boundary.** Sage already supports `Unknown`, and many predicates should be `bool | Unknown`.
+**D18 (08-22, corrected 08-28). There is no decidability boundary.** Every mathematical truth question returns an applied proposition. Every other mathematical query that is not total and exact on its full declared domain returns an applied predicate with an exact result category. Only `ask()` returns `True`, `False`, an owned result, or Sage `Unknown` (`01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T17:24Z, 2026-08-28T17:25Z).
 
-**D19 (08-22). Prefer containment to a raw predicate check.** Predicate computation is localised in `__contains__`. Write `X in Sets().Finite()` rather than `X.is_finite()` or `X.cardinality() < infinity`.
+**D19 (08-22, corrected 08-28). Category containment and the public predicate method ask one proposition.** `X.is_finite()` returns the proposition owned by `Sets().Finite()`. `ask(X.is_finite())` evaluates it. Python containment asks the same proposition and is only a forced two-valued admission boundary (`4544eba5` 2026-08-28T12:00Z).
 
 **D20 (08-24). Every propositional method returns a proposition.** Never a bool, never an `Unknown` in its place.
 Anything that would need `Unknown` routes through `assume`/`ask`/`.assume()`. Containment in a category is always a possibly compound proposition, declared once as part of the category's definition — the kernel wires `FiniteSets` to be reachable as `Sets().Finite()` and lets it declare a membership proposition, and `__contains__` follows from that.
@@ -299,7 +299,7 @@ An image receives the domain's cardinality only when the map is established inje
 
 **D30 (08-25). Cardinal arithmetic is the categorical operation.** The coproduct in the category of cardinals is exactly cardinal addition; the product is exactly cardinal multiplication.
 
-**D64 (08-26). There is no symbolic cardinal.** `X.cardinality()` uses the `ask`/`assume`/`.assume()` machinery in the obvious way: when the answer is known you get a cardinality, and when it is not you get `Unknown`. This is uniform across every method undecidable in full generality, and cardinals implement no separate `Unknown` handling of their own.
+**D64 (08-26, corrected 08-28). There is no unresolved cardinal object.** `X.cardinality()` returns an applied predicate with result category `Cardinal()`. `ask(X.cardinality())` returns an owned cardinal when an exact route applies and Sage `Unknown` otherwise. The same architecture applies to every mathematical query that is not total and exact on its full declared domain. Cardinals contain no separate unresolved value (`01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T17:24Z, 2026-08-28T17:25Z).
 This amends D29.
 
 **D65 (08-27). Cardinals are a semiring with a poset structure.** The poset records that `2 ** aleph_0`, and most cardinal exponentials, are incomparable to `aleph_i` in ZFC. There are two totally ordered infinite sets of formal symbols, `{0, 1, ...}` and `{aleph_0, aleph_1, ...}`, and the algebra must take arbitrary sums, products, and formal exponentials of them.
@@ -543,7 +543,8 @@ The standard notion is a morphism of sets, and the type is `SetMorphism`. Callin
 **D50 (08-23). Never write a method that only fails.** No body that is `assert False`, `return NotImplemented`, or a raise.
 That hides a missing capability from static checkers and surprises the user at runtime; the point is a uniform interface.
 A `cardinality()` that raises is worse than no `cardinality()` at all.
-Use abstract methods, expose the method only where it is decidable, return a decision or `bool | Unknown`, or route by capability.
+Use abstract methods or expose the method only on the category that owns the capability.
+When a mathematical query is not total and exact on its full declared domain, return an applied predicate and evaluate it with `ask()`.
 
 **D51 (08-23). Do not golf type checkers.** They are a signal; the architecture and philosophy are the arbiters of correctness.
 The compiler should be strong enough to teach mypy about the functorial construction, but a very dynamic process may exceed what mypy can follow.

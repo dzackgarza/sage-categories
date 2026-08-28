@@ -73,7 +73,8 @@ X + Y
 Generic categorical methods come from the category foundation.
 `Sets()` does not create another implementation of identity, composition, or morphism-category formation.
 
-`X.cardinality()` returns an exact cardinal or Sage `Unknown`.
+`X.cardinality()` returns an applied predicate with result category `Cardinal()`.
+`ask(X.cardinality())` returns an owned cardinal or Sage `Unknown`.
 
 ## Canonical objects and the separator
 
@@ -233,7 +234,7 @@ x.value()
 
 - the universal map from another cone.
 
-The limit of `D: I -> Sets()` is the predicate subset of the product `prod_{i in Ob(I)} D(i)` cut out by compatibility: a family `(x_i)` is a member when `ask(D(u)(x_i) == x_j) is True` for every generating morphism `u: i -> j` of `I`. Membership decides when `I` is finitely presented and every generating equality decides, and is `Unknown` otherwise.
+The limit of `D: I -> Sets()` is the predicate subset of the product `prod_{i in Ob(I)} D(i)` cut out by compatibility. A family's membership proposition is the conjunction of `D(u)(x_i) == x_j` over every generating morphism `u: i -> j` of `I`. `ask()` decides this proposition when `I` is finitely presented and every generating equality decides; otherwise it returns `Unknown`.
 The projections are the restricted product projections.
 The mediating map of a cone is its map into the product.
 
@@ -365,13 +366,15 @@ The kernel implements `__contains__()` by calling `ask()` on that proposition.
 An `Unknown` decision fails loudly there, since a bool cannot carry it; ask the proposition when the undecided case must be handled.
 A trusted category constructor or named mathematical construction places a set directly in the property category.
 
-### Exact cardinality or `Unknown`
+### Cardinality predicate
 
-The cardinality operation returns an exact cardinal or Sage `Unknown`:
+The cardinality operation constructs an applied predicate:
 
 ```python
-X.cardinality() -> Cardinal | UnknownClass
+X.cardinality()  # applied predicate with result category Cardinal()
 ```
+
+`ask(X.cardinality())` returns an object of `Cardinal()` or the Sage `Unknown` singleton.
 
 A cardinal is an exact value: a finite cardinal, `aleph(alpha)`, `2 ** aleph(0)`, or another value formed by exact cardinal arithmetic.
 There is no placeholder cardinal, no unknown cardinal kind, and no symbolic "cardinality of X" value.
@@ -379,10 +382,10 @@ There is no placeholder cardinal, no unknown cardinal kind, and no symbolic "car
 Cardinal arithmetic, equality, and order are defined on cardinals only.
 Cardinals implement no `Unknown` handling.
 
-A set construction's `cardinality()` is a computational case tree owned by the `Sets()` implementation of that construction.
-It routes on the data the construction retains: the index set's cardinality, the retained diagram's codomain placement (`Sets().Finite()`, `Sets().Countable()`, `Sets().Uncountable()`), a retained constant diagram, and the factor cardinalities when the index is finite.
+A set construction registers exact evaluation cases for the category-owned cardinality predicate.
+Each case uses the data retained by that construction: the index set's cardinality, the retained diagram's codomain placement (`Sets().Finite()`, `Sets().Countable()`, `Sets().Uncountable()`), a retained constant diagram, and the factor cardinalities when the index is finite.
 Each case cites the theorem that decides it.
-The product cases are: a finite index with every factor exact gives the exact product; a finite index with an empty factor gives `0`; the constant diagram at `X` over `S` gives `(#X) ** (#S)`; an infinite index with codomain `Sets().Uncountable()` places the product in `Sets().Uncountable()`; a finite index with codomain `Sets().Countable()` places the product in `Sets().Countable()`. When no case applies the result is `Unknown`. Coproducts use the dual sum cases.
+The product cases are: a finite index with every factor exact gives the exact product; a finite index with an empty factor gives `0`; the constant diagram at `X` over `S` gives `(#X) ** (#S)`; an infinite index with codomain `Sets().Uncountable()` places the product in `Sets().Uncountable()`; a finite index with codomain `Sets().Countable()` places the product in `Sets().Countable()`. When no case applies, `ask()` returns `Unknown`. Coproducts use the dual sum cases.
 
 If SymPy normalizes a subset to `FiniteSet(1, 2, 3)`, its cardinality is `3`.
 
@@ -392,7 +395,7 @@ If the image morphism is monic, the construction theorem gives
 \lvert\operatorname{im}(f)\rvert=\lvert\operatorname{dom}(f)\rvert.
 \]
 
-If neither route applies, `cardinality()` returns `Unknown`.
+If neither route applies, `ask(X.cardinality())` returns `Unknown`.
 
 `X.is_finite()`, `X.is_countable()`, and the other cardinal property methods return applied predicates.
 `ask()` decides them from category placement, active assumptions, and the routes the owning implementation registers: a known cardinality decides finiteness and countability, and a `Sets()` construction registers the case routes that external mathematics supplies for it.
@@ -475,7 +478,7 @@ Engine methods never enter the public surface automatically.
 
 Select engines through the known semantic form of the input.
 Do not probe engines by exception or attempt implementations until one succeeds.
-If no applicable exact algorithm or construction theorem decides the result, return Sage `Unknown`.
+If no applicable exact algorithm or construction theorem determines a query, leave its applied predicate unresolved so `ask()` returns Sage `Unknown`.
 
 Construction-owned mathematics remains authoritative.
 For example, the image of an established monomorphism has the domain cardinality.
@@ -574,7 +577,7 @@ The `ask()` contract is:
 
 - return `Unknown` when available exact handlers establish neither result;
 
-- preserve `Unknown` under three-valued Boolean operations;
+- compose propositions before evaluation and preserve an unresolved result;
 
 - refine a property category only after exact evidence or a construction theorem.
 
@@ -592,7 +595,10 @@ Every owned category owns an equality predicate for its objects, for its morphis
 Identity is the first exact positive handler of every equality predicate.
 
 The applied predicate defines `__bool__` to raise.
-The mature references are SymPy `Relational.__bool__` and Sage `UnknownClass.__bool__`. Therefore `if a == b:` fails loudly, and repository code writes `ask(a == b) is True`. Containment (`in`) remains the one Boolean boundary.
+The mature reference is SymPy `Relational.__bool__`.
+Therefore `if a == b:` fails loudly.
+Repository code asks the proposition, requires a decided result where necessary, and then branches on that decision.
+Containment (`in`) remains the one Python Boolean boundary.
 
 `__hash__` is defined explicitly on every owned value.
 Objects, morphisms, and generalized elements with nonterminal domains hash by identity.
@@ -629,7 +635,9 @@ The implementation satisfies this specification when the public API establishes 
 
 - countability does not create a chosen enumeration;
 
-- `cardinality()` returns an exact cardinal or `Unknown`;
+- `cardinality()` returns an applied predicate with result category `Cardinal()`;
+
+- `ask(X.cardinality())` returns an owned cardinal or `Unknown`;
 
 - every operation uses a mature engine construction when one supplies the required exact mathematics;
 
@@ -639,11 +647,11 @@ The implementation satisfies this specification when the public API establishes 
 
 - normalized `FiniteSet` and `Range` results reconstruct their exact owned cardinalities;
 
-- unevaluated `ConditionSet` and `ImageSet` results reconstruct valid owned sets whose cardinality is `Unknown` when no theorem decides more;
+- unevaluated `ConditionSet` and `ImageSet` results reconstruct valid owned sets whose cardinality predicate remains unresolved when no theorem decides more;
 
 - cardinal arithmetic is defined on exact cardinals only;
 
-- `a == b` on owned values is an applied predicate, `bool(a == b)` raises, and identity decides `ask(a == a) is True`;
+- `a == b` on owned values is an applied predicate, `bool(a == b)` raises, and identity makes `ask(a == a)` return `True`;
 
 - every operation specified as a predicate returns an applied proposition;
 

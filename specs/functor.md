@@ -472,7 +472,7 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
 ```
 
 A point functor is selected only by this declaration.
-It lies in `.Isofibrations()` only when its image is replete in `D`. Like every selected functor, it contributes the target classes, typed construction-input conversions, constructor chain, and inherited public methods (`POL-FUN-003`, `POL-FUN-035`). The compiler reaches it through composition in `Cat` with the rest of the structural graph.
+It lies in `.Isofibrations()` only when its image is [replete](glossary.md#inspected-sources) in `D` (`POL-FUN-036`). Like every selected functor, it contributes the target classes, typed construction-input conversions, constructor chain, and inherited public methods (`POL-FUN-003`, `POL-FUN-035`). The compiler reaches it through composition in `Cat` with the rest of the structural graph.
 
 The point placement supplies each selected target class's state and methods.
 The distinguished object keeps its identity and existing category placement.

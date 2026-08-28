@@ -153,8 +153,6 @@ Natural sum:
 
 - Combines all finite terms.
 
-- Orders symbolic terms by the category-owned ordinal-expression key.
-
 - Removes additive zero.
 
 - Produces a commutative symbolic expression.

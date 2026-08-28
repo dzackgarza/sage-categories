@@ -628,6 +628,26 @@ coercion, a default ambient category, or a walk to a "common ancestor" is the sa
 wherever it silently selects a category — which is why common-ancestor tracing has to run
 along a named, citable property of functors and never a heuristic (D61).
 
+**D75 (08-28). A category of objects carrying a choice is named for the datum, following
+Sage's `WithBasis`.** The pattern is real and has prior art: `Modules(R).WithBasis()` is
+"the category of modules with a distinguished basis"
+(`sage/categories/modules_with_basis.py:179`), alongside `AlgebrasWithBasis`,
+`WithRealizations` (`sage/categories/with_realizations.py`), and the `FinitelyGenerated`
+family, all on the same axiom machinery as `Finite`. Write `With<Datum>` and never
+`Chosen<Anything>`.
+
+It applies when the choice is retained data the public surface uses: a basis gives
+coordinates, an enumeration gives indexing, a generating set gives generators. Then the
+subcategory is genuine structure rather than a property, and its constructor takes the
+datum.
+
+It does not apply when there is no bare object to equip. A subobject is an object together
+with a monomorphism, not an object that was later given one, so `Subobjects()` is the name.
+Nor does it apply to a construction family that already retains its construction: every one
+here does, so the family is the equipped form and needs no adjective. That, and not an
+absence of alternatives, is why `chosen product` was redundant — a product has many
+isomorphic siblings, and the repository simply keeps the one it built.
+
 **D74 (08-26). A subobject is an object with a monomorphism, and restricting structure to
 one is leaf work.** There is no second notion and no separate name for a representative;
 the equivalence class matters only when deciding whether two subobjects are equal, which is

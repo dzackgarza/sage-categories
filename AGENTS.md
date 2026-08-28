@@ -109,7 +109,7 @@ The `Mor(n, C)` foundation includes:
 - slices, coslices, subobjects, superobjects, covering objects, and covered objects.
 
 Build slices and coslices after sequence products, subobjects, `Fun([1], C)`, and its
-evaluation functors `ev_0` and `ev_1`. Their declared functors are composites of these
+evaluation functors `ev_0` and `ev_1`. Their selected functors are composites of these
 general constructions.
 
 ## Mathematical structure as implementation compression
@@ -145,7 +145,7 @@ For a product, trace all of these parts:
 - the kernel definition of products and their universal data;
 - the construction family and its monomorphism into the ambient category;
 - the constructed object, its projections, and its universal maps;
-- propagation through declared functors;
+- propagation through selected functors;
 - method compilation and inherited public operations;
 - the leaf theorem or structure that adds the new mathematical delta.
 
@@ -161,9 +161,9 @@ Do not preserve a mistaken architecture with a cheaper local implementation.
 
 Kernel complexity is justified only when it removes repetition from theory code.
 The theory layer must read like the mathematics it implements.
-A new category should state its new data and immediate declared functors, then inherit the rest.
+A new category should state its new data and immediate selected functors, then inherit the rest.
 
-A leaf category must state its mathematical data, operations, declared functors, constructors, and lifts.
+A leaf category must state its mathematical data, operations, selected functors, constructors, and lifts.
 Stop local work when a leaf contains generic reflection, dispatch, route traversal, transport, cache ownership, wrappers, or public backend selection.
 Treat that wiring as a kernel or backend-boundary defect.
 Repair the owning foundation instead of polishing, moving, or preserving the wiring in a leaf workaround.
@@ -216,7 +216,7 @@ chosen enumeration. Every other question is a proposition, and `ask()` decides i
 Category containment owns predicate evaluation. `is_finite()` is declared once, on
 `Sets()`, and the proposition it applies is membership in `Sets().Finite()`. The class
 that implements `Sets().Finite()` supplies the defining predicate of that membership,
-`cardinality() < aleph_0`. Every category with a declared functor to `Sets()` receives
+`cardinality() < aleph_0`. Every category with a selected functor to `Sets()` receives
 `is_finite()` from that one declaration, and a poset is finite exactly when its underlying
 set is. Placement in the subcategory is a fast positive route, because a value that entered
 through the property constructor already satisfies the predicate. Placement is never the
@@ -389,20 +389,14 @@ computational handlers. `ask()` returns `Unknown` unless category placement, an 
 assumption, a cached exact decision, or a categorical implication decides the predicate.
 
 Every functor is explicit.
-Only declared functors contribute compiled classes and methods to the public object surface.
+Only functors selected in `structure_functors()` contribute compiled classes and methods to the public object surface.
 Ordinary mathematical functors remain available without changing public inheritance.
 
-A relation between two categories exists only as an arrow. An object does not carry its
-underlying set the way a record carries a field: there is nothing inside a module that is
-the set, only a functor whose image at that module is a set. So every operation that crosses
-categories names its functor and both endpoints, and no accessor stands in for one.
-`C.structural_image(x)` names a target and hides the functor; `X.underlying_set()` names a
-direction and hides it; both turn an arrow into a noun. The choice is real — `R^n` reaches
-sets through rings because it is a product of rings, a lattice `(L, b)` projects to `L` and
-to `b` with equal right, and a simplicial set has three different functors to `Sets()` — so
-hiding it asserts mathematics where no reader can see the claim. `specs/decisions.md` D73
-gives the full reasoning, including why an accessor also bypasses the mechanism the whole
-design rests on.
+A relation between two categories exists only as an arrow.
+Every operation that crosses categories names its functor and both endpoints.
+For example, `R^n` reaches sets through its ring structure, and a lattice `(L, b)` has distinct projections to `L` and `b`.
+A simplicial set has several different functors to `Sets()`.
+The named functor makes each mathematical choice visible.
 
 A functor has an image; a category does not. The image of `x` under the named functor `F`
 is `F.on_object(x)`. There is no operation that asks a category for "the image of `x` at
@@ -433,7 +427,7 @@ What must then hold, whatever the kernel does to achieve it:
 - a leaf constructor never accumulates a field for an ancestor category;
 - an inherited method is found by ordinary attribute lookup, Python special methods
   included, and applies to the object the caller named;
-- local declarations win; two declared functors reaching one declaring category share one
+- local declarations win; two selected functors reaching one declaring category share one
   method owner; unrelated declarations sharing a name are an error.
 
 There is one chain per mathematical kind. Every category is a `Cat().ObjectType`.
@@ -455,11 +449,11 @@ A property subcategory has its own `ObjectType` — `Sets().Finite()` genuinely 
 finite sets — but usually adds no method. It receives a trivial extension of its immediate
 ancestor's class and writes no boilerplate for it.
 
-An inherited method means `X.f() := F(X).f()` along the declared functor `F`, and returns
+An inherited method means `X.f() := F(X).f()` along the selected functor `F`, and returns
 the declaring method's value. That equation states the mathematics. Ordinary Python
 inheritance is the mechanism that makes it true:
 
-- for each declared functor `F: C -> D`, the kernel makes `C.ObjectType` a Python subclass
+- for each selected functor `F: C -> D`, the kernel makes `C.ObjectType` a Python subclass
   of `D.ObjectType`, so an object of `C` is an object of `D` at the Python level as well;
 - `F` states how the construction data of `C` produces the data that `D`'s constructor
   consumes;
@@ -481,7 +475,7 @@ Lifting an ancestor result back is leaf work. `Sets()` can construct the product
 underlying sets; supplying the module structure on that product is the module category's
 mathematical delta. Nothing at `Sets()` knows what a module is.
 
-Derive supercategory information from declared functors.
+Derive supercategory information from selected functors.
 Do not maintain a second inheritance or propagation registry.
 
 ## Universal constructions
@@ -610,7 +604,7 @@ This includes ordinary sets, products, coproducts, subsets, and `Y ** X`.
 Products and subsets must delegate to the categorical constructions that create them.
 They must not define parallel set APIs.
 
-Propagate these operations along declared functors and universal constructions.
+Propagate these operations along selected functors and universal constructions.
 Do not implement a second copy of a set operation in a higher category.
 
 ## Mathematical ownership
@@ -720,7 +714,7 @@ structure supplies that correspondence.
 
 Define `Algebras(R, C)` only when `Modules(R, C)` has a supplied monoidal structure.
 It is the base-relative presentation category for the monoid objects in that module
-category. Its declared functor to the general monoid-object category supplies the
+category. Its selected functor to the general monoid-object category supplies the
 multiplication, unit, and monoid laws. A noncommutative base instead requires a
 supplied monoidal category of `R`-bimodule objects.
 
@@ -772,7 +766,7 @@ Use Sage for:
 - established exact algorithms.
 
 Cross into Sage through an explicit realization functor or owned computation boundary.
-A Sage realization is not a declared functor.
+A Sage realization is not a selected structural functor.
 Its Python methods must not enter the public mathematical API by accident.
 
 Apply the same boundary to every external engine. Keep each engine value private.

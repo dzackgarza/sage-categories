@@ -45,6 +45,7 @@ boundaries. Do not compress a specific rule into a nearby general slogan.
 Apply `POL-DOC-010` before adding mathematical vocabulary to an implementation plan.
 Apply `POL-DOC-011` before reporting a contradiction. When the task reconciles past
 decisions, apply `POL-DOC-012`. Apply `POL-DOC-013` to every executing plan.
+Apply `POL-DOC-020` before a phase starts and `POL-DOC-021` throughout phased work.
 
 If no policy or specification governs a material decision, surface that documentation
 gap. Do not invent a local convention and present it as repository architecture.

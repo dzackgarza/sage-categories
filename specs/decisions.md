@@ -108,6 +108,15 @@ Cardinality is not obtained by enumeration, because the set may be `{2, 4, ...}`
 **Complexity has a direction.** It may accumulate in the kernel, and only in exchange for removing it from every leaf.
 A kernel feature that does not shrink a leaf is a net loss, and a leaf carrying wiring is evidence the kernel has not paid for itself.
 
+**Dependency order is part of the architecture.** A production leaf consumes an accepted kernel contract; it does not help design that contract while both are changing.
+Parallel kernel and leaf work lets the leaf's immediate needs choose generic mechanisms and hides missing kernel ownership inside leaf code.
+Complete and independently accept the kernel first, then implement and independently review one leaf phase at a time.
+A generic defect found later invalidates every dependent acceptance and returns work to the kernel owner.
+
+**An execution plan contains decisions.** It cannot assign implementation work whose first task is to decide its mathematical owner, public spelling, result category, constructor contract, or acceptance criterion.
+Resolve each such question in the governing decision and specification before the phase starts.
+When the transcripts do not determine the answer, ask the user before implementation begins.
+
 **The mathematics is the interface; the presentation must not leak.** A group is technically `(X, f)` and a lattice is technically `(L, b)`, but nobody works with them as ordered pairs.
 Publicly a lattice *is* a module with more structure.
 An ordered pair is a fine private representation and an unacceptable public one, which is why every `underlying_Y()` deserves suspicion: it is a presentation escaping into the API.
@@ -405,6 +414,8 @@ Every declaration is a functor into `Cat()`, and the parameter it takes is that 
 
 **D92 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T20:21Z). Active prohibitions remain explicit.** A specification keeps prohibitions that exclude known architectural failure patterns. Such a prohibition is a current contract, not a record of removed implementation history.
 
+**D93 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T16:05Z). Kernel and leaf implementation proceeds in strict dependency order.** First specify the complete kernel contract and its detailed acceptance criteria. Then implement and independently accept the kernel while production leaves remain unchanged. After that, implement and independently review one leaf phase. A leaf defect returns to that leaf phase. A generic defect returns to the kernel phase and invalidates every dependent acceptance. Kernel and production leaf implementation never proceed in parallel.
+
 **D77 (08-28). The leaf writer's contract is a closed list.** The kernel exists to make this list short, so anything a leaf must supply beyond it is a kernel defect, not a leaf obligation.
 
 1. `ObjectType`, `ElementType`, and `MorphismType`, as nested classes.
@@ -566,6 +577,8 @@ A set constructor that can accept a cardinality by fiat does not make cardinalit
 **D53 (08-23). Prefer the mathematically flavoured construction.** `pairwise` over `zip`, and generally: look for packages and dependencies that improve the mathematical flavour of the code, and propose them when the idea surfaces.
 
 ## What the documents are for
+
+**D94 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T17:36Z, 2026-08-28T18:18Z, 2026-08-28T18:20Z, 2026-08-28T18:30Z). An executing plan records resolved contracts.** Before a phase starts, its governing decisions and specifications fix every mathematical owner, public spelling, input and result category, constructor contract, dependency, exclusion, and acceptance statement needed to implement it. The plan states those decisions and the work that makes them true. It does not defer them with tasks to determine, choose, clarify, or correct a contract or policy during implementation. If the transcripts do not determine a required decision, ask the user before implementation starts and then update the governing specification and plan.
 
 **D54 (08-22).** `CONTRIBUTING.md` holds general principles and patterns grounded in examples, and may hold specific observed antipatterns once they recur enough to matter.
 

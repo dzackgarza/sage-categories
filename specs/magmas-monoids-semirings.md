@@ -20,7 +20,7 @@ The governing policies are `POL-MATH-019`, `POL-MATH-022`, `POL-MATH-023`, `POL-
 
 - [Semirings](#semirings)
 
-- [Selected functors](#selected-functors)
+- [Structure functors](#structure-functors)
 
 - [Owned operations](#owned-operations)
 
@@ -78,7 +78,7 @@ f\circ\mu_X=\mu_Y\circ(f\otimes f).
 
 `Magmas(V)` is the category of these objects and morphisms.
 Its defining presentation retains `X`, `mu_X`, and their endpoint equation.
-`Magmas(V)` presents its objects as pairs, so the selected functor to `C` is the
+`Magmas(V)` presents its objects as pairs, so the structure functor to `C` is the
 first product projection, whose index names it and whose codomain is fixed by the
 product:
 
@@ -122,7 +122,7 @@ Magmas(V).Multiplicative()
 They retain the same underlying object, multiplication morphism, and morphisms.
 The additive subcategory exposes `+` on points.
 The multiplicative subcategory exposes `*` on points.
-Their complete immediate structural tuples are
+Their complete immediate structure-functor tuples are
 
 ```python
 # Magmas(V).Additive()
@@ -176,7 +176,7 @@ I\otimes A=A=A\otimes I,
 
 and the matching three equations on morphisms of `X`.
 
-Its immediate selected functor forgets associativity and the unit:
+Its immediate structure functor forgets associativity and the unit:
 
 ```python
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
@@ -201,7 +201,7 @@ Monoids(V).Multiplicative()
 ```
 
 They are inverse images of the matching `Magmas(V)` subcategories.
-Their complete immediate structural tuples preserve both category branches:
+Their complete immediate structure-functor tuples preserve both category branches:
 
 ```python
 # Monoids(V).Additive()
@@ -239,14 +239,14 @@ A monoid morphism between group objects preserves inversion.
 The additive form `Groups(V).Additive()` exposes unary `-` and subtraction.
 The commutative additive group category is `Groups(V).Additive().Commutative()`.
 
-Its complete immediate structural tuple is
+Its complete immediate structure-functor tuple is
 
 ```python
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (Fun(self, Monoids(V)).Monomorphisms().Isofibrations().Full()(),)
 ```
 
-The selected functor supplies the multiplication morphism and unit data required by the monoid constructor.
+The structure functor supplies the multiplication morphism and unit data required by the monoid constructor.
 `Groups(V)` adds only the inversion morphism and its laws.
 
 At `V = Sets()`, an object is an ordinary group.
@@ -283,7 +283,7 @@ two functors `1 -> X` that select the zero object and the one object, and every 
 The strict internal category is the subcategory of `Monoids(C_x).Additive().Commutative() * Monoids(C_x).Multiplicative()` whose two underlying objects agree and whose distributivity and absorption diagrams commute.
 Its defining presentation retains both component projections.
 
-The complete immediate structural tuple is
+The complete immediate structure-functor tuple is
 
 ```python
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
@@ -293,7 +293,8 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     )
 ```
 
-Both paths supply the same constructor datum for the underlying object of `C`. The structural diamond supplies both additive and multiplicative element interfaces.
+The shared ambient `C.ObjectType` occurs once in the Sage dynamic C3 MRO.
+The two immediate structure functors supply the additive and multiplicative element interfaces.
 
 `Semirings(C)` owns the compatibility laws and the combined additive and multiplicative surface.
 Its object interface exposes both unit points.
@@ -321,9 +322,9 @@ x(y+z)=xy+xz,
 
 These formulas are consequences of the internal diagrams.
 
-## Selected functors
+## Structure functors
 
-Each selected functor acts on objects and morphisms.
+Each structure functor acts on objects and morphisms.
 Its point action comes from its morphism action and terminal-object comparison.
 
 The additive and multiplicative refinements use subcategory monomorphisms.
@@ -344,7 +345,7 @@ Longer routes to `C` arise through the projections of `C_x`.
 | `Groups(V).Additive()` | Unary `-` and subtraction. |
 | `Semirings(C)` | Distributivity, absorption, and both selected monoid structures. |
 
-Inherited capabilities come from the listed selected functors.
+Inherited capabilities come from the listed structure functors.
 Each defining predicate returns its owned proposition.
 
 ## Laws in the supplied ambient
@@ -402,7 +403,7 @@ The notation subcategories use the Sage reference sections for [magmas](https://
 
 - Both semiring component routes reach one canonical object of `C`.
 
-- Every immediate structural edge is an owned functor.
+- Every immediate structure-functor edge is an owned functor.
 
 - Deeper inherited operations arrive through functor composition.
 

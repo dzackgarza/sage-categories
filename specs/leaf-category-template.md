@@ -30,7 +30,7 @@ class LeafCategory(Category):
 
 `Category` is `Cat().ObjectType`. Each entry in `structure_functors()` is an explicitly constructed object of `Fun = Mor(Cat())`. Include only immediate functors whose target catalogue supplies the leaf's inherited public surface.
 
-For each inherited operation, the selected functor supplies one pure conversion from source construction data to target constructor data.
+For each inherited operation, the structure functor supplies one pure conversion from source construction data to target constructor data.
 The functor uses that conversion for its public image.
 The kernel uses the same conversion to initialize the target class on the source instance.
 Point actions derive from morphism actions and the declared terminal-object comparison.

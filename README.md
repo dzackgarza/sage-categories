@@ -57,9 +57,26 @@ This project separates those facts.
 Theory code should state the mathematical definition and the immediate functors that connect it to existing theory.
 The kernel should compile that information into a direct method surface.
 
+Sage's `super_categories()` is compiler input presented as if it were one mathematical
+relation. It supplies dynamic class inheritance, but it does not name the functor that
+makes inherited operations meaningful or explain how a source construction initializes
+the target class. A Sage supercategory edge need not be a subcategory inclusion.
+
+This repository replaces each such edge with a **structure functor** `F: C -> D` returned
+by `C.structure_functors()`. A structure functor is an ordinary functor selected for class
+inheritance. It can be a forgetful functor, projection, fibration, subcategory
+monomorphism, or another mathematically specified functor. Selection alone asserts none
+of those properties.
+
+The kernel uses `F` to construct `C.ObjectType`, `C.ElementType`, and `C.MorphismType`
+with the applicable target classes and constructor conversions. This Python inheritance
+does not assert that `C` is a subcategory of `D` or that an object of `C` is an object of
+`D`. The public image `F(x)` remains a separate object of `D`. Only an explicitly
+declared subcategory monomorphism states a subcategory relation.
+
 The separation also preserves mathematical consequences that concrete Sage implementations can lose.
 For example, an integral-lattice presentation has a product projection to finite-rank `ZZ`-modules.
-The resulting structural path to `Sets()` determines cardinality and supports lazy enumeration.
+The resulting composite of named functors to `Sets()` supplies cardinality and supports lazy enumeration.
 A concrete lattice implementation that does not retain those categorical relationships can fail to expose either operation.
 Long-running searches, including bounded enumeration in Vinberg-type algorithms, need those consequences without bespoke lattice-level implementations.
 
@@ -93,7 +110,7 @@ Let \((\mathcal M,\odot,1)\) be monoidal, let \(\mathcal C\) be an \(\mathcal M\
 
 When closed or enriched structure represents these actions by an internal endomorphism monoid, the same module structure is equivalently a monoid morphism \(A\to\operatorname{End}_{\mathcal C}(X)\). The action morphism is the general definition.
 
-[`Algebras(R, C)`](specs/algebras.md) is the base-relative presentation of the monoid objects in the supplied monoidal category `Modules(R, C)`. Its selected route through the general monoid, magma, and module categories supplies the applicable operations.
+[`Algebras(R, C)`](specs/algebras.md) is the base-relative presentation of the monoid objects in the supplied monoidal category `Modules(R, C)`. Its immediate structure functors supply the applicable general monoid, magma, and module interfaces.
 A general module or algebra object reaches `Sets()` only through an explicit declared functor from its ambient category.
 Cardinality and other distant capabilities arrive through functor composition rather than leaf-specific code.
 
@@ -200,16 +217,21 @@ Direct property construction and assumptions refine the same owned functor.
 These predicates have no computational routes.
 
 Every functor is an explicit mathematical object.
-Only declared functors contribute methods to the public surface.
-The selection is compiler input over an already established mathematical functor.
-It is not an additional kind of functor.
+Only structure functors contribute methods to the public surface.
+A structure functor is an ordinary functor used as compiler input, not another kind of
+morphism in `Cat`.
 
-For an object `x` in `C`, the kernel constructs and caches `F(x)` in `D`. It then exposes methods declared by `D.ObjectType` directly on `x`. The same process applies to elements and morphisms.
+For an object `x` in `C`, the named functor constructs and caches `F(x)` in `D`.
+When `F` is a structure functor, the kernel also exposes methods declared by
+`D.ObjectType` directly on `x`. The same distinction applies to elements and morphisms.
+The source value remains an object of `C`; dynamic Python inheritance is the mechanism
+that supplies the method surface.
 
 The method compiler records the category that declares each method.
 Local declarations take precedence.
-Two routes to the same declaration share one implementation.
-Incoherent routes and unrelated name collisions fail during compilation.
+Sage's dynamic-class construction and Python C3 linearization include a shared ancestor
+class once. The kernel does not enumerate paths to that class or compare constructor
+data from those paths. Unrelated name collisions still fail during compilation.
 
 This gives one public mathematical object instead of a chain of user-visible wrappers.
 The functor images remain available for inspection when their exact mathematical type matters.
@@ -290,7 +312,7 @@ Limits and colimits retain the diagrams, cones, cocones, and universal maps that
 
 These constructions act on objects and morphisms through functors.
 Their results then receive methods from the categories in which they live.
-A product of sets is therefore still a set and receives set operations through the same structural route.
+A product of sets is therefore still a set and receives set operations through its retained monomorphism into `Sets()`.
 
 This design removes the need for a separate method-propagation registry.
 Functor composition already records how structure moves.

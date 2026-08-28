@@ -114,7 +114,7 @@ For an atomic proposition \(P(x)\), `ask()` uses this order.
    The isomorphisms are a full subcategory of each of the other two simultaneously; that
    is the statement, and there is no conjunction of predicates underneath it (D83).
 
-4. Evaluate images owned by selected functors.
+4. Evaluate images owned by structure functors.
 
    If \(D.P\) is induced through \(F:D\to C\), evaluate \(P(F(x))\).
 
@@ -166,7 +166,7 @@ Leaves never implement `__contains__` on a category.
 
 ## Property propagation
 
-Suppose \(P\) is defined at category \(C\). Let \(F:D\to C\) be the selected functor.
+Suppose \(P\) is defined at category \(C\). Let \(F:D\to C\) be the structure functor.
 
 The kernel defines:
 
@@ -188,7 +188,7 @@ The kernel derives:
 
 - the membership proposition;
 
-- the selected functor \(D.P\to C.P\);
+- the structure functor \(D.P\to C.P\);
 
 - the refined object, element, and morphism types;
 
@@ -206,7 +206,7 @@ Subcategories then inherit refinements such as `Groups().Finite()`. [Sage catego
 The repository should retain that mathematics.
 It should not copy Sage’s string-based axiom registry or method-name discovery.
 
-A derived property needs a selected functor.
+A derived property needs a structure functor.
 If two routes give different meanings, the category must select one route explicitly.
 
 ## `Finite` and `Countable`
@@ -523,7 +523,7 @@ Each handler positively matches the semantic cases it can decide.
 The final wildcard case returns `Unknown`. Add a new supported procedure by adding a new `case`. Do not encode applicability as an `if` cascade over unsupported cases.
 
 No handler is required.
-Without one, `ask(PObjects().membership_proposition(x))` can still succeed from placement, assumptions, declared containments, or images owned by selected functors.
+Without one, `ask(PObjects().membership_proposition(x))` can still succeed from placement, assumptions, declared containments, or images owned by structure functors.
 
 ## The main boundary
 
@@ -535,7 +535,7 @@ The ownership split is:
 
 - The repository kernel connects positive propositions to category refinement.
 
-- Selected functors propagate properties between categories.
+- Structure functors propagate properties between categories.
 
 - Computation engines supply exact decision procedures.
 
@@ -904,7 +904,7 @@ Let
 U:C\to\mathbf{Sets}
 \]
 
-be the selected functor.
+be the structure functor.
 
 The kernel defines:
 
@@ -916,7 +916,7 @@ C.\operatorname{Finite}
 
 For an owned subcategory of `Sets()`, Sage's axiom-join machinery can help construct this category and its dynamic implementation classes.
 
-For a general selected functor, the correct object is an inverse-image property category.
+For a general structure functor, the correct object is an inverse-image property category.
 It is not only a Python class join.
 
 The kernel must derive:
@@ -925,7 +925,7 @@ The kernel must derive:
 
 - its monomorphism into `C`;
 
-- its selected functor into `Sets().Finite()`;
+- its structure functor into `Sets().Finite()`;
 
 - its membership proposition;
 
@@ -937,7 +937,7 @@ The kernel must derive:
 
 The descendant leaf supplies none of this.
 
-If several selected functors give different meanings to “finite,” the category must select the intended functor.
+If several structure functors give different meanings to “finite,” the category must select the intended functor.
 The kernel must not infer a route from method names.
 
 ## Property axioms and structure additions differ

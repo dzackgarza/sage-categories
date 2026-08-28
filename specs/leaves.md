@@ -26,7 +26,7 @@ They are not method catalogues that a compiler matches against backend method na
 
 - [Local methods are ordinary executable methods](#local-methods-are-ordinary-executable-methods)
 
-- [Selected functors determine class inheritance](#selected-functors-determine-class-inheritance)
+- [Structure functors determine class inheritance](#structure-functors-determine-class-inheritance)
 
 - [The policy conflict that exposed the gap](#the-policy-conflict-that-exposed-the-gap)
 
@@ -50,7 +50,7 @@ They are not method catalogues that a compiler matches against backend method na
 
 - [The product algebra example](#the-product-algebra-example)
 
-- [Relation to structural diamonds](#relation-to-structural-diamonds)
+- [Relation to dynamic class inheritance](#relation-to-dynamic-class-inheritance)
 
 - [Method signatures remain mathematical](#method-signatures-remain-mathematical)
 
@@ -71,7 +71,7 @@ Its implementation types are part of that ownership:
 
 - the category declaration identifies those implementation types;
 
-- selected functors supply inherited operations.
+- structure functors supply inherited operations.
 
 A leaf category introduces only its new mathematics.
 However, introducing a new operation includes implementing that operation.
@@ -98,7 +98,7 @@ The standard definitions already determine the implementation classes:
 
 - an operation's mathematical signature determines the exact type of the value it applies to, of each parameter, and of its result;
 
-- a selected functor determines the compiled ancestor class and its exact construction-input conversion;
+- a structure functor determines the compiled ancestor class and its exact construction-input conversion;
 
 - an element's ambient mathematical object determines its exact element type;
 
@@ -137,7 +137,7 @@ The architecture has two independent reuse mechanisms.
 
 ### Structural inheritance
 
-An implementation already owned by a structural ancestor reaches the leaf through the selected functors.
+An implementation already owned by a target category reaches the leaf through the structure-functor class graph.
 The kernel compiles its methods and constructor into the descendant class class.
 
 Examples include:
@@ -181,7 +181,7 @@ It does not remove the executable bodies of mathematics newly introduced by a le
 
 `C.ObjectType`, `C.ElementType`, and `C.MorphismType` are the executable classes for `C`.
 A category specifies its new mathematics under those exact names.
-The kernel constructs each class dynamically from that specification and the selected functors.
+The kernel constructs each class dynamically from that specification and the structure functors.
 
 They are not:
 
@@ -276,16 +276,16 @@ The same rule applies downstream:
 
 - A lattice constructor can accept `b`, or the explicit pair `(L, b)` when that pair is the intended public presentation.
 
-A downstream leaf selects its immediate structural ancestor.
-When its structural graph contains a selected route to `Sets()`, the category that owns that route supplies the underlying-set construction.
-With an arbitrary ambient category \(\mathcal C\), the leaf receives the capabilities owned by \(\mathcal C\); a set surface requires an explicit selected functor to `Sets()`.
+A downstream leaf returns its immediate structure functors.
+When their target classes inherit the `Sets()` surface through C3, the functor that first enters `Sets()` supplies the required set construction data.
+With an arbitrary ambient category \(\mathcal C\), the leaf receives the capabilities owned by \(\mathcal C\); a set surface requires an explicit structure functor to `Sets()`.
 
 Each named functor owns its public image of a source value.
 It constructs that image from its pure conversion and returns the same image on repeated calls.
 Different functors with the same endpoints remain independent.
 
 An inherited method runs on the structured source value.
-The selected functor's conversion initialized the declaring category's state on that same instance (`POL-KERNEL-018`).
+The structure functor's conversion initialized the declaring category's state on that same instance (`POL-KERNEL-018`).
 The method reads that state through ordinary Python inheritance.
 
 A category that combines two structures on one shared ancestor object is their pullback over that ancestor.
@@ -325,8 +325,8 @@ class LeafCategory(Category):
         ...
 ```
 
-The kernel constructs these classes dynamically from selected functors.
-For each selected `F: C -> D`, `C.ObjectType` inherits `D.ObjectType`.
+The kernel constructs these classes dynamically from structure functors.
+For each structure functor `F: C -> D`, `C.ObjectType` inherits `D.ObjectType`.
 The element and morphism classes follow the same rule when `F` supplies their conversions.
 
 ## Local methods are ordinary executable methods
@@ -365,22 +365,24 @@ A short method can still be the correct owner.
 A semantic method that invokes a mature algorithm is not a meaningless forwarding wrapper.
 It supplies the public mathematical contract and the private computation boundary.
 
-## Selected functors determine class inheritance
+## Structure functors determine class inheritance
 
-The kernel constructs `C.ObjectType`, `C.ElementType`, and `C.MorphismType` from complete selected-functor paths.
+The kernel constructs `C.ObjectType`, `C.ElementType`, and `C.MorphismType` dynamically from the immediate targets of `C.structure_functors()`.
+Sage dynamic classes and Python C3 resolve the resulting inheritance graph.
+The kernel does not enumerate complete functor paths or compare constructor data from different paths.
 
 `C.ObjectType` inherits `Cat().ElementType` because an object of `C` is a point `* -> C`.
 `C.ElementType` implements points `1_C -> X` of objects `X in C`.
 `C.MorphismType` is `Mor(C).ObjectType`.
 A generalized element `T -> X` remains separate from `ElementType` unless `T = 1_C`.
 
-For each selected `F: C -> D`, the kernel:
+For each structure functor `F: C -> D`, the kernel:
 
 - places `D.ObjectType`, `D.ElementType`, or `D.MorphismType` in the corresponding class MRO when `F` supplies the required conversion;
 
 - preserves each member specified for the corresponding class of `C`, except `__init__`;
 
-- rebinds the local initializer and retains it as the node initializer;
+- retains the local initializer for its declaring class;
 
 - installs one generated wrapper in the corresponding class's `__init__` slot;
 
@@ -388,13 +390,13 @@ For each selected `F: C -> D`, the kernel:
 
 - invokes inherited methods on the original structured value through ordinary Python method resolution;
 
-- initializes each common ancestor once across a diamond.
+- lets Python C3 place each common ancestor once in the MRO and initialize it once through cooperative `super()`.
 
 The local constructor accepts only the leaf's new semantic data.
 It initializes that state and calls `super().__init__()` once.
 A declaration can omit `__init__` when it adds no state.
 Its generated wrapper advances to the next C3 initializer.
-The selected functor supplies the input required by the next class constructor.
+The structure functor supplies the input required by the next class constructor.
 The leaf does not add ancestor fields or ancestor arguments.
 An object construction supplies its point `* -> C` to `Cat().ElementType`.
 A morphism follows the object construction of `Mor(C)`.
@@ -757,9 +759,9 @@ If changing one mathematical operation requires synchronized edits to two method
 | Category-local operation name and signature | `ObjectType`, `ElementType`, or `MorphismType` |
 | Category-local executable method body | The same implementation class |
 | Local constructor and state | The same local implementation class |
-| Ancestor constructor conversion | Selected functor |
+| Ancestor constructor conversion | Structure functor |
 | Controlled class MRO and constructor composition | Kernel |
-| Inherited executable method | Declaring structural ancestor |
+| Inherited executable method | Declaring target category |
 | Public functor images and canonical route checks | Kernel |
 | Choice of exact leaf algorithm | Leaf implementation method |
 | Private lowering to Sage | Leaf implementation or private helper |
@@ -803,7 +805,7 @@ R\longrightarrow R^n,
 r\longmapsto(r,\ldots,r).
 \]
 
-Its selected structural chain is
+Its structure-functor class graph contains
 
 \[
 \operatorname{Algebras}(R,\mathcal C)
@@ -854,26 +856,25 @@ This example reinforces the leaf rule.
 A construction retains its mathematical placement.
 A leaf does not flatten the result to a backend container or manually route it to sets.
 
-## Relation to structural diamonds
+## Relation to dynamic class inheritance
 
-Structural diamonds preserve every branch.
-They resolve only duplicate access to a common owner.
+The immediate structure-functor targets supply the dynamic bases of the compiled class.
+Python C3 preserves each branch and places each common class once in the MRO.
 See [resolution.md](resolution.md) for the complete decision.
 
-For this set-based \(R^n\), the algebra-to-rings and algebra-to-modules routes introduce different applicable operations.
-Both later reach `Sets()`. The kernel preserves both catalogues.
-Both routes return the one retained underlying set by identity, and the compiler checks that identity during construction.
-The common `Sets()` constructor runs once.
+For this set-based \(R^n\), the algebra-to-rings and algebra-to-modules branches introduce different applicable operations.
+Both later reach `Sets()`. The C3 MRO contains the common `Sets().ObjectType` once.
+The kernel performs no equality check between data attributed to the two branches.
 
 This structural inheritance does not dispatch the algebra's local methods to Sage.
 The two mechanisms remain separate:
 
-- category paths determine inherited operations;
+- the structure-functor class graph determines inherited operations;
 
 - local method bodies determine computations introduced by the category.
 
 A route diamond cannot justify a mirrored backend hierarchy.
-A backend representation is not another structural ancestor.
+A backend representation is not another target class in the structure-functor graph.
 
 ## Method signatures remain mathematical
 
@@ -971,9 +972,9 @@ A leaf implementation satisfies this specification when all these facts hold:
 
 - no local method is an `assert False` declaration stub;
 
-- inherited methods arrive only through selected functors;
+- inherited methods arrive only through structure functors;
 
-- every selected ancestor's required state is initialized through its functor-owned constructor conversion;
+- every class in the C3 MRO receives the state required by its constructor conversion;
 
 - the compiler does not match local operation names to backend names;
 
@@ -995,7 +996,7 @@ A leaf implementation satisfies this specification when all these facts hold:
 
 - construction results retain every mathematically established category placement;
 
-- structural diamonds preserve all branch-owned operations and one canonical common image returned by identity on every route;
+- Python C3 preserves all branch-owned operations and places each common implementation class once in the MRO;
 
 - a mathematician can find the executable operation from its category-owned implementation class without understanding kernel class construction.
 

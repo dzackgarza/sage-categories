@@ -1,7 +1,7 @@
 # Sets specification
 
 `Sets()` owns the public algorithms for sets, set elements, and total functions.
-Categories with a selected functor to `Sets()` inherit this API.
+Categories with a structure functor to `Sets()` inherit this API.
 
 Standard set theory and category theory are assumed.
 This specification fixes API ownership, constructors, algorithms, result categories, and exact failure states.
@@ -301,7 +301,7 @@ The element record retains its selected point datum.
 The morphism record retains its domain, codomain, and rule.
 
 Direct `Sets()` construction initializes this state on the new set value.
-A selected functor's pure conversion supplies the same constructor data to the `Sets()` initializer on a structured source instance.
+A structure functor's pure conversion supplies the data required by the target constructor on a structured source instance.
 Thus an inherited set method reads set state directly on the value to which it applies.
 Public `F(x)` remains a separate set image owned by the named functor.
 

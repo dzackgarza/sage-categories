@@ -387,15 +387,18 @@ Its monomorphism is faithful by construction.
 A general subcategory monomorphism is also faithful.
 Neither becomes full unless its mathematical definition establishes fullness.
 
-## Structural inheritance
+## Structure functors and inherited classes
 
-`structure_functors()` is a repository compiler declaration.
-It is not an additional kind of functor and is not part of Mathlib's functor theory.
+`structure_functors()` replaces Sage's `super_categories()` declaration.
+Each entry is an ordinary functor and is called a structure functor because the kernel
+uses it for class inheritance. This use adds no new kind of morphism in `Cat`.
 
-Every entry is an ordinary owned object of `Fun`. Its mathematical existence and properties come first.
-For example, finite sets are a full subcategory of sets, so their subcategory monomorphism exists independently of method compilation.
+Every entry is an ordinary owned object of `Fun`. Its mathematical existence and
+properties come first. A structure functor need not be a subcategory monomorphism.
+For example, the functor from posets to sets forgets the order. A poset is not thereby an
+object of `Sets()`, and `Posets()` is not thereby a subcategory of `Sets()`.
 
-A category selects an immediate functor only when the functor states the mathematical change of structure that supplies inherited operations:
+A category returns an immediate structure functor when that exact functor supplies inherited operations:
 
 ```python
 class FiniteSetsCategory(Category):
@@ -403,24 +406,26 @@ class FiniteSetsCategory(Category):
         return (Fun(self, Sets()).Monomorphisms().Isofibrations().Full()(),)
 ```
 
-The leaf explicitly constructs the monomorphism and records fullness through the selected property category.
+This example explicitly constructs a subcategory monomorphism and records fullness through the selected property category.
 The tuple tells the compiler to include the compiled classes owned by `Sets()` through that functor.
 
 The categories `Fun(self, D)` can contain many other functors.
 Their existence does not affect the compiled public surface.
-Selection changes compiler behavior only.
+Use as a structure functor changes compiler behavior only.
 It does not change a functor's mathematical definition.
 
-Each category lists only immediate selected functors.
-The kernel obtains longer routes by composition and applies [resolution.md](resolution.md) to diamonds.
+Each category lists only immediate structure functors.
+The kernel supplies their target classes as immediate dynamic bases. Sage dynamic-class
+construction and Python C3 linearization handle transitive inheritance and shared
+ancestors.
 
 ### `C.ObjectType`, `C.ElementType`, and `C.MorphismType`
 
 A category specifies `C.ObjectType`, `C.ElementType`, and `C.MorphismType` directly.
-The kernel constructs these classes dynamically from the selected functors.
-For each selected `F: C -> D`, `C.ObjectType` inherits `D.ObjectType`.
+The kernel constructs these classes dynamically from the structure functors.
+For each structure functor `F: C -> D`, `C.ObjectType` inherits `D.ObjectType`.
 `C.ElementType` and `C.MorphismType` inherit the corresponding target classes when `F`
-supplies the required conversions. A class with no selected target inherits the kernel
+supplies the required conversions. A class with no structure-functor target inherits the kernel
 base for its mathematical kind. A leaf never constructs this inheritance.
 
 The kernel preserves the body specified for each class. Each category has exactly one
@@ -428,13 +433,14 @@ The kernel preserves the body specified for each class. Each category has exactl
 
 Each local constructor accepts only the exact data introduced by its category.
 It initializes that state and calls `super().__init__()` once.
-Each selected functor retains one pure conversion from source construction data to the data consumed by its target constructor.
+Each structure functor retains one pure conversion from source construction data to the data consumed by its target constructor.
 The conversion reads no partly initialized value.
 
-The structured source instance must carry the state required by every reachable class.
-All selected paths to one target class must produce the same constructor datum.
-Each local constructor receives only its own datum and contributes its state once.
-The kernel mechanism that satisfies these obligations is not part of this specification.
+The structured source instance carries the state required by every class in its C3 MRO.
+A shared ancestor occurs once and its initializer runs once. The kernel follows that MRO;
+it does not enumerate functor paths, create competing constructor data for one class, or
+compare such data. Each local constructor receives only its own datum and contributes its
+state once.
 
 Every object-class constructor initializes `Cat().ElementType` with its point into the parent category.
 Thus `C.ObjectType` represents a point `* -> C`. A morphism uses the same object rule through `Mor(C).ObjectType`, as a point `* -> Mor(C)`. A `C.ElementType` represents a point `1_C -> X` with parent `X in C`.
@@ -532,7 +538,7 @@ implementation of `Sets().Finite()`.
 The kernel completes the connection on the one object: it strengthens the declared
 category's class to the implementing class, the same in-place strengthening every value
 receives when its placement improves, then reads the now-present nested classes and
-selected functors and compiles them onto it.
+structure functors and compiles them onto it.
 
 **The ordinal is not retaken.** It stays the one from declaration, which is when the
 category entered `Cat()`. That is what keeps every codomain older than the category
@@ -593,10 +599,10 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (Fun(self, D).Monomorphisms()(),)
 ```
 
-A point functor is selected only by this declaration.
-It lies in `.Isofibrations()` only when its image is [replete](glossary.md#inspected-sources) in `D` (`POL-FUN-036`). Like every selected functor, it contributes the target classes, typed construction-input conversions, constructor chain, and inherited public methods (`POL-FUN-003`, `POL-FUN-035`). The compiler reaches it through composition in `Cat` with the rest of the structural graph.
+A point functor becomes a structure functor only through this declaration.
+It lies in `.Isofibrations()` only when its image is [replete](glossary.md#inspected-sources) in `D` (`POL-FUN-036`). Like every structure functor, it contributes the target classes, typed construction-input conversions, constructor chain, and inherited public methods (`POL-FUN-003`, `POL-FUN-035`). Its target classes become immediate dynamic bases. Their own bases supply the transitive C3 MRO.
 
-The point placement supplies each selected target class's state and methods.
+The point placement supplies each structure-functor target class's state and methods.
 The distinguished object keeps its identity and existing category placement.
 Existing descendants and values keep their public class identity and behavior.
 
@@ -611,7 +617,7 @@ The point `* -> C` represented by an object is distinct from a selected monomorp
 Take the distinguished object to be a category `C`. Then `{C}` has one object at the `Cat()` level, while `C` has its own objects and morphisms one level below.
 `Cat().ElementType` models the points `* -> C`, which are exactly the actual objects of `C`.
 
-A selected point functor `{C} -> D` therefore compiles as:
+A point structure functor `{C} -> D` therefore compiles as:
 
 | Surface of `D` | Surface it supplies |
 | --- | --- |
@@ -625,10 +631,10 @@ The shift follows from the element relation in `Cat`. It adds no second inherita
 `Cat().Point(C)` gives the point category `{C}` without adding another declaration to `C`.
 
 A level shift contributes the corresponding target class to each affected public class.
-The selected point functor supplies the exact constructor conversion for that class.
+The point structure functor supplies the exact constructor conversion for that class.
 Thus `C`, its objects, and `1_C` carry the state required by their target classes.
 
-Two selected paths to one target class must produce the same constructor datum.
+Shared target classes follow Sage dynamic-class construction and occur once in the C3 MRO.
 
 ### Ambient algebraic categories
 
@@ -762,7 +768,7 @@ Ran_K(F)\circ K\Longrightarrow F.
 Their universal properties induce further natural transformations.
 Each such transformation is a morphism in a fixed-endpoint functor category.
 The Kan extension construction owns these morphisms.
-A later structural route uses their functor components and ordinary composition.
+A later named construction uses their functor components and ordinary composition.
 
 ### Essential images
 
@@ -847,7 +853,7 @@ The kernel supplies these shape constructors:
 A discrete diagram needs only its object rule `i |-> X_i`. The rule is an assignment on `S`; it never enumerates `S`. A Python sequence `(X_0, ..., X_n)` is the convenience form and denotes the diagram over `Discrete([n])`.
 
 `C.Products()(diagram)` constructs one object of `C`, placed in `C.Products()`, with `product_projection(i)` indexed by `i in S` and the universal map.
-The selected functor of the family is its retained identity-on-values monomorphism into `C`. `C.Coproducts()` is dual with `coproduct_injection(i)`. `X * Y` is `C.Products()((X, Y))`.
+The structure functor of the family is its retained identity-on-values monomorphism into `C`. `C.Coproducts()` is dual with `coproduct_injection(i)`. `X * Y` is `C.Products()((X, Y))`.
 
 `P.product_factors()` returns the retained indexed family `i |-> X_i` of a product presentation.
 `Q.coproduct_summands()` returns the retained indexed family of a coproduct presentation.
@@ -948,17 +954,17 @@ A pointed set is an object of the coslice category under the singleton set:
 \mathbf{PointedSet}=1\!\downarrow\!\mathbf{Set}.
 \]
 
-The selected functor is the composite of the pullback projection to `Fun([1], Sets())` with `ev_1`, that is `(X, x) |-> X`. The pullback projection itself returns the morphism `1 -> X` that selects `x`.
+The structure functor is the composite of the pullback projection to `Fun([1], Sets())` with `ev_1`, that is `(X, x) |-> X`. The pullback projection itself returns the morphism `1 -> X` that selects `x`.
 
 ### Product categories and `Fun([1], C)`
 
 For categories `C` and `D`, `product_projection(0)` and `product_projection(1)` are the two functors from `C * D` to its factors.
 
-The construction `Fun([1], C)` creates `ev_0` and `ev_1`. These functors exist without being selected for structural inheritance.
+The construction `Fun([1], C)` creates `ev_0` and `ev_1`. These functors exist without being returned from `structure_functors()`.
 
 ## Compiler contract
 
-The compiler uses `structure_functors()` as its sole structural graph.
+The compiler uses `structure_functors()` as its sole source of dynamic target classes and constructor conversions.
 It must:
 
 1. require every entry to lie in `Fun`;
@@ -967,19 +973,19 @@ It must:
 
 3. derive immediate target categories from functor codomains;
 
-4. build longer paths through composition in `Cat`;
+4. give the immediate target classes to Sage dynamic-class construction and use the resulting C3 MRO;
 
 5. preserve each functor's exact object and morphism maps;
 
 6. derive each point action from the morphism action and the declared terminal-object comparison; map all other generalized elements through the morphism action alone;
 
-7. reject a selected edge when a target class needs construction input and the functor lacks an exact typed conversion;
+7. reject a structure functor when a target class needs construction input and the functor lacks an exact typed conversion;
 
-8. compare the constructor data supplied by all selected paths to one target class and raise a construction-defect error on disagreement; each public functor action remains independent;
+8. initialize each class in the C3 MRO once, without enumerating paths to that class or comparing constructor data across paths; each public functor action remains independent;
 
 9. retain one object of `Fun(C, D)` for each named functor construction;
 
-10. preserve each written public class and fill its bases from its selected targets;
+10. preserve each written public class and fill its bases from its immediate structure-functor targets;
 
 11. make each structured value carry the state required by every reachable class, with each local constructor contributing its state once;
 
@@ -992,26 +998,26 @@ There is no route normalization, route scoring, or preservation registry.
 
 Every inherited method enters the descendant through the compiled class MRO. The declaring method runs on the original descendant instance with the supplied arguments.
 It reads the declaring category's state directly on that instance.
-Each selected functor states how the descendant's construction data produces the data its target constructor consumes.
+Each structure functor states how the descendant's construction data produces the data its target constructor consumes.
 The descendant therefore carries the target state itself.
 A point's construction input uses the declared terminal-object comparison.
 The method's value is returned exactly as declared.
 
 The public surface is dynamic inheritance in Sage's sense.
-The kernel builds `C.ObjectType`, `C.ElementType`, and `C.MorphismType` as dynamic classes carrying the linearized surface of every selected route.
+The kernel builds `C.ObjectType`, `C.ElementType`, and `C.MorphismType` as Sage dynamic classes with the C3-linearized surface of their immediate structure-functor targets.
 A leaf writes no Python inheritance.
 A leaf that wants a source-category result overrides the inherited method or adds its own.
 
 The MROs have these forms:
 
 ```text
-C.ObjectType, selected target ObjectType classes,
+C.ObjectType, immediate structure-functor target ObjectType classes,
 Cat().ElementType, object kernel class
 
 C.MorphismType = Mor(C).ObjectType,
-selected target MorphismType classes, morphism kernel class
+immediate structure-functor target MorphismType classes, morphism kernel class
 
-C.ElementType, selected target ElementType classes,
+C.ElementType, immediate structure-functor target ElementType classes,
 element kernel class
 ```
 
@@ -1121,13 +1127,13 @@ It is kernel infrastructure over already established mathematical functors.
 
 - `Cat().Point(X)`, written `{X}`, is the one-object category on a distinguished object `X`, retained once per `X`.
 
-- A point functor is the monomorphism `{X} -> D`, constructed through `Fun({X}, D)` and selected in `{X}.structure_functors()`.
+- A point functor is the monomorphism `{X} -> D`, constructed through `Fun({X}, D)` and returned from `{X}.structure_functors()` when it supplies inherited implementation.
 
-- A selected point functor `{C} -> D` supplies target object state to `C` and target element state to `C.ObjectType`, the points of `C`.
+- A point structure functor `{C} -> D` supplies target object state to `C` and target element state to `C.ObjectType`, the points of `C`.
 
-- Every selected functor is an ordinary object of `Fun`.
+- Every structure functor is an ordinary object of `Fun`.
 
-- `structure_functors()` determines the structural graph, compiled class bases, constructor conversions, and inherited method surface.
+- `structure_functors()` determines the immediate compiled class bases, constructor conversions, and inherited method surface.
   Each named functor owns its public images.
 
-- The compiler derives structural paths only through composition in `Cat`.
+- Sage dynamic classes and Python C3 derive the complete MRO from those immediate bases.

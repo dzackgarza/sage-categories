@@ -89,7 +89,7 @@ f\circ\rho_X=\rho_Y\circ(A\bullet f).
 
 Composition and identities come from `C`. The action-preservation equation is stable under both.
 
-## Selected functor
+## Structure functor
 
 The construction retains the faithful projection
 
@@ -100,7 +100,7 @@ U_A:\operatorname{Modules}(A,C)\longrightarrow C.
 It sends `(X, rho_X)` to `X` and sends each module morphism to its morphism in `C`.
 
 The construction builds `U_A` with both endpoints written out, retains it, and
-returns it as the complete immediate selected tuple:
+returns it as the complete immediate structure-functor tuple:
 
 ```python
 U_A = Fun(Modules(A, C), C).Faithful()(on_object, on_morphism)
@@ -129,7 +129,7 @@ X.action()
 
 `action()` returns `rho_X` in `Mor(C)(A bullet X, X)`. At compatible point domains, scalar action evaluates this morphism through the selected actegory action.
 
-All other capabilities come through the selected functor to `C` or through later property subcategories of `Modules(A, C)`.
+All other capabilities come through the structure functor to `C` or through later property subcategories of `Modules(A, C)`.
 
 ## Closed and enriched presentation
 
@@ -173,7 +173,7 @@ The [nLab module object](https://ncatlab.org/nlab/show/module%2Bobject) entry, s
 
 - Module morphisms are morphisms in `C` that preserve the action.
 
-- `U_A` is the sole immediate selected functor, and it is applied by name.
+- `U_A` is the sole immediate structure functor, and it is applied by name.
 
 - The enriched map to `End_C(X)` appears when the stated adjunction exists.
 

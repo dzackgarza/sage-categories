@@ -15,10 +15,10 @@ Do not remove a row after the source becomes clean (`POL-MATH-051`).
 | Prohibited term | Required wording |
 | --- | --- |
 | `DeclaredObjectType`, `DeclaredElementType`, `DeclaredMorphismType` | `ObjectType`, `ElementType`, `MorphismType` |
-| `declared functor`, `selected declared functor` | `named functor`; use `selected functor` only when `structure_functors()` selects it for inheritance |
-| `structural functor`, `structure functor` | `named functor` or `selected functor`, as specified above |
+| `declared functor`, `selected declared functor` | `named functor` |
+| `structural functor` | `structure functor` |
 | `role`, `role class`, `role-class`, `object role`, `element role`, `morphism role` | the exact class name, such as `C.ObjectType`, or “the class compiled for objects of `C`” |
-| `role state`, `role node`, `role map`, `role metadata` | the exact class, constructor datum, selected functor, or class graph that the sentence means |
+| `role state`, `role node`, `role map`, `role metadata` | the exact class, constructor datum, structure functor, or class graph that the sentence means |
 | `carrier`, `carrier set`, `carrier surface` | the image under a named functor with stated endpoints |
 | `carrier_projection`, `underlying_object_projection`, `underlying_set`, a generic `underlying_*()` accessor | construct and apply the named functor with stated endpoints |
 | `canonical image`, `canonical ancestor image`, `canonical target image` | `F.on_object(x)` or `F.on_morphism(f)` for the named functor `F` |
@@ -40,11 +40,12 @@ Do not remove a row after the source becomes clean (`POL-MATH-051`).
 | Generalized element of `X` | A morphism `T -> X`. It is not an `ElementType` value unless `T = 1_C`. |
 | Morphism of `C` | An object of `Mor(C)`. Thus `C.MorphismType = Mor(C).ObjectType`. |
 | Functor | An ordinary object of `Fun(C, D)`. A category can name many functors with the same endpoints. |
-| Inheritance selection | `structure_functors()` selects ordinary functors. Selection adds no new mathematical kind. |
-| Classes specified by a category `C` | The category specifies `C.ObjectType`, `C.ElementType`, and `C.MorphismType` directly. The kernel constructs them dynamically from selected functors. |
+| Structure functor | An ordinary functor returned by `C.structure_functors()` and used by the kernel to construct inherited class surfaces and constructor conversions. It need not be a subcategory monomorphism. |
+| Subcategory relation | A declared subcategory monomorphism. Python class inheritance and selection as a structure functor do not establish it. |
+| Classes specified by a category `C` | The category specifies `C.ObjectType`, `C.ElementType`, and `C.MorphismType` directly. The kernel constructs them dynamically from structure functors. |
 | Public functor image | The named functor owns `F.on_object(x)`, `F.on_morphism(f)`, and its image cache. |
-| Inherited execution | The selected target class is in the source class MRO. Its method runs on the initialized source instance. |
-| Constructor conversion | A selected functor converts source construction data to the exact data required by its target constructor. |
+| Inherited execution | A structure-functor target class is in the source class MRO. Its method runs on the initialized source instance. |
+| Constructor conversion | A structure functor converts source construction data to the exact data required by its target constructor. |
 
 The point and generalized-element distinction follows the nLab entry [generalized element](https://ncatlab.org/nlab/show/generalized+element), including its “Global elements” section.
 

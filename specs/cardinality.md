@@ -44,7 +44,7 @@ CardinalElement = Cardinal().ElementType
 CardinalityMorphism = Cardinal().MorphismType
 ```
 
-Its complete structural tuple selects the representative functor:
+Its complete structure-functor tuple selects the representative functor:
 
 ```python
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
@@ -65,7 +65,7 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
 ```
 
 `Semirings(Cat())` is the general internal semiring category at ambient `Cat()`. Its objects, its addition and multiplication functors, its zero and one points, and its laws are defined in [Semirings](magmas-monoids-semirings.md#semirings).
-`Cardinal()` supplies cardinal addition with zero and cardinal multiplication with one. The selected point functor supplies their complete compiled classes, exact constructor conversions, retained state, and public methods.
+`Cardinal()` supplies cardinal addition with zero and cardinal multiplication with one. The point structure functor supplies their complete compiled classes, exact constructor conversions, retained state, and public methods.
 The law data is the equations between these functors ([functor.md](functor.md#ambient-algebraic-categories)). `Cardinal()` is skeletal, so each binary operation selects one representative and the laws hold as equalities ([Laws in the supplied ambient](magmas-monoids-semirings.md#laws-in-the-supplied-ambient)).
 
 For every pair of represented cardinals, `Mor(Cardinal())(kappa, lambda)` is the discrete category on the owned function set between their representatives:
@@ -418,7 +418,7 @@ The ordinal model is specified in [`ordinals.md`](ordinals.md).
 The category-owned `Sets()` implementation declares the predicate.
 Each set construction registers its exact cases from retained construction data.
 An inherited call on a structured object uses the same predicate on that original object.
-A selected functor to `Sets()` supplies the set constructor data used by these cases; it does not replace predicate evaluation with a separate image lookup.
+A structure functor to `Sets()` supplies the set constructor data used by these cases; it does not replace predicate evaluation with a separate image lookup.
 
 The registered cases route on the index set, the retained diagram's codomain placement (`Sets().Finite()`, `Sets().Countable()`, `Sets().Uncountable()`), and any retained constant diagram.
 For a finite chosen enumeration, they obtain each factor query by applying `X_i.cardinality()` to `P.product_factors()`.

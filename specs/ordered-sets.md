@@ -19,7 +19,7 @@ FinitePosets()
 FiniteTotallyOrderedSets()
 ```
 
-The selected functors form this commutative graph:
+The structure functors form this commutative graph:
 
 \[
 \begin{array}{ccc}
@@ -113,7 +113,7 @@ The equality order on two distinct elements remains a poset.
 It does not enter either total-order category.
 
 `FiniteTotallyOrderedSets()` accepts an established finite total order.
-It uses the same poset elements, comparisons, and set images as the two structural routes above.
+It uses the same poset elements, comparisons, and named set images as the two structure-functor branches above.
 
 ## Canonical simplex orders
 
@@ -173,7 +173,7 @@ x\leq y\quad\Longleftrightarrow\quad
 
 The coordinatewise theorem admits this order.
 It also establishes that every inherited product projection is monotone and that the inherited universal morphism is monotone.
-The selected functor to `Sets()` maps the poset product to the chosen set product on the nose.
+The structure functor to `Sets()` maps the poset product to the chosen set product on the nose.
 
 The product of total orders need not be total.
 In a product of two nontrivial chains, the two crossed elements are incomparable.
@@ -257,7 +257,7 @@ A leaf can use Sage or another engine through private helpers.
 
 Leaf methods remain ordinary typed mathematical methods.
 The compiler derives transport from those signatures and category declarations.
-Leaf code declares only its mathematical classes and selected functors.
+Leaf code declares only its mathematical classes and structure functors.
 
 See [Leaf category implementations](leaves.md) and [Structural resolution](resolution.md).
 
@@ -277,7 +277,7 @@ The implementation satisfies this specification when the public API establishes 
 
 - total-order elements use inherited poset comparison;
 
-- all inherited set operations work through every structural route;
+- all inherited set operations work through the C3 class graph;
 
 - iteration returns elements owned by the public ambient poset;
 

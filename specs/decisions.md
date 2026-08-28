@@ -46,7 +46,7 @@ relying on this table.
 
 - [Purpose and scope](#purpose-and-scope)
 
-- [Selected functors and inheritance](#selected-functors-and-inheritance)
+- [Structure functors and inheritance](#structure-functors-and-inheritance)
 
 - [Elements](#elements)
 
@@ -170,21 +170,20 @@ Sage code needs a programmer to audit it; code here, outside the kernel, should 
 **D04 (08-23). The long-term asymptote.** Adding a category such as `MyVerySpecialAlgebraOverANoetherianDomain(R)` should mean: define a leaf category, possibly from a shipped template; declare a few functors to nearby categories you already understand, without reading the rest of the codebase; write your new methods; and receive the full inherited surface.
 You think at the level of your own algebra, and `cardinality()` and suitable limits and colimits arrive because of the functorial wiring.
 
-## Selected functors and inheritance
+## Structure functors and inheritance
 
-**D05 (08-23). Never subclass objects of a category explicitly.** Not without discussion first.
-`ProductSetObject` must not subclass `SetObject`; that bypasses the functor framework.
-If the intended architecture does not work, that is not a licence to subclass.
-Even `FiniteSets` inside `Sets`, where the underlying object is "just a set" both times, must declare its functor — here the inclusion, possibly trivial.
-Otherwise the category is free-floating.
-This is what replaces `super_categories`. The same holds for limits, colimits, products, coproducts, tensor products, direct sums, subobjects, and covering objects.
+**D05 (08-23, corrected 08-29). A leaf never writes subclass relations between category-owned classes.** The category specifies `C.ObjectType`, `C.ElementType`, and `C.MorphismType` and returns its immediate structure functors.
+The kernel constructs those exact classes dynamically with the corresponding target classes as bases.
+Thus a product-set leaf does not write `class ProductSetObject(SetObject)`, but its compiled `C.ObjectType` does inherit the target `Sets().ObjectType` through the declared structure functor.
+This Python inheritance is the intended mechanism. It does not assert categorical containment.
+The same rule applies to limits, colimits, products, coproducts, tensor products, direct sums, subobjects, and covering objects (`01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T21:03Z; 2026-08-28T21:06Z).
 
 **D06 (08-24). Sage's `super_categories` conflates distinct notions.** It carries subcategory inclusions, full or not, and structure projections such as `(X, op) |-> X` where `Monoids` declares `Sets` a supercategory.
 Replace it with an explicit `structure_functors: list[Functor]`, and name the distinct kinds separately: subcategory inclusion, full subcategory inclusion, projection, and so on.
 
-**D07 (08-24). Selection does not include every functor out of the category.** The selected functors are the ones along which the category inherits.
-In the poset example, do not select the second projection: a poset `(X, R)` *is* a set, so it inherits from `X`. Projecting to `R` would give posets the methods of a subset of a product, which is not how anyone works with posets.
-This mirrors Sage declaring only `Sets` as the supercategory.
+**D07 (08-24, corrected 08-29). Selection does not include every functor out of the category.** The structure functors are the ordinary functors whose target classes supply inherited implementation.
+For a poset `(X, R)`, the projection to `X` supplies the set interface. The projection to `R` does not supply the public poset interface.
+The Python inheritance from `Sets().ObjectType` does not make the poset an object of `Sets()` and does not identify it with the separate public set image of the projection (`01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T21:20Z).
 
 **D08 (08-24). What declaring `F: C -> D` obliges you to supply.** How to take the leaf writer's own implementation class and feed it into *any* available constructor for `D.ObjectType`, and the same for elements and arrows.
 A subcategory inclusion claims that `X |-> D()(X)` works.
@@ -206,7 +205,7 @@ Nothing is computed; the leaf writer is trusted.
 Several equivalent spellings of the functor category remain valid; `Fun` is an additional name, not the sole one.
 The `Ar` and `Hom` spellings used on 08-25 were dropped on 08-26; see D55.
 
-**D12 (08-26). A functor does not know it is structural.** Leaves construct ordinary functors and *declare* them, by returning them from `structure_functors()`. There is no kind of functor called structural and no constructor that makes one.
+**D12 (08-26, corrected 08-29). A structure functor is an ordinary functor selected for compiler use.** Leaves construct ordinary functors and return the applicable ones from `structure_functors()`. This contextual name does not define another functor class or constructor, and selection does not assert a subcategory relation.
 
 **D13 (08-26). The kernel is Sage's class-building plus one repair.** Sage's MRO technique works.
 Its one flaw is that dynamic classes carry methods and leave out fields, so a method arrives without the private data it needs to compute anything.
@@ -368,16 +367,14 @@ That is where the assertion that both operands lie in the same category belongs.
 This is an engineering convenience to be formalized later.
 The point is that `Monoids * Rings`, `Fun(Monoids, Sets) * Fun(Rings, Graphs)`, and `X * Y` for two sets all use one interface and one semantics.
 
-**D37 (08-26, corrected 08-28). A structured source instance carries one initialized state for each inherited target class.** For almost every algebraic category there is one set from which the structured object is built.
-Every selected path to `Sets()` must supply that same set as constructor data for the inherited `Sets().ObjectType` state.
-`Free_R({1, 2})` and `Free_R({a, b})` are distinct modules and must never be identified: the second's generators are formal symbols while the first's inherit structure as ring elements.
-This constructor agreement does not identify functor images.
-Each named functor constructs and caches its own public image, and two functors with the same endpoints can return different objects (`4544eba5 2026-08-28T12:00Z`; `4544eba5 2026-08-28T12:18Z`).
+**D37 (08-26, corrected 08-29). Sage dynamic classes and Python C3 own diamonds.** The kernel constructs `C.ObjectType`, `C.ElementType`, and `C.MorphismType` from the immediate targets of `C.structure_functors()` in the same model as Sage's dynamic category classes.
+Python C3 places a shared target class once in the resulting method-resolution order, and its initializer runs once through cooperative `super()`.
+The kernel does not enumerate paths to that class, construct competing data for those paths, or compare such data (`01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T21:19Z).
 
 **D38 (08-26, corrected 08-28). Set equality is a proposition, not a procedure.** The image in `Sets()` of `Free_R(S)` can be created by fiat, from a membership rule and a cardinality rule; nothing enumerates it and there is no extensional description to compare.
 `X == Y` is `True` by identity and otherwise `Unknown`, unless a cited theorem or an exact computation decides it.
 The compiler never uses set equality to merge public functor images.
-Its construction obligation is only that every selected path to one target class supplies the same constructor datum (`4544eba5 2026-08-28T12:18Z`).
+Each named functor constructs and caches its own public image, and two functors with the same endpoints can return different objects (`4544eba5 2026-08-28T12:00Z`; `4544eba5 2026-08-28T12:18Z`).
 
 ## Leaf discipline
 
@@ -408,7 +405,12 @@ Every declaration is a functor into `Cat()`, and the parameter it takes is that 
 
 **D89 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T19:51Z). Property applications come from property subcategories.** When `is_X()` asks whether a value has property `X`, the property subcategory owns the containment predicate. Its `predicate_name` gives the exact public spelling. Its `predicate_owner` gives the largest `C.ObjectType`, `C.ElementType`, or `C.MorphismType` on which the predicate has meaning. The kernel derives the public application from that declaration. A leaf or operation specification does not define a second method contract for the same question.
 
-**D95 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T21:06Z). `C.ObjectType` is the exact class name.** A category specifies `C.ObjectType`, and the kernel constructs `C.ObjectType` dynamically. For each selected `F: C -> D`, `C.ObjectType` inherits `D.ObjectType`. `C.ElementType` inherits `D.ElementType`, and `C.MorphismType` inherits `D.MorphismType`, when `F` supplies the required conversions. A leaf never constructs this inheritance. Policies, specifications, and plans name the exact class they mean.
+**D95 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T21:06Z). `C.ObjectType` is the exact class name.** A category specifies `C.ObjectType`, and the kernel constructs `C.ObjectType` dynamically. For each structure functor `F: C -> D`, `C.ObjectType` inherits `D.ObjectType`. `C.ElementType` inherits `D.ElementType`, and `C.MorphismType` inherits `D.MorphismType`, when `F` supplies the required conversions. A leaf never constructs this inheritance. Policies, specifications, and plans name the exact class they mean.
+
+**D96 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T21:20Z). A structure functor replaces one use of Sage's `super_categories()` mechanism; it does not assert a subcategory relation.** A functor returned by `C.structure_functors()` can be forgetful, a projection, a fibration, a subcategory monomorphism, or another functor whose target classes supply inherited implementation.
+Its use in dynamic class construction does not assert that `C` is a subcategory of its codomain or that an object of `C` is its public image under the functor.
+The public image `F(x)` remains a separate object owned by `F`.
+A subcategory relation exists only through its declared monomorphism.
 
 **D90 (08-29, corrected 08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T20:21Z). Algebraic structures expose their standard mathematical syntax.** A magma constructor receives or defines its multiplication morphism. The additive and multiplicative subcategories expose the corresponding binary operation through `+` and `*`. The public API has no generic `operation()` or `combine()` alias. The specification does not prescribe private storage. Accessors for other chosen structures require their own mathematical contract.
 
@@ -472,7 +474,7 @@ Inheritance is automatic; you write wiring only when you are adding mathematics.
 
 **D45 (08-24). The question to answer at every step.** "What generic categorical mechanism makes every leaf state only its new mathematics?"
 Only that determines where code lives, which objects own theorems, how calls work, and what methods must exist.
-Trace the whole implementation path: how the kernel defines products, how they propagate through categories and presentations and selected functors, so that the leaf supplies only its delta.
+Trace the whole implementation path: how the kernel defines products, how they propagate through categories and presentations and structure functors, so that the leaf supplies only its delta.
 
 **D73 (08-28). Every method makes its choices explicit.** A method that returns the image of a value in another category names the functor and both its endpoints.
 A name that does not determine the codomain chooses silently, whatever noun it uses: a module's object could be asked for as an object of `C`, as an abelian group, or as a ring when it happens to be one.
@@ -493,7 +495,7 @@ An implicit choice is not merely underspecified: it silently claims that one of 
 
 *The arrow is where the leaf writer's work lives.* Everything the framework supplies is a consequence of stating the map: the inheritance, the constructor threading, the construction lifts.
 An accessor that hands back an ancestor value is a way to obtain that value without stating the map — so the mechanism never runs, and the leaf ends up reimplementing what it should have received.
-That is a bypass around the selected-functor mechanism.
+That is a bypass around the structure-functor mechanism.
 
 *And it is what makes the code auditable.* A mathematician can read `U_A(M)` and check it against the definition.
 Reading an accessor that omits the functor endpoints requires opening the implementation to find out which category was meant, which is programming rather than mathematics, and it forfeits the reason the layer exists at all (D03).
@@ -506,7 +508,7 @@ A lifted construction can require more: its chosen apex and defining morphisms c
 State that stronger equality where the construction needs it.
 
 This construction-level equality does not identify the public images of arbitrary named functors (`01a03c6a 2026-08-26T07:36Z`; `4544eba5 2026-08-28T12:18Z`).
-Inheritance requires only that selected paths to one target class supply the same constructor datum (D37, D38). A leaf that lifts an ambient construction builds on the ambient apex and retains its defining morphisms; the compiler has no preservation registry.
+Inheritance follows the Sage dynamic-class MRO from the immediate structure-functor targets (D37, D95, D96). A leaf that lifts an ambient construction builds on the ambient apex and retains its defining morphisms; the compiler has no preservation registry.
 
 **D75 (08-28). Objects carrying a choice form the total category of a fibration over the base, and the choice is usually a morphism.** Sage names the phenomenon — `Modules(R).WithBasis()` is "the category of modules with a distinguished basis" (`sage/categories/modules_with_basis.py:179`), with `AlgebrasWithBasis`, `WithRealizations`, and the `FinitelyGenerated` family beside it, all on the same axiom machinery as `Finite`. Taking the name is not taking the construction, and the construction is what has to be stated.
 
@@ -586,5 +588,5 @@ A set constructor that can accept a cardinality by fiat does not make cardinalit
 
 Specifications are forward-facing.
 They catalogue the desired functionality, nail down the public API, and may hint at internal strategies.
-A specification must be explicit about the expected selected functors — whatever stands in for `super_categories`. It separates, and does not repeat, the methods expected to arrive by inheritance, keeping one source of truth, though naming a few to ground an example is fine.
+A specification must be explicit about the expected structure functors — whatever stands in for `super_categories`. It separates, and does not repeat, the methods expected to arrive by inheritance, keeping one source of truth, though naming a few to ground an example is fine.
 A lattice specification should say that it mentions no cardinality, and that cardinality arrives compositionally along a chain of functors landing in `Sets()` — not from a direct functor to `Sets()`.

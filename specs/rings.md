@@ -91,12 +91,12 @@ instance there is the strict 2-group
 `Cardinal()` and `Ordinals()` are not objects of `Rings(Cat())`. Neither addition admits
 an inversion functor, so both stay in `Semirings(Cat())`.
 
-## Selected functors
+## Structure functors
 
 `Rings(C)` is the subobject of
 `Semirings(C) * Groups(C_x).Additive().Commutative()` whose two additive-monoid
 images are one object with one addition and zero. Its defining presentation retains
-both projections. The complete immediate structural tuple is
+both projections. The complete immediate structure-functor tuple is
 
 ```python
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
@@ -108,7 +108,8 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
 
 The semiring projection supplies the additive and multiplicative element interfaces and their unit points.
 The additive-group projection supplies inversion and subtraction.
-Both paths supply the same additive-monoid and underlying-object constructor data.
+The Sage dynamic C3 MRO contains each shared additive-monoid and ambient-object class once.
+The kernel does not compare constructor data attributed to the two branches.
 
 Both projections state their laws in the supplied ambient
 ([Laws in the supplied ambient](magmas-monoids-semirings.md#laws-in-the-supplied-ambient)).
@@ -128,7 +129,7 @@ For a general `C`, the morphisms and diagrams above remain the public definition
 - `Rings(C)` retains one underlying object in `C`.
 - Its structure maps are morphisms in `C`.
 - Its axioms are commutative diagrams in `C`.
-- Its selected functors target `Semirings(C)` and
+- Its structure functors target `Semirings(C)` and
   `Groups(C_x).Additive().Commutative()`.
 - `Rings(Sets())` gives ordinary rings; `Rings(Cat())` states its laws as equalities of
   functors.

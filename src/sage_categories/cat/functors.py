@@ -538,47 +538,7 @@ class NaturalTransformationData:
     assignment: Assignment
 
 
-class NaturalTransformationDeclaration(MorphismOfCategory):
-    """The local ``Fun.MorphismType`` declaration.
-
-    Its domain and codomain are the objects of ``Fun(I, C)`` as supplied (a functor,
-    or the morphism of ``C`` it denotes when ``I = [1]``); the functors they denote
-    are retained for the components.
-    """
-
-    def __init__(self, data: NaturalTransformationData) -> None:
-        self._assignment = data.assignment
-        self._components: MonoDict = MonoDict()
-        super().__init__()
-
-    def source_functor(self) -> Functor:
-        return diagram_of(self.domain())
-
-    def target_functor(self) -> Functor:
-        return diagram_of(self.codomain())
-
-    def component(self, member_object: ObjectOfCategory) -> MorphismOfCategory:
-        """``eta_X: F(X) -> G(X)``, one morphism per object; naturality is a trusted declaration (POL-MATH-036).
-
-        A natural transformation has one component at each object, so the assignment runs
-        once per object and its value is retained by identity (POL-CAT-012).  This is what
-        makes the projections of a chosen product and the injections of a chosen coproduct
-        one morphism each: they are the components of the limiting cone and cocone.
-        """
-        if member_object in self._components:
-            return self._components[member_object]
-        source, target = self.source_functor(), self.target_functor()
-        component = self._assignment(member_object)
-        assert component in source.codomain().morphism_category(1)(source.on_object(member_object), target.on_object(member_object))
-        self._components[member_object] = component
-        return component
-
-    def __repr__(self) -> str:
-        return f"NaturalTransformation({self.domain()!r} => {self.codomain()!r})"
-
-
 Functor = FunctorDeclaration
-NaturalTransformation = NaturalTransformationDeclaration
 
 _category.bootstrap()
 Cat = _category.Cat
@@ -802,6 +762,44 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
 
 class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     """``Fun = Mor(Cat())``."""
+
+    class MorphismType(MorphismOfCategory):
+        """A natural transformation: the 2-morphisms of ``Cat()``.
+
+        Its domain and codomain are the objects of ``Fun(I, C)`` as supplied (a functor,
+        or the morphism of ``C`` it denotes when ``I = [1]``); the functors they denote
+        are retained for the components.
+        """
+
+        def __init__(self, data: NaturalTransformationData) -> None:
+            self._assignment = data.assignment
+            self._components: MonoDict = MonoDict()
+            super().__init__()
+
+        def source_functor(self) -> Functor:
+            return diagram_of(self.domain())
+
+        def target_functor(self) -> Functor:
+            return diagram_of(self.codomain())
+
+        def component(self, member_object: ObjectOfCategory) -> MorphismOfCategory:
+            """``eta_X: F(X) -> G(X)``, one morphism per object; naturality is a trusted declaration (POL-MATH-036).
+
+            A natural transformation has one component at each object, so the assignment runs
+            once per object and its value is retained by identity (POL-CAT-012).  This is what
+            makes the projections of a chosen product and the injections of a chosen coproduct
+            one morphism each: they are the components of the limiting cone and cocone.
+            """
+            if member_object in self._components:
+                return self._components[member_object]
+            source, target = self.source_functor(), self.target_functor()
+            component = self._assignment(member_object)
+            assert component in source.codomain().morphism_category(1)(source.on_object(member_object), target.on_object(member_object))
+            self._components[member_object] = component
+            return component
+
+        def __repr__(self) -> str:
+            return f"NaturalTransformation({self.domain()!r} => {self.codomain()!r})"
 
     def __init__(self, base: CategoryOfCategories) -> None:
         self._bootstrapping = False

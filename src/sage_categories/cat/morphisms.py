@@ -26,12 +26,12 @@ from sage_categories.cat.properties import FullSubcategory, PropertySubcategory
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role
+from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory, Role
 
 if TYPE_CHECKING:
     from sage_categories.cat.properties import FixedEndpointProperty
 
-__all__ = ["FixedEndpointCategory", "IdentityTwoCell", "Mor", "MorphismCategory", "inhabited"]
+__all__ = ["FixedEndpointCategory", "Mor", "MorphismCategory", "inhabited"]
 
 
 @overload
@@ -62,13 +62,6 @@ def Mor(*arguments: int | Category) -> Category:
         case (int() as level, Category() as category):
             return category.morphism_category(level)
     raise TypeError("Mor takes a category or a level and a category")
-
-
-class IdentityTwoCell(MorphismOfCategory):
-    """The identity 2-morphism of a morphism of a 1-category: the only morphisms of ``Mor(C)``."""
-
-    def __repr__(self) -> str:
-        return f"identity of {self.domain()!r}"
 
 
 # ``endpoints(f, A, B)``: the domain of ``f`` is ``A`` and its codomain is ``B``,
@@ -128,12 +121,15 @@ inhabited.register_handler(_inhabited_by_base_category)
 class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismData, []]):
     """``Mor(C)``: objects are the morphisms of ``C``, morphisms its 2-morphisms."""
 
+    class MorphismType(MorphismOfCategory):
+        """The identity 2-morphism of a morphism of a 1-category: the only morphisms of ``Mor(C)``."""
+
+        def __repr__(self) -> str:
+            return f"identity of {self.domain()!r}"
+
     def __init__(self, base: Category[MorphismData, TwoMorphismData]) -> None:
         self._base = base
         self._fixed_endpoints: TripleDict = TripleDict(weak_values=False)
-        # Each morphism category owns its element role (POL-CAT-058): a generalized
-        # element of a morphism of ``C``, with no local operation.
-        self._declared_element_role = type(f"Mor({base!r}).DeclaredElementType", (ElementOfObject,), {})
         super().__init__()
 
     def base_category(self) -> Category[MorphismData, TwoMorphismData]:
@@ -164,14 +160,6 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
         if role is Role.OBJECT:
             return self._base, Role.MORPHISM
         return self, role
-
-    def local_role_class(self, role: Role) -> type[CategoryPoint]:
-        match role:
-            case Role.ELEMENT:
-                return self._declared_element_role
-            case Role.MORPHISM:
-                return self._base.two_morphism_type()
-        raise AssertionError(f"the objects of {self!r} are the morphisms of {self._base!r}")
 
     def equality(self) -> Predicate:
         return self._base.equality()

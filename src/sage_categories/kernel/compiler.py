@@ -331,7 +331,7 @@ def empty_local_role(category: Category, role: Role) -> type[CategoryPoint]:
     """
     table = _empty_local_roles[role]
     if category not in table:
-        table[category] = type(f"Declared{category!r}.{role.value}", (kernel_base(role),), {})
+        table[category] = type(f"{category!r}.{role.value}", (kernel_base(role),), {})
     return table[category]
 
 
@@ -954,8 +954,9 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
         # base, so every class in the compiled MRO is a node class and carries the node
         # order (POL-CAT-016).
         #
-        # The declared class stays what it was: ``local_role_class`` reads the class
-        # attribute, ``role_class`` the compiled instance attribute.
+        # One name per kind (POL-KERNEL-028): the declaration is ``ObjectType`` on the
+        # category's Python class and the compiled class is ``ObjectType`` on the
+        # category value, which shadows it.
         local = category.local_role_class(role)
         bases = _base_classes(current)
         cell = CellType()

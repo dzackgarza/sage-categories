@@ -82,9 +82,6 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
     def narrowing_roots(self) -> tuple[Category, ...]:
         return (*self._ambient.narrowing_roots(), self)
 
-    def local_role_class(self, role: Role) -> type[CategoryPoint]:
-        return empty_local_role(self, role)
-
     def structure_functors(self) -> tuple[Functor, ...]:
         return (_functors().full_subcategory_monomorphism(self, self._ambient),)
 

@@ -63,17 +63,6 @@ class VertexData:
     label: Hashable
 
 
-class Vertex(ObjectOfCategory):
-    """An object of a finitely presented category: a named vertex, retained by identity."""
-
-    def __init__(self, data: VertexData) -> None:
-        self._label = data.label
-        super().__init__()
-
-    def __repr__(self) -> str:
-        return f"{self._label!r} in {self.category()!r}"
-
-
 @dataclass(frozen=True, eq=False, slots=True)
 class PathData:
     """The local state introduced by a path."""
@@ -81,29 +70,35 @@ class PathData:
     word: Word
 
 
-class Path(MorphismOfCategory):
-    """A morphism of a finitely presented category: a reduced word of generators, first generator first."""
-
-    def __init__(self, data: PathData) -> None:
-        self._word = data.word
-        super().__init__()
-
-    def word(self) -> Word:
-        return self._word
-
-    def __repr__(self) -> str:
-        if not self._word:
-            return f"identity of {self.domain()!r}"
-        return " then ".join(self._word)
-
-
 class FinitePresentedCategory(Category[[Word], []]):
     """The category presented by finitely many vertices, generators, and rewriting relations."""
 
-    DeclaredObjectType = Vertex
-    DeclaredMorphismType = Path
+    class ObjectType(ObjectOfCategory):
+        """An object of a finitely presented category: a named vertex, retained by identity."""
 
-    class DeclaredElementType(ElementOfObject):
+        def __init__(self, data: VertexData) -> None:
+            self._label = data.label
+            super().__init__()
+
+        def __repr__(self) -> str:
+            return f"{self._label!r} in {self.category()!r}"
+
+    class MorphismType(MorphismOfCategory):
+        """A morphism of a finitely presented category: a reduced word of generators, first generator first."""
+
+        def __init__(self, data: PathData) -> None:
+            self._word = data.word
+            super().__init__()
+
+        def word(self) -> Word:
+            return self._word
+
+        def __repr__(self) -> str:
+            if not self._word:
+                return f"identity of {self.domain()!r}"
+            return " then ".join(self._word)
+
+    class ElementType(ElementOfObject):
         """A generalized element of a vertex; no local operation."""
 
     def __init__(self, name: str, labels: tuple[Hashable, ...], generators: tuple[Generator, ...], relations: tuple[Relation, ...]) -> None:
@@ -113,18 +108,18 @@ class FinitePresentedCategory(Category[[Word], []]):
         self._relations = relations
         # One retained path per (source label, reduced word) (specs/functor.md, "Canonical objects of Cat"): a morphism of a
         # finitely presented category exists once by identity.
-        self._paths: dict[tuple[Hashable, Word], Path] = {}
+        self._paths: dict[tuple[Hashable, Word], FinitePresentedCategory.MorphismType] = {}
         self._object_set: MonoDict = MonoDict()
         self._morphism_set: MonoDict = MonoDict()
         super().__init__()
         self._vertices = {label: self.ObjectType(category=self, data=VertexData(label)) for label in labels}
         self._equality.register_handler(self._equal)
 
-    def __call__(self, label: Hashable) -> Vertex:
+    def __call__(self, label: Hashable) -> FinitePresentedCategory.ObjectType:
         """The retained vertex with this label."""
         return self._vertices[label]
 
-    def label(self, vertex: Vertex) -> Hashable:
+    def label(self, vertex: FinitePresentedCategory.ObjectType) -> Hashable:
         return vertex._label
 
     def labels(self) -> tuple[Hashable, ...]:
@@ -135,7 +130,7 @@ class FinitePresentedCategory(Category[[Word], []]):
         """The names of the generating morphisms, in declaration order."""
         return tuple(self._generator_endpoints)
 
-    def generator(self, name: str) -> Path:
+    def generator(self, name: str) -> FinitePresentedCategory.MorphismType:
         source, target = self._generator_endpoints[name]
         return self.construct_morphism(self(source), self(target), (name,))
 
@@ -155,10 +150,10 @@ class FinitePresentedCategory(Category[[Word], []]):
             self._object_set[self] = Sets().Finite()(self._labels)
         return self._object_set[self]
 
-    def object_at(self, point: SetElement) -> Vertex:
+    def object_at(self, point: SetElement) -> FinitePresentedCategory.ObjectType:
         return self(enumerated_datum(self.object_set(), point))
 
-    def object_point(self, vertex: Vertex) -> SetElement:
+    def object_point(self, vertex: FinitePresentedCategory.ObjectType) -> SetElement:
         return self.object_set().point(self.label(vertex))
 
     def _has_directed_cycle(self) -> bool:
@@ -192,12 +187,12 @@ class FinitePresentedCategory(Category[[Word], []]):
             self._morphism_set[self] = Sets().Finite()(words)
         return self._morphism_set[self]
 
-    def morphism_at(self, point: SetElement) -> Path:
+    def morphism_at(self, point: SetElement) -> FinitePresentedCategory.MorphismType:
         source, word = enumerated_datum(self.morphism_set(), point)
         target = source if not word else self._generator_endpoints[word[-1]][1]
         return self.construct_morphism(self(source), self(target), word)
 
-    def generating_morphisms(self) -> tuple[Path, ...]:
+    def generating_morphisms(self) -> tuple[FinitePresentedCategory.MorphismType, ...]:
         """The generators: every morphism is a composite of them."""
         return tuple(self.generator(name) for name in self._generator_endpoints)
 
@@ -215,7 +210,7 @@ class FinitePresentedCategory(Category[[Word], []]):
             else:
                 return reduced
 
-    def construct_morphism(self, domain: Vertex, codomain: Vertex, word: Word) -> Path:
+    def construct_morphism(self, domain: FinitePresentedCategory.ObjectType, codomain: FinitePresentedCategory.ObjectType, word: Word) -> FinitePresentedCategory.MorphismType:
         """The path along the named generators, reduced modulo the relations."""
         position = self.label(domain)
         for name in word:
@@ -246,14 +241,14 @@ class FinitePresentedCategory(Category[[Word], []]):
         one_sided = {(left[0], left[1]) for left, right in self._relations if len(left) == 2 and not right}
         return {first: second for first, second in one_sided if (second, first) in one_sided}
 
-    def construct_identity(self, vertex: Vertex) -> Path:
+    def construct_identity(self, vertex: FinitePresentedCategory.ObjectType) -> FinitePresentedCategory.MorphismType:
         return self.construct_morphism(vertex, vertex, ())
 
-    def composite(self, second: Path, first: Path) -> Path:
+    def composite(self, second: FinitePresentedCategory.MorphismType, first: FinitePresentedCategory.MorphismType) -> FinitePresentedCategory.MorphismType:
         assert first.codomain() is second.domain()
         return self.construct_morphism(first.domain(), second.codomain(), (*first.word(), *second.word()))
 
-    def inverse_morphism(self, morphism: Path) -> Path:
+    def inverse_morphism(self, morphism: FinitePresentedCategory.MorphismType) -> FinitePresentedCategory.MorphismType:
         """The inverse of a path whose generators each have a declared inverse generator."""
         inverses = self._inverse_generators()
         return self.construct_morphism(morphism.codomain(), morphism.domain(), tuple(inverses[name] for name in reversed(morphism.word())))

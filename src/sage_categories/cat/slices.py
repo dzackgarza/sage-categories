@@ -45,7 +45,7 @@ from collections.abc import Callable
 
 from sage.structure.coerce_dict import MonoDict, TripleDict
 
-from sage_categories.cat.cat_constructions import PairMorphism, PairObject, PullbackCategory, images_agree, strict_pullback
+from sage_categories.cat.cat_constructions import PullbackCategory, images_agree, strict_pullback
 from sage_categories.cat.category import Category, member
 from sage_categories.cat.constructions import cone
 from sage_categories.cat.diagrams import cospan_diagram, sequence_position
@@ -133,7 +133,7 @@ class SliceLikeCategory(PullbackCategory):
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         return slice_member(candidate, self)
 
-    def __call__(self, value: CategoryPoint | tuple[CategoryPoint, ObjectOfCategory]) -> PairObject:
+    def __call__(self, value: CategoryPoint | tuple[CategoryPoint, ObjectOfCategory]) -> PullbackCategory.ObjectType:
         """The object ``(t, *)`` of a morphism ``t`` of ``C``, of a generalized element denoting one, or of an explicit pair."""
         match value:
             case (first, second):
@@ -160,7 +160,7 @@ class SliceCategory(SliceLikeCategory):
     def retain_lifts(self, fixed_projection: Functor) -> None:
         fixed_projection.retain_cartesian_lifts(self._precomposition_lift)
 
-    def _precomposition_lift(self, morphism: MorphismOfCategory, member_object: PairObject) -> PairMorphism:
+    def _precomposition_lift(self, morphism: MorphismOfCategory, member_object: PullbackCategory.ObjectType) -> PullbackCategory.MorphismType:
         """The cartesian lift of ``f: y -> z`` at ``(z, p)`` for the fixed projection: ``f: (y, p * f) -> (z, p)`` by precomposition."""
         structure = member_object.first()
         assert morphism.codomain() is structure.domain(), f"{morphism!r} does not end at the varying object of {member_object!r}"
@@ -181,7 +181,7 @@ class CosliceCategory(SliceLikeCategory):
     def retain_lifts(self, fixed_projection: Functor) -> None:
         fixed_projection.retain_cocartesian_lifts(self._postcomposition_lift)
 
-    def _postcomposition_lift(self, morphism: MorphismOfCategory, member_object: PairObject) -> PairMorphism:
+    def _postcomposition_lift(self, morphism: MorphismOfCategory, member_object: PullbackCategory.ObjectType) -> PullbackCategory.MorphismType:
         """The cocartesian lift of ``f: y -> z`` at ``(y, p)`` for the fixed projection: ``f: (y, p) -> (z, f * p)`` by postcomposition."""
         structure = member_object.first()
         assert morphism.domain() is structure.codomain(), f"{morphism!r} does not start at the varying object of {member_object!r}"
@@ -319,7 +319,7 @@ class MorphismPropertyFiber(FullSubcategory[[tuple[MorphismOfCategory, MorphismO
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         return self._ambient.membership_proposition(candidate) & has_morphism_property(candidate, self)
 
-    def __call__(self, value: CategoryPoint) -> PairObject:
+    def __call__(self, value: CategoryPoint) -> PullbackCategory.ObjectType:
         """The pair ``(m, *)`` of a morphism with the property: the trusted constructor of the property on ``m`` (POL-MATH-037), rejected only when decided false."""
         assert ask(has_morphism_property(value, self)) is not False, f"{value!r} is not in {self.property_category()!r}"
         self.property_category()(self.morphism_of(value))

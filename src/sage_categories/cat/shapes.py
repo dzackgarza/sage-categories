@@ -57,35 +57,30 @@ class DiscreteObjectData:
     point: SetElement
 
 
-class DiscreteObject(ObjectOfCategory):
-    """An object of ``Discrete(S)``: a point of ``S``."""
-
-    def __init__(self, data: DiscreteObjectData) -> None:
-        self._point = data.point
-        super().__init__()
-
-    def point(self) -> SetElement:
-        """The point of the index set that this object is."""
-        return self._point
-
-    def __repr__(self) -> str:
-        return f"{self._point!r} in {self.category()!r}"
-
-
-class DiscreteIdentity(MorphismOfCategory):
-    """The only morphisms of a discrete category: identities."""
-
-    def __repr__(self) -> str:
-        return f"identity of {self.domain()!r}"
-
-
 class DiscreteCategory(Category[[], []]):
     """The discrete category on a set."""
 
-    DeclaredObjectType = DiscreteObject
-    DeclaredMorphismType = DiscreteIdentity
+    class ObjectType(ObjectOfCategory):
+        """An object of ``Discrete(S)``: a point of ``S``."""
 
-    class DeclaredElementType(ElementOfObject):
+        def __init__(self, data: DiscreteObjectData) -> None:
+            self._point = data.point
+            super().__init__()
+
+        def point(self) -> SetElement:
+            """The point of the index set that this object is."""
+            return self._point
+
+        def __repr__(self) -> str:
+            return f"{self._point!r} in {self.category()!r}"
+
+    class MorphismType(MorphismOfCategory):
+        """The only morphisms of a discrete category: identities."""
+
+        def __repr__(self) -> str:
+            return f"identity of {self.domain()!r}"
+
+    class ElementType(ElementOfObject):
         """A generalized element of a point; no local operation."""
 
     def __init__(self, index_set: SetObject) -> None:
@@ -102,38 +97,38 @@ class DiscreteCategory(Category[[], []]):
     def object_set(self) -> SetObject:
         return self._index_set
 
-    def object_at(self, point: SetElement) -> DiscreteObject:
+    def object_at(self, point: SetElement) -> DiscreteCategory.ObjectType:
         return self(point)
 
-    def object_point(self, member_object: DiscreteObject) -> SetElement:
+    def object_point(self, member_object: DiscreteCategory.ObjectType) -> SetElement:
         return member_object.point()
 
     def morphism_set(self) -> SetObject | UnknownClass:
         return self._index_set
 
-    def morphism_at(self, point: SetElement) -> DiscreteIdentity:
+    def morphism_at(self, point: SetElement) -> DiscreteCategory.MorphismType:
         return self(point).identity()
 
-    def generating_morphisms(self) -> tuple[DiscreteIdentity, ...]:
+    def generating_morphisms(self) -> tuple[DiscreteCategory.MorphismType, ...]:
         """No morphism beyond the identities: the empty generating family."""
         return ()
 
-    def __call__(self, point: SetElement) -> DiscreteObject:
+    def __call__(self, point: SetElement) -> DiscreteCategory.ObjectType:
         """The object of ``Discrete(S)`` at a point of ``S``, one object per retained point."""
         assert point in self._index_set, f"{point!r} is not a point of {self._index_set!r}"
         if point not in self._objects:
             self._objects[point] = self.ObjectType(category=self, data=DiscreteObjectData(point))
         return self._objects[point]
 
-    def construct_morphism(self, domain: DiscreteObject, codomain: DiscreteObject) -> DiscreteIdentity:
+    def construct_morphism(self, domain: DiscreteCategory.ObjectType, codomain: DiscreteCategory.ObjectType) -> DiscreteCategory.MorphismType:
         """``Mor(Discrete(S))(x, y)()``: the identity, which exists exactly when ``x == y``."""
         assert ask(domain == codomain), f"{self!r} has no morphism {domain!r} -> {codomain!r}"
         return self.MorphismType(self.morphism_category(1), domain, codomain)
 
-    def construct_identity(self, member_object: DiscreteObject) -> DiscreteIdentity:
+    def construct_identity(self, member_object: DiscreteCategory.ObjectType) -> DiscreteCategory.MorphismType:
         return self.MorphismType(self.morphism_category(1), member_object, member_object)
 
-    def composite(self, second: DiscreteIdentity, first: DiscreteIdentity) -> DiscreteIdentity:
+    def composite(self, second: DiscreteCategory.MorphismType, first: DiscreteCategory.MorphismType) -> DiscreteCategory.MorphismType:
         assert ask(first.codomain() == second.domain())
         return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain())
 
@@ -202,27 +197,6 @@ class ThinObjectData:
     point: SetElement
 
 
-class ThinObject(ObjectOfCategory):
-    """An object of ``Thin(P, leq)``: a point of ``P``."""
-
-    def __init__(self, data: ThinObjectData) -> None:
-        self._point = data.point
-        super().__init__()
-
-    def point(self) -> SetElement:
-        return self._point
-
-    def __repr__(self) -> str:
-        return f"{self._point!r} in {self.category()!r}"
-
-
-class Comparison(MorphismOfCategory):
-    """The unique morphism ``x -> y`` of a thin category, present when ``x <= y``."""
-
-    def __repr__(self) -> str:
-        return f"{self.domain()!r} <= {self.codomain()!r}"
-
-
 # ``comparable(f, T)``: the endpoints of the comparison ``f`` of ``T`` satisfy ``T``'s order.
 comparable = Predicate("comparable", 2, False)
 
@@ -246,10 +220,26 @@ class ThinMorphisms(MorphismCategory[[], []]):
 class ThinCategory(Category[[], []]):
     """The thin category of a preorder ``(P, leq)``."""
 
-    DeclaredObjectType = ThinObject
-    DeclaredMorphismType = Comparison
+    class ObjectType(ObjectOfCategory):
+        """An object of ``Thin(P, leq)``: a point of ``P``."""
 
-    class DeclaredElementType(ElementOfObject):
+        def __init__(self, data: ThinObjectData) -> None:
+            self._point = data.point
+            super().__init__()
+
+        def point(self) -> SetElement:
+            return self._point
+
+        def __repr__(self) -> str:
+            return f"{self._point!r} in {self.category()!r}"
+
+    class MorphismType(MorphismOfCategory):
+        """The unique morphism ``x -> y`` of a thin category, present when ``x <= y``."""
+
+        def __repr__(self) -> str:
+            return f"{self.domain()!r} <= {self.codomain()!r}"
+
+    class ElementType(ElementOfObject):
         """A generalized element of a point; no local operation."""
 
     def __init__(self, carrier: SetObject, order: Predicate) -> None:
@@ -274,28 +264,28 @@ class ThinCategory(Category[[], []]):
     def object_set(self) -> SetObject:
         return self._carrier
 
-    def object_at(self, point: SetElement) -> ThinObject:
+    def object_at(self, point: SetElement) -> ThinCategory.ObjectType:
         return self(point)
 
-    def object_point(self, member_object: ThinObject) -> SetElement:
+    def object_point(self, member_object: ThinCategory.ObjectType) -> SetElement:
         return member_object.point()
 
-    def __call__(self, point: SetElement) -> ThinObject:
+    def __call__(self, point: SetElement) -> ThinCategory.ObjectType:
         """The object at a point of ``P``, one object per retained point."""
         assert point in self._carrier, f"{point!r} is not a point of {self._carrier!r}"
         if point not in self._objects:
             self._objects[point] = self.ObjectType(category=self, data=ThinObjectData(point))
         return self._objects[point]
 
-    def construct_morphism(self, domain: ThinObject, codomain: ThinObject) -> Comparison:
+    def construct_morphism(self, domain: ThinCategory.ObjectType, codomain: ThinCategory.ObjectType) -> ThinCategory.MorphismType:
         """``Mor(Thin)(x, y)()``: the comparison ``x <= y``; rejected only when the order decides against it."""
         assert ask(self._order(domain.point(), codomain.point())) is not False, f"{domain!r} <= {codomain!r} is false"
         return self.MorphismType(self.morphism_category(1), domain, codomain)
 
-    def construct_identity(self, member_object: ThinObject) -> Comparison:
+    def construct_identity(self, member_object: ThinCategory.ObjectType) -> ThinCategory.MorphismType:
         return self.MorphismType(self.morphism_category(1), member_object, member_object)
 
-    def composite(self, second: Comparison, first: Comparison) -> Comparison:
+    def composite(self, second: ThinCategory.MorphismType, first: ThinCategory.MorphismType) -> ThinCategory.MorphismType:
         assert ask(first.codomain() == second.domain())
         return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain())
 

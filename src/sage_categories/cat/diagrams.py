@@ -41,7 +41,7 @@ from sage.structure.coerce_dict import MonoDict, TripleDict
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import endpoints
-from sage_categories.cat.shapes import Discrete, DiscreteObject, is_discrete
+from sage_categories.cat.shapes import Discrete, DiscreteCategory, is_discrete
 from sage_categories.kernel.caches import SequenceTable
 from sage_categories.kernel.decisions import Decision
 from sage_categories.kernel.predicates import ask
@@ -107,7 +107,7 @@ _cospan_diagrams: TripleDict = TripleDict(weak_values=False)
 _span_diagrams: TripleDict = TripleDict(weak_values=False)
 
 
-def from_object_rule(functors: FunctorCategory, rule: Callable[[DiscreteObject], ObjectOfCategory]) -> Functor:
+def from_object_rule(functors: FunctorCategory, rule: Callable[[DiscreteCategory.ObjectType], ObjectOfCategory]) -> Functor:
     """A diagram over a discrete shape from its object rule, retained per rule; the morphism rule is forced."""
     assert is_discrete(functors.domain()), f"{functors.domain()!r} is not a discrete shape; supply a morphism rule"
     if rule not in _object_rule_diagrams:
@@ -117,7 +117,7 @@ def from_object_rule(functors: FunctorCategory, rule: Callable[[DiscreteObject],
     return diagram
 
 
-def sequence_position(vertex: DiscreteObject) -> int:
+def sequence_position(vertex: DiscreteCategory.ObjectType) -> int:
     """The position ``k`` of an object of ``Discrete([n])`` at the point ``k`` of ``[n]``."""
     simplex = vertex.category().index_set()
     enumeration = Sets().Finite().chosen_enumeration(simplex)

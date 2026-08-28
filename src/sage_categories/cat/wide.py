@@ -34,10 +34,9 @@ from __future__ import annotations
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategory
-from sage_categories.kernel.compiler import empty_local_role
 from sage_categories.kernel.decisions import Decision
 from sage_categories.kernel.predicates import Proposition, ask
-from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory, Role
+from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory
 
 __all__ = ["WideFixedEndpointCategory", "WideMorphismCategory", "WideSubcategory", "wide_subcategory"]
 
@@ -80,9 +79,6 @@ class WideSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
     def morphism_property(self) -> Category:
         """The property subcategory of ``Mor(C)`` whose objects are the morphisms of this subcategory."""
         return self._morphism_property
-
-    def local_role_class(self, role: Role) -> type[CategoryPoint]:
-        return empty_local_role(self, role)
 
     def structure_functors(self) -> tuple[Functor, ...]:
         return (Fun(self, self._ambient).Monomorphisms().Isofibrations()(),)

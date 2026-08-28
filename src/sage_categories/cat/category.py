@@ -181,32 +181,25 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
         """The local role declaration: the nested class of this category's Python class.
 
+        ``Role.OBJECT.value`` is ``"ObjectType"``: a role *is* the name the category
+        writes for that mathematical kind (POL-KERNEL-028), so this reads the one
+        declaration the architecture fixes, not a capability discovered by probing.
+
         A category states only the roles whose mathematics it introduces; a role it
         declares nothing for gets the empty local declaration, which names this category
         as the node's owner and stands on the role's kernel base (POL-KERNEL-028).
         """
-        match role:
-            case Role.OBJECT:
-                name = "DeclaredObjectType"
-            case Role.ELEMENT:
-                name = "DeclaredElementType"
-            case Role.MORPHISM:
-                name = "DeclaredMorphismType"
-            case _:
-                raise AssertionError(role)
-        declared = getattr(type(self), name, None)
+        declared = getattr(type(self), role.value, None)
         return declared if declared is not None else compiler.empty_local_role(self, role)
 
     def role_class(self, role: Role) -> type[CategoryPoint]:
-        """The compiled role class installed on this category by the kernel."""
-        match role:
-            case Role.OBJECT:
-                return self.ObjectType
-            case Role.ELEMENT:
-                return self.ElementType
-            case Role.MORPHISM:
-                return self.MorphismType
-        raise AssertionError(role)
+        """The compiled role class the kernel installed on this category value.
+
+        One name per kind: the declaration is the nested class of the category's Python
+        class and the compiled class is the attribute of the category value, which
+        shadows it.
+        """
+        return getattr(self, role.value)
 
     def role_source(self, role: Role) -> tuple[Category[MorphismData, TwoMorphismData], Role]:
         return self, role
@@ -316,12 +309,6 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         from sage_categories.cat.morphisms import MorphismCategory
 
         return MorphismCategory
-
-    def two_morphism_type(self) -> type[MorphismOfCategory]:
-        """The local role of the morphisms of ``Mor(self)``; identities only for a 1-category."""
-        from sage_categories.cat.morphisms import IdentityTwoCell
-
-        return IdentityTwoCell
 
     def base_category(self) -> Category:
         """The category ``C`` such that this category is a subcategory of ``Mor(C)``."""
@@ -854,11 +841,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         from sage_categories.cat.functors import FunctorsCategory
 
         return FunctorsCategory
-
-    def two_morphism_type(self) -> type[MorphismOfCategory]:
-        from sage_categories.cat.functors import NaturalTransformation
-
-        return NaturalTransformation
 
     def construct_morphism(
         self,

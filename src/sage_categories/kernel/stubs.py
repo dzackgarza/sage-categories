@@ -188,9 +188,9 @@ def _constructed(category: Category) -> tuple[Category, ...]:
             continue
         member = getattr(category, name)
         if isinstance(member, type) and issubclass(member, CategoryPoint):
-            # A role class the category carries -- ``DeclaredObjectType`` as its class
-            # writes it, ``ObjectType`` as the compiler installs it -- is a role of the
-            # category, not a category it constructs.
+            # A role class the category carries -- ``ObjectType`` as its class writes it
+            # and as the compiler installs it -- is a role of the category, not a
+            # category it constructs.
             continue
         if not _takes_no_argument(member):
             continue

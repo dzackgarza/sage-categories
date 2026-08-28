@@ -74,7 +74,10 @@ These five register entries are remediated and need only to be marked closed:
   `ChosenSubobjects()` at `src/sage_categories/cat/constructions.py:428`.
 - The receiver-valued witness entry at line 1267. Current code has one at
   `tests/cat/test_two_morphisms.sage:254`. The witness itself is a separate defect: it
-  declares `this_object()` returning `self`, which states no mathematical proposition.
+  declares `this_object()` returning `self`, which states no mathematical proposition. It
+  observes that dispatch did not substitute a value, which is only observable while a
+  second value exists to substitute — that is V10. Repair V10 and the assertion becomes
+  unformulable. Do not delete the witness instead (`POL-MATH-047`, `POL-MATH-049`).
 
 Governing sources:
 

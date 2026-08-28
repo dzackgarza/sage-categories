@@ -96,7 +96,7 @@ The standard definitions already determine the software roles:
 
 - `C.ElementType` implements the elements of represented objects when the theory has them;
 
-- an operation's mathematical signature determines its receiver, parameter, and result roles;
+- an operation's mathematical signature determines the exact type of the value it applies to, of each parameter, and of its result;
 
 - a selected functor determines the compiled ancestor role and its exact construction-input conversion;
 

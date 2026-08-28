@@ -906,7 +906,7 @@ Natural transformations are trusted constructions, never compiler proofs.
 There is no route normalization, route scoring, or preservation registry.
 
 Every inherited method enters the descendant through the compiled role MRO. The declaring method runs on the original descendant instance with the supplied arguments.
-It reads the declaring category's state directly on that instance, because each selected functor states how the descendant's construction data produces the data its target's constructor consumes, and the kernel used that statement to thread the descendant's constructor arguments through the ancestor initializers. Nothing is fetched, and the receiver is never exchanged for another value.
+It reads the declaring category's state directly on that instance, because each selected functor states how the descendant's construction data produces the data its target's constructor consumes, and the kernel used that statement to thread the descendant's constructor arguments through the ancestor initializers. Nothing is fetched, because no second value exists to fetch.
 A point's construction input uses the retained separator comparison.
 The method's value is returned exactly as declared.
 

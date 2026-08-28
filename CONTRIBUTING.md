@@ -91,10 +91,115 @@ The package must absorb the elliptic-curve construction before claiming that wor
 | `POL-MATH-042` | Register a computational route only for a predicate with an exact algorithm on its declared semantic domain. Never add a route that purports to prove a general category-theoretic property. Keep unsupported decisions `Unknown`. |
 | `POL-MATH-043` | Treat `Cat` as an abstract universe whose foundation is unspecified. Use only the structure that the repository explicitly declares. A declared ordinary or 2-categorical operation does not select a set-theoretic, simplicial, enriched, or higher-categorical realization. |
 | `POL-MATH-044` | A mathematical term imports only its explicit repository definition. Do not infer surrounding theory, laws, properties, or constructions from the term alone. |
+| `POL-MATH-045` | Every mathematical kind, owner, and relation here is fixed by a declaration and compiled before anything runs. Before adding a runtime value, lookup, tag, branch, or cache, name the declaration that already fixes the fact. When one does, the runtime mechanism is the defect and the declaration is the repair. A rule of the form "never replace X at call time" is evidence that a second X is representable: remove the representability rather than adding the rule. `POL-MATH-046` through `POL-MATH-048` are three known instances of this one substitution, exhibited in [Three wrong models](#three-wrong-models-and-their-corrections). |
+| `POL-MATH-046` | A structured object does not hold its underlying object; it is that object with more structure. Reject `carrier` and `structural_image`, and reject each successor name the same model produces, such as `underlying_data`, `base_set`, `source_value`, or "the projected object". Reject the move whatever it is called: a stored field holding an ancestor value, a method whose first step obtains a second value standing for the one it was applied to, or an accessor named after a target category instead of after a functor. For each selected `F: C -> D` the kernel makes `C.ObjectType` a Python subclass of `D.ObjectType` and threads the construction data through `D`'s initializer, so `D`'s state is the object's own. Only a named functor has an image (`POL-CAT-096`). |
+| `POL-MATH-047` | A method call applies an operation. It is not a message with a recipient, so no call has a receiver. Reject that word and its restatements. Reject the move: any rule, parameter, test, or witness that distinguishes candidate values of `self`, including an assertion that a call returned the value it was applied to. `#: core(Sets()) -> Cardinal()` is a functor and `X.cardinality()` is notation for applying it. One object is present and nothing selects among candidates. |
+| `POL-MATH-048` | A mathematical kind is a declaration site, never a runtime value. Reject the role enumeration and any successor tag that names object, element, or morphism. Reject the move: a value that names a kind, a mapping keyed by one, a branch on one, or a category assembled by passing implementation classes into a call instead of declared as a class. A category declares `DeclaredObjectType`, `DeclaredElementType`, and `DeclaredMorphismType`; where the class is written is what makes it the object, element, or morphism implementation (`POL-LEAF-059`). |
+| `POL-MATH-049` | Never repair a finding of this class by renaming. A rename leaves the move in place and removes the word that located it, so the defect survives with nothing marking it. Treat each occurrence as diagnostic: it marks a site where the wrong model was applied. Repair the model until the wrong move cannot run, and the word is then left with nothing to name. A test that senses one of these defects is not deleted either. When the defect is gone, the distinction it asserts is no longer formulable. Separate the two kinds of occurrence: one in source is evidence and stays until the model is repaired, while a specification or policy sentence that teaches the wrong model is instruction and is rewritten to state the correct one. |
 
 For example, an owned constructor for `RR` records its cardinality as $2^{\aleph_0}$.
 The implementation cites the supporting theorem in source documentation.
 Runtime stores the typed cardinality; it does not derive uncountability or carry theorem prose.
+
+### Three wrong models and their corrections
+
+One substitution produces all three. A fact that a declaration already fixes is moved to
+runtime, and machinery is then built to answer it there. The machinery is what leaks into
+leaves. Each model below is stated as the wrong move, then the correction is shown, because
+a prohibition alone leaves the wrong move as the only one a writer can perform.
+
+#### A structured object holds its underlying object
+
+The wrong model says a poset has a set. It gives that set a name, then answers every
+set-valued question by reaching for it:
+
+```python
+# wrong
+def is_finite(self) -> Proposition:                 # declared on Sets()
+    return Sets().Finite().predicate()(Sets().structural_image(self))
+```
+
+Two faults. The method obtains a second value standing for the one it was applied to. And
+`structural_image` names a target category, which selects nothing: a category can be the
+codomain of many functors, and only `F.on_object(x)` for a named `F` is an image.
+
+The correction is that a poset is a set with more structure. `Posets()` declares one
+functor `U: Posets() -> Sets()`. `U` states how the poset's construction data produces the
+data the `Sets()` constructor consumes. The kernel makes `Posets().ObjectType` a Python
+subclass of `Sets().ObjectType` and uses `U` to thread the poset constructor's arguments
+into the set initializer, so the set state is the poset's own:
+
+```python
+# correct
+def is_finite(self) -> Proposition:                 # declared on Sets(), unchanged
+    return member(self, Sets().Finite())
+```
+
+`P.is_finite()` finds that method by ordinary attribute lookup and applies it to `P`. The
+functor is written once and is what makes the constructor work. Nothing is fetched, so
+there is no value for `carrier` or any successor name to denote.
+
+This is also why the general case is a category with no functor to `Sets()` at all.
+`sSet = Fun(Δ^op, Sets())` has objects that are functors; `X_0`, `⊔_n X_n`, and `π_0` are
+three different functors to `Sets()` and none is structural. A sheaf, a scheme, and a
+functor category are the same. There `Sets()` is the codomain of the functor that *is* the
+object, not an ancestor of the category.
+
+#### A call has a recipient to be chosen
+
+The wrong model treats `X.cardinality()` as a message sent to an object, which makes "which
+object receives it" a question with two answers, the poset or the set. Policy then settles
+the invented question, and a witness pins the policy:
+
+```python
+# wrong: states no proposition; observes that dispatch did not substitute a value
+def this_object(self) -> Self:
+    return self
+
+assert member.this_object() is member
+```
+
+The correction is that `#: core(Sets()) -> Cardinal()` is a functor and `X.cardinality()`
+is notation for applying it. The argument of a function is not a recipient, and `self` is a
+calling convention. Under the model above one object is present, so nothing can be
+substituted and the question cannot be posed. Note the general form: the need for a rule
+saying a value is never replaced is the evidence that a second value exists to replace it.
+
+#### A mathematical kind is a value
+
+The wrong model tags the kind and passes the tag as data:
+
+```python
+# wrong
+self._finite = FiniteSets(self, "Finite", {Role.OBJECT: FiniteSetRole}, (self._countable,))
+
+def local_role_class(self, role: Role) -> type[CategoryPoint]:
+    if role is Role.OBJECT:
+        ...
+```
+
+The kind is already the type: an object of `C` is an instance of `C.ObjectType`, and the
+three implementation classes are distinct. A tag is a second classification running beside
+the type system. Because it is a value it flows into parameters, which turns declaration
+into assembly and leaves a property subcategory with nowhere to declare its classes; and it
+flows into branches, which is classification by inspection with the `isinstance` rule routed
+around.
+
+The correction is that a property subcategory is an ordinary category class, so the
+declaration site says what each class implements:
+
+```python
+# correct
+class FiniteSets(PropertySubcategory):
+    _base_category_class_and_axiom = (Sets, "Finite")
+
+    class DeclaredObjectType(...):
+        ...
+```
+
+Sage's general axiom mechanism is this shape: the axiom is declared once, the implementing
+class is defined independently, and one field wires the two. Nesting the class inside the
+base category is its convenience form, not its content.
 
 ### Trust boundary for the categorical core
 
@@ -327,8 +432,8 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-058` | Compile `ElementType` inheritance from selected structural functors by the same mechanism used for `ObjectType` and `MorphismType`. A subcategory never reuses another category's element implementation type. |
 | `POL-CAT-059` | Let each category add local methods to its `ElementType` while inheriting the complete applicable element interface through structural functors. Preserve the category-specific element type even when it adds no local methods. |
 | `POL-CAT-060` | Every property subcategory declares one owned `is_X()` predicate method on its largest meaningful ambient category. Applying the method returns the category-owned proposition. `ask()` can use its computational routes and self-refine the ambient value. Category placement makes `ask()` return `True`; the method keeps the same proposition-valued contract. The method is a required part of the property declaration and its public predicate surface. |
-| `POL-CAT-061` | Compile an inherited declaration into the descendant role MRO. Execute it on the original descendant instance. Before the local constructor chain starts, compute the declaring role's construction input through every complete selected-functor route. For an object or morphism, also compute the one `Cat().ElementType` generalized-point input used by the common MRO root. Never replace the receiver merely to call the method. |
-| `POL-CAT-062` | Make inherited calls use ordinary Python inheritance. The receiver and arguments remain the supplied values. A declaring category's method reads the state of its own category on that receiver, because the kernel initialized that state from the leaf's construction data through the selected functor's conversion (`POL-KERNEL-018`). It never fetches a second object standing for the receiver in the declaring category. A leaf that changes the mathematics overrides the method or adds its own. |
+| `POL-CAT-061` | Compile an inherited declaration into the descendant role MRO. Execute it on the original descendant instance. Before the local constructor chain starts, compute the declaring role's construction input through every complete selected-functor route. For an object or morphism, also compute the one `Cat().ElementType` generalized-point input used by the common MRO root. |
+| `POL-CAT-062` | Make inherited calls use ordinary Python inheritance. A declaring category's method applies to the value it was called on, with the supplied arguments, and reads its own category's state there, because the kernel initialized that state from the leaf's construction data through the selected functor's conversion (`POL-KERNEL-018`). No second value standing for it in the declaring category exists (`POL-MATH-046`). A leaf that changes the mathematics overrides the method or adds its own. |
 | `POL-CAT-063` | Preserve object, element, morphism, iterator, and mathematical collection roles in compiled method signatures. Derive these roles from the owning implementation role and exact declared types. Do not infer them from runtime registries, `isinstance`, method names, descriptors, or duplicate per-method metadata. |
 | `POL-CAT-064` | Compile special methods and ordinary methods through the same dynamic MRO. Do not add per-method wrappers. Generated role-constructor wrappers are part of class construction, not method dispatch. |
 | `POL-CAT-065` | Return a lazy result and an owned collection exactly as the inherited method returns them, one value at a time. Do not wrap or relabel the collection or its items. |
@@ -341,7 +446,7 @@ The series remains defined when every grading has nonzero cohomology and becomes
 | `POL-CAT-072` | Preserve a collection's declared mathematical type and item role through ordinary inherited calls. Do not infer collection semantics from `Iterable` checks or assume that every lazy result contains elements. |
 | `POL-CAT-073` | Treat `X in C` as the mathematical admissibility fact. Exact identity such as `X.category() is C` is an implementation fact and never triggers structural normalization. |
 | `POL-CAT-074` | Preserve the strongest established category of every object. Do not replace it with an ancestor implementation merely to call an inherited operation. |
-| `POL-CAT-075` | Treat the ordinary typed signature and executable body on the owning implementation class as the sole authoritative declaration of a method. Copy that declaration into its compiled role and derive every generated typing artifact from it. Never maintain a second description of its receiver, parameters, call shape, result, or mathematical roles. |
+| `POL-CAT-075` | Treat the ordinary typed signature and executable body on the owning implementation class as the sole authoritative declaration of a method. Copy that declaration into its compiled role and derive every generated typing artifact from it. Never maintain a second description of the value it applies to, its parameters, call shape, result, or exact mathematical types. |
 | `POL-CAT-076` | Keep mathematical type, Python call shape, and structural construction provenance distinct. Exact types state mathematical roles. The Python signature states positional, keyword, and variadic shape. Canonical-image and construction-input relations state structural provenance. No one of these facts can replace another. |
 | `POL-CAT-077` | Determine method ownership from its definition on the category-owned implementation class and the selected structural functors. No decorator, marker, annotation payload, registry entry, or descriptor argument can create mathematical ownership or repair a missing category declaration. |
 | `POL-CAT-078` | The owner of a mathematical fact is the category, object, morphism, functor, or universal construction whose definition states it. A metadata holder, descriptor, registry, adapter, backend, compiler component, or generated type is never its mathematical owner. |
@@ -423,7 +528,7 @@ Grounding examples:
 | `POL-LEAF-011` | Lift an inherited construction to a leaf category by specifying only how the leaf's additional structure acts on the inherited result and morphisms. Make this lift compatible with the selected structural functors. |
 | `POL-LEAF-012` | Do not redefine the inherited construction's objects, elements, universal property, or general methods in a leaf subtree. Those remain owned by the category where the construction was introduced. |
 | `POL-LEAF-013` | Design the kernel so leaf authors can treat inheritance and method compilation as established infrastructure. Adding a mathematical leaf must not require reading or modifying kernel code or kernel tests. |
-| `POL-LEAF-014` | Ship and maintain a standard template for new leaf categories. The template contains only the category declaration, minimal constructor, selected structural functors, and sites for new methods. A template is design pseudocode that shows the required simplicity, so it is never imported, executed, type-checked, or held to a spelling criterion. Keep the architecture it shows current: a template that teaches a shape the kernel cannot compile is a defect, and a stale identifier in one is not. |
+| `POL-LEAF-014` | Ship and maintain a standard template for new leaf categories. The template contains only the category declaration, minimal constructor, selected structural functors, and sites for new methods. A template is design pseudocode that shows the required simplicity, so it is never imported, executed, type-checked, or held to a spelling criterion. It shows one way to write a leaf, chosen as a worked example. It does not fix the presentation of the mathematics it illustrates: many models of a poset are correct, and a template showing one of them does not make the others stale. A template is a defect only when it teaches a shape the kernel cannot compile. |
 | `POL-LEAF-015` | Let a leaf author work from the new mathematics and the contracts of nearby categories. Do not require knowledge of distant subtrees or the complete category graph. |
 | `POL-LEAF-016` | After the selected functors are declared, automatically supply the complete applicable object, element, morphism, and construction interfaces from their target categories. |
 | `POL-LEAF-017` | Give a full replete subcategory the inherited categorical interface without extra wiring. A limit, colimit, or other functorial construction descends to the subcategory when the subcategory leaf overrides the inherited construction and refines its result through its own constructor; no ancestor category and no kernel branch lifts a result for a descendant. |
@@ -447,7 +552,7 @@ Grounding examples:
 | `POL-LEAF-035` | Direct construction, `assume(P(x))`, exact `True`, and construction-owned mathematics all invoke the same generic self-refinement through the property-subcategory constructor. The leaf performs no allocation, cache mutation, narrowing, or repeated membership assertion. |
 | `POL-LEAF-036` | Treat a type error in leaf refinement machinery as evidence that the kernel lacks a typed refinement contract. Repair that contract and delete the leaf machinery. |
 | `POL-LEAF-037` | Never discover, inspect, compose, or traverse structural routes in a leaf. Declare immediate structural functors and use the resulting public inherited surface. |
-| `POL-LEAF-038` | Never traverse a structural route to obtain an object, element, or morphism image, in a leaf or in a category-owned method. An inherited method already runs on a receiver that carries the declaring category's state (`POL-KERNEL-018`), so there is nothing to fetch. |
+| `POL-LEAF-038` | Never traverse a structural route to obtain an object, element, or morphism image, in a leaf or in a category-owned method. An inherited method already applies to a value that carries the declaring category's state (`POL-KERNEL-018`), so there is nothing to fetch. |
 | `POL-LEAF-039` | Call an inherited operation directly on the original structured value. If that call fails, stop the leaf edit and repair structural compilation. |
 | `POL-LEAF-040` | Never normalize a leaf input to an ancestor implementation, add an exact-category branch, or repeat membership after transport. Store and pass the established mathematical object. |
 | `POL-LEAF-041` | Make `C.ObjectType`, `C.ElementType`, and `C.MorphismType` the sole executable implementation classes for operations owned by `C`. Each class is the public firewall that hides every supported representation, dependency, and algorithm for that mathematical role. |
@@ -497,10 +602,10 @@ It does not reimplement composition, structural transport, domain checks, codoma
 | `POL-KERNEL-015` | A kernel `try`/`except` can only add exact context, translate to a more precise kernel exception while preserving the cause, or perform mandatory cleanup before re-raising. |
 | `POL-KERNEL-016` | Every kernel catch terminates the current operation. It never selects another implementation, retries, suppresses a diagnostic, continues computation, or returns an ordinary value. |
 | `POL-KERNEL-017` | The kernel alone discovers, composes, and traverses structural routes and computes retained canonical images and construction inputs. Theory code never sees these operations. |
-| `POL-KERNEL-018` | Make each inherited method callable directly on every structural descendant through its compiled role MRO. The original descendant is the receiver and its arguments remain unchanged. Make `X.f() == F(X).f()` true by construction, not by lookup: each selected functor `F: C -> D` states how `C`'s construction data produces the data `D`'s constructor consumes, and the kernel uses that statement to thread the leaf constructor's arguments through the ancestor initializers, so the descendant carries `D`'s state itself. A declaring method therefore reads its own state on the receiver. It never resolves a route to fetch a separate ancestor value. |
+| `POL-KERNEL-018` | Make each inherited method callable directly on every structural descendant through its compiled role MRO, applying to the descendant with its arguments unchanged. Make `X.f() == F(X).f()` true by construction, not by lookup: each selected functor `F: C -> D` states how `C`'s construction data produces the data `D`'s constructor consumes, and the kernel uses that statement to thread the leaf constructor's arguments through the ancestor initializers, so the descendant carries `D`'s state itself. A declaring method therefore reads its own state where it is applied. No separate ancestor value exists for it to resolve a route to (`POL-MATH-046`). |
 | `POL-KERNEL-019` | Let a constructor requiring an object of `C` accept every `X` with `X in C`. Resolve any required canonical implementation inside the generic kernel boundary. |
 | `POL-KERNEL-020` | Copy locally declared operations into compiled roles and inherit them through the role MRO. Never route a locally owned operation into Sage or another engine, replace its executable method, match it to an engine method by name, or interpret a decorator, annotation, registry entry, or marker as a computation route. |
-| `POL-KERNEL-021` | Derive a method receiver's role from its owning `ObjectType`, `ElementType`, or `MorphismType`. Derive parameter and result roles from their exact mathematical types. Derive call shape from the Python signature. Fail compilation when any required role is not exact. Never require a leaf to restate these facts. |
+| `POL-KERNEL-021` | Derive the exact type a method applies to from its owning `ObjectType`, `ElementType`, or `MorphismType`. Derive parameter and result types from their exact mathematical types. Derive call shape from the Python signature. Fail compilation when any required role is not exact. Never require a leaf to restate these facts. |
 | `POL-KERNEL-022` | Use mathematical roles to type construction inputs and canonical-image relations. Never relabel a category, object, element, morphism, or mathematical collection as a plain value to avoid an exact role. |
 | `POL-KERNEL-023` | Compile every supported ordinary typed leaf method without any kernel import or framework annotation in the leaf. A required decorator, role marker, or signature mirror is a kernel API defect. |
 | `POL-KERNEL-024` | Inspect standard Python signatures and exact mathematical type annotations inside the kernel. Never require a theory module to use a signature DSL, encode standard call mechanics, describe absent parameters, or state compiler mechanics. |
@@ -518,7 +623,7 @@ A leaf states its immediate mathematics and then uses inherited operations as na
 If a leaf must inspect a route or recover an ancestor implementation, the kernel abstraction has failed.
 
 For example, `__pow__(self, exponent: ObjectType) -> ObjectType` (the exponential object) already states
-its receiver, argument, call shape, and result type.
+the type it applies to, its argument, call shape, and result type.
 The leaf does not repeat those facts in a transport decorator.
 The result remains an `ObjectType`; it is not a plain value used to evade transport.
 The same rule excludes mandatory `@transport_roles(...)`, `receiver=...`, empty
@@ -765,7 +870,7 @@ When an established finite algorithm requires a primitive loop bound, lower the 
 | `POL-API-001` | Shape the API from the mathematics, not from current storage fields or Python classes. |
 | `POL-API-024` | Give two distinct notions two names, and never let one spelling carry a general meaning on one class and a narrower one on a subclass. The compiler's collision check sees declared roles, not a plain Python override, so such a clash is silent until a value whose placement is the overriding category reaches the general route. |
 | `POL-API-025` | Give the declared class and the compiled role class distinct names. Sage separates `ParentMethods` from `parent_class` for this reason: one name for both hides which of the two a site means, and a resolution defect behind that collapse costs several passes to locate. |
-| `POL-API-026` | Let a method's return annotation state what the body returns. A method annotated `-> Self` whose body returns retained state is not receiver-valued, and a reader, a reviewer, and a witness row will all take it for one. |
+| `POL-API-026` | Let a method's return annotation state what the body returns. A method annotated `-> Self` whose body returns retained state does not return the value it was applied to, and both a reader and a reviewer will take it for one. Do not answer this with a witness that asserts a call returned that value; such a witness states no proposition and is banned by `POL-MATH-047`. |
 | `POL-API-002` | Give each operation one owner, one named public entry point, and one public export. A standard operator invokes that same owned operation and adds no second implementation. `Fun` is the sole exported alias: it names `Mor(Cat())` because functor construction is the most frequent call. |
 | `POL-API-003` | Use standard mathematical and Sage syntax at call sites. |
 | `POL-API-004` | Use `as_*` only for an explicit conversion to another mathematical representation. |
@@ -815,7 +920,7 @@ When an established finite algorithm requires a primitive loop bound, lower the 
 | `POL-TYPE-025` | When a checker cannot infer the declared dynamic structure, generate `.pyi` stubs from the authoritative category and functor declarations: one kernel generator projects the same compile-time ownership computation that installs methods, and the commit hook regenerates the stubs whenever a declaration changes. Stub generation is the sole projection mechanism. Do not maintain a second type graph by hand. |
 | `POL-TYPE-026` | Treat generated static typing artifacts as projections of repository-owned declarations. Regenerate them through the applicable commit, test, push, and release workflows whenever their source declarations change. |
 | `POL-TYPE-027` | Do not define or use `typing.Protocol` or another structural duck type. Type mathematical values through the exact category-owned `ObjectType`, `ElementType`, or `MorphismType`, and express capabilities through category membership and structural functors. |
-| `POL-TYPE-028` | Preserve the exact receiver, positional-parameter, keyword-parameter, and result roles of every declaration in its copied compiled method and generated typing artifact. `Callable[..., Any]` and `Callable[..., object]` are forbidden. |
+| `POL-TYPE-028` | Preserve the exact type a declaration applies to, and its positional-parameter, keyword-parameter, and result types, in its copied compiled method and generated typing artifact. `Callable[..., Any]` and `Callable[..., object]` are forbidden. |
 | `POL-TYPE-029` | A broad union of unrelated mathematical roles is type erasure. Do not combine it with `Callable[...]` or variadic parameters as a substitute for each method's exact signature. |
 
 The runtime compiler constructs category relations dynamically, but one repository revision contains a finite declaration graph.

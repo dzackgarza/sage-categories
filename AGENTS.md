@@ -422,9 +422,10 @@ inheritance is the mechanism that makes it true:
   ancestor initializers, so the object carries `D`'s state itself, methods and data alike;
 - `D.f` then runs on the original object, reads that state, and returns its declared value.
 
-The receiver is never replaced, and the method fetches no second object. `self` is the
-value the caller supplied: a poset stays a poset. An object is not "read at the level of"
-another category, because no value can be read in two categories at once.
+The method fetches no second object, because no second object exists: the poset carries
+the set state. `self` is the value the operation was applied to, and it is a poset. An
+object is not "read at the level of" another category, because no value can be read in two
+categories at once.
 
 Stating the conversion once, as the functor, is the point of the mechanism. Without it a
 leaf would repeat that same conversion inside a hand-written `__init__` that threads

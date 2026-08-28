@@ -417,7 +417,13 @@ The kernel obtains longer routes by composition and applies [resolution.md](reso
 ### Compiled implementation classes
 
 A category declares `ObjectType`, `ElementType`, and `MorphismType` directly as nested classes.
-Those same classes are the public implementation classes.
+The kernel compiles the effective `C.ObjectType` and exposes it under that same name, so the
+declaration and the public API use one name for each mathematical kind. The compiled class
+inherits `C`'s local declaration and inherits `F(C).ObjectType` for each selected functor
+`F`. Whether it is a new dynamic class or the declaration itself is an implementation
+choice, and one declaration serving a parameterized family of categories is why a new class
+is often the right one (`POL-KERNEL-028`, `POL-DOC-017`). A leaf never builds this
+inheritance.
 The kernel fills their bases from the corresponding classes at the targets of selected functors.
 A class with no selected target uses the kernel base for its mathematical kind.
 

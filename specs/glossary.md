@@ -24,7 +24,7 @@ Do not remove a row after the source becomes clean (`POL-MATH-051`).
 | `canonical image`, `canonical ancestor image`, `canonical target image` | `F.on_object(x)` or `F.on_morphism(f)` for the named functor `F` |
 | `structural image`, `structural_image` | the image owned by the named functor `F`; a category has no image operation |
 | `receiver`, `receiver-valued`, `this_object` | the source instance, or the value to which the method applies |
-| `stage`, `stage comparison`, `stage identity`, `ObjectStageIdentity`, `ArrowStageIdentity`, `stage_comparison` | the exact point, generalized element, terminal-object comparison, or constructor conversion |
+| `point stage`, `object stage`, `arrow stage`, `classical stage`, `product stage`, `stage comparison`, `stage identity`, `ObjectStageIdentity`, `ArrowStageIdentity`, `stage_comparison` | the exact point, generalized element, terminal-object comparison, or constructor conversion |
 | `generalized point` | `generalized element` for `T -> X`; use `point` only for `1_C -> X` |
 | `Ar(C)`, `Hom(C)`, arrow-category or hom-category aliases | `Mor(C)` or `Mor(C)(A, B)` |
 | `ChosenSubobjects`, `chosen subobject` | `Subobjects()`; a subobject is an object with its monomorphism |

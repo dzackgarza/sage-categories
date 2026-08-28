@@ -17,7 +17,7 @@ the source was written by the same process these decisions correct.
 
 - [Philosophy](#philosophy)
 - [Purpose and scope](#purpose-and-scope)
-- [Declared functors and inheritance](#declared-functors-and-inheritance)
+- [Selected functors and inheritance](#selected-functors-and-inheritance)
 - [Elements](#elements)
 - [Predicates, containment, and assumption](#predicates-containment-and-assumption)
 - [Cardinality](#cardinality)
@@ -171,7 +171,7 @@ understand, without reading the rest of the codebase; write your new methods; an
 the full inherited surface. You think at the level of your own algebra, and `cardinality()`
 and suitable limits and colimits arrive because of the functorial wiring.
 
-## Declared functors and inheritance
+## Selected functors and inheritance
 
 **D05 (08-23). Never subclass objects of a category explicitly.** Not without discussion
 first. `ProductSetObject` must not subclass `SetObject`; that bypasses the functor
@@ -188,11 +188,12 @@ where `Monoids` declares `Sets` a supercategory. Replace it with an explicit
 `structure_functors: list[Functor]`, and name the distinct kinds separately: subcategory
 inclusion, full subcategory inclusion, projection, and so on.
 
-**D07 (08-24). Declared functors are not every functor out of the category.** They are
-the ones along which the category inherits. In the poset example, do not declare the second
-projection: a poset `(X, R)` *is* a set, so it inherits from `X`. Projecting to `R` would
-give posets the methods of a subset of a product, which is not how anyone works with posets.
-This mirrors Sage declaring only `Sets` as the supercategory.
+**D07 (08-24). Selection does not include every functor out of the category.** The
+selected functors are the ones along which the category inherits. In the poset example,
+do not select the second projection: a poset `(X, R)` *is* a set, so it inherits from
+`X`. Projecting to `R` would give posets the methods of a subset of a product, which is
+not how anyone works with posets. This mirrors Sage declaring only `Sets` as the
+supercategory.
 
 **D08 (08-24). What declaring `F: C -> D` obliges you to supply.** How to take the leaf
 writer's own implementation class and feed it into *any* available constructor for
@@ -596,7 +597,7 @@ rule was ever written down.
 
 *A relation between two categories exists only as an arrow.* An object does not carry its
 underlying set the way a record carries a field. There is nothing inside a module that is
-the set; there is a functor whose image at that module is a set. So `X.underlying_set()`
+the set; there is a functor whose image at that module is a set. A generic accessor
 asserts that the relation is a property of `X` alone, and it is not — it is a property of a
 map somebody chose. A category-level image accessor has the same defect: it names a
 target and hides the functor. The mistake recurs because the surrounding programming model
@@ -619,7 +620,7 @@ reimplementing what it should have received. That is a bypass around the selecte
 mechanism.
 
 *And it is what makes the code auditable.* A mathematician can read `U_A(M)` and check it
-against the definition. Reading `M.underlying_object_projection()`, they would have to open
+against the definition. Reading an accessor that omits the functor endpoints requires opening
 the implementation to find out which category was meant, which is programming rather than
 mathematics, and it forfeits the reason the layer exists at all (D03).
 
@@ -672,14 +673,14 @@ distinguished bases to read a matrix as a morphism
 Two places the pattern does not reach. There is no bare object to equip when the object is
 already the pair: a subobject is an object together with a monomorphism, so `Subobjects()`
 is the name (D74). And a construction family that already retains its construction is
-the equipped form, so it needs no adjective — that, and not an absence of alternatives, is
-why `chosen product` was redundant, since a product has many isomorphic siblings and the
-repository simply keeps the one it built.
+the equipped form, so it needs no adjective — that, and not an absence of alternatives,
+is why an extra product-family adjective was redundant, since a product has many
+isomorphic siblings and the repository simply keeps the one it built.
 
 **D74 (08-26). A subobject is an object with a monomorphism, and restricting structure to
 one is leaf work.** There is no second notion and no separate name for a representative;
 the equivalence class matters only when deciding whether two subobjects are equal, which is
-a predicate. So `chosen subobject` and `ChosenSubobjects()` name nothing.
+a predicate. The one family is `Subobjects()`.
 
 The real question the coinage grew out of is who restricts the structure. If `P` is a poset
 presented as `(X, R)`, then `P.subset(...)` returns a subset of `X` and assumes or lifts no
@@ -751,17 +752,6 @@ out.
 and generally: look for packages and dependencies that improve the mathematical flavour of
 the code, and propose them when the idea surfaces.
 
-
-## Open, not yet decided
-
-These are naming or modeling choices an agent made that no session ratifies. They stand in
-the repository today and each needs a ruling.
-
-- (resolved 08-28, see D74) `Cat().Products().ChosenSubobjects()`. The decision of 08-25 says
-  `Cat().Products().Subobjects()`. The longer name was introduced to break a collision with
-  `C.Subobjects()`. Neither the collision nor the rename had a ruling, and "subcategory" and
-  "inclusion functor" were both called colloquial on 08-27 (D61), so the whole family may
-  need citable names rather than a longer one.
 
 ## What the documents are for
 

@@ -13,7 +13,7 @@ The surrounding category code still contains kernel refinement, cache, class-com
 Two defects are more serious than that wiring.
 The cardinality functor cannot act on every object in its declared domain (V2).
 Category-owned methods resolve a structural route to reach state that should already be on
-their receiver, which is the cause of the leaf wiring rather than another instance of it
+the source instance, which is the cause of the leaf wiring rather than another instance of it
 (V10).
 
 ## Review boundary
@@ -382,9 +382,9 @@ Evidence:
 
 Governing sources:
 
-- `POL-KERNEL-018` makes `X.f() == F(X).f()` true by threading construction data through ancestor initializers, so a declaring method reads its own state on the receiver.
+- `POL-KERNEL-018` makes `X.f() == F(X).f()` true by threading construction data through ancestor initializers, so a declaring method reads its own state on the source instance.
 - `POL-CAT-096` states that a functor has an image and a category does not.
-- `POL-CAT-062` and `POL-LEAF-038` forbid fetching a second value to stand for the receiver.
+- `POL-CAT-062` and `POL-LEAF-038` forbid fetching a second value to stand for the source instance.
 - `POL-LEAF-052` treats one non-mathematical step repeated across methods as a missing kernel derivation.
 - `specs/resolution.md`, decision 6.
 

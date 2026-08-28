@@ -912,6 +912,27 @@ Keep precision parameters at that boundary.
 
 Read the test guidelines before editing a test file.
 
+This section has two phases, and the repository is in the first.
+
+**Before 1.0, the architecture is still being designed.** Preventing regressions is not a
+goal, and pursuing it is gradient-misaligned with correctness: a regression suite locks in
+behaviour that the design work exists to replace, so every such test becomes a reason not
+to make the change that is needed. Tests are a feedback signal here, never a correctness
+signal, and the arbiter is agreement with the plans, specifications, and transcripts.
+
+**After 1.0, edits are incremental against a working codebase.** Then regression
+prevention is the point, and the craft rules below govern how each test is written.
+
+Rules that hold in both phases: an assertion states a mathematical proposition or an
+essential type invariant; every expected fact needs an independent inspected oracle; no
+mock, skip, or expected-failure marker is evidence; arithmetic is exact. Those are about
+honesty, not about regression, so they never lapse.
+
+The paragraphs on writing a good test — cause beside effect, only the relevant details,
+values a broken implementation would not produce — describe the craft of a regression
+suite. Apply them to any test you do write now, and do not read them as an instruction to
+build that suite yet.
+
 Never run repository test, lint, type-check, format, or aggregate-check recipes manually.
 Commit and push hooks own these checks and run them automatically.
 Do the work, commit it, and repair a hook failure from its exact output.
@@ -935,10 +956,11 @@ gradient in four ways:
 - it can derail the refactor outright, by turning a structural change into a sequence of
   local repairs that keep the checks green.
 
-Tests here are for regressions and end-to-end behaviour. They are not for internal
-consistency, not unit tests, and not a way to lock in current behaviour. Writing a one-off
-test is fine, and so is adding a new test and running it on its own while you work — as a
-feedback signal, never as a correctness signal.
+When tests do serve their purpose, after 1.0, they are for regressions and end-to-end
+behaviour. They are not for internal consistency, not unit tests, and not a way to lock in
+current behaviour. Before then, writing a one-off test is fine, and so is adding a new test
+and running it on its own while you work — as a feedback signal, never as a correctness
+signal, and never as the beginning of a regression suite.
 
 Until a 1.0 milestone, lean on red commits:
 

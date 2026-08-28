@@ -396,6 +396,8 @@ Every declaration is a functor into `Cat()`, and the parameter it takes is that 
 
 **D87 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T19:25Z). A construction specification follows the category graph.** `Cat` owns the shape, index, diagram, cone or cocone, defining morphisms, universal morphism, and every operation determined by that categorical construction. A leaf specification links to that contract and states its mathematical delta: the added leaf structure, its membership and equality predicates, its cardinality or other leaf operations, its exact algorithms, and its private engine realizations. A public name identifies the exact mathematical object or morphism it returns. One generic construction has one inherited public surface.
 
+**D88 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T19:38Z). Version 1 exposes defining data and composes public operations.** A construction supplies its retained mathematical data, such as the indexed family returned by `P.product_factors()`. A derived query uses ordinary composition: apply `X_i.cardinality()` to those factors. An operation expressible as one or two lines of public compositional code receives no additional method in version 1.
+
 **D77 (08-28). The leaf writer's contract is a closed list.** The kernel exists to make this list short, so anything a leaf must supply beyond it is a kernel defect, not a leaf obligation.
 
 1. `ObjectType`, `ElementType`, and `MorphismType`, as nested classes.

@@ -433,7 +433,8 @@ Each set construction registers its exact cases from retained construction data.
 An inherited call on a structured object uses the same predicate on that original object.
 A selected functor to `Sets()` supplies the set constructor data used by these cases; it does not replace predicate evaluation with a separate image lookup.
 
-The registered cases route on the index set's cardinality, the retained diagram's codomain placement (`Sets().Finite()`, `Sets().Countable()`, `Sets().Uncountable()`), a retained constant diagram, and finite factor cardinalities.
+The registered cases route on the index set, the retained diagram's codomain placement (`Sets().Finite()`, `Sets().Countable()`, `Sets().Uncountable()`), and any retained constant diagram.
+For a finite chosen enumeration, they obtain each factor query by applying `X_i.cardinality()` to `P.product_factors()`.
 Each case cites the theorem that decides it.
 When no case applies, `ask()` returns `Unknown`. The cases are:
 

@@ -845,6 +845,9 @@ A discrete diagram needs only its object rule `i |-> X_i`. The rule is an assign
 `C.Products()(diagram)` constructs one object of `C`, placed in `C.Products()`, with `product_projection(i)` indexed by `i in S` and the universal map.
 The selected functor of the family is its retained identity-on-values monomorphism into `C`. `C.Coproducts()` is dual with `coproduct_injection(i)`. `X * Y` is `C.Products()((X, Y))`.
 
+`P.product_factors()` returns the retained indexed family `i |-> X_i` of a product presentation.
+`Q.coproduct_summands()` returns the retained indexed family of a coproduct presentation.
+
 For a point `x: 1_C -> P` of a product `P`, its component at `i` is the composite
 `P.product_projection(i) after x`.
 This construction belongs to the generic product presentation.

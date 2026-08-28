@@ -195,6 +195,9 @@ A leaf specification of an inherited categorical construction links to the `Cat`
 `Cat` owns the shape, index, diagram, cone or cocone, defining morphisms, universal morphism, and presentation operations.
 The leaf states its added structure, predicates, algorithms, and private engine realizations.
 
+In version 1, expose retained mathematical data and compose public operations directly.
+Do not add a method for an operation that takes one or two lines of public compositional code.
+
 The category-owned implementation class is a polyglot algorithm firewall.
 Its ordinary method can use one private engine, several engines, or an imported research
 program. It can select an exact algorithm from the semantic construction and combine

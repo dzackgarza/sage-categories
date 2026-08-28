@@ -98,7 +98,7 @@ A general module or algebra object reaches `Sets()` only through an explicit dec
 Cardinality and other distant capabilities arrive through functor composition rather than leaf-specific code.
 
 For example, a researcher can add `FiniteSubsetsOfNN()` after the complete theory of sets exists.
-They declare its constructors, its monomorphism into `Sets()`, and only its new methods, such as `minimal_element()` or `gcd_of_elements()`. The kernel constructs `FiniteSubsetsOfNN.ElementType` and supplies the full `Sets.ElementType` interface without a leaf-specific element class.
+They declare its nested `ObjectType`, `ElementType`, and `MorphismType` classes, its constructors, its monomorphism into `Sets()`, and only its new methods, such as `minimal_element()` or `gcd_of_elements()`. A nested class can have no local method when the category adds no operation of that kind. The kernel fills its bases and supplies the full inherited `Sets.ElementType` interface.
 The inherited set interface also makes products, coproducts, filtered limits, and other set constructions available without new implementations in the leaf.
 Each result remains an object of the category that owns the construction.
 The leaf returns it to `FiniteSubsetsOfNN()` by overriding the inherited construction and refining its result through the leaf's own constructor when the mathematics lands there.
@@ -110,7 +110,7 @@ The leaf author supplies only that override, closure, or lift, which is the math
 
 ## Core model
 
-The kernel owns `Cat`, the category of categories.
+`Cat`, the category of categories, is defined here and read as mathematics; the kernel implements it.
 Every category in this repository is an object of `Cat`. The public `Category` implementation is `Cat().ObjectType`.
 
 ### Declared structure of `Cat`

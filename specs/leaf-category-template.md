@@ -68,7 +68,7 @@ assume(proposition)
 proposition.assume()
 ```
 
-The leaf does not implement `ask()`, `assume()`, or `Proposition.assume()`. The predicate kernel owns those operations.
+The leaf does not implement `ask()`, `assume()`, or `Proposition.assume()`. The kernel implements them.
 Direct construction in `C().P()` asserts the property.
 An exact `True` decision or a positive assumption refines the same owned object through that property-category constructor.
 

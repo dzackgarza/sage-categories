@@ -203,15 +203,14 @@ The semiring branch supplies addition, multiplication, zero, and one.
 The group branch supplies additive inverses and subtraction.
 A ring must receive both catalogues.
 
-Both branches reach the same additive monoid and the same object of \(\mathcal C\). The
-requirement is that the square of selected functors commutes on the nose: the two
-composites `Rings(C) -> Semirings(C) -> C` and
-`Rings(C) -> Groups(C_x).Additive().Commutative() -> C` are equal as functors, not merely
-naturally isomorphic. Equality of functors is what makes one shared image, and one
-initialization, correct for both branches.
+Both branches reach the same additive monoid and the same object of \(\mathcal C\).
+Their selected paths must supply the same constructor datum for the inherited
+\(\mathcal C\) class. The compiler can then initialize that class once on the ring
+instance. The two composite functors keep their independent public actions and images.
 
-For \(\mathcal C=\operatorname{Sets}()\), the shared object is the underlying set.
-Membership and other set-owned methods have one canonical route to that set.
+For \(\mathcal C=\operatorname{Sets}()\), both paths supply the set from which the ring
+was constructed. Membership and other set-owned methods occur once in the compiled MRO
+and read the initialized set state on the ring instance.
 Sage's documented diamond is this specialization.
 The final category receives the methods introduced on every branch.
 C3 only resolves a shared method name.
@@ -350,7 +349,8 @@ A correctly designed kernel derives this placement.
 The module leaf contains no route selection code.
 The kernel uses these mathematical facts:
 
-- the selected composite route from `Modules(F_p, C)` to `Sets()` preserves products;
+- the selected composite functor from `Modules(F_p, C)` to `Sets()` carries the chosen
+  product to the chosen set product on the nose;
 
 - a finite product of finite sets is finite;
 
@@ -404,7 +404,8 @@ This set is not the set coproduct
 U(M)\sqcup U(N).
 \]
 
-The selected composite route to `Sets()` preserves products.
+The selected composite functor to `Sets()` carries the chosen module product to the
+chosen set product on the nose.
 It does not preserve module coproducts as set coproducts.
 
 Therefore, the compiler must not assume that every selected functor preserves every universal construction.
@@ -477,7 +478,7 @@ Sage's `FiniteCoxeterGroups.some_elements()` is the grounding example.
 
 The compiler must not use arbitrary route order to decide a semantic collision.
 
-## Constructor coherence and functor images
+## Constructor agreement and functor images
 
 Each named functor constructs and caches its own public images.
 Two functors with the same endpoints can return different objects.
@@ -506,7 +507,8 @@ The architecture uses the following rules.
 
 4. Two selected paths to the same target class supply one exact constructor datum.
 
-5. Routine strictly coherent diamonds resolve automatically in the kernel.
+5. Repeated selected paths to one target class resolve from their constructor-data
+   agreement.
 
 6. A category-owned method reads its initialized state on the structured source instance through direct Python MRO.
 
@@ -567,13 +569,14 @@ It does not enumerate its \(p^n\) elements to establish finiteness.
 ### Module products
 
 A product in `Modules(A, C)` retains its module apex, action, projections, and mediating morphism.
-When the selected functor to \(\mathcal C\) preserves products, its \(\mathcal C\)-image is the chosen product there.
+When the selected functor to \(\mathcal C\) carries the chosen product to the chosen
+product on the nose, its \(\mathcal C\)-image is that chosen product.
 At the ambient `Sets()`, the composite underlying-set image is the set product.
 
 ### Module coproducts
 
 At the ambient `Sets()`, the underlying set of a module coproduct is not identified with the set coproduct.
-The compiler uses only the construction preservation supplied by the selected functor.
+A construction supplies each required lift or equality. The compiler infers neither.
 
 ### Algorithm selection
 

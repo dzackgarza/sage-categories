@@ -157,7 +157,7 @@ This mirrors Sage declaring only `Sets` as the supercategory.
 **D08 (08-24). What declaring `F: C -> D` obliges you to supply.** How to take the leaf writer's own implementation class and feed it into *any* available constructor for `D.ObjectType`, and the same for elements and arrows.
 A subcategory inclusion claims that `X |-> D()(X)` works.
 A product projection claims your objects already carry the target as defining data, so the kernel can extract it.
-Those two are boilerplate and the kernel owns them.
+Those two are boilerplate and the kernel implements them.
 Any other functor states its own maps, teaching the target's constructor how to consume your data.
 
 **D09 (08-25). "Forgetful functor" is ill-defined; do not use it.** Categories such as magmas are pullbacks whose objects are pairs, so there are two projections and neither is "the" forgetful one.
@@ -166,7 +166,7 @@ For `Modules(R)`, whose defining datum is a ring morphism `R -> End(X)`, no kern
 Formulate instead in terms of fibrations, cofibrations, natural projections and inclusions, source and target functors, arrows induced by Kan extensions, and composites of these.
 Follow Mathlib's treatment.
 
-**D10 (08-25). The kernel owns the standard functors.** `FullSubcategoryInclusionFunctor`, `ProductProjectionFunctor(i)`, and their relatives are kernel-owned precisely so that leaves need no boilerplate.
+**D10 (08-25). The kernel implements the standard functors.** `FullSubcategoryInclusionFunctor`, `ProductProjectionFunctor(i)`, and their relatives are kernel-owned precisely so that leaves need no boilerplate.
 A leaf writing a page of functor code is a kernel defect.
 
 **D11 (08-25, superseded in spelling by D55). Every leaf constructs its functors explicitly.** Not `self.inclusion(D)`. A leaf constructs `Fun(self, D).inclusion()`, or `Fun(self, D).Full().inclusion()`, so that a known theorem appears as part of the construction of the functor.
@@ -235,12 +235,12 @@ The functor carries no independent element callback.
 **D20 (08-24). Every propositional method returns a proposition.** Never a bool, never an `Unknown` in its place.
 Anything that would need `Unknown` routes through `assume`/`ask`/`.assume()`. Containment in a category is always a possibly compound proposition, declared once as part of the category's definition — the kernel wires `FiniteSets` to be reachable as `Sets().Finite()` and lets it declare a membership proposition, and `__contains__` follows from that.
 
-**D21 (08-24). Construct into the strongest subcategory you can.** Or override the predicate to return `True`. Both are programmer assertions and need no computation.
+**D21 (08-24, corrected 08-28). Construct into the strongest subcategory you can.** A named construction can return its result through the strongest property-subcategory constructor that its mathematics establishes. The public predicate remains proposition-valued and keeps its one category-owned definition.
 Individual named objects are one-object categories: `QQ` is `{QQ}` with functors into countable sets, posets, and fields.
 `Fields().Countable().PartiallyOrdered()` should be nearly automatic, with Sage's `with_axiom` as the model: if any category defines a property subcategory, any subcategory can narrow itself the same way.
 Defining `FF_p` as a one-object category parameterized by `p` must never require proving finiteness by enumeration.
 
-**D22 (08-24). Assumption is a shortcut for construction.** `assume(X in Sets().Finite())` and `assume(f.is_injective())` refine into the property category — the same rule you would have used to construct into `Monos(Sets)(A, B)` directly.
+**D22 (08-24, corrected 08-28). Assumption is a shortcut for construction.** `assume(X.is_finite())` and `assume(f.is_injective())` refine into the corresponding property category. Python containment asks the same proposition and returns its Boolean decision, so it is not the proposition passed to `assume()`.
 
 **D23 (08-24). Property refinement strengthens the category of the same value.** It is not transport into a second implementation, and it is not a family of admission constructors.
 Each property category owns one constructor that trusts its defining property.
@@ -336,13 +336,13 @@ That is where the assertion that both operands lie in the same category belongs.
 This is an engineering convenience to be formalized later.
 The point is that `Monoids * Rings`, `Fun(Monoids, Sets) * Fun(Rings, Graphs)`, and `X * Y` for two sets all use one interface and one semantics.
 
-**D37 (08-26). There is one underlying set, and identity is the only sameness.** For almost every algebraic category there just is one underlying set, and the functorial paths are different ways of equipping it.
+**D37 (08-26, corrected 08-28). A structured source instance carries one initialized state for each inherited target class.** For almost every algebraic category there is one set from which the structured object is built. Every selected path to `Sets()` must supply that same set as constructor data for the inherited `Sets().ObjectType` state.
 `Free_R({1, 2})` and `Free_R({a, b})` are distinct modules and must never be identified: the second's generators are formal symbols while the first's inherit structure as ring elements.
-No case in this repository needs anything weaker than identity, so route agreement is asserted by `is`, and a failure is a construction defect in the object's leaf.
+This constructor agreement does not identify functor images. Each named functor constructs and caches its own public image, and two functors with the same endpoints can return different objects.
 
-**D38 (08-26). Set equality is a proposition, not a procedure.** The underlying set of `Free_R(S)` is created by fiat, from a membership rule and a cardinality rule; nothing enumerates it and there is no extensional description to compare.
-`X == Y` is `True` by identity and otherwise `Unknown`, unless a cited theorem or an exact route decides it.
-So the compiler's route check cannot compare images; identity is the only decidable option.
+**D38 (08-26, corrected 08-28). Set equality is a proposition, not a procedure.** The image in `Sets()` of `Free_R(S)` can be created by fiat, from a membership rule and a cardinality rule; nothing enumerates it and there is no extensional description to compare.
+`X == Y` is `True` by identity and otherwise `Unknown`, unless a cited theorem or an exact computation decides it.
+The compiler never uses set equality to merge public functor images. Its construction obligation is only that every selected path to one target class supplies the same constructor datum.
 
 ## Leaf discipline
 
@@ -376,8 +376,8 @@ Engine boundaries — Sage, SymPy — should be quarantined in their own subtree
 The naming is the tell: `PropertySet` is engineering-brained.
 Track construction provenance privately if you need it.
 
-**D42 (08-22). The user should not need to know the category graph.** Nobody should write `FiniteSet({1, 2, 3})`; `Sets({1, 2, 3})` routes intelligently, dispatching on optional claims such as a supplied cardinality or `is_projective=True` that would otherwise be hard to verify.
-A small number of high-level endpoints are the primary construction interface, bypassable by specific subcategory constructors as the user learns them.
+**D42 (08-22, corrected 08-24). The user should not need to know the category graph.** Nobody should write `FiniteSet({1, 2, 3})`; `Sets({1, 2, 3})` uses the total constructor selected by that datum. Additional construction data or asserted properties use separate, specifically named constructors, never optional claims or flags.
+A small number of high-level endpoints are the primary construction interface. Specific named constructors state any stronger construction.
 Usability comes from discoverability through well-known names: `Sets`, `Monoids`, `Groups`, `Rings`, `Modules(R)`, `Algebras(R)`.
 
 **D43 (08-24). The leaf class is the implementation, and it is the firewall.** There is never more than one choice of implementation: Sage already lets competing implementations proliferate, with three different free modules carrying different operations and inconsistent inherited surfaces.
@@ -422,7 +422,9 @@ Reading an accessor that omits the functor endpoints requires opening the implem
 The same philosophy governs every other implicit choice, not just this accessor.
 A coercion, a default ambient category, or a walk to a "common ancestor" is the same defect wherever it silently selects a category — which is why common-ancestor tracing has to run along a named, citable property of functors and never a heuristic (D61).
 
-**D76 (08-28). Say "commutes on the nose" where the kernel needs equality, and never "preserves".** These are different statements, and the weaker one was standing in for the stronger. A functor `U` *preserves* a product when the canonical comparison morphism `U(prod X_i) -> prod U(X_i)`, induced by the cone `(U(pi_i))`, is an isomorphism. The kernel needs that comparison to be the identity, because sameness here is identity and never isomorphism (D37, D38). Likewise two selected routes to one target agree because the square of functors is equal, not naturally isomorphic. The equality holds by construction rather than by theorem: a leaf lifts the ambient construction, so its apex is the ambient apex and its projections are the ambient projections carrying the new structure. That is why no comparison isomorphism is ever needed, and why the hedges that stood in these places - "preserves", "compatible presentations", "coherent presentation", "when that structure is retained" - were each covering a spot where the exact statement is a strictly commuting diagram in `Cat`.
+**D76 (08-28, corrected 08-28). Distinguish preservation from equality on the nose.** A functor `U` preserves a product when the canonical comparison morphism `U(prod X_i) -> prod U(X_i)`, induced by the cone `(U(pi_i))`, is an isomorphism. A lifted construction can require more: its chosen apex and defining morphisms can map to the chosen ambient construction on the nose. State that stronger equality where the construction needs it.
+
+This construction-level equality does not identify the public images of arbitrary named functors. Inheritance requires only that selected paths to one target class supply the same constructor datum (D37, D38). A leaf that lifts an ambient construction builds on the ambient apex and retains its defining morphisms; the compiler has no preservation registry.
 
 **D75 (08-28). Objects carrying a choice form the total category of a fibration over the base, and the choice is usually a morphism.** Sage names the phenomenon — `Modules(R).WithBasis()` is "the category of modules with a distinguished basis" (`sage/categories/modules_with_basis.py:179`), with `AlgebrasWithBasis`, `WithRealizations`, and the `FinitelyGenerated` family beside it, all on the same axiom machinery as `Finite`. Taking the name is not taking the construction, and the construction is what has to be stated.
 

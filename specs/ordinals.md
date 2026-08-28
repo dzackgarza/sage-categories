@@ -153,7 +153,7 @@ Natural sum:
 
 - Combines all finite terms.
 
-- Sorts symbolic terms by representation.
+- Orders symbolic terms by the category-owned ordinal-expression key.
 
 - Removes additive zero.
 

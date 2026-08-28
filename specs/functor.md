@@ -70,7 +70,7 @@ A generalized element `T -> X` is not an `ElementType` value unless `T = 1_C`.
 For `C in Cat()`, `Fun(T, C)` constructs these generalized elements.
 `C.MorphismType` is `Mor(C).ObjectType`, because a morphism of `C` is an object of the morphism category.
 
-The kernel also supplies the uniform categorical constructions, defined once at the `Cat()` level and applicable to every category:
+`Cat()` also supplies the uniform categorical constructions, defined once at that level and applicable to every category. They are mathematics, and the kernel implements them:
 
 ```python
 Mor(C)                     # the category of morphisms of C
@@ -418,20 +418,18 @@ Those same classes are the public implementation classes.
 The kernel fills their bases from the corresponding classes at the targets of selected functors.
 A class with no selected target uses the kernel base for its mathematical kind.
 
-The kernel uses Sage's dynamic-class method to preserve each written class body while it fills the bases.
-It also makes zero-argument `super()` enter the final controlled C3 chain.
-Each category therefore has one class name for each mathematical kind.
+The kernel preserves each written class body while it fills the bases.
+Each category therefore has one public class for each mathematical kind.
 
 Each local constructor accepts only the exact data introduced by its category.
 It initializes that state and calls `super().__init__()` once.
 Each selected functor retains one pure conversion from source construction data to the data consumed by its target constructor.
 The conversion reads no partly initialized value.
 
-The kernel allocates the structured source instance first.
-It computes one target constructor datum for every reachable class before initialization starts.
-All selected paths to one target class must produce the same datum.
-Each generated constructor wrapper passes only that class's datum to its local initializer.
-C3 initializes each reachable class once.
+The structured source instance must carry the state required by every reachable class.
+All selected paths to one target class must produce the same constructor datum.
+Each local constructor receives only its own datum and contributes its state once.
+The kernel mechanism that satisfies these obligations is not part of this specification.
 
 Every object-class constructor initializes `Cat().ElementType` with its point into the parent category.
 Thus `C.ObjectType` represents a point `* -> C`.
@@ -443,7 +441,7 @@ Public `F(x)` constructs and returns the separate image owned by `F`.
 Repeated calls use that functor's image cache.
 Different functors with the same endpoints can return different images.
 
-An inherited method runs directly on the structured source instance through ordinary Python MRO.
+An inherited method runs directly on the structured source instance through ordinary Python inheritance.
 The target constructor already initialized the state that the method reads on that instance.
 Thus `x.f()` and `F(x).f()` have the same mathematical value.
 The equality is semantic; method dispatch does not replace `x` with `F(x)`.
@@ -488,13 +486,9 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
 A point functor is selected only by this declaration.
 Like every selected functor, it contributes the target classes, typed construction-input conversions, constructor chain, and inherited public methods (`POL-FUN-003`, `POL-FUN-035`). The compiler reaches it through composition in `Cat` with the rest of the structural graph.
 
-Before a point-inherited initializer runs, the kernel retains the point category, its selected point functors, and all required constructor conversions.
-The ordinary compiled C3 chain then initializes each reachable target class once.
-A target constructor receives its exact converted datum and calls `super().__init__()`. Thus a point placement supplies the target class's state as well as its methods.
-
-A point placement arrives through same-object Sage refinement.
-It extends each affected compiled class without invalidating existing descendants or values, then runs every newly required initializer once.
-The distinguished object keeps its existing category placement, and the placement adds no second inheritance registry.
+The point placement supplies each selected target class's state and methods.
+The distinguished object keeps its identity and existing category placement.
+Existing descendants and values keep their public class identity and behavior.
 
 Refinement is what makes a point category formed from a runtime object work.
 `Cardinal()` and `Ordinals()` are constructed before `Semirings(Cat())` exists, and each receives its semiring surface when `Cat().Point(Cardinal())` and `Cat().Point(Ordinals())` declare their point functors.
@@ -521,13 +515,11 @@ The shift follows from the element relation in `Cat`.
 It adds no second inheritance mechanism, no route normalization, and no propagation registry.
 `C` remains an object of `Cat()`, `{C}` remains a distinct object of `Cat()`, and `C.structure_functors()` continues to state the structure of `C` as a category.
 
-`Cat().Point(C)` retains one point category per object; the compiler reads that retention to find `{C}` from `C`, and `C` records nothing.
+`Cat().Point(C)` gives the point category `{C}` without adding another declaration to `C`.
 
-A level shift contributes the corresponding target compiled class to each affected compiled chain.
-The selected point functor supplies the exact construction-input conversion for that class.
-The same constructor chain therefore gives `C`, its objects, and `1_C` the state required by their target classes.
-
-The selected installation mechanism must preserve one compiled class identity and one constructor order for `C`, its descendants, and values that already exist when the placement becomes available.
+A level shift contributes the corresponding target class to each affected public class.
+The selected point functor supplies the exact constructor conversion for that class.
+Thus `C`, its objects, and `1_C` carry the state required by their target classes.
 
 Two selected paths to one target class must produce the same constructor datum.
 
@@ -844,9 +836,9 @@ It must:
 
 9. retain one object of `Fun(C, D)` for each named functor construction;
 
-10. complete the preallocated `Cat().ElementType` point class first, then fill the bases of each written public class from its selected targets;
+10. preserve each written public class and fill its bases from its selected targets;
 
-11. compute one construction input per reachable class; initialize `Cat().ElementType` from each point `* -> C`; and invoke each constructor once through C3;
+11. make each structured value carry the state required by every reachable class, with each local constructor contributing its state once;
 
 12. derive subobject-of-product component functors by composition;
 
@@ -856,7 +848,7 @@ Natural transformations are trusted constructions, never compiler proofs.
 There is no route normalization, route scoring, or preservation registry.
 
 Every inherited method enters the descendant through the compiled class MRO. The declaring method runs on the original descendant instance with the supplied arguments.
-It reads the declaring category's state directly on that instance. Each selected functor states how the descendant's construction data produces the data its target constructor consumes. The kernel uses that statement to thread the arguments through the superclass initializers.
+It reads the declaring category's state directly on that instance. Each selected functor states how the descendant's construction data produces the data its target constructor consumes. The descendant therefore carries the target state itself.
 A point's construction input uses the declared terminal-object comparison.
 The method's value is returned exactly as declared.
 

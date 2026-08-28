@@ -406,12 +406,10 @@ is `F.on_object(x)`. There is no operation that asks a category for "the image o
 the functor unstated. You should rarely apply a functor by hand; when you do, you get
 exactly what you programmed it to construct.
 
-Two selected structural routes to the same category must return the same object by
-identity. At the first structural transport of a value to a reachable category, traverse
-every route to that category in declaration order, cache the first image, and assert that
-each later image `is` the cached one. A mismatch raises a construction-defect error naming
-both routes. This agreement is a fact about those functors. It creates no image operation
-on the target category. Method compilation constructs no image and performs no such check.
+Two selected paths to the same target class must supply the same constructor datum for
+that class. The kernel checks this agreement while it constructs the structured source
+instance. Each named functor still constructs and caches its own public images. Selection
+does not identify those images, and method compilation constructs no image.
 
 From the leaf writer's side this is ordinary Python inheritance, and that is the whole
 requirement. What a leaf writes:
@@ -447,9 +445,10 @@ One name per kind: the category writes the class and the kernel compiles it. A c
 inherits from a base category class, exactly as in Sage. Never define these classes elsewhere
 and pass them into a call.
 
-A property subcategory has its own `ObjectType` — `Sets().Finite()` genuinely has one, the
-finite sets — but usually adds no method. It receives a trivial extension of its immediate
-ancestor's class and writes no boilerplate for it.
+An axiom generates a property subcategory such as `Sets().Finite()` and its compiled
+classes. The generated category repeats no leaf declaration. A concrete implementation
+category, such as `FiniteSets`, declares its own nested classes and connects itself to
+`Sets().Finite()` through Sage's axiom mechanism.
 
 An inherited method means `X.f() := F(X).f()` along the selected functor `F`, and returns
 the declaring method's value. That equation states the mathematics. Ordinary Python
@@ -463,10 +462,9 @@ inheritance is the mechanism that makes it true:
   ancestor initializers, so the object carries `D`'s state itself, methods and data alike;
 - `D.f` then runs on the original object, reads that state, and returns its declared value.
 
-The method fetches no second object, because no second object exists: the poset carries
-the set state. `self` is the value the operation was applied to, and it is a poset. An
-object is not "read at the level of" another category, because no value can be read in two
-categories at once.
+The inherited method fetches no second object. The poset instance carries the set state,
+and `self` remains the poset. A public call to a named functor can construct a separate
+set image, but inherited method execution does not use that image.
 
 Stating the conversion once, as the functor, is the point of the mechanism. Without it a
 leaf would repeat that same conversion inside a hand-written `__init__` that threads

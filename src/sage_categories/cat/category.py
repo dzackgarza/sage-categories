@@ -38,7 +38,6 @@ from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Propo
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine, traces_placement
 from sage_categories.kernel.roles import (
     CategoryPoint,
-    CategoryPointKernel,
     ElementOfObject,
     MorphismOfCategory,
     ObjectOfCategory,
@@ -847,8 +846,11 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         return NarrowedProperty
 
 
-# Core category classes import this provisional name while the mutually recursive
-# ``Cat`` cluster is defined.  ``bootstrap`` replaces it with the compiled role.
+# Core category classes import this name while the mutually recursive ``Cat`` cluster is
+# defined, before ``Cat()`` exists to be asked for its own object role.  ``bootstrap``
+# binds it again from that role, which is this same class: ``Cat()`` writes
+# ``CategoryDeclaration`` as its ``ObjectType`` and the compiler compiles the class a
+# category writes (``specs/functor.md``, "Compiled implementation classes").
 Category = CategoryDeclaration
 
 
@@ -936,7 +938,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     # nest it.
     ObjectType = CategoryDeclaration
 
-    class ElementType(CategoryPointKernel):
+    class ElementType(CategoryPoint):
         """A point ``* -> C`` of a category, whose value is an object of ``C`` (POL-CAT-058)."""
 
         def __mul__(self, other: ObjectOfCategory) -> ObjectOfCategory:

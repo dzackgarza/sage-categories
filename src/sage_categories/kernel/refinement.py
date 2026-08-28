@@ -103,10 +103,9 @@ def place(value: CategoryPoint, category: Category) -> None:
     Sage's ``Parent._init_category_`` and ``Parent._refine_category_``, which build
     ``dynamic_class(f"{type(self).__name__}_with_category", (type(self),
     category.parent_class), doccls=type(self))`` (``sage/structure/parent.pyx``,
-    inspected 2026-08-27).  ``Cat()`` is the value that needs it: its declaration
-    ``CategoryOfCategories`` names the morphism and two-morphism types of ``Cat``,
-    while the compiled ``Cat().ObjectType`` carries the generic
-    ``CategoryDeclaration`` body every category inherits.
+    inspected 2026-08-27).  A slice category is a value that needs it: it is an instance
+    of ``SliceCategory``, and the role class of the pullback placement it refines into
+    carries what every pullback category inherits.
     """
     target = compiler.node(category, Role.OBJECT)
     role_class = target.category.role_class(target.role)

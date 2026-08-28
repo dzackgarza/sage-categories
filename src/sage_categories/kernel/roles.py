@@ -8,11 +8,12 @@ Every owned runtime value has one role-specific path through these classes
   ``1_C -> X``, represented by its defining morphism, POL-CAT-058);
 - ``MorphismOfCategory``: the base of every ``C.MorphismType``.
 
-``CategoryPointKernel`` is the stable end of the role MRO.  The module preallocates
-the compiled ``Cat().ElementType`` class over it.  An object of ``C`` and a morphism of
-``C`` are both points ``* -> K`` of a category, at ``K = C`` and ``K = Mor(C)``; a
-``C.ElementType`` value is a point of an object (``specs/functor.md``, "Compiled
-implementation classes").
+``CategoryPoint`` is the stable end of the role MRO.  Each of the three kernel classes
+stands on the class ``Cat()`` writes for its own element role, which
+``install_cat_element_root`` fills in when ``Cat()`` compiles.  An object of ``C`` and a
+morphism of ``C`` are both points ``* -> K`` of a category, at ``K = C`` and
+``K = Mor(C)``; a ``C.ElementType`` value is a point of an object (``specs/functor.md``,
+"Compiled implementation classes").
 
 A leaf's local role class subclasses only the kernel base of its role
 (POL-CAT-053).  ``Cat().ObjectType`` and ``Cat().ElementType`` own the universal
@@ -30,13 +31,12 @@ if TYPE_CHECKING:
 
 __all__ = [
     "CategoryPoint",
-    "CategoryPointKernel",
     "ElementOfObject",
     "MorphismOfCategory",
     "ObjectOfCategory",
     "Role",
     "category_of",
-    "cat_element_root",
+    "install_cat_element_root",
     "kernel_base",
     "role_of",
 ]
@@ -48,7 +48,7 @@ class Role(Enum):
     MORPHISM = "MorphismType"
 
 
-class CategoryPointKernel:
+class CategoryPoint:
     """The stable Python end of the compiled ``Cat().ElementType`` role."""
 
     def __init__(self) -> None:
@@ -93,22 +93,6 @@ class CategoryPointKernel:
 
     def __hash__(self) -> int:
         return object.__hash__(self)
-
-
-class CategoryPoint(CategoryPointKernel):
-    """The compiled ``Cat().ElementType`` class, preallocated over its kernel end.
-
-    Every other compiled role is built by ``dynamic_class`` from its node's declaration,
-    but this one is the root of every role chain and so must exist before any category
-    does.  The compiler installs ``Cat()``'s own element declaration onto this class in
-    place rather than deriving a new one, which is why it is a statement here and not a
-    dynamic class: a checker reads it as the type that every owned value has.
-    """
-
-
-def cat_element_root() -> type[CategoryPoint]:
-    """The preallocated compiled ``Cat().ElementType`` class."""
-    return CategoryPoint
 
 
 class ObjectOfCategory(CategoryPoint):
@@ -232,6 +216,18 @@ _BASES: dict[Role, type[CategoryPoint]] = {
 
 def kernel_base(role: Role) -> type[CategoryPoint]:
     return _BASES[role]
+
+
+def install_cat_element_root(root: type[CategoryPoint]) -> None:
+    """Put the class ``Cat()`` writes for its element role below every role's kernel class.
+
+    A leaf writes its own declaration over one of these three classes, so they are
+    statements here and exist before any category does.  ``Cat().ElementType`` is the
+    class ``Cat()`` writes and the first class the compiler compiles: this fills in the
+    one link that makes every owned value a point ``* -> K`` of a category.
+    """
+    for base in _BASES.values():
+        base.__bases__ = (root,)
 
 
 def role_of(candidate: Any) -> Role | None:

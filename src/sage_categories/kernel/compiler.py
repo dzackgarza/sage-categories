@@ -14,23 +14,25 @@ Method catalogue of a node (``specs/resolution.md``):
 3. comparable owners yield the most specific one;
 4. incomparable owners with one spelling raise ``SemanticCollisionError``.
 
-The compiled role class is a Sage dynamic class (``sage.structure.dynamic_class``).
-After the class the node's category wrote, its bases are exactly the *controlled* direct
-bases that ``sage.misc.c3_controlled.C3_sorted_merge`` returns for the node: compiled
-classes of reachable nodes.  A node that reaches none ends its chain on its kernel role
-class.
+The compiled role class *is* the class the node's category wrote (``specs/functor.md``,
+"Compiled implementation classes").  The kernel fills its bases with exactly the
+*controlled* direct bases that ``sage.misc.c3_controlled.C3_sorted_merge`` returns for
+the node: compiled classes of reachable nodes.  A node that reaches none ends its chain
+on its kernel role class.
 
-The class a category writes is the first base of its node's compiled class, so the
-written body runs on the value unchanged and a zero-argument ``super()`` in a written
-method closes over a class that is in the receiver's MRO.  Sage builds a parent's class
-the same way, from ``(type(self), self._category.parent_class)``
-(``Parent._init_category_``, ``sage/structure/parent.pyx``, inspected 2026-08-29).
+Nothing about that class names its category, so a Python class constructed as several
+categories -- ``Cat().Simplex(n)`` for every ``n`` -- writes one declaration that is one
+compiled class for the whole family, and the constructor wrapper reads its node off the
+value's own chain rather than a closure.  The one family that cannot is a declared
+subcategory, whose class stands on its ambient's: ``_declaration_is_the_class`` states
+the rule and ``_claim`` asserts the agreement the others need.  A node that cannot
+compile its declaration compiles a class over it, as Sage builds a parent's class from
+``(type(self), self._category.parent_class)`` (``Parent._init_category_``,
+``sage/structure/parent.pyx``, inspected 2026-08-29).
 
-``C3_sorted_merge`` orders *nodes*, and a declaration it never sees is unconstrained.
-A declaration constrains only the classes it was written over, which are the role kernel
-classes at the end of every chain, so each one lands directly below its own node.
-``_assert_linearized`` holds that: the MRO is the node linearization with each node's
-compiled class followed by the class that node's category wrote.
+``_assert_linearized`` holds the resulting invariant: the MRO is the node linearization,
+each node followed by a declaration it could not compile, ending on the kernel chain.
+Sage states the same one in ``Category._test_category_graph``.
 
 Each compiled node owns one generated constructor wrapper.  Before that wrapper starts
 the local ``super()`` chain, every selected functor converts the complete source input
@@ -73,11 +75,10 @@ from sage_categories.kernel.construction import (
 )
 from sage_categories.kernel.roles import (
     CategoryPoint,
-    CategoryPointKernel,
     MorphismOfCategory,
     ObjectOfCategory,
     Role,
-    cat_element_root,
+    install_cat_element_root,
     kernel_base,
 )
 
@@ -330,7 +331,7 @@ def empty_local_role(category: Category, role: Role) -> type[CategoryPoint]:
 
     One class per category and role, retained: it names the declaring owner of the node
     and stands directly on the role's kernel base (POL-CAT-053, POL-KERNEL-028).  It has
-    no body, so ``_declared`` leaves it out of the compiled bases.
+    no body, and it belongs to its one node, so its node always compiles it.
     """
     table = _empty_local_roles[role]
     if category not in table:
@@ -424,11 +425,12 @@ def _base_classes(current: Node) -> tuple[type[CategoryPoint], ...]:
     occurrence would place it above its own descendants.  Nothing is dropped, so every
     control edge survives.
 
-    A node that reaches no other node ends on its role's kernel class.  A declaration is
-    never a base: its members are copied into its one compiled node.
+    A node that reaches no other node ends on its role's kernel class.  These are the
+    bases the kernel controls; a node that could not compile its own declaration adds it
+    in front of them (``_derived_class``).
     """
     if _is_cat_element_root(current):
-        return (CategoryPointKernel,)
+        return (CategoryPoint,)
     keys = _linearize(current)[1]
     classes = [_nodes_by_key[key].category.role_class(_nodes_by_key[key].role) for key in keys]
     bases = [klass for position, klass in enumerate(classes) if not any(later is klass for later in classes[position + 1 :])]
@@ -447,10 +449,17 @@ def _base_classes(current: Node) -> tuple[type[CategoryPoint], ...]:
     return tuple(bases)
 
 
-def _local_initializer(local: type[CategoryPoint]) -> FunctionType | None:
-    """The declaration's own initializer, which the generated wrapper on its node calls."""
-    initializer = vars(local).get("__init__")
-    return initializer if isinstance(initializer, FunctionType) else None
+def _written_initializer(local: type[CategoryPoint]) -> FunctionType | None:
+    """The declaration's own initializer, which the generated wrapper on its node calls.
+
+    Where the declaration is the node's compiled class, the wrapper the compile installs
+    takes the place of its ``__init__``.  So the first compile of a declaration reads it,
+    and a recompile (D80) reads what that compile retained.
+    """
+    if local not in _written_initializers:
+        initializer = vars(local).get("__init__")
+        _written_initializers[local] = initializer if isinstance(initializer, FunctionType) else None
+    return _written_initializers[local]
 
 
 def _kernel_chain(last: Node) -> tuple[type, ...]:
@@ -460,49 +469,136 @@ def _kernel_chain(last: Node) -> tuple[type, ...]:
     role rather than the role the chain started in.  Two chains end elsewhere than on
     their own role's kernel class:
 
-    * the shared ``Cat().ElementType`` root *is* its kernel class, so what follows it is
-      ``CategoryPointKernel`` alone;
+    * the shared ``Cat().ElementType`` root stands directly on ``CategoryPoint``, which
+      every role's kernel class reaches through it;
     * a full subcategory of ``Mor(C)`` keeps the object role -- it is not itself a
       morphism category -- while its objects are the morphisms of ``C``, so its chain
       runs through ``(C, morphism)`` and ends on ``MorphismOfCategory``.
     """
     if _is_cat_element_root(last):
-        return CategoryPointKernel.__mro__
+        return CategoryPoint.__mro__
     return kernel_base(last.role).__mro__
 
 
-def _written_role_class(category: Category, role: Role) -> type[CategoryPoint] | None:
-    """The class ``category`` wrote for ``role``, or ``None`` when it wrote none.
+class _Claim(NamedTuple):
+    """One compiled class, and the nodes that share it."""
 
-    A written class is the first base of its node's compiled class, so the body runs on
-    the value and a zero-argument ``super()`` inside it enters the compiled chain.  The
-    empty declaration has no body to preserve and stays out of the bases.
+    compiled: type[CategoryPoint]
+    targets: tuple[Category, ...]
+    nodes: list[Node]
+
+
+# The claim of each written declaration used as a compiled class, keyed by that class.
+_claims: dict[type[CategoryPoint], _Claim] = {}
+
+# The ``__init__`` each written declaration had before its compile installed the wrapper.
+_written_initializers: dict[type[CategoryPoint], FunctionType | None] = {}
+
+
+def _declaration_is_the_class(current: Node) -> bool:
+    """Whether the class ``current``'s category wrote is the class its node compiles.
+
+    One Python class constructed as several categories writes one declaration for the
+    whole family, so the kernel can fill its bases only with what every member of the
+    family shares.  A declared subcategory is the family that never does: its objects
+    are its ambient's objects, so its class stands on the ambient's class, and the
+    ambient is exactly what indexes the family (POL-FUN-036).  ``Mor(K).Isomorphisms()``
+    writes one declaration for every ``K`` and each stands over its own
+    ``Mor(K).Monomorphisms()``; filling the declaration for one ``K`` would put that
+    ``K``'s ancestry into the class every other ``K`` reads.
+
+    The empty declaration belongs to its node alone and is always the node's class.
+    Every other family must agree, and ``_claim`` asserts that it does.
     """
-    local = category.local_role_class(role)
-    return None if local is empty_local_role(category, role) else local
+    if current.category.local_role_class(current.role) is empty_local_role(current.category, current.role):
+        return True
+    return not current.category.has_ambient()
 
 
-def _declared(current: Node) -> tuple[type[CategoryPoint], ...]:
-    written = _written_role_class(current.category, current.role)
-    return () if written is None else (written,)
+def _claim(current: Node) -> _Claim:
+    """The compiled class of ``current``, and every node that shares it.
+
+    A shared class does not name its node, so the constructor wrapper reads the node off
+    the value's own chain.  What is left to agree on is the selected targets, which
+    decide both the controlled bases and what the wrapper transports through.
+    """
+    local = current.category.local_role_class(current.role)
+    bases = _base_classes(current)
+    targets = tuple(target.category for _, target in successors(current))
+    if not _declaration_is_the_class(current):
+        return _Claim(_derived_class(current, local, bases), targets, [current])
+    known = _claims.get(local)
+    # A recompile (D80) retakes its own claim: the recorded one is its own last output.
+    if known is not None and len(known.nodes) == 1 and same_node(known.nodes[0], current):
+        known = None
+    if known is None:
+        # PEP 695 puts ``typing.Generic`` in the bases of a parameterized declaration.
+        # It names no node, and dropping it would make the declaration unsubscriptable.
+        generic = tuple(base for base in local.__bases__ if base is Generic)
+        local.__bases__ = (*bases, *generic)
+        _claims[local] = _Claim(local, targets, [current])
+        return _claims[local]
+    # Categories compare by identity here: ``==`` on an owned value is a proposition.
+    agrees = len(known.targets) == len(targets) and all(first is second for first, second in zip(known.targets, targets))
+    assert agrees, (
+        f"{current.category!r} and {known.nodes[0].category!r} write one {current.role.value} declaration "
+        f"and select different targets, {[repr(target) for target in targets]} against "
+        f"{[repr(target) for target in known.targets]}; they cannot compile one class"
+    )
+    if not any(same_node(current, seen) for seen in known.nodes):
+        known.nodes.append(current)
+    return known
+
+
+def _derived_class(current: Node, local: type[CategoryPoint], bases: tuple[type[CategoryPoint], ...]) -> type[CategoryPoint]:
+    """The compiled class of a node whose declaration serves a family of categories.
+
+    The declaration is the first base, so the written body runs on the value unchanged
+    and a zero-argument ``super()`` in a written method closes over a class in the
+    receiver's MRO.  Sage builds a parent's class the same way, from
+    ``(type(self), self._category.parent_class)`` (``Parent._init_category_``,
+    ``sage/structure/parent.pyx``, inspected 2026-08-29).
+    """
+    try:
+        compiled = dynamic_class(f"{current.category!r}.{current.role.value}", (local, *bases), doccls=local, cache=False)
+    except TypeError as conflict:
+        raise TypeError(
+            f"the {current.role.value} class of {current.category!r} has no linearization over "
+            f"{[klass.__name__ for klass in (local, *bases)]}: {conflict}"
+        ) from conflict
+    # ``Generic.__init_subclass__`` reads a class's parameters off its own
+    # ``__orig_bases__``.  The derived class states bases without them, so the hook
+    # clears what the declaration recorded; restoring it keeps a parameterized
+    # declaration subscriptable, as ``Category[[Rule], []]``.
+    parameters = vars(local).get("__parameters__", ())
+    if parameters:
+        compiled.__parameters__ = parameters
+    return compiled
+
+
+def _written_base(found: Node) -> tuple[type[CategoryPoint], ...]:
+    """The declaration a node that could not compile it carries as its own first base."""
+    local = found.category.local_role_class(found.role)
+    return () if found.category.role_class(found.role) is local else (local,)
 
 
 def _assert_linearized(current: Node, compiled: type[CategoryPoint]) -> None:
-    """The MRO is the node linearization, each node followed by the class it wrote.
+    """The MRO is the node linearization, each node followed by a declaration it could not compile.
 
     Sage states the same invariant in ``Category._test_category_graph``
     (``sage/categories/category.py``): ``parent_class.mro()`` is the ancestors'
-    compiled classes followed by the common Python chain end.  A written class ranks
-    with the one node it belongs to, directly below it (POL-KERNEL-028).
+    compiled classes followed by the common Python chain end.  A written body sits at
+    the one node it belongs to (POL-KERNEL-028), whether that node compiles the class
+    itself or stands directly on it.
 
     PEP 695 puts ``typing.Generic`` in the bases of a parameterized declaration.  It
     names no node and carries no mathematics, so the order is read without it.
     """
     order = [] if _is_cat_element_root(current) else [_nodes_by_key[key] for key in _linearize(current)[0]]
-    expected = [compiled, *_declared(current)]
+    expected = [compiled, *_written_base(current)]
     for found in order:
         expected.append(found.category.role_class(found.role))
-        expected.extend(_declared(found))
+        expected.extend(_written_base(found))
     expected.extend(_kernel_chain(order[-1] if order else current))
     actual = [klass for klass in compiled.__mro__ if klass is not Generic]
     assert actual == expected, (
@@ -803,7 +899,39 @@ def construct_category_singleton[Value: ObjectOfCategory](category_type: type[Va
     return instance
 
 
-def _object_wrapper(current: Node) -> FunctionType:
+def _chain_node(
+    context: ObjectConstructionContext | ElementConstructionContext | MorphismConstructionContext,
+    owners: list[Node],
+) -> Node:
+    """The node this compiled class stands for in one value's own constructor chain.
+
+    A family of categories shares one written declaration and so one compiled class, and
+    the class alone does not name the node.  The value's chain does: each node it
+    initializes has one step, and one of them is this class's.
+    """
+    found = [owner for owner, _ in context.steps if any(same_node(owner, claim) for claim in owners)]
+    assert len(found) == 1, (
+        f"the shared class of {[repr(owner.category) for owner in owners]} stands for {len(found)} nodes of one chain"
+    )
+    return found[0]
+
+
+def _named_node(owners: list[Node], category: Category | None, role: Role) -> Node:
+    """The node the caller named, which a class shared by a family of categories needs."""
+    if category is None:
+        assert len(owners) == 1, (
+            f"the {role.value} class of {[repr(owner.category) for owner in owners]} is shared; "
+            "name the category the value is constructed in"
+        )
+        return owners[0]
+    found = node(category, role)
+    assert any(same_node(found, owner) for owner in owners), (
+        f"the {role.value} class of {owners[0].category!r} cannot construct a value of {category!r}"
+    )
+    return found
+
+
+def _object_wrapper(owners: list[Node]) -> FunctionType:
 
     def initialize[Datum](
         instance: ObjectOfCategory,
@@ -813,12 +941,10 @@ def _object_wrapper(current: Node) -> FunctionType:
         active = active_construction_context(instance)
         if active is not None and active.canonical_image is instance:
             assert category is None and data is None, "an ancestor object constructor receives only its precomputed input"
-            active.run(current)
+            active.run(_chain_node(active, owners))
             return
-        if category is None:
-            category = current.category
-        assert category is current.category, f"the {current.category!r} object role cannot construct an object of {category!r}"
-        identity = ObjectRoleIdentity(category)
+        current = _named_node(owners, category, Role.OBJECT)
+        identity = ObjectRoleIdentity(current.category)
         if data is None:
             _construct_object_root(current, instance, identity, None)
             return
@@ -828,7 +954,7 @@ def _object_wrapper(current: Node) -> FunctionType:
     return initialize
 
 
-def _element_wrapper(current: Node) -> FunctionType:
+def _element_wrapper(owners: list[Node]) -> FunctionType:
 
     def initialize[Datum](
         instance: CategoryPoint,
@@ -838,20 +964,20 @@ def _element_wrapper(current: Node) -> FunctionType:
         active = active_construction_context(instance)
         if active is not None and active.canonical_image is instance:
             assert defining_morphism is None and data is None, "an ancestor element constructor receives only its precomputed input"
-            active.run(current)
+            active.run(_chain_node(active, owners))
             return
         assert defining_morphism is not None, "an element root constructor requires its defining morphism"
-        identity = ElementRoleIdentity(defining_morphism)
-        if data is None:
-            _construct_element_root(current, instance, identity, None)
-            return
-        _construct_element_root(current, instance, identity, data)
+        # An element constructor names no category.  When a family shares this class,
+        # the parent's placement is the one the caller reached it through
+        # (``C.element_from_defining_morphism``).
+        current = owners[0] if len(owners) == 1 else _named_node(owners, defining_morphism.codomain().category(), Role.ELEMENT)
+        _construct_element_root(current, instance, ElementRoleIdentity(defining_morphism), data)
 
     initialize.__name__ = "__init__"
     return initialize
 
 
-def _morphism_wrapper(current: Node) -> FunctionType:
+def _morphism_wrapper(owners: list[Node]) -> FunctionType:
 
     def initialize[Datum](
         instance: MorphismOfCategory,
@@ -865,11 +991,14 @@ def _morphism_wrapper(current: Node) -> FunctionType:
             assert category is None and domain is None and codomain is None and data is None, (
                 "an ancestor morphism constructor receives only its precomputed input"
             )
-            active.run(current)
+            active.run(_chain_node(active, owners))
             return
         assert category is not None and domain is not None and codomain is not None, (
             "a morphism root constructor requires its category and endpoints"
         )
+        # ``category`` is the morphism's placement, a subcategory of ``Mor(C)``, so the
+        # node a shared class stands for is the one of its base category ``C``.
+        current = owners[0] if len(owners) == 1 else _named_node(owners, category.base_category(), Role.MORPHISM)
         identity = MorphismRoleIdentity(category, domain, codomain)
         if data is None:
             _construct_morphism_root(current, instance, identity, None)
@@ -880,15 +1009,15 @@ def _morphism_wrapper(current: Node) -> FunctionType:
     return initialize
 
 
-def _constructor_wrapper(current: Node) -> FunctionType:
-    match current.role:
+def _constructor_wrapper(role: Role, owners: list[Node]) -> FunctionType:
+    match role:
         case Role.OBJECT:
-            return _object_wrapper(current)
+            return _object_wrapper(owners)
         case Role.ELEMENT:
-            return _element_wrapper(current)
+            return _element_wrapper(owners)
         case Role.MORPHISM:
-            return _morphism_wrapper(current)
-    raise AssertionError(current.role)
+            return _morphism_wrapper(owners)
+    raise AssertionError(role)
 
 
 def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
@@ -921,44 +1050,20 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
         # Catalogue construction rejects semantic collisions.  Inherited execution
         # itself is ordinary Python lookup through the controlled compiled MRO.
         catalogue(current)
-        # Every node gets its own compiled class, including one that declares nothing
-        # and inherits nothing: in Sage a category without ``ParentMethods`` still has
-        # its own ``parent_class``, built from its super categories and adding no
-        # methods.  The class the category wrote is the first base, so its body runs on
-        # the value and its ``super()`` calls enter the compiled chain (POL-CAT-016).
+        # The class the category wrote is the class the node compiles, so its body runs
+        # on the value and its ``super()`` calls enter the compiled chain (POL-CAT-016).
+        # A category that declares nothing still compiles a class of its own: in Sage a
+        # category without ``ParentMethods`` still has its own ``parent_class``, built
+        # from its super categories and adding no methods.
         #
         # One name per kind (POL-KERNEL-028): the declaration is ``ObjectType`` on the
-        # category's Python class and the compiled class is ``ObjectType`` on the
-        # category value, which shadows it.
-        local = category.local_role_class(role)
-        bases = (*_declared(current), *_base_classes(current))
-        node_initializer = _local_initializer(local)
-        wrapper = _constructor_wrapper(current)
+        # category's Python class and the same class is ``ObjectType`` on the value.
+        node_initializer = _written_initializer(category.local_role_class(role))
+        claim = _claim(current)
+        compiled = claim.compiled
         if _is_cat_element_root(current):
-            compiled = cat_element_root()
-            compiled.__bases__ = bases
-            compiled.__doc__ = local.__doc__
-        else:
-            try:
-                compiled = dynamic_class(
-                    f"{category!r}.{role.value}",
-                    bases,
-                    doccls=local,
-                    cache=False,
-                )
-            except TypeError as conflict:
-                raise TypeError(
-                    f"the {role.value} class of {category!r} has no linearization over "
-                    f"{[klass.__name__ for klass in bases]}: {conflict}"
-                ) from conflict
-        compiled.__init__ = wrapper
-        # ``Generic.__init_subclass__`` reads a class's parameters off its own
-        # ``__orig_bases__``.  The compiled class states bases without them, so the hook
-        # clears what the declaration recorded; restoring it keeps a parameterized
-        # declaration subscriptable, as ``Category[[Rule], []]``.
-        parameters = vars(local).get("__parameters__", ())
-        if parameters:
-            compiled.__parameters__ = parameters
+            install_cat_element_root(compiled)
+        compiled.__init__ = _constructor_wrapper(role, claim.nodes)
         _node_runtimes[role][category] = _NodeRuntime(node_initializer, compiled)
         setattr(category, role.value, compiled)
         _assert_linearized(current, compiled)

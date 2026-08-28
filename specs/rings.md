@@ -106,9 +106,9 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     )
 ```
 
-The semiring projection supplies both operation roles and their unit points.
+The semiring projection supplies both operation classes and their unit points.
 The additive-group projection supplies inversion and subtraction.
-Both paths reach one canonical additive monoid and one canonical object of `C`.
+Both paths supply the same additive-monoid and underlying-object constructor data.
 
 Both projections state their laws in the supplied ambient
 ([Laws in the supplied ambient](magmas-monoids-semirings.md#laws-in-the-supplied-ambient)).
@@ -128,7 +128,7 @@ For a general `C`, the morphisms and diagrams above remain the public definition
 - `Rings(C)` retains one underlying object in `C`.
 - Its structure maps are morphisms in `C`.
 - Its axioms are commutative diagrams in `C`.
-- Its declared functors target `Semirings(C)` and
+- Its selected functors target `Semirings(C)` and
   `Groups(C_x).Additive().Commutative()`.
 - `Rings(Sets())` gives ordinary rings; `Rings(Cat())` states its laws as equalities of
   functors.

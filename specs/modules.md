@@ -100,7 +100,7 @@ U_A:\operatorname{Modules}(A,C)\longrightarrow C.
 It sends `(X, rho_X)` to `X` and sends each module morphism to its morphism in `C`.
 
 The construction builds `U_A` with both endpoints written out, retains it, and
-returns it as the complete immediate declared tuple:
+returns it as the complete immediate selected tuple:
 
 ```python
 U_A = Fun(Modules(A, C), C).Faithful()(on_object, on_morphism)

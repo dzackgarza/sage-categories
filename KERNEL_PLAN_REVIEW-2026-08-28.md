@@ -32,7 +32,7 @@ The leaf scan covered every Python source file under these current subtrees:
 - `src/sage_categories/posets`;
 - `src/sage_categories/ordinals`.
 
-The scan checked imports, declarations, refinement calls, role metadata, cache decorators, and public type assembly.
+The scan checked imports, declarations, refinement calls, duplicate class metadata, cache decorators, and public type assembly.
 Each finding then used the complete local owner or the cited source range.
 
 This report does not certify every mathematical algorithm in those subtrees.
@@ -68,16 +68,12 @@ These five register entries are remediated and need only to be marked closed:
   `src/sage_categories/cat/functors.py:651`.
 - The represented-functor entry at line 1262. Current code defines it at
   `src/sage_categories/cat/category.py:519`.
-- The `CategoryPoint` entry at line 1264. Current code declares a static class at
-  `src/sage_categories/kernel/roles.py:107`.
+- The `CategoryPoint` entry at line 1264. Current code declares a static class in
+  `src/sage_categories/kernel/`.
 - The `Subobjects()` name-collision entry at line 1265. Current code uses
   `ChosenSubobjects()` at `src/sage_categories/cat/constructions.py:428`.
-- The receiver-valued witness entry at line 1267. Current code has one at
-  `tests/cat/test_two_morphisms.sage:254`. The witness itself is a separate defect: it
-  declares `this_object()` returning `self`, which states no mathematical proposition. It
-  observes that dispatch did not substitute a value, which is only observable while a
-  second value exists to substitute — that is V10. Repair V10 and the assertion becomes
-  unformulable. Do not delete the witness instead (`POL-MATH-047`, `POL-MATH-049`).
+- The identity-only witness entry at line 1267. Current code has one at
+  `tests/cat/test_two_morphisms.sage:254`. It states no mathematical proposition.
 
 Governing sources:
 
@@ -162,50 +158,48 @@ Required correction:
 - Let its selected point functors establish every known ambient and property placement.
 - Remove direct kernel refinement from the number-set modules.
 
-### V4. The property-subcategory API forces role metadata into leaves
+### V4. The property-subcategory API forces duplicate class metadata into leaves
 
 Severity: High
 
 - Searched: the complete `PropertySubcategory` declaration and every current leaf call site.
-- Found: its constructor requires `dict[Role, type[CategoryPoint]]`.
-- Found: `Sets()` and finite posets pass explicit `Role.OBJECT` maps.
+- Found: its constructor requires a dictionary that classifies implementation classes.
+- Found: `Sets()` and finite posets pass explicit object-class dictionaries.
 - Conclusion: I conclude that the category API requires the leaf shape that policy forbids.
 - Confidence: High.
 - Gaps: custom full subcategories outside the current leaf subtrees were not classified here.
 
 Evidence:
 
-- The role-map parameter is at `src/sage_categories/cat/properties.py:103`.
+- The class-dictionary parameter is at `src/sage_categories/cat/properties.py:103`.
 - The same class reads that map at `src/sage_categories/cat/properties.py:125`.
-- `Sets()` passes a role map at `src/sage_categories/sets/category.py:121`.
+- `Sets()` passes a class dictionary at `src/sage_categories/sets/category.py:121`.
 - `Posets().Finite()` passes one at `src/sage_categories/posets/category.py:382`.
 - Finite-poset properties pass four more at `src/sage_categories/posets/finite.py:211`.
 
 Governing sources:
 
-- `POL-LEAF-051` forbids separate role tables beside mathematical declarations.
-- `POL-LEAF-054` excludes role metadata from leaves.
-- `POL-LEAF-059` requires leaf-owned role classes and forbids role-enum maps.
-- `specs/leaves.md:962` requires one local implementation for each role.
+- `POL-LEAF-051` forbids a second class table beside mathematical declarations.
+- `POL-LEAF-054` excludes compiler metadata from leaves.
+- `POL-LEAF-059` requires direct nested implementation classes.
+- `specs/leaves.md` requires one declared class for each mathematical kind.
 
 Required correction:
 
-- Make each property subcategory an ordinary category class, so that it has somewhere to
-  declare `DeclaredObjectType`, `DeclaredElementType`, and `DeclaredMorphismType`. A
-  category built by calling a constructor has nowhere to put them, which is why the role
-  map exists. Follow Sage's general axiom mechanism: declare the axiom once, define the
+- Make each property subcategory an ordinary category class that declares
+  `ObjectType`, `ElementType`, and `MorphismType` directly. Follow Sage's general axiom mechanism: declare the axiom once, define the
   implementing class independently, and wire the two with one declared field, as
   `_base_category_class_and_axiom` does (`POL-LEAF-059`).
-- Make the generic property owner read those declarations without a leaf role map.
+- Make the generic property owner read those classes directly.
 
 ### V5. `Posets()` owns generic element, cache, and inverse machinery
 
 Severity: High
 
 - Searched: the complete poset category, finite-poset category, and their selected functors.
-- Found: a poset object stores a generalized-element cache.
+- Found: a poset object stores a point cache.
 - Found: `element()` constructs a morphism, refines it, and updates that cache.
-- Found: the category builds generalized elements through another private cache.
+- Found: the category builds points through another private cache.
 - Found: `inverse_morphism()` owns an inverse cache and reconstructs the inverse locally.
 - Found: a mathematical method uses the kernel `retained_method` decorator.
 - Conclusion: I conclude that the poset leaf contains kernel-owned structural work.
@@ -225,16 +219,16 @@ Evidence:
 Governing sources:
 
 - `POL-KERNEL-001` assigns generic object, element, and morphism construction to the kernel.
-- `POL-KERNEL-017` assigns canonical images and structural routes to the kernel.
+- `POL-KERNEL-017` assigns selected-path composition and constructor data to the kernel.
 - `POL-LEAF-023` excludes inherited caches from property refinements.
-- `POL-LEAF-025` stops leaf work at route or canonical-image machinery.
+- `POL-LEAF-025` stops leaf work at compiler-path machinery.
 - `POL-LEAF-053` excludes framework decorators from mathematical methods.
 - `POL-LEAF-056` assigns isomorphism inversion to its generic morphism category.
 - `POL-CAT-079` assigns forced operations to their highest mathematical owner.
 
 Required correction:
 
-- Let the kernel construct and retain generalized elements.
+- Let the kernel construct points. Keep generalized elements in their morphism categories.
 - Let the isomorphism category own inversion and its retained inverse.
 - Keep `Posets()` focused on relations, monotone maps, order predicates, and induced orders.
 
@@ -372,8 +366,8 @@ Required correction:
 Severity: Blocking
 
 - Searched: `cat/category.py`, `cat/functors.py`, and every call site under `src/sage_categories/sets`.
-- Found: a category exposes `structural_image(value)`, an image operation owned by a category rather than by a functor.
-- Found: thirteen `Sets()`-owned methods open by calling it on their own receiver.
+- Found: a category exposes a target-category image accessor, although only a named functor can own an image.
+- Found: thirteen `Sets()`-owned methods call it before reading their own state.
 - Found: the functor API used by the leaves hands the kernel an already-constructed target object instead of construction data for the target's constructor.
 - Conclusion: I conclude that the compiled class hierarchy and the retained data disagree. A poset is a Python subclass of the compiled `Sets()` object class, but its set state was never initialized from its own construction data, so each `Sets()` method bridges the gap by hand.
 - Confidence: High.
@@ -381,10 +375,10 @@ Severity: Blocking
 
 Evidence:
 
-- `Category.structural_image` is at `src/sage_categories/cat/category.py:140`.
+- The category-level image accessor is at `src/sage_categories/cat/category.py:140`.
 - Ten call sites are in `src/sage_categories/sets/objects.py`; three are in `src/sage_categories/sets/maps.py`.
 - `Functor.retain_object_constructor_conversion` at `src/sage_categories/cat/functors.py:253` is the constructor-threading path. One call site uses it, at `src/sage_categories/sets/cardinals.py:759`.
-- `Functor.retain_structural_images` at `src/sage_categories/cat/functors.py:293` is the path the rest use. Its conversion wraps a value the domain's defining data already names.
+- The alternate functor retention path is at `src/sage_categories/cat/functors.py:293`. Its conversion wraps a value the domain's defining data already names.
 
 Governing sources:
 
@@ -397,7 +391,7 @@ Governing sources:
 Required correction:
 
 - Make each selected structural functor state its target's construction data, not an already-built target object, and let the kernel thread it through the ancestor initializers.
-- Delete `Category.structural_image` and the thirteen call sites together with it.
+- Delete the category-level image accessor and its thirteen call sites together.
 
 ## Leaf assessment
 

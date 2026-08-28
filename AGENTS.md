@@ -250,7 +250,7 @@ A functor constructs an implementation in another category.
 For each category `C`:
 
 - `C.ObjectType` implements objects of `C`.
-- `C.ElementType` implements points of objects of `C`. An element of `X` is a morphism `* -> X` from the chosen terminal object, and `x.parent()` is `X`.
+- `C.ElementType` implements points of objects of `C`. An element of `X` is a morphism `* -> X` from the terminal object, and `x.parent()` is `X`.
 - `C.MorphismType` implements morphisms of `C`.
 - `C(...)` is the category-owned constructor.
 
@@ -333,8 +333,8 @@ morphism is a functor and therefore a `Cat().MorphismType` value.
 
 The operators are defined once in two contexts. On categories: `C * D = Cat().Products()((C, D))`, `C + D = Cat().Coproducts()((C, D))`, and `D ** C = Fun(C, D)`. On objects `X, Y` of one category `C`: `X * Y = C.Products()((X, Y))`, `X + Y` their coproduct, and `Y ** X` the exponential object where `C` is declared cartesian closed. Each takes its construction in the narrowest category containing both operands. An object refined into `C.P()` and an object of `C` are both objects of `C`. Their product is the product in `C`. Operands with no common category fail the assertion. Construct an external pair explicitly as `(C * D)((X, Y))`.
 
-Let `P` be a chosen product category. If `j: S -> P` presents a subcategory, the
-corresponding object of `Cat().Products().ChosenSubobjects()` retains `j` and reads `P` as its
+Let `P` be a product category. If `j: S -> P` presents a subcategory, the
+corresponding object of `Cat().Products().Subobjects()` retains `j` and reads `P` as its
 codomain. Its `product_projection(i)` is the composite of `j` with the corresponding
 projection of `P`.
 
@@ -636,7 +636,10 @@ Keep these notions distinct:
 - a theorem and a runtime algorithm;
 - a mathematical result and an implementation-engine value.
 
-Represent a chosen subobject of `B` by a monomorphism `f: A -> B`.
+A subobject of `B` is an object `A` with a monomorphism `f: A -> B`, and that is the whole
+notion. There is no second kind and no separate name for a representative: the
+equivalence-class formulation matters only when deciding whether two subobjects are equal,
+which is a predicate.
 Obtain `B` from `f.codomain()`.
 Do not duplicate the codomain or monomorphism data in storage fields.
 

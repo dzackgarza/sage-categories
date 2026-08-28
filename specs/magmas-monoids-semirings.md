@@ -12,7 +12,7 @@ The governing policies are `POL-MATH-019`, `POL-MATH-022`, `POL-MATH-023`, `POL-
 
 - [Magmas](#magmas)
 
-- [Additive and multiplicative operation roles](#additive-and-multiplicative-operation-roles)
+- [Additive and multiplicative forms](#additive-and-multiplicative-forms)
 
 - [Monoids](#monoids)
 
@@ -115,9 +115,9 @@ f.is_magma_homomorphism()
 `operation()` returns the morphism `mu_X:X tensor X -> X` in `C`. `combine(x, y)` applies that morphism through the selected point map.
 The homomorphism method returns the owned preservation predicate.
 
-## Additive and multiplicative operation roles
+## Additive and multiplicative forms
 
-The two operation-role subcategories are
+The two notation subcategories are
 
 ```python
 Magmas(V).Additive()
@@ -125,7 +125,7 @@ Magmas(V).Multiplicative()
 ```
 
 They retain the same underlying object, multiplication morphism, and morphisms.
-Each selects one standard operation role.
+Each selects one standard operation spelling.
 Their complete immediate structural tuples are
 
 ```python
@@ -140,7 +140,6 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (Fun(self, Magmas(V)).Monomorphisms().Isofibrations().Full()(),)
 ```
 
-When `V` is monoidal, the selected additive and multiplicative classes expose their operations on applicable elements.
 For cartesian `V`, two generalized elements `x,y:T -> X` combine through
 
 \[
@@ -149,10 +148,11 @@ T\xrightarrow{\Delta_T}T\times T
  \xrightarrow{\mu_X}X.
 \]
 
-This diagram is the generalized-point meaning of the element syntax.
-For `C = Sets()`, it is the usual binary operation on elements.
+This diagram is the generalized-element meaning of the syntax.
+When `T` is terminal, `x` and `y` are points and the result is an actual element.
+For `C = Sets()`, this gives the usual binary operation on elements.
 
-When `V` is braided monoidal, `Magmas(V).Commutative()` is defined by equality of `mu_X` and its composite with the braiding on `X tensor X`. It propagates to both operation roles through property inverse image.
+When `V` is braided monoidal, `Magmas(V).Commutative()` is defined by equality of `mu_X` and its composite with the braiding on `X tensor X`. It propagates to both notation subcategories through property inverse image.
 
 ## Monoids
 
@@ -191,20 +191,21 @@ A notation-neutral monoid owns
 
 ```python
 M.operation()
-M.identity_element()
+M.unit_morphism()
 M.combine(x, y)
 ```
 
-Here `identity_element()` returns the unit morphism `eta_X:I -> X`.
+Here `unit_morphism()` returns `eta_X:I -> X`.
+It is a point only when `I` is terminal.
 
-The operation-role subcategories are
+The notation subcategories are
 
 ```python
 Monoids(V).Additive()
 Monoids(V).Multiplicative()
 ```
 
-They are inverse images of the matching `Magmas(V)` roles.
+They are inverse images of the matching `Magmas(V)` subcategories.
 Their complete immediate structural tuples preserve both category branches:
 
 ```python
@@ -225,7 +226,7 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     )
 ```
 
-The additive role names the unit `zero()`. The multiplicative role names it `one()`. The identity point is one owned morphism with the selected role name.
+When `V` is cartesian, the additive form names the unit point `zero()` and the multiplicative form names it `one()`.
 
 `Monoids(V).Additive().Commutative()` denotes commutative additive monoid objects.
 The matching multiplicative expression denotes commutative multiplicative monoid objects.
@@ -240,7 +241,7 @@ When `V` is cartesian monoidal, `Groups(V)` is the full property subcategory of 
 
 that satisfies the left and right inverse diagrams.
 A monoid morphism between group objects preserves inversion.
-The additive role `Groups(V).Additive()` exposes unary `-` and subtraction.
+The additive form `Groups(V).Additive()` exposes unary `-` and subtraction.
 The commutative additive group category is `Groups(V).Additive().Commutative()`.
 
 Its complete immediate structural tuple is
@@ -297,9 +298,9 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     )
 ```
 
-Both routes reach one canonical object of `C`. The structural diamond supplies both operation roles to that object.
+Both paths supply the same constructor datum for the underlying object of `C`. The structural diamond supplies both operation classes.
 
-`Semirings(C)` owns the compatibility laws and the combined role surface.
+`Semirings(C)` owns the compatibility laws and the combined additive and multiplicative surface.
 Its object interface exposes both unit points.
 Its point interface exposes `+` and `*` through the two retained monoid structures.
 
@@ -327,8 +328,8 @@ These formulas are consequences of the internal diagrams.
 
 ## Structural functors
 
-Each declared functor acts on objects and morphisms.
-Its point action comes from its morphism action.
+Each selected functor acts on objects and morphisms.
+Its point action comes from its morphism action and terminal-object comparison.
 
 The additive and multiplicative refinements use subcategory monomorphisms.
 The semiring component functors come from the generic subobject-of-product construction.
@@ -339,16 +340,16 @@ Longer routes to `C` arise through the projections of `C_x`.
 | Category | New public mathematics |
 | --- | --- |
 | `Magmas(V)` | Multiplication morphism and operation-preservation predicate. |
-| `Magmas(V).Additive()` | Additive operation role. |
-| `Magmas(V).Multiplicative()` | Multiplicative operation role. |
+| `Magmas(V).Additive()` | Additive operation spelling. |
+| `Magmas(V).Multiplicative()` | Multiplicative operation spelling. |
 | `Monoids(V)` | Associativity, unit point, and unit-preserving morphisms. |
-| `Monoids(V).Additive()` | `zero()` in the additive role. |
-| `Monoids(V).Multiplicative()` | `one()` in the multiplicative role. |
+| `Monoids(V).Additive()` | `zero()` when the monoidal unit is terminal. |
+| `Monoids(V).Multiplicative()` | `one()` when the monoidal unit is terminal. |
 | `Groups(V)` | Inversion and the inverse laws. |
 | `Groups(V).Additive()` | Unary `-` and subtraction. |
 | `Semirings(C)` | Distributivity, absorption, and both selected monoid structures. |
 
-Inherited capabilities come from the listed declared functors.
+Inherited capabilities come from the listed selected functors.
 Each defining predicate returns its owned proposition.
 
 ## Laws in the supplied ambient
@@ -388,7 +389,7 @@ That microcosm definition uses a bimonoidal ambient, where the two operations co
 It is a different construction, and the same entry states its `Cat` case separately: "A rig in (Cats, ∐,×, ∅_(cat), pt) is a strict monoidal category".
 `Semirings(C)` instead takes both monoid structures over the finite products of `C`, as the traditional definition does, so both operations come from the underlying object.
 
-The notation-role catalogues use the Sage reference sections for [magmas](https://doc.sagemath.org/html/en/reference/categories/sage/categories/magmas.html) ("A magma is a set with a binary operation"), [additive monoids](https://doc.sagemath.org/html/en/reference/categories/sage/categories/additive_monoids.html), [monoids](https://doc.sagemath.org/html/en/reference/categories/sage/categories/monoids.html), [groups](https://doc.sagemath.org/html/en/reference/categories/sage/categories/groups.html) ("The category of (multiplicative) groups, i.e. monoids with inverses"), and [semirings](https://doc.sagemath.org/html/en/reference/categories/sage/categories/semirings.html) ("it is a combination of a commutative additive monoid (S, +) and a multiplicative monoid (S, *), where * distributes over +").
+The notation subcategories use the Sage reference sections for [magmas](https://doc.sagemath.org/html/en/reference/categories/sage/categories/magmas.html) ("A magma is a set with a binary operation"), [additive monoids](https://doc.sagemath.org/html/en/reference/categories/sage/categories/additive_monoids.html), [monoids](https://doc.sagemath.org/html/en/reference/categories/sage/categories/monoids.html), [groups](https://doc.sagemath.org/html/en/reference/categories/sage/categories/groups.html) ("The category of (multiplicative) groups, i.e. monoids with inverses"), and [semirings](https://doc.sagemath.org/html/en/reference/categories/sage/categories/semirings.html) ("it is a combination of a commutative additive monoid (S, +) and a multiplicative monoid (S, *), where * distributes over +").
 
 ## Acceptance conditions
 

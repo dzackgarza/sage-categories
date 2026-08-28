@@ -454,7 +454,7 @@ For `F: C -> D`, `F.on_morphism(x)` gives `F(1_C) -> F(X)`.
 A supplied morphism `c_F: 1_D -> F(1_C)` gives the point `F.on_element(x): 1_D -> F(X)` by composition.
 
 A generalized element `t: T -> X` maps to `F(t): F(T) -> F(X)`.
-It remains separate from `ElementType` unless its domain is the chosen terminal object.
+It remains separate from `ElementType` unless its domain is the terminal object.
 For a category `C`, `Fun(*, C)` models its points and `Fun(T, C)` models its generalized elements with domain `T`.
 The category `Fun([1], C)` models arrows of `C` separately.
 
@@ -667,9 +667,9 @@ For `F: C -> D`, `F.essential_image()` is the full property subcategory of `D` o
 The original functor factors through this category.
 
 A universal-construction family has more data.
-`C.Products()` is the full subcategory of `C` on the chosen products, reached by its retained identity-on-values monomorphism.
+`C.Products()` is the full subcategory of `C` on the products, reached by its retained identity-on-values monomorphism.
 It retains the universal data of each diagram `D`: `D` itself, its projections, and its universal maps.
-The essential image of the product functor records only which objects are isomorphic to chosen products.
+The essential image of the product functor records only which objects are isomorphic to products.
 
 ## Products, coproducts, and component functors
 
@@ -692,9 +692,9 @@ Here `P` and `Q` are the product and coproduct categories themselves: `Cat().Pro
 The index is an `int` in the supplied sequence.
 These methods come from `Cat().Products().ObjectType` and `Cat().Coproducts().ObjectType`. They return `Cat().MorphismType` values.
 
-Let `P` be a chosen product category.
+Let `P` be a product category.
 Let `j: S -> P` present `S` as a subcategory.
-The corresponding object of `Cat().Products().ChosenSubobjects()` retains `j` and reads `P` as its codomain.
+The corresponding object of `Cat().Products().Subobjects()` retains `j` and reads `P` as its codomain.
 Its component functor is
 
 \[
@@ -972,7 +972,7 @@ It is kernel infrastructure over already established mathematical functors.
 
 - A construction family is a full subcategory of its ambient category, reached by the retained identity-on-values monomorphism, and retains the universal data of each diagram it constructed from.
 
-- Every object of `Cat().Products().ChosenSubobjects()` retains its presenting monomorphism into a chosen product, then derives its component functors by composition.
+- Every object of `Cat().Products().Subobjects()` retains its presenting monomorphism into a product, then derives its component functors by composition.
 
 - Slice and coslice categories are pullbacks of `ev_1` and `ev_0` along the chosen object and retain their pullback projections.
 

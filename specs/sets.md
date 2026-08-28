@@ -256,10 +256,10 @@ Pullbacks, pushouts, equalizers, and coequalizers are these constructions at the
 
 ## Subobjects, images, and power objects
 
-`X.subset_from(predicate)` constructs a chosen subset with its monomorphism into `X`. The predicate returns the membership proposition for a candidate element.
+`X.subset_from(predicate)` constructs a subset with its monomorphism into `X`. It returns a subset of `X` and lifts no other structure: when `P` is a poset presented as `(X, R)`, asking `Sets()` for a subset gives a set, never a poset (`POL-LEAF-060`). The predicate returns the membership proposition for a candidate element.
 `ask()` can evaluate that proposition as `True`, `False`, or `Unknown`.
 
-A chosen subset supplies:
+A subset supplies:
 
 ```python
 A.monomorphism()
@@ -272,7 +272,7 @@ A.cardinality()
 `underlying_set()` would choose a codomain silently (`POL-FUN-037`).
 
 An abstract subobject is represented by a monomorphism.
-Its image supplies the canonical chosen subset representative.
+Its image supplies the corresponding subset.
 The chosen monomorphism remains part of the subobject data.
 
 `f.image()` constructs an owned subobject of `f.codomain()`. It does not require source enumeration.
@@ -615,9 +615,9 @@ The implementation satisfies this specification when the public API establishes 
 
 - the function set `Y ** X` is one canonical object, and `Mor(Sets())(X, Y)` is the discrete category on its elements;
 
-- every chosen subset retains its monomorphism;
+- every subset retains its monomorphism;
 
-- every abstract subobject retains its monomorphism and canonical image;
+- every abstract subobject retains its monomorphism and chosen image;
 
 - products retain `product_projection(i)` and universal maps;
 

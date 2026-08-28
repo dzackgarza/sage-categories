@@ -8,7 +8,7 @@ Applying one returns a proposition.
 `ask()` returns its decision.
 Tables mark any total exact operation that returns a decision directly.
 
-## Category and role surface
+## Category and public surface
 
 The owned category constructors are:
 
@@ -19,7 +19,7 @@ FinitePosets()
 FiniteTotallyOrderedSets()
 ```
 
-The declared functors form this commutative graph:
+The selected functors form this commutative graph:
 
 \[
 \begin{array}{ccc}
@@ -31,7 +31,7 @@ The declared functors form this commutative graph:
 \end{array}
 \]
 
-Both routes from finite total orders to sets produce one canonical set image.
+Both paths from finite total orders to sets supply the same set constructor datum.
 
 Each category owns complete implementation classes:
 
@@ -272,7 +272,7 @@ A leaf can use Sage or another engine through private helpers.
 
 Leaf methods remain ordinary typed mathematical methods.
 The compiler derives transport from those signatures and category declarations.
-Leaf code does not declare compiler roles or route metadata.
+Leaf code declares only its mathematical classes and selected functors.
 
 See [Leaf category implementations](leaves.md) and [Structural resolution](resolution.md).
 

@@ -170,7 +170,7 @@ The module action contract is stated once, in
 - The underlying object of an algebra is a module object in that supplied category.
 - Multiplication and unit are morphisms in the module category.
 - Algebra morphisms preserve both structure morphisms.
-- The equivalence to `Monoids(V_R)` is the sole immediate declared functor.
+- The equivalence to `Monoids(V_R)` is the sole immediate selected functor.
 - The route to `C` passes through `Monoids(V_R)`, `Magmas(V_R)`, and
   `Modules(R, C)`.
 - A noncommutative-base construction supplies a monoidal category of `R`-bimodule objects.

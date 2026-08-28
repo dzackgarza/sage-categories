@@ -316,7 +316,7 @@ total_proposition = P.is_total()
 ```
 
 Each result retains its predicate, semantic arguments, and mathematical owner.
-In SymPy terminology, the predicate is the function and the returned proposition is an `AppliedPredicate`. A Sage symbolic relation such as `x < 2` plays the same role.
+In SymPy terminology, the predicate is the function and the returned proposition is an `AppliedPredicate`. A Sage symbolic relation such as `x < 2` has the same predicate-and-proposition distinction.
 
 `Unknown` is not a proposition.
 It is one possible result of asking for the truth value of a proposition:

@@ -227,7 +227,7 @@ that satisfies the unit and action diagrams.
 When closed or enriched structure represents these actions by an internal endomorphism monoid, this data is equivalently a monoid morphism \(A\to\operatorname{End}_{\mathcal C}(X)\).
 
 Assume that `Modules(A, C)` has the selected products below and that its declared functor to \(\mathcal C\) preserves them.
-For a family \((X_i)_{i\in I}\) in this category, a chosen product contains:
+For a family \((X_i)_{i\in I}\) in this category, a product contains:
 
 - the module apex \(P\);
 
@@ -337,7 +337,7 @@ The kernel uses these mathematical facts:
 
 - methods from both category placements belong on the public object.
 
-There is a further distinction between a chosen product module and an abstract finite-dimensional vector space.
+There is a further distinction between a product module and an abstract finite-dimensional vector space.
 A vector space without a chosen basis has no canonical isomorphism with \(\mathbf F_p^n\). It is still finite by the theorem
 
 \[
@@ -547,7 +547,7 @@ It does not enumerate its \(p^n\) elements to establish finiteness.
 
 A product in `Modules(A, C)` retains its module apex, action, projections, and mediating morphism.
 When the declared functor to \(\mathcal C\) preserves products, its \(\mathcal C\)-image is the chosen product there.
-At the ambient `Sets()`, the composite underlying-set image is the chosen set product.
+At the ambient `Sets()`, the composite underlying-set image is the set product.
 
 ### Module coproducts
 

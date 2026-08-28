@@ -237,10 +237,10 @@ functor that supplies what the `Sets()` constructor requires, then a poset recei
 inheritance rather than methods alone. Wiring the constructors is the functor's job, so a
 leaf constructor never accumulates a field for every ancestor category.
 
-**D14 (08-26). One chain per kind, propagating from `Cat`.** Every category is a
-`Cat().ObjectType`; every object of a category is a `Cat().ElementType`; every `X in C` is
-a `C.ObjectType`, and that propagates along the declared functors; elements and morphisms
-follow the same rule. The lineage is as straightforward as Sage's `Parent` and `Element`.
+**D14 (08-26, corrected 08-28). One chain per mathematical kind.** Every category is a
+`Cat().ObjectType`. Every object of a category is a point `* -> C`, hence a
+`Cat().ElementType` and a `C.ObjectType`. An element of `X in C` is a point
+`1_C -> X` and uses `C.ElementType`. A morphism of `C` is a `Mor(C).ObjectType`.
 
 **D55 (08-26). Drop `Ar(C)` and every arrow and hom spelling.** Define `Mor(n, C)` as the
 category of `n`-morphisms of `C`. Almost every category here is a 1-category, so
@@ -253,13 +253,11 @@ everywhere. This supersedes the `Ar`/`Hom` spellings of D11.
 **D56 (08-26). Eager, and fail fast and loudly.** Declaration order in
 `structure_functors()` controls preference.
 
-**D57 (08-26). The point functor regards a category as an object.** It is the inclusion of
-the one-object category `{C}` into `D`. Its semantics: `D`'s object methods propagate to
-the *category* `C` itself, `D`'s element methods become `C`'s object methods, and morphisms
-shift accordingly. This is how `Ordinals()` receives semiring operations. Nothing here
-needs a carrier set — there is no such thing. In background theory a category is a functor
-`* -> Cat` and the point functor is the corresponding map of points; that framing is not
-needed by the implementation.
+**D57 (08-26, corrected 08-28). The point functor regards a category as an object.** It is
+the inclusion of the one-object category `{C}` into `D`. `D`'s object methods propagate to
+the category `C` itself. `D`'s element methods become `C`'s object methods because the
+points `* -> C` are exactly the objects of `C`. Morphisms of `C` do not receive that
+element surface. This is how `Ordinals()` receives semiring operations.
 
 **D58 (08-27). What a functor is for.** In Sage you declare your supercategories but never
 say *how* to construct an object or morphism of a supercategory from one of yours. That is
@@ -297,26 +295,23 @@ element of a set and may carry `x.factors()`. An element of a finite set is not 
 element of a set" — it is `FiniteSets().ElementType`, which extends `Sets().ElementType`
 when the wiring is correct.
 
-**D16 (08-26). What an element is.** A Sage element is implicitly a pair `(X, x)` with
-`X = x.parent()`. An element of an object in a category is the same thing: a generalized
-element `t: T -> X`, an object of `C.SliceOver(X)`, with `parent()` its codomain. So
-`ElementType` makes sense for every category even when the category implements nothing new.
-An element of a scheme `X` is not a priori well defined, but any `R`-point should have
-`x.parent()` and a stalk `O_{X,x}`; the background model is a point of the category of
-elements of `h_X`, and the consequence is that a category of schemes still receives an
-`ElementType`. For a concrete category with a path `U_C: C -> Sets()`, this recovers the
-usual notion of an element of the underlying set.
+**D16 (08-26, corrected 08-28). What an element is.** A Sage element is implicitly a pair
+`(X, x)` with `X = x.parent()`. Categorically, an element of `X in C` is a point
+`1_C -> X` from the terminal object. This is what `C.ElementType` implements. A morphism
+`T -> X` with general domain is a generalized element and stays in its morphism or slice
+category. For `C in Cat()`, points `* -> C` are the actual objects of `C`, so
+`C.ObjectType` inherits `Cat().ElementType`. An `R`-point of a scheme is generalized unless
+its domain is terminal.
 
-**D17 (08-26). Every functor transports elements through its arrow action.** No functor
-carries element data. `x.f() := F(x).f()` in `D`, where the induced functor on elements
-comes from the arrow action. The onus is on the leaf writer to construct the functor: to
-inherit `__add__` on your elements, supply a functor to `Magmas().Additive()`, which reaches
-sets because magmas are concrete. Every category *gets* the implementation classes; new
-methods arrive by wiring functors out of it.
+**D17 (08-26, corrected 08-28). Every functor transports points through its morphism
+action.** For `F: C -> D` and `t: 1_C -> X`, the morphism action gives
+`F(1_C) -> F(X)`. A declared comparison `1_D -> F(1_C)` gives the point of `F(X)`.
+A generalized element `T -> X` maps to `F(T) -> F(X)` and remains generalized.
+The functor carries no independent element callback.
 
-**D62 (08-27). "Stage" is a parenthetical.** The standard parlance is generalized element,
-or in modern usage generalized point, `p: T -> X`. Taking `T = *` yields a point when `X` is
-a discrete category, and an object when `X` is a category.
+**D62 (08-27, corrected 08-28). Points and generalized elements are distinct.** A point of
+`X` is `p: 1_C -> X`. A generalized element is `p: T -> X`. For `X = C in Cat()`, a point
+`* -> C` is an actual object of `C`, while a functor `T -> C` is a generalized element.
 
 ## Predicates, containment, and assumption
 
@@ -408,8 +403,7 @@ cardinality, and when it is not you get `Unknown`. This is uniform across every 
 undecidable in full generality, and cardinals implement no separate `Unknown` handling of
 their own. This amends D29.
 
-**D65 (08-27). Cardinals are a semiring with a poset structure.** "Linearly ordered
-carrier" is nonsense: the poset is exactly what records that `2 ** aleph_0`, and most
+**D65 (08-27). Cardinals are a semiring with a poset structure.** The poset records that `2 ** aleph_0`, and most
 cardinal exponentials, are incomparable to `aleph_i` in ZFC. There are two totally ordered
 infinite sets of formal symbols, `{0, 1, ...}` and `{aleph_0, aleph_1, ...}`, and the
 algebra must take arbitrary sums, products, and formal exponentials of them.
@@ -604,9 +598,8 @@ rule was ever written down.
 underlying set the way a record carries a field. There is nothing inside a module that is
 the set; there is a functor whose image at that module is a set. So `X.underlying_set()`
 asserts that the relation is a property of `X` alone, and it is not — it is a property of a
-map somebody chose. This is `C.structural_image(x)` one level down: that spelling names a
-target and hides the functor, this one names a direction and hides the functor, and both
-turn an arrow into a noun. The mistake recurs because the surrounding programming model
+map somebody chose. A category-level image accessor has the same defect: it names a
+target and hides the functor. The mistake recurs because the surrounding programming model
 always offers "get the part", and mathematics offers only "apply the map you named".
 
 *The choice is real, so hiding it asserts mathematics.* `R^n` does not project directly to
@@ -622,9 +615,8 @@ see it.
 consequence of stating the map: the inheritance, the constructor threading, the
 construction lifts. An accessor that hands back an ancestor value is a way to obtain that
 value without stating the map — so the mechanism never runs, and the leaf ends up
-reimplementing what it should have received. That is not imprecision. It is a bypass around
-the one mechanism the design rests on, and it is exactly what the `structural_image` call
-sites were.
+reimplementing what it should have received. That is a bypass around the selected-functor
+mechanism.
 
 *And it is what makes the code auditable.* A mathematician can read `U_A(M)` and check it
 against the definition. Reading `M.underlying_object_projection()`, they would have to open
@@ -635,6 +627,31 @@ The same philosophy governs every other implicit choice, not just this accessor.
 coercion, a default ambient category, or a walk to a "common ancestor" is the same defect
 wherever it silently selects a category — which is why common-ancestor tracing has to run
 along a named, citable property of functors and never a heuristic (D61).
+
+**D74 (08-26). A subobject is an object with a monomorphism, and restricting structure to
+one is leaf work.** There is no second notion and no separate name for a representative;
+the equivalence class matters only when deciding whether two subobjects are equal, which is
+a predicate. So `chosen subobject` and `ChosenSubobjects()` name nothing.
+
+The real question the coinage grew out of is who restricts the structure. If `P` is a poset
+presented as `(X, R)`, then `P.subset(...)` returns a subset of `X` and assumes or lifts no
+other structure. Expecting a poset back would require a set-level method to know how to
+handle posets, which reverses the flow of ownership: in the ideal case you write `Sets()`
+once and never touch it again, and every downstream category encapsulates its own concerns.
+
+A leaf that wants subobjects in its own category declares its own method, `X.sub_poset(...)`,
+or overrides the inherited one — calling `super()` for the set and then restricting the order
+itself. It is the poset leaf's job to know everything about applying a partial order to a
+set, including lifting or rewrapping categories further up the graph. Whether the result
+lands in `PartiallyOrderedSets()` or `TotallyOrderedSets()` is that subtree's decision, taken
+by refining inside `sub_poset()` or by offering a second method. Neighbouring subtrees may
+let concerns flow both ways; a general subtree never carries a specific one's.
+
+The categorical fact underneath — that the adjunction between posets and sets preserves
+monomorphisms, which is where "restrict structure to a subset gives a subobject" comes from —
+belongs to the leaf that states it. It is not something the compiler can infer in any useful
+generality, and a compiler that ensures subsets of a poset are posets with no mechanism that
+generalizes beyond posets is defective even when it works.
 
 **D72 (08-27). Categories of structured objects are parameterized by another category.**
 `Semirings`, `Magmas`, `Monoids`, `Rings`, `Modules`, and `Algebras` all take an ambient
@@ -692,9 +709,9 @@ the code, and propose them when the idea surfaces.
 These are naming or modeling choices an agent made that no session ratifies. They stand in
 the repository today and each needs a ruling.
 
-- `Cat().Products().ChosenSubobjects()`. The decision of 08-25 says
+- (resolved 08-28, see D74) `Cat().Products().ChosenSubobjects()`. The decision of 08-25 says
   `Cat().Products().Subobjects()`. The longer name was introduced to break a collision with
-  `C.Subobjects()`. Neither the collision nor the rename has a ruling, and "subcategory" and
+  `C.Subobjects()`. Neither the collision nor the rename had a ruling, and "subcategory" and
   "inclusion functor" were both called colloquial on 08-27 (D61), so the whole family may
   need citable names rather than a longer one.
 

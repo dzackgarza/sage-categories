@@ -40,7 +40,7 @@ A product, pullback, comma, `Fun([1], C)`, or other category construction create
 A leaf reuses those exact objects.
 
 Present structured categories as subobjects of sequence products when their objects have named components.
-The generic `Cat().Products().ChosenSubobjects()` construction then supplies `product_projection(i)`. The leaf selects the applicable indices without restating maps.
+The generic `Cat().Products().Subobjects()` construction then supplies `product_projection(i)`. The leaf selects the applicable indices without restating maps.
 
 For another functor, the leaf supplies its complete object and morphism actions through `Fun(self, Target)`. It selects the strongest established property subcategory before construction.
 The endpoints never select a functor by themselves.

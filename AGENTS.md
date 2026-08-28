@@ -395,40 +395,33 @@ each later image `is` the cached one. A mismatch raises a construction-defect er
 both routes. This agreement is a fact about those functors. It creates no image operation
 on the target category. Method compilation constructs no image and performs no such check.
 
-Sage's dynamic-class construction is the mechanism, and it already works. The kernel
-copies it and closes one gap.
+From the leaf writer's side this is ordinary Python inheritance, and that is the whole
+requirement. What a leaf writes:
 
-Sage builds `parent_class` from a written `ParentMethods`, `element_class` from
-`ElementMethods`, and `morphism_class` from `MorphismMethods`
-(`Category._make_named_class`, `sage/categories/category.py:1498`, and `parent_class` at
-`:1670`), using `dynamic_class(name, bases, cls)`, which inserts the written class's
-methods into the built class and prepends its bases
-(`sage/structure/dynamic_class.py:128`). A dynamic class carries **methods** and not the
-private data those methods need. That single gap is why this kernel exists.
+- `ObjectType`, `ElementType`, and `MorphismType`, as its own nested classes, on a category
+  class that inherits from a base category class;
+- a constructor taking its own category's data, initializing its own state only;
+- for each ancestor category, a functor stating how its own data supplies what that
+  ancestor's constructor requires.
 
-The declared functor closes it. It states how a category's own construction data calls an
-ancestor category's constructor, so `super().__init__()` threading works and the leaf
-constructor initializes only its own data. If `Sets().ObjectType` holds its own private set
-data and a constructor that initializes it, and `Posets()` holds its own private poset data,
-its own constructor, and a functor that supplies what the `Sets()` constructor requires, then
-a poset gets inheritance rather than methods alone. Wiring the constructors is the functor's
-work, so a leaf constructor never accumulates a field for every ancestor category.
+What must then hold, whatever the kernel does to achieve it:
+
+- an object of `C` is an instance of the compiled class of every category `C` declares a
+  functor to, and carries the data those inherited methods need, not the methods alone;
+- a leaf constructor never accumulates a field for an ancestor category;
+- an inherited method is found by ordinary attribute lookup, Python special methods
+  included, and applies to the object the caller named;
+- local declarations win; two declared functors reaching one declaring category share one
+  method owner; unrelated declarations sharing a name are an error.
 
 There is one chain per kind, and the four kinds propagate down from `Cat`. Every category is
 a `Cat().ObjectType`. Every object of a category is a `Cat().ElementType`. Every `X in C` is
 a `C.ObjectType`, and that propagates along the declared functors; elements and morphisms
 follow the same rule. The lineage is as straightforward as Sage's `Parent` and `Element`.
 
-Compile the public method surface from category declarations:
-
-- local declarations take precedence;
-- two declared functors reaching the same declaring category share one method owner;
-- unrelated declarations with the same name are errors;
-- the bases of a compiled class are the compiled classes of its declared targets;
-- a chain that reaches none stands on the kernel class for its kind, which is
-  `Category` for a category;
-- an inherited method reaches the public object by ordinary attribute lookup along that
-  MRO, Python special methods included; there is no per-method forwarding descriptor.
+Sage's dynamic classes already carry inherited methods; what they do not carry is the
+private data those methods need. Supplying that is the kernel's work, and the declared
+functor is where the leaf states it.
 
 A category writes `ObjectType`, `ElementType`, and `MorphismType` as its own nested classes.
 One name per kind: the category writes the class and the kernel compiles it. A category class

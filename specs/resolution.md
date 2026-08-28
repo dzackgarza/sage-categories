@@ -103,7 +103,7 @@ A selected structural functor supplies:
 
 - morphisms;
 
-- the construction-input conversion for each state-bearing target role;
+- the construction-input conversion for each state-bearing target class;
 
 - the target implementation methods;
 
@@ -439,7 +439,7 @@ The compiler distinguishes two kinds of duplicate names.
 ### One declaration reached twice
 
 If a method is owned by \(A\) and both branches reach \(A\), there is one mathematical declaration.
-The compiled role contains the \(A\) node once in its Python MRO. Object construction checks that both routes give the same canonical \(A\)-image.
+The compiled class contains the \(A\) node once in its Python MRO. Object construction checks that both routes give the same canonical \(A\)-image.
 Method compilation installs no route wrapper.
 
 Membership on a ring object in `Sets()` is such a case.
@@ -527,8 +527,8 @@ The architecture uses the following rules.
 
 10. Method-resolution order never decides mathematical meaning.
 
-11. Each compiled role contains the copied local members and the compiled roles of every selected ancestor in controlled C3 order.
-    The object and morphism chains then join the one compiled `Cat().ElementType` root through `ObjectOfCategory` or `MorphismOfCategory`. An ordinary element chain joins it through `ElementOfObject`. Copied functions bind `__class__` to the compiled role.
+11. Each compiled class contains the copied local members and the compiled classes of every selected ancestor in controlled C3 order.
+    The object and morphism chains then join the one compiled `Cat().ElementType` root through `ObjectOfCategory` or `MorphismOfCategory`. An ordinary element chain joins it through `ElementOfObject`. Copied functions bind `__class__` to the compiled class.
     The rebound local initializer remains separate from the generated `__init__` wrapper.
 
 12. The kernel allocates the public value first.
@@ -536,7 +536,7 @@ The architecture uses the following rules.
     The object context adds `ObjectStageIdentity(C)`. The morphism context adds `ArrowStageIdentity(C, A, B)`. An ordinary element keeps its defining morphism.
     A generated class wrapper reads the input for its own node and passes only its local datum to the node initializer.
     Thus adjacent C3 classes need not be joined by a structural edge.
-    The compiler initializes every reachable role and every common ancestor once.
+    The compiler initializes every reachable class and every common ancestor once.
 
 13. A source value retains each ancestor value supplied as defining data.
     A derived ancestor image is constructed once and cached.

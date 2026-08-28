@@ -379,7 +379,7 @@ computational handlers. `ask()` returns `Unknown` unless category placement, an 
 assumption, a cached exact decision, or a categorical implication decides the predicate.
 
 Every functor is explicit.
-Only selected structural functors contribute compiled roles and methods to the public object surface.
+Only selected structural functors contribute compiled classes and methods to the public object surface.
 Ordinary mathematical functors remain available without changing public inheritance.
 
 A functor has an image; a category does not. The image of `x` under the named functor `F`
@@ -400,12 +400,12 @@ Compile the public method surface from category declarations:
 - local declarations take precedence;
 - routes to the same declaring category share one method owner;
 - unrelated declarations with the same name are errors;
-- the bases of a compiled role are the compiled roles of its selected targets;
-- a role that reaches none stands on the kernel role class of its role, which is
+- the bases of a compiled class are the compiled classes of its selected targets;
+- a role that reaches none stands on the kernel class of its role, which is
   `Category` for the category role;
-- the kernel copies each local declaration's class body onto its compiled role and
+- the kernel copies each local declaration's class body onto its compiled class and
   rebinds copied `__class__` closures to that role, so a declaration is not a base;
-- a declaration that is itself the chain's kernel role class is inherited, not copied,
+- a declaration that is itself the chain's kernel class is inherited, not copied,
   so that its Python subclasses can still override it;
 - an inherited method reaches the public object by ordinary attribute lookup along that
   MRO, Python special methods included; there is no per-method forwarding descriptor.
@@ -751,7 +751,7 @@ Treat private fields and private methods as private to their owner or documented
 Ask another object through its public mathematical interface.
 Invoke Python protocols through public syntax such as `f(x)` and `iter(x)`.
 
-Give every value the type that names its mathematical role.
+Give every value the type that names its exact mathematical type.
 Distinguish categories, objects, elements, morphisms, functors, rings, sets, domains, and codomains.
 
 Never use `object` as a type.

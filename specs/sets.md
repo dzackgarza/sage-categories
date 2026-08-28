@@ -435,7 +435,7 @@ The object record retains its canonical object of `Sets()`, membership rule, car
 Every element record retains its canonical generalized set element.
 A point record also retains its selected datum.
 The morphism record retains its canonical set map and rule.
-The element's defining morphism and the morphism's category and endpoints remain in the kernel role identity.
+The element's defining morphism and the morphism's category and endpoints remain in the kernel class identity.
 
 The local datum of each set role is that role's private state record.
 After allocation, direct `Sets()` construction creates the record with the new public value as its canonical image.

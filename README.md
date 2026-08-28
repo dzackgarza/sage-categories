@@ -212,7 +212,7 @@ Two routes to the same declaration share one implementation.
 Incoherent routes and unrelated name collisions fail during compilation.
 
 This gives one public mathematical object instead of a chain of user-visible wrappers.
-The functor images remain available for inspection when their mathematical role matters.
+The functor images remain available for inspection when their exact mathematical type matters.
 
 ## Foundation first
 

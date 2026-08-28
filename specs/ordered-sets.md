@@ -33,7 +33,7 @@ The structural functors form this commutative graph:
 
 Both routes from finite total orders to sets produce one canonical set image.
 
-Each category owns complete implementation roles:
+Each category owns complete implementation classes:
 
 - `ObjectType` implements its objects.
 

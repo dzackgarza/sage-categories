@@ -45,7 +45,7 @@ Its `OrderedCommSemiring NatOrdinal` instance supplies the two distributivity fi
 
 The `Cat()`-level law data is the equations between these functors ([functor.md](functor.md#ambient-algebraic-categories)). `Ordinals()` is skeletal, so the natural sum and the natural product each select one representative and the laws hold as equalities ([Laws in the supplied ambient](magmas-monoids-semirings.md#laws-in-the-supplied-ambient)).
 
-The point functor supplies complete compiled roles and exact constructor conversions.
+The point functor supplies complete compiled classes and exact constructor conversions.
 Those constructors initialize the semiring state before they expose its methods.
 The level shift places `zero()` and `one()` on the category and `+` and `*` on its objects ([Semirings](magmas-monoids-semirings.md#semirings)). One level down, the object surface belongs to the category `Ordinals()` and the element surface belongs to the objects of `Ordinals()`:
 

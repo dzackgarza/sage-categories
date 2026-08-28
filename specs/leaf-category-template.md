@@ -36,8 +36,8 @@ class LeafCategory(Category):
 For each inherited operation, the selected functor must construct every required object and morphism image.
 The compiler does not invent missing maps.
 
-The functor connects the category-owned implementation roles.
-Its object and morphism maps construct the corresponding target roles.
+The functor connects the category-owned implementation classes.
+Its object and morphism maps construct the corresponding target classes.
 A concrete functor category can add an element action when its mathematics supplies one.
 
 A subcategory monomorphism uses the constructor on its fixed-endpoint functor category.

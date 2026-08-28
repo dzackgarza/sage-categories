@@ -5,7 +5,7 @@ It records the discussion that separated structural inheritance from private com
 
 The central rule is:
 
-> `C.ObjectType`, `C.ElementType`, and `C.MorphismType` are the compiled executable classes for `C`. The category defines or links the separate `DeclaredObjectType`, `DeclaredElementType`, and `DeclaredMorphismType` local declarations.
+> `C.ObjectType`, `C.ElementType`, and `C.MorphismType` are the executable classes for `C`. The category writes or links them, and the kernel compiles each into the class of that same name.
 
 These classes are not interfaces for another implementation hierarchy.
 They are not method catalogues that a compiler matches against backend method names.
@@ -98,7 +98,7 @@ The standard definitions already determine the software roles:
 
 - an operation's mathematical signature determines the exact type of the value it applies to, of each parameter, and of its result;
 
-- a selected functor determines the compiled ancestor role and its exact construction-input conversion;
+- a selected functor determines the compiled ancestor class and its exact construction-input conversion;
 
 - an element's ambient mathematical object determines its element role;
 
@@ -138,7 +138,7 @@ The architecture has two independent reuse mechanisms.
 ### Structural inheritance
 
 An implementation already owned by a structural ancestor reaches the leaf through the selected structural functors.
-The kernel compiles its methods and constructor into the descendant role class.
+The kernel compiles its methods and constructor into the descendant class class.
 
 Examples include:
 
@@ -179,9 +179,9 @@ It does not remove the executable bodies of mathematics newly introduced by a le
 
 ## The implementation classes
 
-`ObjectType`, `ElementType`, and `MorphismType` are the compiled public classes.
-Their instances implement the corresponding mathematical roles.
-A category declares its local delta as `DeclaredObjectType`, `DeclaredElementType`, and `DeclaredMorphismType`.
+`ObjectType`, `ElementType`, and `MorphismType` are the executable classes.
+Their instances implement the corresponding exact mathematical types.
+A category writes its local delta into those same three names, and the kernel compiles each in place.
 
 They are not:
 
@@ -198,7 +198,7 @@ They are not:
 - containers for annotations used by runtime dispatch.
 
 Each public operation has one executable declaration on its mathematical owner.
-A local object operation has its body on the category declaration's `DeclaredObjectType`. The kernel copies it into `C.ObjectType`. The same rule applies to elements and morphisms.
+A local object operation has its body on the category's written `ObjectType`. The kernel compiles that class in place. The same rule applies to elements and morphisms.
 
 The implementation class can call dependencies.
 Calling a dependency does not transfer ownership to that dependency.
@@ -316,7 +316,7 @@ A category declaration can define its implementation class locally:
 
 ```python
 class LeafCategory(Category):
-    class DeclaredObjectType(MathematicalObject):
+    class ObjectType(MathematicalObject):
         def leaf_operation(self) -> LeafResult:
             ...
 ```
@@ -325,22 +325,22 @@ It can instead link one imported class:
 
 ```python
 class LeafCategory(Category):
-    DeclaredObjectType = LeafObjectDeclaration
-    DeclaredElementType = LeafElementDeclaration
-    DeclaredMorphismType = LeafMorphismDeclaration
+    ObjectType = LeafObjectClass
+    ElementType = LeafElementClass
+    MorphismType = LeafMorphismClass
 ```
 
-Both forms have one local declaration for each mathematical role.
-The kernel constructs the three compiled public roles separately.
+Both forms have one local declaration for each exact mathematical type.
+The kernel constructs the three compiled public classes separately.
 
-The module then binds its semantic object, element, and morphism names to those compiled roles.
+The module then binds its semantic object, element, and morphism names to those compiled classes.
 These names are the nominal source and stub types.
 
 When the category links an imported class, the category module contains no duplicate method declarations, abstract stubs, or backend method map.
 The linked class is the canonical local declaration.
 
 The link from the category to its local declaration is part of the categorical declaration.
-It does not replace the compiled public role.
+It does not replace the compiled public class.
 
 ## Local methods are ordinary executable methods
 
@@ -388,13 +388,13 @@ Its MRO contains one path from the local role to that common implementation.
 
 For each selected route, the compiler:
 
-- places the ancestor compiled role in the controlled C3 MRO;
+- places the ancestor compiled class in the controlled C3 MRO;
 
-- copies each local member except `__init__` into its own compiled role;
+- copies each local member except `__init__` into its own compiled class;
 
 - rebinds the local initializer and retains it as the node initializer;
 
-- installs one generated wrapper in the compiled role's `__init__` slot;
+- installs one generated wrapper in the compiled class's `__init__` slot;
 
 - uses the functor's constructor conversion to initialize the ancestor state;
 
@@ -646,7 +646,7 @@ Do not elevate a private representation into categorical structure only to dispa
 The default layout keeps the category declaration and its implementation classes together.
 This gives the shortest path from mathematical owner to executable method.
 
-When one implementation class becomes a substantial audit unit, split by mathematical role:
+When one implementation class becomes a substantial audit unit, split by exact mathematical type:
 
 ```text
 finite_posets.py
@@ -663,7 +663,7 @@ This split does not create another implementation surface.
 Do not create one file per type automatically.
 A separate file must contain a substantial coherent implementation unit.
 
-Do not name the sole implementation class `SageFinitePosetObject`. Its mathematical role is `FinitePosetObject`, even when Sage supplies every nontrivial algorithm.
+Do not name the sole implementation class `SageFinitePosetObject`. Its exact mathematical type is `FinitePosetObject`, even when Sage supplies every nontrivial algorithm.
 
 ## Private neighboring engine modules
 
@@ -763,11 +763,11 @@ If changing one mathematical operation requires synchronized edits to two method
 
 | Concern | Owner |
 | --- | --- |
-| Category-local operation name and signature | `DeclaredObjectType`, `DeclaredElementType`, or `DeclaredMorphismType` |
+| Category-local operation name and signature | `ObjectType`, `ElementType`, or `MorphismType` |
 | Category-local executable method body | The same implementation class |
 | Local role constructor and state | The same local implementation declaration |
 | Ancestor constructor conversion | Selected structural functor |
-| Controlled role MRO and constructor composition | Kernel |
+| Controlled class MRO and constructor composition | Kernel |
 | Inherited executable method | Declaring structural ancestor |
 | Public functor images and canonical route checks | Kernel |
 | Choice of exact leaf algorithm | Leaf implementation method |

@@ -159,7 +159,7 @@ def __contains__(self, candidate: Any) -> bool:
 `Unknown` is not `False`, and a bool cannot carry it, so the undecided case fails loudly rather than being reported as non-membership.
 The three-valued question is `ask(C.membership_proposition(x))`, which every caller that must handle the undecided case asks instead.
 
-Placement in a category or a property subcategory is two-valued and therefore never reaches that assertion: a value entered the category or it did not (`POL-CAT-068`). A subcategory whose membership rests on a mathematical predicate instead — endpoint equality in `Mor(C)(A, B)`, or the membership rule of a rule-defined set — can be undecided, and that is the case the assertion catches.
+Placement is a positive shortcut inside that one question, not a second notion of membership: a value that entered through the property constructor already satisfies the defining predicate, so step 1 answers `True` without recomputing (`POL-CAT-068`). A value that never entered still has the defining predicate evaluated, and that predicate can be undecided. Endpoint equality in `Mor(C)(A, B)` and the membership rule of a rule-defined set are the same case. Those are what the assertion catches.
 
 The kernel must not cache `Unknown` as mathematical falsity.
 
@@ -583,7 +583,7 @@ applied to `Sets()`; it is not a class nested inside `Sets`. The axiom is declar
 the implementing class is defined independently anywhere, and one declared field wires
 that class to its ambient category and axiom, as Sage's `_base_category_class_and_axiom`
 does. A property subcategory is therefore an ordinary category class and declares its own
-`DeclaredObjectType`, `DeclaredElementType`, and `DeclaredMorphismType` like any other
+`ObjectType`, `ElementType`, and `MorphismType` like any other
 (`POL-LEAF-059`). Building it by calling a constructor and handing it a dictionary of role
 classes leaves it with nowhere to declare them.
 

@@ -15,6 +15,7 @@ the source was written by the same process these decisions correct.
 
 ## Contents
 
+- [Philosophy](#philosophy)
 - [Purpose and scope](#purpose-and-scope)
 - [Declared functors and inheritance](#declared-functors-and-inheritance)
 - [Elements](#elements)
@@ -25,6 +26,113 @@ the source was written by the same process these decisions correct.
 - [Leaf discipline](#leaf-discipline)
 - [Types and style](#types-and-style)
 - [What the documents are for](#what-the-documents-are-for)
+
+## Philosophy
+
+The decisions below are consequences. These are the reasons, and they were the part that
+never got written down: each rebuild received the rules, could not derive them, and
+substituted something that looked equivalent. A rule you cannot derive is a rule you will
+replace with a synonym.
+
+**Category theory is the DRY mechanism, not decoration.** Sage already computes everything
+this package computes, so computation is not what is being bought. What is being bought is
+that a structure is stated once and reaches everywhere it applies. Products are defined
+once and apply to categories, sets, rings, modules, sheaves, and schemes alike. Inheritance,
+dispatch, and code reuse are engineering answers to a question mathematics answered better,
+and a functor is not a pleasant way to describe a relationship — it is the reuse mechanism
+itself. So writing engineering wiring is the signal that a mathematical statement was
+missed, not a sign that mathematics ran out.
+
+**Categorical placement is the index into a catalogue of algorithms.** The product is an
+easily discoverable and transportable catalogue of algorithms, reached by slotting an object
+into the correct category. That is why placement has to be principled: a wrong placement is
+not a taxonomy error, it is a wrong answer about which algorithms apply to your object. It
+is also why a value is constructed into the strongest category its mathematics supports —
+that is how the right algorithms become reachable.
+
+**A definition determines a complete interface, and an implementation cannot forget part of
+it.** This is the defect being repaired. Sage's `IntegralLattice` does not know its
+underlying set is `ZZ^n`, so `ZZ^n` is not recognised as a product, and Sage can neither
+count nor iterate it, even though `ZZ` enumerates. Sage has three free modules with
+different operations and inconsistent inherited cardinality. If `X` is a set it has a
+cardinality — not because an author remembered to write one, but because that is what being
+a set means. Inheritance is therefore total and automatic, never opt-in.
+
+**Rigour is a floor, not a mandate to build.** The obligation is to be mathematically
+principled and never to do anything ill-defined. It is not to satisfy a self-imposed
+mathematical programme with new machinery. Proving things belongs in a language like Lean.
+When a design question turns out to be about formalization rather than about a decision the
+code must make, the answer is to drop the question, not to build the apparatus. Three
+successive coherence subsystems were built for a mandate that did not exist.
+
+**Construction is assertion.** Placing a value in a category is how a theorem is stated;
+the writer is trusted, and a citation on the construction line is what an auditing
+mathematician reads. There is no separate certificate, authority token, or proof record,
+because they would duplicate what the placement already says, and duplicating it invites the
+two to disagree.
+
+**Information flows from the kernel downstream, never upstream.** A kernel that knows what a
+poset is — that ensures subsets of a poset are posets, with no mechanism that generalizes —
+is defective even when it works. The test is not whether the mechanism produces the right
+answer for the category in front of you; it is whether the mechanism could have been written
+without knowing that category exists.
+
+**A justification must survive weakening its hypotheses.** Checking a kernel by testing that
+a matrix rank is zero is wrong the moment `R` stops being a field, because torsion makes a
+nonzero module have rank zero. Hard-tying an implementation to `ZZ` is wrong when the
+algorithm only needed a PID. An implementation that happens to be correct in its current
+category is still wrong if its *reason* is specific to that category. Ask what the argument
+rests on, not whether the answer comes out right here.
+
+**Never encode a non-finitary concept in a finitary structure.** The components of a natural
+transformation are an indexed family, not a tuple, because almost every category in use is
+infinite. Cardinality is not obtained by enumeration, because the set may be `{2, 4, ...}`
+or `{1, ..., 10^10}`. The underlying set of `Free_R(S)` exists by a membership rule and a
+cardinality rule, with nothing to enumerate and nothing to compare.
+
+**Complexity has a direction.** It may accumulate in the kernel, and only in exchange for
+removing it from every leaf. A kernel feature that does not shrink a leaf is a net loss, and
+a leaf carrying wiring is evidence the kernel has not paid for itself.
+
+**The mathematics is the interface; the presentation must not leak.** A group is technically
+`(X, f)` and a lattice is technically `(L, b)`, but nobody works with them as ordered pairs.
+Publicly a lattice *is* a module with more structure. An ordered pair is a fine private
+representation and an unacceptable public one, which is why every `underlying_Y()` deserves
+suspicion: it is a presentation escaping into the API.
+
+**Depth in the graph bounds vocabulary.** A leaf mentioning cardinality in a lattice subtree
+is a red flag, not because of layering discipline but because cardinality is not part of
+what a lattice is. Vocabulary that leaks across the graph is a mathematical error before it
+is a structural one.
+
+**Auditability is achieved by concentrating violations, not by forbidding them.** The kernel
+subtree is where ordinary Python lives, and that is the firewall. Engine boundaries are
+quarantined in their own subtrees, where repository rules may be broken out of necessity.
+The purpose is that every other subtree can then be read as mathematics, and a reader knows
+by location where to expect something else.
+
+**The user should not need to know the framework.** Nobody writes `FiniteSet({1, 2, 3})`;
+`Sets({1, 2, 3})` routes. A small number of high-level endpoints are the interface, and
+discoverability comes from names mathematicians already know. The code exists to reduce
+cognitive load, so requiring knowledge of the category graph in order to use it defeats the
+purpose.
+
+**Prior art before invention, and mathematical structure is itself prior art.** Sage already
+supports semirings and posets, so cardinals are built on them rather than hand-rolled. Any
+Python, Sage, SymPy, GAP, Singular, Macaulay2, Julia, or published package is available
+inside an implementation. Before encoding something, look for the structure that already
+encodes it and for other systems that have solved it.
+
+**A finding is an instance of a principle.** When a violation is identified, the violation
+is not the finding — the principle it instantiates is, and that principle is the reason the
+instance is wrong. Fixing the instance alone leaves every sibling in place and teaches
+nothing.
+
+**A local repair on a wrong architecture is negative progress.** Polishing the wrong
+structure removes the pressure that would have forced the real fix while leaving the
+structure in place, so the result is worse than having done nothing. The same holds for
+deleting a test that senses a defect: repair what it senses, and the test becomes
+unformulable on its own.
 
 ## Purpose and scope
 

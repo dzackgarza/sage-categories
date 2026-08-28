@@ -109,8 +109,8 @@ A declared functor supplies:
 
 - the morphisms in universal constructions.
 
-The compiler also keeps canonical images in reachable categories.
-Therefore, a route choice can affect exact parent identity, morphism domains and codomains, element parents, projections, injections, and mediating morphisms.
+Each named functor owns its public images.
+The compiler keeps only the constructor data needed to initialize each reachable class on the structured source instance.
 
 Two implementations can be mathematically isomorphic without being the same chosen implementation.
 A tuple product and a vector-space product are a simple example.
@@ -118,11 +118,8 @@ Their elements can use different parents.
 Their projections can have different exact domains.
 
 Thus, method order alone is insufficient.
-A route resolution must select or identify the complete mathematical image and initialize its role state, not only choose a method body.
-
-Implicit coherence is safe when both routes are strict in this framework.
-They must produce the same canonical object, element, and morphism images by identity.
-It is unsafe to treat a nonidentity natural isomorphism as literal identity.
+All selected paths to one target class must supply the same exact constructor datum.
+This requirement does not identify the public images of different functors.
 
 ## The first proposed resolution
 

@@ -4,41 +4,36 @@ Replace each `Leaf`, `Base`, and `defining_data` name with its mathematical name
 Keep only methods introduced by the leaf structure.
 
 ```python
-class LeafObject(MathematicalObject):
-    def __init__(
-        self,
-        *,
-        category: LeafCategory,
-        defining_data: LeafDefiningData,
-    ) -> None:
-        self._defining_data = defining_data
-        super().__init__(category=category)
-
-    def leaf_operation(self) -> LeafResult:
-        """Return the result of an operation introduced by this structure."""
-        ...
-
-
 class LeafCategory(Category):
-    ObjectType = LeafObject
-    ElementType = LeafElement
+    class ObjectType:
+        def __init__(self, defining_data: LeafDefiningData) -> None:
+            self._defining_data = defining_data
+            super().__init__()
 
-    def __call__(self, defining_data: LeafDefiningData) -> LeafObject:
-        return self.ObjectType(category=self, defining_data=defining_data)
+        def leaf_operation(self) -> LeafResult:
+            """Return the result introduced by this structure."""
+            ...
+
+    class ElementType:
+        """Implement points of leaf objects."""
+
+    class MorphismType:
+        """Implement leaf morphisms."""
+
+    def __call__(self, defining_data: LeafDefiningData) -> ObjectType:
+        return self.ObjectType(defining_data)
 
     def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-        """Return the selected immediate declared functors."""
+        """Return the selected immediate structural functors."""
         ...
 ```
 
 `Category` is `Cat().ObjectType`. Each entry in `structure_functors()` is an explicitly constructed object of `Fun = Mor(Cat())`. Include only immediate functors whose target catalogue supplies the leaf's inherited public surface.
 
-For each inherited operation, the declared functor must construct every required object and morphism image.
-The compiler does not invent missing maps.
-
-The functor connects the category-owned implementation classes.
-Its object and morphism maps construct the corresponding target classes.
-A concrete functor category can add an element action when its mathematics supplies one.
+For each inherited operation, the selected functor supplies one pure conversion from source construction data to target constructor data.
+The functor uses that conversion for its public image.
+The kernel uses the same conversion to initialize the target class on the source instance.
+Point actions derive from morphism actions and the declared terminal-object comparison.
 
 A subcategory monomorphism uses the constructor on its fixed-endpoint functor category.
 A product, pullback, comma, `Fun([1], C)`, or other category construction creates and retains its named projection functors.

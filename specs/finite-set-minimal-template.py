@@ -1,69 +1,60 @@
-"""Minimal leaf for the property category ``Sets().Finite()``.
+"""Minimal property category for finite sets.
 
-This file is design pseudocode (``POL-LEAF-014``). It shows the shape and the
-simplicity a leaf must have. It is never imported, executed, or type-checked, and
-its identifiers are illustrative rather than normative.
-
-See ``specs/functor.md`` for structural-functor declarations.
-
-The leaf constructs the finiteness proposition. A private set backend decides only its
-supported semantic cases. The property category binds that backend after its declaration.
-The predicate kernel owns ``ask()``, ``assume()``, proposition ``.assume()``, and positive
-same-object refinement.
+This file is design pseudocode (``POL-LEAF-014``). Its identifiers show the
+required contract. They do not define a second framework API.
 """
 
 from __future__ import annotations
 
 
 class SetsCategory(Category):
-    class ObjectType(Implementation):
+    class ObjectType:
         def is_finite(self) -> Proposition:
-            """Return the finite-set membership proposition."""
-            return Sets().Finite().membership_proposition(self)
+            """Return membership in the finite-set property category."""
+            return FiniteSets().membership_proposition(self)
 
-    class Finite(Category):
-        """The full property subcategory of finite sets."""
+    class ElementType:
+        """Implement points ``1 -> X`` of sets."""
 
-        def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
-            """Select the monomorphism that supplies the inherited set catalogue.
-
-            This tuple is not a list of all functors from finite sets.
-            The full-subcategory construction supplies its maps and constructs it in
-            the fixed-endpoint functor category. Other functors remain in ``Fun``.
-            """
-            return (Fun(self, Sets()).Monomorphisms().Isofibrations().Full()(),)
-
-        def membership_proposition(
-            self,
-            X: SetsCategory.ObjectType,
-        ) -> Proposition:
-            """Return the proposition that ``X`` has finite cardinality."""
-            return self.applied_predicate(
-                X,
-                definition=X.cardinality() < ALEPH_ZERO,
-            )
-
-        class ObjectType(Implementation):
-            """Implement only the operations introduced by known finiteness.
-
-            No initializer repeats set construction.  The kernel-owned monomorphism
-            supplies the canonical ``Sets().ObjectType`` image.
-            """
-
-            def cardinality_parity(self) -> Proposition:
-                """Return the proposition that the cardinality is even."""
-                return self.cardinality() % 2 == 0
+    class MorphismType:
+        """Implement total set maps."""
 
 
-FiniteSets = SetsCategory.Finite
+class FiniteSets(CategoryWithAxiom):
+    """The full property subcategory of finite sets."""
+
+    _base_category_class_and_axiom = (SetsCategory, "Finite")
+
+    class ObjectType:
+        """Add operations valid for known finite sets."""
+
+        def cardinality_parity(self) -> Proposition:
+            """Return the proposition that the cardinality is even."""
+            return self.cardinality() % 2 == 0
+
+    class ElementType:
+        """Add no data to a point of a finite set."""
+
+    class MorphismType:
+        """Add no data to a map between finite sets."""
+
+    def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
+        """Select the full subcategory monomorphism into ``Sets()``."""
+        return (Fun(self, Sets()).Monomorphisms().Isofibrations().Full()(),)
+
+    def membership_proposition(
+        self,
+        X: SetsCategory.ObjectType,
+    ) -> Proposition:
+        """Return the proposition that ``X`` has finite cardinality."""
+        return self.applied_predicate(
+            X,
+            definition=X.cardinality() < ALEPH_ZERO,
+        )
 
 
 def decide_finiteness(X: SetsCategory.ObjectType) -> Decision:
-    """Return an exact decision for the supported private-backend cases.
-
-    Put this entry point and its engine calls in a private set-computation module in the
-    implementation. Replace these pattern names with the owned semantic constructions.
-    """
+    """Return an exact decision for supported private-engine cases."""
     match X:
         case ExplicitFiniteSet():
             return True
@@ -73,15 +64,7 @@ def decide_finiteness(X: SetsCategory.ObjectType) -> Decision:
             return Unknown
 
 
-Sets().Finite().register_exact_handler(
+FiniteSets().register_exact_handler(
     SetsCategory.ObjectType,
     decide_finiteness,
 )
-
-
-# All public routes use the proposition returned by ``X.is_finite()``:
-#
-# proposition = X.is_finite()
-# ask(proposition)       # Decide from placement, assumptions, or exact handlers.
-# assume(proposition)    # Assert and refine in the active mathematical context.
-# proposition.assume()   # The equivalent proposition-owned assumption spelling.

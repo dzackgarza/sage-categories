@@ -10,10 +10,12 @@ These files govern substantive work. Read the relevant sections for the active t
 - `README.md` defines the goal and mathematical philosophy.
 - `CONTRIBUTING.md` is the coding-policy index. Its `POL-*` identifiers are stable review references.
 - `specs/decisions.md` records the architectural decisions the owner stated in working
-  sessions, with dates. It is the source of the architecture. When a specification, a
-  policy row, a plan, or a report disagrees with it, that other artifact is the defect.
-  Read it before proposing an architecture, and never re-derive a decision from source
-  code: the source was written by the process those decisions correct.
+  sessions, with dates, above a Philosophy section giving the reasons they follow from.
+  It is the source of the architecture. When a specification, a policy row, a plan, or a
+  report disagrees with it, that other artifact is the defect. Read the Philosophy first:
+  a rule you cannot derive is a rule you will replace with a synonym, which is how every
+  previous rebuild drifted. Never re-derive a decision from source code — the source was
+  written by the process those decisions correct.
 
 ## Policy and specification traceability
 

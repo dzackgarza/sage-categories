@@ -320,7 +320,6 @@ Define `Fun = Mor(Cat())`. Thus `Fun(C, D)` owns construction of functors from `
 ```python
 Fun(C, D)(on_object, on_morphism)
 Fun(S, T).Monomorphisms().Isofibrations().Full()()
-Fun(C, C).Equivalences().identity()
 ```
 
 A mathematical construction creates each named functor through this category. It retains
@@ -338,11 +337,19 @@ The hom object at the `Cat` level is the category `Mor(C)(A, B)`.
 For example, `Fun(C, D)` has natural transformations as its morphisms.
 Only `Sets()` identifies its hom objects with sets of functions: `Mor(Sets())(A, B)` is the discrete category on the maps `A -> B`, and `B ** A` is the function set.
 
+For `X in C`, let `End_C(X)` be the endomorphism monoid on `Mor(C)(X, X)` under
+composition. Its unit `End_C(X).one()` is the identity morphism of `X`.
+
 The `Cat` level supplies the uniform category constructors:
 
 - `Mor(n, C)` for every `n`;
 - the property subcategories `Mor(C).Monomorphisms()`, `.Epimorphisms()`, `.Isomorphisms()`, `.Endomorphisms()`, and `.Automorphisms()`, and for `Fun` also `.Full()`, `.Faithful()`, `.FullyFaithful()`, `.EssentiallySurjective()`, and `.Equivalences()`, with endpoint dispatch `P(A, B) = Mor(K)(A, B).P()` for every property subcategory `P` of `Mor(K)`;
 - `Products()`, `Coproducts()`, `Limits(I)`, and `Colimits(I)` for a supplied shape `I in Cat()`, and `Subobjects()`.
+
+The fixed-object construction categories are `C.Subobjects()(X)`,
+`C.Superobjects()(X)`, `C.CoveringObjects()(X)`, and `C.CoveredObjects()(X)`.
+The set-specific operation `X.subset_from(predicate)` constructs an object of
+`Sets().Subobjects()(X)`.
 
 Apply products and coproducts to `Cat()` itself. For a sequence of categories:
 

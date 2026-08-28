@@ -724,7 +724,9 @@ This repository records the exact construction instead of defining an unnamed de
 
 ### Identity and composition
 
-`Fun(C, C).Equivalences().identity()` constructs the identity functor on `C`. Functor composition uses the composition of morphisms owned by `Cat`.
+For `X in C`, let `End_C(X)` be the endomorphism monoid on `Mor(C)(X, X)` under composition.
+Its unit `End_C(X).one()` is the identity morphism of `X`.
+For `C in Cat()`, this gives the identity functor as `End_Cat(C).one()`.
 
 ### Subcategory monomorphisms
 
@@ -990,7 +992,7 @@ Mathlib's arrow category has morphisms as objects and commuting squares as morph
 | --- | --- |
 | `CategoryTheory.Functor C D` | `Cat().MorphismType` with domain `C` and codomain `D` |
 | `C ⥤ D` | `Mor(Cat())(C, D)` or `Fun(C, D)` |
-| `Functor.id C` | `Fun(C, C).Equivalences().identity()` |
+| `Functor.id C` | `End_Cat(C).one()` |
 | `Functor.fromPUnit X` | the point functor of `X`, an object of `Fun(Cat().Point(X), D)` |
 | `ObjectProperty.FullSubcategory P` | the property subcategory `C.P()` |
 | `ObjectProperty.ι P` | `Fun(C.P(), C).Monomorphisms().Isofibrations().Full()()` |

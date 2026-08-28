@@ -58,12 +58,12 @@ Mor(Sets())(X, X).Automorphisms()
 Mor(Sets())(X, Y).Isomorphisms()
 Mor(Sets())(X, Y).Monomorphisms()
 Mor(Sets())(X, Y).Epimorphisms()
-X.identity()
 
-X.subobjects()
-X.superobjects()
-X.covering_objects()
-X.covered_objects()
+Sets().Subobjects()(X)
+Sets().Superobjects()(X)
+Sets().CoveringObjects()(X)
+Sets().CoveredObjects()(X)
+X.subset_from(predicate)
 
 Y ** X
 X * Y
@@ -71,7 +71,7 @@ X + Y
 ```
 
 Generic categorical methods come from the category foundation.
-`Sets()` does not create another implementation of identity, composition, or morphism-category formation.
+`Sets()` supplies set-specific realizations and algorithms to those owners.
 
 `X.cardinality()` returns an applied predicate with result category `Cardinal()`.
 `ask(X.cardinality())` returns an owned cardinal or Sage `Unknown`.

@@ -420,13 +420,7 @@ M = Mor(Cardinal()).Monomorphisms()(kappa, lambda)
 kappa <= lambda  # dispatches to M.is_inhabited()
 ```
 
-The base-category identity is an object of the endomorphism category:
-
-```python
-kappa.identity() in Mor(Cardinal())(kappa, kappa)
-```
-
-Inherited base-category composition is ordinary function composition.
+Cardinal morphisms compose by ordinary function composition.
 The coproduct, product, and function set of `Sets()` act on the representative functions through their universal constructions there.
 Addition, multiplication, and exponentiation act on cardinal morphisms through the universal constructions of `Cardinal()` itself.
 

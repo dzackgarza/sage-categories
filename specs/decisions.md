@@ -386,6 +386,8 @@ This corrects the existing vocabulary rather than adding to it. `specs/functor.m
 **D82 (08-28, `77631b59` 2026-08-28T18:00:33Z). `Cat` holds a mathematical planning surface.** It declares the categories the repository expects: points such as `Sets`, `Posets`, `NN`, and `ZZ`; construction functors such as `MagmaObjects(C)`, `MonoidObjects(C)`, and `RingObjects(C)`; and the specializations those give, `Monoids := MonoidObjects(Sets())`.
 Every declaration is a functor into `Cat()`, and the parameter it takes is that functor's domain; a category with no parameter is the terminal-domain case. A declaration no leaf implements is a work queue for leaf writers, auditable against, and never a check that fails a build (`AGENTS.md`, "Tests"). [Declared categories and their implementations](functor.md#declared-categories-and-their-implementations) states the mechanism.
 
+**D84 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T18:36Z). Identity morphisms and object-dependent constructions keep their mathematical owners.** For `X in C`, the identity morphism is `End_C(X).one()`, the unit of the endomorphism monoid on `Mor(C)(X, X)` under composition. The generic fixed-object construction categories are `C.Subobjects()(X)`, `C.Superobjects()(X)`, `C.CoveringObjects()(X)`, and `C.CoveredObjects()(X)`. The set-specific operation `X.subset_from(predicate)` constructs an object of `Sets().Subobjects()(X)`.
+
 **D77 (08-28). The leaf writer's contract is a closed list.** The kernel exists to make this list short, so anything a leaf must supply beyond it is a kernel defect, not a leaf obligation.
 
 1. `ObjectType`, `ElementType`, and `MorphismType`, as nested classes.

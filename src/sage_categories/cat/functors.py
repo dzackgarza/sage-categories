@@ -397,26 +397,26 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         afterwards, in the property category a full subcategory declares.
         """
         self._bootstrapping = True
-        self._full = PropertySubcategory(self, "Full", {}, ())
-        self._faithful = PropertySubcategory(self, "Faithful", {}, ())
-        self._essentially_surjective = PropertySubcategory(self, "EssentiallySurjective", {}, ())
-        # FullyFaithful implies Full and Faithful; Equivalences implies FullyFaithful
-        # and EssentiallySurjective (Mathlib ``Functor.FullyFaithful.full``,
+        self._full = PropertySubcategory(self, "Full", ())
+        self._faithful = PropertySubcategory(self, "Faithful", ())
+        self._essentially_surjective = PropertySubcategory(self, "EssentiallySurjective", ())
+        # FullyFaithful is a full subcategory of Full and of Faithful; Equivalences of
+        # FullyFaithful and of EssentiallySurjective (Mathlib ``Functor.FullyFaithful.full``,
         # ``Functor.FullyFaithful.faithful``, ``Functor.IsEquivalence``; inspected 2026-08-26).
-        self._fully_faithful = PropertySubcategory(self, "FullyFaithful", {}, (self._full, self._faithful))
-        self._equivalences = PropertySubcategory(self, "Equivalences", {}, (self._fully_faithful, self._essentially_surjective))
+        self._fully_faithful = PropertySubcategory(self, "FullyFaithful", (self._full, self._faithful))
+        self._equivalences = PropertySubcategory(self, "Equivalences", (self._fully_faithful, self._essentially_surjective))
         # A subcategory of ``T`` is a subobject of ``T`` in ``Cat()``, and the two
         # conditions on the monomorphism that presents it are monicity and repleteness of
         # the image, which is exactly the isofibration condition (Kerodon, Example
         # 4.4.1.12, https://kerodon.net/tag/01EX, inspected 2026-08-28; nLab, replete
         # subcategory, inspected 2026-08-28).  Placement follows a functor with both, and
         # no other (POL-FUN-036; ``specs/functor.md``, "Monomorphisms of Cat() and placement").
-        self._isofibrations = PropertySubcategory(self, "Isofibrations", {}, ())
+        self._isofibrations = PropertySubcategory(self, "Isofibrations", ())
         # A monomorphism of ``Cat()`` is faithful and injective on objects, so
-        # faithfulness is a recorded implication (nLab, subcategory,
+        # ``Monomorphisms`` is a full subcategory of ``Faithful`` (nLab, subcategory,
         # https://ncatlab.org/nlab/show/subcategory, inspected 2026-08-28: "A functor is
         # easily verified to be monic iff it is faithful and injective on objects").
-        self._monomorphisms = PropertySubcategory(self, "Monomorphisms", {}, (self._faithful,))
+        self._monomorphisms = PropertySubcategory(self, "Monomorphisms", (self._faithful,))
         partial = self._monomorphisms.property_subcategory(self._isofibrations)
         declared = {False: partial, True: partial.property_subcategory(self._full)}
         self._bootstrapped = True
@@ -462,7 +462,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         return self._isofibrations
 
     def Monomorphisms(self) -> Category:
-        """Monic functors: faithful and injective on objects, so ``Faithful`` is a recorded implication."""
+        """Monic functors: faithful and injective on objects, so this is a full subcategory of ``Faithful()``."""
         if not self._bootstrapped:
             self._bootstrap()
         return self._monomorphisms

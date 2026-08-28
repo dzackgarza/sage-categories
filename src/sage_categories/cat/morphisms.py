@@ -18,11 +18,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal, overload
 
-from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import TripleDict
 
 from sage_categories.cat.category import Category, member
-from sage_categories.cat.properties import FullSubcategory, PropertySubcategory
+from sage_categories.cat.properties import Axiom, FullSubcategory, PropertySubcategory
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask
 from sage_categories.kernel.refinement import refine
@@ -31,7 +30,7 @@ from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, Obje
 if TYPE_CHECKING:
     from sage_categories.cat.properties import FixedEndpointProperty
 
-__all__ = ["FixedEndpointCategory", "Mor", "MorphismCategory", "inhabited"]
+__all__ = ["EndomorphismsCategory", "FixedEndpointCategory", "IsomorphismsCategory", "Mor", "MorphismCategory", "inhabited"]
 
 
 @overload
@@ -199,41 +198,21 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
     ) -> MorphismOfCategory:
         return self._base.construct_two_morphism(source, target, *args, **kwargs)
 
-    # -- property subcategories, defined once for every ``C`` (POL-FUN-024) -------------
+    # -- property axioms, declared once for every ``C`` (POL-FUN-024) -------------------
 
     # ``D`` included in ``C`` derives ``Mor(D).P()`` as the narrowing of ``Mor(C).P()``
-    # (POL-CAT-084).  Each root property is constructed once per morphism category
-    # and retained by the method that names it (Sage ``cached_method``).
+    # (POL-CAT-084).  Each axiom states that derivation once and constructs its
+    # subcategory once per morphism category; ``Mor(D)`` is the declared subcategory of
+    # ``Mor(C)`` that the narrowing runs on.
+    #
+    # An isomorphism is monic and epic, so ``Mor(C).Isomorphisms()`` is a full subcategory
+    # of both ``Mor(C).Monomorphisms()`` and ``Mor(C).Epimorphisms()``
+    # (``specs/undecidable-properties.md``, "How ask() works"; D83).
 
-    @cached_method
-    def Monomorphisms(self) -> Category:
-        if self._base.has_ambient():
-            return self.property_subcategory(self._base.ambient().morphism_category(1).Monomorphisms())
-        return PropertySubcategory(self, "Monomorphisms", {}, ())
-
-    @cached_method
-    def Epimorphisms(self) -> Category:
-        if self._base.has_ambient():
-            return self.property_subcategory(self._base.ambient().morphism_category(1).Epimorphisms())
-        return PropertySubcategory(self, "Epimorphisms", {}, ())
-
-    @cached_method
-    def Isomorphisms(self) -> Category:
-        from sage_categories.cat.properties import IsomorphismRole
-
-        if self._base.has_ambient():
-            return self.property_subcategory(self._base.ambient().morphism_category(1).Isomorphisms())
-        # An isomorphism is monic and epic (``specs/undecidable-properties.md``,
-        # "How ask() works": Isomorphism implies Monomorphism and Epimorphism).
-        return PropertySubcategory(self, "Isomorphisms", {Role.OBJECT: IsomorphismRole}, (self.Monomorphisms(), self.Epimorphisms()))
-
-    @cached_method
-    def Endomorphisms(self) -> Category:
-        if self._base.has_ambient():
-            return self.property_subcategory(self._base.ambient().morphism_category(1).Endomorphisms())
-        endomorphisms = PropertySubcategory(self, "Endomorphisms", {}, ())
-        endomorphisms.predicate().register_handler(_endomorphism_by_equality)
-        return endomorphisms
+    Monomorphisms = Axiom()
+    Epimorphisms = Axiom()
+    Isomorphisms = Axiom(full_subcategory_of=(Monomorphisms, Epimorphisms))
+    Endomorphisms = Axiom()
 
     def Automorphisms(self) -> Category:
         """``Mor(C).Endomorphisms().Isomorphisms()``."""
@@ -241,6 +220,29 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
 
     def __repr__(self) -> str:
         return f"Mor({self._base!r})"
+
+
+class IsomorphismsCategory[**MorphismData, **TwoMorphismData](PropertySubcategory[MorphismData, TwoMorphismData]):
+    """``Mor(C).Isomorphisms()``: the implementation of the ``Isomorphisms`` axiom of ``Mor(C)``."""
+
+    _base_category_class_and_axiom = (MorphismCategory, "Isomorphisms")
+
+    class ObjectType(MorphismOfCategory):
+        """An isomorphism of ``C``: the isomorphism category owns inversion (POL-CAT-079)."""
+
+        def inverse(self) -> MorphismOfCategory:
+            """The inverse: the retained one when the construction supplied it, else the category-owned one."""
+            return self.base_category().inverse_morphism(self)
+
+
+class EndomorphismsCategory[**MorphismData, **TwoMorphismData](PropertySubcategory[MorphismData, TwoMorphismData]):
+    """``Mor(C).Endomorphisms()``: the implementation of the ``Endomorphisms`` axiom of ``Mor(C)``."""
+
+    _base_category_class_and_axiom = (MorphismCategory, "Endomorphisms")
+
+    def __init__(self, ambient: Category, name: str, full_subcategory_of: tuple[Category, ...]) -> None:
+        super().__init__(ambient, name, full_subcategory_of)
+        self.predicate().register_handler(_endomorphism_by_equality)
 
 
 class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[TwoMorphismData, []]):

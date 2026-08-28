@@ -1,11 +1,10 @@
 """Canonical structural inputs through functor-owned conversions.
 
 Selected functors supply the object, element, and morphism construction-input
-conversions.  This module composes those conversions along complete structural
-routes and checks diamonds by their constructor data, never by their public
-images (POL-CAT-061/066/071, POL-FUN-003/035; ``specs/resolution.md``,
-"Constructor agreement and functor images").  It never participates in inherited
-method dispatch.
+conversions.  The compiler composes them once per node it reaches
+(``kernel/compiler.py``, ``object_inputs``); this module reads the composite at one
+named target and retains the canonical image built from it (POL-CAT-061/066/071,
+POL-FUN-003/035).  It never participates in inherited method dispatch.
 """
 
 from __future__ import annotations
@@ -64,67 +63,6 @@ def _from_construction(placement: Category, constructed_in: Category) -> bool:
     return is_subcategory(placement, constructed_in)
 
 
-def _routes(source: compiler.Node, target: compiler.Node) -> tuple[compiler.Route, ...]:
-    assert source.role is target.role
-    routes = compiler.routes(source, target)
-    assert routes, f"{source.category!r} has no selected route to {target.category!r}"
-    return routes
-
-
-def _object_route[
-    SourceValue: ObjectOfCategory,
-    SourceDatum,
-    TargetValue: ObjectOfCategory,
-    TargetDatum,
-](
-    source: ObjectConstructionInput[SourceValue, SourceDatum],
-    route: compiler.Route,
-) -> ObjectConstructionInput[TargetValue, TargetDatum]:
-    current = source
-    for step in route:
-        # A selected route keeps its role: a level shift changes it and ends in the
-        # element role, so it never occurs on a route between two object nodes.
-        assert step.source_role is Role.OBJECT and step.functor is not None
-        current = step.functor.object_constructor_input(current)
-    return current
-
-
-def _element_route[
-    SourceValue: CategoryPoint,
-    SourceDatum,
-    TargetValue: CategoryPoint,
-    TargetDatum,
-](
-    source: ElementConstructionInput[SourceValue, SourceDatum],
-    route: compiler.Route,
-) -> ElementConstructionInput[TargetValue, TargetDatum]:
-    current = source
-    for step in route:
-        # A selected route keeps its role: a level shift changes it and ends in the
-        # element role, so it never occurs on a route between two element nodes.
-        assert step.source_role is Role.ELEMENT and step.functor is not None
-        current = step.functor.element_constructor_input(current)
-    return current
-
-
-def _morphism_route[
-    SourceValue: MorphismOfCategory,
-    SourceDatum,
-    TargetValue: MorphismOfCategory,
-    TargetDatum,
-](
-    source: MorphismConstructionInput[SourceValue, SourceDatum],
-    route: compiler.Route,
-) -> MorphismConstructionInput[TargetValue, TargetDatum]:
-    current = source
-    for step in route:
-        # A selected route keeps its role: a level shift changes it and ends in the
-        # element role, so it never occurs on a route between two morphism nodes.
-        assert step.source_role is Role.MORPHISM and step.functor is not None
-        current = step.functor.morphism_constructor_input(current)
-    return current
-
-
 def _object_input_at[
     SourceValue: ObjectOfCategory,
     SourceDatum,
@@ -139,12 +77,9 @@ def _object_input_at[
         f"{source.canonical_image!r} is placed in {source_node.category!r}, which is not the category "
         f"{source.identity.category!r} it was constructed in or a refinement of it"
     )
-    routes = _routes(source_node, target)
-    first = _object_route(source, routes[0])
-    for route in routes[1:]:
-        candidate = _object_route(source, route)
-        compiler.assert_data_agree("object", (first.datum, routes[0]), (candidate.datum, route), target)
-    return first
+    found = next((reached for owner, reached in compiler.object_inputs(source_node, source) if compiler.same_node(owner, target)), None)
+    assert found is not None, f"{source_node.category!r} selects no functors reaching {target.category!r}"
+    return found
 
 
 def _element_input_at[
@@ -165,12 +100,9 @@ def _element_input_at[
         f"{source.canonical_image!r} is placed in {source_node.category!r}, which is not the category "
         f"{category!r} of its parent or a refinement of it"
     )
-    routes = _routes(source_node, target)
-    first = _element_route(source, routes[0])
-    for route in routes[1:]:
-        candidate = _element_route(source, route)
-        compiler.assert_data_agree("element", (first.datum, routes[0]), (candidate.datum, route), target)
-    return first
+    found = next((reached for owner, reached in compiler.element_inputs(source_node, source) if compiler.same_node(owner, target)), None)
+    assert found is not None, f"{source_node.category!r} selects no functors reaching {target.category!r}"
+    return found
 
 
 def _morphism_input_at[
@@ -187,12 +119,9 @@ def _morphism_input_at[
         f"{source.canonical_image!r} is placed in {source_node.category!r}, which is not the category "
         f"{source.identity.category!r} it was constructed in or a refinement of it"
     )
-    routes = _routes(source_node, target)
-    first = _morphism_route(source, routes[0])
-    for route in routes[1:]:
-        candidate = _morphism_route(source, route)
-        compiler.assert_data_agree("morphism", (first.datum, routes[0]), (candidate.datum, route), target)
-    return first
+    found = next((reached for owner, reached in compiler.morphism_inputs(source_node, source) if compiler.same_node(owner, target)), None)
+    assert found is not None, f"{source_node.category!r} selects no functors reaching {target.category!r}"
+    return found
 
 
 @overload

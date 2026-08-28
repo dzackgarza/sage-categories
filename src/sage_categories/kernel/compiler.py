@@ -3,9 +3,8 @@
 The selected graph is ``structure_functors()`` alone.  Its nodes are pairs
 ``(category, role)``; the node ``(Mor(C), object)`` *is* the node ``(C, morphism)``
 (POL-CAT-021: one implementation type, one value, two placements), which
-``Category.role_source`` normalizes.  A route is a simple directed path of ``Step``
-edges; the graph reachable from a category is a finite DAG, asserted at compile time
-(POL-CAT-012).
+``Category.role_source`` normalizes.  The graph a category reaches through its selected
+functors is a finite DAG, asserted at compile time (POL-CAT-012).
 
 Method catalogue of a node (``specs/resolution.md``):
 
@@ -73,7 +72,6 @@ from sage_categories.kernel.construction import (
     retain_morphism_input,
     retain_object_input,
 )
-from sage_categories.kernel.decisions import Unknown
 from sage_categories.kernel.roles import (
     CategoryPoint,
     MorphismOfCategory,
@@ -88,24 +86,21 @@ if TYPE_CHECKING:
     from sage_categories.cat.functors import Functor
 
 __all__ = [
-    "ConstructorDataMismatch",
     "DeclaredMethod",
     "Entry",
     "Node",
-    "Route",
     "SemanticCollisionError",
-    "Step",
-    "assert_data_agree",
     "catalogue",
     "compile_category",
     "controlled_bases",
+    "element_inputs",
     "empty_local_role",
     "install_level_shift",
-    "level_shift",
+    "morphism_inputs",
     "node",
+    "object_inputs",
     "reachable",
     "recompile_category",
-    "routes",
     "same_node",
 ]
 
@@ -114,30 +109,10 @@ class SemanticCollisionError(Exception):
     """Two incomparable owners declare one method spelling (POL-CAT-011, POL-API-011)."""
 
 
-class ConstructorDataMismatch(Exception):
-    """Two selected routes to one target class supplied distinct constructor data (POL-CAT-012)."""
-
-
 class Node(NamedTuple):
     category: Category
     role: Role
 
-
-class Step(NamedTuple):
-    """One directed edge of the compiled graph.
-
-    A selected functor keeps the role it is followed at, so ``source_role`` and
-    ``target_role`` agree.  A level shift applies no functor and changes the role: the
-    objects of a category ``C`` are the points ``* -> C`` and its morphisms the points
-    ``* -> Mor(C)`` (``specs/functor.md``, "The level shift").
-    """
-
-    functor: Functor | None
-    source_role: Role
-    target_role: Role
-
-
-type Route = tuple[Step, ...]
 
 # A declaring method: its receiver is a value of the declaring role class, and its
 # remaining parameters and result are exactly those of its typed signature
@@ -208,31 +183,12 @@ def _is_cat_element_root(current: Node) -> bool:
     return current.role is Role.ELEMENT and current.category.category() is current.category
 
 
-def successors(current: Node) -> tuple[tuple[Step, Node], ...]:
-    """The selected functor steps out of ``current``; each keeps the role it starts in."""
+def successors(current: Node) -> tuple[tuple[Functor, Node], ...]:
+    """The selected functors out of ``current``; each keeps the role it starts in."""
     return tuple(
-        (Step(functor, current.role, current.role), node(functor.codomain(), current.role))
+        (functor, node(functor.codomain(), current.role))
         for functor in current.category.selected_functors()
     )
-
-
-def level_shift(current: Node) -> tuple[tuple[Step, Node], ...]:
-    """The step from the objects or morphisms of a category ``C`` to the elements of ``{C}``.
-
-    ``Cat().Point(C)`` retains one point category per object; the compiler reads that
-    retention to find ``{C}`` from ``C``, and ``C`` records nothing.  The step applies no
-    functor: its value is the value's own defining morphism, the point ``* -> C`` that
-    selects an object of ``C`` and the point ``* -> Mor(C)`` that selects a morphism
-    (``specs/functor.md``, "The level shift").
-    """
-    from sage_categories.cat.category import Cat
-
-    if current.role is Role.ELEMENT:
-        return ()
-    point = Cat().retained_point(current.category)
-    if point is None:
-        return ()
-    return ((Step(None, current.role, Role.ELEMENT), node(point, Role.ELEMENT)),)
 
 
 def reachable(start: Node) -> tuple[Node, ...]:
@@ -246,17 +202,6 @@ def reachable(start: Node) -> tuple[Node, ...]:
                 continue
             found.append(target)
             frontier.append(target)
-    return tuple(found)
-
-
-def routes(source: Node, target: Node) -> tuple[Route, ...]:
-    """Every simple route from ``source`` to ``target`` in declaration order, depth-first."""
-    if same_node(source, target):
-        return ((),)
-    found: list[Route] = []
-    for step, next_node in (*successors(source), *level_shift(source)):
-        for suffix in routes(next_node, target):
-            found.append((step, *suffix))
     return tuple(found)
 
 
@@ -348,7 +293,7 @@ def controlled_bases(current: Node) -> tuple[Node, ...]:
     declaration order: Sage sorts them the same way (``Category._super_categories``
     applies ``Category._sort``, decreasing in ``_cmp_key``).  A category's ambient is
     declared first and constructed first, so declaration order is the wrong one here.
-    Constructor route order still reads ``successors`` directly.
+    The constructor walk still reads ``successors`` directly.
 
     The common ``Cat().ElementType`` node is not among them.  It is the preallocated end
     of every element chain, reached through the role's kernel class, so a selected
@@ -618,10 +563,6 @@ def _assert_linearized(current: Node, compiled: type[CategoryPoint]) -> None:
     )
 
 
-def _route_name(route: Route) -> str:
-    return " then ".join(repr(step.functor) if step.functor is not None else "the level shift" for step in route) or "the identity route"
-
-
 class _NodeRuntime(NamedTuple):
     initializer: FunctionType | None
     owner: type[CategoryPoint]
@@ -689,40 +630,55 @@ def _morphism_step[Value: MorphismOfCategory, Datum](
     return initialize
 
 
-def assert_data_agree(role: str, known: tuple[object, Route], candidate: tuple[object, Route], target: Node) -> None:
-    """Two selected routes to one target class supply one constructor datum (``specs/resolution.md``, final decision 4/14).
-
-    The comparison is of the data, never of the public images: two named functors reaching
-    one class own separate images by construction, and identifying them is not what
-    agreement means (``specs/resolution.md``, "Constructor agreement and functor images").
-
-    A datum that is an owned mathematical value compares as a proposition, so agreement is
-    the decided ``True`` and nothing else (POL-ASSUME-006/012).  The two ways to fail state
-    different facts and are different failures.  ``ConstructorDataMismatch`` states a fact
-    about the two declarations: they decidedly disagree, so the category owning them
-    selects one presentation or declares the resolution.  An undecided comparison states no
-    such fact -- the data may well be equal -- and what fails is this construction's
-    requirement for a decided answer, which the assertion documents (POL-ASSUME-014).
-    """
-    from sage_categories.kernel.predicates import ask
-
-    first, first_route = known
-    datum, route = candidate
-    routes = f"the {role} routes {_route_name(first_route)} and {_route_name(route)} to {target.category!r}"
-    decision = ask(first == datum)
-    assert decision is not Unknown, f"{routes} supply the constructor data {first!r} and {datum!r}, whose equality is not decided"
-    if not decision:
-        raise ConstructorDataMismatch(f"{routes} supply the distinct constructor data {first!r} and {datum!r}")
-
-
-def _ordered_steps[Datum](
+def object_inputs[RootValue: ObjectOfCategory, RootDatum, Value: ObjectOfCategory, Datum](
     current: Node,
-    found: list[tuple[Node, Datum, Callable[[], None], Route]],
-) -> tuple[tuple[Node, Callable[[], None]], ...]:
-    """The one step per reachable node, in the order the linearization visits them."""
-    expected = reachable(current)
-    assert all(any(same_node(owner, target) for owner, _, _, _ in found) for target in expected)
-    return tuple((target, next(step for owner, _, step, _ in found if same_node(owner, target))) for target in expected)
+    root: ObjectConstructionInput[RootValue, RootDatum],
+) -> tuple[tuple[Node, ObjectConstructionInput[Value, Datum]], ...]:
+    """Each node ``current`` reaches, in ``reachable`` order, with its object input.
+
+    The selected functor that first reaches a node converts the source input into the
+    argument that node's initializer consumes.  A node several selected functors reach
+    occurs once in the C3 linearization and runs one initializer through cooperative
+    ``super()``, so one conversion is the whole requirement (POL-KERNEL-028/029).
+    """
+    assert current.role is Role.OBJECT
+    found: list[tuple[Node, ObjectConstructionInput[Value, Datum]]] = [(current, root)]
+    frontier = list(found)
+    while frontier:
+        source, source_input = frontier.pop(0)
+        for functor, target in successors(source):
+            if any(same_node(target, known) for known, _ in found):
+                continue
+            target_input = functor.object_constructor_input(source_input)
+            # An object walk that reaches ``(Mor(C), object)`` is at the node
+            # ``(C, morphism)``, whose values are morphisms and retain a morphism input
+            # (POL-CAT-021).  The node's role names the input the step must supply.
+            assert isinstance(target_input, _INPUT_TYPES[target.role]), (
+                f"{functor!r} returned no {target.role.value} construction input for {target.category!r}"
+            )
+            found.append((target, target_input))
+            frontier.append((target, target_input))
+    return tuple(found)
+
+
+def element_inputs[RootValue: CategoryPoint, RootDatum, Value: CategoryPoint, Datum](
+    current: Node,
+    root: ElementConstructionInput[RootValue, RootDatum],
+) -> tuple[tuple[Node, ElementConstructionInput[Value, Datum]], ...]:
+    """Each node ``current`` reaches, in ``reachable`` order, with its element input."""
+    assert current.role is Role.ELEMENT
+    found: list[tuple[Node, ElementConstructionInput[Value, Datum]]] = [(current, root)]
+    frontier = list(found)
+    while frontier:
+        source, source_input = frontier.pop(0)
+        for functor, target in successors(source):
+            if any(same_node(target, known) for known, _ in found):
+                continue
+            target_input = functor.element_constructor_input(source_input)
+            assert isinstance(target_input, ElementConstructionInput), f"{functor!r} returned no element construction input"
+            found.append((target, target_input))
+            frontier.append((target, target_input))
+    return tuple(found)
 
 
 def _object_steps[RootValue: ObjectOfCategory, RootDatum](
@@ -730,33 +686,10 @@ def _object_steps[RootValue: ObjectOfCategory, RootDatum](
     root: ObjectConstructionInput[RootValue, RootDatum],
 ) -> tuple[tuple[Node, Callable[[], None]], ...]:
     """Close each exact object input into one zero-argument C3 node step."""
-    assert current.role is Role.OBJECT
-    found: list[tuple[Node, object, Callable[[], None], Route]] = []
-
-    def visit[Value: ObjectOfCategory, Datum](
-        source: Node,
-        source_input: ObjectConstructionInput[Value, Datum],
-        route: Route,
-    ) -> None:
-        known = next(((datum, first_route) for owner, datum, _, first_route in found if same_node(owner, source)), None)
-        if known is None:
-            retain_constructed_transport(root, source.category, source_input)
-            found.append((source, source_input.datum, _object_step(source, source_input, root.canonical_image), route))
-        else:
-            assert_data_agree("object", known, (source_input.datum, route), source)
-        for step, target in successors(source):
-            assert step.functor is not None
-            target_input = step.functor.object_constructor_input(source_input)
-            # An object walk that reaches ``(Mor(C), object)`` is at the node
-            # ``(C, morphism)``, whose values are morphisms and retain a morphism input
-            # (POL-CAT-021).  The node's role names the input the step must supply.
-            assert isinstance(target_input, _INPUT_TYPES[target.role]), (
-                f"{step.functor!r} returned no {target.role.value} construction input for {target.category!r}"
-            )
-            visit(target, target_input, (*route, step))
-
-    visit(current, root, ())
-    return _ordered_steps(current, found)
+    found = object_inputs(current, root)
+    for source, source_input in found:
+        retain_constructed_transport(root, source.category, source_input)
+    return tuple((source, _object_step(source, source_input, root.canonical_image)) for source, source_input in found)
 
 
 def _element_steps[RootValue: CategoryPoint, RootDatum](
@@ -764,28 +697,10 @@ def _element_steps[RootValue: CategoryPoint, RootDatum](
     root: ElementConstructionInput[RootValue, RootDatum],
 ) -> tuple[tuple[Node, Callable[[], None]], ...]:
     """Close each exact element input into one zero-argument C3 node step."""
-    assert current.role is Role.ELEMENT
-    found: list[tuple[Node, object, Callable[[], None], Route]] = []
-
-    def visit[Value: CategoryPoint, Datum](
-        source: Node,
-        source_input: ElementConstructionInput[Value, Datum],
-        route: Route,
-    ) -> None:
-        known = next(((datum, first_route) for owner, datum, _, first_route in found if same_node(owner, source)), None)
-        if known is None:
-            retain_constructed_transport(root, source.category, source_input)
-            found.append((source, source_input.datum, _element_step(source, source_input, root.canonical_image), route))
-        else:
-            assert_data_agree("element", known, (source_input.datum, route), source)
-        for step, target in successors(source):
-            assert step.functor is not None
-            target_input = step.functor.element_constructor_input(source_input)
-            assert isinstance(target_input, ElementConstructionInput), f"{step.functor!r} returned no element construction input"
-            visit(target, target_input, (*route, step))
-
-    visit(current, root, ())
-    return _ordered_steps(current, found)
+    found = element_inputs(current, root)
+    for source, source_input in found:
+        retain_constructed_transport(root, source.category, source_input)
+    return tuple((source, _element_step(source, source_input, root.canonical_image)) for source, source_input in found)
 
 
 def _cat_element_step[Datum](
@@ -812,33 +727,35 @@ def _element_cat_element_step[Value: CategoryPoint, Datum](
     return target, _element_step(target, element_input, root.canonical_image)
 
 
+def morphism_inputs[RootValue: MorphismOfCategory, RootDatum, Value: MorphismOfCategory, Datum](
+    current: Node,
+    root: MorphismConstructionInput[RootValue, RootDatum],
+) -> tuple[tuple[Node, MorphismConstructionInput[Value, Datum]], ...]:
+    """Each node ``current`` reaches, in ``reachable`` order, with its morphism input."""
+    assert current.role is Role.MORPHISM
+    found: list[tuple[Node, MorphismConstructionInput[Value, Datum]]] = [(current, root)]
+    frontier = list(found)
+    while frontier:
+        source, source_input = frontier.pop(0)
+        for functor, target in successors(source):
+            if any(same_node(target, known) for known, _ in found):
+                continue
+            target_input = functor.morphism_constructor_input(source_input)
+            assert isinstance(target_input, MorphismConstructionInput), f"{functor!r} returned no morphism construction input"
+            found.append((target, target_input))
+            frontier.append((target, target_input))
+    return tuple(found)
+
+
 def _morphism_steps[RootValue: MorphismOfCategory, RootDatum](
     current: Node,
     root: MorphismConstructionInput[RootValue, RootDatum],
 ) -> tuple[tuple[Node, Callable[[], None]], ...]:
     """Close each exact morphism input into one zero-argument C3 node step."""
-    assert current.role is Role.MORPHISM
-    found: list[tuple[Node, object, Callable[[], None], Route]] = []
-
-    def visit[Value: MorphismOfCategory, Datum](
-        source: Node,
-        source_input: MorphismConstructionInput[Value, Datum],
-        route: Route,
-    ) -> None:
-        known = next(((datum, first_route) for owner, datum, _, first_route in found if same_node(owner, source)), None)
-        if known is None:
-            retain_constructed_transport(root, source.category, source_input)
-            found.append((source, source_input.datum, _morphism_step(source, source_input, root.canonical_image), route))
-        else:
-            assert_data_agree("morphism", known, (source_input.datum, route), source)
-        for step, target in successors(source):
-            assert step.functor is not None
-            target_input = step.functor.morphism_constructor_input(source_input)
-            assert isinstance(target_input, MorphismConstructionInput), f"{step.functor!r} returned no morphism construction input"
-            visit(target, target_input, (*route, step))
-
-    visit(current, root, ())
-    return _ordered_steps(current, found)
+    found = morphism_inputs(current, root)
+    for source, source_input in found:
+        retain_constructed_transport(root, source.category, source_input)
+    return tuple((source, _morphism_step(source, source_input, root.canonical_image)) for source, source_input in found)
 
 
 def _construct_object_root[Datum](

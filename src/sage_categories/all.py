@@ -9,41 +9,33 @@ from the owned number sets, which shadow Sage's names inside the package univers
 theory of ordered sets;
 ``ask``, ``assume``, ``retract``, ``Predicate``, ``Unknown``, and ``Decision`` from the
 kernel's predicate boundary.
+
+The leaves are imported here and not in ``sage_categories`` itself: a leaf implements a
+category ``Cat`` declared, and the kernel holds that declaration without it (D80, D81).
 """
 
 from sage_categories import (
-    NN,
-    QQ,
-    RR,
-    ZZ,
-    Cardinal,
     Cat,
     Category,
     Decision,
     Discrete,
-    FinitePosets,
-    FiniteTotallyOrderedSets,
     Fun,
     Mor,
-    Ordinals,
-    Posets,
     Predicate,
-    Primes,
-    Sets,
     Thin,
-    TotallyOrderedSets,
     Unknown,
     UnknownClass,
     __version__,
-    aleph0,
     ask,
     assume,
-    continuum,
-    generalized_continuum_hypothesis,
-    omega0,
     retract,
     version,
 )
+from sage_categories.number_sets import NN, QQ, RR, ZZ, Primes
+from sage_categories.ordinals import Ordinals, omega0
+from sage_categories.posets import FinitePosets, FiniteTotallyOrderedSets, Posets, TotallyOrderedSets
+from sage_categories.sets.cardinals import Cardinal, aleph0, continuum, generalized_continuum_hypothesis
+from sage_categories.sets.category import Sets
 
 __all__ = [
     "NN",

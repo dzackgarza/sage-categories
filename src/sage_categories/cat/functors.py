@@ -23,7 +23,7 @@ from __future__ import annotations
 import inspect
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from sage.structure.coerce_dict import MonoDict, TripleDict
 
@@ -32,11 +32,7 @@ from sage_categories.cat.category import Assignment, Category, CategoryOfCategor
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import Predicate, Proposition, ask
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
-from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory, Role, role_of
-
-if TYPE_CHECKING:
-    from sage_categories.sets.elements import SetElement
-    from sage_categories.sets.objects import SetObject
+from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, role_of
 
 __all__ = ["Fun", "Functor", "FunctorCategory", "FunctorProperty", "FunctorsCategory", "NaturalTransformation"]
 
@@ -270,18 +266,18 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
 
     # -- ``Fun([1], C)``: its finite data and its fibration lifts (POL-FUN-029, specs/functor.md, "Diagram shapes and universal constructions") -----------
 
-    def object_set(self) -> SetObject:
+    def object_set(self) -> ObjectOfCategory:
         """For ``I = [1]``: the morphism set of ``C``, since the objects are the morphisms of ``C``."""
         assert self.domain() is Cat().Simplex(1), f"{self!r} declares no set of objects"
         morphisms = self.codomain().morphism_set()
         assert morphisms is not Unknown, f"{self.codomain()!r} chooses no finite set of morphisms"
         return morphisms
 
-    def object_at(self, point: SetElement) -> MorphismOfCategory:
+    def object_at(self, point: ElementOfObject) -> MorphismOfCategory:
         assert self.domain() is Cat().Simplex(1), f"{self!r} declares no set of objects"
         return self.codomain().morphism_at(point)
 
-    def morphism_set(self) -> SetObject | UnknownClass:
+    def morphism_set(self) -> ObjectOfCategory | UnknownClass:
         """For ``I = [1]``: the finite set of commuting squares, when ``C`` chooses a finite set of morphisms."""
         from sage_categories.cat.diagrams import square_set
 
@@ -289,7 +285,7 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
             return Unknown
         return square_set(self)
 
-    def morphism_at(self, point: SetElement) -> NaturalTransformation:
+    def morphism_at(self, point: ElementOfObject) -> NaturalTransformation:
         from sage_categories.cat.diagrams import square_at
 
         return square_at(self, point)

@@ -1,49 +1,56 @@
-"""Owned categories with Sage confined to explicit realizations."""
+"""Owned categories with Sage confined to explicit realizations.
+
+This package is the kernel: ``Cat()``, functors, the ``Mor(n, C)`` tower, the shapes,
+the predicate boundary, and the categories ``Cat`` declares.  Importing it loads no
+leaf, because information flows from the kernel into the leaves and never back (D81).
+``sage_categories.all`` is the import surface for the whole owned universe.
+"""
 
 from importlib.metadata import version as _distribution_version
 
 from sage_categories.cat.category import Category
+from sage_categories.cat.declarations import (
+    NN,
+    ZZ,
+    MagmaObjects,
+    MonoidObjects,
+    Posets,
+    RingObjects,
+    SemiringObjects,
+    Sets,
+    TotallyOrderedSets,
+    omega,
+)
 from sage_categories.cat.functors import Cat, Fun
 from sage_categories.cat.morphisms import Mor
 from sage_categories.cat.shapes import Discrete, Thin
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import Predicate, ask, assume, retract
-from sage_categories.sets.category import Sets
-from sage_categories.ordinals import Ordinals, omega0
-from sage_categories.sets.cardinals import Cardinal, aleph0, continuum, generalized_continuum_hypothesis
-from sage_categories.number_sets import NN, QQ, RR, ZZ, Primes
-from sage_categories.posets import FinitePosets, FiniteTotallyOrderedSets, Posets, TotallyOrderedSets
 
 __all__ = [
     "NN",
-    "QQ",
-    "RR",
     "ZZ",
-    "Cardinal",
     "Cat",
     "Category",
     "Decision",
     "Discrete",
-    "FinitePosets",
-    "FiniteTotallyOrderedSets",
     "Fun",
+    "MagmaObjects",
     "Mor",
-    "Ordinals",
+    "MonoidObjects",
     "Posets",
     "Predicate",
-    "Primes",
+    "RingObjects",
+    "SemiringObjects",
     "Sets",
     "Thin",
     "TotallyOrderedSets",
     "Unknown",
     "UnknownClass",
     "__version__",
-    "aleph0",
     "ask",
     "assume",
-    "continuum",
-    "generalized_continuum_hypothesis",
-    "omega0",
+    "omega",
     "retract",
     "version",
 ]

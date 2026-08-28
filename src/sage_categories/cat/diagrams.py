@@ -33,25 +33,25 @@ pushout injection ``y -> z +_x y``, dually.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Hashable
 from typing import TYPE_CHECKING
 
 from sage.structure.coerce_dict import MonoDict, TripleDict
 
 from sage_categories.cat.category import Category
+from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import endpoints
 from sage_categories.cat.shapes import Discrete, DiscreteCategory, is_discrete
 from sage_categories.kernel.caches import SequenceTable
 from sage_categories.kernel.decisions import Decision
 from sage_categories.kernel.predicates import ask
-from sage_categories.kernel.roles import ObjectOfCategory
-from sage_categories.sets.category import Sets
+from sage_categories.kernel.roles import ElementOfObject, ObjectOfCategory
 
 if TYPE_CHECKING:
     from sage_categories.cat.functors import FunctorCategory
-    from sage_categories.sets.elements import Datum, SetElement
-    from sage_categories.sets.objects import SetObject
+
+type Datum = Hashable
 
 __all__ = [
     "codomain_lift",
@@ -120,7 +120,7 @@ def from_object_rule(functors: FunctorCategory, rule: Callable[[DiscreteCategory
 def sequence_position(vertex: DiscreteCategory.ObjectType) -> int:
     """The position ``k`` of an object of ``Discrete([n])`` at the point ``k`` of ``[n]``."""
     simplex = vertex.category().index_set()
-    enumeration = Sets().Finite().chosen_enumeration(simplex)
+    enumeration = Sets.Finite().chosen_enumeration(simplex)
     return next(position for position, datum in enumerate(enumeration) if ask(vertex.point() == simplex.point(datum)))
 
 
@@ -130,7 +130,7 @@ def from_sequence(ambient: Category, sequence: tuple[ObjectOfCategory, ...]) -> 
         _sequence_diagrams[ambient] = SequenceTable()
     table = _sequence_diagrams[ambient]
     if sequence not in table:
-        index_set = Sets().Simplex(len(sequence) - 1) if sequence else Sets().Empty()
+        index_set = Sets.Simplex(len(sequence) - 1) if sequence else Sets.Empty()
         table[sequence] = from_object_rule(Fun(Discrete(index_set), ambient), lambda vertex: sequence[sequence_position(vertex)])
     return table[sequence]
 
@@ -138,12 +138,12 @@ def from_sequence(ambient: Category, sequence: tuple[ObjectOfCategory, ...]) -> 
 # -- the commuting squares of ``Fun([1], C)`` as a finite set (specs/functor.md, "Diagram shapes and universal constructions") ---------------------------
 
 
-def square_set(functors: FunctorCategory) -> SetObject:
+def square_set(functors: FunctorCategory) -> ObjectOfCategory:
     """The finite set of commuting squares ``(f, g, a, b)`` with ``g * a == b * f`` in ``C``, when ``C`` chooses a finite set of morphisms."""
     base = functors.codomain()
     if "squares" not in functors._finite_data:
         morphisms = base.morphism_set()
-        quadruples = Sets().Products()((morphisms, morphisms, morphisms, morphisms))
+        quadruples = Sets.Products()((morphisms, morphisms, morphisms, morphisms))
 
         def commutes(datum: Datum) -> Decision:
             point = quadruples.point(datum)
@@ -161,7 +161,7 @@ def square_set(functors: FunctorCategory) -> SetObject:
     return functors._finite_data["squares"]
 
 
-def square_at(functors: FunctorCategory, point: SetElement) -> NaturalTransformation:
+def square_at(functors: FunctorCategory, point: ElementOfObject) -> NaturalTransformation:
     """The square selected by a point of ``square_set``."""
     square_set(functors)
     base, quadruples = functors.codomain(), functors._finite_data["quadruples"]

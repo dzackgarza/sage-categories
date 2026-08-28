@@ -100,6 +100,7 @@ __all__ = [
     "level_shift",
     "node",
     "reachable",
+    "recompile_category",
     "routes",
     "same_node",
 ]
@@ -468,6 +469,14 @@ _CLASS_METADATA = frozenset({"__dict__", "__weakref__", "__qualname__", "__class
 
 
 def _rebound_member(value, cell: CellType):
+    # Python wraps ``__init_subclass__`` and ``__class_getitem__`` in ``classmethod`` when
+    # it creates the declaring class, so a zero-argument ``super()`` inside one closes over
+    # ``__class__`` the same way an ordinary method does and needs the same rebinding.  Left
+    # unbound, the copy's ``super()`` finds the copy again through the declaration still in
+    # the receiver's MRO, and the call recurses.
+    if isinstance(value, classmethod):
+        rebound = _rebound_member(value.__func__, cell)
+        return value if rebound is value.__func__ else classmethod(rebound)
     uses_super = isinstance(value, FunctionType) and "__class__" in value.__code__.co_freevars
     return _rebound(value, cell) if uses_super else value
 
@@ -931,6 +940,14 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
         functor_category = category.category().morphism_category(1)
         assert functor in functor_category, f"{functor!r} is not an object of {functor_category!r}"
         assert functor.domain() is category, f"{functor!r} does not have domain {category!r}"
+        # Naming a declared category as a functor's *domain* is always safe; selecting a
+        # functor into one that no implementation claims is not, because the declaration's
+        # empty implementation classes would compile into this category's own
+        # linearization (``specs/functor.md``, "Failing loudly").
+        open_codomain = category.universe().open_declaration(functor.codomain())
+        assert open_codomain is None, (
+            f"{category!r} selects {functor!r} into {open_codomain}, which Cat declares and no implementation claims"
+        )
         functor._derive_selected_constructor_conversions()
     assert all(first is not second for index, first in enumerate(functors) for second in functors[index + 1 :]), (
         f"{category!r} selects one functor twice"
@@ -988,6 +1005,21 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
         _node_runtimes[role][category] = _NodeRuntime(node_initializer, cell)
         setattr(category, role.value, compiled)
         _assert_linearized(current, compiled)
+
+
+def recompile_category(category: Category, functors: tuple[Functor, ...]) -> None:
+    """Compile ``category`` again after an implementation claimed the declaration it is (D80).
+
+    The declared object is the final object, so this compiles onto the one already in
+    ``Cat()``: the ordinal is not retaken, and the cached linearizations and method
+    catalogues are this compile's own outputs, so they are dropped and rebuilt.
+    """
+    for role in Role:
+        table = _linearizations[role]
+        if category in table:
+            del table[category]
+    category.catalogues().clear()
+    compile_category(category, functors)
 
 
 def install_level_shift(point: Category) -> None:

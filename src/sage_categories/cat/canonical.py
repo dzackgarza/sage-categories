@@ -27,18 +27,15 @@ from __future__ import annotations
 
 from collections.abc import Hashable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.cat.category import Category
+from sage_categories.cat.declarations import Sets
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
-
-if TYPE_CHECKING:
-    from sage_categories.sets.elements import SetElement
-    from sage_categories.sets.objects import SetObject
 
 __all__ = [
     "FinitePresentedCategory",
@@ -143,17 +140,15 @@ class FinitePresentedCategory(Category[[Word], []]):
     # graph is acyclic every morphism is reached by breadth-first extension of words,
     # and otherwise no finite enumeration of morphisms is chosen.
 
-    def object_set(self) -> SetObject:
-        from sage_categories.sets.category import Sets
-
+    def object_set(self) -> ObjectOfCategory:
         if self not in self._object_set:
-            self._object_set[self] = Sets().Finite()(self._labels)
+            self._object_set[self] = Sets.Finite()(self._labels)
         return self._object_set[self]
 
-    def object_at(self, point: SetElement) -> FinitePresentedCategory.ObjectType:
+    def object_at(self, point: ElementOfObject) -> FinitePresentedCategory.ObjectType:
         return self(enumerated_datum(self.object_set(), point))
 
-    def object_point(self, vertex: FinitePresentedCategory.ObjectType) -> SetElement:
+    def object_point(self, vertex: FinitePresentedCategory.ObjectType) -> ElementOfObject:
         return self.object_set().point(self.label(vertex))
 
     def _has_directed_cycle(self) -> bool:
@@ -166,10 +161,8 @@ class FinitePresentedCategory(Category[[Word], []]):
 
         return any(reaches(label, (label,)) for label in self._labels)
 
-    def morphism_set(self) -> SetObject | UnknownClass:
+    def morphism_set(self) -> ObjectOfCategory | UnknownClass:
         """The finite set of morphisms, as data ``(source label, reduced word)``, when the quiver is acyclic."""
-        from sage_categories.sets.category import Sets
-
         if self._has_directed_cycle():
             return Unknown
         if self not in self._morphism_set:
@@ -184,10 +177,10 @@ class FinitePresentedCategory(Category[[Word], []]):
                         if extended not in words:
                             words.append(extended)
                             frontier.append(extended)
-            self._morphism_set[self] = Sets().Finite()(words)
+            self._morphism_set[self] = Sets.Finite()(words)
         return self._morphism_set[self]
 
-    def morphism_at(self, point: SetElement) -> FinitePresentedCategory.MorphismType:
+    def morphism_at(self, point: ElementOfObject) -> FinitePresentedCategory.MorphismType:
         source, word = enumerated_datum(self.morphism_set(), point)
         target = source if not word else self._generator_endpoints[word[-1]][1]
         return self.construct_morphism(self(source), self(target), word)
@@ -266,13 +259,12 @@ class FinitePresentedCategory(Category[[Word], []]):
         return self._name
 
 
-def enumerated_datum(finite_set: SetObject, point: SetElement) -> Hashable:
+def enumerated_datum(finite_set: ObjectOfCategory, point: ElementOfObject) -> Hashable:
     """The datum of a point of a finite enumerated set, read through the chosen enumeration."""
     from sage_categories.kernel.predicates import ask
-    from sage_categories.sets.category import Sets
 
     assert point in finite_set, f"{point!r} is not a point of {finite_set!r}"
-    return next(datum for datum in Sets().Finite().chosen_enumeration(finite_set) if ask(finite_set.point(datum) == point))
+    return next(datum for datum in Sets.Finite().chosen_enumeration(finite_set) if ask(finite_set.point(datum) == point))
 
 
 def _edge(source: int, target: int) -> Generator:

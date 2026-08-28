@@ -47,6 +47,7 @@ from sage.structure.coerce_dict import MonoDict, TripleDict
 
 from sage_categories.cat.category import Category, member
 from sage_categories.cat.constructions import cocone, cocone_apex, cone, cone_apex, vertex_of
+from sage_categories.cat.declarations import Sets
 from sage_categories.cat.diagrams import sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.shapes import DiscreteCategory, index_set_of
@@ -55,9 +56,6 @@ from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import Predicate, Proposition, ask, conjunction
 from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
-from sage_categories.sets.category import Sets
-from sage_categories.sets.elements import SetElement
-from sage_categories.sets.objects import SetObject
 
 __all__ = [
     "CoproductCategory",
@@ -150,31 +148,31 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
     # sequence-indexed product whose index set is ``[n]``.
 
     def _positions(self) -> tuple[Datum, ...]:
-        enumeration = Sets().Finite().chosen_enumeration(index_set_of(self.shape()))
+        enumeration = Sets.Finite().chosen_enumeration(index_set_of(self.shape()))
         assert enumeration == tuple(range(len(enumeration))), f"{self!r} is not indexed by a simplex"
         return enumeration
 
-    def object_set(self) -> SetObject:
+    def object_set(self) -> ObjectOfCategory:
         if "objects" not in self._finite_data:
-            diagram = Fun(self.shape(), Sets()).from_object_rule(lambda vertex: self.factor(vertex).object_set())
-            self._finite_data["objects"] = Sets().Products()(diagram)
+            diagram = Fun(self.shape(), Sets).from_object_rule(lambda vertex: self.factor(vertex).object_set())
+            self._finite_data["objects"] = Sets.Products()(diagram)
         return self._finite_data["objects"]
 
-    def object_at(self, point: SetElement) -> ProductCategory.ObjectType:
+    def object_at(self, point: ElementOfObject) -> ProductCategory.ObjectType:
         self.object_set()
         product = self._finite_data["objects"]
         return self(tuple(self.factor(position).object_at(product.product_projection(position)(point)) for position in self._positions()))
 
-    def morphism_set(self) -> SetObject | UnknownClass:
+    def morphism_set(self) -> ObjectOfCategory | UnknownClass:
         factor_morphisms = tuple(self.factor(position).morphism_set() for position in self._positions())
         if any(morphisms is Unknown for morphisms in factor_morphisms):
             return Unknown
         if "morphisms" not in self._finite_data:
-            diagram = Fun(self.shape(), Sets()).from_object_rule(lambda vertex: factor_morphisms[sequence_position(vertex)])
-            self._finite_data["morphisms"] = Sets().Products()(diagram)
+            diagram = Fun(self.shape(), Sets).from_object_rule(lambda vertex: factor_morphisms[sequence_position(vertex)])
+            self._finite_data["morphisms"] = Sets.Products()(diagram)
         return self._finite_data["morphisms"]
 
-    def morphism_at(self, point: SetElement) -> ProductCategory.MorphismType:
+    def morphism_at(self, point: ElementOfObject) -> ProductCategory.MorphismType:
         product = self._finite_data["morphisms"]
         components = tuple(self.factor(position).morphism_at(product.product_projection(position)(point)) for position in self._positions())
         return self.construct_morphism(
@@ -185,7 +183,7 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
 
     def separating_family(self) -> tuple[ProductCategory.ObjectType, ...]:
         """The separator ``(G_i)_i`` when every factor of an enumerated family chooses one separator."""
-        index_set, finite = index_set_of(self.shape()), Sets().Finite()
+        index_set, finite = index_set_of(self.shape()), Sets.Finite()
         if not finite.has_chosen_enumeration(index_set):
             return ()
         separators = tuple(self.factor(datum).separating_family() for datum in finite.chosen_enumeration(index_set))
@@ -235,7 +233,7 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
         morphisms = self.morphism_category(1)
         if not ((first in self and candidate in self) or (first in morphisms and candidate in morphisms)):
             return Unknown
-        index_set, finite = index_set_of(self.shape()), Sets().Finite()
+        index_set, finite = index_set_of(self.shape()), Sets.Finite()
         if not finite.has_chosen_enumeration(index_set):
             return Unknown
         return ask(conjunction(first.component(datum) == candidate.component(datum) for datum in finite.chosen_enumeration(index_set)))
@@ -529,10 +527,10 @@ class PullbackCategory(Category[[tuple[MorphismOfCategory, MorphismOfCategory]],
     # The objects are the pairs with one image: the subset of the product of the
     # factors' object sets cut out by ``images_agree``; the morphisms likewise (POL-CAT-092, specs/functor.md, "Diagram shapes and universal constructions").
 
-    def object_set(self) -> SetObject:
+    def object_set(self) -> ObjectOfCategory:
         if "objects" not in self._finite_data:
             first, second = self._first_functor.domain(), self._second_functor.domain()
-            pairs = Sets().Products()((first.object_set(), second.object_set()))
+            pairs = Sets.Products()((first.object_set(), second.object_set()))
 
             def agree(datum: Datum) -> Decision:
                 point = pairs.point(datum)
@@ -543,18 +541,18 @@ class PullbackCategory(Category[[tuple[MorphismOfCategory, MorphismOfCategory]],
             self._finite_data["object set"] = pairs.subset_from(agree)
         return self._finite_data["object set"]
 
-    def object_at(self, point: SetElement) -> PullbackCategory.ObjectType:
+    def object_at(self, point: ElementOfObject) -> PullbackCategory.ObjectType:
         self.object_set()
         pairs = self._finite_data["objects"]
         first, second = self._first_functor.domain(), self._second_functor.domain()
         return self((first.object_at(pairs.product_projection(0)(point)), second.object_at(pairs.product_projection(1)(point))))
 
-    def morphism_set(self) -> SetObject | UnknownClass:
+    def morphism_set(self) -> ObjectOfCategory | UnknownClass:
         first, second = self._first_functor.domain(), self._second_functor.domain()
         if first.morphism_set() is Unknown or second.morphism_set() is Unknown:
             return Unknown
         if "morphisms" not in self._finite_data:
-            pairs = Sets().Products()((first.morphism_set(), second.morphism_set()))
+            pairs = Sets.Products()((first.morphism_set(), second.morphism_set()))
 
             def agree(datum: Datum) -> Decision:
                 point = pairs.point(datum)
@@ -565,7 +563,7 @@ class PullbackCategory(Category[[tuple[MorphismOfCategory, MorphismOfCategory]],
             self._finite_data["morphism set"] = pairs.subset_from(agree)
         return self._finite_data["morphism set"]
 
-    def morphism_at(self, point: SetElement) -> PullbackCategory.MorphismType:
+    def morphism_at(self, point: ElementOfObject) -> PullbackCategory.MorphismType:
         pairs = self._finite_data["morphisms"]
         first, second = self._first_functor.domain(), self._second_functor.domain()
         left, right = first.morphism_at(pairs.product_projection(0)(point)), second.morphism_at(pairs.product_projection(1)(point))

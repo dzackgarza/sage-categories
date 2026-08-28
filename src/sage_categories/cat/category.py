@@ -26,7 +26,7 @@ import inspect
 import itertools
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, overload
 
 from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict, TripleDict
@@ -48,6 +48,7 @@ from sage_categories.kernel.roles import (
 
 if TYPE_CHECKING:
     from sage_categories.cat.canonical import FinitePresentedCategory
+    from sage_categories.cat.declarations import CategoryFamily
     from sage_categories.cat.functors import Fun, Functor, FunctorsCategory, NaturalTransformation
     from sage_categories.cat.morphisms import MorphismCategory
     from sage_categories.cat.points import PointCategory
@@ -78,9 +79,25 @@ member.register_handler(is_placed)
 class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     """The local ``Cat().ObjectType`` declaration."""
 
+    # The declaration this class implements, named in the body of a category class that
+    # claims one ``Cat`` made (D80).  A class that names none declares its own category.
+    _implements: ClassVar[str]
+
     def __init__(self, data: None = None) -> None:
         super().__init__()
         self._initialize(self.category())
+
+    def __init_subclass__(cls) -> None:
+        """Connect a class that names the declaration it implements (D80).
+
+        This is ``PropertySubcategory.__init_subclass__`` generalized from an axiom
+        subcategory to a declared base category: there too the implementing class names
+        what it implements in its own body, and the declaration holds the link.
+        """
+        super().__init_subclass__()
+        name = cls.__dict__.get("_implements")
+        if name is not None:
+            Cat().implement(name, cls)
 
     def __mul__(self, other: Category) -> Category:
         """``C * D``: the product category."""
@@ -139,6 +156,16 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     def ordinal(self) -> int:
         """The construction order of this category among all categories."""
         return self._ordinal
+
+    def recompile(self) -> None:
+        """Compile this category's roles again from its current declarations (D80).
+
+        An implementation claims a declared category after ``Cat`` constructed it, and
+        the declared object is the final one: its class was strengthened in place, and
+        its nested classes and selected functors are read again here.  The ordinal is not
+        retaken, so every codomain stays older than the category that selects it.
+        """
+        compiler.recompile_category(self, tuple(self.structure_functors()))
 
     def structure_functors(self) -> tuple[Functor, ...]:
         """The selected structural graph: immediate functors, in preference order (POL-CAT-016, POL-FUN-003)."""
@@ -540,8 +567,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         functor.  ``Cat()`` is the case in hand: its separating family is ``(1, [1])``,
         so objects and morphisms separate functors jointly and no ``U_Cat`` exists.
         """
+        from sage_categories.cat.declarations import Sets
         from sage_categories.cat.functors import Fun
-        from sage_categories.sets.category import Sets
 
         separators = self.separating_family()
         assert len(separators) == 1, (
@@ -557,14 +584,14 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         def hom_set(member_object: ObjectOfCategory) -> ObjectOfCategory:
             if member_object not in images:
                 hom = self.morphism_category(1)(separator, member_object)
-                images[member_object] = Sets()(lambda datum: ask(hom.membership_proposition(datum)) if role_of(datum) is Role.MORPHISM else False)
+                images[member_object] = Sets(lambda datum: ask(hom.membership_proposition(datum)) if role_of(datum) is Role.MORPHISM else False)
             return images[member_object]
 
         def postcompose(morphism: MorphismOfCategory) -> MorphismOfCategory:
             source, target = hom_set(morphism.domain()), hom_set(morphism.codomain())
-            return Sets().morphism_category(1)(source, target)(lambda datum: morphism * datum)
+            return Sets.morphism_category(1)(source, target)(lambda datum: morphism * datum)
 
-        self._represented[separator] = Fun(self, Sets())(hom_set, postcompose)
+        self._represented[separator] = Fun(self, Sets)(hom_set, postcompose)
         return self._represented[separator]
 
     # -- universal constructions, defined once (POL-CAT-050/092, POL-CAT-093) --------
@@ -1334,7 +1361,73 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         self._point_categories: MonoDict = MonoDict()
         self._declared_functors: TripleDict = TripleDict(weak_values=False)
         self._exponential_actions: TripleDict = TripleDict(weak_values=False)
+        self._declarations: dict[str, Category | CategoryFamily] = {}
+        self._implementations: dict[str, type[Category] | Functor] = {}
+        self._open_declarations: MonoDict = MonoDict()
         super().__init__()
+
+    # -- the categories Cat declares (D80, D82) ------------------------------------
+
+    @overload
+    def declare(self, name: str, domain: None = None) -> Category: ...
+
+    @overload
+    def declare(self, name: str, domain: Category) -> CategoryFamily: ...
+
+    def declare(self, name: str, domain: Category | None = None) -> Category | CategoryFamily:
+        """``Cat().declare(name, domain)``: the category the repository expects to exist.
+
+        ``domain`` is the domain of the functor into ``Cat()`` that the declaration is,
+        and a declaration with no ``domain`` is the terminal-domain case: the point
+        ``* -> Cat()``, whose value is a category.  That value is constructed now and is
+        the final object -- it takes its ordinal, it is placed in ``Cat()``, and its three
+        implementation classes are the empty ones a category declaring nothing already
+        receives.  A parameterized family has no category to return until an
+        implementation supplies its object and morphism actions.
+
+        A declaration no implementation claims is open work, readable through
+        ``declarations()``.  It is never a check that fails a build.
+        """
+        from sage_categories.cat.declarations import CategoryFamily, DeclaredCategory
+
+        assert name not in self._declarations, f"{name!r} is already declared"
+        declared = DeclaredCategory(name) if domain is None else CategoryFamily(name, domain)
+        self._declarations[name] = declared
+        self._open_declarations[declared] = name
+        return declared
+
+    def declarations(self) -> dict[str, Category | CategoryFamily]:
+        """The categories ``Cat`` declares, by name; one with no implementation is open work (D82)."""
+        return dict(self._declarations)
+
+    def open_declaration(self, declared: Category | CategoryFamily) -> str | None:
+        """The name ``declared`` was declared under while no implementation claims it, else ``None``."""
+        return self._open_declarations[declared] if declared in self._open_declarations else None
+
+    def implementation(self, name: str) -> type[Category] | Functor | None:
+        """The class or functor implementing the declaration ``name``, or ``None``."""
+        return self._implementations.get(name)
+
+    def implement(self, name: str, implementation: type[Category] | Functor) -> None:
+        """Connect ``implementation`` to the declaration it names (D80).
+
+        The declared object is the final object, so nothing is constructed here: its
+        class is strengthened to the implementing class in place -- the same in-place
+        strengthening every value receives when its placement improves -- and its roles
+        are compiled again onto it.  **The ordinal is not retaken.**  Every reference
+        written against the declaration therefore uses the implementation the moment it
+        lands, with no edit and no resolution pass.
+        """
+        assert name in self._declarations, (
+            f"{implementation!r} implements {name!r}, which Cat declares nothing for"
+        )
+        assert name not in self._implementations, (
+            f"{name!r} is already implemented by {self._implementations[name]!r}, not {implementation!r}"
+        )
+        declared = self._declarations[name]
+        self._implementations[name] = implementation
+        del self._open_declarations[declared]
+        declared.implemented_by(implementation)
 
     def morphism_category_type(self) -> type[FunctorsCategory]:
         from sage_categories.cat.functors import FunctorsCategory

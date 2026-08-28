@@ -14,10 +14,13 @@ order predicate ``leq``: objects are the points of ``P`` and there is at most on
 morphism ``x -> y``, which exists when ``ask(leq(x, y))`` holds (Mathlib
 ``Preorder.smallCategory`` and ``Preorder.subsingleton_hom``; inspected
 2026-08-26).  The writer asserts reflexivity and transitivity (POL-MATH-037):
-identities and composites are the unique comparisons.  The sequential shape
-``omega`` is ``Thin(NN, leq)`` for the natural order of ``NN`` (``specs/sets.md``,
-"General limits and colimits"); ``NN`` is an owned set, and the order predicate
-that makes it a preorder is supplied by the caller of ``Thin``.
+identities and composites are the unique comparisons.  The carrier and the order
+predicate that makes it a preorder are supplied by the caller of ``Thin``.
+
+The sequential shape ``omega`` is ``Thin(NN, leq)`` for the natural order of ``NN``
+(``specs/sets.md``, "General limits and colimits").  Its carrier and its order are the
+mathematics of ``NN``, so ``Cat`` declares that shape and the category owning them
+implements it (``cat/declarations.py``, D80).
 
 Finite presented shapes are ``FinitePresentedCategory`` (``cat/canonical.py``),
 constructed uniformly by ``Cat()(labels, generators, relations)``.
@@ -26,23 +29,18 @@ constructed uniformly by ``Cat()(labels, generators, relations)``.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.cat.category import Category, member
+from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Cat, Fun, Functor
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import Predicate, Proposition, ask
 from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
-from sage_categories.sets.category import Sets
-from sage_categories.sets.elements import SetElement
-from sage_categories.sets.objects import SetObject
-
-if TYPE_CHECKING:
-    from sage_categories.sets.category import SetMap
 
 __all__ = ["Discrete", "DiscreteCategory", "Thin", "ThinCategory", "index_set_of", "is_discrete", "omega"]
 
@@ -54,7 +52,7 @@ __all__ = ["Discrete", "DiscreteCategory", "Thin", "ThinCategory", "index_set_of
 class DiscreteObjectData:
     """The local state introduced by a discrete-category object."""
 
-    point: SetElement
+    point: ElementOfObject
 
 
 class DiscreteCategory(Category[[], []]):
@@ -67,7 +65,7 @@ class DiscreteCategory(Category[[], []]):
             self._point = data.point
             super().__init__()
 
-        def point(self) -> SetElement:
+        def point(self) -> ElementOfObject:
             """The point of the index set that this object is."""
             return self._point
 
@@ -83,37 +81,37 @@ class DiscreteCategory(Category[[], []]):
     class ElementType(ElementOfObject):
         """A generalized element of a point; no local operation."""
 
-    def __init__(self, index_set: SetObject) -> None:
+    def __init__(self, index_set: ObjectOfCategory) -> None:
         self._index_set = index_set
         self._objects: MonoDict = MonoDict()
         super().__init__()
         self._equality.register_handler(self._equal)
 
-    def index_set(self) -> SetObject:
+    def index_set(self) -> ObjectOfCategory:
         return self._index_set
 
     # The objects are the points of ``S`` and the morphisms their identities (specs/functor.md, "Diagram shapes and universal constructions").
 
-    def object_set(self) -> SetObject:
+    def object_set(self) -> ObjectOfCategory:
         return self._index_set
 
-    def object_at(self, point: SetElement) -> DiscreteCategory.ObjectType:
+    def object_at(self, point: ElementOfObject) -> DiscreteCategory.ObjectType:
         return self(point)
 
-    def object_point(self, member_object: DiscreteCategory.ObjectType) -> SetElement:
+    def object_point(self, member_object: DiscreteCategory.ObjectType) -> ElementOfObject:
         return member_object.point()
 
-    def morphism_set(self) -> SetObject | UnknownClass:
+    def morphism_set(self) -> ObjectOfCategory | UnknownClass:
         return self._index_set
 
-    def morphism_at(self, point: SetElement) -> DiscreteCategory.MorphismType:
+    def morphism_at(self, point: ElementOfObject) -> DiscreteCategory.MorphismType:
         return self(point).identity()
 
     def generating_morphisms(self) -> tuple[DiscreteCategory.MorphismType, ...]:
         """No morphism beyond the identities: the empty generating family."""
         return ()
 
-    def __call__(self, point: SetElement) -> DiscreteCategory.ObjectType:
+    def __call__(self, point: ElementOfObject) -> DiscreteCategory.ObjectType:
         """The object of ``Discrete(S)`` at a point of ``S``, one object per retained point."""
         assert point in self._index_set, f"{point!r} is not a point of {self._index_set!r}"
         if point not in self._objects:
@@ -152,7 +150,7 @@ _index_sets: MonoDict = MonoDict()
 _discrete_functors: MonoDict = MonoDict()
 
 
-def _discrete_on_object(index_set: SetObject) -> DiscreteCategory:
+def _discrete_on_object(index_set: ObjectOfCategory) -> DiscreteCategory:
     if index_set not in _discrete_categories:
         shape = DiscreteCategory(index_set)
         _discrete_categories[index_set] = shape
@@ -160,7 +158,7 @@ def _discrete_on_object(index_set: SetObject) -> DiscreteCategory:
     return _discrete_categories[index_set]
 
 
-def _discrete_on_morphism(set_map: SetMap) -> Functor:
+def _discrete_on_morphism(set_map: MorphismOfCategory) -> Functor:
     if set_map not in _discrete_functors:
         source, target = _discrete_on_object(set_map.domain()), _discrete_on_object(set_map.codomain())
         _discrete_functors[set_map] = Fun(source, target)(
@@ -173,7 +171,7 @@ def _discrete_on_morphism(set_map: SetMap) -> Functor:
 # The functor ``Discrete: Sets() -> Cat()``, retained once; ``Discrete(S)`` is its
 # object action and ``Discrete(f)`` its morphism action (Mathlib
 # ``CategoryTheory.Discrete.functor`` for the action on maps; inspected 2026-08-26).
-Discrete: Functor = Fun(Sets(), Cat())(_discrete_on_object, _discrete_on_morphism)
+Discrete: Functor = Fun(Sets, Cat())(_discrete_on_object, _discrete_on_morphism)
 
 
 def is_discrete(shape: Category) -> bool:
@@ -181,7 +179,7 @@ def is_discrete(shape: Category) -> bool:
     return shape in _index_sets
 
 
-def index_set_of(shape: Category) -> SetObject:
+def index_set_of(shape: Category) -> ObjectOfCategory:
     """The set ``S`` with ``shape is Discrete(S)``."""
     assert is_discrete(shape), f"{shape!r} is not Discrete(S) for a set S"
     return _index_sets[shape]
@@ -194,7 +192,7 @@ def index_set_of(shape: Category) -> SetObject:
 class ThinObjectData:
     """The local state introduced by a thin-category object."""
 
-    point: SetElement
+    point: ElementOfObject
 
 
 # ``comparable(f, T)``: the endpoints of the comparison ``f`` of ``T`` satisfy ``T``'s order.
@@ -227,7 +225,7 @@ class ThinCategory(Category[[], []]):
             self._point = data.point
             super().__init__()
 
-        def point(self) -> SetElement:
+        def point(self) -> ElementOfObject:
             return self._point
 
         def __repr__(self) -> str:
@@ -242,7 +240,7 @@ class ThinCategory(Category[[], []]):
     class ElementType(ElementOfObject):
         """A generalized element of a point; no local operation."""
 
-    def __init__(self, carrier: SetObject, order: Predicate) -> None:
+    def __init__(self, carrier: ObjectOfCategory, order: Predicate) -> None:
         assert order.arity() == 2
         self._carrier = carrier
         self._order = order
@@ -250,7 +248,7 @@ class ThinCategory(Category[[], []]):
         super().__init__()
         self._equality.register_handler(self._equal)
 
-    def carrier(self) -> SetObject:
+    def carrier(self) -> ObjectOfCategory:
         return self._carrier
 
     def order(self) -> Predicate:
@@ -261,16 +259,16 @@ class ThinCategory(Category[[], []]):
 
     # The objects are the points of ``P``; no finite family of comparisons is chosen.
 
-    def object_set(self) -> SetObject:
+    def object_set(self) -> ObjectOfCategory:
         return self._carrier
 
-    def object_at(self, point: SetElement) -> ThinCategory.ObjectType:
+    def object_at(self, point: ElementOfObject) -> ThinCategory.ObjectType:
         return self(point)
 
-    def object_point(self, member_object: ThinCategory.ObjectType) -> SetElement:
+    def object_point(self, member_object: ThinCategory.ObjectType) -> ElementOfObject:
         return member_object.point()
 
-    def __call__(self, point: SetElement) -> ThinCategory.ObjectType:
+    def __call__(self, point: ElementOfObject) -> ThinCategory.ObjectType:
         """The object at a point of ``P``, one object per retained point."""
         assert point in self._carrier, f"{point!r} is not a point of {self._carrier!r}"
         if point not in self._objects:
@@ -301,19 +299,19 @@ class ThinCategory(Category[[], []]):
         return f"Thin({self._carrier!r})"
 
 
-def Thin(carrier: SetObject, order: Predicate) -> ThinCategory:
+def Thin(carrier: ObjectOfCategory, order: Predicate) -> ThinCategory:
     """The thin category of the preorder ``(carrier, order)``."""
-    assert carrier in Sets()
+    assert carrier in Sets
     return ThinCategory(carrier, order)
 
 
-_omega: MonoDict = MonoDict()
+def omega() -> Category:
+    """``omega = Thin(NN, natural_order)``: the sequential shape (specs/functor.md, "Diagram shapes and universal constructions").
 
+    Its carrier and its order are the mathematics of ``NN``, so ``Cat`` declares this
+    shape and the category that owns them implements it (D80).  The kernel owns ``Thin``,
+    which is the construction, and names the one shape it is applied to here.
+    """
+    from sage_categories.cat.declarations import omega as declared
 
-def omega() -> ThinCategory:
-    """``omega = Thin(NN)`` with the natural order: the sequential shape, constructed once (specs/functor.md, "Diagram shapes and universal constructions")."""
-    from sage_categories.number_sets.positive_integers import NN, natural_order
-
-    if NN not in _omega:
-        _omega[NN] = Thin(NN, natural_order)
-    return _omega[NN]
+    return declared

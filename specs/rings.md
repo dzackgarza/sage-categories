@@ -108,7 +108,7 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
 
 The semiring projection supplies the additive and multiplicative element interfaces and their unit points.
 The additive-group projection supplies inversion and subtraction.
-The Sage dynamic C3 MRO contains each shared additive-monoid and ambient-object class once.
+Sage's dynamic-class MRO contains each shared additive-monoid and ambient-object class once.
 The kernel does not compare constructor data attributed to the two branches.
 
 Both projections state their laws in the supplied ambient

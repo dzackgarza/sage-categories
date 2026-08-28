@@ -367,14 +367,15 @@ That is where the assertion that both operands lie in the same category belongs.
 This is an engineering convenience to be formalized later.
 The point is that `Monoids * Rings`, `Fun(Monoids, Sets) * Fun(Rings, Graphs)`, and `X * Y` for two sets all use one interface and one semantics.
 
-**D37 (08-26, corrected 08-29). Sage dynamic classes and Python C3 own diamonds.** The kernel constructs `C.ObjectType`, `C.ElementType`, and `C.MorphismType` from the immediate targets of `C.structure_functors()` in the same model as Sage's dynamic category classes.
-Python C3 places a shared target class once in the resulting method-resolution order, and its initializer runs once through cooperative `super()`.
+**D37 (08-26, corrected 08-29). Sage's dynamic classes and controlled linearization own diamonds.** The kernel constructs `C.ObjectType`, `C.ElementType`, and `C.MorphismType` from the immediate targets of `C.structure_functors()` in the same model as Sage's dynamic category classes.
+Sage's controlled linearization places a shared target class once in the resulting method-resolution order, and its initializer runs once through cooperative `super()`.
 The kernel does not enumerate paths to that class, construct competing data for those paths, or compare such data (`01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T21:19Z).
+This is Sage's `Category._all_super_categories` and `C3_sorted_merge` mechanism (`sage/categories/category.py`, `sage/misc/c3_controlled.py`, inspected 2026-08-29).
 
 **D38 (08-26, corrected 08-28). Set equality is a proposition, not a procedure.** The image in `Sets()` of `Free_R(S)` can be created by fiat, from a membership rule and a cardinality rule; nothing enumerates it and there is no extensional description to compare.
 `X == Y` is `True` by identity and otherwise `Unknown`, unless a cited theorem or an exact computation decides it.
 The compiler never uses set equality to merge public functor images.
-Each named functor constructs and caches its own public image, and two functors with the same endpoints can return different objects (`4544eba5 2026-08-28T12:00Z`; `4544eba5 2026-08-28T12:18Z`).
+Each named functor constructs its own public image, and two functors with the same endpoints can return different objects (`4544eba5 2026-08-28T12:00Z`; `4544eba5 2026-08-28T12:18Z`).
 
 ## Leaf discipline
 

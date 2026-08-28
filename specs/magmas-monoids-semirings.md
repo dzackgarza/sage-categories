@@ -293,7 +293,7 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     )
 ```
 
-The shared ambient `C.ObjectType` occurs once in the Sage dynamic C3 MRO.
+The shared ambient `C.ObjectType` occurs once in Sage's dynamic-class MRO.
 The two immediate structure functors supply the additive and multiplicative element interfaces.
 
 `Semirings(C)` owns the compatibility laws and the combined additive and multiplicative surface.

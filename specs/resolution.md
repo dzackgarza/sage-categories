@@ -47,9 +47,9 @@ The kernel constructs each named class dynamically. For an immediate structure f
 The result is still `C.ObjectType`, `C.ElementType`, or `C.MorphismType`. It is not an
 unnamed implementation class and not a second class passed into the category.
 
-## C3 owns diamonds
+## Sage owns linearization
 
-The compiled classes follow Sage's dynamic-class model and Python C3 linearization.
+The compiled classes use Sage's dynamic-class construction and controlled linearization.
 For a graph
 
 \[
@@ -73,12 +73,12 @@ The kernel does not:
 
 - select one path as the owner of the shared class.
 
-There is no second diamond-resolution system beside Sage dynamic classes and Python C3.
+There is no second diamond-resolution system beside Sage's dynamic-class machinery.
 
 ## Constructor conversions
 
 Each structure functor retains the pure conversion that supplies the data required by its
-target constructor. The kernel uses the immediate structure functors and the C3 MRO to
+target constructor. The kernel uses the immediate structure functors and Sage's MRO to
 initialize the compiled source instance.
 
 Each local constructor initializes only the state introduced by its category. It calls
@@ -107,7 +107,7 @@ data equality.
 ## Method ownership and collisions
 
 A method introduced by one branch remains available in the compiled class. A method owned
-by a shared ancestor appears once because that ancestor class appears once in the C3 MRO.
+by a shared ancestor appears once because that ancestor class appears once in Sage's MRO.
 
 Local declarations win over inherited declarations. One declaring category reached through
 several branches remains one method owner. If unrelated declaring categories use one public
@@ -117,7 +117,7 @@ resolve that conflict.
 ## Universal constructions are not class diamonds
 
 Two diagrams can construct isomorphic apexes with different projections, injections, cones,
-or cocones. Those presentations remain distinct mathematical construction data. Python C3
+or cocones. Those presentations remain distinct mathematical construction data. Class linearization
 does not identify them, and the compiler does not compare them.
 
 A selected construction retains its own diagram and universal morphisms. Another presentation
@@ -138,7 +138,7 @@ The kernel acceptance suite must establish these facts for objects, elements, an
 
 4. Both branches of a dynamic-class diamond contribute their local methods.
 
-5. A shared target class occurs once in the C3 MRO and initializes once.
+5. A shared target class occurs once in Sage's MRO and initializes once.
 
 6. Construction performs no equality call and no comparison of path-specific constructor
    data.

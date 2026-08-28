@@ -229,7 +229,7 @@ that supplies the method surface.
 
 The method compiler records the category that declares each method.
 Local declarations take precedence.
-Sage's dynamic-class construction and Python C3 linearization include a shared ancestor
+Sage's dynamic-class construction and controlled linearization include a shared ancestor
 class once. The kernel does not enumerate paths to that class or compare constructor
 data from those paths. Unrelated name collisions still fail during compilation.
 

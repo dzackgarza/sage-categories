@@ -416,7 +416,7 @@ It does not change a functor's mathematical definition.
 
 Each category lists only immediate structure functors.
 The kernel supplies their target classes as immediate dynamic bases. Sage dynamic-class
-construction and Python C3 linearization handle transitive inheritance and shared
+construction and Sage's controlled linearization handle transitive inheritance and shared
 ancestors.
 
 ### `C.ObjectType`, `C.ElementType`, and `C.MorphismType`
@@ -436,7 +436,7 @@ It initializes that state and calls `super().__init__()` once.
 Each structure functor retains one pure conversion from source construction data to the data consumed by its target constructor.
 The conversion reads no partly initialized value.
 
-The structured source instance carries the state required by every class in its C3 MRO.
+The structured source instance carries the state required by every class in Sage's MRO.
 A shared ancestor occurs once and its initializer runs once. The kernel follows that MRO;
 it does not enumerate functor paths, create competing constructor data for one class, or
 compare such data. Each local constructor receives only its own datum and contributes its
@@ -446,7 +446,7 @@ Every object-class constructor initializes `Cat().ElementType` with its point in
 Thus `C.ObjectType` represents a point `* -> C`. A morphism uses the same object rule through `Mor(C).ObjectType`, as a point `* -> Mor(C)`. A `C.ElementType` represents a point `1_C -> X` with parent `X in C`.
 
 The named functor uses the same conversion for its public action.
-Public `F(x)` constructs and returns the separate image owned by `F`. Repeated calls use that functor's image cache.
+Public `F(x)` constructs and returns the separate image owned by `F`.
 Different functors with the same endpoints can return different images.
 
 An inherited method runs directly on the structured source instance through ordinary Python inheritance.
@@ -600,7 +600,7 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
 ```
 
 A point functor becomes a structure functor only through this declaration.
-It lies in `.Isofibrations()` only when its image is [replete](glossary.md#inspected-sources) in `D` (`POL-FUN-036`). Like every structure functor, it contributes the target classes, typed construction-input conversions, constructor chain, and inherited public methods (`POL-FUN-003`, `POL-FUN-035`). Its target classes become immediate dynamic bases. Their own bases supply the transitive C3 MRO.
+It lies in `.Isofibrations()` only when its image is [replete](glossary.md#inspected-sources) in `D` (`POL-FUN-036`). Like every structure functor, it contributes the target classes, typed construction-input conversions, constructor chain, and inherited public methods (`POL-FUN-003`, `POL-FUN-035`). Its target classes become immediate dynamic bases. Their own bases supply Sage's transitive MRO.
 
 The point placement supplies each structure-functor target class's state and methods.
 The distinguished object keeps its identity and existing category placement.
@@ -634,7 +634,7 @@ A level shift contributes the corresponding target class to each affected public
 The point structure functor supplies the exact constructor conversion for that class.
 Thus `C`, its objects, and `1_C` carry the state required by their target classes.
 
-Shared target classes follow Sage dynamic-class construction and occur once in the C3 MRO.
+Shared target classes follow Sage dynamic-class construction and occur once in Sage's MRO.
 
 ### Ambient algebraic categories
 
@@ -973,7 +973,7 @@ It must:
 
 3. derive immediate target categories from functor codomains;
 
-4. give the immediate target classes to Sage dynamic-class construction and use the resulting C3 MRO;
+4. give the immediate target classes to Sage dynamic-class construction and use the resulting Sage MRO;
 
 5. preserve each functor's exact object and morphism maps;
 
@@ -981,7 +981,7 @@ It must:
 
 7. reject a structure functor when a target class needs construction input and the functor lacks an exact typed conversion;
 
-8. initialize each class in the C3 MRO once, without enumerating paths to that class or comparing constructor data across paths; each public functor action remains independent;
+8. initialize each class in Sage's MRO once, without enumerating paths to that class or comparing constructor data across paths; each public functor action remains independent;
 
 9. retain one object of `Fun(C, D)` for each named functor construction;
 
@@ -1004,7 +1004,7 @@ A point's construction input uses the declared terminal-object comparison.
 The method's value is returned exactly as declared.
 
 The public surface is dynamic inheritance in Sage's sense.
-The kernel builds `C.ObjectType`, `C.ElementType`, and `C.MorphismType` as Sage dynamic classes with the C3-linearized surface of their immediate structure-functor targets.
+The kernel builds `C.ObjectType`, `C.ElementType`, and `C.MorphismType` as Sage dynamic classes with the surface produced from their immediate structure-functor targets by Sage's controlled linearization.
 A leaf writes no Python inheritance.
 A leaf that wants a source-category result overrides the inherited method or adds its own.
 
@@ -1136,4 +1136,4 @@ It is kernel infrastructure over already established mathematical functors.
 - `structure_functors()` determines the immediate compiled class bases, constructor conversions, and inherited method surface.
   Each named functor owns its public images.
 
-- Sage dynamic classes and Python C3 derive the complete MRO from those immediate bases.
+- Sage dynamic classes and Sage's controlled linearization derive the complete MRO from those immediate bases.

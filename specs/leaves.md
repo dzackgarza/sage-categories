@@ -368,7 +368,7 @@ It supplies the public mathematical contract and the private computation boundar
 ## Structure functors determine class inheritance
 
 The kernel constructs `C.ObjectType`, `C.ElementType`, and `C.MorphismType` dynamically from the immediate targets of `C.structure_functors()`.
-Sage dynamic classes and Python C3 resolve the resulting inheritance graph.
+Sage dynamic classes and Sage's controlled linearization resolve the resulting inheritance graph.
 The kernel does not enumerate complete functor paths or compare constructor data from different paths.
 
 `C.ObjectType` inherits `Cat().ElementType` because an object of `C` is a point `* -> C`.
@@ -390,7 +390,7 @@ For each structure functor `F: C -> D`, the kernel:
 
 - invokes inherited methods on the original structured value through ordinary Python method resolution;
 
-- lets Python C3 place each common ancestor once in the MRO and initialize it once through cooperative `super()`.
+- lets Sage's controlled linearization place each common ancestor once in the MRO and initialize it once through cooperative `super()`.
 
 The local constructor accepts only the leaf's new semantic data.
 It initializes that state and calls `super().__init__()` once.
@@ -859,11 +859,11 @@ A leaf does not flatten the result to a backend container or manually route it t
 ## Relation to dynamic class inheritance
 
 The immediate structure-functor targets supply the dynamic bases of the compiled class.
-Python C3 preserves each branch and places each common class once in the MRO.
+Sage's controlled linearization preserves each branch and places each common class once in the MRO.
 See [resolution.md](resolution.md) for the complete decision.
 
 For this set-based \(R^n\), the algebra-to-rings and algebra-to-modules branches introduce different applicable operations.
-Both later reach `Sets()`. The C3 MRO contains the common `Sets().ObjectType` once.
+Both later reach `Sets()`. Sage's MRO contains the common `Sets().ObjectType` once.
 The kernel performs no equality check between data attributed to the two branches.
 
 This structural inheritance does not dispatch the algebra's local methods to Sage.
@@ -974,7 +974,7 @@ A leaf implementation satisfies this specification when all these facts hold:
 
 - inherited methods arrive only through structure functors;
 
-- every class in the C3 MRO receives the state required by its constructor conversion;
+- every class in Sage's MRO receives the state required by its constructor conversion;
 
 - the compiler does not match local operation names to backend names;
 
@@ -996,7 +996,7 @@ A leaf implementation satisfies this specification when all these facts hold:
 
 - construction results retain every mathematically established category placement;
 
-- Python C3 preserves all branch-owned operations and places each common implementation class once in the MRO;
+- Sage's controlled linearization preserves all branch-owned operations and places each common implementation class once in the MRO;
 
 - a mathematician can find the executable operation from its category-owned implementation class without understanding kernel class construction.
 

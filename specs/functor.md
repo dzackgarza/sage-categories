@@ -410,7 +410,7 @@ Their existence does not affect the compiled public surface.
 Selection changes compiler behavior only.
 It does not change a functor's mathematical definition.
 
-Each category lists only immediate selected functors.
+Each category lists only immediate declared functors.
 The kernel obtains longer routes by composition and applies [resolution.md](resolution.md) to diamonds.
 
 ### Compiled roles
@@ -447,9 +447,9 @@ Its defining morphism is a functor only when the represented object is a categor
 The construction input already stores the canonical object or morphism for the two forms.
 Their local `Cat().ElementType` datum is `None`.
 
-A selected functor retains a pure typed conversion from its source construction input to its target construction input for each role.
+A declared functor retains a pure typed conversion from its source construction input to its target construction input for each role.
 Thus a poset datum states only its order data.
-Its selected functor to `Sets()` uses the source identity and datum to return the input retained by the canonical set image.
+Its declared functor to `Sets()` uses the source identity and datum to return the input retained by the canonical set image.
 The conversion does not inspect a partly initialized poset.
 
 The kernel allocates the compiled value first.
@@ -469,7 +469,7 @@ The raw declaration classes do not occur in the public MRO. Python functions cop
 The compiler rebinds that closure to the final compiled class before it installs the function.
 This makes literal zero-argument `super()` enter the controlled compiled MRO.
 
-Object, element, and morphism constructor conversions are retained implementation data of the selected functor.
+Object, element, and morphism constructor conversions are retained implementation data of the declared functor.
 For an object or morphism, the target image retained by a conversion is the canonical `F(x)`. Public object or morphism application returns that exact value.
 The element conversion supplies compiler input.
 Public element application follows the morphism action described below.
@@ -496,7 +496,7 @@ The canonical value `q` retains its own root construction input and cache identi
 For a source whose domain is not the separator, the element conversion gives the compiler the input retained by `q`.
 
 A category may choose a separator `G_C`: `1` for `Sets()`; `Cat()` uses `1` for objects and `[1]` for morphisms.
-A point of `X` is a generalized element whose domain is exactly `G_C`. A selected structural functor that exposes the target's point methods retains a separator comparison `c_F: G_D -> F(G_C)`. For a a `t: G_C -> X` at the separator, the compiler precomposes `q = F(t)` with `c_F` and obtains the input `p: G_D -> F(X)` at the target separator.
+A point of `X` is a generalized element whose domain is exactly `G_C`. A declared functor that exposes the target's point methods retains a separator comparison `c_F: G_D -> F(G_C)`. For a a `t: G_C -> X` at the separator, the compiler precomposes `q = F(t)` with `c_F` and obtains the input `p: G_D -> F(X)` at the target separator.
 The element conversion gives the compiler the input retained by `p`. The values `q` and `p` have separate identities and cache entries when their domains, defining morphisms, or codomains differ.
 For an identity functor, \(c_{\mathrm{id}} = 1_G\). For composable `F: C -> D` and `H: D -> E`, \(c_{H \circ F} = H(c_F) \circ c_H\).
 
@@ -525,8 +525,8 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (Fun(self, D).Monomorphisms().Isofibrations()(),)
 ```
 
-A point functor is a selected structural functor under exactly this declaration and under no other.
-Like every selected functor, it contributes the target's compiled classes, typed construction-input conversions, canonical images, constructor chain, and inherited public methods (`POL-FUN-003`, `POL-FUN-035`). Its generalized-element action is derived from its morphism action (`POL-FUN-002`). The compiler reaches it through composition in `Cat` with the rest of the structural graph.
+A point functor is a declared functor under exactly this declaration and under no other.
+Like every declared functor, it contributes the target's compiled classes, typed construction-input conversions, canonical images, constructor chain, and inherited public methods (`POL-FUN-003`, `POL-FUN-035`). Its generalized-element action is derived from its morphism action (`POL-FUN-002`). The compiler reaches it through composition in `Cat` with the rest of the structural graph.
 
 Before a point-inherited initializer runs, the kernel retains the point category, its selected point functors, and all required role conversions.
 The ordinary compiled C3 chain then initializes each reachable target class once.
@@ -793,7 +793,7 @@ The kernel supplies these shape constructors:
 A discrete diagram needs only its object rule `i |-> X_i`. The rule is an assignment on `S`; it never enumerates `S`. A Python sequence `(X_0, ..., X_n)` is the convenience form and denotes the diagram over `Discrete([n])`.
 
 `C.Products()(diagram)` constructs one object of `C`, placed in `C.Products()`, with `product_projection(i)` indexed by `i in S` and the universal map.
-The selected functor of the family is its retained identity-on-values monomorphism into `C`. `C.Coproducts()` is dual with `coproduct_injection(i)`. `X * Y` is `C.Products()((X, Y))`.
+The declared functor of the family is its retained identity-on-values monomorphism into `C`. `C.Coproducts()` is dual with `coproduct_injection(i)`. `X * Y` is `C.Products()((X, Y))`.
 
 `C.Limits(I)` and `C.Colimits(I)` are the general families for one supplied shape `I`. The named conveniences are instances:
 
@@ -863,7 +863,7 @@ A pointed set is an object of the coslice category under the singleton set:
 \mathbf{PointedSet}=1\!\downarrow\!\mathbf{Set}.
 \]
 
-The selected functor is the composite of the pullback projection to `Fun([1], Sets())` with `ev_1`, that is `(X, x) |-> X`. The pullback projection itself returns the morphism `1 -> X` that selects `x`.
+The declared functor is the composite of the pullback projection to `Fun([1], Sets())` with `ev_1`, that is `(X, x) |-> X`. The pullback projection itself returns the morphism `1 -> X` that selects `x`.
 
 ### Product categories and `Fun([1], C)`
 
@@ -906,7 +906,7 @@ Natural transformations are trusted constructions, never compiler proofs.
 There is no route normalization, route scoring, or preservation registry.
 
 Every inherited method enters the descendant through the compiled class MRO. The declaring method runs on the original descendant instance with the supplied arguments.
-It reads the declaring category's state directly on that instance, because each selected functor states how the descendant's construction data produces the data its target's constructor consumes, and the kernel used that statement to thread the descendant's constructor arguments through the ancestor initializers. Nothing is fetched, because no second value exists to fetch.
+It reads the declaring category's state directly on that instance, because each declared functor states how the descendant's construction data produces the data its target's constructor consumes, and the kernel used that statement to thread the descendant's constructor arguments through the ancestor initializers. Nothing is fetched, because no second value exists to fetch.
 A point's construction input uses the retained separator comparison.
 The method's value is returned exactly as declared.
 
@@ -1012,7 +1012,7 @@ It is kernel infrastructure over already established mathematical functors.
 
 - The repository has no generic constructor selected by the phrase “forget structure.”
 
-- Every structural functor is named by its construction or given as an explicit composite.
+- Every declared functor is named by its construction or given as an explicit composite.
 
 - Each category presentation retains all projections and evaluations required by its definition.
 
@@ -1038,7 +1038,7 @@ It is kernel infrastructure over already established mathematical functors.
 
 - A selected point functor `{C} -> D` supplies complete target classes, typed constructor conversions, state, and methods to `C`, `C.ObjectType` with domain `1`, and `C.MorphismType` with domain `[1]`.
 
-- Every selected structural functor is an ordinary object of `Fun`.
+- Every declared functor is an ordinary object of `Fun`.
 
 - `structure_functors()` determines the structural graph, compiled class bases, construction-input conversions, canonical images, and inherited method surface.
 

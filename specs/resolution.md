@@ -95,7 +95,7 @@ Its controlled order ensures that parents and elements use a consistent method-r
 ## Why this framework has a stronger obligation
 
 This framework compiles more than methods.
-A selected structural functor supplies:
+A declared functor supplies:
 
 - objects;
 
@@ -229,7 +229,7 @@ Let \((\mathcal M,\odot,1)\) be monoidal, let \(\mathcal C\) be an \(\mathcal M\
 that satisfies the unit and action diagrams.
 When closed or enriched structure represents these actions by an internal endomorphism monoid, this data is equivalently a monoid morphism \(A\to\operatorname{End}_{\mathcal C}(X)\).
 
-Assume that `Modules(A, C)` has the selected products below and that its structural functor to \(\mathcal C\) preserves them.
+Assume that `Modules(A, C)` has the selected products below and that its declared functor to \(\mathcal C\) preserves them.
 For a family \((X_i)_{i\in I}\) in this category, a chosen product contains:
 
 - the module apex \(P\);
@@ -242,7 +242,7 @@ For a family \((X_i)_{i\in I}\) in this category, a chosen product contains:
 
 - its complete product universal property.
 
-Let the module presentation select a structural functor
+Let the module presentation select a declared functor
 
 \[
 U:\operatorname{Modules}(A,\mathcal C)\longrightarrow\mathcal C.
@@ -299,7 +299,7 @@ For the explicitly chosen product module
 M=\prod_{i=1}^{n}\mathbf F_p,
 \]
 
-the selected structural functor gives
+the declared functor gives
 
 \[
 U(M)=\prod_{i=1}^{n}U(\mathbf F_p).
@@ -374,7 +374,7 @@ Their common object is a biproduct:
 M\oplus N.
 \]
 
-After applying the selected structural functor to sets,
+After applying the declared functor to sets,
 
 \[
 U(M\oplus N)=U(M)\times U(N).
@@ -389,7 +389,7 @@ U(M)\sqcup U(N).
 The selected composite route to `Sets()` preserves products.
 It does not preserve module coproducts as set coproducts.
 
-Therefore, the compiler must not assume that every structural functor preserves every universal construction.
+Therefore, the compiler must not assume that every declared functor preserves every universal construction.
 Construction preservation is separate mathematical data.
 A functor can preserve limits without preserving colimits.
 
@@ -421,7 +421,7 @@ The choice includes:
 
 - mediating and factoring morphisms;
 
-- the image under every selected structural functor.
+- the image under every declared functor.
 
 This choice does not remove algorithms associated with another category branch.
 It only selects the representation of one mathematical construction.
@@ -467,7 +467,7 @@ A diamond can satisfy this rule in either of two ways.
 This section is about applying a named functor. It is not about how an inherited method
 runs. An inherited method applies to the value it was called on and reads the declaring
 category's state there, because the kernel initialized that state from the leaf's
-construction data through the selected functor's conversion (`POL-KERNEL-018`).
+construction data through the declared functor's conversion (`POL-KERNEL-018`).
 Nothing in this section licenses a method that resolves a route to fetch a second value.
 
 ### Strictly coherent routes
@@ -479,7 +479,7 @@ The compiler deduplicates the routes.
 This identity holds by construction.
 A source value retains each ancestor value supplied as defining data.
 A derived ancestor image is constructed once from retained data and cached for that source value.
-A selected structural functor returns that retained or cached ancestor value on every call and never reconstructs an equal or isomorphic replacement.
+A declared functor returns that retained or cached ancestor value on every call and never reconstructs an equal or isomorphic replacement.
 
 The compiler checks the identity during construction.
 If no constructor reaches the target node, it checks at the first public functor application.
@@ -504,7 +504,7 @@ They never rewrite, normalize, or identify structural routes, and the compiler p
 
 The architecture uses the following rules.
 
-1. Selected structural functors form the complete inheritance graph.
+1. Selected declared functors form the complete inheritance graph.
 
 2. The compiler collects methods from every reachable branch.
 
@@ -532,7 +532,7 @@ The architecture uses the following rules.
     The rebound local initializer remains separate from the generated `__init__` wrapper.
 
 12. The kernel allocates the public value first.
-    Before the C3 chain starts, each selected functor converts complete typed construction inputs along structural edges.
+    Before the C3 chain starts, each declared functor converts complete typed construction inputs along structural edges.
     The object context adds `ObjectStageIdentity(C)`. The morphism context adds `ArrowStageIdentity(C, A, B)`. An ordinary element keeps its defining morphism.
     A generated class wrapper reads the input for its own node and passes only its local datum to the node initializer.
     Thus adjacent C3 classes need not be joined by a structural edge.
@@ -540,7 +540,7 @@ The architecture uses the following rules.
 
 13. A source value retains each ancestor value supplied as defining data.
     A derived ancestor image is constructed once and cached.
-    A selected structural functor returns that retained value on every call and never reconstructs an equal or isomorphic replacement.
+    A declared functor returns that retained value on every call and never reconstructs an equal or isomorphic replacement.
 
 14. During construction or the first public functor application, the compiler traverses every route to that category in declaration order, stores the first image and construction input, and asserts that each later route supplies those same objects by identity.
     A mismatch raises a construction-defect error naming both routes and the shared ancestor.
@@ -579,13 +579,13 @@ It does not enumerate its \(p^n\) elements to establish finiteness.
 ### Module products
 
 A product in `Modules(A, C)` retains its module apex, action, projections, and mediating morphism.
-When the selected functor to \(\mathcal C\) preserves products, its \(\mathcal C\)-image is the chosen product there.
+When the declared functor to \(\mathcal C\) preserves products, its \(\mathcal C\)-image is the chosen product there.
 At the ambient `Sets()`, the composite underlying-set image is the chosen set product.
 
 ### Module coproducts
 
 At the ambient `Sets()`, the underlying set of a module coproduct is not identified with the set coproduct.
-The compiler uses only the construction preservation supplied by the selected structural functor.
+The compiler uses only the construction preservation supplied by the declared functor.
 
 ### Algorithm selection
 

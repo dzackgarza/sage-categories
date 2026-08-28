@@ -195,7 +195,7 @@ It already knows the category in which it must construct the result.
 
 ### Property refinement is not structural transport
 
-A structural functor can create another owned implementation:
+A declared functor can create another owned implementation:
 
 \[
 F:C\longrightarrow D,\qquad x\longmapsto F(x).
@@ -267,7 +267,7 @@ The expression must not cause repeated property checks.
 
 A distinguished named object is represented by its parameterized one-object category.
 For example, the category `{QQ}` has `QQ` as its sole object.
-It declares the structural functors that place `QQ` in countable sets, partially ordered sets, and fields.
+It declares the declared functors that place `QQ` in countable sets, partially ordered sets, and fields.
 The field route then supplies its ring structure.
 Construction of `QQ` places the sole object in the strongest combined category declared by these functors.
 

@@ -128,7 +128,7 @@ For a general `C`, the morphisms and diagrams above remain the public definition
 - `Rings(C)` retains one carrier object in `C`.
 - Its structure maps are morphisms in `C`.
 - Its axioms are commutative diagrams in `C`.
-- Its structural functors target `Semirings(C)` and
+- Its declared functors target `Semirings(C)` and
   `Groups(C_x).Additive().Commutative()`.
 - `Rings(Sets())` gives ordinary rings; `Rings(Cat())` states its laws as equalities of
   functors.

@@ -9,7 +9,7 @@ The central rule is simple:
 > A functor constructs an implementation in another category.
 
 This rule replaces accidental inheritance with explicit mathematics.
-It also lets one public object receive operations from every category reached by the selected functors.
+It also lets one public object receive operations from every category reached by the declared functors.
 
 The public API is not stable.
 The repository contains the categorical kernel, the `Mor(n, C)` tower, and an owned `Sets()` implementation.
@@ -85,7 +85,7 @@ Legibility and categorical uniformity are therefore primary requirements, not de
 ## Leaf-category end state
 
 Once the kernel is established, a researcher adding a leaf category should not need to understand its implementation.
-They should begin from a shipped category template, declare the new mathematical structure, connect it to nearby familiar categories through selected functors, and implement only the new methods.
+They should begin from a shipped category template, declare the new mathematical structure, connect it to nearby familiar categories through declared functors, and implement only the new methods.
 They should need to read only the mathematically relevant neighboring subtrees and their functor contracts.
 
 The compiler then supplies the complete inherited object, element, morphism, and construction interfaces.
@@ -94,7 +94,7 @@ Let \((\mathcal M,\odot,1)\) be monoidal, let \(\mathcal C\) be an \(\mathcal M\
 When closed or enriched structure represents these actions by an internal endomorphism monoid, the same module structure is equivalently a monoid morphism \(A\to\operatorname{End}_{\mathcal C}(X)\). The action morphism is the general definition.
 
 [`Algebras(R, C)`](specs/algebras.md) is the base-relative presentation of the monoid objects in the supplied monoidal category `Modules(R, C)`. Its selected route through the general monoid, magma, and module categories supplies the applicable operations.
-A general module or algebra object reaches `Sets()` only through an explicit selected functor from its ambient category.
+A general module or algebra object reaches `Sets()` only through an explicit declared functor from its ambient category.
 Cardinality and other distant capabilities arrive through functor composition rather than leaf-specific code.
 
 For example, a researcher can add `FiniteSubsetsOfNN()` after the complete theory of sets exists.
@@ -200,7 +200,7 @@ Direct property construction and assumptions refine the same owned functor.
 These predicates have no computational routes.
 
 Every functor is an explicit mathematical object.
-Only selected structural functors contribute methods to the public surface.
+Only declared functors contribute methods to the public surface.
 The selection is compiler input over an already established mathematical functor.
 It is not an additional kind of functor.
 
@@ -319,7 +319,7 @@ The theory layer must read like mathematics:
 
 - constructions preserve their defining morphisms;
 
-- inherited methods follow structural functors;
+- inherited methods follow declared functors;
 
 - implementations do not impose unjustified finiteness or countability assumptions.
 

@@ -27,13 +27,13 @@ class LeafCategory(Category):
         return self.ObjectType(category=self, defining_data=defining_data)
 
     def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-        """Return the selected immediate structural functors."""
+        """Return the selected immediate declared functors."""
         ...
 ```
 
 `Category` is `Cat().ObjectType`. Each entry in `structure_functors()` is an explicitly constructed object of `Fun = Mor(Cat())`. Include only immediate functors whose target catalogue supplies the leaf's inherited public surface.
 
-For each inherited operation, the selected functor must construct every required object and morphism image.
+For each inherited operation, the declared functor must construct every required object and morphism image.
 The compiler does not invent missing maps.
 
 The functor connects the category-owned implementation classes.

@@ -19,7 +19,7 @@ FinitePosets()
 FiniteTotallyOrderedSets()
 ```
 
-The structural functors form this commutative graph:
+The declared functors form this commutative graph:
 
 \[
 \begin{array}{ccc}

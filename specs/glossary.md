@@ -37,6 +37,12 @@ appear in permanent documentation, and the row states what replaces it.
 | `structural_image` | nothing replaces it; a category has no image operation | `POL-CAT-096` |
 | `this_object` | nothing replaces it; it states no proposition | `POL-MATH-047` |
 | `DeclaredObjectType`, `DeclaredElementType`, `DeclaredMorphismType` | `ObjectType`, `ElementType`, `MorphismType` | `POL-KERNEL-028` |
+| `structural functor`, `structure functor` | declared functor | `POL-FUN-028` |
+
+A functor does not know that it is structural. A category builds an ordinary functor and
+declares it by returning it from `structure_functors()`, so the adjective belongs to the
+declaration and never to the functor. There is no kind of functor here and no constructor
+that makes one.
 
 One name exists per mathematical kind. A category writes `ObjectType` and the kernel
 compiles that same class, as Sage compiles a written `ParentMethods` into a dynamic class
@@ -53,19 +59,27 @@ These terms are in use and have no complete row. Each is either completed or rem
 
 | Term | Why it is open |
 | --- | --- |
-| structural functor | `structure_functors()` selects it, but no source or single definition states what "structural" adds to "functor" |
 | leaf category | used throughout as the opposite of kernel; needs one definition or a plainer phrase |
 | construction input | described across `POL-KERNEL-029` and `POL-LEAF-047`; needs one definition |
-| route | a composite of selected functors; either cite "composite" and use it, or define |
+| route | a composite of declared functors; either cite "composite" and use it, or define |
 | transport | overlaps transport of structure along an isomorphism, which is not the sense used |
-| descendant | a category with a selected functor to another; needs a definition or a plainer phrase |
+| descendant | a category with a declared functor to another; needs a definition or a plainer phrase |
 | stage | appears in `ObjectStageIdentity` and `ArrowStageIdentity` with no stated meaning |
 | firewall | metaphor for the implementation class boundary in `POL-LEAF-041` |
+
+## Defined
+
+| Term | Definition |
+| --- | --- |
+| declared functor | An ordinary functor a category returns from `structure_functors()`. `AGENTS.md`, "Core categorical architecture". |
+| compiled class | The class `dynamic_class` builds for `C.ObjectType`, `C.ElementType`, or `C.MorphismType`. `AGENTS.md`, "Core categorical architecture". |
 
 ## Cited
 
 | Term | Source |
 | --- | --- |
+| `dynamic_class(name, bases, cls)` | Sage, `src/sage/structure/dynamic_class.py:128`. With `cls` given, its methods are inserted into the built class and its bases are prepended. |
+| `Category.parent_class`, `_make_named_class` | Sage, `src/sage/categories/category.py:1498` and `:1670`. Builds `parent_class` from `ParentMethods`, `element_class` from `ElementMethods`, `morphism_class` from `MorphismMethods`. |
 | separator | open |
 | replete | open |
 | generalized element | open |

@@ -78,7 +78,7 @@ f\circ\mu_X=\mu_Y\circ(f\otimes f).
 
 `Magmas(V)` is the category of these objects and morphisms.
 Its defining presentation retains `X`, `mu_X`, and their endpoint equation.
-The carrier projection is the selected structural functor to `C`:
+The carrier projection is the declared functor to `C`:
 
 ```python
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
@@ -178,7 +178,7 @@ I\otimes A=A=A\otimes I,
 
 and the matching three equations on morphisms of `X`.
 
-Its immediate structural functor forgets associativity and the unit:
+Its immediate declared functor forgets associativity and the unit:
 
 ```python
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
@@ -248,7 +248,7 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (Fun(self, Monoids(V)).Monomorphisms().Isofibrations().Full()(),)
 ```
 
-The selected functor supplies the monoid operation and unit.
+The declared functor supplies the monoid operation and unit.
 `Groups(V)` adds only the inversion morphism and its laws.
 
 At `V = Sets()`, an object is an ordinary group.
@@ -325,7 +325,7 @@ These formulas are consequences of the internal diagrams.
 
 ## Structural functors
 
-Each selected functor acts on objects and morphisms.
+Each declared functor acts on objects and morphisms.
 Its point action comes from its morphism action.
 
 The additive and multiplicative refinements use subcategory monomorphisms.
@@ -346,7 +346,7 @@ Longer routes to `C` arise through the carrier projections of `C_x`.
 | `Groups(V).Additive()` | Unary `-` and subtraction. |
 | `Semirings(C)` | Distributivity, absorption, and both selected monoid structures. |
 
-Inherited capabilities come from the listed structural functors.
+Inherited capabilities come from the listed declared functors.
 Each defining predicate returns its owned proposition.
 
 ## Laws in the supplied ambient

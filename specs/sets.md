@@ -1,7 +1,7 @@
 # Sets specification
 
 `Sets()` owns the public algorithms for sets, set elements, and total functions.
-Categories with a selected structural functor to `Sets()` inherit this API.
+Categories with a declared functor to `Sets()` inherit this API.
 
 Standard set theory and category theory are assumed.
 This specification fixes API ownership, constructors, algorithms, result categories, and exact failure states.
@@ -440,7 +440,7 @@ The element's defining morphism and the morphism's category and endpoints remain
 The local datum of each set role is that role's private state record.
 After allocation, direct `Sets()` construction creates the record with the new public value as its canonical image.
 The local initializer assigns the record to that value.
-A selected functor returns the input retained by the canonical set image.
+A declared functor returns the input retained by the canonical set image.
 The set initializer assigns that same record to the descendant.
 Thus an inherited set method executes on the descendant and uses the same set state as the public functor image.
 

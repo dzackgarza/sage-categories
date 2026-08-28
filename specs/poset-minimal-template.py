@@ -12,7 +12,7 @@ pair to ``X`` and supplies the inherited set surface. The other component remain
 the order data.
 
 Both component projections are mathematical functors. Only the set projection
-is a structure functor. The relation projection remains an ordinary functor because
+is a declared functor. The relation projection remains an ordinary functor because
 its subset-of-a-product catalogue is not a public poset surface.
 
 The poset category is a subcategory of a product category. The first factor contains

@@ -118,7 +118,7 @@ X.action()
 
 `action()` returns `rho_X` in `Mor(C)(A bullet X, X)`. At compatible point domains, scalar action evaluates this morphism through the selected actegory action.
 
-All other capabilities come through the selected functor to `C` or through later property subcategories of `Modules(A, C)`.
+All other capabilities come through the declared functor to `C` or through later property subcategories of `Modules(A, C)`.
 
 ## Closed and enriched presentation
 
@@ -162,7 +162,7 @@ The [nLab module object](https://ncatlab.org/nlab/show/module%2Bobject) entry, s
 
 - Module morphisms are morphisms in `C` that preserve the action.
 
-- The faithful carrier projection to `C` is the sole immediate structural functor.
+- The faithful carrier projection to `C` is the sole immediate declared functor.
 
 - The enriched map to `End_C(X)` appears when the stated adjunction exists.
 

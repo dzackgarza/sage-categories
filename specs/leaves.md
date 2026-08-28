@@ -71,7 +71,7 @@ Its implementation types are part of that ownership:
 
 - the category declaration identifies those implementation types;
 
-- selected structural functors supply inherited operations.
+- declared functors supply inherited operations.
 
 A leaf category introduces only its new mathematics.
 However, introducing a new operation includes implementing that operation.
@@ -98,7 +98,7 @@ The standard definitions already determine the software roles:
 
 - an operation's mathematical signature determines the exact type of the value it applies to, of each parameter, and of its result;
 
-- a selected functor determines the compiled ancestor class and its exact construction-input conversion;
+- a declared functor determines the compiled ancestor class and its exact construction-input conversion;
 
 - an element's ambient mathematical object determines its element role;
 
@@ -114,7 +114,7 @@ A theorem does not become applicable through an authority token.
 
 Use the following meanings throughout this specification:
 
-- **explicit** means present in the semantic API as an exact type, category placement, defining morphism, selected functor, named construction, predicate result, or hypothesis;
+- **explicit** means present in the semantic API as an exact type, category placement, defining morphism, declared functor, named construction, predicate result, or hypothesis;
 
 - **owner** means the category, object, morphism, functor, or universal construction whose mathematical definition states the operation or fact;
 
@@ -137,7 +137,7 @@ The architecture has two independent reuse mechanisms.
 
 ### Structural inheritance
 
-An implementation already owned by a structural ancestor reaches the leaf through the selected structural functors.
+An implementation already owned by a structural ancestor reaches the leaf through the declared functors.
 The kernel compiles its methods and constructor into the descendant class class.
 
 Examples include:
@@ -278,12 +278,12 @@ The same rule applies downstream:
 
 A downstream leaf selects its immediate structural ancestor.
 When its structural graph contains a selected route to `Sets()`, the category that owns that route supplies the underlying-set construction.
-With an arbitrary ambient category \(\mathcal C\), the leaf receives the capabilities owned by \(\mathcal C\); a set surface requires an explicit selected functor to `Sets()`.
+With an arbitrary ambient category \(\mathcal C\), the leaf receives the capabilities owned by \(\mathcal C\); a set surface requires an explicit declared functor to `Sets()`.
 
-These sentences describe applying a selected functor, which a leaf rarely does.
+These sentences describe applying a declared functor, which a leaf rarely does.
 A source value retains each ancestor value supplied as defining data.
 A derived ancestor image is constructed once from retained data and cached for that source value.
-A selected structural functor returns that retained or cached ancestor value on every call and never reconstructs an equal or isomorphic replacement.
+A declared functor returns that retained or cached ancestor value on every call and never reconstructs an equal or isomorphic replacement.
 A construction lift adds structure to the chosen ancestor value.
 
 None of this applies to calling an inherited method.
@@ -299,7 +299,7 @@ The kernel constructs that exact category-owned element type with its ambient ob
 It also retains the canonical element image under each selected projection.
 The element remains a `C.ElementType`, not an ancestor element type.
 
-The category layer constructs and selects each immediate structural functor.
+The category layer constructs and selects each immediate declared functor.
 A leaf that is a subobject of a product uses `product_projection(i)`. Otherwise, it reuses the exact functors retained by its defining category construction.
 
 A leaf selects the strongest established property subcategory.
@@ -406,7 +406,7 @@ The local constructor accepts only the leaf's new semantic data.
 It initializes that state and calls `super().__init__()` once.
 A declaration can omit `__init__` when it adds no state.
 Its generated wrapper advances to the next C3 initializer.
-The selected functor supplies the input required by the next role constructor.
+The declared functor supplies the input required by the next role constructor.
 The leaf does not add ancestor fields or ancestor arguments.
 The object or morphism construction context supplies the common `Cat().ElementType` generalized-point identity before this chain starts.
 The ordinary element context supplies its defining morphism.
@@ -618,7 +618,7 @@ The word “realization” must distinguish two different notions.
 A realization functor is appropriate when the project models an actual mathematical functor between categories.
 It has object and morphism maps and can be used explicitly.
 
-Such a functor does not contribute methods through structural inheritance unless the category deliberately selects it as a structural functor.
+Such a functor does not contribute methods through structural inheritance unless the category deliberately selects it as a declared functor.
 
 ### Private computation representation
 
@@ -766,7 +766,7 @@ If changing one mathematical operation requires synchronized edits to two method
 | Category-local operation name and signature | `ObjectType`, `ElementType`, or `MorphismType` |
 | Category-local executable method body | The same implementation class |
 | Local role constructor and state | The same local implementation declaration |
-| Ancestor constructor conversion | Selected structural functor |
+| Ancestor constructor conversion | Selected declared functor |
 | Controlled class MRO and constructor composition | Kernel |
 | Inherited executable method | Declaring structural ancestor |
 | Public functor images and canonical route checks | Kernel |
@@ -980,7 +980,7 @@ A leaf implementation satisfies this specification when all these facts hold:
 
 - no local method is an `assert False` declaration stub;
 
-- inherited methods arrive only through selected structural functors;
+- inherited methods arrive only through declared functors;
 
 - every selected ancestor's required state is initialized through its functor-owned constructor conversion;
 

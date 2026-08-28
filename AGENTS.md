@@ -102,7 +102,7 @@ The `Mor(n, C)` foundation includes:
 - slices, coslices, subobjects, superobjects, covering objects, and covered objects.
 
 Build slices and coslices after sequence products, subobjects, `Fun([1], C)`, and its
-evaluation functors `ev_0` and `ev_1`. Their structure functors are composites of these
+evaluation functors `ev_0` and `ev_1`. Their declared functors are composites of these
 general constructions.
 
 ## Mathematical structure as implementation compression
@@ -138,7 +138,7 @@ For a product, trace all of these parts:
 - the kernel definition of products and their universal data;
 - the construction family and its monomorphism into the ambient category;
 - the constructed object, its projections, and its universal maps;
-- propagation through structural functors;
+- propagation through declared functors;
 - method compilation and inherited public operations;
 - the leaf theorem or structure that adds the new mathematical delta.
 
@@ -154,9 +154,9 @@ Do not preserve a mistaken architecture with a cheaper local implementation.
 
 Kernel complexity is justified only when it removes repetition from theory code.
 The theory layer must read like the mathematics it implements.
-A new category should state its new data and immediate structural functors, then inherit the rest.
+A new category should state its new data and immediate declared functors, then inherit the rest.
 
-A leaf category must state its mathematical data, operations, structural functors, constructors, and lifts.
+A leaf category must state its mathematical data, operations, declared functors, constructors, and lifts.
 Stop local work when a leaf contains generic reflection, dispatch, route traversal, transport, cache ownership, wrappers, or public backend selection.
 Treat that wiring as a kernel or backend-boundary defect.
 Repair the owning foundation instead of polishing, moving, or preserving the wiring in a leaf workaround.
@@ -209,7 +209,7 @@ chosen enumeration. Every other question is a proposition, and `ask()` decides i
 Category containment owns predicate evaluation. `is_finite()` is declared once, on
 `Sets()`, and the proposition it applies is membership in `Sets().Finite()`. The class
 that implements `Sets().Finite()` supplies the defining predicate of that membership,
-`cardinality() < aleph_0`. Every category with a selected functor to `Sets()` receives
+`cardinality() < aleph_0`. Every category with a declared functor to `Sets()` receives
 `is_finite()` from that one declaration, and a poset is finite exactly when its underlying
 set is. Placement in the subcategory is a fast positive route, because a value that entered
 through the property constructor already satisfies the predicate. Placement is never the
@@ -379,7 +379,7 @@ computational handlers. `ask()` returns `Unknown` unless category placement, an 
 assumption, a cached exact decision, or a categorical implication decides the predicate.
 
 Every functor is explicit.
-Only selected structural functors contribute compiled classes and methods to the public object surface.
+Only declared functors contribute compiled classes and methods to the public object surface.
 Ordinary mathematical functors remain available without changing public inheritance.
 
 A functor has an image; a category does not. The image of `x` under the named functor `F`
@@ -395,26 +395,55 @@ each later image `is` the cached one. A mismatch raises a construction-defect er
 both routes. This agreement is a fact about those functors. It creates no image operation
 on the target category. Method compilation constructs no image and performs no such check.
 
+Sage's dynamic-class construction is the mechanism, and it already works. The kernel
+copies it and closes one gap.
+
+Sage builds `parent_class` from a written `ParentMethods`, `element_class` from
+`ElementMethods`, and `morphism_class` from `MorphismMethods`
+(`Category._make_named_class`, `sage/categories/category.py:1498`, and `parent_class` at
+`:1670`), using `dynamic_class(name, bases, cls)`, which inserts the written class's
+methods into the built class and prepends its bases
+(`sage/structure/dynamic_class.py:128`). A dynamic class carries **methods** and not the
+private data those methods need. That single gap is why this kernel exists.
+
+The declared functor closes it. It states how a category's own construction data calls an
+ancestor category's constructor, so `super().__init__()` threading works and the leaf
+constructor initializes only its own data. If `Sets().ObjectType` holds its own private set
+data and a constructor that initializes it, and `Posets()` holds its own private poset data,
+its own constructor, and a functor that supplies what the `Sets()` constructor requires, then
+a poset gets inheritance rather than methods alone. Wiring the constructors is the functor's
+work, so a leaf constructor never accumulates a field for every ancestor category.
+
+There is one chain per kind, and the four kinds propagate down from `Cat`. Every category is
+a `Cat().ObjectType`. Every object of a category is a `Cat().ElementType`. Every `X in C` is
+a `C.ObjectType`, and that propagates along the declared functors; elements and morphisms
+follow the same rule. The lineage is as straightforward as Sage's `Parent` and `Element`.
+
 Compile the public method surface from category declarations:
 
 - local declarations take precedence;
-- routes to the same declaring category share one method owner;
+- two declared functors reaching the same declaring category share one method owner;
 - unrelated declarations with the same name are errors;
-- the bases of a compiled class are the compiled classes of its selected targets;
-- a role that reaches none stands on the kernel class of its role, which is
-  `Category` for the category role;
-- the kernel copies each local declaration's class body onto its compiled class and
-  rebinds copied `__class__` closures to that role, so a declaration is not a base;
-- a declaration that is itself the chain's kernel class is inherited, not copied,
-  so that its Python subclasses can still override it;
+- the bases of a compiled class are the compiled classes of its declared targets;
+- a chain that reaches none stands on the kernel class for its kind, which is
+  `Category` for a category;
 - an inherited method reaches the public object by ordinary attribute lookup along that
   MRO, Python special methods included; there is no per-method forwarding descriptor.
 
-An inherited method means `X.f() := F(X).f()` along the selected functor `F`, and returns
+A category writes `ObjectType`, `ElementType`, and `MorphismType` as its own nested classes.
+One name per kind: the category writes the class and the kernel compiles it. A category class
+inherits from a base category class, exactly as in Sage. Never define these classes elsewhere
+and pass them into a call.
+
+A property subcategory has its own `ObjectType` — `Sets().Finite()` genuinely has one, the
+finite sets — but usually adds no method. It receives a trivial extension of its immediate
+ancestor's class and writes no boilerplate for it.
+
+An inherited method means `X.f() := F(X).f()` along the declared functor `F`, and returns
 the declaring method's value. That equation states the mathematics. Ordinary Python
 inheritance is the mechanism that makes it true:
 
-- for each selected functor `F: C -> D`, the kernel makes `C.ObjectType` a Python subclass
+- for each declared functor `F: C -> D`, the kernel makes `C.ObjectType` a Python subclass
   of `D.ObjectType`, so an object of `C` is an object of `D` at the Python level as well;
 - `F` states how the construction data of `C` produces the data that `D`'s constructor
   consumes;
@@ -436,7 +465,7 @@ Lifting an ancestor result back is leaf work. `Sets()` can construct the product
 underlying sets; supplying the module structure on that product is the module category's
 mathematical delta. Nothing at `Sets()` knows what a module is.
 
-Derive supercategory information from structural functors.
+Derive supercategory information from declared functors.
 Do not maintain a second inheritance or propagation registry.
 
 ## Universal constructions
@@ -555,7 +584,7 @@ This includes ordinary sets, products, coproducts, subsets, and `Y ** X`.
 Products and subsets must delegate to the categorical constructions that create them.
 They must not define parallel set APIs.
 
-Propagate these operations along structural functors and universal constructions.
+Propagate these operations along declared functors and universal constructions.
 Do not implement a second copy of a set operation in a higher category.
 
 ## Mathematical ownership
@@ -662,7 +691,7 @@ structure supplies that correspondence.
 
 Define `Algebras(R, C)` only when `Modules(R, C)` has a supplied monoidal structure.
 It is the base-relative presentation category for the monoid objects in that module
-category. Its selected functor to the general monoid-object category supplies the
+category. Its declared functor to the general monoid-object category supplies the
 multiplication, unit, and monoid laws. A noncommutative base instead requires a
 supplied monoidal category of `R`-bimodule objects.
 
@@ -714,7 +743,7 @@ Use Sage for:
 - established exact algorithms.
 
 Cross into Sage through an explicit realization functor or owned computation boundary.
-A Sage realization is not a structural functor.
+A Sage realization is not a declared functor.
 Its Python methods must not enter the public mathematical API by accident.
 
 Apply the same boundary to every external engine. Keep each engine value private.

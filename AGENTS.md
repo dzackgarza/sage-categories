@@ -660,7 +660,7 @@ Use `cardinality()` for a mathematical set, including a set of module elements o
 Use `len()` only for a finite ordered Python sequence whose sequence length is the stated concept.
 Methods such as `ngens()` and `rank()` return cardinalities when their definitions count mathematical sets.
 
-Every object whose parent is `Sets()` receives the complete `Sets.ObjectType` method surface.
+Every object whose parent is `Sets()` receives the complete `Sets().ObjectType` method surface.
 This includes ordinary sets, products, coproducts, subsets, and `Y ** X`.
 Products and subsets must delegate to the categorical constructions that create them.
 They must not define parallel set APIs.

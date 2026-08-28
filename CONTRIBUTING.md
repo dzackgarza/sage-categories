@@ -565,7 +565,7 @@ A new specialized algebra category should start from the leaf template, select i
 It receives distant operations such as cardinality through the resulting functor chain without importing or reimplementing them.
 
 For a toy leaf, `FiniteSubsetsOfNN()` declares its research-specific constructors, its monomorphism into `Sets()`, and methods such as `minimal_element()` or `gcd_of_elements()`.
-Its elements automatically receive the `Sets.ElementType` interface through `FiniteSubsetsOfNN.ElementType`, even when the leaf adds no element methods.
+Its elements automatically receive the `Sets().ElementType` interface through `FiniteSubsetsOfNN().ElementType`, even when the leaf adds no element methods.
 Products, coproducts, filtered limits, and other set constructions require no leaf implementations.
 Their results use the category that owns each construction and return to the leaf when closure is declared or derived.
 
@@ -730,7 +730,7 @@ The products category does not define a second set interface or an independent c
 | `POL-SET-020` | Register the exact evaluation cases `#(X × Y) = #X #Y`, `#(X ⊔ Y) = #X + #Y`, and `#(Y^X) = (#Y)^(#X)` on the corresponding `Sets()` constructions. Each case applies only when `ask()` has exact operand cardinalities. |
 | `POL-SET-021` | Let the category-owned implementation of each set construction register its exact cardinality-predicate cases from retained construction data. Keep this evaluation behind `X.cardinality()` and `ask()`. |
 | `POL-SET-022` | Let `ask(X.cardinality())` return an owned cardinal. Compare that cardinal through the ordinary cardinal equality predicate. Never expose a cardinal's engine value. |
-| `POL-SET-023` | Give every object of `Sets()` the complete `Sets.ObjectType` method surface, including products, coproducts, subsets, exponentials, and the morphism categories `Mor(Sets())(X, Y)`. |
+| `POL-SET-023` | Give every object of `Sets()` the complete `Sets().ObjectType` method surface, including products, coproducts, subsets, exponentials, and the morphism categories `Mor(Sets())(X, Y)`. |
 | `POL-SET-024` | Make set products and subsets delegate to the categorical product and subobject constructions instead of defining parallel APIs. |
 | `POL-SET-025` | Make `Cardinal()` the set-enriched skeletal category of cardinal representatives. Its morphism categories `Mor(Cardinal())(k, l)` are discrete on the function sets between the selected representatives. Cardinal order is the existence of an injective map, not mere inhabitation of `Mor(Cardinal())(k, l)`. Its categorical coproducts, products, and exponentials give cardinal addition, multiplication, and exponentiation. The point structure functor `{Cardinal()} -> Semirings(Cat())` supplies the category object with its semiring methods. Cardinal objects form an ordered semiring of finite, infinite, and symbolic values, not integer wrappers. `Unknown` is an unresolved predicate evaluation, not a cardinal. |
 | `POL-SET-026` | Let cardinal arithmetic return cardinal values. Let cardinal equality and order return applied propositions. `ask()` returns `Unknown` when available mathematics does not decide one of those propositions. |

@@ -680,10 +680,10 @@ It must not create:
 
 ## Predicate application
 
-The kernel derives the ambient predicate application from the property declaration.
+The kernel derives the ambient predicate application from the registered axiom identifier.
 For finite sets its value is `Sets().Finite().membership_proposition(self)` and its return type is `Proposition`.
 
-`FiniteSets.ObjectType` must not replace it with a Boolean override:
+`FiniteSets().ObjectType` must not replace it with a Boolean override:
 
 ```python
 def is_finite(self) -> bool:
@@ -907,7 +907,7 @@ It should not import every engine.
 It should not inspect private representation types.
 
 A neighboring private engine module can contain the SymPy interaction.
-The public `Sets.ObjectType` remains the implementation firewall.
+The public `Sets().ObjectType` remains the implementation firewall.
 
 ## How descendant categories receive `Finite()`
 

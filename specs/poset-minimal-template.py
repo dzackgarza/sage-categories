@@ -44,7 +44,7 @@ class PartiallyOrderedSetsCategory(Category):
 
         def __le__(
             self,
-            other: PartiallyOrderedSetsCategory.ElementType,
+            other: "PartiallyOrderedSets().ElementType",
         ) -> Proposition:
             """Return the proposition ``self <= other``."""
             assert other.parent() is self.parent()
@@ -57,7 +57,7 @@ class PartiallyOrderedSetsCategory(Category):
         self,
         X_prime: set[SetElement],
         order_rule: OrderRule,
-    ) -> PartiallyOrderedSetsCategory.ObjectType:
+    ) -> "PartiallyOrderedSets().ObjectType":
         """Construct the asserted partial order on ``X_prime``."""
         data = PosetConstructionData(
             elements=X_prime,
@@ -74,7 +74,7 @@ class PartiallyOrderedSetsCategory(Category):
             return SetsConstructorInput.from_python_set(data.elements)
 
         # The functor retains ``set_constructor_input`` once. Its public object
-        # action and the kernel's ``Sets.ObjectType`` initialization both use it.
+        # action and the kernel's ``Sets().ObjectType`` initialization both use it.
         return Fun(self, Sets())(
             object_constructor_input=set_constructor_input,
             on_morphism=set_projection_on_morphism,

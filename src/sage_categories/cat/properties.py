@@ -125,10 +125,6 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
     def structure_functors(self) -> tuple[Functor, ...]:
         return (_functors().full_subcategory_monomorphism(self, self._ambient),)
 
-    def separating_family(self) -> tuple[CategoryPoint, ...]:
-        """The separators of the ambient that are objects of this subcategory: a subcategory monomorphism supplies none of its own."""
-        return tuple(separator for separator in self._ambient.separating_family() if separator in self)
-
     def element_from_defining_morphism(self, defining_morphism: MorphismOfCategory) -> CategoryPoint:
         """The elements of a full subcategory are those of its ambient on the shared values (POL-CAT-087)."""
         return self._ambient.element_from_defining_morphism(defining_morphism)

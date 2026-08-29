@@ -181,16 +181,6 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
             components,
         )
 
-    def separating_family(self) -> tuple[ProductCategory.ObjectType, ...]:
-        """The separator ``(G_i)_i`` when every factor of an enumerated family chooses one separator."""
-        index_set, finite = index_set_of(self.shape()), Sets.Finite()
-        if not finite.has_chosen_enumeration(index_set):
-            return ()
-        separators = tuple(self.factor(datum).separating_family() for datum in finite.chosen_enumeration(index_set))
-        if any(len(family) != 1 for family in separators):
-            return ()
-        return (self(tuple(separator for (separator,) in separators)),)
-
     def __call__(self, family: ObjectRule | tuple[ObjectOfCategory, ...]) -> ProductCategory.ObjectType:
         """``P(rule)`` for a family by rule; ``P((X_0, ..., X_n))`` for the external tuple, retained per tuple."""
         if callable(family):

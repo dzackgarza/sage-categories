@@ -23,18 +23,6 @@ functor carries an isomorphism to an isomorphism, with ``F(f⁻¹)`` its inverse
 ``CategoryTheory.Functor.mapIso``; inspected 2026-08-29), and retaining that pair is what
 places the image in ``Mor(D).Isomorphisms()``.
 
-The core chooses no separating family.  A family separates when ``f . e = g . e`` for
-every ``e: S_a -> X`` sourced in it forces ``f = g`` (nLab "separator",
-https://ncatlab.org/nlab/show/separator, inspected 2026-08-29; ``specs/functor.md``,
-"Separators and separating families").  The morphisms of the core are the isomorphisms of
-``C``, so the only ``e: S_a -> X`` it has are isomorphisms, and there is one exactly when
-``S_a`` is isomorphic to ``X``.  A family therefore separates the core only if it meets
-every isomorphism class, which is a property of the family and not of the ambient's:
-``Sets()`` chooses ``(1,)``, and the only isomorphisms ``1 -> X`` are those to singletons,
-so at every other ``X`` the condition is empty and would force any two parallel bijections
-equal.  ``Category.separating_family`` returns none, and ``represented_functor`` fails
-loudly for a category that chose none (POL-MATH-037).
-
 ``epsilon_C: U(C.Core()) -> C`` is the component at ``C`` of the natural inclusion
 ``epsilon: U * Core => End_Cat(Cat()).one()``.  The core selects that same monomorphism as
 its one structural functor, so the component and the structural inclusion are one functor.

@@ -1,7 +1,7 @@
 """``Sets().ElementType``: generalized elements ``T -> X`` (POL-CAT-058, POL-FUN-002).
 
 A point of a set ``X`` is a generalized element whose domain is the
-separator ``Sets().Terminal()``: a point ``1 -> X``.  It retains its defining
+terminal object ``Sets().Terminal()``: a point ``1 -> X``.  It retains its defining
 morphism and, at the private computation boundary, the datum that the point
 selects.  A generalized element with another domain retains no point datum.  Two
 points of one set are equal exactly when their data are equal; a point
@@ -62,7 +62,7 @@ class SetElementDeclaration(ElementOfObject):
 def points_equal(first: CategoryPoint, candidate: Any) -> Decision:
     """Two points of one set are equal exactly when their data are.
 
-    A generalized element is a point exactly when its domain is the separator of
+    A generalized element is a point exactly when its domain is the terminal object of
     ``Sets()`` (POL-CAT-058); with any other domain this handler decides nothing.  The two
     data compare at the private boundary, where ``==`` is exact for an engine value,
     ``Unknown`` for a rule-defined family, and a proposition for an owned mathematical
@@ -72,7 +72,7 @@ def points_equal(first: CategoryPoint, candidate: Any) -> Decision:
         return Unknown
     if first.parent() is not candidate.parent():
         return Unknown
-    separator = _sets.Sets().Terminal()
-    if first.defining_morphism().domain() is not separator or candidate.defining_morphism().domain() is not separator:
+    terminal = _sets.Sets().Terminal()
+    if first.defining_morphism().domain() is not terminal or candidate.defining_morphism().domain() is not terminal:
         return Unknown
     return ask(first._point_datum_() == candidate._point_datum_())

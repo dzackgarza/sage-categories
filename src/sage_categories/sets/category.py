@@ -195,7 +195,7 @@ class SetsCategory(Category[[Rule], []]):
 
     @cached_method
     def Terminal(self) -> SetObject:
-        """The one-point set ``1 = {*}``, the separator of ``Sets()``."""
+        """The one-point set ``1 = {*}``, the terminal object of ``Sets()``: its points ``1 -> X`` are the points of ``X``."""
         return self.Finite()(((),))
 
     def Simplex(self, dimension: int) -> SetObject:
@@ -204,17 +204,6 @@ class SetsCategory(Category[[Rule], []]):
 
         assert dimension >= 0
         return Cardinal().representative(Cardinal()(dimension + 1))
-
-    def separating_family(self) -> tuple[SetObject, ...]:
-        """``G_Sets = 1``.  The writer asserts that ``1`` separates ``Sets()``, so ``Mor(Sets())(1, -)`` is faithful (POL-MATH-037).
-
-        nLab "separator", Definitions ("if ``f . e = g . e`` for every morphism
-        ``e: S -> X``, then ``f = g``") and Examples and applications ("In Set, any
-        inhabited set is a separator; in particular, the point is a separator");
-        inspected 2026-08-27.  Set membership, enumeration, and cardinality read
-        ``Mor(Sets())(1, X)`` through this separator.
-        """
-        return (self.Terminal(),)
 
     @cached_method
     def CardinalityFunctor(self) -> Functor:

@@ -61,7 +61,7 @@ class SetMapDeclaration(MorphismOfCategory):
         super().__init__()
 
     def __call__(self, element: SetElement) -> SetElement:
-        """Compose with a generalized element; evaluate its datum at the separator (POL-CAT-040)."""
+        """Compose with a generalized element; evaluate its datum at the terminal object (POL-CAT-040)."""
         assert element in self.domain(), f"{element!r} is not an element of {self.domain()!r}"
         sets = _sets.Sets()
         underlying_map = sets.structural_image(self)

@@ -239,7 +239,6 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         self._inverses: MonoDict = MonoDict()
         self._points: MonoDict = MonoDict()
         self._arrows: MonoDict = MonoDict()
-        self._represented: MonoDict = MonoDict()
         self._elements: MonoDict = MonoDict()
         self._catalogues: dict[Role, dict[str, compiler.Entry]] = {}
         self._limits: MonoDict = MonoDict()
@@ -287,10 +286,6 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
 
     def structure_functors(self) -> tuple[Functor, ...]:
         """The selected structural graph: immediate functors, in preference order (POL-CAT-016, POL-FUN-003)."""
-        return ()
-
-    def separating_family(self) -> tuple[ObjectOfCategory, ...]:
-        """The chosen objects whose hom functors are jointly faithful; none by default (POL-MATH-037)."""
         return ()
 
     def retain_datum[Datum](self, value: CategoryPoint, datum: Datum) -> None:
@@ -629,6 +624,14 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
 
     # -- points of the category as Cat elements (POL-CAT-058), retained once (POL-CAT-083) --------
 
+    def Terminal(self) -> ObjectOfCategory:
+        """``1_C``: the chosen terminal object, whose points ``1_C -> X`` are the points of ``X``.
+
+        A category that states no terminal object has no points; the ones this
+        repository builds points in state theirs.
+        """
+        raise AssertionError(f"{self!r} declares no terminal object")
+
     def point_functor(self, member_object: ObjectOfCategory) -> Functor:
         """The point ``* -> self`` selecting the object ``member_object``.
 
@@ -662,53 +665,6 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
 
         self._arrows[morphism] = Fun(walking_arrow, self)(on_object, on_morphism)
         return self._arrows[morphism]
-
-    def represented_functor(self) -> Functor:
-        """``U_C = Mor(C)(G_C, -): C -> Sets()``, the functor represented by the chosen separator.
-
-        Its value at ``X`` is the set of morphisms ``G_C -> X``, whose points are exactly
-        the points of ``X``; its value at ``f: X -> Y`` is postcomposition
-        ``u |-> f . u``.  This is Mathlib's co-Yoneda embedding at ``G_C``
-        (``Mathlib/CategoryTheory/Yoneda.lean:87-95``, inspected 2026-08-27: "The co-Yoneda
-        embedding, as a functor from ``Cᵒᵖ`` into co-presheaves on ``C``", with the
-        unification hint ``(coyoneda.obj (op X)).obj Y = X ⟶ Y``).
-
-        The leaf's assertion that its separating family separates is what makes ``U_C``
-        faithful (POL-MATH-037); this construction states the functor and not that
-        property.  A separating family of several states that its hom functors
-        ``Mor(C)(G^j, -)`` are *jointly* faithful (nLab, separator,
-        https://ncatlab.org/nlab/show/separator, inspected 2026-08-28: "``S`` is a
-        separating family if the family of hom functors ``Hom(S_a, -) : C -> Set`` (for
-        ``a in A``) is jointly faithful"), which is a family of functors and not one
-        functor.  ``Cat()`` is the case in hand: its separating family is ``(1, [1])``,
-        so objects and morphisms separate functors jointly and no ``U_Cat`` exists.
-        """
-        from sage_categories.cat.declarations import Sets
-        from sage_categories.cat.functors import Fun
-
-        separators = self.separating_family()
-        assert len(separators) == 1, (
-            f"{self!r} chooses a separating family of {len(separators)}; such a family states that its hom functors "
-            f"Mor(C)(G^j, -) are jointly faithful, which is a family of functors and not one represented functor"
-        )
-        (separator,) = separators
-        if separator in self._represented:
-            return self._represented[separator]
-
-        images: MonoDict = MonoDict()
-
-        def hom_set(member_object: ObjectOfCategory) -> ObjectOfCategory:
-            if member_object not in images:
-                hom = self.morphism_category(1)(separator, member_object)
-                images[member_object] = Sets(lambda datum: ask(hom.membership_proposition(datum)) if role_of(datum) is Role.MORPHISM else False)
-            return images[member_object]
-
-        def postcompose(morphism: MorphismOfCategory) -> MorphismOfCategory:
-            source, target = hom_set(morphism.domain()), hom_set(morphism.codomain())
-            return Sets.morphism_category(1)(source, target)(lambda datum: morphism * datum)
-
-        self._represented[separator] = Fun(self, Sets)(hom_set, postcompose)
-        return self._represented[separator]
 
     # -- universal constructions, defined once (POL-CAT-050/092, POL-CAT-093) --------
     #
@@ -994,9 +950,9 @@ def _shared_category(first: ObjectOfCategory, second: ObjectOfCategory) -> Categ
     return shared
 
 
-# The separator comparisons ``G_D -> F(G_C)`` retained by the constructions that own a
+# The terminal comparisons ``1_D -> F(1_C)`` retained by the constructions that own a
 # selected functor exposing point methods (POL-LEAF-003), keyed by the functor.
-_separator_comparisons: MonoDict = MonoDict()
+_terminal_comparisons: MonoDict = MonoDict()
 
 # The lifts a functor ``p: E -> B`` retains over a stated class of morphisms of ``B``
 # (POL-FUN-029, ``specs/functor.md``, "Slices and coslices"): the owner of the
@@ -1172,11 +1128,10 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             """The image of a point ``t: 1_C -> X``: the element ``q = F(t): F(1_C) -> F(X)`` (POL-FUN-002).
 
             This action is derived, never stored: it applies ``on_morphism`` to the defining
-            morphism of ``t``.  A functor retains no element callback and no element
-            capability.  The element conversion a selected functor retains supplies compiler
-            input only; it never answers this call, so the public image keeps the domain
-            ``F(1_C)`` rather than the target's separator (``specs/functor.md``, "Structural
-            inheritance").
+            morphism of ``t`` and composes with the declared ``c: 1_D -> F(1_C)``, so the
+            image is a point of ``F(X)`` (D100).  A functor retains no element callback and
+            no element capability; the element conversion a selected functor retains
+            supplies compiler input only and never answers this call.
 
             A subcategory monomorphism is the identity on the objects and morphisms of its domain,
             so it is the identity on ``t: 1_C -> X`` as well (``specs/functor.md``, "Inclusion
@@ -1189,7 +1144,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
                 assert is_placed(parent, self.domain()) or parent in self.domain(), f"{element!r} is not a point of an object of {self.domain()!r}"
                 return element
             defining = element.defining_morphism()
-            image = self.on_morphism(defining)
+            image = self.after_terminal_comparison(self.on_morphism(defining), defining)
             if image is defining:
                 return element
             return self.codomain().element_from_defining_morphism(image)
@@ -1201,31 +1156,42 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             assert value in self.domain().morphism_category(1), f"{value!r} is neither an object nor a morphism of {self.domain()!r}"
             return self.on_morphism(value)
 
-        # -- separators (``specs/functor.md``, "Structural inheritance") ----------------
+        # -- points (``specs/functor.md``, "Structural inheritance") --------------------
         #
-        # The retained morphism ``c: G_D -> F(G_C)`` is the whole datum of the separator
-        # transport.  By the covariant Yoneda lemma it *is* the natural transformation
-        # ``phi_F: U_C => U_D . F`` between the represented point functors:
-        # Mathlib ``CategoryTheory.coyonedaEquiv : (coyoneda.obj (op X) ⟶ F) ≃ F.obj X``
-        # (inspected 2026-08-27) with ``X = G_C`` and the presheaf ``U_D . F``, whose value
-        # at ``G_C`` is ``Mor(D)(G_D, F(G_C))``.  The construction therefore retains the
-        # separator morphism and no natural-transformation carrier on ``F``.
+        # A point of ``X in C`` is a morphism ``t: 1_C -> X``, so ``F(t): F(1_C) -> F(X)``
+        # is a point of ``F(X)`` only after the comparison ``c: 1_D -> F(1_C)``.  That
+        # morphism of ``D`` is the whole datum of the transport (D100); the construction
+        # that owns the functor states it, and no property of ``C`` is read to obtain it.
 
-        def retain_separator_comparison(self, comparison: MorphismOfCategory) -> None:
-            """Retain ``c: G_D -> F(G_C)`` as the defining datum of this functor's transport at the separator (POL-LEAF-003)."""
-            (source_separator,) = self.domain().separating_family()
-            (target_separator,) = self.codomain().separating_family()
-            assert comparison in self.codomain().morphism_category(1)(target_separator, self.on_object(source_separator))
-            _separator_comparisons[self] = comparison
+        def retain_terminal_comparison(self, comparison: MorphismOfCategory) -> None:
+            """Retain ``c: 1_D -> F(1_C)`` as the defining datum of this functor's transport of points (POL-LEAF-003)."""
+            target = self.codomain().Terminal()
+            assert comparison in self.codomain().morphism_category(1)(target, self.on_object(self.domain().Terminal()))
+            _terminal_comparisons[self] = comparison
 
-        def separator_comparison(self) -> MorphismOfCategory:
-            """``G_D -> F(G_C)``: the retained comparison, or the identity when ``F(G_C) is G_D``."""
-            if self in _separator_comparisons:
-                return _separator_comparisons[self]
-            (source_separator,) = self.domain().separating_family()
-            (target_separator,) = self.codomain().separating_family()
-            assert self.on_object(source_separator) is target_separator, f"{self!r} retains no separator comparison"
-            return target_separator.category().morphism_category(1)(target_separator, target_separator).one()
+        def terminal_comparison(self) -> MorphismOfCategory:
+            """``1_D -> F(1_C)``: the retained comparison, or the identity when ``F(1_C) is 1_D``."""
+            if self in _terminal_comparisons:
+                return _terminal_comparisons[self]
+            target = self.codomain().Terminal()
+            assert self.on_object(self.domain().Terminal()) is target, f"{self!r} retains no terminal comparison"
+            return target.category().morphism_category(1)(target, target).one()
+
+        def after_terminal_comparison(self, image: MorphismOfCategory, defining: MorphismOfCategory) -> MorphismOfCategory:
+            """``F(t) . c`` for a point ``t: 1_C -> X`` whose image ``F(t)`` is ``image``, with ``c: 1_D -> F(1_C)`` (D100).
+
+            A generalized element ``t: T -> X`` whose domain is not ``1_C`` maps to ``F(t)``
+            and stays a generalized element (AGENTS.md, "Core categorical architecture").
+            An identity comparison composes to ``F(t)`` itself, so the image then keeps one
+            identity and one cache entry (POL-CAT-066).
+            """
+            if defining.domain() is not self.domain().Terminal():
+                return image
+            comparison = self.terminal_comparison()
+            source = comparison.domain()
+            if comparison is source.category().morphism_category(1)(source, source).one():
+                return image
+            return image * comparison
 
         # -- composition data ------------------------------------------------------------------
 
@@ -1363,19 +1329,16 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             self,
             source: ElementConstructionInput[SourceValue, SourceDatum],
         ) -> ElementConstructionInput[TargetValue, TargetDatum]:
-            """The compiler input for the image of ``t``: that of ``q = F(t)``, or of ``p = q . c_F`` for a ``t`` at the separator (POL-FUN-002/035).
+            """The compiler input for the image of ``t``: that of ``q = F(t)``, or of ``p = q . c_F`` for a point (POL-FUN-002/035).
 
             Applying the morphism conversion to the defining morphism of ``t`` gives the
             defining morphism of ``q: F(T) -> F(X)``, the value public element application
             returns.  This derivation is the whole element action; the functor retains no
             element conversion of its own.
 
-            A source ``t: G_C -> X`` at the separator instead supplies the target's
-            element methods, which read a point of the target's own separator.
-            Precomposing ``q`` with the retained comparison ``c_F: G_D -> F(G_C)`` produces
-            that point ``p: G_D -> F(X)``.  When ``c_F`` is an identity, ``F(G_C)`` is
-            ``G_D`` and ``p`` is ``q``: they then share one identity and one cache entry
-            (POL-CAT-066).
+            A point ``t: 1_C -> X`` instead supplies the target's point methods, which read
+            a point of ``1_D``.  Precomposing ``q`` with the declared comparison
+            ``c_F: 1_D -> F(1_C)`` produces that point ``p: 1_D -> F(X)`` (D100).
             """
             from sage_categories.kernel.construction import (
                 ElementRoleIdentity,
@@ -1385,13 +1348,9 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
             assert isinstance(source.identity, ElementRoleIdentity)
             source_defining = source.identity.defining_morphism
-            image = self.morphism_constructor_input(retained_morphism_input(source_defining)).canonical_image
-            separators = self.domain().separating_family()
-            if self in _separator_comparisons and len(separators) == 1 and source_defining.domain() is separators[0]:
-                comparison = _separator_comparisons[self]
-                source_object = comparison.domain()
-                if comparison is not source_object.category().morphism_category(1)(source_object, source_object).one():
-                    image = image * comparison
+            image = self.after_terminal_comparison(
+                self.morphism_constructor_input(retained_morphism_input(source_defining)).canonical_image, source_defining
+            )
             if image is source_defining:
                 return source
             return retained_element_input(self.codomain().element_from_defining_morphism(image))
@@ -1916,18 +1875,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         if ("walking parallel pair", ()) not in self._canonical:
             self._canonical["walking parallel pair", ()] = canonical.walking_parallel_pair()
         return self._canonical["walking parallel pair", ()]
-
-    def separating_family(self) -> tuple[FinitePresentedCategory, ...]:
-        """``{1, [1]}``.  The writer asserts that this family separates ``Cat()`` (POL-MATH-037).
-
-        nLab "separator", Definitions: a family separates when ``f . e = g . e`` for every
-        ``e`` sourced in it forces ``f = g`` (inspected 2026-08-27).  Functors ``1 -> C``
-        are the objects of ``C`` and functors ``[1] -> C`` its morphisms (nLab "walking
-        morphism", Applications: ``Arr(D) := [I, D]``, whose objects are the morphisms of
-        ``D``; inspected 2026-08-27), and a functor is determined by those two actions.
-        ``1`` alone does not separate: ``Mor(Cat())(1, -)`` forgets the morphism action.
-        """
-        return (self.Terminal(), self.Simplex(1))
 
     def element_from_defining_morphism(self, defining_functor: Functor) -> CategoryPoint:
         """The point of a category with domain ``T``, given by a functor ``T -> C``."""

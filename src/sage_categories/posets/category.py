@@ -13,8 +13,8 @@ The one selected structural functor is the underlying-set functor
 retained ``X`` of a poset and the retained set map of a monotone map, and it supplies
 the complete set surface: every inherited method returns the declaring method's value
 in ``Sets()`` (POL-CAT-062).  A poset is never placed in ``Sets()``; it reaches every
-set operation through ``U`` alone.  The separator is the one-point order
-``Posets().Terminal()``; ``U`` carries the identity separator comparison because the
+set operation through ``U`` alone.  The terminal object is the one-point order
+``Posets().Terminal()``; ``U`` carries the identity terminal comparison because the
 underlying set of the one-point order is ``Sets().Terminal()`` by construction.  For
 points ``x, y`` of ``P``, ``x <= y`` is the membership proposition of the
 pair point ``(x, y): 1 -> X * X`` in ``R``.
@@ -306,9 +306,6 @@ class PosetsCategory(Category[[Rule], []]):
             lambda monotone: monotone.set_map,
         )
 
-    def separating_family(self) -> tuple[Poset, ...]:
-        return (self.Terminal(),)
-
     # -- construction (POL-CAT-069, POL-LEAF-002) ----------------------------------------
 
     def __call__(self, relation: SetObject) -> Poset:
@@ -353,7 +350,7 @@ class PosetsCategory(Category[[Rule], []]):
 
     @cached_method
     def Terminal(self) -> Poset:
-        """The one-point order on ``Sets().Terminal()``, the separator of ``Posets()``."""
+        """The one-point order on ``Sets().Terminal()``, the terminal object of ``Posets()``."""
         point = Sets().Terminal()
         return self.TotallyOrdered()(self._construct((point * point).subset_from(lambda pair: True)))
 
@@ -389,7 +386,7 @@ class PosetsCategory(Category[[Rule], []]):
     def element_from_defining_morphism(self, defining_morphism: MonotoneMap) -> PosetElement:
         """The generalized element defined by ``T -> P``, retained by that exact map (POL-CAT-066).
 
-        A separator adds no local state: the underlying set point of ``t: 1 -> P``
+        A point adds no local state: the underlying set point of ``t: 1 -> P``
         is ``U(t)``, which the selected functor supplies on demand.  ``Poset.element``
         owns the point of one carrier element; it reaches this constructor.
         """

@@ -62,7 +62,7 @@ Their contract is in [Functors, `Cat`, and structural inheritance](functor.md).
 `X.cardinality()` returns an applied predicate with result category `Cardinal()`.
 `ask(X.cardinality())` returns an owned cardinal or Sage `Unknown`.
 
-## Canonical objects and the separator
+## Canonical objects and the terminal object
 
 `Sets()` realizes these inherited constructions, each retained by identity:
 
@@ -72,7 +72,7 @@ Their contract is in [Functors, `Cat`, and structural inheritance](functor.md).
 
 The coproduct `1 + 1` is the two-element set `2` used in the power object `2 ** X`.
 
-`G_Sets = Sets().Terminal()` is the separator of `Sets()`. A point of `X` is a point `1 -> X`. Set membership, enumeration, and cardinality use `Mor(Sets())(1, X)` through this separator.
+A point of `X` is a morphism `1 -> X` from `Sets().Terminal()`. Set membership, enumeration, and cardinality use `Mor(Sets())(1, X)` through the terminal object.
 
 ## Set maps, morphism categories, and function sets
 

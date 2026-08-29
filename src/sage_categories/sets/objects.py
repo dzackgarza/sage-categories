@@ -56,7 +56,7 @@ def _element_of_by_rule(candidate: Any, ambient: SetObject) -> Decision:
 
     ``element_of(x, X)`` is the proposition "the point ``x`` lies in the set ``X``",
     and an element of ``X`` is a morphism ``1 -> X``: "set membership, enumeration,
-    and cardinality use ``Mor(Sets())(1, X)`` through this separator"
+    and cardinality use ``Mor(Sets())(1, X)`` through the terminal object"
     (``specs/sets.md``, "Canonical objects").  So a raw datum is not an element of any
     set, and ``False`` is that proposition's value rather than a missing decision:
     ``2`` and ``X.point(2)`` are two values, and no algorithm turns the first into the

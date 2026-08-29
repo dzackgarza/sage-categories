@@ -207,11 +207,18 @@ A category may choose a family of objects whose generalized elements determine i
 [nLab, separator](https://ncatlab.org/nlab/show/separator) (inspected 2026-08-28) names it: a family `S = (S_a)_{a in A}` is a "separating family or a generating family" when "for every pair of parallel morphisms `f, g : X -> Y`, if `f . e = g . e` for every `e : S_a -> X` sourced in the family, then `f = g`", and for locally small `C`, "`S` is a separating family if the family of hom functors `Hom(S_a, -) : C -> Set` (for `a in A`) is jointly faithful".
 The one-element case is a separator: "`S` is a separator if the hom functor `Hom(S, -) : C -> Set` is faithful."
 
-`Category.separating_family()` returns that family, and the leaf's declaration that it separates is trusted (`POL-MATH-037`). `Sets()` chooses `(1,)`, so its separator is the terminal object and its generalized elements `1 -> X` are its points.
-`Cat()` chooses `(1, [1])`: objects and morphisms jointly separate functors, so `Cat()` has a separating family of two rather than a single underlying-set functor, and none is built.
+No category declares its separating family (`D100`). Separation is a theorem, and a tuple returned at runtime is that theorem as metadata, which `POL-MATH-031`, `POL-MATH-032`, and `POL-MATH-045` exclude.
+A category that needs the hom functor of a generator `G` constructs it where the theorem lives:
 
-A separating family of several is a family of hom functors that is jointly faithful.
-It is not one set-valued functor, and no coproduct of the hom-sets is formed: `Category.represented_functor()` therefore constructs `Mor(C)(G, -): C -> Sets()` for a single separator `G` and fails loudly for a larger family, naming the joint faithfulness that a family states instead.
+```python
+Fun(C, Sets()).Faithful()(on_object, on_morphism)
+```
+
+Constructing `Mor(C)(G, -)` in the faithful subcategory is the assertion that `G` separates `C` (`POL-MATH-037`); nothing verifies it and nothing reads a second declaration of it.
+A separating family of several is a family of hom functors that is jointly faithful, so it is a family of such constructions and not one set-valued functor.
+The uses this repository has for generators — presentations, restricted Yoneda functors, density, and evaluation epimorphisms — are named mathematical constructions, recorded in [Separating families and categorical generators](separating-families-and-categorical-generators.md).
+
+Points do not travel through a separator. A point of `X in C` is `t: 1_C -> X`, and a functor `F: C -> D` transports it through the declared comparison `1_D -> F(1_C)` alone.
 
 ## Functor property subcategories
 

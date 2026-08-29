@@ -162,10 +162,14 @@ The reason is uniformity of interface.
 Sage's implementations forget things.
 Sage's `IntegralLattice` does not know its underlying set is `ZZ^n`, so `ZZ^n` is not recognised as a product of sets, rings, or rank-one modules, and Sage cannot say its cardinality or iterate it — while research code wants to enumerate infinite countable sets in bounded loops, as Vinberg's algorithm does.
 
-**D03 (08-23). Computation is not the goal.** Sage already computes everything this package computes.
+**D03 (08-23, clarified 08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T08:08Z, 2026-08-29T08:42Z). Computation is not the goal.** Sage already computes everything this package computes.
 The goals are uniformity, categorically principled code, category theory as a form of DRY, real functors everywhere, and obviating engineering concerns so that a leaf developer thinks about mathematics.
 It is an organisational, more legible layer over Sage.
 Sage code needs a programmer to audit it; code here, outside the kernel, should be auditable by a mathematician with very little coding experience.
+For `M = ZZ^3`, the public result is one free module with the complete interface forced by its mathematics.
+Its structural route to `Sets()` supplies cardinality and countability.
+Its retained finite-product presentation and the chosen enumerations of its factors supply product enumeration.
+These consequences do not depend on which private Sage free-module class performs a computation.
 
 **D04 (08-23). The long-term asymptote.** Adding a category such as `MyVerySpecialAlgebraOverANoetherianDomain(R)` should mean: define a leaf category, possibly from a shipped template; declare a few functors to nearby categories you already understand, without reading the rest of the codebase; write your new methods; and receive the full inherited surface.
 You think at the level of your own algebra, and `cardinality()` and suitable limits and colimits arrive because of the functorial wiring.
@@ -208,11 +212,13 @@ The `Ar` and `Hom` spellings used on 08-25 were dropped on 08-26; see D55.
 
 **D12 (08-26, corrected 08-29). A structure functor is an ordinary functor selected for compiler use.** Leaves construct ordinary functors and return the applicable ones from `structure_functors()`. This contextual name does not define another functor class or constructor, and selection does not assert a subcategory relation.
 
-**D13 (08-26, corrected 08-29). The kernel is Sage's class-building plus constructor threading.** Sage's MRO technique works.
+**D13 (08-26, corrected 08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T08:08Z, 2026-08-29T08:42Z). The kernel is Sage's class-building plus constructor threading.** Sage's MRO technique works.
 Its one flaw is that dynamic classes carry methods and leave out fields, so a method arrives without the private data it needs to compute anything.
 The intended repair is to copy Sage's class-building and fix that flaw, so that from the writer's point of view it is ordinary inheritance.
 If `Sets().ObjectType` holds private set data and a constructor that initializes it, and `Posets()` holds its own private poset data, its own constructor, and a functor that supplies what the `Sets()` constructor requires, then a poset receives inheritance rather than methods alone.
 Wiring the constructors is the selected structure functor's job, so a leaf constructor never accumulates a field for every ancestor category.
+An inherited method runs on the structured source object and reads the initialized target state there.
+It does not forward through a separate public underlying object.
 Sage's dynamic classes and controlled linearization determine diamonds.
 The kernel does not enumerate paths, compare constructor data from paths, or decide equality to build the MRO (`01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T21:17Z, 2026-08-28T21:19Z, 2026-08-28T21:40Z).
 

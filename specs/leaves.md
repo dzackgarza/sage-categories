@@ -216,6 +216,10 @@ The product theorem establishes countability from the countability of `ZZ`.
 Chosen enumerations of the three factors construct the standard product enumeration.
 The property of being countable does not by itself choose that enumeration.
 The result must be independent of the Sage free-module class used for private computation.
+`M.cardinality()` is the method owned by `Sets().ObjectType` executing directly on `M`.
+It is not a free-module method and does not forward through a public `underlying_set()` object.
+`M.is_countable()` returns the proposition that the underlying set lies in `Sets().Countable()`.
+Established placement lets `ask(M.is_countable())` return `True` without enumeration.
 
 This repository must not reproduce that split behind another abstraction.
 A category never offers a menu of competing object implementations.

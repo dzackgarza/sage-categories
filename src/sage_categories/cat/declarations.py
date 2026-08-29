@@ -42,6 +42,7 @@ __all__ = [
     "ZZ",
     "CategoryFamily",
     "DeclaredCategory",
+    "Groupoids",
     "MagmaObjects",
     "MonoidObjects",
     "Posets",
@@ -141,6 +142,10 @@ class CategoryFamily:
 # The points: a declaration with the terminal domain, whose value is a category.
 Sets: Category = Cat().declare("Sets")
 Posets: Category = Cat().declare("Posets")
+# ``Groupoids()``: the point of ``Cat()`` the core functor lands in.  ``cat/core.py``
+# claims it and states the one arrow the documents state, its inclusion into ``Cat()``;
+# groupoid theory stands behind neither (D99).
+Groupoids: Category = Cat().declare("Groupoids")
 TotallyOrderedSets: Category = Cat().declare("TotallyOrderedSets")
 
 # The one-object categories.  An implementation supplies the distinguished object and the

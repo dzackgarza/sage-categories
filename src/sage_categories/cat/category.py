@@ -175,7 +175,6 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         self._colimits: MonoDict = MonoDict()
         self._slices: MonoDict = MonoDict()
         self._coslices: MonoDict = MonoDict()
-        self._wide: MonoDict = MonoDict()
         self._retained_data: MonoDict = MonoDict()
         self._equality = equality_predicate()
         self._ambient_category: Category | None = None
@@ -293,8 +292,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         """Whether this category is a declared full subcategory: its subcategory monomorphism is also full.
 
         A full subcategory has the morphisms, identities, composites, and constructions
-        of its ambient between its objects definitionally (POL-CAT-087); a wide
-        subcategory, whose monomorphism is not full, owns its own
+        of its ambient between its objects definitionally (POL-CAT-087); a core, whose
+        monomorphism is not full, owns its own
         (``specs/functor.md``, "Monomorphisms of ``Cat()`` and placement").
         """
         if self._ambient_monomorphism is None:
@@ -401,8 +400,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     # A full subcategory has exactly the morphisms, identities, and composites of its
     # ambient between its objects (Mathlib ``InducedCategory``): a category declared by
     # ``Fun(self, T).Monomorphisms().Isofibrations().Full()()`` obtains them from ``T`` and refines
-    # each into ``Mor(self)``.  Every other category, including a wide subcategory
-    # declared by a subcategory monomorphism (``cat/wide.py``), owns these constructions.
+    # each into ``Mor(self)``.  Every other category, including a core declared by a
+    # subcategory monomorphism that is not full (``cat/core.py``), owns these constructions.
 
     def _identity_morphism_(self, member_object: ObjectOfCategory) -> MorphismOfCategory:
         """The private construction of ``1_X``, run once per object (POL-CAT-083).
@@ -764,19 +763,13 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         """``C.CoveredObjects(X) = C.CosliceUnder(X).Epimorphisms()``."""
         return self.CosliceUnder(member_object).Epimorphisms()
 
-    # -- wide subcategories and the core (``specs/functor.md``, "Monomorphisms of ``Cat()`` and placement"; ``cat/wide.py``) --
-
-    def WideSubcategory(self, morphism_property: Category) -> Category:
-        """The wide subcategory on the morphisms placed in a property subcategory ``P`` of ``Mor(self)``, one per ``P``."""
-        from sage_categories.cat.wide import wide_subcategory
-
-        if morphism_property not in self._wide:
-            self._wide[morphism_property] = wide_subcategory(self, morphism_property)
-        return self._wide[morphism_property]
+    # -- the core (D99; ``specs/functor.md``, "The core functor"; ``cat/core.py``) --------
 
     def Core(self) -> Category:
-        """The core: the wide subcategory on the isomorphisms, the maximal groupoid inside ``self`` (nLab "core"; Mathlib ``CategoryTheory.Core``; both inspected 2026-08-27)."""
-        return self.WideSubcategory(self.morphism_category(1).Isomorphisms())
+        """``Core.on_object(self)``: the objects of ``self`` with its isomorphisms as morphisms."""
+        from sage_categories.cat.core import Core
+
+        return Core.on_object(self)
 
     # -- the chosen sets of objects and morphisms of a small shape (specs/functor.md, "Diagram shapes and universal constructions") -----------------
     #
@@ -1048,7 +1041,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         # The admission condition is the one the image construction needs.  A retained
         # monomorphism is the identity on the objects and morphisms of its domain
         # (``specs/functor.md``, "Monomorphisms of ``Cat()`` and placement"), so it constructs nothing and
-        # admits exactly the members of its domain: a wide subcategory has every object of
+        # admits exactly the members of its domain: a core has every object of
         # its ambient, and that is a membership fact its ambient decides, not a placement
         # its objects ever entered through (POL-CAT-068, POL-FUN-027).  Every other functor
         # builds its image from the domain's construction input, so it admits exactly the

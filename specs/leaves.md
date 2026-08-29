@@ -210,6 +210,13 @@ Mathematically, there is one notion of a free module over a ring and one expecte
 Sage has three different free-module implementations with different public operations.
 Even an inherited operation such as cardinality is not available consistently across them.
 
+For `M = ZZ^3`, the standard coordinate construction retains a finite-product presentation of the underlying set.
+The selected structural route to `Sets()` supplies the set-owned cardinality and countability interface.
+The product theorem establishes countability from the countability of `ZZ`.
+Chosen enumerations of the three factors construct the standard product enumeration.
+The property of being countable does not by itself choose that enumeration.
+The result must be independent of the Sage free-module class used for private computation.
+
 This repository must not reproduce that split behind another abstraction.
 A category never offers a menu of competing object implementations.
 Its `ObjectType` is the one public class for objects of that category.

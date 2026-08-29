@@ -75,6 +75,13 @@ does not assert that `C` is a subcategory of `D` or that an object of `C` is an 
 declared subcategory monomorphism states a subcategory relation.
 
 The separation also preserves mathematical consequences that concrete Sage implementations can lose.
+For example, let `M = ZZ^3` be a free module with its standard coordinate presentation.
+The selected functors to modules and then to `Sets()` give `M` the set-owned cardinality and countability interface.
+The retained finite-product presentation proves that its underlying set is countable.
+The chosen enumerations of the three `ZZ` factors also supply the standard product enumeration.
+Countability alone does not select an enumeration; the retained construction data does.
+These consequences do not depend on which Sage free-module class performs the private computation.
+
 For example, an integral-lattice presentation has a product projection to finite-rank `ZZ`-modules.
 The resulting composite of named functors to `Sets()` supplies cardinality and supports lazy enumeration.
 A concrete lattice implementation that does not retain those categorical relationships can fail to expose either operation.

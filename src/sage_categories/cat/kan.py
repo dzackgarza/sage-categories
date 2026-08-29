@@ -16,7 +16,7 @@ L``; inspected 2026-08-27.)  The extension exists when ``E`` owns the required
 colimits or limits; otherwise construction fails loudly (POL-CAT-051).
 
 The comma categories are the strict pullbacks of ``cat/slices.py``; the point
-``d: 1 -> D`` is the retained point functor of ``d``.  The extension and its unit
+``d: * -> D`` is the retained point functor of ``d``.  The extension and its unit
 or counit are retained once per pair ``(K, F)``; the unit and counit are
 morphisms of the fixed-endpoint functor category ``Fun(C, E)``.
 """

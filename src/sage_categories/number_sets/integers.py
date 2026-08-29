@@ -1,12 +1,9 @@
-"""``ZZ``: the set of integers, the sole object of the named-object leaf ``Integers()``.
+"""``ZZ``: the set of integers and the sole object of ``Integers()``.
 
-``Integers()`` is the one-object category of ``ZZ`` (POL-CAT-083): a full
-subcategory of ``Sets().Countable()`` whose one selected subcategory monomorphism places ``ZZ``
-there and supplies the complete set surface.  ``ZZ`` is rule-defined: a datum is a
-member exactly when Sage's exact integer ring admits it at the private boundary,
-and its cardinality ``aleph0`` is recorded at construction (POL-MATH-024,
-POL-LEAF-057).  ``ZZ(n)`` constructs the point ``1 -> ZZ`` selecting the Sage
-integer ``n``.
+``Integers()`` is the one-object category of ``ZZ`` as a full subcategory of
+``Sets().Countable()``. ``ZZ`` is rule-defined by Sage integer membership, and its
+recorded cardinality is ``aleph0``. ``ZZ(n)`` constructs the point ``* -> ZZ``
+selecting the Sage integer ``n``.
 """
 
 from __future__ import annotations
@@ -47,7 +44,7 @@ def _is_integer(datum: Datum) -> Decision:
 
 
 class IntegerSet(ObjectOfCategory):
-    """The local object role of ``Integers()``: ``ZZ(n)`` is the point selecting ``n``."""
+    """The local object role of ``Integers()``: ``ZZ(n)`` is the point ``* -> ZZ`` selecting ``n``."""
 
     def __call__(self, integer: int | Integer) -> SetElement:
         return self.point(Integer(integer))

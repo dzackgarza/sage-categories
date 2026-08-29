@@ -195,7 +195,7 @@ class SetsCategory(Category[[Rule], []]):
 
     @cached_method
     def Terminal(self) -> SetObject:
-        """The one-point set ``1 = {*}``, the terminal object of ``Sets()``: its points ``1 -> X`` are the points of ``X``."""
+        """The one-point set ``1 = {*}``, the terminal object of ``Sets()``. A point of ``X`` is a morphism ``* -> X`` from this object."""
         return self.Finite()(((),))
 
     def Simplex(self, dimension: int) -> SetObject:

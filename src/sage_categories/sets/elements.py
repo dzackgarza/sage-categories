@@ -1,11 +1,8 @@
-"""``Sets().ElementType``: generalized elements ``T -> X`` (POL-CAT-058, POL-FUN-002).
+"""``Sets().ElementType``: generalized elements ``T -> X``.
 
-A point of a set ``X`` is a generalized element whose domain is the
-terminal object ``Sets().Terminal()``: a point ``1 -> X``.  It retains its defining
-morphism and, at the private computation boundary, the datum that the point
-selects.  A generalized element with another domain retains no point datum.  Two
-points of one set are equal exactly when their data are equal; a point
-hashes by its datum, so equal points hash equal.
+A point of a set ``X`` has terminal domain and is written ``* -> X``.
+Only such points retain a chosen datum.
+Two points of one set compare and hash by that datum.
 """
 
 from __future__ import annotations

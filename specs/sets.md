@@ -18,11 +18,11 @@ The governing policies are `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001`, `POL-C
 
 - `Sets().ObjectType` implements set objects.
 
-- `Sets().ElementType` implements points `t: 1 -> X`, the actual elements of `X`.
+- `Sets().ElementType` implements points `t: * -> X`, the actual elements of `X`.
 
 - `Sets().MorphismType` implements total functions with a domain and codomain.
 
-An owned element is a point `t: 1 -> X`, and its parent is `X`.
+An owned element is a point `t: * -> X`, and its parent is `X`.
 A generalized element `T -> X` with nonterminal domain is an ordinary morphism in `Sets()`, not a `Sets().ElementType` value.
 The same point datum can produce distinct owned elements in distinct sets.
 
@@ -72,7 +72,7 @@ Their contract is in [Functors, `Cat`, and structural inheritance](functor.md).
 
 The coproduct `1 + 1` is the two-element set `2` used in the power object `2 ** X`.
 
-A point of `X` is a morphism `1 -> X` from `Sets().Terminal()`. Set membership, enumeration, and cardinality use `Mor(Sets())(1, X)` through the terminal object.
+A point of `X` is a morphism `* -> X`, that is, a morphism `1 -> X` from `Sets().Terminal()`. Set membership, enumeration, and cardinality use `Mor(Sets())(1, X)` through the terminal object.
 
 ## Set maps, morphism categories, and function sets
 

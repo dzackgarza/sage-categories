@@ -29,27 +29,18 @@ element_of: Predicate = Predicate("element_of", 2, True)
 
 
 def _element_of_by_parent(candidate: Any, ambient: SetObject) -> Decision:
-    """A point ``1 -> X`` is an element of ``X`` by definition (POL-CAT-058)."""
+    """A point ``* -> X`` is an element of ``X`` by definition (POL-CAT-058)."""
     if role_of(candidate) is Role.ELEMENT and candidate.parent() is ambient:
         return True
     return Unknown
 
 
 def _element_of_by_rule(candidate: Any, ambient: SetObject) -> Decision:
-    """The membership rule decides a point of ``ambient`` on its datum; a candidate that is no element is none.
+    """The membership rule decides a point of ``ambient`` from its stored datum.
 
-    ``element_of(x, X)`` is the proposition "the point ``x`` lies in the set ``X``",
-    and an element of ``X`` is a morphism ``1 -> X``: "set membership, enumeration,
-    and cardinality use ``Mor(Sets())(1, X)`` through the terminal object"
-    (``specs/sets.md``, "Canonical objects").  So a raw datum is not an element of any
-    set, and ``False`` is that proposition's value rather than a missing decision:
-    ``2`` and ``X.point(2)`` are two values, and no algorithm turns the first into the
-    second.  This is the shape of ``is_placed`` (``kernel/refinement.py``), which
-    ``POL-TYPE-004`` authorizes for the same ``Any`` candidate position.  A datum's
-    own question is ``X.point(datum) in X``.
-
-    A generalized element at another stage carries no datum, so the rule cannot reach
-    it and the decision is ``Unknown``.
+    A raw datum is not an element value, so a non-element candidate gives ``False``.
+    A generalized element with nonterminal domain retains no point datum, so the
+    decision there is ``Unknown``.
     """
     if role_of(candidate) is not Role.ELEMENT:
         return False
@@ -121,7 +112,7 @@ class SetObjectDeclaration(ObjectOfCategory):
         return bool(decision)
 
     def point(self, datum: Datum) -> SetElement:
-        """The point ``1 -> X`` selecting ``datum``, one point per datum value.
+        """The point ``* -> X`` selecting ``datum``, one point per datum value.
 
         A set constructed through ``Sets().rule_valued`` routes every point through
         ``rule_point``, since its data compare three-valued.

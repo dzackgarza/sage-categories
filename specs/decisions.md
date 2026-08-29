@@ -294,7 +294,7 @@ The categorical core is meant to be independently auditable by mathematicians, s
 A code writer forms constructions into the correct subcategory as the way of asserting a theorem, with a citation on the construction line.
 
 **D63 (08-26). `__eq__` returns a predicate.** So `a == b` can evaluate to `Unknown`, and that is fine.
-Where a Boolean is forced, repository code writes `decision = ask(x == y); assert decision is not Unknown`. Points are chosen data `x: 1 -> X`.
+Where a Boolean is forced, repository code writes `decision = ask(x == y); assert decision is not Unknown`. Points are chosen data `x: * -> X`.
 
 ## Cardinality
 

@@ -16,8 +16,8 @@ The private runtime assigns these responsibilities:
 | Responsibility | Dependency |
 | --- | --- |
 | Python implementation classes, controlled C3, dynamic refinement, identity caches, nested-class binding, introspection, indexed families, and `Unknown` | SageMath 10.9.x |
-| Generic categorical operations | GAP `>=4.13`; CAP `2026.07-04`; ToolsForHomalg `>=2026.04-01`; ToolsForCategoricalTowers `2026.08-01`; CartesianCategories `2026.08-02`; SubcategoriesForCAP `2026.07-01`; FpCategories `2026.07-03` |
-| Categorical-tower compilation | CompilerForCAP `2026.07-01` |
+| Generic categorical operations | GAP `>=4.13`; CAP `2026.07-04`; ToolsForHomalg `>=2026.04-01`; ToolsForCategoricalTowers `2026.08-01`; CartesianCategories `2026.08-02`; MonoidalCategories `>=2026.08-02`; SubcategoriesForCAP `2026.07-01`; SliceCategories; FpCategories `2026.07-03` |
+| Categorical-tower compilation | CompilerForCAP (bundled in CAP_project) |
 | Diagram syntax and retained universal presentations | Julia 1.12.7; Catlab 0.17.6; GATlab 0.2.4; JuliaCall `>=0.9.35,<0.10` |
 | Proposition algebra, assumptions, and exact symbolic calculation | SymPy `>=1.14,<2` |
 | Residual exact-handler dispatch | plum-dispatch, without conversions or promotions |
@@ -27,8 +27,20 @@ The private runtime assigns these responsibilities:
 Each adapter lowers owned inputs and reconstructs the exact owned result.
 No dependency defines the public category graph, public operation, category containment, or semantic owner.
 
+CAP supplies the checked categorical operations inside its own surface.
+It does not by itself supply a generic pullback category of functors in owned `Cat`.
+FpCategories supplies finite walking shapes and generator-relation presentations.
+It does not by itself supply generic `Fun([1], C)` or evaluation functors.
+SliceCategories is the checked source for slice implementations.
+MonoidalCategories is a required transitive dependency of CartesianCategories and ToolsForCategoricalTowers.
+
 Development uses pytest `>=9.1,<10`, Hypothesis `>=6.165,<7`, Ruff `>=0.16.5,<1`, mypy `>=2`, and `dzackgarza/sagemath-mypy-plugin@main`.
 Migration uses LibCST `>=1.9,<2` until its codemods finish.
+
+The CAP runtime and the Catlab runtime remain separate private engines.
+Owned Python values cross them through separate private adapters.
+No checked source supplies a generic Python--GAP--Julia bridge.
+CompilerForCAP compiles only pure GAP CAP regions.
 
 ## Inputs
 

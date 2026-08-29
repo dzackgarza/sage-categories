@@ -65,7 +65,7 @@ class PosetDeclaration(ObjectOfCategory):
         return self._poset_object_data.relation
 
     def element(self, point: SetElement) -> PosetElement:
-        """The point over a point ``x: 1 -> U(P)``: the monotone map ``1 -> P`` under ``x``."""
+        """The point over a point ``x: * -> U(P)``: the monotone map ``* -> P`` under ``x``."""
         state = self._poset_object_data
         carrier = Posets().underlying_set_functor().on_object(self)
         assert point in carrier, f"{point!r} is not a point of {carrier!r}"
@@ -209,7 +209,7 @@ def _square(relation: SetObject) -> ObjectOfCategory:
 
 
 def _pair_point(square: ObjectOfCategory, left: SetElement, right: SetElement) -> SetElement:
-    """The point ``(left, right): 1 -> X * X``: the mediator of the cone with these legs."""
+    """The point ``(left, right): * -> X * X``: the mediator of the cone with these legs."""
     legs = (left.defining_morphism(), right.defining_morphism())
     pairing = cone(square.diagram(), Sets().Terminal(), lambda vertex: legs[sequence_position(vertex)])
     return Sets().element_from_defining_morphism(square.universal_morphism(pairing))
@@ -356,7 +356,7 @@ class PosetsCategory(Category[[Rule], []]):
     def element_from_defining_morphism(self, defining_morphism: MonotoneMap) -> PosetElement:
         """The generalized element defined by ``T -> P``, retained by that exact map (POL-CAT-066).
 
-        A point adds no local state: the underlying set point of ``t: 1 -> P``
+        A point adds no local state: the underlying set point of ``t: * -> P``
         is ``U(t)``, which the selected functor supplies on demand.  ``Poset.element``
         owns the point of one set element; it reaches this constructor.
         """

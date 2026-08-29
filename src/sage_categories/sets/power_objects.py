@@ -61,7 +61,7 @@ class PowerObjectRole(ObjectOfCategory):
         return _sets.Sets().PowerObjects().subset_of_characteristic_morphism(self, characteristic)
 
     def subset_named_by(self, point: SetElement) -> SetObject:
-        """The chosen subset whose characteristic morphism a point ``1 -> 2 ** X`` names: the inverse of ``Sets().name_of`` on chosen subsets."""
+        """The chosen subset whose characteristic morphism a point ``* -> 2 ** X`` names: the inverse of ``Sets().name_of`` on chosen subsets."""
         assert point in self, f"{point!r} is not a point of {self!r}"
         return self.from_characteristic_morphism(point._point_datum_().map())
 

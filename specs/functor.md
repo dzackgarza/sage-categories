@@ -1112,7 +1112,7 @@ A pointed set is an object of the coslice category under the singleton set:
 \mathbf{PointedSet}=1\!\downarrow\!\mathbf{Set}.
 \]
 
-The structure functor is the composite of the pullback projection to `Fun([1], Sets())` with `ev_1`, that is `(X, x) |-> X`. The pullback projection itself returns the morphism `1 -> X` that selects `x`.
+The structure functor is the composite of the pullback projection to `Fun([1], Sets())` with `ev_1`, that is `(X, x) |-> X`. The pullback projection itself returns the point `* -> X`, that is, the morphism `1 -> X`, that selects `x`.
 
 ### Product categories and `Fun([1], C)`
 

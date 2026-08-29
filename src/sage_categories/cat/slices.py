@@ -1,69 +1,19 @@
-"""Slices, coslices, and comma categories as strict pullbacks; their fibration lifts; the subobject families (POL-CAT-026/095, POL-FUN-013/031, POL-SCOPE-003).
+"""Slices, coslices, and comma categories as strict pullbacks.
 
-``C.SliceOver(x)`` is the strict pullback in ``Cat()`` of ``ev_1: Fun([1], C) -> C``
-along the point ``x: 1 -> C``, and ``C.CosliceUnder(x)`` the pullback of ``ev_0``
-(``specs/functor.md``, "Slices and coslices").  It is the category where its own
-constructor and its own API live: it writes its three declarations, supplies the
-universal data of that pullback square, and states which of its retained projections
-supplies inherited implementation (POL-CAT-057, POL-MATH-037).
+``C.SliceOver(x)`` is the strict pullback of ``ev_1: Fun([1], C) -> C`` along the
+point ``x: * -> C``. ``C.CosliceUnder(x)`` is the dual pullback of ``ev_0``.
+An object is a morphism of ``C`` with one pinned endpoint, and a morphism is a
+commuting triangle in ``C``.
 
-An object is the morphism of ``C`` with the pinned endpoint; a morphism is the
-morphism of ``C`` between the varying objects.  The retained projections are
+The retained projections return the defining arrow and the varying object or
+varying morphism. ``fixed_projection()`` is the selected structure functor.
+The fixed projection also retains the cartesian or cocartesian lift data of the
+slice or coslice.
 
-- ``defining_arrow(): C.SliceOver(x) -> Fun([1], C)``, returning that morphism and,
-  on a triangle, its commuting square;
-- ``fixed_projection(): C.SliceOver(x) -> C``, the composite with ``ev_0`` (with
-  ``ev_1`` for the coslice), returning the varying object and the varying morphism.
-
-``fixed_projection()`` is the one selected structure functor.  A slice inherits the
-methods of the category its objects sit over, so its objects reach ``C.ObjectType``
-and its triangles ``C.MorphismType`` through the ordinary compiler mechanism
-(POL-CAT-047, POL-CAT-053, POL-KERNEL-028/029).  Selection asserts no subcategory
-relation: an object over ``x`` is a pair, and the Python inheritance states only that
-the methods of ``C`` apply to its varying object (D05, D07).
-
-The fixed slice projection is the category of elements of ``Mor(C)(-, x)`` and a
-discrete fibration for every ``C``: the cartesian lift of ``f: y -> z`` at ``(z, p)``
-is ``f: (y, p * f) -> (z, p)`` by precomposition (nLab "discrete fibration", inspected
-2026-08-27: "the representable presheaf on an object X corresponds to the canonical
-functor B/X -> B from the slice category over X").  Dually the coslice projection is a
-discrete opfibration with cocartesian lifts by postcomposition.  Each slice registers
-its lift rule on its fixed projection, which retains the lifts
-(``Functor.cartesian_lift``); the evaluations ``ev_1`` and ``ev_0`` retain their own
-lifts (``cat/diagrams.py``), so the total category and its fiber carry distinct lift
-data (POL-FUN-031).
-
-A comma category ``(F, G)`` for ``F: A -> C`` and ``G: B -> C`` is the pullback of
-``(ev_0, ev_1): Fun([1], C) -> C * C`` along ``F * G`` (Mathlib
-``CategoryTheory.Comma``: objects are triples ``(left, right, hom: L left -> R right)``
-and morphisms are commuting squares; inspected 2026-08-27), constructed by the owned
-pullback of categories.
-
-Objects of ``C.SliceOver(x)`` are the generalized elements of ``x``
-(``specs/functor.md``, "Slices and coslices"; AGENTS.md, "Core categorical
-architecture"): a morphism ``t: T -> x`` or an element with that defining morphism is
-accepted as an object, and is a member by the same decision.
-
-``C.Subobjects(x)`` is ``C.SliceOver(x).Monomorphisms()``: the property subcategory
-``Mor(C).Monomorphisms()`` pulled back along the retained defining-arrow functor of the
-slice (POL-CAT-092, POL-FUN-013/014).  A full subcategory is identity on values, so that
-pullback is the full subcategory of the slice on the objects whose defining arrow has the
-property (``specs/functor.md``, "Fixed-object construction categories"), and
-``SliceProperty`` retains both projections of the square.  Whether an arrow has the
-property is the containment question ``Mor(C).Monomorphisms()`` declares, asked of that
-arrow; nothing here reaches for that category's predicate object (POL-CAT-043,
-POL-CAT-044).  ``C.CoveringObjects(y)`` uses epimorphisms: a covering object of ``y`` is
-the pair ``(X, p: X -> y)``, not ``p`` alone (POL-CAT-026).  ``C.Superobjects(x)`` and
-``C.CoveredObjects(x)`` are the coslice duals.  The ambient category named in the call
-fixes the role of ``x``, which is why these are methods of a category and not of the
-object.
-
-``C.Subobjects(P)`` for a product ``P`` is ``SubobjectsOfProduct``, whose objects read
-each component as ``P.product_projection(i) after j`` through their own monomorphism
-``j``, so a subobject of a product has every component without a leaf repeating those
-maps (POL-CAT-094).  The slice names that class when its fixed object is a product, so
-the method exists exactly where it applies and no subobject asserts its own
-applicability (POL-KERNEL-025).
+``C.Subobjects(x)``, ``C.CoveringObjects(x)``, ``C.Superobjects(x)``, and
+``C.CoveredObjects(x)`` are the monomorphism or epimorphism subcategories of
+these slice or coslice categories. A comma category ``(F, G)`` is the owned
+pullback of ``(ev_0, ev_1): Fun([1], C) -> C * C`` along ``F * G``.
 """
 
 from __future__ import annotations
@@ -159,7 +109,7 @@ slice_member.register_handler(_slice_member_by_fixed_end)
 
 
 class SliceLikeCategory(Category[[MorphismOfCategory], []]):
-    """The pullback of an evaluation ``ev_k: Fun([1], C) -> C`` along ``x: 1 -> C``; ``k = 1`` is the slice, ``k = 0`` the coslice."""
+    """The pullback of ``ev_k: Fun([1], C) -> C`` along ``x: * -> C``; ``k = 1`` is the slice and ``k = 0`` the coslice."""
 
     class ObjectType(ObjectOfCategory):
         """A morphism of ``C`` with one endpoint pinned at ``x``: the arrow is its whole content."""
@@ -373,7 +323,7 @@ class SliceLikeCategory(Category[[MorphismOfCategory], []]):
 def _chosen_pullback(apex: SliceLikeCategory) -> SliceLikeCategory:
     """Place a slice or coslice in ``Cat().Pullbacks()`` with the universal data of its square (POL-MATH-037).
 
-    The cospan is ``ev_k: Fun([1], C) -> C`` and ``x: 1 -> C``; the cone legs are the two
+    The cospan is ``ev_k: Fun([1], C) -> C`` and ``x: * -> C``; the cone legs are the two
     retained projections and, at the shared vertex, the constant functor at ``x``.  The
     mediator of a cone ``(u: T -> Fun([1], C), T -> 1)`` sends ``t`` to the object of the
     arrow ``u(t)``, whose fixed end the cone's own commutation pins at ``x``.

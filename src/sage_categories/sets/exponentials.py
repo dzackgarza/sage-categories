@@ -1,19 +1,12 @@
-"""The function set ``Y ** X`` of ``Sets()`` (POL-SET-017/020).
+"""The function set ``Y ** X`` of ``Sets()``.
 
-``Sets()`` is cartesian closed: the exponential ``Y ** X`` is the function set, the
-rule-defined set whose points are the maps ``X -> Y``, retained once per pair.
-Mathlib states the closure as the instance ``MonoidalClosed (Type v₁)`` of
-``Mathlib/CategoryTheory/Monoidal/Closed/Types.lean`` over the cartesian monoidal
-structure ``CategoryTheory.typesCartesianMonoidalCategory`` of
-``Mathlib/CategoryTheory/Monoidal/Types/Basic.lean``, built from the adjunction
-``Types.tensorProductAdjunction : tensorLeft X ⊣ coyoneda.obj (op X)`` (inspected
-2026-08-27).  The function set retains the evaluation morphism
-``ev: (Y ** X) * X -> Y``, the transpose ``Z -> Y ** X`` of each map ``Z * X -> Y``
-(the adjunction's currying), and, for a map ``f``, its name ``1 -> Y ** X`` (Mac
-Lane and Moerdijk, *Sheaves in Geometry and Logic*, I.6, the name of an arrow;
-inspected 2026-08-26).  ``Mor(Sets())(X, Y)`` is the discrete category on these
-points.  The cardinality is ``(#Y) ** (#X)`` when both cardinals are exact (Mathlib
-``Cardinal.power_def``; inspected 2026-08-26) and ``Unknown`` otherwise.
+``Sets()`` realizes the exponential as the rule-defined set of maps ``X -> Y``,
+retained once per pair. It retains the evaluation morphism
+``ev: (Y ** X) * X -> Y``, the transpose ``Z -> Y ** X`` of a map ``Z * X -> Y``,
+and the name ``* -> Y ** X`` of a map ``X -> Y``.
+``Mor(Sets())(X, Y)`` is the discrete category on these points.
+The cardinality is ``(#Y) ** (#X)`` when both cardinals are exact and ``Unknown``
+otherwise.
 """
 
 from __future__ import annotations
@@ -95,7 +88,7 @@ def function_set(exponent: SetObject, base: SetObject) -> SetObject:
 
 
 def name_of(set_map: SetMap) -> SetElement:
-    """The point ``1 -> Y ** X`` naming a map ``X -> Y``."""
+    """The point ``* -> Y ** X`` naming a map ``X -> Y``."""
     return function_set(set_map.domain(), set_map.codomain()).point(Function(set_map))
 
 

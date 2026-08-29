@@ -717,7 +717,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     # -- slices, coslices, and the categories of subobjects (POL-FUN-029, POL-CAT-095, POL-SCOPE-003) --
 
     def SliceOver(self, member_object: ObjectOfCategory) -> Category:
-        """``C.SliceOver(x)``: the strict pullback of ``ev_1: Fun([1], C) -> C`` along ``x: 1 -> C``."""
+        """``C.SliceOver(x)``: the strict pullback of ``ev_1: Fun([1], C) -> C`` along ``x: * -> C``."""
         from sage_categories.cat.slices import slice_over
 
         if self.has_full_ambient():
@@ -728,7 +728,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         return self._slices[member_object]
 
     def CosliceUnder(self, member_object: ObjectOfCategory) -> Category:
-        """``C.CosliceUnder(x)``: the strict pullback of ``ev_0: Fun([1], C) -> C`` along ``x: 1 -> C``."""
+        """``C.CosliceUnder(x)``: the strict pullback of ``ev_0: Fun([1], C) -> C`` along ``x: * -> C``."""
         from sage_categories.cat.slices import coslice_under
 
         if self.has_full_ambient():

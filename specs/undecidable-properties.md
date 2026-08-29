@@ -13,6 +13,13 @@ Each result retains its monomorphism `C.P() -> C`.
 The kernel derives the standard ambient application, such as `x.is_P()`, from the axiom declaration and the category-owned containment proposition.
 It does not evaluate it.
 
+Predicates are proposition-valued.
+A partial invariant with another result category is a query, not a predicate.
+For example, `X.cardinality()` constructs an applied query with result category
+`Cardinal()`. Then `ask(X.cardinality())` returns an owned cardinal or `Unknown`.
+An applied query does not compose under propositional logic and has no Python truth
+value. A proposition such as `X.cardinality() == aleph_0` is a predicate application.
+
 ## Public paths
 
 | Expression | Meaning | Computes? | Refines? |
@@ -25,6 +32,10 @@ It does not evaluate it.
 | `C.P()(x)` | Construct or place `x` directly in \(C.P\) | No | Immediately |
 | `x in C.P()` | Ask the defining membership proposition | Possibly | On exact `True` |
 | A named construction returning `C.P()` | Apply its construction theorem | No | At construction |
+
+For an owned query `q: A -> B`, `q(x)` constructs an applied query and `ask(q(x))`
+returns an object of `B` or `Unknown`. Query evaluation never places `Unknown` inside an
+object of `B`.
 
 Direct construction and `assume` use the same category-refinement operation.
 They differ only in provenance:
@@ -204,8 +215,10 @@ A leaf does not copy `is_P()`. It also does not forward it by hand.
 This follows the main idea of Sage’s `CategoryWithAxiom`: define an axiom at the largest category where it makes sense.
 Subcategories then inherit refinements such as `Groups().Finite()`. [Sage category-with-axiom documentation](https://doc.sagemath.org/html/en/reference/categories/sage/categories/category_with_axiom.html)
 
-The repository should retain that mathematics.
-It should not copy Sage’s string-based axiom registry or method-name discovery.
+The private runtime reuses `CategoryWithAxiom`, `_base_category_class_and_axiom`, their
+binding, and their cache. The owned declaration supplies the meaning, predicate,
+subcategory monomorphism, and functorial inverse images. Sage's axiom string remains only
+the private key for the established runtime binding.
 
 A derived property needs a structure functor.
 If two routes give different meanings, the category must select one route explicitly.
@@ -565,7 +578,7 @@ The owned kernel must give every property axiom a defining proposition.
 
 ## What remains from `with_axiom`
 
-The repository should retain these parts of Sage’s model:
+The repository should reuse these parts of Sage’s model:
 
 - `Sets().Finite()` constructs a property subcategory.
 
@@ -587,13 +600,13 @@ that class to its ambient category and axiom, as Sage's `_base_category_class_an
 does. A property subcategory is therefore an ordinary category class and declares its own
 `ObjectType`, `ElementType`, and `MorphismType` like any other (`POL-LEAF-059`).
 
-The repository must not retain the bare-string semantics:
+The public mathematics must not use the bare string as its semantics:
 
 ```python
 _with_axiom("Finite")
 ```
 
-The string can remain a private Sage runtime key.
+The string remains a private Sage runtime key.
 It cannot define the mathematics.
 
 ## What an owned property axiom means

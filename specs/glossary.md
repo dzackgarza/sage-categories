@@ -47,6 +47,9 @@ Do not remove a row after the source becomes clean (`POL-MATH-051`).
 | Public functor image | The image constructed by the named action `F.on_object(x)` or `F.on_morphism(f)`. |
 | Inherited execution | A structure-functor target class is in the source class MRO. Its method runs on the initialized source instance. |
 | Constructor conversion | A structure functor converts source construction data to the exact data required by its target constructor. |
+| Predicate | A proposition-valued operation. Its application is an applied proposition, and `ask()` returns `True`, `False`, or `Unknown`. |
+| Query | An operation with an exact non-Boolean result category that can remain unevaluated. Its application is an applied query, and `ask()` returns an owned result or `Unknown`. |
+| Private Sage implementation category | A runtime-only Sage `Category` that compiles one of `C.ObjectType`, `C.ElementType`, or `C.MorphismType`. It states no relation in the owned `Cat` graph. |
 
 The point and generalized-element distinction follows the nLab entry [generalized element](https://ncatlab.org/nlab/show/generalized+element), including its “Global elements” section.
 
@@ -74,4 +77,11 @@ Every term below was checked against the cited source before it was recorded (`P
 | representation of a functor | [Mathlib, `Functor.RepresentableBy`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/RepresentedBy.html): selected data consists of `X in C` and a natural isomorphism `yoneda(X) -> F`. A morphism is a map of representing objects compatible with these isomorphisms. Representability is the existence of such data. |
 | `dynamic_class(name, bases, cls)` | Sage, `src/sage/structure/dynamic_class.py:128`. With `cls` given, its methods are inserted into the built class and its bases are prepended. |
 | `Category.parent_class`, `_make_named_class` | Sage, `src/sage/categories/category.py:1498` and `:1670`. Builds `parent_class` from `ParentMethods`, `element_class` from `ElementMethods`, `morphism_class` from `MorphismMethods`. |
+| `Category._all_super_categories`, `_super_categories_for_classes` | Sage, `src/sage/categories/category.py:845`. Uses controlled C3 to compute the category linearization and the minimal supercategories needed as direct class bases. |
+| `HierarchyElement` | Sage, `src/sage/misc/c3_controlled.pyx:960`. Computes a controlled linearization from an arbitrary successor relation. |
+| `Parent._refine_category_` | Sage, `src/sage/structure/parent.pyx:372`. Joins the current category with the new category and changes the parent to a cached dynamic class containing the joined `parent_class`. |
+| `CategoryWithAxiom`, `_base_category_class_and_axiom` | Sage, `src/sage/categories/category_with_axiom.py`. Supplies axiom binding, category construction, and canonical runtime identity. The owned `Cat` declaration supplies the axiom's mathematical meaning. |
+| `FunctorialConstructionCategory`, `CartesianProductsCategory` | Sage, `src/sage/categories/covariant_functorial_construction.py` and `src/sage/categories/cartesian_product.py`. Supplies private construction-family binding, base-category access, caching, and method-provider assembly. The owned functors and universal presentations replace Sage's supercategory deduction. |
+| `Hom`, `Homset`, `Map`, `Morphism`, `IdentityMorphism` | Sage, `src/sage/categories/homset.py`, `map.pyx`, and `morphism.pyx`. Supplies the concrete endpoint, parent, composition, and identity protocols used when both endpoints are Sage parents. |
+| `sage.categories.functor.Functor` | Sage, `src/sage/categories/functor.py`. Supplies the reference object and morphism action protocol. Its endpoints are Sage categories, so generic owned functors do not inherit it. |
 | `ModulesWithBasis` | Sage, `src/sage/categories/modules_with_basis.py:179`: "The category of modules with a distinguished basis." A name for the phenomenon on the same axiom machinery as `Finite`. Its morphisms are ordinary module morphisms while its homset reads a matrix in the distinguished bases (`:47`), so the name settles neither the fibration nor the morphisms. |

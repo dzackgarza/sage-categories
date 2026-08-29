@@ -34,7 +34,7 @@ Its construction selects one representative set \(R_\kappa\) for each cardinal \
 
 Addition, multiplication, and exponentiation act on cardinals.
 The sum, product, and function type on the right are constructions on types.
-`Sets()` constructions register the corresponding exact cardinality-predicate cases; see [Cardinal arithmetic](#cardinal-arithmetic).
+`Sets()` constructions register the corresponding exact cardinality-query cases; see [Cardinal arithmetic](#cardinal-arithmetic).
 
 A cardinal is an object of this category:
 
@@ -213,7 +213,7 @@ so applying one to a pair returns a cardinal.
 It presents no diagram, retains no injection or projection, and carries no cone.
 The indexed constructions `Cardinal().Coproducts()` and `Cardinal().Products()` are separate operations with their own presentations; see [`Cardinal()` API](#cardinal-api).
 
-The `Sets()` implementations of these constructions register the corresponding exact cardinality-predicate cases.
+The `Sets()` implementations of these constructions register the corresponding exact cardinality-query cases.
 For `X, Y in Core(Sets())`,
 
 \[
@@ -412,7 +412,7 @@ The ordinal model is specified in [`ordinals.md`](ordinals.md).
 
 ## Integration with `Sets()`
 
-`X.cardinality()` returns an applied predicate with result category `Cardinal()`.
+`X.cardinality()` returns an applied query with result category `Cardinal()`.
 `ask(X.cardinality())` returns an owned cardinal when an exact evaluation case applies and Sage `Unknown` otherwise.
 
 The category-owned `Sets()` implementation declares the predicate.

@@ -465,6 +465,48 @@ The kernel supplies their target classes as immediate dynamic bases. Sage dynami
 construction and Sage's controlled linearization handle transitive inheritance and shared
 ancestors.
 
+### Private Sage implementation categories
+
+For each owned category `C` and each of its three implementation-class kinds, the kernel
+constructs one private Sage category:
+
+```python
+_RuntimeImplementationCategory(C, ImplementationKind.OBJECT)
+_RuntimeImplementationCategory(C, ImplementationKind.ELEMENT)
+_RuntimeImplementationCategory(C, ImplementationKind.MORPHISM)
+```
+
+This adapter exists only to compile Python classes. It states no subcategory relation in
+`Cat()`.
+
+Its `super_categories()` method returns the private implementation categories for the
+immediate targets supplied by `C.structure_functors()`. Its `ParentMethods` provider is
+the corresponding local `C.ObjectType`, `C.ElementType`, or `C.MorphismType` declaration.
+The kernel uses only its Sage `parent_class`.
+
+Sage `_all_super_categories`, `_super_categories_for_classes`, `_make_named_class`,
+controlled C3, and `dynamic_class` therefore own class linearization, the minimal direct
+bases, dynamic-class identity, and method-source metadata. The kernel does not maintain a
+second class graph.
+
+The adapter cache uses the identity of `C` and the exact implementation-class kind.
+Owned category equality is proposition-valued, so this cache uses `MonoDict`. The kernel
+normalizes identities such as `Mor(C).ObjectType = C.MorphismType` before lookup and
+anchors each graph at its existing kernel base class.
+
+The kernel retains four tasks that Sage cannot infer:
+
+- reject one public method name owned by incomparable mathematical categories;
+
+- rebind a copied method whose zero-argument `super()` still names the provider class;
+
+- convert source constructor data through each selected structure functor;
+
+- initialize each class in the compiled MRO once.
+
+Public application of a functor still constructs its owned image. The private Sage graph
+does not construct or identify public functor images.
+
 ### `C.ObjectType`, `C.ElementType`, and `C.MorphismType`
 
 A category specifies `C.ObjectType`, `C.ElementType`, and `C.MorphismType` directly.
@@ -1116,7 +1158,7 @@ It must:
 
 3. derive immediate target categories from functor codomains;
 
-4. give the immediate target classes to Sage dynamic-class construction and use the resulting Sage MRO;
+4. create the private Sage implementation category for each class kind, and use its `parent_class` as the compiled class;
 
 5. preserve each functor's exact object and morphism maps;
 
@@ -1128,13 +1170,21 @@ It must:
 
 9. retain one object of `Fun(C, D)` for each named functor construction;
 
-10. preserve each written public class and fill its bases from its immediate structure-functor targets;
+10. preserve each written public class as the private Sage category's method provider;
 
 11. make each structured value carry the state required by every reachable class, with each local constructor contributing its state once;
 
 12. derive subobject-of-product component functors by composition;
 
-13. install the compiled classes of a point category `{X}` on its distinguished object: `{X}.ObjectType` on `X`, and `{X}.ElementType` on the points of `X`; for a category `X = C`, these points are `C.ObjectType`.
+13. install the compiled classes of a point category `{X}` on its distinguished object: `{X}.ObjectType` on `X`, and `{X}.ElementType` on the points of `X`; for a category `X = C`, these points are `C.ObjectType`;
+
+14. normalize categorical level identities before private implementation-category lookup;
+
+15. use Sage's class-graph calculation and dynamic-class cache instead of repository graph linearization or controlled-base code;
+
+16. rebind local methods that use zero-argument `super()` after Sage copies the method provider;
+
+17. keep the semantic collision check and the typed constructor conversion and initialization pass.
 
 Natural transformations are trusted constructions, never compiler proofs.
 There is no route normalization, route scoring, or preservation registry.
@@ -1147,9 +1197,21 @@ An element's construction input uses the selected functor's typed element-constr
 The method's value is returned exactly as declared.
 
 The public surface is dynamic inheritance in Sage's sense.
-The kernel builds `C.ObjectType`, `C.ElementType`, and `C.MorphismType` as Sage dynamic classes with the surface produced from their immediate structure-functor targets by Sage's controlled linearization.
+The kernel obtains `C.ObjectType`, `C.ElementType`, and `C.MorphismType` from the
+`parent_class` values of their private Sage implementation categories.
 A leaf writes no Python inheritance.
 A leaf that wants a source-category result overrides the inherited method or adds its own.
+
+`CachedRepresentation`, `UniqueRepresentation`, and `cached_method` own runtime caches
+whose keys have ordinary exact equality. `MonoDict` and `TripleDict` remain only for keys
+that contain owned values with proposition-valued equality. A direct kernel call to
+`dynamic_class` keeps its cache enabled.
+
+Sage `Hom`, `Homset`, `Map`, `Morphism`, and `IdentityMorphism` can implement concrete
+leaf morphisms whose endpoints are Sage parents. Generic `Mor` and `Fun` remain owned
+categorical constructions. They follow the corresponding parent, domain, codomain,
+composition, and functor-action protocols without forcing abstract categories to become
+Sage parents. Sage `ForgetfulFunctor` does not implement a selected structure functor.
 
 The MROs have these forms:
 

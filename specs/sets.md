@@ -59,7 +59,7 @@ Morphism categories, fixed-object methods, universal-construction methods, and o
 Their contract is in [Functors, `Cat`, and structural inheritance](functor.md).
 `Sets()` supplies only their set-specific realizations and algorithms.
 
-`X.cardinality()` returns an applied predicate with result category `Cardinal()`.
+`X.cardinality()` returns an applied query with result category `Cardinal()`.
 `ask(X.cardinality())` returns an owned cardinal or Sage `Unknown`.
 
 ## Canonical objects and the terminal object
@@ -147,7 +147,7 @@ Equality is the conjunction of the component equality propositions.
 `ask()` evaluates either proposition when the retained diagram and the selected set engines supply an exact algorithm.
 The set implementation selects a private exact representation from the retained diagram.
 The membership and equality predicates use the components obtained through the inherited projections.
-The cardinality predicate uses the computational cases in [Cardinality and enumeration](#cardinality-and-enumeration).
+The cardinality query uses the computational cases in [Cardinality and enumeration](#cardinality-and-enumeration).
 
 ## Coproducts
 
@@ -161,7 +161,7 @@ For a diagram `i |-> X_i` on `S`, `Sets()` constructs an owned set `Q` whose inh
 are injective, have pairwise disjoint images, and have images whose union is `Q`.
 Membership and equality are the owned set propositions determined by this disjoint-union structure.
 The set implementation selects a private exact representation from the retained diagram.
-The cardinality predicate uses the computational cases in [Cardinality and enumeration](#cardinality-and-enumeration).
+The cardinality query uses the computational cases in [Cardinality and enumeration](#cardinality-and-enumeration).
 
 ## General limits and colimits
 
@@ -236,12 +236,12 @@ The kernel implements `__contains__()` by calling `ask()` on that proposition.
 An `Unknown` decision fails loudly there, since a bool cannot carry it; ask the proposition when the undecided case must be handled.
 A trusted category constructor or named mathematical construction places a set directly in the property category.
 
-### Cardinality predicate
+### Cardinality query
 
-The cardinality operation constructs an applied predicate:
+The cardinality operation constructs an applied query:
 
 ```python
-X.cardinality()  # applied predicate with result category Cardinal()
+X.cardinality()  # applied query with result category Cardinal()
 ```
 
 `ask(X.cardinality())` returns an object of `Cardinal()` or the Sage `Unknown` singleton.
@@ -252,7 +252,7 @@ There is no placeholder cardinal, no unknown cardinal kind, and no symbolic "car
 Cardinal arithmetic, equality, and order are defined on cardinals only.
 Cardinals implement no `Unknown` handling.
 
-A set construction registers exact evaluation cases for the category-owned cardinality predicate.
+A set construction registers exact evaluation cases for the category-owned cardinality query.
 Each case uses the index set, the selected presentation's diagram, its codomain placement (`Sets().Finite()`, `Sets().Countable()`, `Sets().Uncountable()`), and any retained constant diagram.
 For a finite chosen enumeration, it obtains each factor query from the selected product cone `p` by applying `p.diagram().on_object(i).cardinality()`.
 Each case cites the theorem that decides it.
@@ -336,7 +336,7 @@ Engine methods never enter the public surface automatically.
 
 Select engines through the known semantic form of the input.
 Do not probe engines by exception or attempt implementations until one succeeds.
-If no applicable exact algorithm or construction theorem determines a query, leave its applied predicate unresolved so `ask()` returns Sage `Unknown`.
+If no applicable exact algorithm or construction theorem determines a query, leave its application unresolved so `ask()` returns Sage `Unknown`.
 
 Construction-owned mathematics remains authoritative.
 For example, the image of an established monomorphism has the domain cardinality.
@@ -493,7 +493,7 @@ The implementation satisfies this specification when the public API establishes 
 
 - countability does not create a chosen enumeration;
 
-- `cardinality()` returns an applied predicate with result category `Cardinal()`;
+- `cardinality()` returns an applied query with result category `Cardinal()`;
 
 - `ask(X.cardinality())` returns an owned cardinal or `Unknown`;
 
@@ -505,7 +505,7 @@ The implementation satisfies this specification when the public API establishes 
 
 - normalized `FiniteSet` and `Range` results reconstruct their exact owned cardinalities;
 
-- unevaluated `ConditionSet` and `ImageSet` results reconstruct valid owned sets whose cardinality predicate remains unresolved when no theorem decides more;
+- unevaluated `ConditionSet` and `ImageSet` results reconstruct valid owned sets whose cardinality query remains unresolved when no theorem decides more;
 
 - cardinal arithmetic is defined on exact cardinals only;
 

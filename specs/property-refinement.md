@@ -11,6 +11,17 @@ Direct property construction, an active assumption, and an exact computation all
 The object's mathematical identity remains unchanged.
 Its category and Sage dynamic class become more specific.
 
+The public refinement is the owned categorical construction.
+Its runtime update uses Sage's existing mechanism.
+A value that is a Sage `Parent` uses `Parent._refine_category_`.
+Another owned value uses the same small pattern with the joined private Sage
+implementation categories and a cached dynamic class.
+The kernel does not maintain a second refinement framework.
+
+The owned property subcategory and its pullbacks remain objects of `Cat()`.
+The private Sage category join changes only the Python implementation class.
+It does not establish a public subcategory relation.
+
 ### Predicate resolution
 
 For a property \(P\) with property subcategory \(C_P\), use this order:
@@ -123,6 +134,9 @@ After refinement, category placement supplies exact `True` to `ask()`.
 ### Negative and unknown results
 
 A negative result cannot refine into `Mor(Sets()).Monomorphisms()`. The engine should cache that exact result through standard Sage or SymPy caching facilities.
+Use `cached_method`, `CachedRepresentation`, or `UniqueRepresentation` when every cache
+key has ordinary exact equality. Use `MonoDict` or `TripleDict` only when a key contains
+an owned value whose equality is proposition-valued.
 
 A complementary category should exist only when it has mathematical value.
 It should not exist merely to cache `False`.

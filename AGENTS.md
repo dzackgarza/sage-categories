@@ -547,10 +547,18 @@ the functor unstated. You should rarely apply a functor by hand; when you do, yo
 exactly what you programmed it to construct.
 
 The kernel constructs each compiled class from the immediate targets of its selected
-structure functors. Sage's controlled linearization places a shared target class once,
-and cooperative initialization initializes that class once. Each named functor constructs
-the object and morphism images specified by its own action. Selection does not identify
-those images with the source value or with another functor's images.
+structure functors. For each category and each of `ObjectType`, `ElementType`, and
+`MorphismType`, a private Sage category exposes the local class as `ParentMethods` and the
+applicable target categories through `super_categories()`. Its `parent_class` is the
+compiled class. Sage's controlled C3 places a shared target class once, and cooperative
+initialization initializes that class once. Each named functor constructs the object and
+morphism images specified by its own action. Selection does not identify those images
+with the source value or with another functor's images.
+
+Use Sage `_all_super_categories`, `_super_categories_for_classes`, `_make_named_class`,
+`C3_sorted_merge`, and `dynamic_class` for this private class graph. Keep only the
+repository-specific method rebinding, semantic collision check, categorical level
+identities, typed constructor conversions, and once-only initializer threading.
 
 From the leaf writer's side this is ordinary Python inheritance, and that is the whole
 requirement. What a leaf writes:
@@ -718,14 +726,14 @@ They must satisfy, when the cardinal arithmetic is known,
 \#(Y^X)=(\#Y)^{\#X}.
 \]
 
-Each set construction registers these exact cases for the category-owned cardinality predicate.
+Each set construction registers these exact cases for the category-owned cardinality query.
 Write `kappa = ask(X.cardinality())`, require `kappa is not Unknown`, and then use the ordinary cardinal operations on `kappa`.
 Never expose or inspect a cardinal engine value.
 
 Cardinals form a semiring with a poset structure, not integer wrappers. The poset
 is what records that `2 ** aleph_0` is incomparable to most `aleph_i` in ZFC.
 There is no separate symbolic cardinal, and cardinals implement no `Unknown`
-handling of their own: `cardinality()` returns an applied predicate with result category
+handling of their own: `cardinality()` returns an applied query with result category
 `Cardinal()`. `ask(X.cardinality())` returns an owned cardinal when an exact route applies
 and `Unknown` when none applies. Preserve an unknown comparison as
 `Unknown`; do not throw an exception or select a Boolean value.
@@ -909,6 +917,24 @@ Use Sage for:
 - dynamic classes and refinement;
 - category joins and construction classes;
 - established exact algorithms.
+
+Use Sage `Parent._refine_category_` for owned values that are Sage parents. Apply its
+small category-join and dynamic-class pattern to other owned values. Use
+`CachedRepresentation`, `UniqueRepresentation`, and `cached_method` for exact-equality
+keys. Use `MonoDict` and `TripleDict` only for keys that contain owned values with
+proposition-valued equality.
+
+Use Sage `CategoryWithAxiom` and functorial-construction category classes inside the
+private runtime. The owned `Cat` graph still defines property subcategories, inverse
+images, construction interfaces, and universal presentations.
+
+Use Sage homsets and morphisms directly only when their endpoints are Sage parents.
+Keep generic `Mor` and `Fun` in the owned `Cat` layer. Do not force an abstract category
+to become a Sage parent.
+
+Parse ordinary Python declarations and generated stubs with Python 3.14 `ast`. Use
+`tree-sitter-sage` only for Sage syntax. If a later generated wrapper needs a runtime
+signature, use `makefun`.
 
 Cross into Sage through an explicit realization functor or owned computation boundary.
 A Sage realization is not selected for inheritance.

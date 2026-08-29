@@ -301,7 +301,7 @@ It does not replace that expression with cardinal exponentiation.
 
 ## Cofinality
 
-`alpha.cofinality()` is an applied predicate with result category `Cardinal()`.
+`alpha.cofinality()` is an applied query with result category `Cardinal()`.
 `ask(alpha.cofinality())` evaluates \(\operatorname{cf}(\alpha)\), the cofinality of the ordinal.
 This result is a **cardinal**. Mathlib's [`Ordinal.cof`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/SetTheory/Cardinal/Cofinality/Ordinal.html#Ordinal.cof) supplies the reference definition.
 

@@ -70,6 +70,7 @@ from __future__ import annotations
 
 from collections.abc import Hashable
 from dataclasses import dataclass
+from typing import Any
 
 from sage.structure.coerce_dict import MonoDict, TripleDict
 
@@ -189,7 +190,6 @@ class SliceLikeCategory(Category[[MorphismOfCategory], []]):
         self._fixed_label = fixed_label
         self._objects: MonoDict = MonoDict()
         self._properties: MonoDict = MonoDict()
-        self._retained: MonoDict = MonoDict()
         # A functor out of this category exists only once this category does, and
         # ``structure_functors`` runs inside that construction, so both projections are
         # built there and retained (``cat/points.py`` makes the same call at the same
@@ -309,7 +309,7 @@ class SliceLikeCategory(Category[[MorphismOfCategory], []]):
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         return slice_member(candidate, self)
 
-    def _equal(self, first: CategoryPoint, candidate: object) -> Decision:
+    def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
         """Two objects are equal when their defining arrows are, two triangles when their varying morphisms are."""
         if first in self and candidate in self:
             return ask(self.defining_arrow_of(first) == self.defining_arrow_of(candidate))

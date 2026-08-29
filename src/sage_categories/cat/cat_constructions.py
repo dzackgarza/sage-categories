@@ -101,7 +101,7 @@ components_agree = Predicate("components_agree", 2, False)
 
 
 def _components_agree_along_diagram(candidate: CategoryPoint, limit: Category) -> Decision:
-    if not (is_placed(candidate, limit) or is_placed(candidate, limit.morphism_category(1))):
+    if not is_placed(candidate, limit):
         return Unknown
     return ask(limit._agrees(candidate.component))
 
@@ -218,10 +218,9 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], []
         vertices = self._vertices()
         if vertices is Unknown:
             return Unknown
-        factor_morphisms = {vertex: ask(self.factor(vertex).morphism_set()) for vertex in vertices}
-        if any(morphisms is Unknown for morphisms in factor_morphisms.values()):
+        if any(ask(self.factor(vertex).morphism_set()) is Unknown for vertex in vertices):
             return Unknown
-        families = self._families("morphisms", lambda factor: factor_morphisms[factor])
+        families = self._families("morphisms", lambda factor: ask(factor.morphism_set()))
         if not self._generators():
             return families
         if "morphism set" not in self._finite_data:

@@ -146,15 +146,17 @@ def _require_declarations(cls: type[CategoryDeclaration]) -> None:
     thing, and a category deliberately silent at a kind cannot be told from one whose
     author forgot the kind (``DeclaredCategory``).  Where a category adds no new
     mathematics at a kind, the class it writes has an empty body, and that empty body is
-    the statement.  A category that specializes another writes its declaration as a
-    subclass of that class's declaration, which keeps the operations it specializes and
-    is its own statement (``kernel/compiler.py``, ``_written_chain``).
+    the statement.
 
-    The two ways of inheriting a declaration are the Python base and ``Cat()``.  A base
-    is read off this class's own ancestry.  ``Cat()``'s three are every category's,
-    including those of a class that does not derive from ``CategoryOfCategories``: the
-    kernel compiles ``Cat()``'s declarations into the role classes every value reaches,
-    so naming one states nothing either.
+    The three ways of inheriting a declaration are the Python base, ``Cat()``, and a
+    declaration written over another declaration.  A base is read off this class's own
+    ancestry.  ``Cat()``'s three are every category's, including those of a class that
+    does not derive from ``CategoryOfCategories``: the kernel compiles ``Cat()``'s
+    declarations into the role classes every value reaches, so naming one states nothing
+    either.  A declaration standing on another carries that other category's body onto
+    this node when the kernel installs it, which is an implementation base no structure
+    functor supplied, so a declaration stands only on its role's kernel class
+    (POL-CAT-053, ``kernel/compiler.py``, ``borrowed_declaration``).
 
     Both questions are asked by identity, of the class object and of the ``Role``, never
     of a module or a name: a declaration that moves module or is renamed is the same
@@ -176,8 +178,7 @@ def _require_declarations(cls: type[CategoryDeclaration]) -> None:
         assert inherited is None, (
             f"{cls.__name__}.{role.value} names {inherited.__name__}'s {role.value} declaration, which this class "
             f"inherits and which therefore states nothing about this category.  Write this category's own class; "
-            f"where it adds no new mathematics its body is empty, and where it specializes that one its class "
-            f"derives from it (POL-CAT-057)"
+            f"where it adds no new mathematics its body is empty (POL-CAT-057)"
         )
         if issubclass(declared, CategoryDeclaration):
             # The objects of this category are categories, and the class of categories is
@@ -189,6 +190,12 @@ def _require_declarations(cls: type[CategoryDeclaration]) -> None:
             f"{cls.__name__}.{role.value} names ``Cat()``'s {role.value} declaration, which every category class "
             f"inherits and which therefore states nothing about this one.  Write this category's own class; where "
             f"it adds no new mathematics its body is empty (POL-CAT-057)"
+        )
+        borrowed = compiler.borrowed_declaration(declared)
+        assert borrowed is None, (
+            f"{cls.__name__}.{role.value} derives from {borrowed.__qualname__}, so it carries that category's "
+            f"body onto this one.  A declaration stands on its role's kernel class alone; the implementation "
+            f"bases come from the selected structure functors (POL-CAT-053, POL-CAT-057)"
         )
 
 

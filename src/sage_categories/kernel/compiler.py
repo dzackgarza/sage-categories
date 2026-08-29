@@ -451,11 +451,10 @@ def _rebound[**P, R](member: DeclaredMethod[P, R], compiled: type[CategoryPoint]
 
 
 def _install_written_body(compiled: type[CategoryPoint], local: type[CategoryPoint]) -> None:
-    """Put the run of written declarations onto the node's compiled class, most specific last."""
-    for klass in reversed(_written_chain(local)):
-        for name, member in vars(klass).items():
-            if name not in _SOURCE_ATTRIBUTES:
-                setattr(compiled, name, _rebound(member, compiled))
+    """Put the node's written declaration onto its compiled class."""
+    for name, member in vars(local).items():
+        if name not in _SOURCE_ATTRIBUTES:
+            setattr(compiled, name, _rebound(member, compiled))
 
 
 def install_on_declaration[**P, R](local: type[CategoryPoint], name: str, member: DeclaredMethod[P, R]) -> None:
@@ -538,22 +537,19 @@ def _compiled_class(current: Node) -> type[CategoryPoint]:
     return compiled
 
 
-def _written_chain(local: type[CategoryPoint]) -> tuple[type[CategoryPoint], ...]:
-    """``local`` and the declarations it specializes, down to where the kernel's chain begins.
+def borrowed_declaration(local: type[CategoryPoint]) -> type[CategoryPoint] | None:
+    """The declaration ``local`` derives from, or ``None`` when it stands only on its role's kernel class.
 
-    A category class that specializes another writes its declaration as a subclass of
-    that class's declaration -- ``SliceCategory.ObjectType`` over
-    ``SliceLikeCategory.ObjectType`` over ``PullbackCategory.ObjectType`` -- so the
-    specialized category keeps the operations its parent declared instead of shadowing
-    them.  The whole run is therefore installed on the node's compiled class, most
-    specific last (``_install_written_body``).
+    A written declaration states one category's mathematics and is installed on the class
+    of the one node it belongs to (``_install_written_body``).  Deriving one from another
+    would carry a second category's body onto that node, which is an implementation base
+    that no structure functor supplies (POL-CAT-053, ``kernel/roles.py``).
     """
-    chain: list[type[CategoryPoint]] = []
-    for klass in local.__mro__:
-        if klass is Generic or klass in _KERNEL_CLASSES:
-            break
-        chain.append(klass)
-    return tuple(chain)
+    for base in local.__mro__[1:]:
+        if base is Generic or base in _KERNEL_CLASSES:
+            return None
+        return base
+    return None
 
 
 def _assert_linearized(current: Node, compiled: type[CategoryPoint]) -> None:

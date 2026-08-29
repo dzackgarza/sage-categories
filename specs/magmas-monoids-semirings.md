@@ -325,7 +325,8 @@ These formulas are consequences of the internal diagrams.
 ## Structure functors
 
 Each structure functor acts on objects and morphisms.
-Its point action comes from its morphism action and terminal-object comparison.
+Point transport uses ordinary composition for a functor whose domain is the category that carries the point.
+Compiled element inheritance uses the selected functor's typed element-constructor conversion.
 
 The additive and multiplicative refinements use subcategory monomorphisms.
 The semiring component functors come from the generic subobject-of-product construction.

@@ -24,8 +24,8 @@ Do not remove a row after the source becomes clean (`POL-MATH-051`).
 | `canonical image`, `canonical ancestor image`, `canonical target image` | `F.on_object(x)` or `F.on_morphism(f)` for the named functor `F` |
 | `structural image`, `structural_image` | the image owned by the named functor `F`; a category has no image operation |
 | `receiver`, `receiver-valued`, `this_object` | the source instance, or the value to which the method applies |
-| `point stage`, `object stage`, `arrow stage`, `classical stage`, `product stage`, `stage comparison`, `stage identity`, `ObjectStageIdentity`, `ArrowStageIdentity`, `stage_comparison` | the exact point, generalized element, terminal-object comparison, or constructor conversion |
-| `generalized point` | `generalized element` for `T -> X`; use `point` only for `1_C -> X` |
+| `point stage`, `object stage`, `arrow stage`, `classical stage`, `product stage`, `stage comparison`, `stage identity`, `ObjectStageIdentity`, `ArrowStageIdentity`, `stage_comparison` | the exact point, generalized element, or constructor conversion |
+| `generalized point` | `generalized element` for `T -> X`; use `point` only for `* -> X` |
 | `Ar(C)`, `Hom(C)`, arrow-category or hom-category aliases | `Mor(C)` or `Mor(C)(A, B)` |
 | `ChosenSubobjects`, `chosen subobject` | `Subobjects(X)`; a subobject is an object with its monomorphism into `X` |
 | `Chosen<Anything>` | `With<Datum>` only when the object retains chosen data; otherwise use the mathematical construction name |
@@ -35,9 +35,10 @@ Do not remove a row after the source becomes clean (`POL-MATH-051`).
 
 | Concept | Required statement |
 | --- | --- |
-| Point of `X in C` | A morphism `1_C -> X`. This is an actual element of `X` and a `C.ElementType` value. |
+| `C.ElementType` | The shared implementation and API for elements of objects of `C`. |
+| Point of a category `X` | A functor `* -> X`. This is an actual object of `X`; a set uses its discrete, 0-truncated category. |
 | Point of `C in Cat()` | A functor `* -> C`. This is an actual object of `C` and a `Cat().ElementType` value. |
-| Generalized element of `X` | A morphism `T -> X`. It is not an `ElementType` value unless `T = 1_C`. |
+| Generalized element of `X` | A functor `T -> X`. |
 | Morphism of `C` | An object of `Mor(C)`. Thus `C.MorphismType = Mor(C).ObjectType`. |
 | Functor | An ordinary object of `Fun(C, D)`. A category can name many functors with the same endpoints. |
 | Structure functor | An ordinary functor returned by `C.structure_functors()` and used by the kernel to construct inherited class surfaces and constructor conversions. It need not be a subcategory monomorphism. |

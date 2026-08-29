@@ -78,7 +78,7 @@ class PartiallyOrderedSetsCategory(Category):
         return Fun(self, Sets())(
             object_constructor_input=set_constructor_input,
             on_morphism=set_projection_on_morphism,
-            terminal_comparison=terminal_point_comparison,
+            element_constructor_input=set_element_constructor_input,
         )
 
     def structure_functors(self) -> tuple[Cat().MorphismType, ...]:

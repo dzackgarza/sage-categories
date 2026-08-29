@@ -372,9 +372,10 @@ The kernel constructs `C.ObjectType`, `C.ElementType`, and `C.MorphismType` dyna
 Sage dynamic classes and Sage's controlled linearization resolve the resulting inheritance graph.
 
 `C.ObjectType` inherits `Cat().ElementType` because an object of `C` is a point `* -> C`.
-`C.ElementType` implements points `1_C -> X` of objects `X in C`.
+`C.ElementType` is the shared implementation and API for the elements of objects of `C`.
+When an object `X` is regarded as a category, its elements are the points `* -> X`.
 `C.MorphismType` is `Mor(C).ObjectType`.
-A generalized element `T -> X` remains separate from `ElementType` unless `T = 1_C`.
+A generalized element of a category `X` has the form `T -> X`.
 
 For each structure functor `F: C -> D`, the kernel:
 
@@ -400,7 +401,7 @@ The structure functor supplies the input required by the next class constructor.
 The leaf does not add ancestor fields or ancestor arguments.
 An object construction supplies its point `* -> C` to `Cat().ElementType`.
 A morphism follows the object construction of `Mor(C)`.
-An element construction supplies its point `1_C -> X`.
+An element construction supplies the local data required by its category-owned `ElementType`.
 
 The compiler never interprets a local decorator as an instruction to find another method body.
 It never pairs a leaf method with an engine method by name.

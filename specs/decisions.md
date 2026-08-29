@@ -216,7 +216,7 @@ Wiring the constructors is the selected structure functor's job, so a leaf const
 Sage's dynamic classes and controlled linearization determine diamonds.
 The kernel does not enumerate paths, compare constructor data from paths, or decide equality to build the MRO (`01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T21:17Z, 2026-08-28T21:19Z, 2026-08-28T21:40Z).
 
-**D14 (08-26, corrected 08-28). One chain per mathematical kind.** Every category is a `Cat().ObjectType`. Every object of a category is a point `* -> C`, hence a `Cat().ElementType` and a `C.ObjectType`. An element of `X in C` is a point `1_C -> X` and uses `C.ElementType`. A morphism of `C` is a `Mor(C).ObjectType`.
+**D14 (08-26, corrected 08-29). One chain per mathematical kind.** Every category is a `Cat().ObjectType`. Every object of a category is a point `* -> C`, hence a `Cat().ElementType` and a `C.ObjectType`. `C.ElementType` is the category-owned implementation and public interface shared by the elements of objects of `C`. When an object `X` is regarded as a category, its elements are the points `* -> X`, with `*` the terminal category. A morphism of `C` is a `Mor(C).ObjectType` (`01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T06:11Z).
 
 **D55 (08-26). Drop `Ar(C)` and every arrow and hom spelling.** Define `Mor(n, C)` as the category of `n`-morphisms of `C`. Almost every category here is a 1-category, so `Mor(0, C) = C` with `C.ObjectType`, and `Mor(1, C) = Mor(C)` with `C.MorphismType`. Hence categories are `Mor(0, Cat)`, functors are `Mor(1, Cat)`, and natural transformations are `Mor(2, Cat) = Mor(1, Fun)`. `Mor(C)` is always a category: its objects are the 1-morphisms of `C` and its morphisms are the 2-morphisms.
 Drop hom and arrow notation everywhere.
@@ -250,15 +250,11 @@ Record the precise citable definitions and the decisions that follow from them.
 
 **D15 (08-23). "Shared elements" is not a concept.** Every category has an `ElementType`, including a dynamically constructed one such as `C.Products()`. Element classes inherit exactly as object classes do, and may add methods: the element type of a product is also an element of a set and may carry `x.factors()`. An element of a finite set is not "just an element of a set" — it is `FiniteSets().ElementType`, which extends `Sets().ElementType` when the wiring is correct.
 
-**D16 (08-26, corrected 08-28). What an element is.** A Sage element is implicitly a pair `(X, x)` with `X = x.parent()`. Categorically, an element of `X in C` is a point `1_C -> X` from the terminal object.
-This is what `C.ElementType` implements.
-A morphism `T -> X` with general domain is a generalized element and stays in its morphism or slice category.
-For `C in Cat()`, points `* -> C` are the actual objects of `C`, so `C.ObjectType` inherits `Cat().ElementType`. An `R`-point of a scheme is generalized unless its domain is terminal.
+**D16 (08-26, corrected 08-29). What `ElementType` implements.** A Sage element is implicitly a pair `(X, x)` with `X = x.parent()`. `C.ElementType` is the shared implementation and API for the elements of objects of `C`, as Sage category element methods are shared across the elements of their parents. The categorical point of a category `X` is a functor `* -> X` from the terminal category. A morphism `T -> X` with general domain is a generalized element and stays in its functor or slice category. For `C in Cat()`, points `* -> C` are the actual objects of `C`, so `C.ObjectType` inherits `Cat().ElementType`. Sets are read as discrete, hence 0-truncated, categories when this point model is applied (`01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T06:11Z).
 
-**D17 (08-26, corrected 08-28). Every functor transports points through its morphism action.** For `F: C -> D` and `t: 1_C -> X`, the morphism action gives `F(1_C) -> F(X)`. A declared comparison `1_D -> F(1_C)` gives the point of `F(X)`. A generalized element `T -> X` maps to `F(T) -> F(X)` and remains generalized.
-The functor carries no independent element callback.
+**D17 (08-26, corrected 08-29). Point transport uses composition at the point's categorical level.** For `x: * -> X` and a functor `G: X -> Y`, the image point is the composite `G after x: * -> Y`. A functor `F: C -> D` between ambient categories has a different domain and supplies no such composite (`01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T06:11Z). Compiled `ElementType` inheritance remains governed by D08 and D95: the selected structure functor supplies the typed constructor conversion for the target element class.
 
-**D62 (08-27, corrected 08-28). Points and generalized elements are distinct.** A point of `X` is `p: 1_C -> X`. A generalized element is `p: T -> X`. For `X = C in Cat()`, a point `* -> C` is an actual object of `C`, while a functor `T -> C` is a generalized element.
+**D62 (08-27, corrected 08-29). Points and generalized elements are distinct.** A point of a category `X` is `p: * -> X`. A generalized element is `p: T -> X`. For `X = C in Cat()`, a point `* -> C` is an actual object of `C`, while a functor `T -> C` is a generalized element.
 
 ## Predicates, containment, and assumption
 
@@ -343,7 +339,7 @@ Ordered pairs are fine as private representations.
 
 **D33 (08-24). A poset product just is the set product with an order on it.** It needs to do nothing to construct its projections or its mediating morphisms.
 
-**D34 (08-25, corrected 08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T18:48Z). The `Cat` level owns the construction vocabulary.** It supplies `C.Subobjects(X)`, `C.Superobjects(X)`, `C.CoveringObjects(X)`, and `C.CoveredObjects(X)` for every `X in C`, together with `C.Products()`, `C.Coproducts()`, `C.Limits(I)`, and `C.Colimits(I)`. For a product category `P`, an object of `Cat().Subobjects(P)` answers `product_projection(i)`. Slice and coslice categories and their fibrations to the varying object supply the fixed-object constructions.
+**D34 (08-25, corrected 08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T18:48Z; `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T06:11Z). The `Cat` level owns the construction vocabulary.** It supplies `C.Subobjects(X)`, `C.Superobjects(X)`, `C.CoveringObjects(X)`, and `C.CoveredObjects(X)` for every `X in C`, together with `C.Products()`, `C.Coproducts()`, `C.Limits(I)`, and `C.Colimits(I)`. `C.Products()` is the interface subcategory on objects in the images of the chosen nontrivial product functors `Prod_J: C^J -> C`; `C.Coproducts()` is dual. The construction retains the diagram and the selected universal presentation. For a product category `P`, an object of `Cat().Subobjects(P)` answers `product_projection(i)`. Slice and coslice categories and their fibrations to the varying object supply the fixed-object constructions.
 General projections exist for any subcategory of a product category, `proj_i: (X_1, ..., X_n) |-> X_i`; a coslice has projections to both `X in C` and `f in Ar(C)`, and composing with the source and target projections of `Ar(C)` gives the rest.
 
 **D35 (08-25). The operators are defined once.** `Y ** X` is `Hom_C(X, Y)`, `X * Y` the product, `X + Y` the coproduct, `X @ Y` the biproduct.
@@ -600,7 +596,7 @@ Every claimed use has a more direct owner:
 - constructing `Hom(G, -)` needs only the object `G`, and does not need `G` to be a generator;
 - that `Hom(G, -)` is faithful belongs on that named functor, through `.Faithful()`;
 - morphism equality belongs to the category's equality predicate and its exact leaf algorithms;
-- element transport uses `1_D -> F(1_C)`, not a generator;
+- a functor `X -> Y` transports points `* -> X` by composition;
 - structural inheritance uses the selected structure functor, not faithfulness;
 - set equality already uses identity, symbolic comparison, finite extensional comparison, or `Unknown`.
 

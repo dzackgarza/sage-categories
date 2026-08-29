@@ -34,7 +34,8 @@ For each target class contributed by a selected structure functor, the leaf stat
 target constructor consumes the converted source construction data. The target category can
 have many constructors. The kernel uses the selected functor's construction rule to
 initialize the target class on the source instance.
-Point actions derive from morphism actions and the declared terminal-object comparison.
+Point actions use ordinary composition for functors between the categories that carry the points.
+Compiled `ElementType` inheritance uses the selected structure functor's exact element-constructor conversion.
 
 A leaf specification links each inherited construction to its generic specification.
 Its construction section states only the added leaf structure, predicates, exact algorithms, and private engine realizations.

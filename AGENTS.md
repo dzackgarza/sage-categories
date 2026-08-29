@@ -306,7 +306,7 @@ A functor constructs an implementation in another category.
 For each category `C`:
 
 - `C.ObjectType` implements objects of `C`.
-- `C.ElementType` implements points of objects of `C`. An element of `X` is a morphism `1_C -> X` from the terminal object of `C`, and `x.parent()` is `X`.
+- `C.ElementType` is the shared implementation and API for the elements of objects of `C`, and `x.parent()` is `X`.
 - `C.MorphismType` implements morphisms of `C`.
 - `C(...)` is the category-owned constructor.
 
@@ -448,9 +448,8 @@ For each functor `F: C -> D`:
 - `F.on_object()` constructs the image of an object.
 - `F.on_morphism()` constructs the image of a morphism.
 
-For `F: C -> D` and a point `t: 1_C -> X`, compose `F.on_morphism(t)` with the supplied morphism `1_D -> F(1_C)`.
-The result is a point of `F(X)`.
-A generalized element `t: T -> X` maps to `F(t): F(T) -> F(X)` without becoming an `ElementType` value.
+For a point `x: * -> X` and a functor `G: X -> Y`, the image point is the composite `G after x: * -> Y`.
+A selected structure functor contributes target `ElementType` implementation through an exact typed constructor conversion.
 
 Functor properties are ordinary property subcategories:
 
@@ -525,7 +524,7 @@ What must then hold, whatever the kernel does to achieve it:
 
 There is one chain per mathematical kind. Every category is a `Cat().ObjectType`.
 Every object of a category is a `Cat().ElementType` and a `C.ObjectType`.
-Every point `1_C -> X` of `X in C` is a `C.ElementType` with parent `X`.
+Every element of an object `X in C` is a `C.ElementType` with parent `X`.
 Every morphism of `C` is a `C.MorphismType` and a `Mor(C).ObjectType`.
 Selected functors contribute only the class conversions that their mathematics supplies.
 
@@ -587,8 +586,10 @@ Let each apex inherit methods from the category in which it lives.
 Use functor composition and natural transformations to move structure.
 Do not create a separate method-propagation system for constructions.
 
-For a construction functor `F: Diag(C) -> C`, the family `C.Products()`, `C.Limits(I)`,
-or its dual is the full subcategory of `C` on the constructed objects. Its one selected
+For each nontrivial discrete shape `J`, `C.Products()` is the full subcategory on the
+union of the strict images of the chosen product functors `Prod_J: C^J -> C`.
+For a general construction functor `F: Diag_I(C) -> C`, `C.Limits(I)` is the full
+subcategory on the constructed objects. Each dual family has the same form. Its selected
 functor is the retained identity-on-values monomorphism into `C`, so `F(D)` is an object of
 `C` with the whole surface of `C`. The construction returns that one value, placed in the
 family. The family retains the universal data of each diagram `D`: `D` itself, the

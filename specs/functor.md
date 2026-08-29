@@ -69,7 +69,7 @@ A stable kernel class exists before the `Cat()` singleton.
 
 - `Fun = Mor(Cat())` constructs the category whose objects are functors.
 
-The points `* -> C` are the actual objects of `C`, so every `C.ObjectType` inherits `Cat().ElementType`. `C.ElementType` implements points `1_C -> X` of objects `X in C`. A generalized element `T -> X` is not an `ElementType` value unless `T = 1_C`. For `C in Cat()`, `Fun(T, C)` constructs these generalized elements.
+The points `* -> C` are the actual objects of `C`, so every `C.ObjectType` inherits `Cat().ElementType`. `C.ElementType` is the shared implementation and API for the elements of objects of `C`. When an object `X` is regarded as a category, its elements are points `* -> X`; a set uses its discrete, 0-truncated category. `Fun(T, X)` constructs generalized elements `T -> X`.
 `C.MorphismType` is `Mor(C).ObjectType`, because a morphism of `C` is an object of the morphism category.
 
 `Cat()` also supplies the uniform categorical constructions, defined once at that level and applicable to every category.
@@ -116,8 +116,7 @@ The maps preserve identities and composition:
 F(1_X)=1_{F(X)},\qquad F(g\circ f)=F(g)\circ F(f).
 \]
 
-A point `t: 1_C -> X` is represented by its defining morphism.
-For a point `t: 1_C -> X`, compose the declared morphism `1_D -> F(1_C)` with `F.on_morphism(t)`. A generalized element `T -> X` maps through `F.on_morphism` and remains a generalized element with domain `F(T)`.
+A point `x: * -> X` is represented by its defining functor. A functor `G: X -> Y` maps it by composition to `G after x: * -> Y`. A generalized element `T -> X` maps by the same composition to `T -> Y`. This point action belongs to `G`. Selected structure functors supply compiled element implementation through typed constructor conversions.
 
 For fixed `C, D in Cat()`, the functor category is endpoint application to `Mor(Cat())`:
 
@@ -218,7 +217,7 @@ Constructing `Mor(C)(G, -)` in the faithful subcategory is the assertion that `G
 A separating family of several is a family of hom functors that is jointly faithful, so it is a family of such constructions and not one set-valued functor.
 The uses this repository has for generators — presentations, restricted Yoneda functors, density, and evaluation epimorphisms — are named mathematical constructions, recorded in [Separating families and categorical generators](separating-families-and-categorical-generators.md).
 
-Points do not travel through a separator. A point of `X in C` is `t: 1_C -> X`, and a functor `F: C -> D` transports it through the declared comparison `1_D -> F(1_C)` alone.
+Points do not travel through a separator. A point `* -> X` travels along a named functor with domain `X` by ordinary composition.
 
 ## Functor property subcategories
 
@@ -486,7 +485,7 @@ A shared ancestor occurs once and its initializer runs once. Each local construc
 receives only its own datum and contributes its state once.
 
 Every object-class constructor initializes `Cat().ElementType` with its point into the parent category.
-Thus `C.ObjectType` represents a point `* -> C`. A morphism uses the same object rule through `Mor(C).ObjectType`, as a point `* -> Mor(C)`. A `C.ElementType` represents a point `1_C -> X` with parent `X in C`.
+Thus `C.ObjectType` represents a point `* -> C`. A morphism uses the same object rule through `Mor(C).ObjectType`, as a point `* -> Mor(C)`. A `C.ElementType` value has parent `X in C` and uses the shared element implementation owned by `C`.
 
 The named functor uses the same conversion for its public action.
 Public `F(x)` constructs and returns the separate image owned by `F`.
@@ -500,10 +499,9 @@ The equality is semantic; method dispatch does not replace `x` with `F(x)`.
 Identity structure functors use identity construction rules.
 Composite structure functors compose the construction rules of their factors.
 
-A point `x: 1_C -> X` is a `C.ElementType` value with `x.parent() is X`. For `F: C -> D`, `F.on_morphism(x)` gives `F(1_C) -> F(X)`. Composing it with the supplied morphism `c_F: 1_D -> F(1_C)` gives the point `1_D -> F(X)`.
+For a category `X`, `Fun(*, X)` models its points and `Fun(T, X)` models its generalized elements with domain `T`. A functor `G: X -> Y` maps both by composition. The category `Fun([1], X)` models arrows of `X` separately.
 
-A generalized element `t: T -> X` maps to `F(t): F(T) -> F(X)`. It remains separate from `ElementType` unless its domain is the terminal object.
-For a category `C`, `Fun(*, C)` models its points and `Fun(T, C)` models its generalized elements with domain `T`. The category `Fun([1], C)` models arrows of `C` separately.
+An ambient functor `F: C -> D` maps objects and morphisms of `C`. When `F` is selected for compiled inheritance, it can also retain a typed conversion from source element-construction data to the input required by `D.ElementType`. The kernel uses that conversion to initialize the target implementation class on the source element. This conversion is compiler data and does not add another mathematical action to `F`.
 
 ## Category classes and category-valued families
 
@@ -813,13 +811,21 @@ The kernel supplies these shape constructors:
 
 A discrete diagram needs only its object rule `i |-> X_i`. The rule is an assignment on `S`; it never enumerates `S`. A Python sequence `(X_0, ..., X_n)` is the convenience form and denotes the diagram over `Discrete([n])`.
 
+For each nontrivial discrete shape `J`, a chosen product functor
+
+\[
+\operatorname{Prod}_J:C^J\longrightarrow C
+\]
+
+maps a diagram to its selected product object. `C.Products()` is the full subcategory of `C` on the union of these strict images. It is the shared interface for objects constructed as nontrivial products. The family retains the diagram, projections, and universal map for each construction. `C.Coproducts()` is dual. Singleton limits remain available through their standard limit construction; they do not make every object a member of `C.Products()`.
+
 `C.Products()(diagram)` constructs one object of `C`, placed in `C.Products()`, with `product_projection(i)` indexed by `i in S` and the universal map.
 The structure functor of the family is its retained identity-on-values monomorphism into `C`. `C.Coproducts()` is dual with `coproduct_injection(i)`. `X * Y` is `C.Products()((X, Y))`.
 
 `P.product_factors()` returns the retained indexed family `i |-> X_i` of a product presentation.
 `Q.coproduct_summands()` returns the retained indexed family of a coproduct presentation.
 
-For a point `x: 1_C -> P` of a product `P`, its component at `i` is the composite
+For a point `x: * -> P` of a product object `P` in the point model, its component at `i` is the composite
 `P.product_projection(i) after x`.
 This construction belongs to the generic product presentation.
 
@@ -938,7 +944,7 @@ It must:
 
 5. preserve each functor's exact object and morphism maps;
 
-6. derive each point action from the morphism action and the declared terminal-object comparison; map all other generalized elements through the morphism action alone;
+6. map points and generalized elements by ordinary functor composition at their category level; use typed element-constructor conversions only for compiled `ElementType` inheritance;
 
 7. reject a selected structure functor when a contributed target class needs construction input and the functor lacks an exact typed construction rule;
 
@@ -961,7 +967,7 @@ Every inherited method enters the descendant through the compiled class MRO. The
 It reads the declaring category's state directly on that instance.
 Each structure functor states how the descendant's construction data produces the data its target constructor consumes.
 The descendant therefore carries the target state itself.
-A point's construction input uses the declared terminal-object comparison.
+An element's construction input uses the selected functor's typed element-constructor conversion.
 The method's value is returned exactly as declared.
 
 The public surface is dynamic inheritance in Sage's sense.

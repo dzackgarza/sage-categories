@@ -113,18 +113,15 @@ ci-provision-sage:
         | sudo tee "${sage_dir}/python" >/dev/null
     sudo chmod +x "${sage_dir}/python"
     sage_bin="${sage_dir}/sage"
-    # The checkout under test, not whatever version the image happened to carry.
-    # This Sage's CLI takes only -c and a file; the environment's pip is reached
-    # through its Python, which is the spelling the QC profile uses too.
+    # The checkout under test supplies one dependency group for runtime and QC packages.
     docker exec -i -w "${workspace}" sage-env /sage/.venv/bin/uv pip install \
         --python /sage/.venv/bin/python \
-        'sage-mypy-category-plugin @ git+https://github.com/dzackgarza/sagemath-mypy-plugin@main' \
-        sympy \
-        'tree-sitter-sage @ git+https://github.com/dzackgarza/tree-sitter-sage'
+        --group dev \
+        --project "${workspace}"
     docker exec -i -w "${workspace}" sage-env /sage/.venv/bin/uv pip install \
         --python /sage/.venv/bin/python --no-deps -e .
     # The CI tier measures coverage with the Sage interpreter's own Python, so
     # the tool has to live in that environment rather than on the runner.
-    "${sage_dir}/python" -m pip install --quiet coverage
+    "${sage_dir}/python" -m uv pip install --quiet coverage
     echo "SAGE_BIN=$sage_bin" >> "${GITHUB_ENV:-/dev/stdout}"
     "$sage_bin" -c "import sage_categories; print('sage_categories', sage_categories.version())"

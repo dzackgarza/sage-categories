@@ -2,13 +2,12 @@
 name = "sage-categories"
 version = "0.1.0"
 description = "Owned Sage categories."
-requires-python = ">=3.14"
+requires-python = ">=3.14,<3.15"
 dependencies = [
-    "inflection>=0.5.1",
-    "mypy>=2",
-    "sage-mypy-category-plugin @ git+https://github.com/dzackgarza/sagemath-mypy-plugin@main",
-    "sympy",
-    "tree-sitter-sage @ git+https://github.com/dzackgarza/tree-sitter-sage",
+    "attrs>=26.1,<27",
+    "plum-dispatch",
+    "sympy>=1.14,<2",
+    "wrapt",
 ]
 
 [build-system]
@@ -17,3 +16,36 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[dependency-groups]
+dev = [
+    "hypothesis>=6.165,<7",
+    "mypy>=2",
+    "pytest>=9.1,<10",
+    "ruff>=0.16.5,<1",
+    "sage-mypy-category-plugin @ git+https://github.com/dzackgarza/sagemath-mypy-plugin@main",
+]
+migration = [
+    "libcst>=1.9,<2",
+]
+platform = [
+    "juliacall>=0.9.35,<0.10",
+    "sagemath==10.9.*",
+]
+cap = [
+    "cap==2026.07-04",
+    "tools-for-homalg>=2026.04-01",
+    "tools-for-categorical-towers==2026.08-01",
+    "cartesian-categories==2026.08-02",
+    "subcategories-for-cap==2026.07-01",
+    "fp-categories==2026.07-03",
+    "compiler-for-cap==2026.07-01",
+]
+gap-system = [
+    "gap>=4.13",
+]
+julia-system = [
+    "julia==1.12.7",
+    "catlab==0.17.6",
+    "gatlab==0.2.4",
+]

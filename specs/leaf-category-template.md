@@ -3,7 +3,8 @@
 Replace each `Leaf`, `Base`, and `defining_data` name with its mathematical name.
 Keep only methods introduced by the leaf structure.
 
-This template implements D118, D119, `POL-LEAF-014`, `POL-LEAF-061`, and `POL-API-028`.
+This template implements D118 through D120, `POL-LEAF-014`, `POL-LEAF-061`,
+`POL-LEAF-062`, and `POL-API-028`.
 It is design pseudocode, not an importable framework API.
 
 ## The four leaf questions
@@ -14,14 +15,14 @@ A leaf answers four questions:
 
 2. What defining data does its default constructor accept, and which other semantic constructors are useful?
 
-3. Which immediate named functors supply inherited structure, and how does each convert constructor data?
+3. Which immediate named functors supply inherited structure, and what do their object and morphism actions construct?
 
 4. Which operations, predicates, algorithms, and theorems first belong to this category?
 
 The explicit structure functors contain most leaf-level transport work.
-Each gives its complete object and morphism actions.
-Each selected functor also gives the exact object, element, and morphism constructor conversions that it contributes.
-The kernel turns those declarations into class inheritance and initialized state.
+Each gives complete executable object and morphism actions.
+Each action returns an owned value built through the target category's public constructors.
+The kernel turns selection into class inheritance and private runtime state sharing.
 
 ```python
 class LeafCategory(Category):
@@ -127,26 +128,25 @@ Thus a selected structure functor has exactly two normal sources:
 
 2. The functor expresses leaf-specific mathematics.
    The leaf constructs it through `Fun(self, Target)` and supplies its object action,
-   morphism action, and exact constructor conversions.
+   and morphism action.
 
 The endpoints do not choose the functor.
-The kernel does not inspect leaf data to infer it.
+The kernel treats the two action functions as complete.
 The leaf owns the statement that its group construction determines a monoid, or that its module action determines an ambient object.
 The kernel only compiles the selected functor after the leaf supplies it.
 
 The generic categorical layer supplies property inverse images and standard construction families.
-The kernel supplies class compilation, constructor threading, inherited method execution,
+The kernel supplies class compilation, private runtime state sharing, inherited method execution,
 generated `is_P()` methods, the positive-decision refinement connection, same-object refinement,
 and public type projection.
 Sage and SymPy supply the session assumption context.
 An ordinary leaf contains none of that machinery.
 
-For each target class contributed by a selected structure functor, the leaf states which
-target constructor consumes the converted source construction data. The target category can
-have many constructors. The kernel uses the selected functor's construction rule to
-initialize the target class on the source instance.
+The object action can use arbitrary ordinary Python and every method supplied by the source category.
+It returns an actual target object through a public target constructor.
+The morphism action returns an actual target morphism through its fixed-endpoint hom category.
 Point actions use ordinary composition for functors between the categories that carry the points.
-Compiled `ElementType` inheritance uses the selected structure functor's exact element-constructor conversion.
+Compiled `ElementType` inheritance is a private compiler consequence of selection.
 
 A leaf specification links each inherited construction to its generic specification.
 Its construction section states only the added leaf structure, predicates, exact algorithms, and private engine realizations.
@@ -161,6 +161,26 @@ The generic `Cat().MonoOver(P)` construction then supplies `product_projection(i
 
 For another functor, the leaf supplies its complete object and morphism actions through `Fun(self, Target)`. It selects the strongest established property subcategory before construction.
 The endpoints never select a functor by themselves.
+
+Use local functions for logic consumed only by one functor action:
+
+```python
+def target_functor(self) -> Cat().MorphismType:
+    D = TargetCategory()
+
+    def on_object(X):
+        return D(X._target_data())
+
+    def on_morphism(f):
+        source = on_object(f.domain())
+        target = on_object(f.codomain())
+        return Mor(D)(source, target)(f._target_morphism_data())
+
+    return Fun(self, D)(on_object, on_morphism)
+```
+
+`_target_data()` and `_target_morphism_data()` are private because this example gives them no other consumer.
+A helper with an independent public mathematical meaning uses its public mathematical name instead.
 
 For a structured object with several defining components, select only components used as its inherited public structure.
 Other component functors remain ordinary functors.

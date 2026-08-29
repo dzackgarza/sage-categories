@@ -242,21 +242,34 @@ A monoid morphism between group objects preserves inversion.
 The additive form `Groups(V).Additive()` exposes unary `-` and subtraction.
 The commutative additive group category is `Groups(V).Additive().Commutative()`.
 
-Its complete immediate structure-functor tuple is
+The leaf constructs the functor through its complete actions:
 
 ```python
+def to_monoids(self) -> Cat().MorphismType:
+    D = Monoids(V)
+
+    def on_object(G):
+        return D(G.multiplication(), G.unit_morphism())
+
+    def on_morphism(f):
+        source = on_object(f.domain())
+        target = on_object(f.codomain())
+        return Mor(D)(source, target)(f._monoid_morphism_data())
+
+    return Fun(self, D).Monomorphisms().Isofibrations().Full()(
+        on_object,
+        on_morphism,
+    )
+
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (self._monoid_projection,)
+    return (self.to_monoids(),)
 ```
 
-The `Groups(V)` leaf constructs `_monoid_projection` in
-`Fun(self, Monoids(V)).Monomorphisms().Isofibrations().Full()`.
-It supplies the object action, morphism action, and constructor conversions that discard
-the inverse datum and construct the corresponding monoid data.
-`Cat()` does not know this conversion.
-The kernel only compiles the functor after the leaf supplies it.
+`on_object` constructs an actual monoid through the public `Monoids(V)` constructor.
+`on_morphism` constructs an actual monoid morphism through its target hom category.
+`_monoid_morphism_data()` is private because this example gives it no consumer outside the functor action.
 
-The structure functor supplies the multiplication morphism and unit data required by the monoid constructor.
+The structure functor's object action calls the public monoid constructor with the multiplication morphism and unit.
 `Groups(V)` adds only the inversion morphism and its laws.
 Membership is the property that such an inversion exists.
 The inverse laws make the inversion morphism unique, so the property implementation exposes that morphism without adding a separate chosen-inverse category.
@@ -338,7 +351,7 @@ These formulas are consequences of the internal diagrams.
 
 Each structure functor acts on objects and morphisms.
 Point transport uses ordinary composition for a functor whose domain is the category that carries the point.
-Compiled element inheritance uses the selected functor's typed element-constructor conversion.
+Compiled element inheritance is a private compiler consequence of selecting the two functors.
 
 The additive and multiplicative refinements use subcategory monomorphisms.
 The semiring component functors come from the generic subobject-of-product construction.
@@ -430,4 +443,4 @@ The notation subcategories use the Sage reference sections for [magmas](https://
 
 - `Semirings(Sets())` gives ordinary semirings; `Semirings(Cat())` states its laws as equalities of functors.
 
-The complete governing set also includes `POL-MATH-001` through `POL-MATH-013`, `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001` through `POL-CAT-020`, `POL-CAT-033`, `POL-CAT-043` through `POL-CAT-047`, `POL-CAT-054`, `POL-CAT-061` through `POL-CAT-087`, `POL-LEAF-061`, `POL-FUN-001` through `POL-FUN-006`, `POL-FUN-023`, `POL-API-028`, and `POL-DOC-003` through `POL-DOC-009`.
+The complete governing set also includes `POL-MATH-001` through `POL-MATH-013`, `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001` through `POL-CAT-020`, `POL-CAT-033`, `POL-CAT-043` through `POL-CAT-047`, `POL-CAT-054`, `POL-CAT-061` through `POL-CAT-087`, `POL-LEAF-061`, `POL-LEAF-062`, `POL-FUN-001` through `POL-FUN-006`, `POL-FUN-023`, `POL-FUN-035`, `POL-API-028`, and `POL-DOC-003` through `POL-DOC-009`.

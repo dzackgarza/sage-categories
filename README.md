@@ -68,11 +68,16 @@ inheritance. It can be a forgetful functor, projection, fibration, subcategory
 monomorphism, or another mathematically specified functor. Selection alone asserts none
 of those properties.
 
-The kernel uses `F` to construct `C.ObjectType`, `C.ElementType`, and `C.MorphismType`
-with the applicable target classes and constructor conversions. This Python inheritance
+The kernel uses selection of `F` to construct `C.ObjectType`, `C.ElementType`, and `C.MorphismType`
+with the applicable target classes and private runtime state. This Python inheritance
 does not assert that `C` is a subcategory of `D` or that an object of `C` is an object of
 `D`. The public image `F(x)` remains a separate object of `D`. Only an explicitly
 declared subcategory monomorphism states a subcategory relation.
+
+The two ordinary functor actions are complete executable constructions.
+`F.on_object(X)` calls a public constructor of `D` and returns the resulting object.
+`F.on_morphism(f)` calls the exact target hom-category constructor and returns the resulting morphism.
+Selecting `F` adds no writer-supplied compiler description.
 
 The separation also preserves mathematical consequences that concrete Sage implementations can lose.
 For example, let `M = ZZ^3` be a free module with its standard coordinate presentation.
@@ -99,7 +104,7 @@ Category theory supplies the reuse mechanism: actual functors replace copied met
 
 The kernel absorbs the Python machinery needed to compile that structure.
 Outside the kernel, category code should read as the mathematical definition it implements.
-A leaf-category contributor should mainly state new objects, morphisms, functors, axioms, and construction rules.
+A leaf-category contributor should mainly state new objects, morphisms, complete functor actions, axioms, and constructors.
 The inherited categorical machinery should supply the rest.
 
 The intended reviewer of a theory subtree is a mathematician with little programming experience.

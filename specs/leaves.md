@@ -89,12 +89,12 @@ Before writing a leaf, answer four questions:
 
 2. What defining datum does the default constructor accept, and which named constructors accept other complete presentations?
 
-3. Which immediate named functors supply inherited structure, and what exact constructor conversions do they supply?
+3. Which immediate named functors supply inherited structure, and what do their object and morphism actions construct?
 
 4. Which operations, predicates, algorithms, and theorems first belong to this category?
 
 Those answers are the leaf contract.
-The explicit structure functors and their conversions contain the structural transport work.
+The explicit structure functors and their executable actions contain the structural transport work.
 The kernel compiles their consequences.
 The standard templates are in [Leaf category template](leaf-category-template.md).
 
@@ -113,7 +113,7 @@ The standard definitions already determine the implementation classes:
 
 - an operation's mathematical signature determines the exact type of the value it applies to, of each parameter, and of its result;
 
-- a structure functor determines the compiled ancestor class and its exact construction-input conversion;
+- a selected structure functor determines the compiled ancestor class, while its ordinary actions construct its public images;
 
 - an element's ambient mathematical object determines its exact element type;
 
@@ -144,7 +144,7 @@ It cannot select a new mathematical model.
 When the code lacks an obvious encoding, derive the encoding from the standard mathematical definition.
 If the repository cannot state that definition, the missing category, functor, morphism, construction, or exact type is the foundational defect.
 
-The governing policies are `POL-MATH-001`, `POL-MATH-031` through `POL-MATH-033`, `POL-CAT-075` through `POL-CAT-080`, `POL-LEAF-053` through `POL-LEAF-056`, `POL-LEAF-061`, `POL-KERNEL-021` through `POL-KERNEL-025`, `POL-FUN-023`, `POL-API-023`, `POL-API-028`, and `POL-CODE-042` through `POL-CODE-043`.
+The governing policies are `POL-MATH-001`, `POL-MATH-031` through `POL-MATH-033`, `POL-CAT-075` through `POL-CAT-080`, `POL-LEAF-053` through `POL-LEAF-056`, `POL-LEAF-061`, `POL-LEAF-062`, `POL-KERNEL-021` through `POL-KERNEL-025`, `POL-FUN-023`, `POL-FUN-035`, `POL-API-023`, `POL-API-028`, and `POL-CODE-042` through `POL-CODE-043`.
 
 ## Two different forms of reuse
 
@@ -267,7 +267,7 @@ These are internal computations, not alternative implementations of the mathemat
 They do not add public classes, backend selectors, realization variants, or automatic method routing.
 The category-owned method calls the selected private computation explicitly and reconstructs the owned result.
 
-The implementation class supplies constructor routes from the general semantic data that defines the category.
+The implementation class supplies public constructors from the semantic data that defines the category.
 Those constructors can choose any suitable private representation.
 Public code does not construct engine values to select an implementation.
 
@@ -284,7 +284,7 @@ R\hookrightarrow X\times X
 \]
 
 already determines `X`. The constructor verifies that the two factors are the same set and stores only `R` as local state.
-The selected set projection derives `X` and supplies its exact set construction input.
+The selected set projection has an object action that returns `X`.
 The relation projection is not selected for inheritance.
 
 Present this category as a subobject of the product of the set category and the relation category.
@@ -303,7 +303,7 @@ The same rule applies downstream:
 - A lattice constructor can accept `b`, or the explicit pair `(L, b)` when that pair is the intended public presentation.
 
 A downstream leaf returns its immediate structure functors.
-Each functor supplies the construction data required by its immediate target class.
+Each functor supplies complete executable actions that return actual target objects and morphisms.
 Sage's controlled linearization orders those classes and places each shared ancestor once.
 With an arbitrary ambient category \(\mathcal C\), the leaf receives the capabilities owned by \(\mathcal C\); a set surface requires an explicit structure functor to `Sets()`.
 
@@ -312,7 +312,7 @@ It constructs that image through its specified object or morphism action.
 Different functors with the same endpoints remain independent.
 
 An inherited method runs on the structured source value.
-The structure functor's conversion initialized the declaring category's state on that same instance (`POL-KERNEL-018`).
+The kernel makes the declaring category's state available on that same instance (`POL-KERNEL-018`).
 The method reads that state through ordinary Python inheritance.
 
 A category that combines two structures on one shared ancestor object is their pullback over that ancestor.
@@ -354,7 +354,7 @@ class LeafCategory(Category):
 
 The kernel constructs these classes dynamically from structure functors.
 For each structure functor `F: C -> D`, `C.ObjectType` inherits `D.ObjectType`.
-The element and morphism classes follow the same rule when `F` supplies their conversions.
+The applicable element and morphism classes follow the same compiler rule.
 
 ## Local methods are ordinary executable methods
 
@@ -395,13 +395,13 @@ It supplies the public mathematical contract and the private computation boundar
 ## Functor construction belongs to `Fun(C, D)`
 
 `Cat()` supplies the generic categorical calculus.
-It does not decide which functor presents a leaf's structure or how the leaf's construction data initializes the target implementation.
+The leaf decides which functor presents its structure and implements both actions completely.
 
 The fixed-endpoint functor category owns construction of each functor:
 
 ```python
 H = Fun(C, D)
-F = H(on_object, on_morphism, ...)
+F = H(on_object, on_morphism)
 ```
 
 The leaf writer can inspect `H` for its ordinary and property-specific constructors.
@@ -414,7 +414,7 @@ A selected leaf functor has two sources:
    The leaf returns that object.
 
 2. The functor is new leaf mathematics.
-   The leaf constructs it in `Fun(self, Target)` and supplies its object action, morphism action, and constructor conversions.
+   The leaf constructs it in `Fun(self, Target)` and supplies its complete object and morphism actions.
 
 `Groups(V)` owns the rule that its group construction determines a monoid construction.
 It supplies that rule to the functor in `Fun(Groups(V), Monoids(V))`.
@@ -422,8 +422,13 @@ It supplies that rule to the functor in `Fun(Groups(V), Monoids(V))`.
 It supplies that rule to its functor in `Fun(Modules(A, C), C)`.
 When a pullback, comma category, or other defining construction already retained the exact projection, the leaf reuses it.
 
-The kernel compiles these supplied functors.
-It never chooses one from the endpoints, fields, tuple positions, or target method names.
+Each object action returns an actual target object through a public target constructor.
+Each morphism action returns an actual target morphism through its fixed-endpoint hom category.
+The kernel compiles the selected target surface and treats the action functions as opaque.
+
+A helper used only by one functor action is a local function or a private leaf method.
+It does not appear in the public method catalogue or generated types.
+A defining datum with an independent public mathematical meaning remains public even when a functor uses it.
 
 ## Structure functors determine class inheritance
 
@@ -438,7 +443,7 @@ A generalized element of a category `X` has the form `T -> X`.
 
 For each structure functor `F: C -> D`, the kernel:
 
-- places `D.ObjectType`, `D.ElementType`, or `D.MorphismType` in the corresponding class MRO when `F` supplies the required conversion;
+- places the applicable `D.ObjectType`, `D.ElementType`, or `D.MorphismType` in the corresponding class MRO;
 
 - preserves each member specified for the corresponding class of `C`, except `__init__`;
 
@@ -446,7 +451,7 @@ For each structure functor `F: C -> D`, the kernel:
 
 - installs one generated wrapper in the corresponding class's `__init__` slot;
 
-- uses the functor's constructor conversion to initialize the ancestor state;
+- makes the target implementation state available on the source instance;
 
 - invokes inherited methods on the original structured value through ordinary Python method resolution;
 
@@ -456,7 +461,7 @@ The local constructor accepts only the leaf's new semantic data.
 It initializes that state and calls `super().__init__()` once.
 A declaration can omit `__init__` when it adds no state.
 Its generated wrapper advances to the next initializer in Sage's MRO.
-The structure functor supplies the input required by the next class constructor.
+The kernel handles private state sharing and once-only initialization.
 The leaf does not add ancestor fields or ancestor arguments.
 An object construction supplies its point `* -> C` to `Cat().ElementType`.
 A morphism follows the object construction of `Mor(C)`.
@@ -819,8 +824,8 @@ If changing one mathematical operation requires synchronized edits to two method
 | Category-local operation name and signature | `ObjectType`, `ElementType`, or `MorphismType` |
 | Category-local executable method body | The same implementation class |
 | Local constructor and state | The same local implementation class |
-| Ancestor constructor conversion | Structure functor |
-| Controlled class MRO and constructor composition | Kernel |
+| Complete object and morphism actions | The named functor |
+| Controlled class MRO, private state sharing, and once-only initialization | Kernel |
 | Inherited executable method | Declaring target category |
 | Object and morphism images | The named functor |
 | Choice of exact leaf algorithm | Leaf implementation method |
@@ -1034,7 +1039,7 @@ A leaf implementation satisfies this specification when all these facts hold:
 
 - inherited methods arrive only through structure functors;
 
-- every class in Sage's MRO receives the state required by its constructor conversion;
+- every class in Sage's MRO receives the state required by its implementation;
 
 - the compiler does not match local operation names to backend names;
 

@@ -485,14 +485,17 @@ If a morphism predicate names a subcategory, implement it as containment in that
 For example, test `f in Mor(C).Monomorphisms()` instead of inspecting the Python class of `f`.
 Prefer a morphism or functor formulation when the mathematical definition names a relation or transport.
 
-A functor transports constructor data. Declaring a supercategory says nothing about how
-to build one of its objects or morphisms from one of yours, and supplying that is the
-leaf's work. The leaf knows the target's constructors, provides constructors on its own
-objects and morphisms, and states how one of its own constructions produces the data the
-target's constructor consumes. A module category whose constructor takes an action
-`rho: A bullet X -> X` teaches the repository to produce a set from a module by stating
-the data `Sets()` requires. Writing those two rules is leaf work. Naming canonical
-images, construction inputs, routes, or transport around them is not.
+A functor has two complete executable actions. Declaring a supercategory says nothing
+about how to build one of its objects or morphisms from one of yours, and supplying those
+actions is the leaf's work. `F.on_object(X)` uses ordinary Python and the source API, then
+returns an actual object built through a public constructor of `F.codomain()`.
+`F.on_morphism(f)` returns an actual morphism built through the exact target hom category.
+The leaf knows its own category and the immediate target category. The kernel treats both
+actions as opaque and asks the writer for no additional description.
+
+A helper used only inside a functor action is local to that action or private to the leaf.
+It does not enter public completion, generated types, or the public method catalogue.
+A datum with independent public mathematical meaning remains public when the functor uses it.
 
 Selecting a functor is not a property of it. A leaf builds an ordinary functor and
 declares it structural by returning it from `structure_functors()`; there is no separate
@@ -502,11 +505,11 @@ For each functor `F: C -> D`:
 
 - `F.domain()` is `C`.
 - `F.codomain()` is `D`.
-- `F.on_object()` constructs the image of an object.
-- `F.on_morphism()` constructs the image of a morphism.
+- `F.on_object(X)` constructs and returns the image object in `D`.
+- `F.on_morphism(f)` constructs and returns the image morphism in `D`.
 
 For a point `x: * -> X` and a functor `G: X -> Y`, the image point is the composite `G after x: * -> Y`.
-A selected structure functor contributes target `ElementType` implementation through an exact typed constructor conversion.
+A selected structure functor contributes the applicable target implementation classes as a compiler consequence of selection.
 
 Functor properties are ordinary property subcategories:
 
@@ -566,7 +569,7 @@ with the source value or with another functor's images.
 Use Sage `_all_super_categories`, `_super_categories_for_classes`, `_make_named_class`,
 `C3_sorted_merge`, and `dynamic_class` for this private class graph. Keep only the
 repository-specific method rebinding, semantic collision check, categorical level
-identities, typed constructor conversions, and once-only initializer threading.
+identities, private runtime state sharing, and once-only initialization.
 
 From the leaf writer's side this is ordinary Python inheritance, and that is the whole
 requirement. What a leaf writes:
@@ -574,8 +577,8 @@ requirement. What a leaf writes:
 - `ObjectType`, `ElementType`, and `MorphismType`, as its own nested classes, on a category
   class that inherits from a base category class;
 - a constructor taking its own category's data, initializing its own state only;
-- for each ancestor category, a functor stating how its own data supplies what that
-  ancestor's constructor requires.
+- for each immediate target category, a functor whose actions return actual target objects
+  and morphisms through the target's public constructors.
 
 What must then hold, whatever the kernel does to achieve it:
 
@@ -591,11 +594,11 @@ There is one chain per mathematical kind. Every category is a `Cat().ObjectType`
 Every object of a category is a `Cat().ElementType` and a `C.ObjectType`.
 Every element of an object `X in C` is a `C.ElementType` with parent `X`.
 Every morphism of `C` is a `C.MorphismType` and a `Mor(C).ObjectType`.
-Selected functors contribute only the class conversions that their mathematics supplies.
+Selected functors contribute the applicable target implementation classes.
 
 Sage's dynamic classes already carry inherited methods; what they do not carry is the
-private data those methods need. Supplying that is the kernel's work, and the declared
-functor is where the leaf states it.
+private data those methods need. Supplying that state is the kernel's work.
+The declared functor contains only its complete ordinary actions.
 
 A category writes `ObjectType`, `ElementType`, and `MorphismType` as its own nested classes.
 One name per kind: the category writes the class and the kernel compiles it. A category class
@@ -613,19 +616,17 @@ inheritance is the mechanism that makes it true:
 
 - for each selected functor `F: C -> D`, the kernel makes `C.ObjectType` a Python subclass
   of `D.ObjectType`, so an object of `C` is an object of `D` at the Python level as well;
-- `F` states how the construction data of `C` produces the data that `D`'s constructor
-  consumes;
-- the kernel uses that statement to thread a leaf constructor's arguments through the
-  ancestor initializers, so the object carries `D`'s state itself, methods and data alike;
+- `F.on_object(X)` constructs the separate target image through a public constructor of `D`;
+- the kernel makes `D`'s implementation state available on the source object and initializes
+  each compiled class once;
 - `D.f` then runs on the original object, reads that state, and returns its declared value.
 
 The inherited method fetches no second object. The poset instance carries the set state,
 and `self` remains the poset. A public call to a named functor can construct a separate
 set image, but inherited method execution does not use that image.
 
-Stating the conversion once, as the functor, is the point of the mechanism. Without it a
-leaf would repeat that same conversion inside a hand-written `__init__` that threads
-`super()` arguments itself.
+The functor writer supplies only `on_object` and `on_morphism`.
+Private runtime state sharing adds no theory-layer declaration.
 
 A leaf that wants a source-category result overrides the inherited method or adds its own.
 Lifting an ancestor result back is leaf work. `Sets()` can construct the product of the

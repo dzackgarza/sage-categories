@@ -24,7 +24,8 @@ Do not remove a row after the source becomes clean (`POL-MATH-051`).
 | `canonical image`, `canonical ancestor image`, `canonical target image` | `F.on_object(x)` or `F.on_morphism(f)` for the named functor `F` |
 | `structural image`, `structural_image` | the image owned by the named functor `F`; a category has no image operation |
 | `receiver`, `receiver-valued`, `this_object` | the source instance, or the value to which the method applies |
-| `point stage`, `object stage`, `arrow stage`, `classical stage`, `product stage`, `stage comparison`, `stage identity`, `ObjectStageIdentity`, `ArrowStageIdentity`, `stage_comparison` | the exact point, generalized element, or constructor conversion |
+| `point stage`, `object stage`, `arrow stage`, `classical stage`, `product stage`, `stage comparison`, `stage identity`, `ObjectStageIdentity`, `ArrowStageIdentity`, `stage_comparison` | the exact point, generalized element, or functor action |
+| `constructor conversion`, `construction-input conversion`, or compiler-oriented constructor metadata on a functor | the complete object or morphism action for the public image; private runtime state sharing for compiler mechanics |
 | `generalized point` | `generalized element` for `T -> X`; use `point` only for `* -> X` |
 | `Ar(C)` and arrow-category API aliases | `Mor(C)` or `Mor(C)(A, B)`; standard `Hom_C(A, B)` remains valid mathematical prose |
 | `Subobjects(X)`, `Superobjects(X)`, `CoveringObjects(X)`, `CoveredObjects(X)` | `MonoOver(X)`, `MonoUnder(X)`, `EpiOver(X)`, `EpiUnder(X)` |
@@ -42,12 +43,11 @@ Do not remove a row after the source becomes clean (`POL-MATH-051`).
 | Generalized element of `X` | A functor `T -> X`. |
 | Morphism of `C` | An object of `Mor(C)`. Thus `C.MorphismType = Mor(C).ObjectType`. |
 | Functor | An ordinary object of `Fun(C, D)`. A category can name many functors with the same endpoints. |
-| Structure functor | An ordinary functor returned by `C.structure_functors()` and used by the kernel to construct inherited class surfaces and constructor conversions. It need not be a subcategory monomorphism. |
+| Structure functor | An ordinary functor returned by `C.structure_functors()` and used by the kernel to construct inherited class surfaces. Its ordinary object and morphism actions are already complete. It need not be a subcategory monomorphism. |
 | Subcategory relation | A declared subcategory monomorphism. Python class inheritance and selection as a structure functor do not establish it. |
 | Classes specified by a category `C` | The category specifies `C.ObjectType`, `C.ElementType`, and `C.MorphismType` directly. The kernel constructs them dynamically from structure functors. |
 | Public functor image | The image constructed by the named action `F.on_object(x)` or `F.on_morphism(f)`. |
 | Inherited execution | A structure-functor target class is in the source class MRO. Its method runs on the initialized source instance. |
-| Constructor conversion | A structure functor converts source construction data to the exact data required by its target constructor. |
 | Predicate | A proposition-valued operation. Its application is an applied proposition, and `ask()` returns `True`, `False`, or `Unknown`. |
 | Query | An operation with an exact non-Boolean result category that can remain unevaluated. Its application is an applied query, and `ask()` returns an owned result or `Unknown`. |
 | Private Sage implementation category | A runtime-only Sage `Category` that compiles one of `C.ObjectType`, `C.ElementType`, or `C.MorphismType`. It states no relation in the owned `Cat` graph. |

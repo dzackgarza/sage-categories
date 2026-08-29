@@ -306,8 +306,10 @@ The element record retains its selected point datum.
 The morphism record retains its domain, codomain, and rule.
 
 Direct `Sets()` construction initializes this state on the new set value.
-A selected structure functor states which `Sets().ObjectType` constructor consumes its converted source construction data.
-Thus an inherited set method reads set state directly on the value to which it applies.
+A functor into `Sets()` has an ordinary object action that calls a public `Sets()` constructor
+and returns the resulting set.
+When that functor is selected, the kernel makes the applicable set state available on the
+source value. Thus an inherited set method reads set state directly on the value to which it applies.
 Public `F(x)` remains a separate set image owned by the named functor.
 
 `Sets().ObjectType` is the sole public implementation of a set.

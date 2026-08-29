@@ -123,20 +123,27 @@ U_A:\operatorname{Modules}(A,C)\longrightarrow C.
 
 It sends `(X, rho_X)` to `X` and sends each module morphism to its morphism in `C`.
 
-The construction builds `U_A` with both endpoints written out, retains it, and
+The leaf builds `U_A` with both endpoints and both complete actions, retains it, and
 returns it as the complete immediate structure-functor tuple:
 
 ```python
+def on_object(M):
+    return M.action_morphism().codomain()
+
+def on_morphism(f):
+    source = on_object(f.domain())
+    target = on_object(f.codomain())
+    return Mor(C)(source, target)(f._ambient_morphism_data())
+
 U_A = Fun(Modules(A, C), C).Faithful()(on_object, on_morphism)
 
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (self._U_A,)
 ```
 
-The `Modules(A, C)` leaf supplies the object action, morphism action, and constructor
-conversions of `U_A`.
-Its action datum `A bullet X -> X` determines the object `X` and its construction data in `C`.
-`Cat()` and the kernel do not select this projection or infer that conversion.
+The object action returns the codomain `X` of the module action.
+The morphism action constructs the corresponding morphism of `C` through its target hom category.
+`_ambient_morphism_data()` is private because this example uses it only inside the functor action.
 If a later definition of `Modules(A, C)` uses a generic pullback or comma construction
 that already retains this exact projection, the leaf reuses that retained functor.
 
@@ -212,4 +219,4 @@ The [nLab module object](https://ncatlab.org/nlab/show/module%2Bobject) entry, s
 
 - The enriched map to `End_C(X)` appears when the stated adjunction exists.
 
-The complete governing set also includes `POL-MATH-001` through `POL-MATH-013`, `POL-MATH-020` through `POL-MATH-023`, `POL-CAT-001` through `POL-CAT-020`, `POL-CAT-033`, `POL-CAT-043` through `POL-CAT-047`, `POL-CAT-054`, `POL-CAT-061` through `POL-CAT-087`, `POL-LEAF-061`, `POL-FUN-001` through `POL-FUN-006`, `POL-FUN-023`, `POL-API-028`, and `POL-DOC-003` through `POL-DOC-009`.
+The complete governing set also includes `POL-MATH-001` through `POL-MATH-013`, `POL-MATH-020` through `POL-MATH-023`, `POL-CAT-001` through `POL-CAT-020`, `POL-CAT-033`, `POL-CAT-043` through `POL-CAT-047`, `POL-CAT-054`, `POL-CAT-061` through `POL-CAT-087`, `POL-LEAF-061`, `POL-LEAF-062`, `POL-FUN-001` through `POL-FUN-006`, `POL-FUN-023`, `POL-FUN-035`, `POL-API-028`, and `POL-DOC-003` through `POL-DOC-009`.

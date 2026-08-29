@@ -65,21 +65,18 @@ The kernel does not:
 
 - enumerate complete functor paths to `A`;
 
-- construct one candidate datum for each path;
-
-- compare constructor conversions or constructor data from different paths;
-
 - decide equality to establish inheritance coherence;
 
 - select one path as the owner of the shared class.
 
 There is no second diamond-resolution system beside Sage's dynamic-class machinery.
 
-## Constructor conversions
+## Runtime state sharing
 
-Each structure functor retains the pure conversion that supplies the data required by its
-target constructor. The kernel uses the immediate structure functors and Sage's MRO to
-initialize the compiled source instance.
+Each structure functor already has complete executable object and morphism actions.
+Each action returns an owned value through the public constructors of its target category.
+The kernel uses only the selected immediate target surfaces and Sage's MRO to make their
+implementation state available on the compiled source instance.
 
 Each local constructor initializes only the state introduced by its category. It calls
 `super().__init__()` cooperatively. A leaf does not accept ancestor constructor fields,

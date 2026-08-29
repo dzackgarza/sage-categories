@@ -336,7 +336,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         return self._retained_data[value]
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
-        """The local role declaration: the nested class of this category's Python class.
+        """The local role declaration: the nested class of the category this value is.
 
         ``Role.OBJECT.value`` is ``"ObjectType"``: a role *is* the name the category
         writes for that mathematical kind (POL-KERNEL-028), so this reads the one
@@ -348,11 +348,30 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         the body and never the inherited attribute, which cannot tell a category that
         stated nothing from one that stated this.
 
+        Which body, is the question the value's construction answers rather than its
+        Python class.  A category constructed in a category whose selected functor has
+        ``Cat()`` as its target -- an object of ``Cat().SliceOver(K)``, of
+        ``Cat().Subobjects(K)``, of ``Cat().Products()`` -- is an instance of
+        ``Cat().ObjectType`` and runs its initializer, and the class it carries is the
+        compiled role class of the category it was constructed in, which holds installed
+        methods and no nested declarations.  Its construction input at
+        ``(Cat(), object)`` names the category it is (POL-CAT-050, POL-KERNEL-028), and
+        the declarations are part of the private data that input supplies.  For a
+        category constructed as a category that input is its own, so this is one rule and
+        not a branch.
+
         ``place`` builds a ``..._with_category`` class over the written one when a value's
         placement improves (``kernel/refinement.py``), so the body to read is the first
         class the source writes, which is where that construction puts it.
+
+        ``Cat()`` compiling its own roles is the one moment there is no ``Cat()`` to ask,
+        and the one category then is ``Cat()`` itself (``bootstrap``).
         """
-        return vars(_written_class(type(self)))[role.value]
+        from sage_categories.kernel.transport import construction_input
+
+        universe = Cat()
+        constructed = self if universe is None else construction_input(self, compiler.node(universe, Role.OBJECT)).canonical_image
+        return vars(_written_class(type(constructed)))[role.value]
 
     def role_class(self, role: Role) -> type[CategoryPoint]:
         """The compiled role class the kernel installed on this category value.

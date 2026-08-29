@@ -980,7 +980,7 @@ Do not derive it from current class layouts, storage fields, or available method
 Use one owner, one public name, and one public export for each operation.
 Define every uniform category method once on `Cat().ObjectType`.
 Let every category inherit it through the ordinary implementation-class hierarchy.
-During version 1, add no receiver-specific or leaf-specific convenience spelling.
+During version 1, add no type-specific or leaf-specific convenience spelling.
 Use established mathematical and Sage terminology.
 Name an accessor for the exact object or morphism that it returns.
 

@@ -18,6 +18,8 @@ punctual category is the exact identity statement owned by this construction.
 
 from __future__ import annotations
 
+from reprlib import recursive_repr
+
 from sage_categories.cat.category import Category
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.kernel.decisions import Decision, Unknown
@@ -146,7 +148,18 @@ class PointCategory(Category[[], []]):
         assert morphism is identity
         return identity
 
+    @recursive_repr("{...}")
     def __repr__(self) -> str:
+        """``{X}``: the member between braces.
+
+        ``Cat().Point(X)`` refines ``X`` into this category, so ``X`` presents itself
+        through the placement it now has, and a member that names its placement names
+        this category back.  The two presentations are each correct and the pair is
+        cyclic, which is what ``reprlib.recursive_repr`` is for: CPython uses it wherever
+        a value can contain itself (``reprlib``, and ``dataclasses`` and
+        ``collections.OrderedDict`` on their own ``__repr__``; inspected 2026-08-29).
+        Presentation only: no identity, equality, or order reads it (``AGENTS.md``).
+        """
         return f"{{{self._member!r}}}"
 
 

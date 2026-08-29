@@ -49,7 +49,7 @@ from typing import TYPE_CHECKING, Concatenate, Generic, NamedTuple
 from sage.misc.c3_controlled import C3_sorted_merge
 from sage.structure.dynamic_class import dynamic_class
 
-from sage_categories.kernel.caches import MonoDict, retain_constructed_transport
+from sage_categories.kernel.caches import MonoDict, canonical_images, retain_constructed_transport
 from sage_categories.kernel.construction import (
     CategoryPointIdentity,
     ElementConstructionContext,
@@ -71,6 +71,7 @@ from sage_categories.kernel.construction import (
     retain_element_input,
     retain_morphism_input,
     retain_object_input,
+    retained_object_input,
 )
 from sage_categories.kernel.roles import (
     CategoryPoint,
@@ -271,6 +272,29 @@ def _merge[**P, R](existing: Entry[P, R], candidate: Entry[P, R]) -> Entry[P, R]
     )
 
 
+def generalized_element_node(current: Node) -> Node:
+    """The element node whose surface the values of ``current`` receive as points ``* -> K``.
+
+    An object of ``C`` is a point ``* -> C``, so the surface is the one ``C``'s own
+    placement gives to the points of its objects.  That placement is ``Cat()`` until
+    ``Cat().Point(C)`` narrows it, and then the points of ``C`` are exactly the objects
+    of ``C``: the level shift (D57, POL-CAT-083; ``specs/functor.md``, "The level
+    shift").
+
+    A morphism of ``C`` is a point ``* -> Mor(C)``, and a point of an object is a point
+    of its own defining morphism.  Neither receives the level shift, which D57 states in
+    those words, and the universal element node is the surface of both.  It is also
+    ``Mor(C)``'s own until a point category narrows that, and asking ``C`` for ``Mor(C)``
+    here would construct it inside ``C``'s own compile.
+    """
+    if current.role is Role.OBJECT:
+        return node(current.category.category(), Role.ELEMENT)
+    # ``Cat()`` compiling its own roles is the one moment there is no ``Cat()`` to name,
+    # and the one category then is ``Cat()`` itself (``cat/category.py``, ``bootstrap``).
+    universe = current.category.universe()
+    return node(current.category if universe is None else universe, Role.ELEMENT)
+
+
 def catalogue[**P, R](current: Node) -> dict[str, Entry[P, R]]:
     """The compiled method catalogue of one node, cached on its category; heterogeneous in ``P`` and ``R``."""
     catalogues = current.category.catalogues()
@@ -287,7 +311,7 @@ def catalogue[**P, R](current: Node) -> dict[str, Entry[P, R]]:
                 continue
             entries[name] = _merge(entries[name], inherited) if name in entries else inherited
     if not _is_cat_element_root(current):
-        cat_element = node(current.category.category(), Role.ELEMENT)
+        cat_element = generalized_element_node(current)
         for name, inherited in catalogue(cat_element).items():
             if name in entries and entries[name].owner is current.category and entries[name].role is current.role:
                 continue
@@ -488,10 +512,14 @@ def _kernel_chain(last: Node) -> tuple[type, ...]:
     * a full subcategory of ``Mor(C)`` keeps the object role -- it is not itself a
       morphism category -- while its objects are the morphisms of ``C``, so its chain
       runs through ``(C, morphism)`` and ends on ``MorphismOfCategory``.
+
+    A level shift contributes ``{C}``'s element class to ``C.ObjectType``, between that
+    class and the kernel one (``install_level_shift``), so what follows a node compiled
+    earlier is read off that node's own class rather than assumed.
     """
     if _is_cat_element_root(last):
         return CategoryPoint.__mro__
-    return kernel_base(last.role).__mro__
+    return tuple(klass for klass in last.category.role_class(last.role).__mro__[1:] if klass is not Generic)
 
 
 def _compiled_class(current: Node) -> type[CategoryPoint]:
@@ -568,7 +596,9 @@ def _assert_linearized(current: Node, compiled: type[CategoryPoint]) -> None:
     expected = [compiled]
     for found in order:
         expected.append(found.category.role_class(found.role))
-    expected.extend(_kernel_chain(order[-1] if order else current))
+    # A node reaching none stands on its role's kernel class, which is the whole chain;
+    # ``_kernel_chain`` reads a node whose own class the compiler already installed.
+    expected.extend(_kernel_chain(order[-1]) if order else CategoryPoint.__mro__ if _is_cat_element_root(current) else kernel_base(current.role).__mro__)
     expected = [klass for position, klass in enumerate(expected) if not any(later is klass for later in expected[position + 1 :])]
     actual = [klass for klass in compiled.__mro__ if klass is not Generic]
     assert actual == expected, (
@@ -732,6 +762,68 @@ def _cat_element_step[Datum](
     return target, _element_step(target, point_input, root.canonical_image)
 
 
+def _point_steps[Datum](
+    root: ObjectConstructionInput[ObjectOfCategory, Datum],
+    starts: tuple[Node, ...],
+) -> tuple[tuple[Node, Callable[[], None]], ...]:
+    """The generalized-element chain of one object: every node the point ``* -> C`` it is runs.
+
+    The chain always ends at the common ``Cat().ElementType`` root, which every role's
+    kernel class reaches.  A level shift puts more above it: ``{C}``'s element class,
+    carrying each point functor's target ``ElementType``, is contributed to
+    ``C.ObjectType`` because the points ``* -> C`` are exactly the objects of ``C``
+    (``install_level_shift``).  An object of a category with a selected functor into
+    ``C`` is an object of ``C`` and carries that class too, so ``_point_starts`` reads
+    every node the object walk reached whose class the shift entered.
+
+    Every functor a point category selects is a subcategory monomorphism, identity on the
+    shared values (``specs/functor.md``, "Point categories and point functors"), so the
+    point is its own image at each target and the input does not change along the walk.
+    The point carries no datum of its own: the value's construction data belongs to its
+    own node in ``C``.
+    """
+    from sage_categories.kernel.refinement import traces_placement
+
+    point_input = ElementConstructionInput(root.canonical_image, CategoryPointIdentity(root.identity.category), None)
+    found: list[Node] = []
+    for start in starts:
+        if not any(same_node(start, known) for known in found):
+            found.append(start)
+    frontier = list(found)
+    while frontier:
+        source = frontier.pop(0)
+        for functor, target in successors(source):
+            if any(same_node(target, known) for known in found):
+                continue
+            assert traces_placement(functor), (
+                f"{source.category!r} selects {functor!r}, which is no placement monomorphism, so it states "
+                "no image of a point ``* -> C``"
+            )
+            found.append(target)
+            frontier.append(target)
+    return tuple((current, _element_step(current, point_input, root.canonical_image)) for current in found)
+
+
+def _point_starts[Datum](
+    root: ObjectConstructionInput[ObjectOfCategory, Datum],
+    reached: tuple[Node, ...],
+) -> tuple[Node, ...]:
+    """Where the generalized-element chain of one object begins, per class the value carries.
+
+    The common ``Cat().ElementType`` root is always one, and each node whose object class
+    a level shift entered adds that point category's element node.  The condition is the
+    class itself, so the steps are exactly the classes the value's MRO runs.
+    """
+    starts = [node(root.identity.category.universe(), Role.ELEMENT)]
+    for current in reached:
+        if current.role is not Role.OBJECT:
+            continue
+        point = current.category.universe().retained_point(current.category)
+        if point is not None and issubclass(current.category.role_class(current.role), point.role_class(Role.ELEMENT)):
+            starts.append(node(point, Role.ELEMENT))
+    return tuple(starts)
+
+
 def _element_cat_element_step[Value: CategoryPoint, Datum](
     root: ElementConstructionInput[Value, Datum],
 ) -> tuple[Node, Callable[[], None]]:
@@ -782,7 +874,8 @@ def _construct_object_root[Datum](
     root = ObjectConstructionInput(instance, identity, data)
     retain_object_input(root)
     cat_element_identity = CategoryPointIdentity(identity.category)
-    steps = (*_object_steps(current, root), _cat_element_step(root))
+    object_steps = _object_steps(current, root)
+    steps = (*object_steps, *_point_steps(root, _point_starts(root, tuple(source for source, _ in object_steps))))
     context = ObjectConstructionContext(root.canonical_image, root.identity, cat_element_identity, steps)
     token = activate_object_context(context)
     try:
@@ -1015,38 +1108,85 @@ def recompile_category(category: Category, functors: tuple[Functor, ...]) -> Non
 
 
 def install_level_shift(point: Category) -> None:
-    """Install the point-inherited generalized-element surface on the roles of ``{C}``'s member.
+    """Contribute ``{C}``'s element class to ``C.ObjectType``, whose values are the points of ``C``.
 
     The member of a point category is a category ``C`` exactly when the level shift
-    applies.  ``{C}``'s points are then the objects of ``C`` and, through ``Mor(C)``, its
-    morphisms, so the two roles that receive the point functors' element surface are
-    ``C.ObjectType`` and ``C.MorphismType`` (``specs/functor.md``, "The level shift").
+    applies.  The points ``* -> C`` are then exactly the objects of ``C``, so the class
+    ``{C}`` compiled for its element role -- carrying each point functor's target
+    ``D.ElementType`` -- is a class of an object of ``C``.  The object role is the only
+    one it reaches: ``D.ObjectType`` applies to the category ``C``, which
+    ``Cat().Point`` refines into ``{C}``, and ``D.MorphismType`` to ``{C}.MorphismType``,
+    whose sole value is ``1_C`` and which ``{C}``'s own compile builds.  Morphisms of
+    ``C`` receive no element surface (D57, POL-CAT-083; ``specs/functor.md``, "The level
+    shift").
 
-    Both classes already exist and already have descendants and live values, so the
-    shift writes the point-inherited spellings onto those exact classes.  It adds no
-    base, replaces no class, and constructs no value: a value of ``C`` answers the new
-    spellings immediately and keeps every role identity it had (POL-CAT-083).  Sage
-    refines a live parent the same way, rebuilding what the existing value answers
-    rather than allocating a second one (``Parent._refine_category_``,
-    ``sage/structure/parent.pyx``, inspected 2026-08-27).
+    A level shift contributes the corresponding target class, not copies of its methods:
+    a method arriving without the private data it reads is the one flaw the kernel exists
+    to fix (D13).  So the class enters the live ``C.ObjectType``, whose descendants and
+    values keep their identity, and the point functors' constructor conversion runs -- on
+    each object of ``C`` afterwards through ``_point_steps``, and here on each one ``C``
+    has already built.  Sage refines a live parent the same way, rebuilding what the
+    existing value answers rather than allocating a second one
+    (``Parent._refine_category_``, ``sage/structure/parent.pyx``, inspected 2026-08-27).
     """
     member = point.member()
     if member not in point.universe():
         return
+    current = node(member, Role.OBJECT)
+    role_class = current.category.role_class(current.role)
+    shifted_class = point.role_class(Role.ELEMENT)
+    if issubclass(role_class, shifted_class):
+        return
     universal = catalogue(node(member.universe(), Role.ELEMENT))
     shifted = catalogue(node(point, Role.ELEMENT))
-    added = tuple(name for name, entry in shifted.items() if universal.get(name) is not entry)
-    for role in (Role.OBJECT, Role.MORPHISM):
-        current = node(member, role)
-        # The member's catalogue is recomputed because its generalized-element node is
-        # now ``{C}``'s: the merge is what rejects a spelling the shift and the member
-        # both declare.
-        current.category.catalogues().pop(current.role, None)
-        compiled = catalogue(current)
-        role_class = current.category.role_class(current.role)
-        for name in added:
-            assert compiled[name] is shifted[name], (
-                f"{name!r} is declared both by {compiled[name].owner!r} and by the level shift from {point!r}; "
-                "name the two mathematical operations distinctly"
-            )
-            setattr(role_class, name, inspect.getattr_static(point.ElementType, name))
+    # The member's object catalogue is recomputed because its generalized-element node is
+    # now ``{C}``'s: the merge is what rejects a spelling the shift and the member both
+    # declare.
+    current.category.catalogues().pop(current.role, None)
+    compiled = catalogue(current)
+    for name, entry in shifted.items():
+        if universal.get(name) is entry:
+            continue
+        assert compiled[name] is entry, (
+            f"{name!r} is declared both by {compiled[name].owner!r} and by the level shift from {point!r}; "
+            "name the two mathematical operations distinctly"
+        )
+    role_class.__bases__ = (*role_class.__bases__, shifted_class)
+    for constructed in _placed_objects(member):
+        _initialize_level_shift(node(point, Role.ELEMENT), constructed)
+
+
+def _placed_objects(category: Category) -> tuple[ObjectOfCategory, ...]:
+    """The objects of ``category`` the kernel has built, each once.
+
+    Every object walk retains its input at each node it reaches, keyed by the source
+    value and indexed by the target category (``retain_constructed_transport``), so this
+    table is the objects of ``category`` that are still live: its keys are weak, and an
+    object nothing holds is gone.
+    """
+    table = canonical_images[Role.OBJECT]
+    if category not in table:
+        return ()
+    found: list[ObjectOfCategory] = []
+    for _, image in table[category].items():
+        if isinstance(image, ObjectOfCategory) and not any(image is known for known in found):
+            found.append(image)
+    return tuple(found)
+
+
+def _initialize_level_shift(start: Node, value: ObjectOfCategory) -> None:
+    """Run the shift's element chain on one object built before the shift.
+
+    The classes above ``{C}.ElementType`` in the value's MRO ran when it was built, so the
+    chain resumes at the class the shift contributed and runs down to the common
+    ``Cat().ElementType`` root, which is where its steps end.
+    """
+    root = retained_object_input(value)
+    steps = _point_steps(root, (start,))
+    context = ObjectConstructionContext(value, root.identity, CategoryPointIdentity(root.identity.category), steps)
+    token = activate_object_context(context)
+    try:
+        context.run(start)
+        context.assert_complete()
+    finally:
+        deactivate_object_context(token)

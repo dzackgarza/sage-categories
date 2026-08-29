@@ -139,10 +139,9 @@ Those declarations are the complete usable structure of `Cat`.
 
 A declaration of particular categorical operations does not select a realization of `Cat`. In particular, it does not make `Cat` a category of simplicial sets or Kan complexes, and it supplies no unstated horn-filling or higher-categorical properties.
 
-A borrowed mathematical name imports no surrounding theory.
-Names such as `Simplex`, `Boundary`, `Horn`, and `strict` denote only the constructions and laws stated here and in the governing specifications.
-For example, `Cat().Horn(n, k)` is the declared free category on its horn graph.
-Its name supplies no additional simplicial-set structure.
+The finite shape constructors use their standard categorical names.
+They include the ordinal categories `[n]`, the walking span, the walking cospan,
+the walking parallel pair, and the walking isomorphism.
 
 Each category `C` owns the implementation types relevant to its theory:
 
@@ -187,7 +186,7 @@ P.product_projection(i)   # P -> C_i
 Q.coproduct_injection(i)  # C_i -> Q
 ```
 
-If `S` is a subcategory of `P`, then `S` is an object of `Cat().Products().Subobjects()`. Its `product_projection(i)` is the subcategory monomorphism followed by the corresponding projection of `P`.
+If `S` is a subcategory of `P`, then its monomorphism is an object of `Cat().MonoOver(P)`. Its `product_projection(i)` is that monomorphism followed by the corresponding projection of `P`.
 
 `C.SliceOver(x)` is the pullback in `Cat()` of `ev_1: Fun([1], C) -> C` along `x: 1 -> C`; `C.CosliceUnder(x)` is the pullback of `ev_0`. Each retains its pullback projections; the varying object is the composite with `ev_0` or `ev_1`.
 

@@ -191,9 +191,9 @@ Fixed endpoints use the same dispatch for every property subcategory `P` of `Mor
 
 - `Cat().Simplex(n)`, written `[n]`: the poset `0 < 1 < ... < n` as a category, for `n >= 0`; `[1]` is the walking arrow, `[2]` the walking commutative triangle;
 
-- `Cat().Boundary(n)`, written `d[n]`: the free category on the graph of the boundary of the `n`-simplex; `d[2]` is the walking triangle with no commutation relation;
+- `Cat().WalkingSpan()`: the free category on `0 <- 1 -> 2`;
 
-- `Cat().Horn(n, k)`, written `L(n, k)`: the free category on the `k`-th horn graph of the `n`-simplex; `L(2, 0)` is the walking span and `L(2, 2)` the walking cospan; `L(2, 1)`, the free category on `0 -> 1 -> 2`, contains the composite `0 -> 2` and is the walking composable pair `[2]`, so `Cat().Horn(2, 1) is Cat().Simplex(2)`;
+- `Cat().WalkingCospan()`: the free category on `0 -> 1 <- 2`;
 
 - `Cat().WalkingIsomorphism()`: two objects and two mutually inverse morphisms;
 
@@ -921,7 +921,7 @@ These methods come from `Cat().Products().ObjectType` and `Cat().Coproducts().Ob
 
 Let `P` be a product category.
 Let `j: S -> P` present `S` as a subcategory.
-The corresponding object of `Cat().Subobjects(P)` retains `j` and reads `P` as its codomain.
+The corresponding object of `Cat().MonoOver(P)` retains `j` and reads `P` as its codomain.
 Its component functor is
 
 \[
@@ -948,7 +948,7 @@ ev_0: Fun([1], C) -> C   # the domain of a morphism
 ev_1: Fun([1], C) -> C   # the codomain of a morphism
 ```
 
-The generic pullback construction is `C.Limits(L(2, 2))` (see [Diagram shapes and universal constructions](#diagram-shapes-and-universal-constructions)). Its legs are the retained projections.
+The generic pullback construction is `C.Limits(Cat().WalkingCospan())` (see [Diagram shapes and universal constructions](#diagram-shapes-and-universal-constructions)). Its legs are the retained projections.
 The same rule handles repeated codomains.
 
 ## Diagram shapes and universal constructions
@@ -1000,8 +1000,8 @@ For a point `x: * -> p.apex()`, its component at `i` is the composite `p.leg(i) 
 `C.Limits(I)` and `C.Colimits(I)` are the general families for one supplied shape `I`. The named conveniences are instances:
 
 ```python
-C.Pullbacks()    is C.Limits(L(2, 2))
-C.Pushouts()     is C.Colimits(L(2, 0))
+C.Pullbacks()    is C.Limits(Cat().WalkingCospan())
+C.Pushouts()     is C.Colimits(Cat().WalkingSpan())
 C.Equalizers()   is C.Limits(WalkingParallelPair)
 C.Coequalizers() is C.Colimits(WalkingParallelPair)
 ```
@@ -1054,23 +1054,23 @@ It is the pullback of `p` along `b`. Its objects lie over `b`, and its morphisms
 For `X in C`, the ambient category in the call fixes the role of `X`:
 
 ```python
-C.Subobjects(X)       = C.SliceOver(X).Monomorphisms()
-C.Superobjects(X)     = C.CosliceUnder(X).Monomorphisms()
-C.CoveringObjects(X)  = C.SliceOver(X).Epimorphisms()
-C.CoveredObjects(X)   = C.CosliceUnder(X).Epimorphisms()
+C.MonoOver(X)   = C.SliceOver(X).Monomorphisms()
+C.MonoUnder(X)  = C.CosliceUnder(X).Monomorphisms()
+C.EpiOver(X)    = C.SliceOver(X).Epimorphisms()
+C.EpiUnder(X)   = C.CosliceUnder(X).Epimorphisms()
 ```
 
 `Cat().ObjectType` defines these methods once, and every category inherits them.
 The slice or coslice retains a functor to `Mor(C)` that returns its defining arrow.
 `Monomorphisms()` and `Epimorphisms()` pull back the corresponding property subcategory of `Mor(C)` along that functor.
 
-Thus `C.Subobjects(X)` is the full subcategory of `C.SliceOver(X)` on monomorphisms.
+Thus `C.MonoOver(X)` is the full subcategory of `C.SliceOver(X)` on monomorphisms.
 Its objects are pairs `(A, i)` with `i: A -> X` monic.
 A morphism `(A, i) -> (B, j)` is a morphism `f: A -> B` with `j compose f = i`.
 
-`C.Superobjects(X)` is the full subcategory of `C.CosliceUnder(X)` on monomorphisms.
-`C.CoveringObjects(X)` is the full subcategory of `C.SliceOver(X)` on epimorphisms.
-`C.CoveredObjects(X)` is the full subcategory of `C.CosliceUnder(X)` on epimorphisms.
+`C.MonoUnder(X)` is the full subcategory of `C.CosliceUnder(X)` on monomorphisms.
+`C.EpiOver(X)` is the full subcategory of `C.SliceOver(X)` on epimorphisms.
+`C.EpiUnder(X)` is the full subcategory of `C.CosliceUnder(X)` on epimorphisms.
 Every object retains its defining morphism.
 
 ## Indexed categories, Yoneda, and representability
@@ -1350,7 +1350,7 @@ It is kernel infrastructure over already established mathematical functors.
 
 - `.PreservesLimits(I)` and `.CreatesLimits(I)` are functor-property categories. Their colimit forms derive through `Op`.
 
-- Every object of `Cat().Subobjects(P)` for a product category `P` retains its presenting monomorphism, then derives its component functors by composition.
+- Every object of `Cat().MonoOver(P)` for a product category `P` retains its presenting monomorphism, then derives its component functors by composition.
 
 - Slice and coslice categories are pullbacks of `ev_1` and `ev_0` along the chosen object and retain their pullback projections.
 

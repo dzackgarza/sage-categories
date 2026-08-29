@@ -52,7 +52,7 @@ They inherit all set operations.
 
 ```python
 X.cardinality()
-Sets().Subobjects(X).from_predicate(predicate)
+Sets().MonoOver(X).from_predicate(predicate)
 ```
 
 Morphism categories, fixed-object methods, universal-construction methods, and operators are inherited from `Cat().ObjectType`.
@@ -178,7 +178,7 @@ For `I = omega`, the exact handler decides `True` when two representatives agree
 
 The inherited fixed-object method is specified in [Fixed-object construction categories](functor.md#fixed-object-construction-categories).
 Its specialization to `Sets()` identifies subobjects with subsets of `X` together with their inclusion monomorphisms.
-`Sets().Subobjects(X).from_predicate(predicate)` constructs the selected subset and its monomorphism into `X`.
+`Sets().MonoOver(X).from_predicate(predicate)` constructs the selected subset and its monomorphism into `X`.
 It lifts no additional structure: when a poset is presented as `(X, R)`, this construction returns a set subobject (`POL-LEAF-060`).
 The predicate returns the membership proposition for a candidate element.
 `ask()` can evaluate that proposition as `True`, `False`, or `Unknown`.
@@ -192,22 +192,22 @@ The set-specific characteristic morphism maps the selected subset to `1 in 2` an
 Image membership remains a proposition when no handler can decide it.
 
 `2 ** X`, with `2 = 1 + 1`, constructs the power object of `X`. It is the function set from `X` to `2`.
-Its points are characteristic morphisms and therefore correspond to the objects of `Sets().Subobjects(X)`.
+Its points are characteristic morphisms and therefore correspond to the objects of `Sets().MonoOver(X)`.
 Set inclusion is an applied proposition.
 The set operations on these subobjects construct owned set subobjects.
 
 ## Finite and fixed-cardinality subsets
 
-Let `U_X: Sets().Subobjects(X) -> Sets()` be the inherited varying-object functor.
+Let `U_X: Sets().MonoOver(X) -> Sets()` be the inherited varying-object functor.
 The inverse image of `Sets().Finite()` along `U_X` is:
 
 ```python
-Sets().Subobjects(X).Finite()
+Sets().MonoOver(X).Finite()
 ```
 
 Its objects are the finite subobjects of `X`.
 The parameterized property category `Sets().OfCardinality(k)` has containment predicate `A.cardinality() == k`.
-The inherited narrowing `Sets().Subobjects(X).OfCardinality(k)` contains the subobjects of cardinality `k`.
+The inherited narrowing `Sets().MonoOver(X).OfCardinality(k)` contains the subobjects of cardinality `k`.
 
 If `X` has a chosen enumeration, these constructions can retain a derived enumeration isomorphism.
 Countability alone does not select one.

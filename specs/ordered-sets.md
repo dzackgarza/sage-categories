@@ -149,13 +149,12 @@ The owned constructors are:
 
 ```sage
 SimplexOrders()[n]
-SimplexOrders()[Aleph0]
 ```
 
-`SimplexOrders()[n]` returns the usual total order on `{0, ..., n}`. `SimplexOrders()[Aleph0]` returns the usual order on the nonnegative integers.
+`SimplexOrders()[n]` returns the usual total order on `{0, ..., n}`.
+The index `n` is finite. The infinite ordinal is `omega0`, constructed by the ordinal API.
 
-Both constructors use their order theorem.
-They return directly in the strongest established total-order category.
+The constructor uses its order theorem and returns directly in the strongest established total-order category.
 
 ## Poset morphism admission
 

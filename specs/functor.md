@@ -612,8 +612,8 @@ The distinguished object keeps its identity and existing category placement.
 Existing descendants and values keep their public class identity and behavior.
 
 Refinement is what makes a point category formed from a runtime object work.
-`Cardinal()` and `Ordinals()` are constructed before `Semirings(Cat())` exists, and each receives its semiring surface when `Cat().Point(Cardinal())` and `Cat().Point(Ordinals())` declare their point functors.
-No construction order between the three is required.
+`Cardinal()` is constructed before `Semirings(Cat())` exists and receives its semiring surface when `Cat().Point(Cardinal())` declares its point functor.
+No eager construction order between `Cardinal()` and `Semirings(Cat())` is required.
 
 The point `* -> C` represented by an object is distinct from a selected monomorphism `{X} -> D`. For `{C} -> D`, the conversions initialize `D.ObjectType` state on `C` and `D.ElementType` state on the actual objects of `C`. The functor's morphism action initializes `D.MorphismType` on the sole morphism of `{C}`.
 
@@ -652,35 +652,11 @@ A category-valued distinguished object therefore uses a point functor into `Semi
 Associativity, units, symmetry, distributivity, and absorption are equalities of functors, exactly as `Semirings(Sets())` states them as equalities of maps.
 `Cat()` supplies the finite products those functors are formed over.
 
-Its two consumers satisfy that strictness by construction.
-`Cardinal()` and `Ordinals()` are skeletal (`POL-SET-025`), so addition and multiplication each select one representative and `(a + b) + c` and `a + (b + c)` are one object.
+Its cardinal consumer satisfies that strictness by construction.
+`Cardinal()` is skeletal (`POL-SET-025`), so addition and multiplication each select one representative and `(a + b) + c` and `a + (b + c)` are one object.
 The equality of functors therefore holds on objects and on morphisms.
 
 A category-valued semiring whose underlying category is not skeletal is outside this definition.
-
-### Ordinals as a semiring
-
-An ordinal is an object of `Ordinals()` ([ordinals.md](ordinals.md)). The commutative semiring of ordinals under the Hessenberg operations is the point functor of `Ordinals()` into `Semirings(Cat())`:
-
-```python
-# Cat().Point(Ordinals())
-def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (Fun(self, Semirings(Cat())).Monomorphisms().Isofibrations()(),)
-```
-
-`Semirings(Cat())` declares `zero()` and `one()` on its object surface and `+` and `*` on its element surface ([magmas-monoids-semirings.md](magmas-monoids-semirings.md)). Its construction receives or defines the addition and multiplication functors, the zero and one objects, and their equations.
-The point functor converts these into the corresponding compiled state.
-The level shift places each public symbol one level down:
-
-```python
-Ordinals().zero()          # the object surface, on the category
-Ordinals().one()
-
-alpha + beta               # the element surface on the objects of Ordinals()
-alpha * beta
-```
-
-The natural sum and natural product act on morphisms through their ordinary functor actions.
 
 ## Functor construction and presentation data
 
@@ -993,7 +969,7 @@ For each nontrivial discrete shape `J`, the selected limiting cones give a produ
 
 `C.Products()(diagram)` selects a product presentation `p in LimitCones(diagram)` and returns `p.apex()` placed in `C.Products()`. The presentation remains an object over the apex. A second limiting cone can have the same apex without replacing the first.
 
-The common unambiguous case can expose `product_projection(i)` as a convenience. Code that must select among presentations uses `p.leg(i)`. `X * Y` is `C.Products()((X, Y))`.
+The common unambiguous case can expose `product_projection(i)` as a convenience. Code that must select among presentations uses `p.leg(i)`. The inherited default `X * Y` is `C.Products()((X, Y))`; a category-owned standard algebraic operation can override that default.
 
 For a point `x: * -> p.apex()`, its component at `i` is the composite `p.leg(i) after x`. This construction belongs to the selected product presentation.
 

@@ -371,7 +371,11 @@ General projections exist for any subcategory of a product category, `proj_i: (X
 
 **D115 (08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T08:01Z). Forming a mathematical question is separate from evaluating it.** Calling a truth-valued method constructs an applied proposition. Calling a partial value-valued method constructs an applied query with an exact result category. Neither call evaluates the application. `ask()` is the common evaluation boundary and can return `Unknown`. Category placement or an active assumption changes what `ask()` can establish without changing the proposition or query that the public method constructs.
 
-**D35 (08-25). The operators are defined once.** `Y ** X` is `Hom_C(X, Y)`, `X * Y` the product, `X + Y` the coproduct, `X @ Y` the biproduct.
+**D116 (08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T06:02Z, 2026-08-29T08:20Z). Ordinal operators keep their standard meaning.** For ordinals `alpha` and `beta`, `alpha + beta` is ordinary ordinal sum and `alpha * beta` is ordinary ordinal product. The Hessenberg operations use `alpha.natural_sum(beta)` and `alpha.natural_product(beta)`. Ordinal exponentiation remains `alpha.ordinal_power(beta)` because `**` denotes the categorical exponential. The ordinary ordinal category is not presented as a commutative semiring through the Hessenberg operations.
+
+**D117 (08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T06:02Z, 2026-08-29T08:20Z). Aleph and initial ordinal are order functors.** Let `OrdinalOrder()` and `CardinalOrder()` be the thin categories on ordinal and cardinal objects, with one morphism `a -> b` exactly when `a <= b`. `Aleph: OrdinalOrder() -> CardinalOrder()` and `InitialOrdinal: CardinalOrder() -> OrdinalOrder()` act on the unique order morphisms by monotonicity. They are not functors on arbitrary functions between cardinal representatives. Their object actions return the same owned ordinal and cardinal values used by the arithmetic categories.
+
+**D35 (08-25, corrected 08-29). Category operators and object operators have different owners.** For categories, `D ** C = Fun(C, D)`, `C * D` is the product category, and `C + D` is the coproduct category. Objects receive categorical product, coproduct, biproduct, and exponential operators as inherited defaults. A category-owned implementation overrides a default when standard notation for its objects names another declared algebraic operation. The explicit universal-construction methods remain available (`01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T06:02Z, 2026-08-29T08:20Z).
 
 **D67 (08-26, corrected 08-28). Scope of the current foundation.** Complete `Cat`, functor categories, the `Mor(n, C)` tower, universal constructions, the method compiler, and the owned `Sets()` category before adding later theories.
 Tests can use small vertical examples to establish this foundation.
@@ -381,11 +385,11 @@ Those examples do not add their theories to the implementation surface (`01a029f
 Do not over-specialize: finite sequence-indexed products alone hit a wall at the adeles.
 Do not over-generalize either: ten times the code for the ten percent needing arbitrary diagrams is the opposite error.
 
-**D69 (08-26). The binary operators live at the `Cat` level.** For categories they do the obvious thing through `ObjectType`; objects of categories receive defaults through `Cat().ElementType`, deferring to their own category for its products and coproducts.
+**D69 (08-26, corrected 08-29). The categorical binary operators live at the `Cat` level.** Categories receive product, coproduct, and functor-category operators through `ObjectType`. Objects receive defaults through `Cat().ElementType`. A local object implementation can replace a default with its standard algebraic notation. Local declarations win through the compiled MRO (`01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T06:02Z, 2026-08-29T08:20Z).
 That is where the assertion that both operands lie in the same category belongs.
 `X * Y` is never silently cast into a product category: when you want that, call the product's own constructor, `(C * D)(X, Y)`.
 
-**D70 (08-27). `X ** Y := Hom_C(Y, X)`, always, and `Cat` owns it.** Not `Sets()`. The same way `X * Y` is always a product in `C`. Common-ancestor tracing has to be resolved by a named mechanism: `{1, 2}` is in `Sets().Finite()` and `ZZ` is in `Sets().Countable().TotallyOrdered()`, so a result may trace as far back as `Sets()` and may refine again.
+**D70 (08-27, corrected 08-29). `**` is category-owned.** The inherited default is the exponential object where the category declares one. `Sets()` identifies this exponential with its function set. `Cardinal()` declares cardinal exponentiation. `Ordinals()` uses `ordinal_power()` for ordinal exponentiation. No spelling identifies an exponential object with the fixed-endpoint category `Mor(C)(Y, X)` (`01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T06:02Z, 2026-08-29T08:20Z).
 
 **D71 (08-26). Canonical objects are included.** `1 = *`, the empty object, simple horns with their boundaries, simplices, and walking structures in `Cat`; the empty set and `[n]` in `Sets()`. Any canonical representing object the constructions need.
 

@@ -465,7 +465,7 @@ Q.coproduct_injection(i)  # C_i -> Q
 Here `P` and `Q` are the product and coproduct categories themselves. Each returned
 morphism is a functor and therefore a `Cat().MorphismType` value.
 
-The operators are defined once in two contexts. On categories: `C * D = Cat().Products()((C, D))`, `C + D = Cat().Coproducts()((C, D))`, and `D ** C = Fun(C, D)`. On objects `X, Y` of one category `C`: `X * Y = C.Products()((X, Y))`, `X + Y` their coproduct, and `Y ** X` the exponential object where `C` is declared cartesian closed. Each takes its construction in the narrowest category containing both operands. An object refined into `C.P()` and an object of `C` are both objects of `C`. Their product is the product in `C`. Operands with no common category fail the assertion. Construct an external pair explicitly as `(C * D)((X, Y))`.
+On categories, `C * D = Cat().Products()((C, D))`, `C + D = Cat().Coproducts()((C, D))`, and `D ** C = Fun(C, D)`. Objects inherit categorical product, coproduct, biproduct, and exponential operators as defaults. A category-owned implementation overrides a default when standard notation for its objects names a different declared algebraic operation. The explicit categorical construction remains available through `C.Products()`, `C.Coproducts()`, and the other named construction families. Local declarations win through the compiled MRO. Construct an external pair explicitly as `(C * D)((X, Y))`.
 
 Let `P` be a product category. If `j: S -> P` presents a subcategory, the
 corresponding object of `Cat().MonoOver(P)` retains `j` and reads `P` as its

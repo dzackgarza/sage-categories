@@ -278,7 +278,7 @@ At `C = Cat()`, an object is a category `X` with two functors
 \]
 
 two functors `1 -> X` that select the zero object and the one object, and every law an equality of functors.
-`Cardinal()` and `Ordinals()` are the objects of `Semirings(Cat())` that this package constructs; see [Cardinalities and ordinals](cardinality.md) and [Ordinals](ordinals.md).
+`Cardinal()` is the object of `Semirings(Cat())` that this package constructs; see [Cardinalities and ordinals](cardinality.md).
 
 The strict internal category is the subcategory of `Monoids(C_x).Additive().Commutative() * Monoids(C_x).Multiplicative()` whose two underlying objects agree and whose distributivity and absorption diagrams commute.
 Its defining presentation retains both component projections.

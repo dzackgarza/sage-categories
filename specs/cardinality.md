@@ -2,14 +2,14 @@
 
 Cardinals are objects of a set-enriched skeletal category of cardinal representatives.
 The point functor of `Cardinal()` into `Semirings(Cat())` presents cardinal addition and multiplication as its two semiring operations.
-Ordinals are objects of the skeletal category `Ordinals()`. Its point functor into `Semirings(Cat())` presents the Hessenberg operations as ordinal addition and multiplication.
+Ordinals are objects of the skeletal category `Ordinals()`. Their Python addition and multiplication operators are ordinary ordinal arithmetic.
 Both models retain exact expressions when no normalization rule applies.
 
 Cardinal and ordinal operations specified as predicates follow the proposition interface in [Property refinement](property-refinement.md).
 Applying one returns a proposition.
 Only `ask()` decides it as `True`, `False`, or `Unknown`.
 
-The governing policies are `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001`, `POL-GEN-017`, `POL-GEN-020`, `POL-GEN-021`, `POL-CAT-021`, `POL-CAT-028`, `POL-CAT-071`, `POL-CAT-083`, `POL-CAT-085`, `POL-CAT-086`, `POL-CAT-088`, `POL-FUN-002`, `POL-FUN-003`, `POL-FUN-035`, `POL-SET-009`, `POL-SET-010`, `POL-SET-025`, `POL-SET-026`, `POL-SET-033` through `POL-SET-035`, `POL-API-002`, `POL-API-016`, and `POL-DOC-010` through `POL-DOC-013`.
+The governing policies are `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001`, `POL-GEN-017`, `POL-GEN-020`, `POL-GEN-021`, `POL-CAT-021`, `POL-CAT-028`, `POL-CAT-071`, `POL-CAT-083`, `POL-CAT-085`, `POL-CAT-086`, `POL-CAT-088`, `POL-FUN-002`, `POL-FUN-003`, `POL-FUN-035`, `POL-SET-009`, `POL-SET-010`, `POL-SET-025`, `POL-SET-026`, `POL-SET-033` through `POL-SET-038`, `POL-API-002`, `POL-API-016`, and `POL-DOC-010` through `POL-DOC-013`.
 
 ## Implementation ownership
 
@@ -90,6 +90,22 @@ Cardinal order is the existence of an injective function:
 Cardinal equality is represented by isomorphism of the selected representatives.
 Mere inhabitation of the unrestricted morphism category does not define cardinal order.
 
+### Cardinal and ordinal order categories
+
+`CardinalOrder()` and `OrdinalOrder()` are thin categories on the owned cardinal and ordinal objects.
+Each has one morphism `a -> b` exactly when `a <= b`.
+Their morphisms are order arrows, not functions between cardinal representatives.
+
+The named order functors are:
+
+```python
+Aleph: OrdinalOrder() -> CardinalOrder()
+InitialOrdinal: CardinalOrder() -> OrdinalOrder()
+```
+
+They act on the unique order arrows by monotonicity.
+Their object actions return the same `CardinalObject` and `OrdinalObject` values used by `Cardinal()` and `Ordinals()`.
+
 ### Public cardinal constructors
 
 ```python
@@ -122,9 +138,8 @@ aleph0
 continuum           # Cardinal()(2) ** aleph0
 ```
 
-`Aleph: Ordinals() -> Cardinal()` is the named functor from an ordinal index to its aleph cardinal.
-`InitialOrdinal: Cardinal() -> Ordinals()` is the named functor from a cardinal to its initial ordinal representative.
-Both act on morphisms through monotonicity.
+`Aleph: OrdinalOrder() -> CardinalOrder()` is the order functor from an ordinal index to its aleph cardinal.
+`InitialOrdinal: CardinalOrder() -> OrdinalOrder()` is the order functor from a cardinal to its initial ordinal representative.
 `aleph0` is `Aleph.on_object(Ordinals().zero())`.
 `continuum` is `Cardinal()(2) ** aleph0`.
 
@@ -299,10 +314,9 @@ The hypothesis is a hypothesis in either.
 The cardinals constructed under one state persist under the other.
 Retracting the hypothesis does not rewrite a cardinal that was normalized while it held.
 
-### Finite cardinal modulus
+### Remainder for finite cardinals
 
-Modulus belongs to the finite-cardinal property category.
-For finite `kappa` and positive natural cardinal `n`, Python `%` returns the finite cardinal remainder:
+For finite `kappa` and positive natural cardinal `n`, Python `%` is the ordinary natural-number remainder, returned as a finite cardinal:
 
 ```python
 kappa % n
@@ -322,8 +336,8 @@ The result is the cardinal `r`. Thus a finite-cardinal predicate can state `kapp
 
 ### Cardinal object API
 
-`Cardinal().EssentialImage(Aleph)` is the property subcategory of aleph cardinals.
-The retained equivalence from `Ordinals()` to this image supplies its inverse functor.
+`CardinalOrder().EssentialImage(Aleph)` is the property subcategory of aleph cardinals.
+The retained equivalence from `OrdinalOrder()` to this image supplies its inverse functor.
 Apply that inverse to obtain an aleph index.
 Apply `InitialOrdinal.on_object(kappa)` to obtain the initial ordinal representative of any cardinal.
 
@@ -452,12 +466,14 @@ The mathematical exports are:
 Cardinal
 CardinalObject
 CardinalityMorphism
+CardinalOrder
 aleph0
 continuum
 generalized_continuum_hypothesis
 
 Ordinals
 OrdinalObject
+OrdinalOrder
 omega0
 
 ```

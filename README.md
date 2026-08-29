@@ -190,7 +190,7 @@ If `S` is a subcategory of `P`, then its monomorphism is an object of `Cat().Mon
 
 `C.SliceOver(x)` is the pullback in `Cat()` of `ev_1: Fun([1], C) -> C` along `x: 1 -> C`; `C.CosliceUnder(x)` is the pullback of `ev_0`. Each retains its pullback projections; the varying object is the composite with `ev_0` or `ev_1`.
 
-For `X, Y in C`, the categorical operators are:
+For `X, Y in C`, the inherited categorical defaults are:
 
 ```python
 Y ** X  # exponential object, where C is declared cartesian closed
@@ -199,7 +199,9 @@ X + Y   # coproduct
 X @ Y   # biproduct
 ```
 
-The category foundation defines these operations once and retains their universal data.
+The category foundation defines these defaults and retains their universal data.
+A category-owned implementation can override a default when standard notation names a different algebraic operation on its objects.
+The explicit categorical constructions remain available through `C.Products()`, `C.Coproducts()`, and the other named construction families.
 
 A functor `F: C -> D` is a morphism in `Cat` and an object of `Fun = Mor(Cat())`. It inherits its domain, codomain, object map, and morphism map from `Cat().MorphismType`. For fixed endpoints, `Fun(C, D)` is `Mor(Cat())(C, D)`. Its morphisms are natural transformations.
 

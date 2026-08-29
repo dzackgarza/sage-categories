@@ -6,7 +6,7 @@ restricts the morphisms to those placed in a property subcategory ``P`` of
 C"; Mathlib ``CategoryTheory.WideSubcategory`` for a ``MorphismProperty`` that
 ``IsMultiplicative``; both inspected 2026-08-27).  That ``P`` contains the
 identities and is closed under composition is the writer's trusted declaration
-(POL-MATH-037): ``W.identity_morphism`` returns the identity of ``C`` and
+(POL-MATH-037): ``End_W(X).one()`` is the identity of ``C`` and
 ``W.compose_morphisms`` returns the composite of ``C`` refined into ``P``.  The
 objects and morphisms of ``W`` are the very values of ``C``: an object is a member
 by ``C``'s membership proposition, a morphism of ``Mor(W)`` by placement in ``P``,
@@ -39,32 +39,6 @@ from sage_categories.kernel.predicates import Proposition, ask
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
 
 __all__ = ["WideFixedEndpointCategory", "WideMorphismCategory", "WideSubcategory", "wide_subcategory"]
-
-
-class WideFixedEndpointCategory(FixedEndpointCategory):
-    """``Mor(W)(A, B)``: by definition the full subcategory ``Mor(C)(A, B).P()``.
-
-    The morphisms of ``W`` are the morphisms of ``C`` placed in ``P``, so these two
-    categories have the same objects and ``Mor(W)(A, B)(data)`` is the constructor
-    ``Mor(C)(A, B).P()(data)``.  The declared monomorphism states that identity, so the
-    placement a value enters through either spelling is comparable with the other
-    (POL-CAT-068, POL-CAT-084).
-    """
-
-    def structure_functors(self) -> tuple[Functor, ...]:
-        wide = self.ambient().base_category()
-        endpoints = wide.morphism_property()(self.domain(), self.codomain())
-        return (*super().structure_functors(), Fun.full_subcategory_monomorphism(self, endpoints))
-
-
-class WideMorphismCategory(MorphismCategory):
-    """``Mor(W)``: a morphism of ``C`` is a member exactly when it is placed in ``P``."""
-
-    def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
-        return self._base.morphism_property().membership_proposition(candidate)
-
-    def fixed_endpoint_type(self) -> type[WideFixedEndpointCategory]:
-        return WideFixedEndpointCategory
 
 
 class WideSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, TwoMorphismData]):
@@ -108,9 +82,9 @@ class WideSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
         """``Mor(W)(A, B)(data)``: the trusted constructor ``Mor(C)(A, B).P()(data)``."""
         return self._morphism_property(domain, codomain)(*args, **kwargs)
 
-    def identity_morphism(self, member_object: ObjectOfCategory) -> MorphismOfCategory:
+    def _identity_morphism_(self, member_object: ObjectOfCategory) -> MorphismOfCategory:
         """The identity of ``C``, which ``P`` contains by declaration."""
-        return self._morphism_property(self._ambient.identity_morphism(member_object))
+        return self._morphism_property(self._ambient.morphism_category(1)(member_object, member_object).one())
 
     def compose_morphisms(self, second: MorphismOfCategory, first: MorphismOfCategory) -> MorphismOfCategory:
         """The composite in ``C``, which ``P`` contains by declaration."""
@@ -134,6 +108,33 @@ class WideSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
         if self._morphism_property is self._ambient.morphism_category(1).Isomorphisms():
             return f"{self._ambient!r}.Core()"
         return f"{self._ambient!r}.WideSubcategory({self._morphism_property!r})"
+
+
+class WideMorphismCategory(MorphismCategory):
+    """``Mor(W)``: a morphism of ``C`` is a member exactly when it is placed in ``P``."""
+
+
+    def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
+        return self._base.morphism_property().membership_proposition(candidate)
+
+    def fixed_endpoint_type(self) -> type[WideFixedEndpointCategory]:
+        return WideFixedEndpointCategory
+
+
+class WideFixedEndpointCategory(FixedEndpointCategory):
+    """``Mor(W)(A, B)``: by definition the full subcategory ``Mor(C)(A, B).P()``.
+
+    The morphisms of ``W`` are the morphisms of ``C`` placed in ``P``, so these two
+    categories have the same objects and ``Mor(W)(A, B)(data)`` is the constructor
+    ``Mor(C)(A, B).P()(data)``.  The declared monomorphism states that identity, so the
+    placement a value enters through either spelling is comparable with the other
+    (POL-CAT-068, POL-CAT-084).
+    """
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        wide = self.ambient().base_category()
+        endpoints = wide.morphism_property()(self.domain(), self.codomain())
+        return (*super().structure_functors(), Fun.full_subcategory_monomorphism(self, endpoints))
 
 
 def wide_subcategory(ambient: Category, morphism_property: Category) -> WideSubcategory:

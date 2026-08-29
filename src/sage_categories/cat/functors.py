@@ -122,7 +122,7 @@ class FunctorProperties:
 
 
 class FunctorProperty(FunctorProperties, FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]]):
-    """``Fun(C, D).P()``: functors ``C -> D`` with property ``P``; constructs one and owns ``identity()``."""
+    """``Fun(C, D).P()``: functors ``C -> D`` with property ``P``; constructs one, and ``one()`` is ``1_C`` with ``P``."""
 
     def __call__(self, *args: OnObject | OnMorphism, **kwargs: OnObject | OnMorphism) -> Functor:
         """``Fun(S, T).P()(on_object, on_morphism)``, or ``Fun(S, T).P()()`` for the subcategory monomorphism.
@@ -304,6 +304,11 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
 class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     """``Fun = Mor(Cat())``."""
 
+    # An object of ``Fun`` is a morphism of ``Cat()``, so ``Fun`` writes ``Cat()``'s
+    # morphism declaration for its own objects (POL-CAT-057).  The five functor property
+    # axioms below write their applications onto it.
+    ObjectType = CategoryOfCategories.MorphismType
+
     class ElementType(ElementOfObject):
         """A generalized element ``t: T -> F`` of a functor: a natural transformation into it.
 
@@ -398,11 +403,9 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     # -- the functor property categories (POL-FUN-024, POL-CAT-090) ----------------------
 
     # The five properties of functors, each an ordinary property axiom of ``Fun``
-    # (POL-CAT-090).  ``predicate_name`` and ``predicate_owner`` are the declaration
-    # POL-CAT-060 requires: the one public spelling of the application, and the largest
-    # role class on which the question has meaning, which for a property of functors is
-    # ``Cat().MorphismType``.  The kernel compiles ``F.is_full()`` and its four siblings
-    # from these five lines, and no category writes one (``Axiom._derive_application``).
+    # (POL-CAT-090).  The identifier is the whole declaration: the kernel compiles
+    # ``F.is_full()`` and its four siblings from these five lines, onto this class's
+    # ``ObjectType``, and no category writes one (``Axiom._derive_application``, D89).
     #
     # FullyFaithful is a full subcategory of Full and of Faithful; Equivalences of
     # FullyFaithful and of EssentiallySurjective (Mathlib ``Functor.FullyFaithful.full``,
@@ -411,11 +414,11 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     # None of the five registers a computational handler (POL-CAT-091): ``ask`` answers
     # from placement, an active assumption, or a declared containment, and returns
     # ``Unknown`` otherwise.
-    Full = Axiom(predicate_name="is_full", predicate_owner=CategoryOfCategories.MorphismType)
-    Faithful = Axiom(predicate_name="is_faithful", predicate_owner=CategoryOfCategories.MorphismType)
-    EssentiallySurjective = Axiom(predicate_name="is_essentially_surjective", predicate_owner=CategoryOfCategories.MorphismType)
-    FullyFaithful = Axiom(full_subcategory_of=(Full, Faithful), predicate_name="is_fully_faithful", predicate_owner=CategoryOfCategories.MorphismType)
-    Equivalences = Axiom(full_subcategory_of=(FullyFaithful, EssentiallySurjective), predicate_name="is_equivalence", predicate_owner=CategoryOfCategories.MorphismType)
+    Full = Axiom()
+    Faithful = Axiom()
+    EssentiallySurjective = Axiom()
+    FullyFaithful = Axiom(full_subcategory_of=(Full, Faithful))
+    Equivalences = Axiom(full_subcategory_of=(FullyFaithful, EssentiallySurjective))
 
     def _bootstrap(self) -> None:
         """Build the two property categories placement itself reads, and place the deferred monomorphisms.

@@ -212,11 +212,15 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
         )
 
     def construct_identity(self, member_object: ProductCategory.ObjectType) -> ProductCategory.MorphismType:
+        def component_identity(vertex: DiscreteCategory.ObjectType) -> MorphismOfCategory:
+            component = member_object.component(vertex)
+            return component.category().morphism_category(1)(component, component).one()
+
         return self.MorphismType(
             category=self.morphism_category(1),
             domain=member_object,
             codomain=member_object,
-            data=FamilyMorphismData(lambda vertex: member_object.component(vertex).identity()),
+            data=FamilyMorphismData(component_identity),
         )
 
     def composite(self, second: ProductCategory.MorphismType, first: ProductCategory.MorphismType) -> ProductCategory.MorphismType:
@@ -376,11 +380,12 @@ class CoproductCategory(Category[[MorphismOfCategory], []]):
         )
 
     def construct_identity(self, member_object: CoproductCategory.ObjectType) -> CoproductCategory.MorphismType:
+        member = member_object.member()
         return self.MorphismType(
             category=self.morphism_category(1),
             domain=member_object,
             codomain=member_object,
-            data=TaggedMorphismData(member_object.member().identity()),
+            data=TaggedMorphismData(member.category().morphism_category(1)(member, member).one()),
         )
 
     def composite(self, second: CoproductCategory.MorphismType, first: CoproductCategory.MorphismType) -> CoproductCategory.MorphismType:
@@ -599,11 +604,15 @@ class PullbackCategory(Category[[tuple[MorphismOfCategory, MorphismOfCategory]],
         )
 
     def construct_identity(self, member_object: PullbackCategory.ObjectType) -> PullbackCategory.MorphismType:
+        first, second = member_object.first(), member_object.second()
         return self.MorphismType(
             category=self.morphism_category(1),
             domain=member_object,
             codomain=member_object,
-            data=PairMorphismData(member_object.first().identity(), member_object.second().identity()),
+            data=PairMorphismData(
+                first.category().morphism_category(1)(first, first).one(),
+                second.category().morphism_category(1)(second, second).one(),
+            ),
         )
 
     def composite(self, second: PullbackCategory.MorphismType, first: PullbackCategory.MorphismType) -> PullbackCategory.MorphismType:

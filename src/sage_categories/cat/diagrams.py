@@ -93,7 +93,8 @@ def constant(functors: FunctorCategory, value: ObjectOfCategory) -> Functor:
     """The constant diagram at ``value``, retained per value."""
     assert value in functors.codomain(), f"{value!r} is not an object of {functors.codomain()!r}"
     if value not in functors._constants:
-        diagram = functors(lambda vertex: value, lambda morphism: value.identity())
+        identity = value.category().morphism_category(1)(value, value).one()
+        diagram = functors(lambda vertex: value, lambda morphism: identity)
         functors._constants[value] = diagram
         functors._constant_values[diagram] = value
     return functors._constants[value]
@@ -112,7 +113,12 @@ def from_object_rule(functors: FunctorCategory, rule: Callable[[DiscreteCategory
     """A diagram over a discrete shape from its object rule, retained per rule; the morphism rule is forced."""
     assert is_discrete(functors.domain()), f"{functors.domain()!r} is not a discrete shape; supply a morphism rule"
     if rule not in _object_rule_diagrams:
-        _object_rule_diagrams[rule] = functors(rule, lambda identity: rule(identity.domain()).identity())
+
+        def image_identity(identity: DiscreteCategory.MorphismType) -> MorphismOfCategory:
+            image = rule(identity.domain())
+            return image.category().morphism_category(1)(image, image).one()
+
+        _object_rule_diagrams[rule] = functors(rule, image_identity)
     diagram = _object_rule_diagrams[rule]
     assert diagram.codomain() is functors.codomain(), f"{rule!r} already defines a diagram in {diagram.codomain()!r}"
     return diagram
@@ -174,6 +180,12 @@ def square_at(functors: FunctorCategory, point: ElementOfObject) -> NaturalTrans
 # -- the lifts of ``ev_1`` and ``ev_0`` on ``Fun([1], C)`` (POL-FUN-029) ----------------------------------
 
 
+def _vertex_identity(objects: dict[int, ObjectOfCategory], shape: Category, vertex: ObjectOfCategory) -> MorphismOfCategory:
+    """``1_X`` at the object a horn vertex is labelled with (POL-CAT-023)."""
+    member_object = objects[shape.label(vertex)]
+    return member_object.category().morphism_category(1)(member_object, member_object).one()
+
+
 def _fold(images: dict[str, MorphismOfCategory], identities: Callable[[ObjectOfCategory], MorphismOfCategory], path: MorphismOfCategory) -> MorphismOfCategory:
     if not path.word():
         return identities(path.domain())
@@ -192,7 +204,7 @@ def cospan_diagram(base: Category, first: MorphismOfCategory, second: MorphismOf
         cospan = Cat().Horn(2, 2)
         objects = {0: first.domain(), 1: second.domain(), 2: first.codomain()}
         images = {"0->2": first, "1->2": second}
-        _cospan_diagrams[key] = Fun(cospan, base)(lambda vertex: objects[cospan.label(vertex)], lambda path: _fold(images, lambda vertex: objects[cospan.label(vertex)].identity(), path))
+        _cospan_diagrams[key] = Fun(cospan, base)(lambda vertex: objects[cospan.label(vertex)], lambda path: _fold(images, lambda vertex: _vertex_identity(objects, cospan, vertex), path))
     return _cospan_diagrams[key]
 
 
@@ -204,7 +216,7 @@ def span_diagram(base: Category, first: MorphismOfCategory, second: MorphismOfCa
         span = Cat().Horn(2, 0)
         objects = {0: first.domain(), 1: first.codomain(), 2: second.codomain()}
         images = {"0->1": first, "0->2": second}
-        _span_diagrams[key] = Fun(span, base)(lambda vertex: objects[span.label(vertex)], lambda path: _fold(images, lambda vertex: objects[span.label(vertex)].identity(), path))
+        _span_diagrams[key] = Fun(span, base)(lambda vertex: objects[span.label(vertex)], lambda path: _fold(images, lambda vertex: _vertex_identity(objects, span, vertex), path))
     return _span_diagrams[key]
 
 

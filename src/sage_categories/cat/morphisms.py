@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING, Literal, overload
 from sage.structure.coerce_dict import TripleDict
 
 from sage_categories.cat.category import Category, member
-from sage_categories.cat.properties import FullSubcategory, PropertySubcategory
+from sage_categories.cat.properties import FullSubcategory, PredicateSubcategory, PropertySubcategory
 from sage_categories.kernel.decisions import Decision
 from sage_categories.kernel.predicates import Axiom, Predicate, Proposition, ask
 from sage_categories.kernel.refinement import refine
@@ -74,13 +74,6 @@ def _endpoints_by_equality(morphism: MorphismOfCategory, domain: ObjectOfCategor
 
 endpoints.register_handler(_endpoints_by_equality)
 
-# ``endomorphism(f)``: the domain of ``f`` is its codomain.
-
-
-def _endomorphism_by_equality(morphism: MorphismOfCategory) -> Decision:
-    return ask(morphism.domain() == morphism.codomain())
-
-
 # ``endpoints_in(f, D)``: the domain and codomain of ``f`` are objects of ``D``.  A full
 # subcategory ``D`` of ``C`` has exactly the morphisms of ``C`` between its objects
 # (Mathlib ``InducedCategory.Hom``; inspected 2026-08-26).
@@ -93,6 +86,7 @@ def _endpoints_in_by_membership(morphism: MorphismOfCategory, subcategory: Categ
 
 endpoints_in.register_handler(_endpoints_in_by_membership)
 
+
 def hom_inhabitation(hom_category: Category) -> Decision:
     """The exact cases of ``H.is_inhabited()`` for ``H = Mor(C)(A, B)`` or a property narrowing of it (POL-CAT-086).
 
@@ -102,13 +96,20 @@ def hom_inhabitation(hom_category: Category) -> Decision:
     category supplies the decision it owns for its hom categories.
     """
     base = hom_category.narrowing_base()
-    if base.domain() is base.codomain() and base.domain().identity() in hom_category:
+    if base.domain() is base.codomain() and base.one() in hom_category:
         return True
     return base.base_category()._chosen_hom_inhabited(hom_category)
 
 
 class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismData, []]):
     """``Mor(C)``: objects are the morphisms of ``C``, morphisms its 2-morphisms."""
+
+    # An object of ``Mor(C)`` is a morphism of ``C``, and ``C`` is arbitrary, so the
+    # object declaration of this class is the kernel's morphism role itself (POL-CAT-057).
+    # Per category value the compiled class is ``C.MorphismType``, which
+    # ``role_source`` names; this class-level declaration is what an axiom declared here
+    # writes its application onto.
+    ObjectType = MorphismOfCategory
 
     class MorphismType(MorphismOfCategory):
         """The identity 2-morphism of a morphism of a 1-category: the only morphisms of ``Mor(C)``."""
@@ -215,14 +216,12 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
     # of both ``Mor(C).Monomorphisms()`` and ``Mor(C).Epimorphisms()``
     # (``specs/undecidable-properties.md``, "How ask() works"; D83).
 
-    # Each of the four declares the one public spelling of its application and the largest
-    # role class on which it has meaning, which for a property of morphisms is every
-    # morphism of every category (POL-CAT-060); the kernel compiles ``f.is_monomorphism()``
-    # and its three siblings from those declarations.  Two are written here, and the two
-    # with an implementation class write them in its body instead.
+    # The identifier is the whole declaration: the kernel compiles ``f.is_monomorphisms()``
+    # and its three siblings from these four lines, onto the ``ObjectType`` this class
+    # declares, which is every morphism of every category (D89, POL-CAT-060).
 
-    Monomorphisms = Axiom(predicate_name="is_monomorphism", predicate_owner=MorphismOfCategory)
-    Epimorphisms = Axiom(predicate_name="is_epimorphism", predicate_owner=MorphismOfCategory)
+    Monomorphisms = Axiom()
+    Epimorphisms = Axiom()
     Isomorphisms = Axiom(full_subcategory_of=(Monomorphisms, Epimorphisms))
     Endomorphisms = Axiom()
 
@@ -238,8 +237,6 @@ class IsomorphismsCategory[**MorphismData, **TwoMorphismData](PropertySubcategor
     """``Mor(C).Isomorphisms()``: the implementation of the ``Isomorphisms`` axiom of ``Mor(C)``."""
 
     _base_category_class_and_axiom = (MorphismCategory, "Isomorphisms")
-    predicate_name = "is_isomorphism"
-    predicate_owner = MorphismOfCategory
 
     class ObjectType(MorphismOfCategory):
         """An isomorphism of ``C``: the isomorphism category owns inversion (POL-CAT-079)."""
@@ -249,16 +246,18 @@ class IsomorphismsCategory[**MorphismData, **TwoMorphismData](PropertySubcategor
             return self.base_category().inverse_morphism(self)
 
 
-class EndomorphismsCategory[**MorphismData, **TwoMorphismData](PropertySubcategory[MorphismData, TwoMorphismData]):
-    """``Mor(C).Endomorphisms()``: the implementation of the ``Endomorphisms`` axiom of ``Mor(C)``."""
+class EndomorphismsCategory[**MorphismData, **TwoMorphismData](PredicateSubcategory[MorphismData, TwoMorphismData]):
+    """``Mor(C).Endomorphisms()``: the implementation of the ``Endomorphisms`` axiom of ``Mor(C)``.
+
+    Its mathematics decides membership, so it inherits ``PredicateSubcategory`` and states
+    the decision as ``_predicate`` (POL-CAT-060, D97).
+    """
 
     _base_category_class_and_axiom = (MorphismCategory, "Endomorphisms")
-    predicate_name = "is_endomorphism"
-    predicate_owner = MorphismOfCategory
 
-    def __init__(self, ambient: Category, name: str, full_subcategory_of: tuple[Category, ...]) -> None:
-        super().__init__(ambient, name, full_subcategory_of)
-        self.predicate().register_handler(_endomorphism_by_equality)
+    def _predicate(self, candidate: MorphismOfCategory) -> Decision:
+        """A morphism is an endomorphism exactly when its two endpoints are equal."""
+        return ask(candidate.domain() == candidate.codomain())
 
 
 class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[TwoMorphismData, []]):
@@ -307,20 +306,19 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
         refine(morphism, self)
         return morphism
 
-    def multiplicative_identity(self) -> MorphismOfCategory:
-        """``1_X``, the unit of the endomorphism monoid ``End_C(X) = Mor(C)(X, X)`` (D86).
+    def one(self) -> MorphismOfCategory:
+        """``1_X``, the unit of the endomorphism monoid ``End_C(X) = Mor(C)(X, X)`` (POL-CAT-023, D84).
 
         Composition makes ``Mor(C)(X, X)`` a monoid, ``compose`` is its multiplication,
-        and this is its multiplicative identity: ``f * 1_X`` and ``1_X * f`` are ``f`` for
-        every endomorphism ``f`` of ``X`` (``specs/functor.md``, "Identity and
-        composition").  An identity is named by the operation it is an identity for, so
-        the unqualified ``identity()`` on this category is the identity *functor* it
-        receives as an object of ``Cat()``.
+        and this is its unit: ``f * 1_X`` and ``1_X * f`` are ``f`` for every endomorphism
+        ``f`` of ``X`` (``specs/functor.md``, "Identity and composition").  This is the one
+        spelling of the identity morphism: an identity is named by the operation it is an
+        identity for, and this monoid is that operation (D86).
         """
         assert self._domain_object is self._codomain_object, (
             f"{self!r} is not an endomorphism monoid: its endpoints differ, so it has no multiplication"
         )
-        return self.base_category().identity_morphism(self._domain_object)
+        return self.base_category()._identity_morphism_(self._domain_object)
 
     def compose(self, second: MorphismOfCategory, first: MorphismOfCategory) -> MorphismOfCategory:
         """``Mor(C)(A, C).compose(g, f)`` for ``f: A -> B`` and ``g: B -> C``."""

@@ -378,8 +378,13 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     # each into ``Mor(self)``.  Every other category, including a wide subcategory
     # declared by a subcategory monomorphism (``cat/wide.py``), owns these constructions.
 
-    def identity_morphism(self, member_object: ObjectOfCategory) -> MorphismOfCategory:
-        """The one identity morphism of an object, constructed once (POL-CAT-083).
+    def _identity_morphism_(self, member_object: ObjectOfCategory) -> MorphismOfCategory:
+        """The private construction of ``1_X``, run once per object (POL-CAT-083).
+
+        The mathematical owner of ``1_X`` is the endomorphism monoid, and its one public
+        spelling is ``End_C(X).one()`` (POL-CAT-023, D84); this is the construction that
+        monoid's unit calls, on the category that owns identities.  A category whose
+        identities are another category's overrides it.
 
         An identity is its own inverse and an endomorphism: it retains itself as its
         inverse and is placed in ``Mor(self).Automorphisms()`` by construction
@@ -474,7 +479,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         from sage_categories.kernel.refinement import refine
 
         if self.has_full_ambient():
-            identity = self.ambient().identity_morphism(member_object)
+            ambient = self.ambient()
+            identity = ambient.morphism_category(1)(member_object, member_object).one()
             refine(identity, self.morphism_category(1))
             return identity
         raise AssertionError(f"{self!r} declares no identity construction")
@@ -524,7 +530,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
             refine(two_cell, self.morphism_category(2))
             return two_cell
         assert first is second and not args and not kwargs, f"{self!r} is a 1-category: its only 2-morphisms are identities"
-        return self.morphism_category(1).identity_morphism(first)
+        return self.morphism_category(2)(first, first).one()
 
     # -- points of the category as Cat elements (POL-CAT-058), retained once (POL-CAT-083) --------
 
@@ -537,9 +543,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         from sage_categories.cat.functors import Fun
 
         if member_object not in self._points:
-            self._points[member_object] = Fun(Cat().Terminal(), self)(
-                lambda vertex: member_object, lambda path: self.identity_morphism(member_object)
-            )
+            identity = self.morphism_category(1)(member_object, member_object).one()
+            self._points[member_object] = Fun(Cat().Terminal(), self)(lambda vertex: member_object, lambda path: identity)
         return self._points[member_object]
 
     def arrow_functor(self, morphism: MorphismOfCategory) -> Functor:
@@ -556,7 +561,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
 
         def on_morphism(path: MorphismOfCategory) -> MorphismOfCategory:
             if path.domain() is path.codomain():
-                return on_object(path.domain()).identity()
+                endpoint = on_object(path.domain())
+                return endpoint.category().morphism_category(1)(endpoint, endpoint).one()
             return morphism
 
         self._arrows[morphism] = Fun(walking_arrow, self)(on_object, on_morphism)
@@ -957,16 +963,15 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     ObjectType = CategoryDeclaration
 
     # Inhabitation and emptiness of a category, as the two property subcategories
-    # POL-CAT-086 names, with the predicate declaration POL-CAT-060 requires: the public
-    # spelling of each application and ``Cat().ObjectType`` as its owner, so every
-    # category receives ``is_inhabited()`` and ``is_empty()`` from these two lines.  They
-    # state mutually negated propositions and both can stay unresolved
-    # (``specs/property-refinement.md``, "Fixed-endpoint predicates").
+    # POL-CAT-086 names.  The kernel derives ``is_inhabited()`` and ``is_empty()`` from
+    # these two identifiers and writes them onto the ``ObjectType`` above, so every
+    # category receives them (D89).  They state mutually negated propositions and both
+    # can stay unresolved (``specs/property-refinement.md``, "Fixed-endpoint predicates").
     #
     # ``Cat().Empty()`` is this property subcategory; the empty category itself is the
     # object ``Cat().Initial()`` (``specs/functor.md``, "Canonical objects of Cat").
-    Inhabited = Axiom(predicate_name="is_inhabited", predicate_owner=CategoryDeclaration)
-    Empty = Axiom(predicate_name="is_empty", predicate_owner=CategoryDeclaration)
+    Inhabited = Axiom()
+    Empty = Axiom()
 
     class ElementType(CategoryPoint):
         """A point ``* -> C`` of a category, whose value is an object of ``C`` (POL-CAT-058)."""
@@ -1122,7 +1127,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             (source_separator,) = self.domain().separating_family()
             (target_separator,) = self.codomain().separating_family()
             assert self.on_object(source_separator) is target_separator, f"{self!r} retains no separator comparison"
-            return target_separator.identity()
+            return target_separator.category().morphism_category(1)(target_separator, target_separator).one()
 
         # -- composition data ------------------------------------------------------------------
 
@@ -1286,7 +1291,8 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             separators = self.domain().separating_family()
             if self in _separator_comparisons and len(separators) == 1 and source_defining.domain() is separators[0]:
                 comparison = _separator_comparisons[self]
-                if comparison is not comparison.domain().identity():
+                source_object = comparison.domain()
+                if comparison is not source_object.category().morphism_category(1)(source_object, source_object).one():
                     image = image * comparison
             if image is source_defining:
                 return source
@@ -1581,7 +1587,12 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         from sage_categories.cat.functors import diagram_of
 
         functor = diagram_of(member_object)
-        return self.construct_two_morphism(member_object, member_object, lambda x: functor.on_object(x).identity())
+
+        def component(x: ObjectOfCategory) -> MorphismOfCategory:
+            image = functor.on_object(x)
+            return image.category().morphism_category(1)(image, image).one()
+
+        return self.construct_two_morphism(member_object, member_object, component)
 
     def compose_two_morphisms(self, second: NaturalTransformation, first: NaturalTransformation) -> NaturalTransformation:
         """Vertical composition: components compose in the codomain category."""

@@ -40,7 +40,8 @@ def _point_object_by_identity(candidate: CategoryPoint, category: Category) -> D
 def _point_identity_by_identity(candidate: CategoryPoint, category: Category) -> Decision:
     if not isinstance(category, PointCategory):
         return Unknown
-    return candidate is category.identity_morphism(category.member())
+    member = category.member()
+    return candidate is category.morphism_category(1)(member, member).one()
 
 
 point_object.register_handler(_point_object_by_identity)
@@ -50,10 +51,9 @@ point_identity.register_handler(_point_identity_by_identity)
 class PointMorphismCategory(MorphismCategory[[], []]):
     """The one-object category whose sole object is ``1_X``."""
 
+
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         return point_identity(candidate, self._base)
-
-
 class PointCategory(Category[[], []]):
     """The one-object category on one existing object ``X``."""
 
@@ -115,26 +115,28 @@ class PointCategory(Category[[], []]):
     def construct_morphism(self, domain: CategoryPoint, codomain: CategoryPoint) -> MorphismOfCategory:
         """Return ``1_X``, the sole morphism, for its unique endpoint pair."""
         assert domain is self._member and codomain is self._member
-        return self.identity_morphism(self._member)
+        return self._identity_morphism_(self._member)
 
     def construct_identity(self, member_object: CategoryPoint) -> MorphismOfCategory:
         """``1_X`` is the identity ``X`` already has in the category it was placed in."""
         assert member_object is self._member
-        return self._established.identity_morphism(member_object)
+        return self._established.morphism_category(1)(member_object, member_object).one()
 
-    def identity_morphism(self, member_object: ObjectOfCategory) -> MorphismOfCategory:
-        """Return the existing identity of ``X``."""
+    def _identity_morphism_(self, member_object: ObjectOfCategory) -> MorphismOfCategory:
+        """``{X}`` places nothing: the unit of ``End_{X}(X)`` is the identity ``X`` already has."""
         return self.construct_identity(member_object)
 
     def composite(self, second: MorphismOfCategory, first: MorphismOfCategory) -> MorphismOfCategory:
-        identity = self.identity_morphism(self._member)
+        identity = self._identity_morphism_(self._member)
         assert first is identity and second is identity
         return identity
 
     def inverse_morphism(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
-        identity = self.identity_morphism(self._member)
+        identity = self._identity_morphism_(self._member)
         assert morphism is identity
         return identity
 
     def __repr__(self) -> str:
         return f"{{{self._member!r}}}"
+
+

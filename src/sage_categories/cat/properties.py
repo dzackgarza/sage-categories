@@ -20,10 +20,15 @@ of ``Mor(C).Epimorphisms()`` at once
 (``specs/functor.md``, "Monomorphisms of ``Cat()`` and placement").  A descendant ``D`` with a selected
 subcategory monomorphism into ``C`` derives ``D.P()`` as the narrowing of ``C.P()`` to ``D``
 (POL-CAT-084): a full subcategory of both, with the same predicate.
+
+The axiom makes the subcategory available; a class that also computes membership
+inherits ``PredicateSubcategory`` and states that computation as ``_predicate``.  Neither
+mechanism needs the other (D97).
 """
 
 from __future__ import annotations
 
+from abc import abstractmethod
 from types import ModuleType
 from typing import TYPE_CHECKING, ClassVar
 
@@ -40,6 +45,7 @@ __all__ = [
     "FixedEndpointProperty",
     "FullSubcategory",
     "NarrowedProperty",
+    "PredicateSubcategory",
     "PropertySubcategory",
 ]
 
@@ -140,13 +146,6 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
 
     _base_category_class_and_axiom: ClassVar[tuple[type[Category], str]]
 
-    # The predicate declaration (POL-CAT-060): the one public spelling of this property's
-    # application, and the largest role class on which it has meaning.  A subclass writes
-    # them in its body; an axiom with no implementation class carries them itself and
-    # fills them in on the value it constructs.
-    predicate_name: str | None = None
-    predicate_owner: type[CategoryPoint] | None = None
-
     def __init_subclass__(cls) -> None:
         """Record this class on the axiom it names: the declaration is the one place the link lives."""
         super().__init_subclass__()
@@ -166,14 +165,14 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
     ) -> None:
         self._name = name
         self._full_subcategory_of = full_subcategory_of
-        self._predicate = PropertyPredicate(name, self)
+        self._property_predicate = PropertyPredicate(name, self)
         super().__init__(ambient)
 
     def name(self) -> str:
         return self._name
 
     def predicate(self) -> PropertyPredicate:
-        return self._predicate
+        return self._property_predicate
 
     def full_subcategory_of(self) -> tuple[Category, ...]:
         """The categories this one is a full subcategory of, beyond its ambient (D83)."""
@@ -199,7 +198,7 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
         the defining predicate evaluated, and an undecided answer fails loudly at
         ``__contains__`` rather than being reported as non-membership.
         """
-        return self._ambient.membership_proposition(candidate) & self._predicate(candidate)
+        return self._ambient.membership_proposition(candidate) & self._property_predicate(candidate)
 
     def __call__(self, *arguments: CategoryPoint) -> CategoryPoint:
         """The trusted constructor: refine a value of the ambient; or dispatch endpoints ``P(A, B)``."""
@@ -214,6 +213,38 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
 
     def __repr__(self) -> str:
         return f"{self._ambient!r}.{self._name}()"
+
+
+class PredicateSubcategory[**MorphismData, **TwoMorphismData](PropertySubcategory[MorphismData, TwoMorphismData]):
+    """``C.P()`` whose membership its own mathematics decides (POL-CAT-060, D97).
+
+    An axiom alone is already complete: it makes ``C.P()`` available, a value enters by
+    construction or refinement, and ``ask`` decides membership from that placement, an
+    active assumption, or a declared containment.  A class inherits this base when its
+    mathematics *computes* the answer as well, and states that computation once, as
+    ``_predicate``.  The base makes it the exact evaluation case of the property's
+    predicate; membership stays what ``PropertySubcategory`` defines, the ambient's
+    membership together with that predicate.
+
+    These are two mechanisms and neither needs the other (D97).
+    """
+
+    def __init__(
+        self,
+        ambient: Category[MorphismData, TwoMorphismData],
+        name: str,
+        full_subcategory_of: tuple[Category, ...],
+    ) -> None:
+        super().__init__(ambient, name, full_subcategory_of)
+        assert type(self)._predicate is not PredicateSubcategory._predicate, (
+            f"{type(self).__name__} inherits PredicateSubcategory, so it states the predicate that decides "
+            f"membership in {name}(); a property that computes nothing declares the axiom alone (POL-CAT-060)"
+        )
+        self._property_predicate.register_handler(self._predicate)
+
+    @abstractmethod
+    def _predicate(self, candidate: CategoryPoint) -> Decision:
+        """The defining decision of membership in this property, on a value of the ambient."""
 
 
 class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):
@@ -293,8 +324,8 @@ class FixedEndpointProperty[**MorphismData, **TwoMorphismData](NarrowedProperty[
         refine(morphism, self)
         return morphism
 
-    def multiplicative_identity(self) -> MorphismOfCategory:
-        """``1_X`` with this property: the unit of ``End_C(X)`` refined into the narrowing (D86)."""
-        identity = self._ambient.multiplicative_identity()
+    def one(self) -> MorphismOfCategory:
+        """``1_X`` with this property: the unit of ``End_C(X)`` refined into the narrowing (POL-CAT-023, D84)."""
+        identity = self._ambient.one()
         refine(identity, self)
         return identity

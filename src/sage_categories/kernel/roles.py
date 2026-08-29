@@ -118,9 +118,6 @@ class ObjectOfCategory(CategoryPoint):
         """The strongest category placement established for this object."""
         return self._category
 
-    def identity(self) -> MorphismOfCategory:
-        return self._category.identity_morphism(self)
-
     def __eq__(self, candidate: Any) -> AppliedPredicate:
         return self._category.equality()(self, candidate)
 

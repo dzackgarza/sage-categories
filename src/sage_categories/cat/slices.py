@@ -90,6 +90,12 @@ def _star() -> ObjectOfCategory:
     return Cat().Terminal()(0)
 
 
+def _star_identity() -> MorphismOfCategory:
+    """``1_*``: the unit of ``End_1(*)``, the fixed component of a slice morphism (POL-CAT-023)."""
+    star = _star()
+    return star.category().morphism_category(1)(star, star).one()
+
+
 def _denoted_morphism(candidate: CategoryPoint) -> CategoryPoint:
     """The morphism a candidate denotes: the defining morphism of a generalized element, else the candidate itself."""
     if role_of(candidate) is Role.ELEMENT:
@@ -189,7 +195,8 @@ class SliceLikeCategory(PullbackCategory):
 
     def _square(self, source: MorphismOfCategory, target: MorphismOfCategory, varying: MorphismOfCategory) -> NaturalTransformation:
         """The commuting square from ``source`` to ``target`` whose component at the fixed end is the identity of ``x``."""
-        components = {self._fixed_label: self._fixed.identity(), 1 - self._fixed_label: varying}
+        fixed = self._fixed
+        components = {self._fixed_label: fixed.category().morphism_category(1)(fixed, fixed).one(), 1 - self._fixed_label: varying}
         squares = Fun(_walking_arrow(), self._base_of_slice)
         return squares.morphism_category(1)(source, target)(lambda vertex: components[_walking_arrow().label(vertex)])
 
@@ -216,7 +223,7 @@ class SliceCategory(SliceLikeCategory):
         assert morphism.codomain() is structure.domain(), f"{morphism!r} does not end at the varying object of {member_object!r}"
         composite = structure * morphism
         square = self._square(composite, structure, morphism)
-        return self.construct_morphism(self((composite, _star())), member_object, (square, _star().identity()))
+        return self.construct_morphism(self((composite, _star())), member_object, (square, _star_identity()))
 
     def __repr__(self) -> str:
         return f"{self._base_of_slice!r}.SliceOver({self._fixed!r})"
@@ -237,7 +244,7 @@ class CosliceCategory(SliceLikeCategory):
         assert morphism.domain() is structure.codomain(), f"{morphism!r} does not start at the varying object of {member_object!r}"
         composite = morphism * structure
         square = self._square(structure, composite, morphism)
-        return self.construct_morphism(member_object, self((composite, _star())), (square, _star().identity()))
+        return self.construct_morphism(member_object, self((composite, _star())), (square, _star_identity()))
 
     def __repr__(self) -> str:
         return f"{self._base_of_slice!r}.CosliceUnder({self._fixed!r})"

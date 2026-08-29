@@ -105,7 +105,8 @@ class DiscreteCategory(Category[[], []]):
         return self._index_set
 
     def morphism_at(self, point: ElementOfObject) -> DiscreteCategory.MorphismType:
-        return self(point).identity()
+        vertex = self(point)
+        return self.morphism_category(1)(vertex, vertex).one()
 
     def generating_morphisms(self) -> tuple[DiscreteCategory.MorphismType, ...]:
         """No morphism beyond the identities: the empty generating family."""
@@ -163,7 +164,7 @@ def _discrete_on_morphism(set_map: MorphismOfCategory) -> Functor:
         source, target = _discrete_on_object(set_map.domain()), _discrete_on_object(set_map.codomain())
         _discrete_functors[set_map] = Fun(source, target)(
             lambda vertex: target(set_map(vertex.point())),
-            lambda identity: target(set_map(identity.domain().point())).identity(),
+            lambda identity: target.morphism_at(set_map(identity.domain().point())),
         )
     return _discrete_functors[set_map]
 
@@ -210,6 +211,7 @@ comparable.register_handler(_comparable_by_order)
 
 class ThinMorphisms(MorphismCategory[[], []]):
     """``Mor(Thin(P, leq))``: a comparison is a member when its order proposition holds."""
+
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         return member(candidate, self) & comparable(candidate, self._base)

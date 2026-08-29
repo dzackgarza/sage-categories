@@ -18,9 +18,9 @@
 
 - [Monomorphisms of `Cat()` and placement](#monomorphisms-of-cat-and-placement)
 
-- [Structural inheritance](#structural-inheritance)
+- [Structure functors and inherited classes](#structure-functors-and-inherited-classes)
 
-- [Declared categories and their implementations](#declared-categories-and-their-implementations)
+- [Category classes and category-valued families](#category-classes-and-category-valued-families)
 
 - [Point categories and point functors](#point-categories-and-point-functors)
 
@@ -40,7 +40,7 @@
 
 - [Examples](#examples)
 
-- [Compiler contract](#compiler-contract)
+- [Compiled public consequence](#compiled-public-consequence)
 
 - [Mathlib correspondence](#mathlib-correspondence)
 
@@ -158,7 +158,7 @@ It returns an actual object built through one of the finite public constructors 
 The writer knows the source leaf, the immediate target category, and the standard categorical calculus needed to navigate their data.
 
 For example, an algebra presentation can retain a morphism `R -> Z(A)`.
-Its functor to rings can recover `Z(A)` as the codomain and then use the ambient-object operation supplied by the generic `MonoOver` construction:
+Its functor to rings can recover `Z(A)` as the codomain and then use the ambient-object operation supplied by `Subobjects`:
 
 ```python
 def to_rings(self) -> Cat().MorphismType:
@@ -182,7 +182,7 @@ Local functions are preferred when no other leaf code needs the helper.
 
 The kernel treats both functions as opaque executable actions.
 Selecting `F` in `structure_functors()` only selects the applicable target implementation surface for compilation.
-This is D08 and D120, with stable policy references `POL-FUN-035`, `POL-LEAF-058`, and `POL-LEAF-062`.
+This is D08, D120, and D123, with stable policy references `POL-FUN-035`, `POL-LEAF-058`, and `POL-LEAF-062`.
 
 A natural transformation `eta: F => G` is constructed as `Mor(Fun(C, D))(F, G)(assignment)`. The assignment is a rule `X |-> eta_X` on the objects of `C`, returning a morphism `F(X) -> G(X)` of `D`. It is never a table.
 Naturality is trusted.
@@ -492,8 +492,8 @@ uses it for class inheritance. This use adds no new kind of morphism in `Cat`.
 
 Every entry is an ordinary owned object of `Fun`. Its mathematical existence and
 properties come first. A structure functor need not be a subcategory monomorphism.
-For example, the functor from posets to sets forgets the order. A poset is not thereby an
-object of `Sets()`, and `Posets()` is not thereby a subcategory of `Sets()`.
+For example, the named relation-base projection `Posets() -> Sets()` sends `(X, R)` to `X`.
+A poset is not thereby an object of `Sets()`, and `Posets()` is not thereby a subcategory of `Sets()`.
 
 The fixed-endpoint category `Fun(C, D)` owns construction of every functor `C -> D`.
 `Cat()` supplies the categorical calculus but does not construct or choose a leaf-specific
@@ -517,16 +517,8 @@ Named convenience constructors belong to `H` or one of its property subcategorie
 There is no parallel `Cat`, kernel, or helper constructor for the same functor
 (`POL-LEAF-061`, `POL-API-028`).
 
-A category returns an immediate structure functor when that exact functor supplies inherited operations:
-
-```python
-class FiniteSetsCategory(Category):
-    def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-        return (Fun(self, Sets()).Monomorphisms().Isofibrations().Full()(),)
-```
-
-This example explicitly constructs a subcategory monomorphism and records fullness through the selected property category.
-The tuple tells the compiler to include the compiled classes owned by `Sets()` through that functor.
+A category returns an immediate structure functor when that exact functor supplies inherited operations.
+The complete finite-set declaration appears once in [finite-set-minimal-template.py](finite-set-minimal-template.py).
 
 The categories `Fun(self, D)` can contain many other functors.
 Their existence does not affect the compiled public surface.
@@ -538,79 +530,24 @@ The kernel supplies their target classes as immediate dynamic bases. Sage dynami
 construction and Sage's controlled linearization handle transitive inheritance and shared
 ancestors.
 
-### Private Sage implementation categories
-
-For each owned category `C` and each of its three implementation-class kinds, the kernel
-constructs one private Sage category:
-
-```python
-_RuntimeImplementationCategory(C, ImplementationKind.OBJECT)
-_RuntimeImplementationCategory(C, ImplementationKind.ELEMENT)
-_RuntimeImplementationCategory(C, ImplementationKind.MORPHISM)
-```
-
-This adapter exists only to compile Python classes. It states no subcategory relation in
-`Cat()`.
-
-Its `super_categories()` method returns the private implementation categories for the
-immediate targets supplied by `C.structure_functors()`. Its `ParentMethods` provider is
-the corresponding local `C.ObjectType`, `C.ElementType`, or `C.MorphismType` declaration.
-The kernel uses only its Sage `parent_class`.
-
-Sage `_all_super_categories`, `_super_categories_for_classes`, `_make_named_class`,
-controlled C3, and `dynamic_class` therefore own class linearization, the minimal direct
-bases, dynamic-class identity, and method-source metadata. The kernel does not maintain a
-second class graph.
-
-The adapter cache uses the identity of `C` and the exact implementation-class kind.
-Owned category equality is proposition-valued, so this cache uses `MonoDict`. The kernel
-normalizes identities such as `Mor(C).ObjectType = C.MorphismType` before lookup and
-anchors each graph at its existing kernel base class.
-
-The kernel retains four tasks that Sage cannot infer:
-
-- reject one public method name owned by incomparable mathematical categories;
-
-- rebind a copied method whose zero-argument `super()` still names the provider class;
-
-- make the target implementation state available on each selected source surface;
-
-- initialize each class in the compiled MRO once.
-
-Public application of a functor still constructs its owned image. The private Sage graph
-does not construct or identify public functor images.
-
 ### `C.ObjectType`, `C.ElementType`, and `C.MorphismType`
 
 A category specifies `C.ObjectType`, `C.ElementType`, and `C.MorphismType` directly.
-The kernel constructs these classes dynamically from the structure functors.
-For each structure functor `F: C -> D`, `C.ObjectType` inherits `D.ObjectType`.
-`C.ElementType` and `C.MorphismType` inherit the corresponding target classes when that
-class kind applies. This applicability is a compiler consequence of selection and adds no
-functor-writer declaration. A class with no structure-functor target inherits the kernel
-base for its mathematical kind. A leaf never constructs this inheritance.
+The kernel constructs these classes from the immediate selected functor targets.
+For each selected `F: C -> D`, the applicable `D` implementation class contributes inherited execution on the source value.
+This consequence adds no functor-writer declaration.
 
 The kernel preserves the body specified for each class. Each category has exactly one
 `C.ObjectType`, one `C.ElementType`, and one `C.MorphismType`.
 
-Each local constructor accepts only the exact data introduced by its category.
-It initializes that state and calls `super().__init__()` once.
 The ordinary object action of `F` uses one of the finite public constructors of `D` and
 returns the resulting `D.ObjectType`. Its morphism action does the same in the exact target
 hom category. Ordinary functors that are not selected do not participate in class construction.
-
-The structured source instance carries the state required by every class in Sage's MRO.
-A shared ancestor occurs once and its initializer runs once. Each local constructor
-receives only its own datum and contributes its state once.
-
-Every object-class constructor initializes `Cat().ElementType` with its point into the parent category.
-Thus `C.ObjectType` represents a point `* -> C`. A morphism uses the same object rule through `Mor(C).ObjectType`, as a point `* -> Mor(C)`. A `C.ElementType` value has parent `X in C` and uses the shared element implementation owned by `C`.
 
 Public `F(x)` runs the named functor's ordinary action and returns the separate image owned by `F`.
 Different functors with the same endpoints can return different images.
 
 An inherited method runs directly on the structured source instance through ordinary Python inheritance.
-The target constructor already initialized the state that the method reads on that instance.
 Thus `x.f()` and `F(x).f()` have the same mathematical value.
 The equality is semantic; method dispatch does not replace `x` with `F(x)`.
 
@@ -619,6 +556,8 @@ Identity and composite structure functors use their ordinary functor actions.
 For a category `X`, `Fun(*, X)` models its points and `Fun(T, X)` models its generalized elements with domain `T`. A functor `G: X -> Y` maps both by composition. The category `Fun([1], X)` models arrows of `X` separately.
 
 An ambient functor `F: C -> D` maps objects and morphisms of `C`. Selecting `F` for compiled inheritance adds the applicable target implementation classes to the source classes. This compiler effect adds nothing to the public functor definition.
+
+The private class compiler, initialization, and cache rules live only in [resolution.md](resolution.md).
 
 ## Category classes and category-valued families
 
@@ -753,12 +692,12 @@ The presentation then retains those distinct functor objects as defining data.
 
 ### Construction-named functors
 
-There is no generic functor selected by the instruction to “forget structure.”
+Every functor has a construction name or is an explicit composite.
 The source and target select only `Fun(Source, Target)`. They do not select one of its objects.
 A category presentation can expose several valid maps, and an equivalent presentation can expose different immediate maps.
 
 For example, a lattice presentation `(M, b)` has one projection to `M` and another to `b`. A module presentation by an action morphism has the projections and evaluations of its chosen action-category construction.
-The kernel cannot recover a preferred map from tuple positions, field names, or a supposed underlying object.
+The kernel cannot recover a preferred map from tuple positions or field names.
 
 Each public functor must name its construction.
 The fundamental cases are:
@@ -968,7 +907,7 @@ These methods come from `Cat().Products().ObjectType` and `Cat().Coproducts().Ob
 
 Let `P` be a product category.
 Let `j: S -> P` present `S` as a subcategory.
-The corresponding object of `Cat().MonoOver(P)` retains `j` and reads `P` as its codomain.
+The corresponding object of `Cat().Subobjects(P)` retains `j` and reads `P` as its codomain.
 Its component functor is
 
 \[
@@ -1101,23 +1040,23 @@ It is the pullback of `p` along `b`. Its objects lie over `b`, and its morphisms
 For `X in C`, the ambient category in the call fixes the role of `X`:
 
 ```python
-C.MonoOver(X)   = C.SliceOver(X).Monomorphisms()
-C.MonoUnder(X)  = C.CosliceUnder(X).Monomorphisms()
-C.EpiOver(X)    = C.SliceOver(X).Epimorphisms()
-C.EpiUnder(X)   = C.CosliceUnder(X).Epimorphisms()
+C.Subobjects(X)       = C.SliceOver(X).Monomorphisms()
+C.Superobjects(X)     = C.CosliceUnder(X).Monomorphisms()
+C.CoveringObjects(X)  = C.SliceOver(X).Epimorphisms()
+C.CoveredObjects(X)   = C.CosliceUnder(X).Epimorphisms()
 ```
 
 `Cat().ObjectType` defines these methods once, and every category inherits them.
 The slice or coslice retains a functor to `Mor(C)` that returns its defining arrow.
 `Monomorphisms()` and `Epimorphisms()` pull back the corresponding property subcategory of `Mor(C)` along that functor.
 
-Thus `C.MonoOver(X)` is the full subcategory of `C.SliceOver(X)` on monomorphisms.
+Thus `C.Subobjects(X)` is the full subcategory of `C.SliceOver(X)` on monomorphisms.
 Its objects are pairs `(A, i)` with `i: A -> X` monic.
 A morphism `(A, i) -> (B, j)` is a morphism `f: A -> B` with `j compose f = i`.
 
-`C.MonoUnder(X)` is the full subcategory of `C.CosliceUnder(X)` on monomorphisms.
-`C.EpiOver(X)` is the full subcategory of `C.SliceOver(X)` on epimorphisms.
-`C.EpiUnder(X)` is the full subcategory of `C.CosliceUnder(X)` on epimorphisms.
+`C.Superobjects(X)` is the full subcategory of `C.CosliceUnder(X)` on monomorphisms.
+`C.CoveringObjects(X)` is the full subcategory of `C.SliceOver(X)` on epimorphisms.
+`C.CoveredObjects(X)` is the full subcategory of `C.CosliceUnder(X)` on epimorphisms.
 Every object retains its defining morphism.
 
 ## Indexed categories, Yoneda, and representability
@@ -1152,19 +1091,6 @@ Monads, comonads, Eilenberg--Moore categories, mates, and reflective or coreflec
 
 ## Examples
 
-### Finite sets
-
-Finite sets form a full property subcategory of sets.
-Finiteness is closed under isomorphism.
-
-```python
-class FiniteSetsCategory(Category):
-    def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-        return (Fun(self, Sets()).Monomorphisms().Isofibrations().Full()(),)
-```
-
-The functor is constructed directly in `Fun(self, Sets()).FullyFaithful()`.
-
 ### Monoid objects
 
 For a selected monoidal category `V`, `Monoids(V)` is notation-neutral.
@@ -1194,87 +1120,19 @@ For categories `C` and `D`, `product_projection(0)` and `product_projection(1)` 
 
 The construction `Fun([1], C)` creates `ev_0` and `ev_1`. These functors exist without being returned from `structure_functors()`.
 
-## Compiler contract
+## Compiled public consequence
 
-The compiler uses `structure_functors()` as its sole source of dynamic target classes.
-It must:
+`structure_functors()` contains the immediate named functors selected for inherited execution.
+Each selected functor is already a complete object of `Fun`.
+Its actions construct its separate public images.
 
-1. require every entry to lie in `Fun`;
+The kernel makes the applicable target implementation classes available on the source value.
+An inherited method then runs directly with the same arguments.
+This effect applies to objects, elements, and morphisms.
 
-2. require each entry's domain to be the declaring category;
-
-3. derive immediate target categories from functor codomains;
-
-4. create the private Sage implementation category for each class kind, and use its `parent_class` as the compiled class;
-
-5. preserve each functor's exact object and morphism maps;
-
-6. map points and generalized elements by ordinary functor composition at their category level;
-
-7. require each object and morphism action to return an owned value in its exact target category;
-
-8. initialize each class in Sage's MRO once; each public functor action remains independent;
-
-9. retain one object of `Fun(C, D)` for each named functor construction;
-
-10. preserve each written public class as the private Sage category's method provider;
-
-11. make each structured value carry the state required by every reachable class, with each local constructor contributing its state once;
-
-12. derive subobject-of-product component functors by composition;
-
-13. install the compiled classes of a point category `{X}` on its distinguished object: `{X}.ObjectType` on `X`, and `{X}.ElementType` on the points of `X`; for a category `X = C`, these points are `C.ObjectType`;
-
-14. normalize categorical level identities before private implementation-category lookup;
-
-15. use Sage's class-graph calculation and dynamic-class cache instead of repository graph linearization or controlled-base code;
-
-16. rebind local methods that use zero-argument `super()` after Sage copies the method provider;
-
-17. keep the semantic collision check, private runtime state sharing, and once-only initialization pass.
-
-Natural transformations are trusted constructions, never compiler proofs.
-There is no route normalization, route scoring, or preservation registry.
-
-Every inherited method enters the descendant through the compiled class MRO. The declaring method runs on the original descendant instance with the supplied arguments.
-It reads the declaring category's state directly on that instance.
-Each structure functor already contains complete executable object and morphism actions.
-The compiler makes the applicable target state available on the descendant without another writer declaration.
-The method's value is returned exactly as declared.
-
-The public surface is dynamic inheritance in Sage's sense.
-The kernel obtains `C.ObjectType`, `C.ElementType`, and `C.MorphismType` from the
-`parent_class` values of their private Sage implementation categories.
-A leaf writes no Python inheritance.
-A leaf that wants a source-category result overrides the inherited method or adds its own.
-
-`CachedRepresentation`, `UniqueRepresentation`, and `cached_method` own runtime caches
-whose keys have ordinary exact equality. `MonoDict` and `TripleDict` remain only for keys
-that contain owned values with proposition-valued equality. A direct kernel call to
-`dynamic_class` keeps its cache enabled.
-
-Sage `Hom`, `Homset`, `Map`, `Morphism`, and `IdentityMorphism` can implement concrete
-leaf morphisms whose endpoints are Sage parents. Generic `Mor` and `Fun` remain owned
-categorical constructions. They follow the corresponding parent, domain, codomain,
-composition, and functor-action protocols without forcing abstract categories to become
-Sage parents. Sage `ForgetfulFunctor` does not implement a selected structure functor.
-
-The MROs have these forms:
-
-```text
-C.ObjectType, immediate structure-functor target ObjectType classes,
-Cat().ElementType, object kernel class
-
-C.MorphismType = Mor(C).ObjectType,
-immediate structure-functor target MorphismType classes, morphism kernel class
-
-C.ElementType, immediate structure-functor target ElementType classes,
-element kernel class
-```
-
-The compiler does not infer a functor from a category pair.
-It does not infer fullness, faithfulness, or equivalence from a class name.
-It does not add computational routes to any functor predicate.
+Selection adds no mathematical data to the functor.
+It does not establish a subcategory relation or identify a source value with its functor image.
+The private Sage mechanism lives only in [resolution.md](resolution.md).
 
 ## Mathlib correspondence
 
@@ -1348,7 +1206,7 @@ It is kernel infrastructure over already established mathematical functors.
 
 - Functor properties are property subcategories of `Fun` and its fixed-endpoint categories.
 
-- Every functor predicate returns an applied `Predicate`.
+- Every functor property method returns its containment proposition.
 
 - Direct construction and assumptions use the general same-object refinement path.
 
@@ -1380,8 +1238,6 @@ It is kernel infrastructure over already established mathematical functors.
 
 - Endpoint categories and object fields never select a functor.
 
-- The repository has no generic constructor selected by the phrase “forget structure.”
-
 - Every functor is named by its construction or given as an explicit composite.
 
 - Each category presentation retains all projections and evaluations required by its definition.
@@ -1396,7 +1252,7 @@ It is kernel infrastructure over already established mathematical functors.
 
 - `.PreservesLimits(I)` and `.CreatesLimits(I)` are functor-property categories. Their colimit forms derive through `Op`.
 
-- Every object of `Cat().MonoOver(P)` for a product category `P` retains its presenting monomorphism, then derives its component functors by composition.
+- Every object of `Cat().Subobjects(P)` for a product category `P` retains its presenting monomorphism, then derives its component functors by composition.
 
 - Slice and coslice categories are pullbacks of `ev_1` and `ev_0` along the chosen object and retain their pullback projections.
 

@@ -246,8 +246,15 @@ Its complete immediate structure-functor tuple is
 
 ```python
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (Fun(self, Monoids(V)).Monomorphisms().Isofibrations().Full()(),)
+    return (self._monoid_projection,)
 ```
+
+The `Groups(V)` leaf constructs `_monoid_projection` in
+`Fun(self, Monoids(V)).Monomorphisms().Isofibrations().Full()`.
+It supplies the object action, morphism action, and constructor conversions that discard
+the inverse datum and construct the corresponding monoid data.
+`Cat()` does not know this conversion.
+The kernel only compiles the functor after the leaf supplies it.
 
 The structure functor supplies the multiplication morphism and unit data required by the monoid constructor.
 `Groups(V)` adds only the inversion morphism and its laws.
@@ -423,4 +430,4 @@ The notation subcategories use the Sage reference sections for [magmas](https://
 
 - `Semirings(Sets())` gives ordinary semirings; `Semirings(Cat())` states its laws as equalities of functors.
 
-The complete governing set also includes `POL-MATH-001` through `POL-MATH-013`, `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001` through `POL-CAT-020`, `POL-CAT-033`, `POL-CAT-043` through `POL-CAT-047`, `POL-CAT-054`, `POL-CAT-061` through `POL-CAT-087`, `POL-FUN-001` through `POL-FUN-006`, `POL-FUN-023`, and `POL-DOC-003` through `POL-DOC-009`.
+The complete governing set also includes `POL-MATH-001` through `POL-MATH-013`, `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001` through `POL-CAT-020`, `POL-CAT-033`, `POL-CAT-043` through `POL-CAT-047`, `POL-CAT-054`, `POL-CAT-061` through `POL-CAT-087`, `POL-LEAF-061`, `POL-FUN-001` through `POL-FUN-006`, `POL-FUN-023`, `POL-API-028`, and `POL-DOC-003` through `POL-DOC-009`.

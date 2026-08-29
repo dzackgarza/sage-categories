@@ -144,7 +144,7 @@ It cannot select a new mathematical model.
 When the code lacks an obvious encoding, derive the encoding from the standard mathematical definition.
 If the repository cannot state that definition, the missing category, functor, morphism, construction, or exact type is the foundational defect.
 
-The governing policies are `POL-MATH-001`, `POL-MATH-031` through `POL-MATH-033`, `POL-CAT-075` through `POL-CAT-080`, `POL-LEAF-053` through `POL-LEAF-056`, `POL-KERNEL-021` through `POL-KERNEL-025`, `POL-FUN-023`, `POL-API-023`, and `POL-CODE-042` through `POL-CODE-043`.
+The governing policies are `POL-MATH-001`, `POL-MATH-031` through `POL-MATH-033`, `POL-CAT-075` through `POL-CAT-080`, `POL-LEAF-053` through `POL-LEAF-056`, `POL-LEAF-061`, `POL-KERNEL-021` through `POL-KERNEL-025`, `POL-FUN-023`, `POL-API-023`, `POL-API-028`, and `POL-CODE-042` through `POL-CODE-043`.
 
 ## Two different forms of reuse
 
@@ -391,6 +391,39 @@ The two mathematical operations have separate names and total signatures.
 A short method can still be the correct owner.
 A semantic method that invokes a mature algorithm is not a meaningless forwarding wrapper.
 It supplies the public mathematical contract and the private computation boundary.
+
+## Functor construction belongs to `Fun(C, D)`
+
+`Cat()` supplies the generic categorical calculus.
+It does not decide which functor presents a leaf's structure or how the leaf's construction data initializes the target implementation.
+
+The fixed-endpoint functor category owns construction of each functor:
+
+```python
+H = Fun(C, D)
+F = H(on_object, on_morphism, ...)
+```
+
+The leaf writer can inspect `H` for its ordinary and property-specific constructors.
+A monic, full, replete functor is constructed in the corresponding property subcategory of `H`.
+There is no second constructor namespace in `Cat`, the kernel, or a helper module.
+
+A selected leaf functor has two sources:
+
+1. The categorical construction that defines the leaf retained the exact projection, inclusion, restriction, lift, or evaluation functor.
+   The leaf returns that object.
+
+2. The functor is new leaf mathematics.
+   The leaf constructs it in `Fun(self, Target)` and supplies its object action, morphism action, and constructor conversions.
+
+`Groups(V)` owns the rule that its group construction determines a monoid construction.
+It supplies that rule to the functor in `Fun(Groups(V), Monoids(V))`.
+`Modules(A, C)` owns the rule that an action `A bullet X -> X` determines `X` and the matching morphism in `C`.
+It supplies that rule to its functor in `Fun(Modules(A, C), C)`.
+When a pullback, comma category, or other defining construction already retained the exact projection, the leaf reuses it.
+
+The kernel compiles these supplied functors.
+It never chooses one from the endpoints, fields, tuple positions, or target method names.
 
 ## Structure functors determine class inheritance
 

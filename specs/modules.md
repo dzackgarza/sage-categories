@@ -133,6 +133,13 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (self._U_A,)
 ```
 
+The `Modules(A, C)` leaf supplies the object action, morphism action, and constructor
+conversions of `U_A`.
+Its action datum `A bullet X -> X` determines the object `X` and its construction data in `C`.
+`Cat()` and the kernel do not select this projection or infer that conversion.
+If a later definition of `Modules(A, C)` uses a generic pullback or comma construction
+that already retains this exact projection, the leaf reuses that retained functor.
+
 There is no accessor standing in for `U_A`, and no method named for a direction
 rather than a codomain (`POL-FUN-037`). A module's object in `C` could equally be
 asked for as a set, an abelian group, or a ring when it happens to be one, so any
@@ -205,4 +212,4 @@ The [nLab module object](https://ncatlab.org/nlab/show/module%2Bobject) entry, s
 
 - The enriched map to `End_C(X)` appears when the stated adjunction exists.
 
-The complete governing set also includes `POL-MATH-001` through `POL-MATH-013`, `POL-MATH-020` through `POL-MATH-023`, `POL-CAT-001` through `POL-CAT-020`, `POL-CAT-033`, `POL-CAT-043` through `POL-CAT-047`, `POL-CAT-054`, `POL-CAT-061` through `POL-CAT-087`, `POL-FUN-001` through `POL-FUN-006`, `POL-FUN-023`, and `POL-DOC-003` through `POL-DOC-009`.
+The complete governing set also includes `POL-MATH-001` through `POL-MATH-013`, `POL-MATH-020` through `POL-MATH-023`, `POL-CAT-001` through `POL-CAT-020`, `POL-CAT-033`, `POL-CAT-043` through `POL-CAT-047`, `POL-CAT-054`, `POL-CAT-061` through `POL-CAT-087`, `POL-LEAF-061`, `POL-FUN-001` through `POL-FUN-006`, `POL-FUN-023`, `POL-API-028`, and `POL-DOC-003` through `POL-DOC-009`.

@@ -3,7 +3,7 @@
 Replace each `Leaf`, `Base`, and `defining_data` name with its mathematical name.
 Keep only methods introduced by the leaf structure.
 
-This template implements D118 and `POL-LEAF-014`.
+This template implements D118, D119, `POL-LEAF-014`, `POL-LEAF-061`, and `POL-API-028`.
 It is design pseudocode, not an importable framework API.
 
 ## The four leaf questions
@@ -67,9 +67,13 @@ They do not select different public implementations.
 A property-category call `C.P()(data)` asserts the defining property and constructs in that same registered category.
 An existing owned value passed to `C.P()` uses same-object refinement.
 
-## What `Cat` supplies
+## Construction owners available to a leaf
 
-The leaf reuses these generic constructions and their retained functors:
+Every mathematical value is constructed by its owning category.
+`Cat()` supplies the category-level calculus and constructs categories.
+It does not construct a leaf-specific functor.
+
+The leaf uses the applicable owning category:
 
 ```python
 Fun(C, D)
@@ -95,11 +99,45 @@ F.base_change(p)
 Grothendieck(P)
 ```
 
+This gives one discovery rule:
+
+```python
+C(...)                         # object of C
+Mor(C)(X, Y)(...)              # morphism X -> Y
+Fun(C, D)(...)                 # functor C -> D
+Fun(C, D).Monomorphisms()(...) # monic functor C -> D
+C.Products()(...)              # product presentation in C
+C.MonoOver(X)(...)             # monomorphism into X
+C.P()(...)                     # object of the property subcategory
+```
+
+A convenience constructor belongs to the category that owns its result.
+For example, `Fun(C, C).identity()` or `Fun(C, D).subcat_inclusion(...)`
+can construct functors when those named constructors are part of the fixed-endpoint functor category.
+A `Cat` helper, kernel factory, or separate functor factory does not duplicate that namespace.
+
 The construction that creates a product, pullback, comma category, slice, fiber, or Grothendieck construction retains its projections and comparison data.
 The leaf selects those functors from the retained presentation.
 It writes a new `Fun(self, Target)` object only when it introduces a new mathematical action.
 
-The kernel supplies class compilation, constructor threading, inherited method execution, property inverse images, generated `is_P()` methods, the positive-decision refinement connection, same-object refinement, and public type projection.
+Thus a selected structure functor has exactly two normal sources:
+
+1. The generic construction that defines the leaf already retained the exact functor.
+   The leaf returns that functor.
+
+2. The functor expresses leaf-specific mathematics.
+   The leaf constructs it through `Fun(self, Target)` and supplies its object action,
+   morphism action, and exact constructor conversions.
+
+The endpoints do not choose the functor.
+The kernel does not inspect leaf data to infer it.
+The leaf owns the statement that its group construction determines a monoid, or that its module action determines an ambient object.
+The kernel only compiles the selected functor after the leaf supplies it.
+
+The generic categorical layer supplies property inverse images and standard construction families.
+The kernel supplies class compilation, constructor threading, inherited method execution,
+generated `is_P()` methods, the positive-decision refinement connection, same-object refinement,
+and public type projection.
 Sage and SymPy supply the session assumption context.
 An ordinary leaf contains none of that machinery.
 

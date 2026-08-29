@@ -444,6 +444,26 @@ properties come first. A structure functor need not be a subcategory monomorphis
 For example, the functor from posets to sets forgets the order. A poset is not thereby an
 object of `Sets()`, and `Posets()` is not thereby a subcategory of `Sets()`.
 
+The fixed-endpoint category `Fun(C, D)` owns construction of every functor `C -> D`.
+`Cat()` supplies the categorical calculus but does not construct or choose a leaf-specific
+functor. A leaf either returns the exact functor retained by its defining categorical
+construction or constructs its new action in `Fun(self, Target)`. In the second case the
+leaf supplies the object action, morphism action, and exact constructor conversions.
+The kernel compiles this declaration and never infers it from the endpoints or source data.
+
+This ownership also fixes discovery:
+
+```python
+H = Fun(C, D)
+H(...)                         # construct a functor C -> D
+H.Monomorphisms()(...)         # construct a monic functor C -> D
+H.Monomorphisms().Full()(...)  # construct a full monic functor C -> D
+```
+
+Named convenience constructors belong to `H` or one of its property subcategories.
+There is no parallel `Cat`, kernel, or helper constructor for the same functor
+(`POL-LEAF-061`, `POL-API-028`).
+
 A category returns an immediate structure functor when that exact functor supplies inherited operations:
 
 ```python

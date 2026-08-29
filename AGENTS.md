@@ -367,7 +367,8 @@ Define the dualizing functor `Op: Cat() -> Cat()`.
 Its actions give `C.op()`, `F.op()`, and `eta.op()` for a category, functor, and natural transformation.
 Dualizing a natural transformation reverses its direction.
 Retain the natural isomorphism `Op compose Op ≅ Id`.
-Derive the standard dual constructions through `Op`.
+Use terminal objects, products, limits, slices, monomorphisms, fibrations, and right Kan extensions as the limit-side owners.
+Derive initial objects, coproducts, colimits, coslices, epimorphisms, opfibrations, and left Kan extensions through `Op`.
 
 For `F: D -> C` and a subcategory monomorphism `P -> C`, define `F.inverse_image(P)` as the pullback `D ×_C P`.
 Retain both pullback projections.

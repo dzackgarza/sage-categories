@@ -717,7 +717,9 @@ eta.op()     # G.op() => F.op(), for eta: F => G
 
 It retains the natural isomorphism `Op compose Op ≅ Id`.
 Thus duality acts on categories, functors, and natural transformations.
-The standard dual pairs use this foundation: initial and terminal objects, products and coproducts, limits and colimits, slices and coslices, monomorphisms and epimorphisms, fibrations and opfibrations, and left and right Kan extensions.
+The limit-side constructions own the implementation: terminal objects, products, limits, slices, monomorphisms, fibrations, and right Kan extensions.
+Their duals are initial objects, coproducts, colimits, coslices, epimorphisms, opfibrations, and left Kan extensions.
+For example, a colimit in `C` is the opposite of the corresponding limit in `C.op()`, and a coslice is the opposite of the corresponding slice in `C.op()`.
 The dualizing functor and its involutivity follow [Mathlib, `CategoryTheory.Cat.opFunctor`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Category/Cat/Op.html); the actions on morphisms, functors, and natural transformations follow [Mathlib, `CategoryTheory.Opposites`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Opposites.html).
 
 ### Inverse-image subcategories

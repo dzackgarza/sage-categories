@@ -213,7 +213,7 @@ P.product_projection(i)   # P -> C_i
 Q.coproduct_injection(i)  # C_i -> Q
 ```
 
-If `S` is a subcategory of `P`, then its monomorphism is an object of `Cat().MonoOver(P)`. Its `product_projection(i)` is that monomorphism followed by the corresponding projection of `P`.
+If `S` is a subcategory of `P`, then its monomorphism is an object of `Cat().Subobjects(P)`. Its `product_projection(i)` is that monomorphism followed by the corresponding projection of `P`.
 
 `C.SliceOver(x)` is the pullback in `Cat()` of `ev_1: Fun([1], C) -> C` along `x: 1 -> C`; `C.CosliceUnder(x)` is the pullback of `ev_0`. Each retains its pullback projections; the varying object is the composite with `ev_0` or `ev_1`.
 
@@ -240,7 +240,7 @@ Mor(Cat()).Faithful()
 Mor(Cat()).FullyFaithful()
 ```
 
-Their `is_full()`, `is_faithful()`, and `is_fully_faithful()` methods return applied predicates.
+Their `is_full()`, `is_faithful()`, and `is_fully_faithful()` methods return containment propositions.
 Direct property construction and assumptions refine the same owned functor.
 These predicates have no computational routes.
 

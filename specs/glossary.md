@@ -3,45 +3,8 @@
 This file is the deterministic vocabulary contract for agent-facing documentation.
 Read it before writing or editing that documentation (`POL-MATH-050`).
 
-Use the required wording in the second column.
-Do not decide from familiarity, repository frequency, or nearby source.
-A prohibited term can occur only in the first column of this table and in Git history.
-
-When a user correction or accepted review prohibits another term, add one row with its exact replacement.
-Do not remove a row after the source becomes clean (`POL-MATH-051`).
-
-## Forbidden vocabulary
-
-| Prohibited term | Required wording |
-| --- | --- |
-| `DeclaredObjectType`, `DeclaredElementType`, `DeclaredMorphismType` | `ObjectType`, `ElementType`, `MorphismType` |
-| `declared functor`, `selected declared functor` | `named functor` |
-| `structural functor` | `structure functor` |
-| `role`, `role class`, `role-class`, `object role`, `element role`, `morphism role` | the exact class name, such as `C.ObjectType`, or “the class compiled for objects of `C`” |
-| `role state`, `role node`, `role map`, `role metadata` | the exact class, constructor datum, structure functor, or class graph that the sentence means |
-| `carrier`, `carrier set`, `carrier surface` | the image under a named functor with stated endpoints |
-| `carrier_projection`, `underlying_object_projection`, `underlying_set`, a generic `underlying_*()` accessor | construct and apply the named functor with stated endpoints |
-| `canonical image`, `canonical ancestor image`, `canonical target image` | `F.on_object(x)` or `F.on_morphism(f)` for the named functor `F` |
-| `structural image`, `structural_image` | the image owned by the named functor `F`; a category has no image operation |
-| `receiver`, `receiver-valued`, `this_object` | the source instance, or the value to which the method applies |
-| `point stage`, `object stage`, `arrow stage`, `classical stage`, `product stage`, `stage comparison`, `stage identity`, `ObjectStageIdentity`, `ArrowStageIdentity`, `stage_comparison` | the exact point, generalized element, or functor action |
-| `constructor conversion`, `construction-input conversion`, or compiler-oriented constructor metadata on a functor | the complete object or morphism action for the public image; private runtime state sharing for compiler mechanics |
-| object, element, or morphism constructor-input wrapper; target-constructor metadata | the actual owned target value returned by the functor action |
-| transport recipe, transport route, canonical transport | the exact named functor or composite |
-| inheritance functor | an ordinary functor selected in `structure_functors()` |
-| projection accessor | the retained projection functor |
-| property implication used to relate property categories | the subcategory monomorphism or inverse-image pullback |
-| generic supercategory | the exact named functor; use Sage supercategory only for the private Sage runtime graph |
-| generic forgetful functor | the exact projection, inclusion, or right adjoint to a named free functor |
-| wrapper, proxy, facade, or view used as a mathematical object | the exact category, functor, universal presentation, or private engine value |
-| method-owner metadata or registry | the method definition on its category-owned implementation class |
-| capability propagation | inherited implementation or property inverse image, stated precisely |
-| `generalized point` | `generalized element` for `T -> X`; use `point` only for `* -> X` |
-| `Ar(C)` and arrow-category API aliases | `Mor(C)` or `Mor(C)(A, B)`; standard `Hom_C(A, B)` remains valid mathematical prose |
-| `MonoOver(X)`, `MonoUnder(X)`, `EpiOver(X)`, `EpiUnder(X)` as public API names | `Subobjects(X)`, `Superobjects(X)`, `CoveringObjects(X)`, `CoveredObjects(X)` |
-| `ChosenSubobjects`, `chosen subobject` | `Subobjects(X)`; each object retains its monomorphism into `X` |
-| `Chosen<Anything>` | `With<Datum>` only when the object retains chosen data; otherwise use the mathematical construction name |
-| generic `_construct` | the exact named constructor for the mathematical construction |
+Use the exact mathematical owner and public spelling in this file.
+Do not record retired names in current documentation.
 
 ## Required distinctions
 
@@ -55,6 +18,9 @@ Do not remove a row after the source becomes clean (`POL-MATH-051`).
 | Morphism of `C` | An object of `Mor(C)`. Thus `C.MorphismType = Mor(C).ObjectType`. |
 | Functor | An ordinary object of `Fun(C, D)`. A category can name many functors with the same endpoints. |
 | Structure functor | An ordinary functor returned by `C.structure_functors()` and used by the kernel to construct inherited class surfaces. Its ordinary object and morphism actions are already complete. It need not be a subcategory monomorphism. |
+| Fixed-object constructions | `C.Subobjects(X)`, `C.Superobjects(X)`, `C.CoveringObjects(X)`, and `C.CoveredObjects(X)`. |
+| Named construction map | The exact retained projection, inclusion, evaluation, or adjoint with stated endpoints. |
+| Functor actions | `F.on_object(X)` and `F.on_morphism(f)` construct the public images owned by `F`. |
 | Subcategory relation | A declared subcategory monomorphism. Python class inheritance and selection as a structure functor do not establish it. |
 | Classes specified by a category `C` | The category specifies `C.ObjectType`, `C.ElementType`, and `C.MorphismType` directly. The kernel constructs them dynamically from structure functors. |
 | Public functor image | The image constructed by the named action `F.on_object(x)` or `F.on_morphism(f)`. |
@@ -79,7 +45,6 @@ Every term below was checked against the cited source before it was recorded (`P
 | inverse-image subcategory | [Mathlib, `ObjectProperty.inverseImage`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/Basic.html): for `F: D -> C` and an object property `P` on `C`, the inverse image contains the objects `X` of `D` for which `P(F(X))` holds. Its associated [full subcategory](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/FullSubcategory.html) is the pullback `D ×_C C.P()`. |
 | whiskering and horizontal composition | [Mathlib, `CategoryTheory.Whiskering`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Whiskering.html): composition on either side is functorial on functor categories. Its action on natural transformations is left or right whiskering; their composite gives horizontal composition. |
 | comma category | [Mathlib, `CategoryTheory.Comma`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Comma/Basic.html): for `F: A -> C` and `G: B -> C`, an object is `(a, b, f)` with `f: F(a) -> G(b)`. The category has projections to `A` and `B` and a natural transformation between the induced composites to `C`. |
-| `MonoOver`, `MonoUnder`, `EpiOver`, `EpiUnder` | [Mathlib, `CategoryTheory.Subobject.MonoOver`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Subobject/MonoOver.html): `MonoOver X` is the category of monomorphisms into `X`; the other three names state the dual slice or coslice restriction. |
 | fiber of a functor | [Mathlib, `CategoryTheory.Functor.Fiber`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/FiberedCategory/Fiber.html): for `p: E -> B` and `b in B`, the fiber has objects of `E` over `b` and morphisms over the identity of `b`. |
 | strict, full, and essential image | The strict image has the literal object image and those target morphisms equal to morphism images. The full image is the full subcategory spanned by the literal object image. [Mathlib, `CategoryTheory.EssentialImage`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/EssentialImage) is the full replete subcategory on objects isomorphic to an object image and supplies the essentially-surjective/fully-faithful factorization. |
 | adjunction | [Mathlib, `CategoryTheory.Adjunction`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Adjunction/Basic.html): selected data `F ⊣ G` consists of a unit, a counit, and the two triangle identities. |

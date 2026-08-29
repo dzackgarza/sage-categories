@@ -52,7 +52,7 @@ They inherit all set operations.
 
 ```python
 X.cardinality()
-Sets().MonoOver(X).from_predicate(predicate)
+Sets().Subobjects(X).from_predicate(predicate)
 ```
 
 Morphism categories, fixed-object methods, universal-construction methods, and operators are inherited from `Cat().ObjectType`.
@@ -178,7 +178,7 @@ For `I = omega`, the exact handler decides `True` when two representatives agree
 
 The inherited fixed-object method is specified in [Fixed-object construction categories](functor.md#fixed-object-construction-categories).
 Its specialization to `Sets()` identifies subobjects with subsets of `X` together with their inclusion monomorphisms.
-`Sets().MonoOver(X).from_predicate(predicate)` constructs the selected subset and its monomorphism into `X`.
+`Sets().Subobjects(X).from_predicate(predicate)` constructs the selected subset and its monomorphism into `X`.
 It lifts no additional structure: when a poset is presented as `(X, R)`, this construction returns a set subobject (`POL-LEAF-060`).
 The predicate returns the membership proposition for a candidate element.
 `ask()` can evaluate that proposition as `True`, `False`, or `Unknown`.
@@ -192,22 +192,22 @@ The set-specific characteristic morphism maps the selected subset to `1 in 2` an
 Image membership remains a proposition when no handler can decide it.
 
 `2 ** X`, with `2 = 1 + 1`, constructs the power object of `X`. It is the function set from `X` to `2`.
-Its points are characteristic morphisms and therefore correspond to the objects of `Sets().MonoOver(X)`.
+Its points are characteristic morphisms and therefore correspond to the objects of `Sets().Subobjects(X)`.
 Set inclusion is an applied proposition.
 The set operations on these subobjects construct owned set subobjects.
 
 ## Finite and fixed-cardinality subsets
 
-Let `U_X: Sets().MonoOver(X) -> Sets()` be the inherited varying-object functor.
+Let `U_X: Sets().Subobjects(X) -> Sets()` be the inherited varying-object functor.
 The inverse image of `Sets().Finite()` along `U_X` is:
 
 ```python
-Sets().MonoOver(X).Finite()
+Sets().Subobjects(X).Finite()
 ```
 
 Its objects are the finite subobjects of `X`.
 The parameterized property category `Sets().OfCardinality(k)` has containment predicate `A.cardinality() == k`.
-The inherited narrowing `Sets().MonoOver(X).OfCardinality(k)` contains the subobjects of cardinality `k`.
+The inherited narrowing `Sets().Subobjects(X).OfCardinality(k)` contains the subobjects of cardinality `k`.
 
 If `X` has a chosen enumeration, these constructions can retain a derived enumeration isomorphism.
 Countability alone does not select one.
@@ -455,10 +455,10 @@ An `Unknown` decision fails loudly rather than being returned as `False`: `Unkno
 ### Equality
 
 Every owned category owns an equality predicate for its objects, for its morphisms, and for the elements of its objects.
-`__eq__` on every owned object, element, and morphism returns the applied equality predicate, and `ask(a == b)` decides it.
+`__eq__` on every owned object, element, and morphism returns the applied equality proposition, and `ask(a == b)` decides it.
 Identity is the first exact positive handler of every equality predicate.
 
-The applied predicate defines `__bool__` to raise.
+The proposition defines `__bool__` to raise.
 The mature reference is SymPy `Relational.__bool__`.
 Therefore `if a == b:` fails loudly.
 Repository code asks the proposition, requires a decided result where necessary, and then branches on that decision.
@@ -515,7 +515,7 @@ The implementation satisfies this specification when the public API establishes 
 
 - cardinal arithmetic is defined on exact cardinals only;
 
-- `a == b` on owned values is an applied predicate, `bool(a == b)` raises, and identity makes `ask(a == a)` return `True`;
+- `a == b` on owned values is a proposition, `bool(a == b)` raises, and identity makes `ask(a == a)` return `True`;
 
 - every operation specified as a predicate returns an applied proposition;
 

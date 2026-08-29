@@ -208,7 +208,7 @@ Such a product remains a poset.
 
 ## Finite-poset API
 
-`PartiallyOrderedSets().MonoOver(P).from_predicate(predicate)` constructs the induced subposet, its restricted order, and its monomorphism into `P`.
+`PartiallyOrderedSets().Subobjects(P).from_predicate(predicate)` constructs the induced subposet, its restricted order, and its monomorphism into `P`.
 Finite-poset algorithms use owned poset elements and owned finite subobjects.
 They do not expose backend elements, Python iterators, or built-in containers.
 They expose these primitive operations:

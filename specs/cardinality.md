@@ -376,7 +376,7 @@ prod_{i in I} kappa_i
 ### Cardinal comparison predicates
 
 Equality and order use standard Python notation.
-Each expression returns an applied predicate.
+Each expression returns a proposition.
 The exact handlers know:
 
 - Exact finite comparisons.

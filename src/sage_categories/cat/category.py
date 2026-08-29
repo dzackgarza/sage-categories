@@ -58,6 +58,7 @@ from sage_categories.kernel.roles import (
     MorphismOfCategory,
     ObjectOfCategory,
     Role,
+    kernel_base,
     role_of,
 )
 
@@ -133,6 +134,19 @@ def _universal_declaration(cls: type[CategoryDeclaration], role: Role) -> type[C
     return None if universe is None or cls is universe else vars(universe)[role.value]
 
 
+# The category class that wrote each declaration, and the kind it wrote it for.  A
+# declaration states one category's mathematics at one kind, so a second category naming
+# it at the same kind states that category's mathematics and not its own; the same class
+# at another kind is the level identity ``Mor(K).ObjectType = K.MorphismType``.  A kernel
+# role class is written by no category and is excluded: naming one says what an empty
+# declaration says, which ``Mor(C)`` does for its objects.
+_declaration_owners: dict[type[CategoryPoint], tuple[type[CategoryDeclaration], Role]] = {}
+
+
+def _kernel_declarations() -> frozenset[type[CategoryPoint]]:
+    return frozenset({*(kernel_base(role) for role in Role), CategoryPoint})
+
+
 def _require_declarations(cls: type[CategoryDeclaration]) -> None:
     """Every category class writes its own three declarations, in its own body (POL-CAT-057).
 
@@ -148,15 +162,19 @@ def _require_declarations(cls: type[CategoryDeclaration]) -> None:
     mathematics at a kind, the class it writes has an empty body, and that empty body is
     the statement.
 
-    The three ways of inheriting a declaration are the Python base, ``Cat()``, and a
-    declaration written over another declaration.  A base is read off this class's own
-    ancestry.  ``Cat()``'s three are every category's, including those of a class that
-    does not derive from ``CategoryOfCategories``: the kernel compiles ``Cat()``'s
-    declarations into the role classes every value reaches, so naming one states nothing
-    either.  A declaration standing on another carries that other category's body onto
-    this node when the kernel installs it, which is an implementation base no structure
-    functor supplied, so a declaration stands only on its role's kernel class
-    (POL-CAT-053, ``kernel/compiler.py``, ``borrowed_declaration``).
+    The four ways of inheriting a declaration are the Python base, ``Cat()``, another
+    category's declaration named here, and a declaration written over another
+    declaration.  A base is read off this class's own ancestry.  ``Cat()``'s three are
+    every category's, including those of a class that does not derive from
+    ``CategoryOfCategories``: the kernel compiles ``Cat()``'s declarations into the role
+    classes every value reaches, so naming one states nothing either.  Another category's
+    declaration, named at the same kind, carries that category's written body onto this
+    node when the kernel installs it (``compiler._install_written_body``) and makes
+    ``catalogue`` record this category as the owner of methods it never stated; a
+    declaration standing on another carries the same body through a base, which is an
+    implementation base no structure functor supplied, so a declaration stands only on
+    its role's kernel class (POL-CAT-053, ``kernel/compiler.py``,
+    ``borrowed_declaration``).
 
     Both questions are asked by identity, of the class object and of the ``Role``, never
     of a module or a name: a declaration that moves module or is renamed is the same
@@ -180,16 +198,16 @@ def _require_declarations(cls: type[CategoryDeclaration]) -> None:
             f"inherits and which therefore states nothing about this category.  Write this category's own class; "
             f"where it adds no new mathematics its body is empty (POL-CAT-057)"
         )
-        if issubclass(declared, CategoryDeclaration):
-            # The objects of this category are categories, and the class of categories is
-            # ``Cat().ObjectType``.  A subclass of it is a second category class -- a
-            # category to declare, not a declaration to write -- so naming it is the
-            # identity the architecture states, as ``Fun`` names ``Cat().MorphismType``.
-            continue
         assert declared is not _universal_declaration(cls, role), (
             f"{cls.__name__}.{role.value} names ``Cat()``'s {role.value} declaration, which every category class "
             f"inherits and which therefore states nothing about this one.  Write this category's own class; where "
             f"it adds no new mathematics its body is empty (POL-CAT-057)"
+        )
+        owner = _declaration_owners.get(declared)
+        assert owner is None or owner[1] is not role, (
+            f"{cls.__name__}.{role.value} names the {role.value} declaration of {owner[0].__name__}, whose "
+            f"mathematics it would state instead of its own.  Write this category's own class; where it adds no "
+            f"new mathematics its body is empty (POL-CAT-053, POL-CAT-057)"
         )
         borrowed = compiler.borrowed_declaration(declared)
         assert borrowed is None, (
@@ -197,6 +215,10 @@ def _require_declarations(cls: type[CategoryDeclaration]) -> None:
             f"body onto this one.  A declaration stands on its role's kernel class alone; the implementation "
             f"bases come from the selected structure functors (POL-CAT-053, POL-CAT-057)"
         )
+    for role in Role:
+        declared = vars(cls)[role.value]
+        if declared not in _kernel_declarations():
+            _declaration_owners.setdefault(declared, (cls, role))
 
 
 class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):

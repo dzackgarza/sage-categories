@@ -33,7 +33,7 @@ the isofibration condition holds.
 
 from __future__ import annotations
 
-from sage_categories.cat.category import Assignment, Category, CategoryOfCategories, OnMorphism, OnObject
+from sage_categories.cat.category import Assignment, Category, OnMorphism, OnObject
 from sage_categories.cat.declarations import Groupoids
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategory
@@ -52,11 +52,12 @@ class GroupoidsCategory(Category[[OnObject, OnMorphism], [Assignment]]):
 
     # A groupoid is a category, a point of a groupoid is an object of it, and a functor
     # between groupoids is a functor.  Groupoid theory would add its mathematics to the
-    # two bodies below and the documents state none, so both are empty (POL-CAT-057).
-    # The object role is the one identity a category of categories cannot write over: the
-    # class of categories is ``Cat().ObjectType``, and a subclass of it is a second
-    # category class -- a category to declare, not a declaration to write.
-    ObjectType = CategoryOfCategories.ObjectType
+    # three bodies below and the documents state none, so all three are empty
+    # (POL-CAT-057).  That the objects here are categories is carried by ``U``, the
+    # inclusion this category selects: a selected structure functor is what makes this
+    # class inherit ``Cat()``'s compiled object class (POL-CAT-053, POL-KERNEL-028).
+    class ObjectType(ObjectOfCategory):
+        """A groupoid, which is a category."""
 
     class ElementType(ElementOfObject):
         """A point ``* -> G`` of a groupoid, whose value is an object of it."""

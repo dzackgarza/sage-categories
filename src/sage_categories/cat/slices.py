@@ -122,6 +122,13 @@ slice_member.register_handler(_slice_member_by_fixed_end)
 class SliceLikeCategory(PullbackCategory):
     """The pullback of an evaluation ``ev_k: Fun([1], C) -> C`` along ``x: 1 -> C``; ``k = 1`` is the slice, ``k = 0`` the coslice."""
 
+    # An object is a pullback pair whose fixed end is ``x``: an arrow of ``C`` with one
+    # endpoint pinned.  The arrow is its whole content, so the varying object is read as
+    # ``ev_k`` after the projection and is not a second datum.
+    ObjectType = PullbackCategory.ObjectType
+    ElementType = PullbackCategory.ElementType
+    MorphismType = PullbackCategory.MorphismType
+
     def __init__(self, base: Category, fixed: ObjectOfCategory, fixed_label: int) -> None:
         self._base_of_slice = base
         self._fixed = fixed
@@ -204,6 +211,12 @@ class SliceLikeCategory(PullbackCategory):
 class SliceCategory(SliceLikeCategory):
     """``C.SliceOver(x)``: the strict pullback of ``ev_1`` along ``x: 1 -> C``, with the generalized elements of ``x`` as objects."""
 
+    # An object is a morphism ``a -> x``, a generalized element of ``x``, whose varying
+    # object is its domain.
+    ObjectType = SliceLikeCategory.ObjectType
+    ElementType = SliceLikeCategory.ElementType
+    MorphismType = SliceLikeCategory.MorphismType
+
     def __init__(self, base: Category, fixed: ObjectOfCategory) -> None:
         super().__init__(base, fixed, 1)
 
@@ -231,6 +244,11 @@ class SliceCategory(SliceLikeCategory):
 
 class CosliceCategory(SliceLikeCategory):
     """``C.CosliceUnder(x)``: the strict pullback of ``ev_0`` along ``x: 1 -> C``."""
+
+    # An object is a morphism ``x -> a``, whose varying object is its codomain.
+    ObjectType = SliceLikeCategory.ObjectType
+    ElementType = SliceLikeCategory.ElementType
+    MorphismType = SliceLikeCategory.MorphismType
 
     def __init__(self, base: Category, fixed: ObjectOfCategory) -> None:
         super().__init__(base, fixed, 0)
@@ -318,6 +336,13 @@ class SliceProperty(FullSubcategory[[tuple[MorphismOfCategory, MorphismOfCategor
     object to its arrow.
     """
 
+    # A subobject of ``x`` is the pair ``(a, j: a -> x)`` with ``j`` monic, and the pair
+    # is the object of the slice, so the property adds nothing to it.  ``j`` is read
+    # through the retained ``defining_arrow()`` functor rather than stored again.
+    ObjectType = FullSubcategory.ObjectType
+    ElementType = FullSubcategory.ElementType
+    MorphismType = FullSubcategory.MorphismType
+
     def __init__(self, ambient: SliceLikeCategory, property_category: Category) -> None:
         self._property_category = property_category
         self._retained: MonoDict = MonoDict()
@@ -365,6 +390,11 @@ class SubobjectsOfProduct(SliceProperty):
     product, so the method belongs to the subobjects of a product and to no other
     subobject (POL-CAT-094, POL-KERNEL-025).
     """
+
+    # The product structure of ``P`` adds no point and no triangle; it adds
+    # ``product_projection`` on the subobject below.
+    ElementType = SliceProperty.ElementType
+    MorphismType = SliceProperty.MorphismType
 
     class ObjectType(ObjectOfCategory):
         """A subobject ``j: S -> P`` of a product: its components are ``P``'s projections after ``j``."""

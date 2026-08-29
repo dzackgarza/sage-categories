@@ -123,12 +123,13 @@ def place(value: CategoryPoint, category: Category) -> None:
         value.__class__ = role_class
         return
     declared = type(value)
-    value.__class__ = dynamic_class(
-        f"{declared.__name__}_with_category",
-        (declared, role_class),
-        doccls=declared,
-        prepend_cls_bases=False,
-    )
+    with compiler.building_role_classes():
+        value.__class__ = dynamic_class(
+            f"{declared.__name__}_with_category",
+            (declared, role_class),
+            doccls=declared,
+            prepend_cls_bases=False,
+        )
 
 
 def _join(current: Category, target: Category) -> Category:

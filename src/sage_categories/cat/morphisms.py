@@ -238,6 +238,11 @@ class IsomorphismsCategory[**MorphismData, **TwoMorphismData](PropertySubcategor
 
     _base_category_class_and_axiom = (MorphismCategory, "Isomorphisms")
 
+    # Invertibility constrains the morphism, not its points or the 2-morphisms between
+    # two of them; ``inverse()`` is the whole delta and it is on the object below.
+    ElementType = PropertySubcategory.ElementType
+    MorphismType = PropertySubcategory.MorphismType
+
     class ObjectType(MorphismOfCategory):
         """An isomorphism of ``C``: the isomorphism category owns inversion (POL-CAT-079)."""
 
@@ -253,6 +258,13 @@ class EndomorphismsCategory[**MorphismData, **TwoMorphismData](PredicateSubcateg
     the decision as ``_predicate`` (POL-CAT-060, D97).
     """
 
+    # Equal endpoints make ``End_C(X)`` a monoid under composition, but that monoid is
+    # the category ``Mor(C)(X, X)`` and its unit is ``one()`` there (D84, D86), so the
+    # endomorphism itself gains nothing.
+    ObjectType = PredicateSubcategory.ObjectType
+    ElementType = PredicateSubcategory.ElementType
+    MorphismType = PredicateSubcategory.MorphismType
+
     _base_category_class_and_axiom = (MorphismCategory, "Endomorphisms")
 
     def _predicate(self, candidate: MorphismOfCategory) -> Decision:
@@ -262,6 +274,13 @@ class EndomorphismsCategory[**MorphismData, **TwoMorphismData](PredicateSubcateg
 
 class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[TwoMorphismData, []]):
     """``Mor(C)(A, B)``: the full subcategory of ``Mor(C)`` on the morphisms ``A -> B``."""
+
+    # Fixing the endpoints selects morphisms; it does not change what one is.  What the
+    # endpoints make available belongs to the hom category, which is a monoid under
+    # composition when ``A`` is ``B``.
+    ObjectType = FullSubcategory.ObjectType
+    ElementType = FullSubcategory.ElementType
+    MorphismType = FullSubcategory.MorphismType
 
     def __init__(self, morphisms: MorphismCategory[MorphismData, TwoMorphismData], domain: ObjectOfCategory, codomain: ObjectOfCategory) -> None:
         self._domain_object = domain

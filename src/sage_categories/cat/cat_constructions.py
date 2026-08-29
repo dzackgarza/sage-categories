@@ -635,6 +635,12 @@ class SharedCarrierPullback(PullbackCategory):
     ancestor object; the pullback retains that object once with both structures.
     """
 
+    # The pair carries one shared carrier with two structures over it, which is a
+    # pullback pair whose components agree by being the same value.
+    ObjectType = PullbackCategory.ObjectType
+    ElementType = PullbackCategory.ElementType
+    MorphismType = PullbackCategory.MorphismType
+
     def __call__(self, pair: tuple[ObjectOfCategory, ObjectOfCategory]) -> PullbackCategory.ObjectType:
         first, second = pair
         assert self._first_functor.on_object(first) is self._second_functor.on_object(second), (

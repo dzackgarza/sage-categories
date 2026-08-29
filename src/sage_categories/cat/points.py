@@ -52,6 +52,11 @@ class PointMorphismCategory(MorphismCategory[[], []]):
     """The one-object category whose sole object is ``1_X``."""
 
 
+    # ``Mor({X})`` has one object, ``1_X``, and one morphism, its identity 2-morphism.
+    ObjectType = MorphismCategory.ObjectType
+    ElementType = MorphismCategory.ElementType
+    MorphismType = MorphismCategory.MorphismType
+
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         return point_identity(candidate, self._base)
 class PointCategory(Category[[], []]):

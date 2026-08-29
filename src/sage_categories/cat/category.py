@@ -5,7 +5,14 @@ bootstrap, ``Category`` is bound to the compiled ``Cat().ObjectType``.  Every
 category in this repository is constructed as an instance of a ``Category``
 subclass, placed in ``Cat()``, and
 compiled by the kernel into its three role classes ``ObjectType``, ``ElementType``,
-and ``MorphismType`` (POL-CAT-002/057).  ``Category`` owns the universal surface:
+and ``MorphismType`` (POL-CAT-002/057).
+
+Every category class writes all three in its own body, and ``__init_subclass__``
+requires them where an omission happens, at the ``class`` statement.  A category that
+introduces no new mathematics at a role names the class its parent writes --
+``ObjectType = FullSubcategory.ObjectType`` -- and that assignment is the statement:
+same kind, no new operation.  There is one form; inheriting a parent's declaration
+without saying so is not it, because it cannot be told from stating nothing.  ``Category`` owns the universal surface:
 construction dispatch, membership, the ``Mor(n, C)`` tower, identities and
 composition, the equality predicate, and property narrowing (POL-CAT-084).
 
@@ -98,6 +105,17 @@ def _morphism_set() -> ValuedPredicate:
     return predicate
 
 
+def _written_class(runtime_class: type[CategoryPoint]) -> type[CategoryPoint]:
+    """The class a module's source wrote for this value, past what the kernel built over it.
+
+    ``place`` strengthens a value's class when its placement improves, building
+    ``dynamic_class(f"{declared.__name__}_with_category", (declared, role_class))`` with
+    the written class first (``kernel/refinement.py``).  So the written class is the first
+    one in the MRO that the kernel did not build.
+    """
+    return next(found for found in runtime_class.__mro__ if not found.__name__.endswith("_with_category"))
+
+
 class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     """The local ``Cat().ObjectType`` declaration."""
 
@@ -110,13 +128,21 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         self._initialize(self.category())
 
     def __init_subclass__(cls) -> None:
-        """Connect a class that names the declaration it implements (D80).
+        """Require the three declarations, and connect a class that names what it implements (D80).
 
-        This is ``PropertySubcategory.__init_subclass__`` generalized from an axiom
-        subcategory to a declared base category: there too the implementing class names
-        what it implements in its own body, and the declaration holds the link.
+        A category class states its three implementation classes in its own body
+        (POL-CAT-057), and the ``class`` statement is where an omission happens, so it is
+        where the omission is reported.  ``compiler`` builds role classes over this one at
+        runtime; those state no category and are not checked.
         """
         super().__init_subclass__()
+        if not compiler.building_role_class():
+            missing = [role.value for role in Role if role.value not in vars(cls)]
+            assert not missing, (
+                f"{cls.__name__} writes no {' or '.join(missing)} declaration.  Every category class writes all "
+                f"three in its own body; where it adds no new mathematics it writes its parent's class, as "
+                f"``ObjectType = FullSubcategory.ObjectType`` (POL-CAT-057)"
+            )
         name = cls.__dict__.get("_implements")
         if name is not None:
             Cat().implement(name, cls)
@@ -222,18 +248,18 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         writes for that mathematical kind (POL-KERNEL-028), so this reads the one
         declaration the architecture fixes, not a capability discovered by probing.
 
-        Every category writes all three (POL-CAT-057).  A category that introduces no new
-        mathematics at a role still writes the class, and its empty body is that
-        statement; the kernel compiles what a category wrote and supplies nothing in its
-        place.  A category class inherits the declaration of the category class it
-        specializes, which states that the two share the mathematical kind.
+        Every category writes all three, in its own class body (POL-CAT-057).  A category
+        that introduces no new mathematics at a role writes the class its parent writes --
+        ``ObjectType = FullSubcategory.ObjectType`` -- and that assignment is the
+        statement: same kind, no new operation.  So this reads the body and never the
+        inherited attribute, which cannot tell a category that stated nothing from one
+        that stated this.
+
+        ``place`` builds a ``..._with_category`` class over the written one when a value's
+        placement improves (``kernel/refinement.py``), so the body to read is the first
+        class the source writes, which is where that construction puts it.
         """
-        declared = getattr(type(self), role.value, None)
-        assert declared is not None, (
-            f"{type(self).__name__} writes no {role.value} declaration, and no category class it derives from "
-            f"writes one; give it one (POL-CAT-057)"
-        )
-        return declared
+        return vars(_written_class(type(self)))[role.value]
 
     def role_class(self, role: Role) -> type[CategoryPoint]:
         """The compiled role class the kernel installed on this category value.
@@ -839,6 +865,13 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
 
         A root containing the base narrows nothing; a set of roots that is exactly one
         root's own closed set is that root.
+
+        A root belongs to this base when it narrows it, which the root states directly.
+        Established placement is the wrong question: a subcategory monomorphism of ``Fun``
+        is itself placed in a property category of ``Fun``, so those placements are queued
+        until ``FunctorsCategory._bootstrap`` drains them, and a narrowing taken before
+        that would build a second value for a category that already exists.  One
+        mathematical category with two values cannot compile one class.
         """
         base = self.narrowing_base()
         if base is not self:
@@ -853,7 +886,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
             return self
         selected = tuple(root for _, root in ordered)
         for root in selected:
-            if is_subcategory(root, self) and {member.ordinal() for member in root.narrowing_roots()} == set(closed):
+            if root.narrowing_base() is self and {member.ordinal() for member in root.narrowing_roots()} == set(closed):
                 return root
         key = tuple(ordinal for ordinal, _ in ordered)
         if key not in self._narrowings:
@@ -956,10 +989,12 @@ class FunctorData:
 class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignment]]):
     """The singleton ``Cat()``."""
 
-    # The three classes ``Cat()`` writes.  ``ObjectType`` is a statement rather than a
-    # nested class because ``Cat()`` is an object of ``Cat()``: this class is itself a
-    # ``CategoryDeclaration``, and Python evaluates a base before the body that would
-    # nest it.
+    # The three classes ``Cat()`` writes, in the one form every category class uses: name
+    # the class this category's role is.  ``Cat()`` is an object of ``Cat()``, so this
+    # class derives from the one below and Python evaluates a base before the body, which
+    # is why that class is written above rather than between these lines.  Where it is
+    # written is not a second form; ``ObjectType = FullSubcategory.ObjectType`` and
+    # ``MorphismCategory.ObjectType = MorphismOfCategory`` say the same thing the same way.
     ObjectType = CategoryDeclaration
 
     # Inhabitation and emptiness of a category, as the two property subcategories

@@ -113,6 +113,11 @@ class WideSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
 class WideMorphismCategory(MorphismCategory):
     """``Mor(W)``: a morphism of ``C`` is a member exactly when it is placed in ``P``."""
 
+    # An object of ``Mor(W)`` is a morphism of ``C`` placed in ``P``: ``W`` narrows the
+    # morphisms and nothing else.
+    ObjectType = MorphismCategory.ObjectType
+    ElementType = MorphismCategory.ElementType
+    MorphismType = MorphismCategory.MorphismType
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         return self._base.morphism_property().membership_proposition(candidate)
@@ -130,6 +135,12 @@ class WideFixedEndpointCategory(FixedEndpointCategory):
     placement a value enters through either spelling is comparable with the other
     (POL-CAT-068, POL-CAT-084).
     """
+
+    # ``Mor(W)(A, B)`` is by definition ``Mor(C)(A, B).P()``: the same objects, so the
+    # same three classes.
+    ObjectType = FixedEndpointCategory.ObjectType
+    ElementType = FixedEndpointCategory.ElementType
+    MorphismType = FixedEndpointCategory.MorphismType
 
     def structure_functors(self) -> tuple[Functor, ...]:
         wide = self.ambient().base_category()

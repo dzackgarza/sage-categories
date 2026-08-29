@@ -42,7 +42,8 @@ in C3 order and initialize every reachable node once (POL-KERNEL-028/029).
 from __future__ import annotations
 
 import inspect
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from types import FunctionType
 from typing import TYPE_CHECKING, Concatenate, Generic, NamedTuple
 
@@ -90,6 +91,8 @@ __all__ = [
     "Entry",
     "Node",
     "SemanticCollisionError",
+    "building_role_class",
+    "building_role_classes",
     "catalogue",
     "compile_category",
     "controlled_bases",
@@ -141,6 +144,31 @@ _ROLE_POSITIONS: dict[Role, int] = {
 }
 
 _COMPILE_ORDER = (Role.ELEMENT, Role.OBJECT, Role.MORPHISM)
+
+# Where a run of written declarations ends: the kernel's own chain, which every role class
+# reaches and which no category writes.
+_KERNEL_CLASSES = frozenset({*(kernel_base(role) for role in Role), CategoryPoint, object})
+
+# Whether the kernel is building a role class right now.  A role class over a category
+# class is a subclass of it, so it reaches that class's own ``__init_subclass__``; it
+# states no category and declares no roles (POL-CAT-057).
+_building_role_class = False
+
+
+def building_role_class() -> bool:
+    """Whether the class being created is one the kernel is building rather than one a module writes."""
+    return _building_role_class
+
+
+@contextmanager
+def building_role_classes() -> Iterator[None]:
+    """Mark the kernel's own class construction, so the declaration check skips what it builds."""
+    global _building_role_class
+    previous, _building_role_class = _building_role_class, True
+    try:
+        yield
+    finally:
+        _building_role_class = previous
 
 # The construction input a node carries, by the role the node lives in.
 _INPUT_TYPES: dict[Role, type] = {
@@ -384,10 +412,24 @@ def _written_initializer(local: type[CategoryPoint]) -> FunctionType | None:
     Where the declaration is the node's compiled class, the wrapper the compile installs
     takes the place of its ``__init__``.  So the first compile of a declaration reads it,
     and a recompile (D80) reads what that compile retained.
+
+    A declaration that specializes another may state no initializer of its own and still
+    need its parent's: a slice object introduces no state and must run the pullback
+    object's initializer, which sets the pair it is.  The run is searched for the first
+    one, and a declaration already compiled answers from what its own compile retained,
+    never from the wrapper now standing in its place.
     """
     if local not in _written_initializers:
-        initializer = vars(local).get("__init__")
-        _written_initializers[local] = initializer if isinstance(initializer, FunctionType) else None
+        found: FunctionType | None = None
+        for klass in _written_chain(local):
+            if klass in _written_initializers:
+                found = _written_initializers[klass]
+            else:
+                initializer = vars(klass).get("__init__")
+                found = initializer if isinstance(initializer, FunctionType) else None
+            if found is not None:
+                break
+        _written_initializers[local] = found
     return _written_initializers[local]
 
 
@@ -493,7 +535,8 @@ def _derived_class(current: Node, local: type[CategoryPoint], bases: tuple[type[
     """
     written = () if any(issubclass(base, local) for base in bases) else (local,)
     try:
-        compiled = dynamic_class(f"{current.category!r}.{current.role.value}", (*written, *bases), doccls=local, cache=False)
+        with building_role_classes():
+            compiled = dynamic_class(f"{current.category!r}.{current.role.value}", (*written, *bases), doccls=local, cache=False)
     except TypeError as conflict:
         raise TypeError(
             f"the {current.role.value} class of {current.category!r} has no linearization over "
@@ -509,10 +552,28 @@ def _derived_class(current: Node, local: type[CategoryPoint], bases: tuple[type[
     return compiled
 
 
+def _written_chain(local: type[CategoryPoint]) -> tuple[type[CategoryPoint], ...]:
+    """``local`` and the declarations it specializes, down to where the kernel's chain begins.
+
+    A category class that specializes another writes its declaration as a subclass of
+    that class's declaration -- ``SliceCategory.ObjectType`` over
+    ``SliceLikeCategory.ObjectType`` over ``PullbackCategory.ObjectType`` -- so the
+    specialized category keeps the operations its parent declared instead of shadowing
+    them.  A run of written classes is therefore in the MRO where a single declaration
+    would otherwise be.
+    """
+    chain: list[type[CategoryPoint]] = []
+    for klass in local.__mro__:
+        if klass is Generic or klass in _KERNEL_CLASSES:
+            break
+        chain.append(klass)
+    return tuple(chain)
+
+
 def _written_base(found: Node) -> tuple[type[CategoryPoint], ...]:
-    """The declaration a node that could not compile it carries as its own first base."""
+    """The declarations a node that could not compile its own carries above its compiled class."""
     local = found.category.local_role_class(found.role)
-    return () if found.category.role_class(found.role) is local else (local,)
+    return () if found.category.role_class(found.role) is local else _written_chain(local)
 
 
 def _assert_linearized(current: Node, compiled: type[CategoryPoint]) -> None:

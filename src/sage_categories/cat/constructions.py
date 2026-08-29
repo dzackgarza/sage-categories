@@ -163,6 +163,13 @@ class ApexCategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismDa
     diagram it constructed from.
     """
 
+    # An apex is a value of ``C``, not a wrapper around one, and the family's
+    # monomorphism is identity on values.  A subclass nests its own ``ObjectType`` for
+    # the surface its universal data gives it.
+    ObjectType = FullSubcategory.ObjectType
+    ElementType = FullSubcategory.ElementType
+    MorphismType = FullSubcategory.MorphismType
+
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData]) -> None:
         self._data: MonoDict = MonoDict()
         self._constructed: MonoDict = MonoDict()
@@ -247,6 +254,11 @@ class ApexCategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismDa
 class LimitsCategory(ApexCategory):
     """``C.Limits(I)``: chosen limits of diagrams of one shape ``I``."""
 
+    # A point of a chosen limit is a cone over the diagram with apex ``1_C``; the
+    # mediator of a cone is a morphism of ``C`` and not a further kind.
+    ElementType = ApexCategory.ElementType
+    MorphismType = ApexCategory.MorphismType
+
     class ObjectType(ObjectOfCategory):
         """A chosen limit: an object of ``C`` whose family retains its diagram, limiting cone, and mediator rule."""
 
@@ -307,6 +319,10 @@ class LimitsCategory(ApexCategory):
 
 class ProductsCategory(ApexCategory):
     """``C.Products()``: chosen products over every discrete shape (POL-CAT-093)."""
+
+    # A point of a chosen product is a family of points, one into each factor.
+    ElementType = ApexCategory.ElementType
+    MorphismType = ApexCategory.MorphismType
 
     class ObjectType(ObjectOfCategory):
         """A chosen product over a discrete shape: an object of ``C`` with its projections and mediator rule."""
@@ -375,6 +391,11 @@ class ProductsCategory(ApexCategory):
 class ColimitsCategory(ApexCategory):
     """``C.Colimits(I)``: chosen colimits of diagrams of one shape ``I``."""
 
+    # The universal property of a colimit describes the morphisms *out* of the apex, so
+    # it fixes nothing about a point of it.  That is the asymmetry with ``LimitsCategory``.
+    ElementType = ApexCategory.ElementType
+    MorphismType = ApexCategory.MorphismType
+
     class ObjectType(ObjectOfCategory):
         """A chosen colimit: an object of ``C`` whose family retains its diagram, colimiting cocone, and mediator rule."""
 
@@ -435,6 +456,11 @@ class ColimitsCategory(ApexCategory):
 
 class CoproductsCategory(ApexCategory):
     """``C.Coproducts()``: chosen coproducts over every discrete shape (POL-CAT-093)."""
+
+    # A point of a chosen coproduct is unconstrained, as for a colimit.  That a point of
+    # a disjoint union factors through one injection is a fact about ``Sets()``.
+    ElementType = ApexCategory.ElementType
+    MorphismType = ApexCategory.MorphismType
 
     class ObjectType(ObjectOfCategory):
         """A chosen coproduct over a discrete shape: an object of ``C`` with its injections and mediator rule."""
@@ -517,6 +543,12 @@ indexed_by.register_handler(_indexed_by_shape)
 class DiscreteLimits(FullSubcategory[[MorphismOfCategory], []]):
     """``C.Limits(Discrete(S))``: the full subcategory of ``C.Products()`` on the products indexed by ``Discrete(S)``."""
 
+    # Fixing the index adds no operation: ``product_projection(i)`` is already available
+    # from ``C.Products()`` and is the same morphism here.
+    ObjectType = FullSubcategory.ObjectType
+    ElementType = FullSubcategory.ElementType
+    MorphismType = FullSubcategory.MorphismType
+
     def __init__(self, products: ProductsCategory, shape: Category) -> None:
         self._shape = shape
         self._limit_functor: MonoDict = MonoDict()
@@ -570,6 +602,11 @@ class DiscreteLimits(FullSubcategory[[MorphismOfCategory], []]):
 
 class DiscreteColimits(FullSubcategory[[MorphismOfCategory], []]):
     """``C.Colimits(Discrete(S))``: the full subcategory of ``C.Coproducts()`` on the coproducts indexed by ``Discrete(S)``."""
+
+    # Fixing the index adds no operation, as for ``DiscreteLimits``.
+    ObjectType = FullSubcategory.ObjectType
+    ElementType = FullSubcategory.ElementType
+    MorphismType = FullSubcategory.MorphismType
 
     def __init__(self, coproducts: CoproductsCategory, shape: Category) -> None:
         self._shape = shape

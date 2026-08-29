@@ -33,6 +33,30 @@ The structure functors form this commutative graph:
 
 Both paths from finite total orders to sets supply the same set constructor datum.
 
+Let `U: PartiallyOrderedSets() -> Sets()` be the named projection `(X, R) |-> X`.
+Then
+
+\[
+\mathbf{FinPos}
+=
+\mathbf{Pos}\times_{\mathbf{Set}}\mathbf{FinSet}
+=
+U^{-1}(\mathbf{FinSet}).
+\]
+
+Thus `FinitePosets()` is `U.inverse_image(Sets().Finite())` and retains this pullback square.
+The corresponding projection from total orders gives
+
+\[
+\mathbf{FinTotOrd}
+=
+\mathbf{TotOrd}\times_{\mathbf{Set}}\mathbf{FinSet}
+=
+\mathbf{TotOrd}\times_{\mathbf{Pos}}\mathbf{FinPos}.
+\]
+
+These are instances of the inverse-image subcategory construction in [Functors and structural inheritance](functor.md#inverse-image-subcategories).
+
 Each category owns complete implementation classes:
 
 - `ObjectType` implements its objects.
@@ -117,6 +141,7 @@ It does not enter either total-order category.
 
 `FiniteTotallyOrderedSets()` accepts an established finite total order.
 It uses the same poset elements, comparisons, and named set images as the two structure-functor branches above.
+Its two displayed pullback presentations retain the same named projection to sets.
 
 ## Canonical simplex orders
 
@@ -264,7 +289,7 @@ Leaf code declares only its mathematical classes and structure functors.
 
 See [Leaf category implementations](leaves.md) and [Structural resolution](resolution.md).
 
-The governing policies include `POL-MATH-001`, `POL-MATH-016` through `POL-MATH-035`, `POL-CAT-020`, `POL-CAT-061` through `POL-CAT-084`, `POL-LEAF-018` through `POL-LEAF-057`, and `POL-KERNEL-001` through `POL-KERNEL-026`.
+The governing policies include `POL-MATH-001`, `POL-MATH-016` through `POL-MATH-035`, `POL-CAT-020`, `POL-CAT-061` through `POL-CAT-100`, `POL-LEAF-018` through `POL-LEAF-057`, and `POL-KERNEL-001` through `POL-KERNEL-026`.
 
 ## Acceptance conditions
 
@@ -279,6 +304,8 @@ The implementation satisfies this specification when the public API establishes 
 - the two-element equality order remains outside total-order categories;
 
 - total-order elements use inherited poset comparison;
+
+- `FinitePosets()` and `FiniteTotallyOrderedSets()` expose their inverse-image pullback squares;
 
 - all inherited set operations work through Sage's controlled class linearization;
 

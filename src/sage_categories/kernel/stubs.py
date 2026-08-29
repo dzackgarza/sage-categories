@@ -255,9 +255,9 @@ def _home(category: Category) -> str:
 def _written(klass: type) -> bool:
     """Whether a class is one a module's source writes, rather than one built at runtime.
 
-    The compiler builds a class over the written declaration at every node whose category
-    shares that declaration with a family (``compiler._derived_class``).  Such a class is
-    bound nowhere, and a stub must never name one.
+    The compiler builds a class over the written declaration at every live node
+    (``compiler._compiled_class``).  Such a class is bound nowhere, and a stub must never
+    name one.
 
     A qualified name a module writes runs through classes: ``Sets.ObjectType`` names a
     nested class of a written class.  The compiler gives a compiled role the same shape

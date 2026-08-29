@@ -7,12 +7,13 @@ subclass, placed in ``Cat()``, and
 compiled by the kernel into its three role classes ``ObjectType``, ``ElementType``,
 and ``MorphismType`` (POL-CAT-002/057).
 
-Every category class writes all three in its own body, and ``__init_subclass__``
-requires them where an omission happens, at the ``class`` statement.  A category that
-introduces no new mathematics at a role names the class its parent writes --
-``ObjectType = FullSubcategory.ObjectType`` -- and that assignment is the statement:
-same kind, no new operation.  There is one form; inheriting a parent's declaration
-without saying so is not it, because it cannot be told from stating nothing.  ``Category`` owns the universal surface:
+Every category class names all three in its own body, and ``__init_subclass__`` requires
+them at the ``class`` statement, where an omission happens.  A category that introduces
+no new mathematics at a role writes a class with an empty body, and that empty body is
+the statement: same kind, no new operation.  One class constructs a whole family of
+categories and writes one declaration for the family; each member compiles its own role
+class over it (``kernel/compiler.py``, ``_compiled_class``).
+``Category`` owns the universal surface:
 construction dispatch, membership, the ``Mor(n, C)`` tower, identities and
 composition, the equality predicate, and property narrowing (POL-CAT-084).
 
@@ -116,6 +117,81 @@ def _written_class(runtime_class: type[CategoryPoint]) -> type[CategoryPoint]:
     return next(found for found in runtime_class.__mro__ if not found.__name__.endswith("_with_category"))
 
 
+def _universal_declaration(cls: type[CategoryDeclaration], role: Role) -> type[CategoryPoint] | None:
+    """``Cat()``'s declaration at ``role``, which every category class inherits.
+
+    Every category is an object of ``Cat()`` (``universe``), so ``Cat()``'s three
+    declarations state what a category, a point of one, and a functor are.  That is true
+    of every category and so distinguishes none: a body that names one says exactly what
+    an empty body says.
+
+    ``CategoryOfCategories`` is created before this module binds its name, and it is the
+    one class ``Cat()`` is not an ancestor of, so an unbound name and the exempt class are
+    the same case.
+    """
+    universe = globals().get("CategoryOfCategories")
+    return None if universe is None or cls is universe else vars(universe)[role.value]
+
+
+def _require_declarations(cls: type[CategoryDeclaration]) -> None:
+    """Every category class writes its own three declarations, in its own body (POL-CAT-057).
+
+    Two questions, asked at the ``class`` statement because that is where an omission and
+    a borrowing both happen.  The first is whether the body names all three kinds.
+
+    The second is whether each named class states this category's mathematics.  A class
+    written for this category -- inline as a nested ``class`` statement, or above and
+    assigned -- does.  A class this one already inherits does not: naming it changes
+    nothing, so the body that names it and the body that names nothing state the same
+    thing, and a category deliberately silent at a kind cannot be told from one whose
+    author forgot the kind (``DeclaredCategory``).  Where a category adds no new
+    mathematics at a kind, the class it writes has an empty body, and that empty body is
+    the statement.  A category that specializes another writes its declaration as a
+    subclass of that class's declaration, which keeps the operations it specializes and
+    is its own statement (``kernel/compiler.py``, ``_written_chain``).
+
+    The two ways of inheriting a declaration are the Python base and ``Cat()``.  A base
+    is read off this class's own ancestry.  ``Cat()``'s three are every category's,
+    including those of a class that does not derive from ``CategoryOfCategories``: the
+    kernel compiles ``Cat()``'s declarations into the role classes every value reaches,
+    so naming one states nothing either.
+
+    Both questions are asked by identity, of the class object and of the ``Role``, never
+    of a module or a name: a declaration that moves module or is renamed is the same
+    declaration, and a namesake in another module is not.  The kind is part of the
+    question, because one written class does serve two kinds and must:
+    ``Mor(K).ObjectType`` *is* ``K.MorphismType`` (``AGENTS.md``, "Core categorical
+    architecture"), so ``Fun`` names ``Cat().MorphismType`` for its objects and states
+    that identity rather than borrowing a declaration.
+    """
+    missing = [role.value for role in Role if role.value not in vars(cls)]
+    assert not missing, (
+        f"{cls.__name__} writes no {' or '.join(missing)} declaration.  Every category class writes all three "
+        f"in its own body, and where it adds no new mathematics the class it writes has an empty body "
+        f"(POL-CAT-057)"
+    )
+    for role in Role:
+        declared = vars(cls)[role.value]
+        inherited = next((base for base in cls.__mro__[1:] if vars(base).get(role.value) is declared), None)
+        assert inherited is None, (
+            f"{cls.__name__}.{role.value} names {inherited.__name__}'s {role.value} declaration, which this class "
+            f"inherits and which therefore states nothing about this category.  Write this category's own class; "
+            f"where it adds no new mathematics its body is empty, and where it specializes that one its class "
+            f"derives from it (POL-CAT-057)"
+        )
+        if issubclass(declared, CategoryDeclaration):
+            # The objects of this category are categories, and the class of categories is
+            # ``Cat().ObjectType``.  A subclass of it is a second category class -- a
+            # category to declare, not a declaration to write -- so naming it is the
+            # identity the architecture states, as ``Fun`` names ``Cat().MorphismType``.
+            continue
+        assert declared is not _universal_declaration(cls, role), (
+            f"{cls.__name__}.{role.value} names ``Cat()``'s {role.value} declaration, which every category class "
+            f"inherits and which therefore states nothing about this one.  Write this category's own class; where "
+            f"it adds no new mathematics its body is empty (POL-CAT-057)"
+        )
+
+
 class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     """The local ``Cat().ObjectType`` declaration."""
 
@@ -137,12 +213,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         """
         super().__init_subclass__()
         if not compiler.building_role_class():
-            missing = [role.value for role in Role if role.value not in vars(cls)]
-            assert not missing, (
-                f"{cls.__name__} writes no {' or '.join(missing)} declaration.  Every category class writes all "
-                f"three in its own body; where it adds no new mathematics it writes its parent's class, as "
-                f"``ObjectType = FullSubcategory.ObjectType`` (POL-CAT-057)"
-            )
+            _require_declarations(cls)
         name = cls.__dict__.get("_implements")
         if name is not None:
             Cat().implement(name, cls)
@@ -247,12 +318,11 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         writes for that mathematical kind (POL-KERNEL-028), so this reads the one
         declaration the architecture fixes, not a capability discovered by probing.
 
-        Every category writes all three, in its own class body (POL-CAT-057).  A category
-        that introduces no new mathematics at a role writes the class its parent writes --
-        ``ObjectType = FullSubcategory.ObjectType`` -- and that assignment is the
-        statement: same kind, no new operation.  So this reads the body and never the
-        inherited attribute, which cannot tell a category that stated nothing from one
-        that stated this.
+        Every category names all three in its own class body (POL-CAT-057).  A category
+        that introduces no new mathematics at a role writes a class with an empty body,
+        and that empty body is the statement: same kind, no new operation.  So this reads
+        the body and never the inherited attribute, which cannot tell a category that
+        stated nothing from one that stated this.
 
         ``place`` builds a ``..._with_category`` class over the written one when a value's
         placement improves (``kernel/refinement.py``), so the body to read is the first

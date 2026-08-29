@@ -58,7 +58,7 @@ from sage_categories.kernel.caches import SequenceTable
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import Predicate, Proposition
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
-from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory
+from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
 
 __all__ = [
     "ApexCategory",
@@ -166,9 +166,14 @@ class ApexCategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismDa
     # An apex is a value of ``C``, not a wrapper around one, and the family's
     # monomorphism is identity on values.  A subclass nests its own ``ObjectType`` for
     # the surface its universal data gives it.
-    ObjectType = FullSubcategory.ObjectType
-    ElementType = FullSubcategory.ElementType
-    MorphismType = FullSubcategory.MorphismType
+    class ObjectType(ObjectOfCategory):
+        """A chosen apex: an object of ``C``, the constructed value itself and not a wrapper around one."""
+
+    class ElementType(ElementOfObject):
+        """A point of a chosen apex, which is a point of ``C``."""
+
+    class MorphismType(MorphismOfCategory):
+        """A morphism of ``C`` between two chosen apexes."""
 
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData]) -> None:
         self._data: MonoDict = MonoDict()
@@ -256,8 +261,11 @@ class LimitsCategory(ApexCategory):
 
     # A point of a chosen limit is a cone over the diagram with apex ``1_C``; the
     # mediator of a cone is a morphism of ``C`` and not a further kind.
-    ElementType = ApexCategory.ElementType
-    MorphismType = ApexCategory.MorphismType
+    class ElementType(ElementOfObject):
+        """A point of a chosen limit: a cone over the diagram with apex ``1_C``."""
+
+    class MorphismType(MorphismOfCategory):
+        """A morphism of ``C`` between two chosen limits; the mediator of a cone is one of these."""
 
     class ObjectType(ObjectOfCategory):
         """A chosen limit: an object of ``C`` whose family retains its diagram, limiting cone, and mediator rule."""
@@ -321,8 +329,11 @@ class ProductsCategory(ApexCategory):
     """``C.Products()``: chosen products over every discrete shape (POL-CAT-093)."""
 
     # A point of a chosen product is a family of points, one into each factor.
-    ElementType = ApexCategory.ElementType
-    MorphismType = ApexCategory.MorphismType
+    class ElementType(ElementOfObject):
+        """A point of a chosen product: a family of points, one into each factor."""
+
+    class MorphismType(MorphismOfCategory):
+        """A morphism of ``C`` between two chosen products."""
 
     class ObjectType(ObjectOfCategory):
         """A chosen product over a discrete shape: an object of ``C`` with its projections and mediator rule."""
@@ -393,8 +404,11 @@ class ColimitsCategory(ApexCategory):
 
     # The universal property of a colimit describes the morphisms *out* of the apex, so
     # it fixes nothing about a point of it.  That is the asymmetry with ``LimitsCategory``.
-    ElementType = ApexCategory.ElementType
-    MorphismType = ApexCategory.MorphismType
+    class ElementType(ElementOfObject):
+        """A point of a chosen colimit, which its universal property leaves unconstrained."""
+
+    class MorphismType(MorphismOfCategory):
+        """A morphism of ``C`` between two chosen colimits."""
 
     class ObjectType(ObjectOfCategory):
         """A chosen colimit: an object of ``C`` whose family retains its diagram, colimiting cocone, and mediator rule."""
@@ -459,8 +473,11 @@ class CoproductsCategory(ApexCategory):
 
     # A point of a chosen coproduct is unconstrained, as for a colimit.  That a point of
     # a disjoint union factors through one injection is a fact about ``Sets()``.
-    ElementType = ApexCategory.ElementType
-    MorphismType = ApexCategory.MorphismType
+    class ElementType(ElementOfObject):
+        """A point of a chosen coproduct, unconstrained as for a colimit."""
+
+    class MorphismType(MorphismOfCategory):
+        """A morphism of ``C`` between two chosen coproducts."""
 
     class ObjectType(ObjectOfCategory):
         """A chosen coproduct over a discrete shape: an object of ``C`` with its injections and mediator rule."""
@@ -545,9 +562,14 @@ class DiscreteLimits(FullSubcategory[[MorphismOfCategory], []]):
 
     # Fixing the index adds no operation: ``product_projection(i)`` is already available
     # from ``C.Products()`` and is the same morphism here.
-    ObjectType = FullSubcategory.ObjectType
-    ElementType = FullSubcategory.ElementType
-    MorphismType = FullSubcategory.MorphismType
+    class ObjectType(ObjectOfCategory):
+        """A chosen product indexed by ``Discrete(S)``: the same object, with the same projections."""
+
+    class ElementType(ElementOfObject):
+        """A point of such a product."""
+
+    class MorphismType(MorphismOfCategory):
+        """A morphism of ``C`` between two such products."""
 
     def __init__(self, products: ProductsCategory, shape: Category) -> None:
         self._shape = shape
@@ -604,9 +626,14 @@ class DiscreteColimits(FullSubcategory[[MorphismOfCategory], []]):
     """``C.Colimits(Discrete(S))``: the full subcategory of ``C.Coproducts()`` on the coproducts indexed by ``Discrete(S)``."""
 
     # Fixing the index adds no operation, as for ``DiscreteLimits``.
-    ObjectType = FullSubcategory.ObjectType
-    ElementType = FullSubcategory.ElementType
-    MorphismType = FullSubcategory.MorphismType
+    class ObjectType(ObjectOfCategory):
+        """A chosen coproduct indexed by ``Discrete(S)``: the same object, with the same injections."""
+
+    class ElementType(ElementOfObject):
+        """A point of such a coproduct."""
+
+    class MorphismType(MorphismOfCategory):
+        """A morphism of ``C`` between two such coproducts."""
 
     def __init__(self, coproducts: CoproductsCategory, shape: Category) -> None:
         self._shape = shape

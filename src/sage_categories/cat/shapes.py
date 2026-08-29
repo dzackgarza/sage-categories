@@ -212,12 +212,14 @@ comparable.register_handler(_comparable_by_order)
 class ThinMorphisms(MorphismCategory[[], []]):
     """``Mor(Thin(P, leq))``: a comparison is a member when its order proposition holds."""
 
+    class ObjectType(MorphismOfCategory):
+        """A comparison ``x <= y`` of ``Thin(P, leq)``, which is a morphism of it."""
 
-    # An object of ``Mor(Thin(P, leq))`` is a comparison ``x <= y``; a thin category is a
-    # 1-category, so its only 2-morphisms are identities.
-    ObjectType = MorphismCategory.ObjectType
-    ElementType = MorphismCategory.ElementType
-    MorphismType = MorphismCategory.MorphismType
+    class ElementType(ElementOfObject):
+        """A generalized element of a comparison: its identity 2-morphism, a thin category being a 1-category."""
+
+    class MorphismType(MorphismOfCategory):
+        """The identity 2-morphism of a comparison: a thin category has no other 2-morphism."""
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         return member(candidate, self) & comparable(candidate, self._base)

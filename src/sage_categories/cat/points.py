@@ -53,9 +53,14 @@ class PointMorphismCategory(MorphismCategory[[], []]):
 
 
     # ``Mor({X})`` has one object, ``1_X``, and one morphism, its identity 2-morphism.
-    ObjectType = MorphismCategory.ObjectType
-    ElementType = MorphismCategory.ElementType
-    MorphismType = MorphismCategory.MorphismType
+    class ObjectType(MorphismOfCategory):
+        """The identity ``1_X``: the one morphism of ``{X}``."""
+
+    class ElementType(ElementOfObject):
+        """A generalized element of ``1_X``: its identity 2-morphism."""
+
+    class MorphismType(MorphismOfCategory):
+        """The identity 2-morphism of ``1_X``: the one morphism of ``Mor({X})``."""
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         return point_identity(candidate, self._base)

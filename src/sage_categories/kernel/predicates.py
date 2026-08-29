@@ -9,8 +9,9 @@ assumption context (POL-ASSUME-002/004): every proposition has an engine value
 ``ask(P(x))`` for a property predicate uses this order
 (``specs/undecidable-properties.md``, "How ``ask()`` works"):
 
-1. category placement, which already includes the recorded implications because
-   an implication is a selected subcategory monomorphism between property categories (POL-FUN-024);
+1. category placement, which already includes the recorded containments: one property
+   category is a full subcategory of another, and the selected monomorphism presenting
+   that is the whole statement (D83, POL-FUN-024);
 2. the active assumption context;
 3. the exact decision cache;
 4. the registered exact handlers on their declared semantic domains (POL-MATH-042);
@@ -35,11 +36,11 @@ decided part, so the two kinds compose without a caller ever inspecting which it
 
 from __future__ import annotations
 
-import re
 from collections.abc import Callable, Iterable
 from functools import partial
 from typing import TYPE_CHECKING, Any
 
+from inflection import underscore
 from sage.structure.coerce_dict import MonoDict, TripleDict
 from sympy import Dummy, Integer, Predicate as EnginePredicate, Q, S, sympify
 from sympy.assumptions import global_assumptions
@@ -47,6 +48,7 @@ from sympy.assumptions.assume import AppliedPredicate as EngineApplied
 from sympy.core.basic import Basic
 from sympy.logic.boolalg import And, Implies, Not, Or
 
+from sage_categories.kernel.compiler import install_on_declaration
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.refinement import is_placed, refine
 from sage_categories.kernel.roles import CategoryPoint, Role, category_of, role_of
@@ -658,14 +660,10 @@ _derived_applications: dict[tuple[type[CategoryPoint], str], Axiom] = {}
 def _application_name(identifier: str) -> str:
     """``"FullyFaithful"`` gives ``"is_fully_faithful"``: snake case, prefixed ``is_`` (D89, POL-CAT-060).
 
-    The CamelCase to snake case conversion is Rails' ``ActiveSupport::Inflector#underscore``,
-    ported to Python as ``inflection.underscore``
-    (https://github.com/jpvanhal/inflection/blob/master/inflection/__init__.py, inspected
-    2026-08-29): break a run of capitals before its final letter, then break a lowercase
-    letter or digit followed by a capital, then lowercase the result.
+    ``inflection.underscore`` is Rails' ``ActiveSupport::Inflector#underscore`` in Python
+    (https://github.com/jpvanhal/inflection, inspected 2026-08-29).
     """
-    split = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", identifier)
-    return "is_" + re.sub(r"([a-z\d])([A-Z])", r"\1_\2", split).lower()
+    return "is_" + underscore(identifier)
 
 
 def _derive_application(axiom: Axiom) -> None:
@@ -698,6 +696,7 @@ def _derive_application(axiom: Axiom) -> None:
         f"{owner.__name__} declares {name!r} itself, so {axiom!r} cannot compile its application there"
     )
     _derived_applications[(owner, name)] = axiom
-    # The kernel writes the compiled method onto the role class, as ``install_level_shift``
-    # writes the point-inherited spellings onto theirs (``kernel/compiler.py``).
-    setattr(owner, name, application)
+    # The kernel writes the compiled method onto the declaration and onto the class of
+    # every node already compiled from it, as ``install_level_shift`` writes the
+    # point-inherited spellings onto theirs (``kernel/compiler.py``).
+    install_on_declaration(owner, name, application)

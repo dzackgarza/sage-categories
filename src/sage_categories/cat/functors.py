@@ -124,11 +124,18 @@ class FunctorProperties:
 class FunctorProperty(FunctorProperties, FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]]):
     """``Fun(C, D).P()``: functors ``C -> D`` with property ``P``; constructs one, and ``one()`` is ``1_C`` with ``P``."""
 
-    # Fullness, faithfulness and the rest are properties of the functor: they narrow
-    # which functors this category has and add nothing to one.
-    ObjectType = FixedEndpointProperty.ObjectType
-    ElementType = FixedEndpointProperty.ElementType
-    MorphismType = FixedEndpointProperty.MorphismType
+    class ObjectType(MorphismOfCategory):
+        """A functor ``C -> D`` with the property.
+
+        Fullness, faithfulness and the rest are properties of the functor: they narrow
+        which functors this category has and add nothing to one.
+        """
+
+    class ElementType(ElementOfObject):
+        """A point of such a functor."""
+
+    class MorphismType(MorphismOfCategory):
+        """A natural transformation between two functors with the property."""
 
     def __call__(self, *args: OnObject | OnMorphism, **kwargs: OnObject | OnMorphism) -> Functor:
         """``Fun(S, T).P()(on_object, on_morphism)``, or ``Fun(S, T).P()()`` for the subcategory monomorphism.
@@ -213,13 +220,19 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
     C ... given by the morphism c_1 x_{c_2} c'_2 -> c'_2").
     """
 
-    # An object of ``Fun(C, D)`` is a functor, which is a morphism of ``Cat()``.  For
-    # ``C = [1]`` the objects are the morphisms of ``D``, and those are objects of
-    # ``Mor(D)``: they reach this category by denoting a diagram, which is why
-    # ``diagram()`` is owned by the category and not by the object.
-    ObjectType = FixedEndpointCategory.ObjectType
-    ElementType = FixedEndpointCategory.ElementType
-    MorphismType = FixedEndpointCategory.MorphismType
+    class ObjectType(MorphismOfCategory):
+        """A functor ``C -> D``, which is a morphism of ``Cat()``.
+
+        For ``C = [1]`` the objects are the morphisms of ``D``, and those are objects of
+        ``Mor(D)``: they reach this category by denoting a diagram, which is why
+        ``diagram()`` is owned by the category and not by the object.
+        """
+
+    class ElementType(ElementOfObject):
+        """A point of a functor."""
+
+    class MorphismType(MorphismOfCategory):
+        """A natural transformation ``F => G``."""
 
     def __init__(self, morphisms: MorphismCategory, domain: Category, codomain: Category) -> None:
         self._evaluations: MonoDict = MonoDict()

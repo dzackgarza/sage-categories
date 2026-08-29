@@ -23,6 +23,18 @@ functor carries an isomorphism to an isomorphism, with ``F(f⁻¹)`` its inverse
 ``CategoryTheory.Functor.mapIso``; inspected 2026-08-29), and retaining that pair is what
 places the image in ``Mor(D).Isomorphisms()``.
 
+The core chooses no separating family.  A family separates when ``f . e = g . e`` for
+every ``e: S_a -> X`` sourced in it forces ``f = g`` (nLab "separator",
+https://ncatlab.org/nlab/show/separator, inspected 2026-08-29; ``specs/functor.md``,
+"Separators and separating families").  The morphisms of the core are the isomorphisms of
+``C``, so the only ``e: S_a -> X`` it has are isomorphisms, and there is one exactly when
+``S_a`` is isomorphic to ``X``.  A family therefore separates the core only if it meets
+every isomorphism class, which is a property of the family and not of the ambient's:
+``Sets()`` chooses ``(1,)``, and the only isomorphisms ``1 -> X`` are those to singletons,
+so at every other ``X`` the condition is empty and would force any two parallel bijections
+equal.  ``Category.separating_family`` returns none, and ``represented_functor`` fails
+loudly for a category that chose none (POL-MATH-037).
+
 ``epsilon_C: U(C.Core()) -> C`` is the component at ``C`` of the natural inclusion
 ``epsilon: U * Core => End_Cat(Cat()).one()``.  The core selects that same monomorphism as
 its one structural functor, so the component and the structural inclusion are one functor.
@@ -50,12 +62,19 @@ class GroupoidsCategory(Category[[OnObject, OnMorphism], [Assignment]]):
 
     _implements = "Groupoids"
 
-    # A groupoid is a category and a functor between groupoids is a functor, so the three
-    # kinds are the ones ``Cat()`` writes (POL-CAT-057).  Groupoid theory would add its
-    # mathematics here and the documents state none.
+    # A groupoid is a category, a point of a groupoid is an object of it, and a functor
+    # between groupoids is a functor.  Groupoid theory would add its mathematics to the
+    # two bodies below and the documents state none, so both are empty (POL-CAT-057).
+    # The object role is the one identity a category of categories cannot write over: the
+    # class of categories is ``Cat().ObjectType``, and a subclass of it is a second
+    # category class -- a category to declare, not a declaration to write.
     ObjectType = CategoryOfCategories.ObjectType
-    ElementType = CategoryOfCategories.ElementType
-    MorphismType = CategoryOfCategories.MorphismType
+
+    class ElementType(ElementOfObject):
+        """A point ``* -> G`` of a groupoid, whose value is an object of it."""
+
+    class MorphismType(MorphismOfCategory):
+        """A functor between two groupoids."""
 
     def structure_functors(self) -> tuple[Functor, ...]:
         return (Fun(self, Cat()).Monomorphisms().Isofibrations()(),)
@@ -90,10 +109,6 @@ class CoreCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Two
 
     def morphism_category_type(self) -> type[CoreMorphismCategory]:
         return CoreMorphismCategory
-
-    def separating_family(self) -> tuple[ObjectOfCategory, ...]:
-        """Every object of ``C`` is an object of the core, so the separators are those of ``C``."""
-        return self._ambient.separating_family()
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         return self._ambient.membership_proposition(candidate)
@@ -133,11 +148,14 @@ class CoreCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Two
 class CoreMorphismCategory(MorphismCategory):
     """``Mor(C.Core())``: a morphism of ``C`` is a member exactly when it is an isomorphism."""
 
-    # An object of ``Mor(C.Core())`` is an isomorphism of ``C``: the core narrows the
-    # morphisms and nothing else.
-    ObjectType = MorphismCategory.ObjectType
-    ElementType = MorphismCategory.ElementType
-    MorphismType = MorphismCategory.MorphismType
+    class ObjectType(MorphismOfCategory):
+        """An isomorphism of ``C``: the core narrows the morphisms and nothing else."""
+
+    class ElementType(ElementOfObject):
+        """A generalized element of an isomorphism, read in ``Mor(C.Core())``."""
+
+    class MorphismType(MorphismOfCategory):
+        """A 2-morphism between two isomorphisms of ``C``."""
 
     def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
         return self._base.isomorphisms().membership_proposition(candidate)
@@ -160,10 +178,15 @@ class CoreFixedEndpointCategory(FixedEndpointCategory):
     """
 
     # ``Mor(C.Core())(A, B)`` is by definition ``Mor(C)(A, B).Isomorphisms()``: the same
-    # objects, so the same three classes.
-    ObjectType = FixedEndpointCategory.ObjectType
-    ElementType = FixedEndpointCategory.ElementType
-    MorphismType = FixedEndpointCategory.MorphismType
+    # objects, so each body below is empty.
+    class ObjectType(ObjectOfCategory):
+        """An isomorphism ``A -> B`` of ``C``."""
+
+    class ElementType(ElementOfObject):
+        """A generalized element of such an isomorphism."""
+
+    class MorphismType(MorphismOfCategory):
+        """A 2-morphism between two isomorphisms ``A -> B``."""
 
 
 def _core_of(category: Category) -> Category:

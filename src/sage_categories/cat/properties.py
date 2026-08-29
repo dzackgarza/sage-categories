@@ -144,13 +144,20 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
     ``Category.local_role_class``, which is the class of this value.
     """
 
-    # A property subcategory adds no object, point, or morphism of its own: its constructor
-    # refines the same value of the ambient.  So it writes the classes a full subcategory
-    # writes, and a subclass whose property makes an operation available nests its own
-    # over them, as ``IsomorphismsCategory`` does for ``inverse()``.
-    ObjectType = FullSubcategory.ObjectType
-    ElementType = FullSubcategory.ElementType
-    MorphismType = FullSubcategory.MorphismType
+    class ObjectType(ObjectOfCategory):
+        """An object of the ambient satisfying the property: the same value, refined in place.
+
+        A property subcategory adds no object of its own -- its constructor refines the
+        value the ambient already owns -- so this body is empty, and a subclass whose
+        property makes an operation available writes it in its own class, as
+        ``IsomorphismsCategory`` does for ``inverse()``.
+        """
+
+    class ElementType(ElementOfObject):
+        """A point ``1_C -> X`` of such an object: the point the ambient owns."""
+
+    class MorphismType(MorphismOfCategory):
+        """A morphism of the ambient between two of these objects; fullness makes it the ambient's."""
 
     _base_category_class_and_axiom: ClassVar[tuple[type[Category], str]]
 
@@ -237,11 +244,18 @@ class PredicateSubcategory[**MorphismData, **TwoMorphismData](PropertySubcategor
     These are two mechanisms and neither needs the other (D97).
     """
 
-    # Deciding membership adds no operation to the value: a computed answer and a trusted
-    # one place the same value in the same category.
-    ObjectType = PropertySubcategory.ObjectType
-    ElementType = PropertySubcategory.ElementType
-    MorphismType = PropertySubcategory.MorphismType
+    class ObjectType(ObjectOfCategory):
+        """An object the property's own predicate decides.
+
+        Deciding membership adds no operation to the value: a computed answer and a
+        trusted one place the same value in the same category.
+        """
+
+    class ElementType(ElementOfObject):
+        """A point of such an object."""
+
+    class MorphismType(MorphismOfCategory):
+        """A morphism of the ambient between two of these objects."""
 
     def __init__(
         self,
@@ -270,11 +284,19 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
     ``D`` is itself a full subcategory (POL-CAT-084).
     """
 
-    # A narrowing is the property subcategory of its base by the roots jointly: its objects
-    # are the objects of the base lying in every root.  The operations come from the roots.
-    ObjectType = PropertySubcategory.ObjectType
-    ElementType = PropertySubcategory.ElementType
-    MorphismType = PropertySubcategory.MorphismType
+    class ObjectType(ObjectOfCategory):
+        """An object of the base lying in every root.
+
+        A narrowing is the property subcategory of its base by the roots jointly, so it
+        states no operation of its own: the operations come from the roots, which the
+        selected monomorphisms reach.
+        """
+
+    class ElementType(ElementOfObject):
+        """A point of such an object."""
+
+    class MorphismType(MorphismOfCategory):
+        """A morphism of the base between two of these objects."""
 
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData], roots: tuple[FullSubcategory, ...]) -> None:
         self._roots = roots
@@ -327,11 +349,17 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
 class FixedEndpointProperty[**MorphismData, **TwoMorphismData](NarrowedProperty[TwoMorphismData, []]):
     """``Mor(C)(A, B).P()``: constructs a morphism ``A -> B`` with property ``P``, or refines one."""
 
-    # A morphism ``A -> B`` with property ``P``: an object of a hom category, so a morphism
-    # of ``C``.  Fixing the endpoints selects morphisms and does not change what one is.
-    ObjectType = NarrowedProperty.ObjectType
-    ElementType = NarrowedProperty.ElementType
-    MorphismType = NarrowedProperty.MorphismType
+    class ObjectType(ObjectOfCategory):
+        """A morphism ``A -> B`` with the property: an object of a hom category, so a morphism of ``C``.
+
+        Fixing the endpoints selects morphisms and does not change what one is.
+        """
+
+    class ElementType(ElementOfObject):
+        """A point of such a morphism."""
+
+    class MorphismType(MorphismOfCategory):
+        """A 2-cell between two of these morphisms."""
 
     def domain(self) -> CategoryPoint:
         return self._ambient.domain()

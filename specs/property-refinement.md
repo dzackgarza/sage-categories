@@ -254,9 +254,19 @@ It does not require the general decision procedure to recompute the property.
 A named-object construction places its result directly in every property category established by the construction.
 The kernel-generated property application then reads the same containment proposition through category placement.
 
-Property refinements must propagate through the category graph.
-If a category `C` defines a property subcategory `C.P()` and `D` is structurally a subcategory of `C`, the kernel must derive `D.P()` as the corresponding narrowing of `D`. A leaf must not define another property class, refinement mechanism, predicate, or transport route.
-Sage's `with_axiom` mechanism is the design precedent: the property category and its refinement behavior become available on descendant categories.
+Property refinements use inverse-image subcategories.
+For a named functor `F: D -> C` and a property subcategory `i_P: C.P() -> C`, form the pullback
+
+\[
+F^{-1}(C.P()) = D\times_C C.P().
+\]
+
+The construction retains its projections, including the subcategory monomorphism into `D`.
+When `F` defines the inherited property `P` on `D`, this inverse image is `D.P()`.
+If several functors `D -> C` exist, the declaration names the one used.
+The axiom registration and compiler expose the resulting category, containment proposition, refinement, and implementation classes.
+They do not define another property-propagation mechanism.
+This is the standard inverse image of an object property and its associated full subcategory; see [Mathlib, `ObjectProperty.inverseImage`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/Basic.html) and [full subcategories](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/FullSubcategory.html).
 
 This uniqueness concerns same-object property refinement only.
 A property category can have many ordinary constructors from supported mathematical and engine representations.

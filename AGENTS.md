@@ -275,6 +275,13 @@ property subcategory's containment proposition and reaches descendants through c
 classes. A predicate-backed concrete implementation supplies only the private abstract
 `_predicate()` method required by `PredicateSubcategory`.
 
+Property refinements use base change.
+For a named functor `F: D -> C` and a property subcategory `C.P() -> C`, form the inverse-image subcategory `F.inverse_image(C.P()) = D ×_C C.P()`.
+When `F` defines the inherited property on `D`, this pullback is `D.P()`.
+Retain its pullback projections and its subcategory monomorphism into `D`.
+The axiom registration and compiler expose this category and its implementation classes.
+They do not implement a separate property-propagation rule.
+
 Every positive property decision uses the kernel's same-object refinement mechanism.
 This mechanism does not limit a property's constructors from mathematical or engine representations.
 Keep explicit prohibitions that exclude known architectural failure patterns.
@@ -355,6 +362,16 @@ Define `Fun = Mor(Cat())`. Thus `Fun(C, D)` owns construction of functors from `
 Fun(C, D)(on_object, on_morphism)
 Fun(S, T).Monomorphisms().Isofibrations().Full()()
 ```
+
+Define the dualizing functor `Op: Cat() -> Cat()`.
+Its actions give `C.op()`, `F.op()`, and `eta.op()` for a category, functor, and natural transformation.
+Dualizing a natural transformation reverses its direction.
+Retain the natural isomorphism `Op compose Op ≅ Id`.
+Derive the standard dual constructions through `Op`.
+
+For `F: D -> C` and a subcategory monomorphism `P -> C`, define `F.inverse_image(P)` as the pullback `D ×_C P`.
+Retain both pullback projections.
+The projection to `D` presents the inverse image as a subcategory of `D`.
 
 A mathematical construction creates each named functor through this category. It retains
 all defining projections, evaluations, and subcategory monomorphisms. A leaf selects the functors that

@@ -704,6 +704,42 @@ For `C in Cat()`, this gives the identity functor as `End_Cat(C).one()`.
 `Fun(S, T).Monomorphisms().Isofibrations()()` constructs an established subcategory monomorphism.
 Use `Fun(S, T).Monomorphisms().Isofibrations().Full()()` when `S` is full in `T`.
 
+### Opposites and dualization
+
+`Op: Cat() -> Cat()` is the dualizing functor.
+Its public actions are
+
+```python
+C.op()       # Op.on_object(C)
+F.op()       # Op.on_morphism(F)
+eta.op()     # G.op() => F.op(), for eta: F => G
+```
+
+It retains the natural isomorphism `Op compose Op ≅ Id`.
+Thus duality acts on categories, functors, and natural transformations.
+The standard dual pairs use this foundation: initial and terminal objects, products and coproducts, limits and colimits, slices and coslices, monomorphisms and epimorphisms, fibrations and opfibrations, and left and right Kan extensions.
+The dualizing functor and its involutivity follow [Mathlib, `CategoryTheory.Cat.opFunctor`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Category/Cat/Op.html); the actions on morphisms, functors, and natural transformations follow [Mathlib, `CategoryTheory.Opposites`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Opposites.html).
+
+### Inverse-image subcategories
+
+Let `F: D -> C` and let `i: P -> C` present a subcategory.
+The inverse-image subcategory is the pullback
+
+\[
+F^{-1}(P)=D\times_C P.
+\]
+
+The public construction is `F.inverse_image(P)`.
+It retains both pullback projections.
+The projection `F.inverse_image(P) -> D` is its subcategory monomorphism.
+Fullness and repleteness pass from `P` to the inverse image.
+
+For a property subcategory `C.P()`, a category declares `D.P()` as `F.inverse_image(C.P())` when the named functor `F` defines that inherited property.
+The category construction owns this propagation.
+The axiom machinery registers the property name, and the compiler exposes the implementation classes of the resulting subcategory.
+Neither one defines a separate propagation rule.
+This construction is the category attached to the standard inverse image of an object property; see [Mathlib, `ObjectProperty.inverseImage`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/Basic.html) and [its full subcategory](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/FullSubcategory.html).
+
 ### Induced functors
 
 A categorical construction can act on a functor.
@@ -1064,6 +1100,12 @@ It is kernel infrastructure over already established mathematical functors.
 - A declared containment between property subcategories is its monomorphism.
 
 - The monomorphism of a full subcategory is fully faithful by construction.
+
+- `Op: Cat() -> Cat()` acts on categories and functors, dualizes natural transformations, and retains `Op compose Op ≅ Id`.
+
+- `F.inverse_image(P)` is the retained pullback `D ×_C P` for `F: D -> C` and `P -> C`.
+
+- Property categories inherited along a named functor use this inverse-image construction.
 
 - Every functor is constructed through `Fun(Source, Target)` or an established property subcategory.
 

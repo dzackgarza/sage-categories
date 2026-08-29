@@ -101,6 +101,63 @@ Propositions compose under `conjunction`, `disjunction`, `negation`, and `implic
 A decided part composes with a proposition, so a handler that compares two private data at the computation boundary needs no separate combinator.
 `Decision` is what `ask` returns and nothing more: it has no operations of its own.
 
+## Twin-prime set
+
+Let
+
+\[
+X=\{n\in\mathbb N\mid n\text{ and }n+2\text{ are prime}\}.
+\]
+
+Membership in `X` is decidable for each supplied natural number. The global proposition
+`Finite(X)` is not currently decided because the twin-prime conjecture remains open.
+The bounded-gap theorem does not decide a gap of exactly two. See MathWorld,
+[“Twin Primes”](https://mathworld.wolfram.com/TwinPrimes.html), the paragraphs on the
+twin-prime conjecture and bounded gaps.
+
+```python
+p = X.is_finite()       # Finite(X)
+ask(p)                  # Unknown
+bool(p)                 # raises
+```
+
+The proposition remains available for logical operations and assumptions:
+
+```python
+~p
+p & X.is_inhabited()
+assume(p)
+ask(p)                  # True in the active assumption state
+```
+
+`assume(p)` establishes the existing proposition and refines the same object into
+`Sets().Finite()`. It does not change what `X.is_finite()` constructs.
+
+Direct construction supplies the same placement without a decision procedure:
+
+```python
+Y = Sets().Finite()(...)
+Y.is_finite()           # Finite(Y)
+ask(Y.is_finite())      # True from category placement
+```
+
+Cardinality has the same formation and evaluation boundary with a different result type:
+
+```python
+q = X.cardinality()     # applied query |X| : Cardinal()
+ask(q)                  # Unknown
+```
+
+If the twin-prime conjecture holds, `X` is an infinite subset of `NN` and its cardinality
+is `aleph_0`. If only finitely many twin primes exist, its exact finite cardinality is also
+not presently known. The applied query is meaningful in both cases.
+
+This follows the useful part of SymPy's official
+[`Predicate`, `AppliedPredicate`, and `ask()` contract](https://docs.sympy.org/latest/modules/assumptions/assume.html):
+predicate application remains unevaluated, and `ask()` returns an undecided result when
+the available knowledge does not determine a truth value. The repository extends this
+formation/evaluation split to typed non-Boolean queries.
+
 ## How `ask()` works
 
 For an atomic proposition \(P(x)\), `ask()` uses this order.

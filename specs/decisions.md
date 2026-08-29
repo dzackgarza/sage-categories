@@ -370,6 +370,8 @@ General projections exist for any subcategory of a product category, `proj_i: (X
 
 **D114 (08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T07:34Z). Generated Python structure uses Python syntax tools.** The stub projector uses Python 3.14 `ast` for ordinary Python declarations and generated stubs. It uses `tree-sitter-sage` only for Sage syntax. Fixed constructor wrappers keep ordinary declared functions. A later wrapper that needs a generated runtime signature uses `makefun` instead of a local signature generator.
 
+**D115 (08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T08:01Z). Forming a mathematical question is separate from evaluating it.** Calling a truth-valued method constructs an applied proposition. Calling a partial value-valued method constructs an applied query with an exact result category. Neither call evaluates the application. `ask()` is the common evaluation boundary and can return `Unknown`. Category placement or an active assumption changes what `ask()` can establish without changing the proposition or query that the public method constructs.
+
 **D35 (08-25). The operators are defined once.** `Y ** X` is `Hom_C(X, Y)`, `X * Y` the product, `X + Y` the coproduct, `X @ Y` the biproduct.
 
 **D67 (08-26, corrected 08-28). Scope of the current foundation.** Complete `Cat`, functor categories, the `Mor(n, C)` tower, universal constructions, the method compiler, and the owned `Sets()` category before adding later theories.

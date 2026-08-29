@@ -285,6 +285,14 @@ Every positive property decision uses the kernel's same-object refinement mechan
 This mechanism does not limit a property's constructors from mathematical or engine representations.
 Keep explicit prohibitions that exclude known architectural failure patterns.
 
+Forming a mathematical question never evaluates it.
+A truth-valued method returns an applied proposition.
+A partial value-valued method returns an applied query with an exact result category.
+Only `ask()` evaluates either application.
+For the set of twin-prime indices, membership is decidable for each index while both
+`X.is_finite()` and `X.cardinality()` remain unevaluated applications whose current
+`ask()` result is `Unknown`.
+
 Decide an equality with `ask(a == b)`. On an owned value `==` returns a proposition, so
 its result decides nothing when consumed as a truth value, compared by identity against
 `True`, `False`, or `Unknown`, or folded through `all`, `any`, `and`, `or`, or `not`. A

@@ -414,10 +414,11 @@ The ordinal model is specified in [`ordinals.md`](ordinals.md).
 
 `X.cardinality()` returns an applied query with result category `Cardinal()`.
 `ask(X.cardinality())` returns an owned cardinal when an exact evaluation case applies and Sage `Unknown` otherwise.
+Calling `X.cardinality()` never invokes `ask()`.
 
-The category-owned `Sets()` implementation declares the predicate.
+The category-owned `Sets()` implementation declares the query.
 Each set construction registers its exact cases from retained construction data.
-An inherited call on a structured object uses the same predicate on that original object.
+A structured object uses the same inherited query on the original object.
 A structure functor to `Sets()` supplies the set constructor data used by these cases; it does not replace predicate evaluation with a separate image lookup.
 
 The registered cases route on the index set, the selected presentation's diagram, its codomain placement (`Sets().Finite()`, `Sets().Countable()`, `Sets().Uncountable()`), and any retained constant diagram.

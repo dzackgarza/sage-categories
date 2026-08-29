@@ -245,6 +245,10 @@ X.cardinality()  # applied query with result category Cardinal()
 ```
 
 `ask(X.cardinality())` returns an object of `Cardinal()` or the Sage `Unknown` singleton.
+Calling `X.cardinality()` itself never attempts this evaluation.
+The twin-prime set in [Undecidable properties](undecidable-properties.md#twin-prime-set)
+is the standard acceptance example: its membership rule is decidable, while its
+finiteness proposition and cardinality query are unresolved.
 
 A cardinal is an exact value: a finite cardinal, `Aleph.on_object(alpha)`, `2 ** Aleph.on_object(Ordinals().zero())`, or another value formed by exact cardinal arithmetic.
 There is no placeholder cardinal, no unknown cardinal kind, and no symbolic "cardinality of X" value.

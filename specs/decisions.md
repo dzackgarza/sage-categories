@@ -229,9 +229,9 @@ This supersedes the `Ar`/`Hom` spellings of D11.
 
 **D56 (08-26). Eager, and fail fast and loudly.** Declaration order in `structure_functors()` controls preference.
 
-**D57 (08-26, corrected 08-28). The point functor regards a category as an object.** It is the inclusion of the one-object category `{C}` into `D`. `D`'s object methods propagate to the category `C` itself.
+**D57 (08-26, corrected 08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T06:02Z, 2026-08-29T08:20Z). The point functor regards a category as an object.** It is the inclusion of the one-object category `{C}` into `D`. `D`'s object methods propagate to the category `C` itself.
 `D`'s element methods become `C`'s object methods because the points `* -> C` are exactly the objects of `C`. Morphisms of `C` do not receive that element surface.
-This is how `Ordinals()` receives semiring operations.
+This is how `Cardinal()` receives the internal semiring-object surface.
 
 **D58 (08-27). What a functor is for.** In Sage you declare your supercategories but never say *how* to construct an object or morphism of a supercategory from one of yours.
 That is the entire purpose of a functor: it transports literal constructor data.
@@ -380,6 +380,8 @@ General projections exist for any subcategory of a product category, `proj_i: (X
 **D116 (08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T06:02Z, 2026-08-29T08:20Z). Ordinal operators keep their standard meaning.** For ordinals `alpha` and `beta`, `alpha + beta` is ordinary ordinal sum and `alpha * beta` is ordinary ordinal product. The Hessenberg operations use `alpha.natural_sum(beta)` and `alpha.natural_product(beta)`. Ordinal exponentiation remains `alpha.ordinal_power(beta)` because `**` denotes the categorical exponential. The ordinary ordinal category is not presented as a commutative semiring through the Hessenberg operations.
 
 **D117 (08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T06:02Z, 2026-08-29T08:20Z). Aleph and initial ordinal are order functors.** Let `OrdinalOrder()` and `CardinalOrder()` be the thin categories on ordinal and cardinal objects, with one morphism `a -> b` exactly when `a <= b`. `Aleph: OrdinalOrder() -> CardinalOrder()` and `InitialOrdinal: CardinalOrder() -> OrdinalOrder()` act on the unique order morphisms by monotonicity. They are not functors on arbitrary functions between cardinal representatives. Their object actions return the same owned ordinal and cardinal values used by the arithmetic categories.
+
+**D118 (08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T08:47Z, 2026-08-29T08:49Z). A typical leaf is an executable mathematical definition.** It states its objects, elements, morphisms, default and named semantic constructors, immediate selected structure functors, and only the operations, predicates, algorithms, and theorems first owned there. The main transport work is the explicit object and morphism action of each selected functor and its exact constructor conversions. A leaf reuses projections, inclusions, restrictions, lifts, fibers, and universal maps retained by the `Cat` construction that defines it. A property implementation gives its defining proposition and optional exact handlers. A chosen-datum category uses the applicable fiber or Grothendieck construction. The kernel compiles classes, threads constructor state, derives inverse-image properties, and supplies the standard categorical construction surface. Several semantic or engine-ingestion constructors still construct one category-owned implementation type.
 
 **D35 (08-25, corrected 08-29). Category operators and object operators have different owners.** For categories, `D ** C = Fun(C, D)`, `C * D` is the product category, and `C + D` is the coproduct category. Objects receive categorical product, coproduct, biproduct, and exponential operators as inherited defaults. A category-owned implementation overrides a default when standard notation for its objects names another declared algebraic operation. The explicit universal-construction methods remain available (`01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T06:02Z, 2026-08-29T08:20Z).
 

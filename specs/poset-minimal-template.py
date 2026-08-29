@@ -1,43 +1,32 @@
-"""Minimal structured leaf for ``PartiallyOrderedSets()``.
+"""Minimal predicate-backed leaf for ``PartiallyOrderedSets()``.
 
 This file is design pseudocode (``POL-LEAF-014``). Its identifiers show the
 required contract. They do not define a second framework API.
 
-A public call accepts a plain Python set ``X_prime`` and an order callable.
-It constructs the poset ``(X, R)``, where ``X = Sets()(X_prime)`` and ``R`` is
-the relation defined by the callable. The named projection ``(X, R) |-> X`` is
-an ordinary functor. It is the only structure functor.
+The default public call accepts an owned relation subobject ``R -> X * X``.
+The property-category constructor refines that same relation after the partial-order
+laws are established. A named convenience constructor accepts an owned set and an
+order rule, then constructs the relation first. The retained projection to ``X`` is
+the only structure functor.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 
-
-@dataclass(frozen=True)
-class PosetConstructionData:
-    """The exact semantic input for one poset construction."""
-
-    elements: set[SetElement]
-    order_rule: OrderRule
-
-
-class PartiallyOrderedSetsCategory(Category):
+class PartiallyOrderedSetsCategory(PredicateSubcategory):
     """The category of partially ordered sets and monotone maps."""
 
+    _base_category_class_and_axiom = (
+        BinaryRelationsCategory,
+        "PartialOrder",
+    )
+
     class ObjectType:
-        """Implement only the order structure added to the set."""
+        """Add only operations guaranteed by the partial-order laws."""
 
-        def __init__(self, data: PosetConstructionData) -> None:
-            self._order_relation = relation_subobject(
-                data.elements,
-                data.order_rule,
-            )
-            super().__init__()
-
-        def order_relation(self) -> SetSubset:
+        def order_relation(self) -> BinaryRelationSubobject:
             """Return the defining subobject of ``X * X``."""
-            return self._order_relation
+            return self.relation_subobject()
 
     class ElementType:
         """Add order comparison to points of a poset."""
@@ -53,34 +42,27 @@ class PartiallyOrderedSetsCategory(Category):
     class MorphismType:
         """Implement monotone maps."""
 
-    def __call__(
+    def _predicate(
         self,
-        X_prime: set[SetElement],
+        relation: BinaryRelationSubobject,
+    ) -> Proposition:
+        """Return the conjunction of the three partial-order laws."""
+        return (
+            Reflexive(relation)
+            & Antisymmetric(relation)
+            & Transitive(relation)
+        )
+
+    def from_rule(
+        self,
+        X: Sets().ObjectType,
         order_rule: OrderRule,
     ) -> "PartiallyOrderedSets().ObjectType":
-        """Construct the asserted partial order on ``X_prime``."""
-        data = PosetConstructionData(
-            elements=X_prime,
-            order_rule=order_rule,
-        )
-        return self.ObjectType(data)
-
-    def set_projection(self) -> Cat().MorphismType:
-        """Return the projection ``(X, R) |-> X``."""
-
-        def set_constructor_input(
-            data: PosetConstructionData,
-        ) -> SetsConstructorInput:
-            return SetsConstructorInput.from_python_set(data.elements)
-
-        # The functor retains ``set_constructor_input`` once. Its public object
-        # action and the kernel's ``Sets().ObjectType`` initialization both use it.
-        return Fun(self, Sets())(
-            object_constructor_input=set_constructor_input,
-            on_morphism=set_projection_on_morphism,
-            element_constructor_input=set_element_constructor_input,
-        )
+        """Construct the relation subobject selected by ``order_rule`` first."""
+        product = Sets().Products()((X, X))
+        relation = Sets().MonoOver(product).from_predicate(order_rule)
+        return self(relation)
 
     def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
         """Select the set projection for inherited set operations."""
-        return (self.set_projection(),)
+        return (self.product_projection(0),)

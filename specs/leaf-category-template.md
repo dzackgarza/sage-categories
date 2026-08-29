@@ -3,6 +3,26 @@
 Replace each `Leaf`, `Base`, and `defining_data` name with its mathematical name.
 Keep only methods introduced by the leaf structure.
 
+This template implements D118 and `POL-LEAF-014`.
+It is design pseudocode, not an importable framework API.
+
+## The four leaf questions
+
+A leaf answers four questions:
+
+1. What are its objects, elements, and morphisms?
+
+2. What defining data does its default constructor accept, and which other semantic constructors are useful?
+
+3. Which immediate named functors supply inherited structure, and how does each convert constructor data?
+
+4. Which operations, predicates, algorithms, and theorems first belong to this category?
+
+The explicit structure functors contain most leaf-level transport work.
+Each gives its complete object and morphism actions.
+Each selected functor also gives the exact object, element, and morphism constructor conversions that it contributes.
+The kernel turns those declarations into class inheritance and initialized state.
+
 ```python
 class LeafCategory(Category):
     class ObjectType:
@@ -30,6 +50,59 @@ class LeafCategory(Category):
 
 `Category` is `Cat().ObjectType`. Each entry in `structure_functors()` is an explicitly constructed object of `Fun = Mor(Cat())`. Include only immediate functors whose target catalogue supplies the leaf's inherited public surface.
 
+## Default and named constructors
+
+For a category object `C`, the call `C(defining_data)` is its expected object constructor.
+It accepts the smallest complete semantic datum that normally defines one object.
+Named constructors accept other meaningful presentations or engine-ingestion inputs:
+
+```python
+C(defining_data)
+C.from_alternative_presentation(other_data)
+C.from_sage(engine_value)
+```
+
+All routes construct `C.ObjectType`.
+They do not select different public implementations.
+A property-category call `C.P()(data)` asserts the defining property and constructs in that same registered category.
+An existing owned value passed to `C.P()` uses same-object refinement.
+
+## What `Cat` supplies
+
+The leaf reuses these generic constructions and their retained functors:
+
+```python
+Fun(C, D)
+Mor(C)(X, Y)
+C.op()
+
+C.Products()
+C.Coproducts()
+C.Limits(I)
+C.Colimits(I)
+C.SliceOver(X)
+C.CosliceUnder(X)
+C.MonoOver(X)
+C.MonoUnder(X)
+C.EpiOver(X)
+C.EpiUnder(X)
+
+Comma(F, G)
+F.inverse_image(P)
+F.restrict(P, Q)
+p.Fiber(b)
+F.base_change(p)
+Grothendieck(P)
+```
+
+The construction that creates a product, pullback, comma category, slice, fiber, or Grothendieck construction retains its projections and comparison data.
+The leaf selects those functors from the retained presentation.
+It writes a new `Fun(self, Target)` object only when it introduces a new mathematical action.
+
+The kernel supplies class compilation, constructor threading, inherited method execution, property inverse images, generated `is_P()` methods, the positive-decision refinement connection, same-object refinement, and public type projection.
+Sage and SymPy supply the session assumption context.
+An ordinary leaf contains none of that machinery.
+
 For each target class contributed by a selected structure functor, the leaf states which
 target constructor consumes the converted source construction data. The target category can
 have many constructors. The kernel uses the selected functor's construction rule to
@@ -54,6 +127,76 @@ The endpoints never select a functor by themselves.
 For a structured object with several defining components, select only components used as its inherited public structure.
 Other component functors remain ordinary functors.
 This selection has the same purpose as Sage's `super_categories()` declaration.
+
+## Standard construction-defined patterns
+
+### Pullback-defined categories
+
+A category that combines compatible structures uses the projections retained by its defining pullback.
+For example, `Rings(C)` selects the semiring and additive-group projections.
+Its leaf adds only their compatibility condition.
+
+```python
+def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
+    return (
+        self.product_projection(0),  # semiring projection
+        self.product_projection(1),  # additive-group projection
+    )
+```
+
+### Categories with selected data
+
+For `P: C.op() -> Cat()`, `Grothendieck(P)` owns the category of pairs `(X, datum)` and its projection `p` to `C`.
+A specialization adds only the API of the selected datum:
+
+```python
+class BasedObjects(Grothendieck(Bases)):
+    class ObjectType:
+        def basis(self) -> Basis:
+            return self.chosen_datum()
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+    def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
+        return (p,)
+```
+
+Existence of some datum is a property.
+An object together with one selected datum is an object of the total category.
+Presentations, bases, generating sets, and realizations use this distinction.
+
+### Universal-construction realizations
+
+A leaf can realize a limit by adding only its local structure to the inherited cone.
+When a named structure functor creates the limits, the leaf places that functor in `.CreatesLimits(I)`.
+The generic construction then supplies the lifted cone and universal maps.
+
+```python
+U = Fun(self, C).CreatesLimits(I)(on_object, on_morphism)
+
+def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
+    return (U,)
+```
+
+The leaf does not rebuild the construction category, diagram, legs, mediator, caching, or descendant interface.
+
+## Named exemplars
+
+| Category | Leaf-local mathematical delta |
+| --- | --- |
+| [`Sets()`](sets.md) | set membership, total-map evaluation, and set realizations of generic constructions |
+| [`Sets().Finite()`](finite-set-minimal-template.py) | axiom registration, the defining finiteness proposition, and finite-set-only operations |
+| [`PartiallyOrderedSets()`](poset-minimal-template.py) | an owned relation subobject, the order laws, and monotone-map mathematics |
+| [`Magmas(V)`, `Monoids(V)`, and `Groups(V)`](magmas-monoids-semirings.md) | structure morphisms and their laws; notation subcategories add the conventional point operators |
+| [`Semirings(C)`](magmas-monoids-semirings.md) and [`Rings(C)`](rings.md) | compatibility of structures reached through retained product or pullback projections |
+| [`Modules(A, C)`](modules.md) | the action morphism, module laws, and the retained projection to `C` |
+
+These specifications are the full mathematical owners.
+The snippets here show only the common leaf shape.
 
 ## Property subcategories and predicate handlers
 
@@ -92,14 +235,14 @@ proposition.assume()
 ```
 
 The leaf does not implement `ask()`, `assume()`, or `Proposition.assume()`. The kernel implements them.
-Direct construction in `C().P()` asserts the property.
+Direct construction in `C.P()` asserts the property.
 An exact `True` decision or a positive assumption refines the same owned object through the kernel mechanism.
 
 Bind computational procedures at the property-category integration site.
 Put their engine work in a private backend module:
 
 ```python
-C().P().register_exact_handler(C.ObjectType, decide_P_for_C_objects)
+C.P().register_exact_handler(C.ObjectType, decide_P_for_C_objects)
 ```
 
 The backend entry point positively matches only the semantic cases that it supports:
@@ -142,6 +285,28 @@ Mor(Sets()).Epimorphisms().register_exact_handler(
 The private SymPy procedure constructs the exact owned image and compares it with `RR`. It returns `Unknown` when SymPy does not determine the image.
 This handler belongs to `Mor(Sets()).Epimorphisms()` because it decides surjectivity.
 An injectivity handler belongs to `Mor(Sets()).Monomorphisms()` and uses an exact injectivity procedure.
+
+## Value-valued query cases
+
+A partial invariant keeps one public query operation at its mathematical owner.
+A theorem for a specific construction registers an exact evaluation case there.
+It does not add another public method to the constructed leaf.
+
+For the set exponential `Y ** X`, the set realization owns the theorem
+
+\[
+\lvert Y^X\rvert=\lvert Y\rvert^{\lvert X\rvert}.
+\]
+
+Its exact case asks the two operand cardinality queries.
+It returns the resulting owned cardinal when both values are available.
+Otherwise, it returns `Unknown`.
+Thus `(RR ** RR).cardinality()` remains the ordinary applied cardinality query.
+`ask()` uses the exponential theorem without any method on `RR` or on a special function-set leaf.
+
+A construction-specific external theorem follows the same rule.
+Place the cited case at the narrowest mathematical construction owner.
+Keep engine work in its private boundary and reconstruct the owned query result there.
 
 See [functor.md](functor.md) for subcategory-monomorphism, projection, evaluation, and induced-functor declarations.
 

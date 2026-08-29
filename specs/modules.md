@@ -79,6 +79,30 @@ I\bullet X\xrightarrow{\lambda_X}X.
 
 These diagrams define the module object without reference to elements.
 
+## Object constructors
+
+The default object call accepts the defining action morphism:
+
+```python
+Modules(A, C)(rho_X)
+```
+
+The codomain of `rho_X: A bullet X -> X` determines `X`.
+The constructor checks the action endpoints and asserts the two module diagrams.
+It does not ask the caller to repeat `X`.
+
+Named constructors can accept other complete semantic presentations:
+
+```python
+Modules(A, C).from_endomorphism_action(A_to_End_X)
+Modules(A, C).from_sage_module(engine_module)
+```
+
+The first route requires the stated closed or enriched structure and its tensor-hom adjunction.
+The second route is an engine-ingestion boundary.
+Each route constructs the same `Modules(A, C).ObjectType` and establishes the same module laws.
+Private representation choice does not change the public class or operation surface.
+
 ## Morphisms
 
 A morphism `f:(X, rho_X) -> (Y, rho_Y)` in `Modules(A, C)` is a morphism `f:X -> Y` in `C` such that
@@ -170,6 +194,10 @@ The [nLab module object](https://ncatlab.org/nlab/show/module%2Bobject) entry, s
 - The underlying object of a module is an object of the supplied category `C`.
 
 - The action is a morphism `A bullet X -> X` in `C`.
+
+- `Modules(A, C)(rho_X)` is the default object constructor and recovers `X` from the action morphism.
+
+- Every named alternative constructor returns the same `Modules(A, C).ObjectType`.
 
 - Module morphisms are morphisms in `C` that preserve the action.
 

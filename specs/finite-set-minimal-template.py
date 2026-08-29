@@ -10,11 +10,13 @@ from __future__ import annotations
 
 
 class SetsCategory(Category):
+    Finite = Axiom()
+
     class ObjectType:
         """Implement sets."""
 
     class ElementType:
-        """Implement points ``1 -> X`` of sets."""
+        """Implement elements of represented sets."""
 
     class MorphismType:
         """Implement total set maps."""

@@ -122,6 +122,9 @@ Magmas(V).Multiplicative()
 They retain the same underlying object, multiplication morphism, and morphisms.
 The additive subcategory exposes `+` on points.
 The multiplicative subcategory exposes `*` on points.
+These operators belong to the two presentation subcategories, not to the kernel.
+A later conventional presentation can declare its own category-owned point operation and inclusion into `Magmas(V)`.
+The current foundation has no operator-registration framework.
 Their complete immediate structure-functor tuples are
 
 ```python
@@ -248,6 +251,8 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
 
 The structure functor supplies the multiplication morphism and unit data required by the monoid constructor.
 `Groups(V)` adds only the inversion morphism and its laws.
+Membership is the property that such an inversion exists.
+The inverse laws make the inversion morphism unique, so the property implementation exposes that morphism without adding a separate chosen-inverse category.
 
 At `V = Sets()`, an object is an ordinary group.
 At `V = Cat()`, an object is a strict 2-group: a category `X` whose multiplication, unit, and inversion are functors and whose group laws are equalities of functors.
@@ -358,8 +363,8 @@ At `C = Sets()` the morphisms are maps, so each law is an equality of maps.
 At `C = Cat()` the morphisms are functors, so each law is an equality of functors.
 This is why `Monoids(Cat())` gives strict monoidal categories and not monoidal categories.
 
-`Cardinal()` and `Ordinals()` satisfy the equalities at `C = Cat()` because both are skeletal.
-Addition and multiplication each select one representative, so `(a + b) + c` and `a + (b + c)` name one object.
+`Cardinal()` satisfies these equalities at `C = Cat()` because it is skeletal.
+Cardinal addition and multiplication each select one representative, so `(a + b) + c` and `a + (b + c)` name one object.
 
 `Rings(C)` uses the same rule; see [Ring objects](rings.md).
 

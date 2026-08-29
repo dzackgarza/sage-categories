@@ -83,6 +83,21 @@ It does not require the leaf to contain no computation code.
 Leaf purity is semantic purity.
 It is not implementation abstinence.
 
+Before writing a leaf, answer four questions:
+
+1. What are its objects, elements, and morphisms?
+
+2. What defining datum does the default constructor accept, and which named constructors accept other complete presentations?
+
+3. Which immediate named functors supply inherited structure, and what exact constructor conversions do they supply?
+
+4. Which operations, predicates, algorithms, and theorems first belong to this category?
+
+Those answers are the leaf contract.
+The explicit structure functors and their conversions contain the structural transport work.
+The kernel compiles their consequences.
+The standard templates are in [Leaf category template](leaf-category-template.md).
+
 ## Standard mathematics determines the three classes
 
 This repository uses the ordinary mathematical meanings of category, object, element, morphism, functor, construction, and theorem.
@@ -217,7 +232,7 @@ Chosen enumerations of the three factors construct the standard product enumerat
 The property of being countable does not by itself choose that enumeration.
 The result must be independent of the Sage free-module class used for private computation.
 `M.cardinality()` is the method owned by `Sets().ObjectType` executing directly on `M`.
-It is not a free-module method and does not forward through a public `underlying_set()` object.
+The selected functor initializes the set state on `M`, so that method needs no forwarding layer.
 `M.is_countable()` returns the proposition that the underlying set lies in `Sets().Countable()`.
 Established placement lets `ask(M.is_countable())` return `True` without enumeration.
 

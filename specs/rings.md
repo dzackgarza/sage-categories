@@ -88,15 +88,32 @@ Its additive part is a commutative group object in `Cat()`; the general group-ob
 instance there is the strict 2-group
 ([Groups](magmas-monoids-semirings.md#groups)).
 
-`Cardinal()` and `Ordinals()` are not objects of `Rings(Cat())`. Neither addition admits
-an inversion functor, so both stay in `Semirings(Cat())`.
+`Cardinal()` is not an object of `Rings(Cat())` because cardinal addition has no inversion functor.
+It remains an object of `Semirings(Cat())`.
 
 ## Structure functors
 
-`Rings(C)` is the subobject of
-`Semirings(C) * Groups(C_x).Additive().Commutative()` whose two additive-monoid
-images are one object with one addition and zero. Its defining presentation retains
-both projections. The complete immediate structure-functor tuple is
+Let
+
+\[
+\mathcal A=\operatorname{Monoids}(C_x).\operatorname{Additive}().\operatorname{Commutative}().
+\]
+
+The additive-structure functors from `Semirings(C)` and
+`Groups(C_x).Additive().Commutative()` both land in \(\mathcal A\).
+The defining category is their pullback:
+
+\[
+\operatorname{Rings}(C)
+=
+\operatorname{Semirings}(C)
+\times_{\mathcal A}
+\operatorname{Groups}(C_x).\operatorname{Additive}().\operatorname{Commutative}().
+\]
+
+Thus the two branches have one addition and one zero.
+The pullback retains both projections and its comparison data.
+The complete immediate structure-functor tuple is
 
 ```python
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:

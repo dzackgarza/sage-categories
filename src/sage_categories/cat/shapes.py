@@ -14,11 +14,11 @@ order predicate ``leq``: objects are the points of ``P`` and there is at most on
 morphism ``x -> y``, which exists when ``ask(leq(x, y))`` holds (Mathlib
 ``Preorder.smallCategory`` and ``Preorder.subsingleton_hom``; inspected
 2026-08-26).  The writer asserts reflexivity and transitivity (POL-MATH-037):
-identities and composites are the unique comparisons.  The carrier and the order
+identities and composites are the unique comparisons. The set and the order
 predicate that makes it a preorder are supplied by the caller of ``Thin``.
 
 The sequential shape ``omega`` is ``Thin(NN, leq)`` for the natural order of ``NN``
-(``specs/sets.md``, "General limits and colimits").  Its carrier and its order are the
+(``specs/sets.md``, "General limits and colimits"). Its set and order are the
 mathematics of ``NN``, so ``Cat`` declares that shape and the category owning them
 implements it (``cat/declarations.py``, D80).
 
@@ -310,7 +310,7 @@ class ThinCategory(Category[[], []]):
 
 
 def Thin(carrier: ObjectOfCategory, order: Predicate) -> ThinCategory:
-    """The thin category of the preorder ``(carrier, order)``."""
+    """Return the thin category of the supplied set and order predicate."""
     assert carrier in Sets
     return ThinCategory(carrier, order)
 
@@ -318,7 +318,7 @@ def Thin(carrier: ObjectOfCategory, order: Predicate) -> ThinCategory:
 def omega() -> Category:
     """``omega = Thin(NN, natural_order)``: the sequential shape (specs/functor.md, "Diagram shapes and universal constructions").
 
-    Its carrier and its order are the mathematics of ``NN``, so ``Cat`` declares this
+    Its set and order are the mathematics of ``NN``, so ``Cat`` declares this
     shape and the category that owns them implements it (D80).  The kernel owns ``Thin``,
     which is the construction, and names the one shape it is applied to here.
     """

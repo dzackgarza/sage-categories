@@ -1,34 +1,4 @@
-"""``Posets()``: partially ordered sets and monotone maps (``specs/ordered-sets.md``).
-
-A poset is a pair ``(X, R)`` with ``R`` a chosen subset of ``X * X`` (``sets/subobjects.py``).
-``Posets()(R)`` recovers ``X`` as the factor of the chosen product that ``R`` is a
-subset of, asserts that both factors are one set (POL-LEAF-002), and trusts that ``R``
-is a partial order (POL-CAT-069, POL-MATH-037); ``Posets().is_partial_order(R)`` is the
-owned predicate whose exact handler decides reflexivity, antisymmetry, and
-transitivity on a finite enumerated carrier (POL-MATH-042).
-
-The one selected structural functor is the underlying-set functor
-``U: Posets() -> Sets()``.  It is faithful because ``Pos`` is a construct (Mathlib
-``PartOrd.instConcreteCategoryOrderHomCarrier``; inspected 2026-08-27).  It returns the
-retained ``X`` of a poset and the retained set map of a monotone map, and it supplies
-the complete set surface: every inherited method returns the declaring method's value
-in ``Sets()`` (POL-CAT-062).  A poset is never placed in ``Sets()``; it reaches every
-set operation through ``U`` alone.  The terminal object is the one-point order
-``Posets().Terminal()``; ``U`` carries the identity terminal comparison because the
-underlying set of the one-point order is ``Sets().Terminal()`` by construction.  For
-points ``x, y`` of ``P``, ``x <= y`` is the membership proposition of the
-pair point ``(x, y): 1 -> X * X`` in ``R``.
-
-A monotone map ``Mor(Posets())(P, Q)(rule)`` retains its underlying set map; identities
-and composites are monotone (Mathlib ``OrderHom.id``, ``OrderHom.comp``; inspected
-2026-08-27), and the inverse of an order isomorphism is monotone (Mathlib
-``OrderIso.symm``, ``OrderIso.monotone``; inspected 2026-08-27).  ``U`` retains the
-cartesian lift of every monomorphism ``m: Y -> U(P)`` of ``Sets()`` at ``P``: the induced
-order on ``Y`` is the ``U``-initial lift of ``m`` (Adamek, Herrlich, Strecker, *Abstract
-and Concrete Categories*, Definition 10.41 and Example 10.42(6), inspected 2026-08-26;
-Mathlib ``PartialOrder.lift``, inspected 2026-08-27).  ``P.sub_poset(...)`` is the leaf
-override of POL-LEAF-029/030: it calls the inherited subset construction and lifts.
-"""
+"""Implement partially ordered sets, monotone maps, and their named projection to sets."""
 
 from __future__ import annotations
 
@@ -295,10 +265,10 @@ class PosetsCategory(Category[[Rule], []]):
 
     @cached_method
     def underlying_set_functor(self) -> Functor:
-        """``U: Posets() -> Sets()``, retained once: the carrier of the order, and the set map of a monotone map.
+        """Return ``U: Posets() -> Sets()`` on posets and monotone maps.
 
         A poset is constructed from its relation ``R``, and the set ``Sets()`` made from
-        that construction is the carrier of ``R``; a monotone map is constructed from its
+        that construction is the common product factor of ``R``; a monotone map is constructed from its
         set map (POL-LEAF-058).
         """
         return Fun(self, Sets()).Faithful()(
@@ -388,7 +358,7 @@ class PosetsCategory(Category[[Rule], []]):
 
         A point adds no local state: the underlying set point of ``t: 1 -> P``
         is ``U(t)``, which the selected functor supplies on demand.  ``Poset.element``
-        owns the point of one carrier element; it reaches this constructor.
+        owns the point of one set element; it reaches this constructor.
         """
         assert defining_morphism in self.morphism_category(1)
         if defining_morphism not in self._elements:

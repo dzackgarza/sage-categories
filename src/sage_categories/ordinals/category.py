@@ -4,8 +4,8 @@ An ordinal is an object of ``Ordinals()``, retained once by its normalized
 expression: a finite ordinal, an initial ordinal ``omega(alpha)``, a Hessenberg
 natural sum or product, or an ordinary ordinal sum, product, or power that no
 normalization rule evaluates.  Python ``+`` and ``*`` are the natural operations
-(Mathlib ``Ordinal.nadd`` and ``Ordinal.nmul``, whose carrier ``NatOrdinal`` is a
-commutative semiring: ``NatOrdinal.instCommSemiring``, Mathlib
+(Mathlib ``Ordinal.nadd`` and ``Ordinal.nmul``; ``NatOrdinal`` is a commutative
+semiring through ``NatOrdinal.instCommSemiring``, Mathlib
 ``SetTheory.Ordinal.NaturalOps``; inspected 2026-08-26); the noncommutative
 ordinary operations have explicit names.
 

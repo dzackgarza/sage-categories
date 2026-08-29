@@ -1,24 +1,4 @@
-"""Functors, ``Fun = Mor(Cat())``, and natural transformations (POL-FUN-001, POL-FUN-017, POL-FUN-027, POL-FUN-024).
-
-A functor is a morphism of ``Cat()``: a ``Cat().MorphismType`` value with a domain,
-a codomain, and total object and morphism actions (Mathlib
-``CategoryTheory.Functor``: ``obj``, ``map``; inspected 2026-08-26).  Its action on
-a generalized element is derived from the morphism action (POL-FUN-002).
-
-``Fun = Mor(Cat())`` is the category whose objects are functors and whose
-morphisms are natural transformations; ``Fun(C, D) = Mor(Cat())(C, D)`` owns the
-construction of functors ``C -> D`` (POL-FUN-017/027).  Functor properties are
-ordinary property subcategories of ``Fun`` with no computational handlers
-(POL-CAT-090/091, Mathlib ``Functor.Full``, ``Functor.Faithful``,
-``Functor.FullyFaithful``; inspected 2026-08-26).
-
-This module constructs ``Cat()`` at import (``category.bootstrap()``).  The local
-``Cat().MorphismType`` declaration lives here.  Bootstrap binds ``Functor`` to the
-compiled role, then constructs ``Fun = Mor(Cat())`` and binds
-``NaturalTransformation`` to ``Fun.MorphismType``.  ``Fun._bootstrap()`` then builds the
-two property categories every subcategory monomorphism is placed in, and places the ones
-built before they existed.
-"""
+"""Implement functors, natural transformations, and the ``Fun`` bootstrap."""
 
 from __future__ import annotations
 

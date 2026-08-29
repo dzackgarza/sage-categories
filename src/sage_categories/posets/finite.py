@@ -219,7 +219,7 @@ class FinitePosetsCategory(PropertySubcategory[[Rule], []]):
 
     @cached_method
     def underlying_finite_set_functor(self) -> Functor:
-        """``U`` restricted to ``Sets().Finite()``, retained once: the very same carrier and set map, stated finite.
+        """Return ``U`` restricted to ``Sets().Finite()``.
 
         Both rules name the values ``U``'s rules name, so the two routes to ``Sets()``
         return one value by identity.  The theorem each states is the one this category

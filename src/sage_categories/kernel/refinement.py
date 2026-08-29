@@ -1,17 +1,4 @@
-"""Placement and same-object property refinement (POL-KERNEL-002/013/014).
-
-``is_placed(x, C)`` is the implementation fact "``x`` entered ``C`` or a declared
-subcategory of ``C``" (POL-CAT-068): the node of ``C`` is reachable from ``x``'s
-placement node through placement-tracing functors alone, which are the declared
-monomorphisms of ``Cat()`` that are isofibrations (POL-FUN-036).  Every recorded
-implication between property categories is declared that way, so implications act
-through the same walk (POL-FUN-024).
-
-``refine(x, P)`` strengthens ``x``'s placement to the join of its current category
-with the property category ``P``, rebuilding its dynamic class in place.  Identity,
-construction data, and existing canonical images are preserved; no wrapper or
-second value is allocated.
-"""
+"""Implement category placement and same-object property refinement."""
 
 from __future__ import annotations
 
@@ -33,13 +20,8 @@ __all__ = ["common_ancestor", "is_placed", "is_subcategory", "place", "refine", 
 def traces_placement(functor: MorphismOfCategory) -> bool:
     """Whether placement follows ``functor``: it is declared a monomorphism of ``Cat()`` and an isofibration (POL-FUN-036).
 
-    Both conditions are read off the functor's own placement, which is what the leaf
-    declared by constructing in ``Fun(S, T).Monomorphisms().Isofibrations()``.  Monicity
-    gives one value rather than a copy; the isofibration condition is repleteness of the
-    subcategory, without which a skeleton would qualify and a cardinal would be a set
-    (``specs/functor.md``, "Monomorphisms of Cat() and placement").  A functor with one
-    condition and not the other changes structure and places nothing: an object of a
-    category with a selected forgetful functor ``U: C -> D`` is not an object of ``D``.
+    Read both conditions from the functor's property-category placement.
+    Monicity and repleteness together present the exact subcategory relation.
     """
     from sage_categories.cat.functors import Fun
 

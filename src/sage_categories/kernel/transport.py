@@ -1,11 +1,4 @@
-"""Canonical structural inputs through functor-owned conversions.
-
-Selected functors supply the object, element, and morphism construction-input
-conversions.  The compiler composes them once per node it reaches
-(``kernel/compiler.py``, ``object_inputs``); this module reads the composite at one
-named target and retains the canonical image built from it (POL-CAT-061/066/071,
-POL-FUN-003/035).  It never participates in inherited method dispatch.
-"""
+"""Read and store private initialization state for the current compiler."""
 
 from __future__ import annotations
 
@@ -166,7 +159,7 @@ def construction_input[
     value: CategoryPoint,
     target: compiler.Node,
 ) -> ObjectConstructionInput[ObjectValue, Datum] | ElementConstructionInput[ElementValue, Datum] | MorphismConstructionInput[MorphismValue, Datum]:
-    """The retained input for the canonical image of ``value`` at ``target``."""
+    """Return the private initialization record for ``value`` at ``target``."""
     if has_canonical_transport(value, target.category):
         return canonical_input(value, target.category)
     source = role_node(value)

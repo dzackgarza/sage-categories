@@ -1,24 +1,4 @@
-"""The shared ``Cat().ElementType`` root and role-specific kernel classes.
-
-Every owned runtime value has one role-specific path through these classes
-(architecture contract §2, §3):
-
-- ``ObjectOfCategory``: the base of every ``C.ObjectType``;
-- ``ElementOfObject``: the base of every ordinary ``C.ElementType`` (a point
-  ``1_C -> X``, represented by its defining morphism, POL-CAT-058);
-- ``MorphismOfCategory``: the base of every ``C.MorphismType``.
-
-``CategoryPoint`` is the stable end of the role MRO.  Each of the three kernel classes
-stands on the class ``Cat()`` writes for its own element role, which
-``install_cat_element_root`` fills in when ``Cat()`` compiles.  An object of ``C`` and a
-morphism of ``C`` are both points ``* -> K`` of a category, at ``K = C`` and
-``K = Mor(C)``; a ``C.ElementType`` value is a point of an object (``specs/functor.md``,
-"Compiled implementation classes").
-
-A leaf's local role class subclasses only the kernel base of its role
-(POL-CAT-053).  ``Cat().ObjectType`` and ``Cat().ElementType`` own the universal
-operators.  Their compiled roles supply those operators to descendants.
-"""
+"""Define the private kernel bases for objects, elements, and morphisms."""
 
 from __future__ import annotations
 

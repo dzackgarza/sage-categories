@@ -1,42 +1,4 @@
-"""The method compiler: catalogues, routes, and dynamic role classes (POL-CAT-016, POL-CAT-012, POL-KERNEL-001).
-
-The selected graph is ``structure_functors()`` alone.  Its nodes are pairs
-``(category, role)``; the node ``(Mor(C), object)`` *is* the node ``(C, morphism)``
-(POL-CAT-021: one implementation type, one value, two placements), which
-``Category.role_source`` normalizes.  The graph a category reaches through its selected
-functors is a finite DAG, asserted at compile time (POL-CAT-012).
-
-Method catalogue of a node (``specs/resolution.md``):
-
-1. a local declaration takes precedence;
-2. one declaring owner reached by several routes supplies one entry;
-3. comparable owners yield the most specific one;
-4. incomparable owners with one spelling raise ``SemanticCollisionError``.
-
-Every live node compiles its own role class (``specs/functor.md``, "Compiled
-implementation classes").  Its bases are exactly the *controlled* direct bases that
-``sage.misc.c3_controlled.C3_sorted_merge`` returns for the node: compiled classes of
-reachable nodes and nothing else.  A node that reaches none ends its chain on its kernel
-role class.  The node's own written declaration is installed on that class rather than
-used as a base, so the written body keeps local precedence and stands at the one node it
-belongs to.  Sage builds a category's ``parent_class`` the same way
-(``Category._make_named_class``, ``sage/categories/category.py``, inspected 2026-08-29).
-
-One Python class is constructed as a whole family of categories -- ``Mor(K)`` for every
-``K``, ``Cat().Simplex(n)`` for every ``n``, every property subcategory -- and writes one
-declaration for the family.  Each member is a node of its own, with its own selected
-functors and its own compiled class carrying that one written body, so no member's
-ancestry reaches another member's chain.
-
-``_assert_linearized`` holds the resulting invariant: the MRO is the node linearization,
-ending on the kernel chain.  Sage states the same one in
-``Category._test_category_graph``.
-
-Each compiled node owns one generated constructor wrapper.  Before that wrapper starts
-the local ``super()`` chain, every selected functor converts the complete source input
-to the retained input of its canonical target.  The wrappers then consume those inputs
-in C3 order and initialize every reachable node once (POL-KERNEL-028/029).
-"""
+"""Compile local declarations and selected target classes for the current kernel."""
 
 from __future__ import annotations
 
@@ -1120,14 +1082,8 @@ def install_level_shift(point: Category) -> None:
     ``C`` receive no element surface (D57, POL-CAT-083; ``specs/functor.md``, "The level
     shift").
 
-    A level shift contributes the corresponding target class, not copies of its methods:
-    a method arriving without the private data it reads is the one flaw the kernel exists
-    to fix (D13).  So the class enters the live ``C.ObjectType``, whose descendants and
-    values keep their identity, and the point functors' constructor conversion runs -- on
-    each object of ``C`` afterwards through ``_point_steps``, and here on each one ``C``
-    has already built.  Sage refines a live parent the same way, rebuilding what the
-    existing value answers rather than allocating a second one
-    (``Parent._refine_category_``, ``sage/structure/parent.pyx``, inspected 2026-08-27).
+    The level shift adds the selected target class to the live ``C.ObjectType``.
+    It then initializes that private class state for objects built before the shift.
     """
     member = point.member()
     if member not in point.universe():

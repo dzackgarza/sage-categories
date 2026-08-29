@@ -1,32 +1,4 @@
-"""``Cat()``: the category of categories, and the universal category surface (POL-CAT-002, POL-CAT-050).
-
-``CategoryDeclaration`` is the local ``Cat().ObjectType`` declaration.  After
-bootstrap, ``Category`` is bound to the compiled ``Cat().ObjectType``.  Every
-category in this repository is constructed as an instance of a ``Category``
-subclass, placed in ``Cat()``, and
-compiled by the kernel into its three role classes ``ObjectType``, ``ElementType``,
-and ``MorphismType`` (POL-CAT-002/057).
-
-Every category class names all three in its own body, and ``__init_subclass__`` requires
-them at the ``class`` statement, where an omission happens.  A category that introduces
-no new mathematics at a role writes a class with an empty body, and that empty body is
-the statement: same kind, no new operation.  One class constructs a whole family of
-categories and writes one declaration for the family; each member compiles its own role
-class over it (``kernel/compiler.py``, ``_compiled_class``).
-``Category`` owns the universal surface:
-construction dispatch, membership, the ``Mor(n, C)`` tower, identities and
-composition, the equality predicate, and property narrowing (POL-CAT-084).
-
-A category is generic over the data of its morphism constructor (``MorphismData``:
-``Sets()`` takes a rule, ``Cat()`` an object action and a morphism action) and of its
-2-morphism constructor (``TwoMorphismData``: empty for a 1-category, a component
-assignment for ``Cat()``).  ``Mor(K)(A, B)(*data)`` is typed by ``MorphismData``.
-
-``Cat()`` is an object of ``Cat()`` by the stated runtime convention: size is
-outside the model, and no kernel operation quantifies over, enumerates, or scans
-the objects of ``Cat()``.  The singleton is constructed once, before any other
-category, with no structural graph; its ``category()`` is itself.
-"""
+"""Implement ``Cat()``, category declarations, and the universal category methods."""
 
 from __future__ import annotations
 
@@ -318,15 +290,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         return ()
 
     def retain_datum[Datum](self, value: CategoryPoint, datum: Datum) -> None:
-        """Retain the datum ``value`` was constructed with as an object of this category.
-
-        A category whose constructor refines an existing value in place -- a property
-        subcategory, a construction family -- adds no construction input of its own
-        (``kernel/refinement.py``), so the structure it chose has nowhere else to live:
-        the base set of ``2 ** X``, the enumeration engine of a set of finite subsets, the
-        basepoint of ``X^(S)``.  It is retained here, by identity, once per value
-        (POL-KERNEL-001).
-        """
+        """Retain this category's datum for ``value`` by identity."""
         assert value not in self._retained_data, f"{value!r} already retains a datum of {self!r}"
         self._retained_data[value] = datum
 
@@ -336,37 +300,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         return self._retained_data[value]
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
-        """The local role declaration: the nested class of the category this value is.
-
-        ``Role.OBJECT.value`` is ``"ObjectType"``: a role *is* the name the category
-        writes for that mathematical kind (POL-KERNEL-028), so this reads the one
-        declaration the architecture fixes, not a capability discovered by probing.
-
-        Every category names all three in its own class body (POL-CAT-057).  A category
-        that introduces no new mathematics at a role writes a class with an empty body,
-        and that empty body is the statement: same kind, no new operation.  So this reads
-        the body and never the inherited attribute, which cannot tell a category that
-        stated nothing from one that stated this.
-
-        Which body, is the question the value's construction answers rather than its
-        Python class.  A category constructed in a category whose selected functor has
-        ``Cat()`` as its target -- an object of ``Cat().SliceOver(K)``, of
-        ``Cat().Subobjects(K)``, of ``Cat().Products()`` -- is an instance of
-        ``Cat().ObjectType`` and runs its initializer, and the class it carries is the
-        compiled role class of the category it was constructed in, which holds installed
-        methods and no nested declarations.  Its construction input at
-        ``(Cat(), object)`` names the category it is (POL-CAT-050, POL-KERNEL-028), and
-        the declarations are part of the private data that input supplies.  For a
-        category constructed as a category that input is its own, so this is one rule and
-        not a branch.
-
-        ``place`` builds a ``..._with_category`` class over the written one when a value's
-        placement improves (``kernel/refinement.py``), so the body to read is the first
-        class the source writes, which is where that construction puts it.
-
-        ``Cat()`` compiling its own roles is the one moment there is no ``Cat()`` to ask,
-        and the one category then is ``Cat()`` itself (``bootstrap``).
-        """
+        """Return this category's written class for the requested implementation kind."""
         from sage_categories.kernel.transport import construction_input
 
         universe = Cat()
@@ -587,8 +521,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         """The generalized element ``t: T -> X`` of ``X`` given by a morphism into it (POL-CAT-058).
 
         The element is retained by that exact morphism (POL-CAT-066): one defining
-        morphism names one generalized element, so two callers reach one value and one
-        construction input.  A declared subcategory shares its ambient's element values;
+        morphism names one generalized element, so two callers reach one value. A declared subcategory shares its ambient's element values;
         ``Sets()`` overrides for its points, which carry a datum.
         """
         assert defining_morphism in self.morphism_category(1), f"{defining_morphism!r} is not a morphism of {self!r}"
@@ -1255,7 +1188,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
                 ObjectConstructionInput[TargetValue, TargetDatum],
             ],
         ) -> None:
-            """Retain the sole object-action implementation used by structural construction (POL-FUN-035)."""
+            """Store the private object initialization function used by this compiler."""
             signature = inspect.signature(conversion)
             assert len(signature.parameters) == 1, "an object constructor conversion accepts one complete input"
             parameter = next(iter(signature.parameters.values()))
@@ -1275,7 +1208,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
                 MorphismConstructionInput[TargetValue, TargetDatum],
             ],
         ) -> None:
-            """Retain the sole morphism-action implementation used by structural construction (POL-FUN-035)."""
+            """Store the private morphism initialization function used by this compiler."""
             signature = inspect.signature(conversion)
             assert len(signature.parameters) == 1, "a morphism constructor conversion accepts one complete input"
             parameter = next(iter(signature.parameters.values()))
@@ -1288,19 +1221,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             object_datum: Callable[[SourceObjectDatum], TargetObjectDatum],
             morphism_datum: Callable[[SourceMorphismDatum], TargetMorphismDatum],
         ) -> None:
-            """Retain the two rules of a selected functor: source construction data to target constructor data.
-
-            A selected functor states how one of its domain's own constructions produces the
-            data its codomain's constructor consumes -- the underlying set of a poset, the
-            set a cardinal represents (POL-FUN-035, POL-LEAF-058).  Each rule reads one
-            node's local datum and returns the datum of the target, and nothing else: it
-            names no image, no construction input, and no route (POL-LEAF-054).
-
-            The kernel does the rest.  The datum initializes the target's class on the
-            structured source instance, and the same datum constructs this functor's own
-            public image (``specs/functor.md``, "Structural inheritance": the named functor
-            uses the same conversion for its public action).
-            """
+            """Store the private datum functions used by the current compiler."""
             from sage_categories.kernel.construction import retained_morphism_input, retained_object_input
 
             def object_conversion[Value: ObjectOfCategory](
@@ -1412,7 +1333,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             self,
             source: MorphismConstructionInput[SourceValue, SourceDatum],
         ) -> MorphismConstructionInput[TargetValue, TargetDatum]:
-            """Return the root input retained by this morphism's canonical functor image."""
+            """Return the private record produced for this morphism."""
             from sage_categories.kernel.construction import retained_morphism_input
 
             assert self in _morphism_constructor_conversions, f"{self!r} retains no morphism constructor conversion"
@@ -1421,26 +1342,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             return target
 
         def _derive_selected_constructor_conversions(self) -> None:
-            """Read this functor's two rules as construction data, which is what selecting it means.
-
-            A functor is built once, by ``Fun(C, D)(object_rule, morphism_rule)``; selection is
-            compiler input and makes no second kind of functor (POL-CAT-085).  What selection
-            adds is the reading: the rules of a selected functor state how one of ``C``'s own
-            constructions produces the data ``D``'s constructor consumes, so each takes one
-            node's local datum and returns the target's constructor datum (POL-LEAF-058).
-            The kernel turns them into the construction inputs the compiler consumes and into
-            the public object and morphism actions (POL-FUN-035); the leaf constructs no
-            target value and names no canonical image, construction input, or transport
-            (POL-LEAF-054).
-
-            A functor that is never selected keeps its rules as its ordinary value-level
-            actions: the represented functor ``Mor(C)(G, -)``, a constant diagram, a Kan
-            extension.  A construction that retained its conversions already -- a subcategory
-            monomorphism, an identity, an explicit composite -- keeps them.
-
-            The element conversion is derived from the morphism one (POL-FUN-002), so a
-            retained morphism conversion already supplies the selected target element role.
-            """
+            """Adapt the two ordinary actions for the current private compiler."""
             if self in _object_constructor_conversions and self in _morphism_constructor_conversions:
                 return
             assert self._on_object is not None and self._on_morphism is not None, (
@@ -1449,7 +1351,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             self.retain_constructor_data(self._on_object, self._on_morphism)
 
         def _retain_identity_constructor_conversions(self) -> None:
-            """Retain the identity conversions for an identity-on-value functor."""
+            """Store the private identity initialization functions."""
             if self not in _object_constructor_conversions:
                 self.retain_object_constructor_conversion(_identity_object_constructor_input)
             if self not in _morphism_constructor_conversions:

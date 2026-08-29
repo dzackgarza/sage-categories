@@ -217,14 +217,7 @@ class SliceLikeCategory(Category[[MorphismOfCategory], []]):
         return self._arrow_projection
 
     def fixed_projection(self) -> Functor:
-        """``C/x -> C``: the evaluation at the varying end after the projection to the arrows, retained once.
-
-        Its images are values that the defining data of a slice object already names --
-        the varying object of the arrow, and the varying morphism of a triangle -- so it
-        has no value-level action of its own and states the two construction-input
-        conversions instead.  The kernel builds its public images and the inherited state
-        from those (POL-FUN-035, POL-KERNEL-029).
-        """
+        """Return the retained projection from the slice to its varying objects in ``C``."""
         if self._varying_projection is None:
             projection = Cat().construct_morphism(self, self._base_of_slice, None, None)
             projection.retain_object_constructor_conversion(self._varying_object_input)

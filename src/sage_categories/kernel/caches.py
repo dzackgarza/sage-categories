@@ -1,15 +1,4 @@
-"""Canonical-image tables keyed by identity.
-
-Every canonical cache is a ``sage.structure.coerce_dict`` dictionary.  Keys use
-identity and values are retained strongly (POL-KERNEL-001).  The outer table is
-keyed by the target category.  The inner identity key is the exact public role
-data required by POL-CAT-066: ``(X, X, X)`` for an object,
-``(domain, defining morphism, codomain)`` for an element, and
-``(domain, codomain, f)`` for a morphism.
-
-``MonoDict`` silently fails for keys that do not support weak references
-(integers, strings); only owned values are ever used as its keys.
-"""
+"""Define the private identity-key caches used by the current compiler."""
 
 from __future__ import annotations
 
@@ -168,7 +157,7 @@ def canonical_input[
     source: CategoryPoint,
     target: Category,
 ) -> ObjectConstructionInput[ObjectValue, Datum] | ElementConstructionInput[ElementValue, Datum] | MorphismConstructionInput[MorphismValue, Datum]:
-    """The construction input retained with the canonical image at ``target``."""
+    """Return the private record stored for ``source`` and ``target``."""
     role = role_of(source)
     assert role is not None
     by_target = canonical_inputs[role]
@@ -232,7 +221,7 @@ def retain_canonical_transport[
     | ElementConstructionInput[ElementValue, Datum]
     | MorphismConstructionInput[MorphismValue, Datum],
 ) -> None:
-    """Retain one canonical image and its exact construction input by identity."""
+    """Store one private compiler record by source and target identity."""
     role = role_of(source)
     assert role is not None and role_of(image) is role
     _retain_at_key(role, _source_key(source), target, image, construction)
@@ -371,7 +360,7 @@ class SequenceTable[Value]:
 def retained_method[Owner: CategoryPoint, **Arguments, Result](
     method: Callable[Concatenate[Owner, Arguments], Result],
 ) -> Callable[Concatenate[Owner, Arguments], Result]:
-    """Retain one result of ``method`` per receiver and argument sequence, arguments compared by identity.
+    """Retain one result of ``method`` per source value and argument sequence.
 
     A mathematical construction returns one value for its data: the chosen subset a
     characteristic morphism names, the direct image along a map, the ``i``-th projection of

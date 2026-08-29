@@ -1,38 +1,4 @@
-"""Owned predicates, applied propositions, ``ask()``, and ``assume()``.
-
-The model is SymPy's split between a ``Predicate``, an applied predicate, and
-``ask()`` (``sympy.assumptions``).  Applying a predicate constructs a proposition;
-only ``ask()`` decides it (POL-MATH-034).  The active SymPy session is the
-assumption context (POL-ASSUME-002/004): every proposition has an engine value
-``Q.owned_property(...)`` and ``assume()`` records it in ``global_assumptions``.
-
-``ask(P(x))`` for a property predicate uses this order
-(``specs/undecidable-properties.md``, "How ``ask()`` works"):
-
-1. category placement, which already includes the recorded containments: one property
-   category is a full subcategory of another, and the selected monomorphism presenting
-   that is the whole statement (D83, POL-FUN-024);
-2. the active assumption context;
-3. the exact decision cache;
-4. the registered exact handlers on their declared semantic domains (POL-MATH-042);
-5. ``Unknown``.
-
-Exact ``True`` for a property predicate refines the argument through the
-property's constructor (POL-CAT-044, POL-ASSUME-007).
-
-There is one three-valued logic, and it is this one.  A handler composes its
-sub-questions as propositions -- ``conjunction``, ``disjunction``, ``negation``,
-``implication``, and the ``&``, ``|``, ``~`` operators -- and asks the result once.
-``Connective`` carries no truth table: it delegates to ``sympy.logic.boolalg``'s
-``And``, ``Or``, ``Not``, and ``Implies``, exactly as an applied predicate delegates to
-``Q.owned_property``.  What the wrapper adds over a bare SymPy expression is that the
-parts stay owned until ``ask`` decides them, because an exact handler needs the owned
-arguments of a leaf and the engine expression has replaced them by dummies.
-
-A part may be a decision rather than a proposition: an exact handler that compares two
-private data holds one, since ``==`` on an engine value is exact.  ``ask`` sympifies a
-decided part, so the two kinds compose without a caller ever inspecting which it holds.
-"""
+"""Implement owned predicates, propositions, typed queries, and evaluation."""
 
 from __future__ import annotations
 

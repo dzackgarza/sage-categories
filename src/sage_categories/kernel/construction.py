@@ -1,10 +1,4 @@
-"""State-bearing role construction (POL-KERNEL-029, POL-FUN-035).
-
-Each public value retains one root input.  The input keeps the role identity,
-the local typed datum, and the canonical public value as separate fields.
-During initialization, one role-specific context holds one zero-argument step
-per node.  Each step closes over its exact typed input before the C3 chain starts.
-"""
+"""Define the private initialization records used by the current compiler."""
 
 from __future__ import annotations
 

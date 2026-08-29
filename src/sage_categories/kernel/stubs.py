@@ -156,10 +156,10 @@ def _declared_categories(names: tuple[str, ...]) -> tuple[Category, ...]:
 
 
 def _takes_no_argument(member: BoundMember) -> bool:
-    """Whether a bound method of a category takes nothing beyond its receiver.
+    """Whether a bound category method takes no arguments.
 
     A ``cached_method`` is a Cython caller rather than a function and carries the
-    declaration as ``f``, receiver included (``sage.misc.cachefunc``).
+    declaration as ``f``, including its bound instance (``sage.misc.cachefunc``).
     """
     if not callable(member):
         return False

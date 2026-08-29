@@ -1,20 +1,4 @@
-"""``Sets().ObjectType``: rule-defined sets (POL-ASSUME-004, POL-SET-016, POL-SET-026).
-
-A set is defined by a membership rule on private data; it needs no enumeration
-(POL-SET-016/029).  ``X.membership_proposition(x)`` is the applied ``element_of``
-predicate whose exact handler calls the rule; ``x in X`` is the Boolean boundary.
-``X.cardinality()`` returns an exact cardinal or Sage ``Unknown``; the cardinal
-property methods return applied predicates decided by category placement, active
-assumptions, the implications ``Finite => Countable`` and
-``Uncountable => Infinite``, and the exact route "a known cardinality decides
-finiteness and countability" (``specs/sets.md``, "Cardinality and enumeration").
-
-A chosen enumeration is structure a finite set has, not a field of every set: it is
-retained by ``Sets().Finite()``, whose enumeration constructor records it
-(``specs/sets.md``, "Cardinality and enumeration").  Iteration reads it there.
-Likewise ``X.subset_from(predicate)`` constructs through ``Sets().ChosenSubsets()``,
-which retains each presenting monomorphism (``sets/subobjects.py``).
-"""
+"""Rule-defined set objects and their local set operations."""
 
 from __future__ import annotations
 

@@ -15,14 +15,7 @@ from sage.structure.coerce_dict import MonoDict, TripleDict
 import sage_categories.kernel.compiler as compiler
 from sage_categories.cat.equality import equality_predicate
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
-from sage_categories.kernel.predicates import (
-    AppliedValuedPredicate,
-    Axiom,
-    Predicate,
-    Proposition,
-    ValuedPredicate,
-    ask,
-)
+from sage_categories.kernel.predicates import AppliedQuery, Axiom, Predicate, Proposition, Query, ask
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine, traces_placement
 from sage_categories.kernel.roles import (
     CategoryPoint,
@@ -65,18 +58,13 @@ member.register_handler(is_placed)
 
 
 @cache
-def _morphism_set() -> ValuedPredicate:
-    """``morphism_set(C)``: the set of morphisms of ``C``, whose one exact case is the enumeration ``C`` chooses.
-
-    Its result category is ``Sets()``, which ``Cat`` declares, so the kernel names it
-    without reaching into the implementation (``cat/declarations.py``, D81).  The
-    declaration is constructed on first use because that module stands on this one.
-    """
+def _morphism_set() -> Query:
+    """The typed query for the set of morphisms of a category."""
     from sage_categories.cat.declarations import Sets
 
-    predicate = ValuedPredicate("morphism_set", 1, False, Sets)
-    predicate.register_handler(lambda category: category._chosen_morphism_set())
-    return predicate
+    query = Query("morphism_set", 1, False, Sets)
+    query.register_handler(lambda category: category._chosen_morphism_set())
+    return query
 
 
 def _written_class(runtime_class: type[CategoryPoint]) -> type[CategoryPoint]:
@@ -800,13 +788,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         """The point of ``object_set()`` selecting an object: the one whose object equals it."""
         return next(point for point in self.object_set() if ask(self.object_at(point) == member_object))
 
-    def morphism_set(self) -> AppliedValuedPredicate:
-        """The set of morphisms of this category, an object of ``Sets()`` (POL-API-020).
-
-        The operation is not total: a category that chooses no enumeration of its
-        morphisms supplies no exact case, so it is an applied predicate and ``ask()``
-        answers it with the set or with Sage ``Unknown``.
-        """
+    def morphism_set(self) -> AppliedQuery:
+        """Return the typed query for this category's set of morphisms."""
         return _morphism_set()(self)
 
     def _chosen_morphism_set(self) -> ObjectOfCategory | UnknownClass:

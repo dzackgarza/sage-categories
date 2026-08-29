@@ -327,9 +327,7 @@ class CardinalSemiring(UniqueRepresentation, Parent):
     aleph pair is the aleph semiring's.  What remains here is the mixed cases,
     exponentiation, and the joins, which are where an expression stays formal.
 
-    The declared order slot answers ``True``, ``False``, or ``Unknown``, so the inherited
-    ``lt``, ``ge``, and ``gt`` of ``Posets()``, which are Boolean, are not used; the owned
-    order is the applied predicate that ``Cardinal()`` registers over ``le``.
+    The declared order can remain undecided. The owned order operation returns a proposition.
     """
 
     Element = CardinalValue

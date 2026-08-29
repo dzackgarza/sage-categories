@@ -6,7 +6,7 @@ from collections.abc import Callable, Iterable
 from functools import partial
 from typing import TYPE_CHECKING, Any
 
-from inflection import underscore
+from sage.categories.category_with_axiom import uncamelcase
 from sage.structure.coerce_dict import MonoDict, TripleDict
 from sympy import Dummy, Integer, Predicate as EnginePredicate, Q, S, sympify
 from sympy.assumptions import global_assumptions
@@ -28,14 +28,14 @@ __all__ = [
     "Axiom",
     "Applied",
     "AppliedPredicate",
-    "AppliedValuedPredicate",
+    "AppliedQuery",
     "Argument",
     "Connective",
     "EqualityPredicate",
     "Predicate",
     "PropertyPredicate",
     "Proposition",
-    "ValuedPredicate",
+    "Query",
     "ask",
     "assume",
     "conjunction",
@@ -52,7 +52,7 @@ __all__ = [
 type Argument = CategoryPoint | int
 
 # What ``ask`` returns: a decision for a proposition, and an owned object of the
-# declared result category for a valued predicate such as ``cardinality()``.  Sage
+# declared result category for a query such as ``cardinality()``. Sage
 # ``Unknown`` is the one unresolved answer of both and is an object of neither result
 # category (``specs/cardinality.md``, "Integration with ``Sets()``").
 type Answer = Decision | CategoryPoint
@@ -154,17 +154,12 @@ class PropertyPredicate(Predicate):
         return self._category
 
 
-class ValuedPredicate(Predicate):
-    """A predicate whose answer is an owned object rather than a truth value.
+class Query(Predicate):
+    """A typed query with one exact mathematical result category.
 
-    ``cardinality()`` and ``cofinality()`` are the two current cases: they are not total
-    and exact on their full declared domain, so they use this interface rather than
-    returning a value directly (``specs/cardinality.md``, "Integration with ``Sets()``").
-    The predicate declares one exact mathematical result category; an exact evaluation
-    case returns an object of it, and ``ask`` returns Sage ``Unknown`` when none applies.
-
-    An operation that can always construct an exact symbolic result is total.  It returns
-    that result directly and does not use this interface.
+    ``cardinality()`` and ``cofinality()`` are the current cases. They are not total
+    and exact on their full declared domain. An exact handler returns an object of
+    the result category. ``ask()`` returns Sage ``Unknown`` when no handler applies.
     """
 
     def __init__(self, name: str, arity: int, records_decisions: bool, result_category: Category) -> None:
@@ -175,22 +170,21 @@ class ValuedPredicate(Predicate):
         """The category whose objects are the exact answers of this predicate."""
         return self._result_category
 
-    def __call__(self, *arguments: Argument) -> AppliedValuedPredicate:
+    def __call__(self, *arguments: Argument) -> AppliedQuery:
         assert len(arguments) == self.arity(), f"{self.name()} has arity {self.arity()}"
-        return AppliedValuedPredicate(self, arguments)
+        return AppliedQuery(self, arguments)
 
 
 class Applied:
-    """A predicate applied to its arguments, whose answer is obtained only through ``ask()``."""
+    """An unevaluated proposition or typed query."""
 
     def __bool__(self) -> bool:
-        # SymPy ``Relational.__bool__`` is the mature reference: an applied predicate has
-        # no Python truth value (POL-MATH-035).
+        # SymPy ``Relational.__bool__`` is the reference for an unevaluated proposition.
         raise TypeError(f"cannot determine truth value of {self!r}; use ask()")
 
 
 class Proposition(Applied):
-    """An applied predicate whose answer is a truth value."""
+    """A truth-valued application."""
 
     def __invert__(self) -> Connective:
         return Connective(Not, (self,))
@@ -228,25 +222,24 @@ class AppliedPredicate(Proposition):
         return f"{self._predicate}({', '.join(map(repr, self._arguments))})"
 
 
-class AppliedValuedPredicate(Applied):
-    """One valued predicate applied to its arguments; ``ask`` evaluates it.
+class AppliedQuery(Applied):
+    """A typed query applied to its arguments.
 
-    It carries no engine expression: an owned cardinal is not a truth value, so no
-    assumption context holds it and the boolean algebra does not compose it.
+    It has no Boolean engine expression or assumption-context entry.
     """
 
-    def __init__(self, predicate: ValuedPredicate, arguments: tuple[Argument, ...]) -> None:
-        self._predicate = predicate
+    def __init__(self, query: Query, arguments: tuple[Argument, ...]) -> None:
+        self._query = query
         self._arguments = arguments
 
-    def predicate(self) -> ValuedPredicate:
-        return self._predicate
+    def query(self) -> Query:
+        return self._query
 
     def arguments(self) -> tuple[Argument, ...]:
         return self._arguments
 
     def __repr__(self) -> str:
-        return f"{self._predicate}({', '.join(map(repr, self._arguments))})"
+        return f"{self._query}({', '.join(map(repr, self._arguments))})"
 
 
 class Connective(Proposition):
@@ -322,17 +315,18 @@ def _session_decision(proposition: AppliedPredicate) -> Decision:
     return Unknown
 
 
-def _cache_key(proposition: AppliedPredicate | AppliedValuedPredicate) -> tuple[Predicate, CategoryPoint, CategoryPoint] | None:
-    """The identity key of a recordable answer: the predicate and its one or two owned arguments."""
-    arguments = proposition.arguments()
-    if not proposition.predicate().records_decisions():
+def _cache_key(applied: AppliedPredicate | AppliedQuery) -> tuple[Predicate, CategoryPoint, CategoryPoint] | None:
+    """The identity key of a recordable answer."""
+    arguments = applied.arguments()
+    owner = applied.predicate() if isinstance(applied, AppliedPredicate) else applied.query()
+    if not owner.records_decisions():
         return None
     if len(arguments) not in (1, 2):
         return None
     first, second = arguments[0], arguments[-1]
     if not isinstance(first, CategoryPoint) or not isinstance(second, CategoryPoint):
         return None
-    return proposition.predicate(), first, second
+    return owner, first, second
 
 
 def _ask_applied(proposition: AppliedPredicate) -> Decision:
@@ -400,24 +394,18 @@ def _decided(proposition: Decision | Proposition) -> Basic:
     raise TypeError(f"{proposition!r} is not a proposition")
 
 
-def _ask_valued(applied: AppliedValuedPredicate) -> Answer:
-    """The first exact case that answers ``applied``, else Sage ``Unknown``.
-
-    The cases are the same ones a proposition uses, minus the two that only a truth value
-    can take: no assumption context and no category placement hold an owned cardinal.
-    What remains is the cached exact answer and the exact evaluation cases the operation
-    owner registered (``specs/undecidable-properties.md``, "How ``ask()`` works").
-    """
-    predicate = applied.predicate()
+def _ask_query(applied: AppliedQuery) -> Answer:
+    """Return the first exact answer, or Sage ``Unknown``."""
+    query = applied.query()
     key = _cache_key(applied)
     if key is not None and key in _decisions:
         return _decisions[key]
-    for handler in predicate.handlers():
+    for handler in query.handlers():
         value = handler(*applied.arguments())
         if value is Unknown:
             continue
-        assert value in predicate.result_category(), (
-            f"an exact case answered {applied!r} with {value!r}, which is not an object of {predicate.result_category()!r}"
+        assert value in query.result_category(), (
+            f"an exact case answered {applied!r} with {value!r}, which is not an object of {query.result_category()!r}"
         )
         if key is not None:
             _decisions[key] = value
@@ -425,19 +413,11 @@ def _ask_valued(applied: AppliedValuedPredicate) -> Answer:
     return Unknown
 
 
-def ask(proposition: Decision | Proposition | AppliedValuedPredicate) -> Answer:
-    """Answer ``proposition``: ``True``, ``False``, an owned object, or Sage ``Unknown``.
-
-    A proposition is decided as ``True``, ``False``, or ``Unknown``; a valued predicate
-    answers with an object of its declared result category or ``Unknown``.
-
-    ``ask`` is total on decisions as well: ``a == b`` returns a proposition for an owned
-    value and a decision for an engine value, and asking an already decided one is
-    idempotent, so a caller never inspects which of the two it holds (POL-MATH-034).
-    """
-    if isinstance(proposition, AppliedValuedPredicate):
-        return _ask_valued(proposition)
-    value = _decided(proposition)
+def ask(application: Decision | Proposition | AppliedQuery) -> Answer:
+    """Evaluate a proposition or typed query."""
+    if isinstance(application, AppliedQuery):
+        return _ask_query(application)
+    value = _decided(application)
     if value is S.true:
         return True
     if value is S.false:
@@ -624,12 +604,8 @@ _derived_applications: dict[tuple[type[CategoryPoint], str], Axiom] = {}
 
 
 def _application_name(identifier: str) -> str:
-    """``"FullyFaithful"`` gives ``"is_fully_faithful"``: snake case, prefixed ``is_`` (D89, POL-CAT-060).
-
-    ``inflection.underscore`` is Rails' ``ActiveSupport::Inflector#underscore`` in Python
-    (https://github.com/jpvanhal/inflection, inspected 2026-08-29).
-    """
-    return "is_" + underscore(identifier)
+    """``"FullyFaithful"`` gives ``"is_fully_faithful"``."""
+    return "is_" + uncamelcase(identifier, "_")
 
 
 def _derive_application(axiom: Axiom) -> None:

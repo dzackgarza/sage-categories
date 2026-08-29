@@ -1,9 +1,7 @@
-"""Minimal predicate-backed category for finite sets.
+"""Finite-set specimen for the property architecture.
 
-This file is design pseudocode (``POL-LEAF-014``). The shape is what it teaches:
-nested implementation classes, Sage axiom registration, and the one private abstract predicate
-required by ``PredicateSubcategory``. The kernel owns the subcategory monomorphism,
-ambient predicate application, and refinement machinery.
+This design pseudocode shows the local ``FiniteSets`` declarations and handler.
+See ``property-refinement.md`` and ``undecidable-properties.md`` for their contracts.
 """
 
 from __future__ import annotations
@@ -31,10 +29,10 @@ class FiniteSets(PredicateSubcategory):
         """Inherit the set surface under established finiteness."""
 
     class ElementType:
-        """Add no data to a point of a finite set."""
+        """Supply no finite-set element operation."""
 
     class MorphismType:
-        """Add no data to a map between finite sets."""
+        """Supply no finite-set morphism operation."""
 
     def _predicate(
         self,

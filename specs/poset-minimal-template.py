@@ -1,13 +1,8 @@
-"""Minimal predicate-backed leaf for ``PartiallyOrderedSets()``.
+"""Local declarations for a ``PartiallyOrderedSets()`` specimen.
 
-This file is design pseudocode (``POL-LEAF-014``). Its identifiers show the
-required contract. They do not define a second framework API.
-
-The default public call accepts an owned relation subobject ``R -> X * X``.
-The property-category constructor refines that same relation after the partial-order
-laws are established. A named convenience constructor accepts an owned set and an
-order rule, then constructs the relation first. The selected functor to ``Sets()``
-constructs its object and morphism images through the public target constructors.
+This design pseudocode constructs a poset from its relation subobject.
+It also supplies the local projection to ``Sets()``.
+See ``leaves.md`` and ``functor.md`` for the governing contracts.
 """
 
 from __future__ import annotations

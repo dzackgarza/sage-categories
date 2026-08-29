@@ -3,18 +3,8 @@
 Replace `Leaf`, `Target`, and each datum name with its exact mathematical name.
 Keep only mathematics introduced by the leaf.
 
-This template implements D118 through D123, `POL-LEAF-014`, `POL-LEAF-061`, `POL-LEAF-062`, and `POL-API-028`.
-It illustrates the contracts in [leaves.md](leaves.md) and [functor.md](functor.md).
-It does not define another contract.
-
-## Leaf questions
-
-A leaf answers four questions:
-
-1. What are its objects, elements, and morphisms?
-2. What complete datum constructs one object or morphism?
-3. Which immediate named functors supply inherited structure?
-4. Which operations, predicates, algorithms, and theorems first belong here?
+This template illustrates the local leaf shape specified in [leaves.md](leaves.md).
+Functor construction and selection are specified in [functor.md](functor.md).
 
 ## Category declaration
 
@@ -37,9 +27,7 @@ class LeafCategory(Category):
         return self.ObjectType(defining_data)
 ```
 
-`Category` is `Cat().ObjectType`.
-The three nested classes state the complete local implementation surface.
-An empty class adds no local operation for that mathematical kind.
+The category declaration adds these local classes and methods.
 
 ## Constructors
 
@@ -56,9 +44,6 @@ Each route returns `C.ObjectType`.
 The constructor obtains data already determined by the input from its mathematical owner.
 
 ## Structure functor introduced by the leaf
-
-A new leaf functor contains complete executable object and morphism actions.
-Each action constructs its public target value directly.
 
 ```python
 def target_projection(self) -> Cat().MorphismType:
@@ -80,23 +65,9 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (self.target_projection(),)
 ```
 
-The two actions are the sole declaration of this functor.
-Selection in `structure_functors()` makes the applicable target implementation classes available on source values.
+This leaf defines `target_projection()` and selects it for inherited structure.
 
-A helper used only by one action stays local to that action or private to the leaf.
-A datum with independent public mathematical meaning keeps its public name.
-
-## Functors retained by constructions
-
-Return an existing retained functor when the defining construction already owns it.
-Examples include:
-
-- a product projection;
-- a pullback projection;
-- a comma-category projection;
-- an evaluation functor from `Fun([1], C)`;
-- a subcategory monomorphism;
-- the projection from a Grothendieck construction.
+## Retained functor specimen
 
 ```python
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
@@ -106,12 +77,9 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     )
 ```
 
-The leaf does not reconstruct a retained functor.
-Ordinary functors that supply no inherited implementation remain unselected.
+These projections belong to `defining_presentation()`.
 
-## Construction owners
-
-Use the category that owns each result:
+## Construction specimen
 
 ```python
 C(data)
@@ -130,24 +98,12 @@ p.Fiber(b)
 Grothendieck(P)
 ```
 
-The defining construction retains all projections, evaluations, and universal morphisms.
-One apex can have several presentations.
-An operation that depends on one presentation stays on that presentation object.
+## Property specimen
 
-## Property categories
+See [finite-set-minimal-template.py](finite-set-minimal-template.py).
+Its category and evaluation behavior comes from [property-refinement.md](property-refinement.md) and [undecidable-properties.md](undecidable-properties.md).
 
-A leaf declares a property axiom once.
-The registered identifier determines the generated `is_P()` method.
-A predicate-backed property category supplies its defining private `_predicate()` method.
-
-See [property-refinement.md](property-refinement.md) for the category construction and refinement.
-See [undecidable-properties.md](undecidable-properties.md) for propositions, typed queries, and handlers.
-See [finite-set-minimal-template.py](finite-set-minimal-template.py) for the one complete property example.
-
-## Private computation
-
-A category-owned method can use a mature engine behind a private boundary.
-It constructs an owned mathematical result before it returns.
+## Private computation specimen
 
 ```python
 def leaf_operation(self, argument: LeafArgument) -> LeafResult:
@@ -156,20 +112,4 @@ def leaf_operation(self, argument: LeafArgument) -> LeafResult:
     return LeafResults()(engine_result)
 ```
 
-The public method names the mathematics.
-The caller does not select the engine.
-
-## Checklist
-
-- The leaf states only its new mathematical data and operations.
-- `ObjectType`, `ElementType`, and `MorphismType` have their exact names.
-- The default constructor accepts one complete defining datum.
-- Each new functor has complete object and morphism actions.
-- Each functor action constructs an owned target value.
-- `structure_functors()` returns only immediate named functors that supply inheritance.
-- Retained construction functors are reused directly.
-- Universal data remains on its presentation object.
-- Property declarations link to their canonical specification.
-- Every public signature uses exact mathematical types.
-- Private engine work returns an owned result.
-- The leaf imports no kernel internal.
+The public method returns `LeafResult`.

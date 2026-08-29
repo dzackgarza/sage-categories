@@ -1,25 +1,28 @@
-"""The constructions ``Cat()`` owns (POL-CAT-050, POL-MATH-037): products and coproducts of categories over a discrete shape, the strict pullback, and the exponential.
+"""The constructions ``Cat()`` owns (POL-CAT-050, POL-MATH-037): the strict limit of a diagram of categories, the coproduct over a discrete shape, and the exponential.
 
 Each construction line carries its inspected citation (POL-MATH-040); the
 universal property of each is a trusted declaration attached to the
 constructor (POL-MATH-037, POL-MATH-036).
 
-- The product of an ``S``-indexed family of categories has as objects the
-  ``S``-indexed families of objects given by rule and as morphisms the
-  componentwise families of morphisms (Mathlib ``CategoryTheory.pi``; the binary
-  case ``CategoryTheory.prod``; inspected 2026-08-26).  ``product_projection(i)``
-  is the evaluation functor at ``i``.
+- The strict limit of ``D: I -> Cat()`` has as objects the ``I``-indexed families
+  of objects that ``D`` carries to one another, given by rule, and as morphisms
+  the componentwise families with the same compatibility: limits in ``Cat`` are
+  computed on objects and on morphisms (Mathlib
+  ``CategoryTheory.Cat.HasLimits.limitCone``, whose apex has as objects the
+  compatible families of objects; inspected 2026-08-26).  The compatibility is
+  decided by ``ask``: identity first, ``Unknown`` for two distinct rule-defined
+  values (POL-MATH-034).  Its projection at ``i`` reads the component there.
+
+  A discrete shape has no generating morphism, so it imposes no compatibility and
+  the limit is the product of the family (Mathlib ``CategoryTheory.pi``; the
+  binary case ``CategoryTheory.prod``; inspected 2026-08-26); ``L(2, 2)`` gives
+  the fibre product.  A product is the fibre product over the terminal category,
+  so the two are one construction at two shapes, and the projections of each are
+  indexed by the objects of its shape (POL-CAT-092).
 - The coproduct has as objects the tagged objects ``(i, x)`` with ``x`` in the
   ``i``-th category and as morphisms the morphisms within one tag (Mathlib
   ``CategoryTheory.Sigma.sigma``; the binary case ``CategoryTheory.sum``;
   inspected 2026-08-26).  ``coproduct_injection(i)`` tags.
-- The strict pullback of ``F: A -> C`` and ``G: B -> C`` has as objects the pairs
-  ``(a, b)`` with ``F(a)`` and ``G(b)`` one object of ``C``, and as morphisms the
-  pairs with identical images: limits in ``Cat`` are computed on objects and on
-  morphisms (Mathlib ``CategoryTheory.Cat.HasLimits.limitCone``, whose apex has
-  as objects the compatible families of objects; inspected 2026-08-26).  A pair's
-  membership is decided by ``ask(F(a) == G(b))``: identity first, ``Unknown`` for
-  two distinct rule-defined sets (POL-MATH-034).
 - The exponential ``D ** C`` is ``Fun(C, D)`` (Mathlib ``CategoryTheory.Cat.exp_obj``;
   inspected 2026-08-26).
 
@@ -28,9 +31,9 @@ constructor (POL-MATH-037, POL-MATH-036).
 owned construction.
 
 Each of these categories retains one object per construction datum -- one tagged
-object per ``(i, x)``, one family per rule, one pair per ``(a, b)`` -- because a
-category has one object per datum, and the structural transport caches identify
-images by it (POL-CAT-066).  A universal object is unique up to unique isomorphism
+object per ``(i, x)``, one family per rule -- because a category has one object
+per datum, and the structural transport caches identify images by it
+(POL-CAT-066).  A universal object is unique up to unique isomorphism
 and has one construction, so a second call with the same data returns the same
 object; the projections, injections, and functor images of that construction are
 likewise one morphism each, retained by the functor and the limiting cone that own
@@ -50,7 +53,7 @@ from sage_categories.cat.constructions import cocone, cocone_apex, cone, cone_ap
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.diagrams import sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
-from sage_categories.cat.shapes import DiscreteCategory, index_set_of
+from sage_categories.cat.shapes import Discrete, DiscreteCategory
 from sage_categories.kernel.caches import SequenceTable
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import Predicate, Proposition, ask, conjunction
@@ -59,47 +62,58 @@ from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, Morphis
 
 __all__ = [
     "CoproductCategory",
-    "ProductCategory",
-    "PullbackCategory",
-    "SharedCarrierPullback",
+    "LimitCategory",
     "coproduct_of_categories",
+    "limit_of_categories",
     "product_of_categories",
     "pullback_of_categories",
-    "shared_carrier_pullback",
-    "strict_pullback",
 ]
 
-type ObjectRule = Callable[[DiscreteCategory.ObjectType], ObjectOfCategory]
-type MorphismRule = Callable[[DiscreteCategory.ObjectType], MorphismOfCategory]
-type Datum = Hashable
+type ObjectRule = Callable[[ObjectOfCategory], ObjectOfCategory]
+type MorphismRule = Callable[[ObjectOfCategory], MorphismOfCategory]
 
 
 def _sequence_rule[Value](sequence: tuple[Value, ...]) -> Callable[[DiscreteCategory.ObjectType], Value]:
+    """The rule of a sequence over ``Discrete([n])``, the convenience form of a family (POL-CAT-092)."""
     return lambda vertex: sequence[sequence_position(vertex)]
 
 
-# -- products of categories ---------------------------------------------------------------
+# -- the strict limit of a diagram of categories --------------------------------------------
 
 
 @dataclass(frozen=True, eq=False, slots=True)
 class FamilyObjectData:
-    """The local state introduced by a product-category object."""
+    """The local state introduced by an object of a strict limit."""
 
     rule: ObjectRule
 
 
 @dataclass(frozen=True, eq=False, slots=True)
 class FamilyMorphismData:
-    """The local state introduced by a product-category morphism."""
+    """The local state introduced by a morphism of a strict limit."""
 
     rule: MorphismRule
 
 
-class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], []]):
-    """The product of an ``S``-indexed family of categories."""
+# ``components_agree(family, L)``: the diagram carries the components of the family to
+# one another, so the family is an object (or a morphism) of the strict limit ``L``.
+components_agree = Predicate("components_agree", 2, False)
+
+
+def _components_agree_along_diagram(candidate: CategoryPoint, limit: Category) -> Decision:
+    if not (is_placed(candidate, limit) or is_placed(candidate, limit.morphism_category(1))):
+        return Unknown
+    return ask(limit._agrees(candidate.component))
+
+
+components_agree.register_handler(_components_agree_along_diagram)
+
+
+class LimitCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], []]):
+    """The strict limit of a diagram of categories: the families its morphisms carry to one another."""
 
     class ObjectType(ObjectOfCategory):
-        """An object of a product category: an ``S``-indexed family of objects by rule."""
+        """An object of a strict limit: a family of objects by rule, one in each factor."""
 
         def __init__(self, data: FamilyObjectData) -> None:
             self._rule = data.rule
@@ -107,14 +121,14 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
             self._shape = self.category().shape()
 
         def component(self, index: ObjectOfCategory | Hashable) -> ObjectOfCategory:
-            """The object at ``i``, for ``i`` an object of the index category or a datum of the index set."""
+            """The object at ``i``, for ``i`` an object of the shape or a datum of its object set."""
             return self._rule(vertex_of(self._shape, index))
 
         def __repr__(self) -> str:
             return f"family in {self.category()!r}"
 
     class MorphismType(MorphismOfCategory):
-        """A morphism of a product category: a componentwise family of morphisms."""
+        """A morphism of a strict limit: a componentwise family of morphisms."""
 
         def __init__(self, data: FamilyMorphismData) -> None:
             self._rule = data.rule
@@ -143,57 +157,110 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
     def factor(self, index: ObjectOfCategory | Hashable) -> Category:
         return self._diagram.on_object(vertex_of(self.shape(), index))
 
-    # The objects and morphisms are the families of objects and morphisms of the
-    # factors: their sets are the set products of the factors' sets (specs/functor.md, "Diagram shapes and universal constructions"), for a
-    # sequence-indexed product whose index set is ``[n]``.
+    # -- the compatibility the diagram imposes ---------------------------------------
+    #
+    # A family is an object of the limit when the diagram carries each of its components
+    # to the next; the shape's generating morphisms state that condition, so a discrete
+    # shape imposes none and the limit is the product.  ``ask`` decides each equation:
+    # identity first, ``Unknown`` for two distinct rule-defined values (POL-MATH-034).
 
-    def _positions(self) -> tuple[Datum, ...]:
-        enumeration = Sets.Finite().chosen_enumeration(index_set_of(self.shape()))
-        assert enumeration == tuple(range(len(enumeration))), f"{self!r} is not indexed by a simplex"
-        return enumeration
+    def _generators(self) -> tuple[MorphismOfCategory, ...]:
+        edges = self.shape().generating_morphisms()
+        assert edges is not Unknown, f"{self.shape()!r} names no generating morphisms, so the compatibility of a family over it is unstated"
+        return edges
+
+    def _agrees(self, rule: ObjectRule | MorphismRule) -> Proposition:
+        """``D(u)(v_i) == v_j`` for every generating morphism ``u: i -> j`` of the shape."""
+        return conjunction(self._diagram.on_morphism(edge)(rule(edge.domain())) == rule(edge.codomain()) for edge in self._generators())
+
+    def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
+        return member(candidate, self) & components_agree(candidate, self)
+
+    # -- the sets of objects and of morphisms (specs/functor.md, "Diagram shapes and universal constructions") --
+    #
+    # The families are the product, over the objects of the shape, of the factors' own
+    # sets; the limit's set is the subobject of that product the compatibility cuts out,
+    # which is the whole product when the shape has no generating morphism.
+
+    def _positions(self) -> Category:
+        """``Discrete(Ob(I))``: the index of the family products, one position per object of the shape."""
+        return Discrete(self.shape().object_set())
+
+    def _families(self, kind: str, factor_set: Callable[[Category], ObjectOfCategory]) -> ObjectOfCategory:
+        if kind not in self._finite_data:
+            shape = self.shape()
+            diagram = Fun(self._positions(), Sets).from_object_rule(lambda position: factor_set(self.factor(shape.object_at(position.point()))))
+            self._finite_data[kind] = Sets.Products()(diagram)
+        return self._finite_data[kind]
+
+    def _component_at(self, families: ObjectOfCategory, point: ElementOfObject, vertex: ObjectOfCategory) -> ElementOfObject:
+        """The point of the factor's set that a point of the family product names at one object of the shape."""
+        return families.product_projection(self._positions()(self.shape().object_point(vertex)))(point)
+
+    def _object_rule(self, families: ObjectOfCategory, point: ElementOfObject) -> ObjectRule:
+        return lambda vertex: self.factor(vertex).object_at(self._component_at(families, point, vertex))
+
+    def _morphism_rule(self, families: ObjectOfCategory, point: ElementOfObject) -> MorphismRule:
+        return lambda vertex: self.factor(vertex).morphism_at(self._component_at(families, point, vertex))
 
     def object_set(self) -> ObjectOfCategory:
-        if "objects" not in self._finite_data:
-            diagram = Fun(self.shape(), Sets).from_object_rule(lambda vertex: self.factor(vertex).object_set())
-            self._finite_data["objects"] = Sets.Products()(diagram)
-        return self._finite_data["objects"]
+        families = self._families("objects", lambda factor: factor.object_set())
+        if not self._generators():
+            return families
+        if "object set" not in self._finite_data:
+            self._finite_data["object set"] = families.subset_from(lambda datum: ask(self._agrees(self._object_rule(families, families.point(datum)))))
+        return self._finite_data["object set"]
 
-    def object_at(self, point: ElementOfObject) -> ProductCategory.ObjectType:
-        self.object_set()
-        product = self._finite_data["objects"]
-        return self(tuple(self.factor(position).object_at(product.product_projection(position)(point)) for position in self._positions()))
+    def object_at(self, point: ElementOfObject) -> LimitCategory.ObjectType:
+        return self(self._object_rule(self._families("objects", lambda factor: factor.object_set()), point))
 
     def _chosen_morphism_set(self) -> ObjectOfCategory | UnknownClass:
-        factor_morphisms = tuple(ask(self.factor(position).morphism_set()) for position in self._positions())
-        if any(morphisms is Unknown for morphisms in factor_morphisms):
+        vertices = self._vertices()
+        if vertices is Unknown:
             return Unknown
-        if "morphisms" not in self._finite_data:
-            diagram = Fun(self.shape(), Sets).from_object_rule(lambda vertex: factor_morphisms[sequence_position(vertex)])
-            self._finite_data["morphisms"] = Sets.Products()(diagram)
-        return self._finite_data["morphisms"]
+        factor_morphisms = {vertex: ask(self.factor(vertex).morphism_set()) for vertex in vertices}
+        if any(morphisms is Unknown for morphisms in factor_morphisms.values()):
+            return Unknown
+        families = self._families("morphisms", lambda factor: factor_morphisms[factor])
+        if not self._generators():
+            return families
+        if "morphism set" not in self._finite_data:
+            self._finite_data["morphism set"] = families.subset_from(lambda datum: ask(self._agrees(self._morphism_rule(families, families.point(datum)))))
+        return self._finite_data["morphism set"]
 
-    def morphism_at(self, point: ElementOfObject) -> ProductCategory.MorphismType:
-        product = self._finite_data["morphisms"]
-        components = tuple(self.factor(position).morphism_at(product.product_projection(position)(point)) for position in self._positions())
+    def morphism_at(self, point: ElementOfObject) -> LimitCategory.MorphismType:
+        rule = self._morphism_rule(self._families("morphisms", lambda factor: ask(factor.morphism_set())), point)
         return self.construct_morphism(
-            self(tuple(component.domain() for component in components)),
-            self(tuple(component.codomain() for component in components)),
-            components,
+            self(lambda vertex: rule(vertex).domain()),
+            self(lambda vertex: rule(vertex).codomain()),
+            rule,
         )
 
-    def __call__(self, family: ObjectRule | tuple[ObjectOfCategory, ...]) -> ProductCategory.ObjectType:
-        """``P(rule)`` for a family by rule; ``P((X_0, ..., X_n))`` for the external tuple, retained per tuple."""
+    def _vertices(self) -> tuple[ObjectOfCategory, ...] | UnknownClass:
+        """The objects of the shape in its chosen enumeration, or ``Unknown`` when it chooses none."""
+        shape, objects, finite = self.shape(), self.shape().object_set(), Sets.Finite()
+        if not finite.has_chosen_enumeration(objects):
+            return Unknown
+        return tuple(shape.object_at(objects.point(datum)) for datum in finite.chosen_enumeration(objects))
+
+    # -- construction ------------------------------------------------------------------
+
+    def __call__(self, family: ObjectRule | tuple[ObjectOfCategory, ...]) -> LimitCategory.ObjectType:
+        """``L(rule)`` for a family by rule; ``L((X_0, ..., X_n))`` for the sequence convenience over ``Discrete([n])``, retained per tuple."""
+        rule = family if callable(family) else _sequence_rule(tuple(family))
+        assert ask(self._agrees(rule)) is not False, f"{family!r} is no family that {self._diagram!r} carries to itself"
         if callable(family):
             return self.ObjectType(category=self, data=FamilyObjectData(family))
         sequence = tuple(family)
         if sequence not in self._sequences:
             for position, member_object in enumerate(sequence):
                 assert member_object in self.factor(position), f"{member_object!r} is not an object of {self.factor(position)!r}"
-            self._sequences[sequence] = self.ObjectType(category=self, data=FamilyObjectData(_sequence_rule(sequence)))
+            self._sequences[sequence] = self.ObjectType(category=self, data=FamilyObjectData(rule))
         return self._sequences[sequence]
 
-    def construct_morphism(self, domain: ProductCategory.ObjectType, codomain: ProductCategory.ObjectType, family: MorphismRule | tuple[MorphismOfCategory, ...]) -> ProductCategory.MorphismType:
+    def construct_morphism(self, domain: LimitCategory.ObjectType, codomain: LimitCategory.ObjectType, family: MorphismRule | tuple[MorphismOfCategory, ...]) -> LimitCategory.MorphismType:
         rule = family if callable(family) else _sequence_rule(tuple(family))
+        assert ask(self._agrees(rule)) is not False, f"{family!r} is no family of morphisms that {self._diagram!r} carries to itself"
         return self.MorphismType(
             category=self.morphism_category(1),
             domain=domain,
@@ -201,8 +268,8 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
             data=FamilyMorphismData(rule),
         )
 
-    def construct_identity(self, member_object: ProductCategory.ObjectType) -> ProductCategory.MorphismType:
-        def component_identity(vertex: DiscreteCategory.ObjectType) -> MorphismOfCategory:
+    def construct_identity(self, member_object: LimitCategory.ObjectType) -> LimitCategory.MorphismType:
+        def component_identity(vertex: ObjectOfCategory) -> MorphismOfCategory:
             component = member_object.component(vertex)
             return component.category().morphism_category(1)(component, component).one()
 
@@ -213,7 +280,7 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
             data=FamilyMorphismData(component_identity),
         )
 
-    def composite(self, second: ProductCategory.MorphismType, first: ProductCategory.MorphismType) -> ProductCategory.MorphismType:
+    def composite(self, second: LimitCategory.MorphismType, first: LimitCategory.MorphismType) -> LimitCategory.MorphismType:
         assert first.codomain() is second.domain()
         return self.MorphismType(
             category=self.morphism_category(1),
@@ -223,47 +290,61 @@ class ProductCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], 
         )
 
     def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
-        """Two families (of objects or of morphisms) over a finitely enumerated index are equal when every component is."""
+        """Two families (of objects or of morphisms) over a finitely enumerated shape are equal when every component is."""
         morphisms = self.morphism_category(1)
         if not ((first in self and candidate in self) or (first in morphisms and candidate in morphisms)):
             return Unknown
-        index_set, finite = index_set_of(self.shape()), Sets.Finite()
-        if not finite.has_chosen_enumeration(index_set):
+        vertices = self._vertices()
+        if vertices is Unknown:
             return Unknown
-        return ask(conjunction(first.component(datum) == candidate.component(datum) for datum in finite.chosen_enumeration(index_set)))
+        return ask(conjunction(first.component(vertex) == candidate.component(vertex) for vertex in vertices))
 
     def __repr__(self) -> str:
-        return f"Product({self._diagram!r})"
+        return f"Limit({self._diagram!r})"
 
 
-def product_of_categories(diagram: Functor) -> ObjectOfCategory:
-    """``Cat().Products()(diagram)`` for a diagram over ``Discrete(S)``."""
-    product = ProductCategory(diagram)
+def limit_of_categories(diagram: Functor, family: Category) -> ObjectOfCategory:
+    """The strict limit of ``diagram``, retained in ``family`` with its cone of projections and its mediator.
+
+    The projection at an object of the shape reads the component there, of a family and
+    of a family morphism alike; the mediator of a cone assembles the family of its
+    components.  Both are indexed by the shape, so a product and a fibre product are the
+    same construction at two shapes (POL-CAT-092).
+    """
+    limit = LimitCategory(diagram)
     projections: MonoDict = MonoDict()
 
-    def projection(vertex: DiscreteCategory.ObjectType) -> Functor:
+    def projection(vertex: ObjectOfCategory) -> Functor:
         if vertex not in projections:
-            projections[vertex] = Fun(product, diagram.on_object(vertex))(
-                lambda family: family.component(vertex),
+            projections[vertex] = Fun(limit, diagram.on_object(vertex))(
+                lambda member_object: member_object.component(vertex),
                 lambda morphism: morphism.component(vertex),
             )
         return projections[vertex]
 
     def mediator(candidate_cone: NaturalTransformation) -> Functor:
         source = cone_apex(candidate_cone)
-        return Fun(source, product)(
-            lambda member_object: product(lambda vertex: candidate_cone.component(vertex).on_object(member_object)),
-            lambda morphism: product.construct_morphism(
-                product(lambda vertex: candidate_cone.component(vertex).on_object(morphism.domain())),
-                product(lambda vertex: candidate_cone.component(vertex).on_object(morphism.codomain())),
+        return Fun(source, limit)(
+            lambda member_object: limit(lambda vertex: candidate_cone.component(vertex).on_object(member_object)),
+            lambda morphism: limit.construct_morphism(
+                limit(lambda vertex: candidate_cone.component(vertex).on_object(morphism.domain())),
+                limit(lambda vertex: candidate_cone.component(vertex).on_object(morphism.codomain())),
                 lambda vertex: candidate_cone.component(vertex).on_morphism(morphism),
             ),
         )
 
-    lowered = Cat().Products().lowered(diagram)
-    return Cat().Products().with_universal_data(lowered, product, cone(lowered, product, projection), mediator)
+    lowered = family.lowered(diagram)
+    return family.with_universal_data(lowered, limit, cone(lowered, limit, projection), mediator)
 
 
+def product_of_categories(diagram: Functor) -> ObjectOfCategory:
+    """``Cat().Products()(diagram)`` for a diagram over ``Discrete(S)``: the limit imposes no condition there."""
+    return limit_of_categories(diagram, Cat().Products())
+
+
+def pullback_of_categories(diagram: Functor) -> ObjectOfCategory:
+    """``Cat().Pullbacks()(diagram)`` for a diagram over the walking cospan ``L(2, 2)``."""
+    return limit_of_categories(diagram, Cat().Pullbacks())
 
 
 
@@ -413,270 +494,3 @@ def coproduct_of_categories(diagram: Functor) -> ObjectOfCategory:
 
     lowered = Cat().Coproducts().lowered(diagram)
     return Cat().Coproducts().with_universal_data(lowered, coproduct, cocone(lowered, coproduct, injection), mediator)
-
-
-# -- the strict pullback ----------------------------------------------------------------
-
-
-@dataclass(frozen=True, eq=False, slots=True)
-class PairObjectData:
-    """The local state introduced by a pullback object."""
-
-    first: ObjectOfCategory
-    second: ObjectOfCategory
-
-
-@dataclass(frozen=True, eq=False, slots=True)
-class PairMorphismData:
-    """The local state introduced by a pullback morphism."""
-
-    first: MorphismOfCategory
-    second: MorphismOfCategory
-
-
-# ``images_agree(pair, pullback)``: the two functors agree on the pair, ``F(a) == G(b)``.
-images_agree = Predicate("images_agree", 2, False)
-
-
-def _images_agree_by_equality(candidate: CategoryPoint, pullback: Category) -> Decision:
-    if not is_placed(candidate, pullback):
-        return Unknown
-    return ask(pullback.first_functor().on_object(candidate.first()) == pullback.second_functor().on_object(candidate.second()))
-
-
-images_agree.register_handler(_images_agree_by_equality)
-
-
-class PullbackCategory(Category[[tuple[MorphismOfCategory, MorphismOfCategory]], []]):
-    """The strict pullback ``A *_C B`` of ``F: A -> C`` and ``G: B -> C``."""
-
-    class ObjectType(ObjectOfCategory):
-        """An object of a strict pullback: a pair ``(a, b)``."""
-
-        def __init__(self, data: PairObjectData) -> None:
-            self._first = data.first
-            self._second = data.second
-            super().__init__()
-
-        def first(self) -> ObjectOfCategory:
-            return self._first
-
-        def second(self) -> ObjectOfCategory:
-            return self._second
-
-        def __repr__(self) -> str:
-            return f"({self._first!r}, {self._second!r})"
-
-    class MorphismType(MorphismOfCategory):
-        """A morphism of a strict pullback: a pair of morphisms with identical images."""
-
-        def __init__(self, data: PairMorphismData) -> None:
-            self._first = data.first
-            self._second = data.second
-            super().__init__()
-
-        def first(self) -> MorphismOfCategory:
-            return self._first
-
-        def second(self) -> MorphismOfCategory:
-            return self._second
-
-        def __repr__(self) -> str:
-            return f"({self._first!r}, {self._second!r})"
-
-    class ElementType(ElementOfObject):
-        """A generalized element of a pair; no local operation."""
-
-    def __init__(self, first_functor: Functor, second_functor: Functor) -> None:
-        assert first_functor.codomain() is second_functor.codomain()
-        self._first_functor = first_functor
-        self._second_functor = second_functor
-        self._pairs = SequenceTable()
-        self._projections: MonoDict = MonoDict()
-        self._finite_data: MonoDict = MonoDict()
-        super().__init__()
-        self._equality.register_handler(self._equal)
-
-    def first_functor(self) -> Functor:
-        return self._first_functor
-
-    def second_functor(self) -> Functor:
-        return self._second_functor
-
-    def first_projection(self) -> Functor:
-        """The pullback projection to the domain of the first functor, retained once."""
-        if self._first_functor not in self._projections:
-            self._projections[self._first_functor] = Fun(self, self._first_functor.domain())(lambda pair: pair.first(), lambda morphism: morphism.first())
-        return self._projections[self._first_functor]
-
-    def second_projection(self) -> Functor:
-        """The pullback projection to the domain of the second functor, retained once."""
-        if self._second_functor not in self._projections:
-            self._projections[self._second_functor] = Fun(self, self._second_functor.domain())(lambda pair: pair.second(), lambda morphism: morphism.second())
-        return self._projections[self._second_functor]
-
-    def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
-        """A constructed pair is a member exactly when its two images are one object."""
-        return member(candidate, self) & images_agree(candidate, self)
-
-    # The objects are the pairs with one image: the subset of the product of the
-    # factors' object sets cut out by ``images_agree``; the morphisms likewise (POL-CAT-092, specs/functor.md, "Diagram shapes and universal constructions").
-
-    def object_set(self) -> ObjectOfCategory:
-        if "objects" not in self._finite_data:
-            first, second = self._first_functor.domain(), self._second_functor.domain()
-            pairs = Sets.Products()((first.object_set(), second.object_set()))
-
-            def agree(datum: Datum) -> Decision:
-                point = pairs.point(datum)
-                left, right = first.object_at(pairs.product_projection(0)(point)), second.object_at(pairs.product_projection(1)(point))
-                return ask(self._first_functor.on_object(left) == self._second_functor.on_object(right))
-
-            self._finite_data["objects"] = pairs
-            self._finite_data["object set"] = pairs.subset_from(agree)
-        return self._finite_data["object set"]
-
-    def object_at(self, point: ElementOfObject) -> PullbackCategory.ObjectType:
-        self.object_set()
-        pairs = self._finite_data["objects"]
-        first, second = self._first_functor.domain(), self._second_functor.domain()
-        return self((first.object_at(pairs.product_projection(0)(point)), second.object_at(pairs.product_projection(1)(point))))
-
-    def _chosen_morphism_set(self) -> ObjectOfCategory | UnknownClass:
-        first, second = self._first_functor.domain(), self._second_functor.domain()
-        first_morphisms, second_morphisms = ask(first.morphism_set()), ask(second.morphism_set())
-        if first_morphisms is Unknown or second_morphisms is Unknown:
-            return Unknown
-        if "morphisms" not in self._finite_data:
-            pairs = Sets.Products()((first_morphisms, second_morphisms))
-
-            def agree(datum: Datum) -> Decision:
-                point = pairs.point(datum)
-                left, right = first.morphism_at(pairs.product_projection(0)(point)), second.morphism_at(pairs.product_projection(1)(point))
-                return ask(self._first_functor.on_morphism(left) == self._second_functor.on_morphism(right))
-
-            self._finite_data["morphisms"] = pairs
-            self._finite_data["morphism set"] = pairs.subset_from(agree)
-        return self._finite_data["morphism set"]
-
-    def morphism_at(self, point: ElementOfObject) -> PullbackCategory.MorphismType:
-        pairs = self._finite_data["morphisms"]
-        first, second = self._first_functor.domain(), self._second_functor.domain()
-        left, right = first.morphism_at(pairs.product_projection(0)(point)), second.morphism_at(pairs.product_projection(1)(point))
-        return self.construct_morphism(self((left.domain(), right.domain())), self((left.codomain(), right.codomain())), (left, right))
-
-    def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
-        """Two pairs are equal when both components are."""
-        morphisms = self.morphism_category(1)
-        if (first in self and candidate in self) or (first in morphisms and candidate in morphisms):
-            return ask((first.first() == candidate.first()) & (first.second() == candidate.second()))
-        return Unknown
-
-    def __call__(self, pair: tuple[ObjectOfCategory, ObjectOfCategory]) -> PullbackCategory.ObjectType:
-        """``PB((a, b))``: the pair, retained per pair; rejected only when the images are decidedly distinct."""
-        first, second = pair
-        assert first in self._first_functor.domain() and second in self._second_functor.domain()
-        assert ask(self._first_functor.on_object(first) == self._second_functor.on_object(second)) is not False
-        if pair not in self._pairs:
-            self._pairs[pair] = self.ObjectType(category=self, data=PairObjectData(first, second))
-        return self._pairs[pair]
-
-    def construct_morphism(self, domain: PullbackCategory.ObjectType, codomain: PullbackCategory.ObjectType, pair: tuple[MorphismOfCategory, MorphismOfCategory]) -> PullbackCategory.MorphismType:
-        first, second = pair
-        assert first in self._first_functor.domain().morphism_category(1)(domain.first(), codomain.first())
-        assert second in self._second_functor.domain().morphism_category(1)(domain.second(), codomain.second())
-        assert ask(self._first_functor.on_morphism(first) == self._second_functor.on_morphism(second)) is not False
-        return self.MorphismType(
-            category=self.morphism_category(1),
-            domain=domain,
-            codomain=codomain,
-            data=PairMorphismData(first, second),
-        )
-
-    def construct_identity(self, member_object: PullbackCategory.ObjectType) -> PullbackCategory.MorphismType:
-        first, second = member_object.first(), member_object.second()
-        return self.MorphismType(
-            category=self.morphism_category(1),
-            domain=member_object,
-            codomain=member_object,
-            data=PairMorphismData(
-                first.category().morphism_category(1)(first, first).one(),
-                second.category().morphism_category(1)(second, second).one(),
-            ),
-        )
-
-    def composite(self, second: PullbackCategory.MorphismType, first: PullbackCategory.MorphismType) -> PullbackCategory.MorphismType:
-        assert first.codomain() is second.domain()
-        return self.MorphismType(
-            category=self.morphism_category(1),
-            domain=first.domain(),
-            codomain=second.codomain(),
-            data=PairMorphismData(second.first() * first.first(), second.second() * first.second()),
-        )
-
-    def __repr__(self) -> str:
-        return f"Pullback({self._first_functor!r}, {self._second_functor!r})"
-
-
-class SharedCarrierPullback(PullbackCategory):
-    """A strict pullback whose objects carry two structures on one retained ancestor object (POL-FUN-029).
-
-    The constructor asserts with ``is`` that both projections return the same
-    ancestor object; the pullback retains that object once with both structures.
-    """
-
-    class ObjectType(PullbackCategory.ObjectType):
-        """A pullback pair whose two components agree by being structures on one carrier."""
-
-    class ElementType(PullbackCategory.ElementType):
-        """A generalized element of such a pair."""
-
-    class MorphismType(PullbackCategory.MorphismType):
-        """A pullback pair of morphisms over one carrier map."""
-
-    def __call__(self, pair: tuple[ObjectOfCategory, ObjectOfCategory]) -> PullbackCategory.ObjectType:
-        first, second = pair
-        assert self._first_functor.on_object(first) is self._second_functor.on_object(second), (
-            f"{first!r} and {second!r} are structures on distinct carriers"
-        )
-        return super().__call__(pair)
-
-
-def cospan_legs(diagram: Functor) -> tuple[Functor, Functor]:
-    """The two legs ``D(0 -> 2)`` and ``D(1 -> 2)`` of a diagram over the walking cospan ``L(2, 2)``."""
-    cospan = Cat().Horn(2, 2)
-    return diagram.on_morphism(cospan.generator("0->2")), diagram.on_morphism(cospan.generator("1->2"))
-
-
-def pullback_of_categories(diagram: Functor) -> ObjectOfCategory:
-    """``Cat().Pullbacks()(diagram)`` for a diagram ``L(2, 2) -> Cat()``: the strict pullback of ``D(0 -> 2)`` and ``D(1 -> 2)``."""
-    return strict_pullback(diagram, PullbackCategory(*cospan_legs(diagram)))
-
-
-def shared_carrier_pullback(diagram: Functor) -> ObjectOfCategory:
-    """The strict pullback of two structure functors into a shared ancestor, with the identity precondition on objects."""
-    return strict_pullback(diagram, SharedCarrierPullback(*cospan_legs(diagram)))
-
-
-def strict_pullback(diagram: Functor, pullback: PullbackCategory) -> ObjectOfCategory:
-    """The chosen pullback of a cospan of categories with the given apex, retaining both projections and the mediator."""
-    cospan = Cat().Horn(2, 2)
-    first_functor, second_functor = pullback.first_functor(), pullback.second_functor()
-    assert all(leg is functor for leg, functor in zip(cospan_legs(diagram), (first_functor, second_functor))), f"{pullback!r} is not the pullback of {diagram!r}"
-    first_projection, second_projection = pullback.first_projection(), pullback.second_projection()
-    legs = {0: first_projection, 1: second_projection, 2: first_functor * first_projection}
-
-    def mediator(candidate_cone: NaturalTransformation) -> Functor:
-        source = cone_apex(candidate_cone)
-        to_first, to_second = candidate_cone.component(cospan(0)), candidate_cone.component(cospan(1))
-        return Fun(source, pullback)(
-            lambda member_object: pullback((to_first.on_object(member_object), to_second.on_object(member_object))),
-            lambda morphism: pullback.construct_morphism(
-                pullback((to_first.on_object(morphism.domain()), to_second.on_object(morphism.domain()))),
-                pullback((to_first.on_object(morphism.codomain()), to_second.on_object(morphism.codomain()))),
-                (to_first.on_morphism(morphism), to_second.on_morphism(morphism)),
-            ),
-        )
-
-    lowered = Cat().Pullbacks().lowered(diagram)
-    return Cat().Pullbacks().with_universal_data(lowered, pullback, cone(lowered, pullback, lambda vertex: legs[cospan.label(vertex)]), mediator)

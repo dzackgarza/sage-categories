@@ -40,6 +40,33 @@ def _star() -> ObjectOfCategory:
     return Cat().Terminal()(0)
 
 
+def _cospan() -> ObjectOfCategory:
+    """``L(2, 2)``, the shape of the pullback square a comma category is."""
+    return Cat().Horn(2, 2)
+
+
+def _pairs_projection(shape: ObjectOfCategory) -> Functor:
+    """The leg of a comma category at the first vertex of its cospan: its projection to the product of the two domains."""
+    return shape.projection(_cospan()(0))
+
+
+def _comma_pair(vertex: ObjectOfCategory) -> ObjectOfCategory:
+    """The component of an object of a comma category at the first vertex: the pair ``(a, b)``."""
+    return vertex.component(_cospan()(0))
+
+
+def _comma_arrow(vertex: ObjectOfCategory) -> MorphismOfCategory:
+    """The component at the second vertex: the arrow ``F a -> G b``."""
+    return vertex.component(_cospan()(1))
+
+
+def _comma_object(shape: ObjectOfCategory, pair: ObjectOfCategory, arrow: MorphismOfCategory) -> ObjectOfCategory:
+    """The object of a comma category with those two components; the diagram forces the third, the endpoints of the arrow."""
+    cospan = _cospan()
+    components = {0: pair, 1: arrow, 2: shape.diagram().on_morphism(cospan.generator("1->2")).on_object(arrow)}
+    return shape(lambda vertex: components[cospan.label(vertex)])
+
+
 def _left_data(along: Functor, functor: Functor) -> tuple[Functor, NaturalTransformation]:
     source, target, values = along.domain(), along.codomain(), functor.codomain()
     product = Cat().Products()((source, Cat().Terminal()))
@@ -52,14 +79,14 @@ def _left_data(along: Functor, functor: Functor) -> tuple[Functor, NaturalTransf
         """The chosen colimit over ``(K, d)`` of ``F`` after the projection to ``C``."""
         if member_object not in colimits:
             shape = comma(member_object)
-            diagram = functor * (product.product_projection(0) * shape.first_projection())
+            diagram = functor * (product.product_projection(0) * _pairs_projection(shape))
             colimits[member_object] = values.Colimits(shape)(diagram)
         return colimits[member_object]
 
     def on_morphism(morphism: MorphismOfCategory) -> MorphismOfCategory:
         lower, upper = at(morphism.domain()), at(morphism.codomain())
         destination = comma(morphism.codomain())
-        induced = cocone(lower.diagram(), upper, lambda vertex: upper.injection(destination((vertex.first(), morphism * vertex.second()))))
+        induced = cocone(lower.diagram(), upper, lambda vertex: upper.injection(_comma_object(destination, _comma_pair(vertex), morphism * _comma_arrow(vertex))))
         return lower.universal_morphism(induced)
 
     # ``at`` is the chosen colimit, an object of ``values`` owning the injections and
@@ -69,7 +96,7 @@ def _left_data(along: Functor, functor: Functor) -> tuple[Functor, NaturalTransf
     def unit_component(member_object: ObjectOfCategory) -> MorphismOfCategory:
         image = along.on_object(member_object)
         identity = image.category().morphism_category(1)(image, image).one()
-        return at(image).injection(comma(image)((product((member_object, _star())), identity)))
+        return at(image).injection(_comma_object(comma(image), product((member_object, _star())), identity))
 
     unit = Fun(source, values).morphism_category(1)(functor, extension * along)(unit_component)
     return extension, unit
@@ -87,14 +114,14 @@ def _right_data(along: Functor, functor: Functor) -> tuple[Functor, NaturalTrans
         """The chosen limit over ``(d, K)`` of ``F`` after the projection to ``C``."""
         if member_object not in limits:
             shape = comma(member_object)
-            diagram = functor * (product.product_projection(1) * shape.first_projection())
+            diagram = functor * (product.product_projection(1) * _pairs_projection(shape))
             limits[member_object] = values.Limits(shape)(diagram)
         return limits[member_object]
 
     def on_morphism(morphism: MorphismOfCategory) -> MorphismOfCategory:
         lower, upper = at(morphism.domain()), at(morphism.codomain())
         origin = comma(morphism.domain())
-        induced = cone(upper.diagram(), lower, lambda vertex: lower.projection(origin((vertex.first(), vertex.second() * morphism))))
+        induced = cone(upper.diagram(), lower, lambda vertex: lower.projection(_comma_object(origin, _comma_pair(vertex), _comma_arrow(vertex) * morphism)))
         return upper.universal_morphism(induced)
 
     # ``at`` is the chosen limit, an object of ``values`` owning the projections and
@@ -104,7 +131,7 @@ def _right_data(along: Functor, functor: Functor) -> tuple[Functor, NaturalTrans
     def counit_component(member_object: ObjectOfCategory) -> MorphismOfCategory:
         image = along.on_object(member_object)
         identity = image.category().morphism_category(1)(image, image).one()
-        return at(image).projection(comma(image)((product((_star(), member_object)), identity)))
+        return at(image).projection(_comma_object(comma(image), product((_star(), member_object)), identity))
 
     counit = Fun(source, values).morphism_category(1)(extension * along, functor)(counit_component)
     return extension, counit

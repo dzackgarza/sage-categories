@@ -53,7 +53,7 @@ from sage_categories.cat.category import Category, member
 from sage_categories.cat.diagrams import from_sequence
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.properties import FullSubcategory
-from sage_categories.cat.shapes import index_set_of, is_discrete
+from sage_categories.cat.shapes import is_discrete
 from sage_categories.kernel.caches import SequenceTable
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import Predicate, Proposition
@@ -114,10 +114,10 @@ def cocone_apex(transformation: NaturalTransformation) -> ObjectOfCategory:
 
 
 def vertex_of(shape: Category, index: ObjectOfCategory | Hashable) -> ObjectOfCategory:
-    """An object of a discrete shape, given directly or as a datum of its index set."""
+    """An object of a shape, given directly or as a datum of its object set."""
     if index in shape:
         return index
-    return shape(index_set_of(shape).point(index))
+    return shape.object_at(shape.object_set().point(index))
 
 
 class UniversalData(NamedTuple):

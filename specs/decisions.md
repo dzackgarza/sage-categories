@@ -593,6 +593,20 @@ A set constructor that can accept a cardinality by fiat does not make cardinalit
 
 **D94 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T17:36Z, 2026-08-28T18:18Z, 2026-08-28T18:20Z, 2026-08-28T18:30Z). An executing plan records resolved contracts.** Before a phase starts, its governing decisions and specifications fix every mathematical owner, public spelling, input and result category, constructor contract, dependency, exclusion, and acceptance statement needed to implement it. The plan states those decisions and the work that makes them true. It does not defer them with tasks to determine, choose, clarify, or correct a contract or policy during implementation. If the transcripts do not determine a required decision, ask the user before implementation starts and then update the governing specification and plan.
 
+**D100 (08-29, `77631b59` 2026-08-29T02:43:39Z). A separating family declares nothing this repository uses.** `separating_family()` returns a tuple whose unstated meaning is that its objects jointly separate morphisms, and downstream code reads it as authorization. That is theorem metadata: `POL-MATH-031` forbids runtime metadata repeating a fact, `POL-MATH-032` makes construction authority static ownership rather than runtime data, `POL-MATH-037` makes constructing in the category the assertion, and `POL-MATH-045` forbids a second runtime classification of one fact.
+
+Every claimed use has a more direct owner:
+
+- constructing `Hom(G, -)` needs only the object `G`, and does not need `G` to be a generator;
+- that `Hom(G, -)` is faithful belongs on that named functor, through `.Faithful()`;
+- morphism equality belongs to the category's equality predicate and its exact leaf algorithms;
+- element transport uses `1_D -> F(1_C)`, not a generator;
+- structural inheritance uses the selected structure functor, not faithfulness;
+- set equality already uses identity, symbolic comparison, finite extensional comparison, or `Unknown`.
+
+A separating family is useful in mathematical theory — representables generate a presheaf category, and such results reduce later theorems to checks on generators. This repository proves no such theorem, and gains no computation, constructor, inheritance edge, or decision procedure from the declaration. So the declaration leaves the kernel, with `represented_functor`'s use of it and `retain_separator_comparison`.
+
+`Sets()` hid the conflation, because its terminal object `1` is also a generator; the two notions differ in general.
 **D99 (08-29, corrected 08-29, `77631b59` 2026-08-29T00:44:44Z; `01a04ab2-d713-74b3-8a24-eeef392b0869` 2026-08-29T00:48Z). `Core` is a functor `Cat -> Groupoids`, and category relations belong to their named structure functors.** Three objects are distinct: a multiplicative property `P` of the morphisms of `C`; the category `W_P(C)` with the objects of `C` and only its `P`-morphisms; and the inclusion functor `i_P: W_P(C) -> C`. A construction produces a category and its defining functor. The category and its inclusion are never two spellings of one object.
 
 `Core(C)` is not `Mor(C).Isomorphisms()`. `Core(C)` has the objects of `C`, and its morphisms are the isomorphisms of `C`. `Mor(C).Isomorphisms()` has the isomorphisms of `C` as its *objects* and lives one categorical level higher; it can say which arrows enter the core and it is not the core.

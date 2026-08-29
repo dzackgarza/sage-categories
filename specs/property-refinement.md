@@ -1,610 +1,169 @@
-# Property refinement
+# Property categories and refinement
 
-A property subcategory owns its membership proposition.
-The same proposition supports decision, global assumption, direct construction, and same-object refinement.
-See [undecidable-properties.md](undecidable-properties.md) for the complete axiom and decision-procedure architecture.
+This specification owns property subcategories, inverse images, containment, and same-object refinement.
+It implements D16, D25, D83, D89, D91, and D101.
 
-The governing policies are `POL-MATH-016`, `POL-MATH-025`, `POL-MATH-029`, `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-018` through `POL-CAT-020`, `POL-CAT-043`, `POL-CAT-044`, `POL-CAT-060`, `POL-CAT-067` through `POL-CAT-069`, `POL-CAT-082`, `POL-CAT-086` through `POL-CAT-091`, and `POL-FUN-024` through `POL-FUN-027`.
+The governing policies are `POL-MATH-016`, `POL-MATH-025`, `POL-MATH-029`, `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-018` through `POL-CAT-020`, `POL-CAT-043`, `POL-CAT-044`, `POL-CAT-060`, `POL-CAT-067` through `POL-CAT-069`, `POL-CAT-082` through `POL-CAT-091`, and `POL-FUN-024` through `POL-FUN-027`.
 
-An established positive property should self-refine the owned object.
-Direct property construction, an active assumption, and an exact computation all establish the same refinement.
-The object's mathematical identity remains unchanged.
-Its category and Sage dynamic class become more specific.
+See [undecidable-properties.md](undecidable-properties.md) for propositions, typed queries, `ask()`, assumptions, and exact handlers.
+See [resolution.md](resolution.md) for the private Sage class update.
 
-The public refinement is the owned categorical construction.
-Its runtime update uses Sage's existing mechanism.
-A value that is a Sage `Parent` uses `Parent._refine_category_`.
-Another owned value uses the same small pattern with the joined private Sage
-implementation categories and a cached dynamic class.
-The kernel does not maintain a second refinement framework.
+## Property axiom
 
-The owned property subcategory and its pullbacks remain objects of `Cat()`.
-The private Sage category join changes only the Python implementation class.
-It does not establish a public subcategory relation.
-
-### Predicate resolution
-
-For a property \(P\) with property subcategory \(C_P\), use this order:
-
-| Current knowledge | Result | Action |
-| --- | --- | --- |
-| \(f\) already lies in \(C_P\) | `True` | Category placement entails the membership proposition |
-| The active session assumes \(P(f)\) | `True` | Refine \(f\) into \(C_P\) without computation |
-| The active session assumes \(\neg P(f)\) | `False` | Skip computation |
-| Exact result was cached | Cached result | Reuse it |
-| An exact computational route establishes \(P(f)\) | `True` | Refine \(f\) into \(C_P\) |
-| An exact computational route establishes \(\neg P(f)\) | `False` | Cache the negative result |
-| Available algorithms cannot decide | `Unknown` | Keep the current category |
-
-The defining property category adds real mathematics.
-Its implementation classes can add operations valid under the property.
-They never replace the defining proposition with a Boolean method.
-Membership in `Mor(Sets()).Monomorphisms()` makes `ask()` return `True` through category entailment.
-The `Monomorphisms` axiom makes that subcategory available and the kernel generates
-`Sets().MorphismType.is_injective()`. A registered predicate-backed implementation supplies
-the injectivity predicate through the abstract `PredicateSubcategory` contract.
-
-### Durable refinement
-
-Suppose an ordinary owned set morphism uses a private SymPy representation.
-
-```python
-f = Mor(Sets())(A, B)(rule)
-ask(f.is_injective())
-```
-
-If the computation returns exact `True`, the kernel uses Sage’s category-refinement machinery.
-The same refinement also occurs when the user assumes injectivity or constructs the morphism directly in the property category:
-
-```python
-f = Mor(Sets())(A, B)(rule)
-assume(f.is_injective())
-```
-
-```python
-f = Mor(Sets()).Monomorphisms()(A, B)(rule)
-```
-
-All three routes establish:
+Let `P` be a registered property axiom on a category `C`.
+The axiom declares the functorial category construction
 
 \[
-\operatorname{Mor}(\mathbf{Set})(A,B)
-\longrightarrow
-\operatorname{Monomorphisms}(\operatorname{Mor}(\mathbf{Set}))(A,B).
+C\longmapsto C.P()
 \]
 
-The same owned morphism now has the more specific category.
-Its refined dynamic class places the monomorphism implementation before the general set-morphism implementation.
-
-The next `ask(f.is_injective())` call terminates at category placement.
-It does not repeat the SymPy computation.
-
-The refinement must preserve:
-
-- object identity;
-
-- domain and codomain;
-
-- the callable rule;
-
-- the private engine representations;
-
-- images owned by existing named functors.
-
-It changes the strongest known category and the resulting public method surface.
-
-If surjectivity is later established, the kernel refines again.
-It uses the categorical join of the established property categories.
-In `Sets()`, established injectivity and surjectivity can place the map in the isomorphism category.
-
-### Equivalent refinement routes
-
-An active assumption triggers property refinement without running the decision procedure.
-
-```python
-f = Mor(Sets())(A, B)(rule)
-assume(f.is_injective())
-```
-
-This is a shortcut for constructing the same rule in the property category:
-
-```python
-f = Mor(Sets()).Monomorphisms()(A, B)(rule)
-```
-
-The kernel reuses the existing domain, codomain, rule, private engine representation, and images owned by existing named functors.
-It does not recompute injectivity.
-It changes the owned morphism's category and dynamic class.
-
-There are three routes to the same placement:
-
-- The user constructs the rule directly in the property category.
-
-- The active mathematical session assumes the property of an existing morphism.
-
-- An exact computation establishes the property.
-
-The routes differ only in how the property becomes established.
-They must use the same kernel refinement operation and refine the same owned morphism.
-
-The active Sage or SymPy session remains the mathematical context.
-A consumer does not maintain a separate assumption-context object.
-After refinement, category placement supplies exact `True` to `ask()`.
-
-### Negative and unknown results
-
-A negative result cannot refine into `Mor(Sets()).Monomorphisms()`. The engine should cache that exact result through standard Sage or SymPy caching facilities.
-Use `cached_method`, `CachedRepresentation`, or `UniqueRepresentation` when every cache
-key has ordinary exact equality. Use `MonoDict` or `TripleDict` only when a key contains
-an owned value whose equality is proposition-valued.
-
-A complementary category should exist only when it has mathematical value.
-It should not exist merely to cache `False`.
-
-Do not treat `Unknown` as a durable mathematical fact.
-A later assumption, realization, or algorithm can make the predicate decidable.
-
-Every exact computational route belongs behind the owning predicate.
-`ask()` selects applicable routes from their declared semantic domains.
-Its call has no route-selection parameters.
-The public API consists of the predicate and `ask()`.
-
-The invariant is:
-
-> Established positive knowledge monotonically refines the owned object’s category.
-> Category placement then entails the property category's membership proposition.
-
-The private SymPy, Sage, GAP, or other engine value never self-refines.
-The category-owned public morphism does.
-
-Property refinement is not transport into a second implementation.
-It is not a family of admission constructors.
-It strengthens the category of the same owned value.
-
-### Property refinement convergence
-
-For a property \(P\) defining \(C_P\), direct construction can assert the property:
-
-```python
-f = Mor(Sets()).Monomorphisms()(A, B)(rule)
-```
-
-Choosing the category asserts injectivity.
-The category can accept each supported mathematical or engine representation through an exact constructor.
-The number of such constructors is not part of the refinement contract.
-
-The four public routes are:
-
-| Route | Operation |
-| --- | --- |
-| Direct property construction | Construct a value already placed in \(C_P\) |
-| Interactive assumption | `assume(C_P.membership_proposition(f))` refines the same value into \(C_P\) |
-| Exact computation | A `True` result refines the same value into \(C_P\) |
-| Named mathematical construction | Construct its result already placed in \(C_P\) |
-
-A named mathematical construction can have its own API because it accepts different mathematical data.
-It does not exist merely to select “the theorem route.”
-
-### Backend code does not call `assume()`
-
-The Sage or SymPy session owns the global assumption context.
-A notebook user can write:
-
-```python
-assume(Mor(Sets()).Monomorphisms().membership_proposition(f))
-```
-
-The standard spelling `assume(f.is_injective())` applies the same owned predicate.
-Both forms record the standard assumption and refine \(f\) through `Mor(Sets()).Monomorphisms()`.
-
-Internal code does something different:
-
-- An exact computational route that returns `True` refines into `Mor(Sets()).Monomorphisms()`.
-
-- An identity constructor constructs into `Mor(Sets()).Monomorphisms()`.
-
-- A theorem-backed construction constructs into `Mor(Sets()).Monomorphisms()`.
-
-- A product lift constructs its projections in the required property category.
-
-Backend code does not create contexts or call `assume()` to justify its own output.
-It already knows the category in which it must construct the result.
-
-### Property refinement is not structural transport
-
-A named functor can create another owned implementation:
+and the subcategory monomorphism
 
 \[
-F:C\longrightarrow D,\qquad x\longmapsto F(x).
+j_P:C.P()\hookrightarrow C.
 \]
 
-That operation can require images and preimages under named functors.
+The objects of `C.P()` are exactly the objects of `C` that satisfy `P`.
+The property category owns this membership proposition.
+Its implementation classes own the operations that require `P`.
 
-Property refinement is a subcategory monomorphism:
+The registered axiom identifier determines the public `is_P()` spelling.
+The kernel generates that method once on the applicable ambient implementation class.
+The method returns the containment proposition for `C.P()`.
+
+For a property of morphisms, the same construction starts from `Mor(C)`.
+For a property of functors, it starts from `Fun` or `Fun(C, D)`.
+
+## Property containment
+
+A relation between two property categories is a declared subcategory monomorphism.
+For example, if every object with property `P` has property `Q`, retain
 
 \[
-C_P\hookrightarrow C.
+C.P()\hookrightarrow C.Q().
 \]
 
-The refined value remains the same owned value.
-Refinement changes:
+Category placement and composition with this monomorphism decide the corresponding positive containment proposition.
+The monomorphism is the operational object used by construction, restriction, and compiled inheritance.
 
-- its strongest category;
+Intersections use pullbacks of subcategory monomorphisms.
+The pullback retains its projections and presents the combined property as a subcategory of `C`.
 
-- its Sage dynamic class;
+## Inverse images
 
-- its MRO;
+Let `F: D -> C` be a named functor and let `j_P: C.P() -> C` be a property subcategory.
+Define
 
-- its inherited public operations.
+\[
+F^{-1}(C.P())
+=
+D\times_C C.P().
+\]
+
+The pullback retains both projections.
+Its projection to `D` is the subcategory monomorphism of the inverse image.
+
+When `F` defines the inherited property `P` on `D`, this inverse image is `D.P()`.
+The axiom registration and compiler expose its containment proposition and implementation classes.
+
+This construction is the standard inverse image of an object property.
+See Mathlib's [`ObjectProperty.inverseImage`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/Basic.html) and [full subcategories](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/FullSubcategory.html).
+
+## Same-object refinement
+
+A positive property result refines the same owned value into its property subcategory.
+The value keeps its mathematical identity.
+Its strongest known category and compiled implementation class become more specific.
+
+These routes use one refinement operation:
+
+- direct construction in `C.P()`;
+- placement in a property subcategory that maps to `C.P()`;
+- an active positive assumption of the containment proposition;
+- an exact `True` result from `ask()`.
+
+After refinement, category placement decides the same containment proposition as `True`.
+The property implementation class supplies its new operations directly on the value.
+
+A negative result records no property placement.
+An `Unknown` result changes nothing.
+Later exact knowledge can still refine the value.
 
 Refinement preserves:
 
-- Python identity;
+- object identity;
+- parent, domain, and codomain data;
+- defining mathematical data;
+- private engine values;
+- images owned by named functors.
 
-- mathematical identity;
+If several established properties apply, their pullback intersection gives the combined property category.
+The refined class contains each applicable property implementation once.
 
-- construction data;
+## Predicate-backed property categories
 
-- domain and codomain;
-
-- private engine representations;
-
-- images owned by existing named functors.
-
-There is no target wrapper.
-There is no separate ambient implementation.
-There is no property-refinement image cache.
-
-After refinement, the property category contributes only the operations valid under its defining mathematics.
-A kernel-generated property application still returns the category-owned proposition.
-
-### Strongest property placement and one-object categories
-
-Construct each owned value in the strongest property-based subcategory established by its construction.
-A programmer can establish a property by constructing directly in that subcategory.
-This is a mathematical assertion in the implementation.
-It does not require the general decision procedure to recompute the property.
-
-A named-object construction places its result directly in every property category established by the construction.
-The kernel-generated property application then reads the same containment proposition through category placement.
-
-Property refinements use inverse-image subcategories.
-For a named functor `F: D -> C` and a property subcategory `i_P: C.P() -> C`, form the pullback
-
-\[
-F^{-1}(C.P()) = D\times_C C.P().
-\]
-
-The construction retains its projections, including the subcategory monomorphism into `D`.
-When `F` defines the inherited property `P` on `D`, this inverse image is `D.P()`.
-If several functors `D -> C` exist, the declaration names the one used.
-The axiom registration and compiler expose the resulting category, containment proposition, refinement, and implementation classes.
-This is the standard inverse image of an object property and its associated full subcategory; see [Mathlib, `ObjectProperty.inverseImage`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/Basic.html) and [full subcategories](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/FullSubcategory.html).
-
-For property subcategories `P -> C` and `Q -> C`, their conjunction is the pullback
-
-\[
-P.\operatorname{intersection}(Q)=P\times_C Q.
-\]
-
-The construction retains both projections. Iterated calls such as `C.P().Q().R()` are iterated pullbacks over `C`. Pullback associativity supplies the comparison natural isomorphisms between parenthesizations. Sage's generated categories implement this pullback and its compiled classes.
-
-When `F: D -> C` maps one property intersection to another, the induced functor is the generic functor between the pullbacks. The leaf supplies only the theorem that each component lands in the named property category.
-
-This uniqueness concerns same-object property refinement only.
-A property category can have many ordinary constructors from supported mathematical and engine representations.
-
-Thus an expression such as
+A concrete property category can choose predicate-backed containment.
+It inherits `PredicateSubcategory` and implements its private abstract `_predicate()` method.
 
 ```python
-Fields().Countable().PartiallyOrdered()
+class ConcreteProperty(PredicateSubcategory):
+    def _predicate(self, X: Ambient.ObjectType) -> Proposition:
+        return exact_relation_about(X)
 ```
 
-denotes the strongest combined category stated by those refinements.
-Its construction must receive any mathematical data introduced by a structure and must retain every property already established.
-The expression must not cause repeated property checks.
+The method states the defining proposition.
+It does not return a Python decision.
+`ask()` owns evaluation.
 
-A distinguished named object is represented by its parameterized one-object category.
-For example, the category `{QQ}` has `QQ` as its sole object.
-It selects the named functors that place `QQ` in countable sets, partially ordered sets, and fields.
-The field route then supplies its ring structure.
-Construction of `QQ` places the sole object in the strongest combined category declared by these functors.
+Placement is a fast positive route because construction or refinement already established the predicate.
+Placement is not a separate definition of membership.
 
-Likewise, `{FF_p}` is a one-object category parameterized by the prime `p`. Its defining construction declares finiteness.
-It never derives finiteness by enumeration, cardinality computation, or backend inspection.
-It constructs `FF_p` directly in the finite property subcategory.
+The complete finite-set example exists only in [finite-set-minimal-template.py](finite-set-minimal-template.py).
 
-For an interactive claim not owned by a construction, the user can apply the sanctioned global assumption operation, such as `assume(Sets().Finite().membership_proposition(X))`. The kernel-generated property application permits `assume(X.is_finite())`. Both forms use the same kernel refinement.
-Backend and theory code still construct directly in the category they establish; they do not call `assume()`.
+## Property construction
 
-## Proposition interface
-
-### Predicates return propositions
-
-Every mathematical truth-valued operation is an owned predicate.
-Applying one returns an unevaluated proposition.
-It does not return `True`, `False`, `Decision`, or `Unknown`.
-
-This rule applies to:
-
-- object properties such as finiteness, countability, totality, and connectedness;
-
-- morphism properties such as injectivity, surjectivity, monotonicity, and invertibility;
-
-- functor properties such as fullness, faithfulness, full faithfulness, and essential surjectivity;
-
-- equality, order, inclusion, and incidence propositions;
-
-- relation laws and construction obligations;
-
-- category-membership propositions;
-
-- every other operation specified as an owned predicate.
-
-For example:
+Direct construction in `C.P()` establishes the property by construction.
+It returns the same owned mathematical kind with the property category as its strongest placement.
 
 ```python
-finite_proposition = X.is_finite()
-injective_proposition = f.is_injective()
-monotone_proposition = f.is_order_preserving()
-total_proposition = P.is_total()
+f = Mor(Sets()).Monomorphisms()(A, B)(rule)
 ```
 
-Each result retains its predicate, semantic arguments, and mathematical owner.
-In SymPy terminology, the predicate is the function and the returned proposition is an `AppliedPredicate`. A Sage symbolic relation such as `x < 2` has the same predicate-and-proposition distinction.
-
-`Unknown` is not a proposition.
-It is one possible result of asking for the truth value of a proposition:
+An interactive assumption of the generated proposition reaches the same placement:
 
 ```python
-proposition = X.is_finite()
-decision = ask(proposition)
-```
-
-The result of `ask(proposition)` is exactly one of:
-
-- `True`, when the active mathematics establishes the proposition;
-
-- `False`, when the active mathematics establishes its negation;
-
-- `Unknown`, when neither conclusion is established.
-
-The kernel translates an engine-specific indeterminate result, such as SymPy `None`, to Sage's `sage.misc.unknown.Unknown` singleton.
-No public propositional method returns that value itself.
-
-### Functor predicates
-
-Every functor is an object of `Fun = Mor(Cat())`. Functor properties therefore use the same property-subcategory mechanism as object and morphism properties:
-
-```python
-FullFunctors = Mor(Cat()).Full()
-FaithfulFunctors = Mor(Cat()).Faithful()
-FullyFaithfulFunctors = Mor(Cat()).FullyFaithful()
-```
-
-The kernel generates the standard applications on `Cat().MorphismType` from these axiom declarations:
-
-```python
-F.is_full()
-F.is_faithful()
-F.is_fully_faithful()
-```
-
-Direct construction in one of these categories establishes the property.
-An interactive assumption refines the same owned functor:
-
-```python
-F = Fun(C, D)(on_object, on_morphism)
-assume(F.is_full())
-```
-
-The kernel also reads the declared containments.
-`Mor(Cat()).FullyFaithful()` is a full subcategory of `Mor(Cat()).Full()` and of `Mor(Cat()).Faithful()`, so placement in it is placement in both (D83).
-
-These functor predicates have no computational routes.
-In the absence of category placement, an active assumption, or a declared containment, `ask(F.is_full())` returns `Unknown`.
-
-### Fixed-endpoint predicates
-
-For every category `C` and objects `A, B in C`, `Mor(C)(A, B)` is a category.
-Its existence does not depend on a decision about its objects.
-
-The `Inhabited` and `Empty` axioms make `Cat().Inhabited()` and `Cat().Empty()` available.
-The kernel generates both applications on `Cat().ObjectType`. Each returns the corresponding containment proposition:
-
-```python
-H = Mor(C)(A, B)
-
-H.is_inhabited()
-H.is_empty()
-```
-
-They state mutually negated propositions.
-Their evaluations can both remain unresolved:
-
-```python
-ask(H.is_inhabited())  # True, False, or Unknown
-ask(H.is_empty())      # True, False, or Unknown
-```
-
-A constructed object of `H` establishes inhabitation.
-Exact emptiness establishes that no such object exists.
-`Unknown` preserves the same symbolic fixed-endpoint category.
-
-An implementation must not replace an unresolved fixed-endpoint category with an empty category.
-This rule applies to thin categories and to general categories.
-
-### Assertions ask predicates
-
-An assertion states that its condition is known to be true.
-Therefore, an assertion on an applied predicate must ask it:
-
-```python
-decision = ask(proposition)
-assert decision is not Unknown
-assert decision
-```
-
-Do not rely on the proposition's Python truth value.
-
-### Assumption and decision use one proposition
-
-The same proposition supports assumption and decision:
-
-```python
-proposition = X.is_finite()
-assume(proposition)
-ask(proposition)
-proposition.assume()
-```
-
-`assume(proposition)` and `proposition.assume()` use the active Sage or SymPy session.
-They do not evaluate a Boolean-returning method first.
-They record the proposition with its semantic argument intact.
-
-If the proposition defines a property subcategory, a positive assumption self-refines the same owned value into that subcategory.
-An exact `True` result from `ask()` uses the same kernel refinement.
-Direct construction and named mathematical construction already return values with that placement.
-
-Thus these routes still converge:
-
-```python
+f = Mor(Sets())(A, B)(rule)
 assume(f.is_injective())
-ask(f.is_injective())
-Mor(Sets()).Monomorphisms()(A, B)(rule)
 ```
 
-Backend and theory code do not call `assume()` for facts they own.
-They construct the result directly in the strongest established category.
-Interactive users call `assume()` when they want the active mathematical context to supply the proposition.
+Theory code and computation engines construct the category they establish.
+They do not create assumptions for their own results.
 
-### Property categories supply evaluation rules
+## Compiled public surface
 
-A property subcategory does not override its propositional method with Boolean `True`. The method always returns the same kind of proposition:
+The property category declares `ObjectType`, `ElementType`, and `MorphismType` additions under the same rules as every category.
+Positive refinement places the applicable property class before the ambient class.
+Existing ambient operations remain available.
 
-```python
-f.is_injective()
-# Applied proposition: injective(f)
-```
+The generated `is_P()` method reaches structural descendants through selected functors and compiled inheritance.
+For example, a property pulled back along a named functor is available on the source implementation class.
+The leaf writes no duplicate ambient method.
 
-Category placement contributes an exact evaluation rule:
+The private runtime uses Sage's refinement and dynamic-class facilities.
+Those mechanics add no public property record.
 
-```python
-ask(f.is_injective())
-# True when f is already in Mor(Sets()).Monomorphisms()
-```
+## Acceptance conditions
 
-The evaluation order is:
+The property architecture satisfies this specification when:
 
-1. Return `True` when category placement establishes the proposition.
-
-2. Return the active positive or negative assumption when one exists.
-
-3. Reuse an exact cached decision when one exists.
-
-4. Run the owned exact handlers and engine algorithms.
-
-5. On exact `True`, refine the same owned value into the property category and return `True`.
-
-6. On exact `False`, retain the negative decision and return `False`.
-
-7. Otherwise, return `Unknown` without changing category placement.
-
-This order belongs to `ask()`, its predicate handlers, and the generic refinement kernel.
-A leaf method only constructs the proposition.
-
-### Comparisons and membership use different Python protocols
-
-Python permits a rich comparison such as `x < 2` to return a symbolic relation.
-Sage therefore passes that unevaluated relation to `assume()`.
-
-Python forces the `in` operator to return a Boolean.
-Even if `__contains__()` returns a proposition when called directly, `X in C` converts it to `True` or `False`. Therefore, `assume(X in C)` can never preserve category membership as a proposition.
-
-The explicit proposition remains available through the category definition:
-
-```python
-membership_proposition = C.membership_proposition(X)
-assume(membership_proposition)
-```
-
-The kernel-generated method from the axiom declaration provides the standard user syntax:
-
-```python
-assume(X.is_finite())
-```
-
-### Category membership is proposition-backed Boolean admission
-
-Every category declares one membership proposition as part of its mathematical definition.
-A property category declares the predicate that defines the property.
-A category formed from several properties declares the conjunction of the relevant propositions.
-The declaration occurs once; `__contains__()` never reimplements the mathematics.
-
-For example, the `Finite` axiom makes `Sets().Finite()` available and generates
-`Sets().ObjectType.is_finite()`. The registered `FiniteSets` category inherits
-`PredicateSubcategory` and implements its private abstract `_predicate()` method.
-Conceptually:
-
-```python
-class FiniteSets(PredicateSubcategory):
-    _base_category_class_and_axiom = (SetsClass, "Finite")
-
-    def _predicate(self, X: Sets().ObjectType) -> Proposition:
-        return X.cardinality() < aleph0
-```
-
-`PredicateSubcategory` combines ambient membership with that predicate to define the
-containment proposition.
-
-The kernel supplies the Boolean protocol:
-
-```python
-def __contains__(self, candidate: Any) -> bool:
-    decision = ask(self.membership_proposition(candidate))
-    assert decision is not Unknown, "membership is not established by the available data and algorithms"
-    return decision is True
-```
-
-Python requires set and category containment to be Boolean, and a bool cannot carry `Unknown`. The undecided case therefore fails loudly here rather than being reported as non-membership: `Unknown` is not `False`, and a caller that receives `False` has no way to tell the two apart.
-
-Consequently:
-
-```python
-X.is_finite()               # proposition: X in Sets().Finite()
-ask(X.is_finite())          # True, False, or Unknown
-X in Sets().Finite()        # the same proposition, forced to a Boolean
-```
-
-`X.is_finite()` and `X in Sets().Finite()` are one question asked twice. The first returns the proposition, the second asks it and must answer with a Boolean.
-
-Placement is a positive shortcut inside that one question, not a second notion of membership. Construction or same-object refinement into the property category establishes the defining predicate, so `ask()` answers `True` from placement without recomputing (`POL-CAT-068`). A value without that placement still gets the defining predicate evaluated. Never split the mathematics off into a handler registered beside a placement-only membership proposition; that makes `X in Sets().Finite()` report `False` for a finite set that happens to have been constructed weakly.
-
-`X not in Sets().Finite()` therefore reports that the defining predicate decided `False`. The undecided case never reaches this boundary: the assertion above raises, because `Unknown` is not `False`. Ask the proposition instead when a decision may be unavailable. A negative decision is retained as itself; the kernel constructs no complementary category from it.
-
-Compound property categories use the same rule.
-For example, membership in `Fields().Countable().PartiallyOrdered()` asks one conjunction built from the defining propositions.
-Exact positive knowledge places the object in the strongest combined category without repeated checks.
-
-### Sage and SymPy own the assumption model
-
-Use the existing Sage and SymPy mechanisms:
-
-- Sage symbolic relations retain propositions and implement `.assume()`;
-
-- Sage generic declarations support standard and user-defined symbolic features;
-
-- SymPy `Predicate` defines a predicate function;
-
-- SymPy `AppliedPredicate` retains the applied proposition;
-
-- SymPy `ask()` evaluates under registered handlers and active assumptions;
-
-- the standard global assumption state records interactive hypotheses.
-
-The repository supplies the semantic bridge from its owned objects and categories to these standard proposition mechanisms.
-It does not create another assumption context, string registry, proof token, predicate metadata system, or Boolean fallback system.
-Engine conversion remains private.
-The public proposition retains the owned mathematical arguments and never exposes an engine representation choice.
-
-The external contracts are [Python comparison and membership semantics](https://docs.python.org/3/reference/expressions.html#comparisons), [Sage symbolic assumptions](https://doc.sagemath.org/html/en/reference/calculus/sage/symbolic/assumptions.html), and [SymPy predicates, applied predicates, and assumptions](https://docs.sympy.org/latest/modules/assumptions/assume.html).
+- each property axiom constructs `C.P()` and its monomorphism into `C`;
+- the registered axiom identifier determines the generated public method name;
+- each generated property method returns the owned containment proposition;
+- every property containment relation is its exact subcategory monomorphism;
+- intersections and inherited properties use retained pullbacks;
+- direct construction, positive assumption, positive placement, and exact positive decision use one same-object refinement;
+- negative and unknown decisions add no property placement;
+- a predicate-backed category supplies only its defining `_predicate()` method;
+- property implementation classes add only operations valid under the property;
+- descendants receive property methods through selected functors and compiled inheritance;
+- no leaf duplicates the property category, containment proposition, or refinement operation.

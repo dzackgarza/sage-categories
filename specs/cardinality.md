@@ -322,7 +322,7 @@ The result is the cardinal `r`. Thus a finite-cardinal predicate can state `kapp
 
 ### Cardinal object API
 
-`Cardinal().ImagesOfFunctor(Aleph)` is the property subcategory of aleph cardinals.
+`Cardinal().EssentialImage(Aleph)` is the property subcategory of aleph cardinals.
 The retained equivalence from `Ordinals()` to this image supplies its inverse functor.
 Apply that inverse to obtain an aleph index.
 Apply `InitialOrdinal.on_object(kappa)` to obtain the initial ordinal representative of any cardinal.
@@ -420,8 +420,8 @@ Each set construction registers its exact cases from retained construction data.
 An inherited call on a structured object uses the same predicate on that original object.
 A structure functor to `Sets()` supplies the set constructor data used by these cases; it does not replace predicate evaluation with a separate image lookup.
 
-The registered cases route on the index set, the retained diagram's codomain placement (`Sets().Finite()`, `Sets().Countable()`, `Sets().Uncountable()`), and any retained constant diagram.
-For a finite chosen enumeration, they obtain each factor query by applying `X_i.cardinality()` to `P.product_factors()`.
+The registered cases route on the index set, the selected presentation's diagram, its codomain placement (`Sets().Finite()`, `Sets().Countable()`, `Sets().Uncountable()`), and any retained constant diagram.
+For a finite chosen enumeration, they apply `p.diagram().on_object(i).cardinality()` to each index of the selected product presentation `p`.
 Each case cites the theorem that decides it.
 When no case applies, `ask()` returns `Unknown`. The cases are:
 

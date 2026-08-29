@@ -26,13 +26,17 @@
 
 - [Functor construction and presentation data](#functor-construction-and-presentation-data)
 
+- [Adjunctions and equivalences](#adjunctions-and-equivalences)
+
 - [Products, coproducts, and component functors](#products-coproducts-and-component-functors)
 
 - [Diagram shapes and universal constructions](#diagram-shapes-and-universal-constructions)
 
-- [Slices and coslices](#slices-and-coslices)
+- [Comma categories, slices, coslices, and fibers](#comma-categories-slices-coslices-and-fibers)
 
 - [Fixed-object construction categories](#fixed-object-construction-categories)
+
+- [Indexed categories, Yoneda, and representability](#indexed-categories-yoneda-and-representability)
 
 - [Examples](#examples)
 
@@ -693,11 +697,35 @@ Its `HasForget₂.forget₂` also carries a chosen functor as extra structure.
 These definitions do not derive a functor from its endpoints.
 This repository records the exact construction instead of defining an unnamed default.
 
-### Identity and composition
+### Functor-category calculus
 
-For `X in C`, let `End_C(X)` be the endomorphism monoid on `Mor(C)(X, X)` under composition.
-Its unit `End_C(X).one()` is the identity morphism of `X`.
-For `C in Cat()`, this gives the identity functor as `End_Cat(C).one()`.
+For categories `A`, `B`, and `C`, `Fun.composition(A, B, C)` is the functor
+
+\[
+\operatorname{Fun}(B,C)\times\operatorname{Fun}(A,B)
+\longrightarrow
+\operatorname{Fun}(A,C).
+\]
+
+For categories `C` and `D`, `Fun.evaluation(C, D)` is the evaluation functor
+
+\[
+\operatorname{Fun}(C,D)\times C\longrightarrow D.
+\]
+
+Fixing one input gives precomposition and postcomposition functors. Their morphism actions give left and right whiskering. Horizontal composition of natural transformations is the corresponding composite of these actions.
+
+The public natural-transformation operations are:
+
+```python
+eta.whisker_left(H)
+eta.whisker_right(K)
+eta.horizontal(theta)
+```
+
+The construction retains the associator and left and right unitor natural isomorphisms. It follows [Mathlib, whiskering](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Whiskering.html).
+
+For `X in C`, let `End_C(X)` be the endomorphism monoid on `Mor(C)(X, X)` under composition. Its unit `End_C(X).one()` is the identity morphism of `X`. For `C in Cat()`, this gives the identity functor as `End_Cat(C).one()`.
 
 ### Subcategory monomorphisms
 
@@ -737,10 +765,31 @@ The projection `F.inverse_image(P) -> D` is its subcategory monomorphism.
 Fullness and repleteness pass from `P` to the inverse image.
 
 For a property subcategory `C.P()`, a category declares `D.P()` as `F.inverse_image(C.P())` when the named functor `F` defines that inherited property.
-The category construction owns this propagation.
-The axiom machinery registers the property name, and the compiler exposes the implementation classes of the resulting subcategory.
-Neither one defines a separate propagation rule.
+The pullback owns the resulting category and both structure functors.
+The axiom machinery registers the property name, and the compiler exposes the implementation classes of this pullback.
 This construction is the category attached to the standard inverse image of an object property; see [Mathlib, `ObjectProperty.inverseImage`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/Basic.html) and [its full subcategory](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/FullSubcategory.html).
+
+For subcategories `P -> C` and `Q -> C`, their intersection is
+
+\[
+P.\operatorname{intersection}(Q)=P\times_C Q.
+\]
+
+It retains both projections and its monomorphism into `C`. Chained property refinements are iterated pullbacks. Pullback associativity supplies their coherence.
+
+### Restrictions and change of base
+
+Let `F: C -> D`, with subcategory monomorphisms `i: P -> C` and `j: Q -> D`. When the defining mathematics supplies a factorization of `F compose i` through `j`, `F.restrict(P, Q)` is the induced functor `P -> Q`. The leaf states the theorem that its objects and morphisms land in `Q`. The general restriction construction supplies the functor and the commuting square.
+
+A morphism between two pullback diagrams induces the corresponding functor between their pullbacks. The pullback construction owns this action on objects, morphisms, and comparison natural transformations.
+
+For `p: E -> C` and `F: D -> C`, `F.base_change(p)` is the pullback projection
+
+\[
+D\times_C E\longrightarrow D.
+\]
+
+It retains the other projection to `E` and the comparison square. The inverse-image subcategory is the case in which `p` is a subcategory monomorphism. Base change of a fibration retains the pulled-back cartesian lifts.
 
 ### Induced functors
 
@@ -767,15 +816,45 @@ Each such transformation is a morphism in a fixed-endpoint functor category.
 The Kan extension construction owns these morphisms.
 A later named construction uses their functor components and ordinary composition.
 
-### Essential images
+### Strict, full, and essential images
 
-For `F: C -> D`, `D.ImagesOfFunctor(F)` is the full property subcategory of `D` on objects isomorphic to `F(X)` for some `X in C`. Its monomorphism into `D` is fully faithful by construction.
-The original functor factors through this category.
+For `F: C -> D`, three constructions retain different information:
 
-A universal-construction family has more data.
-`C.Products()` is the full subcategory of `C` on the products, reached by its retained identity-on-values monomorphism.
-It retains the universal data of each diagram `D`: `D` itself, its projections, and its universal maps.
-The essential image of the product functor records only which objects are isomorphic to products.
+| Construction | Objects | Morphisms |
+| --- | --- | --- |
+| `D.StrictImage(F)` | literal values `F(X)` | morphisms of `D` equal to some value `F(f)` |
+| `D.FullImage(F)` | literal values `F(X)` | all morphisms of `D` between them |
+| `D.EssentialImage(F)` | objects isomorphic in `D` to some `F(X)` | all morphisms of `D` between them |
+
+The essential image is full and replete. The functor factors through it as an essentially surjective functor followed by a fully faithful inclusion. Membership records only the existential property. A selected preimage is separate data. This follows [Mathlib, essential image](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/EssentialImage).
+
+A universal presentation contains more information than any image category. A limiting cone retains its diagram, legs, apex, and universal maps. Its apex can lie in an image subcategory without owning that presentation.
+
+## Adjunctions and equivalences
+
+For `F: C -> D` and `G: D -> C`, `Adjunctions(F, G)` is the category of adjunction data. An object retains
+
+\[
+\eta:\operatorname{Id}_C\Longrightarrow G\circ F,
+\qquad
+\epsilon:F\circ G\Longrightarrow\operatorname{Id}_D,
+\]
+
+with the triangle identities. The category is inhabited exactly when this pair admits an adjunction with the stated orientation. Selecting an object supplies the unit and counit needed by later constructions. This is the standard package in [Mathlib, adjunctions](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Adjunction/Basic.html).
+
+A morphism in `Adjunctions(F, G)` is a pair of endotransformations of `F` and `G` compatible with the two units and counits. Composition is componentwise.
+
+`Equivalences(C, D)` is the category of selected equivalence data. An object retains `F: C -> D`, an inverse `G: D -> C`, and the unit and counit natural isomorphisms. A morphism is a natural transformation between the forward functors. This follows Mathlib's category structure on equivalences and its functor to `Fun(C, D)`. This is distinct from membership of `F` in the property subcategory `Fun(C, D).Equivalences()`. The property stores no inverse. See [Mathlib, equivalences](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Equivalence.html).
+
+For a shape `I`, the diagonal functor is
+
+\[
+\Delta_I:C\longrightarrow\operatorname{Fun}(I,C).
+\]
+
+When chosen `I`-limits exist, the retained limit functor `Lim_I` is a right adjoint of `Delta_I`. The selected object of `Adjunctions(Delta_I, Lim_I)` owns its unit and counit. Colimits and their adjunction derive through `Op`.
+
+Mates under adjunctions are a later operation on this data. They do not belong to PR-8 acceptance.
 
 ## Products, coproducts, and component functors
 
@@ -849,23 +928,32 @@ The kernel supplies these shape constructors:
 
 A discrete diagram needs only its object rule `i |-> X_i`. The rule is an assignment on `S`; it never enumerates `S`. A Python sequence `(X_0, ..., X_n)` is the convenience form and denotes the diagram over `Discrete([n])`.
 
-For each nontrivial discrete shape `J`, a chosen product functor
+For `D: I -> C`, `Cones(D)` is the cone category. A limiting cone is a terminal object of this category. `LimitCones(D)` is the full subcategory on these objects. A selected presentation `p in LimitCones(D)` supplies:
+
+```python
+p.diagram()     # D
+p.apex()        # an object of C
+p.leg(i)        # p.apex() -> D(i)
+p.lift(q)       # the unique cone morphism from q
+```
+
+This follows the standard cone-category description in [Mathlib, cone categories](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Limits/ConeCategory.html). Cocones and colimit cocones derive through `Op`.
+
+For fixed `I`, the total category of limiting cones has a diagram projection to `Fun(I, C)` and an apex functor to `C`. A chosen limit functor is a section of the diagram projection followed by the apex functor. Thus the diagram, universal presentation, and apex are three distinct objects. The fiber of the apex functor over `X` is the category of limiting presentations with apex `X`.
+
+For each nontrivial discrete shape `J`, the selected limiting cones give a product functor
 
 \[
-\operatorname{Prod}_J:C^J\longrightarrow C
+\operatorname{Prod}_J:C^J\longrightarrow C.
 \]
 
-maps a diagram to its selected product object. `C.Products()` is the full subcategory of `C` on the union of these strict images. It is the shared interface for objects constructed as nontrivial products. The family retains the diagram, projections, and universal map for each construction. `C.Coproducts()` is dual. Singleton limits remain available through their standard limit construction; they do not make every object a member of `C.Products()`.
+`C.Products()` is the union of the full images of these chosen product functors. It is the shared apex interface for objects constructed as nontrivial products. `C.Coproducts()` is dual. The essential image gives the replete category of objects isomorphic to such chosen products. Singleton limits remain available through their standard limit construction; they do not make every object a member of `C.Products()`.
 
-`C.Products()(diagram)` constructs one object of `C`, placed in `C.Products()`, with `product_projection(i)` indexed by `i in S` and the universal map.
-The structure functor of the family is its retained identity-on-values monomorphism into `C`. `C.Coproducts()` is dual with `coproduct_injection(i)`. `X * Y` is `C.Products()((X, Y))`.
+`C.Products()(diagram)` selects a product presentation `p in LimitCones(diagram)` and returns `p.apex()` placed in `C.Products()`. The presentation remains an object over the apex. A second limiting cone can have the same apex without replacing the first.
 
-`P.product_factors()` returns the retained indexed family `i |-> X_i` of a product presentation.
-`Q.coproduct_summands()` returns the retained indexed family of a coproduct presentation.
+The common unambiguous case can expose `product_projection(i)` as a convenience. Code that must select among presentations uses `p.leg(i)`. `X * Y` is `C.Products()((X, Y))`.
 
-For a point `x: * -> P` of a product object `P` in the point model, its component at `i` is the composite
-`P.product_projection(i) after x`.
-This construction belongs to the generic product presentation.
+For a point `x: * -> p.apex()`, its component at `i` is the composite `p.leg(i) after x`. This construction belongs to the selected product presentation.
 
 `C.Limits(I)` and `C.Colimits(I)` are the general families for one supplied shape `I`. The named conveniences are instances:
 
@@ -879,10 +967,22 @@ C.Coequalizers() is C.Colimits(WalkingParallelPair)
 `C.Limits(I)` exists as a construction category for every supplied shape `I` without asserting that `C` has `I`-limits.
 Constructing an object of it requires an owned limit construction of `C` for that shape, supplied universal data (an apex with its cone and mediator rule), or an exact engine construction on a declared semantic domain.
 
-## Slices and coslices
+For `F: C -> D`, the shape-indexed property categories
 
-`C.SliceOver(x)` is the pullback in `Cat()` of `ev_1: Fun([1], C) -> C` along `x: 1 -> C`. `C.CosliceUnder(x)` is the pullback of `ev_0` along `x`. A comma category `(F, G)` for `F: A -> C`, `G: B -> C` is the pullback of `(ev_0, ev_1): Fun([1], C) -> C * C` along `F * G`. Each retains its pullback projections.
-The varying object is the composite with `ev_0` or `ev_1`.
+```python
+Fun(C, D).PreservesLimits(I)
+Fun(C, D).CreatesLimits(I)
+```
+
+state that `F` preserves or creates `I`-limits. Their colimit forms derive through `Op`. A right adjoint preserves limits. An equivalence creates and reflects limits and colimits. These implications follow [Mathlib, adjunctions and limits](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Adjunction/Limits.html) and [Mathlib, creates limits](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Limits/Creates.html).
+
+When a structural functor creates the required limits, its leaf states that property on the functor. The general creates-limits construction supplies the lifted cone and its universal maps. The leaf does not implement a separate lift for each named limit.
+
+## Comma categories, slices, coslices, and fibers
+
+For `F: A -> C` and `G: B -> C`, `Comma(F, G)` has objects `(a, b, f)` with `f: F(a) -> G(b)`. It retains its projections to `A` and `B` and the natural transformation between their composites with `F` and `G`. It is the pullback of `(ev_0, ev_1): Fun([1], C) -> C * C` along `F * G`. This is the standard comma construction in [Mathlib](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Comma/Basic.html).
+
+`C.SliceOver(x)` and `C.CosliceUnder(x)` are the fixed-object comma categories. Equivalently, the slice is the pullback of `ev_1: Fun([1], C) -> C` along `x: * -> C`, and the coslice is the pullback of `ev_0` along `x`. Each retains its pullback projections. The varying object is the composite with `ev_0` or `ev_1`.
 
 For the slice over `x`, an object is `(X, f: X -> x)`. The pullback projection to `Fun([1], C)` returns the defining morphism `f`; composing it with `ev_0` gives the varying object `X`, and composing it with `ev_1` gives the constant object `x`.
 
@@ -898,6 +998,14 @@ The fiber of `ev_1` over `x` is `C.SliceOver(x)`. The total category `Fun([1], C
 Dually, `ev_0` is an opfibration when `C` has pushouts, with cocartesian lifts by pushout, and the fixed coslice projection `C.CosliceUnder(x) -> C` is a discrete opfibration with cocartesian lifts by postcomposition.
 These properties come from the construction theorems.
 They are not runtime decisions.
+
+For any functor `p: E -> B` and point `b: * -> B`, the public fiber category is
+
+```python
+p.Fiber(b)
+```
+
+It is the pullback of `p` along `b`. Its objects lie over `b`, and its morphisms lie over the identity of `b`. It retains its inclusion into `E`; see [Mathlib, functor fibers](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/FiberedCategory/Fiber.html). A fibration adds cartesian lifts and reindexing functors. The fiber exists before this added property.
 
 ## Fixed-object construction categories
 
@@ -922,6 +1030,36 @@ A morphism `(A, i) -> (B, j)` is a morphism `f: A -> B` with `j compose f = i`.
 `C.CoveringObjects(X)` is the full subcategory of `C.SliceOver(X)` on epimorphisms.
 `C.CoveredObjects(X)` is the full subcategory of `C.CosliceUnder(X)` on epimorphisms.
 Every object retains its defining morphism.
+
+## Indexed categories, Yoneda, and representability
+
+For a pseudofunctor `P: C.op() -> Cat()`, `Grothendieck(P)` is its total category. Its objects are pairs `(c, x)` with `x in P(c)`. Its projection to `C` is a fibration and its fiber over `c` is equivalent to `P(c)`. The construction acts on morphisms of indexed categories. See [Mathlib, Grothendieck construction](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Bicategory/Grothendieck.html).
+
+Conversely, a fibration `p: E -> C` supplies fibers and cartesian reindexing. Base change along `F: D -> C` is `F.base_change(p)`. This is the general transfer operation for categories of objects equipped with selected data. An inverse-image property category is the subterminal-fiber case.
+
+The Yoneda and co-Yoneda embeddings are retained functors:
+
+\[
+y:C\longrightarrow\operatorname{Fun}(C^{op},\mathbf{Set}),
+\qquad
+y^\vee:C^{op}\longrightarrow\operatorname{Fun}(C,\mathbf{Set}).
+\]
+
+The Yoneda embedding is fully faithful. Its object action supplies the representable hom functors. See [Mathlib, Yoneda](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Yoneda.html).
+
+For `F: C.op() -> Sets()`, `Representations(F)` has objects `(X, eta)` with `X in C` and a natural isomorphism `eta: y(X) -> F`. A morphism `(X, eta) -> (Y, theta)` is a morphism `u: X -> Y` such that `theta compose y(u) = eta`. Yoneda makes such a morphism invertible. The functor is representable exactly when this category is inhabited. Selecting an object supplies the representing object and isomorphism. This property-and-data distinction follows [Mathlib, represented functors](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/RepresentedBy.html).
+
+For a test functor `j: A -> C`, `j.restricted_yoneda()` is
+
+\[
+N_j:C\longrightarrow\operatorname{Fun}(A^{op},\mathbf{Set}),
+\qquad
+N_j(X)(a)=\operatorname{Mor}(C)(j(a),X).
+\]
+
+A separating test category places this functor in `.Faithful()`. A dense test category places it in `.FullyFaithful()`. The canonical evaluation morphisms and presentations belong to this functorial construction, as specified in [Separating families and categorical generators](separating-families-and-categorical-generators.md).
+
+Monads, comonads, Eilenberg--Moore categories, mates, and reflective or coreflective subcategories extend this calculus after PR-8. M1 retains enough adjunction data to add them without a new transport mechanism.
 
 ## Examples
 
@@ -1044,6 +1182,7 @@ Mathlib's arrow category has morphisms as objects and commuting squares as morph
 | `CategoryTheory.Functor C D` | `Cat().MorphismType` with domain `C` and codomain `D` |
 | `C ⥤ D` | `Mor(Cat())(C, D)` or `Fun(C, D)` |
 | `Functor.id C` | `End_Cat(C).one()` |
+| `Functor.comp` and whiskering functors | `Fun.composition(A, B, C)` and its morphism action |
 | `Functor.fromPUnit X` | the point functor of `X`, an object of `Fun(Cat().Point(X), D)` |
 | `ObjectProperty.FullSubcategory P` | the property subcategory `C.P()` |
 | `ObjectProperty.ι P` | `Fun(C.P(), C).Monomorphisms().Isofibrations().Full()()` |
@@ -1055,6 +1194,14 @@ Mathlib's arrow category has morphisms as objects and commuting squares as morph
 | `Arrow.leftFunc`, `Arrow.rightFunc` | `ev_0` and `ev_1` of `Fun([1], C)` |
 | `Over.forget` | the projection retained by the over-category construction |
 | `StructuredArrow.proj` | the projection retained by the structured-arrow construction |
+| `Comma F G` | `Comma(F, G)` with its projections and defining natural transformation |
+| `Functor.Fiber p b` | `p.Fiber(b)` |
+| `EssentialImage F` | `D.EssentialImage(F)` and its retained factorization |
+| `Adjunction F G` | an object of `Adjunctions(F, G)` |
+| `C ≌ D` | an object of `Equivalences(C, D)` |
+| `Cone D`, `IsLimit` | `Cones(D)`, `LimitCones(D)` |
+| `PreservesLimitsOfShape`, `CreatesLimitsOfShape` | `.PreservesLimits(I)`, `.CreatesLimits(I)` |
+| `yoneda`, `RepresentableBy` | the Yoneda functor and an object of `Representations(F)` |
 | `F.Full` | `F.is_full()` and `Mor(Cat()).Full()` |
 | `F.Faithful` | `F.is_faithful()` and `Mor(Cat()).Faithful()` |
 | `F.FullyFaithful` | `F.is_fully_faithful()` and `Mor(Cat()).FullyFaithful()` |
@@ -1109,6 +1256,16 @@ It is kernel infrastructure over already established mathematical functors.
 
 - Property categories inherited along a named functor use this inverse-image construction.
 
+- Composition and evaluation are functors. Their morphism actions supply whiskering and horizontal composition.
+
+- Subcategory intersections, functor restrictions, induced pullback functors, fibers, and change of base use the generic pullback calculus.
+
+- `Comma(F, G)` retains its projections and defining natural transformation. Slices and coslices are its fixed-object forms.
+
+- `D.StrictImage(F)`, `D.FullImage(F)`, and `D.EssentialImage(F)` have the stated distinct morphisms and closure properties.
+
+- `Adjunctions(F, G)` and `Equivalences(C, D)` retain selected data. Their existence is inhabitation of these categories.
+
 - Every functor is constructed through `Fun(Source, Target)` or an established property subcategory.
 
 - A specialized constructor receives enough mathematical data to select one functor.
@@ -1123,17 +1280,23 @@ It is kernel infrastructure over already established mathematical functors.
 
 - `Cat().Products()` and `Cat().Coproducts()` accept sequence-indexed category diagrams.
 
-- Their objects own `product_projection(i)` and `coproduct_injection(i)` respectively.
+- Selected product and coproduct presentations own their legs and universal maps.
 
-- A universal construction returns one value: the constructed object, an object of the ambient category, placed in the construction family and carrying its defining morphisms and universal maps.
+- `Cones(D)` and `LimitCones(D)` separate the universal presentation from its apex.
 
-- A construction family is a full subcategory of its ambient category, reached by the retained identity-on-values monomorphism, and retains the universal data of each diagram it constructed from.
+- The total category of limiting cones retains its diagram projection and apex functor. Apex interfaces are full images of the applicable chosen limit functors.
+
+- `.PreservesLimits(I)` and `.CreatesLimits(I)` are functor-property categories. Their colimit forms derive through `Op`.
 
 - Every object of `Cat().Subobjects(P)` for a product category `P` retains its presenting monomorphism, then derives its component functors by composition.
 
 - Slice and coslice categories are pullbacks of `ev_1` and `ev_0` along the chosen object and retain their pullback projections.
 
 - Fibration and opfibration structure retains its cartesian or cocartesian lifts.
+
+- `p.Fiber(b)` exists for every functor. `F.base_change(p)` retains the pullback projection and comparison square.
+
+- `Grothendieck(P)`, Yoneda, co-Yoneda, restricted Yoneda, and `Representations(F)` are generic constructions.
 
 - Kan extensions retain their units, counits, and universally induced natural transformations.
 

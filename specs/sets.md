@@ -253,8 +253,8 @@ Cardinal arithmetic, equality, and order are defined on cardinals only.
 Cardinals implement no `Unknown` handling.
 
 A set construction registers exact evaluation cases for the category-owned cardinality predicate.
-Each case uses the index set, the retained diagram's codomain placement (`Sets().Finite()`, `Sets().Countable()`, `Sets().Uncountable()`), and any retained constant diagram.
-For a finite chosen enumeration, it obtains each factor query by applying `X_i.cardinality()` to `P.product_factors()`.
+Each case uses the index set, the selected presentation's diagram, its codomain placement (`Sets().Finite()`, `Sets().Countable()`, `Sets().Uncountable()`), and any retained constant diagram.
+For a finite chosen enumeration, it obtains each factor query from the selected product cone `p` by applying `p.diagram().on_object(i).cardinality()`.
 Each case cites the theorem that decides it.
 The product cases are: a finite index with every factor exact gives the exact product; a finite index with an empty factor gives `0`; the constant diagram at `X` over `S` gives `(#X) ** (#S)`; an infinite index with codomain `Sets().Uncountable()` places the product in `Sets().Uncountable()`; a finite index with codomain `Sets().Countable()` places the product in `Sets().Countable()`. When no case applies, `ask()` returns `Unknown`. Coproducts use the dual sum cases.
 

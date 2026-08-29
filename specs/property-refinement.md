@@ -265,8 +265,17 @@ The construction retains its projections, including the subcategory monomorphism
 When `F` defines the inherited property `P` on `D`, this inverse image is `D.P()`.
 If several functors `D -> C` exist, the declaration names the one used.
 The axiom registration and compiler expose the resulting category, containment proposition, refinement, and implementation classes.
-They do not define another property-propagation mechanism.
 This is the standard inverse image of an object property and its associated full subcategory; see [Mathlib, `ObjectProperty.inverseImage`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/Basic.html) and [full subcategories](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/FullSubcategory.html).
+
+For property subcategories `P -> C` and `Q -> C`, their conjunction is the pullback
+
+\[
+P.\operatorname{intersection}(Q)=P\times_C Q.
+\]
+
+The construction retains both projections. Iterated calls such as `C.P().Q().R()` are iterated pullbacks over `C`. Pullback associativity supplies the comparison natural isomorphisms between parenthesizations. Sage's generated categories implement this pullback and its compiled classes.
+
+When `F: D -> C` maps one property intersection to another, the induced functor is the generic functor between the pullbacks. The leaf supplies only the theorem that each component lands in the named property category.
 
 This uniqueness concerns same-object property refinement only.
 A property category can have many ordinary constructors from supported mathematical and engine representations.

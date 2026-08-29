@@ -192,16 +192,16 @@ Poset theory adds only the theorem-backed admission needed to preserve monotonic
 ## Products
 
 The generic product contract is specified in [Products, coproducts, and component functors](functor.md#products-coproducts-and-component-functors).
-The poset delta uses the chosen set-product apex and installs the componentwise order:
+The projection `U: PartiallyOrderedSets() -> Sets()` creates small limits. It is therefore an object of each applicable `Fun(PartiallyOrderedSets(), Sets()).CreatesLimits(I)`.
+
+For a discrete shape, the generic creates-limits construction lifts the selected set-product cone. Its apex carries the componentwise order:
 
 \[
 x\leq y\quad\Longleftrightarrow\quad
 \forall i,\ x_i\leq_i y_i.
 \]
 
-The coordinatewise theorem admits this order.
-It also establishes that every inherited product projection is monotone and that the inherited universal morphism is monotone.
-The structure functor to `Sets()` maps the poset product to the chosen set product on the nose.
+The poset leaf states this coordinatewise theorem once as the creates-limits property of `U`. The generic lift supplies the monotone projections and universal morphism. Applying `U` to the lifted cone returns the selected set-product cone.
 
 The product of total orders need not be total.
 In a product of two nontrivial chains, the two crossed elements are incomparable.
@@ -315,7 +315,7 @@ The implementation satisfies this specification when the public API establishes 
 
 - theorem-backed identities, composites, projections, and standard infinite maps enter `Mor(PartiallyOrderedSets())`;
 
-- poset products retain the chosen set-product apex and universal morphisms;
+- the projection to sets creates poset products and their universal morphisms;
 
 - crossed product elements remain incomparable;
 

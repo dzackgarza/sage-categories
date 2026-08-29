@@ -165,7 +165,7 @@ The kernel must not cache `Unknown` as mathematical falsity.
 
 Leaves never implement `__contains__` on a category.
 
-## Property propagation
+## Inverse-image property categories
 
 Suppose \(P\) is defined at category \(C\). Let \(F:D\to C\) be the structure functor.
 
@@ -197,7 +197,7 @@ The kernel derives:
 
 - declared subcategory containments;
 
-- descendant propagation.
+- inverse images along selected structure functors.
 
 A leaf does not copy `is_P()`. It also does not forward it by hand.
 
@@ -482,7 +482,7 @@ From the axiom declaration and optional registered implementation, the kernel su
 
 - descendant categories such as `D.P()`;
 
-- structural propagation;
+- inverse-image categories along selected structure functors;
 
 - the declared subcategory containments.
 
@@ -545,7 +545,7 @@ The ownership split is:
 
 - The repository kernel connects positive propositions to category refinement.
 
-- Structure functors propagate properties between categories.
+- Each inherited property category is the inverse image along its selected structure functor.
 
 - Computation engines supply exact decision procedures.
 

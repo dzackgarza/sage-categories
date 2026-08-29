@@ -195,7 +195,7 @@ Other cases remain symbolic.
 
 ### Ordinal object API
 
-`Ordinals().ImagesOfFunctor(InitialOrdinal)` is the property subcategory of initial ordinals.
+`Ordinals().EssentialImage(InitialOrdinal)` is the property subcategory of initial ordinals.
 It owns the initiality containment predicate and the retained equivalence from `Cardinal()`.
 The kernel derives the standard `alpha.is_initial()` application.
 Apply the inverse of that equivalence to obtain the cardinal index of an initial ordinal.

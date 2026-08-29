@@ -198,9 +198,9 @@ Do not preserve a mistaken architecture with a cheaper local implementation.
 
 Kernel complexity is justified only when it removes repetition from theory code.
 The theory layer must read like the mathematics it implements.
-A new category should state its new data and immediate selected functors, then inherit the rest.
+A new category should state its new data, immediate selected functors, and functor properties, then inherit the rest.
 
-A leaf category must state its mathematical data, operations, selected functors, constructors, and lifts.
+A leaf category must state its mathematical data, operations, selected functors, constructors, and theorems about those functors.
 Stop local work when a leaf contains generic reflection, dispatch, route traversal, transport, cache ownership, wrappers, or public backend selection.
 Treat that wiring as a kernel or backend-boundary defect.
 Repair the owning foundation instead of polishing, moving, or preserving the wiring in a leaf workaround.
@@ -280,7 +280,6 @@ For a named functor `F: D -> C` and a property subcategory `C.P() -> C`, form th
 When `F` defines the inherited property on `D`, this pullback is `D.P()`.
 Retain its pullback projections and its subcategory monomorphism into `D`.
 The axiom registration and compiler expose this category and its implementation classes.
-They do not implement a separate property-propagation rule.
 
 Every positive property decision uses the kernel's same-object refinement mechanism.
 This mechanism does not limit a property's constructors from mathematical or engine representations.
@@ -374,6 +373,25 @@ For `F: D -> C` and a subcategory monomorphism `P -> C`, define `F.inverse_image
 Retain both pullback projections.
 The projection to `D` presents the inverse image as a subcategory of `D`.
 
+Make composition and evaluation functors between functor categories.
+Their morphism actions supply whiskering and horizontal composition.
+Use pullbacks for subcategory intersections, functor restrictions, induced functors,
+fibers, and change of base.
+A leaf states that its functor lands in a named subcategory.
+The generic `F.restrict(P, Q)` construction supplies the restricted functor.
+
+For `F: A -> C` and `G: B -> C`, `Comma(F, G)` retains its two projections and
+defining natural transformation. Slices and coslices are its fixed-object forms.
+For `p: E -> B`, `p.Fiber(b)` is the pullback along `b: * -> B`.
+
+Distinguish `D.StrictImage(F)`, `D.FullImage(F)`, and `D.EssentialImage(F)`.
+The essential image retains the essentially-surjective and fully faithful factorization.
+
+Selected data lives in categories such as `Adjunctions(F, G)`, `Equivalences(C, D)`,
+`LimitCones(D)`, and `Representations(F)`.
+Inhabitation states existence; an object supplies the data needed for computation.
+Keep these categories distinct from property subcategories on the classified functor.
+
 A mathematical construction creates each named functor through this category. It retains
 all defining projections, evaluations, and subcategory monomorphisms. A leaf selects the functors that
 supply its inherited public structure.
@@ -397,6 +415,19 @@ The `Cat` level supplies the uniform category constructors:
 - `Mor(n, C)` for every `n`;
 - the property subcategories `Mor(C).Monomorphisms()`, `.Epimorphisms()`, `.Isomorphisms()`, `.Endomorphisms()`, and `.Automorphisms()`, and for `Fun` also `.Full()`, `.Faithful()`, `.FullyFaithful()`, `.EssentiallySurjective()`, and `.Equivalences()`, with endpoint dispatch `P(A, B) = Mor(K)(A, B).P()` for every property subcategory `P` of `Mor(K)`;
 - `Products()`, `Coproducts()`, `Limits(I)`, and `Colimits(I)` for a supplied shape `I in Cat()`, and the fixed-object categories `Subobjects(X)`, `Superobjects(X)`, `CoveringObjects(X)`, and `CoveredObjects(X)`.
+
+For `D: I -> C`, `Cones(D)` is the cone category and `LimitCones(D)` is its full
+subcategory of limiting cones. The total limiting-cone category retains its diagram
+projection and apex functor. `C.Products()` and `C.Limits(I)` are apex interfaces formed
+from the applicable full images. Universal data remains on the selected cone.
+
+For each shape `I`, `.PreservesLimits(I)` and `.CreatesLimits(I)` are properties of
+functors. Derive the colimit properties through `Op`. A leaf that creates a limit states
+that theorem on its named structure functor. The generic construction supplies the lift.
+
+For an indexed category `P: C.op() -> Cat()`, `Grothendieck(P)` owns its total category
+and projection. Yoneda, co-Yoneda, restricted Yoneda, and `Representations(F)` are generic
+constructions. Separation and density are properties of the restricted Yoneda functor.
 
 For `X in C`, the fixed-object construction categories are `C.Subobjects(X)`,
 `C.Superobjects(X)`, `C.CoveringObjects(X)`, and `C.CoveredObjects(X)`.
@@ -436,8 +467,8 @@ projection of `P`.
 The category whose objects are the morphisms of `C` and whose morphisms are commuting
 squares is the functor category `Fun([1], C)` from the walking arrow `[1]`. Its evaluation
 functors `ev_0, ev_1: Fun([1], C) -> C` return the domain and codomain. `C.SliceOver(x)` is
-the pullback in `Cat()` of `ev_1` along `x: 1 -> C`; `C.CosliceUnder(x)` is the pullback of
-`ev_0` along `x`; a comma category `(F, G)` is the pullback of `(ev_0, ev_1): Fun([1], C) -> C * C`
+the pullback in `Cat()` of `ev_1` along `x: * -> C`; `C.CosliceUnder(x)` is the pullback of
+`ev_0` along `x`; `Comma(F, G)` is the pullback of `(ev_0, ev_1): Fun([1], C) -> C * C`
 along `F * G`. Each retains its pullback projections; the varying object is the composite
 with `ev_0` or `ev_1`.
 
@@ -593,27 +624,26 @@ Do not maintain a second inheritance or propagation registry.
 A categorical construction acts on objects and morphisms.
 A parent-only result does not implement a categorical construction.
 
-Retain the data that states the universal property:
+Retain the data that states the universal property on its presentation:
 
-- a product retains its diagram, `product_projection(i)`, and mediating morphism;
-- a coproduct retains its diagram, `coproduct_injection(i)`, and mediating morphism;
-- a limit retains its cone and universal map;
-- a colimit retains its cocone and universal map.
+- a selected product cone retains its diagram, legs, apex, and mediating morphism;
+- a selected coproduct cocone retains its diagram, legs, apex, and mediating morphism;
+- a limiting cone retains its cone and universal map;
+- a colimiting cocone retains its cocone and universal map.
 
 Let each apex inherit methods from the category in which it lives.
 Use functor composition and natural transformations to move structure.
 Do not create a separate method-propagation system for constructions.
 
-For each nontrivial discrete shape `J`, `C.Products()` is the full subcategory on the
-union of the strict images of the chosen product functors `Prod_J: C^J -> C`.
-For a general construction functor `F: Diag_I(C) -> C`, `C.Limits(I)` is the full
-subcategory on the constructed objects. Each dual family has the same form. Its selected
-functor is the retained identity-on-values monomorphism into `C`, so `F(D)` is an object of
-`C` with the whole surface of `C`. The construction returns that one value, placed in the
-family. The family retains the universal data of each diagram `D`: `D` itself, the
-defining morphisms, and the universal maps. Distinct diagrams keep distinct universal
-data, including when they construct one object.
-This applies to products, coproducts, limits, and colimits.
+For `D: I -> C`, `Cones(D)` owns cones and `LimitCones(D)` is its full subcategory of
+limiting cones. A selected presentation `p` owns `p.diagram()`, `p.apex()`, `p.leg(i)`,
+and its universal lift. The total category of limiting cones retains its diagram
+projection and apex functor. Thus different presentations can have one apex.
+
+For each nontrivial discrete shape `J`, `C.Products()` is the union of the full images of
+the chosen product functors `Prod_J: Fun(J, C) -> C`. It supplies the apex interface.
+`C.Limits(I)` has the same form for one shape. The presentation remains a separate object
+over the apex. The dual families derive through `Op`.
 
 A covering object of `Y` is a pair `(X, p: X -> Y)` with `p` an epimorphism.
 It is not the morphism `p` alone.

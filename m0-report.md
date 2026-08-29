@@ -159,3 +159,71 @@ One-line evidence: the complete 15-file diff has no whitespace error, edited Pyt
 ## Required closure
 
 Resolve R0.1, R0.2, R0.3, R0.4, R0.6, and R0.7 at one revision. Then perform the required independent R0 review. M1 remains blocked until that review accepts the exact revision.
+
+## R0 fix round 1
+
+Status: `DONE_WITH_CONCERNS`.
+
+Revision repaired: `e3bb1b3421b1f971fb1fac8871aaf6264ba15cf6`.
+
+### Commits
+
+- `e3bb1b3421b1f971fb1fac8871aaf6264ba15cf6` - bounded M0 authority repair in current worktree.
+
+### Files
+
+- `CONTRIBUTING.md`
+- `specs/decisions.md`
+- `specs/functor.md`
+- `specs/resolution.md`
+- `specs/sets.md`
+- `src/sage_categories/cat/category.py`
+- `src/sage_categories/cat/kan.py`
+- `src/sage_categories/cat/slices.py`
+- `src/sage_categories/number_sets/integers.py`
+- `src/sage_categories/posets/category.py`
+- `src/sage_categories/sets/category.py`
+- `src/sage_categories/sets/elements.py`
+- `src/sage_categories/sets/exponentials.py`
+- `src/sage_categories/sets/objects.py`
+- `src/sage_categories/sets/power_objects.py`
+- primary plan-workspace copy `authoritative-plan.md`
+
+### Provenance
+
+- `m0-r0-repair.md` R0.1 controls this repair: normalize normative and source prose, and do not remove or implement the M1 runtime path.
+- D63 and D109 through D114 remain the governing decision sources for point language, dependency language, and the private runtime boundary.
+- `research-cap.md` supplies the checked CAP facts used here: MonoidalCategories is a required transitive dependency; SliceCategories is the checked slice source; FpCategories does not by itself supply generic `Fun([1], C)` or evaluation functors; CompilerForCAP is a CAP_project component; and no checked source supplies a generic Python--GAP--Julia bridge.
+- The parsed Codex transcript cited by D109 through D114 supplied no user-grounded supersession for D114-based exclusions of `inflection`, `multimethod`, `tree-sitter-sage`, or `makefun`.
+
+### Verification
+
+- Before the edit, `git rev-parse HEAD` matched the authorized base `21cf52e49662e8e20ee3bcb84f68ce7366ad4d50`.
+- The immediate repair diff was inspected before commit.
+- A focused residual search on the repaired M0 surfaces left only genuine terminal-object formulas such as `Mor(Sets())(1, X)` and `Fun([1], C)`.
+- `uvx --python 3.14 --from git+https://github.com/dzackgarza/agent-memory agent-memory plan update PLAN-pr-8-kernel-cat-architecture-convergence --body-file /home/dzack/gitclones/sage-categories/.superpowers/sdd/PLAN-pr-8-kernel-cat-architecture-convergence-v3/authoritative-plan.md` succeeded, and `plan show PLAN-pr-8-kernel-cat-architecture-convergence` returned the compact body.
+- No test, build, lint, type, format, stub, or aggregate command ran. This was the documentation-only route.
+
+### R0.1 ruling
+
+The repaired prose now treats `F.on_object` and `F.on_morphism` as the complete leaf functor contract on the inspected M0 surfaces.
+The retained constructor-conversion path remains private compiler vocabulary.
+This round did not remove it and did not implement it.
+
+### R0 criteria after round 1
+
+| R0 criterion | Round 1 disposition | Evidence |
+| --- | --- | --- |
+| 1. D123 controls every current functor clause. | **Satisfied for the bounded M0 prose boundary.** | The repaired specifications, policy rows, and source docstrings treat the two ordinary actions as the complete public contract. The retained constructor-conversion path remains private compiler machinery under the R0.1 ruling. |
+| 2. Each contract has one canonical document. | **Satisfied on the inspected authority surfaces.** | `CONTRIBUTING.md` now points to canonical owners instead of restating the full leaf, kernel, and functor contracts. |
+| 3. Public names match M0.3. | **Satisfied on the repaired M0 surfaces.** | Current M0-governed specs and source now use point notation `* -> X`. Genuine terminal-object formulas remain where they are the mathematical object, such as `Mor(Sets())(1, X)` and `Fun([1], C)`. |
+| 4. Active plans state only phase delta and acceptance. | **Satisfied.** | The active parent plan body now stores authority, scope, phase delta, acceptance, and the explicit D114 authority gap only. |
+| 5. Templates contain no independent contract. | **Unchanged and still satisfied.** | This round needed no template edit. The prior M0 repair already reduced the active templates to examples. |
+| 6. Source docstrings describe only their local symbols. | **Satisfied on the repaired M0 source surfaces.** | The cited slice, set, integer, and poset files now describe only their local objects, maps, points, and retained data. No broader whole-repository claim is made here. |
+| 7. Every kernel/Cat dependency has the fixed disposition above. | **Improved, with one remaining authority gap.** | `specs/resolution.md` now records MonoidalCategories, SliceCategories, CompilerForCAP as a CAP_project component, the limits of CAP and FpCategories, and the separate Python--GAP--Julia bridge requirement. No user-grounded supersession was found for any D114-based exclusion list, so this round removes the unsupported fixed exclusions from the active plan instead of inventing a new decision. |
+| 8. The active DAG contains no production-leaf implementation. | **Satisfied.** | The compact active plan keeps the work at M0 through M6 and keeps production leaves blocked. |
+
+### Remaining concerns
+
+- The inspected transcript did not ground a superseding decision for any D114-based exclusion list. A later authority edit needs that user grounding.
+- This was a bounded M0 repair on the inspected authority and source surfaces. It is not a new whole-repository R0 certification.

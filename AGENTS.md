@@ -169,6 +169,12 @@ This is the main form of implementation compression in this repository:
 - one universal construction retains its defining morphisms;
 - the compiler turns those declarations into a direct public surface.
 
+One mathematical fact has one semantic owner.
+A category, functor, property subcategory, universal presentation, named construction,
+or category-owned implementation class owns it.
+Do not add a second runtime or generated entity that states the same fact again.
+Repair the standard owner and delete the duplicate entity.
+
 At every design, implementation, and review step, answer this question:
 
 > What generic categorical mechanism makes every leaf state only its new mathematics?

@@ -16,13 +16,13 @@ This repository states the implementation relation with a structure functor.
 
 A structure functor can be:
 
-- a forgetful functor;
-
-- a projection from a category of structured objects;
+- a named projection from a category of structured objects;
 
 - a fibration;
 
 - a subcategory monomorphism;
+
+- a right adjoint to a named free functor;
 
 - another ordinary functor whose target classes supply inherited implementation.
 

@@ -1025,6 +1025,12 @@ It does not require every private engine value or algorithm call to enter the fu
 
 A leaf implementation satisfies this specification when all these facts hold:
 
+- after inherited and generic categorical structure is removed, the remaining source states only this category's new mathematics;
+
+- every mathematical fact and public operation has one semantic owner;
+
+- the leaf imports no kernel internal and depends only on its exact immediate targets, generic categorical constructions, and private computation helpers;
+
 - the category specifies `C.ObjectType`, `C.ElementType`, and `C.MorphismType`, and the kernel constructs their required dynamic inheritance;
 
 - exact object, element, morphism, parameter, result, and constructor types follow from the category, operation, and functor definitions;

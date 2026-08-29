@@ -64,7 +64,7 @@ the target class. A Sage supercategory edge need not be a subcategory inclusion.
 
 This repository replaces each such edge with a **structure functor** `F: C -> D` returned
 by `C.structure_functors()`. A structure functor is an ordinary functor selected for class
-inheritance. It can be a forgetful functor, projection, fibration, subcategory
+inheritance. It can be a named projection, fibration, subcategory
 monomorphism, or another mathematically specified functor. Selection alone asserts none
 of those properties.
 
@@ -110,6 +110,21 @@ The inherited categorical machinery should supply the rest.
 The intended reviewer of a theory subtree is a mathematician with little programming experience.
 They should be able to compare a method with its definition without auditing dynamic inheritance, container plumbing, backend types, or dispatch machinery.
 Legibility and categorical uniformity are therefore primary requirements, not decoration around successful computation.
+
+## Architecture boundaries
+
+| Layer | Responsibility |
+| --- | --- |
+| Kernel | Private Sage class compilation, controlled linearization, initialization, identity caches, bootstrap, same-object refinement mechanics, and generated projections. It defines no mathematical meaning. |
+| `Cat` theory | Categories, morphism and functor categories, natural transformations, universal constructions, property inverse images, fibrations, and their retained functors. This code reads as mathematics. |
+| Leaf | One category's new objects, elements, morphisms, constructors, immediate functors, properties, operations, exact handlers, and theorem-backed constructions. |
+| Private backend | Sage, SymPy, GAP, Julia, matrices, processes, caches, and conversions used inside category-owned methods. It returns results to their mathematical owner. |
+| Generated surface | Stubs and manifests projected from accepted declarations. They are never runtime or mathematical authority. |
+
+One mathematical fact has one semantic owner.
+No second runtime or generated entity can restate a fact already owned by the mathematics.
+Kernel and `Cat` theory modules do not import production leaves.
+Leaves do not import kernel internals.
 
 ## Leaf-category end state
 

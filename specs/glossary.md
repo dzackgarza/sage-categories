@@ -26,6 +26,16 @@ Do not remove a row after the source becomes clean (`POL-MATH-051`).
 | `receiver`, `receiver-valued`, `this_object` | the source instance, or the value to which the method applies |
 | `point stage`, `object stage`, `arrow stage`, `classical stage`, `product stage`, `stage comparison`, `stage identity`, `ObjectStageIdentity`, `ArrowStageIdentity`, `stage_comparison` | the exact point, generalized element, or functor action |
 | `constructor conversion`, `construction-input conversion`, or compiler-oriented constructor metadata on a functor | the complete object or morphism action for the public image; private runtime state sharing for compiler mechanics |
+| object, element, or morphism constructor-input wrapper; target-constructor metadata | the actual owned target value returned by the functor action |
+| transport recipe, transport route, canonical transport | the exact named functor or composite |
+| inheritance functor | an ordinary functor selected in `structure_functors()` |
+| projection accessor | the retained projection functor |
+| property implication used to relate property categories | the subcategory monomorphism or inverse-image pullback |
+| generic supercategory | the exact named functor; use Sage supercategory only for the private Sage runtime graph |
+| generic forgetful functor | the exact projection, inclusion, or right adjoint to a named free functor |
+| wrapper, proxy, facade, or view used as a mathematical object | the exact category, functor, universal presentation, or private engine value |
+| method-owner metadata or registry | the method definition on its category-owned implementation class |
+| capability propagation | inherited implementation or property inverse image, stated precisely |
 | `generalized point` | `generalized element` for `T -> X`; use `point` only for `* -> X` |
 | `Ar(C)` and arrow-category API aliases | `Mor(C)` or `Mor(C)(A, B)`; standard `Hom_C(A, B)` remains valid mathematical prose |
 | `Subobjects(X)`, `Superobjects(X)`, `CoveringObjects(X)`, `CoveredObjects(X)` | `MonoOver(X)`, `MonoUnder(X)`, `EpiOver(X)`, `EpiUnder(X)` |

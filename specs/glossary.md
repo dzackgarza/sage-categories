@@ -38,8 +38,8 @@ Do not remove a row after the source becomes clean (`POL-MATH-051`).
 | capability propagation | inherited implementation or property inverse image, stated precisely |
 | `generalized point` | `generalized element` for `T -> X`; use `point` only for `* -> X` |
 | `Ar(C)` and arrow-category API aliases | `Mor(C)` or `Mor(C)(A, B)`; standard `Hom_C(A, B)` remains valid mathematical prose |
-| `Subobjects(X)`, `Superobjects(X)`, `CoveringObjects(X)`, `CoveredObjects(X)` | `MonoOver(X)`, `MonoUnder(X)`, `EpiOver(X)`, `EpiUnder(X)` |
-| `ChosenSubobjects`, `chosen subobject` | `MonoOver(X)`; each object retains its monomorphism into `X` |
+| `MonoOver(X)`, `MonoUnder(X)`, `EpiOver(X)`, `EpiUnder(X)` as public API names | `Subobjects(X)`, `Superobjects(X)`, `CoveringObjects(X)`, `CoveredObjects(X)` |
+| `ChosenSubobjects`, `chosen subobject` | `Subobjects(X)`; each object retains its monomorphism into `X` |
 | `Chosen<Anything>` | `With<Datum>` only when the object retains chosen data; otherwise use the mathematical construction name |
 | generic `_construct` | the exact named constructor for the mathematical construction |
 
@@ -49,6 +49,7 @@ Do not remove a row after the source becomes clean (`POL-MATH-051`).
 | --- | --- |
 | `C.ElementType` | The shared implementation and API for elements of objects of `C`. |
 | Point of a category `X` | A functor `* -> X`. This is an actual object of `X`; a set uses its discrete, 0-truncated category. |
+| `Cat().Point(X)` | The one-object category whose distinguished object is `X`. It is not a point `* -> X`. |
 | Point of `C in Cat()` | A functor `* -> C`. This is an actual object of `C` and a `Cat().ElementType` value. |
 | Generalized element of `X` | A functor `T -> X`. |
 | Morphism of `C` | An object of `Mor(C)`. Thus `C.MorphismType = Mor(C).ObjectType`. |

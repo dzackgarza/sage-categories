@@ -428,7 +428,7 @@ The `Cat` level supplies the uniform category constructors:
 
 - `Mor(n, C)` for every `n`;
 - the property subcategories `Mor(C).Monomorphisms()`, `.Epimorphisms()`, `.Isomorphisms()`, `.Endomorphisms()`, and `.Automorphisms()`, and for `Fun` also `.Full()`, `.Faithful()`, `.FullyFaithful()`, `.EssentiallySurjective()`, and `.Equivalences()`, with endpoint dispatch `P(A, B) = Mor(K)(A, B).P()` for every property subcategory `P` of `Mor(K)`;
-- `Products()`, `Coproducts()`, `Limits(I)`, and `Colimits(I)` for a supplied shape `I in Cat()`, and the fixed-object categories `MonoOver(X)`, `MonoUnder(X)`, `EpiOver(X)`, and `EpiUnder(X)`.
+- `Products()`, `Coproducts()`, `Limits(I)`, and `Colimits(I)` for a supplied shape `I in Cat()`, and the fixed-object categories `Subobjects(X)`, `Superobjects(X)`, `CoveringObjects(X)`, and `CoveredObjects(X)`.
 
 For `D: I -> C`, `Cones(D)` is the cone category and `LimitCones(D)` is its full
 subcategory of limiting cones. The total limiting-cone category retains its diagram
@@ -443,20 +443,20 @@ For an indexed category `P: C.op() -> Cat()`, `Grothendieck(P)` owns its total c
 and projection. Yoneda, co-Yoneda, restricted Yoneda, and `Representations(F)` are generic
 constructions. Separation and density are properties of the restricted Yoneda functor.
 
-For `X in C`, the fixed-object construction categories are `C.MonoOver(X)`,
-`C.MonoUnder(X)`, `C.EpiOver(X)`, and `C.EpiUnder(X)`.
+For `X in C`, the fixed-object construction categories are `C.Subobjects(X)`,
+`C.Superobjects(X)`, `C.CoveringObjects(X)`, and `C.CoveredObjects(X)`.
 Define these methods once on `Cat().ObjectType`; every category inherits them:
 
 ```python
-C.MonoOver(X)   = C.SliceOver(X).Monomorphisms()
-C.MonoUnder(X)  = C.CosliceUnder(X).Monomorphisms()
-C.EpiOver(X)    = C.SliceOver(X).Epimorphisms()
-C.EpiUnder(X)   = C.CosliceUnder(X).Epimorphisms()
+C.Subobjects(X)      = C.SliceOver(X).Monomorphisms()
+C.Superobjects(X)    = C.CosliceUnder(X).Monomorphisms()
+C.CoveringObjects(X) = C.SliceOver(X).Epimorphisms()
+C.CoveredObjects(X)  = C.CosliceUnder(X).Epimorphisms()
 ```
 
 The property subcategory applies to the retained defining arrow in `C`.
 The ambient category in the call fixes the role of `X` when `X` belongs to more than one
-category. `Sets().MonoOver(X).from_predicate(predicate)` constructs the set subobject
+category. `Sets().Subobjects(X).from_predicate(predicate)` constructs the set subobject
 selected by a predicate.
 
 Apply products and coproducts to `Cat()` itself. For a sequence of categories:
@@ -474,7 +474,7 @@ morphism is a functor and therefore a `Cat().MorphismType` value.
 On categories, `C * D = Cat().Products()((C, D))`, `C + D = Cat().Coproducts()((C, D))`, and `D ** C = Fun(C, D)`. Objects inherit categorical product, coproduct, biproduct, and exponential operators as defaults. A category-owned implementation overrides a default when standard notation for its objects names a different declared algebraic operation. The explicit categorical construction remains available through `C.Products()`, `C.Coproducts()`, and the other named construction families. Local declarations win through the compiled MRO. Construct an external pair explicitly as `(C * D)((X, Y))`.
 
 Let `P` be a product category. If `j: S -> P` presents a subcategory, the
-corresponding object of `Cat().MonoOver(P)` retains `j` and reads `P` as its
+corresponding object of `Cat().Subobjects(P)` retains `j` and reads `P` as its
 codomain. Its `product_projection(i)` is the composite of `j` with the corresponding
 projection of `P`.
 
@@ -531,7 +531,7 @@ Use `Faithful` for injectivity on each fixed-endpoint morphism collection, `Full
 surjectivity, `FullyFaithful` for bijectivity, and `EssentiallySurjective` for object
 coverage up to isomorphism. These are properties of the functor, not of its source object.
 
-Their kernel-derived `is_*()` applications return applied predicates. Direct property construction and
+Their kernel-derived `is_*()` applications return applied propositions. Direct property construction and
 `assume()` refine the same owned functor. These properties currently have no
 computational handlers. `ask()` returns `Unknown` unless category placement, an active
 assumption, a cached exact decision, or a categorical implication decides the predicate.

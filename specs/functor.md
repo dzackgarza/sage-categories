@@ -10,6 +10,8 @@
 
 - [Canonical objects of `Cat`](#canonical-objects-of-cat)
 
+- [The core functor](#the-core-functor)
+
 - [Functor property subcategories](#functor-property-subcategories)
 
 - [Property resolution](#property-resolution)
@@ -178,6 +180,8 @@ Fixed endpoints use the same dispatch for every property subcategory `P` of `Mor
 
 `Cat()` owns these objects, each constructed once and retained by identity:
 
+- `Groupoids()`: the category of groupoids, declared as a point of `Cat`; the current foundation requires no further implementation of groupoid theory;
+
 - `Cat().Initial()`: the empty category;
 
 - `Cat().Terminal()`, written `1` and equal to `[0]`;
@@ -257,6 +261,12 @@ For `F: C -> D`:
 - `EssentiallySurjective(F)` states that every object of `D` is isomorphic to an image of an object of `C`;
 
 - `Equivalence(F)` states that `F` is fully faithful and essentially surjective.
+
+These are properties of the named functor `F`, not properties of `C` or `D` alone.
+Use `Faithful` for injectivity on each fixed-endpoint morphism collection, `Full` for
+surjectivity, and `FullyFaithful` for bijectivity. Use `EssentiallySurjective` for object
+coverage up to isomorphism. These standard terms replace strict object counts and an
+ambiguous global claim that a functor is bijective on morphisms.
 
 These definitions introduce no selected witnesses.
 A separate construction can select a preimage morphism, inverse functor, unit, or counit when an operation requires that data.
@@ -381,10 +391,37 @@ predicates, and `P(X) ⟹ Q(X)` is set-theoretic logic with no category-theoreti
 formulation. `Axiom`'s `full_subcategory_of` is where `C` states it, and its
 fixed-endpoint functor category owns the construction.
 
-A wide subcategory retains every object and restricts morphisms by a multiplicative morphism predicate.
-Its monomorphism is faithful by construction.
-A general subcategory monomorphism is also faithful.
-Neither becomes full unless its mathematical definition establishes fullness.
+### The core functor
+
+`Groupoids()` is a declared point of `Cat()`. This foundation needs only that declaration.
+
+Let
+
+```text
+U: Groupoids() -> Cat()
+Core: Cat() -> Groupoids()
+```
+
+where `U` is the inclusion. For every `C in Cat()`, `Core.on_object(C)` is written
+`C.Core()`. It has the objects of `C`, and its morphisms are the isomorphisms of `C`.
+For `F: C -> D`, `Core.on_morphism(F)` restricts `F` to these isomorphisms.
+
+The inclusion
+
+```text
+epsilon_C: U(C.Core()) -> C
+```
+
+is the component at `C` of the natural inclusion `U * Core => End_Cat(Cat()).one()`.
+The construction retains this functor. It is faithful, monic, and an isofibration.
+
+`Core(C)` is not `Mor(C).Isomorphisms()`. The latter has the isomorphisms of `C` as
+objects and lies one categorical level higher. It can state which arrows occur in the
+core, but it is not the core.
+
+The public API has no generic `WideSubcategory` construction. Do not reintroduce one
+unless a later user decision requires it. State category relations through their named
+structure functors and the standard functor properties above.
 
 ## Structure functors and inherited classes
 
@@ -960,7 +997,8 @@ Mathlib's arrow category has morphisms as objects and commuting squares as morph
 | `ObjectProperty.FullSubcategory P` | the property subcategory `C.P()` |
 | `ObjectProperty.ι P` | `Fun(C.P(), C).Monomorphisms().Isofibrations().Full()()` |
 | monomorphism induced by `P -> Q` | `Fun(C.P(), C.Q()).Monomorphisms().Isofibrations().Full()()` |
-| `wideSubcategoryInclusion P` | `Fun(Wide, C).Monomorphisms().Isofibrations()()` |
+| `CategoryTheory.Core` | `Core.on_object(C)`, written `C.Core()` |
+| `Core.inclusion` | `epsilon_C: U(C.Core()) -> C` |
 | `ConcreteCategory.forget`, `HasForget₂.forget₂` | an extra structure containing one chosen functor and its required compatibility |
 | `Prod.fst`, `Prod.snd` | `product_projection(0)` and `product_projection(1)` |
 | `Arrow.leftFunc`, `Arrow.rightFunc` | `ev_0` and `ev_1` of `Fun([1], C)` |

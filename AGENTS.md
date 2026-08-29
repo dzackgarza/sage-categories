@@ -129,7 +129,7 @@ The `Mor(n, C)` foundation includes:
 - `Mor(C)` and the commuting-square category `Fun([1], C)`;
 - fixed-endpoint categories `Mor(C)(A, B)` and endomorphism categories;
 - monomorphism, epimorphism, isomorphism, and automorphism categories;
-- cores and wide subcategories;
+- `Groupoids()` and the core functor `Core: Cat() -> Groupoids()`;
 - slices, coslices, subobjects, superobjects, covering objects, and covered objects.
 
 Build slices and coslices after sequence products, subobjects, `Fun([1], C)`, and its
@@ -324,6 +324,7 @@ None is a set without a specified set-valued functor.
 
 The following are categories and therefore objects of `Cat`:
 
+- `Groupoids()`, declared as a point of `Cat`; the current foundation requires no further implementation of groupoid theory;
 - `Mor(n, C)` for every `n >= 0`, with `Mor(0, C) = C` and `Mor(C) = Mor(1, C)`, including `Mor(C).Endomorphisms()` and `Mor(C).Automorphisms()`;
 - `Fun = Mor(Cat())` and `Fun(C, D) = Mor(Cat())(C, D)`;
 - `Mor(C)(x, y)`.
@@ -446,6 +447,12 @@ Functor properties are ordinary property subcategories:
 - `Mor(Cat()).EssentiallySurjective()`;
 - `Mor(Cat()).Equivalences()`.
 
+State relations such as faithfulness, fullness, full faithfulness, essential surjectivity,
+equivalence, monicity, and isofibration on the named structure functor in `Fun(C, D)`.
+Use `Faithful` for injectivity on each fixed-endpoint morphism collection, `Full` for
+surjectivity, `FullyFaithful` for bijectivity, and `EssentiallySurjective` for object
+coverage up to isomorphism. These are properties of the functor, not of its source object.
+
 Their kernel-derived `is_*()` applications return applied predicates. Direct property construction and
 `assume()` refine the same owned functor. These properties currently have no
 computational handlers. `ask()` returns `Unknown` unless category placement, an active
@@ -460,6 +467,17 @@ Every operation that crosses categories names its functor and both endpoints.
 For example, `R^n` reaches sets through its ring structure, and a lattice `(L, b)` has distinct projections to `L` and `b`.
 A simplicial set has several different functors to `Sets()`.
 The named functor makes each mathematical choice visible.
+
+Let `U: Groupoids() -> Cat()` be the inclusion and `Core: Cat() -> Groupoids()` the core
+functor. For `C in Cat()`, `C.Core()` is `Core.on_object(C)`. It has the objects of `C`
+and only the isomorphisms of `C` as morphisms. The inclusion
+`epsilon_C: U(C.Core()) -> C` is the component at `C` of the natural inclusion
+`U * Core => End_Cat(Cat()).one()`. `Core(C)` is not `Mor(C).Isomorphisms()`: the latter has
+isomorphisms of `C` as objects and lies one categorical level higher.
+
+Do not reintroduce `WideSubcategory` unless a later user decision requires that general
+construction. A strict equality or count of objects is not a substitute for the standard
+functor properties above.
 
 A functor has an image; a category does not. The image of `x` under the named functor `F`
 is `F.on_object(x)`. There is no operation that asks a category for "the image of `x` at

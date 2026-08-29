@@ -214,7 +214,7 @@ It presents no diagram, retains no injection or projection, and carries no cone.
 The indexed constructions `Cardinal().Coproducts()` and `Cardinal().Products()` are separate operations with their own presentations; see [`Cardinal()` API](#cardinal-api).
 
 The `Sets()` implementations of these constructions register the corresponding exact cardinality-predicate cases.
-For `X, Y in core(Sets())`,
+For `X, Y in Core(Sets())`,
 
 \[
 \#(X\sqcup Y)=\#X+\#Y,

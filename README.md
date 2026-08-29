@@ -252,7 +252,7 @@ This family includes:
 
 - monomorphism, epimorphism, isomorphism, and automorphism categories;
 
-- cores and wide subcategories;
+- `Groupoids()` and the core functor `Core: Cat() -> Groupoids()`;
 
 - slices, coslices, subobjects, superobjects, covering objects, and covered objects.
 
@@ -260,6 +260,15 @@ Subobjects of product categories receive component functors by composition.
 Slices and coslices are pullbacks of the evaluation functors `ev_1` and `ev_0` of `Fun([1], C)` and retain their pullback projections.
 
 These constructions must use the same `ObjectType`, `ElementType`, and `MorphismType` inheritance mechanism.
+
+`Groupoids()` is a declared object of `Cat`; this foundation requires no further groupoid
+implementation. For `C in Cat()`, `C.Core()` is `Core.on_object(C)`. It keeps the objects
+of `C` and only its isomorphisms. The inclusion `U(C.Core()) -> C` is a component of the
+natural inclusion from `U * Core` to the identity functor on `Cat()`.
+
+Category relations belong to named structure functors. Use the standard properties
+`Faithful`, `Full`, `FullyFaithful`, and `EssentiallySurjective` on `Fun(C, D)`.
+Do not reintroduce `WideSubcategory` without a later user decision that requires it.
 
 The next layer is an owned category `Sets()`. It must replace Sage's Sets category for this project.
 Its design includes:

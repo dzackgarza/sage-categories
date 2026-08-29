@@ -93,6 +93,19 @@ Do not use Git history to decide what the repository contains or whether current
 Read Git history only when the user or active plan asks about past work, past decisions, or provenance.
 Otherwise, do not inspect logs, blame, ancestry, old branches, commit messages, or prior revisions.
 
+## Agent memory and plans
+
+Use the agent-memory CLI for durable notes and project plans. Write the full runner prefix:
+
+```bash
+uvx --python 3.14 --from git+https://github.com/dzackgarza/agent-memory agent-memory <command>
+```
+
+Search notes with `search QUERY` or `search content QUERY`. Retrieve a note with its returned
+vault key using `retrieve KEY`. Find active plans with `plan progress`, `search metadata --type plan`,
+or `plan show PLAN-ID`; read the complete plan body and links with `plan show PLAN-ID` before acting.
+Use `card dag` when you need the plan and phase dependency graph.
+
 Start repository inspection with `tree` at the smallest useful depth.
 Then read the exact target files and focused sections of their immediate owners.
 Use focused `rg` queries.

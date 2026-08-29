@@ -8,6 +8,28 @@ The public category theory lives in [functor.md](functor.md).
 The leaf boundary lives in [leaves.md](leaves.md).
 Nothing in this file adds a public mathematical object or a leaf declaration.
 
+## Fixed private dependencies
+
+The project runs on SageMath 10.9.x with Python `>=3.14,<3.15`.
+The private runtime assigns these responsibilities:
+
+| Responsibility | Dependency |
+| --- | --- |
+| Python implementation classes, controlled C3, dynamic refinement, identity caches, nested-class binding, introspection, indexed families, and `Unknown` | SageMath 10.9.x |
+| Generic categorical operations | GAP `>=4.13`; CAP `2026.07-04`; ToolsForHomalg `>=2026.04-01`; ToolsForCategoricalTowers `2026.08-01`; CartesianCategories `2026.08-02`; SubcategoriesForCAP `2026.07-01`; FpCategories `2026.07-03` |
+| Categorical-tower compilation | CompilerForCAP `2026.07-01` |
+| Diagram syntax and retained universal presentations | Julia 1.12.7; Catlab 0.17.6; GATlab 0.2.4; JuliaCall `>=0.9.35,<0.10` |
+| Proposition algebra, assumptions, and exact symbolic calculation | SymPy `>=1.14,<2` |
+| Residual exact-handler dispatch | plum-dispatch, without conversions or promotions |
+| Residual wrapper and descriptor behavior | wrapt |
+| Private slotted frozen records | attrs `>=26.1,<27` |
+
+Each adapter lowers owned inputs and reconstructs the exact owned result.
+No dependency defines the public category graph, public operation, category containment, or semantic owner.
+
+Development uses pytest `>=9.1,<10`, Hypothesis `>=6.165,<7`, Ruff `>=0.16.5,<1`, mypy `>=2`, and `dzackgarza/sagemath-mypy-plugin@main`.
+Migration uses LibCST `>=1.9,<2` until its codemods finish.
+
 ## Inputs
 
 For each category `C`, the compiler receives:
@@ -73,7 +95,7 @@ They do not own mathematical equality or categorical structure.
 ## Properties and constructions
 
 Use Sage `CategoryWithAxiom` and `_base_category_class_and_axiom` for private property-class binding.
-Use `inflection` for the public method spelling derived from the registered axiom identifier.
+Use Sage `uncamelcase(identifier, "_")` when an axiom identifier needs snake case.
 The owned property category, containment proposition, inverse images, and subcategory monomorphism remain in `Cat`.
 
 Reuse Sage functorial-construction category factories for private family binding and method-provider assembly.
@@ -87,9 +109,9 @@ Do not force an abstract category object to become a Sage `Parent`.
 ## Declarations and signatures
 
 Read ordinary Python declarations and generated stubs with Python 3.14 `ast`.
-Use `tree-sitter-sage` only for Sage syntax.
+Migration codemods use LibCST when they must preserve source formatting.
 Use ordinary declared functions for fixed wrappers.
-Use `makefun` only when a generated wrapper needs a runtime signature.
+Use Sage introspection and wrapt for residual callable, descriptor, and signature behavior.
 
 The kernel can inspect exact method signatures and mathematical annotations.
 It does not require a leaf to describe call mechanics or compiler state.
@@ -116,4 +138,6 @@ The private runtime satisfies this specification when:
 - public functor application returns its separate owned image;
 - temporary runtime data has no public mathematical effect;
 - unrelated mathematical declarations with one spelling fail as a semantic collision;
-- theory modules import no private runtime type.
+- theory modules import no private runtime type;
+- every fixed dependency owns only its assigned private responsibility;
+- each adapter reconstructs the exact owned mathematical result.

@@ -604,7 +604,9 @@ Every claimed use has a more direct owner:
 - structural inheritance uses the selected structure functor, not faithfulness;
 - set equality already uses identity, symbolic comparison, finite extensional comparison, or `Unknown`.
 
-A separating family is useful in mathematical theory — representables generate a presheaf category, and such results reduce later theorems to checks on generators. This repository proves no such theorem, and gains no computation, constructor, inheritance edge, or decision procedure from the declaration. So the declaration leaves the kernel, with `represented_functor`'s use of it and `retain_separator_comparison`.
+So the tuple-based declaration leaves the kernel, with `represented_functor`'s use of it and `retain_separator_comparison`.
+
+Corrected 08-29: this entry originally added that generators buy the repository nothing. That is stale. [Separating families and categorical generators](separating-families-and-categorical-generators.md) records concrete uses — presentations, restricted Yoneda functors, density, and evaluation epimorphisms. What is banned is the tuple as theorem metadata and as construction authority, not the notion. Generators and separating families stay, through named mathematical constructions: faithfulness on the restricted Yoneda functor, canonical evaluation maps in the established epimorphism category, and finite presentations for finitary morphism constructors.
 
 `Sets()` hid the conflation, because its terminal object `1` is also a generator; the two notions differ in general.
 **D99 (08-29, corrected 08-29, `77631b59` 2026-08-29T00:44:44Z; `01a04ab2-d713-74b3-8a24-eeef392b0869` 2026-08-29T00:48Z). `Core` is a functor `Cat -> Groupoids`, and category relations belong to their named structure functors.** Three objects are distinct: a multiplicative property `P` of the morphisms of `C`; the category `W_P(C)` with the objects of `C` and only its `P`-morphisms; and the inclusion functor `i_P: W_P(C) -> C`. A construction produces a category and its defining functor. The category and its inclusion are never two spellings of one object.

@@ -113,13 +113,17 @@ ci-provision-sage:
         | sudo tee "${sage_dir}/python" >/dev/null
     sudo chmod +x "${sage_dir}/python"
     sage_bin="${sage_dir}/sage"
-    # The checkout under test supplies one dependency group for runtime and QC packages.
+    # Install this checkout, its runtime dependencies, and its QC dependency group together.
     docker exec -i -w "${workspace}" sage-env /sage/.venv/bin/uv pip install \
         --python /sage/.venv/bin/python \
+        --project "${workspace}" \
         --group dev \
-        --project "${workspace}"
-    docker exec -i -w "${workspace}" sage-env /sage/.venv/bin/uv pip install \
-        --python /sage/.venv/bin/python --no-deps -e .
+        --group platform \
+        --editable "${workspace}"
+    # GAP PackageManager resolves the exact native package releases into this checkout.
+    docker exec -i -w "${workspace}" sage-env gap -q -r --packagedirs "${workspace}/.gap/pkg" "${workspace}/.gap-packages.g"
+    # JuliaPkg reads the package-owned juliapkg.json and resolves Julia, Catlab, and GATlab.
+    docker exec -i -w "${workspace}" sage-env /sage/.venv/bin/python -m juliapkg resolve
     # The CI tier measures coverage with the Sage interpreter's own Python, so
     # the tool has to live in that environment rather than on the runner.
     "${sage_dir}/python" -m uv pip install --quiet coverage

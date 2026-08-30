@@ -17,6 +17,8 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+sage_categories = ["juliapkg.json"]
 [dependency-groups]
 dev = [
     "hypothesis>=6.165,<7",
@@ -28,24 +30,4 @@ dev = [
 migration = [
     "libcst>=1.9,<2",
 ]
-platform = [
-    "juliacall>=0.9.35,<0.10",
-    "sagemath==10.9.*",
-]
-cap = [
-    "cap==2026.07-04",
-    "tools-for-homalg>=2026.04-01",
-    "tools-for-categorical-towers==2026.08-01",
-    "cartesian-categories==2026.08-02",
-    "subcategories-for-cap==2026.07-01",
-    "fp-categories==2026.07-03",
-    "compiler-for-cap==2026.07-01",
-]
-gap-system = [
-    "gap>=4.13",
-]
-julia-system = [
-    "julia==1.12.7",
-    "catlab==0.17.6",
-    "gatlab==0.2.4",
-]
+platform = ["juliacall>=0.9.35,<0.10"]

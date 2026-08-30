@@ -10,36 +10,36 @@ Nothing in this file adds a public mathematical object or a leaf declaration.
 
 ## Fixed private dependencies
 
-The project runs on SageMath 10.9.x with Python `>=3.14,<3.15`.
+The project runs in the fixed Sage research environment on Python `>=3.14,<3.15`.
+Python packages use uv. GAP packages use PackageManager. Julia and its packages use JuliaPkg.
 The private runtime assigns these responsibilities:
 
-| Responsibility | Dependency |
-| --- | --- |
-| Python implementation classes, controlled C3, dynamic refinement, identity caches, nested-class binding, introspection, indexed families, and `Unknown` | SageMath 10.9.x |
-| Generic categorical operations | GAP `>=4.13`; CAP `2026.07-04`; ToolsForHomalg `>=2026.04-01`; ToolsForCategoricalTowers `2026.08-01`; CartesianCategories `2026.08-02`; MonoidalCategories `>=2026.08-02`; SubcategoriesForCAP `2026.07-01`; SliceCategories; FpCategories `2026.07-03` |
-| Categorical-tower compilation | CompilerForCAP (bundled in CAP_project) |
-| Diagram syntax and retained universal presentations | Julia 1.12.7; Catlab 0.17.6; GATlab 0.2.4; JuliaCall `>=0.9.35,<0.10` |
-| Proposition algebra, assumptions, and exact symbolic calculation | SymPy `>=1.14,<2` |
-| Residual exact-handler dispatch | plum-dispatch, without conversions or promotions |
-| Residual wrapper and descriptor behavior | wrapt |
-| Private slotted frozen records | attrs `>=26.1,<27` |
+| Responsibility | Dependency | Verified scope |
+| --- | --- | --- |
+| Python implementation classes, controlled C3, dynamic refinement, identity caches, nested-class binding, introspection, indexed families, and `Unknown` | SageMath 10.9.x | Private Python runtime support. The owned category graph remains authoritative. |
+| Categories, functors, natural transformations, opposites, category products, and installed universal operations | GAP `>=4.13`; CAP `2026.07-04`; ToolsForHomalg `2026.04-01`; ToolsForCategoricalTowers `2026.08-01`; CartesianCategories `2026.08-02`; MonoidalCategories `2026.08-02`; SubcategoriesForCAP `2026.07-01`; SliceCategories `2026.06-01`; FpCategories `2026.07-03`; FunctorCategories `2026.08-01` | CAP supplies operations installed on CAP categories. ToolsForCategoricalTowers supplies finite decorated-diagram limits and colimits. FunctorCategories requires an object-finite or finitely presented source. FpCategories supplies finite walking shapes and presentations. SliceCategories supplies slices. |
+| Pure-GAP categorical-tower compilation | CompilerForCAP `2026.07-01` | It compiles GAP CAP regions only. |
+| Finite diagram syntax and retained finite presentations | Julia 1.12.7; Catlab 0.17.6; GATlab 0.2.4; JuliaCall `>=0.9.35,<0.10` | Catlab free diagrams have finite object and morphism sets. Its limit and colimit wrappers retain finite diagrams, apexes, and legs. |
+| Proposition algebra, assumptions, and exact symbolic calculation | SymPy `>=1.14,<2` | Boolean expressions, assumptions, and exact symbolic handlers over private handles. |
+| Residual exact-handler dispatch | plum-dispatch | Private dispatch without conversions or promotions. |
+| Residual wrapper and descriptor behavior | wrapt | Private Python call and descriptor behavior. |
+| Private slotted frozen records | attrs `>=26.1,<27` | Private execution records only. |
 
 Each adapter lowers owned inputs and reconstructs the exact owned result.
 No dependency defines the public category graph, public operation, category containment, or semantic owner.
 
-CAP supplies the checked categorical operations inside its own surface.
-It does not by itself supply a generic pullback category of functors in owned `Cat`.
-FpCategories supplies finite walking shapes and generator-relation presentations.
-It does not by itself supply generic `Fun([1], C)` or evaluation functors.
-SliceCategories is the checked source for slice implementations.
-MonoidalCategories is a required transitive dependency of CartesianCategories and ToolsForCategoricalTowers.
+The inspected dependencies cover only finite or presented functor-category cases; they do not supply arbitrary non-enumerative `Fun(I, C)`.
+They also do not supply a strict pullback category of arbitrary functors or one Python--GAP--Julia bridge.
+CAP object-level pullbacks are not pullbacks in owned `Cat`.
+Mathlib and Agda Categories provide mature formal references for generic functor and comma categories, but no executable engine for this runtime.
+Repository-owned implementation of any uncovered generic construction requires owner approval before its phase starts.
 
 Development uses pytest `>=9.1,<10`, Hypothesis `>=6.165,<7`, Ruff `>=0.16.5,<1`, mypy `>=2`, and `dzackgarza/sagemath-mypy-plugin@main`.
 Migration uses LibCST `>=1.9,<2` until its codemods finish.
+D114 continues to assign `tree-sitter-sage` to Sage syntax and `makefun` to a later generated-signature need.
 
 The CAP runtime and the Catlab runtime remain separate private engines.
 Owned Python values cross them through separate private adapters.
-No checked source supplies a generic Python--GAP--Julia bridge.
 CompilerForCAP compiles only pure GAP CAP regions.
 
 ## Inputs

@@ -39,7 +39,6 @@ from sage_categories.cat.shapes import Discrete
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import AppliedPredicate, ask
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role
 from sage_categories.posets import _finite_poset_sage as engine
 from sage_categories.posets.category import Poset, PosetElement, PosetMorphismData, PosetObjectData
 from sage_categories.sets.cardinals import Cardinal, CardinalObject
@@ -47,12 +46,13 @@ from sage_categories.sets.category import SetObject, Sets
 from sage_categories.sets.maps import Rule
 
 if TYPE_CHECKING:
+    from sage_categories.cat.category import CategoryOfCategories
     from sage_categories.sets.category import SetMap
 
 __all__ = ["FinitePosetsCategory"]
 
 
-class FinitePosetRole(ObjectOfCategory):
+class FinitePosetObject:
     """The local object role of ``FinitePosets()``: the finite order algorithms."""
 
     def has_bottom(self) -> AppliedPredicate:
@@ -144,21 +144,21 @@ class FinitePosetRole(ObjectOfCategory):
         return posets.TotallyOrdered()(posets._construct(extension))
 
 
-class WithBottomRole(ObjectOfCategory):
+class WithBottomObject:
     """The local object role of ``FinitePosets().WithBottom()``."""
 
     def bottom(self) -> PosetElement:
         return engine.element(self, engine.sage_poset(self).bottom())
 
 
-class WithTopRole(ObjectOfCategory):
+class WithTopObject:
     """The local object role of ``FinitePosets().WithTop()``."""
 
     def top(self) -> PosetElement:
         return engine.element(self, engine.sage_poset(self).top())
 
 
-class RankedRole(ObjectOfCategory):
+class RankedObject:
     """The local object role of ``FinitePosets().Ranked()``: the rank function."""
 
     def rank(self) -> CardinalObject:
@@ -180,21 +180,63 @@ class RankedRole(ObjectOfCategory):
         return Fun(Discrete(Sets().Simplex(len(levels) - 1)), _posets.Posets()).from_object_rule(lambda vertex: levels[sequence_position(vertex)])
 
 
-class GradedRole(ObjectOfCategory):
+class GradedObject:
     """The local object role of ``FinitePosets().Graded()``; grading adds no operation beyond rank."""
 
 
-def _finite_by_underlying_set(poset: CategoryPoint) -> Decision:
+class WithBottomCategory(PropertySubcategory[[Rule], []]):
+    ObjectType = WithBottomObject
+
+    class ElementType:
+        """A point of a finite poset with a bottom element."""
+
+    class MorphismType:
+        """A monotone map between finite posets with bottom elements."""
+
+
+class WithTopCategory(PropertySubcategory[[Rule], []]):
+    ObjectType = WithTopObject
+
+    class ElementType:
+        """A point of a finite poset with a top element."""
+
+    class MorphismType:
+        """A monotone map between finite posets with top elements."""
+
+
+class RankedCategory(PropertySubcategory[[Rule], []]):
+    ObjectType = RankedObject
+
+    class ElementType:
+        """A point of a ranked finite poset."""
+
+    class MorphismType:
+        """A monotone map between ranked finite posets."""
+
+
+class GradedCategory(PropertySubcategory[[Rule], []]):
+    ObjectType = GradedObject
+
+    class ElementType:
+        """A point of a graded finite poset."""
+
+    class MorphismType:
+        """A monotone map between graded finite posets."""
+
+
+def _finite_by_underlying_set(poset: CategoryOfCategories.ElementType) -> Decision:
     """Finiteness of a poset is finiteness of ``U(P)``, asked through the inherited ``is_finite()``."""
     if poset not in _posets.Posets():
         return Unknown
     return ask(poset.is_finite())
 
 
-def _decided_by(query: Callable[[SagePoset], bool]) -> Callable[[CategoryPoint], Decision]:
+def _decided_by(
+    query: Callable[[SagePoset], bool],
+) -> Callable[[CategoryOfCategories.ElementType], Decision]:
     """The exact handler deciding a property of a finite poset by a Sage finite-poset query."""
 
-    def decide(poset: CategoryPoint) -> Decision:
+    def decide(poset: CategoryOfCategories.ElementType) -> Decision:
         if poset not in _posets.Posets().Finite():
             return Unknown
         return bool(query(engine.sage_poset(poset)))
@@ -205,13 +247,21 @@ def _decided_by(query: Callable[[SagePoset], bool]) -> Callable[[CategoryPoint],
 class FinitePosetsCategory(PropertySubcategory[[Rule], []]):
     """``Posets().Finite()``: finite posets, with the restriction of ``U`` to finite sets selected."""
 
-    def __init__(self, ambient: Category[[Rule], []], name: str, roles: dict[Role, type], implications: tuple[Category, ...]) -> None:
-        super().__init__(ambient, name, roles, implications)
+    ObjectType = FinitePosetObject
+
+    class ElementType:
+        """A point of a finite poset."""
+
+    class MorphismType:
+        """A monotone map between finite posets."""
+
+    def __init__(self, ambient: Category[[Rule], []], name: str, implications: tuple[Category, ...]) -> None:
+        super().__init__(ambient, name, implications)
         self.predicate().register_handler(_finite_by_underlying_set)
-        self._with_bottom = PropertySubcategory(self, "WithBottom", {Role.OBJECT: WithBottomRole}, ())
-        self._with_top = PropertySubcategory(self, "WithTop", {Role.OBJECT: WithTopRole}, ())
-        self._ranked = PropertySubcategory(self, "Ranked", {Role.OBJECT: RankedRole}, ())
-        self._graded = PropertySubcategory(self, "Graded", {Role.OBJECT: GradedRole}, (self._ranked,))
+        self._with_bottom = WithBottomCategory(self, "WithBottom", ())
+        self._with_top = WithTopCategory(self, "WithTop", ())
+        self._ranked = RankedCategory(self, "Ranked", ())
+        self._graded = GradedCategory(self, "Graded", (self._ranked,))
         self._with_bottom.predicate().register_handler(_decided_by(lambda finite_poset: finite_poset.has_bottom()))
         self._with_top.predicate().register_handler(_decided_by(lambda finite_poset: finite_poset.has_top()))
         self._ranked.predicate().register_handler(_decided_by(lambda finite_poset: finite_poset.is_ranked()))

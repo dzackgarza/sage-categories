@@ -18,13 +18,13 @@ from sage_categories.cat.shapes import ThinCategory
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask, conjunction, disjunction, implication, negation
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, role_of
 from sage_categories.sets.category import Sets
 from sage_categories.sets.elements import Datum, SetElement
 from sage_categories.sets.maps import Rule
 from sage_categories.sets.objects import MembershipRule, SetObject
 
 if TYPE_CHECKING:
+    from sage_categories.cat.category import CategoryOfCategories
     from sage_categories.sets.category import SetMap
 
 __all__ = ["FinitePosets", "FiniteTotallyOrderedSets", "MonotoneMap", "Poset", "PosetElement", "Posets", "PosetsCategory", "TotallyOrderedSets"]
@@ -52,7 +52,7 @@ class PosetMorphismData:
     set_map: SetMap
 
 
-class PosetDeclaration(ObjectOfCategory):
+class PosetDeclaration:
     """The local ``Posets().ObjectType`` declaration."""
 
     def __init__(self, data: PosetObjectData) -> None:
@@ -105,7 +105,7 @@ class PosetDeclaration(ObjectOfCategory):
         return f"Poset({Posets().underlying_set_functor().on_object(self)!r})"
 
 
-class PosetElementDeclaration(ElementOfObject):
+class PosetElementDeclaration:
     """The local ``Posets().ElementType`` declaration."""
 
     def __le__(self, other: PosetElement) -> AppliedPredicate:
@@ -129,7 +129,7 @@ class PosetElementDeclaration(ElementOfObject):
         return f"point of {self.parent()!r} with domain {self.defining_morphism().domain()!r}"
 
 
-class MonotoneMapDeclaration(MorphismOfCategory):
+class MonotoneMapDeclaration:
     """The local monotone-map declaration; set-map state arrives through ``U``."""
 
     def __repr__(self) -> str:
@@ -142,12 +142,17 @@ class MonotoneMapDeclaration(MorphismOfCategory):
 def _is_point(candidate: Any) -> bool:
     """Whether a candidate is a point of a poset.
 
-    A classifier of the equality candidate, like ``role_of`` and ``is_placed``: it
+    A classifier of the equality candidate: it
     receives exactly the second argument of ``_equal`` and must accept every input
     (POL-TYPE-004).
     """
     posets = Posets()
-    return role_of(candidate) is Role.ELEMENT and candidate.parent() in posets and candidate.defining_morphism().domain() is posets.Terminal()
+    return (
+        hasattr(candidate, "_is_element")
+        and candidate._is_element()
+        and candidate.parent() in posets
+        and candidate.defining_morphism().domain() is posets.Terminal()
+    )
 
 
 def _enumerated_points(carrier: SetObject) -> tuple[SetElement, ...]:
@@ -196,7 +201,7 @@ def _partial_order_on_enumerated(relation: SetObject) -> Decision:
     return ask(conjunction((_reflexive(pairs, len(points)), _antisymmetric(pairs, len(points)), _transitive(pairs, len(points)))))
 
 
-def _square(relation: SetObject) -> ObjectOfCategory:
+def _square(relation: SetObject) -> SetObject:
     """The chosen product ``X * X`` that ``relation`` is a chosen subset of.
 
     A chosen subset retains its ambient object, which is the chosen product itself;
@@ -207,7 +212,7 @@ def _square(relation: SetObject) -> ObjectOfCategory:
     return square
 
 
-def _pair_point(square: ObjectOfCategory, left: SetElement, right: SetElement) -> SetElement:
+def _pair_point(square: SetObject, left: SetElement, right: SetElement) -> SetElement:
     """The point ``(left, right): * -> X * X``: the mediator of the cone with these legs."""
     legs = (left.defining_morphism(), right.defining_morphism())
     pairing = cone(square.diagram(), Sets().Terminal(), lambda vertex: legs[sequence_position(vertex)])
@@ -218,7 +223,7 @@ def _order_relation(poset: Poset, points: tuple[SetElement, ...]) -> Relation:
     return _decided(lambda left, right: ask(poset.element(left) <= poset.element(right)), points)
 
 
-def _total_on_enumerated(poset: CategoryPoint) -> Decision:
+def _total_on_enumerated(poset: CategoryOfCategories.ElementType) -> Decision:
     posets = Posets()
     if poset not in posets:
         return Unknown
@@ -244,9 +249,9 @@ def _order_preserving_on_enumerated(source: Poset, target: Poset, set_map: SetMa
 class PosetsCategory(Category[[Rule], []]):
     """The category of partially ordered sets and monotone maps."""
 
-    DeclaredObjectType = PosetDeclaration
-    DeclaredElementType = PosetElementDeclaration
-    DeclaredMorphismType = MonotoneMapDeclaration
+    ObjectType = PosetDeclaration
+    ElementType = PosetElementDeclaration
+    MorphismType = MonotoneMapDeclaration
 
     def __init__(self) -> None:
         super().__init__()
@@ -254,7 +259,7 @@ class PosetsCategory(Category[[Rule], []]):
         self._equality.register_handler(self._equal)
         partial_order.register_handler(_partial_order_on_enumerated)
         order_preserving.register_handler(_order_preserving_on_enumerated)
-        self._totally_ordered = PropertySubcategory(self, "TotallyOrdered", {}, ())
+        self._totally_ordered = PropertySubcategory(self, "TotallyOrdered", ())
         self._totally_ordered.predicate().register_handler(_total_on_enumerated)
 
     # -- the selected structural functor -------------------------------------------
@@ -343,9 +348,9 @@ class PosetsCategory(Category[[Rule], []]):
     @cached_method
     def Finite(self) -> Category[[Rule], []]:
         """``FinitePosets()``: the property subcategory by finiteness of the underlying set (``posets/finite.py``), constructed once."""
-        from sage_categories.posets.finite import FinitePosetRole, FinitePosetsCategory
+        from sage_categories.posets.finite import FinitePosetsCategory
 
-        return FinitePosetsCategory(self, "Finite", {Role.OBJECT: FinitePosetRole}, ())
+        return FinitePosetsCategory(self, "Finite", ())
 
     def TotallyOrdered(self) -> Category[[Rule], []]:
         return self._totally_ordered
@@ -418,7 +423,7 @@ class PosetsCategory(Category[[Rule], []]):
 
     # -- equality (POL-API-015, POL-SET-026) ----------------------------------------------------------------
 
-    def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
+    def _equal(self, first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
         """Classical elements of one poset are equal when their points are; monotone maps when their set maps are."""
         if _is_point(first) and _is_point(candidate) and first.parent() is candidate.parent():
             underlying = self.underlying_set_functor()

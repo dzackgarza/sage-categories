@@ -82,8 +82,8 @@ class _KernelRoleRootCategory(SageCategory):
         super().__init__()
 
     @property
-    def _cmp_key(self) -> int:
-        return _ROLE_POSITIONS[self._role] - len(Role)
+    def _cmp_key(self) -> tuple[int, int]:
+        return (0, _ROLE_POSITIONS[self._role] - len(Role))
 
     def super_categories(self) -> list[SageCategory]:
         return []
@@ -99,8 +99,8 @@ class _RuntimeImplementationCategory(SageCategory):
         super().__init__()
 
     @property
-    def _cmp_key(self) -> int:
-        return node_key(self._current)
+    def _cmp_key(self) -> tuple[int, int]:
+        return (0, node_key(self._current))
 
     def super_categories(self) -> list[SageCategory]:
         return list(self._targets)

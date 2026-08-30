@@ -51,10 +51,6 @@ __all__ = [
 ]
 
 
-def _same_node(first: Node, second: Node) -> bool:
-    return first.category is second.category and first.role is second.role
-
-
 @dataclass(frozen=True, slots=True, eq=False)
 class ObjectRoleIdentity:
     """The kernel identity of an object in one category."""
@@ -257,15 +253,31 @@ class ObjectConstructionContext:
     initialized: list[Node] = field(default_factory=list)
 
     def run(self, node: Node) -> None:
-        assert not any(_same_node(owner, node) for owner in self.initialized), (
+        assert not any(owner.category is node.category and owner.role is node.role for owner in self.initialized), (
             f"the {node.role.value} role of {node.category!r} initialized twice"
         )
-        step = next(initialize for owner, initialize in self.steps if _same_node(owner, node))
+        step = next(
+            initialize
+            for owner, initialize in self.steps
+            if owner.category is node.category and owner.role is node.role
+        )
         self.initialized.append(node)
         step()
 
+    def advance(self) -> None:
+        node = next(
+            owner
+            for owner, _ in self.steps
+            if not any(done.category is owner.category and done.role is owner.role for done in self.initialized)
+        )
+        self.run(node)
+
     def assert_complete(self) -> None:
-        missing = [owner for owner, _ in self.steps if not any(_same_node(done, owner) for done in self.initialized)]
+        missing = [
+            owner
+            for owner, _ in self.steps
+            if not any(done.category is owner.category and done.role is owner.role for done in self.initialized)
+        ]
         assert not missing, f"the constructor chain did not initialize {missing[0].category!r}.{missing[0].role.value}"
 
 
@@ -280,15 +292,31 @@ class ElementConstructionContext:
     initialized: list[Node] = field(default_factory=list)
 
     def run(self, node: Node) -> None:
-        assert not any(_same_node(owner, node) for owner in self.initialized), (
+        assert not any(owner.category is node.category and owner.role is node.role for owner in self.initialized), (
             f"the {node.role.value} role of {node.category!r} initialized twice"
         )
-        step = next(initialize for owner, initialize in self.steps if _same_node(owner, node))
+        step = next(
+            initialize
+            for owner, initialize in self.steps
+            if owner.category is node.category and owner.role is node.role
+        )
         self.initialized.append(node)
         step()
 
+    def advance(self) -> None:
+        node = next(
+            owner
+            for owner, _ in self.steps
+            if not any(done.category is owner.category and done.role is owner.role for done in self.initialized)
+        )
+        self.run(node)
+
     def assert_complete(self) -> None:
-        missing = [owner for owner, _ in self.steps if not any(_same_node(done, owner) for done in self.initialized)]
+        missing = [
+            owner
+            for owner, _ in self.steps
+            if not any(done.category is owner.category and done.role is owner.role for done in self.initialized)
+        ]
         assert not missing, f"the constructor chain did not initialize {missing[0].category!r}.{missing[0].role.value}"
 
 
@@ -303,15 +331,31 @@ class MorphismConstructionContext:
     initialized: list[Node] = field(default_factory=list)
 
     def run(self, node: Node) -> None:
-        assert not any(_same_node(owner, node) for owner in self.initialized), (
+        assert not any(owner.category is node.category and owner.role is node.role for owner in self.initialized), (
             f"the {node.role.value} role of {node.category!r} initialized twice"
         )
-        step = next(initialize for owner, initialize in self.steps if _same_node(owner, node))
+        step = next(
+            initialize
+            for owner, initialize in self.steps
+            if owner.category is node.category and owner.role is node.role
+        )
         self.initialized.append(node)
         step()
 
+    def advance(self) -> None:
+        node = next(
+            owner
+            for owner, _ in self.steps
+            if not any(done.category is owner.category and done.role is owner.role for done in self.initialized)
+        )
+        self.run(node)
+
     def assert_complete(self) -> None:
-        missing = [owner for owner, _ in self.steps if not any(_same_node(done, owner) for done in self.initialized)]
+        missing = [
+            owner
+            for owner, _ in self.steps
+            if not any(done.category is owner.category and done.role is owner.role for done in self.initialized)
+        ]
         assert not missing, f"the constructor chain did not initialize {missing[0].category!r}.{missing[0].role.value}"
 
 

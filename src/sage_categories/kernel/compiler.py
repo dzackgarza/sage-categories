@@ -713,95 +713,66 @@ def construct_category_singleton[Value: ObjectOfCategory](category_type: type[Va
     return instance
 
 
-def _named_node(owner: Node, category: Category | None, role: Role) -> Node:
-    """``owner``, checked against the category the caller named."""
-    if category is None:
-        return owner
-    found = node(category, role)
-    assert same_node(found, owner), f"the {role.value} class of {owner.category!r} cannot construct a value of {category!r}"
-    return owner
+def _construction_node(instance: CategoryPoint, role: Role) -> Node:
+    """The compiled node whose direct role class constructed ``instance``."""
+    by_class = {runtime.owner: Node(category, role) for category, runtime in _node_runtimes[role].items()}
+    current = next((by_class[base] for base in type(instance).__mro__ if base in by_class), None)
+    assert current is not None, f"{type(instance)!r} has no compiled {role.value} class"
+    return current
 
 
-def _object_wrapper(owner: Node) -> FunctionType:
-
-    def initialize[Datum](
-        instance: ObjectOfCategory,
-        category: Category | None = None,
-        data: Datum | None = None,
-    ) -> None:
-        active = active_construction_context(instance)
-        if active is not None and active.canonical_image is instance:
-            assert category is None and data is None, "an ancestor object constructor receives only its precomputed input"
-            active.run(owner)
-            return
-        current = _named_node(owner, category, Role.OBJECT)
-        identity = ObjectRoleIdentity(current.category)
-        if data is None:
-            _construct_object_root(current, instance, identity, None)
-            return
-        _construct_object_root(current, instance, identity, data)
-
-    initialize.__name__ = "__init__"
-    return initialize
-
-
-def _element_wrapper(owner: Node) -> FunctionType:
-
-    def initialize[Datum](
-        instance: CategoryPoint,
-        defining_morphism: MorphismOfCategory | None = None,
-        data: Datum | None = None,
-    ) -> None:
-        active = active_construction_context(instance)
-        if active is not None and active.canonical_image is instance:
-            assert defining_morphism is None and data is None, "an ancestor element constructor receives only its precomputed input"
-            active.run(owner)
-            return
-        assert defining_morphism is not None, "an element root constructor requires its defining morphism"
-        _construct_element_root(owner, instance, ElementRoleIdentity(defining_morphism), data)
-
-    initialize.__name__ = "__init__"
-    return initialize
-
-
-def _morphism_wrapper(owner: Node) -> FunctionType:
-
-    def initialize[Datum](
-        instance: MorphismOfCategory,
-        category: Category | None = None,
-        domain: ObjectOfCategory | None = None,
-        codomain: ObjectOfCategory | None = None,
-        data: Datum | None = None,
-    ) -> None:
-        active = active_construction_context(instance)
-        if active is not None and active.canonical_image is instance:
-            assert category is None and domain is None and codomain is None and data is None, (
-                "an ancestor morphism constructor receives only its precomputed input"
-            )
-            active.run(owner)
-            return
-        assert category is not None and domain is not None and codomain is not None, (
-            "a morphism root constructor requires its category and endpoints"
+def _initialize_object[Datum](
+    instance: ObjectOfCategory,
+    category: Category | None = None,
+    data: Datum | None = None,
+) -> None:
+    active = active_construction_context(instance)
+    if active is not None and active.canonical_image is instance:
+        assert category is None and data is None, "an ancestor object constructor receives only its precomputed input"
+        active.advance()
+        return
+    current = _construction_node(instance, Role.OBJECT)
+    if category is not None:
+        assert same_node(node(category, Role.OBJECT), current), (
+            f"the ObjectType class of {current.category!r} cannot construct a value of {category!r}"
         )
-        identity = MorphismRoleIdentity(category, domain, codomain)
-        if data is None:
-            _construct_morphism_root(owner, instance, identity, None)
-            return
-        _construct_morphism_root(owner, instance, identity, data)
-
-    initialize.__name__ = "__init__"
-    return initialize
+    _construct_object_root(current, instance, ObjectRoleIdentity(current.category), data)
 
 
-def _constructor_wrapper(role: Role, owner: Node) -> FunctionType:
-    match role:
-        case Role.OBJECT:
-            return _object_wrapper(owner)
-        case Role.ELEMENT:
-            return _element_wrapper(owner)
-        case Role.MORPHISM:
-            return _morphism_wrapper(owner)
-    raise AssertionError(role)
+def _initialize_element[Datum](
+    instance: CategoryPoint,
+    defining_morphism: MorphismOfCategory | None = None,
+    data: Datum | None = None,
+) -> None:
+    active = active_construction_context(instance)
+    if active is not None and active.canonical_image is instance:
+        assert defining_morphism is None and data is None, "an ancestor element constructor receives only its precomputed input"
+        active.advance()
+        return
+    assert defining_morphism is not None, "an element root constructor requires its defining morphism"
+    current = _construction_node(instance, Role.ELEMENT)
+    _construct_element_root(current, instance, ElementRoleIdentity(defining_morphism), data)
+
+
+def _initialize_morphism[Datum](
+    instance: MorphismOfCategory,
+    category: Category | None = None,
+    domain: ObjectOfCategory | None = None,
+    codomain: ObjectOfCategory | None = None,
+    data: Datum | None = None,
+) -> None:
+    active = active_construction_context(instance)
+    if active is not None and active.canonical_image is instance:
+        assert category is None and domain is None and codomain is None and data is None, (
+            "an ancestor morphism constructor receives only its precomputed input"
+        )
+        active.advance()
+        return
+    assert category is not None and domain is not None and codomain is not None, (
+        "a morphism root constructor requires its category and endpoints"
+    )
+    current = _construction_node(instance, Role.MORPHISM)
+    _construct_morphism_root(current, instance, MorphismRoleIdentity(category, domain, codomain), data)
 
 
 def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
@@ -829,11 +800,17 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
             continue
         compiled = _compiled_class(current)
         _assert_no_semantic_collisions(compiled)
-        # The generated wrapper owns the private direct-source initialization protocol.
+        # The compiler owns the private direct-source initialization protocol.
         node_initializer = vars(compiled).get("__init__")
         if _is_cat_element_root(current):
             install_cat_element_root(compiled)
-        compiled.__init__ = _constructor_wrapper(role, current)
+        match role:
+            case Role.OBJECT:
+                compiled.__init__ = _initialize_object
+            case Role.ELEMENT:
+                compiled.__init__ = _initialize_element
+            case Role.MORPHISM:
+                compiled.__init__ = _initialize_morphism
         _node_runtimes[role][category] = _NodeRuntime(node_initializer, compiled)
         setattr(category, role.value, compiled)
 

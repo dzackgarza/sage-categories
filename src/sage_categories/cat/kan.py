@@ -23,12 +23,17 @@ morphisms of the fixed-endpoint functor category ``Fun(C, E)``.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from sage.structure.coerce_dict import MonoDict, TripleDict
 
 from sage_categories.cat.constructions import cocone, cone
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.slices import comma_category
-from sage_categories.kernel.roles import MorphismOfCategory, ObjectOfCategory
+
+if TYPE_CHECKING:
+    from sage_categories.cat.category import CategoryOfCategories
+    from sage_categories.cat.morphisms import MorphismCategory
 
 __all__ = ["left_kan_extension", "left_kan_unit", "right_kan_counit", "right_kan_extension"]
 
@@ -36,31 +41,35 @@ _left: TripleDict = TripleDict(weak_values=False)
 _right: TripleDict = TripleDict(weak_values=False)
 
 
-def _star() -> ObjectOfCategory:
+def _star() -> CategoryOfCategories.ElementType:
     return Cat().Terminal()(0)
 
 
-def _cospan() -> ObjectOfCategory:
+def _cospan() -> CategoryOfCategories.ElementType:
     """``L(2, 2)``, the shape of the pullback square a comma category is."""
     return Cat().Horn(2, 2)
 
 
-def _pairs_projection(shape: ObjectOfCategory) -> Functor:
+def _pairs_projection(shape: CategoryOfCategories.ElementType) -> Functor:
     """The leg of a comma category at the first vertex of its cospan: its projection to the product of the two domains."""
     return shape.projection(_cospan()(0))
 
 
-def _comma_pair(vertex: ObjectOfCategory) -> ObjectOfCategory:
+def _comma_pair(vertex: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
     """The component of an object of a comma category at the first vertex: the pair ``(a, b)``."""
     return vertex.component(_cospan()(0))
 
 
-def _comma_arrow(vertex: ObjectOfCategory) -> MorphismOfCategory:
+def _comma_arrow(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
     """The component at the second vertex: the arrow ``F a -> G b``."""
     return vertex.component(_cospan()(1))
 
 
-def _comma_object(shape: ObjectOfCategory, pair: ObjectOfCategory, arrow: MorphismOfCategory) -> ObjectOfCategory:
+def _comma_object(
+    shape: CategoryOfCategories.ElementType,
+    pair: CategoryOfCategories.ElementType,
+    arrow: MorphismCategory.ObjectType,
+) -> CategoryOfCategories.ElementType:
     """The object of a comma category with those two components; the diagram forces the third, the endpoints of the arrow."""
     cospan = _cospan()
     components = {0: pair, 1: arrow, 2: shape.diagram().on_morphism(cospan.generator("1->2")).on_object(arrow)}
@@ -72,10 +81,10 @@ def _left_data(along: Functor, functor: Functor) -> tuple[Functor, NaturalTransf
     product = Cat().Products()((source, Cat().Terminal()))
     colimits: MonoDict = MonoDict()
 
-    def comma(member_object: ObjectOfCategory) -> ObjectOfCategory:
+    def comma(member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         return comma_category(along, target.point_functor(member_object))
 
-    def at(member_object: ObjectOfCategory) -> ObjectOfCategory:
+    def at(member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         """The chosen colimit over ``(K, d)`` of ``F`` after the projection to ``C``."""
         if member_object not in colimits:
             shape = comma(member_object)
@@ -83,7 +92,7 @@ def _left_data(along: Functor, functor: Functor) -> tuple[Functor, NaturalTransf
             colimits[member_object] = values.Colimits(shape)(diagram)
         return colimits[member_object]
 
-    def on_morphism(morphism: MorphismOfCategory) -> MorphismOfCategory:
+    def on_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         lower, upper = at(morphism.domain()), at(morphism.codomain())
         destination = comma(morphism.codomain())
         induced = cocone(lower.diagram(), upper, lambda vertex: upper.injection(_comma_object(destination, _comma_pair(vertex), morphism * _comma_arrow(vertex))))
@@ -93,7 +102,7 @@ def _left_data(along: Functor, functor: Functor) -> tuple[Functor, NaturalTransf
     # the mediator; the extension is the functor sending ``d`` to it.
     extension = Fun(target, values)(at, on_morphism)
 
-    def unit_component(member_object: ObjectOfCategory) -> MorphismOfCategory:
+    def unit_component(member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
         image = along.on_object(member_object)
         identity = image.category().morphism_category(1)(image, image).one()
         return at(image).injection(_comma_object(comma(image), product((member_object, _star())), identity))
@@ -107,10 +116,10 @@ def _right_data(along: Functor, functor: Functor) -> tuple[Functor, NaturalTrans
     product = Cat().Products()((Cat().Terminal(), source))
     limits: MonoDict = MonoDict()
 
-    def comma(member_object: ObjectOfCategory) -> ObjectOfCategory:
+    def comma(member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         return comma_category(target.point_functor(member_object), along)
 
-    def at(member_object: ObjectOfCategory) -> ObjectOfCategory:
+    def at(member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         """The chosen limit over ``(d, K)`` of ``F`` after the projection to ``C``."""
         if member_object not in limits:
             shape = comma(member_object)
@@ -118,7 +127,7 @@ def _right_data(along: Functor, functor: Functor) -> tuple[Functor, NaturalTrans
             limits[member_object] = values.Limits(shape)(diagram)
         return limits[member_object]
 
-    def on_morphism(morphism: MorphismOfCategory) -> MorphismOfCategory:
+    def on_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         lower, upper = at(morphism.domain()), at(morphism.codomain())
         origin = comma(morphism.domain())
         induced = cone(upper.diagram(), lower, lambda vertex: lower.projection(_comma_object(origin, _comma_pair(vertex), _comma_arrow(vertex) * morphism)))
@@ -128,7 +137,7 @@ def _right_data(along: Functor, functor: Functor) -> tuple[Functor, NaturalTrans
     # the mediator; the extension is the functor sending ``d`` to it.
     extension = Fun(target, values)(at, on_morphism)
 
-    def counit_component(member_object: ObjectOfCategory) -> MorphismOfCategory:
+    def counit_component(member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
         image = along.on_object(member_object)
         identity = image.category().morphism_category(1)(image, image).one()
         return at(image).projection(_comma_object(comma(image), product((_star(), member_object)), identity))

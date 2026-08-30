@@ -160,7 +160,11 @@ def node_key(current: Node) -> int:
 
 def node(category: Category, role: Role) -> Node:
     """The normalized node: ``(Mor(C), object)`` is ``(C, morphism)``."""
-    source, source_role = category.role_source(role)
+    if role is Role.OBJECT:
+        source, is_morphism = category._object_role_source()
+        source_role = Role.MORPHISM if is_morphism else Role.OBJECT
+    else:
+        source, source_role = category.role_source(role)
     if source is category and source_role is role:
         return Node(category, role)
     return node(source, source_role)
@@ -763,6 +767,14 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
     for role in _COMPILE_ORDER:
         current = node(category, role)
         if current.category is not category:
+            assert role is Role.OBJECT and current.role is Role.MORPHISM
+            normalization_owner = next(
+                owner for owner in type(category).__mro__ if "_object_role_source" in vars(owner)
+            )
+            _install_written_body(
+                kernel_base(current.role),
+                vars(normalization_owner)[Role.OBJECT.value],
+            )
             setattr(category, role.value, current.category.role_class(current.role))
             continue
         compiled = _compiled_class(current)

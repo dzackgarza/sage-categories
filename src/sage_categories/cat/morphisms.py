@@ -25,9 +25,9 @@ from sage_categories.cat.properties import FullSubcategory, PredicateSubcategory
 from sage_categories.kernel.decisions import Decision
 from sage_categories.kernel.predicates import Axiom, Predicate, Proposition, ask
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role
 
 if TYPE_CHECKING:
+    from sage_categories.cat.category import CategoryOfCategories
     from sage_categories.cat.properties import FixedEndpointProperty
 
 __all__ = ["EndomorphismsCategory", "FixedEndpointCategory", "IsomorphismsCategory", "Mor", "MorphismCategory", "hom_inhabitation"]
@@ -68,7 +68,11 @@ def Mor(*arguments: int | Category) -> Category:
 endpoints = Predicate("endpoints", 3, False)
 
 
-def _endpoints_by_equality(morphism: MorphismOfCategory, domain: ObjectOfCategory, codomain: ObjectOfCategory) -> Decision:
+def _endpoints_by_equality(
+    morphism: MorphismCategory.ObjectType,
+    domain: CategoryOfCategories.ElementType,
+    codomain: CategoryOfCategories.ElementType,
+) -> Decision:
     return ask((morphism.domain() == domain) & (morphism.codomain() == codomain))
 
 
@@ -80,7 +84,7 @@ endpoints.register_handler(_endpoints_by_equality)
 endpoints_in = Predicate("endpoints_in", 2, False)
 
 
-def _endpoints_in_by_membership(morphism: MorphismOfCategory, subcategory: Category) -> Decision:
+def _endpoints_in_by_membership(morphism: MorphismCategory.ObjectType, subcategory: Category) -> Decision:
     return ask(subcategory.membership_proposition(morphism.domain()) & subcategory.membership_proposition(morphism.codomain()))
 
 
@@ -105,19 +109,19 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
     """``Mor(C)``: objects are the morphisms of ``C``, morphisms its 2-morphisms."""
 
     # An object of ``Mor(C)`` is a morphism of ``C``, and ``C`` is arbitrary, so the
-    # object declaration of this class is the kernel's morphism role itself (POL-CAT-057).
-    # Per category value the compiled class is ``C.MorphismType``, which
-    # ``role_source`` names; this class-level declaration is what an axiom declared here
-    # writes its application onto.
-    ObjectType = MorphismOfCategory
+    # Per category value the compiled class is ``C.MorphismType``.  This local class is
+    # the generic declaration whose generated axiom applications the kernel installs on
+    # the private morphism root.
+    class ObjectType:
+        """A morphism of an arbitrary category ``C``."""
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """The identity 2-morphism of a morphism of a 1-category: the only morphisms of ``Mor(C)``."""
 
         def __repr__(self) -> str:
             return f"identity of {self.domain()!r}"
 
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A generalized element ``t: T -> f`` of a morphism of ``C``, read in ``Mor(C)``.
 
         ``Mor(C).ObjectType`` is ``C.MorphismType``, so the object this is a point of is a
@@ -162,22 +166,24 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
             return (*self.ambient().narrowing_roots(), self)
         return ()
 
-    def role_source(self, role: Role) -> tuple[Category, Role]:
-        if role is Role.OBJECT:
-            return self._base, Role.MORPHISM
-        return self, role
+    def _object_role_source(self) -> tuple[Category, bool]:
+        return self._base, True
 
     def equality(self) -> Predicate:
         return self._base.equality()
 
-    def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         if self._base.has_ambient():
             return self._base.ambient().morphism_category(1).membership_proposition(candidate) & endpoints_in(candidate, self._base)
         return member(candidate, self)
 
     # -- fixed endpoints ---------------------------------------------------------
 
-    def __call__(self, domain: ObjectOfCategory, codomain: ObjectOfCategory) -> FixedEndpointCategory[MorphismData, TwoMorphismData]:
+    def __call__(
+        self,
+        domain: CategoryOfCategories.ElementType,
+        codomain: CategoryOfCategories.ElementType,
+    ) -> FixedEndpointCategory[MorphismData, TwoMorphismData]:
         """``Mor(C)(A, B)``: the full subcategory on morphisms ``A -> B``, one object per pair."""
         assert domain in self._base and codomain in self._base
         key = (domain, codomain, self)
@@ -190,19 +196,23 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
 
     # -- 2-morphisms ------------------------------------------------------------
 
-    def construct_identity(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
+    def construct_identity(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         return self._base.identity_two_morphism(morphism)
 
-    def composite(self, second: MorphismOfCategory, first: MorphismOfCategory) -> MorphismOfCategory:
+    def composite(
+        self,
+        second: MorphismCategory.ObjectType,
+        first: MorphismCategory.ObjectType,
+    ) -> MorphismCategory.ObjectType:
         return self._base.compose_two_morphisms(second, first)
 
     def construct_morphism(
         self,
-        source: MorphismOfCategory,
-        target: MorphismOfCategory,
+        source: MorphismCategory.ObjectType,
+        target: MorphismCategory.ObjectType,
         *args: TwoMorphismData.args,
         **kwargs: TwoMorphismData.kwargs,
-    ) -> MorphismOfCategory:
+    ) -> MorphismCategory.ObjectType:
         return self._base.construct_two_morphism(source, target, *args, **kwargs)
 
     # -- property axioms, declared once for every ``C`` (POL-FUN-024) -------------------
@@ -240,16 +250,16 @@ class IsomorphismsCategory[**MorphismData, **TwoMorphismData](PropertySubcategor
 
     # Invertibility constrains the morphism, not its points or the 2-morphisms between
     # two of them; ``inverse()`` is the whole delta and it is on the object below.
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A generalized element of an isomorphism, read in ``Mor(C)``."""
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """A 2-morphism between two isomorphisms of ``C``."""
 
-    class ObjectType(MorphismOfCategory):
+    class ObjectType:
         """An isomorphism of ``C``: the isomorphism category owns inversion (POL-CAT-079)."""
 
-        def inverse(self) -> MorphismOfCategory:
+        def inverse(self) -> MorphismCategory.ObjectType:
             """The inverse: the retained one when the construction supplied it, else the category-owned one."""
             return self.base_category().inverse_morphism(self)
 
@@ -261,7 +271,7 @@ class EndomorphismsCategory[**MorphismData, **TwoMorphismData](PredicateSubcateg
     the decision as ``_predicate`` (POL-CAT-060, D97).
     """
 
-    class ObjectType(MorphismOfCategory):
+    class ObjectType:
         """An endomorphism ``X -> X`` of ``C``.
 
         Equal endpoints make ``End_C(X)`` a monoid under composition, but that monoid is
@@ -269,15 +279,15 @@ class EndomorphismsCategory[**MorphismData, **TwoMorphismData](PredicateSubcateg
         endomorphism itself gains nothing.
         """
 
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A point of an endomorphism."""
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """A 2-cell between two endomorphisms."""
 
     _base_category_class_and_axiom = (MorphismCategory, "Endomorphisms")
 
-    def _predicate(self, candidate: MorphismOfCategory) -> Decision:
+    def _predicate(self, candidate: MorphismCategory.ObjectType) -> Decision:
         """A morphism is an endomorphism exactly when its two endpoints are equal."""
         return ask(candidate.domain() == candidate.codomain())
 
@@ -285,7 +295,7 @@ class EndomorphismsCategory[**MorphismData, **TwoMorphismData](PredicateSubcateg
 class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[TwoMorphismData, []]):
     """``Mor(C)(A, B)``: the full subcategory of ``Mor(C)`` on the morphisms ``A -> B``."""
 
-    class ObjectType(MorphismOfCategory):
+    class ObjectType:
         """A morphism ``A -> B`` of ``C``.
 
         Fixing the endpoints selects morphisms; it does not change what one is.  What the
@@ -293,21 +303,26 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
         composition when ``A`` is ``B``.
         """
 
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A point of such a morphism."""
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """A 2-cell between two morphisms ``A -> B``."""
 
-    def __init__(self, morphisms: MorphismCategory[MorphismData, TwoMorphismData], domain: ObjectOfCategory, codomain: ObjectOfCategory) -> None:
+    def __init__(
+        self,
+        morphisms: MorphismCategory[MorphismData, TwoMorphismData],
+        domain: CategoryOfCategories.ElementType,
+        codomain: CategoryOfCategories.ElementType,
+    ) -> None:
         self._domain_object = domain
         self._codomain_object = codomain
         super().__init__(morphisms)
 
-    def domain(self) -> ObjectOfCategory:
+    def domain(self) -> CategoryOfCategories.ElementType:
         return self._domain_object
 
-    def codomain(self) -> ObjectOfCategory:
+    def codomain(self) -> CategoryOfCategories.ElementType:
         return self._codomain_object
 
     # A fixed-endpoint category is its own base for narrowing: ``Mor(C)(A, B).P()`` is a
@@ -319,14 +334,14 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
     def narrowing_roots(self) -> tuple[Category, ...]:
         return ()
 
-    def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         """A morphism of ``Mor(C)`` with these endpoints (POL-CAT-087: the ambient decides which values are its morphisms)."""
         return self.ambient().membership_proposition(candidate) & endpoints(candidate, self._domain_object, self._codomain_object)
 
     def _chosen_inhabitation(self) -> Decision:
         return hom_inhabitation(self)
 
-    def __call__(self, *args: MorphismData.args, **kwargs: MorphismData.kwargs) -> MorphismOfCategory:
+    def __call__(self, *args: MorphismData.args, **kwargs: MorphismData.kwargs) -> MorphismCategory.ObjectType:
         """``Mor(C)(A, B)(data)``: a morphism ``A -> B`` through ``C``'s constructor, placed here.
 
         Calling a category constructs a value in it, so the result enters ``Mor(C)(A, B)``
@@ -342,7 +357,7 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
         refine(morphism, self)
         return morphism
 
-    def one(self) -> MorphismOfCategory:
+    def one(self) -> MorphismCategory.ObjectType:
         """``1_X``, the unit of the endomorphism monoid ``End_C(X) = Mor(C)(X, X)`` (POL-CAT-023, D84).
 
         Composition makes ``Mor(C)(X, X)`` a monoid, ``compose`` is its multiplication,
@@ -356,7 +371,11 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
         )
         return self.base_category()._identity_morphism_(self._domain_object)
 
-    def compose(self, second: MorphismOfCategory, first: MorphismOfCategory) -> MorphismOfCategory:
+    def compose(
+        self,
+        second: MorphismCategory.ObjectType,
+        first: MorphismCategory.ObjectType,
+    ) -> MorphismCategory.ObjectType:
         """``Mor(C)(A, C).compose(g, f)`` for ``f: A -> B`` and ``g: B -> C``."""
         assert first.domain() is self._domain_object and second.codomain() is self._codomain_object
         return self.base_category().compose_morphisms(second, first)

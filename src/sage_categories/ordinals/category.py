@@ -48,9 +48,9 @@ from sage.rings.integer_ring import ZZ as _integer_ring
 from sage_categories.cat.category import Category
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask, conjunction
-from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, role_of
 
 if TYPE_CHECKING:
+    from sage_categories.cat.category import CategoryOfCategories
     from sage_categories.sets.cardinals import CardinalObject
 
 __all__ = ["OrdinalObject", "Ordinals", "OrdinalsCategory", "bind_cardinals", "is_natural_number", "omega", "omega0", "ordinal"]
@@ -96,7 +96,7 @@ class OrdinalObjectData:
     terms: tuple[OrdinalObject, ...]
 
 
-class OrdinalObjectDeclaration(ObjectOfCategory):
+class OrdinalObjectDeclaration:
     """An exact ordinal, retained by its normalized expression."""
 
     def __init__(self, data: OrdinalObjectData) -> None:
@@ -252,12 +252,12 @@ less_than: Predicate = Predicate("ordinal_less_than", 2, True)
 class OrdinalsCategory(Category[[], []]):
     """The category of exact ordinal expressions."""
 
-    DeclaredObjectType = OrdinalObjectDeclaration
+    ObjectType = OrdinalObjectDeclaration
 
-    class DeclaredElementType(ElementOfObject):
+    class ElementType:
         """A generalized element of an ordinal; no local operation."""
 
-    class DeclaredMorphismType(MorphismOfCategory):
+    class MorphismType:
         """A morphism between ordinals; no local operation."""
 
     def __init__(self) -> None:
@@ -392,12 +392,12 @@ class OrdinalsCategory(Category[[], []]):
                 return False
         return Unknown
 
-    def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
+    def _equal(self, first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
         if first not in self:
             return Unknown
         if candidate in self:
             second = candidate
-        elif role_of(candidate) is None and is_natural_number(candidate):
+        elif not hasattr(candidate, "_is_object") and is_natural_number(candidate):
             second = self(candidate)
         else:
             return Unknown

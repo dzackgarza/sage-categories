@@ -12,9 +12,13 @@ fi;
 PKGMAN_SetCustomPackageDir(Filename(DirectoryCurrent(), ".gap/pkg"));
 
 InstallExactPackage := function(package)
-    local required;
+    local required, installed;
     required := Concatenation("=", package[2]);
-    if TestPackageAvailability(package[1], required) = fail then
+    installed := Filtered(
+        PKGMAN_UserPackageInfo(package[1]),
+        info -> info.Version = package[2]
+    );
+    if Length(installed) = 0 then
         if InstallPackage(package[3]) <> true then
             PrintTo("*errout*", "failed to install ", package[1], " ", package[2], "\n");
             QUIT_GAP(1);
@@ -32,6 +36,7 @@ packages := [
     [ "MonoidalCategories", "2026.08-02", "https://github.com/homalg-project/CAP_project/releases/download/MonoidalCategories-2026.08-02/MonoidalCategories-2026.08-02.tar.gz" ],
     [ "CartesianCategories", "2026.08-02", "https://github.com/homalg-project/CAP_project/releases/download/CartesianCategories-2026.08-02/CartesianCategories-2026.08-02.tar.gz" ],
     [ "ToolsForCategoricalTowers", "2026.08-01", "https://github.com/homalg-project/CategoricalTowers/releases/download/ToolsForCategoricalTowers-2026.08-01/ToolsForCategoricalTowers-2026.08-01.tar.gz" ],
+    [ "Locales", "2024.02-21", "https://github.com/homalg-project/CategoricalTowers/releases/download/Locales-2024.02-21/Locales-2024.02-21.tar.gz" ],
     [ "SubcategoriesForCAP", "2026.07-01", "https://github.com/homalg-project/CategoricalTowers/releases/download/SubcategoriesForCAP-2026.07-01/SubcategoriesForCAP-2026.07-01.tar.gz" ],
     [ "FpCategories", "2026.07-03", "https://github.com/homalg-project/CategoricalTowers/releases/download/FpCategories-2026.07-03/FpCategories-2026.07-03.tar.gz" ],
     [ "SliceCategories", "2026.06-01", "https://github.com/homalg-project/CategoricalTowers/releases/download/SliceCategories-2026.06-01/SliceCategories-2026.06-01.tar.gz" ],

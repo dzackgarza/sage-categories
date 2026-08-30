@@ -5,8 +5,10 @@ from __future__ import annotations
 from collections.abc import Callable
 from contextvars import ContextVar, Token
 from dataclasses import dataclass, field
+from types import FunctionType
 from typing import TYPE_CHECKING
 
+from sage.categories.category import Category as SageCategory
 from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory, Role, role_of
@@ -117,6 +119,33 @@ class MorphismConstructionInput[Value: MorphismOfCategory, Datum]:
 _object_inputs: MonoDict = MonoDict()
 _element_inputs: MonoDict = MonoDict()
 _morphism_inputs: MonoDict = MonoDict()
+
+
+@dataclass(frozen=True, slots=True, eq=False)
+class _InitializerInvocation[Datum]:
+    """One local initializer call on a separately constructed target image."""
+
+    initializer: FunctionType
+    datum: Datum
+
+
+_initializer_invocations: MonoDict = MonoDict()
+
+
+def _retain_initializer_invocation[Datum](
+    target_image: CategoryPoint,
+    runtime_category: SageCategory,
+    initializer: FunctionType,
+    datum: Datum,
+) -> None:
+    """Retain one target-image local initializer invocation by runtime-category identity."""
+    if target_image not in _initializer_invocations:
+        _initializer_invocations[target_image] = MonoDict()
+    invocations: MonoDict = _initializer_invocations[target_image]
+    assert runtime_category not in invocations, (
+        f"the {runtime_category!r} initializer already ran on {target_image!r}"
+    )
+    invocations[runtime_category] = _InitializerInvocation(initializer, datum)
 
 
 def retain_object_input[Value: ObjectOfCategory, Datum](construction_input: ObjectConstructionInput[Value, Datum]) -> None:

@@ -36,6 +36,7 @@ from sage_categories.kernel.construction import (
     retain_morphism_input,
     retain_object_input,
     retained_object_input,
+    _retain_initializer_invocation,
 )
 from sage_categories.kernel.roles import (
     CategoryPoint,
@@ -626,6 +627,7 @@ def _object_step[Value: ObjectOfCategory, Datum](
         if runtime.initializer is None:
             _advance(runtime.owner, instance)
             return
+        _retain_initializer_invocation(instance, _runtime_category(current), runtime.initializer, construction_input.datum)
         runtime.initializer(instance, construction_input.datum)
 
     return initialize
@@ -642,6 +644,7 @@ def _element_step[Value: CategoryPoint, Datum](
         if runtime.initializer is None:
             _advance(runtime.owner, instance)
             return
+        _retain_initializer_invocation(instance, _runtime_category(current), runtime.initializer, construction_input.datum)
         runtime.initializer(instance, construction_input.datum)
 
     return initialize
@@ -658,6 +661,7 @@ def _morphism_step[Value: MorphismOfCategory, Datum](
         if runtime.initializer is None:
             _advance(runtime.owner, instance)
             return
+        _retain_initializer_invocation(instance, _runtime_category(current), runtime.initializer, construction_input.datum)
         runtime.initializer(instance, construction_input.datum)
 
     return initialize

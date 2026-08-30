@@ -128,8 +128,7 @@ def _require_declarations(cls: type[CategoryDeclaration]) -> None:
     ``CategoryOfCategories``: the kernel compiles ``Cat()``'s declarations into the role
     classes every value reaches, so naming one states nothing either.  Another category's
     declaration, named at the same kind, carries that category's written body onto this
-    node when the kernel installs it (``compiler._install_written_body``) and makes
-    ``catalogue`` record this category as the owner of methods it never stated; a
+    node when the kernel installs it (``compiler._install_written_body``); a
     declaration standing on another carries the same body through a base, which is an
     implementation base no structure functor supplied, so a declaration stands only on
     its role's kernel class (POL-CAT-053, ``kernel/compiler.py``,
@@ -228,7 +227,6 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         self._points: MonoDict = MonoDict()
         self._arrows: MonoDict = MonoDict()
         self._elements: MonoDict = MonoDict()
-        self._catalogues: dict[Role, dict[str, compiler.Entry]] = {}
         self._limits: MonoDict = MonoDict()
         self._colimits: MonoDict = MonoDict()
         self._slices: MonoDict = MonoDict()
@@ -301,9 +299,6 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
 
     def role_source(self, role: Role) -> tuple[Category[MorphismData, TwoMorphismData], Role]:
         return self, role
-
-    def catalogues(self) -> dict[Role, dict[str, compiler.Entry]]:
-        return self._catalogues
 
     def select_functors(self, functors: tuple[Functor, ...]) -> None:
         """Record the compiled selection; the ambient is the codomain of its first placement-tracing functor (POL-CAT-016)."""
@@ -420,9 +415,11 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
 
     def base_category(self) -> Category:
         """The category ``C`` such that this category is a subcategory of ``Mor(C)``."""
-        for found in compiler.reachable(compiler.node(self, Role.OBJECT)):
-            if found.role is Role.MORPHISM:
-                return found.category
+        source, role = self.role_source(Role.OBJECT)
+        if role is Role.MORPHISM:
+            return source
+        if self.has_ambient():
+            return self.ambient().base_category()
         raise AssertionError(f"{self!r} is not a category of morphisms")
 
     # -- identities and composition -------------------------------------------

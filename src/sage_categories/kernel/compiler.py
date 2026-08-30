@@ -52,18 +52,14 @@ if TYPE_CHECKING:
     from sage_categories.cat.functors import Functor
 
 __all__ = [
-    "DeclaredMethod",
-    "Entry",
     "Node",
     "SemanticCollisionError",
     "building_role_class",
     "building_role_classes",
-    "catalogue",
     "compile_category",
     "install_level_shift",
     "install_on_declaration",
     "node",
-    "reachable",
     "recompile_category",
     "same_node",
 ]
@@ -139,20 +135,6 @@ def _kernel_role_root(role: Role) -> _KernelRoleRootCategory:
 def _cat_element_role_root() -> _KernelRoleRootCategory:
     """The root below the first compiled ``Cat().ElementType`` class."""
     return _role_root(Role.ELEMENT, CategoryPoint)
-
-
-# A declaring method: its receiver is a value of the declaring role class, and its
-# remaining parameters and result are exactly those of its typed signature
-# (POL-CAT-075, POL-TYPE-028).
-type DeclaredMethod[**P, R] = Callable[Concatenate[CategoryPoint, P], R]
-
-class Entry[**P, R](NamedTuple):
-    """One compiled method: its declaring owner and role, spelling, and declaration."""
-
-    owner: Category
-    role: Role
-    name: str
-    function: DeclaredMethod[P, R]
 
 
 _IGNORED_NAMES = frozenset({"__init__", "__new__", "__repr__", "__init_subclass__", "__class_getitem__"})
@@ -240,112 +222,16 @@ def successors(current: Node) -> tuple[tuple[Functor, Node], ...]:
     )
 
 
-def reachable(start: Node) -> tuple[Node, ...]:
-    """Every node reachable from ``start`` (``start`` first), in breadth-first declaration order."""
-    found: list[Node] = [start]
-    frontier = [start]
-    while frontier:
-        current = frontier.pop(0)
-        for _, target in successors(current):
-            if any(same_node(target, known) for known in found):
-                continue
-            found.append(target)
-            frontier.append(target)
-    return tuple(found)
-
-
-def _assert_acyclic(start: Node, stack: tuple[Node, ...]) -> None:
-    assert not any(same_node(start, seen) for seen in stack), (
-        f"the selected structural graph has a cycle through {start.category!r}"
-    )
-    for _, target in successors(start):
-        _assert_acyclic(target, (*stack, start))
-
-
-def _local_methods[**P, R](local_class: type[CategoryPoint]) -> dict[str, DeclaredMethod[P, R]]:
-    """The methods declared on the class body of a local role class; the catalogue is heterogeneous in ``P`` and ``R``."""
-    return {
-        name: function
+def _local_method_names(local_class: type[CategoryPoint]) -> tuple[str, ...]:
+    """The public method spellings written on one local declaration."""
+    return tuple(
+        name
         for name, function in vars(local_class).items()
         if inspect.isfunction(function) and name not in _IGNORED_NAMES and (not name.startswith("_") or name.startswith("__"))
-    }
-
-
-def _reaches_owner(specific: Entry, general: Entry) -> bool:
-    """Whether the declaring node of ``specific`` reaches that of ``general``."""
-    specific_node = node(specific.owner, specific.role)
-    general_node = node(general.owner, general.role)
-    if same_node(specific_node, general_node):
-        return True
-    if _is_cat_element_root(general_node):
-        return True
-    if specific_node.role is not general_node.role:
-        return False
-    return any(same_node(found, general_node) for found in reachable(specific_node))
-
-
-def _merge[**P, R](existing: Entry[P, R], candidate: Entry[P, R]) -> Entry[P, R]:
-    if existing.owner is candidate.owner and existing.role is candidate.role:
-        return existing
-    if _reaches_owner(existing, candidate):
-        return existing
-    if _reaches_owner(candidate, existing):
-        return candidate
-    raise SemanticCollisionError(
-        f"{existing.name!r} is declared by both {existing.owner!r} and {candidate.owner!r}, "
-        "which are incomparable; name the two mathematical operations distinctly"
     )
 
 
-def generalized_element_node(current: Node) -> Node:
-    """The element node whose surface the values of ``current`` receive as points ``* -> K``.
-
-    An object of ``C`` is a point ``* -> C``, so the surface is the one ``C``'s own
-    placement gives to the points of its objects.  That placement is ``Cat()`` until
-    ``Cat().Point(C)`` narrows it, and then the points of ``C`` are exactly the objects
-    of ``C``: the level shift (D57, POL-CAT-083; ``specs/functor.md``, "The level
-    shift").
-
-    A morphism of ``C`` is a point ``* -> Mor(C)``, and a point of an object is a point
-    of its own defining morphism.  Neither receives the level shift, which D57 states in
-    those words, and the universal element node is the surface of both.  It is also
-    ``Mor(C)``'s own until a point category narrows that, and asking ``C`` for ``Mor(C)``
-    here would construct it inside ``C``'s own compile.
-    """
-    if current.role is Role.OBJECT:
-        return node(current.category.category(), Role.ELEMENT)
-    # ``Cat()`` compiling its own roles is the one moment there is no ``Cat()`` to name,
-    # and the one category then is ``Cat()`` itself (``cat/category.py``, ``bootstrap``).
-    universe = current.category.universe()
-    return node(current.category if universe is None else universe, Role.ELEMENT)
-
-
-def catalogue[**P, R](current: Node) -> dict[str, Entry[P, R]]:
-    """The compiled method catalogue of one node, cached on its category; heterogeneous in ``P`` and ``R``."""
-    catalogues = current.category.catalogues()
-    if current.role in catalogues:
-        return catalogues[current.role]
-    local_class = current.category.local_role_class(current.role)
-    entries = {
-        name: Entry(current.category, current.role, name, function)
-        for name, function in _local_methods(local_class).items()
-    }
-    for _, target in successors(current):
-        for name, inherited in catalogue(target).items():
-            if name in entries and entries[name].owner is current.category:
-                continue
-            entries[name] = _merge(entries[name], inherited) if name in entries else inherited
-    if not _is_cat_element_root(current):
-        cat_element = generalized_element_node(current)
-        for name, inherited in catalogue(cat_element).items():
-            if name in entries and entries[name].owner is current.category and entries[name].role is current.role:
-                continue
-            entries[name] = _merge(entries[name], inherited) if name in entries else inherited
-    catalogues[current.role] = entries
-    return entries
-
-
-def _rebound[**P, R](member: DeclaredMethod[P, R], compiled: type[CategoryPoint]) -> DeclaredMethod[P, R]:
+def _rebound[**P, R](member: Callable[Concatenate[CategoryPoint, P], R], compiled: type[CategoryPoint]) -> Callable[Concatenate[CategoryPoint, P], R]:
     """A written member whose zero-argument ``super()`` names the class its body now runs in.
 
     A zero-argument ``super()`` reads the ``__class__`` cell CPython puts in the closure
@@ -383,7 +269,7 @@ def _install_written_body(compiled: type[CategoryPoint], local: type[CategoryPoi
             setattr(compiled, name, _rebound(member, compiled))
 
 
-def install_on_declaration[**P, R](local: type[CategoryPoint], name: str, member: DeclaredMethod[P, R]) -> None:
+def install_on_declaration[**P, R](local: type[CategoryPoint], name: str, member: Callable[Concatenate[CategoryPoint, P], R]) -> None:
     """Add one method to a declaration and to the class of every node already compiled from it.
 
     A compile installs the written body it reads (``_install_written_body``), so a
@@ -409,6 +295,34 @@ def _compiled_class(current: Node) -> type[CategoryPoint]:
         compiled = _runtime_category(current).parent_class
     _install_written_body(compiled, current.category.local_role_class(current.role))
     return compiled
+
+
+def _assert_no_semantic_collisions(*surfaces: type[CategoryPoint]) -> None:
+    """Reject one public spelling from incomparable owners in Sage's compiled MROs."""
+    runtime_by_class = {
+        runtime.__dict__["parent_class"]: runtime
+        for table in _runtime_categories.values()
+        for _, runtime in table.items()
+        if "parent_class" in runtime.__dict__
+    }
+    owners: dict[str, tuple[Node, type[CategoryPoint]]] = {}
+    for surface in surfaces:
+        for implementation in surface.__mro__:
+            runtime = runtime_by_class.get(implementation)
+            if runtime is None:
+                continue
+            for name in _local_method_names(runtime.ParentMethods):
+                previous = owners.get(name)
+                if previous is None:
+                    owners[name] = (runtime._current, implementation)
+                    continue
+                previous_node, previous_class = previous
+                if issubclass(implementation, previous_class) or issubclass(previous_class, implementation):
+                    continue
+                raise SemanticCollisionError(
+                    f"{name!r} is declared by both {previous_node.category!r} and {runtime._current.category!r}, "
+                    "which are incomparable; name the two mathematical operations distinctly"
+                )
 
 
 def borrowed_declaration(local: type[CategoryPoint]) -> type[CategoryPoint] | None:
@@ -909,16 +823,12 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
     )
     category.select_functors(functors)
     for role in _COMPILE_ORDER:
-        _assert_acyclic(node(category, role), ())
-    for role in _COMPILE_ORDER:
         current = node(category, role)
         if current.category is not category:
             setattr(category, role.value, current.category.role_class(current.role))
             continue
-        # Catalogue construction rejects semantic collisions.  Inherited execution
-        # itself is ordinary Python lookup through Sage's controlled compiled MRO.
-        catalogue(current)
         compiled = _compiled_class(current)
+        _assert_no_semantic_collisions(compiled)
         # The generated wrapper owns the private direct-source initialization protocol.
         node_initializer = vars(compiled).get("__init__")
         if _is_cat_element_root(current):
@@ -945,7 +855,6 @@ def recompile_category(category: Category, functors: tuple[Functor, ...]) -> Non
                 "_super_categories_for_classes",
             ):
                 runtime.__dict__.pop(name, None)
-    category.catalogues().clear()
     compile_category(category, functors)
 
 
@@ -973,20 +882,7 @@ def install_level_shift(point: Category) -> None:
     shifted_class = point.role_class(Role.ELEMENT)
     if issubclass(role_class, shifted_class):
         return
-    universal = catalogue(node(member.universe(), Role.ELEMENT))
-    shifted = catalogue(node(point, Role.ELEMENT))
-    # The member's object catalogue is recomputed because its generalized-element node is
-    # now ``{C}``'s: the merge is what rejects a spelling the shift and the member both
-    # declare.
-    current.category.catalogues().pop(current.role, None)
-    compiled = catalogue(current)
-    for name, entry in shifted.items():
-        if universal.get(name) is entry:
-            continue
-        assert compiled[name] is entry, (
-            f"{name!r} is declared both by {compiled[name].owner!r} and by the level shift from {point!r}; "
-            "name the two mathematical operations distinctly"
-        )
+    _assert_no_semantic_collisions(role_class, shifted_class)
     role_class.__bases__ = (*role_class.__bases__, shifted_class)
     for constructed in _placed_objects(member):
         _initialize_level_shift(node(point, Role.ELEMENT), constructed)

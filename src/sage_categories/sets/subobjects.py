@@ -13,13 +13,13 @@ from sage_categories.cat.properties import FullSubcategory
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask, conjunction, disjunction, established, negation
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role
 from sage_categories.sets.cardinals import CardinalObject
 from sage_categories.sets.elements import Datum
 from sage_categories.sets.maps import Rule
 from sage_categories.sets.objects import MembershipRule, SetObject
 
 if TYPE_CHECKING:
+    from sage_categories.cat.category import CategoryOfCategories
     from sage_categories.sets.category import SetMap
 
 __all__ = ["ChosenQuotientsCategory", "ChosenSubsetsCategory", "subset_of"]
@@ -61,11 +61,11 @@ def _distinct(data: tuple[Datum, ...]) -> tuple[Datum, ...] | UnknownClass:
     return tuple(datum for position, datum in enumerate(data) if not any(ask(datum == earlier) for earlier in data[:position]))
 
 
-def _subset_by_identity(first: CategoryPoint, candidate: Any) -> Decision:
+def _subset_by_identity(first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
     return True if first is candidate else Unknown
 
 
-def _subset_by_enumeration(first: CategoryPoint, candidate: Any) -> Decision:
+def _subset_by_enumeration(first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
     """Exact when ``A`` has a chosen enumeration: ``B`` decides each member of ``A``."""
     sets = _sets.Sets()
     chosen, finite = sets.ChosenSubsets(), sets.Finite()
@@ -83,7 +83,7 @@ subset_of.register_handler(_subset_by_identity)
 subset_of.register_handler(_subset_by_enumeration)
 
 
-class ChosenSubsetRole(ObjectOfCategory):
+class ChosenSubsetObject:
     """The local object role of ``Sets().ChosenSubsets()``: a set that retains its presenting monomorphism and carries the subset algebra of its base set."""
 
     def monomorphism(self) -> SetMap:
@@ -135,6 +135,14 @@ class ChosenSubsetRole(ObjectOfCategory):
 class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
     """``Sets().ChosenSubsets()``: the construction family of the chosen subsets; owns their construction and retains each presenting monomorphism."""
 
+    ObjectType = ChosenSubsetObject
+
+    class ElementType:
+        """A generalized element of a chosen subset."""
+
+    class MorphismType:
+        """A map between chosen subsets."""
+
     def __init__(self, ambient: Category[[Rule], []]) -> None:
         super().__init__(ambient)
 
@@ -143,11 +151,6 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
 
     def __repr__(self) -> str:
         return f"{self.ambient()!r}.{self.name()}()"
-
-    def local_role_class(self, role: Role) -> type[CategoryPoint]:
-        if role is Role.OBJECT:
-            return ChosenSubsetRole
-        return super().local_role_class(role)
 
     def with_cardinality(self, base_set: SetObject, predicate: MembershipRule, cardinality: CardinalObject) -> SetObject:
         """The chosen subset ``{x in X : predicate(x)}`` whose exact cardinality a construction theorem supplies (POL-SET-031)."""
@@ -259,7 +262,7 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
         return subset
 
 
-class ChosenQuotientRole(ObjectOfCategory):
+class ChosenQuotientObject:
     """The local object role of ``Sets().ChosenQuotients()``: a set that retains its quotient map."""
 
     def quotient_map(self) -> SetMap:
@@ -284,6 +287,14 @@ class ChosenQuotientsCategory(FullSubcategory[[Rule], []]):
     2026-08-27) and is retained in ``Epimorphisms()``.
     """
 
+    ObjectType = ChosenQuotientObject
+
+    class ElementType:
+        """A generalized element of a chosen quotient."""
+
+    class MorphismType:
+        """A map between chosen quotients."""
+
     def __init__(self, ambient: Category[[Rule], []]) -> None:
         super().__init__(ambient)
 
@@ -292,11 +303,6 @@ class ChosenQuotientsCategory(FullSubcategory[[Rule], []]):
 
     def __repr__(self) -> str:
         return f"{self.ambient()!r}.{self.name()}()"
-
-    def local_role_class(self, role: Role) -> type[CategoryPoint]:
-        if role is Role.OBJECT:
-            return ChosenQuotientRole
-        return super().local_role_class(role)
 
     def __call__(self, base_set: SetObject, class_of: Callable[[Datum], Datum], membership_rule: MembershipRule) -> SetObject:
         sets = _sets.Sets()

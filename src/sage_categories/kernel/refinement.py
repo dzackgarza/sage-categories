@@ -9,7 +9,6 @@ from sage.structure.dynamic_class import dynamic_class
 
 import sage_categories.kernel.compiler as compiler
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, Role, role_of
-from sage_categories.kernel.transport import placement_node
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
@@ -45,12 +44,22 @@ def _reached_placements(start: compiler.Node) -> Iterator[compiler.Node]:
             frontier.append(target)
 
 
+def _placement_node(value: CategoryPoint) -> compiler.Node:
+    """The object node named by the value's current placement."""
+    match role_of(value):
+        case Role.OBJECT | Role.MORPHISM:
+            return compiler.node(value.category(), Role.OBJECT)
+        case Role.ELEMENT:
+            return compiler.node(value.parent().category(), Role.ELEMENT)
+    raise AssertionError(f"{value!r} is not an owned value")
+
+
 def is_placed(candidate: Any, category: Category) -> bool:
     """Whether ``candidate`` is an object of ``category`` by established placement (the ``member`` handler; POL-TYPE-004)."""
     if role_of(candidate) is None:
         return False
     target = compiler.node(category, Role.OBJECT)
-    return any(compiler.same_node(target, found) for found in _reached_placements(placement_node(candidate)))
+    return any(compiler.same_node(target, found) for found in _reached_placements(_placement_node(candidate)))
 
 
 def is_subcategory(inner: Category, outer: Category) -> bool:

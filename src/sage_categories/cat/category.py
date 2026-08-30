@@ -288,11 +288,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
         """Return this category's written class for the requested implementation kind."""
-        from sage_categories.kernel.transport import construction_input
-
-        universe = Cat()
-        constructed = self if universe is None else construction_input(self, compiler.node(universe, Role.OBJECT)).canonical_image
-        return vars(_written_class(type(constructed)))[role.value]
+        return vars(_written_class(type(self)))[role.value]
 
     def role_class(self, role: Role) -> type[CategoryPoint]:
         """The compiled role class the kernel installed on this category value.

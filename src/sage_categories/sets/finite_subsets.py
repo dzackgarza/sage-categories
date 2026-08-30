@@ -57,7 +57,6 @@ from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import ask, conjunction, established
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.roles import ObjectOfCategory, Role
 from sage_categories.sets.cardinals import Cardinal, CardinalObject
 from sage_categories.sets.elements import Datum, SetElement
 from sage_categories.sets.exponentials import Function
@@ -66,11 +65,11 @@ from sage_categories.sets.objects import SetObject
 
 __all__ = [
     "FiniteSubsetsCategory",
-    "FiniteSubsetsRole",
+    "FiniteSubsetsObject",
     "FinitelySupportedFunctionsCategory",
-    "FinitelySupportedFunctionsRole",
+    "FinitelySupportedFunctionsObject",
     "SizedSubsetsCategory",
-    "SizedSubsetsRole",
+    "SizedSubsetsObject",
 ]
 
 
@@ -81,7 +80,7 @@ def _position(position: CardinalObject | int) -> int:
     return position
 
 
-class FiniteSubsetsRole(ObjectOfCategory):
+class FiniteSubsetsObject:
     """The local object role of ``Sets().FiniteSubsets()``: a set of finite subsets of a base set."""
 
     def base_set(self) -> SetObject:
@@ -104,7 +103,7 @@ class FiniteSubsetsRole(ObjectOfCategory):
         return _sets.Sets().FiniteSubsets().subset_at_position(self, position)
 
 
-class SizedSubsetsRole(ObjectOfCategory):
+class SizedSubsetsObject:
     """The local object role of ``Sets().SubsetsOfSize(k)``: the common size of the subsets."""
 
     def subset_cardinality(self) -> CardinalObject:
@@ -114,10 +113,18 @@ class SizedSubsetsRole(ObjectOfCategory):
 class SizedSubsetsCategory(PropertySubcategory[[Rule], []]):
     """``Sets().SubsetsOfSize(k)``: the sets of subsets of one size ``k``, a narrowing of ``Sets()``; ``(X)`` constructs the subsets of ``X`` of size ``k``."""
 
+    ObjectType = SizedSubsetsObject
+
+    class ElementType:
+        """A generalized element of a set of fixed-size subsets."""
+
+    class MorphismType:
+        """A map between sets of fixed-size subsets."""
+
     def __init__(self, ambient: Category[[Rule], []], size: int) -> None:
         assert size >= 0
         self._size = size
-        super().__init__(ambient, f"SubsetsOfSize({size})", {Role.OBJECT: SizedSubsetsRole}, ())
+        super().__init__(ambient, f"SubsetsOfSize({size})", ())
 
     def size(self) -> CardinalObject:
         return Cardinal()(self._size)
@@ -129,10 +136,18 @@ class SizedSubsetsCategory(PropertySubcategory[[Rule], []]):
 class FiniteSubsetsCategory(PropertySubcategory[[Rule], []]):
     """``Sets().FiniteSubsets()``: the sets of finite subsets of a set, a narrowing of ``Sets()``; owns their construction and enumeration engines."""
 
+    ObjectType = FiniteSubsetsObject
+
+    class ElementType:
+        """A generalized element of a set of finite subsets."""
+
+    class MorphismType:
+        """A map between sets of finite subsets."""
+
     def __init__(self, ambient: Category[[Rule], []]) -> None:
         self._engines: MonoDict = MonoDict()
         self._sizes: MonoDict = MonoDict()
-        super().__init__(ambient, "FiniteSubsets", {Role.OBJECT: FiniteSubsetsRole}, ())
+        super().__init__(ambient, "FiniteSubsets", ())
 
     # -- construction -----------------------------------------------------------------
 
@@ -239,7 +254,7 @@ class FiniteSubsetsCategory(PropertySubcategory[[Rule], []]):
         return self.subset_at(subsets, subsets.point(frozenset(self._engines[subsets].unrank(_position(position)))))
 
 
-class FinitelySupportedFunctionsRole(ObjectOfCategory):
+class FinitelySupportedFunctionsObject:
     """The local object role of ``Sets().FinitelySupportedFunctions()``: the retained index set, value set, and basepoint."""
 
     def index_set(self) -> SetObject:
@@ -255,9 +270,17 @@ class FinitelySupportedFunctionsRole(ObjectOfCategory):
 class FinitelySupportedFunctionsCategory(PropertySubcategory[[Rule], []]):
     """``Sets().FinitelySupportedFunctions()``: the sets ``X^(S)`` of finitely supported maps, a narrowing of ``Sets()``; owns their construction."""
 
+    ObjectType = FinitelySupportedFunctionsObject
+
+    class ElementType:
+        """A generalized element of a finitely supported function set."""
+
+    class MorphismType:
+        """A map between finitely supported function sets."""
+
     def __init__(self, ambient: Category[[Rule], []]) -> None:
         self._index_sets: MonoDict = MonoDict()
-        super().__init__(ambient, "FinitelySupportedFunctions", {Role.OBJECT: FinitelySupportedFunctionsRole}, ())
+        super().__init__(ambient, "FinitelySupportedFunctions", ())
 
     @cached_method(key=lambda self, index_set, basepoint: ((id(index_set), index_set), (id(basepoint), basepoint)))
     def __call__(self, index_set: SetObject, basepoint: SetElement) -> SetObject:

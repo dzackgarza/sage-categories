@@ -34,7 +34,6 @@ from sage_categories.cat.category import Category
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.decisions import Decision
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.roles import ObjectOfCategory, Role
 from sage_categories.sets.elements import Datum, SetElement
 from sage_categories.sets.exponentials import Function, function_set
 from sage_categories.sets.maps import Rule
@@ -46,7 +45,7 @@ if TYPE_CHECKING:
 __all__ = ["PowerObjectsCategory"]
 
 
-class PowerObjectRole(ObjectOfCategory):
+class PowerObject:
     """The local object role of ``Sets().PowerObjects()``: the function set ``2 ** X`` with its subset constructions."""
 
     def base_set(self) -> SetObject:
@@ -86,8 +85,16 @@ class PowerObjectRole(ObjectOfCategory):
 class PowerObjectsCategory(PropertySubcategory[[Rule], []]):
     """``Sets().PowerObjects()``: the power objects ``2 ** X``, a narrowing of ``Sets()`` retaining each base set."""
 
+    ObjectType = PowerObject
+
+    class ElementType:
+        """A generalized element of a power object."""
+
+    class MorphismType:
+        """A map between power objects."""
+
     def __init__(self, ambient: Category[[Rule], []]) -> None:
-        super().__init__(ambient, "PowerObjects", {Role.OBJECT: PowerObjectRole}, ())
+        super().__init__(ambient, "PowerObjects", ())
 
     def __call__(self, base_set: SetObject) -> SetObject:
         """``2 ** X``: the function set ``[1] ** X`` refined here, retaining ``X``."""

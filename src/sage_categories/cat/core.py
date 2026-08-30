@@ -33,6 +33,8 @@ the isofibration condition holds.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from sage_categories.cat.category import Assignment, Category, OnMorphism, OnObject
 from sage_categories.cat.declarations import Groupoids
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
@@ -40,7 +42,9 @@ from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategor
 from sage_categories.kernel.decisions import Decision
 from sage_categories.kernel.predicates import Proposition, ask
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
+
+if TYPE_CHECKING:
+    from sage_categories.cat.category import CategoryOfCategories
 
 __all__ = ["Core", "CoreCategory", "CoreFixedEndpointCategory", "CoreMorphismCategory", "GroupoidsCategory", "U", "epsilon"]
 
@@ -56,13 +60,13 @@ class GroupoidsCategory(Category[[OnObject, OnMorphism], [Assignment]]):
     # (POL-CAT-057).  That the objects here are categories is carried by ``U``, the
     # inclusion this category selects: a selected structure functor is what makes this
     # class inherit ``Cat()``'s compiled object class (POL-CAT-053, POL-KERNEL-028).
-    class ObjectType(ObjectOfCategory):
+    class ObjectType:
         """A groupoid, which is a category."""
 
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A point ``* -> G`` of a groupoid, whose value is an object of it."""
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """A functor between two groupoids."""
 
     def structure_functors(self) -> tuple[Functor, ...]:
@@ -75,13 +79,13 @@ class GroupoidsCategory(Category[[OnObject, OnMorphism], [Assignment]]):
 class CoreCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, TwoMorphismData]):
     """``C.Core()``: the objects of ``C`` with its isomorphisms as morphisms."""
 
-    class ObjectType(ObjectOfCategory):
+    class ObjectType:
         """An object of ``C``: the core has every one of them, as the same value."""
 
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A generalized element ``t: T -> X`` whose defining morphism is an isomorphism, since those are the morphisms of the core."""
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """An isomorphism of ``C``: the core narrows the morphisms and nothing else."""
 
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData]) -> None:
@@ -99,27 +103,41 @@ class CoreCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Two
     def morphism_category_type(self) -> type[CoreMorphismCategory]:
         return CoreMorphismCategory
 
-    def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         return self._ambient.membership_proposition(candidate)
 
     # -- morphisms: the isomorphisms of ``C``, as its own values (POL-MATH-037) ----------
 
-    def construct_morphism(self, domain: ObjectOfCategory, codomain: ObjectOfCategory, *args: MorphismData.args, **kwargs: MorphismData.kwargs) -> MorphismOfCategory:
+    def construct_morphism(
+        self,
+        domain: CategoryOfCategories.ElementType,
+        codomain: CategoryOfCategories.ElementType,
+        *args: MorphismData.args,
+        **kwargs: MorphismData.kwargs,
+    ) -> MorphismCategory.ObjectType:
         """``Mor(C.Core())(A, B)(data)``: the trusted constructor ``Mor(C)(A, B).Isomorphisms()(data)``."""
         return self._isomorphisms(domain, codomain)(*args, **kwargs)
 
-    def _identity_morphism_(self, member_object: ObjectOfCategory) -> MorphismOfCategory:
+    def _identity_morphism_(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
         """The identity of ``C``, which is an isomorphism."""
         return self._isomorphisms(self._ambient.morphism_category(1)(member_object, member_object).one())
 
-    def compose_morphisms(self, second: MorphismOfCategory, first: MorphismOfCategory) -> MorphismOfCategory:
+    def compose_morphisms(
+        self,
+        second: MorphismCategory.ObjectType,
+        first: MorphismCategory.ObjectType,
+    ) -> MorphismCategory.ObjectType:
         """The composite in ``C``, of two isomorphisms and so an isomorphism."""
         return self._isomorphisms(self._ambient.compose_morphisms(second, first))
 
-    def inverse_morphism(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
+    def inverse_morphism(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         return self._ambient.inverse_morphism(morphism)
 
-    def retain_inverses(self, forward: MorphismOfCategory, backward: MorphismOfCategory) -> None:
+    def retain_inverses(
+        self,
+        forward: MorphismCategory.ObjectType,
+        backward: MorphismCategory.ObjectType,
+    ) -> None:
         self._ambient.retain_inverses(forward, backward)
 
     def _chosen_hom_inhabited(self, hom_category: Category) -> Decision:
@@ -137,16 +155,16 @@ class CoreCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Two
 class CoreMorphismCategory(MorphismCategory):
     """``Mor(C.Core())``: a morphism of ``C`` is a member exactly when it is an isomorphism."""
 
-    class ObjectType(MorphismOfCategory):
+    class ObjectType:
         """An isomorphism of ``C``: the core narrows the morphisms and nothing else."""
 
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A generalized element of an isomorphism, read in ``Mor(C.Core())``."""
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """A 2-morphism between two isomorphisms of ``C``."""
 
-    def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         return self._base.isomorphisms().membership_proposition(candidate)
 
     def fixed_endpoint_type(self) -> type[CoreFixedEndpointCategory]:
@@ -168,13 +186,13 @@ class CoreFixedEndpointCategory(FixedEndpointCategory):
 
     # ``Mor(C.Core())(A, B)`` is by definition ``Mor(C)(A, B).Isomorphisms()``: the same
     # objects, so each body below is empty.
-    class ObjectType(ObjectOfCategory):
+    class ObjectType:
         """An isomorphism ``A -> B`` of ``C``."""
 
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A generalized element of such an isomorphism."""
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """A 2-morphism between two isomorphisms ``A -> B``."""
 
 
@@ -190,7 +208,7 @@ def _restricted(functor: Functor) -> Functor:
     return Fun(functor.domain().Core(), functor.codomain().Core())(functor.on_object, lambda isomorphism: _image(functor, isomorphism))
 
 
-def _image(functor: Functor, isomorphism: MorphismOfCategory) -> MorphismOfCategory:
+def _image(functor: Functor, isomorphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
     """``F(f)``, with ``F(f⁻¹)`` retained as its inverse, which places it in ``Mor(D).Isomorphisms()``."""
     image = functor.on_morphism(isomorphism)
     functor.codomain().retain_inverses(image, functor.on_morphism(isomorphism.inverse()))

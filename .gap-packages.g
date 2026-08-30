@@ -3,7 +3,7 @@
 BindGlobal("SAGE_CATEGORIES_InstallPackages", function()
 local InstallExactPackage, packages, package;
 
-# GAP PackageManager 1.6.3 provides exact package installation and dependency resolution.
+# GAP PackageManager provides exact package installation and dependency resolution.
 if LoadPackage("PackageManager") <> true then
     Error("PackageManager is required");
 fi;

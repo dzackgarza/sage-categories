@@ -20,9 +20,6 @@ from sage_categories.kernel.roles import (
     ElementOfObject,
     MorphismOfCategory,
     ObjectOfCategory,
-    Role,
-    kernel_base,
-    role_of,
 )
 
 if TYPE_CHECKING:
@@ -64,119 +61,6 @@ def _morphism_set() -> Query:
     return query
 
 
-def _written_class(runtime_class: type[CategoryPoint]) -> type[CategoryPoint]:
-    """The class a module's source wrote for this value, past what the kernel built over it.
-
-    ``place`` strengthens a value's class when its placement improves, building
-    ``dynamic_class(f"{declared.__name__}_with_category", (declared, role_class))`` with
-    the written class first (``kernel/refinement.py``).  So the written class is the first
-    one in the MRO that the kernel did not build.
-    """
-    return next(found for found in runtime_class.__mro__ if not found.__name__.endswith("_with_category"))
-
-
-def _universal_declaration(cls: type[CategoryDeclaration], role: Role) -> type[CategoryPoint] | None:
-    """``Cat()``'s declaration at ``role``, which every category class inherits.
-
-    Every category is an object of ``Cat()`` (``universe``), so ``Cat()``'s three
-    declarations state what a category, a point of one, and a functor are.  That is true
-    of every category and so distinguishes none: a body that names one says exactly what
-    an empty body says.
-
-    ``CategoryOfCategories`` is created before this module binds its name, and it is the
-    one class ``Cat()`` is not an ancestor of, so an unbound name and the exempt class are
-    the same case.
-    """
-    universe = globals().get("CategoryOfCategories")
-    return None if universe is None or cls is universe else vars(universe)[role.value]
-
-
-# The category class that wrote each declaration, and the kind it wrote it for.  A
-# declaration states one category's mathematics at one kind, so a second category naming
-# it at the same kind states that category's mathematics and not its own; the same class
-# at another kind is the level identity ``Mor(K).ObjectType = K.MorphismType``.  A kernel
-# role class is written by no category and is excluded: naming one says what an empty
-# declaration says, which ``Mor(C)`` does for its objects.
-_declaration_owners: dict[type[CategoryPoint], tuple[type[CategoryDeclaration], Role]] = {}
-
-
-def _kernel_declarations() -> frozenset[type[CategoryPoint]]:
-    return frozenset({*(kernel_base(role) for role in Role), CategoryPoint})
-
-
-def _require_declarations(cls: type[CategoryDeclaration]) -> None:
-    """Every category class writes its own three declarations, in its own body (POL-CAT-057).
-
-    Two questions, asked at the ``class`` statement because that is where an omission and
-    a borrowing both happen.  The first is whether the body names all three kinds.
-
-    The second is whether each named class states this category's mathematics.  A class
-    written for this category -- inline as a nested ``class`` statement, or above and
-    assigned -- does.  A class this one already inherits does not: naming it changes
-    nothing, so the body that names it and the body that names nothing state the same
-    thing, and a category deliberately silent at a kind cannot be told from one whose
-    author forgot the kind (``DeclaredCategory``).  Where a category adds no new
-    mathematics at a kind, the class it writes has an empty body, and that empty body is
-    the statement.
-
-    The four ways of inheriting a declaration are the Python base, ``Cat()``, another
-    category's declaration named here, and a declaration written over another
-    declaration.  A base is read off this class's own ancestry.  ``Cat()``'s three are
-    every category's, including those of a class that does not derive from
-    ``CategoryOfCategories``: the kernel compiles ``Cat()``'s declarations into the role
-    classes every value reaches, so naming one states nothing either.  Another category's
-    declaration, named at the same kind, carries that category's written body onto this
-    node when the kernel installs it (``compiler._install_written_body``); a
-    declaration standing on another carries the same body through a base, which is an
-    implementation base no structure functor supplied, so a declaration stands only on
-    its role's kernel class (POL-CAT-053, ``kernel/compiler.py``,
-    ``borrowed_declaration``).
-
-    Both questions are asked by identity, of the class object and of the ``Role``, never
-    of a module or a name: a declaration that moves module or is renamed is the same
-    declaration, and a namesake in another module is not.  The kind is part of the
-    question, because one written class does serve two kinds and must:
-    ``Mor(K).ObjectType`` *is* ``K.MorphismType`` (``AGENTS.md``, "Core categorical
-    architecture"), so ``Fun`` names ``Cat().MorphismType`` for its objects and states
-    that identity rather than borrowing a declaration.
-    """
-    missing = [role.value for role in Role if role.value not in vars(cls)]
-    assert not missing, (
-        f"{cls.__name__} writes no {' or '.join(missing)} declaration.  Every category class writes all three "
-        f"in its own body, and where it adds no new mathematics the class it writes has an empty body "
-        f"(POL-CAT-057)"
-    )
-    for role in Role:
-        declared = vars(cls)[role.value]
-        inherited = next((base for base in cls.__mro__[1:] if vars(base).get(role.value) is declared), None)
-        assert inherited is None, (
-            f"{cls.__name__}.{role.value} names {inherited.__name__}'s {role.value} declaration, which this class "
-            f"inherits and which therefore states nothing about this category.  Write this category's own class; "
-            f"where it adds no new mathematics its body is empty (POL-CAT-057)"
-        )
-        assert declared is not _universal_declaration(cls, role), (
-            f"{cls.__name__}.{role.value} names ``Cat()``'s {role.value} declaration, which every category class "
-            f"inherits and which therefore states nothing about this one.  Write this category's own class; where "
-            f"it adds no new mathematics its body is empty (POL-CAT-057)"
-        )
-        owner = _declaration_owners.get(declared)
-        assert owner is None or owner[1] is not role, (
-            f"{cls.__name__}.{role.value} names the {role.value} declaration of {owner[0].__name__}, whose "
-            f"mathematics it would state instead of its own.  Write this category's own class; where it adds no "
-            f"new mathematics its body is empty (POL-CAT-053, POL-CAT-057)"
-        )
-        borrowed = CategoryPoint._borrowed_declaration(declared)
-        assert borrowed is None, (
-            f"{cls.__name__}.{role.value} derives from {borrowed.__qualname__}, so it carries that category's "
-            f"body onto this one.  A declaration stands on its role's kernel class alone; the implementation "
-            f"bases come from the selected structure functors (POL-CAT-053, POL-CAT-057)"
-        )
-    for role in Role:
-        declared = vars(cls)[role.value]
-        if declared not in _kernel_declarations():
-            _declaration_owners.setdefault(declared, (cls, role))
-
-
 class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
     """The local ``Cat().ObjectType`` declaration."""
 
@@ -197,8 +81,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         runtime; those state no category and are not checked.
         """
         super().__init_subclass__()
-        if not CategoryPoint._building_role_class():
-            _require_declarations(cls)
+        CategoryPoint._register_role_declarations(cls, globals().get("CategoryOfCategories"))
         name = cls.__dict__.get("_implements")
         if name is not None:
             Cat().implement(name, cls)
@@ -286,22 +169,6 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         """The datum ``value`` was constructed with as an object of this category."""
         assert value in self._retained_data, f"{value!r} retains no datum of {self!r}"
         return self._retained_data[value]
-
-    def local_role_class(self, role: Role) -> type[CategoryPoint]:
-        """Return this category's written class for the requested implementation kind."""
-        return vars(_written_class(type(self)))[role.value]
-
-    def role_class(self, role: Role) -> type[CategoryPoint]:
-        """The compiled role class the kernel installed on this category value.
-
-        One name per kind: the declaration is the nested class of the category's Python
-        class and the compiled class is the attribute of the category value, which
-        shadows it.
-        """
-        return getattr(self, role.value)
-
-    def role_source(self, role: Role) -> tuple[Category[MorphismData, TwoMorphismData], Role]:
-        return self, role
 
     def has_ambient(self) -> bool:
         """Whether this category is a declared subcategory: one selected functor traces placement (POL-FUN-036)."""
@@ -409,8 +276,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
 
     def base_category(self) -> Category:
         """The category ``C`` such that this category is a subcategory of ``Mor(C)``."""
-        source, role = self.role_source(Role.OBJECT)
-        if role is Role.MORPHISM:
+        source, is_morphism = self._object_role_source()
+        if is_morphism:
             return source
         if self.has_ambient():
             return self.ambient().base_category()
@@ -1026,7 +893,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             functors").  Its domain and defining morphism are those of the ambient, which no
             selected route reaches from the subcategory.
             """
-            assert role_of(element) is Role.ELEMENT, f"{element!r} is not a point of an object"
+            assert element._is_element(), f"{element!r} is not a point of an object"
             if traces_placement(self):
                 parent = element.parent()
                 assert is_placed(parent, self.domain()) or parent in self.domain(), f"{element!r} is not a point of an object of {self.domain()!r}"
@@ -1469,7 +1336,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         from sage_categories.cat.points import PointCategory
         from sage_categories.kernel.refinement import refine
 
-        assert role_of(member) is Role.OBJECT, f"{member!r} is not an object of a category"
+        assert member._is_object(), f"{member!r} is not an object of a category"
         if member not in self._point_categories:
             point = PointCategory(member, targets)
             self._point_categories[member] = point

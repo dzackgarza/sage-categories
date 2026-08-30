@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, Generic, Self
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
@@ -18,6 +19,7 @@ __all__ = [
     "MorphismOfCategory",
     "ObjectOfCategory",
     "Role",
+    "building_role_classes",
     "category_of",
     "install_cat_element_root",
     "kernel_base",
@@ -31,20 +33,41 @@ class Role(Enum):
     MORPHISM = "MorphismType"
 
 
+_building_role_class = False
+
+
+@contextmanager
+def building_role_classes() -> Iterator[None]:
+    """Mark a class as kernel-built while Sage constructs one role class.
+
+    A compiled role class derives from the category declaration that supplies its
+    methods.  Python therefore calls that declaration's ``__init_subclass__`` even
+    though the compiled class states no new category and declares no roles.
+    """
+    global _building_role_class
+    previous, _building_role_class = _building_role_class, True
+    try:
+        yield
+    finally:
+        _building_role_class = previous
+
+
 class CategoryPoint:
     """The stable Python end of the compiled ``Cat().ElementType`` role."""
 
     @staticmethod
-    def _building_role_class() -> bool:
-        from sage_categories.kernel.compiler import building_role_class
+    def _register_role_declarations(
+        category_class: type[CategoryPoint],
+        universal_class: type[CategoryPoint] | None,
+    ) -> None:
+        if not _building_role_class:
+            _require_declarations(category_class, universal_class)
 
-        return building_role_class()
+    def _is_element(self) -> bool:
+        return role_of(self) is Role.ELEMENT
 
-    @staticmethod
-    def _borrowed_declaration(local: type[CategoryPoint]) -> type[CategoryPoint] | None:
-        from sage_categories.kernel.compiler import borrowed_declaration
-
-        return borrowed_declaration(local)
+    def _is_object(self) -> bool:
+        return role_of(self) is Role.OBJECT
 
     def __init__(self) -> None:
         from sage_categories.kernel.construction import active_construction_context
@@ -117,6 +140,22 @@ class ObjectOfCategory(CategoryPoint):
         from sage_categories.kernel.compiler import install_level_shift
 
         install_level_shift(self)
+
+    def local_role_class(self, role: Role) -> type[CategoryPoint]:
+        """Return the declaration written for one role of this category."""
+        return vars(_written_class(type(self)))[role.value]
+
+    def role_class(self, role: Role) -> type[CategoryPoint]:
+        """Return the compiled class installed for one role of this category."""
+        return getattr(self, role.value)
+
+    def role_source(self: Category, role: Role) -> tuple[Category, Role]:
+        """Return the category and role that own this role node."""
+        return self, role
+
+    def _object_role_source(self: Category) -> tuple[Category, bool]:
+        source, role = self.role_source(Role.OBJECT)
+        return source, role is Role.MORPHISM
 
     def __init__(self) -> None:
         self._initialize_placement()
@@ -254,6 +293,85 @@ _BASES: dict[Role, type[CategoryPoint]] = {
     Role.ELEMENT: ElementOfObject,
     Role.MORPHISM: MorphismOfCategory,
 }
+
+# A declaration can stand on one kernel role base or directly on ``object``.  Any
+# other base carries another category's written mathematics onto this role node.
+_DECLARATION_BASES = frozenset({*_BASES.values(), CategoryPoint, Generic, object})
+
+# One category owns a declaration at one role.  The same declaration can also name
+# the level identity ``Mor(K).ObjectType = K.MorphismType`` at a different role.
+_declaration_owners: dict[type[CategoryPoint], tuple[type[CategoryPoint], Role]] = {}
+
+
+def _written_class(runtime_class: type[CategoryPoint]) -> type[CategoryPoint]:
+    """Return the source-written class beneath a value's refinement classes."""
+    return next(found for found in runtime_class.__mro__ if not found.__name__.endswith("_with_category"))
+
+
+def _borrowed_declaration(local: type[CategoryPoint]) -> type[CategoryPoint] | None:
+    """Return the category declaration inherited by ``local``, if one exists."""
+    for base in local.__mro__[1:]:
+        if base in _DECLARATION_BASES:
+            return None
+        return base
+    return None
+
+
+def _require_declarations(
+    category_class: type[CategoryPoint],
+    universal_class: type[CategoryPoint] | None,
+) -> None:
+    """Require one local declaration for each category role (POL-CAT-053/057).
+
+    A category must state all three roles in its own class body.  An inherited
+    declaration, ``Cat()``'s universal declaration, or another category's
+    declaration states no local mathematics.  An empty local class is the exact
+    declaration when the category adds no operation at that role.
+
+    This check uses class and role identity.  A renamed declaration remains the
+    same declaration, while a namesake elsewhere remains distinct.  The role stays
+    part of the key because one class can state the categorical level identity
+    ``Mor(K).ObjectType = K.MorphismType``.
+    """
+    missing = [role.value for role in Role if role.value not in vars(category_class)]
+    assert not missing, (
+        f"{category_class.__name__} writes no {' or '.join(missing)} declaration.  Every category class writes all three "
+        "in its own body, and where it adds no new mathematics the class it writes has an empty body "
+        "(POL-CAT-057)"
+    )
+    for role in Role:
+        declared = vars(category_class)[role.value]
+        inherited = next(
+            (base for base in category_class.__mro__[1:] if vars(base).get(role.value) is declared),
+            None,
+        )
+        assert inherited is None, (
+            f"{category_class.__name__}.{role.value} names {inherited.__name__}'s {role.value} declaration, which this class "
+            f"inherits and which therefore states nothing about this category.  Write this category's own class; "
+            "where it adds no new mathematics its body is empty (POL-CAT-057)"
+        )
+        universal = None if universal_class is None or category_class is universal_class else vars(universal_class)[role.value]
+        assert declared is not universal, (
+            f"{category_class.__name__}.{role.value} names ``Cat()``'s {role.value} declaration, which every category class "
+            "inherits and which therefore states nothing about this one.  Write this category's own class; where "
+            "it adds no new mathematics its body is empty (POL-CAT-057)"
+        )
+        owner = _declaration_owners.get(declared)
+        assert owner is None or owner[1] is not role, (
+            f"{category_class.__name__}.{role.value} names the {role.value} declaration of {owner[0].__name__}, whose "
+            f"mathematics it would state instead of its own.  Write this category's own class; where it adds no "
+            "new mathematics its body is empty (POL-CAT-053, POL-CAT-057)"
+        )
+        borrowed = _borrowed_declaration(declared)
+        assert borrowed is None, (
+            f"{category_class.__name__}.{role.value} derives from {borrowed.__qualname__}, so it carries that category's "
+            "body onto this one.  A declaration stands on its role's kernel class alone; the implementation "
+            "bases come from the selected structure functors (POL-CAT-053, POL-CAT-057)"
+        )
+    for role in Role:
+        declared = vars(category_class)[role.value]
+        if declared not in _BASES.values() and declared is not CategoryPoint:
+            _declaration_owners.setdefault(declared, (category_class, role))
 
 
 def kernel_base(role: Role) -> type[CategoryPoint]:

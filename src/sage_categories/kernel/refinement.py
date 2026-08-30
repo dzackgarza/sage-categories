@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 from sage.structure.dynamic_class import dynamic_class
 
 import sage_categories.kernel.compiler as compiler
-from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, Role, role_of
+from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, Role, building_role_classes, role_of
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
@@ -114,7 +114,7 @@ def place(value: CategoryPoint, category: Category) -> None:
         value.__class__ = role_class
         return
     declared = type(value)
-    with compiler.building_role_classes():
+    with building_role_classes():
         value.__class__ = dynamic_class(
             f"{declared.__name__}_with_category",
             (declared, role_class),

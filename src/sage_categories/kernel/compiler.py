@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import inspect
-from collections.abc import Callable, Iterator
-from contextlib import contextmanager
+from collections.abc import Callable
 from types import CellType, FunctionType, GenericAlias
 from typing import TYPE_CHECKING, Concatenate, Generic, NamedTuple
 
@@ -43,6 +42,7 @@ from sage_categories.kernel.roles import (
     MorphismOfCategory,
     ObjectOfCategory,
     Role,
+    building_role_classes,
     install_cat_element_root,
     kernel_base,
 )
@@ -54,8 +54,6 @@ if TYPE_CHECKING:
 __all__ = [
     "Node",
     "SemanticCollisionError",
-    "building_role_class",
-    "building_role_classes",
     "compile_category",
     "install_level_shift",
     "install_on_declaration",
@@ -146,32 +144,6 @@ _ROLE_POSITIONS: dict[Role, int] = {
 }
 
 _COMPILE_ORDER = (Role.ELEMENT, Role.OBJECT, Role.MORPHISM)
-
-# Where a run of written declarations ends: the kernel's own chain, which every role class
-# reaches and which no category writes.
-_KERNEL_CLASSES = frozenset({*(kernel_base(role) for role in Role), CategoryPoint, object})
-
-# Whether the kernel is building a role class right now.  A role class over a category
-# class is a subclass of it, so it reaches that class's own ``__init_subclass__``; it
-# states no category and declares no roles (POL-CAT-057).
-_building_role_class = False
-
-
-def building_role_class() -> bool:
-    """Whether the class being created is one the kernel is building rather than one a module writes."""
-    return _building_role_class
-
-
-@contextmanager
-def building_role_classes() -> Iterator[None]:
-    """Mark the kernel's own class construction, so the declaration check skips what it builds."""
-    global _building_role_class
-    previous, _building_role_class = _building_role_class, True
-    try:
-        yield
-    finally:
-        _building_role_class = previous
-
 
 def node_key(current: Node) -> int:
     """The position of ``current`` in the total order the C3 merge is controlled by.
@@ -323,21 +295,6 @@ def _assert_no_semantic_collisions(*surfaces: type[CategoryPoint]) -> None:
                     f"{name!r} is declared by both {previous_node.category!r} and {runtime._current.category!r}, "
                     "which are incomparable; name the two mathematical operations distinctly"
                 )
-
-
-def borrowed_declaration(local: type[CategoryPoint]) -> type[CategoryPoint] | None:
-    """The declaration ``local`` derives from, or ``None`` when it stands only on its role's kernel class.
-
-    A written declaration states one category's mathematics and is installed on the class
-    of the one node it belongs to (``_install_written_body``).  Deriving one from another
-    would carry a second category's body onto that node, which is an implementation base
-    that no structure functor supplies (POL-CAT-053, ``kernel/roles.py``).
-    """
-    for base in local.__mro__[1:]:
-        if base is Generic or base in _KERNEL_CLASSES:
-            return None
-        return base
-    return None
 
 
 class _NodeRuntime(NamedTuple):

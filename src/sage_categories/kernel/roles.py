@@ -60,6 +60,9 @@ class CategoryPoint:
     def _is_element(self) -> bool:
         return role_of(self) is Role.ELEMENT
 
+    def _is_morphism(self) -> bool:
+        return role_of(self) is Role.MORPHISM
+
     def _is_object(self) -> bool:
         return role_of(self) is Role.OBJECT
 

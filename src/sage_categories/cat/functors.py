@@ -13,30 +13,32 @@ from sage_categories.cat.category import Assignment, Category, CategoryOfCategor
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import Axiom, Predicate, Proposition, ask
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
-from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, role_of
 
 __all__ = ["Fun", "Functor", "FunctorCategory", "FunctorProperty", "FunctorsCategory", "NaturalTransformation"]
 
 
-def identity_on_values(value: CategoryPoint) -> CategoryPoint:
+def identity_on_values(value: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
     """The object and morphism action of every subcategory monomorphism: the identity on the shared values (POL-FUN-027)."""
     return value
 
 
-def diagram_of(value: CategoryPoint) -> Functor:
+def diagram_of(value: CategoryOfCategories.ElementType) -> Functor:
     """Return the functor represented by a functor, object, or morphism value."""
     if is_placed(value, Fun):
         return value
-    if role_of(value) is Role.MORPHISM:
+    if value._is_morphism():
         return value.base_category().arrow_functor(value)
     return value.defining_morphism()
 
 
-def _defining_functor_equal(first: CategoryPoint, candidate: Any) -> Decision:
+def _defining_functor_equal(first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
     """Compare a retained diagram with the functor represented by a value."""
-    if is_placed(first, Fun) and not is_placed(candidate, Fun) and role_of(candidate) in (Role.OBJECT, Role.MORPHISM):
+    if not hasattr(candidate, "_is_object") or not hasattr(candidate, "_is_morphism"):
+        return Unknown
+    candidate_denotes = candidate._is_object() or candidate._is_morphism()
+    if is_placed(first, Fun) and not is_placed(candidate, Fun) and candidate_denotes:
         return True if first is diagram_of(candidate) else Unknown
-    if is_placed(candidate, Fun) and not is_placed(first, Fun) and role_of(first) in (Role.OBJECT, Role.MORPHISM):
+    if is_placed(candidate, Fun) and not is_placed(first, Fun) and (first._is_object() or first._is_morphism()):
         return True if candidate is diagram_of(first) else Unknown
     return Unknown
 
@@ -90,17 +92,17 @@ class FunctorProperties:
 class FunctorProperty(FunctorProperties, FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]]):
     """``Fun(C, D).P()``: functors ``C -> D`` with property ``P``; constructs one, and ``one()`` is ``1_C`` with ``P``."""
 
-    class ObjectType(MorphismOfCategory):
+    class ObjectType:
         """A functor ``C -> D`` with the property.
 
         Fullness, faithfulness and the rest are properties of the functor: they narrow
         which functors this category has and add nothing to one.
         """
 
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A point of such a functor."""
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """A natural transformation between two functors with the property."""
 
     def __call__(self, *args: OnObject | OnMorphism, **kwargs: OnObject | OnMorphism) -> Functor:
@@ -136,15 +138,17 @@ class FunctorProperty(FunctorProperties, FixedEndpointProperty[[OnObject, OnMorp
 denotes_diagram: Predicate = Predicate("denotes_diagram", 2, False)
 
 
-def _denotes_diagram_by_domain(candidate: CategoryPoint, functors: FunctorCategory) -> Decision:
+def _denotes_diagram_by_domain(candidate: CategoryOfCategories.ElementType, functors: FunctorCategory) -> Decision:
+    if not hasattr(candidate, "_is_object") or not hasattr(candidate, "_is_morphism"):
+        return False
     if is_placed(candidate, functors.ambient()):
         return ask(endpoints(candidate, functors.domain(), functors.codomain()))
-    if role_of(candidate) is Role.MORPHISM and functors.domain() is Cat().Simplex(1):
+    if candidate._is_morphism() and functors.domain() is Cat().Simplex(1):
         # A morphism of ``C`` is an object of ``Mor(C)``, and the diagram it denotes is its
         # arrow functor ``[1] -> C``: this is how the objects of ``Fun([1], C)`` are the
         # morphisms of ``C``.
         return is_subcategory(candidate.base_category(), functors.codomain())
-    if role_of(candidate) in (Role.OBJECT, Role.MORPHISM):
+    if candidate._is_object() or candidate._is_morphism():
         # Every object of a category ``K`` is a point ``* -> K``.  The parent is a
         # placement, so the question there is containment in the codomain, not identity
         # (POL-CAT-068, POL-FUN-027): a set refined into ``Sets().Finite()`` is still a
@@ -160,10 +164,12 @@ denotes_diagram.register_handler(_denotes_diagram_by_domain)
 denotes_functor: Predicate = Predicate("denotes_functor", 2, False)
 
 
-def _denotes_functor_by_domain(candidate: CategoryPoint, functors: FunctorsCategory) -> Decision:
+def _denotes_functor_by_domain(candidate: CategoryOfCategories.ElementType, functors: FunctorsCategory) -> Decision:
+    if not hasattr(candidate, "_is_object") or not hasattr(candidate, "_is_morphism"):
+        return False
     if is_placed(candidate, functors):
         return True
-    return role_of(candidate) in (Role.OBJECT, Role.MORPHISM) and candidate.defining_morphism().domain() in Cat()
+    return (candidate._is_object() or candidate._is_morphism()) and candidate.defining_morphism().domain() in Cat()
 
 
 denotes_functor.register_handler(_denotes_functor_by_domain)
@@ -186,7 +192,7 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
     C ... given by the morphism c_1 x_{c_2} c'_2 -> c'_2").
     """
 
-    class ObjectType(MorphismOfCategory):
+    class ObjectType:
         """A functor ``C -> D``, which is a morphism of ``Cat()``.
 
         For ``C = [1]`` the objects are the morphisms of ``D``, and those are objects of
@@ -194,10 +200,10 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
         ``diagram()`` is owned by the category and not by the object.
         """
 
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A point of a functor."""
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """A natural transformation ``F => G``."""
 
     def __init__(self, morphisms: MorphismCategory, domain: Category, codomain: Category) -> None:
@@ -207,10 +213,10 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
         self._finite_data: MonoDict = MonoDict()
         super().__init__(morphisms, domain, codomain)
 
-    def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         return denotes_diagram(candidate, self)
 
-    def diagram(self, value: CategoryPoint) -> Functor:
+    def diagram(self, value: CategoryOfCategories.ElementType) -> Functor:
         """The functor ``I -> C`` that a value of this category denotes: its point for ``I = *``, else ``diagram_of``."""
         if is_placed(value, self.ambient()):
             return value
@@ -219,7 +225,12 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
             return value.defining_morphism()
         return diagram_of(value)
 
-    def construct_morphism(self, source: CategoryPoint, target: CategoryPoint, assignment: Assignment) -> NaturalTransformation:
+    def construct_morphism(
+        self,
+        source: CategoryOfCategories.ElementType,
+        target: CategoryOfCategories.ElementType,
+        assignment: Assignment,
+    ) -> NaturalTransformation:
         """``Mor(Fun(I, C))(F, G)(assignment)``; for ``I = [1]`` the two components must form a commuting square."""
         walking_arrow = Cat().Simplex(1)
         if self.domain() is walking_arrow:
@@ -233,13 +244,13 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
 
     # -- diagrams (POL-FUN-029) -----------------------------------------------------
 
-    def evaluation(self, vertex: ObjectOfCategory) -> Functor:
+    def evaluation(self, vertex: CategoryOfCategories.ElementType) -> Functor:
         """``ev_i: Fun(I, C) -> C``, the evaluation at the object ``i`` of the shape."""
         from sage_categories.cat.diagrams import evaluation
 
         return evaluation(self, vertex)
 
-    def constant(self, value: ObjectOfCategory) -> Functor:
+    def constant(self, value: CategoryOfCategories.ElementType) -> Functor:
         """The constant diagram at an object of the codomain."""
         from sage_categories.cat.diagrams import constant
 
@@ -248,7 +259,7 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
     def has_constant_value(self, diagram: Functor) -> bool:
         return diagram in self._constant_values
 
-    def constant_value(self, diagram: Functor) -> ObjectOfCategory:
+    def constant_value(self, diagram: Functor) -> CategoryOfCategories.ElementType:
         """The object at which a retained constant diagram is constant."""
         assert diagram in self._constant_values, f"{diagram!r} is not a retained constant diagram"
         return self._constant_values[diagram]
@@ -261,18 +272,18 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
 
     # -- ``Fun([1], C)``: its finite data and its fibration lifts (POL-FUN-029, specs/functor.md, "Diagram shapes and universal constructions") -----------
 
-    def object_set(self) -> ObjectOfCategory:
+    def object_set(self) -> CategoryOfCategories.ElementType:
         """For ``I = [1]``: the morphism set of ``C``, since the objects are the morphisms of ``C``."""
         assert self.domain() is Cat().Simplex(1), f"{self!r} declares no set of objects"
         morphisms = ask(self.codomain().morphism_set())
         assert morphisms is not Unknown, f"{self.codomain()!r} chooses no finite set of morphisms"
         return morphisms
 
-    def object_at(self, point: ElementOfObject) -> MorphismOfCategory:
+    def object_at(self, point: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
         assert self.domain() is Cat().Simplex(1), f"{self!r} declares no set of objects"
         return self.codomain().morphism_at(point)
 
-    def _chosen_morphism_set(self) -> ObjectOfCategory | UnknownClass:
+    def _chosen_morphism_set(self) -> CategoryOfCategories.ElementType | UnknownClass:
         """For ``I = [1]``: the finite set of commuting squares, when ``C`` chooses a finite set of morphisms."""
         from sage_categories.cat.diagrams import square_set
 
@@ -280,7 +291,7 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
             return Unknown
         return square_set(self)
 
-    def morphism_at(self, point: ElementOfObject) -> NaturalTransformation:
+    def morphism_at(self, point: CategoryOfCategories.ElementType) -> NaturalTransformation:
         from sage_categories.cat.diagrams import square_at
 
         return square_at(self, point)
@@ -302,14 +313,14 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     # axioms below write their applications onto it.
     ObjectType = CategoryOfCategories.MorphismType
 
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A generalized element ``t: T -> F`` of a functor: a natural transformation into it.
 
         ``Cat()`` is the one category here whose 2-morphisms are not all identities, so
         these are the substantive points of a morphism category (``MorphismCategory.ElementType``).
         """
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """A natural transformation: the 2-morphisms of ``Cat()``.
 
         Its domain and codomain are the objects of ``Fun(I, C)`` as supplied (a functor,
@@ -328,7 +339,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         def target_functor(self) -> Functor:
             return diagram_of(self.codomain())
 
-        def component(self, member_object: ObjectOfCategory) -> MorphismOfCategory:
+        def component(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
             """``eta_X: F(X) -> G(X)``, one morphism per object; naturality is a trusted declaration (POL-MATH-036).
 
             A natural transformation has one component at each object, so the assignment runs
@@ -365,7 +376,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     def fixed_endpoint_type(self) -> type[FunctorCategory]:
         return FunctorCategory
 
-    def __call__(self, shape: ObjectOfCategory, target: ObjectOfCategory | Functor) -> FunctorCategory | Functor:
+    def __call__(self, shape: Category, target: Category | Functor) -> FunctorCategory | Functor:
         """``Fun(I, D)`` is the functor category; ``Fun(I, F)`` for a functor ``F: D -> E`` is ``(-) ** I`` applied to it.
 
         The exponential ``D ** I = Fun(I, D)`` is a functor in ``D``, so the second
@@ -377,7 +388,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             return self.base_category().exponential_on_morphism(shape, target)
         return super().__call__(shape, target)
 
-    def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         """A functor, or a point of a category with a category as domain denoting its defining functor (specs/functor.md, "The Mor(n, C) tower", specs/functor.md, "Slices and coslices")."""
         return denotes_functor(candidate, self)
 
@@ -525,13 +536,19 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
 
     # -- limits and colimits of functors, pointwise (specs/functor.md, "Diagram shapes and universal constructions"; ``cat/diagrams.py``) -----------
 
-    def limit_construction(self, shape: Category) -> Callable[[Functor], ObjectOfCategory]:
+    def limit_construction(
+        self,
+        shape: Category,
+    ) -> Callable[[Functor], CategoryOfCategories.ElementType]:
         """``Fun(I, C)`` has the ``J``-limits that ``C`` has, computed by evaluation."""
         from sage_categories.cat.diagrams import pointwise_limit
 
         return pointwise_limit
 
-    def colimit_construction(self, shape: Category) -> Callable[[Functor], ObjectOfCategory]:
+    def colimit_construction(
+        self,
+        shape: Category,
+    ) -> Callable[[Functor], CategoryOfCategories.ElementType]:
         from sage_categories.cat.diagrams import pointwise_colimit
 
         return pointwise_colimit

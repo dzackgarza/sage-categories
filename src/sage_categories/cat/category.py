@@ -15,6 +15,7 @@ from sage.structure.coerce_dict import MonoDict, TripleDict
 import sage_categories.kernel.compiler as compiler
 from sage_categories.cat.equality import equality_predicate
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
+from sage_categories.kernel.functor_cache import FunctorImageCache
 from sage_categories.kernel.predicates import AppliedQuery, Axiom, Predicate, Proposition, Query, ask
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine, traces_placement
 from sage_categories.kernel.roles import (
@@ -1019,13 +1020,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         def __init__(self, data: FunctorData) -> None:
             self._on_object = data.on_object
             self._on_morphism = data.on_morphism
-            # ``F(X)`` and ``F(f)`` are one value each, not a fresh one per call: a functor
-            # assigns each object and each morphism of its domain a single image
-            # (POL-CAT-012, POL-FUN-001).  The images belong to this functor, so two
-            # functors with the same endpoints keep separate ones (``specs/resolution.md``,
-            # "Constructor agreement and functor images").
-            self._object_images: MonoDict = MonoDict()
-            self._morphism_images: MonoDict = MonoDict()
+            self._image_cache = FunctorImageCache()
             super().__init__()
 
         # The admission condition is the one the image construction needs.  A retained
@@ -1039,11 +1034,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
         def on_object(self, member_object: ObjectOfCategory) -> ObjectOfCategory:
             """The image of an object of the domain, one value per object."""
-            if member_object in self._object_images:
-                return self._object_images[member_object]
-            image = self._construct_object_image(member_object)
-            self._object_images[member_object] = image
-            return image
+            return self._image_cache.object_image(member_object, self._construct_object_image)
 
         def _construct_object_image(self, member_object: ObjectOfCategory) -> ObjectOfCategory:
             if self in _object_constructor_conversions:
@@ -1064,11 +1055,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
         def on_morphism(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
             """The image of a morphism of the domain, one value per morphism."""
-            if morphism in self._morphism_images:
-                return self._morphism_images[morphism]
-            image = self._construct_morphism_image(morphism)
-            self._morphism_images[morphism] = image
-            return image
+            return self._image_cache.morphism_image(morphism, self.on_object, self._construct_morphism_image)
 
         def _construct_morphism_image(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
             morphisms = self.domain().morphism_category(1)
@@ -1226,12 +1213,9 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             datum: TargetDatum,
         ) -> ObjectOfCategory:
             """This functor's image of an object, constructed once from the target constructor datum."""
-            if source.canonical_image in self._object_images:
-                return self._object_images[source.canonical_image]
             target = self.codomain()
             image = target.role_class(Role.OBJECT)(category=target, data=datum)
-            self._object_images[source.canonical_image] = image
-            return image
+            return self._image_cache.retain_object(source.canonical_image, image)
 
         def _image_from_morphism_data[Value: MorphismOfCategory, SourceDatum, TargetDatum](
             self,
@@ -1239,17 +1223,21 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             datum: TargetDatum,
         ) -> MorphismOfCategory:
             """This functor's image of a morphism, constructed once between the images of its endpoints."""
-            if source.canonical_image in self._morphism_images:
-                return self._morphism_images[source.canonical_image]
             target = self.codomain()
+            domain_image = self.on_object(source.identity.domain)
+            codomain_image = self.on_object(source.identity.codomain)
             image = target.role_class(Role.MORPHISM)(
                 target.morphism_category(1),
-                self.on_object(source.identity.domain),
-                self.on_object(source.identity.codomain),
+                domain_image,
+                codomain_image,
                 datum,
             )
-            self._morphism_images[source.canonical_image] = image
-            return image
+            return self._image_cache.retain_morphism(
+                source.canonical_image,
+                domain_image,
+                codomain_image,
+                image,
+            )
 
         def object_constructor_input[
             SourceValue: ObjectOfCategory,

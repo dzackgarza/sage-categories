@@ -29,7 +29,7 @@ constructed uniformly by ``Cat()(labels, generators, relations)``.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sage.structure.coerce_dict import MonoDict
 
@@ -40,7 +40,9 @@ from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import Predicate, Proposition, ask
 from sage_categories.kernel.refinement import is_placed
-from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
+
+if TYPE_CHECKING:
+    from sage_categories.cat.category import CategoryOfCategories
 
 __all__ = ["Discrete", "DiscreteCategory", "Thin", "ThinCategory", "index_set_of", "is_discrete", "omega"]
 
@@ -52,59 +54,59 @@ __all__ = ["Discrete", "DiscreteCategory", "Thin", "ThinCategory", "index_set_of
 class DiscreteObjectData:
     """The local state introduced by a discrete-category object."""
 
-    point: ElementOfObject
+    point: CategoryOfCategories.ElementType
 
 
 class DiscreteCategory(Category[[], []]):
     """The discrete category on a set."""
 
-    class ObjectType(ObjectOfCategory):
+    class ObjectType:
         """An object of ``Discrete(S)``: a point of ``S``."""
 
         def __init__(self, data: DiscreteObjectData) -> None:
             self._point = data.point
             super().__init__()
 
-        def point(self) -> ElementOfObject:
+        def point(self) -> CategoryOfCategories.ElementType:
             """The point of the index set that this object is."""
             return self._point
 
         def __repr__(self) -> str:
             return f"{self._point!r} in {self.category()!r}"
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """The only morphisms of a discrete category: identities."""
 
         def __repr__(self) -> str:
             return f"identity of {self.domain()!r}"
 
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A generalized element of a point; no local operation."""
 
-    def __init__(self, index_set: ObjectOfCategory) -> None:
+    def __init__(self, index_set: CategoryOfCategories.ElementType) -> None:
         self._index_set = index_set
         self._objects: MonoDict = MonoDict()
         super().__init__()
         self._equality.register_handler(self._equal)
 
-    def index_set(self) -> ObjectOfCategory:
+    def index_set(self) -> CategoryOfCategories.ElementType:
         return self._index_set
 
     # The objects are the points of ``S`` and the morphisms their identities (specs/functor.md, "Diagram shapes and universal constructions").
 
-    def object_set(self) -> ObjectOfCategory:
+    def object_set(self) -> CategoryOfCategories.ElementType:
         return self._index_set
 
-    def object_at(self, point: ElementOfObject) -> DiscreteCategory.ObjectType:
+    def object_at(self, point: CategoryOfCategories.ElementType) -> DiscreteCategory.ObjectType:
         return self(point)
 
-    def object_point(self, member_object: DiscreteCategory.ObjectType) -> ElementOfObject:
+    def object_point(self, member_object: DiscreteCategory.ObjectType) -> CategoryOfCategories.ElementType:
         return member_object.point()
 
-    def _chosen_morphism_set(self) -> ObjectOfCategory | UnknownClass:
+    def _chosen_morphism_set(self) -> CategoryOfCategories.ElementType | UnknownClass:
         return self._index_set
 
-    def morphism_at(self, point: ElementOfObject) -> DiscreteCategory.MorphismType:
+    def morphism_at(self, point: CategoryOfCategories.ElementType) -> DiscreteCategory.MorphismType:
         vertex = self(point)
         return self.morphism_category(1)(vertex, vertex).one()
 
@@ -112,7 +114,7 @@ class DiscreteCategory(Category[[], []]):
         """No morphism beyond the identities: the empty generating family."""
         return ()
 
-    def __call__(self, point: ElementOfObject) -> DiscreteCategory.ObjectType:
+    def __call__(self, point: CategoryOfCategories.ElementType) -> DiscreteCategory.ObjectType:
         """The object of ``Discrete(S)`` at a point of ``S``, one object per retained point."""
         assert point in self._index_set, f"{point!r} is not a point of {self._index_set!r}"
         if point not in self._objects:
@@ -131,7 +133,7 @@ class DiscreteCategory(Category[[], []]):
         assert ask(first.codomain() == second.domain())
         return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain())
 
-    def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
+    def _equal(self, first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
         """Objects are equal when their points are; morphisms when their domains are."""
         if first in self and candidate in self:
             return ask(first.point() == candidate.point())
@@ -151,7 +153,7 @@ _index_sets: MonoDict = MonoDict()
 _discrete_functors: MonoDict = MonoDict()
 
 
-def _discrete_on_object(index_set: ObjectOfCategory) -> DiscreteCategory:
+def _discrete_on_object(index_set: CategoryOfCategories.ElementType) -> DiscreteCategory:
     if index_set not in _discrete_categories:
         shape = DiscreteCategory(index_set)
         _discrete_categories[index_set] = shape
@@ -159,7 +161,7 @@ def _discrete_on_object(index_set: ObjectOfCategory) -> DiscreteCategory:
     return _discrete_categories[index_set]
 
 
-def _discrete_on_morphism(set_map: MorphismOfCategory) -> Functor:
+def _discrete_on_morphism(set_map: MorphismCategory.ObjectType) -> Functor:
     if set_map not in _discrete_functors:
         source, target = _discrete_on_object(set_map.domain()), _discrete_on_object(set_map.codomain())
         _discrete_functors[set_map] = Fun(source, target)(
@@ -180,7 +182,7 @@ def is_discrete(shape: Category) -> bool:
     return shape in _index_sets
 
 
-def index_set_of(shape: Category) -> ObjectOfCategory:
+def index_set_of(shape: Category) -> CategoryOfCategories.ElementType:
     """The set ``S`` with ``shape is Discrete(S)``."""
     assert is_discrete(shape), f"{shape!r} is not Discrete(S) for a set S"
     return _index_sets[shape]
@@ -193,14 +195,14 @@ def index_set_of(shape: Category) -> ObjectOfCategory:
 class ThinObjectData:
     """The local state introduced by a thin-category object."""
 
-    point: ElementOfObject
+    point: CategoryOfCategories.ElementType
 
 
 # ``comparable(f, T)``: the endpoints of the comparison ``f`` of ``T`` satisfy ``T``'s order.
 comparable = Predicate("comparable", 2, False)
 
 
-def _comparable_by_order(candidate: CategoryPoint, thin: Category) -> Decision:
+def _comparable_by_order(candidate: CategoryOfCategories.ElementType, thin: Category) -> Decision:
     if not is_placed(candidate, thin.morphism_category(1)):
         return Unknown
     return ask(thin.order()(candidate.domain().point(), candidate.codomain().point()))
@@ -212,45 +214,45 @@ comparable.register_handler(_comparable_by_order)
 class ThinMorphisms(MorphismCategory[[], []]):
     """``Mor(Thin(P, leq))``: a comparison is a member when its order proposition holds."""
 
-    class ObjectType(MorphismOfCategory):
+    class ObjectType:
         """A comparison ``x <= y`` of ``Thin(P, leq)``, which is a morphism of it."""
 
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A generalized element of a comparison: its identity 2-morphism, a thin category being a 1-category."""
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """The identity 2-morphism of a comparison: a thin category has no other 2-morphism."""
 
-    def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         return member(candidate, self) & comparable(candidate, self._base)
 
 
 class ThinCategory(Category[[], []]):
     """The thin category of a preorder ``(P, leq)``."""
 
-    class ObjectType(ObjectOfCategory):
+    class ObjectType:
         """An object of ``Thin(P, leq)``: a point of ``P``."""
 
         def __init__(self, data: ThinObjectData) -> None:
             self._point = data.point
             super().__init__()
 
-        def point(self) -> ElementOfObject:
+        def point(self) -> CategoryOfCategories.ElementType:
             return self._point
 
         def __repr__(self) -> str:
             return f"{self._point!r} in {self.category()!r}"
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """The unique morphism ``x -> y`` of a thin category, present when ``x <= y``."""
 
         def __repr__(self) -> str:
             return f"{self.domain()!r} <= {self.codomain()!r}"
 
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A generalized element of a point; no local operation."""
 
-    def __init__(self, carrier: ObjectOfCategory, order: Predicate) -> None:
+    def __init__(self, carrier: CategoryOfCategories.ElementType, order: Predicate) -> None:
         assert order.arity() == 2
         self._carrier = carrier
         self._order = order
@@ -258,7 +260,7 @@ class ThinCategory(Category[[], []]):
         super().__init__()
         self._equality.register_handler(self._equal)
 
-    def carrier(self) -> ObjectOfCategory:
+    def carrier(self) -> CategoryOfCategories.ElementType:
         return self._carrier
 
     def order(self) -> Predicate:
@@ -269,16 +271,16 @@ class ThinCategory(Category[[], []]):
 
     # The objects are the points of ``P``; no finite family of comparisons is chosen.
 
-    def object_set(self) -> ObjectOfCategory:
+    def object_set(self) -> CategoryOfCategories.ElementType:
         return self._carrier
 
-    def object_at(self, point: ElementOfObject) -> ThinCategory.ObjectType:
+    def object_at(self, point: CategoryOfCategories.ElementType) -> ThinCategory.ObjectType:
         return self(point)
 
-    def object_point(self, member_object: ThinCategory.ObjectType) -> ElementOfObject:
+    def object_point(self, member_object: ThinCategory.ObjectType) -> CategoryOfCategories.ElementType:
         return member_object.point()
 
-    def __call__(self, point: ElementOfObject) -> ThinCategory.ObjectType:
+    def __call__(self, point: CategoryOfCategories.ElementType) -> ThinCategory.ObjectType:
         """The object at a point of ``P``, one object per retained point."""
         assert point in self._carrier, f"{point!r} is not a point of {self._carrier!r}"
         if point not in self._objects:
@@ -297,7 +299,7 @@ class ThinCategory(Category[[], []]):
         assert ask(first.codomain() == second.domain())
         return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain())
 
-    def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
+    def _equal(self, first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
         if first in self and candidate in self:
             return ask(first.point() == candidate.point())
         morphisms = self.morphism_category(1)
@@ -309,7 +311,7 @@ class ThinCategory(Category[[], []]):
         return f"Thin({self._carrier!r})"
 
 
-def Thin(carrier: ObjectOfCategory, order: Predicate) -> ThinCategory:
+def Thin(carrier: CategoryOfCategories.ElementType, order: Predicate) -> ThinCategory:
     """Return the thin category of the supplied set and order predicate."""
     assert carrier in Sets
     return ThinCategory(carrier, order)

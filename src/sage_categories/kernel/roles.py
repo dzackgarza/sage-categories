@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
+    from sage_categories.cat.functors import Functor
+    from sage_categories.kernel.functor_cache import FunctorImageCache
     from sage_categories.kernel.predicates import AppliedPredicate, Proposition
 
 __all__ = [
@@ -30,6 +33,18 @@ class Role(Enum):
 
 class CategoryPoint:
     """The stable Python end of the compiled ``Cat().ElementType`` role."""
+
+    @staticmethod
+    def _building_role_class() -> bool:
+        from sage_categories.kernel.compiler import building_role_class
+
+        return building_role_class()
+
+    @staticmethod
+    def _borrowed_declaration(local: type[CategoryPoint]) -> type[CategoryPoint] | None:
+        from sage_categories.kernel.compiler import borrowed_declaration
+
+        return borrowed_declaration(local)
 
     def __init__(self) -> None:
         from sage_categories.kernel.construction import active_construction_context
@@ -82,6 +97,27 @@ class CategoryPoint:
 class ObjectOfCategory(CategoryPoint):
     """An object of a category: a point ``* -> C`` of it."""
 
+    @classmethod
+    def _construct_category_singleton(cls) -> Self:
+        from sage_categories.kernel.compiler import construct_category_singleton
+
+        return construct_category_singleton(cls)
+
+    def _compile_category(self: Category, functors: tuple[Functor, ...]) -> None:
+        from sage_categories.kernel.compiler import compile_category
+
+        compile_category(self, functors)
+
+    def _recompile_category(self: Category, functors: tuple[Functor, ...]) -> None:
+        from sage_categories.kernel.compiler import recompile_category
+
+        recompile_category(self, functors)
+
+    def _install_level_shift(self: Category) -> None:
+        from sage_categories.kernel.compiler import install_level_shift
+
+        install_level_shift(self)
+
     def __init__(self) -> None:
         self._initialize_placement()
         super().__init__()
@@ -130,6 +166,28 @@ class MorphismOfCategory(ObjectOfCategory):
     context is the morphism one, which carries the two endpoints the object context does
     not.
     """
+
+    _image_cache: FunctorImageCache
+
+    def _initialize_functor_image_cache(self) -> None:
+        from sage_categories.kernel.functor_cache import FunctorImageCache
+
+        self._image_cache = FunctorImageCache()
+
+    def _cached_object_image(
+        self,
+        source: ObjectOfCategory,
+        construct: Callable[[ObjectOfCategory], ObjectOfCategory],
+    ) -> ObjectOfCategory:
+        return self._image_cache.object_image(source, construct)
+
+    def _cached_morphism_image(
+        self,
+        source: MorphismOfCategory,
+        on_object: Callable[[ObjectOfCategory], ObjectOfCategory],
+        construct: Callable[[MorphismOfCategory], MorphismOfCategory],
+    ) -> MorphismOfCategory:
+        return self._image_cache.morphism_image(source, on_object, construct)
 
     def _initialize_placement(self) -> None:
         from sage_categories.kernel.construction import active_morphism_context

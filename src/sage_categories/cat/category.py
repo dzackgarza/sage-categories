@@ -11,10 +11,8 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal, overload
 from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict, TripleDict
 
-import sage_categories.kernel.compiler as compiler
 from sage_categories.cat.equality import equality_predicate
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
-from sage_categories.kernel.functor_cache import FunctorImageCache
 from sage_categories.kernel.predicates import AppliedQuery, Axiom, Predicate, Proposition, Query, ask
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine, traces_placement
 from sage_categories.kernel.roles import (
@@ -167,7 +165,7 @@ def _require_declarations(cls: type[CategoryDeclaration]) -> None:
             f"mathematics it would state instead of its own.  Write this category's own class; where it adds no "
             f"new mathematics its body is empty (POL-CAT-053, POL-CAT-057)"
         )
-        borrowed = compiler.borrowed_declaration(declared)
+        borrowed = CategoryPoint._borrowed_declaration(declared)
         assert borrowed is None, (
             f"{cls.__name__}.{role.value} derives from {borrowed.__qualname__}, so it carries that category's "
             f"body onto this one.  A declaration stands on its role's kernel class alone; the implementation "
@@ -199,7 +197,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         runtime; those state no category and are not checked.
         """
         super().__init_subclass__()
-        if not compiler.building_role_class():
+        if not CategoryPoint._building_role_class():
             _require_declarations(cls)
         name = cls.__dict__.get("_implements")
         if name is not None:
@@ -242,7 +240,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         self._ambient_monomorphism = next((functor for functor in functors if traces_placement(functor)), None)
         self._ambient_category = None if self._ambient_monomorphism is None else self._ambient_monomorphism.codomain()
         self._ordinal = next(_category_ordinals)
-        compiler.compile_category(self, functors)
+        self._compile_category(functors)
         from sage_categories.kernel.refinement import place
 
         place(self, universe)
@@ -273,7 +271,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         functors = tuple(self.structure_functors())
         self._ambient_monomorphism = next((functor for functor in functors if traces_placement(functor)), None)
         self._ambient_category = None if self._ambient_monomorphism is None else self._ambient_monomorphism.codomain()
-        compiler.recompile_category(self, functors)
+        self._recompile_category(functors)
 
     def structure_functors(self) -> tuple[Functor, ...]:
         """The selected structural graph: immediate functors, in preference order (POL-CAT-016, POL-FUN-003)."""
@@ -985,7 +983,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         def __init__(self, data: FunctorData) -> None:
             self._on_object = data.on_object
             self._on_morphism = data.on_morphism
-            self._image_cache = FunctorImageCache()
+            self._initialize_functor_image_cache()
             super().__init__()
 
         # The admission condition is the one the image construction needs.  A retained
@@ -999,7 +997,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
         def on_object(self, member_object: ObjectOfCategory) -> ObjectOfCategory:
             """The image of an object of the domain, one value per object."""
-            return self._image_cache.object_image(member_object, self._construct_object_image)
+            return self._cached_object_image(member_object, self._construct_object_image)
 
         def _construct_object_image(self, member_object: ObjectOfCategory) -> ObjectOfCategory:
             assert member_object in self.domain(), f"{member_object!r} is not an object of {self.domain()!r}"
@@ -1007,7 +1005,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
         def on_morphism(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
             """The image of a morphism of the domain, one value per morphism."""
-            return self._image_cache.morphism_image(morphism, self.on_object, self._construct_morphism_image)
+            return self._cached_morphism_image(morphism, self.on_object, self._construct_morphism_image)
 
         def _construct_morphism_image(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
             morphisms = self.domain().morphism_category(1)
@@ -1476,7 +1474,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             point = PointCategory(member, targets)
             self._point_categories[member] = point
             refine(member, point)
-            compiler.install_level_shift(point)
+            point._install_level_shift()
         return self._point_categories[member]
 
     def retained_point(self, member: CategoryPoint) -> PointCategory | None:
@@ -1559,7 +1557,7 @@ def bootstrap() -> None:
     lookup registry.
     """
     global _CAT, Category, Functor
-    _CAT = compiler.construct_category_singleton(CategoryOfCategories)
+    _CAT = CategoryOfCategories._construct_category_singleton()
     Category = _CAT.ObjectType
     Functor = _CAT.MorphismType
 

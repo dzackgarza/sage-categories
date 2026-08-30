@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING, Concatenate, Generic, NamedTuple
 
 from sage.categories.category import Category as SageCategory
 from sage.misc.lazy_attribute import lazy_attribute
+from sage.structure.coerce_dict import MonoDict
 
-from sage_categories.kernel.caches import MonoDict
 from sage_categories.kernel.construction import (
     CategoryPointIdentity,
     ElementConstructionContext,

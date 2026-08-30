@@ -76,10 +76,26 @@ class SemanticCollisionError(Exception):
     """Two incomparable owners declare one method spelling (POL-CAT-011, POL-API-011)."""
 
 
+class _KernelRoleRootCategory(SageCategory):
+    """A private Sage category for the final implementation class of one role."""
+
+    def __init__(self, role: Role) -> None:
+        self._role = role
+        self.ParentMethods = kernel_base(role)
+        super().__init__()
+
+    @property
+    def _cmp_key(self) -> int:
+        return _ROLE_POSITIONS[self._role] - len(Role)
+
+    def super_categories(self) -> list[SageCategory]:
+        return []
+
+
 class _RuntimeImplementationCategory(SageCategory):
     """A private Sage category whose ``parent_class`` is one owned implementation role."""
 
-    def __init__(self, current: Node, targets: tuple[object, ...]) -> None:
+    def __init__(self, current: Node, targets: tuple[SageCategory, ...]) -> None:
         self._current = current
         self._targets = targets
         self.ParentMethods = current.category.local_role_class(current.role)
@@ -89,7 +105,7 @@ class _RuntimeImplementationCategory(SageCategory):
     def _cmp_key(self) -> int:
         return node_key(self._current)
 
-    def super_categories(self) -> list[object]:
+    def super_categories(self) -> list[SageCategory]:
         return list(self._targets)
 
     @lazy_attribute
@@ -103,6 +119,14 @@ class Node(NamedTuple):
 
 
 _runtime_categories: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
+_kernel_role_roots: dict[Role, _KernelRoleRootCategory] = {}
+
+
+def _kernel_role_root(role: Role) -> _KernelRoleRootCategory:
+    """The identity-cached private Sage category for one kernel role root."""
+    if role not in _kernel_role_roots:
+        _kernel_role_roots[role] = _KernelRoleRootCategory(role)
+    return _kernel_role_roots[role]
 
 
 # A declaring method: its receiver is a value of the declaring role class, and its
@@ -195,9 +219,9 @@ def _runtime_category(current: Node) -> _RuntimeImplementationCategory:
     table = _runtime_categories[current.role]
     if current.category in table:
         return table[current.category]
-    targets = tuple(_runtime_category(target) for _, target in successors(current))
+    targets: tuple[SageCategory, ...] = tuple(_runtime_category(target) for _, target in successors(current))
     if not targets:
-        targets = (kernel_base(Role.ELEMENT if _is_cat_element_root(current) else current.role),)
+        targets = (_kernel_role_root(Role.ELEMENT if _is_cat_element_root(current) else current.role),)
     targets = tuple(sorted(targets, key=lambda target: target._cmp_key, reverse=True))
     runtime = _RuntimeImplementationCategory(current, targets)
     table[current.category] = runtime

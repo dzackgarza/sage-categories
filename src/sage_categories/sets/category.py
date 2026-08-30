@@ -31,7 +31,6 @@ from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import ask, disjunction, negation
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.roles import Role
 from sage_categories.kernel.decisions import UnknownClass
 from sage_categories.sets.elements import Datum, SetElementData, SetElementDeclaration, SetPointData, points_equal
 from sage_categories.sets.maps import (
@@ -43,7 +42,7 @@ from sage_categories.sets.maps import (
     maps_equal,
     surjective_on_finite_domain,
 )
-from sage_categories.sets.objects import FiniteSetRole, MembershipRule, SetObjectData, SetObjectDeclaration, sets_equal
+from sage_categories.sets.objects import FiniteSetObject, MembershipRule, SetObjectData, SetObjectDeclaration, sets_equal
 
 if TYPE_CHECKING:
     from sage_categories.cat.functors import Functor
@@ -58,9 +57,17 @@ __all__ = ["SetElement", "SetMap", "SetObject", "Sets", "SetsCategory"]
 class FiniteSets(PropertySubcategory[[Rule], []]):
     """``Sets().Finite()``: owns construction from an explicit finite enumeration and retains it."""
 
-    def __init__(self, ambient: Category[[Rule], []], name: str, roles: dict[Role, type], implications: tuple[Category, ...]) -> None:
+    ObjectType = FiniteSetObject
+
+    class ElementType:
+        """A generalized element of a finite set."""
+
+    class MorphismType:
+        """A map between finite sets."""
+
+    def __init__(self, ambient: Category[[Rule], []], name: str, implications: tuple[Category, ...]) -> None:
         self._enumerations: MonoDict = MonoDict()
-        super().__init__(ambient, name, roles, implications)
+        super().__init__(ambient, name, implications)
 
     def __call__(self, members: SetObject | Iterable[Datum]) -> SetObject:
         """Refine a set of ``Sets()``, or construct the finite set with the given enumeration."""
@@ -106,9 +113,9 @@ class FiniteSets(PropertySubcategory[[Rule], []]):
 class SetsCategory(Category[[Rule], []]):
     """The category of sets."""
 
-    DeclaredObjectType = SetObjectDeclaration
-    DeclaredElementType = SetElementDeclaration
-    DeclaredMorphismType = SetMapDeclaration
+    ObjectType = SetObjectDeclaration
+    ElementType = SetElementDeclaration
+    MorphismType = SetMapDeclaration
 
     def __init__(self) -> None:
         self._rule_valued: MonoDict = MonoDict()
@@ -116,10 +123,10 @@ class SetsCategory(Category[[Rule], []]):
         self._equality.register_handler(points_equal)
         self._equality.register_handler(sets_equal)
         self._equality.register_handler(maps_equal)
-        self._countable = PropertySubcategory(self, "Countable", {}, ())
-        self._infinite = PropertySubcategory(self, "Infinite", {}, ())
-        self._finite = FiniteSets(self, "Finite", {Role.OBJECT: FiniteSetRole}, (self._countable,))
-        self._uncountable = PropertySubcategory(self, "Uncountable", {}, (self._infinite,))
+        self._countable = PropertySubcategory(self, "Countable", ())
+        self._infinite = PropertySubcategory(self, "Infinite", ())
+        self._finite = FiniteSets(self, "Finite", (self._countable,))
+        self._uncountable = PropertySubcategory(self, "Uncountable", (self._infinite,))
         # A known cardinality decides finiteness and countability (``specs/cardinality.md``); established
         # placement in the complementary property decides the negation (``specs/sets.md``, "Cardinality and enumeration").
         self._finite.predicate().register_handler(self._finite_by_cardinality)

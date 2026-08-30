@@ -12,10 +12,10 @@ import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask, conjunction, disjunction
-from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role, role_of
 from sage_categories.sets.elements import Datum, SetPointData
 
 if TYPE_CHECKING:
+    from sage_categories.cat.category import CategoryOfCategories
     from sage_categories.sets.cardinals import CardinalObject
     from sage_categories.sets.category import SetElement, SetObject
 
@@ -30,7 +30,7 @@ element_of: Predicate = Predicate("element_of", 2, True)
 
 def _element_of_by_parent(candidate: Any, ambient: SetObject) -> Decision:
     """A point ``* -> X`` is an element of ``X`` by definition (POL-CAT-058)."""
-    if role_of(candidate) is Role.ELEMENT and candidate.parent() is ambient:
+    if hasattr(candidate, "_is_element") and candidate._is_element() and candidate.parent() is ambient:
         return True
     return Unknown
 
@@ -42,7 +42,7 @@ def _element_of_by_rule(candidate: Any, ambient: SetObject) -> Decision:
     A generalized element with nonterminal domain retains no point datum, so the
     decision there is ``Unknown``.
     """
-    if role_of(candidate) is not Role.ELEMENT:
+    if not hasattr(candidate, "_is_element") or not candidate._is_element():
         return False
     state = candidate._set_element_data
     if not isinstance(state, SetPointData):
@@ -54,7 +54,7 @@ element_of.register_handler(_element_of_by_parent)
 element_of.register_handler(_element_of_by_rule)
 
 
-def sets_equal(first: CategoryPoint, candidate: Any) -> Decision:
+def sets_equal(first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
     """Two sets with chosen enumerations are equal exactly when they have the same members.
 
     This is extensionality (Mathlib ``Set.ext_iff``, ``Mathlib/Data/Set/Defs.lean``:
@@ -65,7 +65,7 @@ def sets_equal(first: CategoryPoint, candidate: Any) -> Decision:
     members are not available and the handler decides nothing.
     """
     finite = _sets.Sets().Finite()
-    if role_of(first) is not Role.OBJECT or role_of(candidate) is not Role.OBJECT:
+    if not first._is_object() or not hasattr(candidate, "_is_object") or not candidate._is_object():
         return Unknown
     if not finite.has_chosen_enumeration(first) or not finite.has_chosen_enumeration(candidate):
         return Unknown
@@ -85,14 +85,14 @@ class SetObjectData:
     rule_points: MonoDict = field(default_factory=MonoDict)
 
 
-class SetObjectDeclaration(ObjectOfCategory):
+class SetObjectDeclaration:
     """The local ``Sets().ObjectType`` declaration."""
 
     def __init__(self, data: SetObjectData) -> None:
         self._set_object_data = data
         super().__init__()
 
-    def membership_proposition(self, candidate: CategoryPoint) -> AppliedPredicate:
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> AppliedPredicate:
         return element_of(candidate, self)
 
     def __contains__(self, candidate: Any) -> bool:
@@ -182,7 +182,7 @@ class SetObjectDeclaration(ObjectOfCategory):
         return "Set(<rule>)"
 
 
-class FiniteSetRole(ObjectOfCategory):
+class FiniteSetObject:
     """The local object role of ``Sets().Finite()``: the chosen enumeration supplies iteration."""
 
     def __iter__(self) -> Iterator[SetElement]:

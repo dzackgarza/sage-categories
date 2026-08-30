@@ -9,12 +9,14 @@ from __future__ import annotations
 
 from collections.abc import Hashable
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import sage_categories.sets.category as _sets
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import ask
-from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, Role, role_of
+
+if TYPE_CHECKING:
+    from sage_categories.cat.category import CategoryOfCategories
 
 __all__ = ["Datum", "SetElementData", "SetPointData", "points_equal"]
 
@@ -33,7 +35,7 @@ class SetPointData(SetElementData):
     datum: Datum
 
 
-class SetElementDeclaration(ElementOfObject):
+class SetElementDeclaration:
     """The local ``Sets().ElementType`` declaration."""
 
     def __init__(self, data: SetElementData) -> None:
@@ -56,7 +58,7 @@ class SetElementDeclaration(ElementOfObject):
         return self._set_element_data.datum
 
 
-def points_equal(first: CategoryPoint, candidate: Any) -> Decision:
+def points_equal(first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
     """Two points of one set are equal exactly when their data are.
 
     A generalized element is a point exactly when its domain is the terminal object of
@@ -65,7 +67,7 @@ def points_equal(first: CategoryPoint, candidate: Any) -> Decision:
     ``Unknown`` for a rule-defined family, and a proposition for an owned mathematical
     value, so the comparison is asked rather than returned (POL-MATH-034).
     """
-    if role_of(first) is not Role.ELEMENT or role_of(candidate) is not Role.ELEMENT:
+    if not first._is_element() or not hasattr(candidate, "_is_element") or not candidate._is_element():
         return Unknown
     if first.parent() is not candidate.parent():
         return Unknown

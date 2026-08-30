@@ -5,7 +5,8 @@ local InstallExactPackage, packages, package;
 
 # GAP PackageManager provides exact package installation and dependency resolution.
 if LoadPackage("PackageManager") <> true then
-    Error("PackageManager is required");
+    PrintTo("*errout*", "PackageManager is required\n");
+    QUIT_GAP(1);
 fi;
 
 PKGMAN_SetCustomPackageDir(Filename(DirectoryCurrent(), ".gap/pkg"));
@@ -15,17 +16,19 @@ InstallExactPackage := function(package)
     required := Concatenation("=", package[2]);
     if TestPackageAvailability(package[1], required) = fail then
         if InstallPackage(package[3]) <> true then
-            Error("failed to install ", package[1], " ", package[2]);
+            PrintTo("*errout*", "failed to install ", package[1], " ", package[2], "\n");
+            QUIT_GAP(1);
         fi;
     fi;
     if LoadPackage(package[1], required) <> true then
-        Error("failed to load ", package[1], " ", package[2]);
+        PrintTo("*errout*", "failed to load ", package[1], " ", package[2], "\n");
+        QUIT_GAP(1);
     fi;
 end;
 
 packages := [
-    [ "CAP", "2026.07-04", "https://github.com/homalg-project/CAP_project/releases/download/CAP-2026.07-04/CAP-2026.07-04.tar.gz" ],
     [ "ToolsForHomalg", "2026.04-01", "https://github.com/homalg-project/homalg_project/releases/download/ToolsForHomalg-2026.04-01/ToolsForHomalg-2026.04-01.tar.gz" ],
+    [ "CAP", "2026.07-04", "https://github.com/homalg-project/CAP_project/releases/download/CAP-2026.07-04/CAP-2026.07-04.tar.gz" ],
     [ "MonoidalCategories", "2026.08-02", "https://github.com/homalg-project/CAP_project/releases/download/MonoidalCategories-2026.08-02/MonoidalCategories-2026.08-02.tar.gz" ],
     [ "CartesianCategories", "2026.08-02", "https://github.com/homalg-project/CAP_project/releases/download/CartesianCategories-2026.08-02/CartesianCategories-2026.08-02.tar.gz" ],
     [ "ToolsForCategoricalTowers", "2026.08-01", "https://github.com/homalg-project/CategoricalTowers/releases/download/ToolsForCategoricalTowers-2026.08-01/ToolsForCategoricalTowers-2026.08-01.tar.gz" ],

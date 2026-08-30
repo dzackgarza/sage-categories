@@ -121,7 +121,7 @@ _morphism_inputs: MonoDict = MonoDict()
 
 @attrs.define(frozen=True, slots=True, eq=False)
 class _InitializerInvocation[Datum]:
-    """One local initializer call on a separately constructed target image."""
+    """One local initializer call retained from a functor-owned target value."""
 
     initializer: FunctionType
     datum: Datum
@@ -131,42 +131,42 @@ _initializer_invocations: MonoDict = MonoDict()
 
 
 def _retain_initializer_invocation[Datum](
-    target_image: CategoryPoint,
+    target_value: CategoryPoint,
     runtime_category: SageCategory,
     initializer: FunctionType,
     datum: Datum,
 ) -> None:
-    """Retain one target-image local initializer invocation by runtime-category identity."""
-    if target_image not in _initializer_invocations:
-        _initializer_invocations[target_image] = MonoDict()
-    invocations: MonoDict = _initializer_invocations[target_image]
+    """Retain one local initializer invocation by runtime-category identity."""
+    if target_value not in _initializer_invocations:
+        _initializer_invocations[target_value] = MonoDict()
+    invocations: MonoDict = _initializer_invocations[target_value]
     assert runtime_category not in invocations, (
-        f"the {runtime_category!r} initializer already ran on {target_image!r}"
+        f"the {runtime_category!r} initializer already ran on {target_value!r}"
     )
     invocations[runtime_category] = _InitializerInvocation(initializer, datum)
 
 
 def _retained_initializer_replays(
-    target_image: CategoryPoint,
+    target_value: CategoryPoint,
 ) -> tuple[tuple[SageCategory, Callable[[CategoryPoint], None]], ...]:
-    """The retained target-image initializers, closed over their local data."""
-    if target_image not in _initializer_invocations:
+    """The retained initializers for one target value, closed over local data."""
+    if target_value not in _initializer_invocations:
         return ()
-    invocations: MonoDict = _initializer_invocations[target_image]
+    invocations: MonoDict = _initializer_invocations[target_value]
     return tuple(
-        (runtime_category, _retained_initializer_replay(target_image, runtime_category))
+        (runtime_category, _retained_initializer_replay(target_value, runtime_category))
         for runtime_category, _ in invocations.items()
     )
 
 
 def _retained_initializer_replay(
-    target_image: CategoryPoint,
+    target_value: CategoryPoint,
     runtime_category: SageCategory,
 ) -> Callable[[CategoryPoint], None]:
-    """The target-image initializer for ``runtime_category``, closed over its local datum."""
-    assert target_image in _initializer_invocations, f"{target_image!r} retains no initializer records"
-    invocations: MonoDict = _initializer_invocations[target_image]
-    assert runtime_category in invocations, f"{target_image!r} retains no initializer record for {runtime_category!r}"
+    """The retained initializer for ``runtime_category``, closed over its local datum."""
+    assert target_value in _initializer_invocations, f"{target_value!r} retains no initializer records"
+    invocations: MonoDict = _initializer_invocations[target_value]
+    assert runtime_category in invocations, f"{target_value!r} retains no initializer record for {runtime_category!r}"
     invocation: _InitializerInvocation = invocations[runtime_category]
 
     def replay(source_value: CategoryPoint) -> None:

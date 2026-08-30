@@ -14,6 +14,8 @@ _BASE_OBJECT_INITIALIZATIONS = []
 _BASE_ELEMENT_INITIALIZATIONS = []
 _BASE_MORPHISM_INITIALIZATIONS = []
 _SELECTED_FUNCTORS = {}
+_DIAMOND_TO_LEFT_OBJECT_ACTIONS = []
+_DIAMOND_TO_LEFT_MORPHISM_ACTIONS = []
 
 
 class _SyntheticCategoryOperations:
@@ -232,8 +234,16 @@ class DiamondCategory(_SyntheticCategoryOperations, Category[[], []]):
     def structure_functors(self):
         key = id(self)
         if key not in _SELECTED_FUNCTORS:
+            def on_object(member_object):
+                _DIAMOND_TO_LEFT_OBJECT_ACTIONS.append(member_object)
+                return self._object_to_left(member_object)
+
+            def on_morphism(morphism):
+                _DIAMOND_TO_LEFT_MORPHISM_ACTIONS.append(morphism)
+                return self._morphism_to_left(morphism)
+
             _SELECTED_FUNCTORS[key] = (
-                Fun(self, LEFT)(self._object_to_left, self._morphism_to_left),
+                Fun(self, LEFT)(on_object, on_morphism),
                 Fun(self, RIGHT)(self._object_to_right, self._morphism_to_right),
             )
         return _SELECTED_FUNCTORS[key]
@@ -313,26 +323,43 @@ def test_sage_compiler_runs_the_object_element_and_morphism_diamond() -> None:
     assert sum(initialized is identity for initialized in _BASE_MORPHISM_INITIALIZATIONS) == 1
 
 
-def test_selected_functor_owns_separate_cached_public_images() -> None:
+def test_private_initialization_reuses_the_functor_owned_public_image() -> None:
     member_object = DIAMOND(11)
     identity = DIAMOND.morphism_category(1)(member_object, member_object).one()
     to_left = DIAMOND.structure_functors()[0]
     left_to_base = LEFT.structure_functors()[0]
+    object_action_calls = sum(source is member_object for source in _DIAMOND_TO_LEFT_OBJECT_ACTIONS)
+    morphism_action_calls = sum(source is identity for source in _DIAMOND_TO_LEFT_MORPHISM_ACTIONS)
+    assert object_action_calls == 1
+    assert morphism_action_calls == 1
 
     object_image = to_left.on_object(member_object)
+    assert sum(source is member_object for source in _DIAMOND_TO_LEFT_OBJECT_ACTIONS) == object_action_calls
+    assert to_left.on_object(member_object) is object_image
+    assert sum(source is member_object for source in _DIAMOND_TO_LEFT_OBJECT_ACTIONS) == object_action_calls
+
     morphism_image = to_left.on_morphism(identity)
+    assert sum(source is identity for source in _DIAMOND_TO_LEFT_MORPHISM_ACTIONS) == morphism_action_calls
+    assert to_left.on_morphism(identity) is morphism_image
+    assert sum(source is identity for source in _DIAMOND_TO_LEFT_MORPHISM_ACTIONS) == morphism_action_calls
+
     base_image = left_to_base.on_object(object_image)
 
     assert object_image is LEFT(11)
     assert object_image is not member_object
-    assert to_left.on_object(member_object) is object_image
     assert base_image is BASE(11)
     inherited_source, inherited_state = member_object.left_object()
     assert inherited_source is member_object
-    assert inherited_state == 11
+    image_source, image_state = object_image.left_object()
+    assert image_source is object_image
+    assert inherited_state == image_state == 11
     assert morphism_image is LEFT.morphism_category(1)(object_image, object_image).one()
     assert morphism_image is not identity
-    assert to_left.on_morphism(identity) is morphism_image
+    inherited_morphism, inherited_morphism_state = identity.left_morphism()
+    image_morphism, image_morphism_state = morphism_image.left_morphism()
+    assert inherited_morphism is identity
+    assert image_morphism is morphism_image
+    assert inherited_morphism_state == image_morphism_state == 11
     assert DIAMOND.structure_functors()[0] is to_left
 
 

@@ -81,13 +81,17 @@ For a selected functor `F: C -> D`, the applicable `D` implementation class occu
 Methods declared by `D` run directly on the source value.
 Python special methods follow the same rule.
 
-This private mechanism does not apply `F`.
-The public call `F.on_object(X)` constructs the separate image in `D`.
-The public call `F.on_morphism(f)` constructs the separate image in the exact target hom category.
+The two ordinary actions of `F` remain the sole description of how target values are
+constructed (D123).  If inherited initialization needs target implementation state before
+an explicit caller applies `F`, the kernel obtains it from that same named action.  CAP
+retains the resulting public image, so a later `F.on_object(X)` or `F.on_morphism(f)`
+returns that exact image rather than executing a second construction.
 
-The runtime can keep temporary initialization records or cached class data.
-Such data has no public mathematical meaning.
-It does not select a functor, define a functor image, establish category placement, or require a leaf-authored counterpart.
+The runtime can keep temporary initializer records or cached class data.  Such data has
+no public mathematical meaning: it only replays the already-constructed target value's
+implementation initialization on the source value.  It does not select a functor, define
+a second functor image, establish category placement, or require a leaf-authored
+counterpart.
 
 ## Runtime categories and caches
 

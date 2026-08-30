@@ -19,12 +19,15 @@ punctual category is the exact identity statement owned by this construction.
 from __future__ import annotations
 
 from reprlib import recursive_repr
+from typing import TYPE_CHECKING
 
 from sage_categories.cat.category import Category
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import Predicate, Proposition
-from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
+
+if TYPE_CHECKING:
+    from sage_categories.cat.category import CategoryOfCategories
 
 __all__ = ["PointCategory", "PointMorphismCategory"]
 
@@ -33,13 +36,13 @@ point_object = Predicate("point_object", 2, False)
 point_identity = Predicate("point_identity", 2, False)
 
 
-def _point_object_by_identity(candidate: CategoryPoint, category: Category) -> Decision:
+def _point_object_by_identity(candidate: CategoryOfCategories.ElementType, category: Category) -> Decision:
     if not isinstance(category, PointCategory):
         return Unknown
     return candidate is category.member()
 
 
-def _point_identity_by_identity(candidate: CategoryPoint, category: Category) -> Decision:
+def _point_identity_by_identity(candidate: CategoryOfCategories.ElementType, category: Category) -> Decision:
     if not isinstance(category, PointCategory):
         return Unknown
     member = category.member()
@@ -53,23 +56,24 @@ point_identity.register_handler(_point_identity_by_identity)
 class PointMorphismCategory(MorphismCategory[[], []]):
     """The one-object category whose sole object is ``1_X``."""
 
-
     # ``Mor({X})`` has one object, ``1_X``, and one morphism, its identity 2-morphism.
-    class ObjectType(MorphismOfCategory):
+    class ObjectType:
         """The identity ``1_X``: the one morphism of ``{X}``."""
 
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A generalized element of ``1_X``: its identity 2-morphism."""
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """The identity 2-morphism of ``1_X``: the one morphism of ``Mor({X})``."""
 
-    def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         return point_identity(candidate, self._base)
+
+
 class PointCategory(Category[[], []]):
     """The one-object category on one existing object ``X``."""
 
-    class ObjectType(ObjectOfCategory):
+    class ObjectType:
         """The sole object ``X``: the value its established category already holds.
 
         The monomorphism into that category is identity on values, so ``{X}`` constructs
@@ -77,13 +81,13 @@ class PointCategory(Category[[], []]):
         ``{NN}`` owns what is true of the natural numbers and of no other set.
         """
 
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A generalized element ``t: T -> X`` in ``{X}``: the identity, since ``1_X`` is the only morphism."""
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """``1_X``, the sole morphism of ``{X}``: the identity ``X`` already has where it was placed."""
 
-    def __init__(self, member: CategoryPoint, targets: tuple[Category, ...]) -> None:
+    def __init__(self, member: CategoryOfCategories.ElementType, targets: tuple[Category, ...]) -> None:
         self._member = member
         self._targets = targets
         # The placement ``X`` already has: the monomorphism into it is what makes ``{X}`` a
@@ -92,7 +96,7 @@ class PointCategory(Category[[], []]):
         self._established = member.category()
         super().__init__()
 
-    def member(self) -> CategoryPoint:
+    def member(self) -> CategoryOfCategories.ElementType:
         """The sole object ``X``."""
         return self._member
 
@@ -100,7 +104,7 @@ class PointCategory(Category[[], []]):
         """The categories this point category places ``X`` in through its point functors."""
         return self._targets
 
-    def structure_functors(self) -> tuple[MorphismOfCategory, ...]:
+    def structure_functors(self) -> tuple[CategoryOfCategories.MorphismType, ...]:
         """The monomorphism into ``X``'s established category, then one point functor per target.
 
         Each is constructed through ``Fun``'s table of subcategory monomorphisms, so ``Fun({X}, D)`` and
@@ -117,33 +121,41 @@ class PointCategory(Category[[], []]):
     def morphism_category_type(self) -> type[PointMorphismCategory]:
         return PointMorphismCategory
 
-    def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         return point_object(candidate, self)
 
-    def __call__(self) -> CategoryPoint:
+    def __call__(self) -> CategoryOfCategories.ElementType:
         """Return the sole object ``X``."""
         return self._member
 
-    def construct_morphism(self, domain: CategoryPoint, codomain: CategoryPoint) -> MorphismOfCategory:
+    def construct_morphism(
+        self,
+        domain: CategoryOfCategories.ElementType,
+        codomain: CategoryOfCategories.ElementType,
+    ) -> MorphismCategory.ObjectType:
         """Return ``1_X``, the sole morphism, for its unique endpoint pair."""
         assert domain is self._member and codomain is self._member
         return self._identity_morphism_(self._member)
 
-    def construct_identity(self, member_object: CategoryPoint) -> MorphismOfCategory:
+    def construct_identity(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
         """``1_X`` is the identity ``X`` already has in the category it was placed in."""
         assert member_object is self._member
         return self._established.morphism_category(1)(member_object, member_object).one()
 
-    def _identity_morphism_(self, member_object: ObjectOfCategory) -> MorphismOfCategory:
+    def _identity_morphism_(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
         """``{X}`` places nothing: the unit of ``End_{X}(X)`` is the identity ``X`` already has."""
         return self.construct_identity(member_object)
 
-    def composite(self, second: MorphismOfCategory, first: MorphismOfCategory) -> MorphismOfCategory:
+    def composite(
+        self,
+        second: MorphismCategory.ObjectType,
+        first: MorphismCategory.ObjectType,
+    ) -> MorphismCategory.ObjectType:
         identity = self._identity_morphism_(self._member)
         assert first is identity and second is identity
         return identity
 
-    def inverse_morphism(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
+    def inverse_morphism(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         identity = self._identity_morphism_(self._member)
         assert morphism is identity
         return identity
@@ -161,5 +173,3 @@ class PointCategory(Category[[], []]):
         Presentation only: no identity, equality, or order reads it (``AGENTS.md``).
         """
         return f"{{{self._member!r}}}"
-
-

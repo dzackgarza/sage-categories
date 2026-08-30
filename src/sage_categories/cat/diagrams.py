@@ -46,11 +46,12 @@ from sage_categories.cat.morphisms import endpoints
 from sage_categories.cat.shapes import Discrete, DiscreteCategory, is_discrete
 from sage_categories.kernel.decisions import Decision
 from sage_categories.kernel.predicates import ask
-from sage_categories.kernel.roles import ElementOfObject, ObjectOfCategory
 
 if TYPE_CHECKING:
+    from sage_categories.cat.category import CategoryOfCategories
     from sage_categories.cat.constructions import UniversalData
     from sage_categories.cat.functors import FunctorCategory
+    from sage_categories.cat.morphisms import MorphismCategory
 
 type Datum = Hashable
 
@@ -69,7 +70,7 @@ __all__ = [
 ]
 
 
-def evaluation(functors: FunctorCategory, vertex: ObjectOfCategory) -> Functor:
+def evaluation(functors: FunctorCategory, vertex: CategoryOfCategories.ElementType) -> Functor:
     """``ev_i: Fun(I, C) -> C`` for an object ``i`` of ``I``, retained per ``i``.
 
     For ``I = [1]`` the evaluation ``ev_1`` retains its cartesian lifts by pullback and
@@ -89,7 +90,7 @@ def evaluation(functors: FunctorCategory, vertex: ObjectOfCategory) -> Functor:
     return functors._evaluations[vertex]
 
 
-def constant(functors: FunctorCategory, value: ObjectOfCategory) -> Functor:
+def constant(functors: FunctorCategory, value: CategoryOfCategories.ElementType) -> Functor:
     """The constant diagram at ``value``, retained per value."""
     assert value in functors.codomain(), f"{value!r} is not an object of {functors.codomain()!r}"
     if value not in functors._constants:
@@ -108,12 +109,12 @@ _cospan_diagrams: TripleDict = TripleDict(weak_values=False)
 _span_diagrams: TripleDict = TripleDict(weak_values=False)
 
 
-def from_object_rule(functors: FunctorCategory, rule: Callable[[DiscreteCategory.ObjectType], ObjectOfCategory]) -> Functor:
+def from_object_rule(functors: FunctorCategory, rule: Callable[[DiscreteCategory.ObjectType], CategoryOfCategories.ElementType]) -> Functor:
     """A diagram over a discrete shape from its object rule, retained per rule; the morphism rule is forced."""
     assert is_discrete(functors.domain()), f"{functors.domain()!r} is not a discrete shape; supply a morphism rule"
     if rule not in _object_rule_diagrams:
 
-        def image_identity(identity: DiscreteCategory.MorphismType) -> MorphismOfCategory:
+        def image_identity(identity: DiscreteCategory.MorphismType) -> MorphismCategory.ObjectType:
             image = rule(identity.domain())
             return image.category().morphism_category(1)(image, image).one()
 
@@ -136,7 +137,7 @@ def sequence_position(vertex: DiscreteCategory.ObjectType) -> int:
         tuple((id(member_object), member_object) for member_object in sequence),
     )
 )
-def from_sequence(ambient: Category, sequence: tuple[ObjectOfCategory, ...]) -> Functor:
+def from_sequence(ambient: Category, sequence: tuple[CategoryOfCategories.ElementType, ...]) -> Functor:
     """The diagram ``(X_0, ..., X_n)`` over ``Discrete([n])``, retained per sequence and ambient; the empty sequence is over ``Discrete({})``."""
     index_set = Sets.Simplex(len(sequence) - 1) if sequence else Sets.Empty()
     return from_object_rule(Fun(Discrete(index_set), ambient), lambda vertex: sequence[sequence_position(vertex)])
@@ -145,7 +146,7 @@ def from_sequence(ambient: Category, sequence: tuple[ObjectOfCategory, ...]) -> 
 # -- the commuting squares of ``Fun([1], C)`` as a finite set (specs/functor.md, "Diagram shapes and universal constructions") ---------------------------
 
 
-def square_set(functors: FunctorCategory) -> ObjectOfCategory:
+def square_set(functors: FunctorCategory) -> CategoryOfCategories.ElementType:
     """The finite set of commuting squares ``(f, g, a, b)`` with ``g * a == b * f`` in ``C``, when ``C`` chooses a finite set of morphisms."""
     base = functors.codomain()
     if "squares" not in functors._finite_data:
@@ -168,7 +169,7 @@ def square_set(functors: FunctorCategory) -> ObjectOfCategory:
     return functors._finite_data["squares"]
 
 
-def square_at(functors: FunctorCategory, point: ElementOfObject) -> NaturalTransformation:
+def square_at(functors: FunctorCategory, point: CategoryOfCategories.ElementType) -> NaturalTransformation:
     """The square selected by a point of ``square_set``."""
     square_set(functors)
     base, quadruples = functors.codomain(), functors._finite_data["quadruples"]
@@ -180,13 +181,21 @@ def square_at(functors: FunctorCategory, point: ElementOfObject) -> NaturalTrans
 # -- the lifts of ``ev_1`` and ``ev_0`` on ``Fun([1], C)`` (POL-FUN-029) ----------------------------------
 
 
-def _vertex_identity(objects: dict[int, ObjectOfCategory], shape: Category, vertex: ObjectOfCategory) -> MorphismOfCategory:
+def _vertex_identity(
+    objects: dict[int, CategoryOfCategories.ElementType],
+    shape: Category,
+    vertex: CategoryOfCategories.ElementType,
+) -> MorphismCategory.ObjectType:
     """``1_X`` at the object a horn vertex is labelled with (POL-CAT-023)."""
     member_object = objects[shape.label(vertex)]
     return member_object.category().morphism_category(1)(member_object, member_object).one()
 
 
-def _fold(images: dict[str, MorphismOfCategory], identities: Callable[[ObjectOfCategory], MorphismOfCategory], path: MorphismOfCategory) -> MorphismOfCategory:
+def _fold(
+    images: dict[str, MorphismCategory.ObjectType],
+    identities: Callable[[CategoryOfCategories.ElementType], MorphismCategory.ObjectType],
+    path: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
     if not path.word():
         return identities(path.domain())
     first, *rest = path.word()
@@ -196,7 +205,11 @@ def _fold(images: dict[str, MorphismOfCategory], identities: Callable[[ObjectOfC
     return image
 
 
-def cospan_diagram(base: Category, first: MorphismOfCategory, second: MorphismOfCategory) -> Functor:
+def cospan_diagram(
+    base: Category,
+    first: MorphismCategory.ObjectType,
+    second: MorphismCategory.ObjectType,
+) -> Functor:
     """The diagram ``L(2, 2) -> C`` with legs ``first: 0 -> 2`` and ``second: 1 -> 2``, retained per legs and base."""
     assert first.codomain() is second.codomain()
     key = (first, second, base)
@@ -208,7 +221,11 @@ def cospan_diagram(base: Category, first: MorphismOfCategory, second: MorphismOf
     return _cospan_diagrams[key]
 
 
-def span_diagram(base: Category, first: MorphismOfCategory, second: MorphismOfCategory) -> Functor:
+def span_diagram(
+    base: Category,
+    first: MorphismCategory.ObjectType,
+    second: MorphismCategory.ObjectType,
+) -> Functor:
     """The diagram ``L(2, 0) -> C`` with legs ``first: 0 -> 1`` and ``second: 0 -> 2``, retained per legs and base."""
     assert first.domain() is second.domain()
     key = (first, second, base)
@@ -220,7 +237,11 @@ def span_diagram(base: Category, first: MorphismOfCategory, second: MorphismOfCa
     return _span_diagrams[key]
 
 
-def codomain_lift(functors: FunctorCategory, morphism: MorphismOfCategory, member_object: MorphismOfCategory) -> NaturalTransformation:
+def codomain_lift(
+    functors: FunctorCategory,
+    morphism: MorphismCategory.ObjectType,
+    member_object: MorphismCategory.ObjectType,
+) -> NaturalTransformation:
     """The cartesian lift of ``f: y -> x`` at ``p: z -> x`` for ``ev_1``: the square ``(pi_z, f)`` from ``pi_y: z *_x y -> y`` to ``p``."""
     base, arrow = functors.codomain(), functors.domain()
     assert arrow is Cat().Simplex(1) and morphism.codomain() is member_object.codomain(), f"{morphism!r} does not end at the codomain of {member_object!r}"
@@ -231,7 +252,11 @@ def codomain_lift(functors: FunctorCategory, morphism: MorphismOfCategory, membe
     return functors.morphism_category(1)(to_second, member_object)(lambda vertex: components[arrow.label(vertex)])
 
 
-def domain_lift(functors: FunctorCategory, morphism: MorphismOfCategory, member_object: MorphismOfCategory) -> NaturalTransformation:
+def domain_lift(
+    functors: FunctorCategory,
+    morphism: MorphismCategory.ObjectType,
+    member_object: MorphismCategory.ObjectType,
+) -> NaturalTransformation:
     """The cocartesian lift of ``f: x -> y`` at ``p: x -> z`` for ``ev_0``: the square ``(f, iota_z)`` from ``p`` to ``iota_y: y -> z +_x y``."""
     base, arrow = functors.codomain(), functors.domain()
     assert arrow is Cat().Simplex(1) and morphism.domain() is member_object.domain(), f"{morphism!r} does not start at the domain of {member_object!r}"
@@ -245,7 +270,7 @@ def domain_lift(functors: FunctorCategory, morphism: MorphismOfCategory, member_
 # -- limits and colimits in ``Fun(I, C)``, pointwise (specs/functor.md, "Diagram shapes and universal constructions") -----------------------------------------
 
 
-def pointwise_limit(diagram: Functor) -> ObjectOfCategory:
+def pointwise_limit(diagram: Functor) -> CategoryOfCategories.ElementType:
     """``Fun(I, C).Limits(J)(D)``: the functor ``i |-> lim_J (ev_i * D)`` with the pointwise cone and mediator."""
     from sage_categories.cat.constructions import cone, cone_apex, constructed_data
 
@@ -255,13 +280,13 @@ def pointwise_limit(diagram: Functor) -> ObjectOfCategory:
     limits = target.Limits(shape)
     composites: MonoDict = MonoDict()
 
-    def at(vertex: ObjectOfCategory) -> UniversalData:
+    def at(vertex: CategoryOfCategories.ElementType) -> UniversalData:
         """The universal data of the pointwise limit at ``vertex``: the diagram owns it, so the object need not."""
         if vertex not in composites:
             composites[vertex] = constructed_data(limits, functors.evaluation(vertex) * diagram)
         return composites[vertex]
 
-    def on_morphism(morphism: MorphismOfCategory) -> MorphismOfCategory:
+    def on_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         source, destination = at(morphism.domain()).diagram, at(morphism.codomain()).diagram
         transformation = Fun(shape, target).morphism_category(1)(source, destination)(lambda vertex: functors.diagram(diagram.on_object(vertex)).on_morphism(morphism))
         return limits.limit_functor().on_morphism(transformation)
@@ -269,7 +294,7 @@ def pointwise_limit(diagram: Functor) -> ObjectOfCategory:
     apex = functors(lambda vertex: at(vertex).constructed, on_morphism)
     projections: MonoDict = MonoDict()
 
-    def projection(vertex: ObjectOfCategory) -> NaturalTransformation:
+    def projection(vertex: CategoryOfCategories.ElementType) -> NaturalTransformation:
         if vertex not in projections:
             projections[vertex] = functors.morphism_category(1)(apex, diagram.on_object(vertex))(lambda index_object: at(index_object).transformation.component(vertex))
         return projections[vertex]
@@ -287,7 +312,7 @@ def pointwise_limit(diagram: Functor) -> ObjectOfCategory:
     return family.with_universal_data(lowered, apex, cone(lowered, apex, projection), mediator)
 
 
-def pointwise_colimit(diagram: Functor) -> ObjectOfCategory:
+def pointwise_colimit(diagram: Functor) -> CategoryOfCategories.ElementType:
     """``Fun(I, C).Colimits(J)(D)``: the functor ``i |-> colim_J (ev_i * D)`` with the pointwise cocone and mediator."""
     from sage_categories.cat.constructions import cocone, cocone_apex, constructed_data
 
@@ -297,12 +322,12 @@ def pointwise_colimit(diagram: Functor) -> ObjectOfCategory:
     colimits = target.Colimits(shape)
     composites: MonoDict = MonoDict()
 
-    def at(vertex: ObjectOfCategory) -> UniversalData:
+    def at(vertex: CategoryOfCategories.ElementType) -> UniversalData:
         if vertex not in composites:
             composites[vertex] = constructed_data(colimits, functors.evaluation(vertex) * diagram)
         return composites[vertex]
 
-    def on_morphism(morphism: MorphismOfCategory) -> MorphismOfCategory:
+    def on_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         source, destination = at(morphism.domain()).diagram, at(morphism.codomain()).diagram
         transformation = Fun(shape, target).morphism_category(1)(source, destination)(lambda vertex: functors.diagram(diagram.on_object(vertex)).on_morphism(morphism))
         return colimits.colimit_functor().on_morphism(transformation)
@@ -310,7 +335,7 @@ def pointwise_colimit(diagram: Functor) -> ObjectOfCategory:
     apex = functors(lambda vertex: at(vertex).constructed, on_morphism)
     injections: MonoDict = MonoDict()
 
-    def injection(vertex: ObjectOfCategory) -> NaturalTransformation:
+    def injection(vertex: CategoryOfCategories.ElementType) -> NaturalTransformation:
         if vertex not in injections:
             injections[vertex] = functors.morphism_category(1)(diagram.on_object(vertex), apex)(lambda index_object: at(index_object).transformation.component(vertex))
         return injections[vertex]

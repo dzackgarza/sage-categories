@@ -25,13 +25,7 @@ def identity_on_values(value: CategoryPoint) -> CategoryPoint:
 
 
 def diagram_of(value: CategoryPoint) -> Functor:
-    """The functor that a value of ``Fun(I, C)`` denotes (specs/functor.md, "The Mor(n, C) tower", specs/functor.md, "Slices and coslices").
-
-    A functor denotes itself.  An object of ``C`` is a point ``* -> C`` and denotes that
-    point.  A morphism of ``C`` is an object of ``Mor(C)``, so the point it retains is
-    ``* -> Mor(C)``; the diagram it denotes in ``C`` is the arrow functor ``[1] -> C``,
-    which is how the objects of ``Fun([1], C)`` are the morphisms of ``C``.
-    """
+    """Return the functor represented by a functor, object, or morphism value."""
     if is_placed(value, Fun):
         return value
     if role_of(value) is Role.MORPHISM:
@@ -40,13 +34,7 @@ def diagram_of(value: CategoryPoint) -> Functor:
 
 
 def _defining_functor_equal(first: CategoryPoint, candidate: Any) -> Decision:
-    """A functor ``I -> C`` equals a value of ``Fun(I, C)`` when it is the diagram that value denotes.
-
-    The retained diagram is the exact positive route, and ``diagram_of`` is its one owner:
-    the point ``* -> C`` of an object, the arrow functor ``[1] -> C`` of a morphism.
-    Another functor ``I -> C`` selects some value, and whether that value equals this one
-    is the question ``Cat()`` has no further exact route for, so it stays ``Unknown``.
-    """
+    """Compare a retained diagram with the functor represented by a value."""
     if is_placed(first, Fun) and not is_placed(candidate, Fun) and role_of(candidate) in (Role.OBJECT, Role.MORPHISM):
         return True if first is diagram_of(candidate) else Unknown
     if is_placed(candidate, Fun) and not is_placed(first, Fun) and role_of(first) in (Role.OBJECT, Role.MORPHISM):

@@ -153,7 +153,7 @@ class MorphismOfCategory(ObjectOfCategory):
 
     def base_category(self) -> Category:
         """The category ``C`` whose morphism this is."""
-        return self._category.base_category()
+        return self.category().base_category()
 
     def domain(self) -> ObjectOfCategory:
         from sage_categories.kernel.construction import active_morphism_context

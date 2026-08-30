@@ -31,11 +31,10 @@ from typing import TYPE_CHECKING
 # ``Cat`` and the compiled ``Cat().ObjectType`` come from the module that bootstraps
 # them, so this one holds the compiled class whatever imports it first.
 from sage_categories.cat.functors import Cat, Category
-from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
 
 if TYPE_CHECKING:
+    from sage_categories.cat.category import CategoryOfCategories
     from sage_categories.cat.functors import Functor
-    from sage_categories.kernel.roles import CategoryPoint
 
 __all__ = [
     "NN",
@@ -73,13 +72,13 @@ class DeclaredCategory(Category[[], []]):
     and one whose author forgot a declaration are the same category (POL-CAT-057).
     """
 
-    class ObjectType(ObjectOfCategory):
+    class ObjectType:
         """An object of a category whose mathematics no implementation has stated yet."""
 
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A generalized element of such an object."""
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """A morphism between two such objects."""
 
     def __init__(self, name: str) -> None:
@@ -129,7 +128,7 @@ class CategoryFamily:
         )
         self._functor = implementation
 
-    def __call__(self, argument: CategoryPoint) -> Category:
+    def __call__(self, argument: CategoryOfCategories.ElementType) -> Category:
         assert self._functor is not None, (
             f"{self._name} is declared and no implementation claims it, so it has no category to return"
         )

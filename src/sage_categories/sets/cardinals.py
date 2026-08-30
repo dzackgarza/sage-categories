@@ -102,18 +102,10 @@ import sage_categories.ordinals.category as _ordinals
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.properties import PropertySubcategory
-from sage_categories.kernel.construction import (
-    MorphismConstructionInput,
-    ObjectConstructionInput,
-    retained_morphism_input,
-    retained_object_input,
-)
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask, assume, conjunction, disjunction, established, negation
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, role_of
 from sage_categories.ordinals.category import OrdinalObject, Ordinals, bind_cardinals, is_natural_number
-from sage_categories.sets.maps import SetMorphismData
-from sage_categories.sets.objects import SetObjectData
 
 if TYPE_CHECKING:
     from sage_categories.sets.category import SetMap
@@ -739,24 +731,7 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
         Fully faithful by the definition of the morphisms of ``Cardinal()``: the skeleton
         monomorphism (Mathlib ``CategoryTheory.fromSkeleton``, an equivalence; inspected 2026-08-27).
         """
-        representative = Fun(self, _sets.Sets()).FullyFaithful()(self.representative, lambda morphism: morphism._set_map)
-
-        def object_input(
-            source: ObjectConstructionInput[CardinalObject, CardinalObjectData],
-        ) -> ObjectConstructionInput[SetObject, SetObjectData]:
-            cardinal = source.canonical_image
-            if cardinal not in self._representatives:
-                self._representatives[cardinal] = self._select_representative(cardinal, source.datum)
-            return retained_object_input(self._representatives[cardinal])
-
-        def morphism_input(
-            source: MorphismConstructionInput[CardinalityMorphism, CardinalMorphismData],
-        ) -> MorphismConstructionInput[SetMap, SetMorphismData]:
-            return retained_morphism_input(source.datum.set_map)
-
-        representative.retain_object_constructor_conversion(object_input)
-        representative.retain_morphism_constructor_conversion(morphism_input)
-        return representative
+        return Fun(self, _sets.Sets()).FullyFaithful()(self.representative, lambda morphism: morphism._set_map)
 
     def representative(self, cardinal: CardinalObject) -> SetObject:
         """The selected representative set ``R_kappa``, one per cardinal."""

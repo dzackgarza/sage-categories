@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import inspect
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
@@ -473,7 +472,6 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         key = (source, target, self)
         if key not in self._shared_value_functors:
             self._shared_value_functors[key] = self._base.construct_morphism(source, target, identity_on_values, identity_on_values)
-            self._shared_value_functors[key]._retain_identity_constructor_conversions()
         functor = self._shared_value_functors[key]
         if self._bootstrapping:
             self._pending.append((functor, full))

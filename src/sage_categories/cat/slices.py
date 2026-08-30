@@ -29,13 +29,10 @@ from sage_categories.cat.constructions import cone
 from sage_categories.cat.diagrams import cospan_diagram, sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.properties import FullSubcategory
-from sage_categories.kernel import compiler
-from sage_categories.kernel.construction import MorphismConstructionInput, ObjectConstructionInput
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import Predicate, Proposition, ask
 from sage_categories.kernel.refinement import is_placed, refine
 from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, role_of
-from sage_categories.kernel.transport import construction_input
 
 __all__ = [
     "SliceLikeCategory",
@@ -169,19 +166,13 @@ class SliceLikeCategory(Category[[MorphismOfCategory], []]):
     def fixed_projection(self) -> Functor:
         """Return the retained projection from the slice to its varying objects in ``C``."""
         if self._varying_projection is None:
-            projection = Cat().construct_morphism(self, self._base_of_slice, None, None)
-            projection.retain_object_constructor_conversion(self._varying_object_input)
-            projection.retain_morphism_constructor_conversion(self._varying_morphism_input)
-            self._varying_projection = projection
+            self._varying_projection = Cat().construct_morphism(
+                self,
+                self._base_of_slice,
+                lambda member_object: self.varying_end(self.defining_arrow_of(member_object)),
+                lambda triangle: _varying_of(triangle),
+            )
         return self._varying_projection
-
-    def _varying_object_input[Datum](self, source: ObjectConstructionInput[ObjectOfCategory, SliceObjectData]) -> ObjectConstructionInput[ObjectOfCategory, Datum]:
-        """The input of the varying object of a slice object: that of an object of ``C`` already constructed."""
-        return construction_input(self.varying_end(source.datum.structure), compiler.node(self._base_of_slice, Role.OBJECT))
-
-    def _varying_morphism_input[Datum](self, source: MorphismConstructionInput[MorphismOfCategory, SliceTriangleData]) -> MorphismConstructionInput[MorphismOfCategory, Datum]:
-        """The input of the varying morphism of a triangle: that of a morphism of ``C`` already constructed."""
-        return construction_input(source.datum.varying, compiler.node(self._base_of_slice, Role.MORPHISM))
 
     def structure_functors(self) -> tuple[Functor, ...]:
         """The fixed projection: a slice inherits the methods of the category its objects sit over (POL-CAT-047, POL-FUN-031)."""

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import inspect
 import itertools
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
@@ -34,7 +33,6 @@ if TYPE_CHECKING:
     from sage_categories.cat.functors import Fun, Functor, FunctorsCategory, NaturalTransformation
     from sage_categories.cat.morphisms import MorphismCategory
     from sage_categories.cat.points import PointCategory
-    from sage_categories.kernel.construction import ElementConstructionInput, MorphismConstructionInput, ObjectConstructionInput
 
 __all__ = ["Assignment", "Cat", "Category", "CategoryOfCategories", "OnMorphism", "OnObject", "member"]
 
@@ -936,28 +934,6 @@ _cocartesian_lifts: TripleDict = TripleDict(weak_values=False)
 # "Structural inheritance": a selected composite retains its factor functors).
 _composite_factors: MonoDict = MonoDict()
 
-# A selected functor owns the object and morphism conversions that construct its
-# codomain role state.  They are retained on the functor itself, not in a compiler
-# registry (POL-FUN-003/035).  There is no third, element conversion: the element
-# action is derived from the morphism action (POL-FUN-002), so a functor stores no
-# element callback and a leaf declares none.  Ordinary mathematical functors need no
-# conversions at all.
-_object_constructor_conversions = MonoDict()
-_morphism_constructor_conversions = MonoDict()
-
-
-def _identity_object_constructor_input[Value: ObjectOfCategory, Datum](
-    source: ObjectConstructionInput[Value, Datum],
-) -> ObjectConstructionInput[Value, Datum]:
-    return source
-
-
-def _identity_morphism_constructor_input[Value: MorphismOfCategory, Datum](
-    source: MorphismConstructionInput[Value, Datum],
-) -> MorphismConstructionInput[Value, Datum]:
-    return source
-
-
 @dataclass(frozen=True, eq=False, slots=True)
 class FunctorData:
     """The local state introduced by the functor role."""
@@ -1037,20 +1013,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             return self._image_cache.object_image(member_object, self._construct_object_image)
 
         def _construct_object_image(self, member_object: ObjectOfCategory) -> ObjectOfCategory:
-            if self in _object_constructor_conversions:
-                from sage_categories.kernel import compiler
-                from sage_categories.kernel.transport import construction_input
-
-                if not is_placed(member_object, self.domain()):
-                    assert traces_placement(self) and member_object in self.domain(), (
-                        f"{member_object!r} is placed in {member_object.category()!r}; {self!r} constructs its image from the "
-                        f"placement {self.domain()!r}, which that placement does not reach"
-                    )
-                    return member_object
-                source = construction_input(member_object, compiler.node(self.domain(), Role.OBJECT))
-                return self.object_constructor_input(source).canonical_image
             assert member_object in self.domain(), f"{member_object!r} is not an object of {self.domain()!r}"
-            assert self._on_object is not None, f"{self!r} retains neither an object action nor an object constructor conversion"
             return self._on_object(member_object)
 
         def on_morphism(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
@@ -1059,20 +1022,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
         def _construct_morphism_image(self, morphism: MorphismOfCategory) -> MorphismOfCategory:
             morphisms = self.domain().morphism_category(1)
-            if self in _morphism_constructor_conversions:
-                from sage_categories.kernel import compiler
-                from sage_categories.kernel.transport import construction_input
-
-                if not is_placed(morphism, morphisms):
-                    assert traces_placement(self) and morphism in morphisms, (
-                        f"{morphism!r} is placed in {morphism.category()!r}; {self!r} constructs its image from the "
-                        f"placement {morphisms!r}, which that placement does not reach"
-                    )
-                    return morphism
-                source = construction_input(morphism, compiler.node(self.domain(), Role.MORPHISM))
-                return self.morphism_constructor_input(source).canonical_image
             assert morphism in morphisms, f"{morphism!r} is not a morphism of {self.domain()!r}"
-            assert self._on_morphism is not None, f"{self!r} retains neither a morphism action nor a morphism constructor conversion"
             return self._on_morphism(morphism)
 
         def on_element(self, element: CategoryPoint) -> CategoryPoint:
@@ -1146,220 +1096,11 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
         # -- composition data ------------------------------------------------------------------
 
-        def retain_object_constructor_conversion[
-            SourceValue: ObjectOfCategory,
-            SourceDatum,
-            TargetValue: ObjectOfCategory,
-            TargetDatum,
-        ](
-            self,
-            conversion: Callable[
-                [ObjectConstructionInput[SourceValue, SourceDatum]],
-                ObjectConstructionInput[TargetValue, TargetDatum],
-            ],
-        ) -> None:
-            """Store the private object initialization function used by this compiler."""
-            signature = inspect.signature(conversion)
-            assert len(signature.parameters) == 1, "an object constructor conversion accepts one complete input"
-            parameter = next(iter(signature.parameters.values()))
-            assert parameter.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
-            assert self not in _object_constructor_conversions, f"{self!r} already retains an object constructor conversion"
-            _object_constructor_conversions[self] = conversion
-
-        def retain_morphism_constructor_conversion[
-            SourceValue: MorphismOfCategory,
-            SourceDatum,
-            TargetValue: MorphismOfCategory,
-            TargetDatum,
-        ](
-            self,
-            conversion: Callable[
-                [MorphismConstructionInput[SourceValue, SourceDatum]],
-                MorphismConstructionInput[TargetValue, TargetDatum],
-            ],
-        ) -> None:
-            """Store the private morphism initialization function used by this compiler."""
-            signature = inspect.signature(conversion)
-            assert len(signature.parameters) == 1, "a morphism constructor conversion accepts one complete input"
-            parameter = next(iter(signature.parameters.values()))
-            assert parameter.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
-            assert self not in _morphism_constructor_conversions, f"{self!r} already retains a morphism constructor conversion"
-            _morphism_constructor_conversions[self] = conversion
-
-        def retain_constructor_data[SourceObjectDatum, TargetObjectDatum, SourceMorphismDatum, TargetMorphismDatum](
-            self,
-            object_datum: Callable[[SourceObjectDatum], TargetObjectDatum],
-            morphism_datum: Callable[[SourceMorphismDatum], TargetMorphismDatum],
-        ) -> None:
-            """Store the private datum functions used by the current compiler."""
-            from sage_categories.kernel.construction import retained_morphism_input, retained_object_input
-
-            def object_conversion[Value: ObjectOfCategory](
-                source: ObjectConstructionInput[Value, SourceObjectDatum],
-            ) -> ObjectConstructionInput[ObjectOfCategory, TargetObjectDatum]:
-                return retained_object_input(self._image_from_object_data(source, object_datum(source.datum)))
-
-            def morphism_conversion[Value: MorphismOfCategory](
-                source: MorphismConstructionInput[Value, SourceMorphismDatum],
-            ) -> MorphismConstructionInput[MorphismOfCategory, TargetMorphismDatum]:
-                return retained_morphism_input(self._image_from_morphism_data(source, morphism_datum(source.datum)))
-
-            self.retain_object_constructor_conversion(object_conversion)
-            self.retain_morphism_constructor_conversion(morphism_conversion)
-
-        def _image_from_object_data[Value: ObjectOfCategory, SourceDatum, TargetDatum](
-            self,
-            source: ObjectConstructionInput[Value, SourceDatum],
-            datum: TargetDatum,
-        ) -> ObjectOfCategory:
-            """This functor's image of an object, constructed once from the target constructor datum."""
-            target = self.codomain()
-            image = target.role_class(Role.OBJECT)(category=target, data=datum)
-            return self._image_cache.retain_object(source.canonical_image, image)
-
-        def _image_from_morphism_data[Value: MorphismOfCategory, SourceDatum, TargetDatum](
-            self,
-            source: MorphismConstructionInput[Value, SourceDatum],
-            datum: TargetDatum,
-        ) -> MorphismOfCategory:
-            """This functor's image of a morphism, constructed once between the images of its endpoints."""
-            target = self.codomain()
-            domain_image = self.on_object(source.identity.domain)
-            codomain_image = self.on_object(source.identity.codomain)
-            image = target.role_class(Role.MORPHISM)(
-                target.morphism_category(1),
-                domain_image,
-                codomain_image,
-                datum,
-            )
-            return self._image_cache.retain_morphism(
-                source.canonical_image,
-                domain_image,
-                codomain_image,
-                image,
-            )
-
-        def object_constructor_input[
-            SourceValue: ObjectOfCategory,
-            SourceDatum,
-            TargetValue: ObjectOfCategory,
-            TargetDatum,
-        ](
-            self,
-            source: ObjectConstructionInput[SourceValue, SourceDatum],
-        ) -> ObjectConstructionInput[TargetValue, TargetDatum]:
-            """Return the root input retained by this object's canonical functor image.
-
-            The image is read in its own role: the objects of a morphism category are the
-            morphisms of its base and retain a morphism input (POL-CAT-021).
-            """
-            from sage_categories.kernel.construction import retained_input
-
-            assert self in _object_constructor_conversions, f"{self!r} retains no object constructor conversion"
-            target = _object_constructor_conversions[self](source)
-            assert retained_input(target.canonical_image) is target, f"{self!r} constructed a parallel object input"
-            return target
-
-        def element_constructor_input[
-            SourceValue: CategoryPoint,
-            SourceDatum,
-            TargetValue: CategoryPoint,
-            TargetDatum,
-        ](
-            self,
-            source: ElementConstructionInput[SourceValue, SourceDatum],
-        ) -> ElementConstructionInput[TargetValue, TargetDatum]:
-            """The compiler input for the image of ``t``: that of ``q = F(t)``, or of ``p = q . c_F`` for a point (POL-FUN-002/035).
-
-            Applying the morphism conversion to the defining morphism of ``t`` gives the
-            defining morphism of ``q: F(T) -> F(X)``, the value public element application
-            returns.  This derivation is the whole element action; the functor retains no
-            element conversion of its own.
-
-            A point ``t: 1_C -> X`` instead supplies the target's point methods, which read
-            a point of ``1_D``.  Precomposing ``q`` with the declared comparison
-            ``c_F: 1_D -> F(1_C)`` produces that point ``p: 1_D -> F(X)`` (D100).
-            """
-            from sage_categories.kernel.construction import (
-                ElementRoleIdentity,
-                retained_element_input,
-                retained_morphism_input,
-            )
-
-            assert isinstance(source.identity, ElementRoleIdentity)
-            source_defining = source.identity.defining_morphism
-            image = self.after_terminal_comparison(
-                self.morphism_constructor_input(retained_morphism_input(source_defining)).canonical_image, source_defining
-            )
-            if image is source_defining:
-                return source
-            return retained_element_input(self.codomain().element_from_defining_morphism(image))
-
-        def morphism_constructor_input[
-            SourceValue: MorphismOfCategory,
-            SourceDatum,
-            TargetValue: MorphismOfCategory,
-            TargetDatum,
-        ](
-            self,
-            source: MorphismConstructionInput[SourceValue, SourceDatum],
-        ) -> MorphismConstructionInput[TargetValue, TargetDatum]:
-            """Return the private record produced for this morphism."""
-            from sage_categories.kernel.construction import retained_morphism_input
-
-            assert self in _morphism_constructor_conversions, f"{self!r} retains no morphism constructor conversion"
-            target = _morphism_constructor_conversions[self](source)
-            assert retained_morphism_input(target.canonical_image) is target, f"{self!r} constructed a parallel morphism input"
-            return target
-
-        def _derive_selected_constructor_conversions(self) -> None:
-            """Adapt the two ordinary actions for the current private compiler."""
-            if self in _object_constructor_conversions and self in _morphism_constructor_conversions:
-                return
-            assert self._on_object is not None and self._on_morphism is not None, (
-                f"{self!r} states neither its two rules nor its constructor conversions, so it cannot be selected"
-            )
-            self.retain_constructor_data(self._on_object, self._on_morphism)
-
-        def _retain_identity_constructor_conversions(self) -> None:
-            """Store the private identity initialization functions."""
-            if self not in _object_constructor_conversions:
-                self.retain_object_constructor_conversion(_identity_object_constructor_input)
-            if self not in _morphism_constructor_conversions:
-                self.retain_morphism_constructor_conversion(_identity_morphism_constructor_input)
-
         def retain_factors(self, first: Functor, second: Functor) -> None:
             """Retain that this functor is the composite ``second * first``."""
             assert self not in _composite_factors, f"{self!r} already retains its factors"
             assert first.codomain() is second.domain() and self.domain() is first.domain() and self.codomain() is second.codomain()
             _composite_factors[self] = (first, second)
-
-            if first in _object_constructor_conversions and second in _object_constructor_conversions:
-
-                def object_conversion[
-                    SourceValue: ObjectOfCategory,
-                    SourceDatum,
-                    TargetValue: ObjectOfCategory,
-                    TargetDatum,
-                ](
-                    source: ObjectConstructionInput[SourceValue, SourceDatum],
-                ) -> ObjectConstructionInput[TargetValue, TargetDatum]:
-                    return second.object_constructor_input(first.object_constructor_input(source))
-
-                self.retain_object_constructor_conversion(object_conversion)
-            if first in _morphism_constructor_conversions and second in _morphism_constructor_conversions:
-
-                def morphism_conversion[
-                    SourceValue: MorphismOfCategory,
-                    SourceDatum,
-                    TargetValue: MorphismOfCategory,
-                    TargetDatum,
-                ](
-                    source: MorphismConstructionInput[SourceValue, SourceDatum],
-                ) -> MorphismConstructionInput[TargetValue, TargetDatum]:
-                    return second.morphism_constructor_input(first.morphism_constructor_input(source))
-
-                self.retain_morphism_constructor_conversion(morphism_conversion)
 
         def factors(self) -> tuple[Functor, Functor]:
             """The retained factors ``(first, second)`` of an explicit composite ``second * first``, in categorical order."""
@@ -1507,7 +1248,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         from sage_categories.kernel.refinement import refine
 
         identity = self.construct_morphism(category, category, lambda x: x, lambda f: f)
-        identity._retain_identity_constructor_conversions()
         # The identity functor is an equivalence: Mathlib ``CategoryTheory.Functor.id``
         # with ``IsEquivalence`` of the identity (inspected 2026-08-26).
         refine(identity, Fun(category, category).Equivalences())

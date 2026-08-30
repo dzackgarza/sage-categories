@@ -446,6 +446,7 @@ def _advance(owner: type[CategoryPoint], instance: CategoryPoint) -> None:
 
 
 type InitializerReplay = Callable[[CategoryPoint], None]
+type InitializerReplayLookup = Callable[[], dict[SageCategory, InitializerReplay]]
 
 
 def _target_replays(
@@ -466,14 +467,33 @@ def _target_replays(
     return replays
 
 
+def _empty_initializer_replays() -> dict[SageCategory, InitializerReplay]:
+    return {}
+
+
+def _deferred_target_replays(
+    current: Node,
+    images: Callable[[], tuple[CategoryPoint, ...]],
+) -> InitializerReplayLookup:
+    """Construct public target images when the source initializer first enters an inherited node."""
+    replays: dict[SageCategory, InitializerReplay] | None = None
+
+    def lookup() -> dict[SageCategory, InitializerReplay]:
+        nonlocal replays
+        if replays is None:
+            replays = _target_replays(current, images())
+        return replays
+
+    return lookup
+
+
 def _object_target_images(current: Node, source: ObjectOfCategory) -> tuple[CategoryPoint, ...]:
     """The ordinary public object images of ``current``'s immediate selected functors."""
     return tuple(functor.on_object(source) for functor, _ in successors(current))
 
 
-def _element_target_images(current: Node, source: CategoryPoint) -> tuple[CategoryPoint, ...]:
+def _element_target_images(current: Node, defining_morphism: MorphismOfCategory) -> tuple[CategoryPoint, ...]:
     """The ordinary public element images of ``current``'s immediate selected functors."""
-    defining_morphism = source.defining_morphism()
     return tuple(
         functor.codomain().element_from_defining_morphism(functor.on_morphism(defining_morphism))
         for functor, _ in successors(current)
@@ -498,12 +518,12 @@ def _object_step[Value: ObjectOfCategory, Datum](
     current: Node,
     construction_input: ObjectConstructionInput[Value, Datum],
     instance: ObjectOfCategory,
-    replays: dict[SageCategory, InitializerReplay],
+    replays: InitializerReplayLookup,
 ) -> Callable[[], None]:
     runtime = _runtime(current)
 
     def initialize() -> None:
-        replay = replays.get(_runtime_category(current))
+        replay = replays().get(_runtime_category(current))
         if replay is not None:
             replay(instance)
             return
@@ -520,12 +540,12 @@ def _element_step[Value: CategoryPoint, Datum](
     current: Node,
     construction_input: ElementConstructionInput[Value, Datum],
     instance: Value,
-    replays: dict[SageCategory, InitializerReplay],
+    replays: InitializerReplayLookup,
 ) -> Callable[[], None]:
     runtime = _runtime(current)
 
     def initialize() -> None:
-        replay = replays.get(_runtime_category(current))
+        replay = replays().get(_runtime_category(current))
         if replay is not None:
             replay(instance)
             return
@@ -542,12 +562,12 @@ def _morphism_step[Value: MorphismOfCategory, Datum](
     current: Node,
     construction_input: MorphismConstructionInput[Value, Datum],
     instance: MorphismOfCategory,
-    replays: dict[SageCategory, InitializerReplay],
+    replays: InitializerReplayLookup,
 ) -> Callable[[], None]:
     runtime = _runtime(current)
 
     def initialize() -> None:
-        replay = replays.get(_runtime_category(current))
+        replay = replays().get(_runtime_category(current))
         if replay is not None:
             replay(instance)
             return
@@ -565,11 +585,13 @@ def _object_steps[RootValue: ObjectOfCategory, RootDatum](
     root: ObjectConstructionInput[RootValue, RootDatum],
 ) -> tuple[tuple[Node, Callable[[], None]], ...]:
     """Close each object C3 node into one zero-argument initialization step."""
-    images = _object_target_images(current, root.canonical_image)
-    replays = _target_replays(current, images)
-    return tuple(
-        (source, _object_step(source, root, root.canonical_image, replays))
-        for source in (current, *_linearized_nodes(current))
+    replays = _deferred_target_replays(current, lambda: _object_target_images(current, root.canonical_image))
+    return (
+        (current, _object_step(current, root, root.canonical_image, _empty_initializer_replays)),
+        *(
+            (source, _object_step(source, root, root.canonical_image, replays))
+            for source in _linearized_nodes(current)
+        ),
     )
 
 
@@ -578,11 +600,14 @@ def _element_steps[RootValue: CategoryPoint, RootDatum](
     root: ElementConstructionInput[RootValue, RootDatum],
 ) -> tuple[tuple[Node, Callable[[], None]], ...]:
     """Close each element C3 node into one zero-argument initialization step."""
-    images = _element_target_images(current, root.canonical_image)
-    replays = _target_replays(current, images)
-    return tuple(
-        (source, _element_step(source, root, root.canonical_image, replays))
-        for source in (current, *_linearized_nodes(current))
+    assert isinstance(root.identity, ElementRoleIdentity)
+    replays = _deferred_target_replays(current, lambda: _element_target_images(current, root.identity.defining_morphism))
+    return (
+        (current, _element_step(current, root, root.canonical_image, _empty_initializer_replays)),
+        *(
+            (source, _element_step(source, root, root.canonical_image, replays))
+            for source in _linearized_nodes(current)
+        ),
     )
 
 
@@ -597,7 +622,7 @@ def _cat_element_step[Datum](
     """
     target = node(root.identity.category.universe(), Role.ELEMENT)
     point_input = ElementConstructionInput(root.canonical_image, CategoryPointIdentity(root.identity.category), None)
-    return target, _element_step(target, point_input, root.canonical_image, {})
+    return target, _element_step(target, point_input, root.canonical_image, _empty_initializer_replays)
 
 
 def _point_steps[Datum](
@@ -639,7 +664,10 @@ def _point_steps[Datum](
             )
             found.append(target)
             frontier.append(target)
-    return tuple((current, _element_step(current, point_input, root.canonical_image, {})) for current in found)
+    return tuple(
+        (current, _element_step(current, point_input, root.canonical_image, _empty_initializer_replays))
+        for current in found
+    )
 
 
 def _point_starts[Datum](
@@ -669,7 +697,7 @@ def _element_cat_element_step[Value: CategoryPoint, Datum](
     assert isinstance(root.identity, ElementRoleIdentity)
     target = node(root.identity.defining_morphism.base_category().universe(), Role.ELEMENT)
     element_input = ElementConstructionInput(root.canonical_image, root.identity, None)
-    return target, _element_step(target, element_input, root.canonical_image, {})
+    return target, _element_step(target, element_input, root.canonical_image, _empty_initializer_replays)
 
 
 def _morphism_steps[RootValue: MorphismOfCategory, RootDatum](
@@ -677,11 +705,13 @@ def _morphism_steps[RootValue: MorphismOfCategory, RootDatum](
     root: MorphismConstructionInput[RootValue, RootDatum],
 ) -> tuple[tuple[Node, Callable[[], None]], ...]:
     """Close each morphism C3 node into one zero-argument initialization step."""
-    images = _morphism_target_images(current, root.canonical_image)
-    replays = _target_replays(current, images)
-    return tuple(
-        (source, _morphism_step(source, root, root.canonical_image, replays))
-        for source in (current, *_linearized_nodes(current))
+    replays = _deferred_target_replays(current, lambda: _morphism_target_images(current, root.canonical_image))
+    return (
+        (current, _morphism_step(current, root, root.canonical_image, _empty_initializer_replays)),
+        *(
+            (source, _morphism_step(source, root, root.canonical_image, replays))
+            for source in _linearized_nodes(current)
+        ),
     )
 
 

@@ -42,9 +42,11 @@ class CategoryPoint:
         super().__init__()
 
     def defining_morphism(self) -> MorphismOfCategory:
-        from sage_categories.kernel.construction import CategoryPointIdentity, ElementRoleIdentity
+        from sage_categories.kernel.construction import CategoryPointIdentity, ElementRoleIdentity, active_construction_context
 
-        match self._cat_element_identity:
+        context = active_construction_context(self)
+        identity = context.cat_element_identity if context is not None else self._cat_element_identity
+        match identity:
             case ElementRoleIdentity(defining_morphism):
                 return defining_morphism
             case CategoryPointIdentity(parent):
@@ -52,9 +54,11 @@ class CategoryPoint:
         raise AssertionError(self._cat_element_identity)
 
     def parent(self) -> ObjectOfCategory:
-        from sage_categories.kernel.construction import CategoryPointIdentity, ElementRoleIdentity
+        from sage_categories.kernel.construction import CategoryPointIdentity, ElementRoleIdentity, active_construction_context
 
-        match self._cat_element_identity:
+        context = active_construction_context(self)
+        identity = context.cat_element_identity if context is not None else self._cat_element_identity
+        match identity:
             case ElementRoleIdentity(defining_morphism):
                 return defining_morphism.codomain()
             case CategoryPointIdentity(parent):
@@ -96,6 +100,11 @@ class ObjectOfCategory(CategoryPoint):
 
     def category(self) -> Category:
         """The strongest category placement established for this object."""
+        from sage_categories.kernel.construction import active_object_context
+
+        context = active_object_context()
+        if context is not None and context.canonical_image is self:
+            return context.identity.category
         return self._category
 
     def __eq__(self, candidate: Any) -> AppliedPredicate:
@@ -135,6 +144,11 @@ class MorphismOfCategory(ObjectOfCategory):
 
     def category(self) -> Category:
         """The strongest placement established for this morphism as an object of ``Mor(C)``."""
+        from sage_categories.kernel.construction import active_morphism_context
+
+        context = active_morphism_context()
+        if context is not None and context.canonical_image is self:
+            return context.identity.category
         return self._category
 
     def base_category(self) -> Category:
@@ -142,9 +156,19 @@ class MorphismOfCategory(ObjectOfCategory):
         return self._category.base_category()
 
     def domain(self) -> ObjectOfCategory:
+        from sage_categories.kernel.construction import active_morphism_context
+
+        context = active_morphism_context()
+        if context is not None and context.canonical_image is self:
+            return context.identity.domain
         return self._domain
 
     def codomain(self) -> ObjectOfCategory:
+        from sage_categories.kernel.construction import active_morphism_context
+
+        context = active_morphism_context()
+        if context is not None and context.canonical_image is self:
+            return context.identity.codomain
         return self._codomain
 
     def __mul__(self, first: MorphismOfCategory) -> MorphismOfCategory:

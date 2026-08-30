@@ -13,7 +13,7 @@ from sage.misc.c3_controlled import C3_sorted_merge
 from sage.misc.lazy_attribute import lazy_attribute
 from sage.structure.dynamic_class import dynamic_class
 
-from sage_categories.kernel.caches import MonoDict, canonical_images
+from sage_categories.kernel.caches import MonoDict
 from sage_categories.kernel.construction import (
     CategoryPointIdentity,
     ElementConstructionContext,
@@ -36,8 +36,9 @@ from sage_categories.kernel.construction import (
     retain_morphism_input,
     retain_object_input,
     retained_object_input,
+    retained_object_inputs,
     _retain_initializer_invocation,
-    _retained_initializer_replay,
+    _retained_initializer_replays,
 )
 from sage_categories.kernel.roles import (
     CategoryPoint,
@@ -64,7 +65,6 @@ __all__ = [
     "controlled_bases",
     "install_level_shift",
     "install_on_declaration",
-    "morphism_inputs",
     "node",
     "reachable",
     "recompile_category",
@@ -182,13 +182,6 @@ def building_role_classes() -> Iterator[None]:
         yield
     finally:
         _building_role_class = previous
-
-# The construction input a node carries, by the role the node lives in.
-_INPUT_TYPES: dict[Role, type] = {
-    Role.OBJECT: ObjectConstructionInput,
-    Role.ELEMENT: ElementConstructionInput,
-    Role.MORPHISM: MorphismConstructionInput,
-}
 
 
 def node_key(current: Node) -> int:
@@ -616,7 +609,6 @@ def _advance(owner: type[CategoryPoint], instance: CategoryPoint) -> None:
 
 
 type InitializerReplay = Callable[[CategoryPoint], None]
-type TargetReplays = Callable[[], dict[SageCategory, InitializerReplay]]
 
 
 def _target_replays(
@@ -632,42 +624,43 @@ def _target_replays(
     return replays
 
 
-def _object_target_replays(current: Node, source: ObjectOfCategory) -> dict[SageCategory, InitializerReplay]:
-    """The initialized public object images of ``current``'s selected functors."""
-    return _target_replays(current, tuple((target, functor.on_object(source)) for functor, target in successors(current)))
+def _object_target_images(current: Node, source: ObjectOfCategory) -> tuple[tuple[Node, CategoryPoint], ...]:
+    """The ordinary public object images of ``current``'s selected functors."""
+    return tuple((target, functor.on_object(source)) for functor, target in successors(current))
 
 
-def _element_target_replays(current: Node, source: CategoryPoint) -> dict[SageCategory, InitializerReplay]:
-    """The initialized public element images of ``current``'s selected functors."""
+def _element_target_images(current: Node, source: CategoryPoint) -> tuple[tuple[Node, CategoryPoint], ...]:
+    """The ordinary public element images of ``current``'s selected functors."""
     defining_morphism = source.defining_morphism()
-    return _target_replays(
-        current,
-        tuple(
-            (target, functor.codomain().element_from_defining_morphism(functor.on_morphism(defining_morphism)))
-            for functor, target in successors(current)
-        ),
+    return tuple(
+        (target, functor.codomain().element_from_defining_morphism(functor.on_morphism(defining_morphism)))
+        for functor, target in successors(current)
     )
 
 
-def _morphism_target_replays(current: Node, source: MorphismOfCategory) -> dict[SageCategory, InitializerReplay]:
-    """The initialized public morphism images of ``current``'s selected functors."""
-    return _target_replays(current, tuple((target, functor.on_morphism(source)) for functor, target in successors(current)))
+def _morphism_target_images(current: Node, source: MorphismOfCategory) -> tuple[tuple[Node, CategoryPoint], ...]:
+    """The ordinary public morphism images of ``current``'s selected functors."""
+    return tuple((target, functor.on_morphism(source)) for functor, target in successors(current))
+
+
+def _linearized_nodes(current: Node) -> tuple[Node, ...]:
+    """The selected target nodes in Sage C3 order."""
+    return tuple(_nodes_by_key[key] for key in _linearize(current)[0])
 
 
 def _object_step[Value: ObjectOfCategory, Datum](
     current: Node,
     construction_input: ObjectConstructionInput[Value, Datum],
     instance: ObjectOfCategory,
-    target_replays: TargetReplays | None = None,
+    replays: dict[SageCategory, InitializerReplay],
 ) -> Callable[[], None]:
     runtime = _runtime(current)
 
     def initialize() -> None:
-        if target_replays is not None:
-            replay = target_replays().get(_runtime_category(current))
-            if replay is not None:
-                replay(instance)
-                return
+        replay = replays.get(_runtime_category(current))
+        if replay is not None:
+            replay(instance)
+            return
         if runtime.initializer is None:
             _advance(runtime.owner, instance)
             return
@@ -681,16 +674,15 @@ def _element_step[Value: CategoryPoint, Datum](
     current: Node,
     construction_input: ElementConstructionInput[Value, Datum],
     instance: Value,
-    target_replays: TargetReplays | None = None,
+    replays: dict[SageCategory, InitializerReplay],
 ) -> Callable[[], None]:
     runtime = _runtime(current)
 
     def initialize() -> None:
-        if target_replays is not None:
-            replay = target_replays().get(_runtime_category(current))
-            if replay is not None:
-                replay(instance)
-                return
+        replay = replays.get(_runtime_category(current))
+        if replay is not None:
+            replay(instance)
+            return
         if runtime.initializer is None:
             _advance(runtime.owner, instance)
             return
@@ -704,16 +696,15 @@ def _morphism_step[Value: MorphismOfCategory, Datum](
     current: Node,
     construction_input: MorphismConstructionInput[Value, Datum],
     instance: MorphismOfCategory,
-    target_replays: TargetReplays | None = None,
+    replays: dict[SageCategory, InitializerReplay],
 ) -> Callable[[], None]:
     runtime = _runtime(current)
 
     def initialize() -> None:
-        if target_replays is not None:
-            replay = target_replays().get(_runtime_category(current))
-            if replay is not None:
-                replay(instance)
-                return
+        replay = replays.get(_runtime_category(current))
+        if replay is not None:
+            replay(instance)
+            return
         if runtime.initializer is None:
             _advance(runtime.owner, instance)
             return
@@ -723,77 +714,30 @@ def _morphism_step[Value: MorphismOfCategory, Datum](
     return initialize
 
 
-def object_inputs[RootValue: ObjectOfCategory, RootDatum, Value: ObjectOfCategory, Datum](
-    current: Node,
-    root: ObjectConstructionInput[RootValue, RootDatum],
-) -> tuple[tuple[Node, ObjectConstructionInput[Value, Datum]], ...]:
-    """Each node ``current`` reaches, in ``reachable`` order, with its object input.
-
-    The selected functor that first reaches a node converts the source input into the
-    argument that node's initializer consumes.  A node several selected functors reach
-    occurs once in the C3 linearization and runs one initializer through cooperative
-    ``super()``, so one conversion is the whole requirement (POL-KERNEL-028/029).
-    """
-    assert current.role is Role.OBJECT
-    found: list[tuple[Node, ObjectConstructionInput[Value, Datum]]] = [(current, root)]
-    frontier = list(found)
-    while frontier:
-        source, source_input = frontier.pop(0)
-        for functor, target in successors(source):
-            if any(same_node(target, known) for known, _ in found):
-                continue
-            target_input = functor.object_constructor_input(source_input)
-            # An object walk that reaches ``(Mor(C), object)`` is at the node
-            # ``(C, morphism)``, whose values are morphisms and retain a morphism input
-            # (POL-CAT-021).  The node's role names the input the step must supply.
-            assert isinstance(target_input, _INPUT_TYPES[target.role]), (
-                f"{functor!r} returned no {target.role.value} construction input for {target.category!r}"
-            )
-            found.append((target, target_input))
-            frontier.append((target, target_input))
-    return tuple(found)
-
-
-def element_inputs[RootValue: CategoryPoint, RootDatum, Value: CategoryPoint, Datum](
-    current: Node,
-    root: ElementConstructionInput[RootValue, RootDatum],
-) -> tuple[tuple[Node, ElementConstructionInput[Value, Datum]], ...]:
-    """Each node ``current`` reaches, in ``reachable`` order, with its element input."""
-    assert current.role is Role.ELEMENT
-    found: list[tuple[Node, ElementConstructionInput[Value, Datum]]] = [(current, root)]
-    frontier = list(found)
-    while frontier:
-        source, source_input = frontier.pop(0)
-        for functor, target in successors(source):
-            if any(same_node(target, known) for known, _ in found):
-                continue
-            target_input = functor.element_constructor_input(source_input)
-            assert isinstance(target_input, ElementConstructionInput), f"{functor!r} returned no element construction input"
-            found.append((target, target_input))
-            frontier.append((target, target_input))
-    return tuple(found)
-
-
 def _object_steps[RootValue: ObjectOfCategory, RootDatum](
     current: Node,
     root: ObjectConstructionInput[RootValue, RootDatum],
 ) -> tuple[tuple[Node, Callable[[], None]], ...]:
-    """Close each exact object input into one zero-argument C3 node step."""
-    found = object_inputs(current, root)
-    for source, source_input in found:
-        retain_constructed_transport(root, source.category, source_input)
-    return tuple((source, _object_step(source, source_input, root.canonical_image)) for source, source_input in found)
+    """Close each object C3 node into one zero-argument initialization step."""
+    images = _object_target_images(current, root.canonical_image)
+    replays = _target_replays(current, images)
+    return tuple(
+        (source, _object_step(source, root, root.canonical_image, replays))
+        for source in (current, *_linearized_nodes(current))
+    )
 
 
 def _element_steps[RootValue: CategoryPoint, RootDatum](
     current: Node,
     root: ElementConstructionInput[RootValue, RootDatum],
 ) -> tuple[tuple[Node, Callable[[], None]], ...]:
-    """Close each exact element input into one zero-argument C3 node step."""
-    found = element_inputs(current, root)
-    for source, source_input in found:
-        retain_constructed_transport(root, source.category, source_input)
-    return tuple((source, _element_step(source, source_input, root.canonical_image)) for source, source_input in found)
+    """Close each element C3 node into one zero-argument initialization step."""
+    images = _element_target_images(current, root.canonical_image)
+    replays = _target_replays(current, images)
+    return tuple(
+        (source, _element_step(source, root, root.canonical_image, replays))
+        for source in (current, *_linearized_nodes(current))
+    )
 
 
 def _cat_element_step[Datum](
@@ -807,7 +751,7 @@ def _cat_element_step[Datum](
     """
     target = node(root.identity.category.universe(), Role.ELEMENT)
     point_input = ElementConstructionInput(root.canonical_image, CategoryPointIdentity(root.identity.category), None)
-    return target, _element_step(target, point_input, root.canonical_image)
+    return target, _element_step(target, point_input, root.canonical_image, {})
 
 
 def _point_steps[Datum](
@@ -849,7 +793,7 @@ def _point_steps[Datum](
             )
             found.append(target)
             frontier.append(target)
-    return tuple((current, _element_step(current, point_input, root.canonical_image)) for current in found)
+    return tuple((current, _element_step(current, point_input, root.canonical_image, {})) for current in found)
 
 
 def _point_starts[Datum](
@@ -879,38 +823,20 @@ def _element_cat_element_step[Value: CategoryPoint, Datum](
     assert isinstance(root.identity, ElementRoleIdentity)
     target = node(root.identity.defining_morphism.base_category().universe(), Role.ELEMENT)
     element_input = ElementConstructionInput(root.canonical_image, root.identity, None)
-    return target, _element_step(target, element_input, root.canonical_image)
-
-
-def morphism_inputs[RootValue: MorphismOfCategory, RootDatum, Value: MorphismOfCategory, Datum](
-    current: Node,
-    root: MorphismConstructionInput[RootValue, RootDatum],
-) -> tuple[tuple[Node, MorphismConstructionInput[Value, Datum]], ...]:
-    """Each node ``current`` reaches, in ``reachable`` order, with its morphism input."""
-    assert current.role is Role.MORPHISM
-    found: list[tuple[Node, MorphismConstructionInput[Value, Datum]]] = [(current, root)]
-    frontier = list(found)
-    while frontier:
-        source, source_input = frontier.pop(0)
-        for functor, target in successors(source):
-            if any(same_node(target, known) for known, _ in found):
-                continue
-            target_input = functor.morphism_constructor_input(source_input)
-            assert isinstance(target_input, MorphismConstructionInput), f"{functor!r} returned no morphism construction input"
-            found.append((target, target_input))
-            frontier.append((target, target_input))
-    return tuple(found)
+    return target, _element_step(target, element_input, root.canonical_image, {})
 
 
 def _morphism_steps[RootValue: MorphismOfCategory, RootDatum](
     current: Node,
     root: MorphismConstructionInput[RootValue, RootDatum],
 ) -> tuple[tuple[Node, Callable[[], None]], ...]:
-    """Close each exact morphism input into one zero-argument C3 node step."""
-    found = morphism_inputs(current, root)
-    for source, source_input in found:
-        retain_constructed_transport(root, source.category, source_input)
-    return tuple((source, _morphism_step(source, source_input, root.canonical_image)) for source, source_input in found)
+    """Close each morphism C3 node into one zero-argument initialization step."""
+    images = _morphism_target_images(current, root.canonical_image)
+    replays = _target_replays(current, images)
+    return tuple(
+        (source, _morphism_step(source, root, root.canonical_image, replays))
+        for source in (current, *_linearized_nodes(current))
+    )
 
 
 def _construct_object_root[Datum](
@@ -1185,21 +1111,12 @@ def install_level_shift(point: Category) -> None:
 
 
 def _placed_objects(category: Category) -> tuple[ObjectOfCategory, ...]:
-    """The objects of ``category`` the kernel has built, each once.
-
-    Every object walk retains its input at each node it reaches, keyed by the source
-    value and indexed by the target category (``retain_constructed_transport``), so this
-    table is the objects of ``category`` that are still live: its keys are weak, and an
-    object nothing holds is gone.
-    """
-    table = canonical_images[Role.OBJECT]
-    if category not in table:
-        return ()
-    found: list[ObjectOfCategory] = []
-    for _, image in table[category].items():
-        if isinstance(image, ObjectOfCategory) and not any(image is known for known in found):
-            found.append(image)
-    return tuple(found)
+    """The live objects whose construction inputs name ``category``."""
+    return tuple(
+        construction_input.canonical_image
+        for construction_input in retained_object_inputs()
+        if construction_input.identity.category is category
+    )
 
 
 def _initialize_level_shift(start: Node, value: ObjectOfCategory) -> None:

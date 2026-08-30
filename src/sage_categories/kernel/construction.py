@@ -47,6 +47,7 @@ __all__ = [
     "retained_input",
     "retained_morphism_input",
     "retained_object_input",
+    "retained_object_inputs",
 ]
 
 
@@ -149,6 +150,19 @@ def _retain_initializer_invocation[Datum](
     invocations[runtime_category] = _InitializerInvocation(initializer, datum)
 
 
+def _retained_initializer_replays(
+    target_image: CategoryPoint,
+) -> tuple[tuple[SageCategory, Callable[[CategoryPoint], None]], ...]:
+    """The retained target-image initializers, closed over their local data."""
+    if target_image not in _initializer_invocations:
+        return ()
+    invocations: MonoDict = _initializer_invocations[target_image]
+    return tuple(
+        (runtime_category, _retained_initializer_replay(target_image, runtime_category))
+        for runtime_category, _ in invocations.items()
+    )
+
+
 def _retained_initializer_replay(
     target_image: CategoryPoint,
     runtime_category: SageCategory,
@@ -188,6 +202,11 @@ def retain_morphism_input[Value: MorphismOfCategory, Datum](construction_input: 
         assert _morphism_inputs[value] is construction_input, f"{value!r} already retains a different morphism construction input"
         return
     _morphism_inputs[value] = construction_input
+
+
+def retained_object_inputs() -> tuple[ObjectConstructionInput[ObjectOfCategory, object], ...]:
+    """The retained object construction inputs for live owned values."""
+    return tuple(construction_input for _, construction_input in _object_inputs.items())
 
 
 def retained_object_input[Value: ObjectOfCategory, Datum](value: Value) -> ObjectConstructionInput[Value, Datum]:

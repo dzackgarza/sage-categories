@@ -9,9 +9,7 @@ from types import CellType, FunctionType
 from typing import TYPE_CHECKING, Concatenate, Generic, NamedTuple
 
 from sage.categories.category import Category as SageCategory
-from sage.misc.c3_controlled import C3_sorted_merge
 from sage.misc.lazy_attribute import lazy_attribute
-from sage.structure.dynamic_class import dynamic_class
 
 from sage_categories.kernel.caches import MonoDict
 from sage_categories.kernel.construction import (
@@ -62,7 +60,6 @@ __all__ = [
     "building_role_classes",
     "catalogue",
     "compile_category",
-    "controlled_bases",
     "install_level_shift",
     "install_on_declaration",
     "node",
@@ -144,11 +141,6 @@ class Entry[**P, R](NamedTuple):
 
 
 _IGNORED_NAMES = frozenset({"__init__", "__new__", "__repr__", "__init_subclass__", "__class_getitem__"})
-
-# Per role: the C3 linearization of each node and the controlled direct bases its
-# class is built from, keyed by the node's category; and the node of each node key.
-_linearizations: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
-_nodes_by_key: dict[int, Node] = {}
 
 _ROLE_POSITIONS: dict[Role, int] = {
     Role.ELEMENT: 0,
@@ -338,131 +330,6 @@ def catalogue[**P, R](current: Node) -> dict[str, Entry[P, R]]:
     return entries
 
 
-def controlled_bases(current: Node) -> tuple[Node, ...]:
-    """The distinct nodes one selected step from ``current``, most recently constructed first.
-
-    The C3 merge takes the direct supers in the order of the total order, not in
-    declaration order: Sage sorts them the same way (``Category._super_categories``
-    applies ``Category._sort``, decreasing in ``_cmp_key``).  A category's ambient is
-    declared first and constructed first, so declaration order is the wrong one here.
-    The constructor walk still reads ``successors`` directly.
-
-    The common ``Cat().ElementType`` node is not among them.  It is the preallocated end
-    of every element chain, reached through the role's kernel class, so a selected
-    functor into ``Cat()`` -- the monomorphism a point category declares -- adds no base at
-    the element role and would place the chain end above its own descendants.
-    """
-    found: list[Node] = []
-    for _, target in successors(current):
-        if _is_cat_element_root(target):
-            continue
-        if not any(same_node(target, known) for known in found):
-            found.append(target)
-    return tuple(sorted(found, key=node_key, reverse=True))
-
-
-def _name_of(key: int) -> str:
-    found = _nodes_by_key.get(key)
-    return f"{found.category!r}.{found.role.value}" if found else f"an uncompiled node (key {key})"
-
-
-def _out_of_order(current: Node, merged: list[int]) -> str:
-    """The first pair of the linearization that construction order ranks the wrong way."""
-    below, above = next((first, second) for first, second in zip(merged, merged[1:]) if first < second)
-    return (
-        f"the {current.role.value} linearization of {current.category!r} "
-        f"is not sorted by construction order: it places {_name_of(below)} above {_name_of(above)}.  "
-        "A category must be constructed after every category it selects a functor into."
-    )
-
-
-def _linearize(current: Node) -> tuple[tuple[int, ...], tuple[int, ...]]:
-    """The nodes ``current`` inherits from in C3 order, and its controlled direct bases.
-
-    Both are tuples of node keys.  The reference implementation is Sage's
-    ``Category._all_super_categories`` (``sage/categories/category.py``): merge the
-    linearizations of the direct supers together with the list of direct supers, then
-    build the class from the *second* value ``C3_sorted_merge`` returns — the direct
-    bases carrying whatever control edges C3 needed.  Doing that is what guarantees
-    Python's C3 never fails on a large hierarchy (``sage.misc.c3_controlled``).
-
-    Nodes are merged as the integers ``node_key`` gives them: they compare by value,
-    they are already assigned when a node is reached, and every node ranks strictly
-    above every node it reaches, which is the total order the algorithm requires
-    (Sage states the same invariant for ``_cmp_key``).
-    """
-    table = _linearizations[current.role]
-    if current.category not in table:
-        _nodes_by_key[node_key(current)] = current
-        targets = controlled_bases(current)
-        merged: list[int] = []
-        bases: list[int] = []
-        if targets:
-            merged, bases = C3_sorted_merge(
-                [[node_key(target), *_linearize(target)[0]] for target in targets]
-                + [[node_key(target) for target in targets]]
-            )
-            assert sorted(merged, reverse=True) == merged, _out_of_order(current, merged)
-        table[current.category] = (tuple(merged), tuple(bases))
-    return table[current.category]
-
-
-def _base_classes(current: Node) -> tuple[type[CategoryPoint], ...]:
-    """The controlled direct bases of ``current``'s class: compiled role classes only.
-
-    The controlled list is passed through as it is.  Its entries are not only the
-    direct targets: C3 adds the control edges that make the merge succeed, and
-    dropping one because another base already derives from it discards exactly the
-    guarantee the algorithm provides.  Sage passes ``_super_categories_for_classes``
-    to its class construction unchanged for the same reason.
-
-    One adjustment is forced by Python rather than by the algorithm.  Several nodes can
-    share one compiled class — the node ``(Mor(C), object)`` *is* the node
-    ``(C, morphism)``, and its class is installed on both categories.  A base list may
-    not repeat a class, and the shared class belongs at the *last* of its positions: it
-    is an ancestor of whatever the higher-ranked nodes contribute, so keeping an earlier
-    occurrence would place it above its own descendants.  Nothing is dropped, so every
-    control edge survives.
-
-    A node that reaches no other node ends on its role's kernel class.  These are the
-    whole base list: the node's own written declaration is installed on the compiled
-    class instead of standing among them (``_compiled_class``).
-    """
-    if _is_cat_element_root(current):
-        return (CategoryPoint,)
-    keys = _linearize(current)[1]
-    classes = [_nodes_by_key[key].category.role_class(_nodes_by_key[key].role) for key in keys]
-    bases = [klass for position, klass in enumerate(classes) if not any(later is klass for later in classes[position + 1 :])]
-    if not bases:
-        bases = [kernel_base(current.role)]
-    inverted = [
-        (earlier, later)
-        for position, earlier in enumerate(bases)
-        for later in bases[position + 1 :]
-        if issubclass(later, earlier)
-    ]
-    assert not inverted, (
-        f"the {current.role.value} bases of {current.category!r} place {inverted[0][0].__name__} "
-        f"before {inverted[0][1].__name__}, which derives from it"
-    )
-    return tuple(bases)
-
-
-# What a written class body states about its own source rather than about the
-# mathematics.  ``dynamic_class`` sets each of these on the compiled class from ``doccls``.
-_SOURCE_ATTRIBUTES = frozenset({
-    "__dict__",
-    "__weakref__",
-    "__module__",
-    "__doc__",
-    "__qualname__",
-    "__orig_bases__",
-    "__type_params__",
-    "__firstlineno__",
-    "__static_attributes__",
-})
-
-
 def _rebound[**P, R](member: DeclaredMethod[P, R], compiled: type[CategoryPoint]) -> DeclaredMethod[P, R]:
     """A written member whose zero-argument ``super()`` names the class its body now runs in.
 
@@ -493,9 +360,9 @@ def _rebound[**P, R](member: DeclaredMethod[P, R], compiled: type[CategoryPoint]
 
 
 def _install_written_body(compiled: type[CategoryPoint], local: type[CategoryPoint]) -> None:
-    """Put the node's written declaration onto its compiled class."""
+    """Rebind each copied method whose zero-argument ``super()`` names ``local``."""
     for name, member in vars(local).items():
-        if name not in _SOURCE_ATTRIBUTES:
+        if isinstance(member, classmethod | staticmethod | FunctionType):
             setattr(compiled, name, _rebound(member, compiled))
 
 
@@ -512,37 +379,18 @@ def install_on_declaration[**P, R](local: type[CategoryPoint], name: str, member
     class for.  ``install_level_shift`` writes onto live role classes the same way.
     """
     setattr(local, name, member)
-    for found in _nodes_by_key.values():
-        if found.category.local_role_class(found.role) is local:
-            compiled = found.category.role_class(found.role)
-            setattr(compiled, name, _rebound(member, compiled))
-
-
-def _kernel_chain(last: Node) -> tuple[type, ...]:
-    """The Python classes that follow the last node's compiled class in the MRO.
-
-    A chain ends on the kernel class its last node stands on, which is the last node's
-    role rather than the role the chain started in.  Two chains end elsewhere than on
-    their own role's kernel class:
-
-    * the shared ``Cat().ElementType`` root stands directly on ``CategoryPoint``, which
-      every role's kernel class reaches through it;
-    * a full subcategory of ``Mor(C)`` keeps the object role -- it is not itself a
-      morphism category -- while its objects are the morphisms of ``C``, so its chain
-      runs through ``(C, morphism)`` and ends on ``MorphismOfCategory``.
-
-    A level shift contributes ``{C}``'s element class to ``C.ObjectType``, between that
-    class and the kernel one (``install_level_shift``), so what follows a node compiled
-    earlier is read off that node's own class rather than assumed.
-    """
-    if _is_cat_element_root(last):
-        return CategoryPoint.__mro__
-    return tuple(klass for klass in last.category.role_class(last.role).__mro__[1:] if klass is not Generic)
+    for table in _runtime_categories.values():
+        for _, runtime in table.items():
+            if runtime._current.category.local_role_class(runtime._current.role) is local:
+                compiled = runtime.parent_class
+                setattr(compiled, name, _rebound(member, compiled))
 
 
 def _compiled_class(current: Node) -> type[CategoryPoint]:
     """The Sage-compiled implementation class of ``current``'s private runtime category."""
-    return _runtime_category(current).parent_class
+    compiled = _runtime_category(current).parent_class
+    _install_written_body(compiled, current.category.local_role_class(current.role))
+    return compiled
 
 
 def borrowed_declaration(local: type[CategoryPoint]) -> type[CategoryPoint] | None:
@@ -558,34 +406,6 @@ def borrowed_declaration(local: type[CategoryPoint]) -> type[CategoryPoint] | No
             return None
         return base
     return None
-
-
-def _assert_linearized(current: Node, compiled: type[CategoryPoint]) -> None:
-    """The MRO is the node linearization, ending on the kernel chain.
-
-    Sage states the same invariant in ``Category._test_category_graph``
-    (``sage/categories/category.py``): ``parent_class.mro()`` is the ancestors'
-    compiled classes followed by the common Python chain end.  A written body is
-    installed on the class of the one node it belongs to (POL-KERNEL-028), so it adds
-    nothing to this order.
-
-    PEP 695 puts ``typing.Generic`` in the bases of a parameterized declaration.  It
-    names no node and carries no mathematics, so the order is read without it.
-    """
-    order = [] if _is_cat_element_root(current) else [_nodes_by_key[key] for key in _linearize(current)[0]]
-    expected = [compiled]
-    for found in order:
-        expected.append(found.category.role_class(found.role))
-    # A node reaching none stands on its role's kernel class, which is the whole chain;
-    # ``_kernel_chain`` reads a node whose own class the compiler already installed.
-    expected.extend(_kernel_chain(order[-1]) if order else CategoryPoint.__mro__ if _is_cat_element_root(current) else kernel_base(current.role).__mro__)
-    expected = [klass for position, klass in enumerate(expected) if not any(later is klass for later in expected[position + 1 :])]
-    actual = [klass for klass in compiled.__mro__ if klass is not Generic]
-    assert actual == expected, (
-        f"the {current.role.value} MRO of {current.category!r} is "
-        f"{[klass.__qualname__ for klass in actual]}, expected "
-        f"{[klass.__qualname__ for klass in expected]}"
-    )
 
 
 class _NodeRuntime(NamedTuple):

@@ -17,13 +17,11 @@ from sage_categories.cat.functors import Fun, Functor
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import Predicate
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.number_sets.integers import _is_integer
 from sage_categories.sets.cardinals import aleph0
 from sage_categories.sets.category import Sets
-from sage_categories.sets.elements import Datum, SetElement
+from sage_categories.sets.elements import Datum
 from sage_categories.sets.maps import Rule
-from sage_categories.sets.objects import SetObject
 
 __all__ = ["NN", "PositiveIntegers", "PositiveIntegersCategory", "natural_order"]
 
@@ -43,10 +41,10 @@ def _is_positive_integer(datum: Datum) -> Decision:
     return bool(datum > 0)
 
 
-class PositiveIntegerSet(ObjectOfCategory):
+class PositiveIntegerSet:
     """The local object role of ``PositiveIntegers()``: ``NN(n)`` is the point selecting ``n``."""
 
-    def __call__(self, integer: int | Integer) -> SetElement:
+    def __call__(self, integer: int | Integer) -> PositiveIntegersCategory.ElementType:
         return self.point(Integer(integer))
 
     def __repr__(self) -> str:
@@ -56,12 +54,12 @@ class PositiveIntegerSet(ObjectOfCategory):
 class PositiveIntegersCategory(Category[[Rule], []]):
     """The one-object category of ``NN``, a full subcategory of ``Sets().Countable()``."""
 
-    DeclaredObjectType = PositiveIntegerSet
+    ObjectType = PositiveIntegerSet
 
-    class DeclaredElementType(ElementOfObject):
+    class ElementType:
         """A generalized element of ``NN``; no local operation."""
 
-    class DeclaredMorphismType(MorphismOfCategory):
+    class MorphismType:
         """A map ``NN -> NN``; no local operation."""
 
     def __init__(self) -> None:
@@ -73,7 +71,7 @@ class PositiveIntegersCategory(Category[[Rule], []]):
     def structure_functors(self) -> tuple[Functor, ...]:
         return (Fun(self, Sets().Countable()).Monomorphisms().Isofibrations().Full()(),)
 
-    def __call__(self) -> SetObject:
+    def __call__(self) -> PositiveIntegersCategory.ObjectType:
         """The sole object ``NN``, retained by identity."""
         return self._positive_integers
 
@@ -88,7 +86,10 @@ _POSITIVE_INTEGERS = PositiveIntegersCategory()
 natural_order: Predicate = Predicate("natural_order", 2, True)
 
 
-def _natural_order_by_integer_comparison(first: CategoryPoint, second: CategoryPoint) -> Decision:
+def _natural_order_by_integer_comparison(
+    first: PositiveIntegersCategory.ElementType,
+    second: PositiveIntegersCategory.ElementType,
+) -> Decision:
     if first not in _POSITIVE_INTEGERS() or second not in _POSITIVE_INTEGERS():
         return Unknown
     return bool(first._point_datum_() <= second._point_datum_())
@@ -102,4 +103,4 @@ def PositiveIntegers() -> PositiveIntegersCategory:
     return _POSITIVE_INTEGERS
 
 
-NN: SetObject = PositiveIntegers()()
+NN: PositiveIntegersCategory.ObjectType = PositiveIntegers()()

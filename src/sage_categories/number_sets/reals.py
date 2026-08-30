@@ -24,12 +24,10 @@ from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.cardinals import continuum
 from sage_categories.sets.category import Sets
-from sage_categories.sets.elements import Datum, SetElement
+from sage_categories.sets.elements import Datum
 from sage_categories.sets.maps import Rule
-from sage_categories.sets.objects import SetObject
 
 __all__ = ["RR", "Reals", "RealsCategory"]
 
@@ -41,10 +39,10 @@ def _is_real(datum: Datum) -> Decision:
     return Unknown
 
 
-class RealSet(ObjectOfCategory):
+class RealSet:
     """The local object role of ``Reals()``: ``RR(x)`` is the point selecting ``AA(x)``."""
 
-    def __call__(self, real: int | Integer | Rational | AlgebraicReal) -> SetElement:
+    def __call__(self, real: int | Integer | Rational | AlgebraicReal) -> RealsCategory.ElementType:
         return self.point(_real_algebraic_field(real))
 
     def __repr__(self) -> str:
@@ -54,12 +52,12 @@ class RealSet(ObjectOfCategory):
 class RealsCategory(Category[[Rule], []]):
     """The one-object category of ``RR``, a full subcategory of ``Sets().Uncountable()``."""
 
-    DeclaredObjectType = RealSet
+    ObjectType = RealSet
 
-    class DeclaredElementType(ElementOfObject):
+    class ElementType:
         """A generalized element of ``RR``; no local operation."""
 
-    class DeclaredMorphismType(MorphismOfCategory):
+    class MorphismType:
         """A map ``RR -> RR``; no local operation."""
 
     def __init__(self) -> None:
@@ -72,7 +70,7 @@ class RealsCategory(Category[[Rule], []]):
     def structure_functors(self) -> tuple[Functor, ...]:
         return (Fun(self, Sets().Uncountable()).Monomorphisms().Isofibrations().Full()(),)
 
-    def __call__(self) -> SetObject:
+    def __call__(self) -> RealsCategory.ObjectType:
         """The sole object ``RR``, retained by identity."""
         return self._reals
 
@@ -88,4 +86,4 @@ def Reals() -> RealsCategory:
     return _REALS
 
 
-RR: SetObject = Reals()()
+RR: RealsCategory.ObjectType = Reals()()

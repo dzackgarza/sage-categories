@@ -18,12 +18,10 @@ from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.cardinals import aleph0
 from sage_categories.sets.category import Sets
-from sage_categories.sets.elements import Datum, SetElement
+from sage_categories.sets.elements import Datum
 from sage_categories.sets.maps import Rule
-from sage_categories.sets.objects import SetObject
 
 __all__ = ["QQ", "Rationals", "RationalsCategory"]
 
@@ -45,10 +43,10 @@ def _is_rational(datum: Datum) -> Decision:
     return Unknown
 
 
-class RationalSet(ObjectOfCategory):
+class RationalSet:
     """The local object role of ``Rationals()``: ``QQ(q)`` is the point selecting ``q``."""
 
-    def __call__(self, rational: int | Integer | Rational) -> SetElement:
+    def __call__(self, rational: int | Integer | Rational) -> RationalsCategory.ElementType:
         return self.point(Rational(rational))
 
     def __repr__(self) -> str:
@@ -58,12 +56,12 @@ class RationalSet(ObjectOfCategory):
 class RationalsCategory(Category[[Rule], []]):
     """The one-object category of ``QQ``, a full subcategory of ``Sets().Countable()``."""
 
-    DeclaredObjectType = RationalSet
+    ObjectType = RationalSet
 
-    class DeclaredElementType(ElementOfObject):
+    class ElementType:
         """A generalized element of ``QQ``; no local operation."""
 
-    class DeclaredMorphismType(MorphismOfCategory):
+    class MorphismType:
         """A map ``QQ -> QQ``; no local operation."""
 
     def __init__(self) -> None:
@@ -75,7 +73,7 @@ class RationalsCategory(Category[[Rule], []]):
     def structure_functors(self) -> tuple[Functor, ...]:
         return (Fun(self, Sets().Countable()).Monomorphisms().Isofibrations().Full()(),)
 
-    def __call__(self) -> SetObject:
+    def __call__(self) -> RationalsCategory.ObjectType:
         """The sole object ``QQ``, retained by identity."""
         return self._rationals
 
@@ -91,4 +89,4 @@ def Rationals() -> RationalsCategory:
     return _RATIONALS
 
 
-QQ: SetObject = Rationals()()
+QQ: RationalsCategory.ObjectType = Rationals()()

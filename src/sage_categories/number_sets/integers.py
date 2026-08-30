@@ -16,12 +16,10 @@ from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.roles import ElementOfObject, MorphismOfCategory, ObjectOfCategory
 from sage_categories.sets.cardinals import aleph0
 from sage_categories.sets.category import Sets
-from sage_categories.sets.elements import Datum, SetElement
+from sage_categories.sets.elements import Datum
 from sage_categories.sets.maps import Rule
-from sage_categories.sets.objects import SetObject
 
 __all__ = ["ZZ", "Integers", "IntegersCategory"]
 
@@ -43,10 +41,10 @@ def _is_integer(datum: Datum) -> Decision:
     return Unknown
 
 
-class IntegerSet(ObjectOfCategory):
+class IntegerSet:
     """The local object role of ``Integers()``: ``ZZ(n)`` is the point ``* -> ZZ`` selecting ``n``."""
 
-    def __call__(self, integer: int | Integer) -> SetElement:
+    def __call__(self, integer: int | Integer) -> IntegersCategory.ElementType:
         return self.point(Integer(integer))
 
     def __repr__(self) -> str:
@@ -56,12 +54,12 @@ class IntegerSet(ObjectOfCategory):
 class IntegersCategory(Category[[Rule], []]):
     """The one-object category of ``ZZ``, a full subcategory of ``Sets().Countable()``."""
 
-    DeclaredObjectType = IntegerSet
+    ObjectType = IntegerSet
 
-    class DeclaredElementType(ElementOfObject):
+    class ElementType:
         """A generalized element of ``ZZ``; no local operation."""
 
-    class DeclaredMorphismType(MorphismOfCategory):
+    class MorphismType:
         """A map ``ZZ -> ZZ``; no local operation."""
 
     def __init__(self) -> None:
@@ -73,7 +71,7 @@ class IntegersCategory(Category[[Rule], []]):
     def structure_functors(self) -> tuple[Functor, ...]:
         return (Fun(self, Sets().Countable()).Monomorphisms().Isofibrations().Full()(),)
 
-    def __call__(self) -> SetObject:
+    def __call__(self) -> IntegersCategory.ObjectType:
         """The sole object ``ZZ``, retained by identity."""
         return self._integers
 
@@ -89,4 +87,4 @@ def Integers() -> IntegersCategory:
     return _INTEGERS
 
 
-ZZ: SetObject = Integers()()
+ZZ: IntegersCategory.ObjectType = Integers()()

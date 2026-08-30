@@ -101,13 +101,14 @@ import sage_categories.sets.objects as _set_objects
 import sage_categories.ordinals.category as _ordinals
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor
+from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask, assume, conjunction, disjunction, established, negation
-from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, role_of
 from sage_categories.ordinals.category import OrdinalObject, Ordinals, bind_cardinals, is_natural_number
 
 if TYPE_CHECKING:
+    from sage_categories.cat.category import CategoryOfCategories
     from sage_categories.sets.category import SetMap
     from sage_categories.sets.elements import Datum
     from sage_categories.sets.objects import SetObject
@@ -590,7 +591,7 @@ class CardinalMorphismData:
     set_map: SetMap
 
 
-class CardinalObjectDeclaration(ObjectOfCategory):
+class CardinalObjectDeclaration:
     """An exact cardinal, retained by its normalized expression in the cardinal semiring."""
 
     def __init__(self, data: CardinalObjectData) -> None:
@@ -667,7 +668,7 @@ class CardinalObjectDeclaration(ObjectOfCategory):
         return repr(self._value)
 
 
-class CardinalMorphismDeclaration(MorphismOfCategory):
+class CardinalMorphismDeclaration:
     """A morphism ``kappa -> lambda`` of ``Cardinal()``: a function between the representatives, retained as a set map."""
 
     def __init__(self, data: CardinalMorphismData) -> None:
@@ -682,13 +683,13 @@ class CardinalMorphismDeclaration(MorphismOfCategory):
 less_than: Predicate = Predicate("cardinal_less_than", 2, True)
 
 
-class CardinalCategory(Category[[MorphismOfCategory], []]):
+class CardinalCategory(Category[[MorphismCategory.ObjectType], []]):
     """The skeletal category of cardinal representatives; its morphisms are the functions between representatives."""
 
-    DeclaredObjectType = CardinalObjectDeclaration
-    DeclaredMorphismType = CardinalMorphismDeclaration
+    ObjectType = CardinalObjectDeclaration
+    MorphismType = CardinalMorphismDeclaration
 
-    class DeclaredElementType(ElementOfObject):
+    class ElementType:
         """A generalized element of a cardinal; no local operation."""
 
     def __init__(self) -> None:
@@ -698,10 +699,10 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
         super().__init__()
         self._equality.register_handler(self._equal)
         less_than.register_handler(self._less_than)
-        self._countable_cardinals = PropertySubcategory(self, "Countable", {}, ())
-        self._infinite_cardinals = PropertySubcategory(self, "Infinite", {}, ())
-        self._finite_cardinals = PropertySubcategory(self, "Finite", {}, (self._countable_cardinals,))
-        self._uncountable_cardinals = PropertySubcategory(self, "Uncountable", {}, (self._infinite_cardinals,))
+        self._countable_cardinals = PropertySubcategory(self, "Countable", ())
+        self._infinite_cardinals = PropertySubcategory(self, "Infinite", ())
+        self._finite_cardinals = PropertySubcategory(self, "Finite", (self._countable_cardinals,))
+        self._uncountable_cardinals = PropertySubcategory(self, "Uncountable", (self._infinite_cardinals,))
         self._finite_cardinals.predicate().register_handler(self._is_finite)
         self._infinite_cardinals.predicate().register_handler(lambda cardinal: ask(negation(self._is_finite(cardinal))))
         self._countable_cardinals.predicate().register_handler(self._is_countable)
@@ -868,12 +869,12 @@ class CardinalCategory(Category[[MorphismOfCategory], []]):
     def _is_countable(self, cardinal: CardinalObject) -> Decision:
         return self._semiring.is_countable(cardinal._value)
 
-    def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
+    def _equal(self, first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
         if first not in self:
             return Unknown
         if candidate in self:
             second = candidate
-        elif role_of(candidate) is None and is_natural_number(candidate):
+        elif not hasattr(candidate, "_is_object") and is_natural_number(candidate):
             second = self(candidate)
         else:
             return Unknown

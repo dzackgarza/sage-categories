@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from collections.abc import Hashable
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sage.structure.coerce_dict import MonoDict, TripleDict
 
@@ -28,11 +28,14 @@ from sage_categories.cat.category import Category, member
 from sage_categories.cat.constructions import cone
 from sage_categories.cat.diagrams import cospan_diagram, sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
+from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.properties import FullSubcategory
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import Predicate, Proposition, ask
 from sage_categories.kernel.refinement import is_placed, refine
-from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory, Role, role_of
+
+if TYPE_CHECKING:
+    from sage_categories.cat.category import CategoryOfCategories
 
 __all__ = [
     "SliceLikeCategory",
@@ -48,19 +51,19 @@ def _walking_arrow() -> Category:
     return Cat().Simplex(1)
 
 
-def _star() -> ObjectOfCategory:
+def _star() -> CategoryOfCategories.ElementType:
     return Cat().Terminal()(0)
 
 
-def _star_identity() -> MorphismOfCategory:
+def _star_identity() -> MorphismCategory.ObjectType:
     """``1_*``: the unit of ``End_1(*)``, the image of every triangle under the projection to ``1`` (POL-CAT-023)."""
     star = _star()
     return star.category().morphism_category(1)(star, star).one()
 
 
-def _denoted_morphism(candidate: CategoryPoint) -> CategoryPoint:
+def _denoted_morphism(candidate: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
     """The morphism a candidate denotes: the defining morphism of a generalized element, else the candidate itself."""
-    if role_of(candidate) is Role.ELEMENT:
+    if candidate._is_element():
         return candidate.defining_morphism()
     return candidate
 
@@ -69,22 +72,22 @@ def _denoted_morphism(candidate: CategoryPoint) -> CategoryPoint:
 class SliceObjectData:
     """The local state introduced by an object of a slice or coslice: the morphism of ``C`` whose fixed end is ``x``."""
 
-    structure: MorphismOfCategory
+    structure: MorphismCategory.ObjectType
 
 
 @dataclass(frozen=True, eq=False, slots=True)
 class SliceTriangleData:
     """The local state introduced by a morphism of a slice or coslice: the morphism of ``C`` between the varying objects."""
 
-    varying: MorphismOfCategory
+    varying: MorphismCategory.ObjectType
 
 
-def _structure_of(member_object: SliceLikeCategory.ObjectType) -> MorphismOfCategory:
+def _structure_of(member_object: SliceLikeCategory.ObjectType) -> MorphismCategory.ObjectType:
     """The defining arrow of an object of a slice or coslice: the state its declaration below introduces."""
     return member_object._structure
 
 
-def _varying_of(triangle: SliceLikeCategory.MorphismType) -> MorphismOfCategory:
+def _varying_of(triangle: SliceLikeCategory.MorphismType) -> MorphismCategory.ObjectType:
     """The morphism of ``C`` a triangle is: the state its declaration below introduces."""
     return triangle._varying
 
@@ -95,7 +98,7 @@ def _varying_of(triangle: SliceLikeCategory.MorphismType) -> MorphismOfCategory:
 slice_member = Predicate("slice_member", 2, False)
 
 
-def _slice_member_by_fixed_end(candidate: CategoryPoint, slice_category: Category) -> Decision:
+def _slice_member_by_fixed_end(candidate: CategoryOfCategories.ElementType, slice_category: Category) -> Decision:
     morphism = _denoted_morphism(candidate)
     if morphism in slice_category.base_of_slice().morphism_category(1):
         return ask(slice_category.fixed_end(morphism) == slice_category.fixed_object())
@@ -105,10 +108,10 @@ def _slice_member_by_fixed_end(candidate: CategoryPoint, slice_category: Categor
 slice_member.register_handler(_slice_member_by_fixed_end)
 
 
-class SliceLikeCategory(Category[[MorphismOfCategory], []]):
+class SliceLikeCategory(Category[[MorphismCategory.ObjectType], []]):
     """The pullback of ``ev_k: Fun([1], C) -> C`` along ``x: * -> C``; ``k = 1`` is the slice and ``k = 0`` the coslice."""
 
-    class ObjectType(ObjectOfCategory):
+    class ObjectType:
         """A morphism of ``C`` with one endpoint pinned at ``x``: the arrow is its whole content."""
 
         def __init__(self, data: SliceObjectData) -> None:
@@ -118,10 +121,10 @@ class SliceLikeCategory(Category[[MorphismOfCategory], []]):
         def __repr__(self) -> str:
             return f"{self._structure!r} in {self.category()!r}"
 
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A generalized element of such an object."""
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """A triangle: the morphism of ``C`` between the varying objects, commuting with the two pinned arrows."""
 
         def __init__(self, data: SliceTriangleData) -> None:
@@ -131,7 +134,7 @@ class SliceLikeCategory(Category[[MorphismOfCategory], []]):
         def __repr__(self) -> str:
             return f"{self._varying!r} in {self.category()!r}"
 
-    def __init__(self, base: Category, fixed: ObjectOfCategory, fixed_label: int) -> None:
+    def __init__(self, base: Category, fixed: CategoryOfCategories.ElementType, fixed_label: int) -> None:
         self._base_of_slice = base
         self._fixed = fixed
         self._fixed_label = fixed_label
@@ -185,7 +188,11 @@ class SliceLikeCategory(Category[[MorphismOfCategory], []]):
             return
         self.fixed_projection().retain_cocartesian_lifts(self._lift)
 
-    def _lift(self, morphism: MorphismOfCategory, member_object: SliceLikeCategory.ObjectType) -> SliceLikeCategory.MorphismType:
+    def _lift(
+        self,
+        morphism: MorphismCategory.ObjectType,
+        member_object: SliceLikeCategory.ObjectType,
+    ) -> SliceLikeCategory.MorphismType:
         """The lift of ``f: y -> z`` at an object of the fibre: ``f: (p * f) -> p`` over ``x``, ``f: p -> (f * p)`` under it."""
         structure = self.defining_arrow_of(member_object)
         if self._fixed_label == 1:
@@ -199,22 +206,22 @@ class SliceLikeCategory(Category[[MorphismOfCategory], []]):
     def base_of_slice(self) -> Category:
         return self._base_of_slice
 
-    def fixed_object(self) -> ObjectOfCategory:
+    def fixed_object(self) -> CategoryOfCategories.ElementType:
         return self._fixed
 
-    def fixed_end(self, morphism: MorphismOfCategory) -> ObjectOfCategory:
+    def fixed_end(self, morphism: MorphismCategory.ObjectType) -> CategoryOfCategories.ElementType:
         """The end of a morphism of ``C`` that an object must fix: the codomain over ``x``, the domain under ``x``."""
         if self._fixed_label == 1:
             return morphism.codomain()
         return morphism.domain()
 
-    def varying_end(self, morphism: MorphismOfCategory) -> ObjectOfCategory:
+    def varying_end(self, morphism: MorphismCategory.ObjectType) -> CategoryOfCategories.ElementType:
         """The other end: the domain over ``x``, the codomain under ``x``."""
         if self._fixed_label == 1:
             return morphism.domain()
         return morphism.codomain()
 
-    def defining_arrow_of(self, candidate: CategoryPoint) -> MorphismOfCategory:
+    def defining_arrow_of(self, candidate: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
         """The defining morphism of a slice object, of a morphism of ``C``, or of a generalized element denoting one."""
         morphism = _denoted_morphism(candidate)
         if morphism in self._base_of_slice.morphism_category(1):
@@ -240,10 +247,10 @@ class SliceLikeCategory(Category[[MorphismOfCategory], []]):
     def Epimorphisms(self) -> Category:
         return self._property(self._base_of_slice.morphism_category(1).Epimorphisms())
 
-    def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         return slice_member(candidate, self)
 
-    def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
+    def _equal(self, first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
         """Two objects are equal when their defining arrows are, two triangles when their varying morphisms are."""
         if first in self and candidate in self:
             return ask(self.defining_arrow_of(first) == self.defining_arrow_of(candidate))
@@ -254,7 +261,7 @@ class SliceLikeCategory(Category[[MorphismOfCategory], []]):
 
     # -- construction ------------------------------------------------------------------
 
-    def __call__(self, value: CategoryPoint) -> SliceLikeCategory.ObjectType:
+    def __call__(self, value: CategoryOfCategories.ElementType) -> SliceLikeCategory.ObjectType:
         """The object of a morphism ``t`` of ``C`` whose fixed end is ``x``, or of a generalized element denoting one."""
         if is_placed(value, self):
             return value
@@ -265,7 +272,12 @@ class SliceLikeCategory(Category[[MorphismOfCategory], []]):
             self._objects[morphism] = self.ObjectType(category=self, data=SliceObjectData(morphism))
         return self._objects[morphism]
 
-    def construct_morphism(self, domain: SliceLikeCategory.ObjectType, codomain: SliceLikeCategory.ObjectType, varying: MorphismOfCategory) -> SliceLikeCategory.MorphismType:
+    def construct_morphism(
+        self,
+        domain: SliceLikeCategory.ObjectType,
+        codomain: SliceLikeCategory.ObjectType,
+        varying: MorphismCategory.ObjectType,
+    ) -> SliceLikeCategory.MorphismType:
         """The triangle whose varying morphism is ``varying``, which must commute with the two defining arrows."""
         source, target = self.defining_arrow_of(domain), self.defining_arrow_of(codomain)
         assert varying in self._base_of_slice.morphism_category(1)(self.varying_end(source), self.varying_end(target))
@@ -277,7 +289,12 @@ class SliceLikeCategory(Category[[MorphismOfCategory], []]):
             data=SliceTriangleData(varying),
         )
 
-    def _commutes(self, source: MorphismOfCategory, target: MorphismOfCategory, varying: MorphismOfCategory) -> Proposition:
+    def _commutes(
+        self,
+        source: MorphismCategory.ObjectType,
+        target: MorphismCategory.ObjectType,
+        varying: MorphismCategory.ObjectType,
+    ) -> Proposition:
         """The commuting condition of a triangle: ``target . varying == source`` over ``x``, ``varying . source == target`` under it."""
         if self._fixed_label == 1:
             return target * varying == source
@@ -301,7 +318,7 @@ class SliceLikeCategory(Category[[MorphismOfCategory], []]):
         source, target = self.defining_arrow_of(triangle.domain()), self.defining_arrow_of(triangle.codomain())
         return self.arrows().morphism_category(1)(source, target)(lambda vertex: components[_walking_arrow().label(vertex)])
 
-    def varying_component(self, square: NaturalTransformation) -> MorphismOfCategory:
+    def varying_component(self, square: NaturalTransformation) -> MorphismCategory.ObjectType:
         """The component of a commuting square of ``Fun([1], C)`` at the varying end: the triangle it is."""
         return square.component(_walking_arrow()(1 - self._fixed_label))
 
@@ -339,12 +356,12 @@ def _chosen_pullback(apex: SliceLikeCategory) -> SliceLikeCategory:
     return Cat().Pullbacks().with_universal_data(diagram, apex, cone(diagram, apex, lambda vertex: legs[cospan.label(vertex)]), mediator)
 
 
-def slice_over(base: Category, fixed: ObjectOfCategory) -> SliceLikeCategory:
+def slice_over(base: Category, fixed: CategoryOfCategories.ElementType) -> SliceLikeCategory:
     """``C.SliceOver(x)``: the chosen pullback of ``ev_1`` along ``x``, retained in ``Cat().Pullbacks()``."""
     return _chosen_pullback(SliceLikeCategory(base, fixed, 1))
 
 
-def coslice_under(base: Category, fixed: ObjectOfCategory) -> SliceLikeCategory:
+def coslice_under(base: Category, fixed: CategoryOfCategories.ElementType) -> SliceLikeCategory:
     """``C.CosliceUnder(x)``: the chosen pullback of ``ev_0`` along ``x``, retained in ``Cat().Pullbacks()``."""
     return _chosen_pullback(SliceLikeCategory(base, fixed, 0))
 
@@ -386,7 +403,7 @@ def comma_category(first: Functor, second: Functor) -> Category:
 has_morphism_property = Predicate("has_morphism_property", 2, False)
 
 
-def _has_morphism_property(candidate: CategoryPoint, family: Category) -> Decision:
+def _has_morphism_property(candidate: CategoryOfCategories.ElementType, family: Category) -> Decision:
     """The containment question the property subcategory declares, asked of the defining arrow (POL-CAT-043, POL-CAT-044)."""
     return ask(family.property_category().membership_proposition(family.defining_arrow_of(candidate)))
 
@@ -394,7 +411,7 @@ def _has_morphism_property(candidate: CategoryPoint, family: Category) -> Decisi
 has_morphism_property.register_handler(_has_morphism_property)
 
 
-class SliceProperty(FullSubcategory[[MorphismOfCategory], []]):
+class SliceProperty(FullSubcategory[[MorphismCategory.ObjectType], []]):
     """``C.SliceOver(x).Monomorphisms()`` and its relatives: a property subcategory of ``Mor(C)`` pulled back along the defining-arrow functor.
 
     The property subcategory is identity on values, so the pullback is the full
@@ -408,13 +425,13 @@ class SliceProperty(FullSubcategory[[MorphismOfCategory], []]):
     # A subobject of ``x`` is the pair ``(a, j: a -> x)`` with ``j`` monic, and the pair
     # is the object of the slice, so the property adds nothing to it.  ``j`` is read
     # through the retained ``defining_arrow()`` functor rather than stored again.
-    class ObjectType(ObjectOfCategory):
+    class ObjectType:
         """An object of the slice whose defining arrow has the property, as the same value."""
 
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A point of such an object."""
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """A triangle of the slice between two such objects."""
 
     def __init__(self, ambient: SliceLikeCategory, property_category: Category) -> None:
@@ -439,13 +456,13 @@ class SliceProperty(FullSubcategory[[MorphismOfCategory], []]):
             self._retained[self] = self._ambient.defining_arrow() * self.subcategory_monomorphism()
         return self._retained[self]
 
-    def defining_arrow_of(self, candidate: CategoryPoint) -> MorphismOfCategory:
+    def defining_arrow_of(self, candidate: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
         return self._ambient.defining_arrow_of(candidate)
 
-    def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         return self._ambient.membership_proposition(candidate) & has_morphism_property(candidate, self)
 
-    def __call__(self, value: CategoryPoint) -> SliceLikeCategory.ObjectType:
+    def __call__(self, value: CategoryOfCategories.ElementType) -> SliceLikeCategory.ObjectType:
         """The object of a morphism with the property: the trusted constructor of the property on it (POL-MATH-037), rejected only when decided false."""
         assert ask(has_morphism_property(value, self)) is not False, f"{value!r} is not in {self._property_category!r}"
         self._property_category(self.defining_arrow_of(value))
@@ -467,16 +484,19 @@ class SubobjectsOfProduct(SliceProperty):
 
     # The product structure of ``P`` adds no point and no triangle; it adds
     # ``product_projection`` on the subobject below.
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A point of a subobject of a product."""
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """A triangle of the slice between two subobjects of a product."""
 
-    class ObjectType(ObjectOfCategory):
+    class ObjectType:
         """A subobject ``j: S -> P`` of a product: its components are ``P``'s projections after ``j``."""
 
-        def product_projection(self, index: ObjectOfCategory | Hashable) -> MorphismOfCategory:
+        def product_projection(
+            self,
+            index: CategoryOfCategories.ElementType | Hashable,
+        ) -> MorphismCategory.ObjectType:
             """``P.product_projection(i) after j``, so a subobject of a product has every component (POL-CAT-094)."""
             monomorphism = self.category().narrowing_base().defining_arrow_of(self)
             return monomorphism.codomain().product_projection(index) * monomorphism

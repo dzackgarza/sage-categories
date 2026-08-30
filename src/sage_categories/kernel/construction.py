@@ -149,6 +149,23 @@ def _retain_initializer_invocation[Datum](
     invocations[runtime_category] = _InitializerInvocation(initializer, datum)
 
 
+def _retained_initializer_replay(
+    target_image: CategoryPoint,
+    runtime_category: SageCategory,
+) -> Callable[[CategoryPoint], None]:
+    """The target-image initializer for ``runtime_category``, closed over its local datum."""
+    assert target_image in _initializer_invocations, f"{target_image!r} retains no initializer records"
+    invocations: MonoDict = _initializer_invocations[target_image]
+    assert runtime_category in invocations, f"{target_image!r} retains no initializer record for {runtime_category!r}"
+    invocation: _InitializerInvocation = invocations[runtime_category]
+
+    def replay(source_value: CategoryPoint) -> None:
+        _retain_initializer_invocation(source_value, runtime_category, invocation.initializer, invocation.datum)
+        invocation.initializer(source_value, invocation.datum)
+
+    return replay
+
+
 def retain_object_input[Value: ObjectOfCategory, Datum](construction_input: ObjectConstructionInput[Value, Datum]) -> None:
     value = construction_input.canonical_image
     if value in _object_inputs:

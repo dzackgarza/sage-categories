@@ -13,7 +13,7 @@ from sage.misc.c3_controlled import C3_sorted_merge
 from sage.misc.lazy_attribute import lazy_attribute
 from sage.structure.dynamic_class import dynamic_class
 
-from sage_categories.kernel.caches import MonoDict, canonical_images, retain_constructed_transport
+from sage_categories.kernel.caches import MonoDict, canonical_images
 from sage_categories.kernel.construction import (
     CategoryPointIdentity,
     ElementConstructionContext,
@@ -37,6 +37,7 @@ from sage_categories.kernel.construction import (
     retain_object_input,
     retained_object_input,
     _retain_initializer_invocation,
+    _retained_initializer_replay,
 )
 from sage_categories.kernel.roles import (
     CategoryPoint,
@@ -61,12 +62,10 @@ __all__ = [
     "catalogue",
     "compile_category",
     "controlled_bases",
-    "element_inputs",
     "install_level_shift",
     "install_on_declaration",
     "morphism_inputs",
     "node",
-    "object_inputs",
     "reachable",
     "recompile_category",
     "same_node",
@@ -616,14 +615,59 @@ def _advance(owner: type[CategoryPoint], instance: CategoryPoint) -> None:
     super(owner, instance).__init__()
 
 
+type InitializerReplay = Callable[[CategoryPoint], None]
+type TargetReplays = Callable[[], dict[SageCategory, InitializerReplay]]
+
+
+def _target_replays(
+    current: Node,
+    images: tuple[tuple[Node, CategoryPoint], ...],
+) -> dict[SageCategory, InitializerReplay]:
+    """Target initializers keyed by Sage runtime category in source C3 order."""
+    order = {key: position for position, key in enumerate(_linearize(current)[0])}
+    replays: dict[SageCategory, InitializerReplay] = {}
+    for target, image in sorted(images, key=lambda candidate: order[node_key(candidate[0])]):
+        for runtime_category, replay in _retained_initializer_replays(image):
+            replays.setdefault(runtime_category, replay)
+    return replays
+
+
+def _object_target_replays(current: Node, source: ObjectOfCategory) -> dict[SageCategory, InitializerReplay]:
+    """The initialized public object images of ``current``'s selected functors."""
+    return _target_replays(current, tuple((target, functor.on_object(source)) for functor, target in successors(current)))
+
+
+def _element_target_replays(current: Node, source: CategoryPoint) -> dict[SageCategory, InitializerReplay]:
+    """The initialized public element images of ``current``'s selected functors."""
+    defining_morphism = source.defining_morphism()
+    return _target_replays(
+        current,
+        tuple(
+            (target, functor.codomain().element_from_defining_morphism(functor.on_morphism(defining_morphism)))
+            for functor, target in successors(current)
+        ),
+    )
+
+
+def _morphism_target_replays(current: Node, source: MorphismOfCategory) -> dict[SageCategory, InitializerReplay]:
+    """The initialized public morphism images of ``current``'s selected functors."""
+    return _target_replays(current, tuple((target, functor.on_morphism(source)) for functor, target in successors(current)))
+
+
 def _object_step[Value: ObjectOfCategory, Datum](
     current: Node,
     construction_input: ObjectConstructionInput[Value, Datum],
     instance: ObjectOfCategory,
+    target_replays: TargetReplays | None = None,
 ) -> Callable[[], None]:
     runtime = _runtime(current)
 
     def initialize() -> None:
+        if target_replays is not None:
+            replay = target_replays().get(_runtime_category(current))
+            if replay is not None:
+                replay(instance)
+                return
         if runtime.initializer is None:
             _advance(runtime.owner, instance)
             return
@@ -637,10 +681,16 @@ def _element_step[Value: CategoryPoint, Datum](
     current: Node,
     construction_input: ElementConstructionInput[Value, Datum],
     instance: Value,
+    target_replays: TargetReplays | None = None,
 ) -> Callable[[], None]:
     runtime = _runtime(current)
 
     def initialize() -> None:
+        if target_replays is not None:
+            replay = target_replays().get(_runtime_category(current))
+            if replay is not None:
+                replay(instance)
+                return
         if runtime.initializer is None:
             _advance(runtime.owner, instance)
             return
@@ -654,10 +704,16 @@ def _morphism_step[Value: MorphismOfCategory, Datum](
     current: Node,
     construction_input: MorphismConstructionInput[Value, Datum],
     instance: MorphismOfCategory,
+    target_replays: TargetReplays | None = None,
 ) -> Callable[[], None]:
     runtime = _runtime(current)
 
     def initialize() -> None:
+        if target_replays is not None:
+            replay = target_replays().get(_runtime_category(current))
+            if replay is not None:
+                replay(instance)
+                return
         if runtime.initializer is None:
             _advance(runtime.owner, instance)
             return

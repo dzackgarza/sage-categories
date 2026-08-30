@@ -783,14 +783,10 @@ _composite_factors: MonoDict = MonoDict()
 
 @dataclass(frozen=True, eq=False, slots=True)
 class FunctorData:
-    """The local state introduced by the functor role."""
+    """The two complete executable actions of a functor (D123, POL-FUN-002)."""
 
-    # A structural functor whose images are values the domain's defining data already
-    # names has no value-level action of its own: its images exist before any value of the
-    # domain does, so the kernel builds them from construction inputs and never calls a
-    # callback (POL-FUN-035).  Its actions are ``None``.
-    on_object: OnObject | None
-    on_morphism: OnMorphism | None
+    on_object: OnObject
+    on_morphism: OnMorphism
 
 
 class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignment]]):

@@ -1,0 +1,400 @@
+"""R1: synthetic acceptance for the private Sage-backed category compiler."""
+
+import sys
+
+import pytest
+
+from sage_categories.cat import Fun
+from sage_categories.cat.category import Category
+from sage_categories.cat.properties import PropertySubcategory
+from sage_categories.kernel.compiler import SemanticCollisionError
+
+
+_BASE_OBJECT_INITIALIZATIONS = []
+_BASE_ELEMENT_INITIALIZATIONS = []
+_BASE_MORPHISM_INITIALIZATIONS = []
+_SELECTED_FUNCTORS = {}
+
+
+class _SyntheticCategoryOperations:
+    """Construction operations shared only by the synthetic R1 specimens."""
+
+    def __init__(self) -> None:
+        self._synthetic_objects = {}
+        super().__init__()
+
+    def __call__(self, label):
+        if label not in self._synthetic_objects:
+            self._synthetic_objects[label] = self.ObjectType(self, label)
+        return self._synthetic_objects[label]
+
+    def _label(self, member_object):
+        return member_object._synthetic_label
+
+    def element_from_defining_morphism(self, defining_morphism):
+        if defining_morphism not in self._elements:
+            self._elements[defining_morphism] = defining_morphism.codomain().category().ElementType(
+                defining_morphism,
+                self._label(defining_morphism.codomain()),
+            )
+        return self._elements[defining_morphism]
+
+    def construct_morphism(self, domain, codomain):
+        assert domain is codomain
+        return self.MorphismType(
+            self.morphism_category(1),
+            domain,
+            codomain,
+            self._label(domain),
+        )
+
+    def construct_identity(self, member_object):
+        return self.MorphismType(
+            self.morphism_category(1),
+            member_object,
+            member_object,
+            self._label(member_object),
+        )
+
+    def composite(self, second, first):
+        assert first.codomain() is second.domain()
+        return first
+
+
+class BaseCategory(_SyntheticCategoryOperations, Category[[], []]):
+    class ObjectType:
+        def __init__(self, label) -> None:
+            _BASE_OBJECT_INITIALIZATIONS.append(self)
+            self._base_state = label
+            self._synthetic_label = label
+            super().__init__()
+
+        def base_object(self):
+            return self, self._base_state
+
+        def preferred_object(self):
+            return BASE(0)
+
+        def __pos__(self):
+            return self, self._base_state
+
+    class ElementType:
+        def __init__(self, label) -> None:
+            _BASE_ELEMENT_INITIALIZATIONS.append(self)
+            self._base_element_state = label
+            self._synthetic_label = label
+            super().__init__()
+
+        def base_element(self):
+            return self, self._base_element_state
+
+    class MorphismType:
+        def __init__(self, label) -> None:
+            _BASE_MORPHISM_INITIALIZATIONS.append(self)
+            self._base_morphism_state = label
+            self._synthetic_label = label
+            super().__init__()
+
+        def base_morphism(self):
+            return self, self._base_morphism_state
+
+
+BASE = BaseCategory()
+
+
+class LeftCategory(_SyntheticCategoryOperations, Category[[], []]):
+    class ObjectType:
+        def __init__(self, label) -> None:
+            self._left_state = label
+            self._synthetic_label = label
+            super().__init__()
+
+        def left_object(self):
+            return self, self._left_state
+
+    class ElementType:
+        def __init__(self, label) -> None:
+            self._left_element_state = label
+            self._synthetic_label = label
+            super().__init__()
+
+        def left_element(self):
+            return self, self._left_element_state
+
+    class MorphismType:
+        def __init__(self, label) -> None:
+            self._left_morphism_state = label
+            self._synthetic_label = label
+            super().__init__()
+
+        def left_morphism(self):
+            return self, self._left_morphism_state
+
+    def structure_functors(self):
+        key = id(self)
+        if key not in _SELECTED_FUNCTORS:
+            _SELECTED_FUNCTORS[key] = (
+                Fun(self, BASE)(self._object_to_base, self._morphism_to_base),
+            )
+        return _SELECTED_FUNCTORS[key]
+
+    def _object_to_base(self, member_object):
+        return BASE(self._label(member_object))
+
+    def _morphism_to_base(self, morphism):
+        domain = self._object_to_base(morphism.domain())
+        codomain = self._object_to_base(morphism.codomain())
+        return BASE.morphism_category(1)(domain, codomain).one()
+
+
+LEFT = LeftCategory()
+
+
+class RightCategory(_SyntheticCategoryOperations, Category[[], []]):
+    class ObjectType:
+        def __init__(self, label) -> None:
+            self._right_state = label
+            self._synthetic_label = label
+            super().__init__()
+
+        def right_object(self):
+            return self, self._right_state
+
+    class ElementType:
+        def __init__(self, label) -> None:
+            self._right_element_state = label
+            self._synthetic_label = label
+            super().__init__()
+
+        def right_element(self):
+            return self, self._right_element_state
+
+    class MorphismType:
+        def __init__(self, label) -> None:
+            self._right_morphism_state = label
+            self._synthetic_label = label
+            super().__init__()
+
+        def right_morphism(self):
+            return self, self._right_morphism_state
+
+    def structure_functors(self):
+        key = id(self)
+        if key not in _SELECTED_FUNCTORS:
+            _SELECTED_FUNCTORS[key] = (
+                Fun(self, BASE)(self._object_to_base, self._morphism_to_base),
+            )
+        return _SELECTED_FUNCTORS[key]
+
+    def _object_to_base(self, member_object):
+        return BASE(self._label(member_object))
+
+    def _morphism_to_base(self, morphism):
+        domain = self._object_to_base(morphism.domain())
+        codomain = self._object_to_base(morphism.codomain())
+        return BASE.morphism_category(1)(domain, codomain).one()
+
+
+RIGHT = RightCategory()
+
+
+class DiamondCategory(_SyntheticCategoryOperations, Category[[], []]):
+    class ObjectType:
+        def __init__(self, label) -> None:
+            self._diamond_state = label
+            self._synthetic_label = label
+            super().__init__()
+
+        def diamond_object(self):
+            return self, self._diamond_state
+
+        def preferred_object(self):
+            return self
+
+    class ElementType:
+        def __init__(self, label) -> None:
+            self._diamond_element_state = label
+            self._synthetic_label = label
+            super().__init__()
+
+        def diamond_element(self):
+            return self, self._diamond_element_state
+
+    class MorphismType:
+        def __init__(self, label) -> None:
+            self._diamond_morphism_state = label
+            self._synthetic_label = label
+            super().__init__()
+
+        def diamond_morphism(self):
+            return self, self._diamond_morphism_state
+
+    def structure_functors(self):
+        key = id(self)
+        if key not in _SELECTED_FUNCTORS:
+            _SELECTED_FUNCTORS[key] = (
+                Fun(self, LEFT)(self._object_to_left, self._morphism_to_left),
+                Fun(self, RIGHT)(self._object_to_right, self._morphism_to_right),
+            )
+        return _SELECTED_FUNCTORS[key]
+
+    def _object_to_left(self, member_object):
+        return LEFT(self._label(member_object))
+
+    def _morphism_to_left(self, morphism):
+        domain = self._object_to_left(morphism.domain())
+        codomain = self._object_to_left(morphism.codomain())
+        return LEFT.morphism_category(1)(domain, codomain).one()
+
+    def _object_to_right(self, member_object):
+        return RIGHT(self._label(member_object))
+
+    def _morphism_to_right(self, morphism):
+        domain = self._object_to_right(morphism.domain())
+        codomain = self._object_to_right(morphism.codomain())
+        return RIGHT.morphism_category(1)(domain, codomain).one()
+
+
+DIAMOND = DiamondCategory()
+
+
+def test_kernel_imports_without_production_leaves() -> None:
+    production_leaf_prefixes = (
+        "sage_categories.sets",
+        "sage_categories.posets",
+        "sage_categories.number_sets",
+        "sage_categories.ordinals",
+    )
+    assert not any(
+        module == prefix or module.startswith(prefix + ".")
+        for module in sys.modules
+        for prefix in production_leaf_prefixes
+    )
+
+
+def test_sage_compiler_runs_the_object_element_and_morphism_diamond() -> None:
+    member_object = DIAMOND(7)
+    identity = DIAMOND.morphism_category(1)(member_object, member_object).one()
+    element = DIAMOND.element_from_defining_morphism(identity)
+
+    for source, state in (
+        member_object.diamond_object(),
+        member_object.left_object(),
+        member_object.right_object(),
+        member_object.base_object(),
+    ):
+        assert source is member_object
+        assert state == 7
+    assert member_object.preferred_object() is member_object
+    special_source, special_state = +member_object
+    assert special_source is member_object
+    assert special_state == 7
+
+    for source, state in (
+        element.diamond_element(),
+        element.left_element(),
+        element.right_element(),
+        element.base_element(),
+    ):
+        assert source is element
+        assert state == 7
+
+    for source, state in (
+        identity.diamond_morphism(),
+        identity.left_morphism(),
+        identity.right_morphism(),
+        identity.base_morphism(),
+    ):
+        assert source is identity
+        assert state == 7
+
+    assert sum(initialized is member_object for initialized in _BASE_OBJECT_INITIALIZATIONS) == 1
+    assert sum(initialized is element for initialized in _BASE_ELEMENT_INITIALIZATIONS) == 1
+    assert sum(initialized is identity for initialized in _BASE_MORPHISM_INITIALIZATIONS) == 1
+
+
+def test_selected_functor_owns_separate_cached_public_images() -> None:
+    member_object = DIAMOND(11)
+    identity = DIAMOND.morphism_category(1)(member_object, member_object).one()
+    to_left = DIAMOND.structure_functors()[0]
+    left_to_base = LEFT.structure_functors()[0]
+
+    object_image = to_left.on_object(member_object)
+    morphism_image = to_left.on_morphism(identity)
+    base_image = left_to_base.on_object(object_image)
+
+    assert object_image is LEFT(11)
+    assert object_image is not member_object
+    assert to_left.on_object(member_object) is object_image
+    assert base_image is BASE(11)
+    inherited_source, inherited_state = member_object.left_object()
+    assert inherited_source is member_object
+    assert inherited_state == 11
+    assert morphism_image is LEFT.morphism_category(1)(object_image, object_image).one()
+    assert morphism_image is not identity
+    assert to_left.on_morphism(identity) is morphism_image
+    assert DIAMOND.structure_functors()[0] is to_left
+
+
+def test_property_refinement_preserves_object_identity() -> None:
+    member_object = DIAMOND(13)
+    property_category = PropertySubcategory(DIAMOND, "SyntheticR1Property", ())
+
+    refined = property_category(member_object)
+
+    assert refined is member_object
+    assert refined in property_category
+    left_source, left_state = refined.left_object()
+    right_source, right_state = refined.right_object()
+    assert left_source is refined and left_state == 13
+    assert right_source is refined and right_state == 13
+
+
+def test_incomparable_method_owners_fail_at_compilation() -> None:
+    class CollisionLeft(_SyntheticCategoryOperations, Category[[], []]):
+        class ObjectType:
+            def collision(self):
+                return self
+
+        class ElementType:
+            pass
+
+        class MorphismType:
+            pass
+
+    collision_left = CollisionLeft()
+
+    class CollisionRight(_SyntheticCategoryOperations, Category[[], []]):
+        class ObjectType:
+            def collision(self):
+                return self
+
+        class ElementType:
+            pass
+
+        class MorphismType:
+            pass
+
+    collision_right = CollisionRight()
+
+    class CollisionDiamond(_SyntheticCategoryOperations, Category[[], []]):
+        class ObjectType:
+            pass
+
+        class ElementType:
+            pass
+
+        class MorphismType:
+            pass
+
+        def structure_functors(self):
+            key = id(self)
+            if key not in _SELECTED_FUNCTORS:
+                _SELECTED_FUNCTORS[key] = (
+                    Fun(self, collision_left)(lambda member: collision_left(0), lambda morphism: collision_left.morphism_category(1)(collision_left(0), collision_left(0)).one()),
+                    Fun(self, collision_right)(lambda member: collision_right(0), lambda morphism: collision_right.morphism_category(1)(collision_right(0), collision_right(0)).one()),
+                )
+            return _SELECTED_FUNCTORS[key]
+
+    with pytest.raises(SemanticCollisionError, match="collision"):
+        CollisionDiamond()

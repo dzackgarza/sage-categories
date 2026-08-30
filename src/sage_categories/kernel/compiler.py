@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from types import CellType, FunctionType
+from types import CellType, FunctionType, GenericAlias
 from typing import TYPE_CHECKING, Concatenate, Generic, NamedTuple
 
 from sage.categories.category import Category as SageCategory
@@ -376,6 +376,8 @@ def _rebound[**P, R](member: DeclaredMethod[P, R], compiled: type[CategoryPoint]
 
 def _install_written_body(compiled: type[CategoryPoint], local: type[CategoryPoint]) -> None:
     """Rebind each copied method whose zero-argument ``super()`` names ``local``."""
+    if Generic in local.__mro__:
+        compiled.__class_getitem__ = classmethod(GenericAlias)
     for name, member in vars(local).items():
         if isinstance(member, classmethod | staticmethod | FunctionType):
             setattr(compiled, name, _rebound(member, compiled))
@@ -403,7 +405,8 @@ def install_on_declaration[**P, R](local: type[CategoryPoint], name: str, member
 
 def _compiled_class(current: Node) -> type[CategoryPoint]:
     """The Sage-compiled implementation class of ``current``'s private runtime category."""
-    compiled = _runtime_category(current).parent_class
+    with building_role_classes():
+        compiled = _runtime_category(current).parent_class
     _install_written_body(compiled, current.category.local_role_class(current.role))
     return compiled
 

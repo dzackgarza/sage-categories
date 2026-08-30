@@ -808,7 +808,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     # class derives from the one below and Python evaluates a base before the body, which
     # is why that class is written above rather than between these lines.  Where it is
     # written is not a second form; ``ObjectType = FullSubcategory.ObjectType`` and
-    # ``MorphismCategory.ObjectType = MorphismOfCategory`` say the same thing the same way.
+    # ``MorphismCategory.ObjectType = Cat().MorphismType`` say the same thing the same way.
     ObjectType = CategoryDeclaration
 
     # Inhabitation and emptiness of a category, as the two property subcategories
@@ -822,7 +822,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     Inhabited = Axiom()
     Empty = Axiom()
 
-    class ElementType(CategoryPoint):
+    class ElementType:
         """A point ``* -> C`` of a category, whose value is an object of ``C`` (POL-CAT-058)."""
 
         def __mul__(self, other: ObjectOfCategory) -> ObjectOfCategory:
@@ -844,7 +844,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         def __repr__(self) -> str:
             return f"point of {self.parent()!r}"
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """A functor: a morphism of ``Cat()`` with a domain, a codomain, and total object and morphism actions."""
 
         def __init__(self, data: FunctorData) -> None:

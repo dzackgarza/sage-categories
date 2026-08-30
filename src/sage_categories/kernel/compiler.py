@@ -881,16 +881,22 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
 
 
 def recompile_category(category: Category, functors: tuple[Functor, ...]) -> None:
-    """Compile ``category`` again after an implementation claimed the declaration it is (D80).
-
-    The declared object is the final object, so this compiles onto the one already in
-    ``Cat()``: the ordinal is not retaken, and the cached linearizations and method
-    catalogues are this compile's own outputs, so they are dropped and rebuilt.
-    """
+    """Compile ``category`` again after an implementation claims its declaration (D80)."""
     for role in Role:
-        table = _linearizations[role]
+        table = _runtime_categories[role]
         if category in table:
             del table[category]
+        runtimes = tuple(runtime for _, runtime in table.items())
+        for runtime in runtimes:
+            for name in (
+                "parent_class",
+                "_all_super_categories",
+                "_all_super_categories_proper",
+                "_set_of_super_categories",
+                "_super_categories",
+                "_super_categories_for_classes",
+            ):
+                runtime.__dict__.pop(name, None)
     category.catalogues().clear()
     compile_category(category, functors)
 

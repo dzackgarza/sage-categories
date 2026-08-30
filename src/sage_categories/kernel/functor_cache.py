@@ -31,9 +31,8 @@ def _load_cap() -> None:
     )
     assert bool(libgap.LoadPackage("CAP", f"={CAP_VERSION}")), f"CAP {CAP_VERSION} is required"
     package_info = libgap.PackageInfo("CAP")
-    assert str(package_info[0].Version) == CAP_VERSION, (
-        f"loaded CAP {package_info[0].Version}, expected {CAP_VERSION}"
-    )
+    loaded_version = str(package_info[0]["Version"])
+    assert loaded_version == CAP_VERSION, f"loaded CAP {loaded_version}, expected {CAP_VERSION}"
 
 
 _load_cap()
@@ -101,25 +100,6 @@ class FunctorImageCache:
         if len(cached) != 0:
             return self._morphism_images_by_handle[CacheHandle(int(cached[0]))]
         image = construct(source)
-        image_handle = self._handle(self._morphism_handles, image)
-        self._morphism_images_by_handle[image_handle] = image
-        libgap.SetCacheValue(self._morphisms, key, image_handle)
-        return image
-
-    def retain_object(self, source: ObjectOfCategory, image: ObjectOfCategory) -> ObjectOfCategory:
-        return self.object_image(source, lambda _: image)
-
-    def retain_morphism(
-        self,
-        source: MorphismOfCategory,
-        domain_image: ObjectOfCategory,
-        codomain_image: ObjectOfCategory,
-        image: MorphismOfCategory,
-    ) -> MorphismOfCategory:
-        key = self._morphism_key(source, domain_image, codomain_image)
-        cached = libgap.CacheValue(self._morphisms, key)
-        if len(cached) != 0:
-            return self._morphism_images_by_handle[CacheHandle(int(cached[0]))]
         image_handle = self._handle(self._morphism_handles, image)
         self._morphism_images_by_handle[image_handle] = image
         libgap.SetCacheValue(self._morphisms, key, image_handle)

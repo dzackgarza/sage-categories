@@ -8,16 +8,20 @@ domains it owns (points of one set, set maps on a finite enumerable
 domain, paths of a finitely presented category).  Everything else is ``Unknown``.
 """
 
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import EqualityPredicate
-from sage_categories.kernel.roles import CategoryPoint
+
+if TYPE_CHECKING:
+    from sage_categories.cat.category import CategoryOfCategories
 
 __all__ = ["equality_predicate"]
 
 
-def _identity(first: CategoryPoint, candidate: Any) -> Decision:
+def _identity(first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
     if first is candidate:
         return True
     return Unknown

@@ -21,14 +21,21 @@ CacheHandle = NewType("CacheHandle", int)
 
 
 def _load_cap() -> None:
-    package_directory = Path(__file__).resolve().parents[3] / ".gap" / "pkg" / f"CAP-{CAP_VERSION}"
-    assert package_directory.is_dir(), (
-        f"CAP {CAP_VERSION} is not provisioned at {package_directory}; run the repository-owned GAP package installer"
+    package_root = Path(__file__).resolve().parents[3] / ".gap" / "pkg"
+    tools_directory = package_root / f"ToolsForHomalg-{TOOLS_FOR_HOMALG_VERSION}"
+    cap_directory = package_root / f"CAP-{CAP_VERSION}"
+    assert tools_directory.is_dir(), (
+        f"ToolsForHomalg {TOOLS_FOR_HOMALG_VERSION} is not provisioned at {tools_directory}; "
+        "run the repository-owned GAP package installer"
     )
-    libgap.SetPackagePath("CAP", str(package_directory))
+    assert cap_directory.is_dir(), (
+        f"CAP {CAP_VERSION} is not provisioned at {cap_directory}; run the repository-owned GAP package installer"
+    )
+    libgap.SetPackagePath("ToolsForHomalg", str(tools_directory))
     assert bool(libgap.LoadPackage("ToolsForHomalg", f"={TOOLS_FOR_HOMALG_VERSION}")), (
         f"ToolsForHomalg {TOOLS_FOR_HOMALG_VERSION} is required"
     )
+    libgap.SetPackagePath("CAP", str(cap_directory))
     assert bool(libgap.LoadPackage("CAP", f"={CAP_VERSION}")), f"CAP {CAP_VERSION} is required"
     package_info = libgap.PackageInfo("CAP")
     loaded_version = str(package_info[0]["Version"])

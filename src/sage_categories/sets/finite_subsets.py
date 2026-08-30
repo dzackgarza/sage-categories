@@ -48,12 +48,12 @@ from __future__ import annotations
 
 from sage.arith.misc import binomial
 from sage.combinat.subset import Subsets
+from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict
 
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
 from sage_categories.cat.properties import PropertySubcategory
-from sage_categories.kernel.caches import retained_method
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import ask, conjunction, established
 from sage_categories.kernel.refinement import refine
@@ -136,14 +136,14 @@ class FiniteSubsetsCategory(PropertySubcategory[[Rule], []]):
 
     # -- construction -----------------------------------------------------------------
 
-    @retained_method
+    @cached_method(key=lambda self, base_set: (id(base_set), base_set))
     def __call__(self, base_set: SetObject) -> SetObject:
         """The set of finite subsets of ``X``, retained per ``X``."""
         sets = _sets.Sets()
         assert base_set in sets, f"{base_set!r} is not an object of {sets!r}"
         return self._construct(base_set, Unknown)
 
-    @retained_method
+    @cached_method(key=lambda self, size, base_set: (size, (id(base_set), base_set)))
     def of_size(self, size: int, base_set: SetObject) -> SetObject:
         """``Sets().SubsetsOfSize(k)(X)``: the set of subsets of ``X`` of size ``k``, retained per pair."""
         sets = _sets.Sets()
@@ -212,7 +212,7 @@ class FiniteSubsetsCategory(PropertySubcategory[[Rule], []]):
         assert subsets in self._sizes, f"{subsets!r} retains no subset size"
         return self._sizes[subsets]
 
-    @retained_method
+    @cached_method(key=lambda self, subsets, point: ((id(subsets), subsets), (id(point), point)))
     def subset_at(self, subsets: SetObject, point: SetElement) -> SetObject:
         assert point in subsets, f"{point!r} is not a point of {subsets!r}"
         sets = _sets.Sets()
@@ -259,7 +259,7 @@ class FinitelySupportedFunctionsCategory(PropertySubcategory[[Rule], []]):
         self._index_sets: MonoDict = MonoDict()
         super().__init__(ambient, "FinitelySupportedFunctions", {Role.OBJECT: FinitelySupportedFunctionsRole}, ())
 
-    @retained_method
+    @cached_method(key=lambda self, index_set, basepoint: ((id(index_set), index_set), (id(basepoint), basepoint)))
     def __call__(self, index_set: SetObject, basepoint: SetElement) -> SetObject:
         """``X^(S)`` for the pointed set ``(X, x0)`` with ``x0`` a point of ``X``, retained per pair."""
         sets = _sets.Sets()

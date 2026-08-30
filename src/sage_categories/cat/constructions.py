@@ -54,7 +54,6 @@ from sage_categories.cat.diagrams import from_sequence
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.properties import FullSubcategory
 from sage_categories.cat.shapes import is_discrete
-from sage_categories.kernel.caches import SequenceTable
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import Predicate, Proposition
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
@@ -360,10 +359,6 @@ class ProductsCategory(ApexCategory):
             assert candidate_cone.codomain() is data.diagram, f"{candidate_cone!r} is not a cone over {data.diagram!r}"
             return data.mediator(candidate_cone)
 
-    def __init__(self, ambient: Category) -> None:
-        self._sequences = SequenceTable()
-        super().__init__(ambient)
-
     def diagrams(self, shape: Category) -> Category:
         assert is_discrete(shape), f"{shape!r} is not a discrete shape"
         return Fun(shape, self.narrowing_base())
@@ -371,11 +366,9 @@ class ProductsCategory(ApexCategory):
     def _sequence_diagram(self, sequence: tuple[ObjectOfCategory, ...]) -> Functor:
         """The sequence diagram on objects of ``C``, retained per sequence."""
         ambient = self.narrowing_base()
-        if sequence not in self._sequences:
-            for member_object in sequence:
-                assert member_object in ambient, f"{member_object!r} is not an object of {ambient!r}"
-            self._sequences[sequence] = from_sequence(ambient, sequence)
-        return self._sequences[sequence]
+        for member_object in sequence:
+            assert member_object in ambient, f"{member_object!r} is not an object of {ambient!r}"
+        return from_sequence(ambient, sequence)
 
     def __call__(self, family: Functor | tuple[ObjectOfCategory, ...]) -> ObjectOfCategory:
         """``C.Products()(diagram)`` for a diagram over ``Discrete(S)``; ``C.Products()((X_0, ..., X_n))`` for the sequence form."""
@@ -504,10 +497,6 @@ class CoproductsCategory(ApexCategory):
             assert candidate_cocone.domain() is data.diagram, f"{candidate_cocone!r} is not a cocone under {data.diagram!r}"
             return data.mediator(candidate_cocone)
 
-    def __init__(self, ambient: Category) -> None:
-        self._sequences = SequenceTable()
-        super().__init__(ambient)
-
     def diagrams(self, shape: Category) -> Category:
         assert is_discrete(shape), f"{shape!r} is not a discrete shape"
         return Fun(shape, self.narrowing_base())
@@ -515,11 +504,9 @@ class CoproductsCategory(ApexCategory):
     def _sequence_diagram(self, sequence: tuple[ObjectOfCategory, ...]) -> Functor:
         """The sequence diagram on objects of ``C``, retained per sequence."""
         ambient = self.narrowing_base()
-        if sequence not in self._sequences:
-            for member_object in sequence:
-                assert member_object in ambient, f"{member_object!r} is not an object of {ambient!r}"
-            self._sequences[sequence] = from_sequence(ambient, sequence)
-        return self._sequences[sequence]
+        for member_object in sequence:
+            assert member_object in ambient, f"{member_object!r} is not an object of {ambient!r}"
+        return from_sequence(ambient, sequence)
 
     def __call__(self, family: Functor | tuple[ObjectOfCategory, ...]) -> ObjectOfCategory:
         """``C.Coproducts()(diagram)`` for a diagram over ``Discrete(S)``; ``C.Coproducts()((X_0, ..., X_n))`` for the sequence form."""

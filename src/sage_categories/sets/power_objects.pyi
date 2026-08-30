@@ -3,9 +3,9 @@ from sage_categories.sets.category import Sets_PowerObjects_ElementType as Sets_
 from sage_categories.sets.category import Sets_PowerObjects_MorphismType as Sets_PowerObjects_MorphismType
 from sage_categories.sets.elements import SetElementDeclaration as SetElementDeclaration
 from sage_categories.sets.objects import SetObjectDeclaration as SetObjectDeclaration
+from sage.misc.cachefunc import cached_method
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.properties import PropertySubcategory as PropertySubcategory
-from sage_categories.kernel.caches import retained_method as retained_method
 from sage_categories.kernel.decisions import Decision as Decision
 from sage_categories.kernel.refinement import refine as refine
 from sage_categories.kernel.roles import ObjectOfCategory as ObjectOfCategory, Role as Role
@@ -34,11 +34,11 @@ class PowerObjectsCategory(PropertySubcategory[[Rule], []]):
     def MorphismType(self) -> type[Sets_PowerObjects_MorphismType]: ...
     def __init__(self, ambient: Category[[Rule], []]) -> None: ...
     def __call__(self, base_set: SetObject) -> SetObject: ...
-    @retained_method
+    @cached_method
     def subset_of_characteristic_morphism(self, power: SetObject, characteristic: SetMap) -> SetObject: ...
-    @retained_method
+    @cached_method
     def extreme_subset(self, power: SetObject, whole: bool) -> SetObject: ...
-    @retained_method
+    @cached_method
     def inverse_image_morphism(self, power: SetObject, set_map: SetMap) -> SetMap: ...
-    @retained_method
+    @cached_method
     def direct_image_morphism(self, power: SetObject, set_map: SetMap) -> SetMap: ...

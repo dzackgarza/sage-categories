@@ -15,7 +15,6 @@ from sage_categories.cat.diagrams import sequence_position
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.shapes import ThinCategory
-from sage_categories.kernel.caches import retained_method
 from sage_categories.kernel.decisions import Decision, Unknown
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, Proposition, ask, conjunction, disjunction, implication, negation
 from sage_categories.kernel.refinement import refine
@@ -92,7 +91,7 @@ class PosetDeclaration(ObjectOfCategory):
         """Totality: any two elements are comparable."""
         return Posets().TotallyOrdered().predicate()(self)
 
-    @retained_method
+    @cached_method(key=lambda self: ())
     def thin_category(self) -> ThinCategory:
         """The thin category of ``P``: objects the points of ``U(P)``, one comparison per related pair; retained once."""
         order = Predicate("poset_order", 2, True)
@@ -324,7 +323,7 @@ class PosetsCategory(Category[[Rule], []]):
         point = Sets().Terminal()
         return self.TotallyOrdered()(self._construct((point * point).subset_from(lambda pair: True)))
 
-    @retained_method
+    @cached_method(key=lambda self, base_set: (id(base_set), base_set))
     def subset_poset(self, base_set: SetObject) -> Poset:
         """The power object ``2 ** X`` ordered by inclusion of the subsets its points name, retained per ``X``.
 

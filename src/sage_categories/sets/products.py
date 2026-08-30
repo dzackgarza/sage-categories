@@ -49,11 +49,12 @@ import itertools
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
+from sage.misc.cachefunc import cached_function
+
 import sage_categories.sets.category as _sets
 from sage_categories.cat.constructions import cocone, cocone_apex, cone, cone_apex
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.shapes import DiscreteObject, index_set_of
-from sage_categories.kernel.caches import retained_method
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import ask, conjunction, established, negation
 from sage_categories.kernel.refinement import is_subcategory, refine
@@ -204,7 +205,7 @@ def product_of_sets(diagram: Functor) -> SetObject:
         for placement in _product_placements(diagram, index_set):
             refine(apex, placement)
 
-    @retained_method
+    @cached_function(key=lambda vertex: (id(vertex), vertex))
     def projection(vertex: DiscreteObject) -> SetMap:
         index_datum = _index_datum(vertex)
         return sets.construct_morphism(apex, diagram.on_object(vertex), lambda family: family(index_datum))
@@ -292,7 +293,7 @@ def coproduct_of_sets(diagram: Functor) -> SetObject:
         for placement in _coproduct_placements(diagram, index_set):
             refine(apex, placement)
 
-    @retained_method
+    @cached_function(key=lambda vertex: (id(vertex), vertex))
     def injection(vertex: DiscreteObject) -> SetMap:
         index_datum = _index_datum(vertex)
         return sets.construct_morphism(diagram.on_object(vertex), apex, lambda value: (index_datum, value))

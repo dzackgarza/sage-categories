@@ -41,12 +41,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from sage.sets.disjoint_set import DisjointSet
+from sage.misc.cachefunc import cached_function
 
 import sage_categories.sets.category as _sets
 from sage_categories.cat.constructions import cocone, cocone_apex, cone, cone_apex
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.shapes import Discrete, omega
-from sage_categories.kernel.caches import retained_method
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import ask, conjunction, established
 from sage_categories.kernel.roles import ObjectOfCategory
@@ -87,7 +87,7 @@ def limit_of_sets(diagram: Functor) -> SetObject:
 
     apex = product.subset_from(compatible)
     into_product = apex.monomorphism()
-    @retained_method
+    @cached_function(key=lambda member_object: (id(member_object), member_object))
     def projection(member_object: ObjectOfCategory) -> SetMap:
         return product.product_projection(vertex(member_object)) * into_product
 
@@ -246,7 +246,7 @@ def colimit_of_sets(diagram: Functor) -> SetObject:
     def vertex(member_object: ObjectOfCategory) -> ObjectOfCategory:
         return index_shape(shape.object_point(member_object))
 
-    @retained_method
+    @cached_function(key=lambda member_object: (id(member_object), member_object))
     def injection(member_object: ObjectOfCategory) -> SetMap:
         return quotient_map * coproduct.coproduct_injection(vertex(member_object))
 

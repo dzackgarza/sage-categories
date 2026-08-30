@@ -27,10 +27,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from sage.misc.cachefunc import cached_method
+
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
 from sage_categories.cat.properties import PropertySubcategory
-from sage_categories.kernel.caches import retained_method
 from sage_categories.kernel.decisions import Decision
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.roles import ObjectOfCategory, Role
@@ -98,7 +99,7 @@ class PowerObjectsCategory(PropertySubcategory[[Rule], []]):
             refine(power, self)
         return power
 
-    @retained_method
+    @cached_method(key=lambda self, power, characteristic: ((id(power), power), (id(characteristic), characteristic)))
     def subset_of_characteristic_morphism(self, power: SetObject, characteristic: SetMap) -> SetObject:
         sets = _sets.Sets()
         base_set = self.retained_datum(power)
@@ -106,19 +107,19 @@ class PowerObjectsCategory(PropertySubcategory[[Rule], []]):
         rule = characteristic._set_morphism_data.rule
         return base_set.subset_from(lambda datum: rule(datum) == 1)
 
-    @retained_method
+    @cached_method(key=lambda self, power, whole: ((id(power), power), whole))
     def extreme_subset(self, power: SetObject, whole: bool) -> SetObject:
         """The top (``whole``) or bottom chosen subset of the base set, retained per power object."""
         return self.retained_datum(power).subset_from(lambda datum: whole)
 
-    @retained_method
+    @cached_method(key=lambda self, power, set_map: ((id(power), power), (id(set_map), set_map)))
     def inverse_image_morphism(self, power: SetObject, set_map: SetMap) -> SetMap:
         sets = _sets.Sets()
         base_set = self.retained_datum(power)
         assert set_map in sets.morphism_category(1) and set_map.codomain() is base_set, f"{set_map!r} does not end at {base_set!r}"
         return sets.morphism_category(1)(power, self(set_map.domain()))(lambda name: Function(name.map() * set_map))
 
-    @retained_method
+    @cached_method(key=lambda self, power, set_map: ((id(power), power), (id(set_map), set_map)))
     def direct_image_morphism(self, power: SetObject, set_map: SetMap) -> SetMap:
         sets = _sets.Sets()
         base_set = self.retained_datum(power)

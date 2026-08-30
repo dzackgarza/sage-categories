@@ -5,10 +5,11 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
+from sage.misc.cachefunc import cached_method
+
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
 from sage_categories.cat.properties import FullSubcategory
-from sage_categories.kernel.caches import retained_method
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask, conjunction, disjunction, established, negation
 from sage_categories.kernel.refinement import refine
@@ -166,7 +167,7 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
         refine(subset, self)
         return self._retain_monomorphism(subset, base_set)
 
-    @retained_method
+    @cached_method(key=lambda self, subset: (id(subset), subset))
     def characteristic_morphism_of(self, subset: SetObject) -> SetMap:
         """``chi_A``, retained per chosen subset."""
         sets = _sets.Sets()
@@ -202,7 +203,7 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
             sets.Countable()(subset)
         return self._retain_monomorphism(subset, base_set)
 
-    @retained_method
+    @cached_method(key=lambda self, set_map: (id(set_map), set_map))
     def image_of(self, set_map: SetMap) -> SetObject:
         """``f.image()``: the chosen subset of the codomain of the points with a preimage, retained per map."""
         sets = _sets.Sets()

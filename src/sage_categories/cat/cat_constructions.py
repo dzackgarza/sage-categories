@@ -46,6 +46,7 @@ from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from typing import Any
 
+from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict, TripleDict
 
 from sage_categories.cat.category import Category, member
@@ -54,7 +55,6 @@ from sage_categories.cat.declarations import Sets
 from sage_categories.cat.diagrams import sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.shapes import Discrete, DiscreteCategory
-from sage_categories.kernel.caches import SequenceTable
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import Predicate, Proposition, ask, conjunction
 from sage_categories.kernel.refinement import is_placed
@@ -146,7 +146,6 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], []
 
     def __init__(self, diagram: Functor) -> None:
         self._diagram = diagram
-        self._sequences = SequenceTable()
         self._finite_data: MonoDict = MonoDict()
         super().__init__()
         self._equality.register_handler(self._equal)
@@ -246,16 +245,19 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismOfCategory, ...]], []
 
     def __call__(self, family: ObjectRule | tuple[ObjectOfCategory, ...]) -> LimitCategory.ObjectType:
         """``L(rule)`` for a family by rule; ``L((X_0, ..., X_n))`` for the sequence convenience over ``Discrete([n])``, retained per tuple."""
-        rule = family if callable(family) else _sequence_rule(tuple(family))
+        if not callable(family):
+            return self._from_sequence(tuple(family))
+        rule = family
         assert ask(self._agrees(rule)) is not False, f"{family!r} is no family that {self._diagram!r} carries to itself"
-        if callable(family):
-            return self.ObjectType(category=self, data=FamilyObjectData(family))
-        sequence = tuple(family)
-        if sequence not in self._sequences:
-            for position, member_object in enumerate(sequence):
-                assert member_object in self.factor(position), f"{member_object!r} is not an object of {self.factor(position)!r}"
-            self._sequences[sequence] = self.ObjectType(category=self, data=FamilyObjectData(rule))
-        return self._sequences[sequence]
+        return self.ObjectType(category=self, data=FamilyObjectData(rule))
+
+    @cached_method(key=lambda self, sequence: tuple((id(member_object), member_object) for member_object in sequence))
+    def _from_sequence(self, sequence: tuple[ObjectOfCategory, ...]) -> LimitCategory.ObjectType:
+        rule = _sequence_rule(sequence)
+        assert ask(self._agrees(rule)) is not False, f"{sequence!r} is no family that {self._diagram!r} carries to itself"
+        for position, member_object in enumerate(sequence):
+            assert member_object in self.factor(position), f"{member_object!r} is not an object of {self.factor(position)!r}"
+        return self.ObjectType(category=self, data=FamilyObjectData(rule))
 
     def construct_morphism(self, domain: LimitCategory.ObjectType, codomain: LimitCategory.ObjectType, family: MorphismRule | tuple[MorphismOfCategory, ...]) -> LimitCategory.MorphismType:
         rule = family if callable(family) else _sequence_rule(tuple(family))

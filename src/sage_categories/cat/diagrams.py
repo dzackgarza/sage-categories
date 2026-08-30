@@ -36,6 +36,7 @@ from __future__ import annotations
 from collections.abc import Callable, Hashable
 from typing import TYPE_CHECKING
 
+from sage.misc.cachefunc import cached_function
 from sage.structure.coerce_dict import MonoDict, TripleDict
 
 from sage_categories.cat.category import Category
@@ -43,7 +44,6 @@ from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import endpoints
 from sage_categories.cat.shapes import Discrete, DiscreteCategory, is_discrete
-from sage_categories.kernel.caches import SequenceTable
 from sage_categories.kernel.decisions import Decision
 from sage_categories.kernel.predicates import ask
 from sage_categories.kernel.roles import ElementOfObject, ObjectOfCategory
@@ -104,7 +104,6 @@ def constant(functors: FunctorCategory, value: ObjectOfCategory) -> Functor:
 # (POL-CAT-083): object rules per rule, sequences per sequence and ambient, cospans
 # and spans per pair of legs and base.  Every table keys by identity.
 _object_rule_diagrams: MonoDict = MonoDict()
-_sequence_diagrams: MonoDict = MonoDict()
 _cospan_diagrams: TripleDict = TripleDict(weak_values=False)
 _span_diagrams: TripleDict = TripleDict(weak_values=False)
 
@@ -131,15 +130,16 @@ def sequence_position(vertex: DiscreteCategory.ObjectType) -> int:
     return next(position for position, datum in enumerate(enumeration) if ask(vertex.point() == simplex.point(datum)))
 
 
+@cached_function(
+    key=lambda ambient, sequence: (
+        (id(ambient), ambient),
+        tuple((id(member_object), member_object) for member_object in sequence),
+    )
+)
 def from_sequence(ambient: Category, sequence: tuple[ObjectOfCategory, ...]) -> Functor:
     """The diagram ``(X_0, ..., X_n)`` over ``Discrete([n])``, retained per sequence and ambient; the empty sequence is over ``Discrete({})``."""
-    if ambient not in _sequence_diagrams:
-        _sequence_diagrams[ambient] = SequenceTable()
-    table = _sequence_diagrams[ambient]
-    if sequence not in table:
-        index_set = Sets.Simplex(len(sequence) - 1) if sequence else Sets.Empty()
-        table[sequence] = from_object_rule(Fun(Discrete(index_set), ambient), lambda vertex: sequence[sequence_position(vertex)])
-    return table[sequence]
+    index_set = Sets.Simplex(len(sequence) - 1) if sequence else Sets.Empty()
+    return from_object_rule(Fun(Discrete(index_set), ambient), lambda vertex: sequence[sequence_position(vertex)])
 
 
 # -- the commuting squares of ``Fun([1], C)`` as a finite set (specs/functor.md, "Diagram shapes and universal constructions") ---------------------------

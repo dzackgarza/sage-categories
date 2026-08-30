@@ -13,10 +13,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from sage.misc.cachefunc import cached_function
+
 import sage_categories.sets.category as _sets
 from sage_categories.cat.constructions import cone
 from sage_categories.cat.diagrams import sequence_position
-from sage_categories.kernel.caches import retained_method
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import ask
 from sage_categories.sets.elements import Datum, SetElement
@@ -69,7 +70,7 @@ class Function:
         return f"name of {self._map!r}"
 
 
-@retained_method
+@cached_function(key=lambda exponent, base: ((id(exponent), exponent), (id(base), base)))
 def function_set(exponent: SetObject, base: SetObject) -> SetObject:
     """``base ** exponent``: the set of maps ``exponent -> base``, retained per pair."""
     sets = _sets.Sets()
@@ -92,7 +93,7 @@ def name_of(set_map: SetMap) -> SetElement:
     return function_set(set_map.domain(), set_map.codomain()).point(Function(set_map))
 
 
-@retained_method
+@cached_function(key=lambda exponent, base: ((id(exponent), exponent), (id(base), base)))
 def evaluation_morphism(exponent: SetObject, base: SetObject) -> SetMap:
     """``ev: (Y ** X) * X -> Y``, retained per pair."""
     sets = _sets.Sets()
@@ -100,7 +101,7 @@ def evaluation_morphism(exponent: SetObject, base: SetObject) -> SetMap:
     return sets.construct_morphism(product, base, lambda family: family(0).map()._set_morphism_data.rule(family(1)))
 
 
-@retained_method
+@cached_function(key=lambda set_map: (id(set_map), set_map))
 def transpose(set_map: SetMap) -> SetMap:
     """The transpose ``Z -> Y ** X`` of ``f: Z * X -> Y``, retained per map.
 

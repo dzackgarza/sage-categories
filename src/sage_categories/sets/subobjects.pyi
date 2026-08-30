@@ -6,9 +6,9 @@ from sage_categories.sets.category import Sets_ChosenSubsets_ElementType as Sets
 from sage_categories.sets.category import Sets_ChosenSubsets_MorphismType as Sets_ChosenSubsets_MorphismType
 from sage_categories.sets.objects import SetObjectDeclaration as SetObjectDeclaration
 from collections.abc import Callable
+from sage.misc.cachefunc import cached_method
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.properties import FullSubcategory as FullSubcategory
-from sage_categories.kernel.caches import retained_method as retained_method
 from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown, UnknownClass as UnknownClass
 from sage_categories.kernel.predicates import AppliedPredicate as AppliedPredicate, Predicate as Predicate, ask as ask, conjunction as conjunction, disjunction as disjunction, established as established, negation as negation
 from sage_categories.kernel.refinement import refine as refine
@@ -46,10 +46,10 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
     def local_role_class(self, role: Role) -> type[CategoryPoint]: ...
     def with_cardinality(self, base_set: SetObject, predicate: MembershipRule, cardinality: CardinalObject) -> SetObject: ...
     def from_enumeration(self, base_set: SetObject, members: tuple[Datum, ...]) -> SetObject: ...
-    @retained_method
+    @cached_method
     def characteristic_morphism_of(self, subset: SetObject) -> SetMap: ...
     def __call__(self, base_set: SetObject, predicate: MembershipRule) -> SetObject: ...
-    @retained_method
+    @cached_method
     def image_of(self, set_map: SetMap) -> SetObject: ...
 
 class ChosenQuotientRole(SetObjectDeclaration):

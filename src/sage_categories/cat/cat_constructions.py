@@ -32,7 +32,7 @@ owned construction.
 
 Each of these categories retains one object per construction datum -- one tagged
 object per ``(i, x)``, one family per rule -- because a category has one object
-per datum, and the structural transport caches identify images by it
+per datum, and each functor image cache identifies images by it
 (POL-CAT-066).  A universal object is unique up to unique isomorphism
 and has one construction, so a second call with the same data returns the same
 object; the projections, injections, and functor images of that construction are

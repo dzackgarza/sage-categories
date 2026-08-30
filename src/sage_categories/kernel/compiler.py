@@ -8,7 +8,9 @@ from contextlib import contextmanager
 from types import CellType, FunctionType
 from typing import TYPE_CHECKING, Concatenate, Generic, NamedTuple
 
+from sage.categories.category import Category as SageCategory
 from sage.misc.c3_controlled import C3_sorted_merge
+from sage.misc.lazy_attribute import lazy_attribute
 from sage.structure.dynamic_class import dynamic_class
 
 from sage_categories.kernel.caches import MonoDict, canonical_images, retain_constructed_transport
@@ -74,9 +76,33 @@ class SemanticCollisionError(Exception):
     """Two incomparable owners declare one method spelling (POL-CAT-011, POL-API-011)."""
 
 
+class _RuntimeImplementationCategory(SageCategory):
+    """A private Sage category whose ``parent_class`` is one owned implementation role."""
+
+    def __init__(self, current: Node, targets: tuple[object, ...]) -> None:
+        self._current = current
+        self._targets = targets
+        self.ParentMethods = current.category.local_role_class(current.role)
+        super().__init__()
+
+    @property
+    def _cmp_key(self) -> int:
+        return node_key(self._current)
+
+    def super_categories(self) -> list[object]:
+        return list(self._targets)
+
+    @lazy_attribute
+    def parent_class(self) -> type[CategoryPoint]:
+        return self._make_named_class("parent_class", "ParentMethods", cache=True)
+
+
 class Node(NamedTuple):
     category: Category
     role: Role
+
+
+_runtime_categories: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
 
 
 # A declaring method: its receiver is a value of the declaring role class, and its
@@ -162,6 +188,20 @@ def node(category: Category, role: Role) -> Node:
 
 def same_node(first: Node, second: Node) -> bool:
     return first.category is second.category and first.role is second.role
+
+
+def _runtime_category(current: Node) -> _RuntimeImplementationCategory:
+    """The identity-cached Sage category that owns ``current``'s compiled role class."""
+    table = _runtime_categories[current.role]
+    if current.category in table:
+        return table[current.category]
+    targets = tuple(_runtime_category(target) for _, target in successors(current))
+    if not targets:
+        targets = (kernel_base(Role.ELEMENT if _is_cat_element_root(current) else current.role),)
+    targets = tuple(sorted(targets, key=lambda target: target._cmp_key, reverse=True))
+    runtime = _RuntimeImplementationCategory(current, targets)
+    table[current.category] = runtime
+    return runtime
 
 
 def _is_cat_element_root(current: Node) -> bool:
@@ -485,46 +525,8 @@ def _kernel_chain(last: Node) -> tuple[type, ...]:
 
 
 def _compiled_class(current: Node) -> type[CategoryPoint]:
-    """The compiled role class of ``current``: one class per live node.
-
-    Its bases are exactly the compiled classes of the nodes the selected functors reach,
-    in the controlled order ``_base_classes`` returns.  The written declaration is not
-    among them: its body is installed on this class, so it keeps local precedence over
-    everything the targets supply and stands at the one node it belongs to.  Sage builds
-    a category's ``parent_class`` the same way, from the immediate super categories'
-    parent classes with the method provider's body copied in
-    (``Category._make_named_class``, which passes ``prepend_cls_bases=False``,
-    ``sage/categories/category.py``, inspected 2026-08-29); it warns when a method
-    provider has a super class of its own, for the reason below.
-
-    One Python class is constructed as a whole family of categories -- ``Mor(K)`` for
-    every ``K``, ``Cat().Simplex(n)`` for every ``n``, every property subcategory -- and
-    writes one declaration for the family.  A declaration used as a base would hold one
-    position in the MRO while two nodes of one chain need it at their own: in
-    ``Fun.Isofibrations().Monomorphisms().Full()`` the narrowing declaration stands above
-    ``Fun.Full()`` through one branch and below it through another, which is a cycle and
-    has no linearization.  Installing the body instead leaves the node linearization the
-    only order there is.
-    """
-    local = current.category.local_role_class(current.role)
-    bases = _base_classes(current)
-    try:
-        with building_role_classes():
-            compiled = dynamic_class(f"{current.category!r}.{current.role.value}", bases, doccls=local, cache=False)
-    except TypeError as conflict:
-        raise TypeError(
-            f"the {current.role.value} class of {current.category!r} has no linearization over "
-            f"{[klass.__qualname__ for klass in bases]}: {conflict}"
-        ) from conflict
-    # PEP 695 puts ``typing.Generic`` in the bases of a parameterized declaration, and the
-    # compiled class states its own bases.  Without that one the class is unsubscriptable
-    # and ``Category[[Rule], []]`` fails; a ``class`` statement rejects a plain ``Generic``
-    # base, so it is stated by assignment.  The declaration's ``__parameters__`` come
-    # across with the rest of its body.
-    if any(base is Generic for base in local.__bases__):
-        compiled.__bases__ = (*bases, Generic)
-    _install_written_body(compiled, local)
-    return compiled
+    """The Sage-compiled implementation class of ``current``'s private runtime category."""
+    return _runtime_category(current).parent_class
 
 
 def borrowed_declaration(local: type[CategoryPoint]) -> type[CategoryPoint] | None:
@@ -1016,7 +1018,6 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
         assert open_codomain is None, (
             f"{category!r} selects {functor!r} into {open_codomain}, which Cat declares and no implementation claims"
         )
-        functor._derive_selected_constructor_conversions()
     assert all(first is not second for index, first in enumerate(functors) for second in functors[index + 1 :]), (
         f"{category!r} selects one functor twice"
     )
@@ -1025,33 +1026,20 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
         _assert_acyclic(node(category, role), ())
     for role in _COMPILE_ORDER:
         current = node(category, role)
-        _linearize(current)
         if current.category is not category:
             setattr(category, role.value, current.category.role_class(current.role))
             continue
         # Catalogue construction rejects semantic collisions.  Inherited execution
-        # itself is ordinary Python lookup through the controlled compiled MRO.
+        # itself is ordinary Python lookup through Sage's controlled compiled MRO.
         catalogue(current)
-        # The class the category wrote is the class the node compiles, so its body runs
-        # on the value and its ``super()`` calls enter the compiled chain (POL-CAT-016).
-        # A declaration with an empty body still compiles a class of its own: in Sage a
-        # category without ``ParentMethods`` still has its own ``parent_class``, built
-        # from its super categories and adding no methods.
-        #
-        # One name per kind (POL-KERNEL-028): the declaration is ``ObjectType`` on the
-        # category's Python class and the same class is ``ObjectType`` on the value.
         compiled = _compiled_class(current)
-        # The written initializer, which the node's step calls, is now the one installed
-        # on this class: a declaration that specializes another may state none of its own
-        # and still need its parent's, as a slice object must run the pullback object's.
-        # The generated wrapper takes its place as the class's ``__init__``.
+        # The generated wrapper owns the private direct-source initialization protocol.
         node_initializer = vars(compiled).get("__init__")
         if _is_cat_element_root(current):
             install_cat_element_root(compiled)
         compiled.__init__ = _constructor_wrapper(role, current)
         _node_runtimes[role][category] = _NodeRuntime(node_initializer, compiled)
         setattr(category, role.value, compiled)
-        _assert_linearized(current, compiled)
 
 
 def recompile_category(category: Category, functors: tuple[Functor, ...]) -> None:

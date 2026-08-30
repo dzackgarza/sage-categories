@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from types import FunctionType
 from typing import TYPE_CHECKING
 
+import attrs
 from sage.categories.category import Category as SageCategory
 from sage.structure.coerce_dict import MonoDict
 
@@ -121,7 +122,7 @@ _element_inputs: MonoDict = MonoDict()
 _morphism_inputs: MonoDict = MonoDict()
 
 
-@dataclass(frozen=True, slots=True, eq=False)
+@attrs.define(frozen=True, slots=True, eq=False)
 class _InitializerInvocation[Datum]:
     """One local initializer call on a separately constructed target image."""
 

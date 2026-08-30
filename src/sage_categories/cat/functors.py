@@ -48,7 +48,6 @@ class NaturalTransformationData:
     assignment: Assignment
 
 
-_category.bootstrap()
 Cat = _category.Cat
 Category = _category.Category
 Functor = Cat().MorphismType

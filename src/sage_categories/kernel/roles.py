@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Generic, Self
+from typing import TYPE_CHECKING, Any, Generic
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
@@ -34,6 +34,8 @@ class Role(Enum):
 
 
 _building_role_class = False
+_category_declaration_root: type[CategoryPoint] | None = None
+_category_universal_class: type[CategoryPoint] | None = None
 
 
 @contextmanager
@@ -54,14 +56,6 @@ def building_role_classes() -> Iterator[None]:
 
 class CategoryPoint:
     """The stable Python end of the compiled ``Cat().ElementType`` role."""
-
-    @staticmethod
-    def _register_role_declarations(
-        category_class: type[CategoryPoint],
-        universal_class: type[CategoryPoint] | None,
-    ) -> None:
-        if not _building_role_class:
-            _require_declarations(category_class, universal_class)
 
     def _is_element(self) -> bool:
         return role_of(self) is Role.ELEMENT
@@ -120,11 +114,14 @@ class CategoryPoint:
 class ObjectOfCategory(CategoryPoint):
     """An object of a category: a point ``* -> C`` of it."""
 
-    @classmethod
-    def _construct_category_singleton(cls) -> Self:
-        from sage_categories.kernel.compiler import construct_category_singleton
-
-        return construct_category_singleton(cls)
+    def __init_subclass__(cls) -> None:
+        super().__init_subclass__()
+        if (
+            not _building_role_class
+            and _category_declaration_root is not None
+            and issubclass(cls, _category_declaration_root)
+        ):
+            _require_declarations(cls, _category_universal_class)
 
     def _compile_category(self: Category, functors: tuple[Functor, ...]) -> None:
         from sage_categories.kernel.compiler import compile_category
@@ -304,8 +301,12 @@ _declaration_owners: dict[type[CategoryPoint], tuple[type[CategoryPoint], Role]]
 
 
 def _written_class(runtime_class: type[CategoryPoint]) -> type[CategoryPoint]:
-    """Return the source-written class beneath a value's refinement classes."""
-    return next(found for found in runtime_class.__mro__ if not found.__name__.endswith("_with_category"))
+    """Return the category class that writes all three local role declarations."""
+    return next(
+        found
+        for found in runtime_class.__mro__
+        if all(role.value in vars(found) for role in Role)
+    )
 
 
 def _borrowed_declaration(local: type[CategoryPoint]) -> type[CategoryPoint] | None:
@@ -372,6 +373,19 @@ def _require_declarations(
         declared = vars(category_class)[role.value]
         if declared not in _BASES.values() and declared is not CategoryPoint:
             _declaration_owners.setdefault(declared, (category_class, role))
+
+
+def install_category_declaration_root(
+    declaration_root: type[CategoryPoint],
+    universal_class: type[CategoryPoint],
+) -> None:
+    """Install the written ``Cat().ObjectType`` as the root of category declarations."""
+    global _category_declaration_root, _category_universal_class
+    assert _category_declaration_root is None or _category_declaration_root is declaration_root
+    assert _category_universal_class is None or _category_universal_class is universal_class
+    _category_declaration_root = declaration_root
+    _category_universal_class = universal_class
+    _require_declarations(universal_class, universal_class)
 
 
 def kernel_base(role: Role) -> type[CategoryPoint]:

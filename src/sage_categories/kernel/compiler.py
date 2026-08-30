@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Concatenate, Generic, NamedTuple
 from sage.categories.category import Category as SageCategory
 from sage.misc.lazy_attribute import lazy_attribute
 from sage.structure.coerce_dict import MonoDict
+from sage.structure.dynamic_class import dynamic_class
 
 from sage_categories.kernel.construction import (
     CategoryPointIdentity,
@@ -43,6 +44,7 @@ from sage_categories.kernel.roles import (
     ObjectOfCategory,
     Role,
     building_role_classes,
+    install_category_declaration_root,
     install_cat_element_root,
     kernel_base,
 )
@@ -648,7 +650,16 @@ def _construct_morphism_root[Datum](
 
 def construct_category_singleton[Value: ObjectOfCategory](category_type: type[Value]) -> Value:
     """Allocate ``Cat()`` and start its provisional constructor chain inside its object context."""
-    instance = category_type.__new__(category_type)
+    install_category_declaration_root(category_type.ObjectType, category_type)
+    with building_role_classes():
+        provisional_type = dynamic_class(
+            f"_{category_type.__name__}Bootstrap",
+            (category_type, ObjectOfCategory),
+            doccls=category_type,
+            prepend_cls_bases=False,
+            cache=True,
+        )
+    instance = provisional_type.__new__(provisional_type)
     identity = ObjectRoleIdentity(instance)
     root = ObjectConstructionInput(instance, identity, None)
     retain_object_input(root)
@@ -663,7 +674,7 @@ def construct_category_singleton[Value: ObjectOfCategory](category_type: type[Va
     )
     token = activate_object_context(context)
     try:
-        category_type.__init__(instance)
+        provisional_type.__init__(instance)
         context.assert_complete()
     finally:
         deactivate_object_context(token)

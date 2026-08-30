@@ -36,10 +36,11 @@ from sage_categories.cat.category import Category
 from sage_categories.kernel.decisions import Decision
 from sage_categories.kernel.predicates import Axiom, PropertyPredicate, Proposition
 from sage_categories.kernel.refinement import is_subcategory, refine
-from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
 
 if TYPE_CHECKING:
+    from sage_categories.cat.category import CategoryOfCategories
     from sage_categories.cat.functors import Functor, FunctorsCategory
+    from sage_categories.cat.morphisms import MorphismCategory
 
 __all__ = [
     "FixedEndpointProperty",
@@ -76,7 +77,7 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
     subcategory owns a predicate.
     """
 
-    class ObjectType(ObjectOfCategory):
+    class ObjectType:
         """An object of the ambient that this subcategory contains: the same value, and the ambient's whole surface.
 
         The monomorphism is identity on values, so a full subcategory introduces no
@@ -85,7 +86,7 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
         ``inverse()`` (POL-CAT-079).
         """
 
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A point ``1_C -> X`` of an object of this subcategory: the point the ambient owns (POL-CAT-087).
 
         A point belongs to its parent, and only objects and morphisms are placed
@@ -96,7 +97,7 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
         points.  A method written here runs on those and on nothing else.
         """
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """A morphism of the ambient between two of these objects.
 
         Fullness is exactly this: the hom of the subcategory is the hom of the ambient
@@ -125,7 +126,10 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
     def structure_functors(self) -> tuple[Functor, ...]:
         return (_functors().full_subcategory_monomorphism(self, self._ambient),)
 
-    def element_from_defining_morphism(self, defining_morphism: MorphismOfCategory) -> CategoryPoint:
+    def element_from_defining_morphism(
+        self,
+        defining_morphism: MorphismCategory.ObjectType,
+    ) -> CategoryOfCategories.ElementType:
         """The elements of a full subcategory are those of its ambient on the shared values (POL-CAT-087)."""
         return self._ambient.element_from_defining_morphism(defining_morphism)
 
@@ -140,7 +144,7 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
     ``Category.local_role_class``, which is the class of this value.
     """
 
-    class ObjectType(ObjectOfCategory):
+    class ObjectType:
         """An object of the ambient satisfying the property: the same value, refined in place.
 
         A property subcategory adds no object of its own -- its constructor refines the
@@ -149,10 +153,10 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
         ``IsomorphismsCategory`` does for ``inverse()``.
         """
 
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A point ``1_C -> X`` of such an object: the point the ambient owns."""
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """A morphism of the ambient between two of these objects; fullness makes it the ambient's."""
 
     _base_category_class_and_axiom: ClassVar[tuple[type[Category], str]]
@@ -197,7 +201,7 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
             *(functors.full_subcategory_monomorphism(self, containing) for containing in self._full_subcategory_of),
         )
 
-    def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         """Membership in the ambient and the property's own predicate.
 
         ``x in C.P()`` and ``ask(x.is_P())`` are one question asked twice
@@ -211,7 +215,10 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
         """
         return self._ambient.membership_proposition(candidate) & self._property_predicate(candidate)
 
-    def __call__(self, *arguments: CategoryPoint) -> CategoryPoint:
+    def __call__(
+        self,
+        *arguments: CategoryOfCategories.ElementType,
+    ) -> CategoryOfCategories.ElementType:
         """The trusted constructor: refine a value of the ambient; or dispatch endpoints ``P(A, B)``."""
         match arguments:
             case (value,):
@@ -240,17 +247,17 @@ class PredicateSubcategory[**MorphismData, **TwoMorphismData](PropertySubcategor
     These are two mechanisms and neither needs the other (D97).
     """
 
-    class ObjectType(ObjectOfCategory):
+    class ObjectType:
         """An object the property's own predicate decides.
 
         Deciding membership adds no operation to the value: a computed answer and a
         trusted one place the same value in the same category.
         """
 
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A point of such an object."""
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """A morphism of the ambient between two of these objects."""
 
     def __init__(
@@ -267,7 +274,7 @@ class PredicateSubcategory[**MorphismData, **TwoMorphismData](PropertySubcategor
         self._property_predicate.register_handler(self._predicate)
 
     @abstractmethod
-    def _predicate(self, candidate: CategoryPoint) -> Decision:
+    def _predicate(self, candidate: CategoryOfCategories.ElementType) -> Decision:
         """The defining decision of membership in this property, on a value of the ambient."""
 
 
@@ -280,7 +287,7 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
     ``D`` is itself a full subcategory (POL-CAT-084).
     """
 
-    class ObjectType(ObjectOfCategory):
+    class ObjectType:
         """An object of the base lying in every root.
 
         A narrowing is the property subcategory of its base by the roots jointly, so it
@@ -288,10 +295,10 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
         selected monomorphisms reach.
         """
 
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A point of such an object."""
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """A morphism of the base between two of these objects."""
 
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData], roots: tuple[FullSubcategory, ...]) -> None:
@@ -321,7 +328,7 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
                 distinct.append(target)
         return tuple(_functors().full_subcategory_monomorphism(self, target) for target in distinct)
 
-    def membership_proposition(self, candidate: CategoryPoint) -> Proposition:
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         """Membership in the ambient together with membership in every root.
 
         Each root states its own membership: a property subcategory asks its predicate,
@@ -333,7 +340,7 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
             proposition = proposition & root.membership_proposition(candidate)
         return proposition
 
-    def __call__(self, value: CategoryPoint) -> CategoryPoint:
+    def __call__(self, value: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         assert value in self._ambient, f"{value!r} is not an object of {self._ambient!r}"
         refine(value, self)
         return value
@@ -345,28 +352,32 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
 class FixedEndpointProperty[**MorphismData, **TwoMorphismData](NarrowedProperty[TwoMorphismData, []]):
     """``Mor(C)(A, B).P()``: constructs a morphism ``A -> B`` with property ``P``, or refines one."""
 
-    class ObjectType(ObjectOfCategory):
+    class ObjectType:
         """A morphism ``A -> B`` with the property: an object of a hom category, so a morphism of ``C``.
 
         Fixing the endpoints selects morphisms and does not change what one is.
         """
 
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A point of such a morphism."""
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """A 2-cell between two of these morphisms."""
 
-    def domain(self) -> CategoryPoint:
+    def domain(self) -> CategoryOfCategories.ElementType:
         return self._ambient.domain()
 
-    def codomain(self) -> CategoryPoint:
+    def codomain(self) -> CategoryOfCategories.ElementType:
         return self._ambient.codomain()
 
     def _chosen_inhabitation(self) -> Decision:
         return _morphisms().hom_inhabitation(self)
 
-    def __call__(self, *args: MorphismData.args, **kwargs: MorphismData.kwargs) -> MorphismOfCategory:
+    def __call__(
+        self,
+        *args: MorphismData.args,
+        **kwargs: MorphismData.kwargs,
+    ) -> MorphismCategory.ObjectType:
         if len(args) == 1 and not kwargs and args[0] in self._ambient:
             refine(args[0], self)
             return args[0]
@@ -374,7 +385,7 @@ class FixedEndpointProperty[**MorphismData, **TwoMorphismData](NarrowedProperty[
         refine(morphism, self)
         return morphism
 
-    def one(self) -> MorphismOfCategory:
+    def one(self) -> MorphismCategory.ObjectType:
         """``1_X`` with this property: the unit of ``End_C(X)`` refined into the narrowing (POL-CAT-023, D84)."""
         identity = self._ambient.one()
         refine(identity, self)

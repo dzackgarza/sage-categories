@@ -49,11 +49,11 @@ from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.shapes import Discrete, omega
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import ask, conjunction, established
-from sage_categories.kernel.roles import ObjectOfCategory
 from sage_categories.sets.elements import Datum
 from sage_categories.sets.objects import SetObject
 
 if TYPE_CHECKING:
+    from sage_categories.cat.category import CategoryOfCategories
     from sage_categories.sets.category import SetMap
 
 __all__ = ["Representative", "colimit_of_sets", "limit_of_sets"]
@@ -71,7 +71,7 @@ def limit_of_sets(diagram: Functor) -> SetObject:
     product = sets.Products()(Fun(index_shape, sets).from_object_rule(lambda vertex: diagram.on_object(shape.object_at(vertex.point()))))
     generators = shape.generating_morphisms()
 
-    def vertex(member_object: ObjectOfCategory) -> ObjectOfCategory:
+    def vertex(member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         return index_shape(shape.object_point(member_object))
 
     def compatible(datum: Datum) -> Decision:
@@ -88,7 +88,7 @@ def limit_of_sets(diagram: Functor) -> SetObject:
     apex = product.subset_from(compatible)
     into_product = apex.monomorphism()
     @cached_function(key=lambda member_object: (id(member_object), member_object))
-    def projection(member_object: ObjectOfCategory) -> SetMap:
+    def projection(member_object: CategoryOfCategories.ElementType) -> SetMap:
         return product.product_projection(vertex(member_object)) * into_product
 
     def mediator(candidate_cone: NaturalTransformation) -> SetMap:
@@ -158,10 +158,10 @@ class Quotient:
         self._coproduct = coproduct
         self._components: DisjointSet | None = None
 
-    def index_datum(self, member_object: ObjectOfCategory) -> Datum:
+    def index_datum(self, member_object: CategoryOfCategories.ElementType) -> Datum:
         return self._shape.object_point(member_object)._point_datum_()
 
-    def object_at(self, index_datum: Datum) -> ObjectOfCategory:
+    def object_at(self, index_datum: Datum) -> CategoryOfCategories.ElementType:
         return self._shape.object_at(self._objects.point(index_datum))
 
     def transition(self, source: Datum, target: Datum) -> SetMap:
@@ -243,11 +243,11 @@ def colimit_of_sets(diagram: Functor) -> SetObject:
     apex = sets.ChosenQuotients()(coproduct, lambda tagged: Representative(quotient, tagged), membership_rule)
     quotient_map = apex.quotient_map()
 
-    def vertex(member_object: ObjectOfCategory) -> ObjectOfCategory:
+    def vertex(member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         return index_shape(shape.object_point(member_object))
 
     @cached_function(key=lambda member_object: (id(member_object), member_object))
-    def injection(member_object: ObjectOfCategory) -> SetMap:
+    def injection(member_object: CategoryOfCategories.ElementType) -> SetMap:
         return quotient_map * coproduct.coproduct_injection(vertex(member_object))
 
     def mediator(candidate_cocone: NaturalTransformation) -> SetMap:

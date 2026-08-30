@@ -215,7 +215,6 @@ def _runtime_category(current: Node) -> _RuntimeImplementationCategory:
     targets: tuple[SageCategory, ...] = tuple(_runtime_category(target) for _, target in successors(current))
     if not targets:
         targets = (_kernel_role_root(Role.ELEMENT if _is_cat_element_root(current) else current.role),)
-    targets = tuple(sorted(targets, key=lambda target: target._cmp_key, reverse=True))
     runtime = _RuntimeImplementationCategory(current, targets)
     table[current.category] = runtime
     return runtime
@@ -613,39 +612,48 @@ type InitializerReplay = Callable[[CategoryPoint], None]
 
 def _target_replays(
     current: Node,
-    images: tuple[tuple[Node, CategoryPoint], ...],
+    images: tuple[CategoryPoint, ...],
 ) -> dict[SageCategory, InitializerReplay]:
-    """Target initializers keyed by Sage runtime category in source C3 order."""
-    order = {key: position for position, key in enumerate(_linearize(current)[0])}
+    """Target initializers keyed by runtime category; Sage C3 orders their execution."""
+    applicable = {
+        runtime
+        for runtime in _runtime_category(current)._all_super_categories
+        if isinstance(runtime, _RuntimeImplementationCategory)
+    }
     replays: dict[SageCategory, InitializerReplay] = {}
-    for target, image in sorted(images, key=lambda candidate: order[node_key(candidate[0])]):
+    for image in images:
         for runtime_category, replay in _retained_initializer_replays(image):
-            replays.setdefault(runtime_category, replay)
+            if runtime_category in applicable:
+                replays.setdefault(runtime_category, replay)
     return replays
 
 
-def _object_target_images(current: Node, source: ObjectOfCategory) -> tuple[tuple[Node, CategoryPoint], ...]:
-    """The ordinary public object images of ``current``'s selected functors."""
-    return tuple((target, functor.on_object(source)) for functor, target in successors(current))
+def _object_target_images(current: Node, source: ObjectOfCategory) -> tuple[CategoryPoint, ...]:
+    """The ordinary public object images of ``current``'s immediate selected functors."""
+    return tuple(functor.on_object(source) for functor, _ in successors(current))
 
 
-def _element_target_images(current: Node, source: CategoryPoint) -> tuple[tuple[Node, CategoryPoint], ...]:
-    """The ordinary public element images of ``current``'s selected functors."""
+def _element_target_images(current: Node, source: CategoryPoint) -> tuple[CategoryPoint, ...]:
+    """The ordinary public element images of ``current``'s immediate selected functors."""
     defining_morphism = source.defining_morphism()
     return tuple(
-        (target, functor.codomain().element_from_defining_morphism(functor.on_morphism(defining_morphism)))
-        for functor, target in successors(current)
+        functor.codomain().element_from_defining_morphism(functor.on_morphism(defining_morphism))
+        for functor, _ in successors(current)
     )
 
 
-def _morphism_target_images(current: Node, source: MorphismOfCategory) -> tuple[tuple[Node, CategoryPoint], ...]:
-    """The ordinary public morphism images of ``current``'s selected functors."""
-    return tuple((target, functor.on_morphism(source)) for functor, target in successors(current))
+def _morphism_target_images(current: Node, source: MorphismOfCategory) -> tuple[CategoryPoint, ...]:
+    """The ordinary public morphism images of ``current``'s immediate selected functors."""
+    return tuple(functor.on_morphism(source) for functor, _ in successors(current))
 
 
 def _linearized_nodes(current: Node) -> tuple[Node, ...]:
-    """The selected target nodes in Sage C3 order."""
-    return tuple(_nodes_by_key[key] for key in _linearize(current)[0])
+    """The selected target nodes in the private Sage category's C3 order."""
+    return tuple(
+        runtime._current
+        for runtime in _runtime_category(current)._all_super_categories
+        if isinstance(runtime, _RuntimeImplementationCategory)
+    )
 
 
 def _object_step[Value: ObjectOfCategory, Datum](

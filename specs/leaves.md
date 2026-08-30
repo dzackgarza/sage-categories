@@ -94,6 +94,9 @@ The [poset template](poset-minimal-template.py) shows this constructor and its f
 Each entry in `C.structure_functors()` is an ordinary object of `Fun(C, D)`.
 Selection contributes the applicable target implementation classes.
 It does not change the functor's type or mathematical action.
+These declarations build the repository's new owned category graph. They do not import,
+reuse, or modify Sage's mathematical category graph; a migrated Sage category is a new
+owned leaf or construction in this graph.
 
 A leaf gets a selected functor in one of two ways:
 
@@ -120,6 +123,15 @@ def target_functor(self) -> Cat().MorphismType:
 `on_object(X)` constructs and returns the public image in `D`.
 `on_morphism(f)` constructs and returns the public image in the exact target hom category.
 These two actions are the sole leaf declaration of the functor.
+Their inputs are completed source values. The kernel does not ask a leaf to make either
+action support partially initialized constructor state.
+
+A leaf can create a structural diamond simply by selecting functors whose transitive
+targets meet. This never requires route-resolution boilerplate. The kernel chooses the
+single shared implementation occurrence through controlled C3 and debug-logs the diamond
+while its coherence remains implicit. Future optional coherence is expressed, if needed,
+by ordinary owned 2-morphism data between the composite functors rather than by a
+leaf-specific compiler record.
 
 A helper used only by one action stays local to that action or private to the leaf.
 A datum with independent public mathematical meaning keeps its public mathematical name.

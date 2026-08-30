@@ -156,6 +156,8 @@ F = Fun(C, D)(on_object, on_morphism)
 It returns an actual object built through one of the finite public constructors of `D`.
 `on_morphism` returns an actual morphism built through the exact target hom category.
 The writer knows the source leaf, the immediate target category, and the standard categorical calculus needed to navigate their data.
+Both actions are ordinary maps on already-constructed values of their stated source category.
+Returning `F` from `structure_functors()` does not make either action callable on a partially initialized source during construction.
 
 For example, an algebra presentation can retain a morphism `R -> Z(A)`.
 Its functor to rings can recover `Z(A)` as the codomain and then use the ambient-object operation supplied by `Subobjects`:
@@ -486,9 +488,13 @@ structure functors and the standard functor properties above.
 
 ## Structure functors and inherited classes
 
-`structure_functors()` replaces Sage's `super_categories()` declaration.
-Each entry is an ordinary functor and is called a structure functor because the kernel
-uses it for class inheritance. This use adds no new kind of morphism in `Cat`.
+`structure_functors()` declares the immediate implementation edges of the repository's
+entirely new owned category graph. Each entry is an ordinary functor and is called a
+structure functor because the kernel uses its target implementation classes for
+inheritance. This role is analogous to the class-building role of Sage's
+`super_categories()` relation, but the owned graph is not Sage's category graph and no
+Sage category node or edge is reused. Migrating a familiar Sage category means defining a
+new owned category and the owned functors required by its mathematics.
 
 Every entry is an ordinary owned object of `Fun`. Its mathematical existence and
 properties come first. A structure functor need not be a subcategory monomorphism.
@@ -530,6 +536,25 @@ The kernel supplies their target classes as immediate dynamic bases. Sage dynami
 construction and Sage's controlled linearization handle transitive inheritance and shared
 ancestors.
 
+### Structural diamonds and coherence
+
+Two distinct paths of owned structure functors can reach one target implementation owner.
+This is an ordinary diamond in the new graph. The private Sage runtime mirror gives those
+targets to controlled C3, which places the shared implementation class once in the MRO.
+There is one private implementation occurrence, not one occurrence per path; no public
+functor images from the competing paths are constructed or compared in order to resolve
+the diamond. Declaration order remains the existing preference rule of D56 wherever a
+path preference is required.
+
+Coherence of a diamond is mathematical information about the relevant composite functors.
+Its absence is not a compiler failure. Until explicit owned coherence is supplied, the
+kernel reports the diamond only through opt-in `DEBUG` logging and continues with the
+single controlled-C3 implementation occurrence. A future extension can let theory code
+supply an actual 2-morphism, using the ordinary natural-transformation machinery of `Fun`,
+to mark the composites as coherent and silence that diagnostic. This extension must not
+introduce a proof record, certificate, route registry, or second functor declaration; its
+exact spelling is deferred.
+
 ### `C.ObjectType`, `C.ElementType`, and `C.MorphismType`
 
 A category specifies `C.ObjectType`, `C.ElementType`, and `C.MorphismType` directly.
@@ -544,7 +569,7 @@ The ordinary object action of `F` uses one of the finite public constructors of 
 returns the resulting `D.ObjectType`. Its morphism action does the same in the exact target
 hom category. Ordinary functors that are not selected do not participate in class construction.
 
-Public `F(x)` runs the named functor's ordinary action and returns the separate image owned by `F`.
+Public `F(x)` runs the named functor's ordinary action on the completed source value and returns the separate image owned by `F`.
 Different functors with the same endpoints can return different images.
 
 An inherited method runs directly on the structured source instance through ordinary Python inheritance.

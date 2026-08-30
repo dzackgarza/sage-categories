@@ -51,6 +51,12 @@ For each category `C`, the compiler receives:
 - the applicable target implementation class for each selected functor;
 - the exact property categories and construction categories already built in `Cat`.
 
+These inputs describe the repository's owned category graph. The kernel does not inspect
+or extend Sage's mathematical category graph. It builds a private Sage runtime mirror only
+to obtain Sage's class-building behavior. The implementation classes ultimately share the
+ordinary Sage/Python `Parent` ancestry propagated at the `Cat().ObjectType` root; that
+runtime ancestry is not a categorical relation in the owned graph.
+
 The compiler treats each functor action as opaque.
 It does not interpret its source code, fields, result data, or private helpers.
 The object and morphism actions remain the complete public functor declaration.
@@ -81,17 +87,34 @@ For a selected functor `F: C -> D`, the applicable `D` implementation class occu
 Methods declared by `D` run directly on the source value.
 Python special methods follow the same rule.
 
-The two ordinary actions of `F` remain the sole description of how target values are
-constructed (D123).  If inherited initialization needs target implementation state before
-an explicit caller applies `F`, the kernel obtains it from that same named action.  CAP
-retains the resulting public image, so a later `F.on_object(X)` or `F.on_morphism(f)`
-returns that exact image rather than executing a second construction.
+The two ordinary actions of `F` remain the sole public description of how target values are
+constructed (D123), and they apply only to completed source values. The kernel must not
+invoke either action on a partially initialized source as an implicit constructor-state
+transport. Public functor application remains separate from private inherited-state
+installation.
 
-The runtime can keep temporary initializer records or cached class data.  Such data has
-no public mathematical meaning: it only replays the already-constructed target value's
-implementation initialization on the source value.  It does not select a functor, define
-a second functor image, establish category placement, or require a leaf-authored
-counterpart.
+Private initializer threading follows the compiled implementation DAG. Each reached
+implementation class initializes once. If several structural paths reach one implementation
+owner, controlled C3 contributes one shared occurrence and the other paths do not cause
+second initialization or competing public image construction. Route preference, wherever
+needed, remains the declaration-order rule of D56 rather than a second C3-specific rule.
+Any private execution record or cached class data remains implementation-only and cannot
+become a second leaf-authored description of a functor action.
+
+## Diamond diagnostics and future coherence
+
+Every diamond in the owned structure-functor graph is accepted. Until the owned theory
+explicitly supplies coherence between the relevant composites, the kernel emits a
+`DEBUG`-level diagnostic identifying the unresolved diamond. If the diagnostic names a
+preferred path, it uses D56's declaration order. Debugging is opt-in: the same condition
+is never a warning or compilation failure.
+
+M1 requires only this diagnostic and the once-only C3 behavior. A later kernel extension
+can consume ordinary owned 2-morphism data between the composite functors and suppress the
+diagnostic for that diamond. That future mechanism must reuse the natural-transformation
+machinery of `Fun`; it must not add a coherence certificate, proof record, route registry,
+or second functor declaration. No public hook spelling or exact 2-cell property is fixed in
+M1.
 
 ## Runtime categories and caches
 
@@ -149,9 +172,12 @@ The private runtime satisfies this specification when:
 - the same mechanism handles objects, elements, and morphisms;
 - both branches of a class diamond contribute their local methods;
 - a shared target class occurs once and initializes once;
+- unresolved owned structural diamonds compile and appear only in opt-in `DEBUG` logs;
 - local declarations take precedence;
 - inherited methods run directly on the source value;
 - public functor application returns its separate owned image;
+- public functor actions are never invoked on partially initialized source values for state installation;
+- the private Sage implementation graph remains distinct from Sage's mathematical category graph;
 - temporary runtime data has no public mathematical effect;
 - unrelated mathematical declarations with one spelling fail as a semantic collision;
 - theory modules import no private runtime type;

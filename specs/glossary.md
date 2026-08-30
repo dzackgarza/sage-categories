@@ -17,17 +17,20 @@ Do not record retired names in current documentation.
 | Generalized element of `X` | A functor `T -> X`. |
 | Morphism of `C` | An object of `Mor(C)`. Thus `C.MorphismType = Mor(C).ObjectType`. |
 | Functor | An ordinary object of `Fun(C, D)`. A category can name many functors with the same endpoints. |
-| Structure functor | An ordinary functor returned by `C.structure_functors()` and used by the kernel to construct inherited class surfaces. Its ordinary object and morphism actions are already complete. It need not be a subcategory monomorphism. |
+| Owned category graph | The entirely new graph whose nodes are package-owned objects of `Cat()` and whose selected implementation edges are owned structure functors. It is not Sage's mathematical category graph. Migrating a Sage concept creates a new owned category and the functors required by its mathematics. |
+| Structure functor | An ordinary functor returned by `C.structure_functors()` and used by the kernel as an edge of the owned implementation graph. Its ordinary object and morphism actions are already complete and accept completed source values. It need not be a subcategory monomorphism. |
+| Private Sage implementation graph | The runtime-only graph of private Sage categories used to ask Sage for controlled C3 and dynamic implementation classes corresponding to the owned graph. It has no mathematical edges or nodes in the owned `Cat()` graph; the systems share only low-level Python/Sage `Parent` runtime ancestry. |
+| Unresolved structural diamond | Two or more owned structure-functor paths reaching one implementation owner with no explicit owned coherence yet supplied between the relevant composites. C3 still chooses one occurrence and compilation proceeds; the condition is reported only at `DEBUG` level. |
 | Fixed-object constructions | `C.Subobjects(X)`, `C.Superobjects(X)`, `C.CoveringObjects(X)`, and `C.CoveredObjects(X)`. |
 | Named construction map | The exact retained projection, inclusion, evaluation, or adjoint with stated endpoints. |
-| Functor actions | `F.on_object(X)` and `F.on_morphism(f)` construct the public images owned by `F`. |
+| Functor actions | `F.on_object(X)` and `F.on_morphism(f)` construct the public images owned by `F` from completed values in the stated source category. Selection for inheritance does not make them constructor-time callbacks on partially initialized values. |
 | Subcategory relation | A declared subcategory monomorphism. Python class inheritance and selection as a structure functor do not establish it. |
 | Classes specified by a category `C` | The category specifies `C.ObjectType`, `C.ElementType`, and `C.MorphismType` directly. The kernel constructs them dynamically from structure functors. |
 | Public functor image | The image constructed by the named action `F.on_object(x)` or `F.on_morphism(f)`. |
 | Inherited execution | A structure-functor target class is in the source class MRO. Its method runs on the initialized source instance. |
 | Predicate | A proposition-valued operation. Its application is an applied proposition, and `ask()` returns `True`, `False`, or `Unknown`. |
 | Query | An operation with an exact non-Boolean result category that can remain unevaluated. Its application is an applied query, and `ask()` returns an owned result or `Unknown`. |
-| Private Sage implementation category | A runtime-only Sage `Category` that compiles one of `C.ObjectType`, `C.ElementType`, or `C.MorphismType`. It states no relation in the owned `Cat` graph. |
+| Private Sage implementation category | One node of the private Sage implementation graph that compiles one of `C.ObjectType`, `C.ElementType`, or `C.MorphismType`. It states no relation in the owned `Cat` graph. |
 
 The point and generalized-element distinction follows the nLab entry [generalized element](https://ncatlab.org/nlab/show/generalized+element), including its “Global elements” section.
 
@@ -61,7 +64,7 @@ Every term below was checked against the cited source before it was recorded (`P
 | `HierarchyElement` | Sage, `src/sage/misc/c3_controlled.pyx:960`. Computes a controlled linearization from an arbitrary successor relation. |
 | `Parent._refine_category_` | Sage, `src/sage/structure/parent.pyx:372`. Joins the current category with the new category and changes the parent to a cached dynamic class containing the joined `parent_class`. |
 | `CategoryWithAxiom`, `_base_category_class_and_axiom` | Sage, `src/sage/categories/category_with_axiom.py`. Supplies axiom binding, category construction, and canonical runtime identity. The owned `Cat` declaration supplies the axiom's mathematical meaning. |
-| `FunctorialConstructionCategory`, `CartesianProductsCategory` | Sage, `src/sage/categories/covariant_functorial_construction.py` and `src/sage/categories/cartesian_product.py`. Supplies private construction-family binding, base-category access, caching, and method-provider assembly. The owned functors and universal presentations replace Sage's supercategory deduction. |
+| `FunctorialConstructionCategory`, `CartesianProductsCategory` | Sage, `src/sage/categories/covariant_functorial_construction.py` and `src/sage/categories/cartesian_product.py`. Supplies private construction-family binding, base-category access, caching, and method-provider assembly. The owned graph derives its own functors and universal presentations rather than importing Sage's supercategory deductions. |
 | `Hom`, `Homset`, `Map`, `Morphism`, `IdentityMorphism` | Sage, `src/sage/categories/homset.py`, `map.pyx`, and `morphism.pyx`. Supplies the concrete endpoint, parent, composition, and identity protocols used when both endpoints are Sage parents. |
 | `sage.categories.functor.Functor` | Sage, `src/sage/categories/functor.py`. Supplies the reference object and morphism action protocol. Its endpoints are Sage categories, so generic owned functors do not inherit it. |
 | `ModulesWithBasis` | Sage, `src/sage/categories/modules_with_basis.py:179`: "The category of modules with a distinguished basis." A name for the phenomenon on the same axiom machinery as `Finite`. Its morphisms are ordinary module morphisms while its homset reads a matrix in the distinguished bases (`:47`), so the name settles neither the fibration nor the morphisms. |

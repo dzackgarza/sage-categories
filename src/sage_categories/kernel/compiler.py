@@ -218,7 +218,7 @@ def successors(current: Node) -> tuple[tuple[Functor, Node], ...]:
     """The selected functors out of ``current``; each keeps the role it starts in."""
     return tuple(
         (functor, node(functor.codomain(), current.role))
-        for functor in current.category.selected_functors()
+        for functor in current.category.structure_functors()
     )
 
 
@@ -792,7 +792,6 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
     assert all(first is not second for index, first in enumerate(functors) for second in functors[index + 1 :]), (
         f"{category!r} selects one functor twice"
     )
-    category.select_functors(functors)
     for role in _COMPILE_ORDER:
         current = node(category, role)
         if current.category is not category:

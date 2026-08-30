@@ -239,6 +239,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
         # codomain (and every narrowing a declaration constructs) is older than this
         # category.
         functors = tuple(self.structure_functors())
+        self._ambient_monomorphism = next((functor for functor in functors if traces_placement(functor)), None)
+        self._ambient_category = None if self._ambient_monomorphism is None else self._ambient_monomorphism.codomain()
         self._ordinal = next(_category_ordinals)
         compiler.compile_category(self, functors)
         from sage_categories.kernel.refinement import place
@@ -265,10 +267,13 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
 
         An implementation claims a declared category after ``Cat`` constructed it, and
         the declared object is the final one: its class was strengthened in place, and
-        its nested classes and selected functors are read again here.  The ordinal is not
+        its nested classes and structure functors are read again here.  The ordinal is not
         retaken, so every codomain stays older than the category that selects it.
         """
-        compiler.recompile_category(self, tuple(self.structure_functors()))
+        functors = tuple(self.structure_functors())
+        self._ambient_monomorphism = next((functor for functor in functors if traces_placement(functor)), None)
+        self._ambient_category = None if self._ambient_monomorphism is None else self._ambient_monomorphism.codomain()
+        compiler.recompile_category(self, functors)
 
     def structure_functors(self) -> tuple[Functor, ...]:
         """The selected structural graph: immediate functors, in preference order (POL-CAT-016, POL-FUN-003)."""
@@ -299,15 +304,6 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](ObjectOfCategory):
 
     def role_source(self, role: Role) -> tuple[Category[MorphismData, TwoMorphismData], Role]:
         return self, role
-
-    def select_functors(self, functors: tuple[Functor, ...]) -> None:
-        """Record the compiled selection; the ambient is the codomain of its first placement-tracing functor (POL-CAT-016)."""
-        self._selected_functors = functors
-        self._ambient_monomorphism = next((functor for functor in functors if traces_placement(functor)), None)
-        self._ambient_category = None if self._ambient_monomorphism is None else self._ambient_monomorphism.codomain()
-
-    def selected_functors(self) -> tuple[Functor, ...]:
-        return self._selected_functors
 
     def has_ambient(self) -> bool:
         """Whether this category is a declared subcategory: one selected functor traces placement (POL-FUN-036)."""

@@ -76,9 +76,9 @@ class SemanticCollisionError(Exception):
 class _KernelRoleRootCategory(SageCategory):
     """A private Sage category for the final implementation class of one role."""
 
-    def __init__(self, role: Role) -> None:
+    def __init__(self, role: Role, root: type[CategoryPoint]) -> None:
         self._role = role
-        self.ParentMethods = kernel_base(role)
+        self._root = root
         super().__init__()
 
     @property
@@ -87,6 +87,10 @@ class _KernelRoleRootCategory(SageCategory):
 
     def super_categories(self) -> list[SageCategory]:
         return []
+
+    @lazy_attribute
+    def parent_class(self) -> type[CategoryPoint]:
+        return self._root
 
 
 class _RuntimeImplementationCategory(SageCategory):
@@ -116,14 +120,25 @@ class Node(NamedTuple):
 
 
 _runtime_categories: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
-_kernel_role_roots: dict[Role, _KernelRoleRootCategory] = {}
+_kernel_role_roots: dict[tuple[Role, type[CategoryPoint]], _KernelRoleRootCategory] = {}
+
+
+def _role_root(role: Role, root: type[CategoryPoint]) -> _KernelRoleRootCategory:
+    """The identity-cached private Sage category ending one role chain at ``root``."""
+    key = (role, root)
+    if key not in _kernel_role_roots:
+        _kernel_role_roots[key] = _KernelRoleRootCategory(role, root)
+    return _kernel_role_roots[key]
 
 
 def _kernel_role_root(role: Role) -> _KernelRoleRootCategory:
     """The identity-cached private Sage category for one kernel role root."""
-    if role not in _kernel_role_roots:
-        _kernel_role_roots[role] = _KernelRoleRootCategory(role)
-    return _kernel_role_roots[role]
+    return _role_root(role, kernel_base(role))
+
+
+def _cat_element_role_root() -> _KernelRoleRootCategory:
+    """The root below the first compiled ``Cat().ElementType`` class."""
+    return _role_root(Role.ELEMENT, CategoryPoint)
 
 
 # A declaring method: its receiver is a value of the declaring role class, and its
@@ -206,7 +221,7 @@ def _runtime_category(current: Node) -> _RuntimeImplementationCategory:
         return table[current.category]
     targets: tuple[SageCategory, ...] = tuple(_runtime_category(target) for _, target in successors(current))
     if not targets:
-        targets = (_kernel_role_root(Role.ELEMENT if _is_cat_element_root(current) else current.role),)
+        targets = (_cat_element_role_root() if _is_cat_element_root(current) else _kernel_role_root(current.role),)
     runtime = _RuntimeImplementationCategory(current, targets)
     table[current.category] = runtime
     return runtime

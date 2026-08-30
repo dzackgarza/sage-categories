@@ -31,7 +31,9 @@ The structure functors form this commutative graph:
 \end{array}
 \]
 
-Both paths from finite total orders to sets supply the same set constructor datum.
+Both paths from finite total orders to sets have the same intended underlying-set
+projection. This is coherence of the owned mathematical diamond, not a requirement for
+the compiler to compare constructor data or public functor images along the two paths.
 
 Let `U: PartiallyOrderedSets() -> Sets()` be the named projection `(X, R) |-> X`.
 Then
@@ -283,7 +285,9 @@ Each category-owned `ObjectType`, `ElementType`, and `MorphismType` is its imple
 A leaf can use Sage or another engine through private helpers.
 
 Leaf methods remain ordinary typed mathematical methods.
-The compiler derives transport from those signatures and category declarations.
+Their signatures state only the methods' ordinary Python and mathematical types. Selected
+structure functors determine the inherited implementation classes; a method signature does
+not encode a functor action or an initializer-state transport.
 Leaf code declares only its mathematical classes and structure functors.
 
 See [Leaf category implementations](leaves.md) and [Structural resolution](resolution.md).

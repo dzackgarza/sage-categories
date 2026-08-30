@@ -116,19 +116,15 @@ class Node(NamedTuple):
 
 
 _runtime_categories: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
-_kernel_role_roots: dict[tuple[Role, type[CategoryPoint]], _KernelRoleRootCategory] = {}
 
 
 def _role_root(role: Role, root: type[CategoryPoint]) -> _KernelRoleRootCategory:
-    """The identity-cached private Sage category ending one role chain at ``root``."""
-    key = (role, root)
-    if key not in _kernel_role_roots:
-        _kernel_role_roots[key] = _KernelRoleRootCategory(role, root)
-    return _kernel_role_roots[key]
+    """The Sage-canonical private category ending one role chain at ``root``."""
+    return _KernelRoleRootCategory(role, root)
 
 
 def _kernel_role_root(role: Role) -> _KernelRoleRootCategory:
-    """The identity-cached private Sage category for one kernel role root."""
+    """The Sage-canonical private category for one kernel role root."""
     return _role_root(role, kernel_base(role))
 
 

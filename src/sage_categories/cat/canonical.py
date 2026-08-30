@@ -27,7 +27,7 @@ from __future__ import annotations
 
 from collections.abc import Hashable
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sage.structure.coerce_dict import MonoDict
 
@@ -36,7 +36,9 @@ from sage_categories.cat.declarations import Sets
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
 from sage_categories.kernel.predicates import ask
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.roles import CategoryPoint, ElementOfObject, MorphismOfCategory, ObjectOfCategory
+
+if TYPE_CHECKING:
+    from sage_categories.cat.category import CategoryOfCategories
 
 __all__ = [
     "FinitePresentedCategory",
@@ -71,7 +73,7 @@ class PathData:
 class FinitePresentedCategory(Category[[Word], []]):
     """The category presented by finitely many vertices, generators, and rewriting relations."""
 
-    class ObjectType(ObjectOfCategory):
+    class ObjectType:
         """An object of a finitely presented category: a named vertex, retained by identity."""
 
         def __init__(self, data: VertexData) -> None:
@@ -81,7 +83,7 @@ class FinitePresentedCategory(Category[[Word], []]):
         def __repr__(self) -> str:
             return f"{self._label!r} in {self.category()!r}"
 
-    class MorphismType(MorphismOfCategory):
+    class MorphismType:
         """A morphism of a finitely presented category: a reduced word of generators, first generator first."""
 
         def __init__(self, data: PathData) -> None:
@@ -96,7 +98,7 @@ class FinitePresentedCategory(Category[[Word], []]):
                 return f"identity of {self.domain()!r}"
             return " then ".join(self._word)
 
-    class ElementType(ElementOfObject):
+    class ElementType:
         """A generalized element of a vertex; no local operation."""
 
     def __init__(self, name: str, labels: tuple[Hashable, ...], generators: tuple[Generator, ...], relations: tuple[Relation, ...]) -> None:
@@ -141,15 +143,15 @@ class FinitePresentedCategory(Category[[Word], []]):
     # graph is acyclic every morphism is reached by breadth-first extension of words,
     # and otherwise no finite enumeration of morphisms is chosen.
 
-    def object_set(self) -> ObjectOfCategory:
+    def object_set(self) -> CategoryOfCategories.ElementType:
         if self not in self._object_set:
             self._object_set[self] = Sets.Finite()(self._labels)
         return self._object_set[self]
 
-    def object_at(self, point: ElementOfObject) -> FinitePresentedCategory.ObjectType:
+    def object_at(self, point: CategoryOfCategories.ElementType) -> FinitePresentedCategory.ObjectType:
         return self(enumerated_datum(self.object_set(), point))
 
-    def object_point(self, vertex: FinitePresentedCategory.ObjectType) -> ElementOfObject:
+    def object_point(self, vertex: FinitePresentedCategory.ObjectType) -> CategoryOfCategories.ElementType:
         return self.object_set().point(self.label(vertex))
 
     def _has_directed_cycle(self) -> bool:
@@ -162,7 +164,7 @@ class FinitePresentedCategory(Category[[Word], []]):
 
         return any(reaches(label, (label,)) for label in self._labels)
 
-    def _chosen_morphism_set(self) -> ObjectOfCategory | UnknownClass:
+    def _chosen_morphism_set(self) -> CategoryOfCategories.ElementType | UnknownClass:
         """The finite set of morphisms, as data ``(source label, reduced word)``, when the quiver is acyclic."""
         if self._has_directed_cycle():
             return Unknown
@@ -181,7 +183,7 @@ class FinitePresentedCategory(Category[[Word], []]):
             self._morphism_set[self] = Sets.Finite()(words)
         return self._morphism_set[self]
 
-    def morphism_at(self, point: ElementOfObject) -> FinitePresentedCategory.MorphismType:
+    def morphism_at(self, point: CategoryOfCategories.ElementType) -> FinitePresentedCategory.MorphismType:
         source, word = enumerated_datum(ask(self.morphism_set()), point)
         target = source if not word else self._generator_endpoints[word[-1]][1]
         return self.construct_morphism(self(source), self(target), word)
@@ -247,7 +249,7 @@ class FinitePresentedCategory(Category[[Word], []]):
         inverses = self._inverse_generators()
         return self.construct_morphism(morphism.codomain(), morphism.domain(), tuple(inverses[name] for name in reversed(morphism.word())))
 
-    def _equal(self, first: CategoryPoint, candidate: Any) -> Decision:
+    def _equal(self, first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
         """Vertices are retained once per label, so identity decides; paths are equal exactly when their reduced words are."""
         if first in self and candidate in self:
             return first is candidate
@@ -260,7 +262,10 @@ class FinitePresentedCategory(Category[[Word], []]):
         return self._name
 
 
-def enumerated_datum(finite_set: ObjectOfCategory, point: ElementOfObject) -> Hashable:
+def enumerated_datum(
+    finite_set: CategoryOfCategories.ElementType,
+    point: CategoryOfCategories.ElementType,
+) -> Hashable:
     """The datum of a point of a finite enumerated set, read through the chosen enumeration."""
     assert point in finite_set, f"{point!r} is not a point of {finite_set!r}"
     return next(datum for datum in Sets.Finite().chosen_enumeration(finite_set) if ask(finite_set.point(datum) == point))

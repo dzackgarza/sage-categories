@@ -124,9 +124,13 @@ def cocone_apex(transformation: NaturalTransformation) -> CategoryOfCategories.E
 
 
 def vertex_of(shape: Category, index: CategoryOfCategories.ElementType | Hashable) -> CategoryOfCategories.ElementType:
-    """An object of a shape, given directly or as a datum of its object set."""
+    """An object of a shape, given directly or by the shape's source/index datum."""
     if index in shape:
         return index
+    from sage_categories.cat.canonical import FinitePresentedCategory
+
+    if isinstance(shape, FinitePresentedCategory):
+        return shape(index)
     return shape.object_at(shape.object_set().point(index))
 
 

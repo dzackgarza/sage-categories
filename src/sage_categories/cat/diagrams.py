@@ -138,9 +138,11 @@ def sequence_position(vertex: DiscreteCategory.ObjectType) -> int:
     )
 )
 def from_sequence(ambient: Category, sequence: tuple[CategoryOfCategories.ElementType, ...]) -> Functor:
-    """The diagram ``(X_0, ..., X_n)`` over ``Discrete([n])``, retained per sequence and ambient; the empty sequence is over ``Discrete({})``."""
-    index_set = Sets.Simplex(len(sequence) - 1) if sequence else Sets.Empty()
-    return from_object_rule(Fun(Discrete(index_set), ambient), lambda vertex: sequence[sequence_position(vertex)])
+    """The finite discrete sequence diagram used before the owned Sets leaf exists."""
+    from sage_categories.cat.canonical import _finite_discrete
+
+    shape = _finite_discrete(len(sequence))
+    return from_object_rule(Fun(shape, ambient), lambda vertex: sequence[shape.label(vertex)])
 
 
 # -- the commuting squares of ``Fun([1], C)`` as a finite set (specs/functor.md, "Diagram shapes and universal constructions") ---------------------------

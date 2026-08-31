@@ -5,11 +5,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from contextvars import ContextVar, Token
 from dataclasses import dataclass, field
-from types import FunctionType
 from typing import TYPE_CHECKING
 
-import attrs
-from sage.categories.category import Category as SageCategory
 from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory, Role, role_of
@@ -112,68 +109,11 @@ class MorphismConstructionInput[Value: MorphismOfCategory, Datum]:
 
 
 # Identity-keyed storage is necessary because mathematical equality can be
-# proposition-valued.  The retained input is the input of the value's own root
-# node.  Inputs for ancestor nodes are retained by their canonical target values.
+# proposition-valued.  The retained input is the input of the value's own root node.
 _object_inputs: MonoDict = MonoDict()
 _element_inputs: MonoDict = MonoDict()
 _morphism_inputs: MonoDict = MonoDict()
 
-
-@attrs.define(frozen=True, slots=True, eq=False)
-class _InitializerInvocation[Datum]:
-    """One local initializer call retained from a functor-owned target value."""
-
-    initializer: FunctionType
-    datum: Datum
-
-
-_initializer_invocations: MonoDict = MonoDict()
-
-
-def _retain_initializer_invocation[Datum](
-    target_value: CategoryPoint,
-    runtime_category: SageCategory,
-    initializer: FunctionType,
-    datum: Datum,
-) -> None:
-    """Retain one local initializer invocation by runtime-category identity."""
-    if target_value not in _initializer_invocations:
-        _initializer_invocations[target_value] = MonoDict()
-    invocations: MonoDict = _initializer_invocations[target_value]
-    assert runtime_category not in invocations, (
-        f"the {runtime_category!r} initializer already ran on {target_value!r}"
-    )
-    invocations[runtime_category] = _InitializerInvocation(initializer, datum)
-
-
-def _retained_initializer_replays(
-    target_value: CategoryPoint,
-) -> tuple[tuple[SageCategory, Callable[[CategoryPoint], None]], ...]:
-    """The retained initializers for one target value, closed over local data."""
-    if target_value not in _initializer_invocations:
-        return ()
-    invocations: MonoDict = _initializer_invocations[target_value]
-    return tuple(
-        (runtime_category, _retained_initializer_replay(target_value, runtime_category))
-        for runtime_category, _ in invocations.items()
-    )
-
-
-def _retained_initializer_replay(
-    target_value: CategoryPoint,
-    runtime_category: SageCategory,
-) -> Callable[[CategoryPoint], None]:
-    """The retained initializer for ``runtime_category``, closed over its local datum."""
-    assert target_value in _initializer_invocations, f"{target_value!r} retains no initializer records"
-    invocations: MonoDict = _initializer_invocations[target_value]
-    assert runtime_category in invocations, f"{target_value!r} retains no initializer record for {runtime_category!r}"
-    invocation: _InitializerInvocation = invocations[runtime_category]
-
-    def replay(source_value: CategoryPoint) -> None:
-        _retain_initializer_invocation(source_value, runtime_category, invocation.initializer, invocation.datum)
-        invocation.initializer(source_value, invocation.datum)
-
-    return replay
 
 
 def retain_object_input[Value: ObjectOfCategory, Datum](construction_input: ObjectConstructionInput[Value, Datum]) -> None:

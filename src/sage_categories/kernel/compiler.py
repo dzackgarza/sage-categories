@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+import logging
 from collections.abc import Callable
 from types import CellType, FunctionType, GenericAlias
 from typing import TYPE_CHECKING, Concatenate, Generic, NamedTuple
@@ -35,8 +36,6 @@ from sage_categories.kernel.construction import (
     retain_object_input,
     retained_object_input,
     retained_object_inputs,
-    _retain_initializer_invocation,
-    _retained_initializer_replays,
 )
 from sage_categories.kernel.roles import (
     CategoryPoint,
@@ -299,8 +298,11 @@ def _assert_no_semantic_collisions(*surfaces: type[CategoryPoint]) -> None:
                 )
 
 
+type NodeInitializer = Callable[[CategoryPoint, object], None]
+
+
 class _NodeRuntime(NamedTuple):
-    initializer: FunctionType | None
+    initializer: NodeInitializer
     owner: type[CategoryPoint]
 
 
@@ -318,64 +320,14 @@ def _advance(owner: type[CategoryPoint], instance: CategoryPoint) -> None:
     super(owner, instance).__init__()
 
 
-type InitializerReplay = Callable[[CategoryPoint], None]
-type InitializerReplayLookup = Callable[[], dict[SageCategory, InitializerReplay]]
+def _advancing_initializer(owner: type[CategoryPoint]) -> NodeInitializer:
+    """Return the total runtime initializer for a declaration with no local ``__init__``."""
 
+    def initialize(instance: CategoryPoint, _datum: object) -> None:
+        _advance(owner, instance)
 
-def _target_replays(
-    current: Node,
-    target_values: tuple[CategoryPoint, ...],
-) -> dict[SageCategory, InitializerReplay]:
-    """Target initializers keyed by runtime category; Sage C3 orders their execution."""
-    applicable = {
-        runtime
-        for runtime in _runtime_category(current)._all_super_categories
-        if isinstance(runtime, _RuntimeImplementationCategory)
-    }
-    replays: dict[SageCategory, InitializerReplay] = {}
-    for target_value in target_values:
-        for runtime_category, replay in _retained_initializer_replays(target_value):
-            if runtime_category in applicable:
-                replays.setdefault(runtime_category, replay)
-    return replays
+    return initialize
 
-
-def _empty_initializer_replays() -> dict[SageCategory, InitializerReplay]:
-    return {}
-
-
-def _deferred_target_replays(
-    current: Node,
-    target_values: Callable[[], tuple[CategoryPoint, ...]],
-) -> InitializerReplayLookup:
-    """Collect initializer records from the selected functor-owned target values when first needed."""
-    replays: dict[SageCategory, InitializerReplay] | None = None
-
-    def lookup() -> dict[SageCategory, InitializerReplay]:
-        nonlocal replays
-        if replays is None:
-            replays = _target_replays(current, target_values())
-        return replays
-
-    return lookup
-
-
-def _object_initialization_targets(current: Node, source: ObjectOfCategory) -> tuple[CategoryPoint, ...]:
-    """The CAP-retained object images whose initializer state is replayed on ``source``."""
-    return tuple(functor.on_object(source) for functor, _ in successors(current))
-
-
-def _element_initialization_targets(current: Node, defining_morphism: MorphismOfCategory) -> tuple[CategoryPoint, ...]:
-    """The point images induced by the CAP-retained morphism images of selected functors."""
-    return tuple(
-        functor.codomain().element_from_defining_morphism(functor.on_morphism(defining_morphism))
-        for functor, _ in successors(current)
-    )
-
-
-def _morphism_initialization_targets(current: Node, source: MorphismOfCategory) -> tuple[CategoryPoint, ...]:
-    """The CAP-retained morphism images whose initializer state is replayed on ``source``."""
-    return tuple(functor.on_morphism(source) for functor, _ in successors(current))
 
 
 def _linearized_nodes(current: Node) -> tuple[Node, ...]:
@@ -391,19 +343,10 @@ def _object_step[Value: ObjectOfCategory, Datum](
     current: Node,
     construction_input: ObjectConstructionInput[Value, Datum],
     instance: ObjectOfCategory,
-    replays: InitializerReplayLookup,
 ) -> Callable[[], None]:
     runtime = _runtime(current)
 
     def initialize() -> None:
-        replay = replays().get(_runtime_category(current))
-        if replay is not None:
-            replay(instance)
-            return
-        if runtime.initializer is None:
-            _advance(runtime.owner, instance)
-            return
-        _retain_initializer_invocation(instance, _runtime_category(current), runtime.initializer, construction_input.datum)
         runtime.initializer(instance, construction_input.datum)
 
     return initialize
@@ -413,19 +356,10 @@ def _element_step[Value: CategoryPoint, Datum](
     current: Node,
     construction_input: ElementConstructionInput[Value, Datum],
     instance: Value,
-    replays: InitializerReplayLookup,
 ) -> Callable[[], None]:
     runtime = _runtime(current)
 
     def initialize() -> None:
-        replay = replays().get(_runtime_category(current))
-        if replay is not None:
-            replay(instance)
-            return
-        if runtime.initializer is None:
-            _advance(runtime.owner, instance)
-            return
-        _retain_initializer_invocation(instance, _runtime_category(current), runtime.initializer, construction_input.datum)
         runtime.initializer(instance, construction_input.datum)
 
     return initialize
@@ -435,19 +369,10 @@ def _morphism_step[Value: MorphismOfCategory, Datum](
     current: Node,
     construction_input: MorphismConstructionInput[Value, Datum],
     instance: MorphismOfCategory,
-    replays: InitializerReplayLookup,
 ) -> Callable[[], None]:
     runtime = _runtime(current)
 
     def initialize() -> None:
-        replay = replays().get(_runtime_category(current))
-        if replay is not None:
-            replay(instance)
-            return
-        if runtime.initializer is None:
-            _advance(runtime.owner, instance)
-            return
-        _retain_initializer_invocation(instance, _runtime_category(current), runtime.initializer, construction_input.datum)
         runtime.initializer(instance, construction_input.datum)
 
     return initialize
@@ -458,13 +383,9 @@ def _object_steps[RootValue: ObjectOfCategory, RootDatum](
     root: ObjectConstructionInput[RootValue, RootDatum],
 ) -> tuple[tuple[Node, Callable[[], None]], ...]:
     """Close each object C3 node into one zero-argument initialization step."""
-    replays = _deferred_target_replays(current, lambda: _object_initialization_targets(current, root.canonical_image))
     return (
-        (current, _object_step(current, root, root.canonical_image, _empty_initializer_replays)),
-        *(
-            (source, _object_step(source, root, root.canonical_image, replays))
-            for source in _linearized_nodes(current)
-        ),
+        (current, _object_step(current, root, root.canonical_image)),
+        *((source, _object_step(source, root, root.canonical_image)) for source in _linearized_nodes(current)),
     )
 
 
@@ -474,13 +395,9 @@ def _element_steps[RootValue: CategoryPoint, RootDatum](
 ) -> tuple[tuple[Node, Callable[[], None]], ...]:
     """Close each element C3 node into one zero-argument initialization step."""
     assert isinstance(root.identity, ElementRoleIdentity)
-    replays = _deferred_target_replays(current, lambda: _element_initialization_targets(current, root.identity.defining_morphism))
     return (
-        (current, _element_step(current, root, root.canonical_image, _empty_initializer_replays)),
-        *(
-            (source, _element_step(source, root, root.canonical_image, replays))
-            for source in _linearized_nodes(current)
-        ),
+        (current, _element_step(current, root, root.canonical_image)),
+        *((source, _element_step(source, root, root.canonical_image)) for source in _linearized_nodes(current)),
     )
 
 
@@ -495,7 +412,7 @@ def _cat_element_step[Datum](
     """
     target = node(root.identity.category.universe(), Role.ELEMENT)
     point_input = ElementConstructionInput(root.canonical_image, CategoryPointIdentity(root.identity.category), None)
-    return target, _element_step(target, point_input, root.canonical_image, _empty_initializer_replays)
+    return target, _element_step(target, point_input, root.canonical_image)
 
 
 def _point_steps[Datum](
@@ -538,7 +455,7 @@ def _point_steps[Datum](
             found.append(target)
             frontier.append(target)
     return tuple(
-        (current, _element_step(current, point_input, root.canonical_image, _empty_initializer_replays))
+        (current, _element_step(current, point_input, root.canonical_image))
         for current in found
     )
 
@@ -570,7 +487,7 @@ def _element_cat_element_step[Value: CategoryPoint, Datum](
     assert isinstance(root.identity, ElementRoleIdentity)
     target = node(root.identity.defining_morphism.base_category().universe(), Role.ELEMENT)
     element_input = ElementConstructionInput(root.canonical_image, root.identity, None)
-    return target, _element_step(target, element_input, root.canonical_image, _empty_initializer_replays)
+    return target, _element_step(target, element_input, root.canonical_image)
 
 
 def _morphism_steps[RootValue: MorphismOfCategory, RootDatum](
@@ -578,13 +495,9 @@ def _morphism_steps[RootValue: MorphismOfCategory, RootDatum](
     root: MorphismConstructionInput[RootValue, RootDatum],
 ) -> tuple[tuple[Node, Callable[[], None]], ...]:
     """Close each morphism C3 node into one zero-argument initialization step."""
-    replays = _deferred_target_replays(current, lambda: _morphism_initialization_targets(current, root.canonical_image))
     return (
-        (current, _morphism_step(current, root, root.canonical_image, _empty_initializer_replays)),
-        *(
-            (source, _morphism_step(source, root, root.canonical_image, replays))
-            for source in _linearized_nodes(current)
-        ),
+        (current, _morphism_step(current, root, root.canonical_image)),
+        *((source, _morphism_step(source, root, root.canonical_image)) for source in _linearized_nodes(current)),
     )
 
 
@@ -743,6 +656,44 @@ def _initialize_morphism[Datum](
     _construct_morphism_root(current, instance, MorphismRoleIdentity(category, domain, codomain), data)
 
 
+_LOGGER = logging.getLogger(__name__)
+
+
+def _debug_unresolved_diamonds(category: Category) -> None:
+    """Log each repeated structural target in the owned graph, without resolving it.
+
+    The graph declaration is mathematical input.  A repeated target means two distinct
+    structural paths reach one implementation owner.  Controlled C3 still contributes
+    that implementation class once; until owned 2-morphism data explicitly records the
+    coherence, the only runtime effect is this opt-in diagnostic (D37).
+    """
+    paths: MonoDict = MonoDict()
+
+    def walk(source: Category, path: tuple[Category, ...]) -> None:
+        for functor in source.structure_functors():
+            target = functor.codomain()
+            next_path = (*path, target)
+            if target not in paths:
+                paths[target] = []
+            paths[target].append(next_path)
+            assert not any(target is ancestor for ancestor in path), (
+                f"the structural graph contains a cycle through {target!r}"
+            )
+            walk(target, next_path)
+
+    walk(category, (category,))
+    for target, target_paths in paths.items():
+        if len(target_paths) < 2:
+            continue
+        rendered = " ; ".join(" -> ".join(repr(node) for node in path) for path in target_paths)
+        _LOGGER.debug(
+            "unresolved structural diamond to %r from %r: %s",
+            target,
+            category,
+            rendered,
+        )
+
+
 def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
     """Compile the three role classes of ``category`` from its local declarations and its selected functors."""
     for functor in functors:
@@ -760,6 +711,7 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
     assert all(first is not second for index, first in enumerate(functors) for second in functors[index + 1 :]), (
         f"{category!r} selects one functor twice"
     )
+    _debug_unresolved_diamonds(category)
     for role in _COMPILE_ORDER:
         current = node(category, role)
         if current.category is not category:
@@ -777,6 +729,9 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
         _assert_no_semantic_collisions(compiled)
         # The compiler owns the private direct-source initialization protocol.
         node_initializer = vars(compiled).get("__init__")
+        if node_initializer is None:
+            node_initializer = _advancing_initializer(compiled)
+        assert isinstance(node_initializer, FunctionType)
         if _is_cat_element_root(current):
             install_cat_element_root(compiled)
         match role:

@@ -29,6 +29,7 @@ from collections.abc import Hashable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from sage.misc.cachefunc import cached_function
 from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.cat.category import Category
@@ -277,6 +278,20 @@ def _edge(source: int, target: int) -> Generator:
 
 def empty_category() -> FinitePresentedCategory:
     return FinitePresentedCategory("Empty", (), (), ())
+
+
+@cached_function
+def _finite_discrete(length: int) -> FinitePresentedCategory:
+    """The source-backed finite discrete category on labels ``0, ..., length-1``.
+
+    This private Cat-level presentation supports finite sequence conveniences before
+    the owned ``Sets()`` leaf exists.  It is discrete on the integer labels but is not
+    the future public ``Discrete([n])`` image: D71 assigns ``[n]`` itself to ``Sets()``.
+    """
+    assert length >= 0
+    labels = tuple(range(length))
+    name = f"FiniteDiscrete({length})"
+    return FinitePresentedCategory(name, labels, (), ())
 
 
 def simplex(dimension: int) -> FinitePresentedCategory:

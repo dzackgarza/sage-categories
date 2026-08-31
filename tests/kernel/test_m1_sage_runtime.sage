@@ -323,45 +323,82 @@ def test_sage_compiler_runs_the_object_element_and_morphism_diamond() -> None:
     assert sum(initialized is identity for initialized in _BASE_MORPHISM_INITIALIZATIONS) == 1
 
 
-def test_private_initialization_reuses_the_functor_owned_public_image() -> None:
+def test_private_initialization_is_separate_from_public_functor_application() -> None:
+    object_calls_before = len(_DIAMOND_TO_LEFT_OBJECT_ACTIONS)
+    morphism_calls_before = len(_DIAMOND_TO_LEFT_MORPHISM_ACTIONS)
+
     member_object = DIAMOND(11)
     identity = DIAMOND.morphism_category(1)(member_object, member_object).one()
     to_left = DIAMOND.structure_functors()[0]
     left_to_base = LEFT.structure_functors()[0]
-    object_action_calls = sum(source is member_object for source in _DIAMOND_TO_LEFT_OBJECT_ACTIONS)
-    morphism_action_calls = sum(source is identity for source in _DIAMOND_TO_LEFT_MORPHISM_ACTIONS)
-    assert object_action_calls == 1
-    assert morphism_action_calls == 1
 
+    # Construction initializes the inherited implementation state directly and never
+    # applies the ordinary public functor to the partially constructed source.
+    assert len(_DIAMOND_TO_LEFT_OBJECT_ACTIONS) == object_calls_before
+    assert len(_DIAMOND_TO_LEFT_MORPHISM_ACTIONS) == morphism_calls_before
+    inherited_source, inherited_state = member_object.left_object()
+    inherited_morphism, inherited_morphism_state = identity.left_morphism()
+    assert inherited_source is member_object and inherited_state == 11
+    assert inherited_morphism is identity and inherited_morphism_state == 11
+    assert len(_DIAMOND_TO_LEFT_OBJECT_ACTIONS) == object_calls_before
+    assert len(_DIAMOND_TO_LEFT_MORPHISM_ACTIONS) == morphism_calls_before
+
+    # Explicit application happens only after the source is complete and constructs the
+    # distinct public image.  CAP then owns reuse of that public image.
     object_image = to_left.on_object(member_object)
-    assert sum(source is member_object for source in _DIAMOND_TO_LEFT_OBJECT_ACTIONS) == object_action_calls
+    assert len(_DIAMOND_TO_LEFT_OBJECT_ACTIONS) == object_calls_before + 1
     assert to_left.on_object(member_object) is object_image
-    assert sum(source is member_object for source in _DIAMOND_TO_LEFT_OBJECT_ACTIONS) == object_action_calls
+    assert len(_DIAMOND_TO_LEFT_OBJECT_ACTIONS) == object_calls_before + 1
 
     morphism_image = to_left.on_morphism(identity)
-    assert sum(source is identity for source in _DIAMOND_TO_LEFT_MORPHISM_ACTIONS) == morphism_action_calls
+    assert len(_DIAMOND_TO_LEFT_MORPHISM_ACTIONS) == morphism_calls_before + 1
     assert to_left.on_morphism(identity) is morphism_image
-    assert sum(source is identity for source in _DIAMOND_TO_LEFT_MORPHISM_ACTIONS) == morphism_action_calls
+    assert len(_DIAMOND_TO_LEFT_MORPHISM_ACTIONS) == morphism_calls_before + 1
 
     base_image = left_to_base.on_object(object_image)
-
     assert object_image is LEFT(11)
     assert object_image is not member_object
     assert base_image is BASE(11)
-    inherited_source, inherited_state = member_object.left_object()
-    assert inherited_source is member_object
     image_source, image_state = object_image.left_object()
-    assert image_source is object_image
-    assert inherited_state == image_state == 11
+    assert image_source is object_image and image_state == inherited_state == 11
     assert morphism_image is LEFT.morphism_category(1)(object_image, object_image).one()
     assert morphism_image is not identity
-    inherited_morphism, inherited_morphism_state = identity.left_morphism()
     image_morphism, image_morphism_state = morphism_image.left_morphism()
-    assert inherited_morphism is identity
     assert image_morphism is morphism_image
-    assert inherited_morphism_state == image_morphism_state == 11
+    assert image_morphism_state == inherited_morphism_state == 11
     assert DIAMOND.structure_functors()[0] is to_left
 
+
+
+def test_unresolved_structural_diamond_is_debug_only(caplog) -> None:
+    import logging
+
+    caplog.set_level(logging.DEBUG, logger="sage_categories.kernel.compiler")
+
+    class LoggedDiamond(_SyntheticCategoryOperations, Category[[], []]):
+        class ObjectType:
+            pass
+
+        class ElementType:
+            pass
+
+        class MorphismType:
+            pass
+
+        def structure_functors(self):
+            key = id(self)
+            if key not in _SELECTED_FUNCTORS:
+                _SELECTED_FUNCTORS[key] = (
+                    Fun(self, LEFT)(lambda member: LEFT(self._label(member)), lambda morphism: LEFT.morphism_category(1)(LEFT(self._label(morphism.domain())), LEFT(self._label(morphism.codomain()))).one()),
+                    Fun(self, RIGHT)(lambda member: RIGHT(self._label(member)), lambda morphism: RIGHT.morphism_category(1)(RIGHT(self._label(morphism.domain())), RIGHT(self._label(morphism.codomain()))).one()),
+                )
+            return _SELECTED_FUNCTORS[key]
+
+    LoggedDiamond()
+
+    records = [record for record in caplog.records if "unresolved structural diamond" in record.getMessage()]
+    assert records
+    assert all(record.levelno == logging.DEBUG for record in records)
 
 def test_property_refinement_preserves_object_identity() -> None:
     member_object = DIAMOND(13)

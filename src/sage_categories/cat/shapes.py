@@ -178,8 +178,17 @@ Discrete: Functor = Fun(Sets, Cat())(_discrete_on_object, _discrete_on_morphism)
 
 
 def is_discrete(shape: Category) -> bool:
-    """Whether ``shape`` is a retained image ``Discrete(S)``."""
-    return shape in _index_sets
+    """Whether ``shape`` is discrete in one of Cat's two foundation representations.
+
+    General discrete categories are retained images ``Discrete(S)`` of owned sets.
+    Finite sequence conveniences use a source-backed finite presentation with no
+    nonidentity generators so Cat remains executable before the production Sets leaf.
+    """
+    if shape in _index_sets:
+        return True
+    from sage_categories.cat.canonical import FinitePresentedCategory
+
+    return isinstance(shape, FinitePresentedCategory) and not shape.generator_names()
 
 
 def index_set_of(shape: Category) -> CategoryOfCategories.ElementType:

@@ -6,6 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
+from sage.sets.family import LazyFamily
 from sage.structure.coerce_dict import MonoDict, TripleDict
 
 from sage_categories.cat import category as _category
@@ -59,6 +60,34 @@ from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategor
 from sage_categories.cat.properties import FixedEndpointProperty, PropertySubcategory
 
 
+class ShapeIndexedFunctorProperty(PropertySubcategory[[OnObject, OnMorphism], [Assignment]]):
+    """A shape-indexed property subcategory of one fixed-endpoint functor category.
+
+    The shape is mathematical construction data.  M2 establishes the owner; M4 supplies
+    the generic operations licensed by preservation/creation.
+    """
+
+    class ObjectType:
+        """A functor with the stated shape-indexed universal-construction property."""
+
+    class ElementType:
+        """A generalized element of such a functor."""
+
+    class MorphismType:
+        """A natural transformation between such functors."""
+
+    def __init__(self, ambient: FunctorCategory, property_name: str, shape: Category) -> None:
+        self._shape = shape
+        self._property_name = property_name
+        super().__init__(ambient, property_name, ())
+
+    def shape(self) -> Category:
+        return self._shape
+
+    def __repr__(self) -> str:
+        return f"{self.ambient()!r}.{self._property_name}({self._shape!r})"
+
+
 class FunctorProperties:
     """The property subcategories of ``Fun``, narrowed to ``Fun(C, D)`` and to its own narrowings.
 
@@ -81,6 +110,24 @@ class FunctorProperties:
 
     def Equivalences(self) -> Category:
         return self.property_subcategory(self.ambient().Equivalences())
+
+    def PreservesLimits(self, shape: Category) -> Category:
+        """Functors preserving limits of ``shape`` (D107, POL-FUN-039)."""
+        if hasattr(self, "_preserves_limits"):
+            cache = self._preserves_limits
+            if shape not in cache:
+                cache[shape] = ShapeIndexedFunctorProperty(self, "PreservesLimits", shape)
+            return cache[shape]
+        return self.property_subcategory(self.ambient().PreservesLimits(shape))
+
+    def CreatesLimits(self, shape: Category) -> Category:
+        """Functors creating limits of ``shape`` (D107, POL-FUN-039)."""
+        if hasattr(self, "_creates_limits"):
+            cache = self._creates_limits
+            if shape not in cache:
+                cache[shape] = ShapeIndexedFunctorProperty(self, "CreatesLimits", shape)
+            return cache[shape]
+        return self.property_subcategory(self.ambient().CreatesLimits(shape))
 
     def Isofibrations(self) -> Category:
         return self.property_subcategory(self.ambient().Isofibrations())
@@ -211,6 +258,8 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
         self._constants: MonoDict = MonoDict()
         self._constant_values: MonoDict = MonoDict()
         self._finite_data: MonoDict = MonoDict()
+        self._preserves_limits: MonoDict = MonoDict()
+        self._creates_limits: MonoDict = MonoDict()
         super().__init__(morphisms, domain, codomain)
 
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
@@ -332,6 +381,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             self._assignment = data.assignment
             self._components: MonoDict = MonoDict()
             super().__init__()
+            self._component_family = LazyFamily(self.source_functor().domain(), self._component_from_assignment)
 
         def source_functor(self) -> Functor:
             return diagram_of(self.domain())
@@ -339,14 +389,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         def target_functor(self) -> Functor:
             return diagram_of(self.codomain())
 
-        def component(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-            """``eta_X: F(X) -> G(X)``, one morphism per object; naturality is a trusted declaration (POL-MATH-036).
-
-            A natural transformation has one component at each object, so the assignment runs
-            once per object and its value is retained by identity (POL-CAT-012).  This is what
-            makes the projections of a chosen product and the injections of a chosen coproduct
-            one morphism each: they are the components of the limiting cone and cocone.
-            """
+        def _component_from_assignment(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
             if member_object in self._components:
                 return self._components[member_object]
             source, target = self.source_functor(), self.target_functor()
@@ -354,6 +397,31 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             assert component in source.codomain().morphism_category(1)(source.on_object(member_object), target.on_object(member_object))
             self._components[member_object] = component
             return component
+
+        def component(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+            """``eta_X: F(X) -> G(X)``, retained lazily as an indexed Sage family.
+
+            The public declaration remains the rule ``X |-> eta_X``.  ``LazyFamily`` owns
+            the potentially infinite indexed assignment, while ``MonoDict`` retains each
+            realized component by source-object identity because owned equality is
+            proposition-valued (D60, POL-SAGE-013).
+            """
+            assert member_object in self.source_functor().domain(), (
+                f"{member_object!r} is not an object of {self.source_functor().domain()!r}"
+            )
+            return self._component_family[member_object]
+
+        def whisker_left(self, functor: Functor) -> NaturalTransformation:
+            """``H . eta``: left whiskering by ``H`` (specs/functor.md)."""
+            return Cat().whisker_left(functor, self)
+
+        def whisker_right(self, functor: Functor) -> NaturalTransformation:
+            """``eta . F``: right whiskering by ``F`` (specs/functor.md)."""
+            return Cat().whisker_right(self, functor)
+
+        def horizontal(self, transformation: NaturalTransformation) -> NaturalTransformation:
+            """Horizontal composition ``transformation * self`` (specs/functor.md)."""
+            return Cat().horizontal_composite(transformation, self)
 
         def __repr__(self) -> str:
             return f"NaturalTransformation({self.domain()!r} => {self.codomain()!r})"

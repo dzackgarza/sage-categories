@@ -337,7 +337,7 @@ def pointwise_limit(diagram: Functor) -> CategoryOfCategories.ElementType:
             )
         )
 
-    family = Fun.Products() if is_discrete(shape) else Fun.Limits(shape)
+    family = Fun.Limits(shape)
     lowered = family.lowered(diagram)
     return family.with_universal_data(lowered, apex, cone(lowered, apex, projection), mediator)
 
@@ -353,7 +353,7 @@ def pointwise_colimit(diagram: Functor) -> CategoryOfCategories.ElementType:
     transported = to_dual * diagram.op()
     assert isinstance(transported, Functor)
     dual_apex = pointwise_limit(transported)
-    dual_family = Fun.Products() if is_discrete(transported.domain()) else Fun.Limits(transported.domain())
+    dual_family = Fun.Limits(transported.domain())
     presentation = constructed_data(dual_family, transported)
     assert isinstance(presentation, LimitConesCategory.ObjectType)
     inverse = duality.inverse()

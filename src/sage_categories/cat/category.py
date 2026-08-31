@@ -490,9 +490,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
 
     # -- universal constructions, defined once (POL-CAT-050/092, POL-CAT-093) --------
     #
-    # A full subcategory declared by such a monomorphism has the constructions of its
-    # ambient definitionally (POL-CAT-087); every other category owns its own families.
-    # Each family exists for every supplied shape without asserting that the
+    # Each category owns its construction families. Each family exists for every supplied shape without asserting that the
     # category has those limits (POL-CAT-051): constructing an object needs an
     # owned construction or supplied universal data.
 
@@ -501,8 +499,6 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         """The category of chosen products over every discrete shape."""
         from sage_categories.cat.constructions import ProductsCategory
 
-        if self.has_full_ambient():
-            return self.ambient().Products()
         return ProductsCategory(self)
 
     @cached_method
@@ -510,16 +506,12 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         """The category of chosen coproducts over every discrete shape."""
         from sage_categories.cat.constructions import CoproductsCategory
 
-        if self.has_full_ambient():
-            return self.ambient().Coproducts()
         return CoproductsCategory(self)
 
     def Limits(self, shape: Category) -> Category:
         """``C.Limits(I)``: chosen limits of diagrams of shape ``I``, one family per shape."""
         from sage_categories.cat.constructions import limits
 
-        if self.has_full_ambient():
-            return self.ambient().Limits(shape)
         assert shape in Cat(), f"{shape!r} is not a shape"
         if shape not in self._limits:
             self._limits[shape] = limits(self, shape)
@@ -529,8 +521,6 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         """``C.Colimits(I)``: chosen colimits of diagrams of shape ``I``, one family per shape."""
         from sage_categories.cat.constructions import colimits
 
-        if self.has_full_ambient():
-            return self.ambient().Colimits(shape)
         assert shape in Cat(), f"{shape!r} is not a shape"
         if shape not in self._colimits:
             self._colimits[shape] = colimits(self, shape)
@@ -573,8 +563,6 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         """``C.SliceOver(x)``: the strict pullback of ``ev_1: Fun([1], C) -> C`` along ``x: * -> C``."""
         from sage_categories.cat.slices import slice_over
 
-        if self.has_full_ambient():
-            return self.ambient().SliceOver(member_object)
         assert member_object in self, f"{member_object!r} is not an object of {self!r}"
         if member_object not in self._slices:
             self._slices[member_object] = slice_over(self, member_object)
@@ -584,8 +572,6 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         """``C.CosliceUnder(x)``: the strict pullback of ``ev_0: Fun([1], C) -> C`` along ``x: * -> C``."""
         from sage_categories.cat.slices import coslice_under
 
-        if self.has_full_ambient():
-            return self.ambient().CosliceUnder(member_object)
         assert member_object in self, f"{member_object!r} is not an object of {self!r}"
         if member_object not in self._coslices:
             self._coslices[member_object] = coslice_under(self, member_object)

@@ -40,6 +40,7 @@ from sage.misc.cachefunc import cached_function
 from sage.structure.coerce_dict import MonoDict, TripleDict
 
 from sage_categories.cat.category import Category
+from sage_categories.cat.cones import LimitConesCategory, cone, cone_apex, cones
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import endpoints
@@ -278,7 +279,7 @@ def domain_lift(
 
 def pointwise_limit(diagram: Functor) -> CategoryOfCategories.ElementType:
     """``Fun(I, C).Limits(J)(D)``: the functor ``i |-> lim_J (ev_i * D)`` with the pointwise cone and mediator."""
-    from sage_categories.cat.constructions import cone, cone_apex, constructed_data
+    from sage_categories.cat.constructions import constructed_data
 
     functors, shape = diagram.codomain(), diagram.domain()
     assert functors is not Fun, f"{diagram!r} is not a diagram in a fixed-endpoint functor category"
@@ -286,30 +287,38 @@ def pointwise_limit(diagram: Functor) -> CategoryOfCategories.ElementType:
     limits = target.Limits(shape)
     composites: MonoDict = MonoDict()
 
-    def at(vertex: CategoryOfCategories.ElementType) -> UniversalData:
-        """The universal data of the pointwise limit at ``vertex``: the diagram owns it, so the object need not."""
+    def at(vertex: CategoryOfCategories.ElementType) -> LimitConesCategory.ObjectType:
+        """The limiting cone of the pointwise diagram at ``vertex``."""
         if vertex not in composites:
-            composites[vertex] = constructed_data(limits, functors.evaluation(vertex) * diagram)
+            presentation = constructed_data(limits, functors.evaluation(vertex) * diagram)
+            assert isinstance(presentation, LimitConesCategory.ObjectType)
+            composites[vertex] = presentation
         return composites[vertex]
 
     def on_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-        source, destination = at(morphism.domain()).diagram, at(morphism.codomain()).diagram
+        source, destination = at(morphism.domain()).diagram(), at(morphism.codomain()).diagram()
         transformation = Fun(shape, target).morphism_category(1)(source, destination)(lambda vertex: functors.diagram(diagram.on_object(vertex)).on_morphism(morphism))
         return limits.limit_functor().on_morphism(transformation)
 
-    apex = functors(lambda vertex: at(vertex).constructed, on_morphism)
+    apex = functors(lambda vertex: at(vertex).apex(), on_morphism)
     projections: MonoDict = MonoDict()
 
     def projection(vertex: CategoryOfCategories.ElementType) -> NaturalTransformation:
         if vertex not in projections:
-            projections[vertex] = functors.morphism_category(1)(apex, diagram.on_object(vertex))(lambda index_object: at(index_object).transformation.component(vertex))
+            projections[vertex] = functors.morphism_category(1)(apex, diagram.on_object(vertex))(lambda index_object: at(index_object).leg(vertex))
         return projections[vertex]
 
     def mediator(candidate_cone: NaturalTransformation) -> NaturalTransformation:
         source = cone_apex(candidate_cone)
         return functors.morphism_category(1)(source, apex)(
-            lambda index_object: at(index_object).mediator(
-                cone(at(index_object).diagram, source.on_object(index_object), lambda vertex: candidate_cone.component(vertex).component(index_object))
+            lambda index_object: at(index_object).lift(
+                cones(at(index_object).diagram())(
+                    cone(
+                        at(index_object).diagram(),
+                        source.on_object(index_object),
+                        lambda vertex: candidate_cone.component(vertex).component(index_object),
+                    )
+                )
             )
         )
 

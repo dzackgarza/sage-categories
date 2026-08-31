@@ -396,7 +396,7 @@ def pointwise_colimit(diagram: Functor) -> CategoryOfCategories.ElementType:
         assert isinstance(mediator, NaturalTransformation)
         return mediator
 
-    family = Fun.Coproducts() if is_discrete(shape) else Fun.Colimits(shape)
+    family = Fun.Colimits(shape)
     lowered = family.lowered(diagram)
     return family.with_universal_data(
         lowered,

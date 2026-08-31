@@ -160,14 +160,15 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
     # subcategory monomorphism is ``D``'s at the morphism role, which the node
     # normalization already places in the selected graph (POL-CAT-021, POL-CAT-087).
 
-    def structure_functors(self) -> tuple[Functor, ...]:
-        if not self._base.has_ambient():
-            return ()
+    def subcategory_monomorphism(self) -> Functor:
         from sage_categories.cat.functors import Fun
 
-        return (Fun.full_subcategory_monomorphism(self, self.ambient()),)
+        return Fun.full_subcategory_monomorphism(self, self.ambient())
 
     def has_ambient(self) -> bool:
+        return self._base.has_ambient()
+
+    def has_full_ambient(self) -> bool:
         return self._base.has_ambient()
 
     def ambient(self) -> Category:

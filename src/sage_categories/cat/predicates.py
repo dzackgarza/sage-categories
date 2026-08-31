@@ -11,11 +11,8 @@ from sage.misc.cachefunc import cached_method
 from sage.misc.unknown import Unknown, UnknownClass
 from sage.structure.coerce_dict import MonoDict
 
-from sage_categories.kernel.compiler import install_on_declaration
-from sage_categories.kernel.roles import CategoryPoint, Role, category_of, role_of
-
 if TYPE_CHECKING:
-    from sage_categories.cat.category import Category
+    from sage_categories.cat.category import Category, CategoryOfCategories
     from sage_categories.cat.properties import PropertySubcategory
 
 __all__ = [
@@ -48,14 +45,14 @@ __all__ = [
 # What a predicate is applied to: owned values, and the integer convenience of the
 # cardinal and ordinal orders.  The candidate of an equality proposition enters
 # through ``EqualityPredicate`` alone (POL-TYPE-004).
-type Argument = CategoryPoint | int
+type Argument = CategoryOfCategories.ElementType | int
 type Decision = bool | UnknownClass
 
 # What ``ask`` returns: a decision for a proposition, and an owned object of the
 # declared result category for a query such as ``cardinality()``. Sage
 # ``Unknown`` is the one unresolved answer of both and is an object of neither result
 # category (``specs/cardinality.md``, "Integration with ``Sets()``").
-type Answer = Decision | CategoryPoint
+type Answer = Decision | CategoryOfCategories.ElementType
 
 # An exact evaluation case on a declared semantic domain; its arity is the
 # predicate's, and each owning category declares its exact parameter types.
@@ -361,13 +358,15 @@ class Axiom:
     def __set_name__(self, declaring_class: type[Category], name: str) -> None:
         self._declaring_class = declaring_class
         self._name = name
-        _derive_application(self)
+        from sage_categories.kernel.predicates import install_axiom_application
+
+        install_axiom_application(self)
 
     def application_name(self) -> str:
         """``is_p()``: the application generated from this axiom's identifier and nothing else (D89, POL-CAT-060)."""
         return _application_name(self._name)
 
-    def application_owner(self) -> type[CategoryPoint]:
+    def application_owner(self) -> type[CategoryOfCategories.ElementType]:
         """The role class the application is written onto: the object declaration of the declaring category class.
 
         A role *is* the name a category class writes for that mathematical kind
@@ -376,15 +375,9 @@ class Axiom:
         a morphism of an arbitrary ``C``; ``Fun`` writes ``Cat().MorphismType``; ``Cat()``
         writes ``CategoryDeclaration``.
         """
-        assert hasattr(self._declaring_class, Role.OBJECT.value), (
-            f"{self._declaring_class.__name__} writes no {Role.OBJECT.value} declaration"
-        )
-        declared = getattr(self._declaring_class, Role.OBJECT.value)
-        assert declared is not None, (
-            f"{self._declaring_class.__name__} writes no {Role.OBJECT.value} declaration, so {self!r} has no role "
-            f"class to write {self.application_name()}() onto (POL-CAT-057)"
-        )
-        return declared
+        from sage_categories.kernel.predicates import axiom_application_owner
+
+        return axiom_application_owner(self)
 
     def __get__(self, category: Category | None, owner: type[Category]) -> Axiom | Callable[[], Category]:
         """``C.P`` on a category value is its accessor; on the class it is the declaration."""
@@ -437,48 +430,6 @@ class Axiom:
         return f"{self._declaring_class.__name__}.{self._name}"
 
 
-# The axiom each derived application was compiled from, by the class and name it was
-# installed under.  A second axiom reaching one spelling on one owner is the collision
-# ``specs/undecidable-properties.md`` requires the kernel to reject.
-_derived_applications: dict[tuple[type[CategoryPoint], str], Axiom] = {}
-
-
 def _application_name(identifier: str) -> str:
     """``"FullyFaithful"`` gives ``"is_fully_faithful"``."""
     return "is_" + uncamelcase(identifier, "_")
-
-
-def _derive_application(axiom: Axiom) -> None:
-    """Compile ``x.is_P()`` from the axiom's identifier and declaring class (POL-CAT-060, D89).
-
-    The application returns the containment proposition and evaluates nothing; a leaf
-    writes no such method and forwards none (``specs/undecidable-properties.md``,
-    "The exact architectural rule").
-
-    Which property subcategory it asks is read off the value's own placement.  The
-    narrowing base of that placement is the category the axiom is declared on, so a set
-    reaches ``Sets().Finite()`` and a morphism ``Mor(C).Isomorphisms()`` from the one
-    declaration, and a value already refined into a property reaches the same one
-    (POL-CAT-084).  A base that is itself a full subcategory -- ``Mor(C)(A, B)`` is the
-    one -- returns a narrowing there, and the property owning the predicate is its root,
-    which is what the predicate names.
-    """
-    name, owner = axiom.application_name(), axiom.application_owner()
-
-    def application(value: CategoryPoint) -> Proposition:
-        placement = category_of(value, role_of(value)).narrowing_base()
-        return axiom._declared_on(placement).predicate().category().membership_proposition(value)
-
-    application.__name__ = name
-    application.__qualname__ = f"{owner.__name__}.{name}"
-    application.__doc__ = f"The proposition that this value is an object of ``{axiom!r}()`` (POL-CAT-060)."
-    known = _derived_applications.get((owner, name))
-    assert known is None or known is axiom, f"{known!r} and {axiom!r} both spell their application {owner.__name__}.{name}; name the two properties distinctly"
-    assert known is not None or name not in vars(owner), (
-        f"{owner.__name__} declares {name!r} itself, so {axiom!r} cannot compile its application there"
-    )
-    _derived_applications[(owner, name)] = axiom
-    # The kernel writes the compiled method onto the declaration and onto the class of
-    # every node already compiled from it, as ``install_level_shift`` writes the
-    # point-inherited spellings onto theirs (``kernel/compiler.py``).
-    install_on_declaration(owner, name, application)

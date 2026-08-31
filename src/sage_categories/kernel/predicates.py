@@ -15,6 +15,7 @@ from sympy.logic.boolalg import And, Implies, Not, Or
 
 from sage_categories.cat.predicates import (
     Answer,
+    Axiom,
     AppliedPredicate,
     AppliedQuery,
     Argument,
@@ -25,8 +26,9 @@ from sage_categories.cat.predicates import (
     PropertyPredicate,
     Proposition,
 )
+from sage_categories.kernel.compiler import install_on_declaration
 from sage_categories.kernel.refinement import is_placed, refine
-from sage_categories.kernel.roles import CategoryPoint
+from sage_categories.kernel.roles import CategoryPoint, Role, category_of, role_of
 
 
 class OwnedPropertyPredicate(EnginePredicate):
@@ -37,6 +39,31 @@ Q.owned_property = OwnedPropertyPredicate()
 _engine_symbols: MonoDict = MonoDict()
 _predicate_symbols: dict[Predicate, Basic] = {}
 _decisions: TripleDict = TripleDict(weak_values=False)
+_derived_applications: dict[tuple[type[CategoryPoint], str], Axiom] = {}
+
+
+def axiom_application_owner(axiom: Axiom) -> type[CategoryPoint]:
+    declaring_class = axiom._declaring_class
+    assert hasattr(declaring_class, Role.OBJECT.value)
+    declared = getattr(declaring_class, Role.OBJECT.value)
+    assert declared is not None
+    return declared
+
+
+def install_axiom_application(axiom: Axiom) -> None:
+    name, owner = axiom.application_name(), axiom_application_owner(axiom)
+
+    def application(value: CategoryPoint) -> Proposition:
+        placement = category_of(value, role_of(value)).narrowing_base()
+        return axiom._declared_on(placement).predicate().category().membership_proposition(value)
+
+    application.__name__ = name
+    application.__qualname__ = f"{owner.__name__}.{name}"
+    known = _derived_applications.get((owner, name))
+    assert known is None or known is axiom
+    assert known is not None or name not in vars(owner)
+    _derived_applications[(owner, name)] = axiom
+    install_on_declaration(owner, name, application)
 
 
 def _engine_symbol(argument: Argument) -> Basic:

@@ -6,7 +6,7 @@ from sage.misc.unknown import Unknown
 
 from sage_categories.cat.category import Axiom, Cat, Category, Predicate, Query, ask, assume
 from sage_categories.cat.functors import Fun
-from sage_categories.cat.properties import PredicateSubcategory
+from sage_categories.cat.properties import FullSubcategory, PredicateSubcategory
 
 
 class Tiny(Category[[], []]):
@@ -49,6 +49,10 @@ class SpecialTiny(PredicateSubcategory):
         return candidate.value() >= 0
 
 
+class TinySubcategory(FullSubcategory, Tiny):
+    """A named full subcategory used to prove functorial property inheritance."""
+
+
 def test_generated_property_application_and_three_valued_ask():
     tiny = Tiny()
     positive, negative, undecided = tiny(3), tiny(-2), tiny(99)
@@ -84,6 +88,14 @@ def test_positive_evidence_uses_same_object_refinement():
     assert tiny.Special()(constructed) is constructed
     assert id(constructed) == constructed_identity
     assert constructed in tiny.Special()
+
+
+def test_sympy_active_assumptions_own_composite_propositions():
+    tiny = Tiny()
+    proposition = tiny(-1).is_special() | tiny(99).is_special()
+    assert ask(proposition) is Unknown
+    assume(proposition)
+    assert ask(proposition) is True
 
 
 def test_typed_query_has_exact_result_category_and_unknown_is_not_a_value():
@@ -126,53 +138,63 @@ def test_property_monomorphism_and_inverse_image_are_retained_categorical_data()
     assert presentation.transformation.component(shape(1)).codomain() is property_category
 
 
+def test_inherited_property_is_the_inverse_image_along_the_defining_functor():
+    tiny = Tiny()
+    subcategory = TinySubcategory(tiny)
+    defining_functor = subcategory.structure_functors()[0]
+    inherited = subcategory.Special()
+    assert inherited.defining_functor() is defining_functor
+    assert inherited.target_subcategory() is tiny.Special()
+    assert inherited.subcategory_monomorphism().domain() is inherited
+    assert inherited.subcategory_monomorphism().codomain() is subcategory
+    assert inherited.target_projection().domain() is inherited
+    assert inherited.target_projection().codomain() is tiny.Special()
+
+
 def test_plum_owns_specificity_decline_and_ambiguity():
+    tiny = Tiny()
     specificity = Predicate("r3_specificity", 1, False)
 
-    def generic(value: int | str):
+    special = tiny(1)
+    ask(special.is_special())
+    TinyObject = type(tiny(-1))
+    SpecialObject = type(special)
+
+    def generic(value: TinyObject):
         return False
 
-    def specific(value: int):
+    def specific(value: SpecialObject):
         return True
 
     specificity.register_handler(generic)
     specificity.register_handler(specific)
-    assert ask(specificity(int(1))) is True
-    assert ask(specificity("not an int")) is False
+    assert ask(specificity(special)) is True
+    assert ask(specificity(tiny(-1))) is False
 
     decline = Predicate("r3_decline", 1, False)
 
-    def generic_after_decline(value: int | str):
+    def generic_after_decline(value: TinyObject):
         return True
 
-    def declining_specific(value: int):
+    def declining_specific(value: SpecialObject):
         return Unknown
 
     decline.register_handler(generic_after_decline)
     decline.register_handler(declining_specific)
-    assert ask(decline(int(1))) is True
-
-    class First:
-        pass
-
-    class Second:
-        pass
-
-    class Both(First, Second):
-        pass
+    assert ask(decline(special)) is True
 
     ambiguous = Predicate("r3_ambiguous", 2, False)
 
-    def first(value: First, other: Second):
+    def first(value: TinyObject, other: SpecialObject):
         return True
 
-    def second(value: Second, other: First):
+    def second(value: SpecialObject, other: TinyObject):
         return False
 
     ambiguous.register_handler(first)
     ambiguous.register_handler(second)
     with pytest.raises(AmbiguousLookupError):
-        ask(ambiguous(Both(), Both()))
+        ask(ambiguous(special, special))
 
 
 for name, value in tuple(globals().items()):

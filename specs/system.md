@@ -47,18 +47,20 @@ It is not a mathematical layer in the tower.
 | --- | --- | --- |
 | T0 | Decisions and supersession | [decisions.md](decisions.md) |
 | T1 | Categories, points, morphisms, functors, and natural transformations | [functor.md](functor.md) |
-| T2 | Pullbacks, opposites, images, comma categories, fibers, and universal data | [functor.md](functor.md) |
-| T3 | Property categories, propositions, typed queries, and refinement | [property-refinement.md](property-refinement.md) and [undecidable-properties.md](undecidable-properties.md) |
-| T4 | Sets, elements, maps, and set constructions | [sets.md](sets.md) |
-| T5 | Cardinals, ordinals, and ordered sets | [cardinality.md](cardinality.md), [ordinals.md](ordinals.md), and [ordered-sets.md](ordered-sets.md) |
-| T6 | Magmas, monoids, groups, semirings, and rings in supplied ambient categories | [magmas-monoids-semirings.md](magmas-monoids-semirings.md) and [rings.md](rings.md) |
-| T7 | Modules and algebras in supplied ambient categories | [modules.md](modules.md) and [algebras.md](algebras.md) |
+| T2 | Property categories, public propositions, assumptions, and same-object refinement | [property-refinement.md](property-refinement.md) and [undecidable-properties.md](undecidable-properties.md) |
+| T3 | Pullbacks, opposites, images, comma categories, fibers, and universal data | [functor.md](functor.md) |
+| T4 | Property intersections and inverse images through retained pullbacks | [property-refinement.md](property-refinement.md) |
+| T5 | Sets, elements, maps, and set constructions | [sets.md](sets.md) |
+| T6 | Cardinals, ordinals, and ordered sets | [cardinality.md](cardinality.md), [ordinals.md](ordinals.md), and [ordered-sets.md](ordered-sets.md) |
+| T7 | Magmas, monoids, groups, semirings, and rings in supplied ambient categories | [magmas-monoids-semirings.md](magmas-monoids-semirings.md) and [rings.md](rings.md) |
+| T8 | Modules and algebras in supplied ambient categories | [modules.md](modules.md) and [algebras.md](algebras.md) |
 
 Each layer consumes named objects and functors from lower layers.
 It adds only its new mathematical structure.
 
-Propositions and typed queries are transverse to the tower.
-Each layer can define them at its own mathematical owner.
+Predicate and query meanings remain at their mathematical owners.
+T2 supplies the shared proposition substrate.
+Each typed-query runtime path enters with its first category-owned query.
 
 [Separating families and categorical generators](separating-families-and-categorical-generators.md) owns a cross-layer construction pattern.
 Each domain phase instantiates that pattern after its category and `Sets()` exist.

@@ -78,9 +78,12 @@ def vertex_of(
     if index in shape:
         return index
     from sage_categories.cat.canonical import FinitePresentedCategory
+    from sage_categories.cat.opposites import OppositeCategory
 
     if isinstance(shape, FinitePresentedCategory):
         return shape(index)
+    if isinstance(shape, OppositeCategory):
+        return vertex_of(shape.original(), index)
     return shape.object_at(shape.object_set().point(index))
 
 

@@ -384,8 +384,8 @@ def limit_of_categories(
 
 
 def product_of_categories(diagram: Functor) -> CategoryOfCategories.ElementType:
-    """``Cat().Products()(diagram)`` for a diagram over ``Discrete(S)``: the limit imposes no condition there."""
-    return limit_of_categories(diagram, Cat().Products())
+    """The strict limit of a category diagram over ``Discrete(S)``."""
+    return limit_of_categories(diagram, Cat().Limits(diagram.domain()))
 
 
 def pullback_of_categories(diagram: Functor) -> CategoryOfCategories.ElementType:

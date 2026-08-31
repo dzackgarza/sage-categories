@@ -593,12 +593,10 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         return self._slices[member_object]
 
     def CosliceUnder(self, member_object: CategoryOfCategories.ElementType) -> Category:
-        """``C.CosliceUnder(x)``: the strict pullback of ``ev_0: Fun([1], C) -> C`` along ``x: * -> C``."""
-        from sage_categories.cat.slices import coslice_under
-
+        """``C.CosliceUnder(x) = C.op().SliceOver(x).op()``."""
         assert member_object in self, f"{member_object!r} is not an object of {self!r}"
         if member_object not in self._coslices:
-            self._coslices[member_object] = coslice_under(self, member_object)
+            self._coslices[member_object] = self.op().SliceOver(member_object).op()
         return self._coslices[member_object]
 
     # The four fixed-object construction categories, defined once here so that every

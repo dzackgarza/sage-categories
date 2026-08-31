@@ -102,7 +102,7 @@ def _nontrivial_discrete(shape: Category) -> bool | None:
     """Return whether the owned object-set cardinality proves a nontrivial discrete shape."""
     if not is_discrete(shape):
         return False
-    cardinality = shape.object_set().cardinality()
+    cardinality = ask(shape.object_set().cardinality())
     if cardinality is Unknown:
         return None
     decision = ask(cardinality >= 2)

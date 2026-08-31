@@ -692,7 +692,6 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
 
     def __init__(self, ambient: Category) -> None:
         self._candidate_families: list[ColimitsCategory] = []
-        self._presenting_families: MonoDict = MonoDict()
         super().__init__(ambient, "Coproducts", ())
 
     def retain_full_image(self, family: Category) -> None:
@@ -709,8 +708,16 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
         candidate: CategoryOfCategories.ElementType,
         assumptions: Proposition,
     ) -> bool | None:
-        families = self._presenting_families[candidate] if candidate in self._presenting_families else ()
-        decisions = tuple(_nontrivial_discrete(family.shape()) for family in families)
+        decisions: list[bool | None] = []
+        for family in self._candidate_families:
+            membership = ask(family.membership_proposition(candidate))
+            nontrivial = _nontrivial_discrete(family.shape())
+            if membership is False or nontrivial is False:
+                decisions.append(False)
+            elif membership is True and nontrivial is True:
+                decisions.append(True)
+            else:
+                decisions.append(None)
         if any(decision is True for decision in decisions):
             return True
         if any(decision is None for decision in decisions):
@@ -725,14 +732,15 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
         assert isinstance(family, ColimitsCategory)
         assert is_discrete(family.shape())
         self.retain_full_image(family)
-        retained = self._presenting_families[apex] if apex in self._presenting_families else ()
-        if family not in retained:
-            self._presenting_families[apex] = (*retained, family)
         ask(self.membership_proposition(apex))
 
     def presenting_family(self, apex: CategoryOfCategories.ElementType) -> ColimitsCategory:
-        candidates = self._presenting_families[apex] if apex in self._presenting_families else ()
-        families = tuple(family for family in candidates if _nontrivial_discrete(family.shape()) is True)
+        families = tuple(
+            family
+            for family in self._candidate_families
+            if _nontrivial_discrete(family.shape()) is True
+            and ask(family.membership_proposition(apex)) is True
+        )
         assert len(families) == 1, f"{apex!r} has {len(families)} coproduct-family presentations"
         return families[0]
 

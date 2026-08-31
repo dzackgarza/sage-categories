@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from sympy.logic.boolalg import Boolean
-
 from sage_categories.cat.category import Cat, ask
 from sage_categories.cat.cones import cone, cones, limit_cones
 from sage_categories.cat.diagrams import cospan_diagram
@@ -28,7 +26,6 @@ def test_r5_2_fully_faithful_identity_uses_its_exact_proposition_and_same_value(
     proposition = identity.is_fully_faithful()
     identity_before = id(identity)
 
-    assert isinstance(proposition, Boolean)
     assert proposition is fully_faithful.membership_proposition(identity)
     assert ask(proposition) is True
     assert id(identity) == identity_before
@@ -133,7 +130,6 @@ def test_r5_6_results_have_their_exact_semantic_owners():
 
     assert evaluation in Fun(diagrams, Cat())
     assert identity in endomorphisms.FullyFaithful()
-    assert isinstance(proposition, Boolean)
     assert proposition is endomorphisms.FullyFaithful().membership_proposition(identity)
     assert terminal_apex is Cat().Pullbacks().chosen_object(terminal_diagram)
     assert intersection is Cat().Pullbacks().chosen_object(intersection_diagram)

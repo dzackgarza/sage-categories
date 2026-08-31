@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from functools import partial
 from inspect import Parameter, signature
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, get_origin
 
 from plum import Dispatcher, NotFoundLookupError, Signature as DispatchSignature
 
@@ -110,13 +110,14 @@ def _dispatch_annotation(annotation: object, namespace: dict[str, object]) -> ob
         return annotation
     if any(role_name in annotation for role_name in (".ObjectType", ".ElementType", ".MorphismType")):
         return object
-    try:
-        resolved = eval(annotation, namespace)
-    except (NameError, AttributeError):
+    if annotation.split(".", 1)[0] not in namespace:
         return object
-    if isinstance(resolved, type) and issubclass(resolved, CategoryPoint):
-        return object
-    return resolved
+    if "[" in annotation:
+        return namespace[annotation.split("[", 1)[0]]
+    resolved = eval(annotation, namespace)
+    if hasattr(resolved, "__parameters__") and resolved.__parameters__:
+        return CategoryPoint
+    return get_origin(resolved) or resolved
 
 
 def _dispatch_signature(handler: Handler) -> DispatchSignature:
@@ -421,6 +422,11 @@ def _decided(proposition: Decision | Proposition) -> Basic:
     as ``True`` and leaves ``P or Q`` undecided.  That algebra is the only truth table
     involved, and it is SymPy's.
     """
+    representable = isinstance(proposition, Connective) or (
+        isinstance(proposition, AppliedPredicate) and all(map(_representable, proposition.arguments()))
+    )
+    if representable and proposition.engine_value() in global_assumptions:
+        return S.true
     if proposition is Unknown:
         return Dummy("undecided")
     match proposition:

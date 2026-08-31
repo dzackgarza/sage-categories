@@ -107,12 +107,10 @@ def test_sympy_active_assumptions_own_composite_propositions():
     tiny = Tiny()
     proposition = tiny(-1).is_special() | tiny(99).is_special()
     assert ask(proposition) is Unknown
-    try:
-        assume(proposition)
-        assert proposition in global_assumptions
-        assert ask(proposition) is True
-    finally:
-        global_assumptions.discard(proposition)
+    assume(proposition)
+    assert proposition in global_assumptions
+    assert ask(proposition) is True
+    global_assumptions.discard(proposition)
 
 
 def test_typed_query_has_exact_result_category_and_unknown_is_not_a_value():

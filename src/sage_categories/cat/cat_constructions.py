@@ -1,4 +1,4 @@
-"""The constructions ``Cat()`` owns (POL-CAT-050, POL-MATH-037): the strict limit of a diagram of categories, the coproduct over a discrete shape, and the exponential.
+"""The limit constructions owned by ``Cat()`` and ``Cat().op()`` (POL-CAT-050, POL-MATH-037).
 
 Each construction line carries its inspected citation (POL-MATH-040); the
 universal property of each is a trusted declaration attached to the
@@ -19,10 +19,10 @@ constructor (POL-MATH-037, POL-MATH-036).
   the fibre product.  A product is the fibre product over the terminal category,
   so the two are one construction at two shapes, and the projections of each are
   indexed by the objects of its shape (POL-CAT-092).
-- The coproduct has as objects the tagged objects ``(i, x)`` with ``x`` in the
-  ``i``-th category and as morphisms the morphisms within one tag (Mathlib
-  ``CategoryTheory.Sigma.sigma``; the binary case ``CategoryTheory.sum``;
-  inspected 2026-08-26).  ``coproduct_injection(i)`` tags.
+- A discrete limit in ``Cat().op()`` uses tagged objects ``(i, x)`` with ``x``
+  in the ``i``-th category.  Its projections are the opposites of the tagging
+  functors (Mathlib ``CategoryTheory.Sigma.sigma`` and ``CategoryTheory.sum``;
+  inspected 2026-08-26).
 - The exponential ``D ** C`` is ``Fun(C, D)`` (Mathlib ``CategoryTheory.Cat.exp_obj``;
   inspected 2026-08-26).
 
@@ -51,11 +51,12 @@ from sage.structure.coerce_dict import MonoDict, TripleDict
 from sympy import ask as sympy_ask
 
 from sage_categories.cat.category import Category, member
-from sage_categories.cat.constructions import cocone, cocone_apex, cone, cone_apex, vertex_of
+from sage_categories.cat.constructions import cone, cone_apex, vertex_of
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.diagrams import sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.cat.shapes import Discrete, DiscreteCategory
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
 from sage_categories.cat.predicates import Predicate, Proposition, ask, conjunction, predicate, register_handler
@@ -65,9 +66,7 @@ if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
 
 __all__ = [
-    "CoproductCategory",
     "LimitCategory",
-    "coproduct_of_categories",
     "limit_of_categories",
     "product_of_categories",
     "pullback_of_categories",
@@ -395,36 +394,36 @@ def pullback_of_categories(diagram: Functor) -> CategoryOfCategories.ElementType
 
 
 
-# -- coproducts of categories --------------------------------------------------------------
+# -- discrete limits in the opposite category ---------------------------------------------
 
 
 @dataclass(frozen=True, eq=False, slots=True)
-class TaggedObjectData:
-    """The local state introduced by a coproduct-category object."""
+class _TaggedObjectData:
+    """The local state introduced by an object of the private tagged category."""
 
-    tag: DiscreteCategory.ObjectType
+    tag: CategoryOfCategories.ElementType
     member: CategoryOfCategories.ElementType
 
 
 @dataclass(frozen=True, eq=False, slots=True)
-class TaggedMorphismData:
-    """The local state introduced by a coproduct-category morphism."""
+class _TaggedMorphismData:
+    """The local state introduced by a morphism of the private tagged category."""
 
     morphism: MorphismCategory.ObjectType
 
 
-class CoproductCategory(Category[[MorphismCategory.ObjectType], []]):
-    """The coproduct of an ``S``-indexed family of categories."""
+class _TaggedCategory(Category[[MorphismCategory.ObjectType], []]):
+    """The tagged category used to evaluate a discrete limit in ``Cat().op()``."""
 
     class ObjectType:
-        """An object of a coproduct category: an object of one summand, tagged by its index."""
+        """An object of one factor, tagged by its index."""
 
-        def __init__(self, data: TaggedObjectData) -> None:
+        def __init__(self, data: _TaggedObjectData) -> None:
             self._tag = data.tag
             self._member = data.member
             super().__init__()
 
-        def tag(self) -> DiscreteCategory.ObjectType:
+        def tag(self) -> CategoryOfCategories.ElementType:
             return self._tag
 
         def member(self) -> CategoryOfCategories.ElementType:
@@ -434,9 +433,9 @@ class CoproductCategory(Category[[MorphismCategory.ObjectType], []]):
             return f"({self._tag!r}, {self._member!r})"
 
     class MorphismType:
-        """A morphism of a coproduct category: a morphism within one summand."""
+        """A morphism within one tagged factor."""
 
-        def __init__(self, data: TaggedMorphismData) -> None:
+        def __init__(self, data: _TaggedMorphismData) -> None:
             self._morphism = data.morphism
             super().__init__()
 
@@ -469,7 +468,7 @@ class CoproductCategory(Category[[MorphismCategory.ObjectType], []]):
     ) -> bool | None:
         """Two tagged values are equal when they carry one tag and their members are equal.
 
-        A morphism of the coproduct lies within one summand, so equal tags reduce the
+        A morphism of the tagged category lies within one factor, so equal tags reduce the
         question to the summand's own equality (Mathlib ``CategoryTheory.Sigma.SigmaHom``,
         ``Mathlib/CategoryTheory/Sigma/Basic.lean``: "a morphism ``(i, X) -> (j, Y)`` when
         ``i = j`` is just a morphism ``X -> Y``, and if ``i != j`` then there are no such
@@ -493,71 +492,91 @@ class CoproductCategory(Category[[MorphismCategory.ObjectType], []]):
         self,
         index: CategoryOfCategories.ElementType | Hashable,
         member_object: CategoryOfCategories.ElementType,
-    ) -> CoproductCategory.ObjectType:
+    ) -> _TaggedCategory.ObjectType:
         """``Q(i, x)``: the object of the ``i``-th summand tagged by ``i``, retained per pair."""
         tag = vertex_of(self.shape(), index)
         assert member_object in self.summand(tag), f"{member_object!r} is not an object of {self.summand(tag)!r}"
         key = (tag, member_object, self)
         if key not in self._objects:
-            self._objects[key] = self.ObjectType(category=self, data=TaggedObjectData(tag, member_object))
+            self._objects[key] = self.ObjectType(category=self, data=_TaggedObjectData(tag, member_object))
         return self._objects[key]
 
     def construct_morphism(
         self,
-        domain: CoproductCategory.ObjectType,
-        codomain: CoproductCategory.ObjectType,
+        domain: _TaggedCategory.ObjectType,
+        codomain: _TaggedCategory.ObjectType,
         morphism: MorphismCategory.ObjectType,
-    ) -> CoproductCategory.MorphismType:
+    ) -> _TaggedCategory.MorphismType:
         assert domain.tag() is codomain.tag(), f"{domain!r} and {codomain!r} lie in different summands"
         assert morphism in self.summand(domain.tag()).morphism_category(1)(domain.member(), codomain.member())
         return self.MorphismType(
             category=self.morphism_category(1),
             domain=domain,
             codomain=codomain,
-            data=TaggedMorphismData(morphism),
+            data=_TaggedMorphismData(morphism),
         )
 
-    def construct_identity(self, member_object: CoproductCategory.ObjectType) -> CoproductCategory.MorphismType:
+    def construct_identity(self, member_object: _TaggedCategory.ObjectType) -> _TaggedCategory.MorphismType:
         member = member_object.member()
         return self.MorphismType(
             category=self.morphism_category(1),
             domain=member_object,
             codomain=member_object,
-            data=TaggedMorphismData(member.category().morphism_category(1)(member, member).one()),
+            data=_TaggedMorphismData(member.category().morphism_category(1)(member, member).one()),
         )
 
-    def composite(self, second: CoproductCategory.MorphismType, first: CoproductCategory.MorphismType) -> CoproductCategory.MorphismType:
+    def composite(self, second: _TaggedCategory.MorphismType, first: _TaggedCategory.MorphismType) -> _TaggedCategory.MorphismType:
         assert first.codomain() is second.domain()
         return self.MorphismType(
             category=self.morphism_category(1),
             domain=first.domain(),
             codomain=second.codomain(),
-            data=TaggedMorphismData(second.morphism() * first.morphism()),
+            data=_TaggedMorphismData(second.morphism() * first.morphism()),
         )
 
     def __repr__(self) -> str:
-        return f"Coproduct({self._diagram!r})"
+        return f"Tagged({self._diagram!r})"
 
 
-def coproduct_of_categories(diagram: Functor) -> CategoryOfCategories.ElementType:
-    """``Cat().Coproducts()(diagram)`` for a diagram over ``Discrete(S)``."""
-    coproduct = CoproductCategory(diagram)
-    injections: MonoDict = MonoDict()
+def _limit_of_opposite_categories(diagram: Functor) -> CategoryOfCategories.ElementType:
+    """Evaluate a discrete limit in ``Cat().op()`` through the private tagged category."""
+    opposite_categories = Cat().op()
+    family = opposite_categories.Limits(diagram.domain())
+    lowered = family.lowered(diagram)
+    tagged = _TaggedCategory(lowered)
+    opposite_categories(tagged)
+    projections: MonoDict = MonoDict()
 
-    def injection(vertex: DiscreteCategory.ObjectType) -> Functor:
-        if vertex not in injections:
-            injections[vertex] = Fun(diagram.on_object(vertex), coproduct)(
-                lambda member_object: coproduct(vertex, member_object),
-                lambda morphism: coproduct.construct_morphism(coproduct(vertex, morphism.domain()), coproduct(vertex, morphism.codomain()), morphism),
+    def projection(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        if vertex not in projections:
+            injection = Fun(lowered.on_object(vertex), tagged)(
+                lambda member_object: tagged(vertex, member_object),
+                lambda morphism: tagged.construct_morphism(
+                    tagged(vertex, morphism.domain()),
+                    tagged(vertex, morphism.codomain()),
+                    morphism,
+                ),
             )
-        return injections[vertex]
+            projections[vertex] = opposite_morphism(injection)
+        return projections[vertex]
 
-    def mediator(candidate_cocone: NaturalTransformation) -> Functor:
-        target = cocone_apex(candidate_cocone)
-        return Fun(coproduct, target)(
-            lambda tagged: candidate_cocone.component(tagged.tag()).on_object(tagged.member()),
-            lambda morphism: candidate_cocone.component(morphism.domain().tag()).on_morphism(morphism.morphism()),
+    def mediator(candidate_cone: NaturalTransformation) -> MorphismCategory.ObjectType:
+        target = cone_apex(candidate_cone)
+
+        def component(vertex: CategoryOfCategories.ElementType) -> Functor:
+            functor = opposite_morphism(candidate_cone.component(vertex))
+            assert isinstance(functor, Functor)
+            return functor
+
+        tagged_mediator = Fun(tagged, target)(
+            lambda member_object: component(member_object.tag()).on_object(member_object.member()),
+            lambda morphism: component(morphism.domain().tag()).on_morphism(morphism.morphism()),
         )
+        return opposite_morphism(tagged_mediator)
 
-    lowered = Cat().Coproducts().lowered(diagram)
-    return Cat().Coproducts().with_universal_data(lowered, coproduct, cocone(lowered, coproduct, injection), mediator)
+    return family.with_universal_data(
+        lowered,
+        tagged,
+        cone(lowered, tagged, projection),
+        mediator,
+    )

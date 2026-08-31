@@ -44,6 +44,48 @@ type Assignment = Callable[[CategoryOfCategories.ElementType], "MorphismCategory
 member: Predicate = predicate("member")
 
 
+def _pointwise_limit_in_opposite_functor_category(
+    diagram: Functor,
+) -> CategoryOfCategories.ElementType:
+    """Evaluate a limit in ``Fun(I, C).op()`` as the dual pointwise colimit."""
+    from sage_categories.cat.cones import cone, cone_apex, cones
+    from sage_categories.cat.constructions import constructed_data
+    from sage_categories.cat.diagrams import pointwise_colimit
+    from sage_categories.cat.functors import Fun
+    from sage_categories.cat.opposites import opposite_morphism
+    from sage_categories.cat.shapes import is_discrete
+
+    dual_diagram = diagram.op()
+    apex = pointwise_colimit(dual_diagram)
+    dual_family = Fun.Coproducts() if is_discrete(dual_diagram.domain()) else Fun.Colimits(dual_diagram.domain())
+    dual_presentation = constructed_data(dual_family, dual_diagram)
+    family = diagram.codomain().Limits(diagram.domain())
+    lowered = family.lowered(diagram)
+    opposite_apex = diagram.codomain()(apex)
+
+    def in_opposite_functor_category(
+        morphism: MorphismCategory.ObjectType,
+    ) -> MorphismCategory.ObjectType:
+        return opposite_morphism(opposite_morphism(morphism))
+
+    def mediator(candidate_cone: NaturalTransformation) -> MorphismCategory.ObjectType:
+        dual_candidate = cone(
+            dual_presentation.diagram(),
+            cone_apex(candidate_cone),
+            lambda vertex: candidate_cone.component(vertex),
+        )
+        return in_opposite_functor_category(
+            dual_presentation.lift(cones(dual_presentation.diagram())(dual_candidate))
+        )
+
+    return family.with_universal_data(
+        lowered,
+        opposite_apex,
+        cone(lowered, opposite_apex, lambda vertex: in_opposite_functor_category(dual_presentation.leg(vertex))),
+        mediator,
+    )
+
+
 @cache
 def _morphism_set() -> Query:
     """The typed query for the set of morphisms of a category."""
@@ -566,11 +608,20 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
 
     def limit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
         """The owned construction of ``I``-limits, when this category declares one."""
-        raise AssertionError(f"{self!r} owns no {shape!r}-limit construction; supply universal data")
+        from sage_categories.cat.functors import FunctorCategory
+        from sage_categories.cat.opposites import OppositeCategory
 
-    def colimit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
-        """The owned construction of ``I``-colimits, when this category declares one."""
-        raise AssertionError(f"{self!r} owns no {shape!r}-colimit construction; supply universal data")
+        if isinstance(self, OppositeCategory):
+            original = self.original()
+            if original is Cat():
+                from sage_categories.cat.cat_constructions import _limit_of_opposite_categories
+                from sage_categories.cat.shapes import is_discrete
+
+                if is_discrete(shape):
+                    return _limit_of_opposite_categories
+            if isinstance(original, FunctorCategory):
+                return _pointwise_limit_in_opposite_functor_category
+        raise AssertionError(f"{self!r} owns no {shape!r}-limit construction; supply universal data")
 
     def presenting_diagrams(self, constructed: CategoryOfCategories.ElementType) -> tuple[Functor, ...]:
         """The diagrams this category constructed ``constructed`` from; a category that constructs nothing retains none.
@@ -1297,15 +1348,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         if shape is self.Horn(2, 2):
             return pullback_of_categories
         raise AssertionError(f"Cat owns no {shape!r}-limit construction: products over Discrete(S) and pullbacks over L(2, 2) are its owned shapes; supply universal data")
-
-    def colimit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
-        """Coproducts over ``Discrete(S)``; ``Cat()`` owns no other colimit construction."""
-        from sage_categories.cat.cat_constructions import coproduct_of_categories
-        from sage_categories.cat.shapes import is_discrete
-
-        if is_discrete(shape):
-            return coproduct_of_categories
-        raise AssertionError(f"Cat owns no {shape!r}-colimit construction: coproducts over Discrete(S) are its owned shape; supply universal data")
 
     def exponential(self, exponent: Category, base: Category) -> Category:
         """``D ** C = Fun(C, D)``: ``Cat()`` is cartesian closed (Mathlib ``Cat.exp_obj``; inspected 2026-08-26)."""

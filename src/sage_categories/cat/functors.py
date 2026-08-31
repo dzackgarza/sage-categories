@@ -660,7 +660,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         """The same for a full subcategory, which adds fullness (Mathlib ``ObjectProperty.ι``)."""
         return self._shared_value_functor(source, target, True)
 
-    # -- limits and colimits of functors, pointwise (specs/functor.md, "Diagram shapes and universal constructions"; ``cat/diagrams.py``) -----------
+    # -- limits of functors, pointwise (specs/functor.md, "Diagram shapes and universal constructions"; ``cat/diagrams.py``) ------------------------
 
     def limit_construction(
         self,
@@ -670,14 +670,6 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         from sage_categories.cat.diagrams import pointwise_limit
 
         return pointwise_limit
-
-    def colimit_construction(
-        self,
-        shape: Category,
-    ) -> Callable[[Functor], CategoryOfCategories.ElementType]:
-        from sage_categories.cat.diagrams import pointwise_colimit
-
-        return pointwise_colimit
 
     def __repr__(self) -> str:
         return "Fun"

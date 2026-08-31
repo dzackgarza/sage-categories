@@ -512,8 +512,10 @@ class ColimitsCategory(FullSubcategory[[MorphismCategory.ObjectType], []]):
 
         def cocone(self) -> NaturalTransformation:
             """The colimiting cocone ``diagram => constant(self)``."""
-            presentation = presenting_family(self).presentation(self)
-            return cocone(self.diagram(), self, lambda vertex: presentation.leg(vertex).op())
+            family = presenting_family(self)
+            presentation = family.presentation(self)
+            diagram = family.lowered(self.diagram())
+            return cocone(diagram, self, lambda vertex: presentation.leg(vertex).op())
 
         def injection(self, index: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
             """The cocone component ``D(i) -> self``."""
@@ -521,8 +523,13 @@ class ColimitsCategory(FullSubcategory[[MorphismCategory.ObjectType], []]):
 
         def universal_morphism(self, candidate_cocone: NaturalTransformation) -> MorphismCategory.ObjectType:
             """The mediating morphism to the apex of another cocone under the same diagram."""
-            presentation = presenting_family(self).presentation(self)
+            family = presenting_family(self)
+            presentation = family.presentation(self)
+            diagram = family.lowered(self.diagram())
+            assert candidate_cocone in Fun(diagram.domain(), diagram.codomain()).morphism_category(1)
+            assert candidate_cocone.domain() is diagram
             dual_candidate = candidate_cocone.op()
+            assert dual_candidate.codomain() is presentation.diagram()
             candidate = cone(
                 presentation.diagram(),
                 cocone_apex(candidate_cocone),

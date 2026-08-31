@@ -102,24 +102,28 @@ def constant(functors: FunctorCategory, value: CategoryOfCategories.ElementType)
 
 
 # A diagram constructor called on identical data returns the retained functor
-# (POL-CAT-083): object rules per rule, sequences per sequence and ambient, cospans
-# and spans per pair of legs and base.  Every table keys by identity.
+# (POL-CAT-083): discrete object rules per shape and rule, sequences per sequence and
+# ambient, cospans and spans per pair of legs and base.  Every table keys by identity.
 _object_rule_diagrams: MonoDict = MonoDict()
 _cospan_diagrams: TripleDict = TripleDict(weak_values=False)
 _span_diagrams: TripleDict = TripleDict(weak_values=False)
 
 
 def from_object_rule(functors: FunctorCategory, rule: Callable[[DiscreteCategory.ObjectType], CategoryOfCategories.ElementType]) -> Functor:
-    """A diagram over a discrete shape from its object rule, retained per rule; the morphism rule is forced."""
-    assert is_discrete(functors.domain()), f"{functors.domain()!r} is not a discrete shape; supply a morphism rule"
-    if rule not in _object_rule_diagrams:
+    """A diagram over a discrete shape from its object rule, retained per shape and rule; the morphism rule is forced."""
+    shape = functors.domain()
+    assert is_discrete(shape), f"{shape!r} is not a discrete shape; supply a morphism rule"
+    if shape not in _object_rule_diagrams:
+        _object_rule_diagrams[shape] = MonoDict()
+    diagrams = _object_rule_diagrams[shape]
+    if rule not in diagrams:
 
         def image_identity(identity: DiscreteCategory.MorphismType) -> MorphismCategory.ObjectType:
             image = rule(identity.domain())
             return image.category().morphism_category(1)(image, image).one()
 
-        _object_rule_diagrams[rule] = functors(rule, image_identity)
-    diagram = _object_rule_diagrams[rule]
+        diagrams[rule] = functors(rule, image_identity)
+    diagram = diagrams[rule]
     assert diagram.codomain() is functors.codomain(), f"{rule!r} already defines a diagram in {diagram.codomain()!r}"
     return diagram
 

@@ -65,7 +65,7 @@ from sage_categories.cat.cones import (
 from sage_categories.cat.diagrams import from_sequence
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.properties import FullSubcategory
+from sage_categories.cat.properties import FullSubcategory, PredicateSubcategory
 from sage_categories.cat.shapes import is_discrete
 from sage_categories.cat.predicates import Decision, Unknown
 from sage_categories.cat.predicates import Predicate, Proposition, ask, predicate, register_handler
@@ -289,7 +289,7 @@ class LimitsCategory(ApexCategory):
         """``C.Limits(I)(diagram)``: the chosen limit, through ``C.limit_construction(I)``."""
         self.accepts(diagram, self._shape)
         apex = self.chosen(diagram, self.ambient().limit_construction(self._shape))
-        if _nontrivial_discrete(self._shape) is True:
+        if is_discrete(self._shape):
             self.ambient().Products().retain_product(self, apex)
         return apex
 
@@ -309,7 +309,7 @@ class LimitsCategory(ApexCategory):
             lambda candidate: mediator(candidate.transformation()),
         )
         retained = self._retain(diagram, apex, presentation)
-        if _nontrivial_discrete(self._shape) is True:
+        if is_discrete(self._shape):
             self.ambient().Products().retain_product(self, retained)
         return retained
 
@@ -320,7 +320,7 @@ class LimitsCategory(ApexCategory):
             from sage_categories.cat.images import register_full_image
 
             register_full_image(self._limit_functor[self], self)
-        if _nontrivial_discrete(self._shape) is True:
+        if is_discrete(self._shape):
             self.ambient().Products().retain_full_image(self)
         return self._limit_functor[self]
 
@@ -343,7 +343,7 @@ class LimitsCategory(ApexCategory):
         return f"{self.ambient()!r}.Limits({self._shape!r})"
 
 
-class ProductsCategory(FullSubcategory[[MorphismCategory.ObjectType], []]):
+class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
     """``C.Products()``: the union of full images of the known nontrivial discrete limit functors."""
 
     # A point of a chosen product is a family of points, one into each factor.
@@ -384,19 +384,33 @@ class ProductsCategory(FullSubcategory[[MorphismCategory.ObjectType], []]):
             return presentation.lift(cones(presentation.diagram())(candidate_cone))
 
     def __init__(self, ambient: Category) -> None:
-        self._full_image_families: list[Category] = []
+        self._candidate_families: list[LimitsCategory] = []
         self._presenting_families: MonoDict = MonoDict()
-        super().__init__(ambient)
+        super().__init__(ambient, "Products", ())
 
     def retain_full_image(self, family: Category) -> None:
         assert isinstance(family, LimitsCategory)
-        assert _nontrivial_discrete(family.shape()) is True
-        if family not in self._full_image_families:
-            self._full_image_families.append(family)
+        assert is_discrete(family.shape())
+        if family not in self._candidate_families:
+            self._candidate_families.append(family)
 
     def full_images(self) -> tuple[Category, ...]:
         """Return the full-image families whose union this category owns."""
-        return tuple(self._full_image_families)
+        return tuple(family for family in self._candidate_families if _nontrivial_discrete(family.shape()) is True)
+
+    def _predicate(
+        self,
+        candidate: CategoryOfCategories.ElementType,
+        assumptions: Proposition,
+    ) -> bool | None:
+        """Whether a retained limit presentation currently has a nontrivial discrete shape."""
+        families = self._presenting_families[candidate] if candidate in self._presenting_families else ()
+        decisions = tuple(_nontrivial_discrete(family.shape()) for family in families)
+        if any(decision is True for decision in decisions):
+            return True
+        if any(decision is None for decision in decisions):
+            return None
+        return False
 
     def retain_product(
         self,
@@ -404,15 +418,16 @@ class ProductsCategory(FullSubcategory[[MorphismCategory.ObjectType], []]):
         apex: CategoryOfCategories.ElementType,
     ) -> None:
         assert isinstance(family, LimitsCategory)
-        assert _nontrivial_discrete(family.shape()) is True
+        assert is_discrete(family.shape())
         self.retain_full_image(family)
         retained = self._presenting_families[apex] if apex in self._presenting_families else ()
         if family not in retained:
             self._presenting_families[apex] = (*retained, family)
-        refine(apex, self)
+        ask(self.membership_proposition(apex))
 
     def presenting_family(self, apex: CategoryOfCategories.ElementType) -> Category:
-        families = self._presenting_families[apex] if apex in self._presenting_families else ()
+        candidates = self._presenting_families[apex] if apex in self._presenting_families else ()
+        families = tuple(family for family in candidates if _nontrivial_discrete(family.shape()) is True)
         assert len(families) == 1, f"{apex!r} has {len(families)} product-family presentations"
         return families[0]
 

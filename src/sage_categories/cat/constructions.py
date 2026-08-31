@@ -151,6 +151,7 @@ class ApexCategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismDa
         self._constructed: MonoDict = MonoDict()
         self._source_diagrams: MonoDict = MonoDict()
         self._lowered: MonoDict = MonoDict()
+        self._image_factor: Functor | None = None
         super().__init__(ambient)
 
     # -- the diagrams this family accepts ----------------------------------------------
@@ -231,6 +232,14 @@ class ApexCategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismDa
         refine(constructed, self)
         return constructed
 
+    def _factor_through_image(self, defining_functor: Functor) -> Functor:
+        if self._image_factor is None:
+            self._image_factor = Fun(defining_functor.domain(), self)(
+                lambda diagram: self(diagram),
+                lambda transformation: induced_limit_morphism(self, transformation),
+            )
+        return self._image_factor
+
 
 class LimitsCategory(ApexCategory):
     """``C.Limits(I)``: chosen limits of diagrams of one shape ``I``."""
@@ -284,7 +293,16 @@ class LimitsCategory(ApexCategory):
         """``Lim_I: Fun(I, C) -> C``, retained once."""
         if self not in self._limit_functor:
             self._limit_functor[self] = limit_functor(self)
+            from sage_categories.cat.images import register_full_image
+
+            register_full_image(self._limit_functor[self], self)
         return self._limit_functor[self]
+
+    def defining_functor(self) -> Functor:
+        return self.limit_functor()
+
+    def factorization(self) -> tuple[Functor, Functor]:
+        return self._factor_through_image(self.limit_functor()), self.subcategory_monomorphism()
 
     def adjunction(self) -> CategoryOfCategories.ElementType:
         """Return the selected adjunction ``Delta_I |- Lim_I``."""
@@ -338,6 +356,18 @@ class ProductsCategory(ApexCategory):
             presentation = presenting_family(self).presentation(self)
             assert isinstance(presentation, LimitConesCategory.ObjectType)
             return presentation.lift(cones(presentation.diagram())(candidate_cone))
+
+    def __init__(self, ambient: Category) -> None:
+        self._full_image_families: list[Category] = []
+        super().__init__(ambient)
+
+    def retain_full_image(self, family: Category) -> None:
+        if family not in self._full_image_families:
+            self._full_image_families.append(family)
+
+    def full_images(self) -> tuple[Category, ...]:
+        """Return the full-image families whose union this category owns."""
+        return tuple(self._full_image_families)
 
     def diagrams(self, shape: Category) -> Category:
         assert is_discrete(shape), f"{shape!r} is not a discrete shape"
@@ -586,6 +616,7 @@ class DiscreteLimits(FullSubcategory[[MorphismCategory.ObjectType], []]):
         self._shape = shape
         self._limit_functor: MonoDict = MonoDict()
         self._limit_adjunction: CategoryOfCategories.ElementType | None = None
+        self._image_factor: Functor | None = None
         super().__init__(products)
 
     def shape(self) -> Category:
@@ -631,7 +662,23 @@ class DiscreteLimits(FullSubcategory[[MorphismCategory.ObjectType], []]):
         """``Lim_{Discrete(S)}: Fun(Discrete(S), C) -> C``, retained once."""
         if self not in self._limit_functor:
             self._limit_functor[self] = limit_functor(self)
+            from sage_categories.cat.images import register_full_image
+
+            register_full_image(self._limit_functor[self], self)
+            self._ambient.retain_full_image(self)
         return self._limit_functor[self]
+
+    def defining_functor(self) -> Functor:
+        return self.limit_functor()
+
+    def factorization(self) -> tuple[Functor, Functor]:
+        if self._image_factor is None:
+            self._image_factor = Fun(self.diagrams(), self)(
+                lambda diagram: self(diagram),
+                lambda transformation: induced_limit_morphism(self, transformation),
+            )
+        inclusion = self._ambient.subcategory_monomorphism() * self.subcategory_monomorphism()
+        return self._image_factor, inclusion
 
     def adjunction(self) -> CategoryOfCategories.ElementType:
         """Return the selected adjunction ``Delta_I |- Lim_I``."""
@@ -806,9 +853,9 @@ def limit_adjunction(family: Category) -> CategoryOfCategories.ElementType:
 
 def limits(ambient: Category, shape: Category) -> Category:
     """``C.Limits(I)``: the full subcategory of ``C.Products()`` for a discrete shape, else the general family."""
-    if is_discrete(shape):
-        return DiscreteLimits(ambient.Products(), shape)
-    return LimitsCategory(ambient, shape)
+    family = DiscreteLimits(ambient.Products(), shape) if is_discrete(shape) else LimitsCategory(ambient, shape)
+    family.limit_functor()
+    return family
 
 
 def colimits(ambient: Category, shape: Category) -> Category:

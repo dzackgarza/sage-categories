@@ -20,6 +20,7 @@ __all__ = [
     "StrictImageCategory",
     "essential_image",
     "full_image",
+    "register_full_image",
     "retain_morphism_image",
     "retain_object_image",
     "strict_image",
@@ -331,7 +332,7 @@ def retain_object_image(
     if defining_functor in _strict_images:
         _strict_images[defining_functor]._retain_object(image)
     if defining_functor in _full_images:
-        _full_images[defining_functor]._retain_object(image)
+        refine(image, _full_images[defining_functor])
     if defining_functor in _essential_images:
         _essential_images[defining_functor](image)
 
@@ -355,7 +356,14 @@ def strict_image(target: Category, defining_functor: Functor) -> StrictImageCate
     return _strict_images[defining_functor]
 
 
-def full_image(target: Category, defining_functor: Functor) -> FullImageCategory:
+def register_full_image(defining_functor: Functor, image: Category) -> None:
+    """Register the category that owns the full image of ``defining_functor``."""
+    assert defining_functor.codomain() is image.narrowing_base()
+    assert defining_functor not in _full_images or _full_images[defining_functor] is image
+    _full_images[defining_functor] = image
+
+
+def full_image(target: Category, defining_functor: Functor) -> Category:
     """Return the retained full image of ``defining_functor`` in its target."""
     assert defining_functor.codomain() is target
     if defining_functor not in _full_images:

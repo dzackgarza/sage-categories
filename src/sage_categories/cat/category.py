@@ -1140,9 +1140,17 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             lambda f: second.on_morphism(first.on_morphism(f)),
         )
         composite.retain_factors(first, second)
-        # Full, faithful, and fully faithful functors compose (Mathlib
-        # ``Functor.FullyFaithful.comp``, ``Full.comp``, ``Faithful.comp``; inspected 2026-08-26).
-        for property_category in (Fun.FullyFaithful(), Fun.Full(), Fun.Faithful()):
+        # Full, faithful, fully faithful, essentially surjective, and equivalence
+        # functors compose (Mathlib ``Functor.FullyFaithful.comp``, ``Full.comp``,
+        # ``Faithful.comp``, ``EssSurj.comp``, and ``Functor.IsEquivalence.comp``;
+        # inspected 2026-08-26).
+        for property_category in (
+            Fun.FullyFaithful(),
+            Fun.Full(),
+            Fun.Faithful(),
+            Fun.EssentiallySurjective(),
+            Fun.Equivalences(),
+        ):
             if is_placed(first, property_category) and is_placed(second, property_category):
                 refine(composite, property_category)
         return composite

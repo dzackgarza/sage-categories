@@ -48,40 +48,38 @@ def _pointwise_limit_in_opposite_functor_category(
     diagram: Functor,
 ) -> CategoryOfCategories.ElementType:
     """Evaluate a limit in ``Fun(I, C).op()`` as the dual pointwise colimit."""
-    from sage_categories.cat.cones import cone, cone_apex, cones
-    from sage_categories.cat.constructions import constructed_data
-    from sage_categories.cat.diagrams import pointwise_colimit
-    from sage_categories.cat.functors import Fun
-    from sage_categories.cat.opposites import opposite_morphism
-    from sage_categories.cat.shapes import is_discrete
+    from sage_categories.cat.cones import cone, cone_apex
+    from sage_categories.cat.diagrams import _pointwise_limit_data
+    from sage_categories.cat.dual_functor_categories import dual_functor_category_equivalence
+    from sage_categories.cat.functors import Functor, FunctorCategory
+    from sage_categories.cat.opposites import OppositeCategory
 
-    dual_diagram = diagram.op()
-    apex = pointwise_colimit(dual_diagram)
-    dual_family = Fun.Coproducts() if is_discrete(dual_diagram.domain()) else Fun.Colimits(dual_diagram.domain())
-    dual_presentation = constructed_data(dual_family, dual_diagram)
-    family = diagram.codomain().Limits(diagram.domain())
+    opposite_functors = diagram.codomain().narrowing_base()
+    assert isinstance(opposite_functors, OppositeCategory)
+    functors = opposite_functors.original()
+    assert isinstance(functors, FunctorCategory)
+    family = opposite_functors.Limits(diagram.domain())
     lowered = family.lowered(diagram)
-    opposite_apex = diagram.codomain()(apex)
-
-    def in_opposite_functor_category(
-        morphism: MorphismCategory.ObjectType,
-    ) -> MorphismCategory.ObjectType:
-        return opposite_morphism(opposite_morphism(morphism))
+    duality = dual_functor_category_equivalence(functors.domain(), functors.codomain())
+    to_dual = duality.forward().op()
+    from_dual = duality.inverse().op()
+    transported = to_dual * lowered
+    assert isinstance(transported, Functor)
+    dual_apex, dual_cone, dual_mediator = _pointwise_limit_data(transported)
+    apex = from_dual.on_object(dual_apex)
 
     def mediator(candidate_cone: NaturalTransformation) -> MorphismCategory.ObjectType:
         dual_candidate = cone(
-            dual_presentation.diagram(),
-            cone_apex(candidate_cone),
-            lambda vertex: candidate_cone.component(vertex),
+            transported,
+            to_dual.on_object(cone_apex(candidate_cone)),
+            lambda vertex: to_dual.on_morphism(candidate_cone.component(vertex)),
         )
-        return in_opposite_functor_category(
-            dual_presentation.lift(cones(dual_presentation.diagram())(dual_candidate))
-        )
+        return from_dual.on_morphism(dual_mediator(dual_candidate))
 
     return family.with_universal_data(
         lowered,
-        opposite_apex,
-        cone(lowered, opposite_apex, lambda vertex: in_opposite_functor_category(dual_presentation.leg(vertex))),
+        apex,
+        cone(lowered, apex, lambda vertex: from_dual.on_morphism(dual_cone.component(vertex))),
         mediator,
     )
 

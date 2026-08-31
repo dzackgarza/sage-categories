@@ -56,6 +56,7 @@ if TYPE_CHECKING:
     from sage_categories.cat.morphisms import MorphismCategory
 
 type Datum = Hashable
+type _PointwiseLimitMediator = Callable[[NaturalTransformation], NaturalTransformation]
 
 __all__ = [
     "codomain_lift",
@@ -292,8 +293,10 @@ def domain_lift(
 # -- limits and colimits in ``Fun(I, C)``, pointwise (specs/functor.md, "Diagram shapes and universal constructions") -----------------------------------------
 
 
-def pointwise_limit(diagram: Functor) -> CategoryOfCategories.ElementType:
-    """``Fun(I, C).Limits(J)(D)``: the functor ``i |-> lim_J (ev_i * D)`` with the pointwise cone and mediator."""
+def _pointwise_limit_data(
+    diagram: Functor,
+) -> tuple[Functor, NaturalTransformation, _PointwiseLimitMediator]:
+    """Build the pointwise apex, cone, and mediator without retaining an outer construction."""
     from sage_categories.cat.constructions import constructed_data
 
     functors, shape = diagram.codomain(), diagram.domain()
@@ -337,9 +340,21 @@ def pointwise_limit(diagram: Functor) -> CategoryOfCategories.ElementType:
             )
         )
 
-    family = Fun.Limits(shape)
+    return apex, cone(diagram, apex, projection), mediator
+
+
+def pointwise_limit(diagram: Functor) -> CategoryOfCategories.ElementType:
+    """``Fun(I, C).Limits(J)(D)``: the functor ``i |-> lim_J (ev_i * D)`` with the pointwise cone and mediator."""
+    apex, limiting_cone, mediator = _pointwise_limit_data(diagram)
+
+    family = Fun.Limits(diagram.domain())
     lowered = family.lowered(diagram)
-    return family.with_universal_data(lowered, apex, cone(lowered, apex, projection), mediator)
+    return family.with_universal_data(
+        lowered,
+        apex,
+        cone(lowered, apex, lambda vertex: limiting_cone.component(vertex)),
+        mediator,
+    )
 
 
 def pointwise_colimit(diagram: Functor) -> CategoryOfCategories.ElementType:

@@ -26,14 +26,7 @@ from sage_categories.cat.predicates import (
 )
 from sage_categories.kernel.compiler import install_on_declaration
 from sage_categories.kernel.refinement import is_placed, refine
-from sage_categories.kernel.roles import (
-    CategoryPoint,
-    MorphismOfCategory,
-    ObjectOfCategory,
-    Role,
-    category_of,
-    role_of,
-)
+from sage_categories.kernel.roles import CategoryPoint, Role, category_of, role_of
 
 
 class _OwnedValueAtom(AtomicExpr):
@@ -57,23 +50,9 @@ _query_dispatchers: dict[Query, tuple[Dispatcher, Function]] = {}
 def _atom_type(domain: type) -> type[_OwnedValueAtom]:
     if domain in _atom_types:
         return _atom_types[domain]
-    from sage_categories.kernel.compiler import runtime_declaration
+    from sage_categories.kernel.compiler import runtime_semantic_bases
 
-    declaration = runtime_declaration(domain)
-    if declaration is None:
-        semantic_bases = domain.__bases__
-    else:
-        runtime_tail = next(
-            (base for base in domain.__mro__[1:] if runtime_declaration(base) is not None),
-            None,
-        )
-        if runtime_tail is None:
-            runtime_tail = next(
-                base
-                for base in domain.__mro__[1:]
-                if base in (MorphismOfCategory, ObjectOfCategory, CategoryPoint)
-            )
-        semantic_bases = (declaration, runtime_tail)
+    semantic_bases = runtime_semantic_bases(domain) or domain.__bases__
     inherited = tuple(_atom_type(base) for base in semantic_bases)
     if not inherited:
         result = _OwnedValueAtom

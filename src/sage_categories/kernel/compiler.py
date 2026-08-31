@@ -342,13 +342,18 @@ class _NodeRuntime[Value: CategoryPoint, Datum](NamedTuple):
 _node_runtimes: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
 
 
-def runtime_declaration(runtime_class: type[CategoryPoint]) -> type[CategoryPoint] | None:
-    """Return the semantic declaration copied into one compiled role class."""
+def _runtime_node(runtime_class: type[CategoryPoint]) -> Node | None:
     for role, table in _node_runtimes.items():
         for category, runtime in table.items():
             if runtime.owner is runtime_class:
-                return category.local_role_class(role)
+                return Node(category, role)
     return None
+
+
+def runtime_declaration(runtime_class: type[CategoryPoint]) -> type[CategoryPoint] | None:
+    """Return the semantic declaration copied into one compiled role class."""
+    current = _runtime_node(runtime_class)
+    return None if current is None else current.category.local_role_class(current.role)
 
 
 def _runtime[Value: CategoryPoint, Datum](current: Node) -> _NodeRuntime[Value, Datum]:
@@ -379,6 +384,26 @@ def _linearized_nodes(current: Node) -> tuple[Node, ...]:
         for runtime in _runtime_category(current)._all_super_categories
         if isinstance(runtime, _RuntimeImplementationCategory)
     )
+
+
+def runtime_semantic_bases(
+    runtime_class: type[CategoryPoint],
+) -> tuple[type[CategoryPoint], ...] | None:
+    """Return every semantic and runtime branch of a compiled class in compiler C3 order."""
+    current = _runtime_node(runtime_class)
+    if current is None:
+        return None
+    declaration = current.category.local_role_class(current.role)
+    declarations = [declaration]
+    result: list[type[CategoryPoint]] = [declaration]
+    for source in _linearized_nodes(current):
+        source_declaration = source.category.local_role_class(source.role)
+        if any(source_declaration is known for known in declarations):
+            continue
+        declarations.append(source_declaration)
+        result.append(_runtime(source).owner)
+    result.append(kernel_base(current.role))
+    return tuple(result)
 
 
 def _object_step[Value: ObjectOfCategory, Datum](

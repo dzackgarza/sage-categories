@@ -195,12 +195,7 @@ def _runtime_targets(current: Node) -> tuple[SageCategory, ...]:
         targets.append(_cat_element_role_root() if _is_cat_element_root(current) else _kernel_role_root(current.role))
     if current.role is Role.OBJECT:
         shifted = _runtime_category(node(current.category.category(), Role.ELEMENT))
-        reached = tuple(
-            candidate
-            for target in targets
-            for candidate in (target, *target._all_super_categories)
-        )
-        if not any(candidate is shifted for candidate in reached):
+        if not any(issubclass(target.parent_class, shifted.parent_class) for target in targets):
             targets.append(shifted)
     return tuple(targets)
 
@@ -748,7 +743,7 @@ def apply_level_shift(member: Category, placement: Category) -> None:
     current = node(member, Role.OBJECT)
     changed = _runtime_category(current)
     shifted = _runtime_category(node(placement, Role.ELEMENT))
-    if any(runtime is shifted for runtime in changed._all_super_categories):
+    if issubclass(changed.parent_class, shifted.parent_class):
         return
     affected = tuple(
         runtime

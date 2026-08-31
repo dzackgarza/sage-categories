@@ -53,7 +53,7 @@ from sympy import ask as sympy_ask
 from sage_categories.cat.category import Category, member
 from sage_categories.cat.constructions import cone, cone_apex, vertex_of
 from sage_categories.cat.declarations import Sets
-from sage_categories.cat.diagrams import sequence_position
+from sage_categories.cat.diagrams import cospan_diagram, sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism
@@ -389,6 +389,19 @@ def product_of_categories(diagram: Functor) -> CategoryOfCategories.ElementType:
 
 def pullback_of_categories(diagram: Functor) -> CategoryOfCategories.ElementType:
     """``Cat().Pullbacks()(diagram)`` for a diagram over the walking cospan ``L(2, 2)``."""
+    terminal = Cat().Terminal()
+    identity = Cat().morphism_category(1)(terminal, terminal).one()
+    if diagram is cospan_diagram(Cat(), identity, identity):
+
+        def mediator(candidate_cone: NaturalTransformation) -> Functor:
+            return Fun(cone_apex(candidate_cone), terminal).constant(terminal(0))
+
+        return Cat().Pullbacks().with_universal_data(
+            diagram,
+            terminal,
+            cone(diagram, terminal, lambda vertex: identity),
+            mediator,
+        )
     return limit_of_categories(diagram, Cat().Pullbacks())
 
 

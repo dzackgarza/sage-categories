@@ -116,6 +116,15 @@ class Node(NamedTuple):
 
 _runtime_categories: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
 
+_RUNTIME_CACHE_NAMES = (
+    "parent_class",
+    "_all_super_categories",
+    "_all_super_categories_proper",
+    "_set_of_super_categories",
+    "_super_categories",
+    "_super_categories_for_classes",
+)
+
 
 def _role_root(role: Role, root: type[CategoryPoint]) -> _KernelRoleRootCategory:
     """The Sage-canonical private category ending one role chain at ``root``."""
@@ -174,12 +183,26 @@ def _runtime_category(current: Node) -> _RuntimeImplementationCategory:
     table = _runtime_categories[current.role]
     if current.category in table:
         return table[current.category]
-    targets: tuple[SageCategory, ...] = tuple(_runtime_category(target) for _, target in successors(current))
-    if not targets:
-        targets = (_cat_element_role_root() if _is_cat_element_root(current) else _kernel_role_root(current.role),)
-    runtime = _RuntimeImplementationCategory(current, targets)
+    runtime = _RuntimeImplementationCategory(current, _runtime_targets(current))
     table[current.category] = runtime
     return runtime
+
+
+def _runtime_targets(current: Node) -> tuple[SageCategory, ...]:
+    """The immediate Sage runtime targets of one implementation node."""
+    targets: list[SageCategory] = [_runtime_category(target) for _, target in successors(current)]
+    if not targets:
+        targets.append(_cat_element_role_root() if _is_cat_element_root(current) else _kernel_role_root(current.role))
+    if current.role is Role.OBJECT:
+        shifted = _runtime_category(node(current.category.category(), Role.ELEMENT))
+        reached = tuple(
+            candidate
+            for target in targets
+            for candidate in (target, *target._all_super_categories)
+        )
+        if not any(candidate is shifted for candidate in reached):
+            targets.append(shifted)
+    return tuple(targets)
 
 
 def _is_cat_element_root(current: Node) -> bool:
@@ -312,6 +335,7 @@ def _refine_implementation_class(value: CategoryPoint, role_class: type[Category
             (declared, role_class),
             doccls=declared,
             prepend_cls_bases=False,
+            cache=True,
         )
 
 
@@ -396,11 +420,19 @@ def _object_steps[RootValue: ObjectOfCategory, RootDatum](
     current: Node,
     root: ObjectConstructionInput[RootValue, RootDatum],
 ) -> tuple[tuple[Node, Callable[[], None]], ...]:
-    """Close each object C3 node into one zero-argument initialization step."""
-    return (
-        (current, _object_step(current, root, root.canonical_image)),
-        *((source, _object_step(source, root, root.canonical_image)) for source in _linearized_nodes(current)),
-    )
+    """Close the mixed-role C3 implementation graph of one object."""
+    point_input = ElementConstructionInput(root.canonical_image, CategoryPointIdentity(root.identity.category), None)
+
+    def step(source: Node) -> Callable[[], None]:
+        match source.role:
+            case Role.OBJECT:
+                return _object_step(source, root, root.canonical_image)
+            case Role.ELEMENT:
+                return _element_step(source, point_input, root.canonical_image)
+            case Role.MORPHISM:
+                raise AssertionError(f"the object graph of {current.category!r} reaches a morphism implementation")
+
+    return tuple((source, step(source)) for source in (current, *_linearized_nodes(current)))
 
 
 def _element_steps[RootValue: CategoryPoint, RootDatum](
@@ -427,36 +459,6 @@ def _cat_element_step[Datum](
     target = node(root.identity.category.universe(), Role.ELEMENT)
     point_input = ElementConstructionInput(root.canonical_image, CategoryPointIdentity(root.identity.category), None)
     return target, _element_step(target, point_input, root.canonical_image)
-
-
-def _level_shift_steps[Datum](
-    root: ObjectConstructionInput[ObjectOfCategory, Datum],
-    starts: tuple[Node, ...],
-) -> tuple[tuple[Node, Callable[[], None]], ...]:
-    """The element-role initializers supplied by direct placements of category objects."""
-    point_input = ElementConstructionInput(root.canonical_image, CategoryPointIdentity(root.identity.category), None)
-    found: list[Node] = []
-    for start in starts:
-        for current in (start, *_linearized_nodes(start)):
-            if not any(same_node(current, known) for known in found):
-                found.append(current)
-    return tuple((current, _element_step(current, point_input, root.canonical_image)) for current in found)
-
-
-def _level_shift_starts[Datum](
-    root: ObjectConstructionInput[ObjectOfCategory, Datum],
-    reached: tuple[Node, ...],
-) -> tuple[Node, ...]:
-    """The element-role classes supplied by direct placements of reached categories."""
-    starts = [node(root.identity.category.universe(), Role.ELEMENT)]
-    for current in reached:
-        if current.role is not Role.OBJECT:
-            continue
-        placement = current.category.category()
-        shifted = node(placement, Role.ELEMENT)
-        if issubclass(current.category.role_class(current.role), placement.role_class(Role.ELEMENT)):
-            starts.append(shifted)
-    return tuple(starts)
 
 
 def _element_cat_element_step[Value: CategoryPoint, Datum](
@@ -489,8 +491,7 @@ def _construct_object_root[Datum](
     root = ObjectConstructionInput(instance, identity, data)
     retain_object_input(root)
     cat_element_identity = CategoryPointIdentity(identity.category)
-    object_steps = _object_steps(current, root)
-    steps = (*object_steps, *_level_shift_steps(root, _level_shift_starts(root, tuple(source for source, _ in object_steps))))
+    steps = _object_steps(current, root)
     context = ObjectConstructionContext(root.canonical_image, root.identity, cat_element_identity, steps)
     token = activate_object_context(context)
     try:
@@ -704,24 +705,29 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
             )
             setattr(category, role.value, current.category.role_class(current.role))
             continue
-        compiled = _compiled_class(current)
-        _assert_no_semantic_collisions(compiled)
-        # The compiler owns the private direct-source initialization protocol.
-        node_initializer = vars(compiled).get("__init__")
-        if node_initializer is None:
-            node_initializer = _advancing_initializer(compiled)
-        assert isinstance(node_initializer, FunctionType)
-        if _is_cat_element_root(current):
-            install_cat_element_root(compiled)
-        match role:
-            case Role.OBJECT:
-                compiled.__init__ = _initialize_object
-            case Role.ELEMENT:
-                compiled.__init__ = _initialize_element
-            case Role.MORPHISM:
-                compiled.__init__ = _initialize_morphism
-        _node_runtimes[role][category] = _NodeRuntime(node_initializer, compiled)
-        setattr(category, role.value, compiled)
+        _install_runtime_node(current)
+
+
+def _install_runtime_node(current: Node) -> type[CategoryPoint]:
+    """Install one compiled node from its private Sage runtime category."""
+    compiled = _compiled_class(current)
+    _assert_no_semantic_collisions(compiled)
+    node_initializer = vars(compiled).get("__init__")
+    if node_initializer is None:
+        node_initializer = _advancing_initializer(compiled)
+    assert isinstance(node_initializer, FunctionType)
+    if _is_cat_element_root(current):
+        install_cat_element_root(compiled)
+    match current.role:
+        case Role.OBJECT:
+            compiled.__init__ = _initialize_object
+        case Role.ELEMENT:
+            compiled.__init__ = _initialize_element
+        case Role.MORPHISM:
+            compiled.__init__ = _initialize_morphism
+    _node_runtimes[current.role][current.category] = _NodeRuntime(node_initializer, compiled)
+    setattr(current.category, current.role.value, compiled)
+    return compiled
 
 
 def recompile_category(category: Category, functors: tuple[Functor, ...]) -> None:
@@ -732,37 +738,87 @@ def recompile_category(category: Category, functors: tuple[Functor, ...]) -> Non
             del table[category]
         runtimes = tuple(runtime for _, runtime in table.items())
         for runtime in runtimes:
-            for name in (
-                "parent_class",
-                "_all_super_categories",
-                "_all_super_categories_proper",
-                "_set_of_super_categories",
-                "_super_categories",
-                "_super_categories_for_classes",
-            ):
+            for name in _RUNTIME_CACHE_NAMES:
                 runtime.__dict__.pop(name, None)
     compile_category(category, functors)
 
 
 def apply_level_shift(member: Category, placement: Category) -> None:
-    """Supply ``placement.ElementType`` to objects of a category placed in ``placement``."""
+    """Rebuild the object implementation graph after a category placement changes."""
     current = node(member, Role.OBJECT)
-    role_class = current.category.role_class(current.role)
-    shifted_class = placement.role_class(Role.ELEMENT)
-    if issubclass(role_class, shifted_class):
+    changed = _runtime_category(current)
+    shifted = _runtime_category(node(placement, Role.ELEMENT))
+    if any(runtime is shifted for runtime in changed._all_super_categories):
         return
-    _assert_no_semantic_collisions(role_class, shifted_class)
-    with building_role_classes():
-        refined_class = dynamic_class(
-            f"{role_class.__name__}_with_{shifted_class.__name__}",
-            (role_class, shifted_class),
-            doccls=role_class,
-            prepend_cls_bases=False,
+    affected = tuple(
+        runtime
+        for table in _runtime_categories.values()
+        for _, runtime in table.items()
+        if runtime is changed or any(parent is changed for parent in runtime._all_super_categories)
+    )
+    old_classes = {runtime.parent_class: runtime for runtime in affected}
+    old_nodes = {
+        runtime: _linearized_nodes(runtime._current)
+        for runtime in affected
+    }
+    changed._targets = _runtime_targets(current)
+    for runtime in affected:
+        for name in _RUNTIME_CACHE_NAMES:
+            runtime.__dict__.pop(name, None)
+    replacements = {
+        old_class: _install_runtime_node(runtime._current)
+        for old_class, runtime in old_classes.items()
+    }
+    for runtime in affected:
+        if runtime._current.role is not Role.OBJECT:
+            continue
+        added = tuple(
+            reached
+            for reached in _linearized_nodes(runtime._current)
+            if not any(same_node(reached, old) for old in old_nodes[runtime])
         )
-    setattr(member, Role.OBJECT.value, refined_class)
-    for constructed in _placed_objects(member):
-        _refine_implementation_class(constructed, refined_class)
-        _initialize_level_shift(node(placement, Role.ELEMENT), constructed)
+        for constructed in _placed_objects(runtime._current.category):
+            constructed.__class__ = _replace_runtime_classes(type(constructed), replacements)
+            _initialize_added_object_nodes(constructed, added)
+
+
+def _replace_runtime_classes(
+    candidate: type[CategoryPoint],
+    replacements: dict[type[CategoryPoint], type[CategoryPoint]],
+) -> type[CategoryPoint]:
+    """Rebuild a dynamic value class over replacement runtime classes."""
+    if candidate in replacements:
+        return replacements[candidate]
+    bases = tuple(_replace_runtime_classes(base, replacements) for base in candidate.__bases__)
+    if bases == candidate.__bases__:
+        return candidate
+    with building_role_classes():
+        return dynamic_class(
+            candidate.__name__,
+            bases,
+            doccls=candidate,
+            prepend_cls_bases=False,
+            cache=True,
+        )
+
+
+def _initialize_added_object_nodes(value: ObjectOfCategory, added: tuple[Node, ...]) -> None:
+    """Initialize the new nodes of one rebuilt object implementation graph."""
+    if not added:
+        return
+    root = retained_object_input(value)
+    all_steps = _object_steps(node(root.identity.category, Role.OBJECT), root)
+    steps = tuple(
+        next((owner, step) for owner, step in all_steps if same_node(owner, current))
+        for current in added
+    )
+    context = ObjectConstructionContext(value, root.identity, CategoryPointIdentity(root.identity.category), steps)
+    token = activate_object_context(context)
+    try:
+        context.run(added[0])
+        context.assert_complete()
+    finally:
+        deactivate_object_context(token)
 
 
 def _placed_objects(category: Category) -> tuple[ObjectOfCategory, ...]:
@@ -772,20 +828,3 @@ def _placed_objects(category: Category) -> tuple[ObjectOfCategory, ...]:
         for construction_input in retained_object_inputs()
         if construction_input.identity.category is category
     )
-
-
-def _initialize_level_shift(start: Node, value: ObjectOfCategory) -> None:
-    """Run the shift's element chain on one object built before the shift.
-
-    The classes above the supplied element role ran when the value was built.  The chain
-    resumes at the class contributed by the direct placement.
-    """
-    root = retained_object_input(value)
-    steps = _level_shift_steps(root, (start,))
-    context = ObjectConstructionContext(value, root.identity, CategoryPointIdentity(root.identity.category), steps)
-    token = activate_object_context(context)
-    try:
-        context.run(start)
-        context.assert_complete()
-    finally:
-        deactivate_object_context(token)

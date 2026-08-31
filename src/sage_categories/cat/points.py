@@ -6,9 +6,8 @@ category ``Discrete PUnit`` and ``Functor.fromPUnit``; the repository names the 
 object in the category itself instead of in a constant functor
 (``Mathlib/CategoryTheory/PUnit``, inspected 2026-08-27).
 
-The member and its identity keep the placements they already have.  The one-object
-category adds no placement or structural inheritance.  Membership in the punctual
-category is the exact identity statement owned by this construction.
+Membership in the punctual category is the exact identity statement owned by this
+construction.
 """
 
 from __future__ import annotations
@@ -69,12 +68,7 @@ class PointCategory(Category[[], []]):
     """The one-object category on one existing object ``X``."""
 
     class ObjectType:
-        """The sole object ``X``: the value its established category already holds.
-
-        The monomorphism into that category is identity on values, so ``{X}`` constructs
-        no object.  It is where a declaration specific to ``X`` belongs (POL-CAT-083):
-        ``{NN}`` owns what is true of the natural numbers and of no other set.
-        """
+        """The sole object ``X``, retained from its established category."""
 
     class ElementType:
         """A generalized element ``t: T -> X`` in ``{X}``: the identity, since ``1_X`` is the only morphism."""
@@ -92,7 +86,7 @@ class PointCategory(Category[[], []]):
         return self._member
 
     def structure_functors(self) -> tuple[CategoryOfCategories.MorphismType, ...]:
-        """A one-object diagram selects no structure functor."""
+        """Return the selected structure functors."""
         return ()
 
     def morphism_category_type(self) -> type[PointMorphismCategory]:
@@ -120,7 +114,7 @@ class PointCategory(Category[[], []]):
         return self._established.morphism_category(1)(member_object, member_object).one()
 
     def _identity_morphism_(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-        """``{X}`` places nothing: the unit of ``End_{X}(X)`` is the identity ``X`` already has."""
+        """Return the retained identity of ``X``."""
         return self.construct_identity(member_object)
 
     def composite(

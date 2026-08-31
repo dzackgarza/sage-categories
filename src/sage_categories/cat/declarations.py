@@ -147,8 +147,7 @@ Posets: Category = Cat().declare("Posets")
 Groupoids: Category = Cat().declare("Groupoids")
 TotallyOrderedSets: Category = Cat().declare("TotallyOrderedSets")
 
-# The one-object categories.  An implementation supplies the distinguished object and the
-# point functors placing it in each target.
+# The categories whose implementations supply distinguished arithmetic objects.
 NN: Category = Cat().declare("NN")
 ZZ: Category = Cat().declare("ZZ")
 

@@ -217,11 +217,15 @@ class ObjectConstructionContext:
 
     def advance(self) -> None:
         node = next(
-            owner
-            for owner, _ in self.steps
-            if not any(done.category is owner.category and done.role is owner.role for done in self.initialized)
+            (
+                owner
+                for owner, _ in self.steps
+                if not any(done.category is owner.category and done.role is owner.role for done in self.initialized)
+            ),
+            None,
         )
-        self.run(node)
+        if node is not None:
+            self.run(node)
 
     def assert_complete(self) -> None:
         missing = [

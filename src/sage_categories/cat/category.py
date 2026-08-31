@@ -129,8 +129,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         """``Cat()``, whose objects are the categories.
 
         Not ``category()``: that is the strongest placement established for this
-        category, and a point category ``{self}`` narrows it (POL-CAT-083).  Anything
-        that means "the functor category" or "the shapes" wants this one.
+        category.  Anything that means "the functor category" or "the shapes" wants
+        this one.
         """
         return Cat()
 
@@ -1331,10 +1331,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         return self.Simplex(0)
 
     def Point(self, member: CategoryOfCategories.ElementType) -> PointCategory:
-        """``{X}``: the one-object category on ``member``, retained by identity (POL-CAT-083).
-
-        It is a diagram shape.  It does not place ``member`` or add inheritance.
-        """
+        """``{X}``: the one-object category on ``member``, retained by identity (POL-CAT-083)."""
         from sage_categories.cat.points import PointCategory
 
         assert member._is_object(), f"{member!r} is not an object of a category"

@@ -113,9 +113,10 @@ class TotalConesCategory(CommaCategory):
             member = super().__call__(lambda vertex: values[shape.label(vertex)])
             self.retain_datum(member, presentation)
             self._objects[presentation] = member
-            if is_placed(presentation, limit_cones(diagram)):
-                refine(member, self.LimitCones())
-        return self._objects[presentation]
+        member = self._objects[presentation]
+        if is_placed(presentation, limit_cones(diagram)):
+            refine(member, self.LimitCones())
+        return member
 
     def construct_morphism(
         self,

@@ -351,6 +351,12 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
 
         return diagonal(self)
 
+    def TotalCones(self) -> Category:
+        """The total category of cones over diagrams in this functor category."""
+        from sage_categories.cat.total_cones import total_cones
+
+        return total_cones(self)
+
     def has_constant_value(self, diagram: Functor) -> bool:
         return diagram in self._constant_values
 

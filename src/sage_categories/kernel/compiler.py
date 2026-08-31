@@ -690,6 +690,9 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
     for role in _COMPILE_ORDER:
         current = node(category, role)
         if current.category is not category:
+            if current.role is role:
+                setattr(category, role.value, current.category.role_class(current.role))
+                continue
             assert role is Role.OBJECT and current.role is Role.MORPHISM
             normalization_owner = next(
                 owner for owner in type(category).__mro__ if "_object_role_source" in vars(owner)

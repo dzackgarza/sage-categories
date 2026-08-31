@@ -133,8 +133,11 @@ def place(value: CategoryPoint, category: Category) -> None:
 def _join(current: Category, target: Category) -> Category:
     """The intersection of two placements: the narrower base, narrowed by both root sets."""
     current_base, target_base = current.narrowing_base(), target.narrowing_base()
+    current_roots = current.narrowing_roots()
     if compiler.same_node(compiler.node(current_base, Role.OBJECT), compiler.node(target_base, Role.OBJECT)):
         base = target_base
+        if current_base is not target_base and current_base.op() is target_base:
+            current_roots = tuple(root.op() for root in current_roots)
     elif is_subcategory(target, current):
         return target
     elif is_subcategory(current_base, target_base):
@@ -146,7 +149,7 @@ def _join(current: Category, target: Category) -> Category:
             f"{current!r} and {target!r} have no common placement: {current_base!r} and {target_base!r} are incomparable"
         )
         base = target_base
-    return base.intersection((*current.narrowing_roots(), *target.narrowing_roots()))
+    return base.intersection((*current_roots, *target.narrowing_roots()))
 
 
 def refine(value: CategoryPoint, target: Category) -> None:

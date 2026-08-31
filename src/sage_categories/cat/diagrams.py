@@ -97,7 +97,7 @@ def constant(functors: FunctorCategory, value: CategoryOfCategories.ElementType)
     """The constant diagram at ``value``, retained per value."""
     assert value in functors.codomain(), f"{value!r} is not an object of {functors.codomain()!r}"
     if value not in functors._constants:
-        identity = value.category().morphism_category(1)(value, value).one()
+        identity = functors.codomain().morphism_category(1)(value, value).one()
         diagram = functors(lambda vertex: value, lambda morphism: identity)
         functors._constants[value] = diagram
         functors._constant_values[diagram] = value

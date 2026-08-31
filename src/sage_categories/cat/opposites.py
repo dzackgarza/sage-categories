@@ -18,7 +18,6 @@ from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Proposition
-from sage_categories.kernel.refinement import refine
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -75,7 +74,6 @@ class OppositeCategory[**MorphismData, **TwoMorphismData](
     def __call__(self, value: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         """Regard an object of ``C`` as the same object of ``C.op()``."""
         assert value in self._original, f"{value!r} is not an object of {self._original!r}"
-        refine(value, self)
         return value
 
     def construct_morphism(

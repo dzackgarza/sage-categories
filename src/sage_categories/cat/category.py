@@ -51,7 +51,10 @@ def _morphism_set() -> Query:
     from sage_categories.cat.declarations import Sets
 
     query = Query("morphism_set", 1, False, Sets)
-    query.register_handler(lambda category: category._chosen_morphism_set())
+    def chosen(category: CategoryOfCategories.ObjectType):
+        return category._chosen_morphism_set()
+
+    query.register_handler(chosen)
     return query
 
 

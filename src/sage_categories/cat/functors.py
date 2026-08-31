@@ -26,7 +26,6 @@ from sage_categories.cat.category import (
     refine,
 )
 from sage_categories.cat.properties import Axiom
-from sage_categories.kernel.roles import CategoryPoint
 
 __all__ = ["Fun", "Functor", "FunctorCategory", "FunctorProperty", "FunctorsCategory", "NaturalTransformation"]
 
@@ -202,8 +201,8 @@ denotes_diagram: Predicate = Predicate("denotes_diagram", 2, False)
 
 
 def _denotes_diagram_by_domain(
-    candidate: CategoryPoint,
-    functors: CategoryPoint,
+    candidate: CategoryOfCategories.ElementType,
+    functors: FunctorCategory,
 ) -> Decision:
     if not hasattr(candidate, "_is_object") or not hasattr(candidate, "_is_morphism"):
         return False
@@ -231,8 +230,8 @@ denotes_functor: Predicate = Predicate("denotes_functor", 2, False)
 
 
 def _denotes_functor_by_domain(
-    candidate: CategoryPoint,
-    functors: CategoryPoint,
+    candidate: CategoryOfCategories.ElementType,
+    functors: FunctorsCategory,
 ) -> Decision:
     if not hasattr(candidate, "_is_object") or not hasattr(candidate, "_is_morphism"):
         return False
@@ -658,5 +657,13 @@ Cat().equality().register_handler(_defining_functor_equal)
 # owns, in the shape ``morphism_set()`` uses; ``Empty`` is its negation, the one route
 # ``Sets()`` uses for a complementary pair (``sets/category.py``).  Neither decides
 # inhabitation itself (POL-CAT-091).
-Cat().Inhabited().predicate().register_handler(lambda category: category._chosen_inhabitation())
-Cat().Empty().predicate().register_handler(lambda category: ask(~category.is_inhabited()))
+def _chosen_inhabitation(category: CategoryOfCategories.ObjectType) -> Decision:
+    return category._chosen_inhabitation()
+
+
+def _chosen_emptiness(category: CategoryOfCategories.ObjectType) -> Decision:
+    return ask(~category.is_inhabited())
+
+
+Cat().Inhabited().predicate().register_handler(_chosen_inhabitation)
+Cat().Empty().predicate().register_handler(_chosen_emptiness)

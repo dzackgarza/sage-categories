@@ -56,6 +56,8 @@ __all__ = [
     "Node",
     "SemanticCollisionError",
     "compile_category",
+    "compiled_declaration_classes",
+    "compiled_object_class",
     "install_level_shift",
     "install_on_declaration",
     "node",
@@ -313,6 +315,33 @@ def _runtime(current: Node) -> _NodeRuntime:
     table = _node_runtimes[current.role]
     assert current.category in table, f"the {current.role.value} runtime of {current.category!r} is not compiled"
     return table[current.category]
+
+
+def compiled_object_class(category: Category) -> type[CategoryPoint]:
+    """Return the installed runtime class for the normalized object role of ``category``."""
+    return _runtime(node(category, Role.OBJECT)).owner
+
+
+def compiled_declaration_classes(declaration: type[CategoryPoint]) -> tuple[type[CategoryPoint], ...]:
+    """Return installed runtime classes represented by one written Cat role declaration."""
+    from sage_categories.cat.category import Cat, CategoryOfCategories
+    from sage_categories.cat.morphisms import MorphismCategory
+
+    if declaration is CategoryOfCategories.ElementType:
+        return (_runtime(node(Cat(), Role.ELEMENT)).owner,)
+    if declaration is MorphismCategory.ObjectType:
+        return tuple(runtime.owner for _, runtime in _node_runtimes[Role.MORPHISM].items())
+    cat_object_class = _runtime(node(Cat(), Role.OBJECT)).owner
+    if cat_object_class in getattr(declaration, "__mro__", ()):
+        return (cat_object_class,)
+    owners: list[type[CategoryPoint]] = []
+    for role, table in _node_runtimes.items():
+        for category, runtime in table.items():
+            declares_role = category.local_role_class(role) is declaration
+            declares_category = role is Role.OBJECT and declaration in type(category).__mro__
+            if (declares_role or declares_category) and runtime.owner not in owners:
+                owners.append(runtime.owner)
+    return tuple(owners)
 
 
 def _advance(owner: type[CategoryPoint], instance: CategoryPoint) -> None:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from functools import partial
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Literal
 
 from sage.categories.category_with_axiom import uncamelcase
 from sage.misc.cachefunc import cached_method
@@ -105,7 +105,7 @@ class EqualityPredicate(Predicate):
     def __init__(self, name: str) -> None:
         super().__init__(name, 2, True)
 
-    def __call__(self, first: CategoryPoint, candidate: Any) -> AppliedPredicate:
+    def __call__(self, first: CategoryOfCategories.ElementType, candidate: CategoryOfCategories.ElementType) -> AppliedPredicate:
         return AppliedPredicate(self, (first, candidate))
 
 

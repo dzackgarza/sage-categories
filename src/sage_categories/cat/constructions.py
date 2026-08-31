@@ -400,7 +400,7 @@ class ProductsCategory(ApexCategory):
         family: Functor | tuple[CategoryOfCategories.ElementType, ...],
     ) -> CategoryOfCategories.ElementType:
         """``C.Products()(diagram)`` for a diagram over ``Discrete(S)``; ``C.Products()((X_0, ..., X_n))`` for the sequence form."""
-        diagram = family if family in self.universe().morphism_category(1) else self._sequence_diagram(tuple(family))
+        diagram = self._sequence_diagram(family) if isinstance(family, tuple) else family
         shape = diagram.domain()
         assert is_discrete(shape), f"{shape!r} is not a discrete shape"
         self.accepts(diagram, shape)

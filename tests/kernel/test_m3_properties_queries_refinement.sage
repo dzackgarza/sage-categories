@@ -34,7 +34,11 @@ class Tiny(Category[[], []]):
         self._objects = {}
         super().__init__()
         self.Measure = Query("measure", 1, False, self)
-        self.Measure.register_handler(lambda value: self(abs(value.value())) if value.value() != 99 else Unknown)
+
+        def measure(value: Tiny.ObjectType):
+            return self(abs(value.value())) if value.value() != 99 else Unknown
+
+        self.Measure.register_handler(measure)
 
     def __call__(self, value):
         if value not in self._objects:

@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from inspect import signature
-from typing import get_type_hints
+from functools import reduce
+from operator import or_
+from typing import get_origin, get_type_hints
 
 from plum import Dispatcher, NotFoundLookupError, Signature as DispatchSignature
 from sage.misc.unknown import Unknown
@@ -26,7 +28,11 @@ from sage_categories.cat.predicates import (
     PropertyPredicate,
     Proposition,
 )
-from sage_categories.kernel.compiler import install_on_declaration
+from sage_categories.kernel.compiler import (
+    compiled_declaration_classes,
+    compiled_object_class,
+    install_on_declaration,
+)
 from sage_categories.kernel.refinement import is_placed, refine
 from sage_categories.kernel.roles import CategoryPoint, Role, category_of, role_of
 
@@ -108,7 +114,19 @@ def _dispatch_signature(handler: Handler) -> DispatchSignature:
             "MorphismCategory": MorphismCategory,
         },
     )
-    domains = tuple(annotations.get(parameter.name, CategoryPoint) for parameter in signature(handler).parameters.values())
+    owner = getattr(handler, "__self__", None)
+    domains = []
+    for parameter in signature(handler).parameters.values():
+        annotation = annotations.get(parameter.name)
+        if annotation is None:
+            if owner is not None and hasattr(owner, "ambient"):
+                domains.append(compiled_object_class(owner.ambient()))
+            else:
+                raise TypeError(f"{handler!r} must declare an exact semantic domain")
+            continue
+        declaration = get_origin(annotation) or annotation
+        compiled = compiled_declaration_classes(declaration) if isinstance(declaration, type) else ()
+        domains.append(reduce(or_, compiled) if compiled else annotation)
     return DispatchSignature(*domains)
 
 

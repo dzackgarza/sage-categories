@@ -4,16 +4,28 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any
 
 from sage.sets.family import LazyFamily
 from sage.structure.coerce_dict import MonoDict, TripleDict
 
 from sage_categories.cat import category as _category
-from sage_categories.cat.category import Assignment, Category, CategoryOfCategories, OnMorphism, OnObject
-from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
-from sage_categories.kernel.predicates import Axiom, Predicate, Proposition, ask
-from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
+from sage_categories.cat.category import (
+    Assignment,
+    Category,
+    CategoryOfCategories,
+    Decision,
+    OnMorphism,
+    OnObject,
+    Predicate,
+    Proposition,
+    Unknown,
+    UnknownClass,
+    ask,
+    is_placed,
+    is_subcategory,
+    refine,
+)
+from sage_categories.cat.properties import Axiom
 
 __all__ = ["Fun", "Functor", "FunctorCategory", "FunctorProperty", "FunctorsCategory", "NaturalTransformation"]
 
@@ -32,7 +44,10 @@ def diagram_of(value: CategoryOfCategories.ElementType) -> Functor:
     return value.defining_morphism()
 
 
-def _defining_functor_equal(first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
+def _defining_functor_equal(
+    first: CategoryOfCategories.ElementType,
+    candidate: CategoryOfCategories.ElementType,
+) -> Decision:
     """Compare a retained diagram with the functor represented by a value."""
     if not hasattr(candidate, "_is_object") or not hasattr(candidate, "_is_morphism"):
         return Unknown

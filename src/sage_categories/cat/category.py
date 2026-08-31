@@ -13,7 +13,7 @@ from sage.structure.coerce_dict import MonoDict, TripleDict
 
 from sage_categories.cat.equality import equality_predicate
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
-from sage_categories.kernel.predicates import AppliedQuery, Axiom, Predicate, Proposition, Query, ask
+from sage_categories.kernel.predicates import AppliedQuery, Axiom, Predicate, PropertyPredicate, Proposition, Query, ask
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine, traces_placement
 
 if TYPE_CHECKING:
@@ -993,6 +993,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         self._declarations: dict[str, Category | CategoryFamily] = {}
         self._implementations: dict[str, type[Category] | Functor] = {}
         self._open_declarations: MonoDict = MonoDict()
+        self._comma_categories: TripleDict = TripleDict(weak_values=False)
         super().__init__()
 
     # -- the categories Cat declares (D80, D82) ------------------------------------
@@ -1249,6 +1250,17 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         """``D ** C = Fun(C, D)``: ``Cat()`` is cartesian closed (Mathlib ``Cat.exp_obj``; inspected 2026-08-26)."""
         return self.morphism_category(1)(exponent, base)
 
+    def Comma(self, first: Functor, second: Functor) -> Category:
+        """``Comma(F, G)`` for functors with a common codomain, retained per ordered pair."""
+        from sage_categories.cat.slices import _comma_category
+
+        assert first in self.morphism_category(1) and second in self.morphism_category(1)
+        assert first.codomain() is second.codomain(), f"{first!r} and {second!r} have different codomains"
+        key = (first, second, self)
+        if key not in self._comma_categories:
+            self._comma_categories[key] = _comma_category(first, second)
+        return self._comma_categories[key]
+
     def postcompose(self, functor: Functor, diagram: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         """``F . G`` for an object ``G`` of ``Fun(I, D)`` and ``F: D -> E``: the object action of ``Fun(I, F)``.
 
@@ -1393,7 +1405,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 _CAT: CategoryOfCategories | None = None
 
 
-def bootstrap(category: CategoryOfCategories) -> None:
+def bootstrap() -> None:
     """Bind the singleton ``Cat()`` after the kernel constructs its three roles.
 
     ``Cat()`` is self-referential mathematics: ``Cat().ObjectType`` is ``Category``,
@@ -1408,9 +1420,11 @@ def bootstrap(category: CategoryOfCategories) -> None:
     ``cat/__init__.py`` constructs the private runtime value before it imports
     ``cat/functors.py``.  Binding these names completes one Cat declaration identity.
     """
+    from sage_categories.kernel.compiler import construct_category_singleton
+
     global _CAT, Category, Functor
     assert _CAT is None, "Cat is already bound"
-    _CAT = category
+    _CAT = construct_category_singleton(CategoryOfCategories)
     Category = _CAT.ObjectType
     Functor = _CAT.MorphismType
 

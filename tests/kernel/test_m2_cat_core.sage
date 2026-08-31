@@ -3,7 +3,6 @@
 from sage_categories.cat.category import Cat
 from sage_categories.cat.diagrams import cospan_diagram
 from sage_categories.cat.functors import Fun
-from sage_categories.cat.slices import comma_category
 
 
 def _identity_functor(category):
@@ -58,8 +57,16 @@ def test_products_pullbacks_comma_and_fixed_slices_retain_defining_functors():
     assert data.diagram is diagram
     assert data.transformation.codomain() is diagram
 
-    comma = comma_category(identity, identity)
+    comma = Cat().Comma(identity, identity)
+    assert Cat().Comma(identity, identity) is comma
     assert comma in Cat().Pullbacks()
+    assert comma.first_projection().domain() is comma
+    assert comma.first_projection().codomain() is category
+    assert comma.second_projection().domain() is comma
+    assert comma.second_projection().codomain() is category
+    transformation = comma.defining_transformation()
+    assert transformation.source_functor().factors() == (comma.first_projection(), identity)
+    assert transformation.target_functor().factors() == (comma.second_projection(), identity)
 
     slice_category = category.SliceOver(category(1))
     coslice_category = category.CosliceUnder(category(0))

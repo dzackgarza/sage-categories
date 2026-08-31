@@ -332,7 +332,11 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         return f"Limit({self._diagram!r})"
 
 
-def limit_of_categories(diagram: Functor, family: Category) -> CategoryOfCategories.ElementType:
+def limit_of_categories(
+    diagram: Functor,
+    family: Category,
+    category_type: Callable[[Functor], LimitCategory] = LimitCategory,
+) -> CategoryOfCategories.ElementType:
     """The strict limit of ``diagram``, retained in ``family`` with its cone of projections and its mediator.
 
     The projection at an object of the shape reads the component there, of a family and
@@ -340,7 +344,7 @@ def limit_of_categories(diagram: Functor, family: Category) -> CategoryOfCategor
     components.  Both are indexed by the shape, so a product and a fibre product are the
     same construction at two shapes (POL-CAT-092).
     """
-    limit = LimitCategory(diagram)
+    limit = category_type(diagram)
     projections: MonoDict = MonoDict()
 
     def projection(vertex: CategoryOfCategories.ElementType) -> Functor:

@@ -25,6 +25,7 @@ from typing import TYPE_CHECKING, Any
 from sage.structure.coerce_dict import MonoDict, TripleDict
 
 from sage_categories.cat.category import Category, member
+from sage_categories.cat.cat_constructions import LimitCategory, limit_of_categories
 from sage_categories.cat.constructions import cone
 from sage_categories.cat.diagrams import cospan_diagram, sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
@@ -38,10 +39,10 @@ if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
 
 __all__ = [
+    "CommaCategory",
     "SliceLikeCategory",
     "SliceProperty",
     "SubobjectsOfProduct",
-    "comma_category",
     "coslice_under",
     "slice_over",
 ]
@@ -368,7 +369,69 @@ def coslice_under(base: Category, fixed: CategoryOfCategories.ElementType) -> Sl
 
 # -- comma categories ------------------------------------------------------------------------
 
-_commas: TripleDict = TripleDict(weak_values=False)
+
+class CommaCategory(LimitCategory):
+    """``Comma(F, G)`` with its two projections and defining natural transformation."""
+
+    class ObjectType:
+        """A triple ``(a, b, f)`` with ``f: F(a) -> G(b)``."""
+
+    class ElementType:
+        """A generalized element of a comma object."""
+
+    class MorphismType:
+        """A pair of morphisms that commutes with the two defining arrows."""
+
+    def __init__(self, diagram: Functor, first: Functor, second: Functor) -> None:
+        self._comma_functors = (first, second)
+        self._first_projection: Functor | None = None
+        self._second_projection: Functor | None = None
+        self._defining_transformation: NaturalTransformation | None = None
+        super().__init__(diagram)
+
+    def pair_projection(self) -> Functor:
+        """The retained pullback projection to ``A * B``."""
+        data = Cat().Pullbacks().presentation(self)
+        return data.transformation.component(data.diagram.domain()(0))
+
+    def arrow_projection(self) -> Functor:
+        """The retained pullback projection to ``Fun([1], C)``."""
+        data = Cat().Pullbacks().presentation(self)
+        return data.transformation.component(data.diagram.domain()(1))
+
+    def first_projection(self) -> Functor:
+        """The retained projection ``Comma(F, G) -> A``."""
+        if self._first_projection is None:
+            pair = self.pair_projection()
+            self._first_projection = pair.codomain().product_projection(0) * pair
+        return self._first_projection
+
+    def second_projection(self) -> Functor:
+        """The retained projection ``Comma(F, G) -> B``."""
+        if self._second_projection is None:
+            pair = self.pair_projection()
+            self._second_projection = pair.codomain().product_projection(1) * pair
+        return self._second_projection
+
+    def defining_transformation(self) -> NaturalTransformation:
+        """The retained transformation ``F pi_A => G pi_B``."""
+        if self._defining_transformation is None:
+            first, second = self.comma_functors()
+            source = first * self.first_projection()
+            target = second * self.second_projection()
+            arrows = self.arrow_projection()
+            self._defining_transformation = Fun(self, first.codomain()).morphism_category(1)(source, target)(
+                lambda member_object: arrows.on_object(member_object)
+            )
+        return self._defining_transformation
+
+    def comma_functors(self) -> tuple[Functor, Functor]:
+        """The defining ordered pair ``(F, G)``."""
+        return self._comma_functors
+
+    def __repr__(self) -> str:
+        first, second = self.comma_functors()
+        return f"Comma({first!r}, {second!r})"
 
 
 def _pair_functor(first: Functor, second: Functor) -> Functor:
@@ -387,13 +450,13 @@ def _endpoint_functor(base: Category) -> Functor:
     return target.universal_morphism(cone(target.product_factors(), squares, lambda vertex: legs[sequence_position(vertex)]))
 
 
-def comma_category(first: Functor, second: Functor) -> Category:
+def _comma_category(first: Functor, second: Functor) -> Category:
     """The comma category ``(F, G)``: the pullback of ``(ev_0, ev_1)`` along ``F * G``, retained per pair; objects ``((a, b), f: F a -> G b)``."""
-    assert first.codomain() is second.codomain(), f"{first!r} and {second!r} have different codomains"
-    key = (first, second, Cat())
-    if key not in _commas:
-        _commas[key] = Cat().Pullbacks()(cospan_diagram(Cat(), _pair_functor(first, second), _endpoint_functor(first.codomain())))
-    return _commas[key]
+    diagram = cospan_diagram(Cat(), _pair_functor(first, second), _endpoint_functor(first.codomain()))
+    result = limit_of_categories(diagram, Cat().Pullbacks(), lambda defining_diagram: CommaCategory(defining_diagram, first, second))
+    assert isinstance(result, CommaCategory)
+    result.defining_transformation()
+    return result
 
 
 # -- the fixed-object construction categories (POL-CAT-092/094, POL-CAT-026, POL-FUN-013) ----

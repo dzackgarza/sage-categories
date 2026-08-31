@@ -20,11 +20,8 @@ from typing import TYPE_CHECKING, Literal, overload
 
 from sage.structure.coerce_dict import TripleDict
 
-from sage_categories.cat.category import Category, member
-from sage_categories.cat.properties import FullSubcategory, PredicateSubcategory, PropertySubcategory
-from sage_categories.kernel.decisions import Decision
-from sage_categories.kernel.predicates import Axiom, Predicate, Proposition, ask
-from sage_categories.kernel.refinement import refine
+from sage_categories.cat.category import Category, Decision, Predicate, Proposition, ask, member, refine
+from sage_categories.cat.properties import Axiom, FullSubcategory, PredicateSubcategory, PropertySubcategory
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories

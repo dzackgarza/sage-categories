@@ -332,7 +332,10 @@ def retain_object_image(
     if defining_functor in _strict_images:
         _strict_images[defining_functor]._retain_object(image)
     if defining_functor in _full_images:
-        refine(image, _full_images[defining_functor])
+        full_image = _full_images[defining_functor]
+        if isinstance(full_image, FullImageCategory):
+            full_image._retain_object(image)
+        refine(image, full_image)
     if defining_functor in _essential_images:
         _essential_images[defining_functor](image)
 

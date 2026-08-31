@@ -193,7 +193,10 @@ def is_discrete(shape: Category) -> bool:
     if shape in _index_sets:
         return True
     from sage_categories.cat.canonical import FinitePresentedCategory
+    from sage_categories.cat.opposites import OppositeCategory
 
+    if isinstance(shape, OppositeCategory):
+        return is_discrete(shape.original())
     return isinstance(shape, FinitePresentedCategory) and not shape.generator_names()
 
 

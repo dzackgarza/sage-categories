@@ -53,10 +53,11 @@ def _atom_type(domain: type) -> type[_OwnedValueAtom]:
 
 
 def _owned_atom(value: CategoryPoint) -> _OwnedValueAtom:
-    if value not in _atoms:
+    atom_type = _atom_type(type(value))
+    if value not in _atoms or not isinstance(_atoms[value], atom_type):
         identity = id(value)
         _values[identity] = value
-        _atoms[value] = _atom_type(type(value))(identity)
+        _atoms[value] = atom_type(identity)
     return _atoms[value]
 
 

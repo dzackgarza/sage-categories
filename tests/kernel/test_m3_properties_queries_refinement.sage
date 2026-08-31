@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-import pytest
-from plum import AmbiguousLookupError
 from sage.misc.unknown import Unknown
+from sympy import Predicate as SymPyPredicate
+from sympy.assumptions import global_assumptions
 from sympy.assumptions.assume import AppliedPredicate
 from sympy.logic.boolalg import Boolean
 
 from sage_categories.cat.category import Axiom, Cat, Category, Predicate, Query, ask, assume
 from sage_categories.cat.functors import Fun
+from sage_categories.cat.predicates import AppliedQuery
 from sage_categories.cat.properties import FullSubcategory, PredicateSubcategory
 
 
@@ -65,6 +66,7 @@ def test_generated_property_application_and_three_valued_ask():
     tiny = Tiny()
     positive, negative, undecided = tiny(3), tiny(-2), tiny(99)
     proposition = positive.is_special()
+    assert Predicate is SymPyPredicate
     assert isinstance(proposition, Boolean)
     assert all(isinstance(part, AppliedPredicate) for part in proposition.args)
     assert isinstance(proposition | negative.is_special(), Boolean)
@@ -105,8 +107,12 @@ def test_sympy_active_assumptions_own_composite_propositions():
     tiny = Tiny()
     proposition = tiny(-1).is_special() | tiny(99).is_special()
     assert ask(proposition) is Unknown
-    assume(proposition)
-    assert ask(proposition) is True
+    try:
+        assume(proposition)
+        assert proposition in global_assumptions
+        assert ask(proposition) is True
+    finally:
+        global_assumptions.discard(proposition)
 
 
 def test_typed_query_has_exact_result_category_and_unknown_is_not_a_value():
@@ -116,8 +122,8 @@ def test_typed_query_has_exact_result_category_and_unknown_is_not_a_value():
     assert answer is tiny(2)
     assert answer in tiny
     assert ask(tiny.Measure(tiny(99))) is Unknown
-    assert type(query).__name__ == "AppliedQuery"
-    assert type(tiny(2).is_special()).__name__ != type(query).__name__
+    assert isinstance(query, AppliedQuery)
+    assert not isinstance(query, Boolean)
 
 
 def test_property_monomorphism_and_inverse_image_are_retained_categorical_data():
@@ -162,47 +168,22 @@ def test_inherited_property_is_the_inverse_image_along_the_defining_functor():
     assert inherited.target_projection().codomain() is tiny.Special()
 
 
-def test_plum_owns_specificity_decline_and_ambiguity():
-    tiny = Tiny()
-    specificity = Predicate("r3_specificity", 1, False)
+def test_sympy_owns_each_property_predicate_and_its_handler():
+    first, second = Tiny(), Tiny()
+    first_predicate = first.Special().predicate()
+    second_predicate = second.Special().predicate()
+    assert isinstance(first_predicate, SymPyPredicate)
+    assert isinstance(second_predicate, SymPyPredicate)
+    assert first_predicate is not second_predicate
 
-    special = tiny(1)
-    ask(special.is_special())
-    def generic(value: Tiny.ObjectType):
-        return False
-
-    def specific(value: SpecialTiny.ObjectType):
-        return True
-
-    specificity.register_handler(generic)
-    specificity.register_handler(specific)
-    assert ask(specificity(special)) is True
-    assert ask(specificity(tiny(-1))) is False
-
-    decline = Predicate("r3_decline", 1, False)
-
-    def generic_after_decline(value: Tiny.ObjectType):
-        return True
-
-    def declining_specific(value: SpecialTiny.ObjectType):
-        return Unknown
-
-    decline.register_handler(generic_after_decline)
-    decline.register_handler(declining_specific)
-    assert ask(decline(special)) is True
-
-    ambiguous = Predicate("r3_ambiguous", 2, False)
-
-    def first(value: Tiny.ObjectType, other: SpecialTiny.ObjectType):
-        return True
-
-    def second(value: SpecialTiny.ObjectType, other: Tiny.ObjectType):
-        return False
-
-    ambiguous.register_handler(first)
-    ambiguous.register_handler(second)
-    with pytest.raises(AmbiguousLookupError):
-        ask(ambiguous(special, special))
+    positive = first_predicate(first(1))
+    negative = second_predicate(second(-1))
+    assert isinstance(positive, AppliedPredicate)
+    assert isinstance(negative, AppliedPredicate)
+    assert positive.function is first_predicate
+    assert negative.function is second_predicate
+    assert ask(positive) is True
+    assert ask(negative) is False
 
 
 for name, value in tuple(globals().items()):

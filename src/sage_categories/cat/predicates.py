@@ -42,8 +42,7 @@ __all__ = [
 ]
 
 # What a predicate is applied to: owned values, and the integer convenience of the
-# cardinal and ordinal orders.  The candidate of an equality proposition enters
-# through ``EqualityPredicate`` alone (POL-TYPE-004).
+# cardinal and ordinal orders (POL-TYPE-004).
 type Argument = CategoryOfCategories.ElementType | int
 type Decision = bool | UnknownClass
 
@@ -150,7 +149,8 @@ class AppliedQuery:
     def __repr__(self) -> str:
         return f"{self._query}({', '.join(map(repr, self._arguments))})"
 
-def conjunction(parts: Iterable[Decision | Proposition]) -> Proposition:
+
+def conjunction(parts: Iterable[bool | Proposition]) -> Proposition:
     """Construct a conjunction with SymPy's Boolean operation."""
     return And(*tuple(parts))
 

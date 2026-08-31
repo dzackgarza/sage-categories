@@ -1418,7 +1418,12 @@ def _member_by_placement(candidate: CategoryPoint, category: CategoryPoint) -> b
     return is_placed(candidate, category)
 
 
+def _integer_member_by_placement(candidate: int, category: CategoryPoint) -> bool:
+    return is_placed(candidate, category)
+
+
 register_handler(member, _member_by_placement)
+register_handler(member, _integer_member_by_placement)
 
 
 def bootstrap() -> None:

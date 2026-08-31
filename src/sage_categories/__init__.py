@@ -23,6 +23,7 @@ from sage_categories.cat.declarations import (
 )
 from sage_categories.cat.functors import Cat, Fun
 from sage_categories.cat.morphisms import Mor
+from sage_categories.cat.adjunctions import Adjunctions, Equivalences
 from sage_categories.cat.cones import cones as Cones, limit_cones as LimitCones
 from sage_categories.cat.opposites import Op
 from sage_categories.cat.shapes import Discrete, Thin
@@ -30,6 +31,7 @@ from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
 from sage_categories.cat.predicates import Predicate, ask, assume, retract
 
 __all__ = [
+    "Adjunctions",
     "NN",
     "ZZ",
     "Cat",
@@ -37,6 +39,7 @@ __all__ = [
     "Cones",
     "Decision",
     "Discrete",
+    "Equivalences",
     "Fun",
     "LimitCones",
     "MagmaObjects",

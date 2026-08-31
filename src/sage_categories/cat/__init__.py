@@ -7,7 +7,8 @@ del _category
 
 from sage_categories.cat.functors import Cat, Fun
 from sage_categories.cat.morphisms import Mor
+from sage_categories.cat.adjunctions import Adjunctions, Equivalences
 from sage_categories.cat.cones import cones as Cones, limit_cones as LimitCones
 from sage_categories.cat.opposites import Op
 
-__all__ = ["Cat", "Cones", "Fun", "LimitCones", "Mor", "Op"]
+__all__ = ["Adjunctions", "Cat", "Cones", "Equivalences", "Fun", "LimitCones", "Mor", "Op"]

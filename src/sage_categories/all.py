@@ -15,12 +15,17 @@ category ``Cat`` declared, and the kernel holds that declaration without it (D80
 """
 
 from sage_categories import (
+    Adjunctions,
     Cat,
     Category,
     Decision,
     Discrete,
+    Equivalences,
     Fun,
+    Cones,
+    LimitCones,
     Mor,
+    Op,
     Predicate,
     Thin,
     Unknown,
@@ -38,6 +43,7 @@ from sage_categories.sets.cardinals import Cardinal, aleph0, continuum, generali
 from sage_categories.sets.category import Sets
 
 __all__ = [
+    "Adjunctions",
     "NN",
     "QQ",
     "RR",
@@ -47,10 +53,14 @@ __all__ = [
     "Category",
     "Decision",
     "Discrete",
+    "Equivalences",
     "FinitePosets",
     "FiniteTotallyOrderedSets",
     "Fun",
+    "Cones",
+    "LimitCones",
     "Mor",
+    "Op",
     "Ordinals",
     "Posets",
     "Predicate",

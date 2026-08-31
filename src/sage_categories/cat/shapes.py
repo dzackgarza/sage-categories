@@ -38,7 +38,7 @@ from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Cat, Fun, Functor
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
-from sage_categories.cat.predicates import Predicate, Proposition, ask
+from sage_categories.cat.predicates import Predicate, Proposition, ask, predicate, register_handler
 from sage_categories.kernel.refinement import is_placed
 
 if TYPE_CHECKING:
@@ -87,7 +87,7 @@ class DiscreteCategory(Category[[], []]):
         self._index_set = index_set
         self._objects: MonoDict = MonoDict()
         super().__init__()
-        self._equality.register_handler(self._equal)
+        register_handler(self._equality, self._equal)
 
     def index_set(self) -> CategoryOfCategories.ElementType:
         return self._index_set
@@ -208,7 +208,7 @@ class ThinObjectData:
 
 
 # ``comparable(f, T)``: the endpoints of the comparison ``f`` of ``T`` satisfy ``T``'s order.
-comparable = Predicate("comparable", 2, False)
+comparable = predicate("comparable")
 
 
 def _comparable_by_order(candidate: CategoryOfCategories.ElementType, thin: Category) -> Decision:
@@ -217,7 +217,7 @@ def _comparable_by_order(candidate: CategoryOfCategories.ElementType, thin: Cate
     return ask(thin.order()(candidate.domain().point(), candidate.codomain().point()))
 
 
-comparable.register_handler(_comparable_by_order)
+register_handler(comparable, _comparable_by_order)
 
 
 class ThinMorphisms(MorphismCategory[[], []]):
@@ -267,7 +267,7 @@ class ThinCategory(Category[[], []]):
         self._order = order
         self._objects: MonoDict = MonoDict()
         super().__init__()
-        self._equality.register_handler(self._equal)
+        register_handler(self._equality, self._equal)
 
     def carrier(self) -> CategoryOfCategories.ElementType:
         return self._carrier

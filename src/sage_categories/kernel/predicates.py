@@ -1,51 +1,173 @@
-"""Private evaluation engine for the predicate theory of ``Cat``."""
+"""Private SymPy adapter for owned values and typed-query evaluation."""
 
 from __future__ import annotations
 
-from inspect import signature
-from functools import reduce
-from operator import or_
-from typing import get_origin, get_type_hints
+from inspect import get_annotations, signature
+from typing import get_origin
 
-from plum import Dispatcher, NotFoundLookupError, Signature as DispatchSignature
 from sage.misc.unknown import Unknown
-from sage.structure.coerce_dict import MonoDict, TripleDict
-from sympy import Dummy, Integer, Predicate as EnginePredicate, Q, S, sympify
-from sympy.assumptions import global_assumptions
+from sage.structure.coerce_dict import MonoDict
+from sympy import Integer, Predicate, sympify
+from sympy.assumptions.assume import AppliedPredicate
 from sympy.core.basic import Basic
-from sympy.logic.boolalg import And, Implies, Not, Or
+from sympy.core.expr import AtomicExpr
 
-from sage_categories.cat.predicates import (
-    Answer,
-    Axiom,
-    AppliedPredicate,
-    AppliedQuery,
-    Argument,
-    Connective,
-    Decision,
-    Handler,
-    Predicate,
-    PropertyPredicate,
-    Proposition,
-)
-from sage_categories.kernel.compiler import (
-    compiled_declaration_classes,
-    compiled_object_class,
-    install_on_declaration,
-)
+from sage_categories.cat.predicates import Answer, AppliedQuery, Argument, Axiom, Handler, Proposition
+from sage_categories.kernel.compiler import install_on_declaration
 from sage_categories.kernel.refinement import is_placed, refine
 from sage_categories.kernel.roles import CategoryPoint, Role, category_of, role_of
 
 
-class OwnedPropertyPredicate(EnginePredicate):
-    name = "owned_property"
+class _OwnedValueAtom(AtomicExpr):
+    """A private SymPy atom that retains one owned value by Python identity."""
+
+    is_commutative = True
+
+    def __new__(cls, identity: int) -> _OwnedValueAtom:
+        return AtomicExpr.__new__(cls, Integer(identity))
 
 
-Q.owned_property = OwnedPropertyPredicate()
-_engine_symbols: MonoDict = MonoDict()
-_predicate_symbols: dict[Predicate, Basic] = {}
-_decisions: TripleDict = TripleDict(weak_values=False)
+_atoms: MonoDict = MonoDict()
+_values: dict[int, CategoryPoint] = {}
+_atom_types: dict[type, type[_OwnedValueAtom]] = {}
+_property_categories: dict[Predicate, Category] = {}
+_identity_predicates: set[Predicate] = set()
 _derived_applications: dict[tuple[type[CategoryPoint], str], Axiom] = {}
+
+
+def _atom_type(domain: type) -> type[_OwnedValueAtom]:
+    if domain in _atom_types:
+        return _atom_types[domain]
+    inherited = tuple(_atom_type(base) for base in domain.__bases__)
+    if not inherited:
+        result = _OwnedValueAtom
+    else:
+        bases = tuple(
+            base
+            for base in inherited
+            if not any(other is not base and issubclass(other, base) for other in inherited)
+        )
+        result = type(f"_{domain.__name__}Atom", bases, {})
+    _atom_types[domain] = result
+    return result
+
+
+def _owned_atom(value: CategoryPoint) -> _OwnedValueAtom:
+    if value not in _atoms:
+        identity = id(value)
+        _values[identity] = value
+        _atoms[value] = _atom_type(type(value))(identity)
+    return _atoms[value]
+
+
+def engine_argument(argument: Argument) -> Basic:
+    """Convert an owned predicate argument to its private SymPy value."""
+    if isinstance(argument, CategoryPoint):
+        return _owned_atom(argument)
+    return sympify(argument)
+
+
+def _owned_argument(argument: Basic) -> Argument:
+    if isinstance(argument, _OwnedValueAtom):
+        return _values[int(argument.args[0])]
+    if isinstance(argument, Integer):
+        return int(argument)
+    return argument
+
+
+def _handler_domains(handler: Handler) -> tuple[type, ...]:
+    annotations = get_annotations(handler)
+    owner = handler.__self__ if hasattr(handler, "__self__") else None
+    domains: list[type] = []
+    for parameter in signature(handler).parameters.values():
+        annotation = annotations.get(parameter.name)
+        if annotation is None:
+            assert owner is not None and hasattr(owner, "ambient"), (
+                f"{handler!r} must declare an exact semantic domain"
+            )
+            domains.append(_OwnedValueAtom)
+            continue
+        if isinstance(annotation, str):
+            try:
+                annotation = eval(annotation, handler.__globals__)
+            except NameError:
+                domains.append(_OwnedValueAtom)
+                continue
+        domain = get_origin(annotation) or annotation
+        assert isinstance(domain, type), f"{handler!r} has non-type domain {domain!r}"
+        if domain is int:
+            domains.append(Integer)
+        elif issubclass(domain, Basic):
+            domains.append(domain)
+        else:
+            domains.append(_atom_type(domain))
+    return tuple(domains)
+
+
+def bind_property_predicate(owner: Predicate, category: Category) -> None:
+    """Bind one SymPy predicate to the property category it decides."""
+    _property_categories[owner] = category
+
+    def placed(argument: _OwnedValueAtom, assumptions: Proposition) -> bool | None:
+        return True if is_placed(_owned_argument(argument), category) else None
+
+    owner.register(_OwnedValueAtom)(placed)
+
+
+def mark_identity_predicate(owner: Predicate) -> None:
+    """Make object identity the generic exact positive case of an equality predicate."""
+    _identity_predicates.add(owner)
+
+    def identical(first: _OwnedValueAtom, second: _OwnedValueAtom, assumptions: Proposition) -> bool | None:
+        return True if _owned_argument(first) is _owned_argument(second) else None
+
+    owner.register(_OwnedValueAtom, _OwnedValueAtom)(identical)
+
+
+def register_predicate_handler(owner: Predicate, handler: Handler) -> None:
+    """Register one owned exact case on SymPy's predicate dispatcher."""
+    domains = _handler_domains(handler)
+
+    def evaluate(*engine_values, assumptions: Proposition):
+        arguments = tuple(_owned_argument(value) for value in engine_values)
+        property_category = _property_categories.get(owner)
+        if property_category is not None and len(arguments) == 1 and is_placed(arguments[0], property_category):
+            return True
+        if owner in _identity_predicates and len(arguments) == 2 and arguments[0] is arguments[1]:
+            return True
+        result = handler(*arguments)
+        if result is Unknown:
+            return None
+        if result is True and property_category is not None:
+            refine(arguments[0], property_category)
+        return result
+
+    evaluate.__name__ = handler.__name__
+    owner.register(*domains)(evaluate)
+
+
+def ask_query(application: AppliedQuery) -> Answer:
+    """Evaluate a category-owned typed query without entering SymPy's Boolean system."""
+    query = application.query()
+    for handler in query.handlers():
+        value = handler(*application.arguments())
+        if value is Unknown:
+            continue
+        assert value in query.result_category()
+        return value
+    return Unknown
+
+
+def assume_property(proposition: Proposition) -> None:
+    """Apply the same-object refinement attached to a positive property assumption."""
+    if not isinstance(proposition, AppliedPredicate):
+        return
+    category = _property_categories.get(proposition.function)
+    if category is None or len(proposition.arguments) != 1:
+        return
+    argument = _owned_argument(proposition.arguments[0])
+    assert isinstance(argument, CategoryPoint)
+    refine(argument, category)
 
 
 def axiom_application_owner(axiom: Axiom) -> type[CategoryPoint]:
@@ -61,7 +183,7 @@ def install_axiom_application(axiom: Axiom) -> None:
 
     def application(value: CategoryPoint) -> Proposition:
         placement = category_of(value, role_of(value)).narrowing_base()
-        return axiom._declared_on(placement).predicate().category().membership_proposition(value)
+        return axiom._declared_on(placement).membership_proposition(value)
 
     application.__name__ = name
     application.__qualname__ = f"{owner.__name__}.{name}"
@@ -70,183 +192,3 @@ def install_axiom_application(axiom: Axiom) -> None:
     assert known is not None or name not in vars(owner)
     _derived_applications[(owner, name)] = axiom
     install_on_declaration(owner, name, application)
-
-
-def _engine_symbol(argument: Argument) -> Basic:
-    if isinstance(argument, int):
-        return Integer(argument)
-    assert isinstance(argument, CategoryPoint), f"{argument!r} has no engine symbol"
-    if argument not in _engine_symbols:
-        _engine_symbols[argument] = Dummy("owned")
-    return _engine_symbols[argument]
-
-
-def _engine_value(proposition: AppliedPredicate | Connective) -> Basic:
-    if isinstance(proposition, AppliedPredicate):
-        predicate = proposition.predicate()
-        symbol = _predicate_symbols.setdefault(predicate, Dummy(predicate.name()))
-        return Q.owned_property(symbol, *map(_engine_symbol, proposition.arguments()))
-    operator = {"and": And, "or": Or, "not": Not, "implies": Implies}[proposition.operator()]
-    return operator(*(_engine_proposition(part) for part in proposition.parts()))
-
-
-def _engine_proposition(part: Decision | Proposition) -> Basic:
-    if part is Unknown:
-        return Dummy("undecided")
-    if isinstance(part, (AppliedPredicate, Connective)):
-        return _engine_value(part)
-    return sympify(part)
-
-
-def _representable(argument: Argument) -> bool:
-    return isinstance(argument, (CategoryPoint, int))
-
-
-def _dispatch_signature(handler: Handler) -> DispatchSignature:
-    from sage_categories.cat.category import Category, CategoryOfCategories
-    from sage_categories.cat.morphisms import MorphismCategory
-
-    annotations = get_type_hints(
-        handler,
-        localns={
-            "Category": Category,
-            "CategoryOfCategories": CategoryOfCategories,
-            "MorphismCategory": MorphismCategory,
-        },
-    )
-    owner = getattr(handler, "__self__", None)
-    domains = []
-    for parameter in signature(handler).parameters.values():
-        annotation = annotations.get(parameter.name)
-        if annotation is None:
-            if owner is not None and hasattr(owner, "ambient"):
-                domains.append(compiled_object_class(owner.ambient()))
-            else:
-                raise TypeError(f"{handler!r} must declare an exact semantic domain")
-            continue
-        declaration = get_origin(annotation) or annotation
-        compiled = compiled_declaration_classes(declaration) if isinstance(declaration, type) else ()
-        domains.append(reduce(or_, compiled) if compiled else annotation)
-    return DispatchSignature(*domains)
-
-
-def _resolved_handlers(predicate: Predicate, arguments: tuple[Argument, ...]):
-    remaining = []
-    for handler in predicate.handlers():
-        def invoke(*values, _handler=handler):
-            return _handler(*values)
-
-        invoke.__name__ = handler.__name__
-        remaining.append((handler, invoke, _dispatch_signature(handler)))
-    while remaining:
-        dispatcher = Dispatcher()
-        _, first_invoke, first_signature = remaining[0]
-        function = dispatcher.multi(first_signature)(first_invoke)
-        for _, invoke, dispatch_signature in remaining[1:]:
-            function.register(invoke, signature=dispatch_signature)
-        try:
-            implementation, _ = function.resolve_method(arguments)
-        except NotFoundLookupError:
-            return
-        yield implementation
-        remaining = [entry for entry in remaining if entry[1] is not implementation]
-
-
-def _cache_key(applied: AppliedPredicate | AppliedQuery):
-    arguments = applied.arguments()
-    owner = applied.predicate() if isinstance(applied, AppliedPredicate) else applied.query()
-    if not owner.records_decisions() or len(arguments) not in (1, 2):
-        return None
-    first, second = arguments[0], arguments[-1]
-    if not isinstance(first, CategoryPoint) or not isinstance(second, CategoryPoint):
-        return None
-    return owner, first, second
-
-
-def _ask_applied(proposition: AppliedPredicate) -> Decision:
-    predicate, arguments = proposition.predicate(), proposition.arguments()
-    if isinstance(predicate, PropertyPredicate) and is_placed(arguments[0], predicate.category()):
-        return True
-    if all(map(_representable, arguments)):
-        engine_value = _engine_value(proposition)
-        if engine_value in global_assumptions:
-            return True
-        if Not(engine_value) in global_assumptions:
-            return False
-    key = _cache_key(proposition)
-    if key is not None and key in _decisions:
-        return _decisions[key]
-    for handler in _resolved_handlers(predicate, arguments):
-        decision = handler(*arguments)
-        if decision is Unknown:
-            continue
-        if key is not None:
-            _decisions[key] = decision
-        if decision and isinstance(predicate, PropertyPredicate):
-            refine(arguments[0], predicate.category())
-        return decision
-    return Unknown
-
-
-def _decided(proposition: Decision | Proposition) -> Basic:
-    if isinstance(proposition, Connective) and _engine_value(proposition) in global_assumptions:
-        return S.true
-    if proposition is Unknown:
-        return Dummy("undecided")
-    if isinstance(proposition, bool):
-        return sympify(proposition)
-    if isinstance(proposition, Connective):
-        operator = {"and": And, "or": Or, "not": Not, "implies": Implies}[proposition.operator()]
-        if proposition.operator() not in ("and", "or"):
-            return operator(*(_decided(part) for part in proposition.parts()))
-        absorbing = S.false if proposition.operator() == "and" else S.true
-        values: list[Basic] = []
-        for part in proposition.parts():
-            value = _decided(part)
-            if value is absorbing:
-                return absorbing
-            values.append(value)
-        return operator(*values)
-    if isinstance(proposition, AppliedPredicate):
-        decision = _ask_applied(proposition)
-        if decision is not Unknown:
-            return sympify(decision)
-        if all(map(_representable, proposition.arguments())):
-            return _engine_value(proposition)
-        return Dummy("undecided")
-    raise TypeError(f"{proposition!r} is not a proposition")
-
-
-def ask(application: Decision | Proposition | AppliedQuery) -> Answer:
-    if isinstance(application, AppliedQuery):
-        query, key = application.query(), _cache_key(application)
-        if key is not None and key in _decisions:
-            return _decisions[key]
-        for handler in _resolved_handlers(query, application.arguments()):
-            value = handler(*application.arguments())
-            if value is Unknown:
-                continue
-            assert value in query.result_category()
-            if key is not None:
-                _decisions[key] = value
-            return value
-        return Unknown
-    value = _decided(application)
-    return True if value is S.true else False if value is S.false else Unknown
-
-
-def assume(proposition: Proposition) -> None:
-    if isinstance(proposition, Connective) and proposition.operator() == "and":
-        for part in proposition.parts():
-            assert isinstance(part, Proposition)
-            assume(part)
-        return
-    if isinstance(proposition, (AppliedPredicate, Connective)):
-        global_assumptions.add(_engine_value(proposition))
-    if isinstance(proposition, AppliedPredicate) and isinstance(proposition.predicate(), PropertyPredicate):
-        refine(proposition.arguments()[0], proposition.predicate().category())
-
-
-def retract(proposition: AppliedPredicate) -> None:
-    assert not isinstance(proposition.predicate(), PropertyPredicate)
-    global_assumptions.discard(_engine_value(proposition))

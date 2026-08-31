@@ -5,6 +5,8 @@ from __future__ import annotations
 import pytest
 from plum import AmbiguousLookupError
 from sage.misc.unknown import Unknown
+from sympy.assumptions.assume import AppliedPredicate
+from sympy.logic.boolalg import Boolean
 
 from sage_categories.cat.category import Axiom, Cat, Category, Predicate, Query, ask, assume
 from sage_categories.cat.functors import Fun
@@ -33,7 +35,7 @@ class Tiny(Category[[], []]):
     def __init__(self):
         self._objects = {}
         super().__init__()
-        self.Measure = Query("measure", 1, False, self)
+        self.Measure = Query("measure", 1, self)
 
         def measure(value: Tiny.ObjectType):
             return self(abs(value.value())) if value.value() != 99 else Unknown
@@ -63,6 +65,9 @@ def test_generated_property_application_and_three_valued_ask():
     tiny = Tiny()
     positive, negative, undecided = tiny(3), tiny(-2), tiny(99)
     proposition = positive.is_special()
+    assert isinstance(proposition, Boolean)
+    assert all(isinstance(part, AppliedPredicate) for part in proposition.args)
+    assert isinstance(proposition | negative.is_special(), Boolean)
     assert proposition is tiny.Special().membership_proposition(positive)
     assert ask(proposition) is True
     assert ask(negative.is_special()) is False

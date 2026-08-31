@@ -57,7 +57,7 @@ from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformatio
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.shapes import Discrete, DiscreteCategory
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
-from sage_categories.cat.predicates import Predicate, Proposition, ask, conjunction
+from sage_categories.cat.predicates import Predicate, Proposition, ask, conjunction, predicate, register_handler
 from sage_categories.kernel.refinement import is_placed
 
 if TYPE_CHECKING:
@@ -100,7 +100,7 @@ class FamilyMorphismData:
 
 # ``components_agree(family, L)``: the diagram carries the components of the family to
 # one another, so the family is an object (or a morphism) of the strict limit ``L``.
-components_agree = Predicate("components_agree", 2, False)
+components_agree = predicate("components_agree")
 
 
 def _components_agree_along_diagram(candidate: CategoryOfCategories.ElementType, limit: Category) -> Decision:
@@ -109,7 +109,7 @@ def _components_agree_along_diagram(candidate: CategoryOfCategories.ElementType,
     return ask(limit._agrees(candidate.component))
 
 
-components_agree.register_handler(_components_agree_along_diagram)
+register_handler(components_agree, _components_agree_along_diagram)
 
 
 class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, ...]], []]):
@@ -151,7 +151,7 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         self._diagram = diagram
         self._finite_data: MonoDict = MonoDict()
         super().__init__()
-        self._equality.register_handler(self._equal)
+        register_handler(self._equality, self._equal)
 
     def shape(self) -> Category:
         return self._diagram.domain()
@@ -440,7 +440,7 @@ class CoproductCategory(Category[[MorphismCategory.ObjectType], []]):
         self._diagram = diagram
         self._objects: TripleDict = TripleDict(weak_values=False)
         super().__init__()
-        self._equality.register_handler(self._equal)
+        register_handler(self._equality, self._equal)
 
     def shape(self) -> Category:
         return self._diagram.domain()

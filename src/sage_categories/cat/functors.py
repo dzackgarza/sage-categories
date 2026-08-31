@@ -26,6 +26,8 @@ from sage_categories.cat.category import (
     refine,
 )
 from sage_categories.cat.properties import Axiom
+from sage_categories.cat.predicates import predicate, register_handler
+from sage_categories.kernel.roles import CategoryPoint
 
 __all__ = ["Fun", "Functor", "FunctorCategory", "FunctorProperty", "FunctorsCategory", "NaturalTransformation"]
 
@@ -197,11 +199,11 @@ class FunctorProperty(FunctorProperties, FixedEndpointProperty[[OnObject, OnMorp
 # one.  The objects of ``Fun(1, K)`` are the objects of ``K``, each a point ``* -> K``, and
 # the objects of ``Fun([1], C)`` are the morphisms of ``C``, each an object of ``Mor(C)``
 # (specs/functor.md, "The Mor(n, C) tower", specs/functor.md, "Canonical objects of Cat"): one value, denoting one diagram.
-denotes_diagram: Predicate = Predicate("denotes_diagram", 2, False)
+denotes_diagram: Predicate = predicate("denotes_diagram")
 
 
 def _denotes_diagram_by_domain(
-    candidate: CategoryOfCategories.ElementType,
+    candidate: CategoryPoint,
     functors: FunctorCategory,
 ) -> Decision:
     if not hasattr(candidate, "_is_object") or not hasattr(candidate, "_is_morphism"):
@@ -222,15 +224,15 @@ def _denotes_diagram_by_domain(
     return False
 
 
-denotes_diagram.register_handler(_denotes_diagram_by_domain)
+register_handler(denotes_diagram, _denotes_diagram_by_domain)
 
 # ``denotes_functor(x, Fun)``: ``x`` is a functor by placement, or a point of a category
 # with a category as domain, which denotes its defining functor (specs/functor.md, "Slices and coslices").
-denotes_functor: Predicate = Predicate("denotes_functor", 2, False)
+denotes_functor: Predicate = predicate("denotes_functor")
 
 
 def _denotes_functor_by_domain(
-    candidate: CategoryOfCategories.ElementType,
+    candidate: CategoryPoint,
     functors: FunctorsCategory,
 ) -> Decision:
     if not hasattr(candidate, "_is_object") or not hasattr(candidate, "_is_morphism"):
@@ -240,7 +242,7 @@ def _denotes_functor_by_domain(
     return (candidate._is_object() or candidate._is_morphism()) and candidate.defining_morphism().domain() in Cat()
 
 
-denotes_functor.register_handler(_denotes_functor_by_domain)
+register_handler(denotes_functor, _denotes_functor_by_domain)
 
 
 class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]]):
@@ -543,8 +545,8 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             for functor, full in batch:
                 refine(functor, self._declared_subcategory(full))
         self._bootstrapping = False
-        self._isofibrations.predicate().register_handler(self._is_shared_value_functor)
-        self._monomorphisms.predicate().register_handler(self._is_shared_value_functor)
+        register_handler(self._isofibrations.predicate(), self._is_shared_value_functor)
+        register_handler(self._monomorphisms.predicate(), self._is_shared_value_functor)
 
     def Isofibrations(self) -> Category:
         return self._isofibrations
@@ -651,7 +653,7 @@ NaturalTransformation = Fun.MorphismType
 _category.Fun = Fun
 _category.NaturalTransformation = NaturalTransformation
 Fun._bootstrap()
-Cat().equality().register_handler(_defining_functor_equal)
+register_handler(Cat().equality(), _defining_functor_equal)
 # The two property subcategories of ``Cat()`` are constructed here, after ``Fun`` exists to
 # supply their subcategory monomorphisms.  ``Inhabited`` reads the exact case a category
 # owns, in the shape ``morphism_set()`` uses; ``Empty`` is its negation, the one route
@@ -665,5 +667,5 @@ def _chosen_emptiness(category: CategoryOfCategories.ObjectType) -> Decision:
     return ask(~category.is_inhabited())
 
 
-Cat().Inhabited().predicate().register_handler(_chosen_inhabitation)
-Cat().Empty().predicate().register_handler(_chosen_emptiness)
+register_handler(Cat().Inhabited().predicate(), _chosen_inhabitation)
+register_handler(Cat().Empty().predicate(), _chosen_emptiness)

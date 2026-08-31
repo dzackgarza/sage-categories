@@ -32,7 +32,7 @@ from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformatio
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.properties import FullSubcategory
 from sage_categories.cat.predicates import Decision, Unknown
-from sage_categories.cat.predicates import Predicate, Proposition, ask
+from sage_categories.cat.predicates import Predicate, Proposition, ask, predicate, register_handler
 from sage_categories.kernel.refinement import is_placed, refine
 
 if TYPE_CHECKING:
@@ -96,7 +96,7 @@ def _varying_of(triangle: SliceLikeCategory.MorphismType) -> MorphismCategory.Ob
 # ``slice_member(t, C/x)``: ``t`` is an object of the slice or coslice: a morphism of
 # ``C`` (or a generalized element denoting one) whose fixed end is ``x``, or a value
 # already constructed there.
-slice_member = Predicate("slice_member", 2, False)
+slice_member = predicate("slice_member")
 
 
 def _slice_member_by_fixed_end(candidate: CategoryOfCategories.ElementType, slice_category: Category) -> Decision:
@@ -106,7 +106,7 @@ def _slice_member_by_fixed_end(candidate: CategoryOfCategories.ElementType, slic
     return ask(member(candidate, slice_category))
 
 
-slice_member.register_handler(_slice_member_by_fixed_end)
+register_handler(slice_member, _slice_member_by_fixed_end)
 
 
 class SliceLikeCategory(Category[[MorphismCategory.ObjectType], []]):
@@ -148,7 +148,7 @@ class SliceLikeCategory(Category[[MorphismCategory.ObjectType], []]):
         self._arrow_projection: Functor | None = None
         self._varying_projection: Functor | None = None
         super().__init__()
-        self._equality.register_handler(self._equal)
+        register_handler(self._equality, self._equal)
         self.retain_lifts()
 
     # -- the two retained projections (POL-FUN-031) ------------------------------------
@@ -463,7 +463,7 @@ def _comma_category(first: Functor, second: Functor) -> Category:
 
 # ``has_morphism_property(x, S)``: the defining arrow of ``x`` is an object of the
 # property subcategory of ``Mor(C)`` that ``S`` pulls back.
-has_morphism_property = Predicate("has_morphism_property", 2, False)
+has_morphism_property = predicate("has_morphism_property")
 
 
 def _has_morphism_property(candidate: CategoryOfCategories.ElementType, family: Category) -> Decision:
@@ -471,7 +471,7 @@ def _has_morphism_property(candidate: CategoryOfCategories.ElementType, family: 
     return ask(family.property_category().membership_proposition(family.defining_arrow_of(candidate)))
 
 
-has_morphism_property.register_handler(_has_morphism_property)
+register_handler(has_morphism_property, _has_morphism_property)
 
 
 class SliceProperty(FullSubcategory[[MorphismCategory.ObjectType], []]):

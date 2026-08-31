@@ -56,7 +56,7 @@ from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.properties import FullSubcategory
 from sage_categories.cat.shapes import is_discrete
 from sage_categories.cat.predicates import Decision, Unknown
-from sage_categories.cat.predicates import Predicate, Proposition
+from sage_categories.cat.predicates import Predicate, Proposition, predicate, register_handler
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
 
 if TYPE_CHECKING:
@@ -580,7 +580,7 @@ class CoproductsCategory(ApexCategory):
 
 
 # ``indexed_by(P, family)``: the chosen apex ``P`` is indexed by the family's shape.
-indexed_by = Predicate("indexed_by", 2, False)
+indexed_by = predicate("indexed_by")
 
 
 def _indexed_by_shape(constructed: CategoryOfCategories.ElementType, family: Category) -> Decision:
@@ -590,7 +590,7 @@ def _indexed_by_shape(constructed: CategoryOfCategories.ElementType, family: Cat
     return any(diagram.domain() is family.shape() for diagram in diagrams)
 
 
-indexed_by.register_handler(_indexed_by_shape)
+register_handler(indexed_by, _indexed_by_shape)
 
 
 class DiscreteLimits(FullSubcategory[[MorphismCategory.ObjectType], []]):

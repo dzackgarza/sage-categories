@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING
 from sage_categories.cat.category import Category
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Decision, Unknown
-from sage_categories.cat.predicates import Predicate, Proposition
+from sage_categories.cat.predicates import Predicate, Proposition, predicate, register_handler
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -32,8 +32,8 @@ if TYPE_CHECKING:
 __all__ = ["PointCategory", "PointMorphismCategory"]
 
 
-point_object = Predicate("point_object", 2, False)
-point_identity = Predicate("point_identity", 2, False)
+point_object = predicate("point_object")
+point_identity = predicate("point_identity")
 
 
 def _point_object_by_identity(candidate: CategoryOfCategories.ElementType, category: Category) -> Decision:
@@ -49,8 +49,8 @@ def _point_identity_by_identity(candidate: CategoryOfCategories.ElementType, cat
     return candidate is category.morphism_category(1)(member, member).one()
 
 
-point_object.register_handler(_point_object_by_identity)
-point_identity.register_handler(_point_identity_by_identity)
+register_handler(point_object, _point_object_by_identity)
+register_handler(point_identity, _point_identity_by_identity)
 
 
 class PointMorphismCategory(MorphismCategory[[], []]):

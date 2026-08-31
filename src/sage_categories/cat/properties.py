@@ -37,7 +37,7 @@ from sage.misc.cachefunc import cached_method
 
 from sage_categories.cat.category import Category
 from sage_categories.cat.predicates import Decision
-from sage_categories.cat.predicates import Axiom, PropertyPredicate, Proposition
+from sage_categories.cat.predicates import Axiom, Predicate, Proposition, property_predicate, register_handler
 from sage_categories.kernel.refinement import is_subcategory, refine
 
 if TYPE_CHECKING:
@@ -301,13 +301,13 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
     ) -> None:
         self._name = name
         self._full_subcategory_of = full_subcategory_of
-        self._property_predicate = PropertyPredicate(name, self)
+        self._property_predicate = property_predicate(name, self)
         super().__init__(ambient)
 
     def name(self) -> str:
         return self._name
 
-    def predicate(self) -> PropertyPredicate:
+    def predicate(self) -> Predicate:
         return self._property_predicate
 
     def full_subcategory_of(self) -> tuple[Category, ...]:
@@ -393,7 +393,7 @@ class PredicateSubcategory[**MorphismData, **TwoMorphismData](PropertySubcategor
             f"{type(self).__name__} inherits PredicateSubcategory, so it states the predicate that decides "
             f"membership in {name}(); a property that computes nothing declares the axiom alone (POL-CAT-060)"
         )
-        self._property_predicate.register_handler(self._predicate)
+        register_handler(self._property_predicate, self._predicate)
 
     @abstractmethod
     def _predicate(self, candidate: CategoryOfCategories.ElementType) -> Decision:
@@ -430,7 +430,7 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
     def narrowing_roots(self) -> tuple[Category, ...]:
         return self._roots
 
-    def predicate(self) -> PropertyPredicate:
+    def predicate(self) -> Predicate:
         """The predicate of the one root property this narrowing restricts (``D.P()``)."""
         (root,) = self._roots
         return root.predicate()

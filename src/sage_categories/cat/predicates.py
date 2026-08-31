@@ -1,15 +1,19 @@
-"""Predicates, propositions, typed queries, and property axioms in ``Cat``."""
+"""SymPy predicates, typed queries, and property axioms in ``Cat``."""
 
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from functools import partial
-from typing import TYPE_CHECKING, Literal
+from itertools import count
+from typing import TYPE_CHECKING
 
 from sage.categories.category_with_axiom import uncamelcase
 from sage.misc.cachefunc import cached_method
 from sage.misc.unknown import Unknown, UnknownClass
 from sage.structure.coerce_dict import MonoDict
+from sympy import And, Predicate, ask as sympy_ask
+from sympy.assumptions.assume import AppliedPredicate
+from sympy.logic.boolalg import Boolean
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category, CategoryOfCategories
@@ -18,16 +22,12 @@ if TYPE_CHECKING:
 __all__ = [
     "Answer",
     "Axiom",
-    "Applied",
     "AppliedPredicate",
     "AppliedQuery",
     "Argument",
-    "Connective",
     "Decision",
-    "EqualityPredicate",
     "Handler",
     "Predicate",
-    "PropertyPredicate",
     "Proposition",
     "Query",
     "Unknown",
@@ -35,10 +35,9 @@ __all__ = [
     "ask",
     "assume",
     "conjunction",
-    "disjunction",
-    "established",
-    "implication",
-    "negation",
+    "predicate",
+    "property_predicate",
+    "register_handler",
     "retract",
 ]
 
@@ -57,71 +56,44 @@ type Answer = Decision | CategoryOfCategories.ElementType
 # An exact evaluation case on a declared semantic domain; its arity is the
 # predicate's, and each owning category declares its exact parameter types.
 type Handler = Callable[..., Answer]
+type Proposition = Boolean
+
+_predicate_ids = count()
 
 
-class Predicate:
-    """A named predicate of fixed arity; applying it constructs a proposition.
+def _apply_predicate(owner: Predicate, *arguments: Argument) -> AppliedPredicate:
+    from sage_categories.kernel.predicates import engine_argument
 
-    ``records_decisions`` says whether an exact handler decision is a permanent fact
-    of its arguments (equality, element membership, cardinal order) and may be
-    cached; a decision that reads current category placement is not.
-    """
-
-    def __init__(self, name: str, arity: int, records_decisions: bool) -> None:
-        self._name = name
-        self._arity = arity
-        self._records_decisions = records_decisions
-        self._handlers: list[Handler] = []
-
-    def name(self) -> str:
-        return self._name
-
-    def arity(self) -> int:
-        return self._arity
-
-    def records_decisions(self) -> bool:
-        return self._records_decisions
-
-    def register_handler(self, handler: Handler) -> None:
-        """Register an exact case for private runtime dispatch."""
-        assert hasattr(handler, "__name__"), f"{handler!r} is not a named exact case"
-        self._handlers.append(handler)
-
-    def handlers(self) -> tuple[Handler, ...]:
-        return tuple(self._handlers)
-
-    @cached_method
-    def __call__(self, *arguments: Argument) -> AppliedPredicate:
-        assert len(arguments) == self._arity, f"{self._name} has arity {self._arity}"
-        return AppliedPredicate(self, arguments)
-
-    def __repr__(self) -> str:
-        return self._name
+    return Predicate.__call__(owner, *(engine_argument(argument) for argument in arguments))
 
 
-class EqualityPredicate(Predicate):
-    """The binary equality predicate of a category: ``a == b`` applies it to ``a`` and any candidate (POL-TYPE-004)."""
-
-    def __init__(self, name: str) -> None:
-        super().__init__(name, 2, True)
-
-    def __call__(self, first: CategoryOfCategories.ElementType, candidate: CategoryOfCategories.ElementType) -> AppliedPredicate:
-        return AppliedPredicate(self, (first, candidate))
-
-
-class PropertyPredicate(Predicate):
-    """The unary predicate of one property subcategory; ``ask`` consults placement."""
-
-    def __init__(self, name: str, category: Category) -> None:
-        super().__init__(name, 1, True)
-        self._category = category
-
-    def category(self) -> Category:
-        """The root property subcategory that this predicate defines."""
-        return self._category
+def predicate(name: str) -> Predicate:
+    """Construct one mathematical predicate as a native SymPy predicate."""
+    predicate_type = type(
+        f"CatPredicate{next(_predicate_ids)}",
+        (Predicate,),
+        {"name": name, "__call__": _apply_predicate},
+    )
+    return predicate_type()
 
 
-class Query(Predicate):
+def property_predicate(name: str, category: Category) -> Predicate:
+    """Construct the SymPy predicate owned by one property subcategory."""
+    owner = predicate(name)
+    from sage_categories.kernel.predicates import bind_property_predicate
+
+    bind_property_predicate(owner, category)
+    return owner
+
+
+def register_handler(owner: Predicate, handler: Handler) -> None:
+    """Register an exact handler on a SymPy predicate."""
+    from sage_categories.kernel.predicates import register_predicate_handler
+
+    register_predicate_handler(owner, handler)
+
+
+class Query:
     """A typed query with one exact mathematical result category.
 
     ``cardinality()`` and ``cofinality()`` are the current cases. They are not total
@@ -129,64 +101,34 @@ class Query(Predicate):
     the result category. ``ask()`` returns Sage ``Unknown`` when no handler applies.
     """
 
-    def __init__(self, name: str, arity: int, records_decisions: bool, result_category: Category) -> None:
-        super().__init__(name, arity, records_decisions)
+    def __init__(self, name: str, arity: int, result_category: Category) -> None:
+        self._name = name
+        self._arity = arity
         self._result_category = result_category
+        self._handlers: list[Handler] = []
+
+    def name(self) -> str:
+        return self._name
+
+    def register_handler(self, handler: Handler) -> None:
+        self._handlers.append(handler)
+
+    def handlers(self) -> tuple[Handler, ...]:
+        return tuple(self._handlers)
 
     def result_category(self) -> Category:
         """The category whose objects are the exact answers of this predicate."""
         return self._result_category
 
     def __call__(self, *arguments: Argument) -> AppliedQuery:
-        assert len(arguments) == self.arity(), f"{self.name()} has arity {self.arity()}"
+        assert len(arguments) == self._arity, f"{self._name} has arity {self._arity}"
         return AppliedQuery(self, arguments)
 
-
-class Applied:
-    """An unevaluated proposition or typed query."""
-
-    def __bool__(self) -> bool:
-        # SymPy ``Relational.__bool__`` is the reference for an unevaluated proposition.
-        raise TypeError(f"cannot determine truth value of {self!r}; use ask()")
-
-
-class Proposition(Applied):
-    """A truth-valued application."""
-
-    def __invert__(self) -> Connective:
-        return Connective("not", (self,))
-
-    def __and__(self, other: Decision | Proposition) -> Connective:
-        return Connective("and", (self, other))
-
-    def __rand__(self, other: Decision | Proposition) -> Connective:
-        return Connective("and", (other, self))
-
-    def __or__(self, other: Decision | Proposition) -> Connective:
-        return Connective("or", (self, other))
-
-    def __ror__(self, other: Decision | Proposition) -> Connective:
-        return Connective("or", (other, self))
-
-
-class AppliedPredicate(Proposition):
-    """One predicate applied to its arguments."""
-
-    def __init__(self, predicate: Predicate, arguments: tuple[Argument, ...]) -> None:
-        self._predicate = predicate
-        self._arguments = arguments
-
-    def predicate(self) -> Predicate:
-        return self._predicate
-
-    def arguments(self) -> tuple[Argument, ...]:
-        return self._arguments
-
     def __repr__(self) -> str:
-        return f"{self._predicate}({', '.join(map(repr, self._arguments))})"
+        return self._name
 
 
-class AppliedQuery(Applied):
+class AppliedQuery:
     """A typed query applied to its arguments.
 
     It has no Boolean engine expression or assumption-context entry.
@@ -202,103 +144,41 @@ class AppliedQuery(Applied):
     def arguments(self) -> tuple[Argument, ...]:
         return self._arguments
 
+    def __bool__(self) -> bool:
+        raise TypeError(f"cannot determine truth value of {self!r}; use ask()")
+
     def __repr__(self) -> str:
         return f"{self._query}({', '.join(map(repr, self._arguments))})"
 
-
-class Connective(Proposition):
-    """Propositions under one SymPy boolean operator: ``And``, ``Or``, or ``Not``.
-
-    The boolean algebra is SymPy's (``sympy.logic.boolalg``), so this class carries no
-    truth table of its own.  What it adds over SymPy's own expression is that its parts
-    stay owned propositions until ``ask`` decides them: an exact handler needs the owned
-    arguments of a leaf, which the engine expression has already replaced by dummies.
-
-    A part may be a decision instead of a proposition.  A handler that compares two
-    private data holds one, since ``==`` on an engine value is exact; ``ask`` sympifies
-    it and the connective composes the two kinds uniformly.
-    """
-
-    def __init__(self, operator: Literal["and", "or", "not", "implies"], parts: tuple[Decision | Proposition, ...]) -> None:
-        self._operator = operator
-        self._parts = parts
-
-    def operator(self) -> Literal["and", "or", "not", "implies"]:
-        return self._operator
-
-    def parts(self) -> tuple[Decision | Proposition, ...]:
-        return self._parts
-
-    def __repr__(self) -> str:
-        if self._operator == "not":
-            return f"not {self._parts[0]!r}"
-        separator = " and " if self._operator == "and" else (" implies " if self._operator == "implies" else " or ")
-        return separator.join(map(repr, self._parts))
-
-
 def conjunction(parts: Iterable[Decision | Proposition]) -> Proposition:
-    """The conjunction of the parts; the empty conjunction is ``True``."""
-    return Connective("and", tuple(parts))
-
-
-def disjunction(parts: Iterable[Decision | Proposition]) -> Proposition:
-    """The disjunction of the parts; the empty disjunction is ``False``."""
-    return Connective("or", tuple(parts))
-
-
-def negation(part: Decision | Proposition) -> Proposition:
-    """The negation of a proposition or of a decided part."""
-    return Connective("not", (part,))
-
-
-def implication(antecedent: Decision | Proposition, consequent: Decision | Proposition) -> Proposition:
-    """``antecedent => consequent``."""
-    return Connective("implies", (antecedent, consequent))
+    """Construct a conjunction with SymPy's Boolean operation."""
+    return And(*tuple(parts))
 
 
 def ask(application: Decision | Proposition | AppliedQuery) -> Answer:
     """Evaluate a proposition or typed query."""
-    from sage_categories.kernel.predicates import ask as evaluate
+    if isinstance(application, AppliedQuery):
+        from sage_categories.kernel.predicates import ask_query
 
-    return evaluate(application)
-
-
-def established(proposition: Decision | Proposition) -> bool:
-    """Whether ``proposition`` is decided affirmatively, which is what fires an exact rule.
-
-    Not the mathematical question: that is ``ask(proposition)``, and it can be
-    ``Unknown``.  A rule whose hypothesis is a theorem's premise fires only where that
-    premise is established, and an undecided hypothesis does not supply it, so the
-    procedure falls through to its next rule and finally to ``Unknown``.  Whether a
-    premise is established is two-valued by construction (POL-ASSUME-015), in the same
-    way category placement is.
-
-    A caller that must have an answer asks instead and asserts the answer is decided
-    (POL-ASSUME-014); a caller that composes answers builds one proposition and asks it
-    once (POL-ASSUME-013).  This is neither: it selects a rule.
-    """
-    decision = ask(proposition)
-    return isinstance(decision, bool) and decision
+        return ask_query(application)
+    decision = sympy_ask(application)
+    return Unknown if decision is None else decision
 
 
 def assume(proposition: Proposition) -> None:
-    """Record ``proposition`` in the active session and refine positively (POL-ASSUME-007)."""
-    from sage_categories.kernel.predicates import assume as record
+    """Record a SymPy proposition and apply its positive property refinement."""
+    from sage_categories.kernel.predicates import assume_property
+    from sympy.assumptions import global_assumptions
 
-    record(proposition)
+    global_assumptions.add(proposition)
+    assume_property(proposition)
 
 
 def retract(proposition: AppliedPredicate) -> None:
-    """Withdraw ``proposition`` from the active session, so ``ask`` decides it from the mathematics alone.
+    """Withdraw a proposition from SymPy's active assumption context."""
+    from sympy.assumptions import global_assumptions
 
-    This is the inverse of ``assume`` for a hypothesis that records no category
-    placement, which is what a global set-theoretic hypothesis such as the generalized
-    continuum hypothesis is.  A property assumption also refines its argument into the
-    property's category, and placement is permanent, so it does not retract.
-    """
-    from sage_categories.kernel.predicates import retract as withdraw
-
-    withdraw(proposition)
+    global_assumptions.discard(proposition)
 
 
 def _property_subcategory() -> type[PropertySubcategory]:

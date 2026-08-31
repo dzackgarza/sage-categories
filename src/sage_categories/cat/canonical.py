@@ -35,7 +35,7 @@ from sage.structure.coerce_dict import MonoDict
 from sage_categories.cat.category import Category
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
-from sage_categories.cat.predicates import ask
+from sage_categories.cat.predicates import ask, register_handler
 from sage_categories.kernel.refinement import refine
 
 if TYPE_CHECKING:
@@ -114,7 +114,7 @@ class FinitePresentedCategory(Category[[Word], []]):
         self._morphism_set: MonoDict = MonoDict()
         super().__init__()
         self._vertices = {label: self.ObjectType(category=self, data=VertexData(label)) for label in labels}
-        self._equality.register_handler(self._equal)
+        register_handler(self._equality, self._equal)
 
     def __call__(self, label: Hashable) -> FinitePresentedCategory.ObjectType:
         """The retained vertex with this label."""

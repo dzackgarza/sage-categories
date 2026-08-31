@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Literal, overload
 from sage.structure.coerce_dict import TripleDict
 
 from sage_categories.cat.category import Category, Decision, Predicate, Proposition, ask, member, refine
+from sage_categories.cat.predicates import predicate, register_handler
 from sage_categories.cat.properties import Axiom, FullSubcategory, PredicateSubcategory, PropertySubcategory
 
 if TYPE_CHECKING:
@@ -62,30 +63,25 @@ def Mor(*arguments: int | Category) -> Category:
 
 # ``endpoints(f, A, B)``: the domain of ``f`` is ``A`` and its codomain is ``B``,
 # decided through the equality predicate of the base category (identity first).
-endpoints = Predicate("endpoints", 3, False)
+endpoints = predicate("endpoints")
 
 
 def _endpoints_by_equality(
     morphism: MorphismCategory.ObjectType,
-    domain: CategoryOfCategories.ElementType,
-    codomain: CategoryOfCategories.ElementType,
+    domain: Category,
+    codomain: Category,
 ) -> Decision:
     return ask((morphism.domain() == domain) & (morphism.codomain() == codomain))
 
 
-endpoints.register_handler(_endpoints_by_equality)
-
 # ``endpoints_in(f, D)``: the domain and codomain of ``f`` are objects of ``D``.  A full
 # subcategory ``D`` of ``C`` has exactly the morphisms of ``C`` between its objects
 # (Mathlib ``InducedCategory.Hom``; inspected 2026-08-26).
-endpoints_in = Predicate("endpoints_in", 2, False)
+endpoints_in = predicate("endpoints_in")
 
 
 def _endpoints_in_by_membership(morphism: MorphismCategory.ObjectType, subcategory: Category) -> Decision:
     return ask(subcategory.membership_proposition(morphism.domain()) & subcategory.membership_proposition(morphism.codomain()))
-
-
-endpoints_in.register_handler(_endpoints_in_by_membership)
 
 
 def hom_inhabitation(hom_category: Category) -> Decision:
@@ -396,3 +392,7 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
 
     def __repr__(self) -> str:
         return f"{self.ambient()!r}({self._domain_object!r}, {self._codomain_object!r})"
+
+
+register_handler(endpoints, _endpoints_by_equality)
+register_handler(endpoints_in, _endpoints_in_by_membership)

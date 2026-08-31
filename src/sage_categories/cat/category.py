@@ -13,8 +13,9 @@ from sage.structure.coerce_dict import MonoDict, TripleDict
 
 from sage_categories.cat.equality import equality_predicate
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
-from sage_categories.cat.predicates import AppliedQuery, Axiom, Predicate, PropertyPredicate, Proposition, Query, ask, assume
+from sage_categories.cat.predicates import AppliedQuery, Axiom, Predicate, Proposition, Query, ask, assume, predicate, register_handler
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine, traces_placement
+from sage_categories.kernel.roles import CategoryPoint
 
 if TYPE_CHECKING:
     from sage_categories.cat.canonical import FinitePresentedCategory
@@ -41,8 +42,7 @@ type Assignment = Callable[[CategoryOfCategories.ElementType], "MorphismCategory
 # ``member(x, C)``: ``x`` is an object of ``C``.  For a plain category the
 # proposition is decided by established placement alone (POL-CAT-068/073); a
 # property subcategory conjoins its own predicate (``cat/properties.py``).
-member: Predicate = Predicate("member", 2, False)
-member.register_handler(is_placed)
+member: Predicate = predicate("member")
 
 
 @cache
@@ -50,7 +50,7 @@ def _morphism_set() -> Query:
     """The typed query for the set of morphisms of a category."""
     from sage_categories.cat.declarations import Sets
 
-    query = Query("morphism_set", 1, False, Sets)
+    query = Query("morphism_set", 1, Sets)
     def chosen(category: CategoryOfCategories.ObjectType):
         return category._chosen_morphism_set()
 
@@ -1412,6 +1412,13 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
 # The singleton is ``None`` while the kernel constructs the first ``Cat()`` object.
 _CAT: CategoryOfCategories | None = None
+
+
+def _member_by_placement(candidate: CategoryPoint, category: CategoryPoint) -> bool:
+    return is_placed(candidate, category)
+
+
+register_handler(member, _member_by_placement)
 
 
 def bootstrap() -> None:

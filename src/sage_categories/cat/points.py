@@ -30,15 +30,23 @@ point_object = predicate("point_object")
 point_identity = predicate("point_identity")
 
 
-def _point_object_by_identity(candidate: CategoryOfCategories.ElementType, category: Category) -> Decision:
+def _point_object_by_identity(
+    candidate: CategoryOfCategories.ElementType,
+    category: Category,
+    assumptions: Proposition,
+) -> bool | None:
     if not isinstance(category, PointCategory):
-        return Unknown
+        return None
     return candidate is category.member()
 
 
-def _point_identity_by_identity(candidate: CategoryOfCategories.ElementType, category: Category) -> Decision:
+def _point_identity_by_identity(
+    candidate: CategoryOfCategories.ElementType,
+    category: Category,
+    assumptions: Proposition,
+) -> bool | None:
     if not isinstance(category, PointCategory):
-        return Unknown
+        return None
     member = category.member()
     return candidate is category.morphism_category(1)(member, member).one()
 

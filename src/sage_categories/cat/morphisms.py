@@ -19,6 +19,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal, overload
 
 from sage.structure.coerce_dict import TripleDict
+from sympy import ask as sympy_ask
 
 from sage_categories.cat.category import Category, Decision, Predicate, Proposition, ask, member, refine
 from sage_categories.cat.predicates import predicate, register_handler
@@ -70,8 +71,9 @@ def _endpoints_by_equality(
     morphism: CategoryOfCategories.ElementType,
     domain: CategoryOfCategories.ElementType,
     codomain: CategoryOfCategories.ElementType,
-) -> Decision:
-    return ask((morphism.domain() == domain) & (morphism.codomain() == codomain))
+    assumptions: Proposition,
+) -> bool | None:
+    return sympy_ask((morphism.domain() == domain) & (morphism.codomain() == codomain), assumptions)
 
 
 # ``endpoints_in(f, D)``: the domain and codomain of ``f`` are objects of ``D``.  A full
@@ -83,8 +85,13 @@ endpoints_in = predicate("endpoints_in")
 def _endpoints_in_by_membership(
     morphism: CategoryOfCategories.ElementType,
     subcategory: Category,
-) -> Decision:
-    return ask(subcategory.membership_proposition(morphism.domain()) & subcategory.membership_proposition(morphism.codomain()))
+    assumptions: Proposition,
+) -> bool | None:
+    return sympy_ask(
+        subcategory.membership_proposition(morphism.domain())
+        & subcategory.membership_proposition(morphism.codomain()),
+        assumptions,
+    )
 
 
 def hom_inhabitation(hom_category: Category) -> Decision:
@@ -283,9 +290,13 @@ class EndomorphismsCategory[**MorphismData, **TwoMorphismData](PredicateSubcateg
 
     _base_category_class_and_axiom = (MorphismCategory, "Endomorphisms")
 
-    def _predicate(self, candidate: MorphismCategory.ObjectType) -> Decision:
+    def _predicate(
+        self,
+        candidate: MorphismCategory.ObjectType,
+        assumptions: Proposition,
+    ) -> bool | None:
         """A morphism is an endomorphism exactly when its two endpoints are equal."""
-        return ask(candidate.domain() == candidate.codomain())
+        return sympy_ask(candidate.domain() == candidate.codomain(), assumptions)
 
 
 class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[TwoMorphismData, []]):

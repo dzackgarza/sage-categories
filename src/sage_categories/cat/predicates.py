@@ -26,10 +26,12 @@ __all__ = [
     "AppliedQuery",
     "Argument",
     "Decision",
-    "Handler",
     "Predicate",
+    "PredicateHandler",
     "Proposition",
     "Query",
+    "QueryAnswer",
+    "QueryHandler",
     "Unknown",
     "UnknownClass",
     "ask",
@@ -45,16 +47,19 @@ __all__ = [
 # cardinal and ordinal orders (POL-TYPE-004).
 type Argument = CategoryOfCategories.ElementType | int
 type Decision = bool | UnknownClass
+type PredicateDecision = bool | None
 
 # What ``ask`` returns: a decision for a proposition, and an owned object of the
 # declared result category for a query such as ``cardinality()``. Sage
 # ``Unknown`` is the one unresolved answer of both and is an object of neither result
 # category (``specs/cardinality.md``, "Integration with ``Sets()``").
+type QueryAnswer = CategoryOfCategories.ElementType | UnknownClass
 type Answer = Decision | CategoryOfCategories.ElementType
 
 # An exact evaluation case on a declared semantic domain; its arity is the
 # predicate's, and each owning category declares its exact parameter types.
-type Handler = Callable[..., Answer]
+type PredicateHandler = Callable[..., PredicateDecision]
+type QueryHandler = Callable[..., QueryAnswer]
 type Proposition = Boolean
 
 _predicate_ids = count()
@@ -85,7 +90,7 @@ def property_predicate(name: str, category: Category) -> Predicate:
     return owner
 
 
-def register_handler(owner: Predicate, handler: Handler) -> None:
+def register_handler(owner: Predicate, handler: PredicateHandler) -> None:
     """Register an exact handler on a SymPy predicate."""
     from sage_categories.kernel.predicates import register_predicate_handler
 
@@ -104,16 +109,14 @@ class Query:
         self._name = name
         self._arity = arity
         self._result_category = result_category
-        self._handlers: list[Handler] = []
 
     def name(self) -> str:
         return self._name
 
-    def register_handler(self, handler: Handler) -> None:
-        self._handlers.append(handler)
+    def register_handler(self, handler: QueryHandler) -> None:
+        from sage_categories.kernel.predicates import register_query_handler
 
-    def handlers(self) -> tuple[Handler, ...]:
-        return tuple(self._handlers)
+        register_query_handler(self, handler)
 
     def result_category(self) -> Category:
         """The category whose objects are the exact answers of this predicate."""
@@ -174,7 +177,7 @@ def assume(proposition: Proposition) -> None:
     assume_property(proposition)
 
 
-def retract(proposition: AppliedPredicate) -> None:
+def retract(proposition: Proposition) -> None:
     """Withdraw a proposition from SymPy's active assumption context."""
     from sympy.assumptions import global_assumptions
 
@@ -290,7 +293,7 @@ class Axiom:
     def _construct(self, category: Category) -> Category:
         """The narrowing of a declared subcategory, else the implementation of this axiom."""
         if category.has_ambient():
-            defining_functor = category.structure_functors()[0]
+            defining_functor = category.subcategory_monomorphism()
             return defining_functor.inverse_image(self._declared_on(defining_functor.codomain()))
         containing = tuple(axiom._declared_on(category) for axiom in self._full_subcategory_of)
         return (self._implementation or _property_subcategory())(category, self._name, containing)

@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from sage.sets.family import LazyFamily
 from sage.structure.coerce_dict import MonoDict, TripleDict
+from sympy import ask as sympy_ask
 
 from sage_categories.cat import category as _category
 from sage_categories.cat.category import (
@@ -48,16 +49,17 @@ def diagram_of(value: CategoryOfCategories.ElementType) -> Functor:
 def _defining_functor_equal(
     first: CategoryOfCategories.ElementType,
     candidate: CategoryOfCategories.ElementType,
-) -> Decision:
+    assumptions: Proposition,
+) -> bool | None:
     """Compare a retained diagram with the functor represented by a value."""
     if not hasattr(candidate, "_is_object") or not hasattr(candidate, "_is_morphism"):
-        return Unknown
+        return None
     candidate_denotes = candidate._is_object() or candidate._is_morphism()
     if is_placed(first, Fun) and not is_placed(candidate, Fun) and candidate_denotes:
-        return True if first is diagram_of(candidate) else Unknown
+        return True if first is diagram_of(candidate) else None
     if is_placed(candidate, Fun) and not is_placed(first, Fun) and (first._is_object() or first._is_morphism()):
-        return True if candidate is diagram_of(first) else Unknown
-    return Unknown
+        return True if candidate is diagram_of(first) else None
+    return None
 
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -74,34 +76,6 @@ _category.Functor = Functor
 
 from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategory, endpoints
 from sage_categories.cat.properties import FixedEndpointProperty, PropertySubcategory
-
-
-class ShapeIndexedFunctorProperty(PropertySubcategory[[OnObject, OnMorphism], [Assignment]]):
-    """A shape-indexed property subcategory of one fixed-endpoint functor category.
-
-    The shape is mathematical construction data.  M2 establishes the owner; M4 supplies
-    the generic operations licensed by preservation/creation.
-    """
-
-    class ObjectType:
-        """A functor with the stated shape-indexed universal-construction property."""
-
-    class ElementType:
-        """A generalized element of such a functor."""
-
-    class MorphismType:
-        """A natural transformation between such functors."""
-
-    def __init__(self, ambient: FunctorCategory, property_name: str, shape: Category) -> None:
-        self._shape = shape
-        self._property_name = property_name
-        super().__init__(ambient, property_name, ())
-
-    def shape(self) -> Category:
-        return self._shape
-
-    def __repr__(self) -> str:
-        return f"{self.ambient()!r}.{self._property_name}({self._shape!r})"
 
 
 class FunctorProperties:
@@ -152,6 +126,39 @@ class FunctorProperties:
         return self.property_subcategory(self.ambient().Monomorphisms())
 
 
+class ShapeIndexedFunctorProperty(
+    FunctorProperties,
+    PropertySubcategory[[OnObject, OnMorphism], [Assignment]],
+):
+    """A shape-indexed property subcategory of one fixed-endpoint functor category."""
+
+    class ObjectType:
+        """A functor with the stated shape-indexed universal-construction property."""
+
+    class ElementType:
+        """A generalized element of such a functor."""
+
+    class MorphismType:
+        """A natural transformation between such functors."""
+
+    def __init__(self, ambient: FunctorCategory, property_name: str, shape: Category) -> None:
+        self._shape = shape
+        self._property_name = property_name
+        super().__init__(ambient, property_name, ())
+
+    def shape(self) -> Category:
+        return self._shape
+
+    def narrowing_type(self) -> type[FunctorProperty]:
+        return FunctorProperty
+
+    def __call__(self, *args: OnObject | OnMorphism, **kwargs: OnObject | OnMorphism) -> Functor:
+        return _construct_property_functor(self, args, kwargs)
+
+    def __repr__(self) -> str:
+        return f"{self.ambient()!r}.{self._property_name}({self._shape!r})"
+
+
 class FunctorProperty(FunctorProperties, FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]]):
     """``Fun(C, D).P()``: functors ``C -> D`` with property ``P``; constructs one, and ``one()`` is ``1_C`` with ``P``."""
 
@@ -177,21 +184,34 @@ class FunctorProperty(FunctorProperties, FixedEndpointProperty[[OnObject, OnMorp
         constructing in ``Fun(S, T).Monomorphisms().Isofibrations()``, and the kernel
         trusts it (``specs/functor.md``, "Monomorphisms of Cat() and placement").
         """
-        if args or kwargs:
-            return super().__call__(*args, **kwargs)
-        functors = self.universe().morphism_category(1)
-        roots = self.narrowing_roots()
+        return _construct_property_functor(self, args, kwargs)
+
+
+def _construct_property_functor(
+    property_category: ShapeIndexedFunctorProperty | FunctorProperty,
+    args: tuple[OnObject | OnMorphism, ...],
+    kwargs: dict[str, OnObject | OnMorphism],
+) -> Functor:
+    """Construct or refine a functor through its exact property category."""
+    ambient = property_category.ambient()
+    if len(args) == 1 and not kwargs and args[0] in ambient:
+        functor = args[0]
+    elif args or kwargs:
+        functor = ambient(*args, **kwargs)
+    else:
+        functors = property_category.universe().morphism_category(1)
+        roots = property_category.narrowing_roots()
         assert any(root is functors.Monomorphisms() for root in roots), (
-            f"{self!r} takes a functor's object and morphism actions; only a monomorphism of Cat() is "
-            f"determined by its endpoints, as the identity on their shared values"
+            f"{property_category!r} requires object and morphism actions"
         )
-        source, target = self._ambient.domain(), self._ambient.codomain()
-        if any(root is functors.Full() for root in roots):
-            functor = functors.full_subcategory_monomorphism(source, target)
-        else:
-            functor = functors.subcategory_monomorphism(source, target)
-        refine(functor, self)
-        return functor
+        source, target = ambient.domain(), ambient.codomain()
+        functor = (
+            functors.full_subcategory_monomorphism(source, target)
+            if any(root is functors.Full() for root in roots)
+            else functors.subcategory_monomorphism(source, target)
+        )
+    refine(functor, property_category)
+    return functor
 
 
 # ``denotes_diagram(x, Fun(I, C))``: ``x`` is a functor ``I -> C``, or a value that denotes
@@ -204,11 +224,12 @@ denotes_diagram: Predicate = predicate("denotes_diagram")
 def _denotes_diagram_by_domain(
     candidate: CategoryOfCategories.ElementType,
     functors: FunctorCategory,
-) -> Decision:
+    assumptions: Proposition,
+) -> bool | None:
     if not hasattr(candidate, "_is_object") or not hasattr(candidate, "_is_morphism"):
         return False
     if is_placed(candidate, functors.ambient()):
-        return ask(endpoints(candidate, functors.domain(), functors.codomain()))
+        return sympy_ask(endpoints(candidate, functors.domain(), functors.codomain()), assumptions)
     if candidate._is_morphism() and functors.domain() is Cat().Simplex(1):
         # A morphism of ``C`` is an object of ``Mor(C)``, and the diagram it denotes is its
         # arrow functor ``[1] -> C``: this is how the objects of ``Fun([1], C)`` are the
@@ -223,8 +244,6 @@ def _denotes_diagram_by_domain(
     return False
 
 
-register_handler(denotes_diagram, _denotes_diagram_by_domain)
-
 # ``denotes_functor(x, Fun)``: ``x`` is a functor by placement, or a point of a category
 # with a category as domain, which denotes its defining functor (specs/functor.md, "Slices and coslices").
 denotes_functor: Predicate = predicate("denotes_functor")
@@ -233,15 +252,13 @@ denotes_functor: Predicate = predicate("denotes_functor")
 def _denotes_functor_by_domain(
     candidate: CategoryOfCategories.ElementType,
     functors: FunctorsCategory,
-) -> Decision:
+    assumptions: Proposition,
+) -> bool:
     if not hasattr(candidate, "_is_object") or not hasattr(candidate, "_is_morphism"):
         return False
     if is_placed(candidate, functors):
         return True
     return (candidate._is_object() or candidate._is_morphism()) and candidate.defining_morphism().domain() in Cat()
-
-
-register_handler(denotes_functor, _denotes_functor_by_domain)
 
 
 class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]]):
@@ -579,7 +596,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             refine(functor, self._declared_subcategory(full))
         return functor
 
-    def _is_shared_value_functor(self, functor: Functor) -> Decision:
+    def _is_shared_value_functor(self, functor: Functor, assumptions: Proposition) -> bool | None:
         """The exact route for a functor the kernel itself built: it shares the values of its endpoints.
 
         Such a functor is injective on objects and on morphisms, hence monic
@@ -592,7 +609,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         key = (functor.domain(), functor.codomain(), self)
         if key in self._shared_value_functors and self._shared_value_functors[key] is functor:
             return True
-        return Unknown
+        return None
 
     def declares_subcategory(self, functor: Functor) -> bool:
         """Whether ``functor`` is declared a monomorphism of ``Cat()`` and an isofibration (POL-FUN-036).
@@ -652,18 +669,27 @@ NaturalTransformation = Fun.MorphismType
 _category.Fun = Fun
 _category.NaturalTransformation = NaturalTransformation
 Fun._bootstrap()
+register_handler(denotes_diagram, _denotes_diagram_by_domain)
+register_handler(denotes_functor, _denotes_functor_by_domain)
 register_handler(Cat().equality(), _defining_functor_equal)
 # The two property subcategories of ``Cat()`` are constructed here, after ``Fun`` exists to
 # supply their subcategory monomorphisms.  ``Inhabited`` reads the exact case a category
 # owns, in the shape ``morphism_set()`` uses; ``Empty`` is its negation, the one route
 # ``Sets()`` uses for a complementary pair (``sets/category.py``).  Neither decides
 # inhabitation itself (POL-CAT-091).
-def _chosen_inhabitation(category: CategoryOfCategories.ObjectType) -> Decision:
-    return category._chosen_inhabitation()
+def _chosen_inhabitation(
+    category: CategoryOfCategories.ObjectType,
+    assumptions: Proposition,
+) -> bool | None:
+    decision = category._chosen_inhabitation()
+    return None if decision is Unknown else decision
 
 
-def _chosen_emptiness(category: CategoryOfCategories.ObjectType) -> Decision:
-    return ask(~category.is_inhabited())
+def _chosen_emptiness(
+    category: CategoryOfCategories.ObjectType,
+    assumptions: Proposition,
+) -> bool | None:
+    return sympy_ask(~category.is_inhabited(), assumptions)
 
 
 register_handler(Cat().Inhabited().predicate(), _chosen_inhabitation)

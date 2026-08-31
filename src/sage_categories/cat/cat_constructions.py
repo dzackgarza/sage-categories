@@ -44,10 +44,11 @@ from __future__ import annotations
 
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict, TripleDict
+from sympy import ask as sympy_ask
 
 from sage_categories.cat.category import Category, member
 from sage_categories.cat.constructions import cocone, cocone_apex, cone, cone_apex, vertex_of
@@ -103,10 +104,14 @@ class FamilyMorphismData:
 components_agree = predicate("components_agree")
 
 
-def _components_agree_along_diagram(candidate: CategoryOfCategories.ElementType, limit: Category) -> Decision:
+def _components_agree_along_diagram(
+    candidate: CategoryOfCategories.ElementType,
+    limit: Category,
+    assumptions: Proposition,
+) -> bool | None:
     if not is_placed(candidate, limit):
-        return Unknown
-    return ask(limit._agrees(candidate.component))
+        return None
+    return sympy_ask(limit._agrees(candidate.component), assumptions)
 
 
 register_handler(components_agree, _components_agree_along_diagram)
@@ -318,15 +323,23 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
             data=FamilyMorphismData(lambda vertex: second.component(vertex) * first.component(vertex)),
         )
 
-    def _equal(self, first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
+    def _equal(
+        self,
+        first: CategoryOfCategories.ElementType,
+        candidate: CategoryOfCategories.ElementType,
+        assumptions: Proposition,
+    ) -> bool | None:
         """Two families (of objects or of morphisms) over a finitely enumerated shape are equal when every component is."""
         morphisms = self.morphism_category(1)
         if not ((first in self and candidate in self) or (first in morphisms and candidate in morphisms)):
-            return Unknown
+            return None
         vertices = self._vertices()
         if vertices is Unknown:
-            return Unknown
-        return ask(conjunction(first.component(vertex) == candidate.component(vertex) for vertex in vertices))
+            return None
+        return sympy_ask(
+            conjunction(first.component(vertex) == candidate.component(vertex) for vertex in vertices),
+            assumptions,
+        )
 
     def __repr__(self) -> str:
         return f"Limit({self._diagram!r})"
@@ -448,7 +461,12 @@ class CoproductCategory(Category[[MorphismCategory.ObjectType], []]):
     def summand(self, index: CategoryOfCategories.ElementType | Hashable) -> Category:
         return self._diagram.on_object(vertex_of(self.shape(), index))
 
-    def _equal(self, first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
+    def _equal(
+        self,
+        first: CategoryOfCategories.ElementType,
+        candidate: CategoryOfCategories.ElementType,
+        assumptions: Proposition,
+    ) -> bool | None:
         """Two tagged values are equal when they carry one tag and their members are equal.
 
         A morphism of the coproduct lies within one summand, so equal tags reduce the
@@ -458,11 +476,18 @@ class CoproductCategory(Category[[MorphismCategory.ObjectType], []]):
         morphisms"; inspected 2026-08-28).
         """
         if first in self and candidate in self:
-            return ask((first.tag() == candidate.tag()) & (first.member() == candidate.member()))
+            return sympy_ask(
+                (first.tag() == candidate.tag()) & (first.member() == candidate.member()),
+                assumptions,
+            )
         morphisms = self.morphism_category(1)
         if first in morphisms and candidate in morphisms:
-            return ask((first.domain().tag() == candidate.domain().tag()) & (first.morphism() == candidate.morphism()))
-        return Unknown
+            return sympy_ask(
+                (first.domain().tag() == candidate.domain().tag())
+                & (first.morphism() == candidate.morphism()),
+                assumptions,
+            )
+        return None
 
     def __call__(
         self,

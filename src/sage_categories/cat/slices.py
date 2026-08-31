@@ -20,9 +20,10 @@ from __future__ import annotations
 
 from collections.abc import Hashable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from sage.structure.coerce_dict import MonoDict, TripleDict
+from sympy import ask as sympy_ask
 
 from sage_categories.cat.category import Category, member
 from sage_categories.cat.cat_constructions import LimitCategory, limit_of_categories
@@ -99,11 +100,18 @@ def _varying_of(triangle: SliceLikeCategory.MorphismType) -> MorphismCategory.Ob
 slice_member = predicate("slice_member")
 
 
-def _slice_member_by_fixed_end(candidate: CategoryOfCategories.ElementType, slice_category: Category) -> Decision:
+def _slice_member_by_fixed_end(
+    candidate: CategoryOfCategories.ElementType,
+    slice_category: Category,
+    assumptions: Proposition,
+) -> bool | None:
     morphism = _denoted_morphism(candidate)
     if morphism in slice_category.base_of_slice().morphism_category(1):
-        return ask(slice_category.fixed_end(morphism) == slice_category.fixed_object())
-    return ask(member(candidate, slice_category))
+        return sympy_ask(
+            slice_category.fixed_end(morphism) == slice_category.fixed_object(),
+            assumptions,
+        )
+    return sympy_ask(member(candidate, slice_category), assumptions)
 
 
 register_handler(slice_member, _slice_member_by_fixed_end)
@@ -251,14 +259,22 @@ class SliceLikeCategory(Category[[MorphismCategory.ObjectType], []]):
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         return slice_member(candidate, self)
 
-    def _equal(self, first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
+    def _equal(
+        self,
+        first: CategoryOfCategories.ElementType,
+        candidate: CategoryOfCategories.ElementType,
+        assumptions: Proposition,
+    ) -> bool | None:
         """Two objects are equal when their defining arrows are, two triangles when their varying morphisms are."""
         if first in self and candidate in self:
-            return ask(self.defining_arrow_of(first) == self.defining_arrow_of(candidate))
+            return sympy_ask(
+                self.defining_arrow_of(first) == self.defining_arrow_of(candidate),
+                assumptions,
+            )
         triangles = self.morphism_category(1)
         if first in triangles and candidate in triangles:
-            return ask(_varying_of(first) == _varying_of(candidate))
-        return Unknown
+            return sympy_ask(_varying_of(first) == _varying_of(candidate), assumptions)
+        return None
 
     # -- construction ------------------------------------------------------------------
 
@@ -466,9 +482,16 @@ def _comma_category(first: Functor, second: Functor) -> Category:
 has_morphism_property = predicate("has_morphism_property")
 
 
-def _has_morphism_property(candidate: CategoryOfCategories.ElementType, family: Category) -> Decision:
+def _has_morphism_property(
+    candidate: CategoryOfCategories.ElementType,
+    family: Category,
+    assumptions: Proposition,
+) -> bool | None:
     """The containment question the property subcategory declares, asked of the defining arrow (POL-CAT-043, POL-CAT-044)."""
-    return ask(family.property_category().membership_proposition(family.defining_arrow_of(candidate)))
+    return sympy_ask(
+        family.property_category().membership_proposition(family.defining_arrow_of(candidate)),
+        assumptions,
+    )
 
 
 register_handler(has_morphism_property, _has_morphism_property)

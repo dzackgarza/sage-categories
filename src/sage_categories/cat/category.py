@@ -6,7 +6,7 @@ import itertools
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from functools import cache
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, overload
+from typing import TYPE_CHECKING, ClassVar, Literal, overload
 
 from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict, TripleDict
@@ -186,6 +186,11 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         assert self._ambient_category is not None, f"{self!r} declares no monomorphism into an ambient category"
         return self._ambient_category
 
+    def subcategory_monomorphism(self) -> Functor:
+        """The retained monomorphism that presents this category as a subcategory."""
+        assert self._ambient_monomorphism is not None, f"{self!r} is not a declared subcategory"
+        return self._ambient_monomorphism
+
     def _chosen_inhabitation(self) -> Decision:
         """The exact evaluation case of ``is_inhabited()``, which a category owning one overrides.
 
@@ -216,7 +221,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         return member(candidate, self)
 
-    def __contains__(self, candidate: Any) -> bool:
+    def __contains__(self, candidate: CategoryOfCategories.ElementType | int) -> bool:
         """``x in C``: established placement, which is two-valued (POL-CAT-068).
 
         A value entered ``C`` or it did not, so ``member`` never returns ``Unknown``.  A
@@ -1403,11 +1408,15 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 _CAT: CategoryOfCategories | None = None
 
 
-def _member_by_placement(candidate: CategoryOfCategories.ElementType, category: Category) -> bool:
+def _member_by_placement(
+    candidate: CategoryOfCategories.ElementType,
+    category: Category,
+    assumptions: Proposition,
+) -> bool:
     return is_placed(candidate, category)
 
 
-def _integer_member_by_placement(candidate: int, category: Category) -> bool:
+def _integer_member_by_placement(candidate: int, category: Category, assumptions: Proposition) -> bool:
     return is_placed(candidate, category)
 
 

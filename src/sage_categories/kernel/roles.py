@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Generic
+from typing import TYPE_CHECKING, Generic
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
@@ -105,10 +105,10 @@ class CategoryPoint:
         """The slice category of a point ``1_C -> X`` of an object."""
         return self.parent().category().SliceOver(self.parent())
 
-    def __eq__(self, candidate: Any) -> AppliedPredicate:
+    def __eq__(self, candidate: CategoryPoint | int) -> AppliedPredicate:
         return self.parent().category().equality()(self, candidate)
 
-    def __ne__(self, candidate: Any) -> Proposition:
+    def __ne__(self, candidate: CategoryPoint | int) -> Proposition:
         return ~self.parent().category().equality()(self, candidate)
 
     def __hash__(self) -> int:
@@ -178,10 +178,10 @@ class ObjectOfCategory(CategoryPoint):
             return context.identity.category
         return self._category
 
-    def __eq__(self, candidate: Any) -> AppliedPredicate:
+    def __eq__(self, candidate: CategoryPoint | int) -> AppliedPredicate:
         return self._category.equality()(self, candidate)
 
-    def __ne__(self, candidate: Any) -> Proposition:
+    def __ne__(self, candidate: CategoryPoint | int) -> Proposition:
         return ~self._category.equality()(self, candidate)
 
     def __hash__(self) -> int:
@@ -274,10 +274,10 @@ class MorphismOfCategory(ObjectOfCategory):
         """
         return self.base_category().compose_morphisms(self, first)
 
-    def __eq__(self, candidate: Any) -> AppliedPredicate:
+    def __eq__(self, candidate: CategoryPoint | int) -> AppliedPredicate:
         return self.base_category().equality()(self, candidate)
 
-    def __ne__(self, candidate: Any) -> Proposition:
+    def __ne__(self, candidate: CategoryPoint | int) -> Proposition:
         return ~self.base_category().equality()(self, candidate)
 
     def __hash__(self) -> int:

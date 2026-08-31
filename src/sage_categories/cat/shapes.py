@@ -29,9 +29,10 @@ constructed uniformly by ``Cat()(labels, generators, relations)``.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from sage.structure.coerce_dict import MonoDict
+from sympy import ask as sympy_ask
 
 from sage_categories.cat.category import Category, member
 from sage_categories.cat.declarations import Sets
@@ -133,14 +134,19 @@ class DiscreteCategory(Category[[], []]):
         assert ask(first.codomain() == second.domain())
         return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain())
 
-    def _equal(self, first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
+    def _equal(
+        self,
+        first: CategoryOfCategories.ElementType,
+        candidate: CategoryOfCategories.ElementType,
+        assumptions: Proposition,
+    ) -> bool | None:
         """Objects are equal when their points are; morphisms when their domains are."""
         if first in self and candidate in self:
-            return ask(first.point() == candidate.point())
+            return sympy_ask(first.point() == candidate.point(), assumptions)
         morphisms = self.morphism_category(1)
         if first in morphisms and candidate in morphisms:
-            return ask(first.domain() == candidate.domain())
-        return Unknown
+            return sympy_ask(first.domain() == candidate.domain(), assumptions)
+        return None
 
     def __repr__(self) -> str:
         return f"Discrete({self._index_set!r})"
@@ -211,10 +217,17 @@ class ThinObjectData:
 comparable = predicate("comparable")
 
 
-def _comparable_by_order(candidate: CategoryOfCategories.ElementType, thin: Category) -> Decision:
+def _comparable_by_order(
+    candidate: CategoryOfCategories.ElementType,
+    thin: Category,
+    assumptions: Proposition,
+) -> bool | None:
     if not is_placed(candidate, thin.morphism_category(1)):
-        return Unknown
-    return ask(thin.order()(candidate.domain().point(), candidate.codomain().point()))
+        return None
+    return sympy_ask(
+        thin.order()(candidate.domain().point(), candidate.codomain().point()),
+        assumptions,
+    )
 
 
 register_handler(comparable, _comparable_by_order)
@@ -308,13 +321,21 @@ class ThinCategory(Category[[], []]):
         assert ask(first.codomain() == second.domain())
         return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain())
 
-    def _equal(self, first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
+    def _equal(
+        self,
+        first: CategoryOfCategories.ElementType,
+        candidate: CategoryOfCategories.ElementType,
+        assumptions: Proposition,
+    ) -> bool | None:
         if first in self and candidate in self:
-            return ask(first.point() == candidate.point())
+            return sympy_ask(first.point() == candidate.point(), assumptions)
         morphisms = self.morphism_category(1)
         if first in morphisms and candidate in morphisms:
-            return ask((first.domain() == candidate.domain()) & (first.codomain() == candidate.codomain()))
-        return Unknown
+            return sympy_ask(
+                (first.domain() == candidate.domain()) & (first.codomain() == candidate.codomain()),
+                assumptions,
+            )
+        return None
 
     def __repr__(self) -> str:
         return f"Thin({self._carrier!r})"

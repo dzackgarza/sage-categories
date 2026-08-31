@@ -230,7 +230,7 @@ def inverse_image(functor: Functor, target_subcategory: Category) -> Category:
 
     result = InverseImageSubcategory(functor, target_subcategory)
     _inverse_images[key] = result
-    inclusion = target_subcategory.structure_functors()[0]
+    inclusion = target_subcategory.subcategory_monomorphism()
     diagram = cospan_diagram(Cat(), functor, inclusion)
     shape = diagram.domain()
     projections = {0: result.subcategory_monomorphism(), 1: result.target_projection()}
@@ -396,7 +396,11 @@ class PredicateSubcategory[**MorphismData, **TwoMorphismData](PropertySubcategor
         register_handler(self._property_predicate, self._predicate)
 
     @abstractmethod
-    def _predicate(self, candidate: CategoryOfCategories.ElementType) -> Decision:
+    def _predicate(
+        self,
+        candidate: CategoryOfCategories.ElementType,
+        assumptions: Proposition,
+    ) -> bool | None:
         """The defining decision of membership in this property, on a value of the ambient."""
 
 

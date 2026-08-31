@@ -27,7 +27,7 @@ from __future__ import annotations
 
 from collections.abc import Hashable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from sage.misc.cachefunc import cached_function
 from sage.structure.coerce_dict import MonoDict
@@ -250,13 +250,18 @@ class FinitePresentedCategory(Category[[Word], []]):
         inverses = self._inverse_generators()
         return self.construct_morphism(morphism.codomain(), morphism.domain(), tuple(inverses[name] for name in reversed(morphism.word())))
 
-    def _equal(self, first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
+    def _equal(
+        self,
+        first: CategoryOfCategories.ElementType,
+        candidate: CategoryOfCategories.ElementType,
+        assumptions: Proposition,
+    ) -> bool | None:
         """Vertices are retained once per label, so identity decides; paths are equal exactly when their reduced words are."""
         if first in self and candidate in self:
             return first is candidate
         morphisms = self.morphism_category(1)
         if first not in morphisms or candidate not in morphisms:
-            return Unknown
+            return None
         return first.domain() is candidate.domain() and first.codomain() is candidate.codomain() and first.word() == candidate.word()
 
     def __repr__(self) -> str:

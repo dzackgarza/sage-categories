@@ -583,9 +583,13 @@ class CoproductsCategory(ApexCategory):
 indexed_by = predicate("indexed_by")
 
 
-def _indexed_by_shape(constructed: CategoryOfCategories.ElementType, family: Category) -> Decision:
+def _indexed_by_shape(
+    constructed: CategoryOfCategories.ElementType,
+    family: Category,
+    assumptions: Proposition,
+) -> bool | None:
     if not is_placed(constructed, family.ambient()):
-        return Unknown
+        return None
     diagrams = family.ambient().presenting_diagrams(constructed)
     return any(diagram.domain() is family.shape() for diagram in diagrams)
 

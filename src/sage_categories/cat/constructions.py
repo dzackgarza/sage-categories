@@ -535,6 +535,7 @@ class ColimitsCategory(FullSubcategory[[MorphismCategory.ObjectType], []]):
         self._duality = dual_functor_category_equivalence(shape, ambient)
         self._dual_limits = ambient.op().Limits(shape.op())
         self._lowered: MonoDict = MonoDict()
+        self._dual_diagrams: MonoDict = MonoDict()
         self._colimit_functor: Functor | None = None
         super().__init__(ambient)
 
@@ -560,14 +561,23 @@ class ColimitsCategory(FullSubcategory[[MorphismCategory.ObjectType], []]):
         return self._lowered[diagram]
 
     def _dual_diagram(self, diagram: Functor) -> Functor:
-        dual_diagram = self._duality.forward().on_object(self.lowered(diagram))
-        assert isinstance(dual_diagram, Functor)
-        return dual_diagram
+        if diagram not in self._dual_diagrams:
+            dual_diagram = self._duality.forward().on_object(self.lowered(diagram))
+            assert isinstance(dual_diagram, Functor)
+            self._dual_diagrams[diagram] = dual_diagram
+        return self._dual_diagrams[diagram]
 
-    def _original_diagram(self, dual_diagram: Functor) -> Functor:
+    def _original_diagrams(self, dual_diagram: Functor) -> tuple[Functor, ...]:
+        diagrams = tuple(
+            diagram
+            for diagram, associated_dual in self._dual_diagrams.items()
+            if associated_dual is dual_diagram
+        )
+        if diagrams:
+            return diagrams
         diagram = self._duality.inverse().on_object(dual_diagram)
         assert isinstance(diagram, Functor)
-        return diagram
+        return (diagram,)
 
     def _associate(
         self,
@@ -593,8 +603,9 @@ class ColimitsCategory(FullSubcategory[[MorphismCategory.ObjectType], []]):
 
     def presenting_diagrams(self, constructed: CategoryOfCategories.ElementType) -> tuple[Functor, ...]:
         return tuple(
-            self._original_diagram(dual_diagram)
+            diagram
             for dual_diagram in self._dual_limits.presenting_diagrams(constructed)
+            for diagram in self._original_diagrams(dual_diagram)
         )
 
     def presenting_diagram(self, constructed: CategoryOfCategories.ElementType) -> Functor:

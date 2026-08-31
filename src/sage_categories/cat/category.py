@@ -859,7 +859,9 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
         def _construct_object_image(self, member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
             assert member_object in self.domain(), f"{member_object!r} is not an object of {self.domain()!r}"
-            return self._on_object(member_object)
+            image = self._on_object(member_object)
+            assert image in self.codomain(), f"{image!r} is not an object of {self.codomain()!r}"
+            return image
 
         def on_morphism(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
             """The image of a morphism of the domain, one value per morphism."""
@@ -868,7 +870,13 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         def _construct_morphism_image(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
             morphisms = self.domain().morphism_category(1)
             assert morphism in morphisms, f"{morphism!r} is not a morphism of {self.domain()!r}"
-            return self._on_morphism(morphism)
+            image = self._on_morphism(morphism)
+            expected = self.codomain().morphism_category(1)(
+                self.on_object(morphism.domain()),
+                self.on_object(morphism.codomain()),
+            )
+            assert image in expected, f"{image!r} is not a morphism of {expected!r}"
+            return image
 
         def on_element(self, element: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
             """The image of a point ``t: 1_C -> X``: the element ``q = F(t): F(1_C) -> F(X)`` (POL-FUN-002).

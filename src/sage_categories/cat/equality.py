@@ -10,18 +10,14 @@ domain, paths of a finitely presented category).  Everything else is ``Unknown``
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
-
 from sage_categories.cat.predicates import Decision, Unknown
 from sage_categories.cat.predicates import EqualityPredicate
-
-if TYPE_CHECKING:
-    from sage_categories.cat.category import CategoryOfCategories
+from sage_categories.kernel.roles import CategoryPoint
 
 __all__ = ["equality_predicate"]
 
 
-def _identity(first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
+def _identity(first: CategoryPoint, candidate: CategoryPoint) -> Decision:
     if first is candidate:
         return True
     return Unknown

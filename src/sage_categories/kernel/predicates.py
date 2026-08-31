@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from inspect import Parameter, signature
-from typing import get_origin
+from inspect import signature
+from typing import get_type_hints
 
 from plum import Dispatcher, NotFoundLookupError, Signature as DispatchSignature
 from sage.misc.unknown import Unknown
@@ -96,35 +96,20 @@ def _representable(argument: Argument) -> bool:
     return isinstance(argument, (CategoryPoint, int))
 
 
-def _dispatch_annotation(annotation: object, namespace: dict[str, object]) -> object:
-    if annotation is Parameter.empty:
-        return object
-    if not isinstance(annotation, str):
-        return annotation
-    if any(role_name in annotation for role_name in (".ObjectType", ".ElementType", ".MorphismType")):
-        return object
-    if "[" in annotation:
-        return CategoryPoint
-    try:
-        resolved = eval(annotation, namespace)
-    except (NameError, AttributeError, TypeError):
-        return object
-    origin = get_origin(resolved)
-    if isinstance(origin, type) and issubclass(origin, CategoryPoint):
-        return CategoryPoint
-    if isinstance(resolved, type) and issubclass(resolved, CategoryPoint):
-        return CategoryPoint
-    if hasattr(resolved, "__parameters__") and resolved.__parameters__:
-        return CategoryPoint
-    return origin or resolved
-
-
 def _dispatch_signature(handler: Handler) -> DispatchSignature:
-    assert hasattr(handler, "__globals__"), f"{handler!r} has no annotation namespace"
-    return DispatchSignature(*(
-        _dispatch_annotation(parameter.annotation, handler.__globals__)
-        for parameter in signature(handler).parameters.values()
-    ))
+    from sage_categories.cat.category import Category, CategoryOfCategories
+    from sage_categories.cat.morphisms import MorphismCategory
+
+    annotations = get_type_hints(
+        handler,
+        localns={
+            "Category": Category,
+            "CategoryOfCategories": CategoryOfCategories,
+            "MorphismCategory": MorphismCategory,
+        },
+    )
+    domains = tuple(annotations.get(parameter.name, CategoryPoint) for parameter in signature(handler).parameters.values())
+    return DispatchSignature(*domains)
 
 
 def _resolved_handlers(predicate: Predicate, arguments: tuple[Argument, ...]):

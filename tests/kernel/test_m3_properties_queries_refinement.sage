@@ -1,5 +1,7 @@
 """R3 acceptance for properties, typed queries, refinement, pullbacks, and dispatch."""
 
+from __future__ import annotations
+
 import pytest
 from plum import AmbiguousLookupError
 from sage.misc.unknown import Unknown
@@ -157,13 +159,10 @@ def test_plum_owns_specificity_decline_and_ambiguity():
 
     special = tiny(1)
     ask(special.is_special())
-    TinyObject = type(tiny(-1))
-    SpecialObject = type(special)
-
-    def generic(value: TinyObject):
+    def generic(value: Tiny.ObjectType):
         return False
 
-    def specific(value: SpecialObject):
+    def specific(value: SpecialTiny.ObjectType):
         return True
 
     specificity.register_handler(generic)
@@ -173,10 +172,10 @@ def test_plum_owns_specificity_decline_and_ambiguity():
 
     decline = Predicate("r3_decline", 1, False)
 
-    def generic_after_decline(value: TinyObject):
+    def generic_after_decline(value: Tiny.ObjectType):
         return True
 
-    def declining_specific(value: SpecialObject):
+    def declining_specific(value: SpecialTiny.ObjectType):
         return Unknown
 
     decline.register_handler(generic_after_decline)
@@ -185,10 +184,10 @@ def test_plum_owns_specificity_decline_and_ambiguity():
 
     ambiguous = Predicate("r3_ambiguous", 2, False)
 
-    def first(value: TinyObject, other: SpecialObject):
+    def first(value: Tiny.ObjectType, other: SpecialTiny.ObjectType):
         return True
 
-    def second(value: SpecialObject, other: TinyObject):
+    def second(value: SpecialTiny.ObjectType, other: Tiny.ObjectType):
         return False
 
     ambiguous.register_handler(first)

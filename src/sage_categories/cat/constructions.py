@@ -320,8 +320,8 @@ class LimitsCategory(ApexCategory):
             from sage_categories.cat.images import register_full_image
 
             register_full_image(self._limit_functor[self], self)
-            if _nontrivial_discrete(self._shape) is True:
-                self.ambient().Products().retain_full_image(self)
+        if _nontrivial_discrete(self._shape) is True:
+            self.ambient().Products().retain_full_image(self)
         return self._limit_functor[self]
 
     def defining_functor(self) -> Functor:
@@ -405,6 +405,7 @@ class ProductsCategory(FullSubcategory[[MorphismCategory.ObjectType], []]):
     ) -> None:
         assert isinstance(family, LimitsCategory)
         assert _nontrivial_discrete(family.shape()) is True
+        self.retain_full_image(family)
         retained = self._presenting_families[apex] if apex in self._presenting_families else ()
         if family not in retained:
             self._presenting_families[apex] = (*retained, family)

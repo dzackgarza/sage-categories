@@ -20,6 +20,10 @@ if TYPE_CHECKING:
 __all__ = [
     "ConeCategory",
     "LimitConesCategory",
+    "cocone",
+    "cocone_apex",
+    "cocones",
+    "colimit_cocones",
     "cone",
     "cone_apex",
     "cones",
@@ -41,10 +45,29 @@ def cone(
     return functors.morphism_category(1)(functors.constant(apex), diagram)(components)
 
 
+def cocone(
+    diagram: Functor,
+    apex: CategoryOfCategories.ElementType,
+    components: Components,
+) -> NaturalTransformation:
+    """Construct the cocone ``diagram => constant(apex)`` through ``Op``."""
+    dual_cone = cone(
+        diagram.op(),
+        apex,
+        lambda vertex: components(vertex).op(),
+    )
+    return dual_cone.op()
+
+
 def cone_apex(transformation: NaturalTransformation) -> CategoryOfCategories.ElementType:
     """Return the apex retained by a cone transformation."""
     constant = transformation.domain()
     return Fun(constant.domain(), constant.codomain()).constant_value(constant)
+
+
+def cocone_apex(transformation: NaturalTransformation) -> CategoryOfCategories.ElementType:
+    """Return the apex of the cone in the opposite category that represents a cocone."""
+    return cone_apex(transformation.op())
 
 
 def vertex_of(
@@ -239,3 +262,13 @@ def cones(diagram: Functor) -> ConeCategory:
 def limit_cones(diagram: Functor) -> LimitConesCategory:
     """Return the terminal-cone property category of ``diagram``."""
     return cones(diagram).LimitCones()
+
+
+def cocones(diagram: Functor) -> ConeCategory:
+    """Return cocones under ``diagram`` as cones over ``diagram.op()``."""
+    return cones(diagram.op())
+
+
+def colimit_cocones(diagram: Functor) -> LimitConesCategory:
+    """Return colimiting cocones as terminal cones over ``diagram.op()``."""
+    return limit_cones(diagram.op())

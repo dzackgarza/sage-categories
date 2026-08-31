@@ -40,7 +40,7 @@ from sage.misc.cachefunc import cached_function
 from sage.structure.coerce_dict import MonoDict, TripleDict
 
 from sage_categories.cat.category import Category
-from sage_categories.cat.cones import LimitConesCategory, cone, cone_apex, cones
+from sage_categories.cat.cones import LimitConesCategory, cocone, cocone_apex, cocones, cone, cone_apex, cones
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import endpoints
@@ -50,7 +50,6 @@ from sage_categories.cat.predicates import ask
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
-    from sage_categories.cat.constructions import UniversalData
     from sage_categories.cat.functors import FunctorCategory
     from sage_categories.cat.morphisms import MorphismCategory
 
@@ -329,7 +328,7 @@ def pointwise_limit(diagram: Functor) -> CategoryOfCategories.ElementType:
 
 def pointwise_colimit(diagram: Functor) -> CategoryOfCategories.ElementType:
     """``Fun(I, C).Colimits(J)(D)``: the functor ``i |-> colim_J (ev_i * D)`` with the pointwise cocone and mediator."""
-    from sage_categories.cat.constructions import cocone, cocone_apex, constructed_data
+    from sage_categories.cat.constructions import constructed_data
 
     functors, shape = diagram.codomain(), diagram.domain()
     assert functors is not Fun, f"{diagram!r} is not a diagram in a fixed-endpoint functor category"
@@ -337,30 +336,38 @@ def pointwise_colimit(diagram: Functor) -> CategoryOfCategories.ElementType:
     colimits = target.Colimits(shape)
     composites: MonoDict = MonoDict()
 
-    def at(vertex: CategoryOfCategories.ElementType) -> UniversalData:
+    def at(vertex: CategoryOfCategories.ElementType) -> LimitConesCategory.ObjectType:
         if vertex not in composites:
-            composites[vertex] = constructed_data(colimits, functors.evaluation(vertex) * diagram)
+            presentation = constructed_data(colimits, functors.evaluation(vertex) * diagram)
+            assert isinstance(presentation, LimitConesCategory.ObjectType)
+            composites[vertex] = presentation
         return composites[vertex]
 
     def on_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-        source, destination = at(morphism.domain()).diagram, at(morphism.codomain()).diagram
+        source, destination = at(morphism.domain()).diagram().op(), at(morphism.codomain()).diagram().op()
         transformation = Fun(shape, target).morphism_category(1)(source, destination)(lambda vertex: functors.diagram(diagram.on_object(vertex)).on_morphism(morphism))
         return colimits.colimit_functor().on_morphism(transformation)
 
-    apex = functors(lambda vertex: at(vertex).constructed, on_morphism)
+    apex = functors(lambda vertex: at(vertex).apex(), on_morphism)
     injections: MonoDict = MonoDict()
 
     def injection(vertex: CategoryOfCategories.ElementType) -> NaturalTransformation:
         if vertex not in injections:
-            injections[vertex] = functors.morphism_category(1)(diagram.on_object(vertex), apex)(lambda index_object: at(index_object).transformation.component(vertex))
+            injections[vertex] = functors.morphism_category(1)(diagram.on_object(vertex), apex)(lambda index_object: at(index_object).leg(vertex).op())
         return injections[vertex]
 
     def mediator(candidate_cocone: NaturalTransformation) -> NaturalTransformation:
         destination = cocone_apex(candidate_cocone)
         return functors.morphism_category(1)(apex, destination)(
-            lambda index_object: at(index_object).mediator(
-                cocone(at(index_object).diagram, destination.on_object(index_object), lambda vertex: candidate_cocone.component(vertex).component(index_object))
-            )
+            lambda index_object: at(index_object).lift(
+                cocones(at(index_object).diagram().op())(
+                    cocone(
+                        at(index_object).diagram().op(),
+                        destination.on_object(index_object),
+                        lambda vertex: candidate_cocone.component(vertex).component(index_object),
+                    ).op()
+                )
+            ).op()
         )
 
     family = Fun.Coproducts() if is_discrete(shape) else Fun.Colimits(shape)

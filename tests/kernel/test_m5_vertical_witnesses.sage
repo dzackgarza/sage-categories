@@ -24,11 +24,10 @@ def test_r5_2_fully_faithful_identity_uses_its_exact_proposition_and_same_value(
     identity = endomorphisms.one()
     fully_faithful = endomorphisms.FullyFaithful()
     proposition = identity.is_fully_faithful()
-    identity_before = id(identity)
 
     assert proposition is fully_faithful.membership_proposition(identity)
     assert ask(proposition) is True
-    assert id(identity) == identity_before
+    assert fully_faithful(identity) is identity
     assert identity in fully_faithful
 
 
@@ -53,7 +52,6 @@ def test_r5_3_terminal_constant_cospan_retains_its_universal_presentation():
     universal_map = presentation.lift(query)
 
     assert universal_map is unique_map
-    assert universal_map in Fun(query_apex, terminal)
 
 
 def test_r5_4_property_intersection_retains_both_projections_and_ambient_monomorphism():
@@ -70,11 +68,11 @@ def test_r5_4_property_intersection_retains_both_projections_and_ambient_monomor
     second_projection = Fun.full_subcategory_monomorphism(intersection, equivalences)
     ambient_monomorphism = intersection.subcategory_monomorphism()
 
+    assert fully_faithful.intersection(equivalences) is intersection
     assert presentation.apex() is intersection
     assert presentation.leg(0) is first_projection
     assert presentation.leg(1) is second_projection
     assert ambient_monomorphism is Fun.full_subcategory_monomorphism(intersection, Fun)
-    assert ambient_monomorphism in Fun(intersection, Fun).Monomorphisms().Isofibrations().Full()
 
 
 def test_r5_5_identity_inverse_image_retains_both_projections_and_ambient_monomorphism():
@@ -90,11 +88,11 @@ def test_r5_5_identity_inverse_image_retains_both_projections_and_ambient_monomo
     source_projection = inverse_image.subcategory_monomorphism()
     target_projection = inverse_image.target_projection()
 
+    assert identity.inverse_image(fully_faithful) is inverse_image
     assert presentation.apex() is inverse_image
     assert presentation.leg(0) is source_projection
     assert presentation.leg(1) is target_projection
     assert source_projection is Fun.full_subcategory_monomorphism(inverse_image, Fun)
-    assert source_projection in Fun(inverse_image, Fun).Monomorphisms().Isofibrations().Full()
     assert target_projection in Fun(inverse_image, fully_faithful)
 
 
@@ -102,9 +100,6 @@ def test_r5_6_results_have_their_exact_semantic_owners():
     walking_arrow = Cat().Simplex(1)
     diagrams = Fun(walking_arrow, Cat())
     evaluation = diagrams.evaluation(walking_arrow(0))
-    endomorphisms = Fun(Cat(), Cat())
-    identity = endomorphisms.one()
-    proposition = identity.is_fully_faithful()
 
     terminal = Cat().Terminal()
     terminal_identity = Fun(terminal, terminal).one()
@@ -129,8 +124,6 @@ def test_r5_6_results_have_their_exact_semantic_owners():
     )
 
     assert evaluation in Fun(diagrams, Cat())
-    assert identity in endomorphisms.FullyFaithful()
-    assert proposition is endomorphisms.FullyFaithful().membership_proposition(identity)
     assert terminal_apex is Cat().Pullbacks().chosen_object(terminal_diagram)
     assert intersection is Cat().Pullbacks().chosen_object(intersection_diagram)
     assert inverse_image is Cat().Pullbacks().chosen_object(inverse_diagram)

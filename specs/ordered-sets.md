@@ -3,17 +3,17 @@
 This specification defines the public order algorithms and their result categories.
 Standard order theory and category theory are assumed.
 
-Order operations specified as predicates follow the proposition interface in [Property refinement](property-refinement.md).
-Applying one returns a proposition.
-`ask()` returns its decision.
-Tables mark any total exact operation that returns a decision directly.
+Each order category owns its predicate meanings.
+Their public representation and evaluation follow [Propositions and `ask()`](undecidable-properties.md).
+Applying a predicate returns a SymPy proposition.
+Only `ask()` returns `True`, `False`, or Sage `Unknown`.
 
 ## Category and public surface
 
 The owned category constructors are:
 
 ```sage
-PartiallyOrderedSets()
+Posets()
 TotallyOrderedSets()
 FinitePosets()
 FiniteTotallyOrderedSets()
@@ -35,7 +35,7 @@ Both paths from finite total orders to sets have the same intended underlying-se
 projection. This is coherence of the owned mathematical diamond, not a requirement for
 the compiler to compare constructor data or public functor images along the two paths.
 
-Let `U: PartiallyOrderedSets() -> Sets()` be the named projection `(X, R) |-> X`.
+Let `U: Posets() -> Sets()` be the named projection `(X, R) |-> X`.
 Then
 
 \[
@@ -67,7 +67,7 @@ Each category owns complete implementation classes:
 
 - `MorphismType` implements owned morphisms.
 
-`PartiallyOrderedSets()` introduces the order relation, comparison, and monotone morphisms.
+`Posets()` introduces the order relation, comparison, and monotone morphisms.
 `TotallyOrderedSets()` adds only established totality.
 The finite categories add only algorithms and constructions that require finiteness.
 
@@ -88,18 +88,18 @@ x\leq y\land y\leq x\Rightarrow x=y,
 x\leq y\land y\leq z\Rightarrow x\leq z.
 \]
 
-The registered `PartiallyOrderedSets()` implementation inherits `PredicateSubcategory` and
-implements this proposition as its private `_predicate()` method. The axiom declaration makes
-the subcategory available and generates `is_partial_order()` on the ambient relation class.
-`ask()` can use an exhaustive finite algorithm or another exact handler.
-Exact `True` refines the relation into `PartiallyOrderedSets()`.
+`Posets()` owns this predicate meaning and defines its public SymPy predicate.
+The axiom declaration makes the subcategory available and generates `is_partial_order()` on the ambient relation class.
+`ask()` uses the exact SymPy handlers registered by `Posets()`.
+An exhaustive finite algorithm is one such handler.
+Exact `True` refines the relation into `Posets()`.
 `False` disproves admission.
 `Unknown` leaves the relation in its ambient category.
 
 Selecting the property-category constructor directly asserts the laws:
 
 ```python
-PartiallyOrderedSets()(relation)
+Posets()(relation)
 ```
 
 Its standard property application can be passed to `assume()`. A named mathematical construction returns its result already placed in the property category.
@@ -108,7 +108,7 @@ There are no checked, hypothesis-backed, or theorem-backed constructor families.
 Named constructors include:
 
 ```python
-PartiallyOrderedSets().discrete_order(X)
+Posets().discrete_order(X)
 ```
 
 Ordinal orders, natural intervals, and componentwise product orders also use named theorem-backed routes.
@@ -117,7 +117,7 @@ They do not repeat exhaustive checks.
 For example, the usual order on `{1, ..., 10^10}` must use its construction theorem.
 Its constructor must not enumerate all pairs or triples.
 
-An infinite relation can enter `PartiallyOrderedSets()` through direct construction, an active assumption, exact positive evaluation, or a named mathematical construction.
+An infinite relation can enter `Posets()` through direct construction, an active assumption, exact positive evaluation, or a named mathematical construction.
 
 ## Total-order refinement
 
@@ -127,10 +127,9 @@ The containment predicate of `TotallyOrderedSets()` is the proposition:
 \forall x,y,\qquad x\leq y\lor y\leq x.
 \]
 
-The registered `TotallyOrderedSets()` implementation inherits `PredicateSubcategory` and
-implements this proposition as its private `_predicate()` method. The axiom generates
-`is_total()` on `PartiallyOrderedSets().ObjectType`. The application returns this proposition,
-and `ask()` returns its decision.
+`TotallyOrderedSets()` owns this predicate meaning and defines its public SymPy predicate.
+The axiom generates `is_total()` on `Posets().ObjectType`.
+The application returns the SymPy proposition, and `ask()` evaluates it.
 Exact `True` refines the object into `TotallyOrderedSets()`.
 An active assumption and a named mathematical construction establish the same placement without exhaustive checking.
 `False` and `Unknown` keep the object in its previously established category.
@@ -169,7 +168,7 @@ The containment predicate for the fixed-endpoint poset-morphism category is the 
 x\leq_P y\Rightarrow f(x)\leq_Q f(y).
 \]
 
-For a represented finite source, exhaustive pair checking is one exact handler for `ask()`. A witnessed violation makes `ask()` return `False`. An unresolved evaluation makes it return `Unknown`. Exact `True` refines the morphism into `Mor(PartiallyOrderedSets())(P, Q)`. Direct property construction, an active assumption, and a named mathematical construction establish the same placement.
+For a represented finite source, exhaustive pair checking is one exact handler for `ask()`. A witnessed violation makes `ask()` return `False`. An unresolved evaluation makes it return `Unknown`. Exact `True` refines the morphism into `Mor(Posets())(P, Q)`. Direct property construction, an active assumption, and a named mathematical construction establish the same placement.
 
 Named theorem-backed routes include identities, composites, product projections, and product mediating morphisms.
 
@@ -180,8 +179,8 @@ A reversing map on the two-element chain fails checked admission.
 Its underlying set morphism remains valid.
 
 Order preservation, order reflection, order embedding, and order isomorphism use their morphism-property subcategories.
-Each predicate-backed implementation inherits `PredicateSubcategory` and implements its
-private `_predicate()` method. Their axioms generate `is_order_preserving()`,
+Each property subcategory owns its predicate meaning and exact SymPy handlers.
+Their axioms generate `is_order_preserving()`,
 `is_order_reflecting()`, `is_order_embedding()`, and `is_order_isomorphism()` on the
 ambient set-map class. The kernel derives each standard property application.
 Admission makes the preservation proposition evaluate to `True`.
@@ -193,7 +192,7 @@ Poset theory adds only the theorem-backed admission needed to preserve monotonic
 ## Products
 
 The generic product contract is specified in [Products, coproducts, and component functors](functor.md#products-coproducts-and-component-functors).
-The projection `U: PartiallyOrderedSets() -> Sets()` creates small limits. It is therefore an object of each applicable `Fun(PartiallyOrderedSets(), Sets()).CreatesLimits(I)`.
+The projection `U: Posets() -> Sets()` creates small limits. It is therefore an object of each applicable `Fun(Posets(), Sets()).CreatesLimits(I)`.
 
 For a discrete shape, the generic creates-limits construction lifts the selected set-product cone. Its apex carries the componentwise order:
 
@@ -210,7 +209,7 @@ Such a product remains a poset.
 
 ## Finite-poset API
 
-`PartiallyOrderedSets().Subobjects(P).from_predicate(predicate)` constructs the induced subposet, its restricted order, and its monomorphism into `P`.
+`Posets().Subobjects(P).from_predicate(predicate)` constructs the induced subposet, its restricted order, and its monomorphism into `P`.
 Finite-poset algorithms use owned poset elements and owned finite subobjects.
 They do not expose backend elements, Python iterators, or built-in containers.
 They expose these primitive operations:
@@ -266,7 +265,7 @@ Each public method lowers semantic inputs and reconstructs the owned result befo
 
 ## Thin category
 
-The named functor `Thin: PartiallyOrderedSets() -> Cat()` constructs the thin category of a poset.
+The named functor `Thin: Posets() -> Cat()` constructs the thin category of a poset.
 Apply it as `Thin.on_object(P)`.
 The result is an owned category.
 Its objects are the owned elements of `P`. Its fixed-endpoint category `Mor(-)(x, y)` is terminal when `x <= y` and empty otherwise.
@@ -275,7 +274,7 @@ A monotone morphism induces the corresponding functor between thin categories.
 
 ## Inherited surface and implementation ownership
 
-`PartiallyOrderedSets()` owns order comparison and monotone-map admission.
+`Posets()` owns order comparison and monotone-map admission.
 `TotallyOrderedSets()` owns only totality-specific constructors and queries.
 `FinitePosets()` owns only finite-poset algorithms and their semantic reconstruction.
 
@@ -316,7 +315,7 @@ The implementation satisfies this specification when the public API establishes 
 
 - nonmonotone set morphisms fail poset morphism admission;
 
-- theorem-backed identities, composites, projections, and standard infinite maps enter `Mor(PartiallyOrderedSets())`;
+- theorem-backed identities, composites, projections, and standard infinite maps enter `Mor(Posets())`;
 
 - the projection to sets creates poset products and their universal morphisms;
 

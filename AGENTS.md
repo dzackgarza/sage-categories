@@ -9,6 +9,7 @@ Read the applicable owners before each substantive edit or review:
 
 | Subject | Owner |
 | --- | --- |
+| System shape, ownership, dependency order, and task context | [`specs/system.md`](specs/system.md) |
 | Decisions and supersession | [`specs/decisions.md`](specs/decisions.md) |
 | Compact review policies | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
 | `Cat`, `Mor`, `Fun`, actions, and selected functors | [`specs/functor.md`](specs/functor.md) |
@@ -40,6 +41,20 @@ Retrieve the complete active plan and phase card before work.
 Use `card dag` for phase dependencies.
 An executing plan contains phase delta and acceptance only (`POL-DOC-013`).
 
+For each work unit, write this task frame before delegation or implementation:
+
+```text
+Assigned objective:
+Mathematical owner:
+Active phase and direct prerequisites:
+Complete consumer boundary:
+Acceptance at the exact revision:
+```
+
+The frame is an input contract.
+Do not replace its objective with a review finding, diagnostic count, or local patch.
+Reject a work unit when its mathematical owner or consumer boundary is missing.
+
 Start inspection with `tree` at the smallest useful depth.
 Then read each complete target and its immediate owners.
 Use focused `rg` queries.
@@ -51,6 +66,9 @@ Execute the active vault DAG in dependency order.
 The active architecture-convergence DAG is M0 through M6.
 It covers the private kernel, generic `Cat`, and minimal executable witnesses.
 Production sets, posets, named sets, rings, modules, algebras, and lattices remain blocked through R6 and owner approval.
+
+After R6, execute the production DAG from [`specs/system.md`](specs/system.md).
+It cuts the `Sets()` and `Cardinal()` bootstrap cycle before later leaves begin.
 
 Later structures can serve as acceptance examples only.
 A generic defect returns to its owning foundational phase and invalidates dependent acceptance.
@@ -64,8 +82,18 @@ Repair generic structure at its canonical owner.
 Do not add a leaf workaround.
 
 Use mature dependencies before repository-owned infrastructure.
-Keep every engine value private.
+Keep every engine value private, except the authorized public SymPy proposition expression.
+Owned values inside that expression use private identity atoms.
 Return an owned category, object, element, morphism, functor, proposition, typed-query result, or universal presentation.
+
+Continue from canonical specifications, the active DAG, and the current working tree.
+Do not use a handoff, report, phase label, or previous agent claim as execution state.
+
+Delegate only a complete work unit from the task frame.
+A delegate receives its owner sections, direct prerequisites, full consumer boundary, and unchanged acceptance statement.
+A delegate can inspect and edit only that boundary.
+Review the result against the original frame and exact revision.
+If ownership is wrong, discard the work unit instead of repairing its local patch.
 
 End each substantive work unit in a focused commit.
 Stage exact files only.

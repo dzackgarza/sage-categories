@@ -1,12 +1,14 @@
 # Cardinalities and ordinals
 
 Cardinals are objects of a set-enriched skeletal category of cardinal representatives.
-The point functor of `Cardinal()` into `Semirings(Cat())` presents cardinal addition and multiplication as its two semiring operations.
+`Cardinal()` is constructed as an object of `Semirings(Cat())`.
+Cardinal addition and multiplication are its two internal semiring operations.
 Ordinals are objects of the skeletal category `Ordinals()`. Their Python addition and multiplication operators are ordinary ordinal arithmetic.
 Both models retain exact expressions when no normalization rule applies.
 
-Cardinal and ordinal operations specified as predicates follow the proposition interface in [Property refinement](property-refinement.md).
-Applying one returns a proposition.
+`Cardinal()` and `Ordinals()` own their predicate meanings.
+Their public representation and evaluation follow [Propositions and `ask()`](undecidable-properties.md).
+Applying a predicate returns a SymPy proposition.
 Only `ask()` decides it as `True`, `False`, or `Unknown`.
 
 The governing policies are `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001`, `POL-GEN-017`, `POL-GEN-020`, `POL-GEN-021`, `POL-CAT-021`, `POL-CAT-028`, `POL-CAT-071`, `POL-CAT-083`, `POL-CAT-085`, `POL-CAT-086`, `POL-CAT-088`, `POL-FUN-002`, `POL-FUN-003`, `POL-FUN-035`, `POL-SET-009`, `POL-SET-010`, `POL-SET-025`, `POL-SET-026`, `POL-SET-033` through `POL-SET-038`, `POL-API-002`, `POL-API-016`, and `POL-DOC-010` through `POL-DOC-013`.
@@ -56,16 +58,9 @@ Thus a generalized element `t: T -> kappa` maps to the generalized set element `
 
 `Cardinal()` is a skeleton, so this functor is fully faithful and injective on objects, hence monic; it is not an isofibration, because a set isomorphic to a representative need not be one.
 Placement therefore does not follow it, and a cardinal is not a set (`specs/functor.md`, "Monomorphisms of `Cat()` and placement"). It is the representative transport from cardinal objects to sets.
-The point category of `Cardinal()` owns its separate placement as a semiring object in `Cat()`:
-
-```python
-# Cat().Point(Cardinal())
-def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (Fun(self, Semirings(Cat())).Monomorphisms().Isofibrations()(),)
-```
-
 `Semirings(Cat())` is the general internal semiring category at ambient `Cat()`. Its objects, its addition and multiplication functors, its zero and one points, and its laws are defined in [Semirings](magmas-monoids-semirings.md#semirings).
-`Cardinal()` supplies cardinal addition with zero and cardinal multiplication with one. The point structure functor supplies its ordinary actions, and selection supplies the complete compiled classes, retained state, and public methods.
+`Cardinal()` supplies cardinal addition with zero and cardinal multiplication with one through direct construction in that category.
+Direct category-object placement supplies the complete compiled classes, retained state, and public methods.
 The law data is the equations between these functors ([functor.md](functor.md#ambient-algebraic-categories)). `Cardinal()` is skeletal, so each binary operation selects one representative and the laws hold as equalities ([Laws in the supplied ambient](magmas-monoids-semirings.md#laws-in-the-supplied-ambient)).
 
 For every pair of represented cardinals, `Mor(Cardinal())(kappa, lambda)` is the discrete category on the owned function set between their representatives:
@@ -217,7 +212,7 @@ n * kappa
 n ** kappa
 ```
 
-Addition and multiplication are the semiring operations that the point functor exposes ([Semirings](magmas-monoids-semirings.md#semirings)). Each is a morphism out of a product,
+Addition and multiplication are the internal semiring operations ([Semirings](magmas-monoids-semirings.md#semirings)). Each is a morphism out of a product,
 
 \[
 \alpha,\mu:\operatorname{Cardinal}()\times\operatorname{Cardinal}()
@@ -284,7 +279,7 @@ The generalized continuum hypothesis is an assumable proposition, not an axiom o
 generalized_continuum_hypothesis()
 ```
 
-It is a proposition in the sense of [Property refinement](property-refinement.md) and `POL-ASSUME-004`. The active Sage or SymPy assumption state records it and `ask()` reads it.
+It is a zero-argument SymPy proposition under [Propositions and `ask()`](undecidable-properties.md). SymPy `global_assumptions` records it and `ask()` reads it.
 `assume()` records it and `retract()` withdraws it.
 `Cardinal()` records it when the package loads, so the package's own default state assumes it.
 

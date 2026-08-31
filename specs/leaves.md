@@ -160,10 +160,13 @@ Operations that depend on one presentation remain on that presentation object.
 
 A leaf declares a property axiom once.
 The registered axiom identifier determines the public `is_P()` spelling.
-The generated method returns the containment proposition for `C.P()`.
+The leaf owns the predicate's mathematical meaning.
+Its public representation is a SymPy `Predicate` subclass.
+The generated method returns its applied SymPy proposition for `C.P()`.
 
-A predicate-backed implementation supplies the private abstract `_predicate()` method required by `PredicateSubcategory`.
-It can also register exact handlers at the property owner.
+The property owner registers its exact handlers through SymPy.
+The kernel performs same-object refinement after an exact positive result.
+Any Python declaration helper remains private and creates no second predicate model.
 
 The complete example exists in [finite-set-minimal-template.py](finite-set-minimal-template.py).
 The general contract exists in [property-refinement.md](property-refinement.md).
@@ -187,7 +190,7 @@ A private computation has this form:
 
 The leaf method owns the complete sequence.
 It selects the exact algorithm from established mathematical data.
-It returns an owned category, object, element, morphism, functor, proposition, or query result.
+It returns an owned category, object, element, morphism, functor, typed-query result, or authorized SymPy proposition.
 
 ```python
 def rank(self) -> NonnegativeInteger:
@@ -206,7 +209,7 @@ Every public signature uses the exact mathematical input and result types.
 - Use `C.ObjectType`, `C.ElementType`, and `C.MorphismType` for category-owned values.
 - Use an owned set, ordered set, indexed family, or other named collection.
 - Use separate total methods for distinct mathematical operations.
-- Return a proposition for a truth question.
+- Return a SymPy proposition for a truth question.
 - Return an applied query with an exact result category for a partial value question.
 
 For example, `rank()` and `rank_of_element(x)` are distinct operations.

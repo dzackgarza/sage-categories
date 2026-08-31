@@ -158,7 +158,8 @@ the functor into `Sets()`.
 
 ## Owned operations
 
-`Modules(A, C)` owns the action morphism and the action-preservation predicate.
+`Modules(A, C)` owns the action morphism and the meaning of its action-preservation predicate.
+The predicate has the public SymPy representation fixed by [Propositions and `ask()`](undecidable-properties.md).
 Its object surface includes
 
 ```python

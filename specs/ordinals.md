@@ -2,9 +2,10 @@
 
 This document specifies the ordinal model used by the cardinality framework.
 
-Ordinal operations specified as predicates follow the proposition interface in [Property refinement](property-refinement.md).
-Applying one returns a proposition.
-`ask()` returns its decision.
+`Ordinals()` owns each ordinal predicate meaning.
+Its public representation and evaluation follow [Propositions and `ask()`](undecidable-properties.md).
+Applying a predicate returns a SymPy proposition.
+Only `ask()` returns `True`, `False`, or Sage `Unknown`.
 
 The governing policies are `POL-MATH-022` through `POL-MATH-025`, `POL-MATH-034`, `POL-MATH-035`, `POL-GEN-017`, `POL-GEN-020`, `POL-GEN-021`, `POL-CAT-001`, `POL-CAT-054`, `POL-CAT-060`, `POL-CAT-071`, `POL-CAT-083`, `POL-CAT-085`, `POL-FUN-002`, `POL-FUN-003`, `POL-FUN-035`, `POL-SET-025`, `POL-SET-026`, `POL-SET-037`, `POL-SET-038`, and `POL-DOC-010` through `POL-DOC-013`.
 

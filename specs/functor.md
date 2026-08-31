@@ -1,5 +1,7 @@
 # Functors, `Cat`, and structural inheritance
 
+This specification supplies the categorical layers of the tower in [system.md](system.md).
+
 ## Contents
 
 - [`Cat` and its implementation](#cat-and-its-implementation)
@@ -22,7 +24,7 @@
 
 - [Category classes and category-valued families](#category-classes-and-category-valued-families)
 
-- [Point categories and point functors](#point-categories-and-point-functors)
+- [Point categories and one-object diagrams](#point-categories-and-one-object-diagrams)
 
 - [Functor construction and presentation data](#functor-construction-and-presentation-data)
 
@@ -229,7 +231,8 @@ Mor(C).Automorphisms()
 ```
 
 Each is a property subcategory of an owned morphism category.
-Each property has its owned predicate, construction dispatcher, assumption route, the property subcategories it is a full subcategory of, and optional computational routes.
+Each property category owns its predicate meaning and declared subcategory relations.
+SymPy supplies its public predicate class, applied propositions, assumptions, and exact proposition dispatch.
 Fixed endpoints use the same dispatch for every property subcategory `P` of `Mor(K)`: `P(A, B)` is `Mor(K)(A, B).P()`, one cached object.
 
 ## Canonical objects of `Cat`
@@ -252,7 +255,7 @@ Fixed endpoints use the same dispatch for every property subcategory `P` of `Mor
 
 - `Cat().WalkingParallelPair()`: two objects and two parallel morphisms;
 
-- `Cat().Point(X)`, written `{X}`: the one-object category on a distinguished object `X`, one per `X`; see [Point categories and point functors](#point-categories-and-point-functors).
+- `Cat().Point(X)`, written `{X}`: the one-object category on a distinguished object `X`, one per `X`; see [Point categories and one-object diagrams](#point-categories-and-one-object-diagrams).
 
 Two calls return one object by identity.
 No construction creates a second terminal object, simplex, or walking structure.
@@ -353,7 +356,7 @@ set-theoretic logic and has no category-theoretic formulation. `Axiom`'s
 
 ## Property resolution
 
-Functor properties use the general `Predicate`, `ask()`, and property-refinement framework.
+Functor properties use the public SymPy proposition, `ask()`, and property-refinement framework.
 They have no separate evidence or decision system.
 
 An existing functor can enter a property category by direct construction:
@@ -392,7 +395,7 @@ uses category placement, active assumptions, and declared subcategory containmen
 It returns `Unknown` when none establishes the proposition.
 
 This rule is specific to categorical functor properties.
-Other owned predicates, such as injectivity of a set map on a declared semantic domain, can register exact computational routes.
+Other category-owned predicate meanings, such as injectivity on an exact set-map domain, can register exact SymPy handlers.
 
 ## Monomorphisms of `Cat()` and placement
 
@@ -614,74 +617,54 @@ Generic kernel and `cat` modules accept ambient categories as arguments. They do
 production leaves. A category construction fails when its own class declaration,
 constructor, or functor action is incomplete.
 
-## Point categories and point functors
+## Point categories and one-object diagrams
 
-For a distinguished mathematical object `X`, `Cat().Point(X)`, written `{X}`, is the one-object category whose sole object is `X` and whose sole morphism is `1_X`. It is an object of `Cat()`, retained once per `X`, and it owns the declarations specific to `X` (`POL-CAT-083`).
+For a distinguished mathematical object `X`, `Cat().Point(X)`, written `{X}`, is the one-object category whose sole object is `X` and whose sole morphism is `1_X`.
+It is an object of `Cat()` and is retained once per `X`.
 
-A **point functor** of `X` is the monomorphism of `{X}` into a category `D` that has `X` among its objects:
+A functor from `{X}` selects a one-object diagram in `D`:
 
 ```python
-iota = Fun(Cat().Point(X), D).Monomorphisms().Isofibrations()()
+iota = Fun(Cat().Point(X), D).Monomorphisms()()
 ```
 
 `{X}` has one hom category, so every functor out of it is faithful.
-A point functor is full exactly when `X` has no nonidentity endomorphism in `D`; a construction that establishes this states it by building the functor in `Fun({X}, D).FullyFaithful()`.
+The functor is full exactly when `X` has no nonidentity endomorphism in `D`.
+It is an isofibration exactly when every isomorphism at its image lifts to `{X}`.
+A construction states either property through its exact functor-property category.
 
-The endpoint pair selects the category `Fun({X}, D)`, as for every other functor.
 The distinguished object `X` is the construction data.
-`X` retains the category placement it already has; each point functor states one further placement of `X` as an object of `D`.
+The functor records a diagram.
+It does not place `X` in `D`.
+Constructing or refining `X` as an object of `D` owns that placement.
 
-`{X}` selects its point functors by the ordinary declaration:
+The one-object diagram is not a structure functor for `{X}`.
+Its codomain classes do not become implementation bases of `{X}` or `X`.
 
-```python
-# Cat().Point(X)
-def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (Fun(self, D).Monomorphisms()(),)
-```
+### The categorical level shift
 
-A point functor becomes a structure functor only through this declaration.
-It lies in `.Isofibrations()` only when its image is [replete](glossary.md#inspected-sources) in `D` (`POL-FUN-036`). Like every structure functor, it contributes the applicable target classes and inherited public methods (`POL-FUN-003`, `POL-FUN-035`). Its target classes become immediate dynamic bases. Their own bases supply Sage's transitive MRO.
-
-The point placement supplies each structure-functor target class's state and methods.
-The distinguished object keeps its identity and existing category placement.
-Existing descendants and values keep their public class identity and behavior.
-
-Refinement is what makes a point category formed from a runtime object work.
-`Cardinal()` is constructed before `Semirings(Cat())` exists and receives its semiring surface when `Cat().Point(Cardinal())` declares its point functor.
-No eager construction order between `Cardinal()` and `Semirings(Cat())` is required.
-
-The point `* -> C` represented by an object is distinct from a selected monomorphism `{X} -> D`. For `{C} -> D`, selection makes `D.ObjectType` state available on `C` and `D.ElementType` state available on the actual objects of `C`. The functor's ordinary morphism action returns the image of the sole morphism of `{C}`.
-
-### The level shift
-
-Take the distinguished object to be a category `C`. Then `{C}` has one object at the `Cat()` level, while `C` has its own objects and morphisms one level below.
-`Cat().ElementType` models the points `* -> C`, which are exactly the actual objects of `C`.
-
-A point structure functor `{C} -> D` therefore compiles as:
+Let a category `C` be an object of a category `D` whose objects are structured categories.
+Direct placement of `C` in `D` supplies these implementation surfaces:
 
 | Surface of `D` | Surface it supplies |
 | --- | --- |
-| `D.ObjectType` | the category `C` itself, a `Cat().ObjectType` value |
+| `D.ObjectType` | The category `C` itself |
 | `D.ElementType` | `C.ObjectType`, the points `* -> C` |
-| `D.MorphismType` | `{C}.MorphismType`, whose sole value is `1_C` |
+| Applicable structured morphism surface | The exact functors or natural transformations declared by `D` |
 
-The shift follows from the element relation in `Cat`. It adds no second inheritance mechanism, no route normalization, and no propagation registry.
-`C` remains an object of `Cat()`, `{C}` remains a distinct object of `Cat()`, and `C.structure_functors()` continues to state the structure of `C` as a category.
+This shift follows from the point relation in `Cat`.
+It is part of direct category-object construction and refinement.
+It is not a second inheritance mechanism or a one-object functor effect.
 
-`Cat().Point(C)` gives the point category `{C}` without adding another declaration to `C`.
-
-A level shift contributes the corresponding target class to each affected public class.
-The point structure functor supplies its ordinary object and morphism actions.
-Thus `C`, its objects, and `1_C` carry the state required by their target classes.
-
-Shared target classes follow Sage dynamic-class construction and occur once in Sage's MRO.
+`Cat().Point(C)` remains a separate category and adds no declaration to `C`.
+Shared target classes use the ordinary Sage dynamic-class construction and occur once in the MRO.
 
 ### Ambient algebraic categories
 
 An algebraic category takes its ambient category as an argument.
 Thus `Semirings(A)` classifies semiring objects whose underlying objects, addition, multiplication, zero, one, and laws live in `A`. For example, `Semirings(Sets())` has underlying sets and set maps.
 `Semirings(Cat())` has underlying categories and functors.
-A category-valued distinguished object therefore uses a point functor into `Semirings(Cat())`.
+A category-valued internal semiring is constructed or refined directly in `Semirings(Cat())`.
 
 `Semirings(Cat())` is the category of strict internal semiring objects.
 Associativity, units, symmetry, distributivity, and absorption are equalities of functors, exactly as `Semirings(Sets())` states them as equalities of maps.
@@ -1100,6 +1083,10 @@ y^\vee:C^{op}\longrightarrow\operatorname{Fun}(C,\mathbf{Set}).
 
 The Yoneda embedding is fully faithful. Its object action supplies the representable hom functors. See [Mathlib, Yoneda](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Yoneda.html).
 
+This section fixes the mathematical declaration before `Sets()` is executable.
+The executable object and morphism actions activate only after the production `Sets()` phase.
+Before that phase, the core retains only the generic signature and universal laws.
+
 For `F: C.op() -> Sets()`, `Representations(F)` has objects `(X, eta)` with `X in C` and a natural isomorphism `eta: y(X) -> F`. A morphism `(X, eta) -> (Y, theta)` is a morphism `u: X -> Y` such that `theta compose y(u) = eta`. Yoneda makes such a morphism invertible. The functor is representable exactly when this category is inhabited. Selecting an object supplies the representing object and isomorphism. This property-and-data distinction follows [Mathlib, represented functors](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/RepresentedBy.html).
 
 For a test functor `j: A -> C`, `j.restricted_yoneda()` is
@@ -1112,7 +1099,8 @@ N_j(X)(a)=\operatorname{Mor}(C)(j(a),X).
 
 A separating test category places this functor in `.Faithful()`. A dense test category places it in `.FullyFaithful()`. The canonical evaluation morphisms and presentations belong to this functorial construction, as specified in [Separating families and categorical generators](separating-families-and-categorical-generators.md).
 
-Monads, comonads, Eilenberg--Moore categories, mates, and reflective or coreflective subcategories extend this calculus after PR-8. M1 retains enough adjunction data to add them without a new transport mechanism.
+Monads, comonads, Eilenberg--Moore categories, mates, and reflective or coreflective subcategories extend this calculus after the categorical core.
+The retained adjunction data supports them without a new transport mechanism.
 
 ## Examples
 
@@ -1174,7 +1162,7 @@ Mathlib's arrow category has morphisms as objects and commuting squares as morph
 | `C ⥤ D` | `Mor(Cat())(C, D)` or `Fun(C, D)` |
 | `Functor.id C` | `End_Cat(C).one()` |
 | `Functor.comp` and whiskering functors | `Fun.composition(A, B, C)` and its morphism action |
-| `Functor.fromPUnit X` | the point functor of `X`, an object of `Fun(Cat().Point(X), D)` |
+| `Functor.fromPUnit X` | the one-object diagram of `X`, an object of `Fun(Cat().Point(X), D)` |
 | `ObjectProperty.FullSubcategory P` | the property subcategory `C.P()` |
 | `ObjectProperty.ι P` | `Fun(C.P(), C).Monomorphisms().Isofibrations().Full()()` |
 | monomorphism induced by `P -> Q` | `Fun(C.P(), C.Q()).Monomorphisms().Isofibrations().Full()()` |
@@ -1200,7 +1188,7 @@ Mathlib's arrow category has morphisms as objects and commuting squares as morph
 | `F.IsEquivalence` | `F.is_equivalence()` and `Mor(Cat()).Equivalences()` |
 
 Mathlib uses propositions and typeclasses to carry established facts.
-This repository uses owned predicates, `ask()`, assumptions, direct property construction, and same-object refinement.
+This repository uses category-owned predicate meanings, public SymPy propositions, `ask()`, direct property construction, and same-object refinement.
 The mathematical definitions and the declared containments remain the same.
 
 Mathlib's `ConcreteCategory` contains a fixed faithful functor to `Type` as extra structure.
@@ -1208,7 +1196,8 @@ Its `HasForget₂ C D` class also contains a chosen functor `C -> D`; it does no
 See [ConcreteCategory.Forget](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ConcreteCategory/Forget.html).
 
 Mathlib's `Functor.fromPUnit X : Discrete PUnit ⥤ C` sends the punctual category to a chosen object, and `Functor.equiv` states the equivalence `(Discrete PUnit ⥤ C) ≌ C`. See [PUnit](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/PUnit.html).
-Here `Cat().Point(X)` names its sole object `X` and owns the declarations specific to `X`, so the corresponding functor is a subcategory monomorphism rather than a constant functor from an anonymous point.
+Here `Cat().Point(X)` names its sole object `X`.
+The corresponding functor is the retained one-object diagram and has no placement or inheritance effect.
 
 Mathlib defines `Prod.fst` and `Prod.snd` separately.
 See [Products.Basic](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Products/Basic.html).
@@ -1291,9 +1280,9 @@ It is kernel infrastructure over already established mathematical functors.
 
 - `Cat().Point(X)`, written `{X}`, is the one-object category on a distinguished object `X`, retained once per `X`.
 
-- A point functor is the monomorphism `{X} -> D`, constructed through `Fun({X}, D)` and returned from `{X}.structure_functors()` when it supplies inherited implementation.
+- A functor `{X} -> D` is a one-object diagram and has no placement or inheritance effect.
 
-- A point structure functor `{C} -> D` supplies target object state to `C` and target element state to `C.ObjectType`, the points of `C`.
+- Direct placement of a category `C` in a structured category `D` supplies the applicable object and element surfaces by categorical level.
 
 - Every structure functor is an ordinary object of `Fun`.
 

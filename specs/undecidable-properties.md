@@ -1,156 +1,144 @@
 # Propositions, typed queries, and `ask()`
 
-This specification owns propositions, typed queries, evaluation, assumptions, and exact handlers.
-It implements D48 through D52, D82, D87 through D90, D97, D99, and D103.
+This specification owns the public question and evaluation contract.
+It implements D18 through D25, D63, D83, D89, D97, D115, and D125.
 
-See [property-refinement.md](property-refinement.md) for property categories, inverse images, containment, and same-object refinement.
+It consumes property categories from [property-refinement.md](property-refinement.md).
+It provides propositions, typed queries, assumptions, equality, and evaluation.
 
-## Propositions
+## Mathematical questions
 
-A predicate application is a proposition.
-It can be evaluated, assumed, negated, and combined with other propositions.
+A predicate is a proposition-valued mathematical operation.
+Its category, property category, or equality operation owns its meaning.
 
-For a property category `C.P()`, these expressions construct the same owned proposition:
+A typed query is a partial value-valued mathematical operation.
+Its owner declares one exact result category.
+
+Forming either question performs no evaluation.
+Only `ask()` evaluates it.
+
+## Public propositions
+
+Each mathematical predicate has a public SymPy `Predicate` subclass.
+Applying it returns a SymPy `AppliedPredicate`.
+Compound propositions use SymPy `And`, `Or`, `Not`, and `Implies`.
+
+For a property category `C.P()`, these expressions return the same proposition:
 
 ```python
 C.P().membership_proposition(X)
 X.is_P()
 ```
 
-Construction does not evaluate the proposition.
-The public method returns the proposition, never a Python decision.
+The property category owns the predicate meaning.
+SymPy owns the public predicate class, application class, and Boolean algebra.
 
-Owned equality also returns a proposition:
+An owned value enters a SymPy expression through a private identity atom.
+The atom preserves the value's identity and gives the handler access to that value.
+The atom has no independent public API.
+
+## Equality
+
+Each exact category owns equality for its objects, elements, and morphisms.
+That owner defines a SymPy predicate and its exact handlers.
 
 ```python
 p = a == b
 decision = ask(p)
 ```
 
-Use `ask(a == b)` at every decision site.
-Python truth protocols do not preserve a possible `Unknown` result.
+`a == b` returns the applied category-owned predicate.
+It does not return a Python Boolean or a SymPy `Eq`.
+`a != b` returns `Not(a == b)`.
 
-Propositions compose through conjunction, disjunction, negation, and implication.
-The operators `&`, `|`, and `~` delegate to the corresponding SymPy Boolean operations.
+Equality decisions do not cause property refinement.
+A Python protocol that requires a Boolean must call `ask()` and reject `Unknown`.
 
 ## Typed queries
 
-A typed query asks for a value in an exact result category.
-It is not Boolean.
-
-For example:
+A typed query owns its argument contract and exact result category.
+Application returns an owned unevaluated query application.
+It does not enter SymPy Boolean algebra.
 
 ```python
 q = X.cardinality()
 value = ask(q)
 ```
 
-Here `q` is an applied query with result category `Cardinal()`.
-The result of `ask(q)` is an owned cardinal or `Unknown`.
+Here the result category is `Cardinal()`.
+Evaluation returns an owned cardinal or Sage `Unknown`.
 `Unknown` is not an object of `Cardinal()`.
 
-Cardinality, cofinality, rank, suprema, infima, maxima, minima, and extrema use typed queries when their value can be undecidable or undefined.
-A comparison with a query result can construct a proposition.
-
-An applied query has no Python truth value.
-It does not compose through propositional operators.
+Cardinality, cofinality, rank, suprema, infima, maxima, minima, and extrema use typed queries when their result can be undecided or undefined.
+A proposition can compare a typed-query result only after the applicable mathematical owner defines that comparison.
 
 ## Evaluation
 
-Only `ask()` evaluates a proposition or an applied query.
+Public `ask()` has two branches.
 
-For a proposition, `ask()` returns:
+For a SymPy proposition, it calls `sympy.ask()`.
+It returns the resulting `True` or `False`.
+It maps SymPy `None` to Sage `Unknown`.
 
-```text
-True | False | Unknown
-```
+For a typed query, it calls the exact evaluator owned by that query.
+It returns an object of the declared result category or Sage `Unknown`.
 
-For a query with result category `R`, `ask()` returns:
+An exact positive property result invokes the same-object refinement in [property-refinement.md](property-refinement.md).
+An exact negative result and `Unknown` add no category placement.
 
-```text
-an object of R | Unknown
-```
+The repository has no second proposition evaluator, proposition cache, connective hierarchy, or proposition handler graph.
 
-Evaluation uses this information in order:
+## Proposition handlers
 
-1. exact category placement or an active assumption;
-2. an exact cached result;
-3. the registered exact handlers at the proposition or query owner;
-4. `Unknown` when the available mathematics does not decide the application.
+Each mathematical predicate registers exact handlers through SymPy.
+A handler receives the applied predicate and the active SymPy assumptions.
+It returns `True`, `False`, or `None`.
 
-An exact positive property result invokes the same-object refinement specified in [property-refinement.md](property-refinement.md).
-An exact negative result and `Unknown` add no property placement.
+A handler can use:
 
-`Decision` is the result of proposition evaluation.
-It has no Boolean-algebra operations.
-Compose propositions before evaluation.
+- exact category placement;
+- owned mathematical data;
+- exact subquestions;
+- a mature computation engine;
+- a cited theorem with established hypotheses.
+
+Handler domains are exact and unambiguous.
+The predicate owner supplies their mathematical meaning.
+SymPy supplies their dispatch and evaluation.
+
+Typed-query evaluators remain at the query owner.
+Their private dispatch mechanism has no mathematical authority.
 
 ## Assumptions
 
-`assume(p)` records an owned proposition in the active Sage or SymPy assumption state.
-`retract(p)` withdraws a recorded proposition when it created no permanent category placement.
+SymPy `global_assumptions` owns the active proposition context.
+Public `assume(p)` adds the SymPy proposition `p` to that context.
+Public `retract(p)` removes it from that context.
 
-```python
-p = X.is_finite()
-assume(p)
-ask(p)
-```
+A positive property assumption also refines the same owned value.
+Removing the assumption does not reverse established category placement.
 
-A positive property assumption refines the same owned value into its property category.
-Category placement remains established after that refinement.
+An ambient hypothesis is a zero-argument SymPy predicate application.
+It uses the same assumption context and refines no value.
 
-An ambient mathematical hypothesis is a proposition of arity zero.
-It uses the same assumption state and refines no owned value.
-
-Theory code and computation engines do not use assumptions as evidence for results they construct.
-Interactive users use assumptions to add hypotheses to the current mathematical context.
-
-## Exact handlers
-
-Each proposition or query owner registers its exact handlers.
-The handler receives the complete application and either returns an exact result or declines to decide it.
-
-A handler can:
-
-- use category placement;
-- inspect owned mathematical data;
-- ask exact subquestions;
-- call a mature computation engine;
-- apply a cited theorem whose hypotheses are established.
-
-A proposition handler returns `True`, `False`, or `Unknown`.
-A query handler returns an object of its exact result category or `Unknown`.
-
-Handlers compose propositions before calling `ask()`.
-They do not fold proposition results through `all`, `any`, `and`, `or`, or `not`.
-
-An expensive exact handler can remain unevaluated until `ask()` reaches it.
-Its cache key is the owned application and the applicable assumption state.
-The handler has no side effect other than an exact cache entry and positive property refinement.
+Theory code and computation engines do not add assumptions for results they construct.
+They construct those results in the exact category their mathematics establishes.
 
 ## Category containment
 
 Every category owns a membership proposition for a supplied value.
-Property categories use their defining predicate as that proposition.
+A property category uses its defining predicate for that proposition.
 
-The Python expression
+The Python expression `X in C` is a forced two-valued protocol boundary.
+It calls `ask(C.membership_proposition(X))`.
+It converts only a decided result to `bool`.
 
-```python
-X in C
-```
-
-is a forced protocol boundary.
-It calls `ask(C.membership_proposition(X))` and converts only that final decision to `bool`.
-
-Use the proposition directly when the mathematical context must preserve `Unknown`:
-
-```python
-p = C.membership_proposition(X)
-assume(p)
-```
-
-Placement in `C` is a fast positive answer because construction or refinement already established membership.
+Placement in `C` is an exact positive result.
 Placement is not the definition of membership.
+
+Property containment is a declared subcategory monomorphism.
+It is not an implication registry between predicates.
+Proposition implication uses SymPy `Implies`.
 
 ## Twin-prime set
 
@@ -170,35 +158,32 @@ ask(X.is_finite())       # Unknown
 ask(X.cardinality())     # Unknown
 ```
 
-The first line uses the set-membership protocol for one supplied index.
-The other lines evaluate distinct global applications.
-
-See MathWorld's [Twin Primes](https://mathworld.wolfram.com/TwinPrimes.html) for the conjecture and the distinction from bounded-gap results.
+See MathWorld's [Twin Primes](https://mathworld.wolfram.com/TwinPrimes.html).
 
 ## Public paths
 
-| Expression | Result before evaluation | Evaluation result |
+| Expression | Unevaluated value | Result from `ask()` |
 | --- | --- | --- |
-| `C.P().membership_proposition(X)` | proposition | `True`, `False`, or `Unknown` |
-| `X.is_P()` | the same proposition | `True`, `False`, or `Unknown` |
-| `X.cardinality()` | applied query in `Cardinal()` | owned cardinal or `Unknown` |
-| `C.P()(X)` | owned value placed in `C.P()` | no evaluation |
-| named construction into `C.P()` | owned value placed in `C.P()` | no evaluation |
-| `X in C.P()` | Python protocol result | `bool` |
+| `C.P().membership_proposition(X)` | SymPy proposition | `True`, `False`, or `Unknown` |
+| `X.is_P()` | The same SymPy proposition | `True`, `False`, or `Unknown` |
+| `a == b` | Category-owned SymPy proposition | `True`, `False`, or `Unknown` |
+| `X.cardinality()` | Typed query with result category `Cardinal()` | Owned cardinal or `Unknown` |
+| `C.P()(X)` | Owned value placed in `C.P()` | Not applicable |
+| `X in C.P()` | Python `bool` | Not applicable |
 
 ## Acceptance conditions
 
-The evaluation architecture satisfies this specification when:
+The architecture satisfies this specification when:
 
-- every truth-valued mathematical method returns a proposition;
-- every partial value-valued method returns an applied query with an exact result category;
-- constructing an application performs no evaluation;
-- only `ask()` returns a decision or a query result;
-- propositions compose before evaluation;
-- owned equality is decided through `ask()`;
-- assumptions record owned propositions in the standard active context;
-- exact handlers live at the proposition or query owner;
-- positive property decisions use same-object refinement;
-- negative and unknown property decisions add no placement;
-- category containment asks the owned membership proposition at the Python protocol boundary;
-- an unavailable result remains `Unknown` and never becomes an object of the result category.
+- each truth-valued method returns a SymPy proposition;
+- each predicate meaning has one mathematical owner;
+- SymPy owns proposition application, composition, assumptions, dispatch, and evaluation;
+- private identity atoms expose no independent public value;
+- `ask()` maps only undecided SymPy results to Sage `Unknown`;
+- each partial value-valued method has one exact result category;
+- typed queries remain separate from SymPy Boolean algebra;
+- every equality operation uses its exact category-owned predicate;
+- positive property results refine the same value;
+- property containment uses declared monomorphisms;
+- category containment asks the same membership proposition;
+- no unavailable result becomes an object of its result category.

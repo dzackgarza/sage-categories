@@ -20,15 +20,19 @@ The private runtime assigns these responsibilities:
 | Categories, functors, natural transformations, opposites, category products, and installed universal operations | GAP `>=4.13`; CAP `2026.07-04`; ToolsForHomalg `2026.04-01`; ToolsForCategoricalTowers `2026.08-01`; CartesianCategories `2026.08-02`; MonoidalCategories `2026.08-02`; SubcategoriesForCAP `2026.07-01`; SliceCategories `2026.06-01`; FpCategories `2026.07-03`; FunctorCategories `2026.08-01` | CAP supplies operations installed on CAP categories. ToolsForCategoricalTowers supplies finite decorated-diagram limits and colimits. FunctorCategories requires an object-finite or finitely presented source. FpCategories supplies finite walking shapes and presentations. SliceCategories supplies slices. |
 | Pure-GAP categorical-tower compilation | CompilerForCAP `2026.07-01` | It compiles GAP CAP regions only. |
 | Finite diagram syntax and retained finite presentations | Julia 1.12.7; Catlab 0.17.6; GATlab 0.2.4; JuliaCall `>=0.9.35,<0.10` | Catlab free diagrams have finite object and morphism sets. Its limit and colimit wrappers retain finite diagrams, apexes, and legs. |
-| Proposition algebra, assumptions, and exact symbolic calculation | SymPy `>=1.14,<2` | Boolean expressions, assumptions, and exact symbolic handlers over private handles. |
-| Residual exact-handler dispatch | plum-dispatch | Private dispatch without conversions or promotions. |
+| Public proposition classes, Boolean algebra, assumptions, proposition dispatch, and exact symbolic calculation | SymPy `>=1.14,<2` | Public proposition expressions can contain private identity atoms for owned values. |
+| Typed-query dispatch | plum-dispatch | Private exact dispatch without conversions or promotions. |
 | Residual wrapper and descriptor behavior | wrapt | Private Python call and descriptor behavior. |
 | Private slotted frozen records | attrs `>=26.1,<27` | Private execution records only. |
 
 Each adapter lowers owned inputs and reconstructs the exact owned result.
-No dependency defines the public category graph, public operation, category containment, or semantic owner.
+SymPy proposition expressions are the sole public engine values.
+Their mathematical predicates remain category-owned.
+No dependency defines the category graph, category containment, or another semantic owner.
 
-The inspected dependencies cover only finite or presented functor-category cases; they do not supply arbitrary non-enumerative `Fun(I, C)`.
+The inspected dependencies evaluate only finite or presented functor-category cases.
+The owned theory can still construct an arbitrary symbolic `Fun(I, C)` and its universal presentations.
+Evaluation is available only when an exact engine adapter supports the supplied presentation.
 They also do not supply a strict pullback category of arbitrary functors or one Python--GAP--Julia bridge.
 CAP object-level pullbacks are not pullbacks in owned `Cat`.
 Mathlib and Agda Categories provide mature formal references for generic functor and comma categories, but no executable engine for this runtime.
@@ -109,12 +113,12 @@ explicitly supplies coherence between the relevant composites, the kernel emits 
 preferred path, it uses D56's declaration order. Debugging is opt-in: the same condition
 is never a warning or compilation failure.
 
-M1 requires only this diagnostic and the once-only C3 behavior. A later kernel extension
+The core compiler requires only this diagnostic and the once-only C3 behavior. A later kernel extension
 can consume ordinary owned 2-morphism data between the composite functors and suppress the
 diagnostic for that diamond. That future mechanism must reuse the natural-transformation
 machinery of `Fun`; it must not add a coherence certificate, proof record, route registry,
 or second functor declaration. No public hook spelling or exact 2-cell property is fixed in
-M1.
+the core compiler.
 
 ## Runtime categories and caches
 
@@ -135,7 +139,16 @@ They do not own mathematical equality or categorical structure.
 
 Use Sage `CategoryWithAxiom` and `_base_category_class_and_axiom` for private property-class binding.
 Use Sage `uncamelcase(identifier, "_")` when an axiom identifier needs snake case.
-The owned property category, containment proposition, inverse images, and subcategory monomorphism remain in `Cat`.
+The owned property category, predicate meaning, inverse images, and subcategory monomorphism remain in `Cat`.
+Its public predicate class, applied proposition, assumptions, and exact proposition dispatch use SymPy.
+Private identity atoms recover owned values inside exact SymPy handlers.
+Typed-query dispatch remains separate and private.
+
+When a category `C` is constructed or refined as an object of a structured category `D`, the runtime applies the categorical level shift from [functor.md](functor.md#the-categorical-level-shift).
+It refines `C` with the applicable `D.ObjectType` surface.
+It refines `C.ObjectType` with the applicable `D.ElementType` surface.
+The exact structured morphism category supplies any further surface.
+The runtime does not inspect a one-object diagram to perform this update.
 
 Reuse Sage functorial-construction category factories for private family binding and method-provider assembly.
 For example, Sage `CartesianProductsCategory` can supply private implementation classes.
@@ -177,9 +190,13 @@ The private runtime satisfies this specification when:
 - inherited methods run directly on the source value;
 - public functor application returns its separate owned image;
 - public functor actions are never invoked on partially initialized source values for state installation;
+- direct category-object placement applies the exact categorical level shift;
+- one-object diagrams cause no placement or inheritance;
 - the private Sage implementation graph remains distinct from Sage's mathematical category graph;
 - temporary runtime data has no public mathematical effect;
 - unrelated mathematical declarations with one spelling fail as a semantic collision;
 - theory modules import no private runtime type;
+- public engine values are limited to authorized SymPy proposition expressions;
+- their nested identity atoms expose no independent public API;
 - every fixed dependency owns only its assigned private responsibility;
 - each adapter reconstructs the exact owned mathematical result.

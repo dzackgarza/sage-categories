@@ -1,23 +1,36 @@
-"""Local declarations for a ``PartiallyOrderedSets()`` specimen.
+"""Local declarations for one ``Posets()`` design specimen.
 
-This design pseudocode constructs a poset from its relation subobject.
-It also supplies the local projection to ``Sets()``.
-See ``leaves.md`` and ``functor.md`` for the governing contracts.
+This pseudocode constructs a poset from its relation subobject.
+It also supplies the named projection to ``Sets()``.
 """
 
 from __future__ import annotations
 
+from sympy import ask
+from sympy.assumptions import Predicate
+from sympy.logic.boolalg import And, Boolean
 
-class PartiallyOrderedSetsCategory(PredicateSubcategory):
-    """The category of partially ordered sets and monotone maps."""
+
+class PartialOrderPredicate(Predicate):
+    """State the partial-order laws for an owned binary relation."""
+
+    name = "partial_order"
+
+
+partial_order = PartialOrderPredicate()
+
+
+class PosetsCategory(Category):
+    """Implement posets and monotone maps."""
 
     _base_category_class_and_axiom = (
         BinaryRelationsCategory,
         "PartialOrder",
     )
+    predicate = partial_order
 
     class ObjectType:
-        """Add only operations guaranteed by the partial-order laws."""
+        """Add operations guaranteed by the partial-order laws."""
 
         def order_relation(self) -> BinaryRelationSubobject:
             """Return the defining subobject of ``X * X``."""
@@ -26,10 +39,7 @@ class PartiallyOrderedSetsCategory(PredicateSubcategory):
     class ElementType:
         """Add order comparison to points of a poset."""
 
-        def __le__(
-            self,
-            other: "PartiallyOrderedSets().ElementType",
-        ) -> Proposition:
+        def __le__(self, other: Posets().ElementType) -> Boolean:
             """Return the proposition ``self <= other``."""
             assert other.parent() is self.parent()
             return self.parent().order_relation().contains_pair(self, other)
@@ -37,23 +47,19 @@ class PartiallyOrderedSetsCategory(PredicateSubcategory):
     class MorphismType:
         """Implement monotone maps."""
 
-    def _predicate(
+    def membership_proposition(
         self,
         relation: BinaryRelationSubobject,
-    ) -> Proposition:
-        """Return the conjunction of the three partial-order laws."""
-        return (
-            Reflexive(relation)
-            & Antisymmetric(relation)
-            & Transitive(relation)
-        )
+    ) -> Boolean:
+        """Apply the category-owned predicate without evaluation."""
+        return partial_order(owned_value_atom(relation))
 
     def from_rule(
         self,
         X: Sets().ObjectType,
         order_rule: OrderRule,
-    ) -> "PartiallyOrderedSets().ObjectType":
-        """Construct the relation subobject selected by ``order_rule`` first."""
+    ) -> Posets().ObjectType:
+        """Construct the relation subobject selected by ``order_rule``."""
         product = Sets().Products()((X, X))
         relation = Sets().Subobjects(product).from_predicate(order_rule)
         return self(relation)
@@ -62,16 +68,12 @@ class PartiallyOrderedSetsCategory(PredicateSubcategory):
         """Return the named functor from posets to their sets of points."""
         target_category = Sets()
 
-        def on_object(
-            P: "PartiallyOrderedSets().ObjectType",
-        ) -> Sets().ObjectType:
+        def on_object(P: Posets().ObjectType) -> Sets().ObjectType:
             product = P.order_relation().ambient_object()
             points = product.product_projection(0).codomain()
             return target_category(points)
 
-        def on_morphism(
-            f: "PartiallyOrderedSets().MorphismType",
-        ) -> Sets().MorphismType:
+        def on_morphism(f: Posets().MorphismType) -> Sets().MorphismType:
             source = on_object(f.domain())
             target = on_object(f.codomain())
             return Mor(target_category)(source, target)(lambda x: f(x))
@@ -81,3 +83,18 @@ class PartiallyOrderedSetsCategory(PredicateSubcategory):
     def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
         """Select the set projection for inherited set operations."""
         return (self.sets_projection(),)
+
+
+@partial_order.register(OwnedValueAtom)
+def decide_partial_order(
+    relation: OwnedValueAtom,
+    assumptions: Boolean,
+) -> bool | None:
+    """Ask exact handlers for the three partial-order laws."""
+    owned_relation = relation.owned_value()
+    result = And(
+        Reflexive(owned_relation),
+        Antisymmetric(owned_relation),
+        Transitive(owned_relation),
+    )
+    return ask(result, assumptions)

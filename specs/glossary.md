@@ -12,7 +12,7 @@ Do not record retired names in current documentation.
 | --- | --- |
 | `C.ElementType` | The shared implementation and API for elements of objects of `C`. |
 | Point of a category `X` | A functor `* -> X`. This is an actual object of `X`; a set uses its discrete, 0-truncated category. |
-| `Cat().Point(X)` | The one-object category whose distinguished object is `X`. It is not a point `* -> X`. |
+| `Cat().Point(X)` | The one-object category whose distinguished object is `X`. It is not a point `* -> X`, and its functors cause no object placement. |
 | Point of `C in Cat()` | A functor `* -> C`. This is an actual object of `C` and a `Cat().ElementType` value. |
 | Generalized element of `X` | A functor `T -> X`. |
 | Morphism of `C` | An object of `Mor(C)`. Thus `C.MorphismType = Mor(C).ObjectType`. |
@@ -28,8 +28,17 @@ Do not record retired names in current documentation.
 | Classes specified by a category `C` | The category specifies `C.ObjectType`, `C.ElementType`, and `C.MorphismType` directly. The kernel constructs them dynamically from structure functors. |
 | Public functor image | The image constructed by the named action `F.on_object(x)` or `F.on_morphism(f)`. |
 | Inherited execution | A structure-functor target class is in the source class MRO. Its method runs on the initialized source instance. |
-| Predicate | A proposition-valued operation. Its application is an applied proposition, and `ask()` returns `True`, `False`, or `Unknown`. |
-| Query | An operation with an exact non-Boolean result category that can remain unevaluated. Its application is an applied query, and `ask()` returns an owned result or `Unknown`. |
+| Mathematical predicate | A proposition-valued operation owned by its category, property category, or equality operation. |
+| Public SymPy predicate | The SymPy `Predicate` subclass that represents one mathematical predicate. SymPy owns its application and evaluation machinery. |
+| Applied proposition | A SymPy `AppliedPredicate` or Boolean expression. `ask()` returns `True`, `False`, or Sage `Unknown`. |
+| Typed query | A repository-owned operation with an exact non-Boolean result category. Its application remains unevaluated until `ask()` returns an owned result or `Unknown`. |
+| Owned value | A public mathematical value constructed by its exact owning category. |
+| Engine representation | A private runtime value used to compute with an owned value. It is not public mathematics. |
+| Mathematical owner | The category, functor, property, query, or universal construction that defines one fact or operation. |
+| Implementation-class owner | The category that declares the local `ObjectType`, `ElementType`, or `MorphismType` method provider. |
+| Runtime substrate | The private compiler, dispatch, refinement, assumption, and computation machinery that executes the mathematical tower. |
+| Foundational leaf | A production category required by later layers of the mathematical tower. |
+| `Posets()` | The category of partially ordered sets and monotone maps. This is the public category spelling. |
 | Private Sage implementation category | One node of the private Sage implementation graph that compiles one of `C.ObjectType`, `C.ElementType`, or `C.MorphismType`. It states no relation in the owned `Cat` graph. |
 
 The point and generalized-element distinction follows the nLab entry [generalized element](https://ncatlab.org/nlab/show/generalized+element), including its “Global elements” section.

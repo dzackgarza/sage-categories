@@ -4,7 +4,20 @@
 It uses explicit categories, functors, and universal constructions as its reuse model.
 Sage and other computation systems remain private engines.
 
-The public API is not stable. The current work completes the foundation before any production leaf.
+The public API is not stable. The active plan closes the categorical core before any production leaf.
+
+The system is one mathematical tower over one private runtime substrate:
+
+```text
+Cat and generic constructions
+        -> properties and queries
+        -> sets and order
+        -> algebra
+        -> research categories
+```
+
+The active M0 through M6 plan closes the categorical core.
+The production foundation follows in dependency order after that plan.
 
 ## Public import
 
@@ -19,6 +32,7 @@ Public operations on owned inputs return owned mathematical values.
 
 | Subject | Owner |
 | --- | --- |
+| Complete system shape, dependency order, and agent context | [`specs/system.md`](specs/system.md) |
 | Mathematical decisions and supersession | [`specs/decisions.md`](specs/decisions.md) |
 | `Cat`, `Mor`, `Fun`, functor actions, and selected structure functors | [`specs/functor.md`](specs/functor.md) |
 | Private Sage compiler and runtime | [`specs/resolution.md`](specs/resolution.md) |

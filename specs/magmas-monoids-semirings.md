@@ -372,7 +372,8 @@ Longer routes to `C` arise through the projections of `C_x`.
 | `Semirings(C)` | Distributivity, absorption, and both selected monoid structures. |
 
 Inherited capabilities come from the listed structure functors.
-Each defining predicate returns its owned proposition.
+Each algebraic category owns its predicate meanings.
+Their public representations are SymPy propositions under [Propositions and `ask()`](undecidable-properties.md).
 
 ## Laws in the supplied ambient
 

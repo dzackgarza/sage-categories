@@ -1,14 +1,26 @@
-"""Finite-set specimen for the property architecture.
+"""Finite-set design specimen for the public SymPy proposition contract.
 
-This design pseudocode shows the local ``FiniteSets`` declarations and handler.
-See ``property-refinement.md`` and ``undecidable-properties.md`` for their contracts.
+This pseudocode shows only the declarations owned by ``Sets().Finite()``.
+The private atom adapter and class compiler belong to the runtime substrate.
 """
 
 from __future__ import annotations
 
+from sympy.assumptions import Predicate
+from sympy.logic.boolalg import Boolean
+
+
+class FinitePredicate(Predicate):
+    """State that an owned set has finite cardinality."""
+
+    name = "finite"
+
+
+finite = FinitePredicate()
+
 
 class SetsCategory(Category):
-    Finite = Axiom()
+    Finite = Axiom(predicate=finite)
 
     class ObjectType:
         """Implement sets."""
@@ -20,8 +32,8 @@ class SetsCategory(Category):
         """Implement total set maps."""
 
 
-class FiniteSets(PredicateSubcategory):
-    """The full property subcategory of finite sets."""
+class FiniteSetsCategory(Category):
+    """Implement the full property subcategory of finite sets."""
 
     _base_category_class_and_axiom = (SetsCategory, "Finite")
 
@@ -29,31 +41,27 @@ class FiniteSets(PredicateSubcategory):
         """Inherit the set surface under established finiteness."""
 
     class ElementType:
-        """Supply no finite-set element operation."""
+        """Add no finite-set element operation."""
 
     class MorphismType:
-        """Supply no finite-set morphism operation."""
+        """Add no finite-set morphism operation."""
 
-    def _predicate(
-        self,
-        X: Sets().ObjectType,
-    ) -> Proposition:
-        """Return the proposition that ``X`` has finite cardinality."""
-        return X.cardinality() < ALEPH_ZERO
+    def membership_proposition(self, X: Sets().ObjectType) -> Boolean:
+        """Apply the category-owned predicate without evaluation."""
+        return finite(owned_value_atom(X))
 
 
-def decide_finiteness(X: Sets().ObjectType) -> Decision:
-    """Return an exact decision for supported private-engine cases."""
-    match X:
+@finite.register(OwnedValueAtom)
+def decide_finiteness(
+    X: OwnedValueAtom,
+    assumptions: Boolean,
+) -> bool | None:
+    """Decide finiteness for exact supported owned representations."""
+    value = X.owned_value()
+    match value:
         case ExplicitFiniteSet():
             return True
         case ExplicitInfiniteSet():
             return False
         case _:
-            return Unknown
-
-
-FiniteSets().register_exact_handler(
-    Sets().ObjectType,
-    decide_finiteness,
-)
+            return None

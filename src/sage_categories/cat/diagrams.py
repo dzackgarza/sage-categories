@@ -40,10 +40,12 @@ from sage.misc.cachefunc import cached_function
 from sage.structure.coerce_dict import MonoDict, TripleDict
 
 from sage_categories.cat.category import Category
-from sage_categories.cat.cones import LimitConesCategory, cocone, cocone_apex, cocones, cone, cone_apex, cones
+from sage_categories.cat.cones import LimitConesCategory, cocone, cocone_apex, cone, cone_apex, cones
 from sage_categories.cat.declarations import Sets
+from sage_categories.cat.dual_functor_categories import dual_functor_category_equivalence
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import endpoints
+from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.cat.shapes import Discrete, DiscreteCategory, is_discrete
 from sage_categories.cat.predicates import Decision
 from sage_categories.cat.predicates import ask
@@ -341,49 +343,49 @@ def pointwise_limit(diagram: Functor) -> CategoryOfCategories.ElementType:
 
 
 def pointwise_colimit(diagram: Functor) -> CategoryOfCategories.ElementType:
-    """``Fun(I, C).Colimits(J)(D)``: the functor ``i |-> colim_J (ev_i * D)`` with the pointwise cocone and mediator."""
+    """Derive a pointwise colimit from the pointwise limit in the dual functor category."""
     from sage_categories.cat.constructions import constructed_data
 
     functors, shape = diagram.codomain(), diagram.domain()
     assert functors is not Fun, f"{diagram!r} is not a diagram in a fixed-endpoint functor category"
-    target = functors.codomain()
-    colimits = target.Colimits(shape)
-    composites: MonoDict = MonoDict()
-
-    def at(vertex: CategoryOfCategories.ElementType) -> LimitConesCategory.ObjectType:
-        if vertex not in composites:
-            presentation = constructed_data(colimits, functors.evaluation(vertex) * diagram)
-            assert isinstance(presentation, LimitConesCategory.ObjectType)
-            composites[vertex] = presentation
-        return composites[vertex]
-
-    def on_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-        source, destination = at(morphism.domain()).diagram().op(), at(morphism.codomain()).diagram().op()
-        transformation = Fun(shape, target).morphism_category(1)(source, destination)(lambda vertex: functors.diagram(diagram.on_object(vertex)).on_morphism(morphism))
-        return colimits.colimit_functor().on_morphism(transformation)
-
-    apex = functors(lambda vertex: at(vertex).apex(), on_morphism)
-    injections: MonoDict = MonoDict()
+    duality = dual_functor_category_equivalence(functors.domain(), functors.codomain())
+    to_dual = duality.forward().op()
+    transported = to_dual * diagram.op()
+    assert isinstance(transported, Functor)
+    dual_apex = pointwise_limit(transported)
+    dual_family = Fun.Products() if is_discrete(transported.domain()) else Fun.Limits(transported.domain())
+    presentation = constructed_data(dual_family, transported)
+    assert isinstance(presentation, LimitConesCategory.ObjectType)
+    inverse = duality.inverse()
+    dual_functors = to_dual.codomain()
+    apex = inverse.on_object(dual_functors.op()(dual_apex))
 
     def injection(vertex: CategoryOfCategories.ElementType) -> NaturalTransformation:
-        if vertex not in injections:
-            injections[vertex] = functors.morphism_category(1)(diagram.on_object(vertex), apex)(lambda index_object: at(index_object).leg(vertex).op())
-        return injections[vertex]
+        dual_leg = presentation.leg(transported.domain()(vertex))
+        injection = inverse.on_morphism(opposite_morphism(dual_leg))
+        assert isinstance(injection, NaturalTransformation)
+        return injection
 
     def mediator(candidate_cocone: NaturalTransformation) -> NaturalTransformation:
         destination = cocone_apex(candidate_cocone)
-        return functors.morphism_category(1)(apex, destination)(
-            lambda index_object: at(index_object).lift(
-                cocones(at(index_object).diagram().op())(
-                    cocone(
-                        at(index_object).diagram().op(),
-                        destination.on_object(index_object),
-                        lambda vertex: candidate_cocone.component(vertex).component(index_object),
-                    ).op()
-                )
-            ).op()
+        opposite_functors = functors.op()
+        opposite_destination = opposite_functors(destination)
+        dual_destination = to_dual.on_object(opposite_destination)
+        dual_candidate = cone(
+            transported,
+            dual_destination,
+            lambda vertex: to_dual.on_morphism(candidate_cocone.op().component(vertex)),
         )
+        dual_mediator = presentation.lift(cones(transported)(dual_candidate))
+        mediator = inverse.on_morphism(opposite_morphism(dual_mediator))
+        assert isinstance(mediator, NaturalTransformation)
+        return mediator
 
     family = Fun.Coproducts() if is_discrete(shape) else Fun.Colimits(shape)
     lowered = family.lowered(diagram)
-    return family.with_universal_data(lowered, apex, cocone(lowered, apex, injection), mediator)
+    return family.with_universal_data(
+        lowered,
+        apex,
+        cocone(lowered, apex, injection),
+        mediator,
+    )

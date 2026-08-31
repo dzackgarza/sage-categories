@@ -13,7 +13,6 @@ Cat and generic constructions
         -> properties and queries
         -> sets and order
         -> algebra
-        -> research categories
 ```
 
 The active M0 through M6 plan closes the categorical core.
@@ -26,7 +25,7 @@ from sage_categories.all import *
 ```
 
 This import selects the package-owned mathematical universe.
-Public operations on owned inputs return owned mathematical values.
+Public operations return owned mathematical values or authorized SymPy proposition expressions.
 
 ## Documentation map
 

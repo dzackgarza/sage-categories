@@ -25,7 +25,7 @@ The private runtime assigns these responsibilities:
 | Residual wrapper and descriptor behavior | wrapt | Private Python call and descriptor behavior. |
 | Private slotted frozen records | attrs `>=26.1,<27` | Private execution records only. |
 
-Each adapter lowers owned inputs and reconstructs the exact owned result.
+Each category-specific computation adapter lowers owned inputs and reconstructs the exact owned result.
 SymPy proposition expressions are the sole public engine values.
 Their mathematical predicates remain category-owned.
 No dependency defines the category graph, category containment, or another semantic owner.
@@ -199,4 +199,5 @@ The private runtime satisfies this specification when:
 - public engine values are limited to authorized SymPy proposition expressions;
 - their nested identity atoms expose no independent public API;
 - every fixed dependency owns only its assigned private responsibility;
-- each adapter reconstructs the exact owned mathematical result.
+- each category-specific computation adapter reconstructs the exact owned mathematical result;
+- proposition construction and evaluation return the authorized SymPy and Sage results.

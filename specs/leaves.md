@@ -248,7 +248,8 @@ A leaf satisfies this specification when:
 - `structure_functors()` returns only the immediate named functors that supply inheritance;
 - the leaf reuses functors and universal data retained by its defining constructions;
 - every public signature uses exact mathematical types;
-- private computation returns an owned mathematical result;
+- each category-specific computation adapter reconstructs an owned mathematical result;
+- proposition methods return the authorized SymPy expressions and `ask()` results;
 - property methods and typed queries follow their canonical specifications;
 - the leaf imports no kernel internal;
 - the caller selects no computation engine;

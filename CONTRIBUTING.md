@@ -10,7 +10,7 @@ Do not reuse a retired identifier.
 
 | ID | Policy |
 | --- | --- |
-| `POL-SCOPE-001` | Build the complete tower in the dependency order from `specs/system.md`. Close M0 through M6 before P0 begins. Then follow P0 through P9. |
+| `POL-SCOPE-001` | Build the complete tower in the dependency order from `specs/system.md`. Close M0 through M6 before P1 begins. Then follow P1 through P7. |
 | `POL-SCOPE-002` | Execute only the active phase and its accepted prerequisites. Keep production leaves blocked until R6 passes. |
 | `POL-SCOPE-003` | Implement the complete morphism-category family: `Mor(n, C)`, its fixed-endpoint subcategories `Mor(C)(A, B)`, its endomorphism, monomorphism, epimorphism, isomorphism, and automorphism property subcategories, `Fun([1], C)`, and the slice, coslice, subobject, and superobject categories. |
 | `POL-SCOPE-004` | Make object, element, and morphism inheritance work before adding theories that depend on it. |
@@ -1008,7 +1008,7 @@ It remains a replaceable algorithm, not the representation or default structural
 | `POL-DOC-001` | Use `CONTRIBUTING.md` for general contribution principles and recurring patterns. State the general rule first and use concrete cases only as grounding examples. |
 | `POL-DOC-002` | Add a specific observed antipattern to `CONTRIBUTING.md` only when its recurrence or severity makes a dedicated indexed warning useful. Keep its governing general principle explicit. |
 | `POL-DOC-003` | Make each specification a forward-facing inventory of the desired mathematical capabilities and public API. |
-| `POL-DOC-004` | Keep private compiler design in `specs/resolution.md`. Other specifications state the public mathematical consequence and link to that private design only when needed. Keep backend types and names outside public contracts. |
+| `POL-DOC-004` | Keep private compiler design in `specs/resolution.md`. Other specifications state the public mathematical consequence and link to that private design only when needed. Keep private computation types and names outside public contracts. Public SymPy proposition types follow `POL-SCOPE-016`. |
 | `POL-DOC-005` | Make each category specification declare its complete `structure_functors()` tuple. Use the exact functor retained by its defining construction, or construct it through `Fun(self, Target)`. Each entry is an ordinary functor. The tuple is the compiler input for the immediate edges of the new owned implementation graph and determines inherited structure; it does not describe or modify Sage's `super_categories()` graph. |
 | `POL-DOC-006` | State which capabilities the specified category owns. State inherited capabilities by naming their owning category and the functor path that supplies them. |
 | `POL-DOC-007` | Keep one authoritative catalogue for each public method surface. Reference that catalogue from dependent specifications instead of copying it. |

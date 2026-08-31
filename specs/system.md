@@ -36,9 +36,6 @@ sets, cardinals, ordinals, and ordered sets
     |
     v
 internal algebraic objects, rings, modules, and algebras
-    |
-    v
-formed modules, lattices, and research categories
 ```
 
 The private runtime makes this tower executable.
@@ -56,13 +53,15 @@ It is not a mathematical layer in the tower.
 | T5 | Cardinals, ordinals, and ordered sets | [cardinality.md](cardinality.md), [ordinals.md](ordinals.md), and [ordered-sets.md](ordered-sets.md) |
 | T6 | Magmas, monoids, groups, semirings, and rings in supplied ambient categories | [magmas-monoids-semirings.md](magmas-monoids-semirings.md) and [rings.md](rings.md) |
 | T7 | Modules and algebras in supplied ambient categories | [modules.md](modules.md) and [algebras.md](algebras.md) |
-| T8 | Formed modules, lattices, and research categories | Their future category specifications |
 
 Each layer consumes named objects and functors from lower layers.
 It adds only its new mathematical structure.
 
 Propositions and typed queries are transverse to the tower.
 Each layer can define them at its own mathematical owner.
+
+[Separating families and categorical generators](separating-families-and-categorical-generators.md) owns a cross-layer construction pattern.
+Each domain phase instantiates that pattern after its category and `Sets()` exist.
 
 ## Runtime substrate
 
@@ -105,6 +104,9 @@ Every public result is an owned value or an authorized public proposition.
 | Positive property refinement | The property category | The kernel and Sage |
 | Diagram | `Fun(I, C)` | Owned diagram value |
 | Universal presentation | Its cone or cocone category | Owned presentation value |
+| Restricted Yoneda functor | Its supplied probe family | Owned functor into a set-valued functor category |
+| Evaluation epimorphism | Its probe family and target object | Owned coproduct presentation and morphism |
+| Finite presentation | Its generator and relation objects | Owned coequalizer presentation |
 | Apex | The ambient category `C` | Owned object of `C` |
 | Engine representation | No mathematical owner | Private adapter |
 | Generated stub | No semantic authority | Derived static projection |
@@ -153,15 +155,14 @@ Semirings(Cat()) -> Cardinal() -> Sets()
 The implementation cuts this cycle without changing its mathematics:
 
 1. Complete `Cat`, `Mor`, `Fun`, properties, and generic constructions.
-2. Define the internal algebraic-object schema required by `Semirings(Cat())`.
-3. Define minimal `Sets()` without cardinality integration.
+2. Define minimal `Sets()` without cardinality integration.
+3. Define the internal algebraic-object schema with `Cardinal()` as its first consumer.
 4. Define `Ordinals()`, `Cardinal()`, and their order categories.
 5. Attach cardinality queries and cardinal property categories to `Sets()`.
-6. Complete the remaining `Sets()` construction surface.
+6. Complete the specified `Sets()` construction surface.
 7. Add ordered sets.
 8. Add general algebraic families.
 9. Add modules and algebras.
-10. Add formed modules, lattices, and research categories.
 
 The active vault DAG records these stages and their acceptance order.
 
@@ -244,3 +245,4 @@ It adds no parallel status document, inheritance registry, proposition system, o
 A public runtime mechanism enters with its first real mathematical consumer.
 A specification can define its contract earlier.
 Acceptance uses objects and functors already owned by the active tower layer.
+Each executing phase names that consumer, its exact owner, and its complete functor path.

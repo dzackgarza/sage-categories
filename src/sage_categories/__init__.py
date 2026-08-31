@@ -24,8 +24,8 @@ from sage_categories.cat.declarations import (
 from sage_categories.cat.functors import Cat, Fun
 from sage_categories.cat.morphisms import Mor
 from sage_categories.cat.shapes import Discrete, Thin
-from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
-from sage_categories.kernel.predicates import Predicate, ask, assume, retract
+from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
+from sage_categories.cat.predicates import Predicate, ask, assume, retract
 
 __all__ = [
     "NN",

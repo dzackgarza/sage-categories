@@ -28,10 +28,10 @@ from sage_categories.sets import maps as _set_maps
 from sage_categories.sets import objects as _set_objects
 from sage_categories.cat.category import Category
 from sage_categories.cat.properties import PropertySubcategory
-from sage_categories.kernel.decisions import Decision, Unknown
-from sage_categories.kernel.predicates import ask, disjunction, negation
+from sage_categories.cat.predicates import Decision, Unknown
+from sage_categories.cat.predicates import ask, disjunction, negation
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.decisions import UnknownClass
+from sage_categories.cat.predicates import UnknownClass
 from sage_categories.sets.elements import Datum, SetElementData, SetElementDeclaration, SetPointData, points_equal
 from sage_categories.sets.maps import (
     Rule,

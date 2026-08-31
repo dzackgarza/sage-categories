@@ -16,8 +16,8 @@ from sage.rings.integer import Integer
 from sage.structure.coerce_dict import MonoDict
 
 import sage_categories.posets.category as _posets
-from sage_categories.kernel.decisions import Unknown
-from sage_categories.kernel.predicates import ask, disjunction
+from sage_categories.cat.predicates import Unknown
+from sage_categories.cat.predicates import ask, disjunction
 from sage_categories.posets.category import Poset, PosetElement
 from sage_categories.sets.category import Sets
 from sage_categories.sets.elements import Datum

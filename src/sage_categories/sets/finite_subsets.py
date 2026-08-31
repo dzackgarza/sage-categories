@@ -54,8 +54,8 @@ from sage.structure.coerce_dict import MonoDict
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
 from sage_categories.cat.properties import PropertySubcategory
-from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
-from sage_categories.kernel.predicates import ask, conjunction, established
+from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
+from sage_categories.cat.predicates import ask, conjunction, established
 from sage_categories.kernel.refinement import refine
 from sage_categories.sets.cardinals import Cardinal, CardinalObject
 from sage_categories.sets.elements import Datum, SetElement

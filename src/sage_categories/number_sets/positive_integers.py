@@ -14,8 +14,8 @@ from sage.rings.integer import Integer
 
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor
-from sage_categories.kernel.decisions import Decision, Unknown
-from sage_categories.kernel.predicates import Predicate
+from sage_categories.cat.predicates import Decision, Unknown
+from sage_categories.cat.predicates import Predicate
 from sage_categories.kernel.refinement import refine
 from sage_categories.number_sets.integers import _is_integer
 from sage_categories.sets.cardinals import aleph0

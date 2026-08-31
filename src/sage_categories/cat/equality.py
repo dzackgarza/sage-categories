@@ -12,8 +12,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from sage_categories.kernel.decisions import Decision, Unknown
-from sage_categories.kernel.predicates import EqualityPredicate
+from sage_categories.cat.predicates import Decision, Unknown
+from sage_categories.cat.predicates import EqualityPredicate
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories

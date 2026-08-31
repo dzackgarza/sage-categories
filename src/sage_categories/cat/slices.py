@@ -31,8 +31,8 @@ from sage_categories.cat.diagrams import cospan_diagram, sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.properties import FullSubcategory
-from sage_categories.kernel.decisions import Decision, Unknown
-from sage_categories.kernel.predicates import Predicate, Proposition, ask
+from sage_categories.cat.predicates import Decision, Unknown
+from sage_categories.cat.predicates import Predicate, Proposition, ask
 from sage_categories.kernel.refinement import is_placed, refine
 
 if TYPE_CHECKING:

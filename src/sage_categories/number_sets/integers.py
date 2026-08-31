@@ -14,7 +14,7 @@ from sage.rings.qqbar import QQbar as _algebraic_numbers
 
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor
-from sage_categories.kernel.decisions import Decision, Unknown
+from sage_categories.cat.predicates import Decision, Unknown
 from sage_categories.kernel.refinement import refine
 from sage_categories.sets.cardinals import aleph0
 from sage_categories.sets.category import Sets

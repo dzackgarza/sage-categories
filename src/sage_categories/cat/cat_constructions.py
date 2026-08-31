@@ -56,8 +56,8 @@ from sage_categories.cat.diagrams import sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.shapes import Discrete, DiscreteCategory
-from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
-from sage_categories.kernel.predicates import Predicate, Proposition, ask, conjunction
+from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
+from sage_categories.cat.predicates import Predicate, Proposition, ask, conjunction
 from sage_categories.kernel.refinement import is_placed
 
 if TYPE_CHECKING:

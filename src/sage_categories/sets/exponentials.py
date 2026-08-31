@@ -18,8 +18,8 @@ from sage.misc.cachefunc import cached_function
 import sage_categories.sets.category as _sets
 from sage_categories.cat.constructions import cone
 from sage_categories.cat.diagrams import sequence_position
-from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
-from sage_categories.kernel.predicates import ask
+from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
+from sage_categories.cat.predicates import ask
 from sage_categories.sets.elements import Datum, SetElement
 from sage_categories.sets.objects import SetObject
 

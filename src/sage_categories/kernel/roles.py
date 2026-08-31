@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from sage_categories.cat.category import Category
     from sage_categories.cat.functors import Functor
     from sage_categories.kernel.functor_cache import FunctorImageCache
-    from sage_categories.kernel.predicates import AppliedPredicate, Proposition
+    from sage_categories.cat.predicates import AppliedPredicate, Proposition
 
 __all__ = [
     "CategoryPoint",

@@ -36,8 +36,8 @@ from sage_categories.cat.diagrams import sequence_position
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.shapes import Discrete
-from sage_categories.kernel.decisions import Decision, Unknown
-from sage_categories.kernel.predicates import AppliedPredicate, ask
+from sage_categories.cat.predicates import Decision, Unknown
+from sage_categories.cat.predicates import AppliedPredicate, ask
 from sage_categories.kernel.refinement import refine
 from sage_categories.posets import _finite_poset_sage as engine
 from sage_categories.posets.category import Poset, PosetElement, PosetMorphismData, PosetObjectData

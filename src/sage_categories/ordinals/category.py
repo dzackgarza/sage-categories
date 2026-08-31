@@ -46,8 +46,8 @@ from typing import TYPE_CHECKING, Any
 from sage.rings.integer_ring import ZZ as _integer_ring
 
 from sage_categories.cat.category import Category
-from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
-from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask, conjunction
+from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
+from sage_categories.cat.predicates import AppliedPredicate, Predicate, ask, conjunction
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories

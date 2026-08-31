@@ -39,8 +39,8 @@ from sage_categories.cat.category import Assignment, Category, OnMorphism, OnObj
 from sage_categories.cat.declarations import Groupoids
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategory
-from sage_categories.kernel.decisions import Decision
-from sage_categories.kernel.predicates import Proposition, ask
+from sage_categories.cat.predicates import Decision
+from sage_categories.cat.predicates import Proposition, ask
 from sage_categories.kernel.refinement import refine
 
 if TYPE_CHECKING:

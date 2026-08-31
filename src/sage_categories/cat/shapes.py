@@ -37,8 +37,8 @@ from sage_categories.cat.category import Category, member
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Cat, Fun, Functor
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
-from sage_categories.kernel.predicates import Predicate, Proposition, ask
+from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
+from sage_categories.cat.predicates import Predicate, Proposition, ask
 from sage_categories.kernel.refinement import is_placed
 
 if TYPE_CHECKING:

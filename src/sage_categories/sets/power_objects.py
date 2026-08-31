@@ -32,7 +32,7 @@ from sage.misc.cachefunc import cached_method
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
 from sage_categories.cat.properties import PropertySubcategory
-from sage_categories.kernel.decisions import Decision
+from sage_categories.cat.predicates import Decision
 from sage_categories.kernel.refinement import refine
 from sage_categories.sets.elements import Datum, SetElement
 from sage_categories.sets.exponentials import Function, function_set

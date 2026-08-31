@@ -23,8 +23,8 @@ from typing import TYPE_CHECKING
 
 from sage_categories.cat.category import Category
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.kernel.decisions import Decision, Unknown
-from sage_categories.kernel.predicates import Predicate, Proposition
+from sage_categories.cat.predicates import Decision, Unknown
+from sage_categories.cat.predicates import Predicate, Proposition
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories

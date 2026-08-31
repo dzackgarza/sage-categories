@@ -55,8 +55,8 @@ from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.properties import FullSubcategory
 from sage_categories.cat.shapes import is_discrete
-from sage_categories.kernel.decisions import Decision, Unknown
-from sage_categories.kernel.predicates import Predicate, Proposition
+from sage_categories.cat.predicates import Decision, Unknown
+from sage_categories.cat.predicates import Predicate, Proposition
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
 
 if TYPE_CHECKING:

@@ -33,8 +33,8 @@ from typing import TYPE_CHECKING, Any
 
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
-from sage_categories.kernel.decisions import Decision, Unknown
-from sage_categories.kernel.predicates import ask, conjunction, disjunction, negation
+from sage_categories.cat.predicates import Decision, Unknown
+from sage_categories.cat.predicates import ask, conjunction, disjunction, negation
 from sage_categories.sets.elements import Datum
 
 if TYPE_CHECKING:

@@ -12,8 +12,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 import sage_categories.sets.category as _sets
-from sage_categories.kernel.decisions import Decision, Unknown
-from sage_categories.kernel.predicates import ask
+from sage_categories.cat.predicates import Decision, Unknown
+from sage_categories.cat.predicates import ask
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories

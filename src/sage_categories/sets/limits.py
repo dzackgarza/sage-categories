@@ -47,8 +47,8 @@ import sage_categories.sets.category as _sets
 from sage_categories.cat.constructions import cocone, cocone_apex, cone, cone_apex
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.shapes import Discrete, omega
-from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
-from sage_categories.kernel.predicates import ask, conjunction, established
+from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
+from sage_categories.cat.predicates import ask, conjunction, established
 from sage_categories.sets.elements import Datum
 from sage_categories.sets.objects import SetObject
 

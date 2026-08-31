@@ -36,8 +36,8 @@ from sage.structure.coerce_dict import TripleDict
 from sage.misc.cachefunc import cached_method
 
 from sage_categories.cat.category import Category
-from sage_categories.kernel.decisions import Decision
-from sage_categories.kernel.predicates import Axiom, PropertyPredicate, Proposition
+from sage_categories.cat.predicates import Decision
+from sage_categories.cat.predicates import Axiom, PropertyPredicate, Proposition
 from sage_categories.kernel.refinement import is_subcategory, refine
 
 if TYPE_CHECKING:

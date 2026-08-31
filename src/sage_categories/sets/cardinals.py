@@ -103,8 +103,8 @@ from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.properties import PropertySubcategory
-from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
-from sage_categories.kernel.predicates import AppliedPredicate, Predicate, ask, assume, conjunction, disjunction, established, negation
+from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
+from sage_categories.cat.predicates import AppliedPredicate, Predicate, ask, assume, conjunction, disjunction, established, negation
 from sage_categories.ordinals.category import OrdinalObject, Ordinals, bind_cardinals, is_natural_number
 
 if TYPE_CHECKING:

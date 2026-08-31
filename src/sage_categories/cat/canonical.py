@@ -34,8 +34,8 @@ from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.cat.category import Category
 from sage_categories.cat.declarations import Sets
-from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
-from sage_categories.kernel.predicates import ask
+from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
+from sage_categories.cat.predicates import ask
 from sage_categories.kernel.refinement import refine
 
 if TYPE_CHECKING:

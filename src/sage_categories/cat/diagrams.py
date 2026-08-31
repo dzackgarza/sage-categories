@@ -44,8 +44,8 @@ from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import endpoints
 from sage_categories.cat.shapes import Discrete, DiscreteCategory, is_discrete
-from sage_categories.kernel.decisions import Decision
-from sage_categories.kernel.predicates import ask
+from sage_categories.cat.predicates import Decision
+from sage_categories.cat.predicates import ask
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories

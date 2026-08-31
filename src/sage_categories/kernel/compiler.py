@@ -394,15 +394,19 @@ def runtime_semantic_bases(
     if current is None:
         return None
     declaration = current.category.local_role_class(current.role)
-    declarations = [declaration]
-    result: list[type[CategoryPoint]] = [declaration]
-    for source in _linearized_nodes(current):
-        source_declaration = source.category.local_role_class(source.role)
-        if any(source_declaration is known for known in declarations):
-            continue
-        declarations.append(source_declaration)
-        result.append(_runtime(source).owner)
-    result.append(kernel_base(current.role))
+    result: list[type[CategoryPoint]] = [
+        declaration,
+        *(
+            _runtime(source).owner
+            for source in _linearized_nodes(current)
+            if not same_node(source, current)
+        ),
+    ]
+    stable_role = kernel_base(current.role)
+    if not issubclass(stable_role, runtime_class) and not any(
+        issubclass(base, stable_role) for base in result
+    ):
+        result.append(stable_role)
     return tuple(result)
 
 

@@ -18,6 +18,7 @@ from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Proposition
+from sage_categories.kernel.roles import Role
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -67,6 +68,12 @@ class OppositeCategory[**MorphismData, **TwoMorphismData](
     def original(self) -> Category[MorphismData, TwoMorphismData]:
         """The category whose opposite this is."""
         return self._original
+
+    def role_source(self, role: Role) -> tuple[Category, Role]:
+        """Share the object implementation node with the original category."""
+        if role is Role.OBJECT:
+            return self._original.role_source(role)
+        return super().role_source(role)
 
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         return self._original.membership_proposition(candidate)

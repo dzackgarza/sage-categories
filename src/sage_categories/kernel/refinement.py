@@ -42,6 +42,23 @@ def _reached_placements(start: compiler.Node) -> Iterator[compiler.Node]:
             frontier.append(target)
 
 
+def _reached_subcategories(start: Category) -> Iterator[Category]:
+    """Every exact category reached through placement-tracing functors."""
+    found: list[Category] = [start]
+    frontier = [start]
+    while frontier:
+        current = frontier.pop(0)
+        yield current
+        for functor in current.structure_functors():
+            if not traces_placement(functor):
+                continue
+            target = functor.codomain()
+            if any(target is known for known in found):
+                continue
+            found.append(target)
+            frontier.append(target)
+
+
 def _placement_node(value: CategoryPoint) -> compiler.Node:
     """The object node named by the value's current placement."""
     match role_of(value):
@@ -63,8 +80,7 @@ def is_placed(candidate: RoleCandidate, category: Category) -> bool:
 
 def is_subcategory(inner: Category, outer: Category) -> bool:
     """Whether ``inner`` is ``outer`` or a declared subcategory of it, through placement-tracing functors."""
-    outer_node = compiler.node(outer, Role.OBJECT)
-    return any(compiler.same_node(outer_node, found) for found in _reached_placements(compiler.node(inner, Role.OBJECT)))
+    return any(found is outer for found in _reached_subcategories(inner))
 
 
 def common_ancestor(first: Category, second: Category) -> Category | None:
@@ -76,7 +92,7 @@ def common_ancestor(first: Category, second: Category) -> Category | None:
     placement changes structure and is not walked, so a poset and a set meet nowhere.  The
     caller states the precondition, because only the caller knows the two values.
     """
-    common = [reached.category for reached in _reached_placements(compiler.node(first, Role.OBJECT)) if is_subcategory(second, reached.category)]
+    common = [reached for reached in _reached_subcategories(first) if is_subcategory(second, reached)]
     return next((candidate for candidate in common if all(is_subcategory(candidate, other) for other in common)), None)
 
 
@@ -116,10 +132,12 @@ def place(value: CategoryPoint, category: Category) -> None:
 
 def _join(current: Category, target: Category) -> Category:
     """The intersection of two placements: the narrower base, narrowed by both root sets."""
-    if is_subcategory(target, current):
-        return target
     current_base, target_base = current.narrowing_base(), target.narrowing_base()
-    if is_subcategory(current_base, target_base):
+    if compiler.same_node(compiler.node(current_base, Role.OBJECT), compiler.node(target_base, Role.OBJECT)):
+        base = target_base
+    elif is_subcategory(target, current):
+        return target
+    elif is_subcategory(current_base, target_base):
         base = current_base
     else:
         # A placement is never weakened to reach a property (POL-CAT-074): the two

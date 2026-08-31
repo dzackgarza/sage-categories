@@ -450,6 +450,12 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             )
             return self._component_family[member_object]
 
+        def op(self) -> NaturalTransformation:
+            """Return the retained reversed transformation between opposite functors."""
+            from sage_categories.cat.opposites import opposite_transformation
+
+            return opposite_transformation(self)
+
         def whisker_left(self, functor: Functor) -> NaturalTransformation:
             """``H . eta``: left whiskering by ``H`` (specs/functor.md)."""
             return Cat().whisker_left(functor, self)

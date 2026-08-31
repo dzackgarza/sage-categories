@@ -32,6 +32,9 @@ from abc import abstractmethod
 from types import ModuleType
 from typing import TYPE_CHECKING, ClassVar
 
+from sage.structure.coerce_dict import TripleDict
+from sage.misc.cachefunc import cached_method
+
 from sage_categories.cat.category import Category
 from sage_categories.kernel.decisions import Decision
 from sage_categories.kernel.predicates import Axiom, PropertyPredicate, Proposition
@@ -45,6 +48,8 @@ if TYPE_CHECKING:
 __all__ = [
     "FixedEndpointProperty",
     "FullSubcategory",
+    "InverseImageSubcategory",
+    "inverse_image",
     "NarrowedProperty",
     "PredicateSubcategory",
     "PropertySubcategory",
@@ -134,6 +139,121 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
         return self._ambient.element_from_defining_morphism(defining_morphism)
 
 
+_inverse_images: TripleDict = TripleDict(weak_values=False)
+
+
+class InverseImageSubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):
+    """``F.inverse_image(P)``: the full same-value subcategory ``D ×_C P``.
+
+    The source projection is the subcategory monomorphism into ``D``.  The second
+    projection is the restriction of ``F`` to ``P``.  The category is retained as the
+    chosen pullback in ``Cat().Pullbacks()``; its values are nevertheless the values of
+    ``D`` itself, so positive evidence uses the ordinary same-object refinement path.
+    """
+
+    class ObjectType:
+        """An object ``X`` of ``D`` whose image ``F(X)`` lies in ``P``."""
+
+    class ElementType:
+        """A generalized element inherited from the source category."""
+
+    class MorphismType:
+        """A source morphism between objects of the inverse-image subcategory."""
+
+    def __init__(self, functor: Functor, target_subcategory: Category) -> None:
+        self._functor = functor
+        self._target_subcategory = target_subcategory
+        self._target_projection: Functor | None = None
+        super().__init__(functor.domain())
+
+    def defining_functor(self) -> Functor:
+        return self._functor
+
+    def target_subcategory(self) -> Category:
+        return self._target_subcategory
+
+    def subcategory_monomorphism(self) -> Functor:
+        return _functors().full_subcategory_monomorphism(self, self._ambient)
+
+    def target_projection(self) -> Functor:
+        if self._target_projection is None:
+            target = self._target_subcategory
+            defining = self._functor
+
+            def on_object(value: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+                return target(defining.on_object(value))
+
+            def on_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+                image = defining.on_morphism(morphism)
+                refine(image, target.morphism_category(1))
+                return image
+
+            self._target_projection = _functors()(self, target)(on_object, on_morphism)
+        return self._target_projection
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        return (self.subcategory_monomorphism(), self.target_projection())
+
+    @cached_method
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
+        return self._ambient.membership_proposition(candidate) & self._target_subcategory.membership_proposition(
+            self._functor.on_object(candidate)
+        )
+
+    def __call__(self, value: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        assert value in self._ambient, f"{value!r} is not an object of {self._ambient!r}"
+        self._target_subcategory(self._functor.on_object(value))
+        refine(value, self)
+        return value
+
+    def __repr__(self) -> str:
+        return f"{self._functor!r}.inverse_image({self._target_subcategory!r})"
+
+
+def inverse_image(functor: Functor, target_subcategory: Category) -> Category:
+    """Construct and retain ``D ×_C P`` for ``F: D -> C`` and ``P -> C``.
+
+    This is a chosen pullback in ``Cat`` whose source projection is identity on the
+    values of ``D``.  The mediator is therefore the first leg of any candidate cone,
+    refined into the inverse-image subcategory.
+    """
+    from sage_categories.cat.diagrams import cospan_diagram
+    from sage_categories.cat.constructions import cone, cone_apex
+    from sage_categories.cat.functors import Cat, Fun
+
+    assert is_subcategory(target_subcategory, functor.codomain()), (
+        f"{target_subcategory!r} is not a subcategory of {functor.codomain()!r}"
+    )
+    key = (functor, target_subcategory, Cat())
+    if key in _inverse_images:
+        return _inverse_images[key]
+
+    result = InverseImageSubcategory(functor, target_subcategory)
+    _inverse_images[key] = result
+    inclusion = target_subcategory.structure_functors()[0]
+    diagram = cospan_diagram(Cat(), functor, inclusion)
+    shape = diagram.domain()
+    projections = {0: result.subcategory_monomorphism(), 1: result.target_projection()}
+    limiting_cone = cone(diagram, result, lambda vertex: projections[shape.label(vertex)])
+
+    def mediator(candidate_cone):
+        source = cone_apex(candidate_cone)
+        to_source = candidate_cone.component(shape(0))
+
+        def on_object(value):
+            return result(to_source.on_object(value))
+
+        def on_morphism(morphism):
+            image = to_source.on_morphism(morphism)
+            refine(image, result.morphism_category(1))
+            return image
+
+        return Fun(source, result)(on_object, on_morphism)
+
+    Cat().Pullbacks().with_universal_data(diagram, result, limiting_cone, mediator)
+    return result
+
+
 class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):
     """``C.P()``: the full subcategory of ``C`` on the objects satisfying ``P``.
 
@@ -168,7 +288,8 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
         if connection is None:
             return
         declaring_class, name = connection
-        axiom = getattr(declaring_class, name, None)
+        assert hasattr(declaring_class, name), f"{declaring_class.__name__}.{name} does not exist"
+        axiom = getattr(declaring_class, name)
         assert isinstance(axiom, Axiom), f"{declaring_class.__name__}.{name} is not an axiom, so {cls.__name__} cannot implement it"
         axiom.implemented_by(cls)
 
@@ -201,6 +322,7 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
             *(functors.full_subcategory_monomorphism(self, containing) for containing in self._full_subcategory_of),
         )
 
+    @cached_method
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         """Membership in the ambient and the property's own predicate.
 

@@ -4,9 +4,13 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from functools import partial
+from inspect import Parameter, signature
 from typing import TYPE_CHECKING, Any
 
+from plum import Dispatcher, NotFoundLookupError, Signature as DispatchSignature
+
 from sage.categories.category_with_axiom import uncamelcase
+from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict, TripleDict
 from sympy import Dummy, Integer, Predicate as EnginePredicate, Q, S, sympify
 from sympy.assumptions import global_assumptions
@@ -93,6 +97,35 @@ def _representable(argument: Argument) -> bool:
     return isinstance(argument, (CategoryPoint, int))
 
 
+def _dispatch_annotation(annotation: object, namespace: dict[str, object]) -> object:
+    """Resolve one exact-handler annotation for Plum when it is runtime-visible.
+
+    Theory-facing names deliberately kept under ``TYPE_CHECKING`` are not imported into
+    the kernel merely for dispatch; those cases remain unrestricted and validate their
+    mathematical domain in the handler itself.
+    """
+    if annotation is Parameter.empty:
+        return object
+    if not isinstance(annotation, str):
+        return annotation
+    if any(role_name in annotation for role_name in (".ObjectType", ".ElementType", ".MorphismType")):
+        return object
+    try:
+        resolved = eval(annotation, namespace)
+    except (NameError, AttributeError):
+        return object
+    if isinstance(resolved, type) and issubclass(resolved, CategoryPoint):
+        return object
+    return resolved
+
+
+def _dispatch_signature(handler: Handler) -> DispatchSignature:
+    parameters = signature(handler).parameters.values()
+    assert hasattr(handler, "__globals__"), f"{handler!r} is not a function with a runtime annotation namespace"
+    namespace = handler.__globals__
+    return DispatchSignature(*(_dispatch_annotation(parameter.annotation, namespace) for parameter in parameters))
+
+
 class Predicate:
     """A named predicate of fixed arity; applying it constructs a proposition.
 
@@ -105,7 +138,7 @@ class Predicate:
         self._name = name
         self._arity = arity
         self._records_decisions = records_decisions
-        self._handlers: list[Handler] = []
+        self._handlers: list[tuple[Handler, Handler, DispatchSignature]] = []
         self._symbol = Dummy(name)
 
     def name(self) -> str:
@@ -118,12 +151,40 @@ class Predicate:
         return self._records_decisions
 
     def register_handler(self, handler: Handler) -> None:
-        """Register an exact decision procedure on a declared semantic domain."""
-        self._handlers.append(handler)
+        """Register an exact case; Plum owns specificity and ambiguity at evaluation."""
+        def invoke(*arguments):
+            return handler(*arguments)
+
+        assert hasattr(handler, "__name__"), f"{handler!r} is not a named exact case"
+        invoke.__name__ = handler.__name__
+        self._handlers.append((handler, invoke, _dispatch_signature(handler)))
 
     def handlers(self) -> tuple[Handler, ...]:
-        return tuple(self._handlers)
+        return tuple(handler for handler, _, _ in self._handlers)
 
+    def resolved_handlers(self, arguments: tuple[Argument, ...]):
+        """Yield Plum-selected cases, retrying only when a selected case declines.
+
+        ``Unknown`` means the selected exact case declines. The caller then asks this
+        generator for another case; the one declined implementation has been removed,
+        and Plum resolves among the remaining signatures again. The kernel never compares
+        signatures or resolves an ambiguity itself.
+        """
+        remaining = list(self._handlers)
+        while remaining:
+            dispatcher = Dispatcher()
+            _, first_invoke, first_signature = remaining[0]
+            function = dispatcher.multi(first_signature)(first_invoke)
+            for _, invoke, dispatch_signature in remaining[1:]:
+                function.register(invoke, signature=dispatch_signature)
+            try:
+                implementation, _ = function.resolve_method(arguments)
+            except NotFoundLookupError:
+                return
+            yield implementation
+            remaining = [entry for entry in remaining if entry[1] is not implementation]
+
+    @cached_method
     def __call__(self, *arguments: Argument) -> AppliedPredicate:
         assert len(arguments) == self._arity, f"{self._name} has arity {self._arity}"
         return AppliedPredicate(self, arguments)
@@ -340,7 +401,7 @@ def _ask_applied(proposition: AppliedPredicate) -> Decision:
     key = _cache_key(proposition)
     if key is not None and key in _decisions:
         return _decisions[key]
-    for handler in predicate.handlers():
+    for handler in predicate.resolved_handlers(arguments):
         decision = handler(*arguments)
         if decision is Unknown:
             continue
@@ -400,7 +461,7 @@ def _ask_query(applied: AppliedQuery) -> Answer:
     key = _cache_key(applied)
     if key is not None and key in _decisions:
         return _decisions[key]
-    for handler in query.handlers():
+    for handler in query.resolved_handlers(applied.arguments()):
         value = handler(*applied.arguments())
         if value is Unknown:
             continue
@@ -540,7 +601,10 @@ class Axiom:
         a morphism of an arbitrary ``C``; ``Fun`` writes ``Cat().MorphismType``; ``Cat()``
         writes ``CategoryDeclaration``.
         """
-        declared = getattr(self._declaring_class, Role.OBJECT.value, None)
+        assert hasattr(self._declaring_class, Role.OBJECT.value), (
+            f"{self._declaring_class.__name__} writes no {Role.OBJECT.value} declaration"
+        )
+        declared = getattr(self._declaring_class, Role.OBJECT.value)
         assert declared is not None, (
             f"{self._declaring_class.__name__} writes no {Role.OBJECT.value} declaration, so {self!r} has no role "
             f"class to write {self.application_name()}() onto (POL-CAT-057)"

@@ -13,7 +13,7 @@ from sage.structure.coerce_dict import MonoDict, TripleDict
 
 from sage_categories.cat.equality import equality_predicate
 from sage_categories.kernel.decisions import Decision, Unknown, UnknownClass
-from sage_categories.kernel.predicates import AppliedQuery, Axiom, Predicate, PropertyPredicate, Proposition, Query, ask
+from sage_categories.kernel.predicates import AppliedQuery, Axiom, Predicate, PropertyPredicate, Proposition, Query, ask, assume
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine, traces_placement
 
 if TYPE_CHECKING:
@@ -899,6 +899,12 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
                 return self.on_object(value)
             assert value in self.domain().morphism_category(1), f"{value!r} is neither an object nor a morphism of {self.domain()!r}"
             return self.on_morphism(value)
+
+        def inverse_image(self, subcategory: Category) -> Category:
+            """``F.inverse_image(P) = D ×_C P`` for a subcategory ``P -> C``."""
+            from sage_categories.cat.properties import inverse_image
+
+            return inverse_image(self, subcategory)
 
         # -- points (``specs/functor.md``, "Structural inheritance") --------------------
         #

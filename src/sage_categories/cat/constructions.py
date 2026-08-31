@@ -249,6 +249,7 @@ class LimitsCategory(ApexCategory):
     def __init__(self, ambient: Category, shape: Category) -> None:
         self._shape = shape
         self._limit_functor: MonoDict = MonoDict()
+        self._limit_adjunction: CategoryOfCategories.ElementType | None = None
         super().__init__(ambient)
 
     def shape(self) -> Category:
@@ -284,6 +285,12 @@ class LimitsCategory(ApexCategory):
         if self not in self._limit_functor:
             self._limit_functor[self] = limit_functor(self)
         return self._limit_functor[self]
+
+    def adjunction(self) -> CategoryOfCategories.ElementType:
+        """Return the selected adjunction ``Delta_I |- Lim_I``."""
+        if self._limit_adjunction is None:
+            self._limit_adjunction = limit_adjunction(self)
+        return self._limit_adjunction
 
     def name(self) -> str:
         return f"Limits({self._shape!r})"
@@ -578,6 +585,7 @@ class DiscreteLimits(FullSubcategory[[MorphismCategory.ObjectType], []]):
     def __init__(self, products: ProductsCategory, shape: Category) -> None:
         self._shape = shape
         self._limit_functor: MonoDict = MonoDict()
+        self._limit_adjunction: CategoryOfCategories.ElementType | None = None
         super().__init__(products)
 
     def shape(self) -> Category:
@@ -624,6 +632,12 @@ class DiscreteLimits(FullSubcategory[[MorphismCategory.ObjectType], []]):
         if self not in self._limit_functor:
             self._limit_functor[self] = limit_functor(self)
         return self._limit_functor[self]
+
+    def adjunction(self) -> CategoryOfCategories.ElementType:
+        """Return the selected adjunction ``Delta_I |- Lim_I``."""
+        if self._limit_adjunction is None:
+            self._limit_adjunction = limit_adjunction(self)
+        return self._limit_adjunction
 
     def name(self) -> str:
         return f"Limits({self._shape!r})"
@@ -756,6 +770,35 @@ def colimit_functor(family: Category) -> Functor:
         lambda diagram: family(diagram),
         lambda transformation: induced_colimit_morphism(family, transformation),
     )
+
+
+def limit_adjunction(family: Category) -> CategoryOfCategories.ElementType:
+    """Select ``Delta_I |- Lim_I`` from the retained limiting cones."""
+    from sage_categories.cat.adjunctions import Adjunctions
+
+    diagrams = family.diagrams()
+    base = diagrams.codomain()
+    diagonal_functor = diagrams.diagonal()
+    limit = family.limit_functor()
+
+    def unit_component(member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        diagram = diagrams.constant(member_object)
+        presentation = constructed_data(family, diagram)
+        identity = base.morphism_category(1)(member_object, member_object).one()
+        candidate = cones(diagram)(cone(diagram, member_object, lambda vertex: identity))
+        return presentation.lift(candidate)
+
+    unit_endofunctors = Fun(base, base)
+    unit = unit_endofunctors.morphism_category(1)(
+        unit_endofunctors.one(),
+        limit * diagonal_functor,
+    )(unit_component)
+    counit_endofunctors = Fun(diagrams, diagrams)
+    counit = counit_endofunctors.morphism_category(1)(
+        diagonal_functor * limit,
+        counit_endofunctors.one(),
+    )(lambda diagram: constructed_data(family, diagram).transformation())
+    return Adjunctions(diagonal_functor, limit)(unit, counit)
 
 
 # -- the families owned once on ``Category`` (POL-CAT-050) ---------------------------

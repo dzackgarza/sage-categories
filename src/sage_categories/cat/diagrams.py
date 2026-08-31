@@ -58,6 +58,7 @@ type Datum = Hashable
 __all__ = [
     "codomain_lift",
     "constant",
+    "diagonal",
     "domain_lift",
     "evaluation",
     "from_object_rule",
@@ -99,6 +100,19 @@ def constant(functors: FunctorCategory, value: CategoryOfCategories.ElementType)
         functors._constants[value] = diagram
         functors._constant_values[diagram] = value
     return functors._constants[value]
+
+
+def diagonal(functors: FunctorCategory) -> Functor:
+    """Return the diagonal functor ``C -> Fun(I, C)``."""
+    if functors._diagonal is None:
+        functors._diagonal = Fun(functors.codomain(), functors)(
+            lambda member_object: functors.constant(member_object),
+            lambda morphism: functors.morphism_category(1)(
+                functors.constant(morphism.domain()),
+                functors.constant(morphism.codomain()),
+            )(lambda vertex: morphism),
+        )
+    return functors._diagonal
 
 
 # A diagram constructor called on identical data returns the retained functor

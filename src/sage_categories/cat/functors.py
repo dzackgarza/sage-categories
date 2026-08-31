@@ -296,6 +296,7 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
         self._evaluations: MonoDict = MonoDict()
         self._constants: MonoDict = MonoDict()
         self._constant_values: MonoDict = MonoDict()
+        self._diagonal: Functor | None = None
         self._finite_data: MonoDict = MonoDict()
         self._preserves_limits: MonoDict = MonoDict()
         self._creates_limits: MonoDict = MonoDict()
@@ -343,6 +344,12 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
         from sage_categories.cat.diagrams import constant
 
         return constant(self, value)
+
+    def diagonal(self) -> Functor:
+        """The diagonal functor from the codomain into this functor category."""
+        from sage_categories.cat.diagrams import diagonal
+
+        return diagonal(self)
 
     def has_constant_value(self, diagram: Functor) -> bool:
         return diagram in self._constant_values

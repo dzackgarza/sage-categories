@@ -22,13 +22,12 @@ data of the one diagram the object presents; an object two diagrams constructed
 has no one cone, so ``presentation`` fails loudly there, naming both diagrams,
 and the caller reads the data it means at that diagram.
 
-``C.Products()`` is the family of chosen products over every discrete shape, with
-the sequence convenience ``(X_0, ..., X_n)`` and ``product_projection(i)``
-(POL-CAT-093); ``C.Limits(Discrete(S))`` is its full subcategory on the products
-indexed by ``Discrete(S)``, since a limit over a discrete shape is a product by
-definition (Mathlib ``CategoryTheory.Limits.HasProduct``: ``HasLimit
-(Discrete.functor f)``; inspected 2026-08-26).  ``C.Coproducts()`` and
-``C.Colimits(Discrete(S))`` are dual with cocones.
+``C.Products()`` is the union of the full images of ``Lim_I`` for discrete shapes
+whose owned object-set cardinality is at least two.  It supplies the sequence
+convenience ``(X_0, ..., X_n)`` and ``product_projection(i)`` (POL-CAT-093).
+The shape family ``C.Limits(I)`` remains the sole owner of the universal data.
+Singleton and unresolved discrete shapes remain only in ``C.Limits(I)``.
+``C.Coproducts()`` and ``C.Colimits(Discrete(S))`` are dual with cocones.
 
 Constructing an object of ``C.Limits(I)`` calls the category-owned
 ``C.limit_construction(I)``, which fails loudly unless ``C`` owns an ``I``-limit
@@ -69,7 +68,7 @@ from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.properties import FullSubcategory
 from sage_categories.cat.shapes import is_discrete
 from sage_categories.cat.predicates import Decision, Unknown
-from sage_categories.cat.predicates import Predicate, Proposition, predicate, register_handler
+from sage_categories.cat.predicates import Predicate, Proposition, ask, predicate, register_handler
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
 
 if TYPE_CHECKING:
@@ -80,7 +79,6 @@ __all__ = [
     "ColimitsCategory",
     "CoproductsCategory",
     "DiscreteColimits",
-    "DiscreteLimits",
     "LimitsCategory",
     "ProductsCategory",
     "cocone",
@@ -100,6 +98,17 @@ type Construction = Callable[[Functor], "CategoryOfCategories.ElementType"]
 type UniversalPresentation = LimitConesCategory.ObjectType
 
 
+def _nontrivial_discrete(shape: Category) -> bool | None:
+    """Return whether the owned object-set cardinality proves a nontrivial discrete shape."""
+    if not is_discrete(shape):
+        return False
+    cardinality = shape.object_set().cardinality()
+    if cardinality is Unknown:
+        return None
+    decision = ask(cardinality >= 2)
+    return decision if isinstance(decision, bool) else None
+
+
 def presenting_family(constructed: CategoryOfCategories.ElementType) -> Category:
     """The construction family that retains the universal data of ``constructed``.
 
@@ -113,6 +122,15 @@ def presenting_family(constructed: CategoryOfCategories.ElementType) -> Category
         if candidate.presenting_diagrams(constructed):
             return candidate
     raise AssertionError(f"{constructed!r} is in no construction family of {placement!r}")
+
+
+def product_presenting_family(constructed: CategoryOfCategories.ElementType) -> Category:
+    """Return the shape-specific limit family that presents one product apex."""
+    placement = constructed.category()
+    for candidate in (placement, *placement.narrowing_roots()):
+        if isinstance(candidate, ProductsCategory):
+            return candidate.presenting_family(constructed)
+    raise AssertionError(f"{constructed!r} is in no product family")
 
 
 # -- construction families --------------------------------------------------------------------
@@ -270,7 +288,10 @@ class LimitsCategory(ApexCategory):
     def __call__(self, diagram: Functor) -> CategoryOfCategories.ElementType:
         """``C.Limits(I)(diagram)``: the chosen limit, through ``C.limit_construction(I)``."""
         self.accepts(diagram, self._shape)
-        return self.chosen(diagram, self.ambient().limit_construction(self._shape))
+        apex = self.chosen(diagram, self.ambient().limit_construction(self._shape))
+        if _nontrivial_discrete(self._shape) is True:
+            self.ambient().Products().retain_product(self, apex)
+        return apex
 
     def with_universal_data(
         self,
@@ -287,7 +308,10 @@ class LimitsCategory(ApexCategory):
             limiting_cone,
             lambda candidate: mediator(candidate.transformation()),
         )
-        return self._retain(diagram, apex, presentation)
+        retained = self._retain(diagram, apex, presentation)
+        if _nontrivial_discrete(self._shape) is True:
+            self.ambient().Products().retain_product(self, retained)
+        return retained
 
     def limit_functor(self) -> Functor:
         """``Lim_I: Fun(I, C) -> C``, retained once."""
@@ -296,6 +320,8 @@ class LimitsCategory(ApexCategory):
             from sage_categories.cat.images import register_full_image
 
             register_full_image(self._limit_functor[self], self)
+            if _nontrivial_discrete(self._shape) is True:
+                self.ambient().Products().retain_full_image(self)
         return self._limit_functor[self]
 
     def defining_functor(self) -> Functor:
@@ -317,8 +343,8 @@ class LimitsCategory(ApexCategory):
         return f"{self.ambient()!r}.Limits({self._shape!r})"
 
 
-class ProductsCategory(ApexCategory):
-    """``C.Products()``: chosen products over every discrete shape (POL-CAT-093)."""
+class ProductsCategory(FullSubcategory[[MorphismCategory.ObjectType], []]):
+    """``C.Products()``: the union of full images of the known nontrivial discrete limit functors."""
 
     # A point of a chosen product is a family of points, one into each factor.
     class ElementType:
@@ -332,7 +358,7 @@ class ProductsCategory(ApexCategory):
 
         def product_factors(self) -> Functor:
             """The retained indexed family ``i |-> X_i`` (``specs/functor.md``, "Diagram shapes and universal constructions")."""
-            presentation = presenting_family(self).presentation(self)
+            presentation = product_presenting_family(self).presentation(self)
             assert isinstance(presentation, ConeCategory.ObjectType)
             return presentation.diagram()
 
@@ -341,33 +367,53 @@ class ProductsCategory(ApexCategory):
 
         def cone(self) -> NaturalTransformation:
             """The product cone ``constant(self) => diagram``, whose components are the projections."""
-            presentation = presenting_family(self).presentation(self)
+            presentation = product_presenting_family(self).presentation(self)
             assert isinstance(presentation, ConeCategory.ObjectType)
             return presentation.transformation()
 
         def product_projection(self, index: CategoryOfCategories.ElementType | Hashable) -> MorphismCategory.ObjectType:
             """``pi_i: self -> X_i`` for ``i`` an object of the index category or a datum of the index set (POL-CAT-093)."""
-            presentation = presenting_family(self).presentation(self)
+            presentation = product_presenting_family(self).presentation(self)
             assert isinstance(presentation, ConeCategory.ObjectType)
             return presentation.leg(index)
 
         def universal_morphism(self, candidate_cone: NaturalTransformation) -> MorphismCategory.ObjectType:
             """The mediating morphism from the apex of another cone over the same diagram."""
-            presentation = presenting_family(self).presentation(self)
+            presentation = product_presenting_family(self).presentation(self)
             assert isinstance(presentation, LimitConesCategory.ObjectType)
             return presentation.lift(cones(presentation.diagram())(candidate_cone))
 
     def __init__(self, ambient: Category) -> None:
         self._full_image_families: list[Category] = []
+        self._presenting_families: MonoDict = MonoDict()
         super().__init__(ambient)
 
     def retain_full_image(self, family: Category) -> None:
+        assert isinstance(family, LimitsCategory)
+        assert _nontrivial_discrete(family.shape()) is True
         if family not in self._full_image_families:
             self._full_image_families.append(family)
 
     def full_images(self) -> tuple[Category, ...]:
         """Return the full-image families whose union this category owns."""
         return tuple(self._full_image_families)
+
+    def retain_product(
+        self,
+        family: Category,
+        apex: CategoryOfCategories.ElementType,
+    ) -> None:
+        assert isinstance(family, LimitsCategory)
+        assert _nontrivial_discrete(family.shape()) is True
+        retained = self._presenting_families[apex] if apex in self._presenting_families else ()
+        if family not in retained:
+            self._presenting_families[apex] = (*retained, family)
+        refine(apex, self)
+
+    def presenting_family(self, apex: CategoryOfCategories.ElementType) -> Category:
+        families = self._presenting_families[apex] if apex in self._presenting_families else ()
+        assert len(families) == 1, f"{apex!r} has {len(families)} product-family presentations"
+        return families[0]
 
     def diagrams(self, shape: Category) -> Category:
         assert is_discrete(shape), f"{shape!r} is not a discrete shape"
@@ -384,12 +430,15 @@ class ProductsCategory(ApexCategory):
         self,
         family: Functor | tuple[CategoryOfCategories.ElementType, ...],
     ) -> CategoryOfCategories.ElementType:
-        """``C.Products()(diagram)`` for a diagram over ``Discrete(S)``; ``C.Products()((X_0, ..., X_n))`` for the sequence form."""
+        """Construct a known nontrivial discrete limit, or use the sequence form."""
         diagram = self._sequence_diagram(family) if isinstance(family, tuple) else family
         shape = diagram.domain()
-        assert is_discrete(shape), f"{shape!r} is not a discrete shape"
-        self.accepts(diagram, shape)
-        return self.chosen(diagram, self.ambient().limit_construction(shape))
+        assert _nontrivial_discrete(shape) is True, (
+            f"{shape!r} is not known to have at least two objects; use {self.ambient()!r}.Limits({shape!r})"
+        )
+        assert diagram in self.universe().morphism_category(1) and diagram.domain() is shape
+        assert is_subcategory(diagram.codomain(), self.ambient()), f"{diagram!r} does not land in {self.ambient()!r}"
+        return self.ambient().Limits(shape)(diagram)
 
     def with_universal_data(
         self,
@@ -399,14 +448,19 @@ class ProductsCategory(ApexCategory):
         mediator: Mediator,
     ) -> CategoryOfCategories.ElementType:
         """The chosen product from supplied universal data (POL-MATH-037)."""
-        diagrams = self.diagrams(diagram.domain())
+        shape = diagram.domain()
+        assert _nontrivial_discrete(shape) is True, (
+            f"{shape!r} is not known to have at least two objects; use {self.ambient()!r}.Limits({shape!r})"
+        )
+        diagrams = self.diagrams(shape)
         assert diagram in diagrams
         assert limiting_cone in diagrams.morphism_category(1)(diagrams.constant(apex), diagram)
-        presentation = limit_cones(diagram).with_universal_data(
+        return self.ambient().Limits(diagram.domain()).with_universal_data(
+            diagram,
+            apex,
             limiting_cone,
-            lambda candidate: mediator(candidate.transformation()),
+            mediator,
         )
-        return self._retain(diagram, apex, presentation)
 
     def name(self) -> str:
         return "Products"
@@ -598,101 +652,6 @@ def _indexed_by_shape(
 register_handler(indexed_by, _indexed_by_shape)
 
 
-class DiscreteLimits(FullSubcategory[[MorphismCategory.ObjectType], []]):
-    """``C.Limits(Discrete(S))``: the full subcategory of ``C.Products()`` on the products indexed by ``Discrete(S)``."""
-
-    # Fixing the index adds no operation: ``product_projection(i)`` is already available
-    # from ``C.Products()`` and is the same morphism here.
-    class ObjectType:
-        """A chosen product indexed by ``Discrete(S)``: the same object, with the same projections."""
-
-    class ElementType:
-        """A point of such a product."""
-
-    class MorphismType:
-        """A morphism of ``C`` between two such products."""
-
-    def __init__(self, products: ProductsCategory, shape: Category) -> None:
-        self._shape = shape
-        self._limit_functor: MonoDict = MonoDict()
-        self._limit_adjunction: CategoryOfCategories.ElementType | None = None
-        self._image_factor: Functor | None = None
-        super().__init__(products)
-
-    def shape(self) -> Category:
-        return self._shape
-
-    def diagrams(self) -> Category:
-        return self._ambient.diagrams(self._shape)
-
-    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
-        return member(candidate, self._ambient) & indexed_by(candidate, self)
-
-    def lowered(self, diagram: Functor) -> Functor:
-        return self._ambient.lowered(diagram)
-
-    def universal_data(self, diagram: Functor) -> UniversalPresentation:
-        return self._ambient.universal_data(diagram)
-
-    def presenting_diagrams(self, constructed: CategoryOfCategories.ElementType) -> tuple[Functor, ...]:
-        return self._ambient.presenting_diagrams(constructed)
-
-    def presentation(self, constructed: CategoryOfCategories.ElementType) -> UniversalPresentation:
-        return self._ambient.presentation(constructed)
-
-    def __call__(self, diagram: Functor) -> CategoryOfCategories.ElementType:
-        self._ambient.accepts(diagram, self._shape)
-        constructed = self._ambient(diagram)
-        refine(constructed, self)
-        return constructed
-
-    def with_universal_data(
-        self,
-        diagram: Functor,
-        apex: CategoryOfCategories.ElementType,
-        limiting_cone: NaturalTransformation,
-        mediator: Mediator,
-    ) -> CategoryOfCategories.ElementType:
-        assert diagram in self.diagrams()
-        constructed = self._ambient.with_universal_data(diagram, apex, limiting_cone, mediator)
-        refine(constructed, self)
-        return constructed
-
-    def limit_functor(self) -> Functor:
-        """``Lim_{Discrete(S)}: Fun(Discrete(S), C) -> C``, retained once."""
-        if self not in self._limit_functor:
-            self._limit_functor[self] = limit_functor(self)
-            from sage_categories.cat.images import register_full_image
-
-            register_full_image(self._limit_functor[self], self)
-            self._ambient.retain_full_image(self)
-        return self._limit_functor[self]
-
-    def defining_functor(self) -> Functor:
-        return self.limit_functor()
-
-    def factorization(self) -> tuple[Functor, Functor]:
-        if self._image_factor is None:
-            self._image_factor = Fun(self.diagrams(), self)(
-                lambda diagram: self(diagram),
-                lambda transformation: induced_limit_morphism(self, transformation),
-            )
-        inclusion = self._ambient.subcategory_monomorphism() * self.subcategory_monomorphism()
-        return self._image_factor, inclusion
-
-    def adjunction(self) -> CategoryOfCategories.ElementType:
-        """Return the selected adjunction ``Delta_I |- Lim_I``."""
-        if self._limit_adjunction is None:
-            self._limit_adjunction = limit_adjunction(self)
-        return self._limit_adjunction
-
-    def name(self) -> str:
-        return f"Limits({self._shape!r})"
-
-    def __repr__(self) -> str:
-        return f"{self.diagrams().codomain()!r}.Limits({self._shape!r})"
-
-
 class DiscreteColimits(FullSubcategory[[MorphismCategory.ObjectType], []]):
     """``C.Colimits(Discrete(S))``: the full subcategory of ``C.Coproducts()`` on the coproducts indexed by ``Discrete(S)``."""
 
@@ -852,8 +811,8 @@ def limit_adjunction(family: Category) -> CategoryOfCategories.ElementType:
 
 
 def limits(ambient: Category, shape: Category) -> Category:
-    """``C.Limits(I)``: the full subcategory of ``C.Products()`` for a discrete shape, else the general family."""
-    family = DiscreteLimits(ambient.Products(), shape) if is_discrete(shape) else LimitsCategory(ambient, shape)
+    """``C.Limits(I)``: the full image of the selected limit functor for the shape ``I``."""
+    family = LimitsCategory(ambient, shape)
     family.limit_functor()
     return family
 

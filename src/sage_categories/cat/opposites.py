@@ -29,6 +29,7 @@ __all__ = [
     "op_squared_isomorphism",
     "opposite_category",
     "opposite_functor",
+    "opposite_morphism",
     "opposite_transformation",
 ]
 
@@ -139,6 +140,11 @@ def _opposite_morphism(
         return morphism.original()
     opposite = opposite_category(category)
     return opposite.morphism_category(1)(morphism.codomain(), morphism.domain())(morphism)
+
+
+def opposite_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+    """Return the retained opposite of a categorical morphism."""
+    return _opposite_morphism(morphism.base_category(), morphism)
 
 
 def _construct_opposite_functor(functor: Functor) -> Functor:

@@ -118,6 +118,12 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
     class ObjectType:
         """A morphism of an arbitrary category ``C``."""
 
+        def op(self) -> MorphismCategory.ObjectType:
+            """Return the retained morphism with its direction reversed in the opposite category."""
+            from sage_categories.cat.opposites import opposite_morphism
+
+            return opposite_morphism(self)
+
     class MorphismType:
         """The identity 2-morphism of a morphism of a 1-category: the only morphisms of ``Mor(C)``."""
 

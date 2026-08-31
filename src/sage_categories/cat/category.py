@@ -935,6 +935,12 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
             return inverse_image(self, subcategory)
 
+        def base_change(self, defining_functor: Functor) -> Functor:
+            """Return the pullback projection ``D ×_C E -> D`` for ``self: D -> C`` and ``defining_functor: E -> C``."""
+            from sage_categories.cat.base_change import base_change
+
+            return base_change(self, defining_functor)
+
         def op(self) -> Functor:
             """Return the retained opposite functor."""
             from sage_categories.cat.opposites import opposite_functor

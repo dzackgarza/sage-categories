@@ -314,6 +314,49 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
         """The categories this one is a full subcategory of, beyond its ambient (D83)."""
         return self._full_subcategory_of
 
+    def intersection(
+        self,
+        other: Category[MorphismData, TwoMorphismData] | tuple[Category[MorphismData, TwoMorphismData], ...],
+    ) -> Category[MorphismData, TwoMorphismData]:
+        """``self.intersection(other)`` as the retained pullback over the common ambient."""
+        if isinstance(other, tuple):
+            return super().intersection(other)
+        from sage_categories.cat.constructions import cone, cone_apex
+        from sage_categories.cat.diagrams import cospan_diagram
+        from sage_categories.cat.functors import Cat, Fun
+
+        ambient = self.narrowing_base()
+        assert other.narrowing_base() is ambient, f"{self!r} and {other!r} do not have a common narrowing base"
+        result = ambient.intersection((self, other))
+        diagram = cospan_diagram(Cat(), self.subcategory_monomorphism(), other.subcategory_monomorphism())
+        shape = diagram.domain()
+        projections = {
+            0: Fun.full_subcategory_monomorphism(result, self),
+            1: Fun.full_subcategory_monomorphism(result, other),
+        }
+        limiting_cone = cone(diagram, result, lambda vertex: projections[shape.label(vertex)])
+
+        def mediator(candidate_cone):
+            source = cone_apex(candidate_cone)
+            to_self = candidate_cone.component(shape(0))
+
+            def on_object(value):
+                return result(to_self.on_object(value))
+
+            def on_morphism(morphism):
+                image = to_self.on_morphism(morphism)
+                refine(image, result.morphism_category(1))
+                return image
+
+            return Fun(source, result)(on_object, on_morphism)
+
+        pullbacks = Cat().Pullbacks()
+        if not pullbacks.has_construction(diagram):
+            pullbacks.with_universal_data(diagram, result, limiting_cone, mediator)
+        else:
+            assert pullbacks.chosen_object(diagram) is result
+        return result
+
     def structure_functors(self) -> tuple[Functor, ...]:
         """The monomorphism into the ambient, then one per further recorded containment (POL-FUN-024)."""
         functors = _functors()

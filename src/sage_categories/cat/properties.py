@@ -316,7 +316,8 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
 
     def intersection(
         self,
-        other: Category[MorphismData, TwoMorphismData] | tuple[Category[MorphismData, TwoMorphismData], ...],
+        other: PropertySubcategory[MorphismData, TwoMorphismData]
+        | tuple[Category[MorphismData, TwoMorphismData], ...],
     ) -> Category[MorphismData, TwoMorphismData]:
         """``self.intersection(other)`` as the retained pullback over the common ambient."""
         if isinstance(other, tuple):
@@ -351,10 +352,10 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
             return Fun(source, result)(on_object, on_morphism)
 
         pullbacks = Cat().Pullbacks()
-        if not pullbacks.has_construction(diagram):
-            pullbacks.with_universal_data(diagram, result, limiting_cone, mediator)
-        else:
+        if pullbacks.has_construction(diagram):
             assert pullbacks.chosen_object(diagram) is result
+            return result
+        pullbacks.with_universal_data(diagram, result, limiting_cone, mediator)
         return result
 
     def structure_functors(self) -> tuple[Functor, ...]:

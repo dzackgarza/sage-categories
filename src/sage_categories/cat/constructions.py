@@ -532,8 +532,10 @@ class ColimitsCategory(FullSubcategory[[MorphismCategory.ObjectType], []]):
 
     def __init__(self, ambient: Category, shape: Category) -> None:
         self._shape = shape
-        self._presentations: MonoDict = MonoDict()
+        self._duality = dual_functor_category_equivalence(shape, ambient)
         self._dual_limits = ambient.op().Limits(shape.op())
+        self._lowered: MonoDict = MonoDict()
+        self._colimit_functor: Functor | None = None
         super().__init__(ambient)
 
     def shape(self) -> Category:
@@ -553,43 +555,46 @@ class ColimitsCategory(FullSubcategory[[MorphismCategory.ObjectType], []]):
         if codomain is self.ambient():
             return diagram
         assert is_subcategory(codomain, self.ambient()), f"{codomain!r} is not a declared subcategory of {self.ambient()!r}"
-        return Fun(codomain, self.ambient()).Monomorphisms().Isofibrations().Full()() * diagram
+        if diagram not in self._lowered:
+            self._lowered[diagram] = Fun(codomain, self.ambient()).Monomorphisms().Isofibrations().Full()() * diagram
+        return self._lowered[diagram]
 
     def _dual_diagram(self, diagram: Functor) -> Functor:
-        equivalence = dual_functor_category_equivalence(self._shape, self.ambient())
-        dual_diagram = equivalence.forward().on_object(self.lowered(diagram))
+        dual_diagram = self._duality.forward().on_object(self.lowered(diagram))
         assert isinstance(dual_diagram, Functor)
         return dual_diagram
 
+    def _original_diagram(self, dual_diagram: Functor) -> Functor:
+        diagram = self._duality.inverse().on_object(dual_diagram)
+        assert isinstance(diagram, Functor)
+        return diagram
+
     def _associate(
         self,
-        diagram: Functor,
         presentation: LimitConesCategory.ObjectType,
     ) -> CategoryOfCategories.ElementType:
-        assert diagram not in self._presentations, f"{self!r} already retains the construction of {diagram!r}"
         apex = presentation.apex()
         assert apex in self.ambient(), f"{apex!r} is not an object of {self.ambient()!r}"
-        self._presentations[diagram] = presentation
         refine(apex, self)
         if is_discrete(self._shape):
             self.ambient().Coproducts().retain_coproduct(self, apex)
         return apex
 
     def has_construction(self, diagram: Functor) -> bool:
-        return diagram in self._presentations
+        dual_diagram = self._dual_diagram(diagram)
+        return self._dual_limits.has_construction(self._dual_limits.lowered(dual_diagram))
 
     def chosen_object(self, diagram: Functor) -> CategoryOfCategories.ElementType:
         return self.universal_data(diagram).apex()
 
     def universal_data(self, diagram: Functor) -> UniversalPresentation:
-        assert diagram in self._presentations, f"{self!r} retains no construction of {diagram!r}"
-        return self._presentations[diagram]
+        dual_diagram = self._dual_diagram(diagram)
+        return self._dual_limits.universal_data(self._dual_limits.lowered(dual_diagram))
 
     def presenting_diagrams(self, constructed: CategoryOfCategories.ElementType) -> tuple[Functor, ...]:
         return tuple(
-            diagram
-            for diagram, presentation in self._presentations.items()
-            if presentation.apex() is constructed
+            self._original_diagram(dual_diagram)
+            for dual_diagram in self._dual_limits.presenting_diagrams(constructed)
         )
 
     def presenting_diagram(self, constructed: CategoryOfCategories.ElementType) -> Functor:
@@ -603,12 +608,11 @@ class ColimitsCategory(FullSubcategory[[MorphismCategory.ObjectType], []]):
     def __call__(self, diagram: Functor) -> CategoryOfCategories.ElementType:
         """Construct the chosen colimit as the dual limit in ``C.op()``."""
         self.accepts(diagram)
-        if diagram not in self._presentations:
-            dual_diagram = self._dual_diagram(diagram)
+        dual_diagram = self._dual_diagram(diagram)
+        if not self._dual_limits.has_construction(self._dual_limits.lowered(dual_diagram)):
             self._dual_limits(dual_diagram)
-            presentation = self._dual_limits.universal_data(self._dual_limits.lowered(dual_diagram))
-            self._associate(diagram, presentation)
-        return self.chosen_object(diagram)
+        presentation = self._dual_limits.universal_data(self._dual_limits.lowered(dual_diagram))
+        return self._associate(presentation)
 
     def with_universal_data(
         self,
@@ -630,18 +634,18 @@ class ColimitsCategory(FullSubcategory[[MorphismCategory.ObjectType], []]):
             lambda candidate: mediator(candidate.transformation().op()).op(),
         )
         presentation = self._dual_limits.universal_data(self._dual_limits.lowered(dual_diagram))
-        return self._associate(diagram, presentation)
+        return self._associate(presentation)
 
     def colimit_functor(self) -> Functor:
         """``Colim_I: Fun(I, C) -> C``, derived from the opposite limit functor."""
-        equivalence = dual_functor_category_equivalence(self._shape, self.ambient())
-        derived = self._dual_limits.limit_functor().op() * equivalence.forward()
+        if self._colimit_functor is None:
+            self._colimit_functor = self._dual_limits.limit_functor().op() * self._duality.forward()
+            from sage_categories.cat.images import register_full_image
+
+            register_full_image(self._colimit_functor, self)
         if is_discrete(self._shape):
             self.ambient().Coproducts().retain_full_image(self)
-        return Fun(self.diagrams(), self.ambient())(
-            lambda diagram: self(diagram),
-            lambda transformation: derived.on_morphism(transformation),
-        )
+        return self._colimit_functor
 
     def defining_functor(self) -> Functor:
         return self.colimit_functor()

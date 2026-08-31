@@ -27,7 +27,6 @@ from sage_categories.cat.category import (
 )
 from sage_categories.cat.properties import Axiom
 from sage_categories.cat.predicates import predicate, register_handler
-from sage_categories.kernel.roles import CategoryPoint
 
 __all__ = ["Fun", "Functor", "FunctorCategory", "FunctorProperty", "FunctorsCategory", "NaturalTransformation"]
 
@@ -203,7 +202,7 @@ denotes_diagram: Predicate = predicate("denotes_diagram")
 
 
 def _denotes_diagram_by_domain(
-    candidate: CategoryPoint,
+    candidate: CategoryOfCategories.ElementType,
     functors: FunctorCategory,
 ) -> Decision:
     if not hasattr(candidate, "_is_object") or not hasattr(candidate, "_is_morphism"):
@@ -232,7 +231,7 @@ denotes_functor: Predicate = predicate("denotes_functor")
 
 
 def _denotes_functor_by_domain(
-    candidate: CategoryPoint,
+    candidate: CategoryOfCategories.ElementType,
     functors: FunctorsCategory,
 ) -> Decision:
     if not hasattr(candidate, "_is_object") or not hasattr(candidate, "_is_morphism"):

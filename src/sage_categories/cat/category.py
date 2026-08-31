@@ -15,7 +15,6 @@ from sage_categories.cat.equality import equality_predicate
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
 from sage_categories.cat.predicates import AppliedQuery, Axiom, Predicate, Proposition, Query, ask, assume, predicate, register_handler
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine, traces_placement
-from sage_categories.kernel.roles import CategoryPoint
 
 if TYPE_CHECKING:
     from sage_categories.cat.canonical import FinitePresentedCategory
@@ -1331,32 +1330,17 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     def Terminal(self) -> FinitePresentedCategory:
         return self.Simplex(0)
 
-    def Point(self, member: CategoryOfCategories.ElementType, targets: tuple[Category, ...] = ()) -> PointCategory:
+    def Point(self, member: CategoryOfCategories.ElementType) -> PointCategory:
         """``{X}``: the one-object category on ``member``, retained by identity (POL-CAT-083).
 
-        ``targets`` are the categories the point functors place ``member`` in.  Building
-        ``{X}`` installs that placement by same-object refinement: ``member`` keeps its
-        identity and its role classes keep theirs, and the level shift puts the point
-        functors' generalized-element surface on the objects and morphisms of ``member``
-        when ``member`` is itself a category (``specs/functor.md``, "The level shift").
-
-        One point category exists per object, so calling this again returns the retained
-        one and its declared targets stand.
+        It is a diagram shape.  It does not place ``member`` or add inheritance.
         """
         from sage_categories.cat.points import PointCategory
-        from sage_categories.kernel.refinement import refine
 
         assert member._is_object(), f"{member!r} is not an object of a category"
         if member not in self._point_categories:
-            point = PointCategory(member, targets)
-            self._point_categories[member] = point
-            refine(member, point)
-            point._install_level_shift()
+            self._point_categories[member] = PointCategory(member)
         return self._point_categories[member]
-
-    def retained_point(self, member: CategoryOfCategories.ElementType) -> PointCategory | None:
-        """The point category retained for ``member``, or ``None``; the compiler reads this table."""
-        return self._point_categories[member] if member in self._point_categories else None
 
     def Simplex(self, dimension: int) -> FinitePresentedCategory:
         from sage_categories.cat import canonical
@@ -1414,11 +1398,11 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 _CAT: CategoryOfCategories | None = None
 
 
-def _member_by_placement(candidate: CategoryPoint, category: CategoryPoint) -> bool:
+def _member_by_placement(candidate: CategoryOfCategories.ElementType, category: Category) -> bool:
     return is_placed(candidate, category)
 
 
-def _integer_member_by_placement(candidate: int, category: CategoryPoint) -> bool:
+def _integer_member_by_placement(candidate: int, category: Category) -> bool:
     return is_placed(candidate, category)
 
 

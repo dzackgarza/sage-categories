@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any
-
-from sage.structure.dynamic_class import dynamic_class
+from typing import TYPE_CHECKING
 
 import sage_categories.kernel.compiler as compiler
-from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, Role, building_role_classes, role_of
+from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, Role, RoleCandidate, role_of
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
@@ -54,10 +52,11 @@ def _placement_node(value: CategoryPoint) -> compiler.Node:
     raise AssertionError(f"{value!r} is not an owned value")
 
 
-def is_placed(candidate: Any, category: Category) -> bool:
+def is_placed(candidate: RoleCandidate, category: Category) -> bool:
     """Whether ``candidate`` is an object of ``category`` by established placement (the ``member`` handler; POL-TYPE-004)."""
     if role_of(candidate) is None:
         return False
+    assert isinstance(candidate, CategoryPoint)
     target = compiler.node(category, Role.OBJECT)
     return any(compiler.same_node(target, found) for found in _reached_placements(_placement_node(candidate)))
 
@@ -108,19 +107,11 @@ def place(value: CategoryPoint, category: Category) -> None:
             # A morphism of ``C`` is an object of ``Mor(C)``, and ``category`` is that
             # placement, so both roles are the point ``* -> category``.
             value._cat_element_identity = CategoryPointIdentity(category)
-    if issubclass(type(value), role_class):
-        return
-    if issubclass(role_class, type(value)):
-        value.__class__ = role_class
-        return
-    declared = type(value)
-    with building_role_classes():
-        value.__class__ = dynamic_class(
-            f"{declared.__name__}_with_category",
-            (declared, role_class),
-            doccls=declared,
-            prepend_cls_bases=False,
-        )
+    compiler._refine_implementation_class(value, role_class)
+    from sage_categories.cat.category import Category
+
+    if isinstance(value, Category):
+        compiler.apply_level_shift(value, category)
 
 
 def _join(current: Category, target: Category) -> Category:

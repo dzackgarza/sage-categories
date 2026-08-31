@@ -56,7 +56,7 @@ __all__ = [
     "Node",
     "SemanticCollisionError",
     "compile_category",
-    "install_level_shift",
+    "apply_level_shift",
     "install_on_declaration",
     "node",
     "recompile_category",
@@ -252,7 +252,7 @@ def install_on_declaration[**P, R](local: type[CategoryPoint], name: str, member
     which the bootstrap compiled before that class could exist (POL-CAT-060, D89).
 
     The nodes are the ones the compiler linearized, which is every node it has built a
-    class for.  ``install_level_shift`` writes onto live role classes the same way.
+    class for.  ``apply_level_shift`` writes onto live role classes the same way.
     """
     setattr(local, name, member)
     for table in _runtime_categories.values():
@@ -298,32 +298,46 @@ def _assert_no_semantic_collisions(*surfaces: type[CategoryPoint]) -> None:
                 )
 
 
-type NodeInitializer = Callable[[CategoryPoint, object], None]
+def _refine_implementation_class(value: CategoryPoint, role_class: type[CategoryPoint]) -> None:
+    """Refine one owned value with a compiled implementation class."""
+    if issubclass(type(value), role_class):
+        return
+    if issubclass(role_class, type(value)):
+        value.__class__ = role_class
+        return
+    declared = type(value)
+    with building_role_classes():
+        value.__class__ = dynamic_class(
+            f"{declared.__name__}_with_category",
+            (declared, role_class),
+            doccls=declared,
+            prepend_cls_bases=False,
+        )
 
 
-class _NodeRuntime(NamedTuple):
-    initializer: NodeInitializer
-    owner: type[CategoryPoint]
+class _NodeRuntime[Value: CategoryPoint, Datum](NamedTuple):
+    initializer: Callable[[Value, Datum], None]
+    owner: type[Value]
 
 
 _node_runtimes: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
 
 
-def _runtime(current: Node) -> _NodeRuntime:
+def _runtime[Value: CategoryPoint, Datum](current: Node) -> _NodeRuntime[Value, Datum]:
     table = _node_runtimes[current.role]
     assert current.category in table, f"the {current.role.value} runtime of {current.category!r} is not compiled"
     return table[current.category]
 
 
-def _advance(owner: type[CategoryPoint], instance: CategoryPoint) -> None:
+def _advance[Value: CategoryPoint](owner: type[Value], instance: Value) -> None:
     """Enter the next generated wrapper, or the kernel role initializer."""
     super(owner, instance).__init__()
 
 
-def _advancing_initializer(owner: type[CategoryPoint]) -> NodeInitializer:
+def _advancing_initializer[Value: CategoryPoint, Datum](owner: type[Value]) -> Callable[[Value, Datum], None]:
     """Return the total runtime initializer for a declaration with no local ``__init__``."""
 
-    def initialize(instance: CategoryPoint, _datum: object) -> None:
+    def initialize(instance: Value, _datum: Datum) -> None:
         _advance(owner, instance)
 
     return initialize
@@ -415,68 +429,33 @@ def _cat_element_step[Datum](
     return target, _element_step(target, point_input, root.canonical_image)
 
 
-def _point_steps[Datum](
+def _level_shift_steps[Datum](
     root: ObjectConstructionInput[ObjectOfCategory, Datum],
     starts: tuple[Node, ...],
 ) -> tuple[tuple[Node, Callable[[], None]], ...]:
-    """The generalized-element chain of one object: every node the point ``* -> C`` it is runs.
-
-    The chain always ends at the common ``Cat().ElementType`` root, which every role's
-    kernel class reaches.  A level shift puts more above it: ``{C}``'s element class,
-    carrying each point functor's target ``ElementType``, is contributed to
-    ``C.ObjectType`` because the points ``* -> C`` are exactly the objects of ``C``
-    (``install_level_shift``).  An object of a category with a selected functor into
-    ``C`` is an object of ``C`` and carries that class too, so ``_point_starts`` reads
-    every node the object walk reached whose class the shift entered.
-
-    Every functor a point category selects is a subcategory monomorphism, identity on the
-    shared values (``specs/functor.md``, "Point categories and point functors"), so the
-    point is its own image at each target and the input does not change along the walk.
-    The point carries no datum of its own: the value's construction data belongs to its
-    own node in ``C``.
-    """
-    from sage_categories.kernel.refinement import traces_placement
-
+    """The element-role initializers supplied by direct placements of category objects."""
     point_input = ElementConstructionInput(root.canonical_image, CategoryPointIdentity(root.identity.category), None)
     found: list[Node] = []
     for start in starts:
-        if not any(same_node(start, known) for known in found):
-            found.append(start)
-    frontier = list(found)
-    while frontier:
-        source = frontier.pop(0)
-        for functor, target in successors(source):
-            if any(same_node(target, known) for known in found):
-                continue
-            assert traces_placement(functor), (
-                f"{source.category!r} selects {functor!r}, which is no placement monomorphism, so it states "
-                "no image of a point ``* -> C``"
-            )
-            found.append(target)
-            frontier.append(target)
-    return tuple(
-        (current, _element_step(current, point_input, root.canonical_image))
-        for current in found
-    )
+        for current in (start, *_linearized_nodes(start)):
+            if not any(same_node(current, known) for known in found):
+                found.append(current)
+    return tuple((current, _element_step(current, point_input, root.canonical_image)) for current in found)
 
 
-def _point_starts[Datum](
+def _level_shift_starts[Datum](
     root: ObjectConstructionInput[ObjectOfCategory, Datum],
     reached: tuple[Node, ...],
 ) -> tuple[Node, ...]:
-    """Where the generalized-element chain of one object begins, per class the value carries.
-
-    The common ``Cat().ElementType`` root is always one, and each node whose object class
-    a level shift entered adds that point category's element node.  The condition is the
-    class itself, so the steps are exactly the classes the value's MRO runs.
-    """
+    """The element-role classes supplied by direct placements of reached categories."""
     starts = [node(root.identity.category.universe(), Role.ELEMENT)]
     for current in reached:
         if current.role is not Role.OBJECT:
             continue
-        point = current.category.universe().retained_point(current.category)
-        if point is not None and issubclass(current.category.role_class(current.role), point.role_class(Role.ELEMENT)):
-            starts.append(node(point, Role.ELEMENT))
+        placement = current.category.category()
+        shifted = node(placement, Role.ELEMENT)
+        if issubclass(current.category.role_class(current.role), placement.role_class(Role.ELEMENT)):
+            starts.append(shifted)
     return tuple(starts)
 
 
@@ -511,7 +490,7 @@ def _construct_object_root[Datum](
     retain_object_input(root)
     cat_element_identity = CategoryPointIdentity(identity.category)
     object_steps = _object_steps(current, root)
-    steps = (*object_steps, *_point_steps(root, _point_starts(root, tuple(source for source, _ in object_steps))))
+    steps = (*object_steps, *_level_shift_steps(root, _level_shift_starts(root, tuple(source for source, _ in object_steps))))
     context = ObjectConstructionContext(root.canonical_image, root.identity, cat_element_identity, steps)
     token = activate_object_context(context)
     try:
@@ -765,34 +744,25 @@ def recompile_category(category: Category, functors: tuple[Functor, ...]) -> Non
     compile_category(category, functors)
 
 
-def install_level_shift(point: Category) -> None:
-    """Contribute ``{C}``'s element class to ``C.ObjectType``, whose values are the points of ``C``.
-
-    The member of a point category is a category ``C`` exactly when the level shift
-    applies.  The points ``* -> C`` are then exactly the objects of ``C``, so the class
-    ``{C}`` compiled for its element role -- carrying each point functor's target
-    ``D.ElementType`` -- is a class of an object of ``C``.  The object role is the only
-    one it reaches: ``D.ObjectType`` applies to the category ``C``, which
-    ``Cat().Point`` refines into ``{C}``, and ``D.MorphismType`` to ``{C}.MorphismType``,
-    whose sole value is ``1_C`` and which ``{C}``'s own compile builds.  Morphisms of
-    ``C`` receive no element surface (D57, POL-CAT-083; ``specs/functor.md``, "The level
-    shift").
-
-    The level shift adds the selected target class to the live ``C.ObjectType``.
-    It then initializes that private class state for objects built before the shift.
-    """
-    member = point.member()
-    if member not in point.universe():
-        return
+def apply_level_shift(member: Category, placement: Category) -> None:
+    """Supply ``placement.ElementType`` to objects of a category placed in ``placement``."""
     current = node(member, Role.OBJECT)
     role_class = current.category.role_class(current.role)
-    shifted_class = point.role_class(Role.ELEMENT)
+    shifted_class = placement.role_class(Role.ELEMENT)
     if issubclass(role_class, shifted_class):
         return
     _assert_no_semantic_collisions(role_class, shifted_class)
-    role_class.__bases__ = (*role_class.__bases__, shifted_class)
+    with building_role_classes():
+        refined_class = dynamic_class(
+            f"{role_class.__name__}_with_{shifted_class.__name__}",
+            (role_class, shifted_class),
+            doccls=role_class,
+            prepend_cls_bases=False,
+        )
+    setattr(member, Role.OBJECT.value, refined_class)
     for constructed in _placed_objects(member):
-        _initialize_level_shift(node(point, Role.ELEMENT), constructed)
+        _refine_implementation_class(constructed, refined_class)
+        _initialize_level_shift(node(placement, Role.ELEMENT), constructed)
 
 
 def _placed_objects(category: Category) -> tuple[ObjectOfCategory, ...]:
@@ -807,12 +777,11 @@ def _placed_objects(category: Category) -> tuple[ObjectOfCategory, ...]:
 def _initialize_level_shift(start: Node, value: ObjectOfCategory) -> None:
     """Run the shift's element chain on one object built before the shift.
 
-    The classes above ``{C}.ElementType`` in the value's MRO ran when it was built, so the
-    chain resumes at the class the shift contributed and runs down to the common
-    ``Cat().ElementType`` root, which is where its steps end.
+    The classes above the supplied element role ran when the value was built.  The chain
+    resumes at the class contributed by the direct placement.
     """
     root = retained_object_input(value)
-    steps = _point_steps(root, (start,))
+    steps = _level_shift_steps(root, (start,))
     context = ObjectConstructionContext(value, root.identity, CategoryPointIdentity(root.identity.category), steps)
     token = activate_object_context(context)
     try:

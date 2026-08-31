@@ -6,14 +6,9 @@ category ``Discrete PUnit`` and ``Functor.fromPUnit``; the repository names the 
 object in the category itself instead of in a constant functor
 (``Mathlib/CategoryTheory/PUnit``, inspected 2026-08-27).
 
-``{X}`` selects the monomorphism into the category ``X`` was already placed in, then one
-**point functor** per target: the subcategory monomorphism ``{X} -> D`` stating one
-further placement of ``X`` as an object of ``D`` (``specs/functor.md``, "Point categories
-and point functors").  ``{X}`` has one hom category, so every functor out of it is
-faithful.
-
-The member and its identity keep the placements they already have; membership in the
-punctual category is the exact identity statement owned by this construction.
+The member and its identity keep the placements they already have.  The one-object
+category adds no placement or structural inheritance.  Membership in the punctual
+category is the exact identity statement owned by this construction.
 """
 
 from __future__ import annotations
@@ -87,12 +82,8 @@ class PointCategory(Category[[], []]):
     class MorphismType:
         """``1_X``, the sole morphism of ``{X}``: the identity ``X`` already has where it was placed."""
 
-    def __init__(self, member: CategoryOfCategories.ElementType, targets: tuple[Category, ...]) -> None:
+    def __init__(self, member: CategoryOfCategories.ElementType) -> None:
         self._member = member
-        self._targets = targets
-        # The placement ``X`` already has: the monomorphism into it is what makes ``{X}`` a
-        # subcategory, so refining ``X`` into ``{X}`` never weakens its placement
-        # (POL-CAT-074).
         self._established = member.category()
         super().__init__()
 
@@ -100,23 +91,9 @@ class PointCategory(Category[[], []]):
         """The sole object ``X``."""
         return self._member
 
-    def targets(self) -> tuple[Category, ...]:
-        """The categories this point category places ``X`` in through its point functors."""
-        return self._targets
-
     def structure_functors(self) -> tuple[CategoryOfCategories.MorphismType, ...]:
-        """The monomorphism into ``X``'s established category, then one point functor per target.
-
-        Each is constructed through ``Fun``'s table of subcategory monomorphisms, so ``Fun({X}, D)`` and
-        ``{X}.structure_functors()`` name one functor (POL-FUN-027).  ``{X}`` is not yet
-        an object of ``Cat()`` while its own declaration runs, which is why the table is
-        addressed directly rather than through ``Fun({X}, D).Monomorphisms().Isofibrations()()``.
-        """
-        functors = self.universe().morphism_category(1)
-        return (
-            functors.subcategory_monomorphism(self, self._established),
-            *(functors.subcategory_monomorphism(self, target) for target in self._targets),
-        )
+        """A one-object diagram selects no structure functor."""
+        return ()
 
     def morphism_category_type(self) -> type[PointMorphismCategory]:
         return PointMorphismCategory
@@ -162,14 +139,5 @@ class PointCategory(Category[[], []]):
 
     @recursive_repr("{...}")
     def __repr__(self) -> str:
-        """``{X}``: the member between braces.
-
-        ``Cat().Point(X)`` refines ``X`` into this category, so ``X`` presents itself
-        through the placement it now has, and a member that names its placement names
-        this category back.  The two presentations are each correct and the pair is
-        cyclic, which is what ``reprlib.recursive_repr`` is for: CPython uses it wherever
-        a value can contain itself (``reprlib``, and ``dataclasses`` and
-        ``collections.OrderedDict`` on their own ``__repr__``; inspected 2026-08-29).
-        Presentation only: no identity, equality, or order reads it (``AGENTS.md``).
-        """
+        """``{X}``: the member between braces."""
         return f"{{{self._member!r}}}"

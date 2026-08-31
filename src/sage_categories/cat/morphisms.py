@@ -23,7 +23,6 @@ from sage.structure.coerce_dict import TripleDict
 from sage_categories.cat.category import Category, Decision, Predicate, Proposition, ask, member, refine
 from sage_categories.cat.predicates import predicate, register_handler
 from sage_categories.cat.properties import Axiom, FullSubcategory, PredicateSubcategory, PropertySubcategory
-from sage_categories.kernel.roles import CategoryPoint
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -68,9 +67,9 @@ endpoints = predicate("endpoints")
 
 
 def _endpoints_by_equality(
-    morphism: CategoryPoint,
-    domain: CategoryPoint,
-    codomain: CategoryPoint,
+    morphism: CategoryOfCategories.ElementType,
+    domain: CategoryOfCategories.ElementType,
+    codomain: CategoryOfCategories.ElementType,
 ) -> Decision:
     return ask((morphism.domain() == domain) & (morphism.codomain() == codomain))
 
@@ -81,7 +80,10 @@ def _endpoints_by_equality(
 endpoints_in = predicate("endpoints_in")
 
 
-def _endpoints_in_by_membership(morphism: CategoryPoint, subcategory: CategoryPoint) -> Decision:
+def _endpoints_in_by_membership(
+    morphism: CategoryOfCategories.ElementType,
+    subcategory: Category,
+) -> Decision:
     return ask(subcategory.membership_proposition(morphism.domain()) & subcategory.membership_proposition(morphism.codomain()))
 
 

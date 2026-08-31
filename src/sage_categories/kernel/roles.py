@@ -19,6 +19,7 @@ __all__ = [
     "MorphismOfCategory",
     "ObjectOfCategory",
     "Role",
+    "RoleCandidate",
     "building_role_classes",
     "category_of",
     "install_cat_element_root",
@@ -135,11 +136,6 @@ class ObjectOfCategory(CategoryPoint):
         from sage_categories.kernel.compiler import recompile_category
 
         recompile_category(self, functors)
-
-    def _install_level_shift(self: Category) -> None:
-        from sage_categories.kernel.compiler import install_level_shift
-
-        install_level_shift(self)
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
         """Return the declaration written for one role of this category."""
@@ -411,7 +407,10 @@ def install_cat_element_root(root: type[CategoryPoint]) -> None:
             base.__bases__ = (root,)
 
 
-def role_of(candidate: Any) -> Role | None:
+type RoleCandidate = CategoryPoint | int
+
+
+def role_of(candidate: RoleCandidate) -> Role | None:
     """The implementation role of a candidate value, or ``None`` for an unowned candidate (POL-TYPE-004)."""
     match candidate:
         case MorphismOfCategory():

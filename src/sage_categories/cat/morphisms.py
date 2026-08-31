@@ -27,6 +27,7 @@ from sage_categories.cat.properties import Axiom, FullSubcategory, PredicateSubc
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
+    from sage_categories.cat.functors import Functor
     from sage_categories.cat.properties import FixedEndpointProperty
 
 __all__ = ["EndomorphismsCategory", "FixedEndpointCategory", "IsomorphismsCategory", "Mor", "MorphismCategory", "hom_inhabitation"]
@@ -158,6 +159,13 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
     # ``Mor(C)`` on the morphisms of ``D`` (Mathlib ``InducedCategory.Hom``); its
     # subcategory monomorphism is ``D``'s at the morphism role, which the node
     # normalization already places in the selected graph (POL-CAT-021, POL-CAT-087).
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        if not self._base.has_ambient():
+            return ()
+        from sage_categories.cat.functors import Fun
+
+        return (Fun.full_subcategory_monomorphism(self, self.ambient()),)
 
     def has_ambient(self) -> bool:
         return self._base.has_ambient()

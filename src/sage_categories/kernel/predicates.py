@@ -642,7 +642,8 @@ class Axiom:
     def _construct(self, category: Category) -> Category:
         """The narrowing of a declared subcategory, else the implementation of this axiom."""
         if category.has_ambient():
-            return category.property_subcategory(self._declared_on(category.ambient()))
+            defining_functor = category.structure_functors()[0]
+            return defining_functor.inverse_image(self._declared_on(defining_functor.codomain()))
         containing = tuple(axiom._declared_on(category) for axiom in self._full_subcategory_of)
         return (self._implementation or _property_subcategory())(category, self._name, containing)
 

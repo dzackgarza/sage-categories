@@ -20,6 +20,8 @@ __all__ = [
     "StrictImageCategory",
     "essential_image",
     "full_image",
+    "retain_morphism_image",
+    "retain_object_image",
     "strict_image",
 ]
 
@@ -319,6 +321,30 @@ class EssentialImageCategory[**MorphismData, **TwoMorphismData](
 _strict_images: MonoDict = MonoDict()
 _full_images: MonoDict = MonoDict()
 _essential_images: MonoDict = MonoDict()
+
+
+def retain_object_image(
+    defining_functor: Functor,
+    image: CategoryOfCategories.ElementType,
+) -> None:
+    """Retain a completed public object image in each constructed image category."""
+    if defining_functor in _strict_images:
+        _strict_images[defining_functor]._retain_object(image)
+    if defining_functor in _full_images:
+        _full_images[defining_functor]._retain_object(image)
+    if defining_functor in _essential_images:
+        _essential_images[defining_functor](image)
+
+
+def retain_morphism_image(
+    defining_functor: Functor,
+    image: MorphismCategory.ObjectType,
+) -> None:
+    """Retain a completed public morphism image in each constructed image category."""
+    if defining_functor in _strict_images:
+        _strict_images[defining_functor]._retain_morphism(image)
+    if defining_functor in _essential_images:
+        refine(image, _essential_images[defining_functor].morphism_category(1))
 
 
 def strict_image(target: Category, defining_functor: Functor) -> StrictImageCategory:

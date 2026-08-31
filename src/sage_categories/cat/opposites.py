@@ -173,6 +173,13 @@ def opposite_category(category: Category) -> Category:
         opposite = OppositeCategory(category)
         _opposite_categories[category] = opposite
         _opposite_categories[opposite] = category
+        base = opposite.narrowing_base()
+        if base is not opposite:
+            key = tuple(sorted(root.ordinal() for root in opposite.narrowing_roots()))
+            if key in base._narrowings:
+                assert base._narrowings[key] is opposite
+            else:
+                base._narrowings[key] = opposite
         opposite._enable_structure_functors()
     return _opposite_categories[category]
 

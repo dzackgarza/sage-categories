@@ -943,6 +943,12 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
             return opposite_functor(self)
 
+        def Fiber(self, member_object: CategoryOfCategories.ElementType) -> Category:
+            """Return the strict fiber over ``member_object``."""
+            from sage_categories.cat.fibers import fiber
+
+            return fiber(self, member_object)
+
         # -- points (``specs/functor.md``, "Structural inheritance") --------------------
         #
         # A point of ``X in C`` is a morphism ``t: 1_C -> X``, so ``F(t): F(1_C) -> F(X)``

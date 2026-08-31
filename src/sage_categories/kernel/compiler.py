@@ -342,6 +342,15 @@ class _NodeRuntime[Value: CategoryPoint, Datum](NamedTuple):
 _node_runtimes: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
 
 
+def runtime_declaration(runtime_class: type[CategoryPoint]) -> type[CategoryPoint] | None:
+    """Return the semantic declaration copied into one compiled role class."""
+    for role, table in _node_runtimes.items():
+        for category, runtime in table.items():
+            if runtime.owner is runtime_class:
+                return category.local_role_class(role)
+    return None
+
+
 def _runtime[Value: CategoryPoint, Datum](current: Node) -> _NodeRuntime[Value, Datum]:
     table = _node_runtimes[current.role]
     assert current.category in table, f"the {current.role.value} runtime of {current.category!r} is not compiled"
@@ -671,9 +680,11 @@ def _debug_unresolved_diamonds(category: Category) -> None:
 
 def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
     """Compile the three role classes of ``category`` from its local declarations and its selected functors."""
+    from sage_categories.kernel.refinement import is_placed
+
     for functor in functors:
         functor_category = category.category().morphism_category(1)
-        assert functor in functor_category, f"{functor!r} is not an object of {functor_category!r}"
+        assert is_placed(functor, functor_category), f"{functor!r} is not an object of {functor_category!r}"
         assert functor.domain() is category, f"{functor!r} does not have domain {category!r}"
         # Naming a declared category as a functor's *domain* is always safe; selecting a
         # functor into one that no implementation claims is not, because the declaration's

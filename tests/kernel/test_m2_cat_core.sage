@@ -53,9 +53,9 @@ def test_products_pullbacks_comma_and_fixed_slices_retain_defining_functors():
     identity = _identity_functor(category)
     diagram = cospan_diagram(Cat(), identity, identity)
     pullback = Cat().Pullbacks()(diagram)
-    data = Cat().Pullbacks().presentation(pullback)
-    assert data.diagram is diagram
-    assert data.transformation.codomain() is diagram
+    presentation = Cat().Pullbacks().presentation(pullback)
+    assert presentation.diagram() is diagram
+    assert presentation.transformation().codomain() is diagram
 
     comma = Cat().Comma(identity, identity)
     assert Cat().Comma(identity, identity) is comma

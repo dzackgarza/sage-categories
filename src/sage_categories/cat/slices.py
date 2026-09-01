@@ -407,13 +407,13 @@ class CommaCategory(LimitCategory):
 
     def pair_projection(self) -> Functor:
         """The retained pullback projection to ``A * B``."""
-        data = Cat().Pullbacks().presentation(self)
-        return data.transformation.component(data.diagram.domain()(0))
+        presentation = Cat().Pullbacks().presentation(self)
+        return presentation.transformation().component(presentation.diagram().domain()(0))
 
     def arrow_projection(self) -> Functor:
         """The retained pullback projection to ``Fun([1], C)``."""
-        data = Cat().Pullbacks().presentation(self)
-        return data.transformation.component(data.diagram.domain()(1))
+        presentation = Cat().Pullbacks().presentation(self)
+        return presentation.transformation().component(presentation.diagram().domain()(1))
 
     def first_projection(self) -> Functor:
         """The retained projection ``Comma(F, G) -> A``."""

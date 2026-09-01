@@ -225,6 +225,39 @@ reads.
 | **Deduction Handlers** | Call `in` / `ask()` on complements | Inspect established structure via `is_placed` | `POL-ONT-006` |
 | **Morphisms** | Bare Python callables / lambdas | Explicit arrows with domain and codomain endpoints | `POL-ONT-007` |
 
+### The Core Categorical Philosophy
+
+#### 1. Categorical Primacy: Arrows and Objects as Foundational Primitives
+Mathematics in `sage-categories` is not constructed on top of a global universe of material sets or raw Python data structures. Category theory is the primitive ontology:
+- **No Free-Floating Elements**: There is no such thing as an element existing outside of an object, or an object existing outside of a category. An "element" $x$ of an object $X$ is a **generalized element**—an arrow $x: \mathbf{1} \to X$ from the terminal object in the slice category over $\mathbf{1}$.
+- **Morphisms as the Universal Medium of Interaction**: Mathematical actions, evaluations, points, and relationships are modeled as morphism compositions $g \circ f$ and functor applications $F(f)$, never as container mutations, dictionary lookups, or ad-hoc method calls.
+- **Private Carrier Data vs. Public Mathematical Identity**: A raw Python tuple, integer, or lambda is solely private carrier data (`Datum` / `Rule`) used by runtime engines. It has no category membership, no domain, and no mathematical standing until an owned category constructor produces an owned `CategoryPoint`.
+
+#### 2. Functorial Transport: Structure Arrives via Functor Chains
+In traditional object-oriented systems, capabilities are added to classes via inheritance, mixins, or duplicated utility methods. In `sage-categories`, capabilities are **transported along canonical chains of structure functors**:
+- **Single Source of Mathematical Ownership**: Every mathematical concept is owned by the weakest category whose axioms imply it. Cardinality is owned exclusively by $\mathbf{Sets}$. Linearity is owned exclusively by $\mathbf{Modules}$. Order is owned exclusively by $\mathbf{Posets}$.
+- **Compositional Access**: Higher mathematical structures receive capabilities compositionally. For example, a lattice does not implement an ad-hoc cardinality method; cardinality arrives through the functor path:
+  $$\mathbf{Lattices} \xrightarrow{U_{\mathrm{form}}} \mathbf{FormedModules} \xrightarrow{U_{\mathrm{mod}}} \mathbf{Modules} \xrightarrow{U_{\mathrm{grp}}} \mathbf{AbelianGroups} \xrightarrow{U_{\mathrm{set}}} \mathbf{Sets}$$
+- **Zero Redundancy**: Leaf categories declare only their genuine mathematical delta (new objects, generating arrows, structure functors, and canonical lifts). They never re-implement or shadow downstream theory.
+
+#### 3. Universal Properties: Defining Data Determined up to Unique Isomorphism
+Categorical constructions are defined strictly by their **universal mapping properties**:
+- **Limits and Colimits**: A product $A \times B$ is not a Python tuple container; it is the universal limit cone equipped with canonical projection morphisms $\pi_A: A \times B \to A$ and $\pi_B: A \times B \to B$. Any candidate cone factors uniquely through these projections.
+- **Subobjects and Quotients**: A subobject of $X$ is an equivalence class of monomorphisms $m: S \hookrightarrow X$ (an object of the slice category $\mathbf{Sub}(X)$). A quotient of $X$ is an epimorphism $q: X \twoheadrightarrow Q$.
+- **Universal Data Preservation**: Structural constructions retain their defining universal morphisms and presentations as first-class mathematical objects.
+
+#### 4. Categorical Refinement: Subcategories as Same-Object Classification
+A subcategory $\mathcal{P} \subseteq \mathcal{C}$ (whether a property subcategory, full subcategory, or wide subcategory) is a mathematical filter on the ambient category:
+- **Same-Object Identity**: An object in a property subcategory $\mathcal{P}$ is the exact same runtime instance in memory as in the ambient category $\mathcal{C}$. Refinement is functorial placement, not subclass instantiation or wrapper allocation.
+- **Multi-Property Intersection**: An object can simultaneously belong to multiple property subcategories (e.g., $X \in \operatorname{Ob}(\mathbf{FiniteSets}) \cap \operatorname{Ob}(\mathbf{TotallyOrderedSets})$) without generating combinatorial wrapper classes.
+- **Placement vs. Active Deduction**: An established placement means the object is already known to belong to $\mathcal{P}$ (`is_placed(X, P)`). Category containment `X in P` evaluates active proposition deduction.
+
+#### 5. Constructive Categorical Logic: Three-Valued Propositions via SymPy
+Mathematical truths, relations, and capabilities are modeled through constructive categorical logic:
+- **Propositions as First-Class Expressions**: Membership queries, property assertions, and equalities return unevaluated SymPy propositions (`AppliedPredicate`).
+- **Three-Valued Decidability**: Questions evaluate via `ask()` to `True` (provably true), `False` (provably false), or `Unknown` (undecidable from available axioms and algorithms).
+- **Exact Justification**: Truth is established by definition, by inspected construction theorem (canonical lifts along structure functors), or by exact computational deduction handlers. Algorithms realize natural transformations rather than ad-hoc heuristics.
+
 ## Predicates, hypotheses, and assumptions
 
 A predicate application is a public SymPy proposition with typed mathematical arguments.

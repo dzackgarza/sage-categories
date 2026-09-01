@@ -7,3 +7,17 @@ tests/kernel/test_m5_vertical_witnesses.sage
 === Running: mypy static type analysis (Sage-aware) ===
 # Type checks Python and preparsed Sage files
 # Preparsing 5 Sage file(s) for mypy
+/home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage/categories/category.py:1612: UserWarning: _RuntimeImplementationCategory.ParentMethods should not have a super class
+  warn("%s.%s should not have a super class" % (cls.__name__, method_provider))
+error: INTERNAL ERROR -- Please try using mypy master on GitHub:
+https://mypy.readthedocs.io/en/stable/common_issues.html#using-a-development-mypy-build
+If this issue continues with mypy master, please report a bug at https://github.com/python/mypy/issues
+version: 2.0.0
+note: please use --show-traceback to print a traceback when reporting a bug
+Error constructing plugin instance of SageCategoryProjectionPlugin
+
+ERROR: mypy found type errors in project code.
+/home/dzack/ai-review-ci/justfiles/../tool-artifacts/scripts/emit-triage-directive.sh: line 14: AI_REVIEW_CI_FAILURE_MODE: AI_REVIEW_CI_FAILURE_MODE must be set by test-commit, test-push, test-ci, or ambient
+error: recipe `_sage-mypy` failed with exit code 1
+
+[exit status: 1]

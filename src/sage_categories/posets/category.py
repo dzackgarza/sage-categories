@@ -10,13 +10,14 @@ from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.cat.category import Category
-from sage_categories.cat.constructions import cone
+from sage_categories.cat.constructions import ProductsCategory, cone
 from sage_categories.cat.diagrams import sequence_position
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.shapes import ThinCategory
 from sage_categories.cat.predicates import AppliedPredicate, Predicate, Proposition, ask, conjunction, disjunction, implication, negation, predicate, register_handler
-from sage_categories.kernel.refinement import refine
+from sage_categories.kernel.refinement import is_placed, refine
+from sage_categories.kernel.roles import Role, role_of
 from sage_categories.sets.category import Sets
 from sage_categories.sets.elements import Datum, SetElement
 from sage_categories.sets.maps import Rule
@@ -128,7 +129,7 @@ class PosetDeclaration:
         carrier = self.carrier()
         order = predicate(f"ThinOrder({self!r})")
 
-        def _thin_le(left: CategoryOfCategories.ElementType, right: CategoryOfCategories.ElementType, assumptions: Any = True) -> Decision:
+        def _thin_le(left: CategoryOfCategories.ElementType, right: CategoryOfCategories.ElementType, assumptions: Proposition) -> Decision:
             return ask(self.element(left) <= self.element(right))
 
         register_handler(order, _thin_le)
@@ -197,8 +198,7 @@ def _is_point(candidate: Any) -> bool:
     """
     posets = Posets()
     return (
-        hasattr(candidate, "_is_element")
-        and candidate._is_element()
+        role_of(candidate) is Role.ELEMENT
         and candidate.parent() in posets
         and candidate.defining_morphism().domain() is posets.Terminal()
     )
@@ -237,7 +237,7 @@ def _total(relation: Relation, size: int) -> Decision:
     return ask(conjunction(disjunction((relation[i, j], relation[j, i])) for i in range(size) for j in range(i + 1, size)))
 
 
-def _partial_order_on_enumerated(relation: CategoryOfCategories.ElementType, assumptions: Any = True) -> Decision:
+def _partial_order_on_enumerated(relation: CategoryOfCategories.ElementType, assumptions: Proposition) -> Decision:
     sets = Sets()
     if relation not in sets.ChosenSubsets():
         return Unknown
@@ -257,7 +257,10 @@ def _square(relation: CategoryOfCategories.ElementType) -> SetObject:
     that object owns the projections and the mediator (POL-CAT-046, POL-FUN-019).
     """
     square = relation.underlying_set()
-    assert hasattr(square, "product_projection") or is_placed(square, Sets().Products()), f"{relation!r} is not a chosen subset of a chosen product"
+    placement = square.category()
+    assert any(
+        isinstance(root, ProductsCategory) for root in (placement, *placement.narrowing_roots())
+    ), f"{relation!r} is not a chosen subset of a chosen product"
     return square
 
 
@@ -266,8 +269,8 @@ def _pair_point(square: SetObject, left: SetElement, right: SetElement) -> SetEl
     from sage_categories.sets.products import Family
 
     index_set = Sets().Simplex(1)
-    d0 = left._point_datum_() if hasattr(left, "_point_datum_") else left
-    d1 = right._point_datum_() if hasattr(right, "_point_datum_") else right
+    d0 = left._point_datum_() if role_of(left) is Role.ELEMENT else left
+    d1 = right._point_datum_() if role_of(right) is Role.ELEMENT else right
     fam = Family(index_set, {0: d0, 1: d1}.__getitem__)
     return square.point(fam)
 
@@ -276,7 +279,7 @@ def _order_relation(poset: CategoryOfCategories.ElementType, points: tuple[SetEl
     return _decided(lambda left, right: ask(poset.element(left) <= poset.element(right)), points)
 
 
-def _total_on_enumerated(poset: CategoryOfCategories.ElementType, assumptions: Any = True) -> Decision:
+def _total_on_enumerated(poset: CategoryOfCategories.ElementType, assumptions: Proposition) -> Decision:
     posets = Posets()
     if poset not in posets:
         return Unknown
@@ -287,7 +290,7 @@ def _total_on_enumerated(poset: CategoryOfCategories.ElementType, assumptions: A
     return _total(_order_relation(poset, points), len(points))
 
 
-def _order_preserving_on_enumerated(source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType, set_map: CategoryOfCategories.ElementType, assumptions: Any = True) -> Decision:
+def _order_preserving_on_enumerated(source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType, set_map: CategoryOfCategories.ElementType, assumptions: Proposition) -> Decision:
     carrier = Posets().underlying_set_functor().on_object(source)
     if not Sets().Finite().has_chosen_enumeration(carrier):
         return Unknown
@@ -430,8 +433,10 @@ class PosetsCategory(Category[[Rule], []]):
         underlying = self.underlying_set_functor()
         u_dom = underlying.on_object(domain)
         u_cod = underlying.on_object(codomain)
-        if hasattr(rule, "domain") and hasattr(rule, "codomain") and hasattr(rule, "_set_morphism_data"):
-            assert rule.domain() == u_dom and rule.codomain() == u_cod, f"{rule!r} endpoints do not match {domain!r} -> {codomain!r}"
+        if role_of(rule) is Role.MORPHISM:
+            assert ask(rule.domain() == u_dom) is True and ask(rule.codomain() == u_cod) is True, (
+                f"{rule!r} endpoints do not match {domain!r} -> {codomain!r}"
+            )
             set_map = rule
         else:
             set_map = Sets().morphism_category(1)(u_dom, u_cod)(rule)
@@ -556,7 +561,7 @@ def _covers_on_finite(
     poset: CategoryOfCategories.ElementType,
     lower: CategoryOfCategories.ElementType,
     upper: CategoryOfCategories.ElementType,
-    assumptions: Any = True,
+    assumptions: Proposition,
 ) -> Decision:
     from sage_categories.posets import _finite_poset_sage as engine
 

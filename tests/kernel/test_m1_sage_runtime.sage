@@ -271,17 +271,17 @@ DIAMOND = DiamondCategory()
 
 
 def test_kernel_imports_without_production_leaves() -> None:
-    production_leaf_prefixes = (
-        "sage_categories.sets",
-        "sage_categories.posets",
-        "sage_categories.number_sets",
-        "sage_categories.ordinals",
+    import subprocess
+    cmd = (
+        "import sys, sage_categories.cat.category, sage_categories.cat.functors, "
+        "sage_categories.cat.properties, sage_categories.cat.constructions, "
+        "sage_categories.cat.canonical, sage_categories.cat.declarations, "
+        "sage_categories.kernel.compiler; "
+        "prefixes = ('sage_categories.sets', 'sage_categories.posets', 'sage_categories.number_sets', 'sage_categories.ordinals'); "
+        "leaves = [m for m in sys.modules if any(m == p or m.startswith(p + '.') for p in prefixes)]; "
+        "assert not leaves, f'Kernel imported production leaves: {leaves}'"
     )
-    assert not any(
-        module == prefix or module.startswith(prefix + ".")
-        for module in sys.modules
-        for prefix in production_leaf_prefixes
-    )
+    subprocess.run([sys.executable, "-c", cmd], check=True)
 
 
 def test_sage_compiler_runs_the_object_element_and_morphism_diamond() -> None:

@@ -144,6 +144,7 @@ reads.
 | `POL-ONT-006` | Inspect established placement via `is_placed(X, C)` inside property deduction handlers. Never invoke active deduction via `X in C` or `ask()` within complementary property handlers, which triggers infinite mutual deduction cycles. |
 | `POL-ONT-007` | Treat raw Python callables (`lambda`, functions) solely as constructor input rules, never as morphisms. Morphisms require explicit category endpoints $A \to B$ and must be constructed through `Mor(C)(A, B)(rule)`. |
 | `POL-ONT-008` | Ban catch-all constructors, implicit fallback heuristics, and loose `@overload` sniffing. Provide dedicated explicit constructors of the form `X.from_Y(...)` for distinct input modalities. The main constructor must perform an explicit `match`/`case` on the exact supported input types, route them directly with no fallback paths, and unconditionally raise a hard `TypeError` on the default `case _:`. |
+| `POL-ONT-009` | Model mathematical structures using generic categorical constructions (slice, coslice, subobject, quotient, comma, and functor categories) rather than ad-hoc leaf classes or facade parents with ambient pointers. Theory-specific sub-entities (e.g. `Submonoids(M)`, `Subgroups(G)`, `Submodules(V)`) are convenience spellings for the corresponding generic construction `SubobjectCategory(C, X)`. No leaf category may implement bespoke subobject or quotient container classes. |
 
 ### `POL-ONT-001`: The False Prior "Sets Are Containers of Python Data"
 
@@ -220,6 +221,16 @@ reads.
   - The main constructor does an explicit `match`/`case` on *exactly* what types of inputs come in, and routes them directly to the appropriate dedicated constructor.
   - There are **zero fallback heuristics and zero silent coercions**. The default `case _:` branch unconditionally raises a hard `TypeError` or `ValueError`.
 
+### `POL-ONT-009`: The False Prior "Reinventing Generic Categorical Constructions as Ad-Hoc Leaf Facades"
+
+- **The False Model**:
+  - Creating a standalone facade class or custom category (e.g. `class Submonoid`, `class Subgroup`) that holds an `ambient` pointer, a `predicate`, and hand-rolled containment logic.
+- **The Internalized Reality (`specs/functor.md`, `specs/leaves.md`)**:
+  - Subobjects, quotients, pointed objects, and comma objects are **generic categorical constructions** that exist uniformly across any category $\mathcal{C}$.
+  - In any category $\mathcal{C}$, for an object $X \in \operatorname{Ob}(\mathcal{C})$, the subobjects form the **Subobject Category** $\mathbf{Sub}_{\mathcal{C}}(X)$—the full subcategory of the slice $\mathcal{C}/X$ spanned by monomorphisms $m: S \hookrightarrow X$. Morphisms between subobjects are commuting triangles in the slice ($m' \circ h = m$).
+  - Theory-specific constructors (`Submonoids(M)`, `Subgroups(G)`, `Subsets(X)`, `Submodules(V)`) are convenience spellings for `SubobjectCategory(C, X)`.
+  - Generic operations (subobject poset ordering, intersection via pullbacks, image factorization) are implemented once generically, not duplicated across leaf theories.
+
 ### Core Project Philosophy Summary
 
 | Concept | Python / SWE Prior (The Mistake) | `sage-categories` Architecture (The Truth) | Policy |
@@ -235,6 +246,7 @@ reads.
 | **Deduction Handlers** | Call `in` / `ask()` on complements | Inspect established structure via `is_placed` | `POL-ONT-006` |
 | **Morphisms** | Bare Python callables / lambdas | Explicit arrows with domain and codomain endpoints | `POL-ONT-007` |
 | **Constructor Architecture** | Catch-all `*args` with heuristic fallbacks | Dedicated `from_Y` methods; explicit `match`/`case` with hard error on default `case _:` | `POL-ONT-008` |
+| **Subobjects & Quotients** | Bespoke leaf facade classes with ambient pointers | Generic slice/subobject/quotient categories (`SubobjectCategory(C, X)`) | `POL-ONT-009` |
 
 ### The Core Categorical Philosophy
 
@@ -274,6 +286,18 @@ A robust categorical framework requires unambiguous mathematical construction:
 - **Explicit Named Constructors `X.from_Y(...)`**: When an object or morphism can be presented from different data modalities (e.g. from an explicit enumeration, a characteristic predicate, a generator list, a relation matrix), each representation receives its own dedicated, explicitly named constructor (`from_enumeration`, `from_rule`, `from_matrix`). Never rely on polymorphic overloads to guess the representation.
 - **Exhaustive Matching on Canonical Constructors**: The main constructor (`__call__` or primary factory) performs an explicit `match`/`case` on *exactly* what types or structural signatures of inputs arrive, routing each matched case directly to the appropriate dedicated constructor.
 - **Zero Fallback Heuristics and Hard Error on Default**: There are zero fallback branches and zero heuristic coercions. The default `case _:` branch must unconditionally raise an immediate, informative hard error (`TypeError` or `ValueError`), ensuring that unrecognized input forms fail fast and noisily.
+
+#### 7. Generic Categorical Constructions vs. Ad-Hoc Leaf Facades
+Whenever a mathematical structure is an instance of a standard categorical construction, it must be realized through that generic construction rather than by inventing bespoke leaf classes:
+
+| Mathematical Concept | Anti-Pattern (Ad-Hoc Leaf Facade) | Correct Generic Categorical Construction |
+| :--- | :--- | :--- |
+| **Subobjects** (Submonoids, Subgroups, Subrings) | Custom `SubX` class with `ambient` pointer | `SubobjectCategory(C, X)` (full subcategory of slice $\mathcal{C}/X$ on monics) |
+| **Quotients** (Quotient groups, Quotient rings) | Custom `QuotientX` equivalence-class wrapper | `QuotientCategory(C, X)` (full subcategory of coslice $X/\mathcal{C}$ on epics) |
+| **Pointed Objects** (Pointed sets, Pointed spaces) | Custom `PointedX` pair `(space, basepoint)` | Coslice under the terminal/initial object $\mathbf{1}/\mathcal{C}$ |
+| **Hom-Sets / Morphisms** | Custom mapping lookup classes | Morphism Category $\mathbf{Mor}(\mathcal{C})(A, B)$ |
+| **Diagrams / Systems** | Custom graph/network data structures | Functor Category $[\mathcal{J}, \mathcal{C}]$ |
+| **Extensions / Bundles** | Ad-hoc fiber classes | Slice Category $\mathcal{C}/B$ |
 
 ## Predicates, hypotheses, and assumptions
 

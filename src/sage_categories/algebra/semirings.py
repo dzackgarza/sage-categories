@@ -17,6 +17,7 @@ from collections.abc import Hashable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from sage.rings.integer import Integer
 from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.algebra.monoids import Monoids, MonoidsCategory
@@ -161,7 +162,7 @@ class SemiringsCategory(Category[[], []]):
 
         return Fun(self, target).Monomorphisms().Isofibrations()(on_object, on_morphism)
 
-    def product_projection(self, index: int) -> Functor:
+    def product_projection(self, index: int | Integer) -> Functor:
         """Product projections: 0 is additive monoid projection, 1 is multiplicative monoid projection."""
         if index == 0:
             return self.additive_monoid_projection()

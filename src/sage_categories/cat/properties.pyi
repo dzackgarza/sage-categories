@@ -1,5 +1,6 @@
 import sage_categories
 import abc
+from collections.abc import Callable
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.morphisms import MorphismCategory
@@ -38,10 +39,10 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
     def element_from_defining_morphism(self, defining_morphism: MorphismCategory.ObjectType) -> CategoryOfCategories.ElementType:
         ...
 
-    def limit_construction(self, shape: Category):
+    def limit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
         ...
 
-    def colimit_construction(self, shape: Category):
+    def colimit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
         ...
 
 class InverseImageSubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):
@@ -84,13 +85,13 @@ def inverse_image(functor: Functor, target_subcategory: Category) -> Category:
 
 class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):
 
-    class ObjectType(sage_categories.cat.category.CategoryDeclaration, sage_categories.kernel.roles.ObjectOfCategory, sage_categories.sets.objects.SetObjectDeclaration, sage_categories.sets.cardinals.CardinalObjectDeclaration, sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.posets.category.PosetDeclaration, sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.sets.maps.SetMapDeclaration):
+    class ObjectType(sage_categories.sets.cardinals.CardinalObjectDeclaration, sage_categories.sets.objects.SetObjectDeclaration, sage_categories.kernel.roles.ObjectOfCategory, sage_categories.posets.category.PosetDeclaration, sage_categories.sets.maps.SetMapDeclaration, sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.cat.category.CategoryDeclaration):
         ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject, sage_categories.sets.elements.SetElementDeclaration, sage_categories.cat.functors.FunctorsCategory.ElementType, sage_categories.sets.cardinals.CardinalCategory.ElementType, sage_categories.cat.morphisms.MorphismCategory.ElementType, sage_categories.posets.category.PosetElementDeclaration):
+    class ElementType(sage_categories.sets.cardinals.CardinalCategory.ElementType, sage_categories.sets.elements.SetElementDeclaration, sage_categories.kernel.roles.ElementOfObject, sage_categories.posets.category.PosetElementDeclaration, sage_categories.cat.morphisms.MorphismCategory.ElementType, sage_categories.cat.functors.FunctorsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class MorphismType(sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.sets.maps.SetMapDeclaration, sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.sets.cardinals.CardinalMorphismDeclaration, sage_categories.cat.morphisms.MorphismCategory.MorphismType, sage_categories.posets.category.MonotoneMapDeclaration):
+    class MorphismType(sage_categories.sets.cardinals.CardinalMorphismDeclaration, sage_categories.sets.maps.SetMapDeclaration, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.posets.category.MonotoneMapDeclaration, sage_categories.cat.morphisms.MorphismCategory.MorphismType, sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.cat.category.CategoryOfCategories.MorphismType):
         ...
 
     def __init_subclass__(cls) -> None:
@@ -136,13 +137,13 @@ class PredicateSubcategory[**MorphismData, **TwoMorphismData](PropertySubcategor
 
 class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):
 
-    class ObjectType(sage_categories.cat.morphisms.IsomorphismsCategory.ObjectType, sage_categories.cat.properties.PropertySubcategory.ObjectType, sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.kernel.roles.ObjectOfCategory, sage_categories.sets.subobjects.ChosenSubsetObject, sage_categories.sets.objects.SetObjectDeclaration, sage_categories.cat.morphisms.EndomorphismsCategory.ObjectType):
+    class ObjectType(sage_categories.cat.properties.PropertySubcategory.ObjectType, sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.kernel.roles.ObjectOfCategory, sage_categories.sets.objects.SetObjectDeclaration, sage_categories.sets.subobjects.ChosenSubsetObject, sage_categories.cat.morphisms.IsomorphismsCategory.ObjectType, sage_categories.cat.morphisms.EndomorphismsCategory.ObjectType):
         ...
 
-    class ElementType(sage_categories.cat.morphisms.IsomorphismsCategory.ElementType, sage_categories.cat.properties.PropertySubcategory.ElementType, sage_categories.cat.functors.FunctorsCategory.ElementType, sage_categories.kernel.roles.ElementOfObject, sage_categories.sets.subobjects.ChosenSubsetsCategory.ElementType, sage_categories.sets.elements.SetElementDeclaration, sage_categories.cat.morphisms.EndomorphismsCategory.ElementType):
+    class ElementType(sage_categories.cat.properties.PropertySubcategory.ElementType, sage_categories.cat.functors.FunctorsCategory.ElementType, sage_categories.kernel.roles.ElementOfObject, sage_categories.sets.elements.SetElementDeclaration, sage_categories.sets.subobjects.ChosenSubsetsCategory.ElementType, sage_categories.cat.morphisms.IsomorphismsCategory.ElementType, sage_categories.cat.morphisms.EndomorphismsCategory.ElementType):
         ...
 
-    class MorphismType(sage_categories.cat.morphisms.IsomorphismsCategory.MorphismType, sage_categories.cat.properties.PropertySubcategory.MorphismType, sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.sets.subobjects.ChosenSubsetsCategory.MorphismType, sage_categories.sets.maps.SetMapDeclaration, sage_categories.cat.morphisms.EndomorphismsCategory.MorphismType):
+    class MorphismType(sage_categories.cat.properties.PropertySubcategory.MorphismType, sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.sets.maps.SetMapDeclaration, sage_categories.sets.subobjects.ChosenSubsetsCategory.MorphismType, sage_categories.cat.morphisms.IsomorphismsCategory.MorphismType, sage_categories.cat.morphisms.EndomorphismsCategory.MorphismType):
         ...
 
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData], roots: tuple[FullSubcategory, ...]) -> None:

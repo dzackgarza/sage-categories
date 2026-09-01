@@ -3,6 +3,7 @@ from _typeshed import Incomplete
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from sage.misc.cachefunc import cached_method
+from sage.rings.integer import Integer
 from sage_categories.cat.canonical import FinitePresentedCategory
 from sage_categories.cat.declarations import CategoryFamily
 from sage_categories.cat.functors import Functor, FunctorsCategory, NaturalTransformation
@@ -97,7 +98,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](sage_categories.ker
         ...
 
     @overload
-    def morphism_category(self, level: int) -> MorphismCategory[[], []]:
+    def morphism_category(self, level: int | Integer) -> MorphismCategory[[], []]:
         ...
 
     def morphism_category_type(self) -> type[MorphismCategory[MorphismData, TwoMorphismData]]:
@@ -409,10 +410,10 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     def Point(self, member: CategoryOfCategories.ElementType) -> PointCategory:
         ...
 
-    def Simplex(self, dimension: int) -> FinitePresentedCategory:
+    def Simplex(self, dimension: int | Integer) -> FinitePresentedCategory:
         ...
 
-    def Boundary(self, dimension: int) -> FinitePresentedCategory:
+    def Boundary(self, dimension: int | Integer) -> FinitePresentedCategory:
         ...
 
     def Horn(self, dimension: int, omitted_face: int) -> FinitePresentedCategory:

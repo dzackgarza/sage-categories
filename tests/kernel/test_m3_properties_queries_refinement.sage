@@ -12,7 +12,7 @@ from sympy.logic.boolalg import Boolean
 
 from sage_categories.cat.category import Axiom, Cat, Category, Predicate, Proposition, Query, ask, assume
 from sage_categories.cat.functors import Fun
-from sage_categories.cat.predicates import AppliedQuery
+from sage_categories.cat.predicates import AppliedQuery, UnknownClass
 from sage_categories.cat.properties import FullSubcategory, PredicateSubcategory
 from sage_categories.kernel.roles import CategoryPoint
 
@@ -23,11 +23,11 @@ class Tiny(Category[[], []]):
     Special = Axiom()
 
     class ObjectType:
-        def __init__(self, value):
+        def __init__(self, value: int | Integer) -> None:
             self._value = value
             super().__init__()
 
-        def value(self):
+        def value(self) -> int | Integer:
             return self._value
 
     class ElementType:
@@ -36,17 +36,17 @@ class Tiny(Category[[], []]):
     class MorphismType:
         pass
 
-    def __init__(self):
-        self._objects = {}
+    def __init__(self) -> None:
+        self._objects: dict[int | Integer, CategoryPoint] = {}
         super().__init__()
         self.Measure = Query("measure", 1, self)
 
-        def measure(value: CategoryPoint):
+        def measure(value: CategoryPoint) -> CategoryPoint | UnknownClass:
             return self(abs(value.value())) if value.value() != 99 else Unknown
 
         self.Measure.register_handler(measure)
 
-    def __call__(self, value):
+    def __call__(self, value: int | Integer) -> CategoryPoint:
         if value not in self._objects:
             self._objects[value] = self.ObjectType(category=self, data=value)
         return self._objects[value]

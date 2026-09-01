@@ -17,6 +17,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from sage.rings.integer import Integer
 from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.algebra.monoids import MonoidObjectDeclaration
@@ -180,11 +181,13 @@ class ModulesCategory(Category[[], []]):
     def presentation(
         self,
         relations_matrix: tuple[tuple[Datum, ...], ...],
-        rank: int,
+        rank: int | Integer,
     ) -> ModulePresentation:
         r"""Matrix presentation \(R^m \xrightarrow{A} R^n \twoheadrightarrow M\) (specs/separating-families-and-categorical-generators.md)."""
         tuple_matrix = tuple(tuple(row) for row in relations_matrix)
-        n = rank
+        # int() only normalizes an established integer to the Python integer the
+        # presentation record declares; it never truncates a value that is not one.
+        n = int(rank)
 
         # Generators module R^n and relations module R^m
         sets = Sets()

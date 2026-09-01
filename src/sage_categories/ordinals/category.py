@@ -449,7 +449,7 @@ omega0: OrdinalObject = omega(0)
 _ORDINAL_ORDER = None
 
 
-def OrdinalOrder():
+def OrdinalOrder() -> Category:
     """The thin category of the ordinal order (specs/cardinality.md, specs/ordinals.md)."""
     global _ORDINAL_ORDER
     if _ORDINAL_ORDER is None:

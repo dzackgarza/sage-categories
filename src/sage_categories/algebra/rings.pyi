@@ -1,5 +1,6 @@
 from collections.abc import Hashable
 from dataclasses import dataclass
+from sage.rings.integer import Integer
 from sage_categories.algebra.groups import Groups as Groups, GroupsCategory as GroupsCategory
 from sage_categories.algebra.semirings import Semirings as Semirings, SemiringsCategory as SemiringsCategory
 from sage_categories.cat.category import Category as Category, CategoryOfCategories as CategoryOfCategories
@@ -79,7 +80,7 @@ class RingsCategory(Category[[], []]):
     def additive_group_projection(self) -> Functor:
         ...
 
-    def product_projection(self, index: int) -> Functor:
+    def product_projection(self, index: int | Integer) -> Functor:
         ...
 
     def structure_functors(self) -> tuple[Functor, ...]:

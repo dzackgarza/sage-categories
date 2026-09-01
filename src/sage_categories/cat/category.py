@@ -9,6 +9,7 @@ from functools import cache
 from typing import TYPE_CHECKING, ClassVar, Literal, overload
 
 from sage.misc.cachefunc import cached_method
+from sage.rings.integer import Integer
 from sage.structure.coerce_dict import MonoDict, TripleDict
 
 from sage_categories.cat.equality import equality_predicate
@@ -340,10 +341,10 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
     def morphism_category(self, level: Literal[2]) -> MorphismCategory[TwoMorphismData, []]: ...
 
     @overload
-    def morphism_category(self, level: int) -> MorphismCategory[[], []]: ...
+    def morphism_category(self, level: int | Integer) -> MorphismCategory[[], []]: ...
 
     def morphism_category(
-        self, level: int
+        self, level: int | Integer
     ) -> (
         Category[MorphismData, TwoMorphismData]
         | MorphismCategory[MorphismData, TwoMorphismData]
@@ -1504,7 +1505,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             self._point_categories[member] = PointCategory(member)
         return self._point_categories[member]
 
-    def Simplex(self, dimension: int) -> FinitePresentedCategory:
+    def Simplex(self, dimension: int | Integer) -> FinitePresentedCategory:
         from sage_categories.cat import canonical
 
         assert dimension >= 0
@@ -1512,7 +1513,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             self._canonical["simplex", (dimension,)] = canonical.simplex(dimension)
         return self._canonical["simplex", (dimension,)]
 
-    def Boundary(self, dimension: int) -> FinitePresentedCategory:
+    def Boundary(self, dimension: int | Integer) -> FinitePresentedCategory:
         from sage_categories.cat import canonical
 
         assert dimension == 2, "Cat owns the boundary of the 2-simplex only"

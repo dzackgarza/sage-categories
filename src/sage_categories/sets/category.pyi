@@ -2,6 +2,7 @@ import sage_categories
 from _typeshed import Incomplete
 from collections.abc import Callable, Iterable
 from sage.misc.cachefunc import cached_method
+from sage.rings.integer import Integer
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.predicates import UnknownClass
@@ -102,7 +103,7 @@ class SetsCategory(Category[[Rule], []]):
         ...
 
     @cached_method
-    def Simplex(self, dimension: int) -> SetObject:
+    def Simplex(self, dimension: int | Integer) -> SetObject:
         ...
 
     @cached_method

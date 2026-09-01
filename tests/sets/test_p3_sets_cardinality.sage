@@ -32,10 +32,10 @@ from sage_categories.sets.cardinals import (
     cardinality_functor,
     representative_bijection,
 )
-from sage_categories.sets.category import Sets
+from sage_categories.sets.category import Sets, SetsCategory
 
 
-def _get_sets():
+def _get_sets() -> SetsCategory:
     return Sets()
 
 

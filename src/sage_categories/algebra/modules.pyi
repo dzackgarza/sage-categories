@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from sage.rings.integer import Integer
 from sage_categories.algebra.monoids import MonoidObjectDeclaration as MonoidObjectDeclaration
 from sage_categories.cat.category import Category as Category, CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.functors import Fun as Fun, Functor as Functor
@@ -88,7 +89,7 @@ class ModulesCategory(Category[[], []]):
     def regular(self) -> ModulesCategory.ObjectType:
         ...
 
-    def presentation(self, relations_matrix: tuple[tuple[Datum, ...], ...], rank: int) -> ModulePresentation:
+    def presentation(self, relations_matrix: tuple[tuple[Datum, ...], ...], rank: int | Integer) -> ModulePresentation:
         ...
 
     def __call__(self, rho_X: MorphismCategory.ObjectType | ModuleObjectDeclaration) -> ModulesCategory.ObjectType:

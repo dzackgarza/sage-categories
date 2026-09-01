@@ -1,5 +1,6 @@
 from collections.abc import Hashable
 from dataclasses import dataclass
+from sage.rings.integer import Integer
 from sage_categories.cat.category import Category as Category, CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.functors import Fun as Fun, Functor as Functor
 from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
@@ -62,7 +63,7 @@ class MagmasCategory(Category[[], []]):
     def Commutative(self) -> PropertySubcategory:
         ...
 
-    def product_projection(self, index: int) -> Functor:
+    def product_projection(self, index: int | Integer) -> Functor:
         ...
 
     def structure_functors(self) -> tuple[Functor, ...]:

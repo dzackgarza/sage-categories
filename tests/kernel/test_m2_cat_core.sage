@@ -2,16 +2,16 @@
 
 from sage.rings.integer import Integer
 
-from sage_categories.cat.category import Cat
+from sage_categories.cat.category import Cat, Category
 from sage_categories.cat.diagrams import cospan_diagram
-from sage_categories.cat.functors import Fun
+from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 
 
-def _identity_functor(category):
+def _identity_functor(category: Category) -> Functor:
     return Fun(category, category)(lambda x: x, lambda f: f)
 
 
-def _identity_transformation(functor):
+def _identity_transformation(functor: Functor) -> NaturalTransformation:
     category = functor.codomain()
     return Fun(functor.domain(), category).morphism_category(1)(functor, functor)(
         lambda x: category.morphism_category(1)(functor.on_object(x), functor.on_object(x)).one()

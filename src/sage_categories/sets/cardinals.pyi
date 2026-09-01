@@ -271,7 +271,7 @@ cardinality_query: Query
 def Cardinal() -> CardinalCategory:
     ...
 
-def CardinalOrder():
+def CardinalOrder() -> Category:
     ...
 Aleph: Functor
 InitialOrdinal: Functor

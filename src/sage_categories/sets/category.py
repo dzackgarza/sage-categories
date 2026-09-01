@@ -21,6 +21,7 @@ from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING, overload
 
 from sage.misc.cachefunc import cached_method
+from sage.rings.integer import Integer
 from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.cat.category import Category
@@ -292,7 +293,7 @@ class SetsCategory(Category[[Rule], []]):
         return one_point
 
     @cached_method
-    def Simplex(self, dimension: int) -> SetObject:
+    def Simplex(self, dimension: int | Integer) -> SetObject:
         """``[n] = {0, ..., n}`` (Mathlib ``Cardinal.mk_fin``)."""
         assert dimension >= 0
         return self.Finite().from_enumeration(range(dimension + 1))

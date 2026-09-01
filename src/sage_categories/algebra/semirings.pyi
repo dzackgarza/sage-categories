@@ -1,5 +1,6 @@
 from collections.abc import Hashable
 from dataclasses import dataclass
+from sage.rings.integer import Integer
 from sage_categories.algebra.monoids import Monoids as Monoids, MonoidsCategory as MonoidsCategory
 from sage_categories.cat.category import Category as Category, CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.functors import Fun as Fun, Functor as Functor
@@ -70,7 +71,7 @@ class SemiringsCategory(Category[[], []]):
     def multiplicative_monoid_projection(self) -> Functor:
         ...
 
-    def product_projection(self, index: int) -> Functor:
+    def product_projection(self, index: int | Integer) -> Functor:
         ...
 
     def structure_functors(self) -> tuple[Functor, ...]:

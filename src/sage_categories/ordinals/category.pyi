@@ -122,5 +122,5 @@ def omega(index: OrdinalObject | int) -> OrdinalObject:
     ...
 omega0: OrdinalObject
 
-def OrdinalOrder():
+def OrdinalOrder() -> Category:
     ...

@@ -2,6 +2,7 @@ import sage_categories
 from _typeshed import Incomplete
 from dataclasses import dataclass, field
 from sage.misc.cachefunc import cached_method
+from sage.rings.integer import Integer
 from sage.structure.coerce_dict import MonoDict
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Functor
@@ -113,7 +114,7 @@ class PosetsCategory(Category[[Rule], []]):
         ...
 
     @cached_method
-    def Simplex(self, dimension: int) -> Poset:
+    def Simplex(self, dimension: int | Integer) -> Poset:
         ...
 
     @cached_method
@@ -172,7 +173,7 @@ def FiniteTotallyOrderedSets() -> Category[[Rule], []]:
 
 class SimplexOrdersFamily:
 
-    def __getitem__(self, dimension: int) -> Poset:
+    def __getitem__(self, dimension: int | Integer) -> Poset:
         ...
 
 def SimplexOrders() -> SimplexOrdersFamily:

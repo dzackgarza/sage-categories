@@ -10,10 +10,16 @@ Verifies the P1 acceptance criteria:
 """
 
 import sys
+from collections.abc import Hashable
+from typing import TYPE_CHECKING, NoReturn
+
 import pytest
 
+if TYPE_CHECKING:
+    from sage_categories.sets.category import SetsCategory
 
-def _get_sets():
+
+def _get_sets() -> "SetsCategory":
     from sage_categories.sets.category import Sets
     return Sets()
 
@@ -345,7 +351,7 @@ def test_zero_calls_to_cardinal_during_p1(monkeypatch: pytest.MonkeyPatch) -> No
     """Verify that P1 minimal sets operations execute without calling Cardinal()."""
     import sage_categories.sets.cardinals as cardinals_mod
 
-    def forbidden_cardinal(*args, **kwargs):
+    def forbidden_cardinal(*args: Hashable, **kwargs: Hashable) -> NoReturn:
         raise AssertionError("Cardinal() must not be called during P1 minimal sets!")
 
     monkeypatch.setattr(cardinals_mod, "Cardinal", forbidden_cardinal)

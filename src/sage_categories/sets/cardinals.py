@@ -998,7 +998,7 @@ def Cardinal() -> CardinalCategory:
 _CARDINAL_ORDER = None
 
 
-def CardinalOrder():
+def CardinalOrder() -> Category:
     """The thin category of the cardinal order (specs/cardinality.md)."""
     global _CARDINAL_ORDER
     if _CARDINAL_ORDER is None:

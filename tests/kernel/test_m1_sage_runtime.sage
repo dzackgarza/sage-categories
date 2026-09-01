@@ -4,38 +4,43 @@ from sage.rings.integer import Integer
 
 import sys
 
+from typing import Self
+
 import pytest
 
 from sage_categories.cat import Fun
-from sage_categories.cat.category import Category
+from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.functors import Functor
+from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.compiler import SemanticCollisionError
+from sage_categories.kernel.roles import CategoryPoint
 
 
-_BASE_OBJECT_INITIALIZATIONS = []
-_BASE_ELEMENT_INITIALIZATIONS = []
-_BASE_MORPHISM_INITIALIZATIONS = []
-_SELECTED_FUNCTORS = {}
-_DIAMOND_TO_LEFT_OBJECT_ACTIONS = []
-_DIAMOND_TO_LEFT_MORPHISM_ACTIONS = []
+_BASE_OBJECT_INITIALIZATIONS: list[CategoryPoint] = []
+_BASE_ELEMENT_INITIALIZATIONS: list[CategoryPoint] = []
+_BASE_MORPHISM_INITIALIZATIONS: list[CategoryPoint] = []
+_SELECTED_FUNCTORS: dict[int, tuple[Functor, ...]] = {}
+_DIAMOND_TO_LEFT_OBJECT_ACTIONS: list[CategoryPoint] = []
+_DIAMOND_TO_LEFT_MORPHISM_ACTIONS: list[CategoryPoint] = []
 
 
 class _SyntheticCategoryOperations:
     """Construction operations shared only by the synthetic R1 specimens."""
 
     def __init__(self) -> None:
-        self._synthetic_objects = {}
+        self._synthetic_objects: dict[int | Integer, CategoryOfCategories.ElementType] = {}
         super().__init__()
 
-    def __call__(self, label):
+    def __call__(self, label: int | Integer) -> CategoryOfCategories.ElementType:
         if label not in self._synthetic_objects:
             self._synthetic_objects[label] = self.ObjectType(self, label)
         return self._synthetic_objects[label]
 
-    def _label(self, member_object):
+    def _label(self, member_object: CategoryPoint) -> int | Integer:
         return member_object._synthetic_label
 
-    def element_from_defining_morphism(self, defining_morphism):
+    def element_from_defining_morphism(self, defining_morphism: MorphismCategory.ObjectType) -> CategoryPoint:
         if defining_morphism not in self._elements:
             self._elements[defining_morphism] = defining_morphism.codomain().category().ElementType(
                 defining_morphism,
@@ -43,7 +48,11 @@ class _SyntheticCategoryOperations:
             )
         return self._elements[defining_morphism]
 
-    def construct_morphism(self, domain, codomain):
+    def construct_morphism(
+        self,
+        domain: CategoryOfCategories.ElementType,
+        codomain: CategoryOfCategories.ElementType,
+    ) -> MorphismCategory.ObjectType:
         assert domain is codomain
         return self.MorphismType(
             self.morphism_category(1),
@@ -52,7 +61,7 @@ class _SyntheticCategoryOperations:
             self._label(domain),
         )
 
-    def construct_identity(self, member_object):
+    def construct_identity(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
         return self.MorphismType(
             self.morphism_category(1),
             member_object,
@@ -60,46 +69,50 @@ class _SyntheticCategoryOperations:
             self._label(member_object),
         )
 
-    def composite(self, second, first):
+    def composite(
+        self,
+        second: MorphismCategory.ObjectType,
+        first: MorphismCategory.ObjectType,
+    ) -> MorphismCategory.ObjectType:
         assert first.codomain() is second.domain()
         return first
 
 
 class BaseCategory(_SyntheticCategoryOperations, Category[[], []]):
     class ObjectType:
-        def __init__(self, label) -> None:
+        def __init__(self, label: int | Integer) -> None:
             _BASE_OBJECT_INITIALIZATIONS.append(self)
             self._base_state = label
             self._synthetic_label = label
             super().__init__()
 
-        def base_object(self):
+        def base_object(self) -> tuple[Self, int | Integer]:
             return self, self._base_state
 
-        def preferred_object(self):
+        def preferred_object(self) -> CategoryOfCategories.ElementType:
             return BASE(0)
 
-        def __pos__(self):
+        def __pos__(self) -> tuple[Self, int | Integer]:
             return self, self._base_state
 
     class ElementType:
-        def __init__(self, label) -> None:
+        def __init__(self, label: int | Integer) -> None:
             _BASE_ELEMENT_INITIALIZATIONS.append(self)
             self._base_element_state = label
             self._synthetic_label = label
             super().__init__()
 
-        def base_element(self):
+        def base_element(self) -> tuple[Self, int | Integer]:
             return self, self._base_element_state
 
     class MorphismType:
-        def __init__(self, label) -> None:
+        def __init__(self, label: int | Integer) -> None:
             _BASE_MORPHISM_INITIALIZATIONS.append(self)
             self._base_morphism_state = label
             self._synthetic_label = label
             super().__init__()
 
-        def base_morphism(self):
+        def base_morphism(self) -> tuple[Self, int | Integer]:
             return self, self._base_morphism_state
 
 
@@ -108,33 +121,33 @@ BASE = BaseCategory()
 
 class LeftCategory(_SyntheticCategoryOperations, Category[[], []]):
     class ObjectType:
-        def __init__(self, label) -> None:
+        def __init__(self, label: int | Integer) -> None:
             self._left_state = label
             self._synthetic_label = label
             super().__init__()
 
-        def left_object(self):
+        def left_object(self) -> tuple[Self, int | Integer]:
             return self, self._left_state
 
     class ElementType:
-        def __init__(self, label) -> None:
+        def __init__(self, label: int | Integer) -> None:
             self._left_element_state = label
             self._synthetic_label = label
             super().__init__()
 
-        def left_element(self):
+        def left_element(self) -> tuple[Self, int | Integer]:
             return self, self._left_element_state
 
     class MorphismType:
-        def __init__(self, label) -> None:
+        def __init__(self, label: int | Integer) -> None:
             self._left_morphism_state = label
             self._synthetic_label = label
             super().__init__()
 
-        def left_morphism(self):
+        def left_morphism(self) -> tuple[Self, int | Integer]:
             return self, self._left_morphism_state
 
-    def structure_functors(self):
+    def structure_functors(self) -> tuple[Functor, ...]:
         key = id(self)
         if key not in _SELECTED_FUNCTORS:
             _SELECTED_FUNCTORS[key] = (
@@ -142,10 +155,10 @@ class LeftCategory(_SyntheticCategoryOperations, Category[[], []]):
             )
         return _SELECTED_FUNCTORS[key]
 
-    def _object_to_base(self, member_object):
+    def _object_to_base(self, member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         return BASE(self._label(member_object))
 
-    def _morphism_to_base(self, morphism):
+    def _morphism_to_base(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         domain = self._object_to_base(morphism.domain())
         codomain = self._object_to_base(morphism.codomain())
         return BASE.morphism_category(1)(domain, codomain).one()
@@ -156,33 +169,33 @@ LEFT = LeftCategory()
 
 class RightCategory(_SyntheticCategoryOperations, Category[[], []]):
     class ObjectType:
-        def __init__(self, label) -> None:
+        def __init__(self, label: int | Integer) -> None:
             self._right_state = label
             self._synthetic_label = label
             super().__init__()
 
-        def right_object(self):
+        def right_object(self) -> tuple[Self, int | Integer]:
             return self, self._right_state
 
     class ElementType:
-        def __init__(self, label) -> None:
+        def __init__(self, label: int | Integer) -> None:
             self._right_element_state = label
             self._synthetic_label = label
             super().__init__()
 
-        def right_element(self):
+        def right_element(self) -> tuple[Self, int | Integer]:
             return self, self._right_element_state
 
     class MorphismType:
-        def __init__(self, label) -> None:
+        def __init__(self, label: int | Integer) -> None:
             self._right_morphism_state = label
             self._synthetic_label = label
             super().__init__()
 
-        def right_morphism(self):
+        def right_morphism(self) -> tuple[Self, int | Integer]:
             return self, self._right_morphism_state
 
-    def structure_functors(self):
+    def structure_functors(self) -> tuple[Functor, ...]:
         key = id(self)
         if key not in _SELECTED_FUNCTORS:
             _SELECTED_FUNCTORS[key] = (
@@ -190,10 +203,10 @@ class RightCategory(_SyntheticCategoryOperations, Category[[], []]):
             )
         return _SELECTED_FUNCTORS[key]
 
-    def _object_to_base(self, member_object):
+    def _object_to_base(self, member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         return BASE(self._label(member_object))
 
-    def _morphism_to_base(self, morphism):
+    def _morphism_to_base(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         domain = self._object_to_base(morphism.domain())
         codomain = self._object_to_base(morphism.codomain())
         return BASE.morphism_category(1)(domain, codomain).one()
@@ -204,43 +217,43 @@ RIGHT = RightCategory()
 
 class DiamondCategory(_SyntheticCategoryOperations, Category[[], []]):
     class ObjectType:
-        def __init__(self, label) -> None:
+        def __init__(self, label: int | Integer) -> None:
             self._diamond_state = label
             self._synthetic_label = label
             super().__init__()
 
-        def diamond_object(self):
+        def diamond_object(self) -> tuple[Self, int | Integer]:
             return self, self._diamond_state
 
-        def preferred_object(self):
+        def preferred_object(self) -> Self:
             return self
 
     class ElementType:
-        def __init__(self, label) -> None:
+        def __init__(self, label: int | Integer) -> None:
             self._diamond_element_state = label
             self._synthetic_label = label
             super().__init__()
 
-        def diamond_element(self):
+        def diamond_element(self) -> tuple[Self, int | Integer]:
             return self, self._diamond_element_state
 
     class MorphismType:
-        def __init__(self, label) -> None:
+        def __init__(self, label: int | Integer) -> None:
             self._diamond_morphism_state = label
             self._synthetic_label = label
             super().__init__()
 
-        def diamond_morphism(self):
+        def diamond_morphism(self) -> tuple[Self, int | Integer]:
             return self, self._diamond_morphism_state
 
-    def structure_functors(self):
+    def structure_functors(self) -> tuple[Functor, ...]:
         key = id(self)
         if key not in _SELECTED_FUNCTORS:
-            def on_object(member_object):
+            def on_object(member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
                 _DIAMOND_TO_LEFT_OBJECT_ACTIONS.append(member_object)
                 return self._object_to_left(member_object)
 
-            def on_morphism(morphism):
+            def on_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
                 _DIAMOND_TO_LEFT_MORPHISM_ACTIONS.append(morphism)
                 return self._morphism_to_left(morphism)
 
@@ -250,18 +263,18 @@ class DiamondCategory(_SyntheticCategoryOperations, Category[[], []]):
             )
         return _SELECTED_FUNCTORS[key]
 
-    def _object_to_left(self, member_object):
+    def _object_to_left(self, member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         return LEFT(self._label(member_object))
 
-    def _morphism_to_left(self, morphism):
+    def _morphism_to_left(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         domain = self._object_to_left(morphism.domain())
         codomain = self._object_to_left(morphism.codomain())
         return LEFT.morphism_category(1)(domain, codomain).one()
 
-    def _object_to_right(self, member_object):
+    def _object_to_right(self, member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         return RIGHT(self._label(member_object))
 
-    def _morphism_to_right(self, morphism):
+    def _morphism_to_right(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         domain = self._object_to_right(morphism.domain())
         codomain = self._object_to_right(morphism.codomain())
         return RIGHT.morphism_category(1)(domain, codomain).one()
@@ -387,7 +400,7 @@ def test_unresolved_structural_diamond_is_debug_only(caplog: pytest.LogCaptureFi
         class MorphismType:
             pass
 
-        def structure_functors(self):
+        def structure_functors(self) -> tuple[Functor, ...]:
             key = id(self)
             if key not in _SELECTED_FUNCTORS:
                 _SELECTED_FUNCTORS[key] = (
@@ -419,7 +432,7 @@ def test_property_refinement_preserves_object_identity() -> None:
 def test_incomparable_method_owners_fail_at_compilation() -> None:
     class CollisionLeft(_SyntheticCategoryOperations, Category[[], []]):
         class ObjectType:
-            def collision(self):
+            def collision(self) -> Self:
                 return self
 
         class ElementType:
@@ -432,7 +445,7 @@ def test_incomparable_method_owners_fail_at_compilation() -> None:
 
     class CollisionRight(_SyntheticCategoryOperations, Category[[], []]):
         class ObjectType:
-            def collision(self):
+            def collision(self) -> Self:
                 return self
 
         class ElementType:
@@ -453,7 +466,7 @@ def test_incomparable_method_owners_fail_at_compilation() -> None:
         class MorphismType:
             pass
 
-        def structure_functors(self):
+        def structure_functors(self) -> tuple[Functor, ...]:
             key = id(self)
             if key not in _SELECTED_FUNCTORS:
                 _SELECTED_FUNCTORS[key] = (

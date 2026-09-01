@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from sage.misc.cachefunc import cached_method
+from sage.rings.integer import Integer
 from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.cat.category import Category
@@ -369,7 +370,7 @@ class PosetsCategory(Category[[Rule], []]):
         return order_preserving(source, target, set_map)
 
     @cached_method
-    def Simplex(self, dimension: int) -> Poset:
+    def Simplex(self, dimension: int | Integer) -> Poset:
         """``[n]``: the poset on ``Sets().Simplex(n)`` with the usual order, retained once."""
         assert dimension >= 0
         simplex = Sets().Simplex(dimension)
@@ -600,7 +601,7 @@ def FiniteTotallyOrderedSets() -> Category[[Rule], []]:
 class SimplexOrdersFamily:
     """The canonical simplex orders [n] on {0, ..., n}."""
 
-    def __getitem__(self, dimension: int) -> Poset:
+    def __getitem__(self, dimension: int | Integer) -> Poset:
         return Posets().Simplex(dimension)
 
 

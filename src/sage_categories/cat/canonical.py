@@ -146,7 +146,9 @@ class FinitePresentedCategory(Category[[Word], []]):
 
     def object_set(self) -> CategoryOfCategories.ElementType:
         if self not in self._object_set:
-            self._object_set[self] = Sets.Finite()(self._labels)
+            from sage_categories.sets.category import Sets as ActualSets
+
+            self._object_set[self] = ActualSets().Finite().from_enumeration(self._labels)
         return self._object_set[self]
 
     def object_at(self, point: CategoryOfCategories.ElementType) -> FinitePresentedCategory.ObjectType:
@@ -181,7 +183,9 @@ class FinitePresentedCategory(Category[[Word], []]):
                         if extended not in words:
                             words.append(extended)
                             frontier.append(extended)
-            self._morphism_set[self] = Sets.Finite()(words)
+            from sage_categories.sets.category import Sets as ActualSets
+
+            self._morphism_set[self] = ActualSets().Finite().from_enumeration(words)
         return self._morphism_set[self]
 
     def morphism_at(self, point: CategoryOfCategories.ElementType) -> FinitePresentedCategory.MorphismType:
@@ -274,7 +278,9 @@ def enumerated_datum(
 ) -> Hashable:
     """The datum of a point of a finite enumerated set, read through the chosen enumeration."""
     assert point in finite_set, f"{point!r} is not a point of {finite_set!r}"
-    return next(datum for datum in Sets.Finite().chosen_enumeration(finite_set) if ask(finite_set.point(datum) == point))
+    from sage_categories.sets.category import Sets as ActualSets
+
+    return next(datum for datum in ActualSets().Finite().chosen_enumeration(finite_set) if ask(finite_set.point(datum) == point))
 
 
 def _edge(source: int, target: int) -> Generator:

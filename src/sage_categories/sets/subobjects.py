@@ -228,7 +228,7 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
         assert all(base_rule(member) is not False for member in members), (
             f"{members!r} are not all members of {base_set!r}"
         )
-        subset = sets.Finite()(members)
+        subset = sets.Finite().from_enumeration(members)
         refine(subset, self)
         return self._retain_monomorphism(subset, base_set)
 

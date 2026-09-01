@@ -203,7 +203,13 @@ def is_discrete(shape: Category) -> bool:
 def index_set_of(shape: Category) -> CategoryOfCategories.ElementType:
     """The set ``S`` with ``shape is Discrete(S)``."""
     assert is_discrete(shape), f"{shape!r} is not Discrete(S) for a set S"
-    return _index_sets[shape]
+    if shape in _index_sets:
+        return _index_sets[shape]
+    from sage_categories.cat.canonical import FinitePresentedCategory
+
+    if isinstance(shape, FinitePresentedCategory):
+        return shape.object_set()
+    raise KeyError(shape)
 
 
 # -- Thin(P, leq) --------------------------------------------------------------------

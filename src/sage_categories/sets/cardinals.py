@@ -733,7 +733,7 @@ class CardinalCategory(Category[[MorphismCategory.ObjectType], []]):
         Fully faithful by the definition of the morphisms of ``Cardinal()``: the skeleton
         monomorphism (Mathlib ``CategoryTheory.fromSkeleton``, an equivalence; inspected 2026-08-27).
         """
-        return Fun(self, _sets.Sets()).FullyFaithful()(self.representative, lambda morphism: morphism._set_map)
+        return Fun(self, _sets.Sets()).FullyFaithful()(lambda cardinal: self._select_representative(cardinal, CardinalObjectData(value=cardinal._value)), lambda morphism: morphism._set_map)
 
     def representative(self, cardinal: CardinalObject) -> SetObject:
         """The selected representative set ``R_kappa``, one per cardinal."""

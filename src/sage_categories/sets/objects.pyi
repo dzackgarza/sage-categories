@@ -4,7 +4,7 @@ from sage.structure.coerce_dict import MonoDict
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.predicates import AppliedPredicate, Decision, Predicate, Proposition, UnknownClass
 from sage_categories.sets.cardinals import CardinalObject
-from sage_categories.sets.category import SetElement, SetObject
+from sage_categories.sets.category import SetElement, SetMap, SetObject
 from sage_categories.sets.elements import Datum
 from typing import Any
 __all__ = ['MembershipRule', 'element_of', 'sets_equal', 'SetObjectData']
@@ -54,6 +54,9 @@ class SetObjectDeclaration:
         ...
 
     def is_uncountable(self) -> AppliedPredicate:
+        ...
+
+    def evaluation_isomorphism(self) -> SetMap:
         ...
 
 class FiniteSetObject:

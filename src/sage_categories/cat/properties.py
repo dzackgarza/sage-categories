@@ -138,6 +138,12 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
         """The elements of a full subcategory are those of its ambient on the shared values (POL-CAT-087)."""
         return self._ambient.element_from_defining_morphism(defining_morphism)
 
+    def limit_construction(self, shape: Category):
+        return self._ambient.limit_construction(shape)
+
+    def colimit_construction(self, shape: Category):
+        return self._ambient.colimit_construction(shape)
+
 
 _inverse_images: TripleDict = TripleDict(weak_values=False)
 

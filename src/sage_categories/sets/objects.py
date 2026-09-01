@@ -26,7 +26,7 @@ from sage_categories.sets.elements import Datum, SetPointData
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
     from sage_categories.sets.cardinals import CardinalObject
-    from sage_categories.sets.category import SetElement, SetObject
+    from sage_categories.sets.category import SetElement, SetMap, SetObject
 
 __all__ = ["MembershipRule", "SetObjectData", "element_of", "sets_equal"]
 
@@ -38,7 +38,7 @@ element_of: Predicate = predicate("element_of")
 
 
 def _element_of_by_parent(
-    candidate: Any, ambient: SetObjectDeclaration, assumptions: Proposition
+    candidate: CategoryOfCategories.ElementType, ambient: SetObjectDeclaration, assumptions: Proposition
 ) -> Decision:
     """A point ``* -> X`` is an element of ``X`` by definition (POL-CAT-058)."""
     if (
@@ -51,7 +51,7 @@ def _element_of_by_parent(
 
 
 def _element_of_by_rule(
-    candidate: Any, ambient: SetObjectDeclaration, assumptions: Proposition
+    candidate: CategoryOfCategories.ElementType, ambient: SetObjectDeclaration, assumptions: Proposition
 ) -> Decision:
     """The membership rule decides a point of ``ambient`` from its stored datum.
 
@@ -206,6 +206,27 @@ class SetObjectDeclaration:
 
     def is_uncountable(self) -> AppliedPredicate:
         return _sets.Sets().Uncountable().predicate()(self)
+
+    def evaluation_isomorphism(self) -> SetMap:
+        r"""The evaluation isomorphism ``\coprod_{x \in X} 1 \cong X`` (specs/separating-families-and-categorical-generators.md)."""
+        sets = _sets.Sets()
+        finite = sets.Finite()
+        if finite.has_chosen_enumeration(self):
+            enumeration = finite.chosen_enumeration(self)
+            coprod = finite.from_enumeration((datum, ()) for datum in enumeration)
+        else:
+            coprod = sets(lambda datum: (
+                isinstance(datum, tuple)
+                and len(datum) == 2
+                and datum[1] == ()
+                and self._set_object_data.membership_rule(datum[0]) is not False
+            ))
+        return sets.construct_morphism(
+            coprod,
+            self,
+            lambda tagged: tagged[0],
+            lambda datum: (datum, ()),
+        )
 
     def __repr__(self) -> str:
         finite = _sets.Sets().Finite()

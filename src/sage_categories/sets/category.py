@@ -100,17 +100,27 @@ class FiniteSets(PropertySubcategory[[Rule], []]):
         super().__init__(ambient, name, implications)
 
     def __call__(self, members: SetObject | Iterable[Datum]) -> SetObject:
-        """Refine a set of ``Sets()``, or construct the finite set with the given enumeration."""
-        from sage_categories.sets.cardinals import Cardinal
-
-        if members in self.ambient():
+        """Refine an existing set of ``Sets()`` into the finite property subcategory, or construct from an enumeration of data."""
+        if hasattr(members, "_is_object") and members._is_object():
+            assert members in self.ambient(), (
+                f"{members!r} is not an object of {self.ambient()!r}"
+            )
             refine(members, self)
             return members
+        return self.from_enumeration(members)
+
+    def from_enumeration(self, members: Iterable[Datum]) -> SetObject:
+        """Construct the finite set with the given enumeration of distinct data.
+
+        Each element of ``members`` is a ``Datum`` (raw Python value); it becomes
+        an owned element only through the set's ``point()`` constructor.  The data
+        must be exactly distinct.
+        """
         enumeration = tuple(members)
-        return self._from_enumeration(enumeration, Cardinal()(len(enumeration)))
+        return self._from_enumeration(enumeration, Unknown)
 
     def _from_enumeration(
-        self, enumeration: tuple[Datum, ...], cardinality: CardinalObject
+        self, enumeration: tuple[Datum, ...], cardinality: CardinalObject | UnknownClass
     ) -> SetObject:
         """Construct the finite set with this exact enumeration and cardinal."""
         # An enumeration lists each member once: its length is the cardinality
@@ -246,23 +256,26 @@ class SetsCategory(Category[[Rule], []]):
 
         return ChosenQuotientsCategory(self)
 
+    @cached_method
     def Empty(self) -> SetObject:
-        """The empty set: the representative that ``Cardinal()`` selects for ``0`` (``sets/cardinals.py``)."""
-        from sage_categories.sets.cardinals import Cardinal
+        """The empty set {}."""
+        return self.Finite().from_enumeration(())
 
-        return Cardinal().representative(Cardinal().zero())
+    @cached_method
+    def Initial(self) -> SetObject:
+        """The initial object of Sets(), the empty set {}."""
+        return self.Empty()
 
     @cached_method
     def Terminal(self) -> SetObject:
         """The one-point set ``1 = {*}``, the terminal object of ``Sets()``. A point of ``X`` is a morphism ``* -> X`` from this object."""
-        return self.Finite()(((),))
+        return self.Finite().from_enumeration(((),))
 
+    @cached_method
     def Simplex(self, dimension: int) -> SetObject:
-        """``[n] = {0, ..., n}``: the representative that ``Cardinal()`` selects for ``n + 1`` (Mathlib ``Cardinal.mk_fin``; ``sets/cardinals.py``)."""
-        from sage_categories.sets.cardinals import Cardinal
-
+        """``[n] = {0, ..., n}`` (Mathlib ``Cardinal.mk_fin``)."""
         assert dimension >= 0
-        return Cardinal().representative(Cardinal()(dimension + 1))
+        return self.Finite().from_enumeration(range(dimension + 1))
 
     @cached_method
     def CardinalityFunctor(self) -> Functor:
@@ -375,12 +388,16 @@ class SetsCategory(Category[[Rule], []]):
     # -- owned constructions (POL-SET-013; ``sets/products.py``, ``sets/exponentials.py``) ---
 
     def limit_construction(self, shape: Category) -> Callable[[Functor], SetObject]:
-        """Products over ``Discrete(S)``; over every other shape, the compatible families (``sets/limits.py``)."""
+        """Products over ``Discrete(S)``; coproducts over ``Discrete(S).op()``; over every other shape, the compatible families (``sets/limits.py``)."""
         from sage_categories.cat.shapes import is_discrete
         from sage_categories.sets.limits import limit_of_sets
-        from sage_categories.sets.products import product_of_sets
+        from sage_categories.sets.products import coproduct_of_sets, product_of_sets
 
         if is_discrete(shape):
+            from sage_categories.cat.opposites import OppositeCategory
+
+            if isinstance(shape, OppositeCategory):
+                return coproduct_of_sets
             return product_of_sets
         return limit_of_sets
 

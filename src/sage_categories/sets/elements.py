@@ -58,7 +58,7 @@ class SetElementDeclaration:
         return self._set_element_data.datum
 
 
-def points_equal(first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
+def points_equal(first: CategoryOfCategories.ElementType, candidate: CategoryOfCategories.ElementType) -> Decision:
     """Two points of one set are equal exactly when their data are.
 
     A generalized element is a point exactly when its domain is the terminal object of

@@ -104,9 +104,16 @@ def _nontrivial_discrete(shape: Category) -> bool | None:
 
     if isinstance(shape, FinitePresentedCategory):
         return len(shape.labels()) >= 2
-    cardinality = ask(shape.object_set().cardinality())
+    from sage_categories.sets.category import Sets as ActualSets
+
+    obj_set = shape.object_set()
+    if ActualSets().Finite().has_chosen_enumeration(obj_set):
+        return len(ActualSets().Finite().chosen_enumeration(obj_set)) >= 2
+    cardinality = obj_set.cardinality()
     if cardinality is Unknown:
         return None
+    if isinstance(cardinality, int):
+        return cardinality >= 2
     decision = ask(cardinality >= 2)
     return decision if isinstance(decision, bool) else None
 
@@ -467,9 +474,12 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
         assert _nontrivial_discrete(shape) is True, (
             f"{shape!r} is not known to have at least two objects; use {self.ambient()!r}.Limits({shape!r})"
         )
-        assert diagram in self.universe().morphism_category(1) and diagram.domain() is shape
-        assert is_subcategory(diagram.codomain(), self.ambient()), f"{diagram!r} does not land in {self.ambient()!r}"
-        return self.ambient().Limits(shape)(diagram)
+        ambient = self.ambient()
+        if hasattr(ambient, "limit_construction"):
+            construction = ambient.limit_construction(shape)
+            apex = construction(diagram)
+            return apex
+        return ambient.Limits(shape)(diagram)
 
     def with_universal_data(
         self,
@@ -782,7 +792,12 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
         )
         assert diagram in self.universe().morphism_category(1) and diagram.domain() is shape
         assert is_subcategory(diagram.codomain(), self.ambient()), f"{diagram!r} does not land in {self.ambient()!r}"
-        return self.ambient().Colimits(shape)(diagram)
+        ambient = self.ambient()
+        if hasattr(ambient, 'colimit_construction'):
+            construction = ambient.colimit_construction(shape)
+            apex = construction(diagram)
+            return apex
+        return ambient.Colimits(shape)(diagram)
 
     def with_universal_data(
         self,

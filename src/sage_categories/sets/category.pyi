@@ -76,7 +76,12 @@ class SetsCategory(Category[[Rule], []]):
     def ChosenQuotients(self) -> ChosenQuotientsCategory:
         ...
 
+    @cached_method
     def Empty(self) -> SetObject:
+        ...
+
+    @cached_method
+    def Initial(self) -> SetObject:
         ...
 
     @cached_method

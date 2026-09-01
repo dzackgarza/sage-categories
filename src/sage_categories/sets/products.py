@@ -58,11 +58,11 @@ from sage_categories.cat.shapes import DiscreteCategory, index_set_of
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
 from sage_categories.cat.predicates import ask, conjunction, established, negation
 from sage_categories.kernel.refinement import is_subcategory, refine
-from sage_categories.sets.cardinals import Cardinal, CardinalObject
 from sage_categories.sets.elements import Datum
 from sage_categories.sets.objects import SetObject
 
 if TYPE_CHECKING:
+    from sage_categories.sets.cardinals import CardinalObject
     from sage_categories.sets.category import SetMap
 
 __all__ = ["Family", "coproduct_of_sets", "product_of_sets"]
@@ -122,6 +122,15 @@ class Family:
 
 
 def _index_datum(vertex: DiscreteCategory.ObjectType) -> Datum:
+    if hasattr(vertex, "_point_datum_"):
+        return vertex.point()._point_datum_()
+    # FinitePresentedCategory vertices don't have point() compiled;
+    # the label IS the datum.
+    shape = vertex.category()
+    from sage_categories.cat.canonical import FinitePresentedCategory
+
+    if isinstance(shape, FinitePresentedCategory):
+        return shape.label(vertex)
     return vertex.point()._point_datum_()
 
 
@@ -137,9 +146,13 @@ def _product_cardinality(diagram: Functor, index_set: SetObject, factors: tuple[
     if factors is not Unknown:
         cardinalities = tuple(factor.cardinality() for factor in factors)
         if all(map(_exact, cardinalities)):
+            from sage_categories.sets.cardinals import Cardinal
+
             # Cardinal.mk_pi, Fintype.card_pi: the exact finite product.
             return Cardinal()(_cardinal_product(cardinalities))
         if any(_exact(cardinality) and established(cardinality == 0) for cardinality in cardinalities):
+            from sage_categories.sets.cardinals import Cardinal
+
             # Cardinal.prod_eq_zero: a factor of cardinality 0.
             return Cardinal()(0)
     functors = Fun(diagram.domain(), diagram.codomain())
@@ -199,7 +212,7 @@ def product_of_sets(diagram: Functor) -> SetObject:
     if factors is not Unknown and all(finite.has_chosen_enumeration(factor) for factor in factors):
         enumeration = finite.chosen_enumeration(index_set)
         choices = itertools.product(*(finite.chosen_enumeration(factor) for factor in factors))
-        apex = finite(Family(index_set, dict(zip(enumeration, choice)).__getitem__) for choice in choices)
+        apex = finite.from_enumeration(Family(index_set, dict(zip(enumeration, choice)).__getitem__) for choice in choices)
     else:
         apex = sets.rule_valued(membership_rule, _product_cardinality(diagram, index_set, factors))
         for placement in _product_placements(diagram, index_set):
@@ -221,8 +234,8 @@ def product_of_sets(diagram: Functor) -> SetObject:
             ),
         )
 
-    lowered = sets.Products().lowered(diagram)
-    return sets.Products().with_universal_data(lowered, apex, cone(lowered, apex, projection), mediator)
+    lowered = sets.Limits(shape).lowered(diagram)
+    return sets.Limits(shape).with_universal_data(lowered, apex, cone(lowered, apex, projection), mediator)
 
 
 # -- coproducts -------------------------------------------------------------------------------
@@ -233,6 +246,8 @@ def _coproduct_cardinality(diagram: Functor, index_set: SetObject, cofactors: tu
     if cofactors is not Unknown:
         cardinalities = tuple(cofactor.cardinality() for cofactor in cofactors)
         if all(map(_exact, cardinalities)):
+            from sage_categories.sets.cardinals import Cardinal
+
             # Cardinal.mk_sigma, Fintype.card_sigma: the exact finite sum.
             return Cardinal()(sum(cardinalities, 0))
     functors = Fun(diagram.domain(), diagram.codomain())
@@ -282,7 +297,7 @@ def coproduct_of_sets(diagram: Functor) -> SetObject:
                 return False
 
     if cofactors is not Unknown and all(finite.has_chosen_enumeration(cofactor) for cofactor in cofactors):
-        apex = finite(
+        apex = finite.from_enumeration(
             (index_datum, value)
             for index_datum, cofactor in zip(finite.chosen_enumeration(index_set), cofactors)
             for value in finite.chosen_enumeration(cofactor)
@@ -306,5 +321,5 @@ def coproduct_of_sets(diagram: Functor) -> SetObject:
             lambda tagged: candidate_cocone.component(shape(index_set.point(tagged[0])))._set_morphism_data.rule(tagged[1]),
         )
 
-    lowered = sets.Coproducts().lowered(diagram)
-    return sets.Coproducts().with_universal_data(lowered, apex, cocone(lowered, apex, injection), mediator)
+    lowered = sets.Colimits(shape).lowered(diagram)
+    return sets.Colimits(shape).with_universal_data(lowered, apex, cocone(lowered, apex, injection), mediator)

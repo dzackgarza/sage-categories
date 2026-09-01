@@ -99,6 +99,9 @@ class OppositeCategory[**MorphismData, **TwoMorphismData](
         assert value in self._original, f"{value!r} is not an object of {self._original!r}"
         return value
 
+    def object_set(self) -> CategoryOfCategories.ElementType:
+        return self._original.object_set()
+
     def construct_morphism(
         self,
         domain: CategoryOfCategories.ElementType,

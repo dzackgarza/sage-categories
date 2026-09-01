@@ -44,6 +44,7 @@ __all__ = [
     "SliceLikeCategory",
     "SliceProperty",
     "SubobjectsOfProduct",
+    "comma_category",
     "coslice_under",
     "slice_over",
 ]
@@ -466,11 +467,11 @@ def _endpoint_functor(base: Category) -> Functor:
     return target.universal_morphism(cone(target.product_factors(), squares, lambda vertex: legs[sequence_position(vertex)]))
 
 
-def _comma_category(first: Functor, second: Functor) -> Category:
+def comma_category(first: Functor, second: Functor) -> Category:
     """The comma category ``(F, G)``: the pullback of ``(ev_0, ev_1)`` along ``F * G``, retained per pair; objects ``((a, b), f: F a -> G b)``."""
     diagram = cospan_diagram(Cat(), _pair_functor(first, second), _endpoint_functor(first.codomain()))
     result = limit_of_categories(diagram, Cat().Pullbacks(), lambda defining_diagram: CommaCategory(defining_diagram, first, second))
-    assert isinstance(result, CommaCategory)
+    assert result in Cat().Pullbacks()
     result.defining_transformation()
     return result
 

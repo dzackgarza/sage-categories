@@ -1374,13 +1374,13 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
     def Comma(self, first: Functor, second: Functor) -> Category:
         """``Comma(F, G)`` for functors with a common codomain, retained per ordered pair."""
-        from sage_categories.cat.slices import _comma_category
+        from sage_categories.cat.slices import comma_category
 
         assert first in self.morphism_category(1) and second in self.morphism_category(1)
         assert first.codomain() is second.codomain(), f"{first!r} and {second!r} have different codomains"
         key = (first, second, self)
         if key not in self._comma_categories:
-            self._comma_categories[key] = _comma_category(first, second)
+            self._comma_categories[key] = comma_category(first, second)
         return self._comma_categories[key]
 
     def postcompose(self, functor: Functor, diagram: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:

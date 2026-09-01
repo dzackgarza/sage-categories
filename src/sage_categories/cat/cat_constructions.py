@@ -369,14 +369,26 @@ def limit_of_categories(
 
     def mediator(candidate_cone: NaturalTransformation) -> Functor:
         source = cone_apex(candidate_cone)
-        return Fun(source, limit)(
-            lambda member_object: limit(lambda vertex: candidate_cone.component(vertex).on_object(member_object)),
-            lambda morphism: limit.construct_morphism(
-                limit(lambda vertex: candidate_cone.component(vertex).on_object(morphism.domain())),
-                limit(lambda vertex: candidate_cone.component(vertex).on_object(morphism.codomain())),
-                lambda vertex: candidate_cone.component(vertex).on_morphism(morphism),
-            ),
-        )
+
+        def on_object(member_object: LimitCategory.ObjectType) -> LimitCategory.ObjectType:
+            def component_rule(vertex: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+                return candidate_cone.component(vertex).on_object(member_object)
+
+            return limit(component_rule)
+
+        def on_morphism(morphism: LimitCategory.MorphismType) -> LimitCategory.MorphismType:
+            def domain_rule(vertex: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+                return candidate_cone.component(vertex).on_object(morphism.domain())
+
+            def codomain_rule(vertex: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+                return candidate_cone.component(vertex).on_object(morphism.codomain())
+
+            def family_rule(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+                return candidate_cone.component(vertex).on_morphism(morphism)
+
+            return limit.construct_morphism(limit(domain_rule), limit(codomain_rule), family_rule)
+
+        return Fun(source, limit)(on_object, on_morphism)
 
     lowered = family.lowered(diagram)
     return family.with_universal_data(lowered, limit, cone(lowered, limit, projection), mediator)
@@ -598,7 +610,7 @@ def _limit_of_opposite_categories(diagram: Functor) -> CategoryOfCategories.Elem
 
         def component(vertex: CategoryOfCategories.ElementType) -> Functor:
             functor = opposite_morphism(candidate_cone.component(vertex))
-            assert isinstance(functor, Functor)
+            assert functor in Fun
             return functor
 
         tagged_mediator = Fun(tagged, target)(

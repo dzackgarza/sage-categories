@@ -242,6 +242,11 @@ def _rebound[**P, R](member: Callable[Concatenate[CategoryPoint, P], R], compile
         return type(member)(_rebound(member.__func__, compiled))
     if not isinstance(member, FunctionType) or "__class__" not in member.__code__.co_freevars:
         return member
+    if member.__closure__ is None:
+        raise ValueError(
+            f"_rebound: {member!r} declares free variable '__class__' but has no closure; "
+            f"cannot install on {compiled!r}"
+        )
     closure = tuple(
         CellType(compiled) if name == "__class__" else cell
         for name, cell in zip(member.__code__.co_freevars, member.__closure__, strict=True)

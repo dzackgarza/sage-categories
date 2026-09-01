@@ -16,7 +16,7 @@ def _identity_transformation(functor):
     )
 
 
-def test_functors_and_two_morphisms_are_owned_and_distinct():
+def test_functors_and_two_morphisms_are_owned_and_distinct() -> None:
     category = Cat().Simplex(1)
     first = _identity_functor(category)
     second = _identity_functor(category)
@@ -33,7 +33,7 @@ def test_functors_and_two_morphisms_are_owned_and_distinct():
     assert eta.horizontal(theta).source_functor().domain() is category
 
 
-def test_walking_arrow_evaluation_acts_on_objects_and_two_morphisms():
+def test_walking_arrow_evaluation_acts_on_objects_and_two_morphisms() -> None:
     category = Cat().Simplex(1)
     diagrams = Fun(Cat().Simplex(1), category)
     identity = _identity_functor(category)
@@ -43,7 +43,7 @@ def test_walking_arrow_evaluation_acts_on_objects_and_two_morphisms():
     assert evaluation.on_morphism(eta) is eta.component(category(0))
 
 
-def test_products_pullbacks_comma_and_fixed_slices_retain_defining_functors():
+def test_products_pullbacks_comma_and_fixed_slices_retain_defining_functors() -> None:
     category = Cat().Simplex(1)
     product = Cat().Products()((category, category))
     assert product.product_projection(0).domain() is product
@@ -76,7 +76,7 @@ def test_products_pullbacks_comma_and_fixed_slices_retain_defining_functors():
         assert fixed.fixed_projection().codomain() is category
 
 
-def test_shape_indexed_functor_properties_exist_at_fixed_endpoints():
+def test_shape_indexed_functor_properties_exist_at_fixed_endpoints() -> None:
     category = Cat().Simplex(1)
     shape = Cat().Simplex(1)
     functors = Fun(category, category)
@@ -88,7 +88,7 @@ def test_shape_indexed_functor_properties_exist_at_fixed_endpoints():
     assert creates.shape() is shape
 
 
-def test_canonical_shapes_are_retained():
+def test_canonical_shapes_are_retained() -> None:
     cat = Cat()
     assert cat.Initial() is cat.Initial()
     assert cat.Terminal() is cat.Terminal()

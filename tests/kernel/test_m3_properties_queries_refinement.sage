@@ -62,7 +62,7 @@ class TinySubcategory(FullSubcategory, Tiny):
     """A named full subcategory used to prove functorial property inheritance."""
 
 
-def test_generated_property_application_and_three_valued_ask():
+def test_generated_property_application_and_three_valued_ask() -> None:
     tiny = Tiny()
     positive, negative, undecided = tiny(3), tiny(-2), tiny(99)
     proposition = positive.is_special()
@@ -78,7 +78,7 @@ def test_generated_property_application_and_three_valued_ask():
     assert ask(~negative.is_special()) is True
 
 
-def test_positive_evidence_uses_same_object_refinement():
+def test_positive_evidence_uses_same_object_refinement() -> None:
     tiny = Tiny()
 
     exact = tiny(4)
@@ -103,7 +103,7 @@ def test_positive_evidence_uses_same_object_refinement():
     assert constructed in tiny.Special()
 
 
-def test_sympy_active_assumptions_own_composite_propositions():
+def test_sympy_active_assumptions_own_composite_propositions() -> None:
     tiny = Tiny()
     proposition = tiny(-1).is_special() | tiny(99).is_special()
     assert ask(proposition) is Unknown
@@ -113,7 +113,7 @@ def test_sympy_active_assumptions_own_composite_propositions():
     global_assumptions.discard(proposition)
 
 
-def test_typed_query_has_exact_result_category_and_unknown_is_not_a_value():
+def test_typed_query_has_exact_result_category_and_unknown_is_not_a_value() -> None:
     tiny = Tiny()
     query = tiny.Measure(tiny(-2))
     answer = ask(query)
@@ -124,7 +124,7 @@ def test_typed_query_has_exact_result_category_and_unknown_is_not_a_value():
     assert not isinstance(query, Boolean)
 
 
-def test_property_monomorphism_and_inverse_image_are_retained_categorical_data():
+def test_property_monomorphism_and_inverse_image_are_retained_categorical_data() -> None:
     tiny = Tiny()
     property_category = tiny.Special()
     (monomorphism,) = property_category.structure_functors()
@@ -153,7 +153,7 @@ def test_property_monomorphism_and_inverse_image_are_retained_categorical_data()
     assert presentation.transformation.component(shape(1)).codomain() is property_category
 
 
-def test_inherited_property_is_the_inverse_image_along_the_defining_functor():
+def test_inherited_property_is_the_inverse_image_along_the_defining_functor() -> None:
     tiny = Tiny()
     subcategory = TinySubcategory(tiny)
     defining_functor = subcategory.structure_functors()[0]
@@ -166,7 +166,7 @@ def test_inherited_property_is_the_inverse_image_along_the_defining_functor():
     assert inherited.target_projection().codomain() is tiny.Special()
 
 
-def test_sympy_owns_each_property_predicate_and_its_handler():
+def test_sympy_owns_each_property_predicate_and_its_handler() -> None:
     first, second = Tiny(), Tiny()
     first_predicate = first.Special().predicate()
     second_predicate = second.Special().predicate()

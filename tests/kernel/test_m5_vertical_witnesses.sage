@@ -8,7 +8,7 @@ from sage_categories.cat.diagrams import cospan_diagram
 from sage_categories.cat.functors import Fun
 
 
-def test_r5_1_domain_evaluation_is_the_retained_evaluation_functor():
+def test_r5_1_domain_evaluation_is_the_retained_evaluation_functor() -> None:
     walking_arrow = Cat().Simplex(1)
     diagrams = Fun(walking_arrow, Cat())
     evaluation = diagrams.evaluation(walking_arrow(0))
@@ -19,7 +19,7 @@ def test_r5_1_domain_evaluation_is_the_retained_evaluation_functor():
     assert evaluation.on_object(arrow) is arrow.on_morphism(walking_arrow.generator("0->1")).domain()
 
 
-def test_r5_2_fully_faithful_identity_uses_its_exact_proposition_and_same_value():
+def test_r5_2_fully_faithful_identity_uses_its_exact_proposition_and_same_value() -> None:
     endomorphisms = Fun(Cat(), Cat())
     identity = endomorphisms.one()
     fully_faithful = endomorphisms.FullyFaithful()
@@ -31,7 +31,7 @@ def test_r5_2_fully_faithful_identity_uses_its_exact_proposition_and_same_value(
     assert identity in fully_faithful
 
 
-def test_r5_3_terminal_constant_cospan_retains_its_universal_presentation():
+def test_r5_3_terminal_constant_cospan_retains_its_universal_presentation() -> None:
     terminal = Cat().Terminal()
     identity = Fun(terminal, terminal).one()
     diagram = cospan_diagram(Cat(), identity, identity)
@@ -54,7 +54,7 @@ def test_r5_3_terminal_constant_cospan_retains_its_universal_presentation():
     assert universal_map is unique_map
 
 
-def test_r5_4_property_intersection_retains_both_projections_and_ambient_monomorphism():
+def test_r5_4_property_intersection_retains_both_projections_and_ambient_monomorphism() -> None:
     fully_faithful = Fun.FullyFaithful()
     equivalences = Fun.Equivalences()
     intersection = fully_faithful.intersection(equivalences)
@@ -75,7 +75,7 @@ def test_r5_4_property_intersection_retains_both_projections_and_ambient_monomor
     assert ambient_monomorphism is Fun.full_subcategory_monomorphism(intersection, Fun)
 
 
-def test_r5_5_identity_inverse_image_retains_both_projections_and_ambient_monomorphism():
+def test_r5_5_identity_inverse_image_retains_both_projections_and_ambient_monomorphism() -> None:
     identity = Fun(Fun, Fun).one()
     fully_faithful = Fun.FullyFaithful()
     inverse_image = identity.inverse_image(fully_faithful)
@@ -96,7 +96,7 @@ def test_r5_5_identity_inverse_image_retains_both_projections_and_ambient_monomo
     assert target_projection in Fun(inverse_image, fully_faithful)
 
 
-def test_r5_6_results_have_their_exact_semantic_owners():
+def test_r5_6_results_have_their_exact_semantic_owners() -> None:
     walking_arrow = Cat().Simplex(1)
     diagrams = Fun(walking_arrow, Cat())
     evaluation = diagrams.evaluation(walking_arrow(0))

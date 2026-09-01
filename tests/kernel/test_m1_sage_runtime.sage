@@ -370,7 +370,7 @@ def test_private_initialization_is_separate_from_public_functor_application() ->
 
 
 
-def test_unresolved_structural_diamond_is_debug_only(caplog) -> None:
+def test_unresolved_structural_diamond_is_debug_only(caplog: pytest.LogCaptureFixture) -> None:
     import logging
 
     caplog.set_level(logging.DEBUG, logger="sage_categories.kernel.compiler")

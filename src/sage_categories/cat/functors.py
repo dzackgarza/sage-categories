@@ -28,6 +28,7 @@ from sage_categories.cat.category import (
 )
 from sage_categories.cat.properties import Axiom
 from sage_categories.cat.predicates import predicate, register_handler
+from sage_categories.kernel.roles import CategoryPoint
 
 __all__ = ["Fun", "Functor", "FunctorCategory", "FunctorProperty", "FunctorsCategory", "NaturalTransformation"]
 
@@ -52,7 +53,7 @@ def _defining_functor_equal(
     assumptions: Proposition,
 ) -> bool | None:
     """Compare a retained diagram with the functor represented by a value."""
-    if not hasattr(candidate, "_is_object") or not hasattr(candidate, "_is_morphism"):
+    if not isinstance(candidate, CategoryPoint):
         return None
     candidate_denotes = candidate._is_object() or candidate._is_morphism()
     if is_placed(first, Fun) and not is_placed(candidate, Fun) and candidate_denotes:
@@ -103,20 +104,10 @@ class FunctorProperties:
 
     def PreservesLimits(self, shape: Category) -> Category:
         """Functors preserving limits of ``shape`` (D107, POL-FUN-039)."""
-        if hasattr(self, "_preserves_limits"):
-            cache = self._preserves_limits
-            if shape not in cache:
-                cache[shape] = ShapeIndexedFunctorProperty(self, "PreservesLimits", shape)
-            return cache[shape]
         return self.property_subcategory(self.ambient().PreservesLimits(shape))
 
     def CreatesLimits(self, shape: Category) -> Category:
         """Functors creating limits of ``shape`` (D107, POL-FUN-039)."""
-        if hasattr(self, "_creates_limits"):
-            cache = self._creates_limits
-            if shape not in cache:
-                cache[shape] = ShapeIndexedFunctorProperty(self, "CreatesLimits", shape)
-            return cache[shape]
         return self.property_subcategory(self.ambient().CreatesLimits(shape))
 
     def Isofibrations(self) -> Category:
@@ -226,7 +217,7 @@ def _denotes_diagram_by_domain(
     functors: FunctorCategory,
     assumptions: Proposition,
 ) -> bool | None:
-    if not hasattr(candidate, "_is_object") or not hasattr(candidate, "_is_morphism"):
+    if not isinstance(candidate, CategoryPoint):
         return False
     if is_placed(candidate, functors.ambient()):
         return sympy_ask(endpoints(candidate, functors.domain(), functors.codomain()), assumptions)
@@ -254,7 +245,7 @@ def _denotes_functor_by_domain(
     functors: FunctorsCategory,
     assumptions: Proposition,
 ) -> bool:
-    if not hasattr(candidate, "_is_object") or not hasattr(candidate, "_is_morphism"):
+    if not isinstance(candidate, CategoryPoint):
         return False
     if is_placed(candidate, functors):
         return True
@@ -301,6 +292,18 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
         self._preserves_limits: MonoDict = MonoDict()
         self._creates_limits: MonoDict = MonoDict()
         super().__init__(morphisms, domain, codomain)
+
+    def PreservesLimits(self, shape: Category) -> Category:
+        """Functors preserving limits of ``shape`` (D107, POL-FUN-039); cached per shape on this fixed-endpoint category."""
+        if shape not in self._preserves_limits:
+            self._preserves_limits[shape] = ShapeIndexedFunctorProperty(self, "PreservesLimits", shape)
+        return self._preserves_limits[shape]
+
+    def CreatesLimits(self, shape: Category) -> Category:
+        """Functors creating limits of ``shape`` (D107, POL-FUN-039); cached per shape on this fixed-endpoint category."""
+        if shape not in self._creates_limits:
+            self._creates_limits[shape] = ShapeIndexedFunctorProperty(self, "CreatesLimits", shape)
+        return self._creates_limits[shape]
 
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         return denotes_diagram(candidate, self)

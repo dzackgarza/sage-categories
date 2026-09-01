@@ -82,6 +82,7 @@ module attributes resolved on first access.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -292,7 +293,7 @@ class CardinalValue(Element):
                 return int(self._value)
         raise AssertionError(f"{self!r} is not a finite cardinal")
 
-    def __reduce__(self) -> tuple[Any, tuple[Key]]:
+    def __reduce__(self) -> tuple[Callable[[Key], CardinalValue], tuple[Key]]:
         """A cardinal is interned, so its pickle names its key and the round trip returns the same object."""
         return (_retained_cardinal, (self._key,))
 

@@ -338,10 +338,10 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
     def _retain_monomorphism(self, subset: SetObject, base_set: SetObject) -> SetObject:
         # The monomorphism of a subset is injective: Mathlib ``Set.inclusion_injective``
         # (Mathlib.Data.Set.Inclusion; inspected 2026-08-26).
-        identity = _sets.Sets().morphism_category(1)(subset, base_set)(
-            lambda datum: datum
+        monomorphisms = (
+            _sets.Sets().morphism_category(1)(subset, base_set).Monomorphisms()
         )
-        self.retain_datum(subset, identity)
+        self.retain_datum(subset, monomorphisms(lambda datum: datum))
         return subset
 
 
@@ -415,8 +415,8 @@ class ChosenQuotientsCategory(FullSubcategory[[Rule], []]):
         quotient: SetObject,
         class_of: Callable[[Datum], Datum],
     ) -> SetObject:
-        epi_morphism = _sets.Sets().morphism_category(1)(base_set, quotient)(
-            class_of
+        epimorphisms = (
+            _sets.Sets().morphism_category(1)(base_set, quotient).Epimorphisms()
         )
-        self.retain_datum(quotient, epi_morphism)
+        self.retain_datum(quotient, epimorphisms(class_of))
         return quotient

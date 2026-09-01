@@ -548,7 +548,12 @@ class FixedEndpointProperty[**MorphismData, **TwoMorphismData](NarrowedProperty[
         *args: MorphismData.args,
         **kwargs: MorphismData.kwargs,
     ) -> MorphismCategory.ObjectType:
-        if len(args) == 1 and not kwargs and args[0] in self._ambient:
+        if (
+            len(args) == 1
+            and not kwargs
+            and hasattr(args[0], "domain")
+            and args[0] in self._ambient
+        ):
             refine(args[0], self)
             return args[0]
         morphism = self._ambient(*args, **kwargs)

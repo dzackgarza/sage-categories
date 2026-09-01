@@ -25,7 +25,8 @@ from sage_categories.sets.objects import MembershipRule, SetObject
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
-    from sage_categories.sets.category import SetMap
+
+from sage_categories.sets.category import SetMap
 
 __all__ = ["FinitePosets", "FiniteTotallyOrderedSets", "MonotoneMap", "Poset", "PosetElement", "Posets", "PosetsCategory", "TotallyOrderedSets"]
 
@@ -219,7 +220,7 @@ def _pair_point(square: SetObject, left: SetElement, right: SetElement) -> SetEl
     return Sets().element_from_defining_morphism(square.universal_morphism(pairing))
 
 
-def _order_relation(poset: CategoryOfCategories.ElementType, points: tuple[SetElement, ...]) -> Relation:
+def _order_relation(poset: Poset, points: tuple[SetElement, ...]) -> Relation:
     return _decided(lambda left, right: ask(poset.element(left) <= poset.element(right)), points)
 
 
@@ -234,7 +235,7 @@ def _total_on_enumerated(poset: CategoryOfCategories.ElementType) -> Decision:
     return _total(_order_relation(poset, points), len(points))
 
 
-def _order_preserving_on_enumerated(source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType, set_map: CategoryOfCategories.ElementType) -> Decision:
+def _order_preserving_on_enumerated(source: Poset, target: Poset, set_map: SetMap) -> Decision:
     carrier = Posets().underlying_set_functor().on_object(source)
     if not Sets().Finite().has_chosen_enumeration(carrier):
         return Unknown

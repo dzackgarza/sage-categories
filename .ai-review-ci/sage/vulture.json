@@ -1,0 +1,6 @@
+{
+  "check": "vulture",
+  "diagnostics": ".ai-review-ci/sage/vulture.diagnostics.log",
+  "log": ".ai-review-ci/sage/vulture.log",
+  "status": 0
+}

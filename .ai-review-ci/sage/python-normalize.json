@@ -1,0 +1,6 @@
+{
+  "check": "python-normalize",
+  "diagnostics": ".ai-review-ci/sage/python-normalize.diagnostics.log",
+  "log": ".ai-review-ci/sage/python-normalize.log",
+  "status": 0
+}

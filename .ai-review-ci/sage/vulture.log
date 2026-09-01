@@ -1,0 +1,7 @@
+tests/test_cat.sage
+tests/test_sets.sage
+tests/test_version.sage
+=============================
+=== Running: vulture dead code detection (Sage-aware) ===
+# Finds unused code in Python and Sage files
+# Preparsing 3 Sage file(s) for vulture

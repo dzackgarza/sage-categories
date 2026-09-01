@@ -1,0 +1,6 @@
+{
+  "check": "python-ast-grep",
+  "diagnostics": ".ai-review-ci/sage/python-ast-grep.diagnostics.log",
+  "log": ".ai-review-ci/sage/python-ast-grep.log",
+  "status": 0
+}

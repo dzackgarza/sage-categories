@@ -1,0 +1,6 @@
+{
+  "check": "deptry",
+  "diagnostics": ".ai-review-ci/sage/deptry.diagnostics.log",
+  "log": ".ai-review-ci/sage/deptry.log",
+  "status": 0
+}

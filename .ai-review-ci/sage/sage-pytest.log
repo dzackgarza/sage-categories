@@ -1,0 +1,125 @@
+=============================
+=== Running: pytest on Sage test files (preparsed) ===
+# Preparses .sage test files so integer literals become Sage Integer/Rational,
+# then runs pytest on the generated .py files.
+# Preparsing 3 .sage test file(s)
+/home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/pytest_asyncio/plugin.py:299: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the "fixture" caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to "function" scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+============================= test session starts ==============================
+platform linux -- Python 3.14.7, pytest-9.0.2, pluggy-1.6.0
+rootdir: /tmp/qc-sage-pytest.xZrNLW/tests
+plugins: anyio-4.14.2, asyncio-1.4.0, timeout-2.4.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 34 items
+
+../../../../tmp/qc-sage-pytest.xZrNLW/tests/test_version.py .            [  2%]
+../../../../tmp/qc-sage-pytest.xZrNLW/tests/test_cat.py ................ [ 50%]
+..                                                                       [ 55%]
+../../../../tmp/qc-sage-pytest.xZrNLW/tests/test_sets.py ............... [100%]
+
+=============================== warnings summary ===============================
+../sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247
+  /home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247: DeprecationWarning: 
+  Importing verbose from here is deprecated; please use "from sage.misc.verbose import verbose" instead.
+  See https://github.com/sagemath/sage/issues/17815 for details.
+    return getattr(object, name, default)
+
+../sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247
+  /home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247: DeprecationWarning: 
+  Importing banner from here is deprecated; please use "from sage.misc.banner import banner" instead.
+  See https://github.com/sagemath/sage/issues/34259 for details.
+    return getattr(object, name, default)
+
+../sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247
+  /home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247: DeprecationWarning: 
+  Importing set_edit_template from here is deprecated; please use "from sage.misc.edit_module import set_edit_template" instead.
+  See https://github.com/sagemath/sage/issues/34259 for details.
+    return getattr(object, name, default)
+
+../sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247
+  /home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247: DeprecationWarning: 
+  Importing Profiler from here is deprecated; please use "from sage.misc.profiler import Profiler" instead.
+  See https://github.com/sagemath/sage/issues/34259 for details.
+    return getattr(object, name, default)
+
+../sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247
+  /home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247: DeprecationWarning: 
+  Importing trace from here is deprecated; please use "from sage.misc.trace import trace" instead.
+  See https://github.com/sagemath/sage/issues/34259 for details.
+    return getattr(object, name, default)
+
+../sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247
+  /home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247: DeprecationWarning: 
+  Importing installed_packages from here is deprecated; please use "from sage.misc.package import installed_packages" instead.
+  See https://github.com/sagemath/sage/issues/34259 for details.
+    return getattr(object, name, default)
+
+../sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247
+  /home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247: DeprecationWarning: 
+  Importing is_package_installed from here is deprecated; please use "from sage.misc.package import is_package_installed" instead.
+  See https://github.com/sagemath/sage/issues/34259 for details.
+    return getattr(object, name, default)
+
+../sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247
+  /home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247: DeprecationWarning: 
+  Importing package_versions from here is deprecated; please use "from sage.misc.package import package_versions" instead.
+  See https://github.com/sagemath/sage/issues/34259 for details.
+    return getattr(object, name, default)
+
+../sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247
+  /home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247: DeprecationWarning: 
+  Importing benchmark from here is deprecated; please use "from sage.misc.benchmark import benchmark" instead.
+  See https://github.com/sagemath/sage/issues/34259 for details.
+    return getattr(object, name, default)
+
+../sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247
+  /home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247: DeprecationWarning: 
+  Importing logstr from here is deprecated; please use "from sage.repl.interpreter import logstr" instead.
+  See https://github.com/sagemath/sage/issues/34259 for details.
+    return getattr(object, name, default)
+
+../sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247
+  /home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247: DeprecationWarning: 
+  Importing GroupExp_Class from here is deprecated; please use "from sage.groups.group_exp import GroupExp_Class" instead.
+  See https://github.com/sagemath/sage/issues/38238 for details.
+    return getattr(object, name, default)
+
+../sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247
+  /home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247: DeprecationWarning: 
+  Importing GroupExpElement from here is deprecated; please use "from sage.groups.group_exp import GroupExpElement" instead.
+  See https://github.com/sagemath/sage/issues/38238 for details.
+    return getattr(object, name, default)
+
+../sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247
+  /home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247: DeprecationWarning: 
+  Importing GroupSemidirectProductElement from here is deprecated; please use "from sage.groups.group_semidirect_product import GroupSemidirectProductElement" instead.
+  See https://github.com/sagemath/sage/issues/38238 for details.
+    return getattr(object, name, default)
+
+../sage-dev-allopts/.venv/lib/python3.14/site-packages/sage/crypto/public_key/key_exchange/finite_field_diffie_hellman.py:32
+  /home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage/crypto/public_key/key_exchange/finite_field_diffie_hellman.py:32: FutureWarning: SageMath's key exchange functionality is experimental and might change in the future.
+  See https://github.com/sagemath/sage/issues/41218 for details.
+    from sage.crypto.public_key.key_exchange.key_exchange_base import (
+
+../sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247
+../sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247
+  /home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/_pytest/compat.py:247: DeprecationWarning: combinat.species is superseded by LazyCombinatorialSpecies
+  See https://github.com/sagemath/sage/issues/38544 for details.
+    return getattr(object, name, default)
+
+../sage-dev-allopts/.venv/lib/python3.14/site-packages/sage/misc/sage_unittest.py:20
+  /home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage/misc/sage_unittest.py:20: PytestCollectionWarning: cannot collect test class 'TestSuite' because it has a __init__ constructor (from: test_version.py)
+    class TestSuite:
+
+../sage-dev-allopts/.venv/lib/python3.14/site-packages/sage/misc/sage_unittest.py:20
+  /home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage/misc/sage_unittest.py:20: PytestCollectionWarning: cannot collect test class 'TestSuite' because it has a __init__ constructor (from: test_cat.py)
+    class TestSuite:
+
+../sage-dev-allopts/.venv/lib/python3.14/site-packages/sage/misc/sage_unittest.py:20
+  /home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage/misc/sage_unittest.py:20: PytestCollectionWarning: cannot collect test class 'TestSuite' because it has a __init__ constructor (from: test_sets.py)
+    class TestSuite:
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 34 passed, 19 warnings in 4.71s ========================

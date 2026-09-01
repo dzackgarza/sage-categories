@@ -1,0 +1,6 @@
+{
+  "check": "sage-file-length",
+  "diagnostics": ".ai-review-ci/sage/sage-file-length.diagnostics.log",
+  "log": ".ai-review-ci/sage/sage-file-length.log",
+  "status": 0
+}

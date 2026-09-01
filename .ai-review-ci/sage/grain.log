@@ -1,0 +1,115 @@
+=============================
+=== Running: grain unused code detection ===
+# Finds unused imports and variables that can be safely removed
+AGENTS.md:135  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+AGENTS.md:145  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+AGENTS.md:491  [WARN] OBVIOUS_HEADER  header "Tests" adds no navigation value -- content restates it
+README.md:108  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+README.md:112  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+README.md:114  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+README.md:149  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+README.md:162  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/cardinality.md:15  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/cardinality.md:17  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/cardinality.md:19  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/cardinality.md:23  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/cardinality.md:25  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/cardinality.md:27  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/cardinality.md:75  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/cardinality.md:77  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/cardinality.md:79  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/cardinality.md:108  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/cardinality.md:110  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/cardinality.md:112  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/cardinality.md:114  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/cardinality.md:116  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/cardinality.md:118  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/cardinality.md:196  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/cardinality.md:198  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/cardinality.md:200  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/cardinality.md:210  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/cardinality.md:304  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/cardinality.md:404  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/cardinality.md:406  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/cardinality.md:408  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/cardinality.md:410  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/ordered-sets.md:95  [WARN] OBVIOUS_HEADER  header "4. Canonical simplex orders" adds no navigation value -- content restates it
+specs/ordinals.md:1  [WARN] OBVIOUS_HEADER  header "Ordinals" adds no navigation value -- content restates it
+specs/ordinals.md:37  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/ordinals.md:39  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/ordinals.md:41  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/ordinals.md:62  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/ordinals.md:64  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/ordinals.md:66  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/ordinals.md:68  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/ordinals.md:70  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/ordinals.md:72  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/ordinals.md:74  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/ordinals.md:109  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/ordinals.md:111  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/ordinals.md:115  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/ordinals.md:123  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/ordinals.md:125  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/ordinals.md:127  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/ordinals.md:131  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/ordinals.md:190  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/ordinals.md:219  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/ordinals.md:221  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/ordinals.md:225  [WARN] OBVIOUS_HEADER  header "Cardinality of ordinals" adds no navigation value -- content restates it
+specs/sets.md:12  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/sets.md:22  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/sets.md:145  [WARN] OBVIOUS_HEADER  header "Products" adds no navigation value -- content restates it
+specs/sets.md:183  [WARN] OBVIOUS_HEADER  header "Coproducts" adds no navigation value -- content restates it
+specs/sets.md:262  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+specs/sets.md:483  [WARN] BULLET_PROSE  short bullet list would read better as a sentence
+src/sage_categories/__init__.py:236  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/__init__.py:237  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/__init__.py:238  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/abstract_categories/diagram_functors.py:205  [WARN] RESTATED_DOCSTRING  docstring for "DiscreteCategoriesCategory" just restates the name
+src/sage_categories/abstract_categories/functor_core.py:451  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/abstract_categories/functor_core.py:452  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/abstract_categories/functor_images.py:33  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/abstract_categories/functor_images.py:34  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/abstract_categories/functor_images.py:35  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/abstract_categories/functor_images.py:36  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/abstract_categories/functor_images.py:37  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/abstract_categories/functor_images.py:38  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/abstract_categories/functor_images.py:46  [WARN] RESTATED_DOCSTRING  docstring for "FunctorImageElement" just restates the name
+src/sage_categories/abstract_categories/opposite_categories.py:123  [WARN] RESTATED_DOCSTRING  docstring for "OppositeCategoryObjects" just restates the name
+src/sage_categories/abstract_categories/product_categories.py:83  [WARN] RESTATED_DOCSTRING  docstring for "ProductHomCategory" just restates the name
+src/sage_categories/abstract_categories/product_presentations.py:117  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/abstract_categories/product_presentations.py:118  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/compiler.py:30  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/compiler.py:31  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/compiler.py:35  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/compiler.py:36  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/compiler.py:37  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/compiler.py:96  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/compiler.py:97  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/compiler.py:183  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/compiler.py:184  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/compiler.py:372  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/compiler.py:373  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/compiler.py:502  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/compiler.py:503  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/theories/cardinal_categories.py:329  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/theories/cardinal_categories.py:338  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/theories/cardinal_categories.py:362  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/theories/finite_posets.py:52  [WARN] RESTATED_DOCSTRING  docstring for "FinitePosetElement" just restates the name
+src/sage_categories/theories/finite_subset_sets.py:104  [WARN] RESTATED_DOCSTRING  docstring for "FiniteSubsetSet" just restates the name
+src/sage_categories/theories/set_category.py:243  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/theories/set_category.py:255  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/theories/set_colimits.py:188  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/theories/set_colimits.py:189  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/theories/set_limits.py:97  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/theories/set_limits.py:98  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/theories/set_limits.py:99  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/theories/set_objects.py:195  [WARN] RESTATED_DOCSTRING  docstring for "FiniteSetElement" just restates the name
+src/sage_categories/theories/set_products.py:78  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/theories/set_products.py:188  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/theories/set_products.py:189  [WARN] TAG_COMMENT  untagged comment -- use # TAG: description
+src/sage_categories/theories/thin_categories.py:183  [WARN] RESTATED_DOCSTRING  docstring for "ThinCategoryArrowSet" just restates the name
+src/sage_categories/theories/total_orders.py:70  [WARN] RESTATED_DOCSTRING  docstring for "TotallyOrderedSetElement" just restates the name
+src/sage_categories/values.py:208  [WARN] RESTATED_DOCSTRING  docstring for "MathematicalElement" just restates the name
+
+grain: 110 warning(s) -- fix errors before committing

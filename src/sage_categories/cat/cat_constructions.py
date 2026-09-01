@@ -562,19 +562,19 @@ def _limit_of_opposite_categories(diagram: Functor) -> CategoryOfCategories.Elem
     if isinstance(shape, OppositeCategory) and shape.original() is Cat().WalkingSpan():
         original_shape = shape.original()
         vertices = tuple(original_shape(label) for label in original_shape.labels())
-        apex = diagram.on_object(vertices[0])
-        assert all(diagram.on_object(vertex) is apex for vertex in vertices)
+        generators = tuple(original_shape.generator(name) for name in original_shape.generator_names())
+        legs = tuple(diagram.on_morphism(opposite_morphism(generator)) for generator in generators)
+        original_legs = tuple(opposite_morphism(leg) for leg in legs)
+        assert original_legs[0] is original_legs[1]
+        apex = diagram.on_object(vertices[1])
+        assert diagram.on_object(vertices[2]) is apex
         identity = opposite_categories.morphism_category(1)(apex, apex).one()
-        assert all(
-            opposite_morphism(diagram.on_morphism(opposite_morphism(original_shape.generator(name))))
-            is opposite_morphism(identity)
-            for name in original_shape.generator_names()
-        )
+        components = {vertices[0]: legs[0], vertices[1]: identity, vertices[2]: identity}
         return family.with_universal_data(
             lowered,
             apex,
-            cone(lowered, apex, lambda _vertex: identity),
-            lambda candidate: candidate.component(vertices[0]),
+            cone(lowered, apex, lambda vertex: components[vertex]),
+            lambda candidate: candidate.component(vertices[1]),
         )
     tagged = _TaggedCategory(lowered)
     opposite_categories(tagged)

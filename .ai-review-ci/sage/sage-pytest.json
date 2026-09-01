@@ -1,6 +1,0 @@
-{
-  "check": "sage-pytest",
-  "diagnostics": ".ai-review-ci/sage/sage-pytest.diagnostics.log",
-  "log": ".ai-review-ci/sage/sage-pytest.log",
-  "status": 0
-}

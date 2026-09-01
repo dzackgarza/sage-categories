@@ -1,6 +1,0 @@
-{
-  "check": "grain",
-  "diagnostics": ".ai-review-ci/sage/grain.diagnostics.log",
-  "log": ".ai-review-ci/sage/grain.log",
-  "status": 0
-}

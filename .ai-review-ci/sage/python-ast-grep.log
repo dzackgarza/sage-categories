@@ -1,9 +1,0 @@
-=============================
-=== Running: uvx/npx tool runners setup ===
-# Provides access to ruff, coverage, semgrep, and other Python/JS tools via uvx/npx without local installation
-=============================
-=== Running: tool installation ===
-# Installs Python/JS tool dependencies to local cache for faster subsequent runs
-=============================
-=== Running: ast-grep code quality audit ===
-# Custom AST rules for fraud detection (boolean assignment, loops without asserts, numeric bounds, self-reinforcing prints)

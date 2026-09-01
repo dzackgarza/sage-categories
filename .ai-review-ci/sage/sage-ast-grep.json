@@ -1,6 +1,0 @@
-{
-  "check": "sage-ast-grep",
-  "diagnostics": ".ai-review-ci/sage/sage-ast-grep.diagnostics.log",
-  "log": ".ai-review-ci/sage/sage-ast-grep.log",
-  "status": 0
-}

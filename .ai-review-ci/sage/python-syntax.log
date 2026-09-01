@@ -1,3 +1,0 @@
-=============================
-=== Running: Python syntax validation ===
-# Compiles Python source with the configured target interpreter before linting or analysis

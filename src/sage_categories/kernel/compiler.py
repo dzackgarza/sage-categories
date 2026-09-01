@@ -35,7 +35,7 @@ from sage_categories.kernel.construction import (
     retain_morphism_input,
     retain_object_input,
     retained_object_input,
-    retained_object_inputs,
+    retained_objects,
 )
 from sage_categories.kernel.roles import (
     CategoryPoint,
@@ -861,8 +861,4 @@ def _initialize_added_object_nodes(value: ObjectOfCategory, added: tuple[Node, .
 
 def _placed_objects(category: Category) -> tuple[ObjectOfCategory, ...]:
     """The live objects whose construction inputs name ``category``."""
-    return tuple(
-        construction_input.canonical_image
-        for construction_input in retained_object_inputs()
-        if construction_input.identity.category is category
-    )
+    return retained_objects(category)

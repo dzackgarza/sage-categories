@@ -574,11 +574,11 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
 
     def Pullbacks(self) -> Category:
         """``C.Limits(L(2, 2))``: limits over the walking cospan."""
-        return self.Limits(Cat().Horn(2, 2))
+        return self.Limits(Cat().WalkingCospan())
 
     def Pushouts(self) -> Category:
         """``C.Colimits(L(2, 0))``: colimits over the walking span."""
-        return self.Colimits(Cat().Horn(2, 0))
+        return self.Colimits(Cat().WalkingSpan())
 
     def Equalizers(self) -> Category:
         return self.Limits(Cat().WalkingParallelPair())
@@ -844,6 +844,14 @@ _cocartesian_lifts: TripleDict = TripleDict(weak_values=False)
 # ``Cat()``: an explicit composite names its construction (``specs/functor.md``,
 # "Structural inheritance": a selected composite retains its factor functors).
 _composite_factors: MonoDict = MonoDict()
+_composites: MonoDict = MonoDict()
+
+
+def _composite_sequence(functor: Functor) -> tuple[Functor, ...]:
+    if functor not in _composite_factors:
+        return (functor,)
+    first, second = _composite_factors[functor]
+    return (*_composite_sequence(first), *_composite_sequence(second))
 
 @dataclass(frozen=True, eq=False, slots=True)
 class FunctorData:
@@ -1214,13 +1222,21 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
         assert first in self.morphism_category(1) and second in self.morphism_category(1)
         assert first.codomain() is second.domain()
-        composite = self.construct_morphism(
-            first.domain(),
-            second.codomain(),
-            lambda x: second.on_object(first.on_object(x)),
-            lambda f: second.on_morphism(first.on_morphism(f)),
-        )
-        composite.retain_factors(first, second)
+        table = _composites
+        for factor in (*_composite_sequence(first), *_composite_sequence(second)):
+            if factor not in table:
+                table[factor] = MonoDict()
+            table = table[factor]
+        if self not in table:
+            composite = self.construct_morphism(
+                first.domain(),
+                second.codomain(),
+                lambda x: second.on_object(first.on_object(x)),
+                lambda f: second.on_morphism(first.on_morphism(f)),
+            )
+            composite.retain_factors(first, second)
+            table[self] = composite
+        composite = table[self]
         # Full, faithful, fully faithful, essentially surjective, and equivalence
         # functors compose (Mathlib ``Functor.FullyFaithful.comp``, ``Full.comp``,
         # ``Faithful.comp``, ``EssSurj.comp``, and ``Functor.IsEquivalence.comp``;
@@ -1343,7 +1359,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
         if is_discrete(shape):
             return product_of_categories
-        if shape is self.Horn(2, 2):
+        if shape is self.WalkingCospan():
             return pullback_of_categories
         raise AssertionError(f"Cat owns no {shape!r}-limit construction: products over Discrete(S) and pullbacks over L(2, 2) are its owned shapes; supply universal data")
 
@@ -1467,6 +1483,14 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         if ("walking isomorphism", ()) not in self._canonical:
             self._canonical["walking isomorphism", ()] = canonical.walking_isomorphism()
         return self._canonical["walking isomorphism", ()]
+
+    def WalkingSpan(self) -> FinitePresentedCategory:
+        """The free category on ``0 <- 1 -> 2``."""
+        return self.Horn(2, 0)
+
+    def WalkingCospan(self) -> FinitePresentedCategory:
+        """The free category on ``0 -> 1 <- 2``."""
+        return self.Horn(2, 2)
 
     def WalkingParallelPair(self) -> FinitePresentedCategory:
         from sage_categories.cat import canonical

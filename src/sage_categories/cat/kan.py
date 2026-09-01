@@ -47,7 +47,7 @@ def _star() -> CategoryOfCategories.ElementType:
 
 def _cospan() -> CategoryOfCategories.ElementType:
     """``L(2, 2)``, the shape of the pullback square a comma category is."""
-    return Cat().Horn(2, 2)
+    return Cat().WalkingCospan()
 
 
 def _pairs_projection(shape: CategoryOfCategories.ElementType) -> Functor:

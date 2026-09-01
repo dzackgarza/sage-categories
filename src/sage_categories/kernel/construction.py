@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from contextvars import ContextVar, Token
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING
 
 from sage.structure.coerce_dict import MonoDict
 
@@ -27,7 +27,6 @@ __all__ = [
     "ObjectConstructionContext",
     "ObjectConstructionInput",
     "ObjectRoleIdentity",
-    "RetainedObjectInput",
     "activate_element_context",
     "activate_morphism_context",
     "activate_object_context",
@@ -45,7 +44,7 @@ __all__ = [
     "retained_input",
     "retained_morphism_input",
     "retained_object_input",
-    "retained_object_inputs",
+    "retained_objects",
 ]
 
 
@@ -89,16 +88,6 @@ class ObjectConstructionInput[Value: ObjectOfCategory, Datum]:
     canonical_image: Value
     identity: ObjectRoleIdentity
     datum: Datum
-
-
-class RetainedObjectInput(Protocol):
-    """The fields needed from an object input without erasing its datum type."""
-
-    @property
-    def canonical_image(self) -> ObjectOfCategory: ...
-
-    @property
-    def identity(self) -> ObjectRoleIdentity: ...
 
 
 @dataclass(frozen=True, slots=True, eq=False)
@@ -151,9 +140,13 @@ def retain_morphism_input[Value: MorphismOfCategory, Datum](construction_input: 
     _morphism_inputs[value] = construction_input
 
 
-def retained_object_inputs() -> tuple[RetainedObjectInput, ...]:
-    """The retained object construction inputs for live owned values."""
-    return tuple(construction_input for _, construction_input in _object_inputs.items())
+def retained_objects(category: Category) -> tuple[ObjectOfCategory, ...]:
+    """The live objects whose retained construction input names ``category``."""
+    return tuple(
+        construction_input.canonical_image
+        for _, construction_input in _object_inputs.items()
+        if construction_input.identity.category is category
+    )
 
 
 def retained_object_input[Value: ObjectOfCategory, Datum](value: Value) -> ObjectConstructionInput[Value, Datum]:

@@ -165,14 +165,10 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
         forward_functors = Fun(source, target)
         inverse_functors = Fun(target, source)
 
-        assert unit in source_endofunctors.morphism_category(1)(
-            source_endofunctors.one(),
-            self._inverse * self._forward,
-        )
-        assert counit in target_endofunctors.morphism_category(1)(
-            self._forward * self._inverse,
-            target_endofunctors.one(),
-        )
+        assert unit.domain() is source_endofunctors.one()
+        assert unit.codomain() is self._inverse * self._forward
+        assert counit.domain() is self._forward * self._inverse
+        assert counit.codomain() is target_endofunctors.one()
 
         forward_triangle = counit.whisker_right(self._forward) * unit.whisker_left(self._forward)
         inverse_triangle = counit.whisker_left(self._inverse) * unit.whisker_right(self._inverse)

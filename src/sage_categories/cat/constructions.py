@@ -370,7 +370,6 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
         def product_factors(self) -> Functor:
             """The retained indexed family ``i |-> X_i`` (``specs/functor.md``, "Diagram shapes and universal constructions")."""
             presentation = product_presenting_family(self).presentation(self)
-            assert isinstance(presentation, ConeCategory.ObjectType)
             return presentation.diagram()
 
         def index_category(self) -> Category:
@@ -379,19 +378,16 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
         def cone(self) -> NaturalTransformation:
             """The product cone ``constant(self) => diagram``, whose components are the projections."""
             presentation = product_presenting_family(self).presentation(self)
-            assert isinstance(presentation, ConeCategory.ObjectType)
             return presentation.transformation()
 
         def product_projection(self, index: CategoryOfCategories.ElementType | Hashable) -> MorphismCategory.ObjectType:
             """``pi_i: self -> X_i`` for ``i`` an object of the index category or a datum of the index set (POL-CAT-093)."""
             presentation = product_presenting_family(self).presentation(self)
-            assert isinstance(presentation, ConeCategory.ObjectType)
             return presentation.leg(index)
 
         def universal_morphism(self, candidate_cone: NaturalTransformation) -> MorphismCategory.ObjectType:
             """The mediating morphism from the apex of another cone over the same diagram."""
             presentation = product_presenting_family(self).presentation(self)
-            assert isinstance(presentation, LimitConesCategory.ObjectType)
             return presentation.lift(cones(presentation.diagram())(candidate_cone))
 
     def __init__(self, ambient: Category) -> None:

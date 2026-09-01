@@ -355,7 +355,7 @@ def _chosen_pullback(apex: SliceLikeCategory) -> SliceLikeCategory:
     """
     evaluation = apex.fixed_evaluation()
     diagram = cospan_diagram(Cat(), evaluation, apex.base_of_slice().point_functor(apex.fixed_object()))
-    cospan = Cat().Horn(2, 2)
+    cospan = Cat().WalkingCospan()
     to_point = Cat().construct_morphism(apex, Cat().Terminal(), lambda member_object: _star(), lambda triangle: _star_identity())
     legs = {0: apex.defining_arrow(), 1: to_point, 2: evaluation * apex.defining_arrow()}
 

@@ -237,7 +237,7 @@ def cospan_diagram(
     assert first.codomain() is second.codomain()
     key = (first, second, base)
     if key not in _cospan_diagrams:
-        cospan = Cat().Horn(2, 2)
+        cospan = Cat().WalkingCospan()
         objects = {0: first.domain(), 1: second.domain(), 2: first.codomain()}
         images = {"0->2": first, "1->2": second}
         _cospan_diagrams[key] = Fun(cospan, base)(lambda vertex: objects[cospan.label(vertex)], lambda path: _fold(images, lambda vertex: _vertex_identity(objects, cospan, vertex), path))
@@ -253,7 +253,7 @@ def span_diagram(
     assert first.domain() is second.domain()
     key = (first, second, base)
     if key not in _span_diagrams:
-        span = Cat().Horn(2, 0)
+        span = Cat().WalkingSpan()
         objects = {0: first.domain(), 1: first.codomain(), 2: second.codomain()}
         images = {"0->1": first, "0->2": second}
         _span_diagrams[key] = Fun(span, base)(lambda vertex: objects[span.label(vertex)], lambda path: _fold(images, lambda vertex: _vertex_identity(objects, span, vertex), path))
@@ -268,7 +268,7 @@ def codomain_lift(
     """The cartesian lift of ``f: y -> x`` at ``p: z -> x`` for ``ev_1``: the square ``(pi_z, f)`` from ``pi_y: z *_x y -> y`` to ``p``."""
     base, arrow = functors.codomain(), functors.domain()
     assert arrow is Cat().Simplex(1) and morphism.codomain() is member_object.codomain(), f"{morphism!r} does not end at the codomain of {member_object!r}"
-    cospan = Cat().Horn(2, 2)
+    cospan = Cat().WalkingCospan()
     pullback = base.Pullbacks()(cospan_diagram(base, member_object, morphism))
     to_first, to_second = pullback.projection(cospan(0)), pullback.projection(cospan(1))
     components = {0: to_first, 1: morphism}
@@ -283,7 +283,7 @@ def domain_lift(
     """The cocartesian lift of ``f: x -> y`` at ``p: x -> z`` for ``ev_0``: the square ``(f, iota_z)`` from ``p`` to ``iota_y: y -> z +_x y``."""
     base, arrow = functors.codomain(), functors.domain()
     assert arrow is Cat().Simplex(1) and morphism.domain() is member_object.domain(), f"{morphism!r} does not start at the domain of {member_object!r}"
-    span = Cat().Horn(2, 0)
+    span = Cat().WalkingSpan()
     pushout = base.Pushouts()(span_diagram(base, member_object, morphism))
     from_first, from_second = pushout.injection(span(1)), pushout.injection(span(2))
     components = {0: morphism, 1: from_first}

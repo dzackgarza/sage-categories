@@ -9,6 +9,7 @@ endofunctor (``specs/functor.md``, "Opposites and dualization").
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -141,11 +142,11 @@ class OppositeCategory[**MorphismData, **TwoMorphismData](
         original = self._original.inverse_morphism(morphism.original())
         return self.construct_morphism(morphism.codomain(), morphism.domain(), original)
 
-    def limit_construction(self, shape: Category) -> Any:
+    def limit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
         shape_orig = shape._original if isinstance(shape, OppositeCategory) else shape
         return self._original.colimit_construction(shape_orig)
 
-    def colimit_construction(self, shape: Category) -> Any:
+    def colimit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
         shape_orig = shape._original if isinstance(shape, OppositeCategory) else shape
         return self._original.limit_construction(shape_orig)
 

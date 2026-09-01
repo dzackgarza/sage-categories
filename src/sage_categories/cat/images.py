@@ -361,7 +361,12 @@ def strict_image(target: Category, defining_functor: Functor) -> StrictImageCate
 
 def register_full_image(defining_functor: Functor, image: Category) -> None:
     """Register the category that owns the full image of ``defining_functor``."""
-    assert defining_functor.codomain() in (image, image.narrowing_base(), getattr(image, "_ambient", None))
+    codomain = defining_functor.codomain()
+    assert (
+        codomain is image
+        or codomain is image.narrowing_base()
+        or (image.has_ambient() and codomain is image.ambient())
+    ), f"{defining_functor!r} does not land in {image!r}, its narrowing base, or its ambient"
     assert defining_functor not in _full_images or _full_images[defining_functor] is image
     _full_images[defining_functor] = image
 

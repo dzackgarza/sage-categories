@@ -108,6 +108,13 @@ class OppositeCategory[**MorphismData, **TwoMorphismData](
     def object_set(self) -> CategoryOfCategories.ElementType:
         return self._original.object_set()
 
+    def object_at(self, point: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        """A category and its opposite share their objects."""
+        return self._original.object_at(point)
+
+    def object_point(self, member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        return self._original.object_point(member_object)
+
     def construct_morphism(
         self,
         domain: CategoryOfCategories.ElementType,

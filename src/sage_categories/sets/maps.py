@@ -92,7 +92,7 @@ class SetMapDeclaration:
 
 
 def maps_equal(
-    first: CategoryOfCategories.ElementType, candidate: CategoryOfCategories.ElementType, assumptions: Proposition
+    first: SetMapDeclaration, candidate: SetMapDeclaration, assumptions: Proposition
 ) -> Decision:
     """Two maps with one finite enumerable domain are equal exactly when they agree on every point."""
     sets = _sets.Sets()

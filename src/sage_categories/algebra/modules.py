@@ -17,6 +17,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from sage.misc.cachefunc import cached_method
 from sage.rings.integer import Integer
 from sage.structure.coerce_dict import MonoDict
 
@@ -145,8 +146,9 @@ class ModulesCategory(Category[[], []]):
     def Based(self) -> PropertySubcategory:
         return self._based
 
+    @cached_method
     def U_A(self) -> Functor:
-        """The faithful forgetful functor to the ambient category C."""
+        """The faithful forgetful functor to the ambient category C, retained once."""
         ambient = self._ambient
 
         def on_object(M: ModulesCategory.ObjectType) -> CategoryOfCategories.ElementType:

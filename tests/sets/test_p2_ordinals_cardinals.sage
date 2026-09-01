@@ -16,7 +16,7 @@ import pytest
 
 from sage_categories.algebra import Groups, Magmas, Monoids, Semirings
 from sage_categories.cat import Cat
-from sage_categories.cat.predicates import ask
+from sage_categories.cat.predicates import Unknown, ask
 from sage_categories.ordinals import OrdinalObject, OrdinalOrder, Ordinals, omega, omega0
 from sage_categories.sets.cardinals import (
     Aleph,
@@ -86,8 +86,8 @@ def test_cardinal_semiring_object() -> None:
     semiring_obj = card.semiring_object()
     assert semiring_obj is not None
     assert semiring_obj.carrier() is card
-    assert semiring_obj.zero() == card.zero()
-    assert semiring_obj.one() == card.one()
+    assert semiring_obj.zero() is card.zero()
+    assert semiring_obj.one() is card.one()
 
 
 def test_cardinal_representative_functor() -> None:
@@ -134,18 +134,22 @@ def test_ordinal_arithmetic() -> None:
     b = O(4)
 
     # Natural operations
-    assert a + b == O(7)
-    assert a * b == O(12)
+    assert a + b is O(7)
+    assert a * b is O(12)
 
     # Ordinary operations
-    assert a.ordinal_sum(b) == O(7)
-    assert a.ordinal_product(b) == O(12)
-    assert a.ordinal_power(O(2)) == O(9)
+    assert a.ordinal_sum(b) is O(7)
+    assert a.ordinal_product(b) is O(12)
+    assert a.ordinal_power(O(2)) is O(9)
 
-    # Infinite with finite
+    # Infinite with finite: the ordinary sum stays symbolic and retained by expression,
+    # and its equality with ω_0 is Unknown -- distinct expressions never decide
+    # inequality by themselves (specs/ordinals.md, "Ordinary ordinal arithmetic").
     w = omega0
     assert repr(w + a) == "3 # ω_0" or repr(w + a) == "ω_0 # 3"
-    assert a.ordinal_sum(w) == w
+    absorbed = a.ordinal_sum(w)
+    assert absorbed is O.ordinal_sum(a, w)
+    assert ask(absorbed == w) is Unknown
 
 
 def test_ordinal_order_category() -> None:
@@ -184,16 +188,16 @@ def test_cardinal_arithmetic() -> None:
     c3 = C(3)
 
     # Finite arithmetic
-    assert c2 + c3 == C(5)
-    assert c2 * c3 == C(6)
-    assert c2 ** c3 == C(8)
-    assert C(7) % 3 == C(1)
+    assert c2 + c3 is C(5)
+    assert c2 * c3 is C(6)
+    assert c2 ** c3 is C(8)
+    assert C(7) % 3 is C(1)
 
     # Infinite arithmetic
-    assert aleph0 + c3 == aleph0
-    assert aleph0 * c3 == aleph0
-    assert aleph0 + aleph0 == aleph0
-    assert aleph0 * aleph0 == aleph0
+    assert aleph0 + c3 is aleph0
+    assert aleph0 * c3 is aleph0
+    assert aleph0 + aleph0 is aleph0
+    assert aleph0 * aleph0 is aleph0
 
 
 def test_cardinal_order_category() -> None:
@@ -228,7 +232,7 @@ def test_order_functors() -> None:
 
     alpha_pt = OO(O.zero())
     aleph_img = Aleph.on_object(alpha_pt)
-    assert CO.object_point(aleph_img) == aleph0
+    assert CO.object_point(aleph_img) is aleph0
 
     # InitialOrdinal: CardinalOrder() -> OrdinalOrder()
     assert InitialOrdinal.domain() is CO
@@ -236,15 +240,15 @@ def test_order_functors() -> None:
 
     kappa_pt = CO(aleph0)
     omega_img = InitialOrdinal.on_object(kappa_pt)
-    assert OO.object_point(omega_img) == omega0
+    assert OO.object_point(omega_img) is omega0
 
     # Monotonicity on morphisms
     alpha1 = OO(O(0))
     alpha2 = OO(O(1))
     arrow_o = OO.construct_morphism(alpha1, alpha2)
     arrow_c = Aleph.on_morphism(arrow_o)
-    assert arrow_c.domain() == Aleph.on_object(alpha1)
-    assert arrow_c.codomain() == Aleph.on_object(alpha2)
+    assert arrow_c.domain() is Aleph.on_object(alpha1)
+    assert arrow_c.codomain() is Aleph.on_object(alpha2)
 
 
 # ---------------------------------------------------------------------------

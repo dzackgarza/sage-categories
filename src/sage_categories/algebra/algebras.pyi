@@ -1,5 +1,6 @@
 from collections.abc import Hashable
 from dataclasses import dataclass
+from sage.misc.cachefunc import cached_method
 from sage_categories.algebra.modules import ModuleObjectDeclaration as ModuleObjectDeclaration, Modules as Modules, ModulesCategory as ModulesCategory
 from sage_categories.algebra.monoids import MonoidObjectDeclaration as MonoidObjectDeclaration, Monoids as Monoids, MonoidsCategory as MonoidsCategory
 from sage_categories.cat.category import Category as Category, CategoryOfCategories as CategoryOfCategories
@@ -92,12 +93,14 @@ class AlgebrasCategory(Category[[], []]):
     def Commutative(self) -> PropertySubcategory:
         ...
 
+    @cached_method
     def monoid_presentation(self) -> Functor:
         ...
 
     def structure_functors(self) -> tuple[Functor, ...]:
         ...
 
+    @cached_method
     def U_R(self) -> Functor:
         ...
 

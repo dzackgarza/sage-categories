@@ -68,7 +68,7 @@ def test_finite_posets_inverse_image_pullback() -> None:
     assert is_subcategory(fin_pos, pos)
 
     # The canonical constructor FinitePosets() matches
-    assert FinitePosets() == fin_pos
+    assert FinitePosets() is fin_pos
 
 
 # ---------------------------------------------------------------------------
@@ -230,21 +230,21 @@ def test_finite_poset_operations() -> None:
     # Height and Width
     h = simp2.height()
     w = simp2.width()
-    assert h == Cardinal()(3)
-    assert w == Cardinal()(1)
+    assert h is Cardinal()(3)
+    assert w is Cardinal()(1)
 
     # Linear extension
     S = Sets()
     f3 = S.Finite()((10, 20, 30))
     disc = Posets().discrete_order(f3)
-    assert disc.height() == Cardinal()(1)
-    assert disc.width() == Cardinal()(3)
+    assert disc.height() is Cardinal()(1)
+    assert disc.width() is Cardinal()(3)
 
     lin_ext = disc.linear_extension()
     assert lin_ext in TotallyOrderedSets()
     assert lin_ext in FiniteTotallyOrderedSets()
     assert ask(lin_ext.is_total()) is True
-    assert lin_ext.carrier() == f3
+    assert lin_ext.carrier() is f3
 
 
 def test_subposet_from_predicate() -> None:
@@ -257,4 +257,4 @@ def test_subposet_from_predicate() -> None:
     assert sub in Posets()
     assert sub in FinitePosets()
     assert ask(sub.is_total()) is True
-    assert sub.height() == Cardinal()(2)
+    assert sub.height() is Cardinal()(2)

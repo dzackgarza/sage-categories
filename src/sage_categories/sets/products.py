@@ -191,7 +191,7 @@ def product_of_sets(diagram: Functor) -> SetObject:
     enumerated = finite.has_chosen_enumeration(index_set)
 
     def factor(index_datum: Datum) -> SetObject:
-        return diagram.on_object(shape(index_set.point(index_datum)))
+        return diagram.on_object(shape.object_at(index_set.point(index_datum)))
 
     factors: tuple[SetObject, ...] | UnknownClass = (
         tuple(factor(datum) for datum in finite.chosen_enumeration(index_set)) if enumerated else Unknown
@@ -227,7 +227,7 @@ def product_of_sets(diagram: Functor) -> SetObject:
             apex,
             lambda source_datum: Family(
                 index_set,
-                lambda index_datum: candidate_cone.component(shape(index_set.point(index_datum)))._set_morphism_data.rule(source_datum),
+                lambda index_datum: candidate_cone.component(shape.object_at(index_set.point(index_datum)))._set_morphism_data.rule(source_datum),
             ),
         )
 
@@ -279,7 +279,7 @@ def coproduct_of_sets(diagram: Functor) -> SetObject:
     enumerated = finite.has_chosen_enumeration(index_set)
 
     def cofactor(index_datum: Datum) -> SetObject:
-        return diagram.on_object(shape(index_set.point(index_datum)))
+        return diagram.on_object(shape.object_at(index_set.point(index_datum)))
 
     cofactors: tuple[SetObject, ...] | UnknownClass = (
         tuple(cofactor(datum) for datum in finite.chosen_enumeration(index_set)) if enumerated else Unknown
@@ -317,7 +317,7 @@ def coproduct_of_sets(diagram: Functor) -> SetObject:
         return sets.construct_morphism(
             apex,
             target,
-            lambda tagged: candidate_cocone.component(shape(index_set.point(tagged[0])))._set_morphism_data.rule(tagged[1]),
+            lambda tagged: candidate_cocone.component(shape.object_at(index_set.point(tagged[0])))._set_morphism_data.rule(tagged[1]),
         )
 
     ambient = diagram.codomain()

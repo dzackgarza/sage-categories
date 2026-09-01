@@ -12,8 +12,21 @@ from sage.misc.cachefunc import cached_method
 from sage.misc.unknown import Unknown, UnknownClass
 from sage.structure.coerce_dict import MonoDict
 from sympy import And, Implies, Not, Or, Predicate, ask as sympy_ask
-from sympy.assumptions.assume import AppliedPredicate
+from sympy.assumptions.assume import AppliedPredicate as _SymPyAppliedPredicate
 from sympy.logic.boolalg import Boolean
+
+
+class AppliedPredicate(_SymPyAppliedPredicate):
+    """An owned predicate application; three-valued, so its Python truth value raises (D131).
+
+    SymPy's own applied predicates take ``object.__bool__``'s default ``True``, which
+    lets ``if proposition:`` and list containment silently affirm an undecided
+    proposition.  Every application an owned predicate constructs is this subclass,
+    and only ``ask()`` evaluates it.
+    """
+
+    def __bool__(self) -> bool:
+        raise TypeError(f"cannot determine truth value of {self!r}; use ask()")
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category, CategoryOfCategories
@@ -72,7 +85,7 @@ _predicate_ids = count()
 def _apply_predicate(owner: Predicate, *arguments: Argument) -> AppliedPredicate:
     from sage_categories.kernel.predicates import engine_argument
 
-    return Predicate.__call__(owner, *(engine_argument(argument) for argument in arguments))
+    return AppliedPredicate(owner, *(engine_argument(argument) for argument in arguments))
 
 
 def _register_handler(owner: Predicate, handler: PredicateHandler) -> None:

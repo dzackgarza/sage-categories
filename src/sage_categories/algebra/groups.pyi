@@ -1,5 +1,6 @@
 from collections.abc import Hashable
 from dataclasses import dataclass
+from sage.misc.cachefunc import cached_method
 from sage_categories.algebra.monoids import MonoidObjectData as MonoidObjectData, Monoids as Monoids, MonoidsCategory as MonoidsCategory
 from sage_categories.cat.category import Category as Category, CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.functors import Fun as Fun, Functor as Functor
@@ -80,6 +81,7 @@ class GroupsCategory(Category[[], []]):
     def Multiplicative(self) -> PropertySubcategory:
         ...
 
+    @cached_method
     def to_monoids(self) -> Functor:
         ...
 

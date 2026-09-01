@@ -21,6 +21,7 @@ from collections.abc import Hashable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.algebra.modules import Modules, ModulesCategory, ModuleObjectDeclaration
@@ -161,8 +162,9 @@ class AlgebrasCategory(Category[[], []]):
     def Commutative(self) -> PropertySubcategory:
         return self._commutative
 
+    @cached_method
     def monoid_presentation(self) -> Functor:
-        """The presentation equivalence to Monoids(V_R) (specs/algebras.md)."""
+        """The presentation equivalence to Monoids(V_R), retained once (specs/algebras.md)."""
         target = Monoids(self._module_category)
 
         def on_object(B: AlgebrasCategory.ObjectType) -> MonoidsCategory.ObjectType:
@@ -181,8 +183,9 @@ class AlgebrasCategory(Category[[], []]):
         """The equivalence to Monoids(V_R) is the sole immediate structure functor."""
         return (self.monoid_presentation(),)
 
+    @cached_method
     def U_R(self) -> Functor:
-        """The composite forgetful functor to the ambient category C."""
+        """The composite forgetful functor to the ambient category C, retained once."""
         ambient = self._ambient
 
         def on_object(B: AlgebrasCategory.ObjectType) -> CategoryOfCategories.ElementType:

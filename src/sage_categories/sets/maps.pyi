@@ -1,7 +1,5 @@
-import sage_categories
 from collections.abc import Callable
 from dataclasses import dataclass
-from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.predicates import Decision
 from sage_categories.sets.category import SetElement, SetObject
 from sage_categories.sets.elements import Datum
@@ -12,7 +10,7 @@ type Rule = Callable[[Datum], Datum]
 class SetMorphismData:
     rule: Rule
 
-class SetMapDeclaration(sage_categories.kernel.roles.MorphismOfCategory):
+class SetMapDeclaration:
 
     def __init__(self, data: SetMorphismData) -> None:
         ...
@@ -23,7 +21,7 @@ class SetMapDeclaration(sage_categories.kernel.roles.MorphismOfCategory):
     def image(self) -> SetObject:
         ...
 
-def maps_equal(first: CategoryOfCategories.ElementType, candidate: CategoryOfCategories.ElementType, assumptions: Proposition) -> Decision:
+def maps_equal(first: SetMapDeclaration, candidate: SetMapDeclaration, assumptions: Proposition) -> Decision:
     ...
 
 def injective_on_finite_domain(morphism: SetMapDeclaration, assumptions: Proposition) -> Decision:

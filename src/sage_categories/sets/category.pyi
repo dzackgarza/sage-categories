@@ -1,4 +1,3 @@
-import sage_categories
 from _typeshed import Incomplete
 from collections.abc import Callable, Iterable
 from sage.misc.cachefunc import cached_method
@@ -20,10 +19,10 @@ __all__ = ['SetsCategory', 'SetObject', 'SetElement', 'SetMap', 'Sets']
 class FiniteSets(PropertySubcategory[[Rule], []]):
     ObjectType = FiniteSetObject
 
-    class ElementType(sage_categories.cat.properties.PropertySubcategory.ElementType, sage_categories.sets.elements.SetElementDeclaration, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType:
         ...
 
-    class MorphismType(sage_categories.cat.properties.PropertySubcategory.MorphismType, sage_categories.sets.maps.SetMapDeclaration, sage_categories.kernel.roles.MorphismOfCategory):
+    class MorphismType:
         ...
 
     def __init__(self, ambient: Category[[Rule], []], name: str, implications: tuple[Category, ...]) -> None:

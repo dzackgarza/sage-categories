@@ -3,9 +3,14 @@ from sage.misc.unknown import Unknown as Unknown, UnknownClass as UnknownClass
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.properties import PropertySubcategory
 from sympy import Predicate as Predicate
-from sympy.assumptions.assume import AppliedPredicate as AppliedPredicate
+from sage_categories.cat.predicates import AppliedPredicate as _SymPyAppliedPredicate
 from sympy.logic.boolalg import Boolean
 __all__ = ['Unknown', 'UnknownClass', 'Predicate', 'AppliedPredicate', 'Argument', 'Decision', 'QueryAnswer', 'Answer', 'PredicateHandler', 'QueryHandler', 'Proposition', 'predicate', 'property_predicate', 'register_handler', 'Query', 'AppliedQuery', 'conjunction', 'disjunction', 'negation', 'implication', 'ask', 'established', 'assume', 'retract', 'Axiom']
+
+class AppliedPredicate(_SymPyAppliedPredicate):
+
+    def __bool__(self) -> bool:
+        ...
 type Argument = CategoryOfCategories.ElementType | int
 type Decision = bool | UnknownClass
 type PredicateDecision = bool | None

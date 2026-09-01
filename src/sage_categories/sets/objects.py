@@ -65,7 +65,7 @@ def _element_of_by_rule(
 
 
 def sets_equal(
-    first: CategoryOfCategories.ElementType, candidate: Any, assumptions: Proposition
+    first: SetObjectDeclaration, candidate: SetObjectDeclaration, assumptions: Proposition
 ) -> Decision:
     """Two sets with chosen enumerations are equal exactly when they have the same members.
 

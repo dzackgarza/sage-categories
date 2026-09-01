@@ -1,4 +1,3 @@
-import sage_categories
 from collections.abc import Callable
 from sage_categories.cat.category import Category
 from sage_categories.cat.predicates import AppliedPredicate, Predicate
@@ -27,7 +26,7 @@ class SetSubobjects(SliceProperty):
         ...
 subset_of: Predicate
 
-class ChosenSubsetObject(sage_categories.sets.objects.SetObjectDeclaration, sage_categories.kernel.roles.ObjectOfCategory):
+class ChosenSubsetObject:
 
     def monomorphism(self) -> SetMap:
         ...
@@ -65,10 +64,10 @@ class ChosenSubsetObject(sage_categories.sets.objects.SetObjectDeclaration, sage
 class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
     ObjectType = ChosenSubsetObject
 
-    class ElementType(sage_categories.sets.elements.SetElementDeclaration, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType:
         ...
 
-    class MorphismType(sage_categories.sets.maps.SetMapDeclaration, sage_categories.kernel.roles.MorphismOfCategory):
+    class MorphismType:
         ...
 
     def __init__(self, ambient: Category[[Rule], []]) -> None:

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from sage.misc.cachefunc import cached_method
 from sage.rings.integer import Integer
 from sage_categories.algebra.monoids import MonoidObjectDeclaration as MonoidObjectDeclaration
 from sage_categories.cat.category import Category as Category, CategoryOfCategories as CategoryOfCategories
@@ -77,6 +78,7 @@ class ModulesCategory(Category[[], []]):
     def Based(self) -> PropertySubcategory:
         ...
 
+    @cached_method
     def U_A(self) -> Functor:
         ...
 

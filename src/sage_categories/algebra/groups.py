@@ -17,6 +17,7 @@ from collections.abc import Hashable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.algebra.monoids import MonoidObjectData, Monoids, MonoidsCategory
@@ -148,8 +149,9 @@ class GroupsCategory(Category[[], []]):
     def Multiplicative(self) -> PropertySubcategory:
         return self._multiplicative
 
+    @cached_method
     def to_monoids(self) -> Functor:
-        """Structure functor to Monoids(ambient), forgetting inversion."""
+        """Structure functor to Monoids(ambient), forgetting inversion, retained once."""
         D = Monoids(self._ambient)
 
         def on_object(G: GroupsCategory.ObjectType) -> MonoidsCategory.ObjectType:

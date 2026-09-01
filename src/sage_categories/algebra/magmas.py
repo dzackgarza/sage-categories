@@ -17,6 +17,7 @@ from collections.abc import Hashable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from sage.misc.cachefunc import cached_method
 from sage.rings.integer import Integer
 from sage.structure.coerce_dict import MonoDict
 
@@ -129,8 +130,9 @@ class MagmasCategory(Category[[], []]):
     def Commutative(self) -> PropertySubcategory:
         return self._commutative
 
+    @cached_method
     def product_projection(self, index: int | Integer) -> Functor:
-        """The projection functor to the ambient category ``V`` (specs/magmas-monoids-semirings.md)."""
+        """The projection functor to the ambient category ``V``, retained once (specs/magmas-monoids-semirings.md)."""
         assert index == 0, f"Magmas only has product projection 0, got {index}"
         ambient = self._ambient
 

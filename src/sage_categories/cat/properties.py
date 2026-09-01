@@ -52,6 +52,7 @@ __all__ = [
     "FullSubcategory",
     "InverseImageSubcategory",
     "inverse_image",
+    "retain_inverse_image",
     "NarrowedProperty",
     "PredicateSubcategory",
     "PropertySubcategory",
@@ -225,6 +226,37 @@ def inverse_image(functor: Functor, target_subcategory: Category) -> Category:
     values of ``D``.  The mediator is therefore the first leg of any candidate cone,
     refined into the inverse-image subcategory.
     """
+    from sage_categories.cat.functors import Cat
+
+    key = (functor, target_subcategory, Cat())
+    if key in _inverse_images:
+        return _inverse_images[key]
+
+    result = InverseImageSubcategory(functor, target_subcategory)
+    retain_inverse_image(
+        functor,
+        target_subcategory,
+        result,
+        result.subcategory_monomorphism(),
+        result.target_projection(),
+    )
+    return result
+
+
+def retain_inverse_image(
+    functor: Functor,
+    target_subcategory: Category,
+    realization: Category,
+    source_projection: Functor,
+    target_projection: Functor,
+) -> None:
+    """Retain ``realization`` as the chosen pullback ``D ×_C P`` for ``F: D -> C`` and ``P -> C``.
+
+    A leaf that declares an inherited property category calls this with its canonical
+    value, so the leaf constructor and ``F.inverse_image(P)`` return one retained
+    category (``specs/functor.md``, "Inverse-image subcategories";
+    ``specs/ordered-sets.md``).
+    """
     from sage_categories.cat.diagrams import cospan_diagram
     from sage_categories.cat.constructions import cone, cone_apex
     from sage_categories.cat.functors import Cat, Fun
@@ -233,33 +265,31 @@ def inverse_image(functor: Functor, target_subcategory: Category) -> Category:
         f"{target_subcategory!r} is not a subcategory of {functor.codomain()!r}"
     )
     key = (functor, target_subcategory, Cat())
-    if key in _inverse_images:
-        return _inverse_images[key]
-
-    result = InverseImageSubcategory(functor, target_subcategory)
-    _inverse_images[key] = result
+    assert key not in _inverse_images, (
+        f"an inverse image of {target_subcategory!r} along {functor!r} is already retained"
+    )
+    _inverse_images[key] = realization
     inclusion = target_subcategory.subcategory_monomorphism()
     diagram = cospan_diagram(Cat(), functor, inclusion)
     shape = diagram.domain()
-    projections = {0: result.subcategory_monomorphism(), 1: result.target_projection()}
-    limiting_cone = cone(diagram, result, lambda vertex: projections[shape.label(vertex)])
+    projections = {0: source_projection, 1: target_projection}
+    limiting_cone = cone(diagram, realization, lambda vertex: projections[shape.label(vertex)])
 
     def mediator(candidate_cone):
         source = cone_apex(candidate_cone)
         to_source = candidate_cone.component(shape(0))
 
         def on_object(value):
-            return result(to_source.on_object(value))
+            return realization(to_source.on_object(value))
 
         def on_morphism(morphism):
             image = to_source.on_morphism(morphism)
-            refine(image, result.morphism_category(1))
+            refine(image, realization.morphism_category(1))
             return image
 
-        return Fun(source, result)(on_object, on_morphism)
+        return Fun(source, realization)(on_object, on_morphism)
 
-    Cat().Pullbacks().with_universal_data(diagram, result, limiting_cone, mediator)
-    return result
+    Cat().Pullbacks().with_universal_data(diagram, realization, limiting_cone, mediator)
 
 
 class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):

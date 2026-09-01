@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import sage_categories.sets.category as _sets
-from sage_categories.cat.predicates import Decision, Unknown
+from sage_categories.cat.predicates import Decision, Proposition, Unknown
 from sage_categories.cat.predicates import ask
 from sage_categories.kernel.roles import Role, role_of
 
@@ -59,7 +59,11 @@ class SetElementDeclaration:
         return self._set_element_data.datum
 
 
-def points_equal(first: CategoryOfCategories.ElementType, candidate: CategoryOfCategories.ElementType) -> Decision:
+def points_equal(
+    first: SetElementDeclaration,
+    candidate: SetElementDeclaration,
+    assumptions: Proposition,
+) -> Decision:
     """Two points of one set are equal exactly when their data are.
 
     A generalized element is a point exactly when its domain is the terminal object of

@@ -71,7 +71,7 @@ def test_modules_structure_functor_U_A() -> None:
     assert len(struct) == 1
 
     U_A = mod_cat.U_A()
-    assert struct[0] == U_A
+    assert struct[0] is U_A
 
     carrier_X = S.Simplex(3)
     prod_AX = carrier_A * carrier_X

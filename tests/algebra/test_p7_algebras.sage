@@ -84,7 +84,7 @@ def test_algebras_monoid_presentation_structure_functor() -> None:
     assert len(struct) == 1
 
     pres_functor = alg_cat.monoid_presentation()
-    assert struct[0] == pres_functor
+    assert struct[0] is pres_functor
 
     # Test projection on object
     carrier_B = S.Simplex(3)

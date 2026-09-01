@@ -17,6 +17,7 @@ from collections.abc import Hashable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from sage.misc.cachefunc import cached_method
 from sage.rings.integer import Integer
 from sage.structure.coerce_dict import MonoDict
 
@@ -122,8 +123,9 @@ class SemiringsCategory(Category[[], []]):
     def ambient(self) -> Category:
         return self._ambient
 
+    @cached_method
     def additive_monoid_projection(self) -> Functor:
-        """Projection to ``Monoids(C).Additive().Commutative()``."""
+        """Projection to ``Monoids(C).Additive().Commutative()``, retained once."""
         target = Monoids(self._ambient).Additive().Commutative()
 
         def on_object(S: SemiringsCategory.ObjectType) -> MonoidsCategory.ObjectType:
@@ -142,8 +144,9 @@ class SemiringsCategory(Category[[], []]):
 
         return Fun(self, target).Monomorphisms().Isofibrations()(on_object, on_morphism)
 
+    @cached_method
     def multiplicative_monoid_projection(self) -> Functor:
-        """Projection to ``Monoids(C).Multiplicative()``."""
+        """Projection to ``Monoids(C).Multiplicative()``, retained once."""
         target = Monoids(self._ambient).Multiplicative()
 
         def on_object(S: SemiringsCategory.ObjectType) -> MonoidsCategory.ObjectType:

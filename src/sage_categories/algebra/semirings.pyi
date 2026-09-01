@@ -1,5 +1,6 @@
 from collections.abc import Hashable
 from dataclasses import dataclass
+from sage.misc.cachefunc import cached_method
 from sage.rings.integer import Integer
 from sage_categories.algebra.monoids import Monoids as Monoids, MonoidsCategory as MonoidsCategory
 from sage_categories.cat.category import Category as Category, CategoryOfCategories as CategoryOfCategories
@@ -65,9 +66,11 @@ class SemiringsCategory(Category[[], []]):
     def ambient(self) -> Category:
         ...
 
+    @cached_method
     def additive_monoid_projection(self) -> Functor:
         ...
 
+    @cached_method
     def multiplicative_monoid_projection(self) -> Functor:
         ...
 

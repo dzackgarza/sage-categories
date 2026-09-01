@@ -1,4 +1,3 @@
-import sage_categories
 from sage.rings.integer import Integer
 from sage.rings.qqbar import AlgebraicReal
 from sage.rings.rational import Rational
@@ -7,7 +6,7 @@ from sage_categories.cat.functors import Functor
 from sage_categories.sets.maps import Rule
 __all__ = ['RealsCategory', 'Reals', 'RR']
 
-class RealSet(sage_categories.cat.properties.PropertySubcategory.ObjectType, sage_categories.sets.objects.SetObjectDeclaration, sage_categories.kernel.roles.ObjectOfCategory):
+class RealSet:
 
     def __call__(self, real: int | Integer | Rational | AlgebraicReal) -> RealsCategory.ElementType:
         ...
@@ -15,10 +14,10 @@ class RealSet(sage_categories.cat.properties.PropertySubcategory.ObjectType, sag
 class RealsCategory(Category[[Rule], []]):
     ObjectType = RealSet
 
-    class ElementType(sage_categories.cat.properties.PropertySubcategory.ElementType, sage_categories.sets.elements.SetElementDeclaration, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType:
         ...
 
-    class MorphismType(sage_categories.cat.properties.PropertySubcategory.MorphismType, sage_categories.sets.maps.SetMapDeclaration, sage_categories.kernel.roles.MorphismOfCategory):
+    class MorphismType:
         ...
 
     def __init__(self) -> None:

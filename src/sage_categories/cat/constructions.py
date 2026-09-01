@@ -417,7 +417,9 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
     def retain_full_image(self, family: Category) -> None:
         assert isinstance(family, LimitsCategory)
         assert family.shape().is_discrete()
-        if family not in self._candidate_families:
+        # Families are retained by identity: list containment would ask the
+        # proposition-valued equality of two distinct families (POL-SAGE-013).
+        if not any(family is known for known in self._candidate_families):
             self._candidate_families.append(family)
 
     def full_images(self) -> tuple[Category, ...]:
@@ -731,7 +733,9 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
     def retain_full_image(self, family: Category) -> None:
         assert isinstance(family, ColimitsCategory)
         assert family.shape().is_discrete()
-        if family not in self._candidate_families:
+        # Families are retained by identity: list containment would ask the
+        # proposition-valued equality of two distinct families (POL-SAGE-013).
+        if not any(family is known for known in self._candidate_families):
             self._candidate_families.append(family)
 
     def full_images(self) -> tuple[Category, ...]:

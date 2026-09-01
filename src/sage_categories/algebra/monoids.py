@@ -19,6 +19,7 @@ from collections.abc import Hashable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.algebra.magmas import MagmaObjectData, Magmas, MagmasCategory
@@ -132,8 +133,9 @@ class MonoidsCategory(Category[[], []]):
     def Multiplicative(self) -> PropertySubcategory:
         return self._multiplicative
 
+    @cached_method
     def to_magmas(self) -> Functor:
-        """Forgets unit and associativity: ``Monoids(V) -> Magmas(V)``."""
+        """Forgets unit and associativity: ``Monoids(V) -> Magmas(V)``, retained once."""
         D = Magmas(self._ambient)
 
         def on_object(M: MonoidsCategory.ObjectType) -> MagmasCategory.ObjectType:

@@ -53,7 +53,7 @@ def test_magmas_construction_and_structure_functors() -> None:
     struct = M.structure_functors()
     assert len(struct) == 1
     proj0 = M.product_projection(0)
-    assert struct[0] == proj0
+    assert struct[0] is proj0
 
     # Projecting magma object yields the carrier
     assert proj0.on_object(magma) is carrier
@@ -91,7 +91,7 @@ def test_monoids_construction_and_to_magmas() -> None:
     struct = Mon.structure_functors()
     assert len(struct) == 1
     to_mag = Mon.to_magmas()
-    assert struct[0] == to_mag
+    assert struct[0] is to_mag
 
     magma = to_mag.on_object(monoid)
     assert magma.carrier() is carrier
@@ -131,7 +131,7 @@ def test_groups_construction_and_to_monoids() -> None:
     struct = Grp.structure_functors()
     assert len(struct) == 1
     to_mon = Grp.to_monoids()
-    assert struct[0] == to_mon
+    assert struct[0] is to_mon
 
     mon = to_mon.on_object(grp)
     assert mon.carrier() is carrier
@@ -208,8 +208,8 @@ def test_semirings_projections() -> None:
     assert len(struct) == 2
     proj0 = Semi.product_projection(0)
     proj1 = Semi.product_projection(1)
-    assert struct[0] == proj0
-    assert struct[1] == proj1
+    assert struct[0] is proj0
+    assert struct[1] is proj1
 
     add_mon = proj0.on_object(semi)
     assert add_mon.carrier() is carrier
@@ -254,8 +254,8 @@ def test_rings_pullback_projections() -> None:
     assert len(struct) == 2
     proj0 = Rng.product_projection(0)
     proj1 = Rng.product_projection(1)
-    assert struct[0] == proj0
-    assert struct[1] == proj1
+    assert struct[0] is proj0
+    assert struct[1] is proj1
 
     semi = proj0.on_object(ring)
     assert semi.carrier() is carrier

@@ -56,18 +56,18 @@ def test_cardinality_query_structure() -> None:
     # ask(X.cardinality()) evaluates to an exact CardinalObject
     res = ask(q)
     assert res in Cardinal()
-    assert res == Cardinal()(3)
+    assert res is Cardinal()(3)
 
 
 def test_cardinality_canonical_sets() -> None:
     """Canonical sets have exact cardinalities."""
     S = _get_sets()
-    assert ask(S.Empty().cardinality()) == Cardinal()(0)
-    assert ask(S.Initial().cardinality()) == Cardinal()(0)
-    assert ask(S.Terminal().cardinality()) == Cardinal()(1)
-    assert ask(S.Simplex(0).cardinality()) == Cardinal()(1)
-    assert ask(S.Simplex(1).cardinality()) == Cardinal()(2)
-    assert ask(S.Simplex(5).cardinality()) == Cardinal()(6)
+    assert ask(S.Empty().cardinality()) is Cardinal()(0)
+    assert ask(S.Initial().cardinality()) is Cardinal()(0)
+    assert ask(S.Terminal().cardinality()) is Cardinal()(1)
+    assert ask(S.Simplex(0).cardinality()) is Cardinal()(1)
+    assert ask(S.Simplex(1).cardinality()) is Cardinal()(2)
+    assert ask(S.Simplex(5).cardinality()) is Cardinal()(6)
 
 
 def test_cardinality_unresolved_set() -> None:
@@ -83,7 +83,7 @@ def test_cardinality_countable_infinite_set() -> None:
     naturals = S(lambda d: isinstance(d, int) and d >= 0)
     refine(naturals, S.Countable())
     refine(naturals, S.Infinite())
-    assert ask(naturals.cardinality()) == aleph0
+    assert ask(naturals.cardinality()) is aleph0
 
 
 # ---------------------------------------------------------------------------
@@ -153,7 +153,7 @@ def test_subobjects_from_predicate() -> None:
     arrow = sub._structure  # the monomorphism j: S -> f5
     assert arrow.codomain() is f5
     domain = arrow.domain()
-    assert ask(domain.cardinality()) == Cardinal()(3)
+    assert ask(domain.cardinality()) is Cardinal()(3)
 
 
 def test_image_of_monomorphism() -> None:
@@ -165,7 +165,7 @@ def test_image_of_monomorphism() -> None:
     refine(inc, S.morphism_category(1).Monomorphisms())
 
     img = inc.image()
-    assert ask(img.cardinality()) == Cardinal()(3)
+    assert ask(img.cardinality()) is Cardinal()(3)
     assert img.monomorphism().codomain() is f5
 
 
@@ -192,13 +192,13 @@ def test_power_object_construction_and_cardinality() -> None:
     f3 = S.Finite()((1, 2, 3))
     P = S.PowerObjects()(f3)
     assert P.base_set() is f3
-    assert ask(P.cardinality()) == Cardinal()(8)
+    assert ask(P.cardinality()) is Cardinal()(8)
 
     # Top and bottom subsets
     top = P.top()
     bottom = P.bottom()
-    assert ask(top.cardinality()) == Cardinal()(3)
-    assert ask(bottom.cardinality()) == Cardinal()(0)
+    assert ask(top.cardinality()) is Cardinal()(3)
+    assert ask(bottom.cardinality()) is Cardinal()(0)
 
 
 # ---------------------------------------------------------------------------
@@ -212,7 +212,7 @@ def test_finite_subsets_cardinality() -> None:
     f3 = S.Finite()((10, 20, 30))
     fin_subsets = S.FiniteSubsets()(f3)
     assert fin_subsets.base_set() is f3
-    assert ask(fin_subsets.cardinality()) == Cardinal()(8)
+    assert ask(fin_subsets.cardinality()) is Cardinal()(8)
 
 
 def test_sized_subsets_cardinality_and_indexing() -> None:
@@ -220,12 +220,12 @@ def test_sized_subsets_cardinality_and_indexing() -> None:
     S = _get_sets()
     f4 = S.Finite()((1, 2, 3, 4))
     pairs = S.SubsetsOfSize(2)(f4)
-    assert ask(pairs.cardinality()) == Cardinal()(6)
+    assert ask(pairs.cardinality()) is Cardinal()(6)
 
     # Induced enumeration position indexing
     pt = list(pairs)[0]
     sub = pairs.subset_at(pt)
-    assert ask(sub.cardinality()) == Cardinal()(2)
+    assert ask(sub.cardinality()) is Cardinal()(2)
 
 
 # ---------------------------------------------------------------------------
@@ -241,7 +241,7 @@ def test_finitely_supported_functions_cardinality() -> None:
     index_set = S.Finite()(('a', 'b'))
 
     finsupp = S.FinitelySupportedFunctions()(index_set, zero_pt)
-    assert ask(finsupp.cardinality()) == Cardinal()(9)
+    assert ask(finsupp.cardinality()) is Cardinal()(9)
 
 
 # ---------------------------------------------------------------------------
@@ -287,13 +287,13 @@ def test_chosen_enumeration_and_representative_transport() -> None:
     # Representative bijection X -> R_3
     bij = representative_bijection(f3)
     assert bij.domain() is f3
-    assert ask(bij.codomain().cardinality()) == Cardinal()(3)
+    assert ask(bij.codomain().cardinality()) is Cardinal()(3)
 
     # Cardinality functor on Core(Sets())
     card_fun = cardinality_functor()
-    assert card_fun.on_object(f3) == Cardinal()(3)
-    assert card_fun.on_object(S.Empty()) == Cardinal()(0)
-    assert card_fun.on_object(S.Terminal()) == Cardinal()(1)
+    assert card_fun.on_object(f3) is Cardinal()(3)
+    assert card_fun.on_object(S.Empty()) is Cardinal()(0)
+    assert card_fun.on_object(S.Terminal()) is Cardinal()(1)
 
 
 # ---------------------------------------------------------------------------

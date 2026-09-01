@@ -47,7 +47,7 @@ from sage.rings.integer_ring import ZZ as _integer_ring
 
 from sage_categories.cat.category import Category
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
-from sage_categories.cat.predicates import AppliedPredicate, Predicate, ask, conjunction, predicate
+from sage_categories.cat.predicates import AppliedPredicate, Predicate, predicate
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -398,8 +398,16 @@ class OrdinalsCategory(Category[[], []]):
         if first._key == second._key:
             return True
         # Ordinal.le_antisymm: two ordinals are equal exactly when each is at most the
-        # other (inspected 2026-08-28).
-        return ask(conjunction((self._at_most(first, second), self._at_most(second, first))))
+        # other (inspected 2026-08-28).  The two order decisions compose by Kleene's
+        # strong conjunction: a strict separation decides inequality, two positive
+        # decisions decide equality, and anything else is Unknown.
+        forward = self._at_most(first, second, assumptions)
+        backward = self._at_most(second, first, assumptions)
+        if forward is False or backward is False:
+            return False
+        if forward is True and backward is True:
+            return True
+        return Unknown
 
     def _at_most(self, first: OrdinalObjectDeclaration, second: OrdinalObjectDeclaration, assumptions: Proposition | None = None) -> Decision:
         if first._key == second._key:

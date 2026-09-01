@@ -404,10 +404,23 @@ class PosetsCategory(Category[[Rule], []]):
 
     @cached_method
     def Finite(self) -> Category[[Rule], []]:
-        """``FinitePosets()``: the property subcategory by finiteness of the underlying set (``posets/finite.py``), constructed once."""
+        """``FinitePosets()``: the property subcategory by finiteness of the underlying set (``posets/finite.py``), constructed once.
+
+        The category is retained as the chosen pullback ``U.inverse_image(Sets().Finite())``
+        (``specs/ordered-sets.md``), so both routes return this one value.
+        """
+        from sage_categories.cat.properties import retain_inverse_image
         from sage_categories.posets.finite import FinitePosetsCategory
 
-        return FinitePosetsCategory(self, "Finite", ())
+        finite = FinitePosetsCategory(self, "Finite", ())
+        retain_inverse_image(
+            self.underlying_set_functor(),
+            Sets().Finite(),
+            finite,
+            finite.structure_functors()[0],
+            finite.underlying_finite_set_functor(),
+        )
+        return finite
 
     def TotallyOrdered(self) -> Category[[Rule], []]:
         return self._totally_ordered

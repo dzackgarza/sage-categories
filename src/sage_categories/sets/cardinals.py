@@ -105,7 +105,7 @@ from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
-from sage_categories.cat.predicates import AppliedPredicate, Predicate, ask, assume, conjunction, disjunction, established, negation, predicate
+from sage_categories.cat.predicates import AppliedPredicate, Predicate, Query, ask, assume, conjunction, disjunction, established, negation, predicate
 from sage_categories.ordinals.category import OrdinalObject, Ordinals, bind_cardinals, is_natural_number
 
 if TYPE_CHECKING:
@@ -125,6 +125,7 @@ __all__ = [
     "aleph0",
     "at_most",
     "cardinality_functor",
+    "cardinality_query",
     "continuum",
     "generalized_continuum_hypothesis",
     "less_than",
@@ -969,6 +970,8 @@ _sets.CardinalObject = CardinalObject
 _set_objects.CardinalObject = CardinalObject
 _ordinals.CardinalObject = CardinalObject
 
+cardinality_query: Query = Query("cardinality", 1, _CARDINAL)
+
 
 def Cardinal() -> CardinalCategory:
     """The category of exact cardinals."""
@@ -1071,7 +1074,7 @@ def representative_bijection(member_object: SetObject) -> SetMap:
     """The selected bijection ``X -> R_#X``, retained per set; ``X`` needs an exact cardinality."""
     sets, cardinals = _sets.Sets(), Cardinal()
     if member_object not in _representative_bijections:
-        cardinality = member_object.cardinality()
+        cardinality = ask(member_object.cardinality())
         assert cardinality is not Unknown, f"{member_object!r} has no known cardinality, so no bijection with a representative is selected"
         representative = cardinals.representative(cardinality)
         finite = sets.Finite()
@@ -1096,7 +1099,7 @@ def cardinality_functor() -> Functor:
     sets, cardinals = _sets.Sets(), Cardinal()
 
     def on_object(member_object: SetObject) -> CardinalObject:
-        cardinality = member_object.cardinality()
+        cardinality = ask(member_object.cardinality())
         assert cardinality is not Unknown, f"{member_object!r} has no known cardinality, so the cardinality functor has no executable value at it"
         return cardinality
 

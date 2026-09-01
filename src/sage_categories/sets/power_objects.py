@@ -33,7 +33,7 @@ import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.predicates import Decision
-from sage_categories.kernel.refinement import refine
+from sage_categories.kernel.refinement import is_placed, refine
 from sage_categories.sets.elements import Datum, SetElement
 from sage_categories.sets.exponentials import Function, function_set
 from sage_categories.sets.maps import Rule
@@ -101,7 +101,7 @@ class PowerObjectsCategory(PropertySubcategory[[Rule], []]):
         sets = _sets.Sets()
         assert base_set in sets, f"{base_set!r} is not an object of {sets!r}"
         power = function_set(base_set, sets.Simplex(1))
-        if power not in self:
+        if not is_placed(power, self):
             self.retain_datum(power, base_set)
             refine(power, self)
         return power

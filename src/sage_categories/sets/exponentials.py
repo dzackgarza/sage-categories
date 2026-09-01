@@ -21,10 +21,11 @@ from sage_categories.cat.diagrams import sequence_position
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
 from sage_categories.cat.predicates import ask
 from sage_categories.sets.elements import Datum, SetElement
-from sage_categories.sets.objects import SetObject
+from sage_categories.sets.objects import SetObject, SetObjectData
 
 if TYPE_CHECKING:
     from sage_categories.sets.category import SetMap
+    from sage_categories.sets.cardinals import CardinalObject
 
 __all__ = ["Function", "evaluation_morphism", "function_set", "name_of", "transpose"]
 
@@ -83,9 +84,17 @@ def function_set(exponent: SetObject, base: SetObject) -> SetObject:
             case _:
                 return False
 
-    base_cardinality, exponent_cardinality = base.cardinality(), exponent.cardinality()
-    cardinality = base_cardinality**exponent_cardinality if base_cardinality is not Unknown and exponent_cardinality is not Unknown else Unknown
-    return sets.rule_valued(membership_rule, cardinality)
+    def eval_cardinality() -> CardinalObject | UnknownClass:
+        base_cardinality = ask(base.cardinality())
+        exponent_cardinality = ask(exponent.cardinality())
+        if base_cardinality is not Unknown and exponent_cardinality is not Unknown:
+            return base_cardinality**exponent_cardinality
+        return Unknown
+
+    data = SetObjectData(membership_rule, Unknown, cardinality_evaluator=eval_cardinality)
+    obj = sets.ObjectType(sets, data)
+    sets._rule_valued[obj] = obj
+    return obj
 
 
 def name_of(set_map: SetMap) -> SetElement:

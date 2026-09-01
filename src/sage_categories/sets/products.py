@@ -144,7 +144,7 @@ def _exact(cardinality: CardinalObject | UnknownClass) -> bool:
 def _product_cardinality(diagram: Functor, index_set: SetObject, factors: tuple[SetObject, ...] | UnknownClass) -> CardinalObject | UnknownClass:
     """The product cardinality case tree; ``factors`` is the enumerated family when the index is enumerated."""
     if factors is not Unknown:
-        cardinalities = tuple(factor.cardinality() for factor in factors)
+        cardinalities = tuple(ask(factor.cardinality()) for factor in factors)
         if all(map(_exact, cardinalities)):
             from sage_categories.sets.cardinals import Cardinal
 
@@ -157,7 +157,7 @@ def _product_cardinality(diagram: Functor, index_set: SetObject, factors: tuple[
             return Cardinal()(0)
     functors = Fun(diagram.domain(), diagram.codomain())
     if functors.has_constant_value(diagram):
-        value_cardinality, index_cardinality = functors.constant_value(diagram).cardinality(), index_set.cardinality()
+        value_cardinality, index_cardinality = ask(functors.constant_value(diagram).cardinality()), ask(index_set.cardinality())
         if _exact(value_cardinality) and _exact(index_cardinality):
             # Cardinal.prod_const': prod (fun _ => a) = a ^ #S.
             return value_cardinality**index_cardinality
@@ -244,7 +244,7 @@ def product_of_sets(diagram: Functor) -> SetObject:
 def _coproduct_cardinality(diagram: Functor, index_set: SetObject, cofactors: tuple[SetObject, ...] | UnknownClass) -> CardinalObject | UnknownClass:
     """The coproduct cardinality case tree, dual to the product tree."""
     if cofactors is not Unknown:
-        cardinalities = tuple(cofactor.cardinality() for cofactor in cofactors)
+        cardinalities = tuple(ask(cofactor.cardinality()) for cofactor in cofactors)
         if all(map(_exact, cardinalities)):
             from sage_categories.sets.cardinals import Cardinal
 
@@ -252,7 +252,7 @@ def _coproduct_cardinality(diagram: Functor, index_set: SetObject, cofactors: tu
             return Cardinal()(sum(cardinalities, 0))
     functors = Fun(diagram.domain(), diagram.codomain())
     if functors.has_constant_value(diagram):
-        value_cardinality, index_cardinality = functors.constant_value(diagram).cardinality(), index_set.cardinality()
+        value_cardinality, index_cardinality = ask(functors.constant_value(diagram).cardinality()), ask(index_set.cardinality())
         if _exact(value_cardinality) and _exact(index_cardinality):
             # Cardinal.sum_const': sum (fun _ => a) = #S * a.
             return index_cardinality * value_cardinality

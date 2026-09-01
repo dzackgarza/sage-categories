@@ -187,7 +187,7 @@ class FiniteSubsetsCategory(PropertySubcategory[[Rule], []]):
                     case _:
                         return False
 
-            cardinality = self._cardinality(base_set.cardinality(), size)
+            cardinality = self._cardinality(ask(base_set.cardinality()), size)
             subsets = sets(membership_rule) if cardinality is Unknown else sets.with_cardinality(membership_rule, cardinality)
             if base_set in sets.Countable():
                 # Mathlib ``Finset.countable``: the finite subsets of a countable type are countable.
@@ -299,7 +299,7 @@ class FinitelySupportedFunctionsCategory(PropertySubcategory[[Rule], []]):
                 case _:
                     return False
 
-        cardinality = self._cardinality(index_set.cardinality(), value_set.cardinality())
+        cardinality = self._cardinality(ask(index_set.cardinality()), ask(value_set.cardinality()))
         chosen = sets.ChosenSubsets()
         functions = chosen(function_set, finitely_supported) if cardinality is Unknown else chosen.with_cardinality(function_set, finitely_supported, cardinality)
         refine(functions, self)

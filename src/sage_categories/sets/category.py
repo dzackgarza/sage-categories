@@ -177,20 +177,20 @@ class SetsCategory(Category[[Rule], []]):
         self._equality.register_handler(points_equal)
         self._equality.register_handler(sets_equal)
         self._equality.register_handler(maps_equal)
+        self._empty = PropertySubcategory(self, "Empty", ())
+        self._inhabited = PropertySubcategory(self, "Inhabited", ())
         self._countable = PropertySubcategory(self, "Countable", ())
         self._infinite = PropertySubcategory(self, "Infinite", ())
         self._finite = FiniteSets(self, "Finite", (self._countable,))
         self._uncountable = PropertySubcategory(self, "Uncountable", (self._infinite,))
         # A known cardinality decides finiteness and countability (``specs/cardinality.md``); established
         # placement in the complementary property decides the negation (``specs/sets.md``, "Cardinality and enumeration").
-        self._finite.predicate().register_handler(self._finite_by_cardinality)
-        self._finite.predicate().register_handler(self._finite_by_infinite)
-        self._countable.predicate().register_handler(self._countable_by_cardinality)
-        self._countable.predicate().register_handler(self._countable_by_uncountable)
-        self._infinite.predicate().register_handler(self._infinite_by_finiteness)
-        self._uncountable.predicate().register_handler(
-            self._uncountable_by_countability
-        )
+        self._empty.predicate().register_handler(self._empty_predicate)
+        self._inhabited.predicate().register_handler(self._inhabited_predicate)
+        self._finite.predicate().register_handler(self._finite_predicate)
+        self._countable.predicate().register_handler(self._countable_predicate)
+        self._infinite.predicate().register_handler(self._infinite_predicate)
+        self._uncountable.predicate().register_handler(self._uncountable_predicate)
         morphisms = self.morphism_category(1)
         morphisms.Monomorphisms().predicate().register_handler(
             injective_on_finite_domain
@@ -236,6 +236,9 @@ class SetsCategory(Category[[Rule], []]):
         """Whether ``member_object`` was constructed through ``rule_valued``."""
         return member_object in self._rule_valued
 
+    def Inhabited(self) -> Category[[Rule], []]:
+        return self._inhabited
+
     def Finite(self) -> FiniteSets:
         return self._finite
 
@@ -265,7 +268,9 @@ class SetsCategory(Category[[Rule], []]):
     @cached_method
     def Empty(self) -> SetObject:
         """The empty set {}."""
-        return self.Finite().from_enumeration(())
+        empty_set = self.Finite().from_enumeration(())
+        refine(empty_set, self._empty)
+        return empty_set
 
     @cached_method
     def Initial(self) -> SetObject:
@@ -275,7 +280,9 @@ class SetsCategory(Category[[Rule], []]):
     @cached_method
     def Terminal(self) -> SetObject:
         """The one-point set ``1 = {*}``, the terminal object of ``Sets()``. A point of ``X`` is a morphism ``* -> X`` from this object."""
-        return self.Finite().from_enumeration(((),))
+        one_point = self.Finite().from_enumeration(((),))
+        refine(one_point, self._inhabited)
+        return one_point
 
     @cached_method
     def Simplex(self, dimension: int) -> SetObject:
@@ -479,7 +486,7 @@ class SetsCategory(Category[[Rule], []]):
 
     # -- exact routes (POL-MATH-042) --------------------------------------------------
 
-    def hom_inhabited(self, hom_category: Category) -> Decision:
+    def _chosen_hom_inhabited(self, hom_category: Category) -> Decision:
         """Inhabitation of ``Mor(Sets())(A, B)`` and of its isomorphism and monomorphism narrowings, from the cardinalities.
 
         Each case is a Mathlib theorem (inspected 2026-08-27): a function ``A -> B``
@@ -488,14 +495,21 @@ class SetsCategory(Category[[Rule], []]):
         exactly when ``#A <= #B`` (``Cardinal.le_def``).  ``Unknown`` when a needed
         cardinality is unknown or the narrowing is another one.
         """
+        from sage_categories.sets.cardinals import Cardinal
+
         base = hom_category.narrowing_base()
-        source, target = base.domain().cardinality(), base.codomain().cardinality()
+        source, target = ask(base.domain().cardinality()), ask(base.codomain().cardinality())
         morphisms = self.morphism_category(1)
+        zero = Cardinal()(0)
         match hom_category.narrowing_roots():
             case ():
-                source_empty = Unknown if source is Unknown else ask(source == 0)
-                target_empty = Unknown if target is Unknown else ask(target == 0)
-                return ask(disjunction((source_empty, negation(target_empty))))
+                if source is not Unknown and ask(source == zero) is True:
+                    return True
+                if target is not Unknown and ask(target == zero) is True and source is not Unknown and ask(source > zero) is True:
+                    return False
+                if target is not Unknown and ask(target > zero) is True:
+                    return True
+                return Unknown
         if source is Unknown or target is Unknown:
             return Unknown
         match hom_category.narrowing_roots():
@@ -505,41 +519,71 @@ class SetsCategory(Category[[Rule], []]):
                 return ask(source <= target)
         return Unknown
 
-    def _finite_by_cardinality(
+    def _empty_predicate(
         self, ambient: SetObjectDeclaration, assumptions: Proposition
     ) -> Decision:
-        cardinality = ambient.cardinality()
-        if cardinality is Unknown:
-            return Unknown
-        return ask(cardinality.is_finite())
+        if is_placed(ambient, self._inhabited):
+            return False
+        cardinality = ask(ambient.cardinality())
+        if cardinality is not Unknown:
+            from sage_categories.sets.cardinals import Cardinal
 
-    def _countable_by_cardinality(
-        self, ambient: SetObjectDeclaration, assumptions: Proposition
-    ) -> Decision:
-        cardinality = ambient.cardinality()
-        if cardinality is Unknown:
-            return Unknown
-        return ask(cardinality.is_countable())
+            return ask(cardinality == Cardinal()(0))
+        return Unknown
 
-    def _finite_by_infinite(
+    def _inhabited_predicate(
         self, ambient: SetObjectDeclaration, assumptions: Proposition
     ) -> Decision:
-        return False if is_placed(ambient, self._infinite) else Unknown
+        if is_placed(ambient, self._empty):
+            return False
+        cardinality = ask(ambient.cardinality())
+        if cardinality is not Unknown:
+            from sage_categories.sets.cardinals import Cardinal
 
-    def _countable_by_uncountable(
-        self, ambient: SetObjectDeclaration, assumptions: Proposition
-    ) -> Decision:
-        return False if is_placed(ambient, self._uncountable) else Unknown
+            return ask(cardinality > Cardinal()(0))
+        return Unknown
 
-    def _infinite_by_finiteness(
+    def _finite_predicate(
         self, ambient: SetObjectDeclaration, assumptions: Proposition
     ) -> Decision:
-        return False if is_placed(ambient, self._finite) else Unknown
+        if is_placed(ambient, self._infinite):
+            return False
+        cardinality = ask(ambient.cardinality())
+        if cardinality is not Unknown:
+            return ask(cardinality.is_finite())
+        return Unknown
 
-    def _uncountable_by_countability(
+    def _countable_predicate(
         self, ambient: SetObjectDeclaration, assumptions: Proposition
     ) -> Decision:
-        return False if is_placed(ambient, self._countable) else Unknown
+        if is_placed(ambient, self._uncountable):
+            return False
+        cardinality = ask(ambient.cardinality())
+        if cardinality is not Unknown:
+            return ask(cardinality.is_countable())
+        return Unknown
+
+    def _infinite_predicate(
+        self, ambient: SetObjectDeclaration, assumptions: Proposition
+    ) -> Decision:
+        if is_placed(ambient, self._finite):
+            return False
+        cardinality = ask(ambient.cardinality())
+        if cardinality is not Unknown:
+            is_fin = ask(cardinality.is_finite())
+            return not is_fin if isinstance(is_fin, bool) else Unknown
+        return Unknown
+
+    def _uncountable_predicate(
+        self, ambient: SetObjectDeclaration, assumptions: Proposition
+    ) -> Decision:
+        if is_placed(ambient, self._countable):
+            return False
+        cardinality = ask(ambient.cardinality())
+        if cardinality is not Unknown:
+            is_cnt = ask(cardinality.is_countable())
+            return not is_cnt if isinstance(is_cnt, bool) else Unknown
+        return Unknown
 
     def __repr__(self) -> str:
         return "Sets"
@@ -560,3 +604,13 @@ _set_maps.SetElement = SetElement
 def Sets() -> SetsCategory:
     """The category of sets."""
     return _SETS
+
+
+def _register_cardinality_handler() -> None:
+    from sage_categories.sets.cardinals import cardinality_query
+    from sage_categories.sets.objects import set_cardinality
+
+    cardinality_query.register_handler(set_cardinality)
+
+
+_register_cardinality_handler()

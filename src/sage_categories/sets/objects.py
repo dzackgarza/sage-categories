@@ -104,6 +104,7 @@ class SetObjectData:
 
     membership_rule: MembershipRule
     cardinality: CardinalObject | UnknownClass
+    cardinality_evaluator: Callable[[], CardinalObject | UnknownClass] | None = None
     points: dict[Datum, SetElement] = field(default_factory=dict)
     rule_points: MonoDict = field(default_factory=MonoDict)
 
@@ -173,19 +174,11 @@ class SetObjectDeclaration:
             sets.construct_morphism(sets.Terminal(), self, lambda star: datum)
         )
 
-    def cardinality(self) -> CardinalObject | UnknownClass:
-        """The recorded exact cardinal; a set placed in both ``Countable()`` and ``Infinite()`` has ``aleph0`` (Mathlib ``Cardinal.mk_eq_aleph0``; inspected 2026-08-27)."""
-        from sage_categories.sets.cardinals import Cardinal
+    def cardinality(self) -> AppliedQuery:
+        """Return the applied cardinality query with result category Cardinal()."""
+        from sage_categories.sets.cardinals import cardinality_query
 
-        sets = _sets.Sets()
-        state = self._set_object_data
-        if (
-            state.cardinality is Unknown
-            and self in sets.Countable()
-            and self in sets.Infinite()
-        ):
-            return Cardinal().aleph(0)
-        return state.cardinality
+        return cardinality_query(self)
 
     def subset_from(self, predicate: MembershipRule) -> SetObject:
         """The chosen subset ``{x in X : predicate(x)}`` with its subcategory monomorphism (POL-SET-007, POL-ENGINE-004).
@@ -194,6 +187,12 @@ class SetObjectDeclaration:
         construction is owned by ``Sets().ChosenSubsets()`` (``sets/subobjects.py``).
         """
         return _sets.Sets().ChosenSubsets()(self, predicate)
+
+    def is_empty(self) -> AppliedPredicate:
+        return _sets.Sets()._empty.predicate()(self)
+
+    def is_inhabited(self) -> AppliedPredicate:
+        return _sets.Sets().Inhabited().predicate()(self)
 
     def is_finite(self) -> AppliedPredicate:
         return _sets.Sets().Finite().predicate()(self)
@@ -237,6 +236,30 @@ class SetObjectDeclaration:
 
 element_of.register_handler(_element_of_by_parent)
 element_of.register_handler(_element_of_by_rule)
+
+
+def set_cardinality(set_obj: SetObjectDeclaration) -> CardinalObject | UnknownClass:
+    """The recorded exact cardinal; a set placed in both ``Countable()`` and ``Infinite()`` has ``aleph0`` (Mathlib ``Cardinal.mk_eq_aleph0``; inspected 2026-08-27)."""
+    state = set_obj._set_object_data
+    if state.cardinality is not Unknown:
+        return state.cardinality
+    if state.cardinality_evaluator is not None:
+        evaluated = state.cardinality_evaluator()
+        if evaluated is not Unknown:
+            return evaluated
+    finite = _sets.Sets().Finite()
+    if finite.has_chosen_enumeration(set_obj):
+        from sage_categories.sets.cardinals import Cardinal
+
+        return Cardinal()(len(finite.chosen_enumeration(set_obj)))
+    sets = _sets.Sets()
+    from sage_categories.kernel.refinement import is_placed
+
+    if is_placed(set_obj, sets.Countable()) and is_placed(set_obj, sets.Infinite()):
+        from sage_categories.sets.cardinals import Cardinal
+
+        return Cardinal().aleph(0)
+    return Unknown
 
 
 class FiniteSetObject:

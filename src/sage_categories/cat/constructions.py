@@ -649,7 +649,7 @@ class ColimitsCategory(FullSubcategory[[MorphismCategory.ObjectType], []]):
         self.accepts(diagram)
         dual_diagram = self._dual_diagram(diagram)
         if not self._dual_limits.has_construction(self._dual_limits.lowered(dual_diagram)):
-            self._dual_limits(dual_diagram)
+            self.ambient().colimit_construction(self._shape)(diagram)
         presentation = self._dual_limits.universal_data(self._dual_limits.lowered(dual_diagram))
         return self._associate(presentation)
 

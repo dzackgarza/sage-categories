@@ -95,9 +95,10 @@ class OppositeCategory[**MorphismData, **TwoMorphismData](
         return self._original.membership_proposition(candidate)
 
     def __call__(self, value: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-        """Regard an object of ``C`` as the same object of ``C.op()``."""
-        assert value in self._original, f"{value!r} is not an object of {self._original!r}"
-        return value
+        """Regard an object of ``C`` as the same object of ``C.op()``, or construct via ``C(value)``."""
+        if value in self._original:
+            return value
+        return self._original(value)
 
     def object_set(self) -> CategoryOfCategories.ElementType:
         return self._original.object_set()
@@ -135,6 +136,14 @@ class OppositeCategory[**MorphismData, **TwoMorphismData](
     def _symbolic_inverse_(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         original = self._original.inverse_morphism(morphism.original())
         return self.construct_morphism(morphism.codomain(), morphism.domain(), original)
+
+    def limit_construction(self, shape: Category) -> Any:
+        shape_orig = shape._original if isinstance(shape, OppositeCategory) else shape
+        return self._original.colimit_construction(shape_orig)
+
+    def colimit_construction(self, shape: Category) -> Any:
+        shape_orig = shape._original if isinstance(shape, OppositeCategory) else shape
+        return self._original.limit_construction(shape_orig)
 
     def __repr__(self) -> str:
         return f"{self._original!r}.op()"

@@ -205,6 +205,10 @@ def index_set_of(shape: Category) -> CategoryOfCategories.ElementType:
     assert is_discrete(shape), f"{shape!r} is not Discrete(S) for a set S"
     if shape in _index_sets:
         return _index_sets[shape]
+    from sage_categories.cat.opposites import OppositeCategory
+
+    if isinstance(shape, OppositeCategory):
+        return index_set_of(shape.original())
     from sage_categories.cat.canonical import FinitePresentedCategory
 
     if isinstance(shape, FinitePresentedCategory):

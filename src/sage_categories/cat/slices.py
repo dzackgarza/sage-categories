@@ -557,6 +557,14 @@ class SliceProperty(FullSubcategory[[MorphismCategory.ObjectType], []]):
         refine(member_object, self)
         return member_object
 
+    def from_predicate(self, predicate: Any) -> SliceLikeCategory.ObjectType:
+        """Construct the subobject from a predicate on elements (specs/sets.md)."""
+        target = self._ambient._fixed
+        if hasattr(target, "subset_from"):
+            subset = target.subset_from(predicate)
+            return self(subset.monomorphism())
+        raise NotImplementedError(f"from_predicate is not supported on {self!r}")
+
     def __repr__(self) -> str:
         return f"{self._ambient!r}.{self._property_category.name()}()"
 

@@ -316,7 +316,7 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
                     return False
                 return Unknown
 
-        cardinality = domain.cardinality() if set_map in monomorphisms else Unknown
+        cardinality = ask(domain.cardinality()) if set_map in monomorphisms else Unknown
         subset = (
             sets(has_preimage)
             if cardinality is Unknown

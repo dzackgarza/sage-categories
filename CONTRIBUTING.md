@@ -132,9 +132,15 @@ certification machinery between the mathematical definition and its typed constr
 None of it applies to the wiring that realizes those declarations, which no mathematician
 reads.
 
-## Foundational architectural ontology
+## Foundational architectural ontology and false priors
 
-### 1. The False Prior: "Sets Are Containers of Python Data"
+| ID | Policy |
+| --- | --- |
+| `POL-ONT-001` | Treat raw Python values (`Datum`) solely as private carrier representations, never as members or elements of any category. An element exists only as a morphism $x: \mathbf{1} \to X$ owned by a specific parent object $X$. Categories contain only category-owned `CategoryPoint` instances. |
+| `POL-ONT-002` | Make every mathematical constructor total on a single exact domain. Keep category refinement ($X \mapsto X$ placed in $\mathcal{P}$) strictly distinct from object construction from carrier data ($\text{data} \mapsto X$). Never create overloaded constructors that perform runtime type sniffing or fallback dispatch. |
+| `POL-ONT-003` | Evaluate category membership `X in C` strictly through the three-valued categorical proposition $\operatorname{ask}(C.\operatorname{membership\_proposition}(X))$. Never treat `in` as a container item check or query it on raw carrier data. Use `is_placed(X, C)` to test established category placement. |
+
+### `POL-ONT-001`: The False Prior "Sets Are Containers of Python Data"
 
 - **The False Model**:
   - Viewing `Sets()` as a Python wrapper around collections.
@@ -146,7 +152,7 @@ reads.
     $$x: \mathbf{1} \to X \quad (\text{an owned } \texttt{ElementOfObject})$$
   - Categories contain **only** category-owned `CategoryPoint` instances, never raw Python literals.
 
-### 2. The False Prior: "Constructors Should Be Convenient Polymorphic Parsers"
+### `POL-ONT-002`: The False Prior "Constructors Should Be Convenient Polymorphic Parsers"
 
 - **The False Model**:
   - Designing `__call__` as a flexible Python function that sniffs inputs:
@@ -157,7 +163,7 @@ reads.
   - **Category Refinement** ($X \mapsto X \text{ with placement in } \mathcal{P}$) is mathematically distinct from **Object Construction from Carrier Data** ($\text{data} \mapsto X$).
   - Merging these two operations into one overloaded `__call__` violates categorical clarity and forces runtime type sniffing.
 
-### 3. The False Prior: "`in` Is a Python Container Lookup"
+### `POL-ONT-003`: The False Prior "`in` Is a Python Container Lookup"
 
 - **The False Model**:
   - Treating `x in C` as checking whether `x` is in an internal Python collection on `C`.
@@ -169,14 +175,14 @@ reads.
 
 ### Core Project Philosophy Summary
 
-| Concept | Python / SWE Prior (The Mistake) | `sage-categories` Architecture (The Truth) |
-| :--- | :--- | :--- |
-| **Elements** | Raw Python values (`1`, `(1, 2)`) | Arrows $x: \mathbf{1} \to X$ owned by a specific parent set $X$ |
-| **Carrier Data** | The mathematical object itself | Private implementation representation (`Datum`), not in any category |
-| **Categories** | Collections / registries of objects | Mathematical category structures with role-compiled classes |
-| **Constructors** | Polymorphic helper functions (`*args`) | Total, single-purpose mathematical operations (`POL-API-021`) |
-| **Refinement** | Dynamic mutation / wrapper allocation | Same-object placement in subcategory without wrapper classes |
-| **Membership `in`** | Container item containment | Three-valued proposition evaluation via SymPy / `ask()` |
+| Concept | Python / SWE Prior (The Mistake) | `sage-categories` Architecture (The Truth) | Policy |
+| :--- | :--- | :--- | :--- |
+| **Elements** | Raw Python values (`1`, `(1, 2)`) | Arrows $x: \mathbf{1} \to X$ owned by a specific parent set $X$ | `POL-ONT-001` |
+| **Carrier Data** | The mathematical object itself | Private implementation representation (`Datum`), not in any category | `POL-ONT-001` |
+| **Categories** | Collections / registries of objects | Mathematical category structures with role-compiled classes | `POL-ONT-001` |
+| **Constructors** | Polymorphic helper functions (`*args`) | Total, single-purpose mathematical operations (`POL-API-021`) | `POL-ONT-002` |
+| **Refinement** | Dynamic mutation / wrapper allocation | Same-object placement in subcategory without wrapper classes | `POL-ONT-002` |
+| **Membership `in`** | Container item containment | Three-valued proposition evaluation via SymPy / `ask()` | `POL-ONT-003` |
 
 ## Predicates, hypotheses, and assumptions
 

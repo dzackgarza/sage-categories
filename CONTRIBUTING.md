@@ -139,6 +139,10 @@ reads.
 | `POL-ONT-001` | Treat raw Python values (`Datum`) solely as private carrier representations, never as members or elements of any category. An element exists only as a morphism $x: \mathbf{1} \to X$ owned by a specific parent object $X$. Categories contain only category-owned `CategoryPoint` instances. |
 | `POL-ONT-002` | Make every mathematical constructor total on a single exact domain. Keep category refinement ($X \mapsto X$ placed in $\mathcal{P}$) strictly distinct from object construction from carrier data ($\text{data} \mapsto X$). Never create overloaded constructors that perform runtime type sniffing or fallback dispatch. |
 | `POL-ONT-003` | Evaluate category membership `X in C` strictly through the three-valued categorical proposition $\operatorname{ask}(C.\operatorname{membership\_proposition}(X))$. Never treat `in` as a container item check or query it on raw carrier data. Use `is_placed(X, C)` to test established category placement. |
+| `POL-ONT-004` | Never weaken or strip a categorical classification or subcategory placement (such as `Monomorphisms()`, `Epimorphisms()`, `Isomorphisms()`) to bypass a runtime error or constructor failure. Repair the underlying constructor or handler registration instead. |
+| `POL-ONT-005` | Never widen an exact semantic type (e.g. `Poset`, `SetMap`) to a generic ancestor type (e.g. `CategoryOfCategories.ElementType`, `CategoryPoint`) to resolve import cycles or forward-reference errors. Resolve module import ordering or defer handler registration instead. |
+| `POL-ONT-006` | Inspect established placement via `is_placed(X, C)` inside property deduction handlers. Never invoke active deduction via `X in C` or `ask()` within complementary property handlers, which triggers infinite mutual deduction cycles. |
+| `POL-ONT-007` | Treat raw Python callables (`lambda`, functions) solely as constructor input rules, never as morphisms. Morphisms require explicit category endpoints $A \to B$ and must be constructed through `Mor(C)(A, B)(rule)`. |
 
 ### `POL-ONT-001`: The False Prior "Sets Are Containers of Python Data"
 
@@ -173,6 +177,39 @@ reads.
   - Evaluating `((),) in Sets()` is a category error because raw Python memory structures have no categorical propositions.
   - Checking whether an owned value already carries category placement uses `is_placed(X, C)`, not `in`.
 
+### `POL-ONT-004`: The False Prior "Weaken the Invariant to Fix the Bug"
+
+- **The False Model**:
+  - If placing a morphism into `Monomorphisms()` fails during subset creation, constructing a bare morphism in `Mor(Sets())` instead to make the code run.
+- **The Internalized Reality (`specs/sets.md`, `POL-FUN-013`)**:
+  - Categorical classifications are fundamental mathematical contracts. A chosen subset **must** retain a monomorphism.
+  - Never weaken an invariant to suppress a symptom. Fix the constructor or argument preparation that caused the failure.
+
+### `POL-ONT-005`: The False Prior "Widen the Type to Fix the Import"
+
+- **The False Model**:
+  - When a type annotation like `poset: Poset` cannot be resolved at module top-level, widening the type to `CategoryOfCategories.ElementType` so Python doesn't raise a `NameError`.
+- **The Internalized Reality (`POL-TYPE-001`, `POL-TYPE-018`, `POL-TYPE-019`)**:
+  - Types communicate exact mathematical semantics. Type erasure blinds the static checker and violates policy.
+  - Fix the module structure, import at module level, or defer handler registration until semantic types exist.
+
+### `POL-ONT-006`: The False Prior "Call `in` Inside Deduction Handlers"
+
+- **The False Model**:
+  - Inside `_finite_by_infinite`, querying `ambient in self._infinite` to check if the ambient set is infinite.
+- **The Internalized Reality (`specs/undecidable-properties.md`, `specs/sets.md`)**:
+  - `ambient in category` re-enters active three-valued proposition deduction (`ask()`).
+  - Complementary property handlers calling each other through active deduction cause unbounded mutual recursion.
+  - Handlers must inspect already-placed structural facts using `is_placed(ambient, category)`.
+
+### `POL-ONT-007`: The False Prior "Raw Callables Are Morphisms"
+
+- **The False Model**:
+  - Passing a bare Python `lambda x: x` into functions or subcategories expecting a morphism.
+- **The Internalized Reality (`specs/functor.md`, `specs/sets.md`)**:
+  - A lambda function is only mapping rule data (`Rule` / `Datum`), lacking domain, codomain, and category composition laws.
+  - A morphism must always be constructed explicitly with endpoints via `Mor(C)(A, B)(rule)`.
+
 ### Core Project Philosophy Summary
 
 | Concept | Python / SWE Prior (The Mistake) | `sage-categories` Architecture (The Truth) | Policy |
@@ -183,6 +220,10 @@ reads.
 | **Constructors** | Polymorphic helper functions (`*args`) | Total, single-purpose mathematical operations (`POL-API-021`) | `POL-ONT-002` |
 | **Refinement** | Dynamic mutation / wrapper allocation | Same-object placement in subcategory without wrapper classes | `POL-ONT-002` |
 | **Membership `in`** | Container item containment | Three-valued proposition evaluation via SymPy / `ask()` | `POL-ONT-003` |
+| **Categorical Invariants** | Omit or weaken when failing | Strict mathematical contract; fix root cause | `POL-ONT-004` |
+| **Semantic Types** | Widen to avoid import issues | Exact mathematical types; defer handler registration | `POL-ONT-005` |
+| **Deduction Handlers** | Call `in` / `ask()` on complements | Inspect established structure via `is_placed` | `POL-ONT-006` |
+| **Morphisms** | Bare Python callables / lambdas | Explicit arrows with domain and codomain endpoints | `POL-ONT-007` |
 
 ## Predicates, hypotheses, and assumptions
 

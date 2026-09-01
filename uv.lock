@@ -301,7 +301,7 @@ wheels = [
 [[package]]
 name = "microsoft-python-type-stubs"
 version = "0"
-source = { git = "https://github.com/microsoft/python-type-stubs.git#d23acef5204a077bd6623c82bf7cc6134879dd4e" }
+source = { git = "https://github.com/dzackgarza/python-type-stubs.git?rev=main#c22a757c3371fef8a93281522324d50af7e617c5" }
 
 [[package]]
 name = "mpmath"
@@ -589,7 +589,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "hypothesis", specifier = ">=6.165,<7" },
-    { name = "microsoft-python-type-stubs", git = "https://github.com/microsoft/python-type-stubs.git" },
+    { name = "microsoft-python-type-stubs", git = "https://github.com/dzackgarza/python-type-stubs.git?rev=main" },
     { name = "mypy", specifier = ">=2" },
     { name = "pytest", specifier = ">=9.1,<10" },
     { name = "ruff", specifier = ">=0.16.5,<1" },

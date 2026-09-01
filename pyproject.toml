@@ -29,7 +29,7 @@ dev = [
     "ruff>=0.16.5,<1",
     "sage-mypy-category-plugin @ git+https://github.com/dzackgarza/sagemath-mypy-plugin@main",
     "sage-stubs @ git+https://github.com/dzackgarza/sage-stubs.git@main",
-    "microsoft-python-type-stubs @ git+https://github.com/microsoft/python-type-stubs.git",
+    "microsoft-python-type-stubs @ git+https://github.com/dzackgarza/python-type-stubs.git@main",
 ]
 migration = [
     "libcst>=1.9,<2",

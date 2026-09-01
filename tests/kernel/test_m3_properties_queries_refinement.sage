@@ -1,5 +1,7 @@
 """R3 acceptance for properties, typed queries, refinement, pullbacks, and dispatch."""
 
+from sage.rings.integer import Integer
+
 from __future__ import annotations
 
 from sage.misc.unknown import Unknown

@@ -1,5 +1,7 @@
 """R1: synthetic acceptance for the private Sage-backed category compiler."""
 
+from sage.rings.integer import Integer
+
 import sys
 
 import pytest

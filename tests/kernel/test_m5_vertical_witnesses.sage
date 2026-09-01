@@ -1,5 +1,7 @@
 """R5 acceptance for retained evaluations, pullbacks, and property closure."""
 
+from sage.rings.integer import Integer
+
 from __future__ import annotations
 
 from sage_categories.cat.category import Cat, ask

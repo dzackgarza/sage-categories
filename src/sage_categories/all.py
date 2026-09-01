@@ -37,7 +37,7 @@ from sage_categories import (
     retract,
     version,
 )
-from sage_categories.algebra import Groups, Magmas, Monoids, Semirings
+from sage_categories.algebra import Groups, Magmas, Modules, Monoids, Rings, Semirings
 from sage_categories.number_sets import NN, QQ, RR, ZZ, Primes
 from sage_categories.ordinals import OrdinalOrder, Ordinals, omega0
 from sage_categories.posets import FinitePosets, FiniteTotallyOrderedSets, Posets, TotallyOrderedSets
@@ -62,6 +62,7 @@ __all__ = [
     "InitialOrdinal",
     "LimitCones",
     "Magmas",
+    "Modules",
     "Monoids",
     "Mor",
     "NN",
@@ -73,6 +74,7 @@ __all__ = [
     "Primes",
     "QQ",
     "RR",
+    "Rings",
     "Semirings",
     "Sets",
     "Thin",

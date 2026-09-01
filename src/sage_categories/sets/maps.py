@@ -32,16 +32,27 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 import sage_categories.sets.category as _sets
-from sage_categories.cat.category import Category
-from sage_categories.cat.predicates import Decision, Unknown
-from sage_categories.cat.predicates import ask, conjunction, disjunction, negation
+from sage_categories.cat.predicates import (
+    Decision,
+    Unknown,
+    ask,
+    conjunction,
+    disjunction,
+    negation,
+)
 from sage_categories.sets.elements import Datum
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
-    from sage_categories.sets.category import SetElement, SetMap, SetObject
+    from sage_categories.sets.category import SetElement, SetObject
 
-__all__ = ["Rule", "SetMorphismData", "injective_on_finite_domain", "maps_equal", "surjective_on_finite_domain"]
+__all__ = [
+    "Rule",
+    "SetMorphismData",
+    "injective_on_finite_domain",
+    "maps_equal",
+    "surjective_on_finite_domain",
+]
 
 type Rule = Callable[[Datum], Datum]
 
@@ -62,61 +73,101 @@ class SetMapDeclaration:
 
     def __call__(self, element: SetElement) -> SetElement:
         """Compose with a generalized element; evaluate its datum at the terminal object (POL-CAT-040)."""
-        assert element in self.domain(), f"{element!r} is not an element of {self.domain()!r}"
+        assert element in self.domain(), (
+            f"{element!r} is not an element of {self.domain()!r}"
+        )
         sets = _sets.Sets()
-        underlying_map = sets.structural_image(self)
-        underlying = sets.structural_image(element)
-        if underlying.defining_morphism().domain() is sets.Terminal():
-            return underlying_map.codomain().point(self._set_morphism_data.rule(underlying._point_datum_()))
-        return sets.element_from_defining_morphism(underlying_map * underlying.defining_morphism())
+        if element.defining_morphism().domain() is sets.Terminal():
+            return self.codomain().point(
+                self._set_morphism_data.rule(element._point_datum_())
+            )
+        return sets.element_from_defining_morphism(self * element.defining_morphism())
 
     def image(self) -> SetObject:
         """The chosen subset of the codomain of the points with a preimage, with its monomorphism (POL-ENGINE-004; ``sets/subobjects.py``)."""
-        return _sets.Sets().ChosenSubsets().image_of(_sets.Sets().structural_image(self))
+        return _sets.Sets().ChosenSubsets().image_of(self)
 
     def __repr__(self) -> str:
         return f"SetMap({self.domain()!r} -> {self.codomain()!r})"
 
 
-def maps_equal(first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
+def maps_equal(
+    first: CategoryOfCategories.ElementType, candidate: Any, assumptions: Proposition
+) -> Decision:
     """Two maps with one finite enumerable domain are equal exactly when they agree on every point."""
     sets = _sets.Sets()
     morphisms = sets.morphism_category(1)
     if first not in morphisms or candidate not in morphisms:
         return Unknown
-    if first.domain() is not candidate.domain() or first.codomain() is not candidate.codomain():
+    if (
+        first.domain() is not candidate.domain()
+        or first.codomain() is not candidate.codomain()
+    ):
         return Unknown
     finite = sets.Finite()
     if not finite.has_chosen_enumeration(first.domain()):
         return Unknown
     first_rule = first._set_morphism_data.rule
     candidate_rule = candidate._set_morphism_data.rule
-    return ask(conjunction(first_rule(datum) == candidate_rule(datum) for datum in finite.chosen_enumeration(first.domain())))
+    return ask(
+        conjunction(
+            first_rule(datum) == candidate_rule(datum)
+            for datum in finite.chosen_enumeration(first.domain())
+        )
+    )
 
 
-def injective_on_finite_domain(morphism: SetMap) -> Decision:
+def injective_on_finite_domain(
+    morphism: SetMapDeclaration, assumptions: Proposition
+) -> Decision:
     """Injective exactly when no two distinct points of the enumerated domain have equal images."""
     sets = _sets.Sets()
-    if morphism not in sets.morphism_category(1) or not sets.Finite().has_chosen_enumeration(morphism.domain()):
+    if morphism not in sets.morphism_category(
+        1
+    ) or not sets.Finite().has_chosen_enumeration(morphism.domain()):
         return Unknown
     rule = morphism._set_morphism_data.rule
-    images = [rule(datum) for datum in sets.Finite().chosen_enumeration(morphism.domain())]
-    collisions = (images[i] == images[j] for i in range(len(images)) for j in range(i + 1, len(images)))
+    images = [
+        rule(datum) for datum in sets.Finite().chosen_enumeration(morphism.domain())
+    ]
+    collisions = (
+        images[i] == images[j]
+        for i in range(len(images))
+        for j in range(i + 1, len(images))
+    )
     return ask(negation(disjunction(collisions)))
 
 
-def surjective_on_finite_domain(morphism: SetMap) -> Decision:
+def surjective_on_finite_domain(
+    morphism: SetMapDeclaration, assumptions: Proposition
+) -> Decision:
     """Surjective exactly when every point of the enumerated codomain is an image."""
     sets = _sets.Sets()
     finite = sets.Finite()
     if morphism not in sets.morphism_category(1):
         return Unknown
-    if not finite.has_chosen_enumeration(morphism.domain()) or not finite.has_chosen_enumeration(morphism.codomain()):
+    if not finite.has_chosen_enumeration(
+        morphism.domain()
+    ) or not finite.has_chosen_enumeration(morphism.codomain()):
         return Unknown
     rule = morphism._set_morphism_data.rule
     images = [rule(datum) for datum in finite.chosen_enumeration(morphism.domain())]
-    return ask(conjunction(disjunction(image == datum for image in images) for datum in finite.chosen_enumeration(morphism.codomain())))
+    return ask(
+        conjunction(
+            disjunction(image == datum for image in images)
+            for datum in finite.chosen_enumeration(morphism.codomain())
+        )
+    )
 
 
-def bijective_on_finite_domain(morphism: SetMap) -> Decision:
-    return ask(conjunction((injective_on_finite_domain(morphism), surjective_on_finite_domain(morphism))))
+def bijective_on_finite_domain(
+    morphism: SetMapDeclaration, assumptions: Proposition
+) -> Decision:
+    return ask(
+        conjunction(
+            (
+                injective_on_finite_domain(morphism),
+                surjective_on_finite_domain(morphism),
+            )
+        )
+    )

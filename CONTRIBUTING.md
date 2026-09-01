@@ -146,6 +146,7 @@ reads.
 | `POL-ONT-008` | Ban catch-all constructors, implicit fallback heuristics, and loose `@overload` sniffing. Provide dedicated explicit constructors of the form `X.from_Y(...)` for distinct input modalities. The main constructor must perform an explicit `match`/`case` on the exact supported input types, route them directly with no fallback paths, and unconditionally raise a hard `TypeError` on the default `case _:`. |
 | `POL-ONT-009` | Model mathematical structures using generic categorical constructions (slice, coslice, subobject, quotient, comma, and functor categories) rather than ad-hoc leaf classes or facade parents with ambient pointers. Theory-specific sub-entities (e.g. `Submonoids(M)`, `Subgroups(G)`, `Submodules(V)`) are convenience spellings for the corresponding generic construction `SubobjectCategory(C, X)`. No leaf category may implement bespoke subobject or quotient container classes. |
 | `POL-ONT-010` | Perform a mandatory survey of existing generic categorical machinery before implementing any new theory, object, morphism, or construction. Never write greenfield code or bespoke data structures without first verifying whether the requested notion is an instance of an existing categorical construction, structure functor, or universal limit/colimit in `Cat`. |
+| `POL-ONT-011` | Ban standalone procedural free functions for mathematical properties, queries, or predicates (e.g. `is_discrete(C)`). Mathematical entities must own their operations as direct methods (e.g. `C.is_discrete()`), inherited on role classes from the most general category whose axioms define them. Standalone functions that accept loose duck-typed arguments are strictly prohibited. |
 
 ### `POL-ONT-001`: The False Prior "Sets Are Containers of Python Data"
 
@@ -240,6 +241,15 @@ reads.
   - Category theory is deeply unified: almost all structural concepts are instances of generic constructions (`Cat`, `Mor`, `Fun`, `SliceCategory`, `SubobjectCategory`, `QuotientCategory`, `Pullbacks`, `Limits`, `Colimits`, `diagrams`).
   - Before writing any implementation code, a mandatory survey of existing generic machinery is strictly required. Hand-rolling code that duplicates or bypasses existing foundational machinery causes architectural drift and code bloat.
 
+### `POL-ONT-011`: The False Prior "Standalone Procedural Helper Functions"
+
+- **The False Model**:
+  - Writing module-level standalone functions like `is_discrete(diagram_category)` that accept arbitrary inputs and inspect attributes via loose duck-typing.
+- **The Internalized Reality (`POL-MATH-009`, `POL-TYPE-018`, `POL-TYPE-019`)**:
+  - Standalone procedural functions allow foreign, duck-typed, or unvetted objects to pass through loosely, creating subtle bugs and bypassing category role compilation.
+  - Objects must own their operations directly as methods (e.g. `C.is_discrete()`, `X.cardinality()`).
+  - Methods must be defined on the role classes in the **most general category where the concept makes mathematical sense** (e.g. any category $\mathcal{C}$ can ask `C.is_discrete()`), so that all subcategories inherit the operation with full type safety and MRO compilation.
+
 ### Core Project Philosophy Summary
 
 | Concept | Python / SWE Prior (The Mistake) | `sage-categories` Architecture (The Truth) | Policy |
@@ -257,6 +267,7 @@ reads.
 | **Constructor Architecture** | Catch-all `*args` with heuristic fallbacks | Dedicated `from_Y` methods; explicit `match`/`case` with hard error on default `case _:` | `POL-ONT-008` |
 | **Subobjects & Quotients** | Bespoke leaf facade classes with ambient pointers | Generic slice/subobject/quotient categories (`SubobjectCategory(C, X)`) | `POL-ONT-009` |
 | **Implementation Process** | Immediate greenfield coding without surveying | Mandatory prior survey of existing generic categorical machinery | `POL-ONT-010` |
+| **Method & Property Ownership** | Standalone free functions (`is_discrete(C)`) | Direct category-owned methods (`C.is_discrete()`) inherited from the most general category | `POL-ONT-011` |
 
 ### The Core Categorical Philosophy
 
@@ -316,6 +327,12 @@ Writing new code before understanding existing machinery causes severe architect
   2. Structure functor transport paths and canonical lifts across existing categories.
   3. Universal data and predicate registration mechanisms in `src/sage_categories/kernel/`.
 - **Specialization Over Duplication**: If the required mathematical concept is an instance of an existing generic construction (e.g. subobjects of $X$ in $\mathcal{C}$), specialize the generic construction (`SubobjectCategory(C, X)`) rather than hand-rolling new classes. Only write greenfield theory code when the concept is genuinely primitive to that specific category.
+
+#### 9. Method Ownership over Standalone Procedural Functions
+In a typed categorical architecture, operations belong to mathematical objects, not loose module functions:
+- **The Danger of Standalone Functions**: Standalone functions like `is_discrete(diagram_category)` or `is_finite(set_obj)` allow arbitrary duck-typed or unverified objects to slip through, bypassing category role compilation and producing subtle runtime errors.
+- **Direct Object Methods**: Properties, queries, and predicates must be owned directly as methods on the object itself (e.g. `C.is_discrete()`, `X.cardinality()`, `V.dimension()`).
+- **Inheritance at the Most General Categorical Level**: Every method must be defined on the role class (`CategoryDeclaration`, `ObjectOfCategory`, `ElementOfObject`, `MorphismOfCategory`) in the most general category whose mathematical hypotheses imply it (e.g. `C.is_discrete()` on generic `Cat`). The kernel compiles role MROs so that all specialized subcategories inherit the operation uniformly and with complete type safety.
 
 ## Predicates, hypotheses, and assumptions
 

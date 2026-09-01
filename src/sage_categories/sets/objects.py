@@ -21,6 +21,7 @@ from sage_categories.cat.predicates import (
     disjunction,
     predicate,
 )
+from sage_categories.kernel.roles import Role, role_of
 from sage_categories.sets.elements import Datum, SetPointData
 
 if TYPE_CHECKING:
@@ -41,11 +42,7 @@ def _element_of_by_parent(
     candidate: CategoryOfCategories.ElementType, ambient: SetObjectDeclaration, assumptions: Proposition
 ) -> Decision:
     """A point ``* -> X`` is an element of ``X`` by definition (POL-CAT-058)."""
-    if (
-        hasattr(candidate, "_is_element")
-        and candidate._is_element()
-        and candidate.parent() is ambient
-    ):
+    if role_of(candidate) is Role.ELEMENT and candidate.parent() is ambient:
         return True
     return Unknown
 
@@ -59,7 +56,7 @@ def _element_of_by_rule(
     A generalized element with nonterminal domain retains no point datum, so the
     decision there is ``Unknown``.
     """
-    if not hasattr(candidate, "_is_element") or not candidate._is_element():
+    if role_of(candidate) is not Role.ELEMENT:
         return False
     state = candidate._set_element_data
     if not isinstance(state, SetPointData):
@@ -80,11 +77,7 @@ def sets_equal(
     members are not available and the handler decides nothing.
     """
     finite = _sets.Sets().Finite()
-    if (
-        not first._is_object()
-        or not hasattr(candidate, "_is_object")
-        or not candidate._is_object()
-    ):
+    if not first._is_object() or role_of(candidate) is not Role.OBJECT:
         return Unknown
     if not finite.has_chosen_enumeration(first) or not finite.has_chosen_enumeration(
         candidate

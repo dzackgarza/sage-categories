@@ -41,7 +41,7 @@ from __future__ import annotations
 from collections.abc import Hashable
 from dataclasses import dataclass
 from functools import reduce
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from sage.rings.integer_ring import ZZ as _integer_ring
 
@@ -61,24 +61,11 @@ __all__ = [
     "at_most",
     "bind_cardinals",
     "initial",
-    "is_natural_number",
     "less_than",
     "omega",
     "omega0",
     "ordinal",
 ]
-
-
-def is_natural_number(value: Any) -> bool:
-    """Whether an unowned value denotes a natural number, at Sage's exact integer ring.
-
-    ``Ordinals()`` and ``Cardinal()`` both construct their finite objects from one.
-    Each states it as a constructor precondition and tests it before coercing an
-    equality candidate: an equality handler is total over an ``Any`` candidate
-    (POL-TYPE-004, POL-MATH-034), so a candidate denoting no object of the category
-    is undecided rather than a construction error.
-    """
-    return value in _integer_ring and value >= 0
 
 
 def bind_cardinals() -> None:
@@ -298,7 +285,7 @@ class OrdinalsCategory(Category[[], []]):
         """
         if value in self:
             return value
-        assert is_natural_number(value), f"{value!r} is not an ordinal"
+        assert value in _integer_ring and value >= 0, f"{value!r} is not an ordinal"
         return self._retain(("finite", int(value)), ())
 
     def omega(self, index: OrdinalObject | int) -> OrdinalObject:

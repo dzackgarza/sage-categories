@@ -9,11 +9,12 @@ from __future__ import annotations
 
 from collections.abc import Hashable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import sage_categories.sets.category as _sets
 from sage_categories.cat.predicates import Decision, Unknown
 from sage_categories.cat.predicates import ask
+from sage_categories.kernel.roles import Role, role_of
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -67,7 +68,7 @@ def points_equal(first: CategoryOfCategories.ElementType, candidate: CategoryOfC
     ``Unknown`` for a rule-defined family, and a proposition for an owned mathematical
     value, so the comparison is asked rather than returned (POL-MATH-034).
     """
-    if not first._is_element() or not hasattr(candidate, "_is_element") or not candidate._is_element():
+    if not first._is_element() or role_of(candidate) is not Role.ELEMENT:
         return Unknown
     if first.parent() is not candidate.parent():
         return Unknown

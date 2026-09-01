@@ -246,9 +246,6 @@ class LimitConesCategory(PropertySubcategory[[MorphismCategory.ObjectType], []])
         presentation = self.ambient()(transformation)
         presentation._cone_lift = lift
         refine(presentation, self)
-        from sage_categories.cat.total_cones import total_cones
-
-        total_cones(Fun(presentation.diagram().domain(), presentation.diagram().codomain()))(presentation)
         return presentation
 
     def __repr__(self) -> str:

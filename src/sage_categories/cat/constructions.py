@@ -100,6 +100,10 @@ def _nontrivial_discrete(shape: Category) -> bool | None:
     """Return whether the owned object-set cardinality proves a nontrivial discrete shape."""
     if not is_discrete(shape):
         return False
+    from sage_categories.cat.canonical import FinitePresentedCategory
+
+    if isinstance(shape, FinitePresentedCategory):
+        return len(shape.labels()) >= 2
     cardinality = ask(shape.object_set().cardinality())
     if cardinality is Unknown:
         return None

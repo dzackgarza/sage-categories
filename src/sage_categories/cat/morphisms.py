@@ -184,6 +184,11 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
             return (*self.ambient().narrowing_roots(), self)
         return ()
 
+    def structure_functors(self) -> tuple[Functor, ...]:
+        if self._base.has_ambient():
+            return (self.subcategory_monomorphism(),)
+        return ()
+
     def _object_role_source(self) -> tuple[Category, bool]:
         return self._base, True
 

@@ -77,11 +77,14 @@ class _KernelRoleRootCategory(SageCategory):
         super().__init__()
 
     @property
-    def _cmp_key(self) -> tuple[int, int]:
-        return (0, _ROLE_POSITIONS[self._role] - len(Role))
+    def _cmp_key(self) -> tuple[int, int, int, int]:
+        return (0, _ROLE_POSITIONS[self._role], -1, len(self._root.__mro__))
 
     def super_categories(self) -> list[SageCategory]:
-        return []
+        if self._root is CategoryPoint:
+            return []
+        base = self._root.__bases__[0]
+        return [_cat_element_role_root() if base is CategoryPoint else _role_root(self._role, base)]
 
     @lazy_attribute
     def parent_class(self) -> type[CategoryPoint]:
@@ -98,8 +101,9 @@ class _RuntimeImplementationCategory(SageCategory):
         super().__init__()
 
     @property
-    def _cmp_key(self) -> tuple[int, int]:
-        return (0, node_key(self._current))
+    def _cmp_key(self) -> tuple[int, int, int, int]:
+        role, ordinal = node_key(self._current)
+        return (0, role, ordinal, 0)
 
     def super_categories(self) -> list[SageCategory]:
         return list(self._targets)
@@ -151,15 +155,14 @@ _ROLE_POSITIONS: dict[Role, int] = {
 
 _COMPILE_ORDER = (Role.ELEMENT, Role.OBJECT, Role.MORPHISM)
 
-def node_key(current: Node) -> int:
+def node_key(current: Node) -> tuple[int, int]:
     """The position of ``current`` in the total order the C3 merge is controlled by.
 
-    A category is constructed after every category it selects a functor into, so its
-    ordinal already ranks it above them; the role breaks the tie between the object
-    node and the morphism node of one category, which are distinct nodes that no
-    selected functor relates.
+    Role order comes first because an object node can acquire a newer element node when
+    the category value enters a new placement.  Within one role, construction order
+    ranks a category after every structural target it selects.
     """
-    return current.category.ordinal() * len(Role) + _ROLE_POSITIONS[current.role]
+    return (_ROLE_POSITIONS[current.role], current.category.ordinal())
 
 
 def node(category: Category, role: Role) -> Node:
@@ -394,14 +397,11 @@ def runtime_semantic_bases(
     if current is None:
         return None
     declaration = current.category.local_role_class(current.role)
-    result: list[type[CategoryPoint]] = [
-        declaration,
-        *(
-            _runtime(source).owner
-            for source in _linearized_nodes(current)
-            if not same_node(source, current)
-        ),
-    ]
+    result: list[type[CategoryPoint]] = [declaration]
+    for source in _linearized_nodes(current):
+        source_declaration = source.category.local_role_class(source.role)
+        if not any(source_declaration is known for known in result):
+            result.append(source_declaration)
     stable_role = kernel_base(current.role)
     if not issubclass(stable_role, runtime_class) and not any(
         issubclass(base, stable_role) for base in result

@@ -567,6 +567,7 @@ dev = [
     { name = "pytest" },
     { name = "ruff" },
     { name = "sage-mypy-category-plugin" },
+    { name = "sage-stubs" },
 ]
 migration = [
     { name = "libcst" },
@@ -593,6 +594,7 @@ dev = [
     { name = "pytest", specifier = ">=9.1,<10" },
     { name = "ruff", specifier = ">=0.16.5,<1" },
     { name = "sage-mypy-category-plugin", git = "https://github.com/dzackgarza/sagemath-mypy-plugin?rev=main" },
+    { name = "sage-stubs", git = "https://github.com/dzackgarza/sage-stubs.git?rev=main" },
 ]
 migration = [{ name = "libcst", specifier = ">=1.9,<2" }]
 platform = [{ name = "juliacall", specifier = ">=0.9.35,<0.10" }]
@@ -606,6 +608,11 @@ dependencies = [
     { name = "packaging" },
     { name = "pydantic" },
 ]
+
+[[package]]
+name = "sage-stubs"
+version = "10.7.0"
+source = { git = "https://github.com/dzackgarza/sage-stubs.git?rev=main#1d87ee246c5dc95a29617ac64eaa46b9f3df5d48" }
 
 [[package]]
 name = "semver"

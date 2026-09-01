@@ -2,5 +2,5 @@
   "check": "sage-mypy",
   "diagnostics": ".ai-review-ci/sage/sage-mypy.diagnostics.log",
   "log": ".ai-review-ci/sage/sage-mypy.log",
-  "status": 1
+  "status": "running"
 }

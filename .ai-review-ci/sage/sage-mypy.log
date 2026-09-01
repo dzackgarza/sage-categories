@@ -11,13 +11,72 @@ tests/kernel/test_m5_vertical_witnesses.sage
   warn("%s.%s should not have a super class" % (cls.__name__, method_provider))
 error: INTERNAL ERROR -- Please try using mypy master on GitHub:
 https://mypy.readthedocs.io/en/stable/common_issues.html#using-a-development-mypy-build
-If this issue continues with mypy master, please report a bug at https://github.com/python/mypy/issues
+Please report a bug at https://github.com/python/mypy/issues
 version: 2.0.0
-note: please use --show-traceback to print a traceback when reporting a bug
+note: use --pdb to drop into pdb
 Error constructing plugin instance of SageCategoryProjectionPlugin
 
-ERROR: mypy found type errors in project code.
-/home/dzack/ai-review-ci/justfiles/../tool-artifacts/scripts/emit-triage-directive.sh: line 14: AI_REVIEW_CI_FAILURE_MODE: AI_REVIEW_CI_FAILURE_MODE must be set by test-commit, test-push, test-ci, or ambient
-error: recipe `_sage-mypy` failed with exit code 1
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/mypy/__main__.py", line 16, in console_entry
+    main()
+    ~~~~^^
+  File "mypy/main.py", line 154, in main
+    res, messages, blockers = run_build(sources, options, fscache, t0, stdout, stderr)
+  File "mypy/main.py", line 244, in run_build
+    res = build.build(sources, options, None, flush_errors, fscache, stdout, stderr)
+  File "mypy/build.py", line 422, in build
+    result = build_inner(
+  File "mypy/build.py", line 500, in build_inner
+    plugin, snapshot = load_plugins(options, errors, stdout, extra_plugins)
+  File "mypy/build.py", line 732, in load_plugins
+    custom_plugins, snapshot = load_plugins_from_config(options, errors, stdout)
+  File "mypy/build.py", line 713, in load_plugins_from_config
+    custom_plugins.append(plugin_type(options))
+  File "/home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage_mypy_category_plugin/plugin.py", line 69, in __init__
+    self._manifest, self._manifest_path = _generate_and_cache(config)
+                                          ~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage_mypy_category_plugin/plugin.py", line 612, in _generate_and_cache
+    category_fullnames = discover_category_fullnames(config.packages)
+  File "/home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage_mypy_category_plugin/resolver.py", line 132, in discover_category_fullnames
+    if compiler_in(package_names) is not None:
+       ~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage_mypy_category_plugin/declared.py", line 65, in compiler_in
+    modules = _imported_modules(module_names)
+  File "/home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage_mypy_category_plugin/declared.py", line 215, in _imported_modules
+    for found in _submodule_names(package):
+                 ~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage_mypy_category_plugin/declared.py", line 226, in _submodule_names
+    return tuple(found.name for found in walk_packages(search_path, f"{package.__name__}."))
+           ^^^^^
+  File "/home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage_mypy_category_plugin/declared.py", line 226, in <genexpr>
+    return tuple(found.name for found in walk_packages(search_path, f"{package.__name__}."))
+                                         ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dzack/.local/share/uv/python/cpython-3.14.7-linux-x86_64-gnu/lib/python3.14/pkgutil.py", line 76, in walk_packages
+    __import__(info.name)
+    ~~~~~~~~~~^^^^^^^^^^^
+  File "/home/dzack/gitclones/sage-categories/src/sage_categories/number_sets/__init__.py", line 11, in <module>
+    from sage_categories.number_sets.primes import Primes
+  File "/home/dzack/gitclones/sage-categories/src/sage_categories/number_sets/primes.py", line 28, in <module>
+    Primes = ZZ.subset_from(_is_prime)
+  File "/home/dzack/gitclones/sage-categories/src/sage_categories/sets/objects.py", line 159, in subset_from
+    return _sets.Sets().ChosenSubsets()(_sets.Sets().structural_image(self), predicate)
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'SetsCategory' object has no attribute 'structural_image'
 
-[exit status: 1]
+ERROR: mypy found type errors in project code.
+
+================================================================================
+  LOCAL QC FAILURE — DIRECT REPAIR REQUIRED
+================================================================================
+
+  Fix the reported compiler, formatter, type, or test failure in the object
+  being changed, then rerun the same gate. This is not PR review feedback and
+  does not enter returned-PR-feedback triage or require independent policy/remediation subagents.
+
+  Do not weaken the checker, suppress the diagnostic, golf the error count, or
+  edit ai-review-ci to make the signal disappear.
+
+================================================================================
+error: recipe `_sage-mypy` failed with exit code 2

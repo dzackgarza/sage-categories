@@ -1,14 +1,7 @@
-Sage-aware Mypy baseline
-Invocation count: 1
-Exit status: 1
-Revision: f59cb31
-
-Mypy aborted while constructing SageCategoryProjectionPlugin before emitting project source diagnostics.
-
-Owner attribution
-kernel/static projection: 1 tool-execution failure
-Cat: 0 source diagnostics
-leaf: 0 source diagnostics
-test: 0 source diagnostics
-
-Additional QC wrapper failure: AI_REVIEW_CI_FAILURE_MODE was unset while the private _sage-mypy recipe emitted its triage directive.
+12:error: INTERNAL ERROR -- Please try using mypy master on GitHub:
+17:Error constructing plugin instance of SageCategoryProjectionPlugin
+68:ERROR: mypy found type errors in project code.
+71:  LOCAL QC FAILURE — DIRECT REPAIR REQUIRED
+74:  Fix the reported compiler, formatter, type, or test failure in the object
+78:  Do not weaken the checker, suppress the diagnostic, golf the error count, or
+82:error: recipe `_sage-mypy` failed with exit code 2

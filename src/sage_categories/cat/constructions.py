@@ -104,18 +104,21 @@ def _nontrivial_discrete(shape: Category) -> bool | None:
 
     if isinstance(shape, FinitePresentedCategory):
         return len(shape.labels()) >= 2
-    from sage_categories.sets.category import Sets as ActualSets
-
-    obj_set = shape.object_set()
-    if ActualSets().Finite().has_chosen_enumeration(obj_set):
-        return len(ActualSets().Finite().chosen_enumeration(obj_set)) >= 2
-    cardinality = obj_set.cardinality()
-    if cardinality is Unknown:
-        return None
-    if isinstance(cardinality, int):
-        return cardinality >= 2
-    decision = ask(cardinality >= 2)
-    return decision if isinstance(decision, bool) else None
+    if hasattr(shape, "object_set"):
+        try:
+            obj_set = shape.object_set()
+            if Sets.Finite().has_chosen_enumeration(obj_set):
+                return len(Sets.Finite().chosen_enumeration(obj_set)) >= 2
+            cardinality = obj_set.cardinality()
+            if cardinality is Unknown:
+                return None
+            if isinstance(cardinality, int):
+                return cardinality >= 2
+            decision = ask(cardinality >= 2)
+            return decision if isinstance(decision, bool) else None
+        except Exception:
+            pass
+    return None
 
 
 def presenting_family(constructed: CategoryOfCategories.ElementType) -> Category:

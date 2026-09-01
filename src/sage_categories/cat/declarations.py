@@ -94,6 +94,8 @@ class DeclaredCategory(Category[[], []]):
             f"{implementation!r} implements the declared category {self._name!r} and is not a category class"
         )
         self.__class__ = implementation
+        if hasattr(self, "_init_sets_category"):
+            self._init_sets_category()
         self.recompile()
 
     def __repr__(self) -> str:

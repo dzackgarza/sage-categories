@@ -24,6 +24,7 @@ from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.cat.category import Category
+from sage_categories.cat.functors import Cat
 from sage_categories.cat.predicates import (
     Decision,
     Proposition,
@@ -161,13 +162,18 @@ class FiniteSets(PropertySubcategory[[Rule], []]):
 class SetsCategory(Category[[Rule], []]):
     """The category of sets."""
 
+    _implements = "Sets"
+
     ObjectType = SetObjectDeclaration
     ElementType = SetElementDeclaration
     MorphismType = SetMapDeclaration
 
     def __init__(self) -> None:
-        self._rule_valued: MonoDict = MonoDict()
         super().__init__()
+        self._init_sets_category()
+
+    def _init_sets_category(self) -> None:
+        self._rule_valued: MonoDict = MonoDict()
         self._equality.register_handler(points_equal)
         self._equality.register_handler(sets_equal)
         self._equality.register_handler(maps_equal)
@@ -539,7 +545,7 @@ class SetsCategory(Category[[Rule], []]):
         return "Sets"
 
 
-_SETS = SetsCategory()
+_SETS = Cat().declarations()["Sets"]
 SetObject = _SETS.ObjectType
 SetElement = _SETS.ElementType
 SetMap = _SETS.MorphismType

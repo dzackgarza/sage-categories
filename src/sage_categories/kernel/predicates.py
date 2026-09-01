@@ -158,7 +158,7 @@ def register_predicate_handler(owner: Predicate, handler: PredicateHandler) -> N
         result = handler(*arguments, assumptions=assumptions)
         if result is True and property_category is not None:
             refine(arguments[0], property_category)
-        return result
+        return None if result is Unknown else result
 
     evaluate.__name__ = handler.__name__
     owner.register(*domains)(evaluate)

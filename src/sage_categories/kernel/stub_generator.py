@@ -20,19 +20,30 @@ def generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
     """Write the compiler-derived stub projection for ``package`` to its package directory."""
     from mypy.stubgen import main as stubgen_main
 
-    stubgen_main(["--package", package, "--output", str(output_directory.parent)])
+    sources = tuple(sorted(output_directory.rglob("*.py")))
+    canonical_exports = _canonical_exports(package, output_directory, sources)
+    stubgen_main(
+        [
+            "--no-import",
+            "--output",
+            str(output_directory.parent),
+            *(str(source) for source in sources),
+        ]
+    )
     inheritance = compiler().declared_inheritance()
-    written: list[Path] = []
     for stub_path in output_directory.rglob("*.pyi"):
         module = _module_name(package, output_directory, stub_path)
         providers = _providers_in_module(inheritance, module)
         if not providers:
+            tree = ast.parse(stub_path.read_text(encoding="utf-8"), filename=str(stub_path))
+            _canonicalize_imports(tree, canonical_exports)
+            stub_path.write_text(ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8")
             continue
         tree = ast.parse(stub_path.read_text(encoding="utf-8"), filename=str(stub_path))
+        _canonicalize_imports(tree, canonical_exports)
         _project_provider_bases(tree, module, providers)
         stub_path.write_text(ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8")
-        written.append(stub_path)
-    return tuple(written)
+    return tuple(sorted(output_directory.rglob("*.pyi")))
 
 
 def _module_name(package: str, output_directory: Path, stub_path: Path) -> str:
@@ -54,6 +65,77 @@ def _providers_in_module(
             if provider.startswith(prefix):
                 providers[provider] = bases
     return providers
+
+
+def _canonical_exports(
+    package: str,
+    output_directory: Path,
+    sources: tuple[Path, ...],
+) -> dict[str, str]:
+    """Map each uniquely declared public name to its authoritative source module."""
+    candidates: dict[str, list[str]] = {}
+    for source in sources:
+        module = _module_name(package, output_directory, source)
+        tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
+        declarations = _declared_names(tree)
+        for name in _public_names(tree):
+            if name in declarations:
+                candidates.setdefault(name, []).append(module)
+    return {
+        name: canonical
+        for name, modules in candidates.items()
+        if len(modules) == 1
+        for canonical in modules
+    }
+
+
+def _declared_names(tree: ast.Module) -> set[str]:
+    names: set[str] = set()
+    for statement in tree.body:
+        match statement:
+            case ast.ClassDef(name=name) | ast.FunctionDef(name=name) | ast.AsyncFunctionDef(name=name):
+                names.add(name)
+            case ast.Assign(targets=targets):
+                names.update(target.id for target in targets if isinstance(target, ast.Name))
+            case ast.AnnAssign(target=ast.Name(id=name)):
+                names.add(name)
+    return names
+
+
+def _public_names(tree: ast.Module) -> tuple[str, ...]:
+    for statement in tree.body:
+        if not isinstance(statement, ast.Assign):
+            continue
+        if not any(isinstance(target, ast.Name) and target.id == "__all__" for target in statement.targets):
+            continue
+        if isinstance(statement.value, ast.List | ast.Tuple):
+            return tuple(
+                element.value
+                for element in statement.value.elts
+                if isinstance(element, ast.Constant) and isinstance(element.value, str)
+            )
+    return ()
+
+
+def _canonicalize_imports(
+    tree: ast.Module,
+    canonical_exports: dict[str, str],
+) -> None:
+    """Replace an imported runtime alias with its uniquely declared public owner."""
+    statements: list[ast.stmt] = []
+    for statement in tree.body:
+        if not isinstance(statement, ast.ImportFrom) or statement.module is None:
+            statements.append(statement)
+            continue
+        grouped: dict[str, list[ast.alias]] = {}
+        for alias in statement.names:
+            module = canonical_exports.get(alias.name, statement.module)
+            grouped.setdefault(module, []).append(alias)
+        statements.extend(
+            ast.ImportFrom(module=module, names=aliases, level=statement.level)
+            for module, aliases in grouped.items()
+        )
+    tree.body[:] = statements
 
 
 def _project_provider_bases(

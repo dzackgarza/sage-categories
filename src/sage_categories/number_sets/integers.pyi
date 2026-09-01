@@ -1,41 +1,32 @@
-from sage_categories.cat.category import CategoryDeclaration as CategoryDeclaration
-from sage_categories.cat.functors import FunctorDeclaration as FunctorDeclaration
-from sage_categories.sets.category import Sets_Countable_ElementType as Sets_Countable_ElementType
-from sage_categories.sets.category import Sets_Countable_MorphismType as Sets_Countable_MorphismType
-from sage_categories.sets.category import Sets_Countable_ObjectType as Sets_Countable_ObjectType
-from sage_categories.sets.elements import SetElementDeclaration as SetElementDeclaration
-from sage_categories.sets.objects import SetObjectDeclaration as SetObjectDeclaration
 from sage.rings.integer import Integer
-from sage_categories.cat.category import Category as Category
-from sage_categories.cat.functors import Fun as Fun, Functor as Functor
-from sage_categories.kernel.decisions import Decision as Decision, Unknown as Unknown
-from sage_categories.kernel.refinement import refine as refine
-from sage_categories.kernel.roles import ElementOfObject as ElementOfObject, MorphismOfCategory as MorphismOfCategory, ObjectOfCategory as ObjectOfCategory
-from sage_categories.sets.cardinals import aleph0 as aleph0
-from sage_categories.sets.category import Sets as Sets
-from sage_categories.sets.elements import Datum as Datum, SetElement as SetElement
-from sage_categories.sets.maps import Rule as Rule
-from sage_categories.sets.objects import SetObject as SetObject
+from sage_categories.cat.category import Category
+from sage_categories.cat.functors import Functor
+from sage_categories.sets.maps import Rule
+__all__ = ['IntegersCategory', 'Integers', 'ZZ']
 
-class IntegerSet(Sets_Countable_ObjectType):
-    def __call__(self, integer: int | Integer) -> SetElement: ...
+class IntegerSet:
 
-class IntegersCategory(CategoryDeclaration[[Rule], []]):
-    @property
-    def ObjectType(self) -> type[IntegerSet]: ...
-    @property
-    def ElementType(self) -> type[IntegersCategory.DeclaredElementType]: ...
-    @property
-    def MorphismType(self) -> type[IntegersCategory.DeclaredMorphismType]: ...
-    DeclaredObjectType = IntegerSet
-    class DeclaredElementType(Sets_Countable_ElementType):
+    def __call__(self, integer: int | Integer) -> IntegersCategory.ElementType:
         ...
-    class DeclaredMorphismType(Sets_Countable_MorphismType):
+
+class IntegersCategory(Category[[Rule], []]):
+    ObjectType = IntegerSet
+
+    class ElementType:
         ...
-    def __init__(self) -> None: ...
-    def structure_functors(self) -> tuple[Functor, ...]: ...
-    def __call__(self) -> SetObject: ...
 
-def Integers() -> IntegersCategory: ...
+    class MorphismType:
+        ...
 
-ZZ: SetObject
+    def __init__(self) -> None:
+        ...
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        ...
+
+    def __call__(self) -> IntegersCategory.ObjectType:
+        ...
+
+def Integers() -> IntegersCategory:
+    ...
+ZZ: IntegersCategory.ObjectType

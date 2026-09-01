@@ -1,0 +1,94 @@
+from collections.abc import Callable, Iterable
+from sage.misc.unknown import Unknown as Unknown, UnknownClass as UnknownClass
+from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.properties import PropertySubcategory
+from sympy import Predicate as Predicate
+from sympy.assumptions.assume import AppliedPredicate as AppliedPredicate
+from sympy.logic.boolalg import Boolean
+__all__ = ['Unknown', 'UnknownClass', 'Predicate', 'AppliedPredicate', 'Argument', 'Decision', 'QueryAnswer', 'Answer', 'PredicateHandler', 'QueryHandler', 'Proposition', 'predicate', 'property_predicate', 'register_handler', 'Query', 'AppliedQuery', 'conjunction', 'ask', 'assume', 'retract', 'Axiom']
+type Argument = CategoryOfCategories.ElementType | int
+type Decision = bool | UnknownClass
+type PredicateDecision = bool | None
+type QueryAnswer = CategoryOfCategories.ElementType | UnknownClass
+type Answer = Decision | CategoryOfCategories.ElementType
+type PredicateHandler = Callable[..., PredicateDecision]
+type QueryHandler = Callable[..., QueryAnswer]
+type Proposition = Boolean
+
+def predicate(name: str) -> Predicate:
+    ...
+
+def property_predicate(name: str, category: Category) -> Predicate:
+    ...
+
+def register_handler(owner: Predicate, handler: PredicateHandler) -> None:
+    ...
+
+class Query:
+
+    def __init__(self, name: str, arity: int, result_category: Category) -> None:
+        ...
+
+    def name(self) -> str:
+        ...
+
+    def register_handler(self, handler: QueryHandler) -> None:
+        ...
+
+    def result_category(self) -> Category:
+        ...
+
+    def __call__(self, *arguments: Argument) -> AppliedQuery:
+        ...
+
+class AppliedQuery:
+
+    def __init__(self, query: Query, arguments: tuple[Argument, ...]) -> None:
+        ...
+
+    def query(self) -> Query:
+        ...
+
+    def arguments(self) -> tuple[Argument, ...]:
+        ...
+
+    def __bool__(self) -> bool:
+        ...
+
+def conjunction(parts: Iterable[bool | Proposition]) -> Proposition:
+    ...
+
+def ask(application: Decision | Proposition | AppliedQuery) -> Answer:
+    ...
+
+def assume(proposition: Proposition) -> None:
+    ...
+
+def retract(proposition: Proposition) -> None:
+    ...
+
+class Axiom:
+
+    def __init__(self, full_subcategory_of: tuple[Axiom, ...]=()) -> None:
+        ...
+
+    def __set_name__(self, declaring_class: type[Category], name: str) -> None:
+        ...
+
+    def application_name(self) -> str:
+        ...
+
+    def application_owner(self) -> type[CategoryOfCategories.ElementType]:
+        ...
+
+    def __get__(self, category: Category | None, owner: type[Category]) -> Axiom | Callable[[], Category]:
+        ...
+
+    def name(self) -> str:
+        ...
+
+    def implemented_by(self, implementation: type[PropertySubcategory]) -> None:
+        ...
+
+    def subcategory(self, category: Category) -> Category:
+        ...

@@ -37,7 +37,7 @@ from sage_categories import (
     retract,
     version,
 )
-from sage_categories.algebra import Groups, Magmas, Modules, Monoids, Rings, Semirings
+from sage_categories.algebra import Algebras, Groups, Magmas, Modules, Monoids, Rings, Semirings
 from sage_categories.number_sets import NN, QQ, RR, ZZ, Primes
 from sage_categories.ordinals import OrdinalOrder, Ordinals, omega0
 from sage_categories.posets import FinitePosets, FiniteTotallyOrderedSets, Posets, TotallyOrderedSets
@@ -47,6 +47,7 @@ from sage_categories.sets.category import Sets
 __all__ = [
     "Adjunctions",
     "Aleph",
+    "Algebras",
     "Cardinal",
     "CardinalOrder",
     "Cat",

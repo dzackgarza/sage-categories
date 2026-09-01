@@ -19,6 +19,11 @@ from typing import TYPE_CHECKING, Any
 from sage_categories.algebra.monoids import Monoids
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun
+from sage_categories.kernel.refinement import refine
+from sage_categories.sets.category import Sets
+
+if TYPE_CHECKING:
+    from sage_categories.cat.functors import Functor
 
 
 @dataclass(frozen=True, eq=False)
@@ -33,13 +38,13 @@ class SemiringObjectData:
 
     @property
     def unit(self) -> Any:
-        return self.one
+        return self.zero
 
 
 class SemiringObjectDeclaration:
     """An object in ``Semirings(C)``."""
 
-    def __init__(self, data: SemiringObjectData) -> None:
+    def __init__(self, data: Any) -> None:
         self._carrier = data.carrier
         self._addition = data.addition
         self._zero = data.zero
@@ -70,16 +75,35 @@ class SemiringObjectDeclaration:
         return f"Semiring({self._carrier!r})"
 
 
+@dataclass(frozen=True, eq=False, slots=True)
+class SemiringMorphismData:
+    """A morphism in ``Semirings(C)``."""
+
+    carrier_morphism: Any
+
+
+class SemiringMorphismDeclaration:
+    """A morphism in ``Semirings(C)``."""
+
+    def __init__(self, data: SemiringMorphismData) -> None:
+        self._carrier_morphism = data.carrier_morphism
+        super().__init__()
+
+    def carrier_morphism(self) -> Any:
+        return self._carrier_morphism
+
+    def __repr__(self) -> str:
+        return f"SemiringMorphism({self.domain()!r} -> {self.codomain()!r})"
+
+
 class SemiringsCategory(Category[[], []]):
     """``Semirings(C)``: strict internal semiring objects in a category ``C`` with finite products."""
 
     ObjectType = SemiringObjectDeclaration
+    MorphismType = SemiringMorphismDeclaration
 
     class ElementType:
         """A generalized element of a semiring object."""
-
-    class MorphismType:
-        """A morphism of semirings."""
 
     def __init__(self, ambient: Category) -> None:
         self._ambient = ambient
@@ -89,14 +113,72 @@ class SemiringsCategory(Category[[], []]):
     def ambient(self) -> Category:
         return self._ambient
 
+    def additive_monoid_projection(self) -> Functor:
+        """Projection to ``Monoids(C).Additive().Commutative()``."""
+        target = Monoids(self._ambient).Additive().Commutative()
+
+        def on_object(S: SemiringsCategory.ObjectType) -> Any:
+            obj = Monoids(self._ambient)(S.carrier(), S.addition(), S.zero())
+            refine(obj, target)
+            return obj
+
+        def on_morphism(f: SemiringsCategory.MorphismType) -> Any:
+            mor = Monoids(self._ambient).construct_morphism(
+                on_object(f.domain()),
+                on_object(f.codomain()),
+                f.carrier_morphism() if hasattr(f, "carrier_morphism") else f,
+            )
+            refine(mor, target.morphism_category(1))
+            return mor
+
+        return Fun(self, target).Monomorphisms().Isofibrations()(on_object, on_morphism)
+
+    def multiplicative_monoid_projection(self) -> Functor:
+        """Projection to ``Monoids(C).Multiplicative()``."""
+        target = Monoids(self._ambient).Multiplicative()
+
+        def on_object(S: SemiringsCategory.ObjectType) -> Any:
+            obj = Monoids(self._ambient)(S.carrier(), S.multiplication(), S.one())
+            refine(obj, target)
+            return obj
+
+        def on_morphism(f: SemiringsCategory.MorphismType) -> Any:
+            mor = Monoids(self._ambient).construct_morphism(
+                on_object(f.domain()),
+                on_object(f.codomain()),
+                f.carrier_morphism() if hasattr(f, "carrier_morphism") else f,
+            )
+            refine(mor, target.morphism_category(1))
+            return mor
+
+        return Fun(self, target).Monomorphisms().Isofibrations()(on_object, on_morphism)
+
+    def product_projection(self, index: int) -> Functor:
+        """Product projections: 0 is additive monoid projection, 1 is multiplicative monoid projection."""
+        if index == 0:
+            return self.additive_monoid_projection()
+        if index == 1:
+            return self.multiplicative_monoid_projection()
+        raise IndexError(f"Semirings only has projections 0 and 1, got {index}")
+
     def structure_functors(self) -> tuple[Any, ...]:
         """Projections to the additive and multiplicative monoid categories."""
-        monoids = Monoids(self._ambient)
-        add_monoids = monoids.Additive()
-        mul_monoids = monoids.Multiplicative()
         return (
-            Fun(self, add_monoids).Monomorphisms().Isofibrations()(),
-            Fun(self, mul_monoids).Monomorphisms().Isofibrations()(),
+            self.additive_monoid_projection(),
+            self.multiplicative_monoid_projection(),
+        )
+
+    def construct_morphism(
+        self,
+        domain: SemiringsCategory.ObjectType,
+        codomain: SemiringsCategory.ObjectType,
+        carrier_morphism: Any,
+    ) -> SemiringsCategory.MorphismType:
+        return self.MorphismType(
+            self.morphism_category(1),
+            domain,
+            codomain,
+            SemiringMorphismData(carrier_morphism),
         )
 
     def __call__(
@@ -122,8 +204,10 @@ class SemiringsCategory(Category[[], []]):
 _SEMIRING_CATEGORIES: dict[Category, SemiringsCategory] = {}
 
 
-def Semirings(ambient: Category) -> SemiringsCategory:
+def Semirings(ambient: Category | None = None) -> SemiringsCategory:
     """Construct or retrieve ``Semirings(ambient)``."""
+    if ambient is None:
+        ambient = Sets()
     if ambient not in _SEMIRING_CATEGORIES:
         _SEMIRING_CATEGORIES[ambient] = SemiringsCategory(ambient)
     return _SEMIRING_CATEGORIES[ambient]

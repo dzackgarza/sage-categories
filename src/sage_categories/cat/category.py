@@ -15,6 +15,7 @@ from sage_categories.cat.equality import equality_predicate
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
 from sage_categories.cat.predicates import AppliedQuery, Axiom, Predicate, Proposition, Query, ask, assume, predicate, register_handler
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine, traces_placement
+from sage_categories.kernel.roles import Role
 
 if TYPE_CHECKING:
     from sage_categories.cat.canonical import FinitePresentedCategory
@@ -106,6 +107,10 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
 
     def __init__(self, data: None = None) -> None:
         super().__init__()
+        if hasattr(self, "_ordinal"):
+            return
+        if not any(all(role.value in vars(found) for role in Role) for found in type(self).__mro__):
+            return
         self._initialize(self.category())
 
     def __init_subclass__(cls) -> None:

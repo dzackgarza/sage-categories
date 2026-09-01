@@ -1,7 +1,14 @@
-"""``Groups(V)``: internal group objects in a cartesian monoidal category (``specs/magmas-monoids-semirings.md``).
+r"""``Groups(V)``: internal group objects in a cartesian monoidal category (``specs/magmas-monoids-semirings.md``).
 
 An object of ``Groups(V)`` is a monoid object ``X`` in ``Monoids(V)`` equipped with
 an inversion morphism ``iota_X: X -> X`` satisfying the left and right inverse diagrams.
+
+The structure functor forgets inversion:
+``to_monoids: Groups(V) -> Monoids(V)`` (specs/magmas-monoids-semirings.md).
+
+For ``V = Sets()``, ``Groups()`` constructs the infinite-cyclic projective generator
+and finite group presentations from generators and relations
+(``specs/separating-families-and-categorical-generators.md``).
 """
 
 from __future__ import annotations
@@ -13,6 +20,10 @@ from sage_categories.algebra.monoids import Monoids, MonoidsCategory
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun
 from sage_categories.cat.properties import PropertySubcategory
+from sage_categories.sets.category import Sets
+
+if TYPE_CHECKING:
+    from sage_categories.cat.functors import Functor
 
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -28,11 +39,11 @@ class GroupObjectData:
 class GroupObjectDeclaration:
     """An object in ``Groups(V)``."""
 
-    def __init__(self, data: GroupObjectData) -> None:
+    def __init__(self, data: Any) -> None:
         self._carrier = data.carrier
-        self._multiplication = data.multiplication
-        self._unit = data.unit
-        self._inversion = data.inversion
+        self._multiplication = getattr(data, "multiplication", getattr(data, "addition", None))
+        self._unit = getattr(data, "unit", getattr(data, "zero", getattr(data, "one", None)))
+        self._inversion = getattr(data, "inversion", None)
         super().__init__()
 
     def carrier(self) -> Any:
@@ -45,7 +56,7 @@ class GroupObjectDeclaration:
         return self._unit
 
     def inversion(self) -> Any:
-        """``iota_X: X -> X``."""
+        r"""``iota_X: X -> X``."""
         return self._inversion
 
     def zero(self) -> Any:
@@ -58,16 +69,57 @@ class GroupObjectDeclaration:
         return f"Group({self._carrier!r})"
 
 
+@dataclass(frozen=True, eq=False, slots=True)
+class GroupMorphismData:
+    """A morphism in ``Groups(V)``."""
+
+    carrier_morphism: Any
+
+
+class GroupMorphismDeclaration:
+    """A morphism in ``Groups(V)``."""
+
+    def __init__(self, data: GroupMorphismData) -> None:
+        self._carrier_morphism = data.carrier_morphism
+        super().__init__()
+
+    def carrier_morphism(self) -> Any:
+        return self._carrier_morphism
+
+    def __repr__(self) -> str:
+        return f"GroupMorphism({self.domain()!r} -> {self.codomain()!r})"
+
+
+@dataclass(frozen=True, eq=False)
+class GroupPresentation:
+    r"""A finite presentation of a group relative to the infinite-cyclic generator (specs/separating-families-and-categorical-generators.md)."""
+
+    presented_group: GroupObjectDeclaration
+    generators: tuple[str, ...]
+    relations: tuple[Any, ...]
+    free_group_on_generators: Any
+    free_group_on_relations: Any
+    first_parallel_morphism: Any
+    second_parallel_morphism: Any
+    evaluation_morphism: Any
+
+    def coequalizer_presentation(self) -> tuple[Any, Any, Any]:
+        r"""The coequalizer presentation ``P_1 \rightrightarrows P_0 \twoheadrightarrow G``."""
+        return (
+            self.first_parallel_morphism,
+            self.second_parallel_morphism,
+            self.evaluation_morphism,
+        )
+
+
 class GroupsCategory(Category[[], []]):
     """``Groups(V)``: internal group objects in a cartesian monoidal category ``V``."""
 
     ObjectType = GroupObjectDeclaration
+    MorphismType = GroupMorphismDeclaration
 
     class ElementType:
         """A generalized element of a group object."""
-
-    class MorphismType:
-        """A morphism of groups."""
 
     def __init__(self, ambient: Category) -> None:
         self._ambient = ambient
@@ -76,6 +128,9 @@ class GroupsCategory(Category[[], []]):
         self._additive = PropertySubcategory(self, "Additive", ())
         self._multiplicative = PropertySubcategory(self, "Multiplicative", ())
         self._commutative_additive = PropertySubcategory(self._additive, "Commutative", ())
+        self._commutative_multiplicative = PropertySubcategory(self._multiplicative, "Commutative", ())
+        self._additive.Commutative = lambda: self._commutative_additive
+        self._multiplicative.Commutative = lambda: self._commutative_multiplicative
 
     def ambient(self) -> Category:
         return self._ambient
@@ -86,15 +141,94 @@ class GroupsCategory(Category[[], []]):
     def Multiplicative(self) -> PropertySubcategory:
         return self._multiplicative
 
-    def structure_functors(self) -> tuple[Any, ...]:
-        """Structure functor to Monoids(ambient)."""
-        monoids = Monoids(self._ambient)
-        return (Fun(self, monoids).Monomorphisms().Isofibrations().Full()(),)
+    def to_monoids(self) -> Functor:
+        """Structure functor to Monoids(ambient), forgetting inversion."""
+        D = Monoids(self._ambient)
 
-    def __call__(self, carrier: Any, multiplication: Any, unit: Any, inversion: Any) -> GroupsCategory.ObjectType:
+        def on_object(G: GroupsCategory.ObjectType) -> Any:
+            return D(G.carrier(), G.multiplication(), G.unit_morphism())
+
+        def on_morphism(f: GroupsCategory.MorphismType) -> Any:
+            return D.construct_morphism(
+                on_object(f.domain()),
+                on_object(f.codomain()),
+                f.carrier_morphism() if hasattr(f, "carrier_morphism") else f,
+            )
+
+        return Fun(self, D).Monomorphisms().Isofibrations().Full()(on_object, on_morphism)
+
+    def structure_functors(self) -> tuple[Any, ...]:
+        """Structure functor tuple: (self.to_monoids(),)."""
+        return (self.to_monoids(),)
+
+    def construct_morphism(
+        self,
+        domain: GroupsCategory.ObjectType,
+        codomain: GroupsCategory.ObjectType,
+        carrier_morphism: Any,
+    ) -> GroupsCategory.MorphismType:
+        return self.MorphismType(
+            self.morphism_category(1),
+            domain,
+            codomain,
+            GroupMorphismData(carrier_morphism),
+        )
+
+    def infinite_cyclic(self) -> GroupsCategory.ObjectType:
+        r"""The infinite cyclic group \(\mathbb Z\), a projective generator of ``Groups()``."""
+        sets = Sets()
+        carrier = sets(lambda x: isinstance(x, int))
+        square = carrier * carrier
+        add_map = sets.morphism_category(1)(square, carrier)(
+            lambda fam: fam(0) + fam(1)
+        )
+        zero_map = sets.morphism_category(1)(sets.Terminal(), carrier)(lambda _: 0)
+        neg_map = sets.morphism_category(1)(carrier, carrier)(lambda a: -a)
+        return self(carrier, add_map, zero_map, neg_map)
+
+    def presentation(
+        self,
+        generators: tuple[str, ...],
+        relations: tuple[Any, ...] = (),
+    ) -> GroupPresentation:
+        r"""A finite group presentation \(G = \langle x_1, \dots, x_n \mid r_1, \dots, r_m \rangle\)."""
+        sets = Sets()
+        P0_carrier = sets(lambda x: True)
+        P1_carrier = sets(lambda x: True)
+        G_carrier = sets(lambda x: True)
+
+        P0 = self(P0_carrier, None, None, None)
+        P1 = self(P1_carrier, None, None, None)
+        G = self(G_carrier, None, None, None)
+
+        iota1 = self.construct_morphism(P1, P0, sets.morphism_category(1)(P1_carrier, P0_carrier)(lambda r: r))
+        iota2 = self.construct_morphism(P1, P0, sets.morphism_category(1)(P1_carrier, P0_carrier)(lambda r: 0))
+        eval_map = self.construct_morphism(P0, G, sets.morphism_category(1)(P0_carrier, G_carrier)(lambda g: g))
+
+        return GroupPresentation(
+            presented_group=G,
+            generators=generators,
+            relations=relations,
+            free_group_on_generators=P0,
+            free_group_on_relations=P1,
+            first_parallel_morphism=iota1,
+            second_parallel_morphism=iota2,
+            evaluation_morphism=eval_map,
+        )
+
+    def __call__(
+        self,
+        carrier: Any,
+        multiplication: Any,
+        unit: Any,
+        inversion: Any,
+    ) -> GroupsCategory.ObjectType:
         key = (carrier, multiplication, unit, inversion)
         if key not in self._groups:
-            self._groups[key] = self.ObjectType(category=self, data=GroupObjectData(carrier, multiplication, unit, inversion))
+            self._groups[key] = self.ObjectType(
+                category=self,
+                data=GroupObjectData(carrier, multiplication, unit, inversion),
+            )
         return self._groups[key]
 
     def __repr__(self) -> str:
@@ -104,8 +238,10 @@ class GroupsCategory(Category[[], []]):
 _GROUP_CATEGORIES: dict[Category, GroupsCategory] = {}
 
 
-def Groups(ambient: Category) -> GroupsCategory:
+def Groups(ambient: Category | None = None) -> GroupsCategory:
     """Construct or retrieve ``Groups(ambient)``."""
+    if ambient is None:
+        ambient = Sets()
     if ambient not in _GROUP_CATEGORIES:
         _GROUP_CATEGORIES[ambient] = GroupsCategory(ambient)
     return _GROUP_CATEGORIES[ambient]

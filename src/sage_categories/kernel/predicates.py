@@ -166,12 +166,14 @@ def register_predicate_handler(owner: Predicate, handler: PredicateHandler) -> N
 
 def register_query_handler(query: Query, handler: QueryHandler) -> None:
     """Register one exact typed-query evaluator with private Plum dispatch."""
-    domains = _handler_domains(handler)
+    from sage_categories.kernel.compiler import runtime_implementation_class
+
+    domains = tuple(runtime_implementation_class(domain) for domain in _handler_domains(handler))
     assert len(domains) == query._arity, f"{handler!r} has the wrong arity for {query!r}"
     if query not in _query_dispatchers:
         dispatcher = Dispatcher()
 
-        def evaluate(*arguments: Argument) -> QueryAnswer:
+        def evaluate(*arguments):
             raise NotFoundLookupError(f"no exact evaluator for {query!r}{arguments!r}")
 
         evaluate.__name__ = "evaluate"
@@ -179,7 +181,7 @@ def register_query_handler(query: Query, handler: QueryHandler) -> None:
         _query_dispatchers[query] = dispatcher, evaluator
     dispatcher, evaluator = _query_dispatchers[query]
 
-    def evaluate(*arguments: Argument) -> QueryAnswer:
+    def evaluate(*arguments):
         return handler(*arguments)
 
     evaluate.__name__ = "evaluate"

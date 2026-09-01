@@ -364,6 +364,15 @@ def runtime_declaration(runtime_class: type[CategoryPoint]) -> type[CategoryPoin
     return None if current is None else current.category.local_role_class(current.role)
 
 
+def runtime_implementation_class(declaration: type[CategoryPoint]) -> type[CategoryPoint]:
+    """Return the compiled runtime class for a local semantic declaration, if installed."""
+    for table in _node_runtimes.values():
+        for _, runtime in table.items():
+            if runtime_declaration(runtime.owner) is declaration:
+                return runtime.owner
+    return declaration
+
+
 def _runtime[Value: CategoryPoint, Datum](current: Node) -> _NodeRuntime[Value, Datum]:
     table = _node_runtimes[current.role]
     assert current.category in table, f"the {current.role.value} runtime of {current.category!r} is not compiled"

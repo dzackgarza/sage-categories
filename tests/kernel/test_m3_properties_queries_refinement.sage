@@ -1,8 +1,8 @@
 """R3 acceptance for properties, typed queries, refinement, pullbacks, and dispatch."""
 
-from sage.rings.integer import Integer
-
 from __future__ import annotations
+
+from sage.rings.integer import Integer
 
 from sage.misc.unknown import Unknown
 from sympy import Predicate as SymPyPredicate
@@ -10,10 +10,11 @@ from sympy.assumptions import global_assumptions
 from sympy.assumptions.assume import AppliedPredicate
 from sympy.logic.boolalg import Boolean
 
-from sage_categories.cat.category import Axiom, Cat, Category, Predicate, Query, ask, assume
+from sage_categories.cat.category import Axiom, Cat, Category, Predicate, Proposition, Query, ask, assume
 from sage_categories.cat.functors import Fun
 from sage_categories.cat.predicates import AppliedQuery
 from sage_categories.cat.properties import FullSubcategory, PredicateSubcategory
+from sage_categories.kernel.roles import CategoryPoint
 
 
 class Tiny(Category[[], []]):
@@ -40,7 +41,7 @@ class Tiny(Category[[], []]):
         super().__init__()
         self.Measure = Query("measure", 1, self)
 
-        def measure(value: Tiny.ObjectType):
+        def measure(value: CategoryPoint):
             return self(abs(value.value())) if value.value() != 99 else Unknown
 
         self.Measure.register_handler(measure)
@@ -54,10 +55,10 @@ class Tiny(Category[[], []]):
 class SpecialTiny(PredicateSubcategory):
     _base_category_class_and_axiom = (Tiny, "Special")
 
-    def _predicate(self, candidate):
-        if candidate.value() == 99:
-            return Unknown
-        return candidate.value() >= 0
+    def _predicate(self, candidate: Tiny.ObjectType, assumptions: Proposition) -> bool | None:
+        if candidate.value() == Integer(99):
+            return None
+        return bool(candidate.value() >= Integer(0))
 
 
 class TinySubcategory(FullSubcategory, Tiny):
@@ -146,13 +147,13 @@ def test_property_monomorphism_and_inverse_image_are_retained_categorical_data()
     assert value in inverse
 
     presentation = Cat().Pullbacks().presentation(inverse)
-    shape = presentation.diagram.domain()
-    assert presentation.diagram.on_object(shape(0)) is tiny
-    assert presentation.diagram.on_object(shape(1)) is property_category
-    assert presentation.transformation.component(shape(0)).domain() is inverse
-    assert presentation.transformation.component(shape(0)).codomain() is tiny
-    assert presentation.transformation.component(shape(1)).domain() is inverse
-    assert presentation.transformation.component(shape(1)).codomain() is property_category
+    shape = presentation.diagram().domain()
+    assert presentation.diagram().on_object(shape(0)) is tiny
+    assert presentation.diagram().on_object(shape(1)) is property_category
+    assert presentation.transformation().component(shape(0)).domain() is inverse
+    assert presentation.transformation().component(shape(0)).codomain() is tiny
+    assert presentation.transformation().component(shape(1)).domain() is inverse
+    assert presentation.transformation().component(shape(1)).codomain() is property_category
 
 
 def test_inherited_property_is_the_inverse_image_along_the_defining_functor() -> None:

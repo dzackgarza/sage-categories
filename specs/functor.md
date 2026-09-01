@@ -22,6 +22,8 @@ This specification supplies the categorical layers of the tower in [system.md](s
 
 - [Structure functors and inherited classes](#structure-functors-and-inherited-classes)
 
+- [Static semantic projection](#static-semantic-projection)
+
 - [Category classes and category-valued families](#category-classes-and-category-valued-families)
 
 - [Point categories and one-object diagrams](#point-categories-and-one-object-diagrams)
@@ -586,6 +588,86 @@ For a category `X`, `Fun(*, X)` models its points and `Fun(T, X)` models its gen
 An ambient functor `F: C -> D` maps objects and morphisms of `C`. Selecting `F` for compiled inheritance adds the applicable target implementation classes to the source classes. This compiler effect adds nothing to the public functor definition.
 
 The private class compiler, initialization, and cache rules live only in [resolution.md](resolution.md).
+
+## Static semantic projection
+
+The dynamic compiler has one static semantic model.  This section fixes the model that
+the compiler projector emits; it is not a second declaration language and no runtime
+class consumes it (`POL-TYPE-024` through `POL-TYPE-029`).
+
+For a category, the three associated types are its structural parameters:
+
+```python
+class Category[Obj: CategoryPoint, Elem: CategoryPoint, Mor: CategoryPoint]:
+    ObjectType: type[Obj]
+    ElementType: type[Elem]
+    MorphismType: type[Mor]
+```
+
+`Category[Obj, Elem, Mor]` denotes exactly the category whose values have those three
+category-owned types.  A declaration fixes all three parameters.  It does not replace
+one with `Cat().ElementType`, a universal morphism type, or a structural duck type
+(`POL-TYPE-018`, `POL-TYPE-019`, `POL-TYPE-027`).  A generated static declaration for a
+concrete category family binds its exact `ObjectType`, `ElementType`, and
+`MorphismType`; this includes `CategoryOfCategories`, `MorphismCategory`,
+`FunctorsCategory`, finite presented categories such as `Simplex(n)`, and pullback
+categories.
+
+The semantic signature of a functor keeps both endpoint triples:
+
+```python
+class Functor[
+    DomainCat: Category[DomainObj, DomainElem, DomainMor],
+    CodomainCat: Category[CodomainObj, CodomainElem, CodomainMor],
+]:
+    def domain(self) -> DomainCat: ...
+    def codomain(self) -> CodomainCat: ...
+    def on_object(self, member_object: DomainObj) -> CodomainObj: ...
+    def on_morphism(self, morphism: DomainMor) -> CodomainMor: ...
+```
+
+Here the type variables in each endpoint triple are determined by that endpoint
+category.  Thus the displayed form is semantic notation for
+`DomainCat.ObjectType`, `DomainCat.ElementType`, `DomainCat.MorphismType`, and their
+codomain counterparts.  The projector emits the concrete nominal spelling that the
+checker supports.  It never widens either action to `Callable[[Any], Any]`,
+`Callable[..., Any]`, a broad union, or a structural capability (`POL-FUN-001`,
+`POL-TYPE-017`, `POL-TYPE-028`, `POL-TYPE-029`).
+
+The same model fixes the morphism tower and endpoint categories:
+
+```python
+Mor(C): Category[C.MorphismType, MorElement, MorTwoMorphism]
+Mor(C)(A, B): FixedEndpointCategory[C, A, B]
+
+class FixedEndpointCategory[
+    C: Category[Obj, Elem, MorType],
+    A: Obj,
+    B: Obj,
+]:
+    def domain(self) -> A: ...
+    def codomain(self) -> B: ...
+    def __call__(self, ...) -> MorType: ...
+```
+
+The returned `MorType` is statically the morphism type of `C`; its stored domain and
+codomain are exactly `A` and `B`.  `Mor(C).ObjectType = C.MorphismType` is a
+level identity, not a wrapper, conversion, or additional class hierarchy.
+
+For a full property subcategory `P = C.P()`, the associated-type triple has the same
+semantic values as `C`.  A positive proposition evaluated by `ask()`, an assumption,
+or construction in `P` returns the identical owned value with the compiler-generated
+refined nominal type.  The generated type is the one dynamic class computed from
+`C` and `P`; it exposes both the ambient and property surfaces.  This is the static
+intersection for same-object refinement.  It is not a `Protocol`, `TypeIs` guard,
+adapter, wrapper allocation, cast, or false runtime inheritance (`POL-TYPE-020`,
+`POL-TYPE-027`; [property-refinement.md](property-refinement.md#same-object-refinement)).
+
+The compiler projector is the sole consumer of this model.  It derives every `.pyi`
+symbol from the authoritative category declarations, selected structure functors, and
+the compiler's declared inheritance computation.  No source module maintains a
+parallel hand-written type graph; generated stubs are output-only and do not become
+semantic authority (`POL-TYPE-025`, `POL-TYPE-026`).
 
 ## Category classes and category-valued families
 

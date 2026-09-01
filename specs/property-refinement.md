@@ -67,6 +67,15 @@ A positive property result refines the same owned value into its property subcat
 The value keeps its mathematical identity.
 Its strongest known category and compiled class become more specific.
 
+The static projection represents this operation with the exact compiler-generated
+nominal type for the refined category.  That type has the same associated
+`ObjectType`, `ElementType`, and `MorphismType` values as the ambient category and
+the generated dynamic class exposes both applicable method surfaces.  It is the
+static intersection of the ambient and property declarations, not a new value, a
+structural protocol, a Python boolean type guard, or a wrapper
+([functor.md](functor.md#static-semantic-projection); `POL-TYPE-018`,
+`POL-TYPE-020`, `POL-TYPE-025`, `POL-TYPE-027`).
+
 These routes use one refinement operation:
 
 - direct construction in `C.P()`;

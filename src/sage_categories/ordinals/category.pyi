@@ -1,3 +1,4 @@
+import sage_categories
 from _typeshed import Incomplete
 from collections.abc import Hashable
 from dataclasses import dataclass
@@ -15,7 +16,7 @@ class OrdinalObjectData:
     key: Key
     terms: tuple[OrdinalObject, ...]
 
-class OrdinalObjectDeclaration:
+class OrdinalObjectDeclaration(sage_categories.kernel.roles.ObjectOfCategory):
 
     def __init__(self, data: OrdinalObjectData) -> None:
         ...
@@ -74,10 +75,10 @@ less_than: Predicate
 class OrdinalsCategory(Category[[], []]):
     ObjectType = OrdinalObjectDeclaration
 
-    class ElementType:
+    class ElementType(sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.kernel.roles.MorphismOfCategory):
         ...
 
     def __init__(self) -> None:

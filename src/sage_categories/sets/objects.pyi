@@ -1,3 +1,4 @@
+import sage_categories
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from sage.structure.coerce_dict import MonoDict
@@ -11,7 +12,7 @@ __all__ = ['MembershipRule', 'element_of', 'sets_equal', 'SetObjectData']
 type MembershipRule = Callable[[Datum], Decision]
 element_of: Predicate
 
-def sets_equal(first: SetObjectDeclaration, candidate: SetObjectDeclaration, assumptions: Proposition) -> Decision:
+def sets_equal(first: CategoryOfCategories.ElementType, candidate: Any, assumptions: Proposition) -> Decision:
     ...
 
 @dataclass(eq=False, slots=True)
@@ -22,7 +23,7 @@ class SetObjectData:
     points: dict[Datum, SetElement] = field(default_factory=dict)
     rule_points: MonoDict = field(default_factory=MonoDict)
 
-class SetObjectDeclaration:
+class SetObjectDeclaration(sage_categories.kernel.roles.ObjectOfCategory):
 
     def __init__(self, data: SetObjectData) -> None:
         ...
@@ -66,7 +67,7 @@ class SetObjectDeclaration:
     def evaluation_isomorphism(self) -> SetMap:
         ...
 
-class FiniteSetObject:
+class FiniteSetObject(sage_categories.cat.properties.PropertySubcategory.ObjectType, sage_categories.sets.objects.SetObjectDeclaration, sage_categories.kernel.roles.ObjectOfCategory):
 
     def __iter__(self) -> Iterator[SetElement]:
         ...

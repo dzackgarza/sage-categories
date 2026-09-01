@@ -1,3 +1,4 @@
+import sage_categories
 from dataclasses import dataclass
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor
@@ -82,7 +83,7 @@ class ThinMorphisms(MorphismCategory[[], []]):
 
 class ThinCategory(Category[[], []]):
 
-    class ObjectType:
+    class ObjectType(sage_categories.kernel.roles.ObjectOfCategory):
 
         def __init__(self, data: ThinObjectData) -> None:
             ...
@@ -90,10 +91,10 @@ class ThinCategory(Category[[], []]):
         def point(self) -> CategoryOfCategories.ElementType:
             ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.kernel.roles.MorphismOfCategory):
         ...
 
-    class ElementType:
+    class ElementType(sage_categories.kernel.roles.ElementOfObject):
         ...
 
     def __init__(self, carrier: CategoryOfCategories.ElementType, order: Predicate) -> None:

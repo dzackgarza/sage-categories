@@ -1,3 +1,4 @@
+import sage_categories
 from _typeshed import Incomplete
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -123,7 +124,7 @@ class CardinalObjectData:
 class CardinalMorphismData:
     set_map: SetMap
 
-class CardinalObjectDeclaration:
+class CardinalObjectDeclaration(sage_categories.sets.objects.SetObjectDeclaration, sage_categories.kernel.roles.ObjectOfCategory):
 
     def __init__(self, data: CardinalObjectData) -> None:
         ...
@@ -185,7 +186,7 @@ class CardinalObjectDeclaration:
     def __gt__(self, other: CardinalObject | int) -> AppliedPredicate:
         ...
 
-class CardinalMorphismDeclaration:
+class CardinalMorphismDeclaration(sage_categories.sets.maps.SetMapDeclaration, sage_categories.kernel.roles.MorphismOfCategory):
 
     def __init__(self, data: CardinalMorphismData) -> None:
         ...
@@ -196,7 +197,7 @@ class CardinalCategory(Category[[MorphismCategory.ObjectType], []]):
     ObjectType = CardinalObjectDeclaration
     MorphismType = CardinalMorphismDeclaration
 
-    class ElementType:
+    class ElementType(sage_categories.sets.elements.SetElementDeclaration, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     def __init__(self) -> None:

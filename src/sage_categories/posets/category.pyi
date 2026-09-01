@@ -1,3 +1,4 @@
+import sage_categories
 from _typeshed import Incomplete
 from dataclasses import dataclass, field
 from sage.misc.cachefunc import cached_method
@@ -27,7 +28,7 @@ class PosetObjectData:
 class PosetMorphismData:
     set_map: SetMap
 
-class PosetDeclaration:
+class PosetDeclaration(sage_categories.sets.objects.SetObjectDeclaration, sage_categories.kernel.roles.ObjectOfCategory):
 
     def __init__(self, data: PosetObjectData) -> None:
         ...
@@ -60,7 +61,7 @@ class PosetDeclaration:
     def thin_category(self) -> ThinCategory:
         ...
 
-class PosetElementDeclaration:
+class PosetElementDeclaration(sage_categories.sets.elements.SetElementDeclaration, sage_categories.kernel.roles.ElementOfObject):
 
     def __le__(self, other: PosetElement) -> AppliedPredicate:
         ...
@@ -74,7 +75,7 @@ class PosetElementDeclaration:
     def __gt__(self, other: PosetElement) -> Proposition:
         ...
 
-class MonotoneMapDeclaration:
+class MonotoneMapDeclaration(sage_categories.sets.maps.SetMapDeclaration, sage_categories.kernel.roles.MorphismOfCategory):
 
     def __init__(self, data: PosetMorphismData) -> None:
         ...

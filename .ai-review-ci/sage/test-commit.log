@@ -15,12 +15,12 @@ No staged Markdown, JSON, or YAML files found
 ┌─────────────┐
 │ Scan Status │
 └─────────────┘
-  Scanning 167 files tracked by git with 228 Code rules:
+  Scanning 231 files tracked by git with 228 Code rules:
                                                                                                                         
   Language      Rules   Files          Origin      Rules                                                                
  ─────────────────────────────        ───────────────────                                                               
-  <multilang>       7     167          Community     160                                                                
-  python           36      79          Custom         68                                                                
+  <multilang>       7     231          Community     160                                                                
+  python           36     136          Custom         68                                                                
   yaml             11       4                                                                                           
                                                                                                                         
 No files modified by autofix.
@@ -30,23 +30,76 @@ No files modified by autofix.
 │ Scan Summary │
 └──────────────┘
 ✅ Scan completed successfully.
- • Findings: 0 (0 blocking)
+ • Findings: 7 (7 blocking)
  • Rules run: 54
- • Targets scanned: 167
+ • Targets scanned: 231
  • Parsed lines: ~100.0%
  • Scan was limited to files tracked by git
  • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
-Ran 54 rules on 167 files: 0 findings.
-(need more rules? `semgrep login` for additional free Semgrep Registry rules)
+Ran 54 rules on 231 files: 7 findings.
+                   
+                   
+┌─────────────────┐
+│ 7 Code Findings │
+└─────────────────┘
+                                          
+    src/sage_categories/kernel/compiler.py
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-dict-get-default
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          304┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+   
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          304┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+   
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-dict-get-default
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          321┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+   
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          321┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+                                                
+    src/sage_categories/kernel/stub_generator.py
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+           83┆ candidates.setdefault(name, []).append(module)
+   
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-dict-get-default
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          132┆ module = canonical_exports.get(alias.name, statement.module)
+   
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          133┆ grouped.setdefault(module, []).append(alias)
 
-If Semgrep missed a finding, please send us feedback to let us know!
-See https://semgrep.dev/docs/reporting-false-negatives/
 Common normalization completed
 =============================
 === Running: Sage syntax validation ===
 # Preparses .sage files and byte-compiles the generated Python to catch syntax errors early
-# Preparsing and compiling 5 Sage file(s)
+# Preparsing and compiling 12 Sage file(s)
+tests/algebra/test_p7_algebras.sage
+tests/algebra/test_p6_modules.sage
+tests/algebra/test_p5_algebraic_families.sage
+tests/posets/test_p4_ordered_sets.sage
 tests/test_version.sage
+tests/sets/test_p2_ordinals_cardinals.sage
+tests/sets/test_p1_minimal_sets.sage
+tests/sets/test_p3_sets_cardinality.sage
 tests/kernel/test_m1_sage_runtime.sage
 tests/kernel/test_m2_cat_core.sage
 tests/kernel/test_m3_properties_queries_refinement.sage
@@ -54,4 +107,1433 @@ tests/kernel/test_m5_vertical_witnesses.sage
 =============================
 === Running: mypy static type analysis (Sage-aware) ===
 # Type checks Python and preparsed Sage files
-# Preparsing 5 Sage file(s) for mypy
+# Preparsing 12 Sage file(s) for mypy
+src/sage_categories/cat/predicates.py:105: error: Returning Any from function declared to return "Predicate"  [no-any-return]
+src/sage_categories/cat/predicates.py:204: error: Argument 1 to "ask" has incompatible type "bool | UnknownClass | Boolean"; expected "Boolean | bool"  [arg-type]
+src/sage_categories/cat/predicates.py:305: error: Incompatible return value type (got "type[CategoryPoint]", expected "type[ElementType]")  [return-value]
+src/sage_categories/cat/predicates.py:333: error: Returning Any from function declared to return "CategoryDeclaration[Any, Any]"  [no-any-return]
+src/sage_categories/cat/predicates.py:339: error: Returning Any from function declared to return "CategoryDeclaration[Any, Any]"  [no-any-return]
+src/sage_categories/cat/predicates.py:352: error: Returning Any from function declared to return "CategoryDeclaration[Any, Any]"  [no-any-return]
+src/sage_categories/cat/points.pyi:20: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/canonical.pyi:18: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/canonical.pyi:18: note: Did you mean "List[...]"?
+src/sage_categories/cat/canonical.pyi:63: error: Argument 1 of "object_point" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/canonical.pyi:63: note: This violates the Liskov substitution principle
+src/sage_categories/cat/canonical.pyi:63: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/canonical.pyi:72: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/canonical.pyi:72: note:      Superclass:
+src/sage_categories/cat/canonical.pyi:72: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
+src/sage_categories/cat/canonical.pyi:72: note:      Subclass:
+src/sage_categories/cat/canonical.pyi:72: note:          def construct_morphism(self, domain: ObjectType, codomain: ObjectType, word: tuple[str, ...]) -> MorphismType
+src/sage_categories/cat/canonical.pyi:75: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/canonical.pyi:75: note: This violates the Liskov substitution principle
+src/sage_categories/cat/canonical.pyi:75: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/canonical.pyi:78: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/canonical.pyi:78: note: This violates the Liskov substitution principle
+src/sage_categories/cat/canonical.pyi:78: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/canonical.pyi:78: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/canonical.pyi:81: error: Argument 1 of "inverse_morphism" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/canonical.pyi:81: note: This violates the Liskov substitution principle
+src/sage_categories/cat/canonical.pyi:81: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/declarations.pyi:8: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/kernel/roles.pyi:31: error: Return type "AppliedPredicate" of "__eq__" incompatible with return type "bool" in supertype "builtins.object"  [override]
+src/sage_categories/kernel/roles.pyi:31: error: Argument 1 of "__eq__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
+src/sage_categories/kernel/roles.pyi:31: note: This violates the Liskov substitution principle
+src/sage_categories/kernel/roles.pyi:31: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/kernel/roles.pyi:31: note: It is recommended for "__eq__" to work with arbitrary objects, for example:
+src/sage_categories/kernel/roles.pyi:31: note:     def __eq__(self, other: object) -> bool:
+src/sage_categories/kernel/roles.pyi:31: note:         if not isinstance(other, CategoryPoint):
+src/sage_categories/kernel/roles.pyi:31: note:             return NotImplemented
+src/sage_categories/kernel/roles.pyi:31: note:         return <logic to compare two CategoryPoint instances>
+src/sage_categories/kernel/roles.pyi:34: error: Return type "Boolean" of "__ne__" incompatible with return type "bool" in supertype "builtins.object"  [override]
+src/sage_categories/kernel/roles.pyi:34: error: Argument 1 of "__ne__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
+src/sage_categories/kernel/roles.pyi:34: note: This violates the Liskov substitution principle
+src/sage_categories/kernel/roles.pyi:34: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/kernel/roles.pyi:60: error: Return type "AppliedPredicate" of "__eq__" incompatible with return type "bool" in supertype "builtins.object"  [override]
+src/sage_categories/kernel/roles.pyi:60: error: Argument 1 of "__eq__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
+src/sage_categories/kernel/roles.pyi:60: note: This violates the Liskov substitution principle
+src/sage_categories/kernel/roles.pyi:60: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/kernel/roles.pyi:60: note: It is recommended for "__eq__" to work with arbitrary objects, for example:
+src/sage_categories/kernel/roles.pyi:60: note:     def __eq__(self, other: object) -> bool:
+src/sage_categories/kernel/roles.pyi:60: note:         if not isinstance(other, ObjectOfCategory):
+src/sage_categories/kernel/roles.pyi:60: note:             return NotImplemented
+src/sage_categories/kernel/roles.pyi:60: note:         return <logic to compare two ObjectOfCategory instances>
+src/sage_categories/kernel/roles.pyi:63: error: Return type "Boolean" of "__ne__" incompatible with return type "bool" in supertype "builtins.object"  [override]
+src/sage_categories/kernel/roles.pyi:63: error: Argument 1 of "__ne__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
+src/sage_categories/kernel/roles.pyi:63: note: This violates the Liskov substitution principle
+src/sage_categories/kernel/roles.pyi:63: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/kernel/roles.pyi:89: error: Return type "AppliedPredicate" of "__eq__" incompatible with return type "bool" in supertype "builtins.object"  [override]
+src/sage_categories/kernel/roles.pyi:89: error: Argument 1 of "__eq__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
+src/sage_categories/kernel/roles.pyi:89: note: This violates the Liskov substitution principle
+src/sage_categories/kernel/roles.pyi:89: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/kernel/roles.pyi:89: note: It is recommended for "__eq__" to work with arbitrary objects, for example:
+src/sage_categories/kernel/roles.pyi:89: note:     def __eq__(self, other: object) -> bool:
+src/sage_categories/kernel/roles.pyi:89: note:         if not isinstance(other, MorphismOfCategory):
+src/sage_categories/kernel/roles.pyi:89: note:             return NotImplemented
+src/sage_categories/kernel/roles.pyi:89: note:         return <logic to compare two MorphismOfCategory instances>
+src/sage_categories/kernel/roles.pyi:92: error: Return type "Boolean" of "__ne__" incompatible with return type "bool" in supertype "builtins.object"  [override]
+src/sage_categories/kernel/roles.pyi:92: error: Argument 1 of "__ne__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
+src/sage_categories/kernel/roles.pyi:92: note: This violates the Liskov substitution principle
+src/sage_categories/kernel/roles.pyi:92: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/morphisms.pyi:3: error: Module "sage_categories.cat.category" has no attribute "Decision"  [attr-defined]
+src/sage_categories/cat/morphisms.pyi:3: error: Module "sage_categories.cat.category" does not explicitly export attribute "Predicate"  [attr-defined]
+src/sage_categories/cat/morphisms.pyi:3: error: Module "sage_categories.cat.category" does not explicitly export attribute "Proposition"  [attr-defined]
+src/sage_categories/cat/morphisms.pyi:32: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/morphisms.pyi:84: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/morphisms.pyi:84: note: This violates the Liskov substitution principle
+src/sage_categories/cat/morphisms.pyi:84: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/morphisms.pyi:90: error: Argument 1 of "construct_morphism" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/morphisms.pyi:90: note: This violates the Liskov substitution principle
+src/sage_categories/cat/morphisms.pyi:90: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/morphisms.pyi:90: error: Argument 2 of "construct_morphism" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/morphisms.pyi:113: error: Class sage_categories.cat.morphisms.EndomorphismsCategory has abstract attributes "_predicate"  [misc]
+src/sage_categories/cat/morphisms.pyi:113: note: If it is meant to be abstract, add 'abc.ABCMeta' as an explicit metaclass
+src/sage_categories/cat/functors.pyi:6: error: Module "sage_categories.cat.category" does not explicitly export attribute "Proposition"  [attr-defined]
+src/sage_categories/cat/functors.pyi:66: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/cat/functors.pyi:66: note:      Superclass:
+src/sage_categories/cat/functors.pyi:66: note:          def __call__(self, *arguments: ElementType) -> ElementType
+src/sage_categories/cat/functors.pyi:66: note:      Subclass:
+src/sage_categories/cat/functors.pyi:66: note:          def __call__(self, *args: Callable[[ElementType], ElementType] | Callable[[ObjectType], ObjectType], **kwargs: Callable[[ElementType], ElementType] | Callable[[ObjectType], ObjectType]) -> Any
+src/sage_categories/cat/functors.pyi:71: error: Cannot determine consistent method resolution order (MRO) for "ObjectType"  [misc]
+src/sage_categories/cat/functors.pyi:74: error: Cannot determine consistent method resolution order (MRO) for "ElementType"  [misc]
+src/sage_categories/cat/functors.pyi:77: error: Cannot determine consistent method resolution order (MRO) for "MorphismType"  [misc]
+src/sage_categories/cat/functors.pyi:80: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.NarrowedProperty"  [override]
+src/sage_categories/cat/functors.pyi:80: note:      Superclass:
+src/sage_categories/cat/functors.pyi:80: note:          def __call__(self, value: ElementType) -> ElementType
+src/sage_categories/cat/functors.pyi:80: note:      Subclass:
+src/sage_categories/cat/functors.pyi:80: note:          def __call__(self, *args: Callable[[ElementType], ElementType] | Callable[[ObjectType], ObjectType], **kwargs: Callable[[ElementType], ElementType] | Callable[[ObjectType], ObjectType]) -> Any
+src/sage_categories/cat/functors.pyi:136: error: Return type "ObjectType" of "object_at" incompatible with return type "ElementType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/functors.pyi:146: error: Incompatible types in assignment (expression has type "type[MorphismType]", base class "MorphismCategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/cat/functors.pyi:183: error: Argument 1 of "__call__" is incompatible with supertype "sage_categories.cat.morphisms.MorphismCategory"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/functors.pyi:183: note: This violates the Liskov substitution principle
+src/sage_categories/cat/functors.pyi:183: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/functors.pyi:203: error: Signature of "subcategory_monomorphism" incompatible with supertype "sage_categories.cat.morphisms.MorphismCategory"  [override]
+src/sage_categories/cat/functors.pyi:203: note:      Superclass:
+src/sage_categories/cat/functors.pyi:203: note:          def subcategory_monomorphism(self) -> Any
+src/sage_categories/cat/functors.pyi:203: note:      Subclass:
+src/sage_categories/cat/functors.pyi:203: note:          def subcategory_monomorphism(self, source: CategoryDeclaration[Any, Any], target: CategoryDeclaration[Any, Any]) -> Any
+src/sage_categories/cat/functors.pyi:203: error: Signature of "subcategory_monomorphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/functors.pyi:203: note:      Superclass:
+src/sage_categories/cat/functors.pyi:203: note:          def subcategory_monomorphism(self) -> Any
+src/sage_categories/cat/functors.pyi:203: note:      Subclass:
+src/sage_categories/cat/functors.pyi:203: note:          def subcategory_monomorphism(self, source: CategoryDeclaration[Any, Any], target: CategoryDeclaration[Any, Any]) -> Any
+src/sage_categories/cat/category.pyi:64: error: A function returning TypeVar should receive at least one argument containing the same TypeVar  [type-var]
+src/sage_categories/cat/category.pyi:359: error: Argument 1 of "construct_morphism" is incompatible with supertype "CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/category.pyi:359: note: This violates the Liskov substitution principle
+src/sage_categories/cat/category.pyi:359: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/category.pyi:359: error: Argument 2 of "construct_morphism" is incompatible with supertype "CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/category.pyi:362: error: Argument 1 of "construct_identity" is incompatible with supertype "CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/category.pyi:362: note: This violates the Liskov substitution principle
+src/sage_categories/cat/category.pyi:362: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/category.pyi:368: error: Argument 1 of "construct_two_morphism" is incompatible with supertype "CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/category.pyi:368: note: This violates the Liskov substitution principle
+src/sage_categories/cat/category.pyi:368: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/category.pyi:368: error: Argument 2 of "construct_two_morphism" is incompatible with supertype "CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/category.pyi:371: error: Argument 1 of "identity_two_morphism" is incompatible with supertype "CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/category.pyi:371: note: This violates the Liskov substitution principle
+src/sage_categories/cat/category.pyi:371: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/category.pyi:389: error: Argument 1 of "exponential" is incompatible with supertype "CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/category.pyi:389: note: This violates the Liskov substitution principle
+src/sage_categories/cat/category.pyi:389: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/category.pyi:389: error: Argument 2 of "exponential" is incompatible with supertype "CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/properties.py:148: error: Returning Any from function declared to return "Callable[[Any], ElementType]"  [no-any-return]
+src/sage_categories/cat/properties.py:193: error: Returning Any from function declared to return "ElementType"  [no-any-return]
+src/sage_categories/cat/properties.py:198: error: Returning Any from function declared to return "ObjectType"  [no-any-return]
+src/sage_categories/cat/properties.py:208: error: Returning Any from function declared to return "Boolean"  [no-any-return]
+src/sage_categories/cat/properties.py:208: error: "_SympifyWrapper" not callable  [operator]
+src/sage_categories/cat/properties.py:215: error: Argument 1 to "refine" has incompatible type "ElementType"; expected "CategoryPoint"  [arg-type]
+src/sage_categories/cat/properties.py:233: error: Returning Any from function declared to return "CategoryDeclaration[Any, Any]"  [no-any-return]
+src/sage_categories/cat/properties.py:235: error: Need type annotation for "result"  [var-annotated]
+src/sage_categories/cat/properties.py:260: error: Module "sage_categories.cat.diagrams" has no attribute "cospan_diagram"  [attr-defined]
+src/sage_categories/cat/properties.py:278: error: Function is missing a type annotation  [no-untyped-def]
+src/sage_categories/cat/properties.py:282: error: Function is missing a type annotation  [no-untyped-def]
+src/sage_categories/cat/properties.py:285: error: Function is missing a type annotation  [no-untyped-def]
+src/sage_categories/cat/properties.py:290: error: Argument 1 to "__call__" of "FunctorsCategory" has incompatible type "ElementType"; expected "CategoryDeclaration[Any, Any]"  [arg-type]
+src/sage_categories/cat/properties.py:364: error: Module "sage_categories.cat.diagrams" has no attribute "cospan_diagram"  [attr-defined]
+src/sage_categories/cat/properties.py:378: error: Function is missing a type annotation  [no-untyped-def]
+src/sage_categories/cat/properties.py:382: error: Function is missing a type annotation  [no-untyped-def]
+src/sage_categories/cat/properties.py:385: error: Function is missing a type annotation  [no-untyped-def]
+src/sage_categories/cat/properties.py:390: error: Argument 1 to "__call__" of "FunctorsCategory" has incompatible type "ElementType"; expected "CategoryDeclaration[Any, Any]"  [arg-type]
+src/sage_categories/cat/properties.py:395: error: Returning Any from function declared to return "CategoryDeclaration[MorphismData, TwoMorphismData]"  [no-any-return]
+src/sage_categories/cat/properties.py:420: error: Returning Any from function declared to return "Boolean"  [no-any-return]
+src/sage_categories/cat/properties.py:420: error: "_SympifyWrapper" not callable  [operator]
+src/sage_categories/cat/properties.py:430: error: Argument 1 to "refine" has incompatible type "ElementType"; expected "CategoryPoint"  [arg-type]
+src/sage_categories/cat/properties.py:433: error: Returning Any from function declared to return "ElementType"  [no-any-return]
+src/sage_categories/cat/properties.py:522: error: Returning Any from function declared to return "Predicate"  [no-any-return]
+src/sage_categories/cat/properties.py:548: error: "_SympifyWrapper" not callable  [operator]
+src/sage_categories/cat/properties.py:553: error: Argument 1 to "refine" has incompatible type "ElementType"; expected "CategoryPoint"  [arg-type]
+src/sage_categories/cat/properties.py:576: error: Returning Any from function declared to return "ElementType"  [no-any-return]
+src/sage_categories/cat/properties.py:579: error: Returning Any from function declared to return "ElementType"  [no-any-return]
+src/sage_categories/cat/properties.py:582: error: Returning Any from function declared to return "bool | UnknownClass"  [no-any-return]
+src/sage_categories/cat/properties.py:584: error: Signature of "__call__" incompatible with supertype "NarrowedProperty"  [override]
+src/sage_categories/cat/properties.py:584: note:      Superclass:
+src/sage_categories/cat/properties.py:584: note:          def __call__(self, value: ElementType) -> ElementType
+src/sage_categories/cat/properties.py:584: note:      Subclass:
+src/sage_categories/cat/properties.py:584: note:          def __call__(self, *args: MorphismData.args, **kwargs: MorphismData.kwargs) -> ObjectType
+src/sage_categories/cat/properties.py:596: error: Incompatible return value type (got "CategoryPoint", expected "ObjectType")  [return-value]
+src/sage_categories/cat/properties.py:599: error: Returning Any from function declared to return "ObjectType"  [no-any-return]
+src/sage_categories/cat/properties.py:605: error: Returning Any from function declared to return "ObjectType"  [no-any-return]
+src/sage_categories/cat/cat_constructions.pyi:19: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/cat_constructions.pyi:19: note: Did you mean "List[...]"?
+src/sage_categories/cat/cat_constructions.pyi:55: error: Return type "ObjectType" of "object_at" incompatible with return type "ElementType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/cat_constructions.pyi:58: error: Return type "MorphismType" of "morphism_at" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/cat_constructions.pyi:64: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/cat_constructions.pyi:64: note:      Superclass:
+src/sage_categories/cat/cat_constructions.pyi:64: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
+src/sage_categories/cat/cat_constructions.pyi:64: note:      Subclass:
+src/sage_categories/cat/cat_constructions.pyi:64: note:          def construct_morphism(self, domain: ObjectType, codomain: ObjectType, family: Callable[[ElementType], ObjectType] | tuple[ObjectType, ...]) -> MorphismType
+src/sage_categories/cat/cat_constructions.pyi:67: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/cat_constructions.pyi:67: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/cat_constructions.pyi:67: note: This violates the Liskov substitution principle
+src/sage_categories/cat/cat_constructions.pyi:67: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/cat_constructions.pyi:70: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/cat_constructions.pyi:70: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/cat_constructions.pyi:70: note: This violates the Liskov substitution principle
+src/sage_categories/cat/cat_constructions.pyi:70: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/cat_constructions.pyi:70: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/cat_constructions.pyi:91: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/cat_constructions.pyi:91: note: Did you mean "List[...]"?
+src/sage_categories/cat/cat_constructions.pyi:127: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/cat_constructions.pyi:127: note:      Superclass:
+src/sage_categories/cat/cat_constructions.pyi:127: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
+src/sage_categories/cat/cat_constructions.pyi:127: note:      Subclass:
+src/sage_categories/cat/cat_constructions.pyi:127: note:          def construct_morphism(self, domain: ObjectType, codomain: ObjectType, morphism: ObjectType) -> MorphismType
+src/sage_categories/cat/cat_constructions.pyi:130: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/cat_constructions.pyi:130: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/cat_constructions.pyi:130: note: This violates the Liskov substitution principle
+src/sage_categories/cat/cat_constructions.pyi:130: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/cat_constructions.pyi:133: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/cat_constructions.pyi:133: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/cat_constructions.pyi:133: note: This violates the Liskov substitution principle
+src/sage_categories/cat/cat_constructions.pyi:133: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/cat_constructions.pyi:133: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/shapes.pyi:12: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/shapes.pyi:40: error: Return type "ObjectType" of "object_at" incompatible with return type "ElementType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/shapes.pyi:43: error: Argument 1 of "object_point" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/shapes.pyi:43: note: This violates the Liskov substitution principle
+src/sage_categories/cat/shapes.pyi:43: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/shapes.pyi:46: error: Return type "MorphismType" of "morphism_at" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/shapes.pyi:49: error: Return type "tuple[MorphismType, ...]" of "generating_morphisms" incompatible with return type "tuple[ObjectType, ...] | UnknownClass" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/shapes.pyi:55: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/shapes.pyi:55: note:      Superclass:
+src/sage_categories/cat/shapes.pyi:55: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
+src/sage_categories/cat/shapes.pyi:55: note:      Subclass:
+src/sage_categories/cat/shapes.pyi:55: note:          def construct_morphism(self, domain: ObjectType, codomain: ObjectType) -> MorphismType
+src/sage_categories/cat/shapes.pyi:58: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/shapes.pyi:58: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/shapes.pyi:58: note: This violates the Liskov substitution principle
+src/sage_categories/cat/shapes.pyi:58: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/shapes.pyi:61: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/shapes.pyi:61: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/shapes.pyi:61: note: This violates the Liskov substitution principle
+src/sage_categories/cat/shapes.pyi:61: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/shapes.pyi:61: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/shapes.pyi:83: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/shapes.pyi:114: error: Return type "ObjectType" of "object_at" incompatible with return type "ElementType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/shapes.pyi:117: error: Argument 1 of "object_point" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/shapes.pyi:117: note: This violates the Liskov substitution principle
+src/sage_categories/cat/shapes.pyi:117: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/shapes.pyi:123: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/shapes.pyi:123: note:      Superclass:
+src/sage_categories/cat/shapes.pyi:123: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
+src/sage_categories/cat/shapes.pyi:123: note:      Subclass:
+src/sage_categories/cat/shapes.pyi:123: note:          def construct_morphism(self, domain: ObjectType, codomain: ObjectType) -> MorphismType
+src/sage_categories/cat/shapes.pyi:126: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/shapes.pyi:126: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/shapes.pyi:126: note: This violates the Liskov substitution principle
+src/sage_categories/cat/shapes.pyi:126: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/shapes.pyi:129: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/shapes.pyi:129: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/shapes.pyi:129: note: This violates the Liskov substitution principle
+src/sage_categories/cat/shapes.pyi:129: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/shapes.pyi:129: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/adjunctions.pyi:29: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/adjunctions.pyi:80: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/adjunctions.pyi:80: note:      Superclass:
+src/sage_categories/cat/adjunctions.pyi:80: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
+src/sage_categories/cat/adjunctions.pyi:80: note:      Subclass:
+src/sage_categories/cat/adjunctions.pyi:80: note:          def construct_morphism(self, source: ObjectType, target: ObjectType, forward: Any, inverse: Any) -> MorphismType
+src/sage_categories/cat/adjunctions.pyi:83: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/adjunctions.pyi:83: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/adjunctions.pyi:83: note: This violates the Liskov substitution principle
+src/sage_categories/cat/adjunctions.pyi:83: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/adjunctions.pyi:86: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/adjunctions.pyi:86: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/adjunctions.pyi:86: note: This violates the Liskov substitution principle
+src/sage_categories/cat/adjunctions.pyi:86: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/adjunctions.pyi:86: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/adjunctions.pyi:89: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/adjunctions.pyi:89: note: Did you mean "List[...]"?
+src/sage_categories/cat/adjunctions.pyi:134: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/adjunctions.pyi:134: note:      Superclass:
+src/sage_categories/cat/adjunctions.pyi:134: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
+src/sage_categories/cat/adjunctions.pyi:134: note:      Subclass:
+src/sage_categories/cat/adjunctions.pyi:134: note:          def construct_morphism(self, source: ObjectType, target: ObjectType, transformation: Any) -> MorphismType
+src/sage_categories/cat/adjunctions.pyi:137: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/adjunctions.pyi:137: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/adjunctions.pyi:137: note: This violates the Liskov substitution principle
+src/sage_categories/cat/adjunctions.pyi:137: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/adjunctions.pyi:140: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/adjunctions.pyi:140: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/adjunctions.pyi:140: note: This violates the Liskov substitution principle
+src/sage_categories/cat/adjunctions.pyi:140: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/adjunctions.pyi:140: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/cones.pyi:35: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/cones.pyi:35: note: Did you mean "List[...]"?
+src/sage_categories/cat/cones.pyi:74: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/cones.pyi:74: note:      Superclass:
+src/sage_categories/cat/cones.pyi:74: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
+src/sage_categories/cat/cones.pyi:74: note:      Subclass:
+src/sage_categories/cat/cones.pyi:74: note:          def construct_morphism(self, source: ObjectType, target: ObjectType, apex_morphism: ObjectType) -> MorphismType
+src/sage_categories/cat/cones.pyi:77: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/cones.pyi:77: note: This violates the Liskov substitution principle
+src/sage_categories/cat/cones.pyi:77: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/cones.pyi:80: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/cones.pyi:80: note: This violates the Liskov substitution principle
+src/sage_categories/cat/cones.pyi:80: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/cones.pyi:80: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/sets/elements.py:53: error: "SetElementDeclaration" has no attribute "parent"  [attr-defined]
+src/sage_categories/sets/elements.py:54: error: "SetElementDeclaration" has no attribute "defining_morphism"  [attr-defined]
+src/sage_categories/sets/elements.py:54: error: "SetElementDeclaration" has no attribute "parent"  [attr-defined]
+src/sage_categories/sets/elements.py:58: error: "SetElementDeclaration" has no attribute "defining_morphism"  [attr-defined]
+src/sage_categories/sets/elements.py:59: error: Returning Any from function declared to return "Hashable"  [no-any-return]
+src/sage_categories/sets/elements.py:59: error: "SetElementData" has no attribute "datum"  [attr-defined]
+src/sage_categories/sets/elements.py:75: error: "SetElementDeclaration" has no attribute "_is_element"  [attr-defined]
+src/sage_categories/sets/elements.py:75: error: Argument 1 to "role_of" has incompatible type "SetElementDeclaration"; expected "CategoryPoint | int"  [arg-type]
+src/sage_categories/sets/elements.py:77: error: "SetElementDeclaration" has no attribute "parent"  [attr-defined]
+src/sage_categories/sets/elements.py:80: error: "SetElementDeclaration" has no attribute "defining_morphism"  [attr-defined]
+src/sage_categories/sets/elements.py:82: error: Incompatible return value type (got "bool | UnknownClass | ElementType", expected "bool | UnknownClass")  [return-value]
+src/sage_categories/ordinals/category.py:96: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:96: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:108: error: Incompatible return value type (got "Hashable", expected "str")  [return-value]
+src/sage_categories/ordinals/category.py:114: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:114: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:119: error: Incompatible return value type (got "Hashable", expected "int")  [return-value]
+src/sage_categories/ordinals/category.py:122: error: Incompatible return value type (got "sympy.assumptions.assume.AppliedPredicate", expected "sage_categories.cat.predicates.AppliedPredicate")  [return-value]
+src/sage_categories/ordinals/category.py:124: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:124: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:151: error: OrdinalObject? has no attribute "cardinality"  [attr-defined]
+src/sage_categories/ordinals/category.py:153: error: OrdinalObject? has no attribute "cardinality"  [attr-defined]
+src/sage_categories/ordinals/category.py:155: error: OrdinalObject? has no attribute "cardinality"  [attr-defined]
+src/sage_categories/ordinals/category.py:180: error: OrdinalObject? has no attribute "_kind_"  [attr-defined]
+src/sage_categories/ordinals/category.py:184: error: OrdinalObject? has no attribute "_kind_"  [attr-defined]
+src/sage_categories/ordinals/category.py:186: error: OrdinalObject? has no attribute "_finite_value_"  [attr-defined]
+src/sage_categories/ordinals/category.py:188: error: OrdinalObject? has no attribute "cofinality"  [attr-defined]
+src/sage_categories/ordinals/category.py:191: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:191: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:194: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:194: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:197: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:197: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:200: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:200: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:203: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:203: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:206: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:206: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:209: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:209: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:212: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:212: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:213: error: Incompatible return value type (got "sympy.assumptions.assume.AppliedPredicate", expected "sage_categories.cat.predicates.AppliedPredicate")  [return-value]
+src/sage_categories/ordinals/category.py:215: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:215: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:216: error: Incompatible return value type (got "sympy.assumptions.assume.AppliedPredicate", expected "sage_categories.cat.predicates.AppliedPredicate")  [return-value]
+src/sage_categories/ordinals/category.py:218: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:218: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:219: error: Incompatible return value type (got "sympy.assumptions.assume.AppliedPredicate", expected "sage_categories.cat.predicates.AppliedPredicate")  [return-value]
+src/sage_categories/ordinals/category.py:221: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:221: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:222: error: Incompatible return value type (got "sympy.assumptions.assume.AppliedPredicate", expected "sage_categories.cat.predicates.AppliedPredicate")  [return-value]
+src/sage_categories/ordinals/category.py:252: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:264: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:264: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:267: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/ordinals/category.py:268: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/ordinals/category.py:269: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/ordinals/category.py:273: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:273: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:275: error: Unexpected keyword argument "category"  [call-arg]
+src/sage_categories/ordinals/category.py:278: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:278: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:291: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:291: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:294: error: OrdinalObject? has no attribute "_expression_key_"  [attr-defined]
+src/sage_categories/ordinals/category.py:296: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:296: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:299: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:299: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:302: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:302: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:303: error: Returning Any from function declared to return "bool"  [no-any-return]
+src/sage_categories/ordinals/category.py:303: error: OrdinalObject? has no attribute "_kind_"  [attr-defined]
+src/sage_categories/ordinals/category.py:303: error: OrdinalObject? has no attribute "_finite_value_"  [attr-defined]
+src/sage_categories/ordinals/category.py:305: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:305: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:306: error: OrdinalObject? has no attribute "_expression_key_"  [attr-defined]
+src/sage_categories/ordinals/category.py:308: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:308: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:309: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:309: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:312: error: OrdinalObject? has no attribute "_kind_"  [attr-defined]
+src/sage_categories/ordinals/category.py:314: error: OrdinalObject? has no attribute "_finite_value_"  [attr-defined]
+src/sage_categories/ordinals/category.py:316: error: OrdinalObject? has no attribute "_terms_"  [attr-defined]
+src/sage_categories/ordinals/category.py:328: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:328: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:330: error: OrdinalObject? has no attribute "_kind_"  [attr-defined]
+src/sage_categories/ordinals/category.py:332: error: OrdinalObject? has no attribute "_terms_"  [attr-defined]
+src/sage_categories/ordinals/category.py:333: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:333: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:336: error: OrdinalObject? has no attribute "_kind_"  [attr-defined]
+src/sage_categories/ordinals/category.py:338: error: OrdinalObject? has no attribute "_finite_value_"  [attr-defined]
+src/sage_categories/ordinals/category.py:340: error: OrdinalObject? has no attribute "_finite_value_"  [attr-defined]
+src/sage_categories/ordinals/category.py:342: error: OrdinalObject? has no attribute "_terms_"  [attr-defined]
+src/sage_categories/ordinals/category.py:352: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:352: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:353: error: OrdinalObject? has no attribute "_kind_"  [attr-defined]
+src/sage_categories/ordinals/category.py:354: error: OrdinalObject? has no attribute "_finite_value_"  [attr-defined]
+src/sage_categories/ordinals/category.py:361: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:361: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:362: error: OrdinalObject? has no attribute "_kind_"  [attr-defined]
+src/sage_categories/ordinals/category.py:363: error: OrdinalObject? has no attribute "_finite_value_"  [attr-defined]
+src/sage_categories/ordinals/category.py:372: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:372: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:373: error: OrdinalObject? has no attribute "_kind_"  [attr-defined]
+src/sage_categories/ordinals/category.py:374: error: OrdinalObject? has no attribute "_finite_value_"  [attr-defined]
+src/sage_categories/ordinals/category.py:446: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:446: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:451: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:451: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:456: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:456: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/cat/opposites.py:43: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/opposites.py:43: note: Did you mean "List[...]"?
+src/sage_categories/cat/opposites.py:79: error: Returning Any from function declared to return "tuple[CategoryDeclaration[Any, Any], bool]"  [no-any-return]
+src/sage_categories/cat/opposites.py:106: error: Returning Any from function declared to return "ElementType"  [no-any-return]
+src/sage_categories/cat/opposites.py:126: error: Unexpected keyword argument "category" for "MorphismType"  [call-arg]
+src/sage_categories/cat/opposites.py:126: error: Unexpected keyword argument "domain" for "MorphismType"  [call-arg]
+src/sage_categories/cat/opposites.py:126: error: Unexpected keyword argument "codomain" for "MorphismType"  [call-arg]
+src/sage_categories/cat/opposites.py:126: error: Incompatible return value type (got "MorphismType", expected "ObjectType")  [return-value]
+src/sage_categories/cat/opposites.py:145: error: "ObjectType" has no attribute "original"  [attr-defined]
+src/sage_categories/cat/opposites.py:146: error: "ObjectType" has no attribute "domain"  [attr-defined]
+src/sage_categories/cat/opposites.py:146: error: "ObjectType" has no attribute "codomain"  [attr-defined]
+src/sage_categories/cat/opposites.py:149: error: "ObjectType" has no attribute "original"  [attr-defined]
+src/sage_categories/cat/opposites.py:150: error: "ObjectType" has no attribute "codomain"  [attr-defined]
+src/sage_categories/cat/opposites.py:150: error: "ObjectType" has no attribute "domain"  [attr-defined]
+src/sage_categories/cat/opposites.py:154: error: Returning Any from function declared to return "Callable[[Any], ElementType]"  [no-any-return]
+src/sage_categories/cat/opposites.py:194: error: Need type annotation for "opposite"  [var-annotated]
+src/sage_categories/cat/opposites.py:205: error: Returning Any from function declared to return "CategoryDeclaration[Any, Any]"  [no-any-return]
+src/sage_categories/cat/opposites.py:215: error: Returning Any from function declared to return "ObjectType"  [no-any-return]
+src/sage_categories/cat/opposites.py:215: error: "ObjectType" has no attribute "original"  [attr-defined]
+src/sage_categories/cat/opposites.py:217: error: "ObjectType" has no attribute "codomain"  [attr-defined]
+src/sage_categories/cat/opposites.py:217: error: "ObjectType" has no attribute "domain"  [attr-defined]
+src/sage_categories/cat/opposites.py:222: error: "ObjectType" has no attribute "base_category"  [attr-defined]
+src/sage_categories/cat/opposites.py:237: error: Returning Any from function declared to return "ElementType"  [no-any-return]
+src/sage_categories/cat/opposites.py:249: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[CategoryDeclaration[Any, Any]], CategoryDeclaration[Any, Any]]"; expected "Callable[[ElementType], ElementType]"  [arg-type]
+src/sage_categories/cat/opposites.py:283: error: Argument 2 to "__call__" of "MorphismCategory" has incompatible type "ObjectType | Any"; expected "ElementType"  [arg-type]
+src/sage_categories/cat/opposites.py:283: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[CategoryDeclaration[Any, Any]], Any]"; expected "Callable[[ElementType], ObjectType]"  [arg-type]
+src/sage_categories/cat/opposites.py:284: error: Argument 1 to "__call__" of "MorphismCategory" has incompatible type "ObjectType | Any"; expected "ElementType"  [arg-type]
+src/sage_categories/cat/opposites.py:284: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[CategoryDeclaration[Any, Any]], Any]"; expected "Callable[[ElementType], ObjectType]"  [arg-type]
+src/sage_categories/algebra/magmas.py:59: error: Returning Any from function declared to return "ObjectType"  [no-any-return]
+src/sage_categories/algebra/magmas.py:59: error: "ElementType" has no attribute "action_morphism"  [attr-defined]
+src/sage_categories/algebra/magmas.py:99: error: "MagmaMorphismDeclaration" has no attribute "domain"  [attr-defined]
+src/sage_categories/algebra/magmas.py:99: error: "MagmaMorphismDeclaration" has no attribute "codomain"  [attr-defined]
+src/sage_categories/algebra/magmas.py:102: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/algebra/magmas.py:113: error: Variable "sage_categories.algebra.magmas.MagmasCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/magmas.py:113: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/magmas.py:115: error: Need type annotation for "_additive"  [var-annotated]
+src/sage_categories/algebra/magmas.py:116: error: Need type annotation for "_multiplicative"  [var-annotated]
+src/sage_categories/algebra/magmas.py:117: error: Need type annotation for "_commutative"  [var-annotated]
+src/sage_categories/algebra/magmas.py:139: error: Variable "sage_categories.algebra.magmas.MagmasCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/magmas.py:139: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/magmas.py:140: error: Returning Any from function declared to return "ElementType"  [no-any-return]
+src/sage_categories/algebra/magmas.py:140: error: MagmasCategory.ObjectType? has no attribute "carrier"  [attr-defined]
+src/sage_categories/algebra/magmas.py:142: error: Variable "sage_categories.algebra.magmas.MagmasCategory.MorphismType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/magmas.py:142: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/magmas.py:143: error: Returning Any from function declared to return "ObjectType"  [no-any-return]
+src/sage_categories/algebra/magmas.py:143: error: MagmasCategory.MorphismType? has no attribute "carrier_morphism"  [attr-defined]
+src/sage_categories/algebra/magmas.py:153: error: Variable "sage_categories.algebra.magmas.MagmasCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/magmas.py:153: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/magmas.py:154: error: Variable "sage_categories.algebra.magmas.MagmasCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/magmas.py:154: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/magmas.py:156: error: Variable "sage_categories.algebra.magmas.MagmasCategory.MorphismType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/magmas.py:156: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/magmas.py:157: error: Too many arguments  [call-arg]
+src/sage_categories/algebra/magmas.py:168: error: Variable "sage_categories.algebra.magmas.MagmasCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/magmas.py:168: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/magmas.py:171: error: Unexpected keyword argument "category"  [call-arg]
+src/sage_categories/algebra/magmas.py:185: error: Returning Any from function declared to return "MagmasCategory"  [no-any-return]
+src/sage_categories/cat/slices.pyi:19: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/slices.pyi:19: note: Did you mean "List[...]"?
+src/sage_categories/cat/slices.pyi:85: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/slices.pyi:85: note:      Superclass:
+src/sage_categories/cat/slices.pyi:85: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
+src/sage_categories/cat/slices.pyi:85: note:      Subclass:
+src/sage_categories/cat/slices.pyi:85: note:          def construct_morphism(self, domain: ObjectType, codomain: ObjectType, varying: ObjectType) -> MorphismType
+src/sage_categories/cat/slices.pyi:88: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/slices.pyi:88: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/slices.pyi:88: note: This violates the Liskov substitution principle
+src/sage_categories/cat/slices.pyi:88: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/slices.pyi:91: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/slices.pyi:91: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/slices.pyi:91: note: This violates the Liskov substitution principle
+src/sage_categories/cat/slices.pyi:91: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/slices.pyi:91: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/sets/objects.py:45: error: Argument 1 to "role_of" has incompatible type "ElementType"; expected "CategoryPoint | int"  [arg-type]
+src/sage_categories/sets/objects.py:45: error: "ElementType" has no attribute "parent"  [attr-defined]
+src/sage_categories/sets/objects.py:59: error: Argument 1 to "role_of" has incompatible type "ElementType"; expected "CategoryPoint | int"  [arg-type]
+src/sage_categories/sets/objects.py:61: error: "ElementType" has no attribute "_set_element_data"  [attr-defined]
+src/sage_categories/sets/objects.py:80: error: "SetObjectDeclaration" has no attribute "_is_object"  [attr-defined]
+src/sage_categories/sets/objects.py:80: error: Argument 1 to "role_of" has incompatible type "SetObjectDeclaration"; expected "CategoryPoint | int"  [arg-type]
+src/sage_categories/sets/objects.py:89: error: Incompatible return value type (got "bool | UnknownClass | ElementType", expected "bool | UnknownClass")  [return-value]
+src/sage_categories/sets/objects.py:115: error: Incompatible return value type (got "sympy.assumptions.assume.AppliedPredicate", expected "sage_categories.cat.predicates.AppliedPredicate")  [return-value]
+src/sage_categories/sets/objects.py:174: error: Argument 1 to "__call__" of "Query" has incompatible type "SetObjectDeclaration"; expected "ElementType | int"  [arg-type]
+src/sage_categories/sets/objects.py:185: error: Returning Any from function declared to return "AppliedPredicate"  [no-any-return]
+src/sage_categories/sets/objects.py:188: error: Returning Any from function declared to return "AppliedPredicate"  [no-any-return]
+src/sage_categories/sets/objects.py:191: error: Incompatible return value type (got "sympy.assumptions.assume.AppliedPredicate", expected "sage_categories.cat.predicates.AppliedPredicate")  [return-value]
+src/sage_categories/sets/objects.py:194: error: Returning Any from function declared to return "AppliedPredicate"  [no-any-return]
+src/sage_categories/sets/objects.py:197: error: Returning Any from function declared to return "AppliedPredicate"  [no-any-return]
+src/sage_categories/sets/objects.py:200: error: Returning Any from function declared to return "AppliedPredicate"  [no-any-return]
+src/sage_categories/sets/objects.py:219: error: Value of type "Hashable" is not indexable  [index]
+src/sage_categories/sets/objects.py:230: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/sets/objects.py:231: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/sets/objects.py:251: error: Argument 1 to "is_placed" has incompatible type "SetObjectDeclaration"; expected "CategoryPoint | int"  [arg-type]
+src/sage_categories/sets/maps.py:76: error: Unsupported right operand type for in ("ObjectOfCategory")  [operator]
+src/sage_categories/sets/maps.py:81: error: "ObjectOfCategory" has no attribute "point"  [attr-defined]
+src/sage_categories/sets/maps.py:112: error: Incompatible return value type (got "bool | UnknownClass | ElementType", expected "bool | UnknownClass")  [return-value]
+src/sage_categories/sets/maps.py:138: error: Incompatible return value type (got "bool | UnknownClass | ElementType", expected "bool | UnknownClass")  [return-value]
+src/sage_categories/sets/maps.py:155: error: Incompatible return value type (got "bool | UnknownClass | ElementType", expected "bool | UnknownClass")  [return-value]
+src/sage_categories/sets/maps.py:166: error: Incompatible return value type (got "bool | UnknownClass | ElementType", expected "bool | UnknownClass")  [return-value]
+src/sage_categories/sets/maps.py:168: error: Argument 1 to "conjunction" has incompatible type "tuple[bool | UnknownClass, bool | UnknownClass]"; expected "Iterable[bool | Boolean]"  [arg-type]
+src/sage_categories/sets/maps.py:169: error: Missing positional argument "assumptions" in call to "injective_on_finite_domain"  [call-arg]
+src/sage_categories/sets/maps.py:170: error: Missing positional argument "assumptions" in call to "surjective_on_finite_domain"  [call-arg]
+src/sage_categories/algebra/monoids.py:104: error: "MonoidMorphismDeclaration" has no attribute "domain"  [attr-defined]
+src/sage_categories/algebra/monoids.py:104: error: "MonoidMorphismDeclaration" has no attribute "codomain"  [attr-defined]
+src/sage_categories/algebra/monoids.py:107: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/algebra/monoids.py:118: error: Variable "sage_categories.algebra.monoids.MonoidsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/monoids.py:118: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/monoids.py:120: error: Need type annotation for "_additive"  [var-annotated]
+src/sage_categories/algebra/monoids.py:121: error: Need type annotation for "_multiplicative"  [var-annotated]
+src/sage_categories/algebra/monoids.py:122: error: Need type annotation for "_commutative_additive"  [var-annotated]
+src/sage_categories/algebra/monoids.py:123: error: Need type annotation for "_commutative_multiplicative"  [var-annotated]
+src/sage_categories/algebra/monoids.py:141: error: Variable "sage_categories.algebra.monoids.MonoidsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/monoids.py:141: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/monoids.py:141: error: Variable "sage_categories.algebra.magmas.MagmasCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/monoids.py:142: error: MonoidsCategory.ObjectType? has no attribute "carrier"  [attr-defined]
+src/sage_categories/algebra/monoids.py:142: error: MonoidsCategory.ObjectType? has no attribute "multiplication"  [attr-defined]
+src/sage_categories/algebra/monoids.py:144: error: Variable "sage_categories.algebra.monoids.MonoidsCategory.MorphismType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/monoids.py:144: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/monoids.py:146: error: MonoidsCategory.MorphismType? has no attribute "domain"  [attr-defined]
+src/sage_categories/algebra/monoids.py:147: error: MonoidsCategory.MorphismType? has no attribute "codomain"  [attr-defined]
+src/sage_categories/algebra/monoids.py:148: error: MonoidsCategory.MorphismType? has no attribute "carrier_morphism"  [attr-defined]
+src/sage_categories/algebra/monoids.py:159: error: Variable "sage_categories.algebra.monoids.MonoidsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/monoids.py:159: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/monoids.py:160: error: Variable "sage_categories.algebra.monoids.MonoidsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/monoids.py:160: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/monoids.py:162: error: Variable "sage_categories.algebra.monoids.MonoidsCategory.MorphismType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/monoids.py:162: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/monoids.py:163: error: Too many arguments  [call-arg]
+src/sage_categories/algebra/monoids.py:175: error: Variable "sage_categories.algebra.monoids.MonoidsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/monoids.py:175: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/monoids.py:178: error: Unexpected keyword argument "category"  [call-arg]
+src/sage_categories/algebra/monoids.py:192: error: Returning Any from function declared to return "MonoidsCategory"  [no-any-return]
+src/sage_categories/cat/total_cones.pyi:57: error: Return type "sage_categories.cat.total_cones.TotalConesCategory.ObjectType" of "__call__" incompatible with return type "sage_categories.cat.cat_constructions.LimitCategory.ObjectType" in supertype "sage_categories.cat.cat_constructions.LimitCategory"  [override]
+src/sage_categories/cat/total_cones.pyi:57: error: Argument 1 of "__call__" is incompatible with supertype "sage_categories.cat.cat_constructions.LimitCategory"; supertype defines the argument type as "Callable[[ElementType], ElementType] | tuple[ElementType, ...]"  [override]
+src/sage_categories/cat/total_cones.pyi:57: note: This violates the Liskov substitution principle
+src/sage_categories/cat/total_cones.pyi:57: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/total_cones.pyi:60: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.cat_constructions.LimitCategory"  [override]
+src/sage_categories/cat/total_cones.pyi:60: note:      Superclass:
+src/sage_categories/cat/total_cones.pyi:60: note:          def construct_morphism(self, domain: ObjectType, codomain: ObjectType, family: Callable[[ElementType], ObjectType] | tuple[ObjectType, ...]) -> MorphismType
+src/sage_categories/cat/total_cones.pyi:60: note:      Subclass:
+src/sage_categories/cat/total_cones.pyi:60: note:          def construct_morphism(self, source: ObjectType, target: ObjectType, apex: ObjectType, diagram: Any) -> MorphismType
+src/sage_categories/cat/total_cones.pyi:60: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/total_cones.pyi:60: note:      Superclass:
+src/sage_categories/cat/total_cones.pyi:60: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
+src/sage_categories/cat/total_cones.pyi:60: note:      Subclass:
+src/sage_categories/cat/total_cones.pyi:60: note:          def construct_morphism(self, source: ObjectType, target: ObjectType, apex: ObjectType, diagram: Any) -> MorphismType
+src/sage_categories/cat/total_cones.pyi:63: error: Return type "sage_categories.cat.total_cones.TotalConesCategory.MorphismType" of "construct_identity" incompatible with return type "sage_categories.cat.cat_constructions.LimitCategory.MorphismType" in supertype "sage_categories.cat.cat_constructions.LimitCategory"  [override]
+src/sage_categories/cat/total_cones.pyi:63: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/total_cones.pyi:63: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.cat_constructions.LimitCategory"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/total_cones.pyi:63: note: This violates the Liskov substitution principle
+src/sage_categories/cat/total_cones.pyi:63: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/total_cones.pyi:63: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/total_cones.pyi:66: error: Return type "sage_categories.cat.total_cones.TotalConesCategory.MorphismType" of "composite" incompatible with return type "sage_categories.cat.cat_constructions.LimitCategory.MorphismType" in supertype "sage_categories.cat.cat_constructions.LimitCategory"  [override]
+src/sage_categories/cat/total_cones.pyi:66: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/total_cones.pyi:66: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.cat_constructions.LimitCategory"; supertype defines the argument type as "MorphismType"  [override]
+src/sage_categories/cat/total_cones.pyi:66: note: This violates the Liskov substitution principle
+src/sage_categories/cat/total_cones.pyi:66: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/total_cones.pyi:66: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/total_cones.pyi:66: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.cat_constructions.LimitCategory"; supertype defines the argument type as "MorphismType"  [override]
+src/sage_categories/cat/total_cones.pyi:66: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/constructions.py:120: error: "ElementType" has no attribute "cardinality"  [attr-defined]
+src/sage_categories/cat/constructions.py:123: error: Unsupported operand types for <= ("int" and "UnknownClass")  [operator]
+src/sage_categories/cat/constructions.py:123: error: Unsupported operand types for <= ("int" and "ElementType")  [operator]
+src/sage_categories/cat/constructions.py:123: note: Left operand is of type "bool | UnknownClass | ElementType"
+src/sage_categories/cat/constructions.py:124: error: Incompatible return value type (got "bool | UnknownClass | ElementType | None", expected "bool | None")  [return-value]
+src/sage_categories/cat/constructions.py:135: error: "ElementType" has no attribute "category"  [attr-defined]
+src/sage_categories/cat/constructions.py:138: error: Returning Any from function declared to return "CategoryDeclaration[Any, Any]"  [no-any-return]
+src/sage_categories/cat/constructions.py:144: error: "ElementType" has no attribute "category"  [attr-defined]
+src/sage_categories/cat/constructions.py:153: error: "ElementType" has no attribute "category"  [attr-defined]
+src/sage_categories/cat/constructions.py:225: error: Returning Any from function declared to return "ElementType"  [no-any-return]
+src/sage_categories/cat/constructions.py:230: error: Returning Any from function declared to return "ObjectType"  [no-any-return]
+src/sage_categories/cat/constructions.py:249: error: Returning Any from function declared to return "ObjectType"  [no-any-return]
+src/sage_categories/cat/constructions.py:274: error: Argument 1 to "refine" has incompatible type "ElementType"; expected "CategoryPoint"  [arg-type]
+src/sage_categories/cat/constructions.py:392: error: Argument 1 to "product_presenting_family" has incompatible type "ObjectType"; expected "ElementType"  [arg-type]
+src/sage_categories/cat/constructions.py:396: error: Returning Any from function declared to return "CategoryDeclaration[Any, Any]"  [no-any-return]
+src/sage_categories/cat/constructions.py:400: error: Argument 1 to "product_presenting_family" has incompatible type "ObjectType"; expected "ElementType"  [arg-type]
+src/sage_categories/cat/constructions.py:405: error: Argument 1 to "product_presenting_family" has incompatible type "ObjectType"; expected "ElementType"  [arg-type]
+src/sage_categories/cat/constructions.py:406: error: Returning Any from function declared to return "ObjectType"  [no-any-return]
+src/sage_categories/cat/constructions.py:410: error: Argument 1 to "product_presenting_family" has incompatible type "ObjectType"; expected "ElementType"  [arg-type]
+src/sage_categories/cat/constructions.py:411: error: Returning Any from function declared to return "ObjectType"  [no-any-return]
+src/sage_categories/cat/constructions.py:482: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/cat/constructions.py:482: note:      Superclass:
+src/sage_categories/cat/constructions.py:482: note:          def __call__(self, *arguments: ElementType) -> ElementType
+src/sage_categories/cat/constructions.py:482: note:      Subclass:
+src/sage_categories/cat/constructions.py:482: note:          def __call__(self, family: Any | tuple[ElementType, ...]) -> ElementType
+src/sage_categories/cat/constructions.py:493: error: Returning Any from function declared to return "ElementType"  [no-any-return]
+src/sage_categories/cat/constructions.py:510: error: Returning Any from function declared to return "ElementType"  [no-any-return]
+src/sage_categories/cat/constructions.py:537: error: Argument 1 to "presenting_family" has incompatible type "ObjectType"; expected "ElementType"  [arg-type]
+src/sage_categories/cat/constructions.py:540: error: Returning Any from function declared to return "CategoryDeclaration[Any, Any]"  [no-any-return]
+src/sage_categories/cat/constructions.py:544: error: Argument 1 to "presenting_family" has incompatible type "ObjectType"; expected "ElementType"  [arg-type]
+src/sage_categories/cat/constructions.py:547: error: Argument 2 to "cocone" has incompatible type "ObjectType"; expected "ElementType"  [arg-type]
+src/sage_categories/cat/constructions.py:551: error: Returning Any from function declared to return "ObjectType"  [no-any-return]
+src/sage_categories/cat/constructions.py:551: error: Argument 1 to "presenting_family" has incompatible type "ObjectType"; expected "ElementType"  [arg-type]
+src/sage_categories/cat/constructions.py:555: error: Argument 1 to "presenting_family" has incompatible type "ObjectType"; expected "ElementType"  [arg-type]
+src/sage_categories/cat/constructions.py:567: error: Returning Any from function declared to return "ObjectType"  [no-any-return]
+src/sage_categories/cat/constructions.py:624: error: Argument 1 to "refine" has incompatible type "ElementType"; expected "CategoryPoint"  [arg-type]
+src/sage_categories/cat/constructions.py:631: error: Returning Any from function declared to return "bool"  [no-any-return]
+src/sage_categories/cat/constructions.py:638: error: Returning Any from function declared to return "ObjectType"  [no-any-return]
+src/sage_categories/cat/constructions.py:723: error: Argument 1 to "coproduct_presenting_family" has incompatible type "ObjectType"; expected "ElementType"  [arg-type]
+src/sage_categories/cat/constructions.py:727: error: Returning Any from function declared to return "ObjectType"  [no-any-return]
+src/sage_categories/cat/constructions.py:727: error: Argument 1 to "coproduct_presenting_family" has incompatible type "ObjectType"; expected "ElementType"  [arg-type]
+src/sage_categories/cat/constructions.py:796: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/cat/constructions.py:796: note:      Superclass:
+src/sage_categories/cat/constructions.py:796: note:          def __call__(self, *arguments: ElementType) -> ElementType
+src/sage_categories/cat/constructions.py:796: note:      Subclass:
+src/sage_categories/cat/constructions.py:796: note:          def __call__(self, family: Any | tuple[ElementType, ...]) -> ElementType
+src/sage_categories/cat/constructions.py:808: error: Returning Any from function declared to return "ElementType"  [no-any-return]
+src/sage_categories/cat/constructions.py:824: error: Returning Any from function declared to return "ElementType"  [no-any-return]
+src/sage_categories/cat/constructions.py:848: error: Returning Any from function declared to return "ObjectType"  [no-any-return]
+src/sage_categories/cat/constructions.py:891: error: Argument 1 to "__call__" of "MorphismCategory" has incompatible type "ObjectType | Any"; expected "ElementType"  [arg-type]
+src/sage_categories/cat/constructions.py:897: error: Argument 2 to "__call__" of "MorphismCategory" has incompatible type "ObjectType | Any"; expected "ElementType"  [arg-type]
+src/sage_categories/cat/constructions.py:899: error: Incompatible return value type (got "ObjectType", expected "ElementType")  [return-value]
+src/sage_categories/algebra/semirings.py:106: error: "SemiringMorphismDeclaration" has no attribute "domain"  [attr-defined]
+src/sage_categories/algebra/semirings.py:106: error: "SemiringMorphismDeclaration" has no attribute "codomain"  [attr-defined]
+src/sage_categories/algebra/semirings.py:109: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/algebra/semirings.py:120: error: Variable "sage_categories.algebra.semirings.SemiringsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/semirings.py:120: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/semirings.py:131: error: Variable "sage_categories.algebra.semirings.SemiringsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/semirings.py:131: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/semirings.py:131: error: Variable "sage_categories.algebra.monoids.MonoidsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/semirings.py:132: error: SemiringsCategory.ObjectType? has no attribute "carrier"  [attr-defined]
+src/sage_categories/algebra/semirings.py:132: error: SemiringsCategory.ObjectType? has no attribute "addition"  [attr-defined]
+src/sage_categories/algebra/semirings.py:132: error: SemiringsCategory.ObjectType? has no attribute "zero"  [attr-defined]
+src/sage_categories/algebra/semirings.py:136: error: Variable "sage_categories.algebra.semirings.SemiringsCategory.MorphismType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/semirings.py:136: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/semirings.py:138: error: SemiringsCategory.MorphismType? has no attribute "domain"  [attr-defined]
+src/sage_categories/algebra/semirings.py:139: error: SemiringsCategory.MorphismType? has no attribute "codomain"  [attr-defined]
+src/sage_categories/algebra/semirings.py:140: error: SemiringsCategory.MorphismType? has no attribute "carrier_morphism"  [attr-defined]
+src/sage_categories/algebra/semirings.py:152: error: Variable "sage_categories.algebra.semirings.SemiringsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/semirings.py:152: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/semirings.py:152: error: Variable "sage_categories.algebra.monoids.MonoidsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/semirings.py:153: error: SemiringsCategory.ObjectType? has no attribute "carrier"  [attr-defined]
+src/sage_categories/algebra/semirings.py:153: error: SemiringsCategory.ObjectType? has no attribute "multiplication"  [attr-defined]
+src/sage_categories/algebra/semirings.py:153: error: SemiringsCategory.ObjectType? has no attribute "one"  [attr-defined]
+src/sage_categories/algebra/semirings.py:157: error: Variable "sage_categories.algebra.semirings.SemiringsCategory.MorphismType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/semirings.py:157: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/semirings.py:159: error: SemiringsCategory.MorphismType? has no attribute "domain"  [attr-defined]
+src/sage_categories/algebra/semirings.py:160: error: SemiringsCategory.MorphismType? has no attribute "codomain"  [attr-defined]
+src/sage_categories/algebra/semirings.py:161: error: SemiringsCategory.MorphismType? has no attribute "carrier_morphism"  [attr-defined]
+src/sage_categories/algebra/semirings.py:185: error: Variable "sage_categories.algebra.semirings.SemiringsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/semirings.py:185: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/semirings.py:186: error: Variable "sage_categories.algebra.semirings.SemiringsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/semirings.py:186: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/semirings.py:188: error: Variable "sage_categories.algebra.semirings.SemiringsCategory.MorphismType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/semirings.py:188: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/semirings.py:189: error: Too many arguments  [call-arg]
+src/sage_categories/algebra/semirings.py:203: error: Variable "sage_categories.algebra.semirings.SemiringsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/semirings.py:203: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/semirings.py:206: error: Unexpected keyword argument "category"  [call-arg]
+src/sage_categories/algebra/semirings.py:223: error: Returning Any from function declared to return "SemiringsCategory"  [no-any-return]
+src/sage_categories/sets/power_objects.pyi:37: error: Incompatible types in assignment (expression has type "type[PowerObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/sets/power_objects.pyi:45: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/power_objects.pyi:45: note: Did you mean "List[...]"?
+src/sage_categories/sets/power_objects.pyi:48: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/sets/power_objects.pyi:48: note:      Superclass:
+src/sage_categories/sets/power_objects.pyi:48: note:          def __call__(self, *arguments: ElementType) -> ElementType
+src/sage_categories/sets/power_objects.pyi:48: note:      Subclass:
+src/sage_categories/sets/power_objects.pyi:48: note:          def __call__(self, base_set: Any) -> Any
+src/sage_categories/sets/finite_subsets.pyi:32: error: Incompatible types in assignment (expression has type "type[SizedSubsetsObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/sets/finite_subsets.pyi:40: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:40: note: Did you mean "List[...]"?
+src/sage_categories/sets/finite_subsets.pyi:46: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/sets/finite_subsets.pyi:46: note:      Superclass:
+src/sage_categories/sets/finite_subsets.pyi:46: note:          def __call__(self, *arguments: ElementType) -> ElementType
+src/sage_categories/sets/finite_subsets.pyi:46: note:      Subclass:
+src/sage_categories/sets/finite_subsets.pyi:46: note:          def __call__(self, base_set: Any) -> Any
+src/sage_categories/sets/finite_subsets.pyi:50: error: Incompatible types in assignment (expression has type "type[FiniteSubsetsObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/sets/finite_subsets.pyi:58: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:58: note: Did you mean "List[...]"?
+src/sage_categories/sets/finite_subsets.pyi:61: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/sets/finite_subsets.pyi:61: note:      Superclass:
+src/sage_categories/sets/finite_subsets.pyi:61: note:          def __call__(self, *arguments: ElementType) -> ElementType
+src/sage_categories/sets/finite_subsets.pyi:61: note:      Subclass:
+src/sage_categories/sets/finite_subsets.pyi:61: note:          def __call__(self, base_set: Any) -> Any
+src/sage_categories/sets/finite_subsets.pyi:94: error: Incompatible types in assignment (expression has type "type[FinitelySupportedFunctionsObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/sets/finite_subsets.pyi:102: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:102: note: Did you mean "List[...]"?
+src/sage_categories/sets/finite_subsets.pyi:105: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/sets/finite_subsets.pyi:105: note:      Superclass:
+src/sage_categories/sets/finite_subsets.pyi:105: note:          def __call__(self, *arguments: ElementType) -> ElementType
+src/sage_categories/sets/finite_subsets.pyi:105: note:      Subclass:
+src/sage_categories/sets/finite_subsets.pyi:105: note:          def __call__(self, index_set: Any, basepoint: Any) -> Any
+src/sage_categories/sets/subobjects.pyi:65: error: Incompatible types in assignment (expression has type "type[ChosenSubsetObject]", base class "FullSubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/sets/subobjects.pyi:73: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.pyi:73: note: Did you mean "List[...]"?
+src/sage_categories/sets/subobjects.pyi:106: error: Incompatible types in assignment (expression has type "type[ChosenQuotientObject]", base class "FullSubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/sets/subobjects.pyi:114: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.pyi:114: note: Did you mean "List[...]"?
+src/sage_categories/sets/cardinals.pyi:59: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.pyi:59: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.pyi:83: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.pyi:83: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.pyi:131: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.pyi:131: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.pyi:134: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.pyi:134: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.pyi:195: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.pyi:195: note: Did you mean "List[...]"?
+src/sage_categories/sets/cardinals.pyi:230: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.pyi:230: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.pyi:263: error: Variable "sage_categories.algebra.semirings.SemiringsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.pyi:263: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.pyi:28: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.pyi:28: note: Did you mean "List[...]"?
+src/sage_categories/sets/category.pyi:31: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/sets/category.pyi:31: note:      Superclass:
+src/sage_categories/sets/category.pyi:31: note:          def __call__(self, *arguments: ElementType) -> ElementType
+src/sage_categories/sets/category.pyi:31: note:      Subclass:
+src/sage_categories/sets/category.pyi:31: note:          def __call__(self, members: Any | Iterable[Hashable]) -> Any
+src/sage_categories/sets/category.pyi:46: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.pyi:46: note: Did you mean "List[...]"?
+src/sage_categories/sets/category.pyi:69: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.pyi:69: note: Did you mean "List[...]"?
+src/sage_categories/sets/category.pyi:75: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.pyi:75: note: Did you mean "List[...]"?
+src/sage_categories/sets/category.pyi:78: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.pyi:78: note: Did you mean "List[...]"?
+src/sage_categories/sets/category.pyi:81: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.pyi:81: note: Did you mean "List[...]"?
+src/sage_categories/posets/category.py:23: error: Module "sage_categories.sets.elements" has no attribute "SetElement"; maybe "SetElementData"?  [attr-defined]
+src/sage_categories/posets/category.py:89: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:89: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:102: error: Returning Any from function declared to return PosetElement?  [no-any-return]
+src/sage_categories/posets/category.py:104: error: Variable "sage_categories.posets.category.MonotoneMap" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:104: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:107: error: Returning Any from function declared to return MonotoneMap?  [no-any-return]
+src/sage_categories/posets/category.py:109: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:109: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:111: error: Returning Any from function declared to return Poset?  [no-any-return]
+src/sage_categories/posets/category.py:111: error: MonotoneMap? has no attribute "domain"  [attr-defined]
+src/sage_categories/posets/category.py:113: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:113: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:115: error: Incompatible return value type (got "sympy.assumptions.assume.AppliedPredicate", expected "sage_categories.cat.predicates.AppliedPredicate")  [return-value]
+src/sage_categories/posets/category.py:117: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:117: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:123: error: Returning Any from function declared to return "AppliedPredicate"  [no-any-return]
+src/sage_categories/posets/category.py:134: error: Unsupported left operand type for <= (PosetElement?)  [operator]
+src/sage_categories/posets/category.py:149: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:149: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:151: error: "PosetElementDeclaration" has no attribute "parent"  [attr-defined]
+src/sage_categories/posets/category.py:153: error: PosetElement? has no attribute "parent"  [attr-defined]
+src/sage_categories/posets/category.py:155: error: Returning Any from function declared to return "AppliedPredicate"  [no-any-return]
+src/sage_categories/posets/category.py:157: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:157: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:158: error: Returning Any from function declared to return "Boolean"  [no-any-return]
+src/sage_categories/posets/category.py:158: error: "_SympifyWrapper" not callable  [operator]
+src/sage_categories/posets/category.py:160: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:160: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:163: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:163: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:164: error: Returning Any from function declared to return "Boolean"  [no-any-return]
+src/sage_categories/posets/category.py:164: error: "_SympifyWrapper" not callable  [operator]
+src/sage_categories/posets/category.py:167: error: "PosetElementDeclaration" has no attribute "parent"  [attr-defined]
+src/sage_categories/posets/category.py:167: error: "PosetElementDeclaration" has no attribute "defining_morphism"  [attr-defined]
+src/sage_categories/posets/category.py:181: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:181: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:184: error: Returning Any from function declared to return PosetElement?  [no-any-return]
+src/sage_categories/posets/category.py:184: error: "ObjectOfCategory" has no attribute "element"  [attr-defined]
+src/sage_categories/posets/category.py:250: error: "ElementType" has no attribute "membership_proposition"  [attr-defined]
+src/sage_categories/posets/category.py:260: error: "ElementType" has no attribute "underlying_set"  [attr-defined]
+src/sage_categories/posets/category.py:275: error: Argument 2 to "Family" has incompatible type "Callable[[int], Any]"; expected "Callable[[Hashable], Hashable]"  [arg-type]
+src/sage_categories/posets/category.py:280: error: "ElementType" has no attribute "element"  [attr-defined]
+src/sage_categories/posets/category.py:299: error: "ElementType" not callable  [operator]
+src/sage_categories/posets/category.py:306: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:306: note: Did you mean "List[...]"?
+src/sage_categories/posets/category.py:317: error: Need type annotation for "_totally_ordered"  [var-annotated]
+src/sage_categories/posets/category.py:342: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:342: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:356: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:356: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:359: error: Too many arguments  [call-arg]
+src/sage_categories/posets/category.py:366: error: Incompatible return value type (got "sympy.assumptions.assume.AppliedPredicate", expected "sage_categories.cat.predicates.AppliedPredicate")  [return-value]
+src/sage_categories/posets/category.py:368: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:368: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:370: error: Incompatible return value type (got "sympy.assumptions.assume.AppliedPredicate", expected "sage_categories.cat.predicates.AppliedPredicate")  [return-value]
+src/sage_categories/posets/category.py:373: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:373: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:380: error: Returning Any from function declared to return Poset?  [no-any-return]
+src/sage_categories/posets/category.py:383: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:383: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:386: error: Returning Any from function declared to return Poset?  [no-any-return]
+src/sage_categories/posets/category.py:389: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:389: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:401: error: "Hashable" not callable  [operator]
+src/sage_categories/posets/category.py:406: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:406: note: Did you mean "List[...]"?
+src/sage_categories/posets/category.py:425: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:425: note: Did you mean "List[...]"?
+src/sage_categories/posets/category.py:430: error: Variable "sage_categories.posets.category.MonotoneMap" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:430: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:430: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:439: error: MonotoneMap? has no attribute "codomain"  [attr-defined]
+src/sage_categories/posets/category.py:440: error: Returning Any from function declared to return PosetElement?  [no-any-return]
+src/sage_categories/posets/category.py:444: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:444: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:444: error: Variable "sage_categories.posets.category.MonotoneMap" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:450: error: Argument 1 to "role_of" has incompatible type "Callable[[Hashable], Hashable] | Any"; expected "CategoryPoint | int"  [arg-type]
+src/sage_categories/posets/category.py:451: error: Item "function" of "Callable[[Hashable], Hashable] | Any" has no attribute "domain"  [union-attr]
+src/sage_categories/posets/category.py:451: error: Item "function" of "Callable[[Hashable], Hashable] | Any" has no attribute "codomain"  [union-attr]
+src/sage_categories/posets/category.py:460: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:460: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:460: error: Variable "sage_categories.posets.category.MonotoneMap" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:462: error: Too many arguments  [call-arg]
+src/sage_categories/posets/category.py:464: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:464: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:464: error: Variable "sage_categories.posets.category.MonotoneMap" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:468: error: Variable "sage_categories.posets.category.MonotoneMap" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:468: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:472: error: MonotoneMap? has no attribute "codomain"  [attr-defined]
+src/sage_categories/posets/category.py:472: error: MonotoneMap? has no attribute "domain"  [attr-defined]
+src/sage_categories/posets/category.py:475: error: MonotoneMap? has no attribute "domain"  [attr-defined]
+src/sage_categories/posets/category.py:475: error: MonotoneMap? has no attribute "codomain"  [attr-defined]
+src/sage_categories/posets/category.py:477: error: Variable "sage_categories.posets.category.MonotoneMap" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:477: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:481: error: MonotoneMap? has no attribute "codomain"  [attr-defined]
+src/sage_categories/posets/category.py:481: error: MonotoneMap? has no attribute "domain"  [attr-defined]
+src/sage_categories/posets/category.py:483: error: Returning Any from function declared to return MonotoneMap?  [no-any-return]
+src/sage_categories/posets/category.py:485: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:485: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:485: error: Variable "sage_categories.posets.category.MonotoneMap" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:496: error: "Hashable" not callable  [operator]
+src/sage_categories/posets/category.py:497: error: Poset? has no attribute "relation"  [attr-defined]
+src/sage_categories/posets/category.py:497: error: Poset? has no attribute "_pair"  [attr-defined]
+src/sage_categories/posets/category.py:506: error: "ElementType" has no attribute "parent"  [attr-defined]
+src/sage_categories/posets/category.py:516: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:516: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:523: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:523: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:531: error: "Hashable" not callable  [operator]
+src/sage_categories/posets/category.py:534: error: Poset? has no attribute "element"  [attr-defined]
+src/sage_categories/posets/category.py:535: error: Poset? has no attribute "element"  [attr-defined]
+src/sage_categories/posets/category.py:536: error: Argument 1 to "conjunction" has incompatible type "tuple[bool | UnknownClass | ElementType, bool | UnknownClass | ElementType]"; expected "Iterable[bool | Boolean]"  [arg-type]
+src/sage_categories/posets/category.py:547: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:547: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:548: error: Returning Any from function declared to return "ThinCategory"  [no-any-return]
+src/sage_categories/posets/category.py:548: error: Poset? has no attribute "thin_category"  [attr-defined]
+src/sage_categories/posets/category.py:550: error: Variable "sage_categories.posets.category.MonotoneMap" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:550: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:551: error: MonotoneMap? has no attribute "domain"  [attr-defined]
+src/sage_categories/posets/category.py:552: error: MonotoneMap? has no attribute "codomain"  [attr-defined]
+src/sage_categories/posets/category.py:555: error: "ElementType" has no attribute "point"  [attr-defined]
+src/sage_categories/posets/category.py:557: error: "ObjectType" has no attribute "domain"  [attr-defined]
+src/sage_categories/posets/category.py:558: error: "ObjectType" has no attribute "codomain"  [attr-defined]
+src/sage_categories/posets/category.py:583: error: "FinitePoset" has no attribute "covers"  [attr-defined]
+src/sage_categories/posets/category.py:588: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/posets/category.py:589: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/posets/category.py:590: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/posets/category.py:591: error: Cannot determine type of "_totally_ordered"  [has-type]
+src/sage_categories/posets/category.py:599: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:599: note: Did you mean "List[...]"?
+src/sage_categories/posets/category.py:604: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:604: note: Did you mean "List[...]"?
+src/sage_categories/posets/category.py:609: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:609: note: Did you mean "List[...]"?
+src/sage_categories/posets/category.py:611: error: Returning Any from function declared to return "CategoryDeclaration[Any, Any]"  [no-any-return]
+src/sage_categories/posets/category.py:617: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:617: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:618: error: Returning Any from function declared to return Poset?  [no-any-return]
+src/sage_categories/sets/exponentials.pyi:16: error: Return type "bool | UnknownClass" of "__eq__" incompatible with return type "bool" in supertype "builtins.object"  [override]
+src/sage_categories/posets/_finite_poset_sage.pyi:9: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/_finite_poset_sage.pyi:9: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/_finite_poset_sage.pyi:12: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/_finite_poset_sage.pyi:12: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/_finite_poset_sage.pyi:12: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/_finite_poset_sage.pyi:15: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/_finite_poset_sage.pyi:15: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/_finite_poset_sage.pyi:18: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/_finite_poset_sage.pyi:18: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/_finite_poset_sage.pyi:18: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:31: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:31: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:34: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:34: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:34: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:37: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:37: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:37: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:40: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:40: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:43: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:43: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:46: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:46: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:49: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:49: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:52: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:52: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:52: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:55: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:55: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:55: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:58: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:58: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:58: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:61: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:61: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:61: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:64: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:64: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:67: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:67: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:70: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:70: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:73: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:73: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:76: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:76: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:81: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:81: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:86: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:86: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:94: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:94: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:104: error: Incompatible types in assignment (expression has type "type[WithBottomObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/posets/finite.pyi:113: error: Incompatible types in assignment (expression has type "type[WithTopObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/posets/finite.pyi:122: error: Incompatible types in assignment (expression has type "type[RankedObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/posets/finite.pyi:131: error: Incompatible types in assignment (expression has type "type[GradedObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/posets/finite.pyi:140: error: Incompatible types in assignment (expression has type "type[FinitePosetObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/posets/finite.pyi:148: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:148: note: Did you mean "List[...]"?
+src/sage_categories/posets/finite.pyi:158: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/posets/finite.pyi:158: note:      Superclass:
+src/sage_categories/posets/finite.pyi:158: note:          def __call__(self, *arguments: ElementType) -> ElementType
+src/sage_categories/posets/finite.pyi:158: note:      Subclass:
+src/sage_categories/posets/finite.pyi:158: note:          def __call__(self, poset: Poset?) -> Poset?
+src/sage_categories/posets/finite.pyi:158: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:158: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:161: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:161: note: Did you mean "List[...]"?
+src/sage_categories/posets/finite.pyi:164: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:164: note: Did you mean "List[...]"?
+src/sage_categories/posets/finite.pyi:167: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:167: note: Did you mean "List[...]"?
+src/sage_categories/posets/finite.pyi:170: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:170: note: Did you mean "List[...]"?
+src/sage_categories/posets/finite.pyi:173: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:173: note: Did you mean "List[...]"?
+src/sage_categories/sets/products.py:97: error: Return type "bool | UnknownClass" of "__eq__" incompatible with return type "bool" in supertype "builtins.object"  [override]
+src/sage_categories/sets/products.py:109: error: Incompatible return value type (got "bool | UnknownClass | ElementType", expected "bool | UnknownClass")  [return-value]
+src/sage_categories/sets/products.py:109: error: Item "UnknownClass" of "tuple[Hashable, ...] | UnknownClass" has no attribute "__iter__" (not iterable)  [union-attr]
+src/sage_categories/sets/products.py:115: error: Item "UnknownClass" of "tuple[Hashable, ...] | UnknownClass" has no attribute "__iter__" (not iterable)  [union-attr]
+src/sage_categories/sets/products.py:121: error: Item "UnknownClass" of "tuple[Hashable, ...] | UnknownClass" has no attribute "__iter__" (not iterable)  [union-attr]
+src/sage_categories/sets/products.py:128: error: "ObjectType" has no attribute "category"  [attr-defined]
+src/sage_categories/sets/products.py:130: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "sage_categories.cat.shapes.DiscreteCategory.ObjectType"; expected "sage_categories.cat.canonical.FinitePresentedCategory.ObjectType"  [arg-type]
+src/sage_categories/sets/products.py:131: error: Returning Any from function declared to return "Hashable"  [no-any-return]
+src/sage_categories/sets/products.py:131: error: "ElementType" has no attribute "_point_datum_"  [attr-defined]
+src/sage_categories/sets/products.py:144: error: Item "UnknownClass" of "tuple[Any, ...] | UnknownClass" has no attribute "__iter__" (not iterable)  [union-attr]
+src/sage_categories/sets/products.py:157: error: Item "ElementType" of "ElementType | Any" has no attribute "cardinality"  [union-attr]
+src/sage_categories/sets/products.py:160: error: No overload variant of "__pow__" of "int" matches argument type "UnknownClass"  [operator]
+src/sage_categories/sets/products.py:160: note: Possible overload variants:
+src/sage_categories/sets/products.py:160: note:     def __pow__(self, Literal[0], /) -> Literal[1]
+src/sage_categories/sets/products.py:160: note:     def __pow__(self, Literal[0], None, /) -> Literal[1]
+src/sage_categories/sets/products.py:160: note:     def __pow__(self, Literal[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25], None = ..., /) -> int
+src/sage_categories/sets/products.py:160: note:     def __pow__(self, Literal[-1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20], None = ..., /) -> float
+src/sage_categories/sets/products.py:160: note:     def __pow__(self, int, None = ..., /) -> Any
+src/sage_categories/sets/products.py:160: note:     def __pow__(self, int, int, /) -> int
+src/sage_categories/sets/products.py:160: error: No overload variant of "__pow__" of "int" matches argument type "ElementType"  [operator]
+src/sage_categories/sets/products.py:160: error: Unsupported operand types for ** ("UnknownClass" and "bool")  [operator]
+src/sage_categories/sets/products.py:160: error: Unsupported left operand type for ** ("UnknownClass")  [operator]
+src/sage_categories/sets/products.py:160: error: Unsupported operand types for ** ("ElementType" and "bool")  [operator]
+src/sage_categories/sets/products.py:160: error: Unsupported operand types for ** ("ElementType" and "UnknownClass")  [operator]
+src/sage_categories/sets/products.py:160: note: Both left and right operands are unions
+src/sage_categories/sets/products.py:205: error: Incompatible return value type (got "bool | UnknownClass | ElementType", expected "bool | UnknownClass")  [return-value]
+src/sage_categories/sets/products.py:205: error: Argument 2 to "zip" has incompatible type "tuple[Any, ...] | UnknownClass"; expected "Iterable[Any]"  [arg-type]
+src/sage_categories/sets/products.py:209: error: Item "UnknownClass" of "tuple[Any, ...] | UnknownClass" has no attribute "__iter__" (not iterable)  [union-attr]
+src/sage_categories/sets/products.py:211: error: Item "UnknownClass" of "tuple[Any, ...] | UnknownClass" has no attribute "__iter__" (not iterable)  [union-attr]
+src/sage_categories/sets/products.py:221: error: "Hashable" not callable  [operator]
+src/sage_categories/sets/products.py:237: error: Argument 3 to "cone" has incompatible type "CachedFunction[[sage_categories.cat.shapes.DiscreteCategory.ObjectType], Any]"; expected "Callable[[ElementType], sage_categories.cat.morphisms.MorphismCategory.ObjectType]"  [arg-type]
+src/sage_categories/sets/products.py:237: note: "CachedFunction[[ObjectType], Any].__call__" has type "def __call__(self, vertex: ObjectType) -> Any"
+src/sage_categories/sets/products.py:246: error: Item "UnknownClass" of "tuple[Any, ...] | UnknownClass" has no attribute "__iter__" (not iterable)  [union-attr]
+src/sage_categories/sets/products.py:251: error: Argument 1 to "sum" has incompatible type "tuple[bool | UnknownClass | ElementType, ...]"; expected "Iterable[bool]"  [arg-type]
+src/sage_categories/sets/products.py:254: error: Item "ElementType" of "ElementType | Any" has no attribute "cardinality"  [union-attr]
+src/sage_categories/sets/products.py:257: error: Unsupported operand types for * ("bool" and "UnknownClass")  [operator]
+src/sage_categories/sets/products.py:257: error: Unsupported operand types for * ("bool" and "ElementType")  [operator]
+src/sage_categories/sets/products.py:257: error: Unsupported operand types for * ("UnknownClass" and "bool")  [operator]
+src/sage_categories/sets/products.py:257: error: Unsupported left operand type for * ("UnknownClass")  [operator]
+src/sage_categories/sets/products.py:257: error: Unsupported operand types for * ("ElementType" and "bool")  [operator]
+src/sage_categories/sets/products.py:257: error: Unsupported operand types for * ("ElementType" and "UnknownClass")  [operator]
+src/sage_categories/sets/products.py:257: note: Both left and right operands are unions
+src/sage_categories/sets/products.py:294: error: Incompatible return value type (got "bool | UnknownClass | ElementType", expected "bool | UnknownClass")  [return-value]
+src/sage_categories/sets/products.py:298: error: Item "UnknownClass" of "tuple[Any, ...] | UnknownClass" has no attribute "__iter__" (not iterable)  [union-attr]
+src/sage_categories/sets/products.py:301: error: Argument 2 to "zip" has incompatible type "tuple[Any, ...] | UnknownClass"; expected "Iterable[Any]"  [arg-type]
+src/sage_categories/sets/products.py:320: error: Value of type "Hashable" is not indexable  [index]
+src/sage_categories/sets/products.py:326: error: Argument 3 to "cocone" has incompatible type "CachedFunction[[sage_categories.cat.shapes.DiscreteCategory.ObjectType], Any]"; expected "Callable[[ElementType], sage_categories.cat.morphisms.MorphismCategory.ObjectType]"  [arg-type]
+src/sage_categories/sets/products.py:326: note: "CachedFunction[[ObjectType], Any].__call__" has type "def __call__(self, vertex: ObjectType) -> Any"
+tests/sets/test_p3_sets_cardinality.py:80: error: Unsupported operand types for < ("Integer" and "Hashable")  [operator]
+tests/sets/test_p3_sets_cardinality.py:226: error: Argument 1 to "__call__" of "CachedMethodCaller" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/sets/test_p1_minimal_sets.py:68: error: Unsupported operand types for % ("Hashable" and "Integer")  [operator]
+tests/sets/test_p1_minimal_sets.py:108: error: Unsupported operand types for % ("Hashable" and "Integer")  [operator]
+tests/sets/test_p1_minimal_sets.py:173: error: No overload variant of "__sub__" of "Integer" matches argument type "Hashable"  [operator]
+tests/sets/test_p1_minimal_sets.py:173: note: Possible overload variants:
+tests/sets/test_p1_minimal_sets.py:173: note:     def __sub__(self, int | Integer, /) -> Integer
+tests/sets/test_p1_minimal_sets.py:173: note:     def __sub__(self, Rational, /) -> Rational
+tests/sets/test_p1_minimal_sets.py:175: error: No overload variant of "__sub__" of "Integer" matches argument type "Hashable"  [operator]
+tests/sets/test_p1_minimal_sets.py:175: note: Possible overload variants:
+tests/sets/test_p1_minimal_sets.py:175: note:     def __sub__(self, int | Integer, /) -> Integer
+tests/sets/test_p1_minimal_sets.py:175: note:     def __sub__(self, Rational, /) -> Rational
+tests/sets/test_p1_minimal_sets.py:373: error: Unsupported operand types for < ("Integer" and "Hashable")  [operator]
+tests/kernel/test_m5_vertical_witnesses.py:11: error: Module "sage_categories.cat.category" has no attribute "ask"  [attr-defined]
+tests/kernel/test_m5_vertical_witnesses.py:13: error: Module "sage_categories.cat.diagrams" has no attribute "cospan_diagram"  [attr-defined]
+tests/kernel/test_m5_vertical_witnesses.py:32: error: Item "ObjectType" of "ObjectType | Any" has no attribute "is_fully_faithful"  [union-attr]
+tests/kernel/test_m5_vertical_witnesses.py:34: error: Argument 1 to "membership_proposition" of "CategoryDeclaration" has incompatible type "ObjectType | Any"; expected "ElementType"  [arg-type]
+tests/kernel/test_m5_vertical_witnesses.py:87: error: Item "ObjectType" of "ObjectType | Any" has no attribute "inverse_image"  [union-attr]
+tests/kernel/test_m5_vertical_witnesses.py:97: error: Item "ObjectType" of "ObjectType | Any" has no attribute "inverse_image"  [union-attr]
+tests/kernel/test_m5_vertical_witnesses.py:125: error: Item "ObjectType" of "ObjectType | Any" has no attribute "inverse_image"  [union-attr]
+tests/kernel/test_m3_properties_queries_refinement.py:17: error: Module "sage_categories.cat.category" has no attribute "Axiom"  [attr-defined]
+tests/kernel/test_m3_properties_queries_refinement.py:17: error: Module "sage_categories.cat.category" does not explicitly export attribute "Predicate"  [attr-defined]
+tests/kernel/test_m3_properties_queries_refinement.py:17: error: Module "sage_categories.cat.category" does not explicitly export attribute "Proposition"  [attr-defined]
+tests/kernel/test_m3_properties_queries_refinement.py:17: error: Module "sage_categories.cat.category" has no attribute "Query"  [attr-defined]
+tests/kernel/test_m3_properties_queries_refinement.py:17: error: Module "sage_categories.cat.category" has no attribute "ask"  [attr-defined]
+tests/kernel/test_m3_properties_queries_refinement.py:17: error: Module "sage_categories.cat.category" has no attribute "assume"  [attr-defined]
+tests/kernel/test_m3_properties_queries_refinement.py:24: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+tests/kernel/test_m3_properties_queries_refinement.py:49: error: "CategoryPoint" has no attribute "value"  [attr-defined]
+tests/kernel/test_m3_properties_queries_refinement.py:55: error: Unexpected keyword argument "category" for "ObjectType"  [call-arg]
+tests/kernel/test_m3_properties_queries_refinement.py:55: error: Unexpected keyword argument "data" for "ObjectType"  [call-arg]
+tests/kernel/test_m3_properties_queries_refinement.py:55: error: Incompatible types in assignment (expression has type "ObjectType", target has type "CategoryPoint")  [assignment]
+tests/kernel/test_m3_properties_queries_refinement.py:62: error: Argument 1 of "_predicate" is incompatible with supertype "sage_categories.cat.properties.PredicateSubcategory"; supertype defines the argument type as "ElementType"  [override]
+tests/kernel/test_m3_properties_queries_refinement.py:62: note: This violates the Liskov substitution principle
+tests/kernel/test_m3_properties_queries_refinement.py:62: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+tests/kernel/test_m3_properties_queries_refinement.py:68: error: Definition of "ElementType" in base class "FullSubcategory" is incompatible with definition in base class "Tiny"  [misc]
+tests/kernel/test_m3_properties_queries_refinement.py:68: error: Definition of "MorphismType" in base class "FullSubcategory" is incompatible with definition in base class "Tiny"  [misc]
+tests/kernel/test_m3_properties_queries_refinement.py:68: error: Definition of "ObjectType" in base class "FullSubcategory" is incompatible with definition in base class "Tiny"  [misc]
+tests/kernel/test_m3_properties_queries_refinement.py:75: error: "CategoryPoint" has no attribute "is_special"  [attr-defined]
+tests/kernel/test_m3_properties_queries_refinement.py:79: error: "CategoryPoint" has no attribute "is_special"  [attr-defined]
+tests/kernel/test_m3_properties_queries_refinement.py:82: error: "CategoryPoint" has no attribute "is_special"  [attr-defined]
+tests/kernel/test_m3_properties_queries_refinement.py:83: error: "CategoryPoint" has no attribute "is_special"  [attr-defined]
+tests/kernel/test_m3_properties_queries_refinement.py:84: error: "CategoryPoint" has no attribute "is_special"  [attr-defined]
+tests/kernel/test_m3_properties_queries_refinement.py:85: error: "CategoryPoint" has no attribute "is_special"  [attr-defined]
+tests/kernel/test_m3_properties_queries_refinement.py:93: error: "CategoryPoint" has no attribute "is_special"  [attr-defined]
+tests/kernel/test_m3_properties_queries_refinement.py:99: error: "CategoryPoint" has no attribute "is_special"  [attr-defined]
+tests/kernel/test_m3_properties_queries_refinement.py:115: error: "CategoryPoint" has no attribute "is_special"  [attr-defined]
+tests/kernel/test_m3_properties_queries_refinement.py:143: error: Item "ObjectType" of "ObjectType | Any" has no attribute "inverse_image"  [union-attr]
+tests/kernel/test_m2_cat_core.py:10: error: Module "sage_categories.cat.diagrams" has no attribute "cospan_diagram"  [attr-defined]
+tests/kernel/test_m2_cat_core.py:20: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/kernel/test_m2_cat_core.py:30: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/kernel/test_m2_cat_core.py:33: error: Item "ObjectType" of "ObjectType | Any" has no attribute "component"  [union-attr]
+tests/posets/test_p4_ordered_sets.py:94: error: Poset? has no attribute "is_total"  [attr-defined]
+tests/posets/test_p4_ordered_sets.py:97: error: Poset? has no attribute "carrier"  [attr-defined]
+tests/posets/test_p4_ordered_sets.py:98: error: Poset? has no attribute "element"  [attr-defined]
+tests/posets/test_p4_ordered_sets.py:99: error: Poset? has no attribute "element"  [attr-defined]
+tests/posets/test_p4_ordered_sets.py:100: error: Poset? has no attribute "element"  [attr-defined]
+tests/posets/test_p4_ordered_sets.py:142: error: Unsupported left operand type for * (Poset?)  [operator]
+tests/posets/test_p4_ordered_sets.py:171: error: Poset? has no attribute "carrier"  [attr-defined]
+tests/posets/test_p4_ordered_sets.py:174: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/posets/test_p4_ordered_sets.py:176: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/posets/test_p4_ordered_sets.py:180: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/posets/test_p4_ordered_sets.py:184: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/posets/test_p4_ordered_sets.py:198: error: Poset? has no attribute "carrier"  [attr-defined]
+tests/posets/test_p4_ordered_sets.py:224: error: Poset? has no attribute "carrier"  [attr-defined]
+tests/posets/test_p4_ordered_sets.py:225: error: Poset? has no attribute "element"  [attr-defined]
+tests/posets/test_p4_ordered_sets.py:226: error: Poset? has no attribute "element"  [attr-defined]
+tests/posets/test_p4_ordered_sets.py:227: error: Poset? has no attribute "element"  [attr-defined]
+tests/posets/test_p4_ordered_sets.py:235: error: Poset? has no attribute "height"  [attr-defined]
+tests/posets/test_p4_ordered_sets.py:236: error: Poset? has no attribute "width"  [attr-defined]
+tests/posets/test_p4_ordered_sets.py:258: error: Poset? has no attribute "sub_poset_inclusion"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:41: error: "_SyntheticCategoryOperations" has no attribute "ObjectType"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:45: error: Returning Any from function declared to return "int | Integer"  [no-any-return]
+tests/kernel/test_m1_sage_runtime.py:45: error: "CategoryPoint" has no attribute "_synthetic_label"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:48: error: "_SyntheticCategoryOperations" has no attribute "_elements"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:49: error: "_SyntheticCategoryOperations" has no attribute "_elements"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:49: error: "ObjectType" has no attribute "codomain"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:51: error: "ObjectType" has no attribute "codomain"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:53: error: Returning Any from function declared to return "CategoryPoint"  [no-any-return]
+tests/kernel/test_m1_sage_runtime.py:53: error: "_SyntheticCategoryOperations" has no attribute "_elements"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:61: error: Returning Any from function declared to return "ObjectType"  [no-any-return]
+tests/kernel/test_m1_sage_runtime.py:61: error: "_SyntheticCategoryOperations" has no attribute "MorphismType"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:62: error: "_SyntheticCategoryOperations" has no attribute "morphism_category"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:65: error: Argument 1 to "_label" of "_SyntheticCategoryOperations" has incompatible type "ElementType"; expected "CategoryPoint"  [arg-type]
+tests/kernel/test_m1_sage_runtime.py:69: error: Returning Any from function declared to return "ObjectType"  [no-any-return]
+tests/kernel/test_m1_sage_runtime.py:69: error: "_SyntheticCategoryOperations" has no attribute "MorphismType"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:70: error: "_SyntheticCategoryOperations" has no attribute "morphism_category"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:73: error: Argument 1 to "_label" of "_SyntheticCategoryOperations" has incompatible type "ElementType"; expected "CategoryPoint"  [arg-type]
+tests/kernel/test_m1_sage_runtime.py:81: error: "ObjectType" has no attribute "codomain"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:81: error: "ObjectType" has no attribute "domain"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:85: error: Definition of "element_from_defining_morphism" in base class "_SyntheticCategoryOperations" is incompatible with definition in base class "CategoryDeclaration"  [misc]
+tests/kernel/test_m1_sage_runtime.py:85: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+tests/kernel/test_m1_sage_runtime.py:88: error: Argument 1 to "append" of "list" has incompatible type "ObjectType"; expected "CategoryPoint"  [arg-type]
+tests/kernel/test_m1_sage_runtime.py:104: error: Argument 1 to "append" of "list" has incompatible type "ElementType"; expected "CategoryPoint"  [arg-type]
+tests/kernel/test_m1_sage_runtime.py:114: error: Argument 1 to "append" of "list" has incompatible type "MorphismType"; expected "CategoryPoint"  [arg-type]
+tests/kernel/test_m1_sage_runtime.py:126: error: Definition of "element_from_defining_morphism" in base class "_SyntheticCategoryOperations" is incompatible with definition in base class "CategoryDeclaration"  [misc]
+tests/kernel/test_m1_sage_runtime.py:126: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+tests/kernel/test_m1_sage_runtime.py:163: error: Argument 1 to "_label" of "_SyntheticCategoryOperations" has incompatible type "ElementType"; expected "CategoryPoint"  [arg-type]
+tests/kernel/test_m1_sage_runtime.py:166: error: "ObjectType" has no attribute "domain"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:167: error: "ObjectType" has no attribute "codomain"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:174: error: Definition of "element_from_defining_morphism" in base class "_SyntheticCategoryOperations" is incompatible with definition in base class "CategoryDeclaration"  [misc]
+tests/kernel/test_m1_sage_runtime.py:174: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+tests/kernel/test_m1_sage_runtime.py:211: error: Argument 1 to "_label" of "_SyntheticCategoryOperations" has incompatible type "ElementType"; expected "CategoryPoint"  [arg-type]
+tests/kernel/test_m1_sage_runtime.py:214: error: "ObjectType" has no attribute "domain"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:215: error: "ObjectType" has no attribute "codomain"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:222: error: Definition of "element_from_defining_morphism" in base class "_SyntheticCategoryOperations" is incompatible with definition in base class "CategoryDeclaration"  [misc]
+tests/kernel/test_m1_sage_runtime.py:222: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+tests/kernel/test_m1_sage_runtime.py:257: error: Argument 1 to "append" of "list" has incompatible type "ElementType"; expected "CategoryPoint"  [arg-type]
+tests/kernel/test_m1_sage_runtime.py:261: error: Argument 1 to "append" of "list" has incompatible type "ObjectType"; expected "CategoryPoint"  [arg-type]
+tests/kernel/test_m1_sage_runtime.py:271: error: Argument 1 to "_label" of "_SyntheticCategoryOperations" has incompatible type "ElementType"; expected "CategoryPoint"  [arg-type]
+tests/kernel/test_m1_sage_runtime.py:274: error: "ObjectType" has no attribute "domain"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:275: error: "ObjectType" has no attribute "codomain"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:279: error: Argument 1 to "_label" of "_SyntheticCategoryOperations" has incompatible type "ElementType"; expected "CategoryPoint"  [arg-type]
+tests/kernel/test_m1_sage_runtime.py:282: error: "ObjectType" has no attribute "domain"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:283: error: "ObjectType" has no attribute "codomain"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:310: error: "ElementType" has no attribute "diamond_object"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:311: error: "ElementType" has no attribute "left_object"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:312: error: "ElementType" has no attribute "right_object"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:313: error: "ElementType" has no attribute "base_object"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:317: error: "ElementType" has no attribute "preferred_object"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:323: error: "CategoryPoint" has no attribute "diamond_element"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:324: error: "CategoryPoint" has no attribute "left_element"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:325: error: "CategoryPoint" has no attribute "right_element"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:326: error: "CategoryPoint" has no attribute "base_element"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:332: error: "ObjectType" has no attribute "diamond_morphism"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:333: error: "ObjectType" has no attribute "left_morphism"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:334: error: "ObjectType" has no attribute "right_morphism"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:335: error: "ObjectType" has no attribute "base_morphism"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:358: error: "ElementType" has no attribute "left_object"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:359: error: "ObjectType" has no attribute "left_morphism"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:381: error: "ElementType" has no attribute "left_object"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:385: error: "ObjectType" has no attribute "left_morphism"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:397: error: Definition of "element_from_defining_morphism" in base class "_SyntheticCategoryOperations" is incompatible with definition in base class "CategoryDeclaration"  [misc]
+tests/kernel/test_m1_sage_runtime.py:397: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+tests/kernel/test_m1_sage_runtime.py:411: error: Argument 1 to "_label" of "_SyntheticCategoryOperations" has incompatible type "ElementType"; expected "CategoryPoint"  [arg-type]
+tests/kernel/test_m1_sage_runtime.py:411: error: "ObjectType" has no attribute "domain"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:411: error: "ObjectType" has no attribute "codomain"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:412: error: Argument 1 to "_label" of "_SyntheticCategoryOperations" has incompatible type "ElementType"; expected "CategoryPoint"  [arg-type]
+tests/kernel/test_m1_sage_runtime.py:412: error: "ObjectType" has no attribute "domain"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:412: error: "ObjectType" has no attribute "codomain"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:424: error: Need type annotation for "property_category"  [var-annotated]
+tests/kernel/test_m1_sage_runtime.py:430: error: "ElementType" has no attribute "left_object"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:431: error: "ElementType" has no attribute "right_object"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:437: error: Definition of "element_from_defining_morphism" in base class "_SyntheticCategoryOperations" is incompatible with definition in base class "CategoryDeclaration"  [misc]
+tests/kernel/test_m1_sage_runtime.py:437: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+tests/kernel/test_m1_sage_runtime.py:450: error: Definition of "element_from_defining_morphism" in base class "_SyntheticCategoryOperations" is incompatible with definition in base class "CategoryDeclaration"  [misc]
+tests/kernel/test_m1_sage_runtime.py:450: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+tests/kernel/test_m1_sage_runtime.py:463: error: Definition of "element_from_defining_morphism" in base class "_SyntheticCategoryOperations" is incompatible with definition in base class "CategoryDeclaration"  [misc]
+tests/kernel/test_m1_sage_runtime.py:463: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/algebra/modules.py:92: error: "ModuleMorphismDeclaration" has no attribute "domain"  [attr-defined]
+src/sage_categories/algebra/modules.py:92: error: "ModuleMorphismDeclaration" has no attribute "codomain"  [attr-defined]
+src/sage_categories/algebra/modules.py:108: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/algebra/modules.py:124: error: Need type annotation for "_free"  [var-annotated]
+src/sage_categories/algebra/modules.py:125: error: Need type annotation for "_finite_rank"  [var-annotated]
+src/sage_categories/algebra/modules.py:126: error: Need type annotation for "_based"  [var-annotated]
+src/sage_categories/algebra/modules.py:127: error: Need type annotation for "_free_finite_rank"  [var-annotated]
+src/sage_categories/algebra/modules.py:128: error: Need type annotation for "_free_based"  [var-annotated]
+src/sage_categories/algebra/modules.py:154: error: Variable "sage_categories.algebra.modules.ModulesCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/modules.py:154: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/modules.py:155: error: Returning Any from function declared to return "ElementType"  [no-any-return]
+src/sage_categories/algebra/modules.py:155: error: ModulesCategory.ObjectType? has no attribute "carrier"  [attr-defined]
+src/sage_categories/algebra/modules.py:157: error: Variable "sage_categories.algebra.modules.ModulesCategory.MorphismType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/modules.py:157: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/modules.py:158: error: Returning Any from function declared to return "ObjectType"  [no-any-return]
+src/sage_categories/algebra/modules.py:158: error: ModulesCategory.MorphismType? has no attribute "carrier_morphism"  [attr-defined]
+src/sage_categories/algebra/modules.py:168: error: Variable "sage_categories.algebra.modules.ModulesCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/modules.py:168: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/modules.py:169: error: Variable "sage_categories.algebra.modules.ModulesCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/modules.py:169: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/modules.py:171: error: Variable "sage_categories.algebra.modules.ModulesCategory.MorphismType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/modules.py:171: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/modules.py:172: error: Too many arguments  [call-arg]
+src/sage_categories/algebra/modules.py:179: error: Variable "sage_categories.algebra.modules.ModulesCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/modules.py:179: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/modules.py:224: error: Variable "sage_categories.algebra.modules.ModulesCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/modules.py:224: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/modules.py:226: error: Argument 1 to "role_of" has incompatible type "ObjectType | ModuleObjectDeclaration"; expected "CategoryPoint | int"  [arg-type]
+src/sage_categories/algebra/modules.py:227: error: Item "ObjectType" of "ObjectType | ModuleObjectDeclaration" has no attribute "action_morphism"  [union-attr]
+src/sage_categories/algebra/modules.py:228: error: Argument 1 to "role_of" has incompatible type "ObjectType | ModuleObjectDeclaration"; expected "CategoryPoint | int"  [arg-type]
+src/sage_categories/algebra/modules.py:230: error: Unexpected keyword argument "category"  [call-arg]
+src/sage_categories/algebra/modules.py:232: error: Item "ObjectType" of "ObjectType | ModuleObjectDeclaration" has no attribute "codomain"  [union-attr]
+src/sage_categories/algebra/modules.py:232: error: Item "ModuleObjectDeclaration" of "ObjectType | ModuleObjectDeclaration" has no attribute "codomain"  [union-attr]
+src/sage_categories/algebra/modules.py:232: error: Argument "action_morphism" to "ModuleObjectData" has incompatible type "ObjectType | ModuleObjectDeclaration"; expected "ObjectType"  [arg-type]
+src/sage_categories/algebra/modules.py:234: error: Returning Any from function declared to return ModulesCategory.ObjectType?  [no-any-return]
+src/sage_categories/algebra/modules.py:252: error: Returning Any from function declared to return "ModulesCategory"  [no-any-return]
+src/sage_categories/algebra/groups.py:96: error: "GroupMorphismDeclaration" has no attribute "domain"  [attr-defined]
+src/sage_categories/algebra/groups.py:96: error: "GroupMorphismDeclaration" has no attribute "codomain"  [attr-defined]
+src/sage_categories/algebra/groups.py:123: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/algebra/groups.py:134: error: Variable "sage_categories.algebra.groups.GroupsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/groups.py:134: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/groups.py:136: error: Need type annotation for "_additive"  [var-annotated]
+src/sage_categories/algebra/groups.py:137: error: Need type annotation for "_multiplicative"  [var-annotated]
+src/sage_categories/algebra/groups.py:138: error: Need type annotation for "_commutative_additive"  [var-annotated]
+src/sage_categories/algebra/groups.py:139: error: Need type annotation for "_commutative_multiplicative"  [var-annotated]
+src/sage_categories/algebra/groups.py:157: error: Variable "sage_categories.algebra.groups.GroupsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/groups.py:157: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/groups.py:157: error: Variable "sage_categories.algebra.monoids.MonoidsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/groups.py:158: error: GroupsCategory.ObjectType? has no attribute "carrier"  [attr-defined]
+src/sage_categories/algebra/groups.py:158: error: GroupsCategory.ObjectType? has no attribute "multiplication"  [attr-defined]
+src/sage_categories/algebra/groups.py:158: error: GroupsCategory.ObjectType? has no attribute "unit_morphism"  [attr-defined]
+src/sage_categories/algebra/groups.py:160: error: Variable "sage_categories.algebra.groups.GroupsCategory.MorphismType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/groups.py:160: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/groups.py:162: error: GroupsCategory.MorphismType? has no attribute "domain"  [attr-defined]
+src/sage_categories/algebra/groups.py:163: error: GroupsCategory.MorphismType? has no attribute "codomain"  [attr-defined]
+src/sage_categories/algebra/groups.py:164: error: GroupsCategory.MorphismType? has no attribute "carrier_morphism"  [attr-defined]
+src/sage_categories/algebra/groups.py:175: error: Variable "sage_categories.algebra.groups.GroupsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/groups.py:175: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/groups.py:176: error: Variable "sage_categories.algebra.groups.GroupsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/groups.py:176: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/groups.py:178: error: Variable "sage_categories.algebra.groups.GroupsCategory.MorphismType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/groups.py:178: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/groups.py:179: error: Too many arguments  [call-arg]
+src/sage_categories/algebra/groups.py:186: error: Variable "sage_categories.algebra.groups.GroupsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/groups.py:186: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/groups.py:209: error: Argument 2 to "__call__" of "GroupsCategory" has incompatible type "None"; expected "ObjectType"  [arg-type]
+src/sage_categories/algebra/groups.py:209: error: Argument 3 to "__call__" of "GroupsCategory" has incompatible type "None"; expected "ObjectType | ElementType"  [arg-type]
+src/sage_categories/algebra/groups.py:209: error: Argument 4 to "__call__" of "GroupsCategory" has incompatible type "None"; expected "ObjectType"  [arg-type]
+src/sage_categories/algebra/groups.py:210: error: Argument 2 to "__call__" of "GroupsCategory" has incompatible type "None"; expected "ObjectType"  [arg-type]
+src/sage_categories/algebra/groups.py:210: error: Argument 3 to "__call__" of "GroupsCategory" has incompatible type "None"; expected "ObjectType | ElementType"  [arg-type]
+src/sage_categories/algebra/groups.py:210: error: Argument 4 to "__call__" of "GroupsCategory" has incompatible type "None"; expected "ObjectType"  [arg-type]
+src/sage_categories/algebra/groups.py:211: error: Argument 2 to "__call__" of "GroupsCategory" has incompatible type "None"; expected "ObjectType"  [arg-type]
+src/sage_categories/algebra/groups.py:211: error: Argument 3 to "__call__" of "GroupsCategory" has incompatible type "None"; expected "ObjectType | ElementType"  [arg-type]
+src/sage_categories/algebra/groups.py:211: error: Argument 4 to "__call__" of "GroupsCategory" has incompatible type "None"; expected "ObjectType"  [arg-type]
+src/sage_categories/algebra/groups.py:234: error: Variable "sage_categories.algebra.groups.GroupsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/groups.py:234: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/groups.py:242: error: Unexpected keyword argument "category"  [call-arg]
+src/sage_categories/algebra/groups.py:259: error: Returning Any from function declared to return "GroupsCategory"  [no-any-return]
+src/sage_categories/algebra/algebras.py:121: error: "AlgebraMorphismDeclaration" has no attribute "domain"  [attr-defined]
+src/sage_categories/algebra/algebras.py:121: error: "AlgebraMorphismDeclaration" has no attribute "codomain"  [attr-defined]
+src/sage_categories/algebra/algebras.py:135: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/algebra/algebras.py:148: error: Variable "sage_categories.algebra.algebras.AlgebrasCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/algebras.py:148: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/algebras.py:151: error: Need type annotation for "_commutative"  [var-annotated]
+src/sage_categories/algebra/algebras.py:170: error: Variable "sage_categories.algebra.algebras.AlgebrasCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/algebras.py:170: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/algebras.py:170: error: Variable "sage_categories.algebra.monoids.MonoidsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/algebras.py:171: error: AlgebrasCategory.ObjectType? has no attribute "module"  [attr-defined]
+src/sage_categories/algebra/algebras.py:171: error: AlgebrasCategory.ObjectType? has no attribute "multiplication"  [attr-defined]
+src/sage_categories/algebra/algebras.py:171: error: AlgebrasCategory.ObjectType? has no attribute "unit_morphism"  [attr-defined]
+src/sage_categories/algebra/algebras.py:173: error: Variable "sage_categories.algebra.algebras.AlgebrasCategory.MorphismType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/algebras.py:173: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/algebras.py:175: error: AlgebrasCategory.MorphismType? has no attribute "domain"  [attr-defined]
+src/sage_categories/algebra/algebras.py:176: error: AlgebrasCategory.MorphismType? has no attribute "codomain"  [attr-defined]
+src/sage_categories/algebra/algebras.py:177: error: AlgebrasCategory.MorphismType? has no attribute "module_morphism"  [attr-defined]
+src/sage_categories/algebra/algebras.py:191: error: Variable "sage_categories.algebra.algebras.AlgebrasCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/algebras.py:191: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/algebras.py:192: error: Returning Any from function declared to return "ElementType"  [no-any-return]
+src/sage_categories/algebra/algebras.py:192: error: AlgebrasCategory.ObjectType? has no attribute "carrier"  [attr-defined]
+src/sage_categories/algebra/algebras.py:194: error: Variable "sage_categories.algebra.algebras.AlgebrasCategory.MorphismType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/algebras.py:194: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/algebras.py:195: error: Returning Any from function declared to return "ObjectType"  [no-any-return]
+src/sage_categories/algebra/algebras.py:195: error: AlgebrasCategory.MorphismType? has no attribute "module_morphism"  [attr-defined]
+src/sage_categories/algebra/algebras.py:201: error: Variable "sage_categories.algebra.algebras.AlgebrasCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/algebras.py:201: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/algebras.py:202: error: Variable "sage_categories.algebra.algebras.AlgebrasCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/algebras.py:202: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/algebras.py:204: error: Variable "sage_categories.algebra.algebras.AlgebrasCategory.MorphismType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/algebras.py:204: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/algebras.py:205: error: Too many arguments  [call-arg]
+src/sage_categories/algebra/algebras.py:225: error: Argument 2 to "__call__" of "AlgebrasCategory" has incompatible type "None"; expected "ObjectType"  [arg-type]
+src/sage_categories/algebra/algebras.py:225: error: Argument 3 to "__call__" of "AlgebrasCategory" has incompatible type "None"; expected "ObjectType"  [arg-type]
+src/sage_categories/algebra/algebras.py:226: error: Argument 2 to "__call__" of "AlgebrasCategory" has incompatible type "None"; expected "ObjectType"  [arg-type]
+src/sage_categories/algebra/algebras.py:226: error: Argument 3 to "__call__" of "AlgebrasCategory" has incompatible type "None"; expected "ObjectType"  [arg-type]
+src/sage_categories/algebra/algebras.py:248: error: Variable "sage_categories.algebra.algebras.AlgebrasCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/algebras.py:248: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/algebras.py:251: error: Unexpected keyword argument "category"  [call-arg]
+src/sage_categories/algebra/algebras.py:273: error: Returning Any from function declared to return "AlgebrasCategory"  [no-any-return]
+src/sage_categories/algebra/rings.py:117: error: "RingMorphismDeclaration" has no attribute "domain"  [attr-defined]
+src/sage_categories/algebra/rings.py:117: error: "RingMorphismDeclaration" has no attribute "codomain"  [attr-defined]
+src/sage_categories/algebra/rings.py:120: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/algebra/rings.py:131: error: Variable "sage_categories.algebra.rings.RingsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/rings.py:131: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/rings.py:133: error: Need type annotation for "_commutative"  [var-annotated]
+src/sage_categories/algebra/rings.py:146: error: Variable "sage_categories.algebra.rings.RingsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/rings.py:146: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/rings.py:146: error: Variable "sage_categories.algebra.semirings.SemiringsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/rings.py:147: error: RingsCategory.ObjectType? has no attribute "carrier"  [attr-defined]
+src/sage_categories/algebra/rings.py:147: error: RingsCategory.ObjectType? has no attribute "addition"  [attr-defined]
+src/sage_categories/algebra/rings.py:147: error: RingsCategory.ObjectType? has no attribute "zero"  [attr-defined]
+src/sage_categories/algebra/rings.py:147: error: RingsCategory.ObjectType? has no attribute "multiplication"  [attr-defined]
+src/sage_categories/algebra/rings.py:147: error: RingsCategory.ObjectType? has no attribute "one"  [attr-defined]
+src/sage_categories/algebra/rings.py:149: error: Variable "sage_categories.algebra.rings.RingsCategory.MorphismType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/rings.py:149: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/rings.py:151: error: RingsCategory.MorphismType? has no attribute "domain"  [attr-defined]
+src/sage_categories/algebra/rings.py:152: error: RingsCategory.MorphismType? has no attribute "codomain"  [attr-defined]
+src/sage_categories/algebra/rings.py:153: error: RingsCategory.MorphismType? has no attribute "carrier_morphism"  [attr-defined]
+src/sage_categories/algebra/rings.py:163: error: Variable "sage_categories.algebra.rings.RingsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/rings.py:163: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/rings.py:163: error: Variable "sage_categories.algebra.groups.GroupsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/rings.py:164: error: RingsCategory.ObjectType? has no attribute "carrier"  [attr-defined]
+src/sage_categories/algebra/rings.py:164: error: RingsCategory.ObjectType? has no attribute "addition"  [attr-defined]
+src/sage_categories/algebra/rings.py:164: error: RingsCategory.ObjectType? has no attribute "zero"  [attr-defined]
+src/sage_categories/algebra/rings.py:164: error: RingsCategory.ObjectType? has no attribute "inversion"  [attr-defined]
+src/sage_categories/algebra/rings.py:168: error: Variable "sage_categories.algebra.rings.RingsCategory.MorphismType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/rings.py:168: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/rings.py:170: error: RingsCategory.MorphismType? has no attribute "domain"  [attr-defined]
+src/sage_categories/algebra/rings.py:171: error: RingsCategory.MorphismType? has no attribute "codomain"  [attr-defined]
+src/sage_categories/algebra/rings.py:172: error: RingsCategory.MorphismType? has no attribute "carrier_morphism"  [attr-defined]
+src/sage_categories/algebra/rings.py:196: error: Variable "sage_categories.algebra.rings.RingsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/rings.py:196: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/rings.py:197: error: Variable "sage_categories.algebra.rings.RingsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/rings.py:197: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/rings.py:199: error: Variable "sage_categories.algebra.rings.RingsCategory.MorphismType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/rings.py:199: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/rings.py:200: error: Too many arguments  [call-arg]
+src/sage_categories/algebra/rings.py:215: error: Variable "sage_categories.algebra.rings.RingsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/algebra/rings.py:215: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/algebra/rings.py:218: error: Unexpected keyword argument "category"  [call-arg]
+src/sage_categories/algebra/rings.py:235: error: Returning Any from function declared to return "RingsCategory"  [no-any-return]
+tests/sets/test_p2_ordinals_cardinals.py:92: error: Statement is unreachable  [unreachable]
+tests/sets/test_p2_ordinals_cardinals.py:141: error: Unsupported left operand type for + (OrdinalObject?)  [operator]
+tests/sets/test_p2_ordinals_cardinals.py:142: error: Unsupported left operand type for * (OrdinalObject?)  [operator]
+tests/sets/test_p2_ordinals_cardinals.py:145: error: OrdinalObject? has no attribute "ordinal_sum"  [attr-defined]
+tests/sets/test_p2_ordinals_cardinals.py:146: error: OrdinalObject? has no attribute "ordinal_product"  [attr-defined]
+tests/sets/test_p2_ordinals_cardinals.py:147: error: OrdinalObject? has no attribute "ordinal_power"  [attr-defined]
+tests/sets/test_p2_ordinals_cardinals.py:153: error: Unsupported left operand type for + (OrdinalObject?)  [operator]
+tests/sets/test_p2_ordinals_cardinals.py:154: error: OrdinalObject? has no attribute "ordinal_sum"  [attr-defined]
+tests/sets/test_p2_ordinals_cardinals.py:156: error: Unsupported left operand type for == (OrdinalObject?)  [operator]
+tests/sets/test_p2_ordinals_cardinals.py:169: error: "ObjectType" has no attribute "domain"  [attr-defined]
+tests/sets/test_p2_ordinals_cardinals.py:170: error: "ObjectType" has no attribute "codomain"  [attr-defined]
+tests/sets/test_p2_ordinals_cardinals.py:217: error: "ObjectType" has no attribute "domain"  [attr-defined]
+tests/sets/test_p2_ordinals_cardinals.py:218: error: "ObjectType" has no attribute "codomain"  [attr-defined]
+tests/sets/test_p2_ordinals_cardinals.py:274: error: Unsupported left operand type for <= (OrdinalObject?)  [operator]
+tests/sets/test_p2_ordinals_cardinals.py:275: error: Unsupported left operand type for <= (OrdinalObject?)  [operator]
+tests/sets/test_p2_ordinals_cardinals.py:276: error: Unsupported left operand type for < (OrdinalObject?)  [operator]
+tests/sets/test_p2_ordinals_cardinals.py:277: error: Unsupported left operand type for < (OrdinalObject?)  [operator]
+tests/algebra/test_p5_algebraic_families.py:50: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p5_algebraic_families.py:53: error: MagmasCategory.ObjectType? has no attribute "carrier"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:54: error: MagmasCategory.ObjectType? has no attribute "multiplication"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:84: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p5_algebraic_families.py:85: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p5_algebraic_families.py:88: error: MonoidsCategory.ObjectType? has no attribute "carrier"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:89: error: MonoidsCategory.ObjectType? has no attribute "multiplication"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:90: error: MonoidsCategory.ObjectType? has no attribute "unit_morphism"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:91: error: MonoidsCategory.ObjectType? has no attribute "zero"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:92: error: MonoidsCategory.ObjectType? has no attribute "one"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:124: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p5_algebraic_families.py:125: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p5_algebraic_families.py:126: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p5_algebraic_families.py:129: error: GroupsCategory.ObjectType? has no attribute "carrier"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:130: error: GroupsCategory.ObjectType? has no attribute "multiplication"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:131: error: GroupsCategory.ObjectType? has no attribute "unit_morphism"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:132: error: GroupsCategory.ObjectType? has no attribute "inversion"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:161: error: GroupsCategory.ObjectType? has no attribute "carrier"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:162: error: GroupsCategory.ObjectType? has no attribute "multiplication"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:163: error: GroupsCategory.ObjectType? has no attribute "unit_morphism"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:164: error: GroupsCategory.ObjectType? has no attribute "inversion"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:177: error: "ObjectType" has no attribute "domain"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:178: error: "ObjectType" has no attribute "codomain"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:179: error: "ObjectType" has no attribute "domain"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:180: error: "ObjectType" has no attribute "codomain"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:181: error: "ObjectType" has no attribute "domain"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:182: error: "ObjectType" has no attribute "codomain"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:198: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p5_algebraic_families.py:199: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p5_algebraic_families.py:200: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p5_algebraic_families.py:201: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p5_algebraic_families.py:204: error: SemiringsCategory.ObjectType? has no attribute "carrier"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:205: error: SemiringsCategory.ObjectType? has no attribute "addition"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:206: error: SemiringsCategory.ObjectType? has no attribute "zero"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:207: error: SemiringsCategory.ObjectType? has no attribute "multiplication"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:208: error: SemiringsCategory.ObjectType? has no attribute "one"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:242: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p5_algebraic_families.py:243: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p5_algebraic_families.py:244: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p5_algebraic_families.py:245: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p5_algebraic_families.py:246: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p5_algebraic_families.py:249: error: RingsCategory.ObjectType? has no attribute "carrier"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:250: error: RingsCategory.ObjectType? has no attribute "addition"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:251: error: RingsCategory.ObjectType? has no attribute "zero"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:252: error: RingsCategory.ObjectType? has no attribute "multiplication"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:253: error: RingsCategory.ObjectType? has no attribute "one"  [attr-defined]
+tests/algebra/test_p5_algebraic_families.py:254: error: RingsCategory.ObjectType? has no attribute "inversion"  [attr-defined]
+tests/algebra/test_p6_modules.py:40: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p6_modules.py:41: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p6_modules.py:51: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p6_modules.py:54: error: ModulesCategory.ObjectType? has no attribute "carrier"  [attr-defined]
+tests/algebra/test_p6_modules.py:55: error: ModulesCategory.ObjectType? has no attribute "action"  [attr-defined]
+tests/algebra/test_p6_modules.py:56: error: ModulesCategory.ObjectType? has no attribute "action_morphism"  [attr-defined]
+tests/algebra/test_p6_modules.py:69: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p6_modules.py:70: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p6_modules.py:82: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p6_modules.py:99: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p6_modules.py:100: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p6_modules.py:123: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p6_modules.py:124: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p6_modules.py:125: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p6_modules.py:126: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p6_modules.py:127: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p6_modules.py:133: error: ModulesCategory.ObjectType? has no attribute "carrier"  [attr-defined]
+tests/algebra/test_p6_modules.py:134: error: ModulesCategory.ObjectType? has no attribute "action"  [attr-defined]
+tests/algebra/test_p6_modules.py:147: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p6_modules.py:148: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p6_modules.py:149: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p6_modules.py:150: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p6_modules.py:151: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:39: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:40: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:41: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:42: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:43: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:54: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:59: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:60: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:63: error: AlgebrasCategory.ObjectType? has no attribute "module"  [attr-defined]
+tests/algebra/test_p7_algebras.py:64: error: AlgebrasCategory.ObjectType? has no attribute "carrier"  [attr-defined]
+tests/algebra/test_p7_algebras.py:65: error: AlgebrasCategory.ObjectType? has no attribute "multiplication"  [attr-defined]
+tests/algebra/test_p7_algebras.py:66: error: AlgebrasCategory.ObjectType? has no attribute "unit_morphism"  [attr-defined]
+tests/algebra/test_p7_algebras.py:79: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:80: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:81: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:82: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:83: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:96: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:100: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:101: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:120: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:121: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:122: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:123: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:124: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:133: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:136: error: Argument 2 to "__call__" of "AlgebrasCategory" has incompatible type "None"; expected "ObjectType"  [arg-type]
+tests/algebra/test_p7_algebras.py:136: error: Argument 3 to "__call__" of "AlgebrasCategory" has incompatible type "None"; expected "ObjectType"  [arg-type]
+tests/algebra/test_p7_algebras.py:150: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:151: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:152: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:153: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+tests/algebra/test_p7_algebras.py:154: error: Too many arguments for "__call__" of "FixedEndpointCategory"  [call-arg]
+/home/dzack/ai-review-ci/justfiles/../tool-configs/mypy-sage.ini: note: unused section(s): [mypy-slop_detector.*], [mypy-fpylll.*], [mypy-tree_sitter_sage.*], [mypy-setuptools.*], [mypy-wheel.*], [mypy-networkx.*], [mypy-tqdm.*], [mypy-IPython.*], [mypy-flowmark.formats.flowmark_markdown]
+Found 1022 errors in 49 files (checked 29 source files)
+ERROR: mypy found type errors in project code.
+
+================================================================================
+  LOCAL QC FAILURE — DIRECT REPAIR REQUIRED
+================================================================================
+
+  Fix the reported compiler, formatter, type, or test failure in the object
+  being changed, then rerun the same gate. This is not PR review feedback and
+  does not enter returned-PR-feedback triage or require independent policy/remediation subagents.
+
+  Do not weaken the checker, suppress the diagnostic, golf the error count, or
+  edit ai-review-ci to make the signal disappear.
+
+================================================================================
+error: recipe `_sage-mypy` failed with exit code 1
+error: recipe `_sage-run-check` failed with exit code 1
+error: recipe `test-commit` failed with exit code 1

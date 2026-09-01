@@ -1,6 +1,5 @@
 from collections.abc import Hashable
 from dataclasses import dataclass
-from sage.misc.cachefunc import cached_method
 from sage.rings.integer import Integer
 from sage_categories.algebra.groups import Groups as Groups, GroupsCategory as GroupsCategory
 from sage_categories.algebra.semirings import Semirings as Semirings, SemiringsCategory as SemiringsCategory
@@ -75,11 +74,9 @@ class RingsCategory(Category[[], []]):
     def Commutative(self) -> PropertySubcategory:
         ...
 
-    @cached_method
     def semiring_projection(self) -> Functor:
         ...
 
-    @cached_method
     def additive_group_projection(self) -> Functor:
         ...
 

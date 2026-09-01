@@ -145,6 +145,7 @@ reads.
 | `POL-ONT-007` | Treat raw Python callables (`lambda`, functions) solely as constructor input rules, never as morphisms. Morphisms require explicit category endpoints $A \to B$ and must be constructed through `Mor(C)(A, B)(rule)`. |
 | `POL-ONT-008` | Ban catch-all constructors, implicit fallback heuristics, and loose `@overload` sniffing. Provide dedicated explicit constructors of the form `X.from_Y(...)` for distinct input modalities. The main constructor must perform an explicit `match`/`case` on the exact supported input types, route them directly with no fallback paths, and unconditionally raise a hard `TypeError` on the default `case _:`. |
 | `POL-ONT-009` | Model mathematical structures using generic categorical constructions (slice, coslice, subobject, quotient, comma, and functor categories) rather than ad-hoc leaf classes or facade parents with ambient pointers. Theory-specific sub-entities (e.g. `Submonoids(M)`, `Subgroups(G)`, `Submodules(V)`) are convenience spellings for the corresponding generic construction `SubobjectCategory(C, X)`. No leaf category may implement bespoke subobject or quotient container classes. |
+| `POL-ONT-010` | Perform a mandatory survey of existing generic categorical machinery before implementing any new theory, object, morphism, or construction. Never write greenfield code or bespoke data structures without first verifying whether the requested notion is an instance of an existing categorical construction, structure functor, or universal limit/colimit in `Cat`. |
 
 ### `POL-ONT-001`: The False Prior "Sets Are Containers of Python Data"
 
@@ -231,6 +232,14 @@ reads.
   - Theory-specific constructors (`Submonoids(M)`, `Subgroups(G)`, `Subsets(X)`, `Submodules(V)`) are convenience spellings for `SubobjectCategory(C, X)`.
   - Generic operations (subobject poset ordering, intersection via pullbacks, image factorization) are implemented once generically, not duplicated across leaf theories.
 
+### `POL-ONT-010`: The False Prior "Greenfield First, Search Later"
+
+- **The False Model**:
+  - Receiving an implementation task (e.g. "implement submonoids", "implement products of sets", "implement pullback diagrams"), immediately creating a new file or class, and writing bespoke ad-hoc code from scratch without surveying the existing codebase.
+- **The Internalized Reality (`specs/system.md`, `specs/functor.md`)**:
+  - Category theory is deeply unified: almost all structural concepts are instances of generic constructions (`Cat`, `Mor`, `Fun`, `SliceCategory`, `SubobjectCategory`, `QuotientCategory`, `Pullbacks`, `Limits`, `Colimits`, `diagrams`).
+  - Before writing any implementation code, a mandatory survey of existing generic machinery is strictly required. Hand-rolling code that duplicates or bypasses existing foundational machinery causes architectural drift and code bloat.
+
 ### Core Project Philosophy Summary
 
 | Concept | Python / SWE Prior (The Mistake) | `sage-categories` Architecture (The Truth) | Policy |
@@ -247,6 +256,7 @@ reads.
 | **Morphisms** | Bare Python callables / lambdas | Explicit arrows with domain and codomain endpoints | `POL-ONT-007` |
 | **Constructor Architecture** | Catch-all `*args` with heuristic fallbacks | Dedicated `from_Y` methods; explicit `match`/`case` with hard error on default `case _:` | `POL-ONT-008` |
 | **Subobjects & Quotients** | Bespoke leaf facade classes with ambient pointers | Generic slice/subobject/quotient categories (`SubobjectCategory(C, X)`) | `POL-ONT-009` |
+| **Implementation Process** | Immediate greenfield coding without surveying | Mandatory prior survey of existing generic categorical machinery | `POL-ONT-010` |
 
 ### The Core Categorical Philosophy
 
@@ -298,6 +308,14 @@ Whenever a mathematical structure is an instance of a standard categorical const
 | **Hom-Sets / Morphisms** | Custom mapping lookup classes | Morphism Category $\mathbf{Mor}(\mathcal{C})(A, B)$ |
 | **Diagrams / Systems** | Custom graph/network data structures | Functor Category $[\mathcal{J}, \mathcal{C}]$ |
 | **Extensions / Bundles** | Ad-hoc fiber classes | Slice Category $\mathcal{C}/B$ |
+
+#### 8. Mandatory Construction Survey: Reuse Before Greenfield
+Writing new code before understanding existing machinery causes severe architectural fragmentation:
+- **The Mandatory Pre-Implementation Survey**: Before writing any implementation code for a requested structure or operation, the engineer must explicitly survey:
+  1. Generic categorical constructions in `src/sage_categories/cat/` (`SliceCategory`, `SubobjectCategory`, `QuotientCategory`, `MorphismCategory`, `FunctorCategory`, `Cones`, `Cocones`, `Pullbacks`).
+  2. Structure functor transport paths and canonical lifts across existing categories.
+  3. Universal data and predicate registration mechanisms in `src/sage_categories/kernel/`.
+- **Specialization Over Duplication**: If the required mathematical concept is an instance of an existing generic construction (e.g. subobjects of $X$ in $\mathcal{C}$), specialize the generic construction (`SubobjectCategory(C, X)`) rather than hand-rolling new classes. Only write greenfield theory code when the concept is genuinely primitive to that specific category.
 
 ## Predicates, hypotheses, and assumptions
 

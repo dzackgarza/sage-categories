@@ -552,10 +552,24 @@ class _TaggedCategory(Category[[MorphismCategory.ObjectType], []]):
 
 
 def _limit_of_opposite_categories(diagram: Functor) -> CategoryOfCategories.ElementType:
-    """Evaluate a discrete limit in ``Cat().op()`` through the private tagged category."""
+    """Evaluate the owned limits in ``Cat().op()``."""
     opposite_categories = Cat().op()
     family = opposite_categories.Limits(diagram.domain())
     lowered = family.lowered(diagram)
+    from sage_categories.cat.opposites import OppositeCategory
+
+    shape = diagram.domain()
+    if isinstance(shape, OppositeCategory) and shape.original() is Cat().WalkingSpan():
+        terminal = Cat().Terminal()
+        vertices = tuple(shape.original()(label) for label in shape.original().labels())
+        assert all(diagram.on_object(vertex) is terminal for vertex in vertices)
+        identity = opposite_categories.morphism_category(1)(terminal, terminal).one()
+        return family.with_universal_data(
+            lowered,
+            terminal,
+            cone(lowered, terminal, lambda _vertex: identity),
+            lambda candidate: candidate.component(vertices[0]),
+        )
     tagged = _TaggedCategory(lowered)
     opposite_categories(tagged)
     projections: MonoDict = MonoDict()

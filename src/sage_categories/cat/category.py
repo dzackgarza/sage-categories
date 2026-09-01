@@ -615,7 +615,10 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
                 from sage_categories.cat.cat_constructions import _limit_of_opposite_categories
                 from sage_categories.cat.shapes import is_discrete
 
-                if is_discrete(shape):
+                if is_discrete(shape) or (
+                    isinstance(shape, OppositeCategory)
+                    and shape.original() is Cat().WalkingSpan()
+                ):
                     return _limit_of_opposite_categories
             if isinstance(original, FunctorCategory):
                 return _pointwise_limit_in_opposite_functor_category

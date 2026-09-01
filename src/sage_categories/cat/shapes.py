@@ -333,6 +333,11 @@ class ThinCategory(Category[[], []]):
         assert ask(first.codomain() == second.domain())
         return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain())
 
+    def _chosen_hom_inhabited(self, hom_category: Category) -> Decision:
+        domain = hom_category.domain()
+        codomain = hom_category.codomain()
+        return ask(self._order(domain.point(), codomain.point()))
+
     def _equal(
         self,
         first: CategoryOfCategories.ElementType,

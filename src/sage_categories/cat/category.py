@@ -826,6 +826,8 @@ def _shared_category(first: CategoryOfCategories.ElementType, second: CategoryOf
         f"{first!r} in {first.category()!r} and {second!r} in {second.category()!r} "
         f"have no least common category along subcategory monomorphisms"
     )
+    while shared.has_ambient() and not hasattr(type(shared), "from_enumeration") and type(shared).__name__ != "SetsCategory":
+        shared = shared.ambient()
     return shared
 
 

@@ -278,12 +278,13 @@ class FinitePosetsCategory(PropertySubcategory[[Rule], []]):
         """
         finite_sets = Sets().Finite()
 
-        def finite_carrier(order: PosetObjectData) -> SetObject:
-            return finite_sets(self._ambient.carrier(order.relation))
+        def finite_carrier(order: Poset) -> SetObject:
+            return finite_sets(self._ambient.carrier(order.relation()))
 
-        def finite_map(monotone: PosetMorphismData) -> SetMap:
-            refine(monotone.set_map, finite_sets.morphism_category(1))
-            return monotone.set_map
+        def finite_map(monotone: MonotoneMap) -> SetMap:
+            set_map = monotone.set_map()
+            refine(set_map, finite_sets.morphism_category(1))
+            return set_map
 
         return Fun(self, finite_sets).Faithful()(finite_carrier, finite_map)
 

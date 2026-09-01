@@ -7,7 +7,12 @@ from sage_categories.posets.category import (
     Poset,
     PosetElement,
     Posets,
+    SimplexOrders,
+    Thin,
     TotallyOrderedSets,
+    covers,
+    order_preserving,
+    partial_order,
 )
 
 __all__ = [
@@ -17,5 +22,10 @@ __all__ = [
     "Poset",
     "PosetElement",
     "Posets",
+    "SimplexOrders",
+    "Thin",
     "TotallyOrderedSets",
+    "covers",
+    "order_preserving",
+    "partial_order",
 ]

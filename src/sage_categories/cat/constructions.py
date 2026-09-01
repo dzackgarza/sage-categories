@@ -478,11 +478,7 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
             f"{shape!r} is not known to have at least two objects; use {self.ambient()!r}.Limits({shape!r})"
         )
         ambient = self.ambient()
-        try:
-            construction = ambient.limit_construction(shape)
-            return construction(diagram)
-        except AssertionError:
-            return ambient.Limits(shape)(diagram)
+        return ambient.Limits(shape)(diagram)
 
     def with_universal_data(
         self,

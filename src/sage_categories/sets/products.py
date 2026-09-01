@@ -99,7 +99,7 @@ class Family:
             return True
         match other:
             case Family():
-                if other.index_set() is not self._index_set:
+                if other.index_set() is not self._index_set and ask(other.index_set() == self._index_set) is False:
                     return False
             case _:
                 return False
@@ -234,8 +234,10 @@ def product_of_sets(diagram: Functor) -> SetObject:
             ),
         )
 
-    lowered = sets.Limits(shape).lowered(diagram)
-    return sets.Limits(shape).with_universal_data(lowered, apex, cone(lowered, apex, projection), mediator)
+    ambient = diagram.codomain()
+    family = ambient.Limits(shape)
+    lowered = family.lowered(diagram)
+    return family.with_universal_data(lowered, apex, cone(lowered, apex, projection), mediator)
 
 
 # -- coproducts -------------------------------------------------------------------------------
@@ -321,5 +323,7 @@ def coproduct_of_sets(diagram: Functor) -> SetObject:
             lambda tagged: candidate_cocone.component(shape(index_set.point(tagged[0])))._set_morphism_data.rule(tagged[1]),
         )
 
-    lowered = sets.Colimits(shape).lowered(diagram)
-    return sets.Colimits(shape).with_universal_data(lowered, apex, cocone(lowered, apex, injection), mediator)
+    ambient = diagram.codomain()
+    family = ambient.Colimits(shape)
+    lowered = family.lowered(diagram)
+    return family.with_universal_data(lowered, apex, cocone(lowered, apex, injection), mediator)

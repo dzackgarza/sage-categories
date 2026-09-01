@@ -475,11 +475,11 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
             f"{shape!r} is not known to have at least two objects; use {self.ambient()!r}.Limits({shape!r})"
         )
         ambient = self.ambient()
-        if hasattr(ambient, "limit_construction"):
+        try:
             construction = ambient.limit_construction(shape)
-            apex = construction(diagram)
-            return apex
-        return ambient.Limits(shape)(diagram)
+            return construction(diagram)
+        except AssertionError:
+            return ambient.Limits(shape)(diagram)
 
     def with_universal_data(
         self,
@@ -793,11 +793,11 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
         assert diagram in self.universe().morphism_category(1) and diagram.domain() is shape
         assert is_subcategory(diagram.codomain(), self.ambient()), f"{diagram!r} does not land in {self.ambient()!r}"
         ambient = self.ambient()
-        if hasattr(ambient, 'colimit_construction'):
+        try:
             construction = ambient.colimit_construction(shape)
-            apex = construction(diagram)
-            return apex
-        return ambient.Colimits(shape)(diagram)
+            return construction(diagram)
+        except AssertionError:
+            return ambient.Colimits(shape)(diagram)
 
     def with_universal_data(
         self,

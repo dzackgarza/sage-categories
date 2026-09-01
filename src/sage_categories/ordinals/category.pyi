@@ -1,11 +1,12 @@
+import sage_categories
 from _typeshed import Incomplete
 from collections.abc import Hashable
 from dataclasses import dataclass
 from sage_categories.cat.category import Category
-from sage_categories.cat.predicates import AppliedPredicate, UnknownClass
+from sage_categories.cat.predicates import AppliedPredicate, Predicate, UnknownClass
 from sage_categories.sets.cardinals import CardinalObject
 from typing import Any
-__all__ = ['is_natural_number', 'bind_cardinals', 'OrdinalsCategory', 'OrdinalObject', 'Ordinals', 'ordinal', 'omega', 'omega0']
+__all__ = ['is_natural_number', 'bind_cardinals', 'initial', 'at_most', 'less_than', 'OrdinalsCategory', 'OrdinalObject', 'Ordinals', 'ordinal', 'omega', 'omega0', 'OrdinalOrder']
 
 def is_natural_number(value: Any) -> bool:
     ...
@@ -19,7 +20,7 @@ class OrdinalObjectData:
     key: Key
     terms: tuple[OrdinalObject, ...]
 
-class OrdinalObjectDeclaration:
+class OrdinalObjectDeclaration(sage_categories.kernel.roles.ObjectOfCategory):
 
     def __init__(self, data: OrdinalObjectData) -> None:
         ...
@@ -71,14 +72,17 @@ class OrdinalObjectDeclaration:
 
     def __hash__(self) -> int:
         ...
+initial: Predicate
+at_most: Predicate
+less_than: Predicate
 
 class OrdinalsCategory(Category[[], []]):
     ObjectType = OrdinalObjectDeclaration
 
-    class ElementType:
+    class ElementType(sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.kernel.roles.MorphismOfCategory):
         ...
 
     def __init__(self) -> None:
@@ -121,3 +125,6 @@ def ordinal(value: OrdinalObject | int) -> OrdinalObject:
 def omega(index: OrdinalObject | int) -> OrdinalObject:
     ...
 omega0: OrdinalObject
+
+def OrdinalOrder():
+    ...

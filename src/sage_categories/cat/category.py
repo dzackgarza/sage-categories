@@ -113,6 +113,46 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
             return
         self._initialize(self.category())
 
+    def _init_local_state(self) -> None:
+        """Initialize the local runtime state the implementing category owns.
+
+        ``implemented_by`` swaps the declared value's class in place, so no ``__init__``
+        runs there; it calls this once instead (``cat/declarations.py``).  A category
+        with no local runtime state initializes nothing.
+        """
+
+    def is_discrete(self) -> bool:
+        """Whether this category is one of the kernel's discrete diagram representations.
+
+        Discrete shapes are the retained images ``Discrete(S)`` of owned sets, their
+        opposites, and finite presented shapes with no nonidentity generators
+        (``cat/shapes.py``).  This decides the representation, an implementation fact
+        that is two-valued by construction (POL-ASSUME-005); it is not the mathematical
+        proposition that an arbitrary category is discrete.
+        """
+        return False
+
+    def construction_owner(self) -> Category:
+        """The category whose constructors own the values of this placement (POL-CAT-088).
+
+        An object refined into ``C.P()`` and an object of ``C`` are both objects of
+        ``C``, so their constructions are owned where the constructors are declared: a
+        declared subcategory defers to its ambient, and a category that supplies its own
+        construction surface overrides this to return itself.
+        """
+        return self.ambient().construction_owner() if self.has_ambient() else self
+
+    def subobjects_type(self) -> type:
+        """The slice-property class implementing ``C.Subobjects(X)`` (POL-CAT-092).
+
+        A category whose specification owns subobject-specific constructors, such as
+        ``Sets()`` with ``from_predicate`` (D84), overrides this; the generic slice
+        property serves every other category.
+        """
+        from sage_categories.cat.slices import SliceProperty
+
+        return SliceProperty
+
     def __init_subclass__(cls) -> None:
         """Require the three declarations, and connect a class that names what it implements (D80).
 
@@ -618,9 +658,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
             original = self.original()
             if original is Cat():
                 from sage_categories.cat.cat_constructions import _limit_of_opposite_categories
-                from sage_categories.cat.shapes import is_discrete
 
-                if is_discrete(shape) or (
+                if shape.is_discrete() or (
                     isinstance(shape, OppositeCategory)
                     and shape.original() is Cat().WalkingSpan()
                 ):
@@ -831,9 +870,7 @@ def _shared_category(first: CategoryOfCategories.ElementType, second: CategoryOf
         f"{first!r} in {first.category()!r} and {second!r} in {second.category()!r} "
         f"have no least common category along subcategory monomorphisms"
     )
-    while shared.has_ambient() and not hasattr(type(shared), "from_enumeration") and type(shared).__name__ != "SetsCategory":
-        shared = shared.ambient()
-    return shared
+    return shared.construction_owner()
 
 
 # The terminal comparisons ``1_D -> F(1_C)`` retained by the constructions that own a
@@ -1120,31 +1157,39 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
     # -- the categories Cat declares (D80, D82) ------------------------------------
 
-    @overload
-    def declare(self, name: str, domain: None = None) -> Category: ...
+    def declare(self, name: str) -> Category:
+        """``Cat().declare(name)``: the category the repository expects to exist.
 
-    @overload
-    def declare(self, name: str, domain: Category) -> CategoryFamily: ...
-
-    def declare(self, name: str, domain: Category | None = None) -> Category | CategoryFamily:
-        """``Cat().declare(name, domain)``: the category the repository expects to exist.
-
-        ``domain`` is the domain of the functor into ``Cat()`` that the declaration is,
-        and a declaration with no ``domain`` is the terminal-domain case: the point
-        ``* -> Cat()``, whose value is a category.  That value is constructed now and is
-        the final object -- it takes its ordinal, it is placed in ``Cat()``, and its three
-        implementation classes are compiled from ``DeclaredCategory``'s declarations,
-        which name the three kinds and no operation on any of them.  A parameterized
-        family has no category to return until an implementation supplies its object and
-        morphism actions.
+        A declaration is a functor into ``Cat()``, and this is the terminal-domain case:
+        the point ``* -> Cat()``, whose value is a category.  That value is constructed
+        now and is the final object -- it takes its ordinal, it is placed in ``Cat()``,
+        and its three implementation classes are compiled from ``DeclaredCategory``'s
+        declarations, which name the three kinds and no operation on any of them.  A
+        parameterized family is declared through ``declare_family`` instead
+        (POL-API-021).
 
         A declaration no implementation claims is open work, readable through
         ``declarations()``.  It is never a check that fails a build.
         """
-        from sage_categories.cat.declarations import CategoryFamily, DeclaredCategory
+        from sage_categories.cat.declarations import DeclaredCategory
 
         assert name not in self._declarations, f"{name!r} is already declared"
-        declared = DeclaredCategory(name) if domain is None else CategoryFamily(name, domain)
+        declared = DeclaredCategory(name)
+        self._declarations[name] = declared
+        self._open_declarations[declared] = name
+        return declared
+
+    def declare_family(self, name: str, domain: Category) -> CategoryFamily:
+        """``Cat().declare_family(name, domain)``: the parameterized family the repository expects to exist.
+
+        ``domain`` is the domain of the functor into ``Cat()`` that the declaration is.
+        A parameterized family has no category to return until an implementation
+        supplies its object and morphism actions.
+        """
+        from sage_categories.cat.declarations import CategoryFamily
+
+        assert name not in self._declarations, f"{name!r} is already declared"
+        declared = CategoryFamily(name, domain)
         self._declarations[name] = declared
         self._open_declarations[declared] = name
         return declared
@@ -1367,9 +1412,8 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     def limit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
         """Products over ``Discrete(S)`` and strict pullbacks over ``L(2, 2)``; ``Cat()`` owns no other limit construction."""
         from sage_categories.cat.cat_constructions import product_of_categories, pullback_of_categories
-        from sage_categories.cat.shapes import is_discrete
 
-        if is_discrete(shape):
+        if shape.is_discrete():
             return product_of_categories
         if shape is self.WalkingCospan():
             return pullback_of_categories

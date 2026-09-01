@@ -1,9 +1,10 @@
+import sage_categories
 from dataclasses import dataclass
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Predicate, Proposition
-__all__ = ['DiscreteCategory', 'Discrete', 'is_discrete', 'index_set_of', 'ThinCategory', 'Thin', 'omega']
+__all__ = ['DiscreteCategory', 'Discrete', 'ThinCategory', 'Thin', 'omega']
 
 @dataclass(frozen=True, eq=False, slots=True)
 class DiscreteObjectData:
@@ -29,6 +30,9 @@ class DiscreteCategory(Category[[], []]):
         ...
 
     def index_set(self) -> CategoryOfCategories.ElementType:
+        ...
+
+    def is_discrete(self) -> bool:
         ...
 
     def object_set(self) -> CategoryOfCategories.ElementType:
@@ -59,12 +63,6 @@ class DiscreteCategory(Category[[], []]):
         ...
 Discrete: Functor
 
-def is_discrete(shape: Category) -> bool:
-    ...
-
-def index_set_of(shape: Category) -> CategoryOfCategories.ElementType:
-    ...
-
 @dataclass(frozen=True, eq=False, slots=True)
 class ThinObjectData:
     point: CategoryOfCategories.ElementType
@@ -85,7 +83,7 @@ class ThinMorphisms(MorphismCategory[[], []]):
 
 class ThinCategory(Category[[], []]):
 
-    class ObjectType:
+    class ObjectType(sage_categories.kernel.roles.ObjectOfCategory):
 
         def __init__(self, data: ThinObjectData) -> None:
             ...
@@ -93,10 +91,10 @@ class ThinCategory(Category[[], []]):
         def point(self) -> CategoryOfCategories.ElementType:
             ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.kernel.roles.MorphismOfCategory):
         ...
 
-    class ElementType:
+    class ElementType(sage_categories.kernel.roles.ElementOfObject):
         ...
 
     def __init__(self, carrier: CategoryOfCategories.ElementType, order: Predicate) -> None:

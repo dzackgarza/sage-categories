@@ -45,7 +45,7 @@ from sage_categories.kernel.refinement import is_placed
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
 
-__all__ = ["Discrete", "DiscreteCategory", "Thin", "ThinCategory", "index_set_of", "is_discrete", "omega"]
+__all__ = ["Discrete", "DiscreteCategory", "Thin", "ThinCategory", "omega"]
 
 
 # -- Discrete(S) ---------------------------------------------------------------------
@@ -92,6 +92,9 @@ class DiscreteCategory(Category[[], []]):
 
     def index_set(self) -> CategoryOfCategories.ElementType:
         return self._index_set
+
+    def is_discrete(self) -> bool:
+        return True
 
     # The objects are the points of ``S`` and the morphisms their identities (specs/functor.md, "Diagram shapes and universal constructions").
 
@@ -152,18 +155,14 @@ class DiscreteCategory(Category[[], []]):
         return f"Discrete({self._index_set!r})"
 
 
-# The retained images of the ``Discrete`` functor: ``S |-> Discrete(S)`` and, for
-# ``index_set_of``, ``Discrete(S) |-> S``; both keyed by identity.
+# The retained images of the ``Discrete`` functor, keyed by identity.
 _discrete_categories: MonoDict = MonoDict()
-_index_sets: MonoDict = MonoDict()
 _discrete_functors: MonoDict = MonoDict()
 
 
 def _discrete_on_object(index_set: CategoryOfCategories.ElementType) -> DiscreteCategory:
     if index_set not in _discrete_categories:
-        shape = DiscreteCategory(index_set)
-        _discrete_categories[index_set] = shape
-        _index_sets[shape] = index_set
+        _discrete_categories[index_set] = DiscreteCategory(index_set)
     return _discrete_categories[index_set]
 
 
@@ -181,39 +180,6 @@ def _discrete_on_morphism(set_map: MorphismCategory.ObjectType) -> Functor:
 # object action and ``Discrete(f)`` its morphism action (Mathlib
 # ``CategoryTheory.Discrete.functor`` for the action on maps; inspected 2026-08-26).
 Discrete: Functor = Fun(Sets, Cat())(_discrete_on_object, _discrete_on_morphism)
-
-
-def is_discrete(shape: Category) -> bool:
-    """Whether ``shape`` is discrete in one of Cat's two foundation representations.
-
-    General discrete categories are retained images ``Discrete(S)`` of owned sets.
-    Finite sequence conveniences use a source-backed finite presentation with no
-    nonidentity generators so Cat remains executable before the production Sets leaf.
-    """
-    if shape in _index_sets:
-        return True
-    from sage_categories.cat.canonical import FinitePresentedCategory
-    from sage_categories.cat.opposites import OppositeCategory
-
-    if isinstance(shape, OppositeCategory):
-        return is_discrete(shape.original())
-    return isinstance(shape, FinitePresentedCategory) and not shape.generator_names()
-
-
-def index_set_of(shape: Category) -> CategoryOfCategories.ElementType:
-    """The set ``S`` with ``shape is Discrete(S)``."""
-    assert is_discrete(shape), f"{shape!r} is not Discrete(S) for a set S"
-    if shape in _index_sets:
-        return _index_sets[shape]
-    from sage_categories.cat.opposites import OppositeCategory
-
-    if isinstance(shape, OppositeCategory):
-        return index_set_of(shape.original())
-    from sage_categories.cat.canonical import FinitePresentedCategory
-
-    if isinstance(shape, FinitePresentedCategory):
-        return shape.object_set()
-    raise KeyError(shape)
 
 
 # -- Thin(P, leq) --------------------------------------------------------------------

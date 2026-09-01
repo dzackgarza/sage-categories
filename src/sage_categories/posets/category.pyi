@@ -1,17 +1,21 @@
+import sage_categories
 from _typeshed import Incomplete
 from dataclasses import dataclass, field
 from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Functor
-from sage_categories.cat.predicates import AppliedPredicate, Decision, Proposition
+from sage_categories.cat.predicates import AppliedPredicate, Predicate, Proposition
 from sage_categories.cat.shapes import ThinCategory
 from sage_categories.sets.category import SetMap
 from sage_categories.sets.category import SetElement
 from sage_categories.sets.maps import Rule
 from sage_categories.sets.objects import MembershipRule
 from sage_categories.sets.category import SetObject
-__all__ = ['PosetsCategory', 'Poset', 'PosetElement', 'MonotoneMap', 'Posets', 'FinitePosets', 'TotallyOrderedSets', 'FiniteTotallyOrderedSets']
+__all__ = ['partial_order', 'order_preserving', 'covers', 'PosetsCategory', 'Poset', 'PosetElement', 'MonotoneMap', 'Posets', 'FinitePosets', 'TotallyOrderedSets', 'FiniteTotallyOrderedSets', 'SimplexOrders', 'Thin']
+partial_order: Predicate
+order_preserving: Predicate
+covers: Predicate
 type Relation = dict[tuple[int, int], Decision]
 
 @dataclass(eq=False, slots=True)
@@ -23,7 +27,7 @@ class PosetObjectData:
 class PosetMorphismData:
     set_map: SetMap
 
-class PosetDeclaration:
+class PosetDeclaration(sage_categories.sets.objects.SetObjectDeclaration, sage_categories.kernel.roles.ObjectOfCategory):
 
     def __init__(self, data: PosetObjectData) -> None:
         ...
@@ -31,19 +35,32 @@ class PosetDeclaration:
     def relation(self) -> SetObject:
         ...
 
+    def carrier(self) -> SetObject:
+        ...
+
     def element(self, point: SetElement) -> PosetElement:
+        ...
+
+    def sub_poset_inclusion(self, predicate: MembershipRule) -> MonotoneMap:
         ...
 
     def sub_poset(self, predicate: MembershipRule) -> Poset:
         ...
 
+    def covers(self, lower: PosetElement, upper: PosetElement) -> AppliedPredicate:
+        ...
+
+    def __mul__(self, other: Poset) -> Poset:
+        ...
+
     def is_total(self) -> AppliedPredicate:
         ...
 
+    @cached_method
     def thin_category(self) -> ThinCategory:
         ...
 
-class PosetElementDeclaration:
+class PosetElementDeclaration(sage_categories.sets.elements.SetElementDeclaration, sage_categories.kernel.roles.ElementOfObject):
 
     def __le__(self, other: PosetElement) -> AppliedPredicate:
         ...
@@ -57,8 +74,16 @@ class PosetElementDeclaration:
     def __gt__(self, other: PosetElement) -> Proposition:
         ...
 
-class MonotoneMapDeclaration:
-    ...
+class MonotoneMapDeclaration(sage_categories.sets.maps.SetMapDeclaration, sage_categories.kernel.roles.MorphismOfCategory):
+
+    def __init__(self, data: PosetMorphismData) -> None:
+        ...
+
+    def set_map(self) -> SetMap:
+        ...
+
+    def __call__(self, element: PosetElement) -> PosetElement:
+        ...
 
 class PosetsCategory(Category[[Rule], []]):
     ObjectType = PosetDeclaration
@@ -108,7 +133,7 @@ class PosetsCategory(Category[[Rule], []]):
     def element_from_defining_morphism(self, defining_morphism: MonotoneMap) -> PosetElement:
         ...
 
-    def construct_morphism(self, domain: Poset, codomain: Poset, rule: Rule) -> MonotoneMap:
+    def construct_morphism(self, domain: Poset, codomain: Poset, rule: Rule | SetMap) -> MonotoneMap:
         ...
 
     def construct_identity(self, poset: Poset) -> MonotoneMap:
@@ -118,6 +143,16 @@ class PosetsCategory(Category[[Rule], []]):
         ...
 
     def inverse_morphism(self, monotone: MonotoneMap) -> MonotoneMap:
+        ...
+
+    def discrete_order(self, base_set: SetObject) -> Poset:
+        ...
+
+    def binary_product(self, first: Poset, second: Poset) -> Poset:
+        ...
+
+    @cached_method
+    def thin_functor(self) -> Functor:
         ...
 Poset: Incomplete
 PosetElement: Incomplete
@@ -134,3 +169,12 @@ def TotallyOrderedSets() -> Category[[Rule], []]:
 
 def FiniteTotallyOrderedSets() -> Category[[Rule], []]:
     ...
+
+class SimplexOrdersFamily:
+
+    def __getitem__(self, dimension: int) -> Poset:
+        ...
+
+def SimplexOrders() -> SimplexOrdersFamily:
+    ...
+Thin: Functor

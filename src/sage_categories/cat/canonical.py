@@ -131,6 +131,10 @@ class FinitePresentedCategory(Category[[Word], []]):
         """The names of the generating morphisms, in declaration order."""
         return tuple(self._generator_endpoints)
 
+    def is_discrete(self) -> bool:
+        """A finite presented shape with no nonidentity generators is discrete."""
+        return not self._generator_endpoints
+
     def generator(self, name: str) -> FinitePresentedCategory.MorphismType:
         source, target = self._generator_endpoints[name]
         return self.construct_morphism(self(source), self(target), (name,))

@@ -3,6 +3,7 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Proposition
+from typing import Any
 __all__ = ['OppositeCategory', 'opposite_category', 'opposite_morphism', 'Op', 'opposite_functor', 'opposite_transformation', 'op_squared_isomorphism']
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -31,6 +32,9 @@ class OppositeCategory[**MorphismData, **TwoMorphismData](Category[[MorphismCate
     def original(self) -> Category[MorphismData, TwoMorphismData]:
         ...
 
+    def is_discrete(self) -> bool:
+        ...
+
     def narrowing_base(self) -> Category:
         ...
 
@@ -46,6 +50,9 @@ class OppositeCategory[**MorphismData, **TwoMorphismData](Category[[MorphismCate
     def __call__(self, value: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         ...
 
+    def object_set(self) -> CategoryOfCategories.ElementType:
+        ...
+
     def construct_morphism(self, domain: CategoryOfCategories.ElementType, codomain: CategoryOfCategories.ElementType, original: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         ...
 
@@ -53,6 +60,12 @@ class OppositeCategory[**MorphismData, **TwoMorphismData](Category[[MorphismCate
         ...
 
     def composite(self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+        ...
+
+    def limit_construction(self, shape: Category) -> Any:
+        ...
+
+    def colimit_construction(self, shape: Category) -> Any:
         ...
 
 def opposite_category(category: Category) -> Category:

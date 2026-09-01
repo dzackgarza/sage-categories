@@ -54,7 +54,7 @@ from sage.misc.cachefunc import cached_function
 import sage_categories.sets.category as _sets
 from sage_categories.cat.constructions import cocone, cocone_apex, cone, cone_apex
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
-from sage_categories.cat.shapes import DiscreteCategory, index_set_of
+from sage_categories.cat.shapes import DiscreteCategory
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
 from sage_categories.cat.predicates import ask, conjunction, established, negation
 from sage_categories.kernel.refinement import is_subcategory, refine
@@ -122,13 +122,10 @@ class Family:
 
 
 def _index_datum(vertex: DiscreteCategory.ObjectType) -> Datum:
-    if hasattr(vertex, "_point_datum_"):
-        return vertex.point()._point_datum_()
-    # FinitePresentedCategory vertices don't have point() compiled;
-    # the label IS the datum.
-    shape = vertex.category()
+    """The datum indexing a vertex: a finite presented shape's label is its datum; every other discrete vertex carries a point."""
     from sage_categories.cat.canonical import FinitePresentedCategory
 
+    shape = vertex.category()
     if isinstance(shape, FinitePresentedCategory):
         return shape.label(vertex)
     return vertex.point()._point_datum_()
@@ -190,7 +187,7 @@ def product_of_sets(diagram: Functor) -> SetObject:
     """``Sets().Products()(diagram)`` for ``diagram: Discrete(S) -> Sets()``: the set of ``S``-indexed families."""
     sets, finite = _sets.Sets(), _sets.Sets().Finite()
     shape = diagram.domain()
-    index_set = index_set_of(shape)
+    index_set = shape.object_set()
     enumerated = finite.has_chosen_enumeration(index_set)
 
     def factor(index_datum: Datum) -> SetObject:
@@ -278,7 +275,7 @@ def coproduct_of_sets(diagram: Functor) -> SetObject:
     """``Sets().Coproducts()(diagram)`` for ``diagram: Discrete(S) -> Sets()``: the set of tagged points ``(i, x)``."""
     sets, finite = _sets.Sets(), _sets.Sets().Finite()
     shape = diagram.domain()
-    index_set = index_set_of(shape)
+    index_set = shape.object_set()
     enumerated = finite.has_chosen_enumeration(index_set)
 
     def cofactor(index_datum: Datum) -> SetObject:

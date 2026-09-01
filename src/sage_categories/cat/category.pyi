@@ -21,6 +21,15 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](sage_categories.ker
     def __init__(self, data: None=None) -> None:
         ...
 
+    def is_discrete(self) -> bool:
+        ...
+
+    def construction_owner(self) -> Category:
+        ...
+
+    def subobjects_type(self) -> type:
+        ...
+
     def __init_subclass__(cls) -> None:
         ...
 
@@ -325,12 +334,10 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     def __init__(self) -> None:
         ...
 
-    @overload
-    def declare(self, name: str, domain: None=None) -> Category:
+    def declare(self, name: str) -> Category:
         ...
 
-    @overload
-    def declare(self, name: str, domain: Category) -> CategoryFamily:
+    def declare_family(self, name: str, domain: Category) -> CategoryFamily:
         ...
 
     def declarations(self) -> dict[str, Category | CategoryFamily]:

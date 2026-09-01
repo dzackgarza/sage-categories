@@ -94,8 +94,7 @@ class DeclaredCategory(Category[[], []]):
             f"{implementation!r} implements the declared category {self._name!r} and is not a category class"
         )
         self.__class__ = implementation
-        if hasattr(self, "_init_sets_category"):
-            self._init_sets_category()
+        self._init_local_state()
         self.recompile()
 
     def __repr__(self) -> str:
@@ -161,7 +160,7 @@ omega: Category = Cat().declare("omega")
 
 # The construction families: functors ``Cat() -> Cat()`` carrying an ambient category to
 # the category of its internal magma, monoid, semiring, and ring objects.
-MagmaObjects: CategoryFamily = Cat().declare("MagmaObjects", Cat())
-MonoidObjects: CategoryFamily = Cat().declare("MonoidObjects", Cat())
-SemiringObjects: CategoryFamily = Cat().declare("SemiringObjects", Cat())
-RingObjects: CategoryFamily = Cat().declare("RingObjects", Cat())
+MagmaObjects: CategoryFamily = Cat().declare_family("MagmaObjects", Cat())
+MonoidObjects: CategoryFamily = Cat().declare_family("MonoidObjects", Cat())
+SemiringObjects: CategoryFamily = Cat().declare_family("SemiringObjects", Cat())
+RingObjects: CategoryFamily = Cat().declare_family("RingObjects", Cat())

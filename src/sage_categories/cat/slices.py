@@ -239,10 +239,12 @@ class SliceLikeCategory(Category[[MorphismCategory.ObjectType], []]):
         return self.defining_arrow().on_object(candidate)
 
     def property_type(self, property_category: Category) -> type[SliceProperty]:
-        """The subobjects of a product state their components; every other property subcategory of a slice has no such method (POL-CAT-094)."""
+        """The subobjects of a product state their components (POL-CAT-094); otherwise the base category supplies its subobjects class (POL-CAT-092)."""
         monomorphisms = self._base_of_slice.morphism_category(1).Monomorphisms()
-        if self._fixed_label == 1 and property_category is monomorphisms and self._fixed in self._base_of_slice.Products():
-            return SubobjectsOfProduct
+        if self._fixed_label == 1 and property_category is monomorphisms:
+            if self._fixed in self._base_of_slice.Products():
+                return SubobjectsOfProduct
+            return self._base_of_slice.subobjects_type()
         return SliceProperty
 
     def _property(self, property_category: Category) -> Category:
@@ -556,14 +558,6 @@ class SliceProperty(FullSubcategory[[MorphismCategory.ObjectType], []]):
         member_object = self._ambient(value)
         refine(member_object, self)
         return member_object
-
-    def from_predicate(self, predicate: Any) -> SliceLikeCategory.ObjectType:
-        """Construct the subobject from a predicate on elements (specs/sets.md)."""
-        target = self._ambient._fixed
-        if hasattr(target, "subset_from"):
-            subset = target.subset_from(predicate)
-            return self(subset.monomorphism())
-        raise NotImplementedError(f"from_predicate is not supported on {self!r}")
 
     def __repr__(self) -> str:
         return f"{self._ambient!r}.{self._property_category.name()}()"

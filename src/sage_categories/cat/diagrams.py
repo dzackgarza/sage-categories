@@ -46,7 +46,7 @@ from sage_categories.cat.dual_functor_categories import dual_functor_category_eq
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import endpoints
 from sage_categories.cat.opposites import opposite_morphism
-from sage_categories.cat.shapes import Discrete, DiscreteCategory, is_discrete
+from sage_categories.cat.shapes import Discrete, DiscreteCategory
 from sage_categories.cat.predicates import Decision
 from sage_categories.cat.predicates import ask
 
@@ -129,7 +129,7 @@ _span_diagrams: TripleDict = TripleDict(weak_values=False)
 def from_object_rule(functors: FunctorCategory, rule: Callable[[DiscreteCategory.ObjectType], CategoryOfCategories.ElementType]) -> Functor:
     """A diagram over a discrete shape from its object rule, retained per shape and rule; the morphism rule is forced."""
     shape = functors.domain()
-    assert is_discrete(shape), f"{shape!r} is not a discrete shape; supply a morphism rule"
+    assert shape.is_discrete(), f"{shape!r} is not a discrete shape; supply a morphism rule"
     if shape not in _object_rule_diagrams:
         _object_rule_diagrams[shape] = MonoDict()
     diagrams = _object_rule_diagrams[shape]

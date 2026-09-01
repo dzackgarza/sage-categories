@@ -69,6 +69,10 @@ class OppositeCategory[**MorphismData, **TwoMorphismData](
         """The category whose opposite this is."""
         return self._original
 
+    def is_discrete(self) -> bool:
+        """A discrete category is its own opposite's representation."""
+        return self._original.is_discrete()
+
     def _object_role_source(self) -> tuple[Category, bool]:
         """Share the object implementation node with the original category."""
         return self._original._object_role_source()

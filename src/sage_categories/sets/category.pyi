@@ -1,9 +1,10 @@
+import sage_categories
 from _typeshed import Incomplete
 from collections.abc import Callable, Iterable
 from sage.misc.cachefunc import cached_method
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Functor
-from sage_categories.cat.predicates import Decision, UnknownClass
+from sage_categories.cat.predicates import UnknownClass
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.sets.cardinals import CardinalObject
 from sage_categories.sets.elements import Datum, SetElementDeclaration
@@ -18,16 +19,22 @@ __all__ = ['SetsCategory', 'SetObject', 'SetElement', 'SetMap', 'Sets']
 class FiniteSets(PropertySubcategory[[Rule], []]):
     ObjectType = FiniteSetObject
 
-    class ElementType:
+    class ElementType(sage_categories.cat.properties.PropertySubcategory.ElementType, sage_categories.sets.elements.SetElementDeclaration, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.cat.properties.PropertySubcategory.MorphismType, sage_categories.sets.maps.SetMapDeclaration, sage_categories.kernel.roles.MorphismOfCategory):
         ...
 
     def __init__(self, ambient: Category[[Rule], []], name: str, implications: tuple[Category, ...]) -> None:
         ...
 
     def __call__(self, members: SetObject | Iterable[Datum]) -> SetObject:
+        ...
+
+    def construction_owner(self) -> Category:
+        ...
+
+    def from_enumeration(self, members: Iterable[Datum]) -> SetObject:
         ...
 
     def has_chosen_enumeration(self, finite_set: SetObject) -> bool:
@@ -54,6 +61,12 @@ class SetsCategory(Category[[Rule], []]):
         ...
 
     def points_by_rule(self, member_object: SetObject) -> bool:
+        ...
+
+    def subobjects_type(self) -> type:
+        ...
+
+    def Inhabited(self) -> Category[[Rule], []]:
         ...
 
     def Finite(self) -> FiniteSets:
@@ -88,6 +101,7 @@ class SetsCategory(Category[[Rule], []]):
     def Terminal(self) -> SetObject:
         ...
 
+    @cached_method
     def Simplex(self, dimension: int) -> SetObject:
         ...
 
@@ -147,9 +161,6 @@ class SetsCategory(Category[[Rule], []]):
         ...
 
     def transpose(self, set_map: SetMap) -> SetMap:
-        ...
-
-    def hom_inhabited(self, hom_category: Category) -> Decision:
         ...
 SetObject: Incomplete
 SetElement: Incomplete

@@ -48,6 +48,9 @@ class FinitePresentedCategory(Category[[Word], []]):
     def generator_names(self) -> tuple[str, ...]:
         ...
 
+    def is_discrete(self) -> bool:
+        ...
+
     def generator(self, name: str) -> FinitePresentedCategory.MorphismType:
         ...
 

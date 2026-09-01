@@ -1,17 +1,33 @@
+import sage_categories
 from collections.abc import Callable
 from sage_categories.cat.category import Category
 from sage_categories.cat.predicates import AppliedPredicate, Predicate
 from sage_categories.cat.properties import FullSubcategory
+from sage_categories.cat.slices import SliceLikeCategory, SliceProperty
 from sage_categories.sets.cardinals import CardinalObject
 from sage_categories.sets.category import SetMap
 from sage_categories.sets.elements import Datum
 from sage_categories.sets.maps import Rule
 from sage_categories.sets.objects import MembershipRule
 from sage_categories.sets.category import SetObject
-__all__ = ['subset_of', 'ChosenSubsetsCategory', 'ChosenQuotientsCategory']
+__all__ = ['SetSubobjects', 'subset_of', 'ChosenSubsetsCategory', 'ChosenQuotientsCategory']
+
+class SetSubobjects(SliceProperty):
+
+    class ElementType:
+        ...
+
+    class MorphismType:
+        ...
+
+    class ObjectType:
+        ...
+
+    def from_predicate(self, predicate: MembershipRule) -> SliceLikeCategory.ObjectType:
+        ...
 subset_of: Predicate
 
-class ChosenSubsetObject:
+class ChosenSubsetObject(sage_categories.sets.objects.SetObjectDeclaration, sage_categories.kernel.roles.ObjectOfCategory):
 
     def monomorphism(self) -> SetMap:
         ...
@@ -49,16 +65,19 @@ class ChosenSubsetObject:
 class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
     ObjectType = ChosenSubsetObject
 
-    class ElementType:
+    class ElementType(sage_categories.sets.elements.SetElementDeclaration, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.sets.maps.SetMapDeclaration, sage_categories.kernel.roles.MorphismOfCategory):
         ...
 
     def __init__(self, ambient: Category[[Rule], []]) -> None:
         ...
 
     def name(self) -> str:
+        ...
+
+    def construction_owner(self) -> Category:
         ...
 
     def with_cardinality(self, base_set: SetObject, predicate: MembershipRule, cardinality: CardinalObject) -> SetObject:

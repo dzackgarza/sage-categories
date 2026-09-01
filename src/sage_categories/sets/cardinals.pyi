@@ -1,3 +1,4 @@
+import sage_categories
 from _typeshed import Incomplete
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -10,11 +11,12 @@ from sage.structure.unique_representation import UniqueRepresentation
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.predicates import AppliedPredicate, Decision, Predicate
+from sage_categories.cat.predicates import AppliedPredicate, Decision, Predicate, Query
 from sage_categories.ordinals.category import OrdinalObject
 from sage_categories.sets.category import SetMap
 from sage_categories.sets.category import SetObject
-__all__ = ['generalized_continuum_hypothesis', 'CardinalObject', 'CardinalElement', 'CardinalityMorphism', 'Cardinal', 'aleph0', 'continuum', 'representative_bijection', 'cardinality_functor']
+from typing import Any
+__all__ = ['generalized_continuum_hypothesis', 'at_most', 'less_than', 'CardinalObject', 'CardinalElement', 'CardinalityMorphism', 'cardinality_query', 'Cardinal', 'CardinalOrder', 'Aleph', 'InitialOrdinal', 'aleph0', 'continuum', 'representative_bijection', 'cardinality_functor']
 type Key = tuple[str | int | Key, ...]
 generalized_continuum_hypothesis: Predicate
 
@@ -122,7 +124,7 @@ class CardinalObjectData:
 class CardinalMorphismData:
     set_map: SetMap
 
-class CardinalObjectDeclaration:
+class CardinalObjectDeclaration(sage_categories.sets.objects.SetObjectDeclaration, sage_categories.kernel.roles.ObjectOfCategory):
 
     def __init__(self, data: CardinalObjectData) -> None:
         ...
@@ -166,6 +168,12 @@ class CardinalObjectDeclaration:
     def __rpow__(self, base: int) -> CardinalObject:
         ...
 
+    def __mod__(self, other: CardinalObject | int) -> CardinalObject:
+        ...
+
+    def __rmod__(self, other: int) -> CardinalObject:
+        ...
+
     def __le__(self, other: CardinalObject | int) -> AppliedPredicate:
         ...
 
@@ -178,16 +186,18 @@ class CardinalObjectDeclaration:
     def __gt__(self, other: CardinalObject | int) -> AppliedPredicate:
         ...
 
-class CardinalMorphismDeclaration:
+class CardinalMorphismDeclaration(sage_categories.sets.maps.SetMapDeclaration, sage_categories.kernel.roles.MorphismOfCategory):
 
     def __init__(self, data: CardinalMorphismData) -> None:
         ...
+at_most: Predicate
+less_than: Predicate
 
 class CardinalCategory(Category[[MorphismCategory.ObjectType], []]):
     ObjectType = CardinalObjectDeclaration
     MorphismType = CardinalMorphismDeclaration
 
-    class ElementType:
+    class ElementType(sage_categories.sets.elements.SetElementDeclaration, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     def __init__(self) -> None:
@@ -251,14 +261,20 @@ class CardinalCategory(Category[[MorphismCategory.ObjectType], []]):
     def inverse_morphism(self, morphism: CardinalityMorphism) -> CardinalityMorphism:
         ...
 
-    def hom_inhabited(self, hom_category: Category) -> Decision:
+    def semiring_object(self) -> Any:
         ...
 CardinalObject: Incomplete
 CardinalElement: Incomplete
 CardinalityMorphism: Incomplete
+cardinality_query: Query
 
 def Cardinal() -> CardinalCategory:
     ...
+
+def CardinalOrder():
+    ...
+Aleph: Functor
+InitialOrdinal: Functor
 aleph0: CardinalObject
 continuum: CardinalObject
 

@@ -102,13 +102,14 @@ class FiniteSets(PropertySubcategory[[Rule], []]):
 
     def __call__(self, members: SetObject | Iterable[Datum]) -> SetObject:
         """Refine an existing set of ``Sets()`` into the finite property subcategory, or construct from an enumeration of data."""
-        if hasattr(members, "_is_object") and members._is_object():
-            assert members in self.ambient(), (
-                f"{members!r} is not an object of {self.ambient()!r}"
-            )
+        if is_placed(members, self.ambient()):
             refine(members, self)
             return members
         return self.from_enumeration(members)
+
+    def construction_owner(self) -> Category:
+        """Finite sets own their construction surface: ``from_enumeration`` and the finite constructors."""
+        return self
 
     def from_enumeration(self, members: Iterable[Datum]) -> SetObject:
         """Construct the finite set with the given enumeration of distinct data.
@@ -170,9 +171,9 @@ class SetsCategory(Category[[Rule], []]):
 
     def __init__(self) -> None:
         super().__init__()
-        self._init_sets_category()
+        self._init_local_state()
 
-    def _init_sets_category(self) -> None:
+    def _init_local_state(self) -> None:
         self._rule_valued: MonoDict = MonoDict()
         self._equality.register_handler(points_equal)
         self._equality.register_handler(sets_equal)
@@ -235,6 +236,12 @@ class SetsCategory(Category[[Rule], []]):
     def points_by_rule(self, member_object: SetObject) -> bool:
         """Whether ``member_object`` was constructed through ``rule_valued``."""
         return member_object in self._rule_valued
+
+    def subobjects_type(self) -> type:
+        """``Sets().Subobjects(X)`` uses the set-specific class that owns ``from_predicate`` (D84, POL-CAT-092)."""
+        from sage_categories.sets.subobjects import SetSubobjects
+
+        return SetSubobjects
 
     def Inhabited(self) -> Category[[Rule], []]:
         return self._inhabited
@@ -402,11 +409,10 @@ class SetsCategory(Category[[Rule], []]):
 
     def limit_construction(self, shape: Category) -> Callable[[Functor], SetObject]:
         """Products over ``Discrete(S)``; coproducts over ``Discrete(S).op()``; over every other shape, the compatible families (``sets/limits.py``)."""
-        from sage_categories.cat.shapes import is_discrete
         from sage_categories.sets.limits import limit_of_sets
         from sage_categories.sets.products import coproduct_of_sets, product_of_sets
 
-        if is_discrete(shape):
+        if shape.is_discrete():
             from sage_categories.cat.opposites import OppositeCategory
 
             if isinstance(shape, OppositeCategory):
@@ -416,11 +422,10 @@ class SetsCategory(Category[[Rule], []]):
 
     def colimit_construction(self, shape: Category) -> Callable[[Functor], SetObject]:
         """Coproducts over ``Discrete(S)``; over every other shape, the quotient of the coproduct (``sets/limits.py``)."""
-        from sage_categories.cat.shapes import is_discrete
         from sage_categories.sets.limits import colimit_of_sets
         from sage_categories.sets.products import coproduct_of_sets
 
-        if is_discrete(shape):
+        if shape.is_discrete():
             return coproduct_of_sets
         return colimit_of_sets
 

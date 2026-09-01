@@ -1,3 +1,4 @@
+import sage_categories
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from sage.structure.coerce_dict import MonoDict
@@ -18,10 +19,11 @@ def sets_equal(first: CategoryOfCategories.ElementType, candidate: Any, assumpti
 class SetObjectData:
     membership_rule: MembershipRule
     cardinality: CardinalObject | UnknownClass
+    cardinality_evaluator: Callable[[], CardinalObject | UnknownClass] | None = ...
     points: dict[Datum, SetElement] = field(default_factory=dict)
     rule_points: MonoDict = field(default_factory=MonoDict)
 
-class SetObjectDeclaration:
+class SetObjectDeclaration(sage_categories.kernel.roles.ObjectOfCategory):
 
     def __init__(self, data: SetObjectData) -> None:
         ...
@@ -38,10 +40,16 @@ class SetObjectDeclaration:
     def rule_point(self, datum: Datum) -> SetElement:
         ...
 
-    def cardinality(self) -> CardinalObject | UnknownClass:
+    def cardinality(self) -> AppliedQuery:
         ...
 
     def subset_from(self, predicate: MembershipRule) -> SetObject:
+        ...
+
+    def is_empty(self) -> AppliedPredicate:
+        ...
+
+    def is_inhabited(self) -> AppliedPredicate:
         ...
 
     def is_finite(self) -> AppliedPredicate:
@@ -59,7 +67,7 @@ class SetObjectDeclaration:
     def evaluation_isomorphism(self) -> SetMap:
         ...
 
-class FiniteSetObject:
+class FiniteSetObject(sage_categories.cat.properties.PropertySubcategory.ObjectType, sage_categories.sets.objects.SetObjectDeclaration, sage_categories.kernel.roles.ObjectOfCategory):
 
     def __iter__(self) -> Iterator[SetElement]:
         ...

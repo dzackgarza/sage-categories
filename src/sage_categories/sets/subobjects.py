@@ -23,6 +23,7 @@ from sage_categories.cat.predicates import (
     predicate,
 )
 from sage_categories.cat.properties import FullSubcategory
+from sage_categories.cat.slices import SliceLikeCategory, SliceProperty
 from sage_categories.kernel.refinement import is_placed, refine
 from sage_categories.sets.cardinals import CardinalObject
 from sage_categories.sets.elements import Datum
@@ -33,7 +34,25 @@ if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
     from sage_categories.sets.category import SetMap
 
-__all__ = ["ChosenQuotientsCategory", "ChosenSubsetsCategory", "subset_of"]
+__all__ = ["ChosenQuotientsCategory", "ChosenSubsetsCategory", "SetSubobjects", "subset_of"]
+
+
+class SetSubobjects(SliceProperty):
+    """``Sets().Subobjects(X)``: set subobjects add construction from a membership predicate (D84, POL-CAT-092)."""
+
+    class ElementType:
+        """A point of a set subobject."""
+
+    class MorphismType:
+        """A triangle of the slice between two set subobjects."""
+
+    class ObjectType:
+        """A subobject ``j: A -> X`` of a set."""
+
+    def from_predicate(self, predicate: MembershipRule) -> SliceLikeCategory.ObjectType:
+        """The subobject selected by a predicate on the data of the fixed set: its chosen subset with its monomorphism."""
+        subset = self._ambient.fixed_object().subset_from(predicate)
+        return self(subset.monomorphism())
 
 # ``subset_of(A, B)``: every member of the chosen subset ``A`` is a member of the
 # chosen subset ``B`` of the same set.
@@ -199,6 +218,10 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
 
     def name(self) -> str:
         return "ChosenSubsets"
+
+    def construction_owner(self) -> Category:
+        """Chosen subsets own their construction surface: ``from_enumeration`` and ``with_cardinality``."""
+        return self
 
     def __repr__(self) -> str:
         return f"{self.ambient()!r}.{self.name()}()"

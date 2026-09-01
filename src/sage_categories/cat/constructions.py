@@ -49,6 +49,7 @@ from typing import TYPE_CHECKING
 from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.cat.category import Category
+from sage_categories.cat.declarations import Sets
 from sage_categories.cat.cones import (
     ConeCategory,
     LimitConesCategory,
@@ -65,7 +66,6 @@ from sage_categories.cat.dual_functor_categories import dual_functor_category_eq
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.properties import FullSubcategory, PredicateSubcategory
-from sage_categories.cat.shapes import is_discrete
 from sage_categories.cat.predicates import Unknown
 from sage_categories.cat.predicates import Proposition, ask
 from sage_categories.kernel.refinement import is_subcategory, refine
@@ -97,28 +97,17 @@ type UniversalPresentation = LimitConesCategory.ObjectType
 
 
 def _nontrivial_discrete(shape: Category) -> bool | None:
-    """Return whether the owned object-set cardinality proves a nontrivial discrete shape."""
-    if not is_discrete(shape):
+    """Return whether the owned object-set cardinality proves a nontrivial discrete shape; ``None`` while undecided."""
+    if not shape.is_discrete():
         return False
-    from sage_categories.cat.canonical import FinitePresentedCategory
-
-    if isinstance(shape, FinitePresentedCategory):
-        return len(shape.labels()) >= 2
-    if hasattr(shape, "object_set"):
-        try:
-            obj_set = shape.object_set()
-            if Sets.Finite().has_chosen_enumeration(obj_set):
-                return len(Sets.Finite().chosen_enumeration(obj_set)) >= 2
-            cardinality = obj_set.cardinality()
-            if cardinality is Unknown:
-                return None
-            if isinstance(cardinality, int):
-                return cardinality >= 2
-            decision = ask(cardinality >= 2)
-            return decision if isinstance(decision, bool) else None
-        except Exception:
-            pass
-    return None
+    object_set = shape.object_set()
+    if Sets.Finite().has_chosen_enumeration(object_set):
+        return len(Sets.Finite().chosen_enumeration(object_set)) >= 2
+    cardinal = ask(object_set.cardinality())
+    if cardinal is Unknown:
+        return None
+    decision = ask(cardinal >= 2)
+    return decision if decision is not Unknown else None
 
 
 def presenting_family(constructed: CategoryOfCategories.ElementType) -> Category:
@@ -307,10 +296,17 @@ class LimitsCategory(ApexCategory):
         return Fun(self._shape, self.ambient())
 
     def __call__(self, diagram: Functor) -> CategoryOfCategories.ElementType:
-        """``C.Limits(I)(diagram)``: the chosen limit, through ``C.limit_construction(I)``."""
+        """``C.Limits(I)(diagram)``: the chosen limit, through ``C.limit_construction(I)``.
+
+        A retained diagram answers from its universal data; only a new diagram asks the
+        ambient for its owned construction, which fails loudly when none is declared.
+        """
         self.accepts(diagram, self._shape)
-        apex = self.chosen(diagram, self.ambient().limit_construction(self._shape))
-        if is_discrete(self._shape):
+        if self.has_construction(diagram):
+            apex = self.chosen_object(diagram)
+        else:
+            apex = self.chosen(diagram, self.ambient().limit_construction(self._shape))
+        if self._shape.is_discrete():
             self.ambient().Products().retain_product(self, apex)
         return apex
 
@@ -330,7 +326,7 @@ class LimitsCategory(ApexCategory):
             lambda candidate: mediator(candidate.transformation()),
         )
         retained = self._retain(diagram, apex, presentation)
-        if is_discrete(self._shape):
+        if self._shape.is_discrete():
             self.ambient().Products().retain_product(self, retained)
         return retained
 
@@ -341,7 +337,7 @@ class LimitsCategory(ApexCategory):
             from sage_categories.cat.images import register_full_image
 
             register_full_image(self._limit_functor[self], self)
-        if is_discrete(self._shape):
+        if self._shape.is_discrete():
             self.ambient().Products().retain_full_image(self)
         return self._limit_functor[self]
 
@@ -406,7 +402,7 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
 
     def retain_full_image(self, family: Category) -> None:
         assert isinstance(family, LimitsCategory)
-        assert is_discrete(family.shape())
+        assert family.shape().is_discrete()
         if family not in self._candidate_families:
             self._candidate_families.append(family)
 
@@ -442,7 +438,7 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
         apex: CategoryOfCategories.ElementType,
     ) -> None:
         assert isinstance(family, LimitsCategory)
-        assert is_discrete(family.shape())
+        assert family.shape().is_discrete()
         self.retain_full_image(family)
         ask(self.membership_proposition(apex))
 
@@ -457,7 +453,7 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
         return families[0]
 
     def diagrams(self, shape: Category) -> Category:
-        assert is_discrete(shape), f"{shape!r} is not a discrete shape"
+        assert shape.is_discrete(), f"{shape!r} is not a discrete shape"
         return Fun(shape, self.ambient())
 
     def _sequence_diagram(self, sequence: tuple[CategoryOfCategories.ElementType, ...]) -> Functor:
@@ -610,7 +606,7 @@ class ColimitsCategory(FullSubcategory[[MorphismCategory.ObjectType], []]):
         apex = presentation.apex()
         assert apex in self.ambient(), f"{apex!r} is not an object of {self.ambient()!r}"
         refine(apex, self)
-        if is_discrete(self._shape):
+        if self._shape.is_discrete():
             self.ambient().Coproducts().retain_coproduct(self, apex)
         return apex
 
@@ -678,7 +674,7 @@ class ColimitsCategory(FullSubcategory[[MorphismCategory.ObjectType], []]):
             from sage_categories.cat.images import register_full_image
 
             register_full_image(self._colimit_functor, self)
-        if is_discrete(self._shape):
+        if self._shape.is_discrete():
             self.ambient().Coproducts().retain_full_image(self)
         return self._colimit_functor
 
@@ -720,7 +716,7 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
 
     def retain_full_image(self, family: Category) -> None:
         assert isinstance(family, ColimitsCategory)
-        assert is_discrete(family.shape())
+        assert family.shape().is_discrete()
         if family not in self._candidate_families:
             self._candidate_families.append(family)
 
@@ -754,7 +750,7 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
         apex: CategoryOfCategories.ElementType,
     ) -> None:
         assert isinstance(family, ColimitsCategory)
-        assert is_discrete(family.shape())
+        assert family.shape().is_discrete()
         self.retain_full_image(family)
         ask(self.membership_proposition(apex))
 
@@ -769,7 +765,7 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
         return families[0]
 
     def diagrams(self, shape: Category) -> Category:
-        assert is_discrete(shape), f"{shape!r} is not a discrete shape"
+        assert shape.is_discrete(), f"{shape!r} is not a discrete shape"
         return Fun(shape, self.ambient())
 
     def _sequence_diagram(self, sequence: tuple[CategoryOfCategories.ElementType, ...]) -> Functor:
@@ -791,12 +787,7 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
         )
         assert diagram in self.universe().morphism_category(1) and diagram.domain() is shape
         assert is_subcategory(diagram.codomain(), self.ambient()), f"{diagram!r} does not land in {self.ambient()!r}"
-        ambient = self.ambient()
-        try:
-            construction = ambient.colimit_construction(shape)
-            return construction(diagram)
-        except AssertionError:
-            return ambient.Colimits(shape)(diagram)
+        return self.ambient().Colimits(shape)(diagram)
 
     def with_universal_data(
         self,

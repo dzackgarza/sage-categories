@@ -39,6 +39,7 @@ from sage_categories.cat.category import Category
 from sage_categories.cat.predicates import Decision
 from sage_categories.cat.predicates import Axiom, Predicate, Proposition, property_predicate, register_handler
 from sage_categories.kernel.refinement import is_subcategory, refine
+from sage_categories.kernel.roles import CategoryPoint
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -200,7 +201,7 @@ class InverseImageSubcategory[**MorphismData, **TwoMorphismData](FullSubcategory
     def structure_functors(self) -> tuple[Functor, ...]:
         return (self.subcategory_monomorphism(), self.target_projection())
 
-    @cached_method
+    @cached_method(key=lambda self, candidate: (id(candidate), candidate))
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         return self._ambient.membership_proposition(candidate) & self._target_subcategory.membership_proposition(
             self._functor.on_object(candidate)
@@ -372,7 +373,7 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
             *(functors.full_subcategory_monomorphism(self, containing) for containing in self._full_subcategory_of),
         )
 
-    @cached_method
+    @cached_method(key=lambda self, candidate: (id(candidate), candidate))
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         """Membership in the ambient and the property's own predicate.
 
@@ -557,7 +558,7 @@ class FixedEndpointProperty[**MorphismData, **TwoMorphismData](NarrowedProperty[
         if (
             len(args) == 1
             and not kwargs
-            and hasattr(args[0], "domain")
+            and isinstance(args[0], CategoryPoint)
             and args[0] in self._ambient
         ):
             refine(args[0], self)

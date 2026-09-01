@@ -37,41 +37,50 @@ from sage_categories import (
     retract,
     version,
 )
+from sage_categories.algebra import Groups, Magmas, Monoids, Semirings
 from sage_categories.number_sets import NN, QQ, RR, ZZ, Primes
-from sage_categories.ordinals import Ordinals, omega0
+from sage_categories.ordinals import OrdinalOrder, Ordinals, omega0
 from sage_categories.posets import FinitePosets, FiniteTotallyOrderedSets, Posets, TotallyOrderedSets
-from sage_categories.sets.cardinals import Cardinal, aleph0, continuum, generalized_continuum_hypothesis
+from sage_categories.sets.cardinals import Aleph, Cardinal, CardinalOrder, InitialOrdinal, aleph0, continuum, generalized_continuum_hypothesis
 from sage_categories.sets.category import Sets
 
 __all__ = [
     "Adjunctions",
-    "NN",
-    "QQ",
-    "RR",
-    "ZZ",
+    "Aleph",
     "Cardinal",
+    "CardinalOrder",
     "Cat",
     "Category",
+    "Cones",
     "Decision",
     "Discrete",
     "Equivalences",
     "FinitePosets",
     "FiniteTotallyOrderedSets",
     "Fun",
-    "Cones",
+    "Groups",
+    "InitialOrdinal",
     "LimitCones",
+    "Magmas",
+    "Monoids",
     "Mor",
+    "NN",
     "Op",
+    "OrdinalOrder",
     "Ordinals",
     "Posets",
     "Predicate",
     "Primes",
+    "QQ",
+    "RR",
+    "Semirings",
     "Sets",
     "Thin",
     "TotalCones",
     "TotallyOrderedSets",
     "Unknown",
     "UnknownClass",
+    "ZZ",
     "__version__",
     "aleph0",
     "ask",

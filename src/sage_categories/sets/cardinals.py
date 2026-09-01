@@ -115,14 +115,19 @@ if TYPE_CHECKING:
     from sage_categories.sets.objects import SetObject
 
 __all__ = [
+    "Aleph",
     "Cardinal",
     "CardinalElement",
+    "CardinalOrder",
     "CardinalityMorphism",
     "CardinalObject",
+    "InitialOrdinal",
     "aleph0",
+    "at_most",
     "cardinality_functor",
     "continuum",
     "generalized_continuum_hypothesis",
+    "less_than",
     "representative_bijection",
 ]
 
@@ -680,6 +685,8 @@ class CardinalMorphismDeclaration:
         return f"CardinalityMorphism({self.domain()!r} -> {self.codomain()!r})"
 
 
+# ``at_most(kappa, lambda)``: ``kappa <= lambda`` in cardinal order.
+at_most: Predicate = predicate("cardinal_at_most")
 # ``less_than(kappa, lambda)``: ``kappa <= lambda`` and not ``kappa == lambda``.
 less_than: Predicate = predicate("cardinal_less_than")
 
@@ -699,6 +706,7 @@ class CardinalCategory(Category[[MorphismCategory.ObjectType], []]):
         self._representatives: MonoDict = MonoDict()
         super().__init__()
         self._equality.register_handler(self._equal)
+        at_most.register_handler(self._at_most)
         less_than.register_handler(self._less_than)
         self._countable_cardinals = PropertySubcategory(self, "Countable", ())
         self._infinite_cardinals = PropertySubcategory(self, "Infinite", ())
@@ -903,6 +911,48 @@ class CardinalCategory(Category[[MorphismCategory.ObjectType], []]):
             return False
         return Unknown
 
+    def semiring_object(self) -> Any:
+        """The strict internal semiring object of Cardinal() in Semirings(Cat())."""
+        if not hasattr(self, "_semiring_object"):
+            from sage_categories.algebra.semirings import Semirings
+            from sage_categories.cat.functors import Cat
+
+            def add_objects(pair: Any) -> CardinalObject:
+                c1, c2 = pair
+                return self.sum(c1, c2)
+
+            def add_morphisms(m_pair: Any) -> CardinalityMorphism:
+                m1, m2 = m_pair
+                return self.morphism_category(1)(
+                    self.sum(m1.domain(), m2.domain()),
+                    self.sum(m1.codomain(), m2.codomain()),
+                )(m1._set_map + m2._set_map)
+
+            def mul_objects(pair: Any) -> CardinalObject:
+                c1, c2 = pair
+                return self.product(c1, c2)
+
+            def mul_morphisms(m_pair: Any) -> CardinalityMorphism:
+                m1, m2 = m_pair
+                return self.morphism_category(1)(
+                    self.product(m1.domain(), m2.domain()),
+                    self.product(m1.codomain(), m2.codomain()),
+                )(m1._set_map * m2._set_map)
+
+            cat = Cat()
+            card_prod = self * self
+            addition_functor = Fun(card_prod, self)(add_objects, add_morphisms)
+            multiplication_functor = Fun(card_prod, self)(mul_objects, mul_morphisms)
+
+            self._semiring_object = Semirings(cat)(
+                self,
+                addition_functor,
+                self.zero(),
+                multiplication_functor,
+                self.one(),
+            )
+        return self._semiring_object
+
     def __repr__(self) -> str:
         return "Cardinal"
 
@@ -921,17 +971,89 @@ def Cardinal() -> CardinalCategory:
     return _CARDINAL
 
 
-def __getattr__(name: str) -> CardinalObject:
-    """``aleph0`` and ``continuum`` are constructed with ``Cardinal()``, on first access."""
+_CARDINAL_ORDER = None
+
+
+def CardinalOrder():
+    """The thin category of the cardinal order (specs/cardinality.md)."""
+    global _CARDINAL_ORDER
+    if _CARDINAL_ORDER is None:
+        from sage_categories.cat.shapes import Thin
+
+        _CARDINAL_ORDER = Thin(Cardinal(), at_most)
+    return _CARDINAL_ORDER
+
+
+_ALEPH: Functor | None = None
+_INITIAL_ORDINAL: Functor | None = None
+
+
+def _get_aleph() -> Functor:
+    global _ALEPH
+    if _ALEPH is None:
+        ordinal_order = _ordinals.OrdinalOrder()
+        cardinal_order = CardinalOrder()
+
+        def on_object(alpha_point: Any) -> Any:
+            alpha = ordinal_order.object_point(alpha_point)
+            card = Cardinal().aleph(alpha)
+            return cardinal_order(card)
+
+        def on_morphism(arrow: Any) -> Any:
+            dom = on_object(arrow.domain())
+            cod = on_object(arrow.codomain())
+            return cardinal_order.construct_morphism(dom, cod)
+
+        _ALEPH = Fun(ordinal_order, cardinal_order)(on_object, on_morphism)
+    return _ALEPH
+
+
+def _get_initial_ordinal() -> Functor:
+    global _INITIAL_ORDINAL
+    if _INITIAL_ORDINAL is None:
+        cardinal_order = CardinalOrder()
+        ordinal_order = _ordinals.OrdinalOrder()
+
+        def on_object(kappa_point: Any) -> Any:
+            kappa = cardinal_order.object_point(kappa_point)
+            ord_cat = _ordinals.Ordinals()
+            val = kappa._value
+            if isinstance(val._value, int) or (hasattr(val, "_value") and isinstance(val._value, int)):
+                res = ord_cat(int(val._value))
+            elif hasattr(val, "_kind_") and val._kind_() == "aleph":
+                res = ord_cat.omega(val._index)
+            elif hasattr(val, "_value") and hasattr(val._value, "value"):
+                res = ord_cat.omega(val._value.value)
+            else:
+                res = ord_cat(0)
+            return ordinal_order(res)
+
+        def on_morphism(arrow: Any) -> Any:
+            dom = on_object(arrow.domain())
+            cod = on_object(arrow.codomain())
+            return ordinal_order.construct_morphism(dom, cod)
+
+        _INITIAL_ORDINAL = Fun(cardinal_order, ordinal_order)(on_object, on_morphism)
+    return _INITIAL_ORDINAL
+
+
+def __getattr__(name: str) -> Any:
+    """``aleph0``, ``continuum``, ``Aleph``, and ``InitialOrdinal`` on first access."""
     match name:
         case "aleph0":
             return Cardinal().aleph(0)
         case "continuum":
             return Cardinal()(2) ** Cardinal().aleph(0)
+        case "Aleph":
+            return _get_aleph()
+        case "InitialOrdinal":
+            return _get_initial_ordinal()
     raise AttributeError(name)
 
 
 if TYPE_CHECKING:
+    Aleph: Functor
+    InitialOrdinal: Functor
     aleph0: CardinalObject
     continuum: CardinalObject
 

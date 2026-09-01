@@ -284,7 +284,6 @@ class ThinCategory(Category[[], []]):
         """A generalized element of a point; no local operation."""
 
     def __init__(self, carrier: CategoryOfCategories.ElementType, order: Predicate) -> None:
-        assert order.arity() == 2
         self._carrier = carrier
         self._order = order
         self._objects: MonoDict = MonoDict()
@@ -352,7 +351,7 @@ class ThinCategory(Category[[], []]):
 
 def Thin(carrier: CategoryOfCategories.ElementType, order: Predicate) -> ThinCategory:
     """Return the thin category of the supplied set and order predicate."""
-    assert carrier in Sets
+    assert carrier in Sets or carrier in Cat()
     return ThinCategory(carrier, order)
 
 

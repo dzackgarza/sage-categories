@@ -53,7 +53,20 @@ if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
     from sage_categories.sets.cardinals import CardinalObject
 
-__all__ = ["OrdinalObject", "Ordinals", "OrdinalsCategory", "bind_cardinals", "is_natural_number", "omega", "omega0", "ordinal"]
+__all__ = [
+    "OrdinalObject",
+    "OrdinalOrder",
+    "Ordinals",
+    "OrdinalsCategory",
+    "at_most",
+    "bind_cardinals",
+    "initial",
+    "is_natural_number",
+    "less_than",
+    "omega",
+    "omega0",
+    "ordinal",
+]
 
 
 def is_natural_number(value: Any) -> bool:
@@ -452,3 +465,14 @@ def omega(index: OrdinalObject | int) -> OrdinalObject:
 
 
 omega0: OrdinalObject = omega(0)
+_ORDINAL_ORDER = None
+
+
+def OrdinalOrder():
+    """The thin category of the ordinal order (specs/cardinality.md, specs/ordinals.md)."""
+    global _ORDINAL_ORDER
+    if _ORDINAL_ORDER is None:
+        from sage_categories.cat.shapes import Thin
+
+        _ORDINAL_ORDER = Thin(Ordinals(), at_most)
+    return _ORDINAL_ORDER

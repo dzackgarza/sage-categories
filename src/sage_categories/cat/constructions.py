@@ -100,6 +100,20 @@ def _nontrivial_discrete(shape: Category) -> bool | None:
     """Return whether the owned object-set cardinality proves a nontrivial discrete shape; ``None`` while undecided."""
     if not shape.is_discrete():
         return False
+    from sage_categories.cat.canonical import FinitePresentedCategory
+    from sage_categories.cat.opposites import OppositeCategory
+
+    if isinstance(shape, OppositeCategory):
+        # A positive decision on a dual shape refines the op-apex into the op-side
+        # products family, and the op-narrowing join cannot compile that placement yet
+        # (the op categories' shared ``original`` spelling collides); the dual family
+        # stays undecided until the kernel owner supports that join.
+        return None
+    # A finite presented shape decides by its label count without touching the owned
+    # object set, so the categorical core stays executable before the production Sets
+    # leaf (D126, D129).
+    if isinstance(shape, FinitePresentedCategory):
+        return len(shape.labels()) >= 2
     object_set = shape.object_set()
     if Sets.Finite().has_chosen_enumeration(object_set):
         return len(Sets.Finite().chosen_enumeration(object_set)) >= 2

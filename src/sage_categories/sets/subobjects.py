@@ -9,10 +9,21 @@ from sage.misc.cachefunc import cached_method
 
 import sage_categories.sets.category as _sets
 from sage_categories.cat.category import Category
+from sage_categories.cat.predicates import (
+    AppliedPredicate,
+    Decision,
+    Predicate,
+    Unknown,
+    UnknownClass,
+    ask,
+    conjunction,
+    disjunction,
+    established,
+    negation,
+    predicate,
+)
 from sage_categories.cat.properties import FullSubcategory
-from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
-from sage_categories.cat.predicates import AppliedPredicate, Predicate, ask, conjunction, disjunction, established, negation
-from sage_categories.kernel.refinement import refine
+from sage_categories.kernel.refinement import is_placed, refine
 from sage_categories.sets.cardinals import CardinalObject
 from sage_categories.sets.elements import Datum
 from sage_categories.sets.maps import Rule
@@ -26,7 +37,7 @@ __all__ = ["ChosenQuotientsCategory", "ChosenSubsetsCategory", "subset_of"]
 
 # ``subset_of(A, B)``: every member of the chosen subset ``A`` is a member of the
 # chosen subset ``B`` of the same set.
-subset_of: Predicate = Predicate("subset_of", 2, True)
+subset_of: Predicate = predicate("subset_of")
 
 
 def _restricted_rule(base_set: SetObject, predicate: MembershipRule) -> MembershipRule:
@@ -56,16 +67,28 @@ def _distinct(data: tuple[Datum, ...]) -> tuple[Datum, ...] | UnknownClass:
     proposition, not a decision (POL-MATH-034/035), so only ``ask`` yields the
     ``True``/``False``/``Unknown`` this deduplication branches on.
     """
-    if any(ask(first == second) is Unknown for position, first in enumerate(data) for second in data[:position]):
+    if any(
+        ask(first == second) is Unknown
+        for position, first in enumerate(data)
+        for second in data[:position]
+    ):
         return Unknown
-    return tuple(datum for position, datum in enumerate(data) if not any(ask(datum == earlier) for earlier in data[:position]))
+    return tuple(
+        datum
+        for position, datum in enumerate(data)
+        if not any(ask(datum == earlier) for earlier in data[:position])
+    )
 
 
-def _subset_by_identity(first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
+def _subset_by_identity(
+    first: CategoryOfCategories.ElementType, candidate: Any
+) -> Decision:
     return True if first is candidate else Unknown
 
 
-def _subset_by_enumeration(first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
+def _subset_by_enumeration(
+    first: CategoryOfCategories.ElementType, candidate: Any
+) -> Decision:
     """Exact when ``A`` has a chosen enumeration: ``B`` decides each member of ``A``."""
     sets = _sets.Sets()
     chosen, finite = sets.ChosenSubsets(), sets.Finite()
@@ -103,20 +126,41 @@ class ChosenSubsetObject:
         return subset_of(self, other)
 
     def union(self, other: SetObject) -> SetObject:
-        return self._combined(other, lambda in_first, in_second: ask(disjunction((in_first, in_second))))
+        return self._combined(
+            other, lambda in_first, in_second: ask(disjunction((in_first, in_second)))
+        )
 
     def intersection(self, other: SetObject) -> SetObject:
-        return self._combined(other, lambda in_first, in_second: ask(conjunction((in_first, in_second))))
+        return self._combined(
+            other, lambda in_first, in_second: ask(conjunction((in_first, in_second)))
+        )
 
     def difference(self, other: SetObject) -> SetObject:
-        return self._combined(other, lambda in_first, in_second: ask(conjunction((in_first, negation(in_second)))))
+        return self._combined(
+            other,
+            lambda in_first, in_second: ask(
+                conjunction((in_first, negation(in_second)))
+            ),
+        )
 
     def symmetric_difference(self, other: SetObject) -> SetObject:
-        return self._combined(other, lambda in_first, in_second: ask(disjunction((conjunction((in_first, negation(in_second))), conjunction((in_second, negation(in_first)))))))
+        return self._combined(
+            other,
+            lambda in_first, in_second: ask(
+                disjunction(
+                    (
+                        conjunction((in_first, negation(in_second))),
+                        conjunction((in_second, negation(in_first))),
+                    )
+                )
+            ),
+        )
 
     def complement(self) -> SetObject:
         rule = self._set_object_data.membership_rule
-        return self.underlying_set().subset_from(lambda datum: ask(negation(rule(datum))))
+        return self.underlying_set().subset_from(
+            lambda datum: ask(negation(rule(datum)))
+        )
 
     def __or__(self, other: SetObject) -> SetObject:
         return self.union(other)
@@ -124,12 +168,19 @@ class ChosenSubsetObject:
     def __and__(self, other: SetObject) -> SetObject:
         return self.intersection(other)
 
-    def _combined(self, other: SetObject, combine: Callable[[Decision, Decision], Decision]) -> SetObject:
+    def _combined(
+        self, other: SetObject, combine: Callable[[Decision, Decision], Decision]
+    ) -> SetObject:
         """The chosen subset of ``X`` whose membership is the combination of the two membership decisions."""
-        assert other in _sets.Sets().ChosenSubsets() and other.underlying_set() is self.underlying_set(), f"{other!r} is not a chosen subset of {self.underlying_set()!r}"
+        assert (
+            other in _sets.Sets().ChosenSubsets()
+            and other.underlying_set() is self.underlying_set()
+        ), f"{other!r} is not a chosen subset of {self.underlying_set()!r}"
         first_rule = self._set_object_data.membership_rule
         second_rule = other._set_object_data.membership_rule
-        return self.underlying_set().subset_from(lambda datum: combine(first_rule(datum), second_rule(datum)))
+        return self.underlying_set().subset_from(
+            lambda datum: combine(first_rule(datum), second_rule(datum))
+        )
 
 
 class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
@@ -152,20 +203,31 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
     def __repr__(self) -> str:
         return f"{self.ambient()!r}.{self.name()}()"
 
-    def with_cardinality(self, base_set: SetObject, predicate: MembershipRule, cardinality: CardinalObject) -> SetObject:
+    def with_cardinality(
+        self,
+        base_set: SetObject,
+        predicate: MembershipRule,
+        cardinality: CardinalObject,
+    ) -> SetObject:
         """The chosen subset ``{x in X : predicate(x)}`` whose exact cardinality a construction theorem supplies (POL-SET-031)."""
         sets = _sets.Sets()
         assert base_set in sets, f"{base_set!r} is not an object of {sets!r}"
-        subset = sets.with_cardinality(_restricted_rule(base_set, predicate), cardinality)
+        subset = sets.with_cardinality(
+            _restricted_rule(base_set, predicate), cardinality
+        )
         refine(subset, self)
         return self._retain_monomorphism(subset, base_set)
 
-    def from_enumeration(self, base_set: SetObject, members: tuple[Datum, ...]) -> SetObject:
+    def from_enumeration(
+        self, base_set: SetObject, members: tuple[Datum, ...]
+    ) -> SetObject:
         """The chosen subset of ``X`` with the given finite enumeration of member data, each admitted by ``X``."""
         sets = _sets.Sets()
         assert base_set in sets, f"{base_set!r} is not an object of {sets!r}"
         base_rule = base_set._set_object_data.membership_rule
-        assert all(base_rule(member) is not False for member in members), f"{members!r} are not all members of {base_set!r}"
+        assert all(base_rule(member) is not False for member in members), (
+            f"{members!r} are not all members of {base_set!r}"
+        )
         subset = sets.Finite()(members)
         refine(subset, self)
         return self._retain_monomorphism(subset, base_set)
@@ -178,10 +240,14 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
 
         def indicator(datum: Datum) -> Datum:
             decision = rule(datum)
-            assert decision is not Unknown, f"membership of {datum!r} in {subset!r} is not decided, so its characteristic morphism has no value there"
+            assert decision is not Unknown, (
+                f"membership of {datum!r} in {subset!r} is not decided, so its characteristic morphism has no value there"
+            )
             return 1 if decision else 0
 
-        return sets.morphism_category(1)(subset.underlying_set(), sets.Simplex(1))(indicator)
+        return sets.morphism_category(1)(subset.underlying_set(), sets.Simplex(1))(
+            indicator
+        )
 
     def __call__(self, base_set: SetObject, predicate: MembershipRule) -> SetObject:
         """The chosen subset ``{x in X : predicate(x)}`` with its monomorphism into ``X``."""
@@ -189,18 +255,21 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
         assert base_set in sets, f"{base_set!r} is not an object of {sets!r}"
         finite = sets.Finite()
         if finite.has_chosen_enumeration(base_set):
-            decided = tuple((datum, predicate(datum)) for datum in finite.chosen_enumeration(base_set))
+            decided = tuple(
+                (datum, predicate(datum))
+                for datum in finite.chosen_enumeration(base_set)
+            )
             if all(decision is not Unknown for _, decision in decided):
                 subset = finite(tuple(datum for datum, decision in decided if decision))
                 refine(subset, self)
                 return self._retain_monomorphism(subset, base_set)
         subset = sets(_restricted_rule(base_set, predicate))
         refine(subset, self)
-        if base_set in finite:
+        if is_placed(base_set, finite):
             # A subset of a finite set is finite: Mathlib ``Set.Finite.subset``
             # (Mathlib.Data.Set.Finite.Basic; inspected 2026-08-26).
             finite(subset)
-        elif base_set in sets.Countable():
+        elif is_placed(base_set, sets.Countable()):
             # A subset of a countable set is countable: Mathlib ``Set.Countable.mono``
             # (Mathlib.Data.Set.Countable; inspected 2026-08-26).
             sets.Countable()(subset)
@@ -210,7 +279,11 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
     def image_of(self, set_map: SetMap) -> SetObject:
         """``f.image()``: the chosen subset of the codomain of the points with a preimage, retained per map."""
         sets = _sets.Sets()
-        finite, countable, monomorphisms = sets.Finite(), sets.Countable(), sets.morphism_category(1).Monomorphisms()
+        finite, countable, monomorphisms = (
+            sets.Finite(),
+            sets.Countable(),
+            sets.morphism_category(1).Monomorphisms(),
+        )
         assert set_map in sets.morphism_category(1), f"{set_map!r} is not a set map"
         domain, codomain = set_map.domain(), set_map.codomain()
         codomain_rule = codomain._set_object_data.membership_rule
@@ -229,7 +302,11 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
                 in_codomain = codomain_rule(datum)
                 if established(negation(in_codomain)):
                     return False
-                return ask(conjunction((in_codomain, disjunction(image == datum for image in images))))
+                return ask(
+                    conjunction(
+                        (in_codomain, disjunction(image == datum for image in images))
+                    )
+                )
 
         else:
 
@@ -240,7 +317,11 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
                 return Unknown
 
         cardinality = domain.cardinality() if set_map in monomorphisms else Unknown
-        subset = sets(has_preimage) if cardinality is Unknown else sets.with_cardinality(has_preimage, cardinality)
+        subset = (
+            sets(has_preimage)
+            if cardinality is Unknown
+            else sets.with_cardinality(has_preimage, cardinality)
+        )
         refine(subset, self)
         if domain in finite:
             # Mathlib ``Set.Finite.image`` (Mathlib.Data.Set.Finite.Basic; inspected 2026-08-27).
@@ -257,8 +338,10 @@ class ChosenSubsetsCategory(FullSubcategory[[Rule], []]):
     def _retain_monomorphism(self, subset: SetObject, base_set: SetObject) -> SetObject:
         # The monomorphism of a subset is injective: Mathlib ``Set.inclusion_injective``
         # (Mathlib.Data.Set.Inclusion; inspected 2026-08-26).
-        monomorphisms = _sets.Sets().morphism_category(1)(subset, base_set).Monomorphisms()
-        self.retain_datum(subset, monomorphisms(lambda datum: datum))
+        identity = _sets.Sets().morphism_category(1)(subset, base_set)(
+            lambda datum: datum
+        )
+        self.retain_datum(subset, identity)
         return subset
 
 
@@ -304,12 +387,19 @@ class ChosenQuotientsCategory(FullSubcategory[[Rule], []]):
     def __repr__(self) -> str:
         return f"{self.ambient()!r}.{self.name()}()"
 
-    def __call__(self, base_set: SetObject, class_of: Callable[[Datum], Datum], membership_rule: MembershipRule) -> SetObject:
+    def __call__(
+        self,
+        base_set: SetObject,
+        class_of: Callable[[Datum], Datum],
+        membership_rule: MembershipRule,
+    ) -> SetObject:
         sets = _sets.Sets()
         assert base_set in sets, f"{base_set!r} is not an object of {sets!r}"
         finite = sets.Finite()
         if finite.has_chosen_enumeration(base_set):
-            classes = tuple(class_of(datum) for datum in finite.chosen_enumeration(base_set))
+            classes = tuple(
+                class_of(datum) for datum in finite.chosen_enumeration(base_set)
+            )
             distinct = _distinct(classes)
             if distinct is not Unknown:
                 quotient = finite(distinct)
@@ -319,7 +409,14 @@ class ChosenQuotientsCategory(FullSubcategory[[Rule], []]):
         refine(quotient, self)
         return self._retain_quotient_map(base_set, quotient, class_of)
 
-    def _retain_quotient_map(self, base_set: SetObject, quotient: SetObject, class_of: Callable[[Datum], Datum]) -> SetObject:
-        epimorphisms = _sets.Sets().morphism_category(1)(base_set, quotient).Epimorphisms()
-        self.retain_datum(quotient, epimorphisms(class_of))
+    def _retain_quotient_map(
+        self,
+        base_set: SetObject,
+        quotient: SetObject,
+        class_of: Callable[[Datum], Datum],
+    ) -> SetObject:
+        epi_morphism = _sets.Sets().morphism_category(1)(base_set, quotient)(
+            class_of
+        )
+        self.retain_datum(quotient, epi_morphism)
         return quotient

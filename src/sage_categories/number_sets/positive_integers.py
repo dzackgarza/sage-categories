@@ -15,7 +15,7 @@ from sage.rings.integer import Integer
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.predicates import Decision, Unknown
-from sage_categories.cat.predicates import Predicate
+from sage_categories.cat.predicates import Predicate, predicate
 from sage_categories.kernel.refinement import refine
 from sage_categories.number_sets.integers import _is_integer
 from sage_categories.sets.cardinals import aleph0
@@ -83,7 +83,7 @@ _POSITIVE_INTEGERS = PositiveIntegersCategory()
 
 # ``natural_order(m, n)``: ``m <= n`` for two points of ``NN``, decided by Sage's exact
 # integer order; ``omega = Thin(NN, natural_order)`` is the sequential shape (specs/functor.md, "Diagram shapes and universal constructions").
-natural_order: Predicate = Predicate("natural_order", 2, True)
+natural_order: Predicate = predicate("natural_order")
 
 
 def _natural_order_by_integer_comparison(

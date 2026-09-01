@@ -105,7 +105,7 @@ from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
-from sage_categories.cat.predicates import AppliedPredicate, Predicate, ask, assume, conjunction, disjunction, established, negation
+from sage_categories.cat.predicates import AppliedPredicate, Predicate, ask, assume, conjunction, disjunction, established, negation, predicate
 from sage_categories.ordinals.category import OrdinalObject, Ordinals, bind_cardinals, is_natural_number
 
 if TYPE_CHECKING:
@@ -159,7 +159,7 @@ type Key = tuple[str | int | Key, ...]
 # so the package's own default state has it; ``retract`` withdraws it and the exponents
 # return to the formal powers and joins that ZFC alone supports.  It carries no arguments
 # and records no decision, so nothing about it is cached.
-generalized_continuum_hypothesis: Predicate = Predicate("generalized_continuum_hypothesis", 0, False)
+generalized_continuum_hypothesis: Predicate = predicate("generalized_continuum_hypothesis")
 
 assume(generalized_continuum_hypothesis())
 
@@ -681,7 +681,7 @@ class CardinalMorphismDeclaration:
 
 
 # ``less_than(kappa, lambda)``: ``kappa <= lambda`` and not ``kappa == lambda``.
-less_than: Predicate = Predicate("cardinal_less_than", 2, True)
+less_than: Predicate = predicate("cardinal_less_than")
 
 
 class CardinalCategory(Category[[MorphismCategory.ObjectType], []]):
@@ -705,9 +705,9 @@ class CardinalCategory(Category[[MorphismCategory.ObjectType], []]):
         self._finite_cardinals = PropertySubcategory(self, "Finite", (self._countable_cardinals,))
         self._uncountable_cardinals = PropertySubcategory(self, "Uncountable", (self._infinite_cardinals,))
         self._finite_cardinals.predicate().register_handler(self._is_finite)
-        self._infinite_cardinals.predicate().register_handler(lambda cardinal: ask(negation(self._is_finite(cardinal))))
+        self._infinite_cardinals.predicate().register_handler(self._is_infinite)
         self._countable_cardinals.predicate().register_handler(self._is_countable)
-        self._uncountable_cardinals.predicate().register_handler(lambda cardinal: ask(negation(self._is_countable(cardinal))))
+        self._uncountable_cardinals.predicate().register_handler(self._is_uncountable)
 
     def Finite(self) -> Category:
         return self._finite_cardinals
@@ -864,11 +864,17 @@ class CardinalCategory(Category[[MorphismCategory.ObjectType], []]):
 
     # -- exact decisions -----------------------------------------------------------
 
-    def _is_finite(self, cardinal: CardinalObject) -> Decision:
+    def _is_finite(self, cardinal: CardinalObjectDeclaration) -> Decision:
         return self._semiring.is_finite(cardinal._value)
 
-    def _is_countable(self, cardinal: CardinalObject) -> Decision:
+    def _is_countable(self, cardinal: CardinalObjectDeclaration) -> Decision:
         return self._semiring.is_countable(cardinal._value)
+
+    def _is_infinite(self, cardinal: CardinalObjectDeclaration) -> Decision:
+        return ask(negation(self._is_finite(cardinal)))
+
+    def _is_uncountable(self, cardinal: CardinalObjectDeclaration) -> Decision:
+        return ask(negation(self._is_countable(cardinal)))
 
     def _equal(self, first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
         if first not in self:
@@ -885,10 +891,10 @@ class CardinalCategory(Category[[MorphismCategory.ObjectType], []]):
         # other (inspected 2026-08-28).
         return ask(conjunction((self._at_most(first, second), self._at_most(second, first))))
 
-    def _at_most(self, first: CardinalObject, second: CardinalObject) -> Decision:
+    def _at_most(self, first: CardinalObjectDeclaration, second: CardinalObjectDeclaration) -> Decision:
         return self._semiring.le(first._value, second._value)
 
-    def _less_than(self, first: CardinalObject, second: CardinalObject) -> Decision:
+    def _less_than(self, first: CardinalObjectDeclaration, second: CardinalObjectDeclaration) -> Decision:
         if first is second:
             return False
         if established(self._at_most(first, second)):

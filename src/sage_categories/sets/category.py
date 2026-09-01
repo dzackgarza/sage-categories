@@ -34,7 +34,7 @@ from sage_categories.cat.predicates import (
     negation,
 )
 from sage_categories.cat.properties import PropertySubcategory
-from sage_categories.kernel.refinement import refine
+from sage_categories.kernel.refinement import is_placed, refine
 from sage_categories.sets import elements as _set_elements
 from sage_categories.sets import maps as _set_maps
 from sage_categories.sets import objects as _set_objects
@@ -501,22 +501,22 @@ class SetsCategory(Category[[Rule], []]):
     def _finite_by_infinite(
         self, ambient: SetObjectDeclaration, assumptions: Proposition
     ) -> Decision:
-        return False if ambient in self._infinite else Unknown
+        return False if is_placed(ambient, self._infinite) else Unknown
 
     def _countable_by_uncountable(
         self, ambient: SetObjectDeclaration, assumptions: Proposition
     ) -> Decision:
-        return False if ambient in self._uncountable else Unknown
+        return False if is_placed(ambient, self._uncountable) else Unknown
 
     def _infinite_by_finiteness(
         self, ambient: SetObjectDeclaration, assumptions: Proposition
     ) -> Decision:
-        return ask(negation(ambient.is_finite()))
+        return False if is_placed(ambient, self._finite) else Unknown
 
     def _uncountable_by_countability(
         self, ambient: SetObjectDeclaration, assumptions: Proposition
     ) -> Decision:
-        return ask(negation(ambient.is_countable()))
+        return False if is_placed(ambient, self._countable) else Unknown
 
     def __repr__(self) -> str:
         return "Sets"

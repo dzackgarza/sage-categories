@@ -23,11 +23,11 @@ class SetMapDeclaration:
     def image(self) -> SetObject:
         ...
 
-def maps_equal(first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
+def maps_equal(first: CategoryOfCategories.ElementType, candidate: Any, assumptions: Proposition) -> Decision:
     ...
 
-def injective_on_finite_domain(morphism: SetMapDeclaration) -> Decision:
+def injective_on_finite_domain(morphism: SetMapDeclaration, assumptions: Proposition) -> Decision:
     ...
 
-def surjective_on_finite_domain(morphism: SetMapDeclaration) -> Decision:
+def surjective_on_finite_domain(morphism: SetMapDeclaration, assumptions: Proposition) -> Decision:
     ...

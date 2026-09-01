@@ -47,7 +47,7 @@ from sage.rings.integer_ring import ZZ as _integer_ring
 
 from sage_categories.cat.category import Category
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
-from sage_categories.cat.predicates import AppliedPredicate, Predicate, ask, conjunction
+from sage_categories.cat.predicates import AppliedPredicate, Predicate, ask, conjunction, predicate
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -242,11 +242,11 @@ class OrdinalObjectDeclaration:
 
 
 # ``initial(alpha)``: ``alpha`` is an initial ordinal ``omega(beta)``.
-initial: Predicate = Predicate("ordinal_initial", 1, True)
+initial: Predicate = predicate("ordinal_initial")
 # ``at_most(alpha, beta)``: ``alpha <= beta`` in the ordinal order.
-at_most: Predicate = Predicate("ordinal_at_most", 2, True)
+at_most: Predicate = predicate("ordinal_at_most")
 # ``less_than(alpha, beta)``: ``alpha < beta``.
-less_than: Predicate = Predicate("ordinal_less_than", 2, True)
+less_than: Predicate = predicate("ordinal_less_than")
 
 
 class OrdinalsCategory(Category[[], []]):
@@ -382,7 +382,7 @@ class OrdinalsCategory(Category[[], []]):
 
     # -- exact decisions -----------------------------------------------------------
 
-    def _initial(self, alpha: OrdinalObject) -> Decision:
+    def _initial(self, alpha: OrdinalObjectDeclaration) -> Decision:
         """An initial-ordinal expression is initial and a finite ordinal is not (``Ordinal.natCast_lt_omega0``,
         ``Ordinal.omega0_le_omega``); a symbolic expression may still equal one, so it is ``Unknown``."""
         match alpha._kind_():
@@ -407,7 +407,7 @@ class OrdinalsCategory(Category[[], []]):
         # other (inspected 2026-08-28).
         return ask(conjunction((self._at_most(first, second), self._at_most(second, first))))
 
-    def _at_most(self, first: OrdinalObject, second: OrdinalObject) -> Decision:
+    def _at_most(self, first: OrdinalObjectDeclaration, second: OrdinalObjectDeclaration) -> Decision:
         if first._key == second._key:
             return True
         if first._kind_() == "finite":
@@ -420,7 +420,7 @@ class OrdinalsCategory(Category[[], []]):
             return self._at_most(first.initial_index(), second.initial_index())
         return Unknown
 
-    def _less_than(self, first: OrdinalObject, second: OrdinalObject) -> Decision:
+    def _less_than(self, first: OrdinalObjectDeclaration, second: OrdinalObjectDeclaration) -> Decision:
         # Each ``True`` of ``_at_most`` between distinct expressions is strict: the
         # finite and finite-below-nonfinite cases by definition, the initial case by
         # induction on the indices (``Ordinal.omega_lt_omega``).

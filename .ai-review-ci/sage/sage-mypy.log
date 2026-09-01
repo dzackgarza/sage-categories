@@ -1,8 +1,8 @@
 tests/test_version.sage
+tests/kernel/test_m5_vertical_witnesses.sage
 tests/kernel/test_m1_sage_runtime.sage
 tests/kernel/test_m2_cat_core.sage
 tests/kernel/test_m3_properties_queries_refinement.sage
-tests/kernel/test_m5_vertical_witnesses.sage
 =============================
 === Running: mypy static type analysis (Sage-aware) ===
 # Type checks Python and preparsed Sage files
@@ -44,26 +44,21 @@ Traceback (most recent call last):
        ~~~~~~~~~~~^^^^^^^^^^^^^^^
   File "/home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage_mypy_category_plugin/declared.py", line 65, in compiler_in
     modules = _imported_modules(module_names)
-  File "/home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage_mypy_category_plugin/declared.py", line 215, in _imported_modules
-    for found in _submodule_names(package):
-                 ~~~~~~~~~~~~~~~~^^^^^^^^^
-  File "/home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage_mypy_category_plugin/declared.py", line 226, in _submodule_names
-    return tuple(found.name for found in walk_packages(search_path, f"{package.__name__}."))
-           ^^^^^
-  File "/home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage_mypy_category_plugin/declared.py", line 226, in <genexpr>
-    return tuple(found.name for found in walk_packages(search_path, f"{package.__name__}."))
-                                         ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/dzack/.local/share/uv/python/cpython-3.14.7-linux-x86_64-gnu/lib/python3.14/pkgutil.py", line 76, in walk_packages
-    __import__(info.name)
-    ~~~~~~~~~~^^^^^^^^^^^
-  File "/home/dzack/gitclones/sage-categories/src/sage_categories/number_sets/__init__.py", line 11, in <module>
-    from sage_categories.number_sets.primes import Primes
-  File "/home/dzack/gitclones/sage-categories/src/sage_categories/number_sets/primes.py", line 28, in <module>
-    Primes = ZZ.subset_from(_is_prime)
-  File "/home/dzack/gitclones/sage-categories/src/sage_categories/sets/objects.py", line 159, in subset_from
-    return _sets.Sets().ChosenSubsets()(_sets.Sets().structural_image(self), predicate)
-                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'SetsCategory' object has no attribute 'structural_image'
+  File "/home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage_mypy_category_plugin/declared.py", line 216, in _imported_modules
+    imported[found] = import_module(found)
+                      ~~~~~~~~~~~~~^^^^^^^
+  File "/home/dzack/.local/share/uv/python/cpython-3.14.7-linux-x86_64-gnu/lib/python3.14/importlib/__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+  File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+  File "/home/dzack/gitclones/sage-categories/src/sage_categories/sets/products.py", line 57, in <module>
+    from sage_categories.cat.shapes import DiscreteObject, index_set_of
+ImportError: cannot import name 'DiscreteObject' from 'sage_categories.cat.shapes' (/home/dzack/gitclones/sage-categories/src/sage_categories/cat/shapes.py)
 
 ERROR: mypy found type errors in project code.
 

@@ -2,7 +2,7 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from sage.structure.coerce_dict import MonoDict
 from sage_categories.cat.category import CategoryOfCategories
-from sage_categories.cat.predicates import AppliedPredicate, Decision, Predicate, UnknownClass
+from sage_categories.cat.predicates import AppliedPredicate, Decision, Predicate, Proposition, UnknownClass
 from sage_categories.sets.cardinals import CardinalObject
 from sage_categories.sets.category import SetElement, SetObject
 from sage_categories.sets.elements import Datum
@@ -11,7 +11,7 @@ __all__ = ['MembershipRule', 'element_of', 'sets_equal', 'SetObjectData']
 type MembershipRule = Callable[[Datum], Decision]
 element_of: Predicate
 
-def sets_equal(first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
+def sets_equal(first: CategoryOfCategories.ElementType, candidate: Any, assumptions: Proposition) -> Decision:
     ...
 
 @dataclass(eq=False, slots=True)

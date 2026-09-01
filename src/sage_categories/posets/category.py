@@ -16,7 +16,7 @@ from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.shapes import ThinCategory
 from sage_categories.cat.predicates import Decision, Unknown
-from sage_categories.cat.predicates import AppliedPredicate, Predicate, Proposition, ask, conjunction, disjunction, implication, negation
+from sage_categories.cat.predicates import AppliedPredicate, Predicate, Proposition, ask, conjunction, disjunction, implication, negation, predicate
 from sage_categories.kernel.refinement import refine
 from sage_categories.sets.category import Sets
 from sage_categories.sets.elements import Datum, SetElement
@@ -30,9 +30,9 @@ if TYPE_CHECKING:
 __all__ = ["FinitePosets", "FiniteTotallyOrderedSets", "MonotoneMap", "Poset", "PosetElement", "Posets", "PosetsCategory", "TotallyOrderedSets"]
 
 # ``partial_order(R)``: the relation ``R`` on ``X`` is reflexive, antisymmetric, and transitive.
-partial_order: Predicate = Predicate("partial_order", 1, True)
+partial_order: Predicate = predicate("partial_order")
 # ``order_preserving(P, Q, f)``: the set map ``f: U(P) -> U(Q)`` is monotone.
-order_preserving: Predicate = Predicate("order_preserving", 3, False)
+order_preserving: Predicate = predicate("order_preserving")
 
 type Relation = dict[tuple[int, int], Decision]
 
@@ -94,7 +94,7 @@ class PosetDeclaration:
     @cached_method(key=lambda self: ())
     def thin_category(self) -> ThinCategory:
         """The thin category of ``P``: objects the points of ``U(P)``, one comparison per related pair; retained once."""
-        order = Predicate("poset_order", 2, True)
+        order = predicate("poset_order")
         order.register_handler(lambda left, right: ask(self.element(left) <= self.element(right)))
         return ThinCategory(Posets().underlying_set_functor().on_object(self), order)
 
@@ -219,7 +219,7 @@ def _pair_point(square: SetObject, left: SetElement, right: SetElement) -> SetEl
     return Sets().element_from_defining_morphism(square.universal_morphism(pairing))
 
 
-def _order_relation(poset: Poset, points: tuple[SetElement, ...]) -> Relation:
+def _order_relation(poset: CategoryOfCategories.ElementType, points: tuple[SetElement, ...]) -> Relation:
     return _decided(lambda left, right: ask(poset.element(left) <= poset.element(right)), points)
 
 
@@ -234,7 +234,7 @@ def _total_on_enumerated(poset: CategoryOfCategories.ElementType) -> Decision:
     return _total(_order_relation(poset, points), len(points))
 
 
-def _order_preserving_on_enumerated(source: Poset, target: Poset, set_map: SetMap) -> Decision:
+def _order_preserving_on_enumerated(source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType, set_map: CategoryOfCategories.ElementType) -> Decision:
     carrier = Posets().underlying_set_functor().on_object(source)
     if not Sets().Finite().has_chosen_enumeration(carrier):
         return Unknown
@@ -257,10 +257,10 @@ class PosetsCategory(Category[[Rule], []]):
         super().__init__()
         self.underlying_set_functor().retain_cartesian_lifts(self._induced_order)
         self._equality.register_handler(self._equal)
-        partial_order.register_handler(_partial_order_on_enumerated)
-        order_preserving.register_handler(_order_preserving_on_enumerated)
         self._totally_ordered = PropertySubcategory(self, "TotallyOrdered", ())
-        self._totally_ordered.predicate().register_handler(_total_on_enumerated)
+        # Handler registrations for partial_order and order_preserving are deferred
+        # to module-level after _POSETS is created, so that Poset (which is defined
+        # as _POSETS.ObjectType) is in the handler's __globals__ at registration time.
 
     # -- the selected structural functor -------------------------------------------
 
@@ -442,6 +442,11 @@ _POSETS = PosetsCategory()
 Poset = _POSETS.ObjectType
 PosetElement = _POSETS.ElementType
 MonotoneMap = _POSETS.MorphismType
+
+# Deferred handler registrations (see __init__ comment).
+partial_order.register_handler(_partial_order_on_enumerated)
+order_preserving.register_handler(_order_preserving_on_enumerated)
+_POSETS._totally_ordered.predicate().register_handler(_total_on_enumerated)
 
 
 def Posets() -> PosetsCategory:

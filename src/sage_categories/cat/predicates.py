@@ -11,7 +11,7 @@ from sage.categories.category_with_axiom import uncamelcase
 from sage.misc.cachefunc import cached_method
 from sage.misc.unknown import Unknown, UnknownClass
 from sage.structure.coerce_dict import MonoDict
-from sympy import And, Predicate, ask as sympy_ask
+from sympy import And, Implies, Not, Or, Predicate, ask as sympy_ask
 from sympy.assumptions.assume import AppliedPredicate
 from sympy.logic.boolalg import Boolean
 
@@ -37,6 +37,10 @@ __all__ = [
     "ask",
     "assume",
     "conjunction",
+    "disjunction",
+    "established",
+    "implication",
+    "negation",
     "predicate",
     "property_predicate",
     "register_handler",
@@ -71,12 +75,19 @@ def _apply_predicate(owner: Predicate, *arguments: Argument) -> AppliedPredicate
     return Predicate.__call__(owner, *(engine_argument(argument) for argument in arguments))
 
 
+def _register_handler(owner: Predicate, handler: PredicateHandler) -> None:
+    """Register an exact handler on one repository-owned SymPy predicate."""
+    from sage_categories.kernel.predicates import register_predicate_handler
+
+    register_predicate_handler(owner, handler)
+
+
 def predicate(name: str) -> Predicate:
     """Construct one mathematical predicate as a native SymPy predicate."""
     predicate_type = type(
         f"CatPredicate{next(_predicate_ids)}",
         (Predicate,),
-        {"name": name, "__call__": _apply_predicate},
+        {"name": name, "__call__": _apply_predicate, "register_handler": _register_handler},
     )
     return predicate_type()
 
@@ -92,9 +103,7 @@ def property_predicate(name: str, category: Category) -> Predicate:
 
 def register_handler(owner: Predicate, handler: PredicateHandler) -> None:
     """Register an exact handler on a SymPy predicate."""
-    from sage_categories.kernel.predicates import register_predicate_handler
-
-    register_predicate_handler(owner, handler)
+    _register_handler(owner, handler)
 
 
 class Query:
@@ -158,6 +167,21 @@ def conjunction(parts: Iterable[bool | Proposition]) -> Proposition:
     return And(*tuple(parts))
 
 
+def disjunction(parts: Iterable[bool | Proposition]) -> Proposition:
+    """Construct a disjunction with SymPy's Boolean operation."""
+    return Or(*tuple(parts))
+
+
+def negation(proposition: bool | Proposition) -> Proposition:
+    """Construct a negation with SymPy's Boolean operation."""
+    return Not(proposition)
+
+
+def implication(antecedent: bool | Proposition, consequent: bool | Proposition) -> Proposition:
+    """Construct an implication with SymPy's Boolean operation."""
+    return Implies(antecedent, consequent)
+
+
 def ask(application: Decision | Proposition | AppliedQuery) -> Answer:
     """Evaluate a proposition or typed query."""
     if isinstance(application, AppliedQuery):
@@ -166,6 +190,11 @@ def ask(application: Decision | Proposition | AppliedQuery) -> Answer:
         return ask_query(application)
     decision = sympy_ask(application)
     return Unknown if decision is None else decision
+
+
+def established(application: Decision | Proposition) -> bool:
+    """Whether an exact decision establishes ``application`` as true."""
+    return ask(application) is True
 
 
 def assume(proposition: Proposition) -> None:

@@ -5,7 +5,7 @@ from sage_categories.cat.properties import PropertySubcategory
 from sympy import Predicate as Predicate
 from sympy.assumptions.assume import AppliedPredicate as AppliedPredicate
 from sympy.logic.boolalg import Boolean
-__all__ = ['Unknown', 'UnknownClass', 'Predicate', 'AppliedPredicate', 'Argument', 'Decision', 'QueryAnswer', 'Answer', 'PredicateHandler', 'QueryHandler', 'Proposition', 'predicate', 'property_predicate', 'register_handler', 'Query', 'AppliedQuery', 'conjunction', 'ask', 'assume', 'retract', 'Axiom']
+__all__ = ['Unknown', 'UnknownClass', 'Predicate', 'AppliedPredicate', 'Argument', 'Decision', 'QueryAnswer', 'Answer', 'PredicateHandler', 'QueryHandler', 'Proposition', 'predicate', 'property_predicate', 'register_handler', 'Query', 'AppliedQuery', 'conjunction', 'disjunction', 'negation', 'implication', 'ask', 'established', 'assume', 'retract', 'Axiom']
 type Argument = CategoryOfCategories.ElementType | int
 type Decision = bool | UnknownClass
 type PredicateDecision = bool | None
@@ -58,7 +58,19 @@ class AppliedQuery:
 def conjunction(parts: Iterable[bool | Proposition]) -> Proposition:
     ...
 
+def disjunction(parts: Iterable[bool | Proposition]) -> Proposition:
+    ...
+
+def negation(proposition: bool | Proposition) -> Proposition:
+    ...
+
+def implication(antecedent: bool | Proposition, consequent: bool | Proposition) -> Proposition:
+    ...
+
 def ask(application: Decision | Proposition | AppliedQuery) -> Answer:
+    ...
+
+def established(application: Decision | Proposition) -> bool:
     ...
 
 def assume(proposition: Proposition) -> None:

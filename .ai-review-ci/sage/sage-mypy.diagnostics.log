@@ -1,78 +1,58 @@
-tests/test_version.sage
-tests/kernel/test_m1_sage_runtime.sage
-tests/kernel/test_m2_cat_core.sage
-tests/kernel/test_m3_properties_queries_refinement.sage
-tests/kernel/test_m5_vertical_witnesses.sage
-=============================
-=== Running: mypy static type analysis (Sage-aware) ===
-# Type checks Python and preparsed Sage files
-# Preparsing 5 Sage file(s) for mypy
-[sage-mypy-plugin] stale manifest /home/dzack/ai-review-ci/justfiles/../tool-configs/.mypy_cache/sage-category-plugin/projection-manifest.json: Stale Sage category source module metadata for sage_categories.cat.properties: mtime_ns mismatch (1788207436603116787 → 1788253414143750163) — regenerating
-/home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage/categories/category.py:1612: UserWarning: _RuntimeImplementationCategory.ParentMethods should not have a super class
-  warn("%s.%s should not have a super class" % (cls.__name__, method_provider))
+============================================================
+PHASE 7: DIAGNOSTIC PARTITION BY OWNER
+Total: 279 errors across 279 files
+kernel: 12 errors | cat: 129 errors | leaf: 31 errors | test: 107 errors
+============================================================
+
+### KERNEL OWNER (12 errors)
+Dynamic class compilation, role MRO projections, AST base rewrites,
+private sum-type dispatch, CategoryPoint.__eq__/__ne__ (governed by D131).
+----------------------------------------
+src/sage_categories/kernel/roles.pyi:31: error: Return type "AppliedPredicate" of "__eq__" incompatible with return type "bool" in supertype "builtins.object"  [override]
+src/sage_categories/kernel/roles.pyi:31: error: Argument 1 of "__eq__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
+src/sage_categories/kernel/roles.pyi:34: error: Return type "Boolean" of "__ne__" incompatible with return type "bool" in supertype "builtins.object"  [override]
+src/sage_categories/kernel/roles.pyi:34: error: Argument 1 of "__ne__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
+src/sage_categories/kernel/roles.pyi:60: error: Return type "AppliedPredicate" of "__eq__" incompatible with return type "bool" in supertype "builtins.object"  [override]
+src/sage_categories/kernel/roles.pyi:60: error: Argument 1 of "__eq__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
+src/sage_categories/kernel/roles.pyi:63: error: Return type "Boolean" of "__ne__" incompatible with return type "bool" in supertype "builtins.object"  [override]
+src/sage_categories/kernel/roles.pyi:63: error: Argument 1 of "__ne__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
+src/sage_categories/kernel/roles.pyi:89: error: Return type "AppliedPredicate" of "__eq__" incompatible with return type "bool" in supertype "builtins.object"  [override]
+src/sage_categories/kernel/roles.pyi:89: error: Argument 1 of "__eq__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
+src/sage_categories/kernel/roles.pyi:92: error: Return type "Boolean" of "__ne__" incompatible with return type "bool" in supertype "builtins.object"  [override]
+src/sage_categories/kernel/roles.pyi:92: error: Argument 1 of "__ne__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
+
+### CAT OWNER (129 errors)
+Functor endpoint declarations, generic category parameters
+(Category[Obj, Elem, Mor]), morphism category call signatures, override violations in .pyi stubs.
+----------------------------------------
 src/sage_categories/cat/points.pyi:20: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
 src/sage_categories/cat/canonical.pyi:18: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/cat/canonical.pyi:18: note: Did you mean "List[...]"?
 src/sage_categories/cat/canonical.pyi:60: error: Argument 1 of "object_point" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
-src/sage_categories/cat/canonical.pyi:60: note: This violates the Liskov substitution principle
-src/sage_categories/cat/canonical.pyi:60: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/canonical.pyi:69: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
-src/sage_categories/cat/canonical.pyi:69: note:      Superclass:
-src/sage_categories/cat/canonical.pyi:69: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
-src/sage_categories/cat/canonical.pyi:69: note:      Subclass:
-src/sage_categories/cat/canonical.pyi:69: note:          def construct_morphism(self, domain: ObjectType, codomain: ObjectType, word: tuple[str, ...]) -> MorphismType
 src/sage_categories/cat/canonical.pyi:72: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
-src/sage_categories/cat/canonical.pyi:72: note: This violates the Liskov substitution principle
-src/sage_categories/cat/canonical.pyi:72: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/canonical.pyi:75: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
-src/sage_categories/cat/canonical.pyi:75: note: This violates the Liskov substitution principle
-src/sage_categories/cat/canonical.pyi:75: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/canonical.pyi:75: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
 src/sage_categories/cat/canonical.pyi:78: error: Argument 1 of "inverse_morphism" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
-src/sage_categories/cat/canonical.pyi:78: note: This violates the Liskov substitution principle
-src/sage_categories/cat/canonical.pyi:78: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/morphisms.pyi:3: error: Module "sage_categories.cat.category" has no attribute "Decision"  [attr-defined]
 src/sage_categories/cat/morphisms.pyi:3: error: Module "sage_categories.cat.category" does not explicitly export attribute "Predicate"  [attr-defined]
 src/sage_categories/cat/morphisms.pyi:3: error: Module "sage_categories.cat.category" does not explicitly export attribute "Proposition"  [attr-defined]
 src/sage_categories/cat/morphisms.pyi:32: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
 src/sage_categories/cat/morphisms.pyi:84: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
-src/sage_categories/cat/morphisms.pyi:84: note: This violates the Liskov substitution principle
-src/sage_categories/cat/morphisms.pyi:84: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/morphisms.pyi:90: error: Argument 1 of "construct_morphism" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
-src/sage_categories/cat/morphisms.pyi:90: note: This violates the Liskov substitution principle
-src/sage_categories/cat/morphisms.pyi:90: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/morphisms.pyi:90: error: Argument 2 of "construct_morphism" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
 src/sage_categories/cat/morphisms.pyi:108: error: Definition of "__mul__" in base class "CategoryDeclaration" is incompatible with definition in base class "MorphismType"  [misc]
 src/sage_categories/cat/declarations.pyi:8: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
 src/sage_categories/cat/functors.pyi:6: error: Module "sage_categories.cat.category" does not explicitly export attribute "Proposition"  [attr-defined]
 src/sage_categories/cat/functors.pyi:66: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
-src/sage_categories/cat/functors.pyi:66: note:      Superclass:
-src/sage_categories/cat/functors.pyi:66: note:          def __call__(self, *arguments: ElementType) -> ElementType
-src/sage_categories/cat/functors.pyi:66: note:      Subclass:
-src/sage_categories/cat/functors.pyi:66: note:          def __call__(self, *args: Callable[[ElementType], ElementType] | Callable[[ObjectType], ObjectType], **kwargs: Callable[[ElementType], ElementType] | Callable[[ObjectType], ObjectType]) -> Any
 src/sage_categories/cat/functors.pyi:71: error: Cannot determine consistent method resolution order (MRO) for "ObjectType"  [misc]
 src/sage_categories/cat/functors.pyi:74: error: Cannot determine consistent method resolution order (MRO) for "ElementType"  [misc]
 src/sage_categories/cat/functors.pyi:77: error: Cannot determine consistent method resolution order (MRO) for "MorphismType"  [misc]
 src/sage_categories/cat/functors.pyi:80: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.NarrowedProperty"  [override]
-src/sage_categories/cat/functors.pyi:80: note:      Superclass:
-src/sage_categories/cat/functors.pyi:80: note:          def __call__(self, value: ElementType) -> ElementType
-src/sage_categories/cat/functors.pyi:80: note:      Subclass:
-src/sage_categories/cat/functors.pyi:80: note:          def __call__(self, *args: Callable[[ElementType], ElementType] | Callable[[ObjectType], ObjectType], **kwargs: Callable[[ElementType], ElementType] | Callable[[ObjectType], ObjectType]) -> Any
 src/sage_categories/cat/functors.pyi:136: error: Return type "ObjectType" of "object_at" incompatible with return type "ElementType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
 src/sage_categories/cat/functors.pyi:146: error: Incompatible types in assignment (expression has type "type[MorphismType]", base class "MorphismCategory" defined the type as "type[ObjectType]")  [assignment]
 src/sage_categories/cat/functors.pyi:183: error: Argument 1 of "__call__" is incompatible with supertype "sage_categories.cat.morphisms.MorphismCategory"; supertype defines the argument type as "ElementType"  [override]
-src/sage_categories/cat/functors.pyi:183: note: This violates the Liskov substitution principle
-src/sage_categories/cat/functors.pyi:183: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/functors.pyi:203: error: Signature of "subcategory_monomorphism" incompatible with supertype "sage_categories.cat.morphisms.MorphismCategory"  [override]
-src/sage_categories/cat/functors.pyi:203: note:      Superclass:
-src/sage_categories/cat/functors.pyi:203: note:          def subcategory_monomorphism(self) -> Any
-src/sage_categories/cat/functors.pyi:203: note:      Subclass:
-src/sage_categories/cat/functors.pyi:203: note:          def subcategory_monomorphism(self, source: CategoryDeclaration[Any, Any], target: CategoryDeclaration[Any, Any]) -> Any
 src/sage_categories/cat/functors.pyi:203: error: Signature of "subcategory_monomorphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
-src/sage_categories/cat/functors.pyi:203: note:      Superclass:
-src/sage_categories/cat/functors.pyi:203: note:          def subcategory_monomorphism(self) -> Any
-src/sage_categories/cat/functors.pyi:203: note:      Subclass:
-src/sage_categories/cat/functors.pyi:203: note:          def subcategory_monomorphism(self, source: CategoryDeclaration[Any, Any], target: CategoryDeclaration[Any, Any]) -> Any
 src/sage_categories/cat/properties.pyi:44: error: Definition of "__add__" in base class "CategoryDeclaration" is incompatible with definition in base class "ElementType"  [misc]
 src/sage_categories/cat/properties.pyi:44: error: Definition of "__mul__" in base class "CategoryDeclaration" is incompatible with definition in base class "MorphismType"  [misc]
 src/sage_categories/cat/properties.pyi:44: error: Definition of "__mul__" in base class "CategoryDeclaration" is incompatible with definition in base class "ElementType"  [misc]
@@ -87,311 +67,132 @@ src/sage_categories/cat/properties.pyi:165: error: Definition of "__mul__" in ba
 src/sage_categories/cat/properties.pyi:165: error: Definition of "__mul__" in base class "CategoryDeclaration" is incompatible with definition in base class "ElementType"  [misc]
 src/sage_categories/cat/properties.pyi:165: error: Definition of "__pow__" in base class "CategoryDeclaration" is incompatible with definition in base class "ElementType"  [misc]
 src/sage_categories/cat/properties.pyi:180: error: Signature of "__call__" incompatible with supertype "NarrowedProperty"  [override]
-src/sage_categories/cat/properties.pyi:180: note:      Superclass:
-src/sage_categories/cat/properties.pyi:180: note:          def __call__(self, value: ElementType) -> ElementType
-src/sage_categories/cat/properties.pyi:180: note:      Subclass:
-src/sage_categories/cat/properties.pyi:180: note:          def __call__(self, *args: MorphismData.args, **kwargs: MorphismData.kwargs) -> ObjectType
 src/sage_categories/cat/category.pyi:54: error: A function returning TypeVar should receive at least one argument containing the same TypeVar  [type-var]
 src/sage_categories/cat/category.pyi:351: error: Argument 1 of "construct_morphism" is incompatible with supertype "CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
-src/sage_categories/cat/category.pyi:351: note: This violates the Liskov substitution principle
-src/sage_categories/cat/category.pyi:351: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/category.pyi:351: error: Argument 2 of "construct_morphism" is incompatible with supertype "CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
 src/sage_categories/cat/category.pyi:354: error: Argument 1 of "construct_identity" is incompatible with supertype "CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
-src/sage_categories/cat/category.pyi:354: note: This violates the Liskov substitution principle
-src/sage_categories/cat/category.pyi:354: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/category.pyi:360: error: Argument 1 of "construct_two_morphism" is incompatible with supertype "CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
-src/sage_categories/cat/category.pyi:360: note: This violates the Liskov substitution principle
-src/sage_categories/cat/category.pyi:360: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/category.pyi:360: error: Argument 2 of "construct_two_morphism" is incompatible with supertype "CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
 src/sage_categories/cat/category.pyi:363: error: Argument 1 of "identity_two_morphism" is incompatible with supertype "CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
-src/sage_categories/cat/category.pyi:363: note: This violates the Liskov substitution principle
-src/sage_categories/cat/category.pyi:363: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/category.pyi:381: error: Argument 1 of "exponential" is incompatible with supertype "CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
-src/sage_categories/cat/category.pyi:381: note: This violates the Liskov substitution principle
-src/sage_categories/cat/category.pyi:381: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/category.pyi:381: error: Argument 2 of "exponential" is incompatible with supertype "CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
 src/sage_categories/cat/cat_constructions.pyi:19: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/cat/cat_constructions.pyi:19: note: Did you mean "List[...]"?
 src/sage_categories/cat/cat_constructions.pyi:55: error: Return type "ObjectType" of "object_at" incompatible with return type "ElementType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
 src/sage_categories/cat/cat_constructions.pyi:58: error: Return type "MorphismType" of "morphism_at" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
 src/sage_categories/cat/cat_constructions.pyi:64: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
-src/sage_categories/cat/cat_constructions.pyi:64: note:      Superclass:
-src/sage_categories/cat/cat_constructions.pyi:64: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
-src/sage_categories/cat/cat_constructions.pyi:64: note:      Subclass:
-src/sage_categories/cat/cat_constructions.pyi:64: note:          def construct_morphism(self, domain: ObjectType, codomain: ObjectType, family: Callable[[ElementType], ObjectType] | tuple[ObjectType, ...]) -> MorphismType
 src/sage_categories/cat/cat_constructions.pyi:67: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
 src/sage_categories/cat/cat_constructions.pyi:67: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
-src/sage_categories/cat/cat_constructions.pyi:67: note: This violates the Liskov substitution principle
-src/sage_categories/cat/cat_constructions.pyi:67: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/cat_constructions.pyi:70: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
 src/sage_categories/cat/cat_constructions.pyi:70: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
-src/sage_categories/cat/cat_constructions.pyi:70: note: This violates the Liskov substitution principle
-src/sage_categories/cat/cat_constructions.pyi:70: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/cat_constructions.pyi:70: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
 src/sage_categories/cat/cat_constructions.pyi:91: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/cat/cat_constructions.pyi:91: note: Did you mean "List[...]"?
 src/sage_categories/cat/cat_constructions.pyi:127: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
-src/sage_categories/cat/cat_constructions.pyi:127: note:      Superclass:
-src/sage_categories/cat/cat_constructions.pyi:127: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
-src/sage_categories/cat/cat_constructions.pyi:127: note:      Subclass:
-src/sage_categories/cat/cat_constructions.pyi:127: note:          def construct_morphism(self, domain: ObjectType, codomain: ObjectType, morphism: ObjectType) -> MorphismType
 src/sage_categories/cat/cat_constructions.pyi:130: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
 src/sage_categories/cat/cat_constructions.pyi:130: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
-src/sage_categories/cat/cat_constructions.pyi:130: note: This violates the Liskov substitution principle
-src/sage_categories/cat/cat_constructions.pyi:130: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/cat_constructions.pyi:133: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
 src/sage_categories/cat/cat_constructions.pyi:133: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
-src/sage_categories/cat/cat_constructions.pyi:133: note: This violates the Liskov substitution principle
-src/sage_categories/cat/cat_constructions.pyi:133: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/cat_constructions.pyi:133: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
 src/sage_categories/cat/shapes.pyi:12: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
 src/sage_categories/cat/shapes.pyi:37: error: Return type "ObjectType" of "object_at" incompatible with return type "ElementType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
 src/sage_categories/cat/shapes.pyi:40: error: Argument 1 of "object_point" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
-src/sage_categories/cat/shapes.pyi:40: note: This violates the Liskov substitution principle
-src/sage_categories/cat/shapes.pyi:40: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/shapes.pyi:43: error: Return type "MorphismType" of "morphism_at" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
 src/sage_categories/cat/shapes.pyi:52: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
-src/sage_categories/cat/shapes.pyi:52: note:      Superclass:
-src/sage_categories/cat/shapes.pyi:52: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
-src/sage_categories/cat/shapes.pyi:52: note:      Subclass:
-src/sage_categories/cat/shapes.pyi:52: note:          def construct_morphism(self, domain: ObjectType, codomain: ObjectType) -> MorphismType
 src/sage_categories/cat/shapes.pyi:55: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
 src/sage_categories/cat/shapes.pyi:55: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
-src/sage_categories/cat/shapes.pyi:55: note: This violates the Liskov substitution principle
-src/sage_categories/cat/shapes.pyi:55: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/shapes.pyi:58: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
 src/sage_categories/cat/shapes.pyi:58: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
-src/sage_categories/cat/shapes.pyi:58: note: This violates the Liskov substitution principle
-src/sage_categories/cat/shapes.pyi:58: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/shapes.pyi:58: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
 src/sage_categories/cat/shapes.pyi:86: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
 src/sage_categories/cat/shapes.pyi:117: error: Return type "ObjectType" of "object_at" incompatible with return type "ElementType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
 src/sage_categories/cat/shapes.pyi:120: error: Argument 1 of "object_point" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
-src/sage_categories/cat/shapes.pyi:120: note: This violates the Liskov substitution principle
-src/sage_categories/cat/shapes.pyi:120: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/shapes.pyi:126: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
-src/sage_categories/cat/shapes.pyi:126: note:      Superclass:
-src/sage_categories/cat/shapes.pyi:126: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
-src/sage_categories/cat/shapes.pyi:126: note:      Subclass:
-src/sage_categories/cat/shapes.pyi:126: note:          def construct_morphism(self, domain: ObjectType, codomain: ObjectType) -> MorphismType
 src/sage_categories/cat/shapes.pyi:129: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
 src/sage_categories/cat/shapes.pyi:129: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
-src/sage_categories/cat/shapes.pyi:129: note: This violates the Liskov substitution principle
-src/sage_categories/cat/shapes.pyi:129: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/shapes.pyi:132: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
 src/sage_categories/cat/shapes.pyi:132: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
-src/sage_categories/cat/shapes.pyi:132: note: This violates the Liskov substitution principle
-src/sage_categories/cat/shapes.pyi:132: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/shapes.pyi:132: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
 src/sage_categories/cat/opposites.pyi:12: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/cat/opposites.pyi:12: note: Did you mean "List[...]"?
 src/sage_categories/cat/adjunctions.pyi:29: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
 src/sage_categories/cat/adjunctions.pyi:80: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
-src/sage_categories/cat/adjunctions.pyi:80: note:      Superclass:
-src/sage_categories/cat/adjunctions.pyi:80: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
-src/sage_categories/cat/adjunctions.pyi:80: note:      Subclass:
-src/sage_categories/cat/adjunctions.pyi:80: note:          def construct_morphism(self, source: ObjectType, target: ObjectType, forward: Any, inverse: Any) -> MorphismType
 src/sage_categories/cat/adjunctions.pyi:83: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
 src/sage_categories/cat/adjunctions.pyi:83: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
-src/sage_categories/cat/adjunctions.pyi:83: note: This violates the Liskov substitution principle
-src/sage_categories/cat/adjunctions.pyi:83: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/adjunctions.pyi:86: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
 src/sage_categories/cat/adjunctions.pyi:86: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
-src/sage_categories/cat/adjunctions.pyi:86: note: This violates the Liskov substitution principle
-src/sage_categories/cat/adjunctions.pyi:86: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/adjunctions.pyi:86: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
 src/sage_categories/cat/adjunctions.pyi:89: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/cat/adjunctions.pyi:89: note: Did you mean "List[...]"?
 src/sage_categories/cat/adjunctions.pyi:134: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
-src/sage_categories/cat/adjunctions.pyi:134: note:      Superclass:
-src/sage_categories/cat/adjunctions.pyi:134: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
-src/sage_categories/cat/adjunctions.pyi:134: note:      Subclass:
-src/sage_categories/cat/adjunctions.pyi:134: note:          def construct_morphism(self, source: ObjectType, target: ObjectType, transformation: Any) -> MorphismType
 src/sage_categories/cat/adjunctions.pyi:137: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
 src/sage_categories/cat/adjunctions.pyi:137: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
-src/sage_categories/cat/adjunctions.pyi:137: note: This violates the Liskov substitution principle
-src/sage_categories/cat/adjunctions.pyi:137: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/adjunctions.pyi:140: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
 src/sage_categories/cat/adjunctions.pyi:140: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
-src/sage_categories/cat/adjunctions.pyi:140: note: This violates the Liskov substitution principle
-src/sage_categories/cat/adjunctions.pyi:140: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/adjunctions.pyi:140: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
 src/sage_categories/cat/cones.pyi:35: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/cat/cones.pyi:35: note: Did you mean "List[...]"?
 src/sage_categories/cat/cones.pyi:74: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
-src/sage_categories/cat/cones.pyi:74: note:      Superclass:
-src/sage_categories/cat/cones.pyi:74: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
-src/sage_categories/cat/cones.pyi:74: note:      Subclass:
-src/sage_categories/cat/cones.pyi:74: note:          def construct_morphism(self, source: ObjectType, target: ObjectType, apex_morphism: ObjectType) -> MorphismType
 src/sage_categories/cat/cones.pyi:77: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
-src/sage_categories/cat/cones.pyi:77: note: This violates the Liskov substitution principle
-src/sage_categories/cat/cones.pyi:77: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/cones.pyi:80: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
-src/sage_categories/cat/cones.pyi:80: note: This violates the Liskov substitution principle
-src/sage_categories/cat/cones.pyi:80: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/cones.pyi:80: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
-src/sage_categories/kernel/roles.pyi:31: error: Return type "AppliedPredicate" of "__eq__" incompatible with return type "bool" in supertype "builtins.object"  [override]
-src/sage_categories/kernel/roles.pyi:31: error: Argument 1 of "__eq__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
-src/sage_categories/kernel/roles.pyi:31: note: This violates the Liskov substitution principle
-src/sage_categories/kernel/roles.pyi:31: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
-src/sage_categories/kernel/roles.pyi:31: note: It is recommended for "__eq__" to work with arbitrary objects, for example:
-src/sage_categories/kernel/roles.pyi:31: note:     def __eq__(self, other: object) -> bool:
-src/sage_categories/kernel/roles.pyi:31: note:         if not isinstance(other, CategoryPoint):
-src/sage_categories/kernel/roles.pyi:31: note:             return NotImplemented
-src/sage_categories/kernel/roles.pyi:31: note:         return <logic to compare two CategoryPoint instances>
-src/sage_categories/kernel/roles.pyi:34: error: Return type "Boolean" of "__ne__" incompatible with return type "bool" in supertype "builtins.object"  [override]
-src/sage_categories/kernel/roles.pyi:34: error: Argument 1 of "__ne__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
-src/sage_categories/kernel/roles.pyi:34: note: This violates the Liskov substitution principle
-src/sage_categories/kernel/roles.pyi:34: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
-src/sage_categories/kernel/roles.pyi:60: error: Return type "AppliedPredicate" of "__eq__" incompatible with return type "bool" in supertype "builtins.object"  [override]
-src/sage_categories/kernel/roles.pyi:60: error: Argument 1 of "__eq__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
-src/sage_categories/kernel/roles.pyi:60: note: This violates the Liskov substitution principle
-src/sage_categories/kernel/roles.pyi:60: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
-src/sage_categories/kernel/roles.pyi:60: note: It is recommended for "__eq__" to work with arbitrary objects, for example:
-src/sage_categories/kernel/roles.pyi:60: note:     def __eq__(self, other: object) -> bool:
-src/sage_categories/kernel/roles.pyi:60: note:         if not isinstance(other, ObjectOfCategory):
-src/sage_categories/kernel/roles.pyi:60: note:             return NotImplemented
-src/sage_categories/kernel/roles.pyi:60: note:         return <logic to compare two ObjectOfCategory instances>
-src/sage_categories/kernel/roles.pyi:63: error: Return type "Boolean" of "__ne__" incompatible with return type "bool" in supertype "builtins.object"  [override]
-src/sage_categories/kernel/roles.pyi:63: error: Argument 1 of "__ne__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
-src/sage_categories/kernel/roles.pyi:63: note: This violates the Liskov substitution principle
-src/sage_categories/kernel/roles.pyi:63: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
-src/sage_categories/kernel/roles.pyi:89: error: Return type "AppliedPredicate" of "__eq__" incompatible with return type "bool" in supertype "builtins.object"  [override]
-src/sage_categories/kernel/roles.pyi:89: error: Argument 1 of "__eq__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
-src/sage_categories/kernel/roles.pyi:89: note: This violates the Liskov substitution principle
-src/sage_categories/kernel/roles.pyi:89: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
-src/sage_categories/kernel/roles.pyi:89: note: It is recommended for "__eq__" to work with arbitrary objects, for example:
-src/sage_categories/kernel/roles.pyi:89: note:     def __eq__(self, other: object) -> bool:
-src/sage_categories/kernel/roles.pyi:89: note:         if not isinstance(other, MorphismOfCategory):
-src/sage_categories/kernel/roles.pyi:89: note:             return NotImplemented
-src/sage_categories/kernel/roles.pyi:89: note:         return <logic to compare two MorphismOfCategory instances>
-src/sage_categories/kernel/roles.pyi:92: error: Return type "Boolean" of "__ne__" incompatible with return type "bool" in supertype "builtins.object"  [override]
-src/sage_categories/kernel/roles.pyi:92: error: Argument 1 of "__ne__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
-src/sage_categories/kernel/roles.pyi:92: note: This violates the Liskov substitution principle
-src/sage_categories/kernel/roles.pyi:92: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/slices.pyi:19: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/cat/slices.pyi:19: note: Did you mean "List[...]"?
 src/sage_categories/cat/slices.pyi:85: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
-src/sage_categories/cat/slices.pyi:85: note:      Superclass:
-src/sage_categories/cat/slices.pyi:85: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
-src/sage_categories/cat/slices.pyi:85: note:      Subclass:
-src/sage_categories/cat/slices.pyi:85: note:          def construct_morphism(self, domain: ObjectType, codomain: ObjectType, varying: ObjectType) -> MorphismType
 src/sage_categories/cat/slices.pyi:88: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
 src/sage_categories/cat/slices.pyi:88: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
-src/sage_categories/cat/slices.pyi:88: note: This violates the Liskov substitution principle
-src/sage_categories/cat/slices.pyi:88: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/slices.pyi:91: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
 src/sage_categories/cat/slices.pyi:91: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
-src/sage_categories/cat/slices.pyi:91: note: This violates the Liskov substitution principle
-src/sage_categories/cat/slices.pyi:91: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/slices.pyi:91: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
-src/sage_categories/sets/power_objects.pyi:37: error: Incompatible types in assignment (expression has type "type[PowerObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
-src/sage_categories/sets/power_objects.pyi:45: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/sets/power_objects.pyi:45: note: Did you mean "List[...]"?
-src/sage_categories/sets/power_objects.pyi:48: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
-src/sage_categories/sets/power_objects.pyi:48: note:      Superclass:
-src/sage_categories/sets/power_objects.pyi:48: note:          def __call__(self, *arguments: ElementType) -> ElementType
-src/sage_categories/sets/power_objects.pyi:48: note:      Subclass:
-src/sage_categories/sets/power_objects.pyi:48: note:          def __call__(self, base_set: Any) -> Any
-src/sage_categories/sets/finite_subsets.pyi:32: error: Incompatible types in assignment (expression has type "type[SizedSubsetsObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
-src/sage_categories/sets/finite_subsets.pyi:40: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/sets/finite_subsets.pyi:40: note: Did you mean "List[...]"?
-src/sage_categories/sets/finite_subsets.pyi:46: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
-src/sage_categories/sets/finite_subsets.pyi:46: note:      Superclass:
-src/sage_categories/sets/finite_subsets.pyi:46: note:          def __call__(self, *arguments: ElementType) -> ElementType
-src/sage_categories/sets/finite_subsets.pyi:46: note:      Subclass:
-src/sage_categories/sets/finite_subsets.pyi:46: note:          def __call__(self, base_set: Any) -> Any
-src/sage_categories/sets/finite_subsets.pyi:50: error: Incompatible types in assignment (expression has type "type[FiniteSubsetsObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
-src/sage_categories/sets/finite_subsets.pyi:58: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/sets/finite_subsets.pyi:58: note: Did you mean "List[...]"?
-src/sage_categories/sets/finite_subsets.pyi:61: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
-src/sage_categories/sets/finite_subsets.pyi:61: note:      Superclass:
-src/sage_categories/sets/finite_subsets.pyi:61: note:          def __call__(self, *arguments: ElementType) -> ElementType
-src/sage_categories/sets/finite_subsets.pyi:61: note:      Subclass:
-src/sage_categories/sets/finite_subsets.pyi:61: note:          def __call__(self, base_set: Any) -> Any
-src/sage_categories/sets/finite_subsets.pyi:94: error: Incompatible types in assignment (expression has type "type[FinitelySupportedFunctionsObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
-src/sage_categories/sets/finite_subsets.pyi:102: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/sets/finite_subsets.pyi:102: note: Did you mean "List[...]"?
-src/sage_categories/sets/finite_subsets.pyi:105: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
-src/sage_categories/sets/finite_subsets.pyi:105: note:      Superclass:
-src/sage_categories/sets/finite_subsets.pyi:105: note:          def __call__(self, *arguments: ElementType) -> ElementType
-src/sage_categories/sets/finite_subsets.pyi:105: note:      Subclass:
-src/sage_categories/sets/finite_subsets.pyi:105: note:          def __call__(self, index_set: Any, basepoint: Any) -> Any
-src/sage_categories/ordinals/category.pyi:75: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/sets/category.pyi:19: error: Incompatible types in assignment (expression has type "type[FiniteSetObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
-src/sage_categories/sets/category.pyi:27: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/sets/category.pyi:27: note: Did you mean "List[...]"?
-src/sage_categories/sets/category.pyi:30: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
-src/sage_categories/sets/category.pyi:30: note:      Superclass:
-src/sage_categories/sets/category.pyi:30: note:          def __call__(self, *arguments: ElementType) -> ElementType
-src/sage_categories/sets/category.pyi:30: note:      Subclass:
-src/sage_categories/sets/category.pyi:30: note:          def __call__(self, members: Any | Iterable[Hashable]) -> Any
-src/sage_categories/sets/category.pyi:39: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/sets/category.pyi:39: note: Did you mean "List[...]"?
-src/sage_categories/sets/category.pyi:62: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/sets/category.pyi:62: note: Did you mean "List[...]"?
-src/sage_categories/sets/category.pyi:65: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/sets/category.pyi:65: note: Did you mean "List[...]"?
-src/sage_categories/sets/category.pyi:68: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/sets/category.pyi:68: note: Did you mean "List[...]"?
-src/sage_categories/sets/subobjects.pyi:50: error: Incompatible types in assignment (expression has type "type[ChosenSubsetObject]", base class "FullSubcategory" defined the type as "type[ObjectType]")  [assignment]
-src/sage_categories/sets/subobjects.pyi:58: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/sets/subobjects.pyi:58: note: Did you mean "List[...]"?
-src/sage_categories/sets/subobjects.pyi:88: error: Incompatible types in assignment (expression has type "type[ChosenQuotientObject]", base class "FullSubcategory" defined the type as "type[ObjectType]")  [assignment]
-src/sage_categories/sets/subobjects.pyi:96: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/sets/subobjects.pyi:96: note: Did you mean "List[...]"?
-src/sage_categories/sets/cardinals.pyi:186: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/sets/cardinals.pyi:186: note: Did you mean "List[...]"?
 src/sage_categories/cat/constructions.pyi:138: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
-src/sage_categories/cat/constructions.pyi:138: note:      Superclass:
-src/sage_categories/cat/constructions.pyi:138: note:          def __call__(self, *arguments: ElementType) -> ElementType
-src/sage_categories/cat/constructions.pyi:138: note:      Subclass:
-src/sage_categories/cat/constructions.pyi:138: note:          def __call__(self, family: Any | tuple[ElementType, ...]) -> ElementType
 src/sage_categories/cat/constructions.pyi:254: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
-src/sage_categories/cat/constructions.pyi:254: note:      Superclass:
-src/sage_categories/cat/constructions.pyi:254: note:          def __call__(self, *arguments: ElementType) -> ElementType
-src/sage_categories/cat/constructions.pyi:254: note:      Subclass:
-src/sage_categories/cat/constructions.pyi:254: note:          def __call__(self, family: Any | tuple[ElementType, ...]) -> ElementType
-src/sage_categories/posets/category.pyi:63: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/posets/category.pyi:63: note: Did you mean "List[...]"?
-src/sage_categories/posets/category.pyi:102: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/posets/category.pyi:102: note: Did you mean "List[...]"?
-src/sage_categories/posets/category.pyi:105: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/posets/category.pyi:105: note: Did you mean "List[...]"?
-src/sage_categories/posets/category.pyi:129: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/posets/category.pyi:129: note: Did you mean "List[...]"?
-src/sage_categories/posets/category.pyi:132: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/posets/category.pyi:132: note: Did you mean "List[...]"?
-src/sage_categories/posets/category.pyi:135: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/posets/category.pyi:135: note: Did you mean "List[...]"?
 src/sage_categories/cat/total_cones.pyi:57: error: Return type "sage_categories.cat.total_cones.TotalConesCategory.ObjectType" of "__call__" incompatible with return type "sage_categories.cat.cat_constructions.LimitCategory.ObjectType" in supertype "sage_categories.cat.cat_constructions.LimitCategory"  [override]
 src/sage_categories/cat/total_cones.pyi:57: error: Argument 1 of "__call__" is incompatible with supertype "sage_categories.cat.cat_constructions.LimitCategory"; supertype defines the argument type as "Callable[[ElementType], ElementType] | tuple[ElementType, ...]"  [override]
-src/sage_categories/cat/total_cones.pyi:57: note: This violates the Liskov substitution principle
-src/sage_categories/cat/total_cones.pyi:57: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/total_cones.pyi:60: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.cat_constructions.LimitCategory"  [override]
-src/sage_categories/cat/total_cones.pyi:60: note:      Superclass:
-src/sage_categories/cat/total_cones.pyi:60: note:          def construct_morphism(self, domain: ObjectType, codomain: ObjectType, family: Callable[[ElementType], ObjectType] | tuple[ObjectType, ...]) -> MorphismType
-src/sage_categories/cat/total_cones.pyi:60: note:      Subclass:
-src/sage_categories/cat/total_cones.pyi:60: note:          def construct_morphism(self, source: ObjectType, target: ObjectType, apex: ObjectType, diagram: Any) -> MorphismType
 src/sage_categories/cat/total_cones.pyi:60: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
-src/sage_categories/cat/total_cones.pyi:60: note:      Superclass:
-src/sage_categories/cat/total_cones.pyi:60: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
-src/sage_categories/cat/total_cones.pyi:60: note:      Subclass:
-src/sage_categories/cat/total_cones.pyi:60: note:          def construct_morphism(self, source: ObjectType, target: ObjectType, apex: ObjectType, diagram: Any) -> MorphismType
 src/sage_categories/cat/total_cones.pyi:63: error: Return type "sage_categories.cat.total_cones.TotalConesCategory.MorphismType" of "construct_identity" incompatible with return type "sage_categories.cat.cat_constructions.LimitCategory.MorphismType" in supertype "sage_categories.cat.cat_constructions.LimitCategory"  [override]
 src/sage_categories/cat/total_cones.pyi:63: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
 src/sage_categories/cat/total_cones.pyi:63: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.cat_constructions.LimitCategory"; supertype defines the argument type as "ObjectType"  [override]
-src/sage_categories/cat/total_cones.pyi:63: note: This violates the Liskov substitution principle
-src/sage_categories/cat/total_cones.pyi:63: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/total_cones.pyi:63: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
 src/sage_categories/cat/total_cones.pyi:66: error: Return type "sage_categories.cat.total_cones.TotalConesCategory.MorphismType" of "composite" incompatible with return type "sage_categories.cat.cat_constructions.LimitCategory.MorphismType" in supertype "sage_categories.cat.cat_constructions.LimitCategory"  [override]
 src/sage_categories/cat/total_cones.pyi:66: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
 src/sage_categories/cat/total_cones.pyi:66: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.cat_constructions.LimitCategory"; supertype defines the argument type as "MorphismType"  [override]
-src/sage_categories/cat/total_cones.pyi:66: note: This violates the Liskov substitution principle
-src/sage_categories/cat/total_cones.pyi:66: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/total_cones.pyi:66: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
 src/sage_categories/cat/total_cones.pyi:66: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.cat_constructions.LimitCategory"; supertype defines the argument type as "MorphismType"  [override]
 src/sage_categories/cat/total_cones.pyi:66: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+
+### LEAF OWNER (31 errors)
+Concrete leaf mathematical structures (sets, posets, ordinals, number sets).
+----------------------------------------
+src/sage_categories/sets/power_objects.pyi:37: error: Incompatible types in assignment (expression has type "type[PowerObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/sets/power_objects.pyi:45: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/power_objects.pyi:48: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/sets/finite_subsets.pyi:32: error: Incompatible types in assignment (expression has type "type[SizedSubsetsObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/sets/finite_subsets.pyi:40: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:46: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/sets/finite_subsets.pyi:50: error: Incompatible types in assignment (expression has type "type[FiniteSubsetsObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/sets/finite_subsets.pyi:58: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:61: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/sets/finite_subsets.pyi:94: error: Incompatible types in assignment (expression has type "type[FinitelySupportedFunctionsObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/sets/finite_subsets.pyi:102: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:105: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/ordinals/category.pyi:75: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.pyi:19: error: Incompatible types in assignment (expression has type "type[FiniteSetObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/sets/category.pyi:27: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.pyi:30: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/sets/category.pyi:39: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.pyi:62: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.pyi:65: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.pyi:68: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.pyi:50: error: Incompatible types in assignment (expression has type "type[ChosenSubsetObject]", base class "FullSubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/sets/subobjects.pyi:58: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.pyi:88: error: Incompatible types in assignment (expression has type "type[ChosenQuotientObject]", base class "FullSubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/sets/subobjects.pyi:96: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.pyi:186: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.pyi:63: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.pyi:102: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.pyi:105: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.pyi:129: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.pyi:132: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.pyi:135: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+
+### TEST OWNER (107 errors)
+Test suite fixtures, preparsed integer literal overrides, test assertions.
+----------------------------------------
 tests/kernel/test_m3_properties_queries_refinement.py:17: error: Module "sage_categories.cat.category" has no attribute "Axiom"  [attr-defined]
 tests/kernel/test_m3_properties_queries_refinement.py:17: error: Module "sage_categories.cat.category" does not explicitly export attribute "Predicate"  [attr-defined]
 tests/kernel/test_m3_properties_queries_refinement.py:17: error: Module "sage_categories.cat.category" does not explicitly export attribute "Proposition"  [attr-defined]
@@ -499,20 +300,3 @@ tests/kernel/test_m1_sage_runtime.py:437: error: Bracketed expression "[...]" is
 tests/kernel/test_m1_sage_runtime.py:439: error: Function is missing a return type annotation  [no-untyped-def]
 tests/kernel/test_m1_sage_runtime.py:450: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
 tests/kernel/test_m1_sage_runtime.py:460: error: Function is missing a return type annotation  [no-untyped-def]
-/home/dzack/ai-review-ci/justfiles/../tool-configs/mypy-sage.ini: note: unused section(s): [mypy-slop_detector.*], [mypy-fpylll.*], [mypy-tree_sitter_sage.*], [mypy-setuptools.*], [mypy-wheel.*], [mypy-networkx.*], [mypy-tqdm.*], [mypy-IPython.*], [mypy-flowmark.formats.flowmark_markdown]
-Found 279 errors in 27 files (checked 5 source files)
-ERROR: mypy found type errors in project code.
-
-================================================================================
-  LOCAL QC FAILURE — DIRECT REPAIR REQUIRED
-================================================================================
-
-  Fix the reported compiler, formatter, type, or test failure in the object
-  being changed, then rerun the same gate. This is not PR review feedback and
-  does not enter returned-PR-feedback triage or require independent policy/remediation subagents.
-
-  Do not weaken the checker, suppress the diagnostic, golf the error count, or
-  edit ai-review-ci to make the signal disappear.
-
-================================================================================
-error: recipe `_sage-mypy` failed with exit code 1

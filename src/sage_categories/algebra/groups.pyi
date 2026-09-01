@@ -1,65 +1,64 @@
+from collections.abc import Hashable
 from dataclasses import dataclass
-from sage_categories.algebra.monoids import Monoids as Monoids, MonoidsCategory as MonoidsCategory
-from sage_categories.cat.category import Category as Category
+from sage_categories.algebra.monoids import MonoidObjectData as MonoidObjectData, Monoids as Monoids, MonoidsCategory as MonoidsCategory
+from sage_categories.cat.category import Category as Category, CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.functors import Fun as Fun, Functor as Functor
+from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
 from sage_categories.cat.properties import PropertySubcategory as PropertySubcategory
 from sage_categories.sets.category import Sets as Sets
-from typing import Any
+type Key = tuple[Hashable, ...]
 
 @dataclass(frozen=True, eq=False, slots=True)
-class GroupObjectData:
-    carrier: Any
-    multiplication: Any
-    unit: Any
-    inversion: Any
+class GroupObjectData(MonoidObjectData):
+    inversion: MorphismCategory.ObjectType
 
 class GroupObjectDeclaration:
 
-    def __init__(self, data: Any) -> None:
+    def __init__(self, data: GroupObjectData) -> None:
         ...
 
-    def carrier(self) -> Any:
+    def carrier(self) -> CategoryOfCategories.ElementType:
         ...
 
-    def multiplication(self) -> Any:
+    def multiplication(self) -> MorphismCategory.ObjectType:
         ...
 
-    def unit_morphism(self) -> Any:
+    def unit_morphism(self) -> MorphismCategory.ObjectType | CategoryOfCategories.ElementType:
         ...
 
-    def inversion(self) -> Any:
+    def inversion(self) -> MorphismCategory.ObjectType:
         ...
 
-    def zero(self) -> Any:
+    def zero(self) -> MorphismCategory.ObjectType | CategoryOfCategories.ElementType:
         ...
 
-    def one(self) -> Any:
+    def one(self) -> MorphismCategory.ObjectType | CategoryOfCategories.ElementType:
         ...
 
 @dataclass(frozen=True, eq=False, slots=True)
 class GroupMorphismData:
-    carrier_morphism: Any
+    carrier_morphism: MorphismCategory.ObjectType
 
 class GroupMorphismDeclaration:
 
     def __init__(self, data: GroupMorphismData) -> None:
         ...
 
-    def carrier_morphism(self) -> Any:
+    def carrier_morphism(self) -> MorphismCategory.ObjectType:
         ...
 
 @dataclass(frozen=True, eq=False)
 class GroupPresentation:
     presented_group: GroupObjectDeclaration
     generators: tuple[str, ...]
-    relations: tuple[Any, ...]
-    free_group_on_generators: Any
-    free_group_on_relations: Any
-    first_parallel_morphism: Any
-    second_parallel_morphism: Any
-    evaluation_morphism: Any
+    relations: tuple[str, ...]
+    free_group_on_generators: GroupObjectDeclaration
+    free_group_on_relations: GroupObjectDeclaration
+    first_parallel_morphism: MorphismCategory.ObjectType
+    second_parallel_morphism: MorphismCategory.ObjectType
+    evaluation_morphism: MorphismCategory.ObjectType
 
-    def coequalizer_presentation(self) -> tuple[Any, Any, Any]:
+    def coequalizer_presentation(self) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
         ...
 
 class GroupsCategory(Category[[], []]):
@@ -84,20 +83,20 @@ class GroupsCategory(Category[[], []]):
     def to_monoids(self) -> Functor:
         ...
 
-    def structure_functors(self) -> tuple[Any, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         ...
 
-    def construct_morphism(self, domain: GroupsCategory.ObjectType, codomain: GroupsCategory.ObjectType, carrier_morphism: Any) -> GroupsCategory.MorphismType:
+    def construct_morphism(self, domain: GroupsCategory.ObjectType, codomain: GroupsCategory.ObjectType, carrier_morphism: MorphismCategory.ObjectType) -> GroupsCategory.MorphismType:
         ...
 
     def infinite_cyclic(self) -> GroupsCategory.ObjectType:
         ...
 
-    def presentation(self, generators: tuple[str, ...], relations: tuple[Any, ...]=()) -> GroupPresentation:
+    def presentation(self, generators: tuple[str, ...], relations: tuple[str, ...]) -> GroupPresentation:
         ...
 
-    def __call__(self, carrier: Any, multiplication: Any, unit: Any, inversion: Any) -> GroupsCategory.ObjectType:
+    def __call__(self, carrier: CategoryOfCategories.ElementType, multiplication: MorphismCategory.ObjectType, unit: MorphismCategory.ObjectType | CategoryOfCategories.ElementType, inversion: MorphismCategory.ObjectType) -> GroupsCategory.ObjectType:
         ...
 
-def Groups(ambient: Category | None=None) -> GroupsCategory:
+def Groups(ambient: Category) -> GroupsCategory:
     ...

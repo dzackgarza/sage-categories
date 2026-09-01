@@ -1,59 +1,60 @@
+from collections.abc import Hashable
 from dataclasses import dataclass
-from sage_categories.algebra.groups import Groups as Groups
-from sage_categories.algebra.semirings import Semirings as Semirings
-from sage_categories.cat.category import Category as Category
+from sage_categories.algebra.groups import Groups as Groups, GroupsCategory as GroupsCategory
+from sage_categories.algebra.semirings import Semirings as Semirings, SemiringsCategory as SemiringsCategory
+from sage_categories.cat.category import Category as Category, CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.functors import Fun as Fun, Functor as Functor
+from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
 from sage_categories.cat.properties import PropertySubcategory as PropertySubcategory
 from sage_categories.kernel.refinement import refine as refine
-from sage_categories.sets.category import Sets as Sets
-from typing import Any
+type Key = tuple[Hashable, ...]
 
 @dataclass(frozen=True, eq=False)
 class RingObjectData:
-    carrier: Any
-    addition: Any
-    zero: Any
-    multiplication: Any
-    one: Any
-    inversion: Any
+    carrier: CategoryOfCategories.ElementType
+    addition: MorphismCategory.ObjectType
+    zero: MorphismCategory.ObjectType | CategoryOfCategories.ElementType
+    multiplication: MorphismCategory.ObjectType
+    one: MorphismCategory.ObjectType | CategoryOfCategories.ElementType
+    inversion: MorphismCategory.ObjectType
 
     @property
-    def unit(self) -> Any:
+    def unit(self) -> MorphismCategory.ObjectType | CategoryOfCategories.ElementType:
         ...
 
 class RingObjectDeclaration:
 
-    def __init__(self, data: Any) -> None:
+    def __init__(self, data: RingObjectData) -> None:
         ...
 
-    def carrier(self) -> Any:
+    def carrier(self) -> CategoryOfCategories.ElementType:
         ...
 
-    def addition(self) -> Any:
+    def addition(self) -> MorphismCategory.ObjectType:
         ...
 
-    def zero(self) -> Any:
+    def zero(self) -> MorphismCategory.ObjectType | CategoryOfCategories.ElementType:
         ...
 
-    def multiplication(self) -> Any:
+    def multiplication(self) -> MorphismCategory.ObjectType:
         ...
 
-    def one(self) -> Any:
+    def one(self) -> MorphismCategory.ObjectType | CategoryOfCategories.ElementType:
         ...
 
-    def inversion(self) -> Any:
+    def inversion(self) -> MorphismCategory.ObjectType:
         ...
 
 @dataclass(frozen=True, eq=False, slots=True)
 class RingMorphismData:
-    carrier_morphism: Any
+    carrier_morphism: MorphismCategory.ObjectType
 
 class RingMorphismDeclaration:
 
     def __init__(self, data: RingMorphismData) -> None:
         ...
 
-    def carrier_morphism(self) -> Any:
+    def carrier_morphism(self) -> MorphismCategory.ObjectType:
         ...
 
 class RingsCategory(Category[[], []]):
@@ -81,14 +82,14 @@ class RingsCategory(Category[[], []]):
     def product_projection(self, index: int) -> Functor:
         ...
 
-    def structure_functors(self) -> tuple[Any, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         ...
 
-    def construct_morphism(self, domain: RingsCategory.ObjectType, codomain: RingsCategory.ObjectType, carrier_morphism: Any) -> RingsCategory.MorphismType:
+    def construct_morphism(self, domain: RingsCategory.ObjectType, codomain: RingsCategory.ObjectType, carrier_morphism: MorphismCategory.ObjectType) -> RingsCategory.MorphismType:
         ...
 
-    def __call__(self, carrier: Any, addition: Any, zero: Any, multiplication: Any, one: Any, inversion: Any) -> RingsCategory.ObjectType:
+    def __call__(self, carrier: CategoryOfCategories.ElementType, addition: MorphismCategory.ObjectType, zero: MorphismCategory.ObjectType | CategoryOfCategories.ElementType, multiplication: MorphismCategory.ObjectType, one: MorphismCategory.ObjectType | CategoryOfCategories.ElementType, inversion: MorphismCategory.ObjectType) -> RingsCategory.ObjectType:
         ...
 
-def Rings(ambient: Category | None=None) -> RingsCategory:
+def Rings(ambient: Category) -> RingsCategory:
     ...

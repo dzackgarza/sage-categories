@@ -8,6 +8,7 @@ from sage.structure.element import Element
 from sage.structure.element_wrapper import ElementWrapper
 from sage.structure.parent import Parent
 from sage.structure.unique_representation import UniqueRepresentation
+from sage_categories.algebra.semirings import SemiringsCategory
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.morphisms import MorphismCategory
@@ -15,7 +16,6 @@ from sage_categories.cat.predicates import AppliedPredicate, Decision, Predicate
 from sage_categories.ordinals.category import OrdinalObject
 from sage_categories.sets.category import SetMap
 from sage_categories.sets.category import SetObject
-from typing import Any
 __all__ = ['generalized_continuum_hypothesis', 'at_most', 'less_than', 'CardinalObject', 'CardinalElement', 'CardinalityMorphism', 'cardinality_query', 'Cardinal', 'CardinalOrder', 'Aleph', 'InitialOrdinal', 'aleph0', 'continuum', 'representative_bijection', 'cardinality_functor']
 type Key = tuple[str | int | Key, ...]
 generalized_continuum_hypothesis: Predicate
@@ -261,7 +261,7 @@ class CardinalCategory(Category[[MorphismCategory.ObjectType], []]):
     def inverse_morphism(self, morphism: CardinalityMorphism) -> CardinalityMorphism:
         ...
 
-    def semiring_object(self) -> Any:
+    def semiring_object(self) -> SemiringsCategory.ObjectType:
         ...
 CardinalObject: Incomplete
 CardinalElement: Incomplete

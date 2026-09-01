@@ -1,39 +1,43 @@
+from collections.abc import Hashable
 from dataclasses import dataclass
-from sage_categories.cat.category import Category as Category
-from sage_categories.cat.category import Cat as Cat
+from sage_categories.cat.category import Category as Category, CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.functors import Fun as Fun, Functor as Functor
+from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
 from sage_categories.cat.predicates import Predicate as Predicate, predicate as predicate
 from sage_categories.cat.properties import PropertySubcategory as PropertySubcategory
-from sage_categories.sets.category import Sets as Sets
-from typing import Any
+type Key = tuple[Hashable, ...]
 preserves_magma_operation: Predicate
 
 @dataclass(frozen=True, eq=False, slots=True)
 class MagmaObjectData:
-    carrier: Any
-    multiplication: Any
+    carrier: CategoryOfCategories.ElementType
+    multiplication: MorphismCategory.ObjectType
+
+    @property
+    def action_morphism(self) -> MorphismCategory.ObjectType:
+        ...
 
 class MagmaObjectDeclaration:
 
-    def __init__(self, data: Any) -> None:
+    def __init__(self, data: MagmaObjectData) -> None:
         ...
 
-    def carrier(self) -> Any:
+    def carrier(self) -> CategoryOfCategories.ElementType:
         ...
 
-    def multiplication(self) -> Any:
+    def multiplication(self) -> MorphismCategory.ObjectType:
         ...
 
 @dataclass(frozen=True, eq=False, slots=True)
 class MagmaMorphismData:
-    carrier_morphism: Any
+    carrier_morphism: MorphismCategory.ObjectType
 
 class MagmaMorphismDeclaration:
 
     def __init__(self, data: MagmaMorphismData) -> None:
         ...
 
-    def carrier_morphism(self) -> Any:
+    def carrier_morphism(self) -> MorphismCategory.ObjectType:
         ...
 
 class MagmasCategory(Category[[], []]):
@@ -61,14 +65,14 @@ class MagmasCategory(Category[[], []]):
     def product_projection(self, index: int) -> Functor:
         ...
 
-    def structure_functors(self) -> tuple[Any, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         ...
 
-    def construct_morphism(self, domain: MagmasCategory.ObjectType, codomain: MagmasCategory.ObjectType, carrier_morphism: Any) -> MagmasCategory.MorphismType:
+    def construct_morphism(self, domain: MagmasCategory.ObjectType, codomain: MagmasCategory.ObjectType, carrier_morphism: MorphismCategory.ObjectType) -> MagmasCategory.MorphismType:
         ...
 
-    def __call__(self, carrier: Any, multiplication: Any) -> MagmasCategory.ObjectType:
+    def __call__(self, carrier: CategoryOfCategories.ElementType, multiplication: MorphismCategory.ObjectType) -> MagmasCategory.ObjectType:
         ...
 
-def Magmas(ambient: Category | None=None) -> MagmasCategory:
+def Magmas(ambient: Category) -> MagmasCategory:
     ...

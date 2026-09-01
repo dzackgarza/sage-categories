@@ -1,53 +1,54 @@
+from collections.abc import Hashable
 from dataclasses import dataclass
-from sage_categories.algebra.monoids import Monoids as Monoids
-from sage_categories.cat.category import Category as Category
+from sage_categories.algebra.monoids import Monoids as Monoids, MonoidsCategory as MonoidsCategory
+from sage_categories.cat.category import Category as Category, CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.functors import Fun as Fun, Functor as Functor
+from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
 from sage_categories.kernel.refinement import refine as refine
-from sage_categories.sets.category import Sets as Sets
-from typing import Any
+type Key = tuple[Hashable, ...]
 
 @dataclass(frozen=True, eq=False)
 class SemiringObjectData:
-    carrier: Any
-    addition: Any
-    zero: Any
-    multiplication: Any
-    one: Any
+    carrier: CategoryOfCategories.ElementType
+    addition: MorphismCategory.ObjectType
+    zero: MorphismCategory.ObjectType | CategoryOfCategories.ElementType
+    multiplication: MorphismCategory.ObjectType
+    one: MorphismCategory.ObjectType | CategoryOfCategories.ElementType
 
     @property
-    def unit(self) -> Any:
+    def unit(self) -> MorphismCategory.ObjectType | CategoryOfCategories.ElementType:
         ...
 
 class SemiringObjectDeclaration:
 
-    def __init__(self, data: Any) -> None:
+    def __init__(self, data: SemiringObjectData) -> None:
         ...
 
-    def carrier(self) -> Any:
+    def carrier(self) -> CategoryOfCategories.ElementType:
         ...
 
-    def addition(self) -> Any:
+    def addition(self) -> MorphismCategory.ObjectType:
         ...
 
-    def zero(self) -> Any:
+    def zero(self) -> MorphismCategory.ObjectType | CategoryOfCategories.ElementType:
         ...
 
-    def multiplication(self) -> Any:
+    def multiplication(self) -> MorphismCategory.ObjectType:
         ...
 
-    def one(self) -> Any:
+    def one(self) -> MorphismCategory.ObjectType | CategoryOfCategories.ElementType:
         ...
 
 @dataclass(frozen=True, eq=False, slots=True)
 class SemiringMorphismData:
-    carrier_morphism: Any
+    carrier_morphism: MorphismCategory.ObjectType
 
 class SemiringMorphismDeclaration:
 
     def __init__(self, data: SemiringMorphismData) -> None:
         ...
 
-    def carrier_morphism(self) -> Any:
+    def carrier_morphism(self) -> MorphismCategory.ObjectType:
         ...
 
 class SemiringsCategory(Category[[], []]):
@@ -72,14 +73,14 @@ class SemiringsCategory(Category[[], []]):
     def product_projection(self, index: int) -> Functor:
         ...
 
-    def structure_functors(self) -> tuple[Any, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         ...
 
-    def construct_morphism(self, domain: SemiringsCategory.ObjectType, codomain: SemiringsCategory.ObjectType, carrier_morphism: Any) -> SemiringsCategory.MorphismType:
+    def construct_morphism(self, domain: SemiringsCategory.ObjectType, codomain: SemiringsCategory.ObjectType, carrier_morphism: MorphismCategory.ObjectType) -> SemiringsCategory.MorphismType:
         ...
 
-    def __call__(self, carrier: Any, addition: Any, zero: Any, multiplication: Any, one: Any) -> SemiringsCategory.ObjectType:
+    def __call__(self, carrier: CategoryOfCategories.ElementType, addition: MorphismCategory.ObjectType, zero: MorphismCategory.ObjectType | CategoryOfCategories.ElementType, multiplication: MorphismCategory.ObjectType, one: MorphismCategory.ObjectType | CategoryOfCategories.ElementType) -> SemiringsCategory.ObjectType:
         ...
 
-def Semirings(ambient: Category | None=None) -> SemiringsCategory:
+def Semirings(ambient: Category) -> SemiringsCategory:
     ...

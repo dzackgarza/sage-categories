@@ -17,19 +17,27 @@ are constructed via ``presentation(generators, relations)``
 
 from __future__ import annotations
 
+from collections.abc import Hashable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-from sage_categories.algebra.modules import Modules, ModulesCategory
-from sage_categories.algebra.monoids import Monoids
+from sage.structure.coerce_dict import MonoDict
+
+from sage_categories.algebra.modules import Modules, ModulesCategory, ModuleObjectDeclaration
+from sage_categories.algebra.monoids import MonoidObjectDeclaration, Monoids, MonoidsCategory
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun
+from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Predicate, predicate
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.sets.category import Sets
 
 if TYPE_CHECKING:
+    from sage_categories.cat.category import CategoryOfCategories
     from sage_categories.cat.functors import Functor
+
+# A private retention key: identity pairs ``(id(v), v)`` (POL-SAGE-013).
+type Key = tuple[Hashable, ...]
 
 
 preserves_algebra_multiplication: Predicate = predicate("preserves_algebra_multiplication")
@@ -40,39 +48,43 @@ preserves_algebra_unit: Predicate = predicate("preserves_algebra_unit")
 class AlgebraObjectData:
     """The underlying module object, multiplication morphism, and unit morphism of an algebra."""
 
-    module: Any
-    multiplication: Any
-    unit: Any
+    module: ModuleObjectDeclaration
+    multiplication: MorphismCategory.ObjectType
+    unit: MorphismCategory.ObjectType
 
     @property
-    def carrier(self) -> Any:
+    def carrier(self) -> ModuleObjectDeclaration:
+        """The carrier the compiled monoid occurrence in ``Monoids(V_R)`` reads: the module object."""
         return self.module
+
+    @property
+    def action_morphism(self) -> MorphismCategory.ObjectType:
+        """The action the compiled module occurrence reads: the underlying module's action."""
+        return self.module.action_morphism()
 
 
 class AlgebraObjectDeclaration:
     """An object in ``Algebras(R, C)``."""
 
-    def __init__(self, data: Any) -> None:
-        self._module = getattr(data, "module", getattr(data, "carrier", data))
-        self._multiplication = getattr(data, "multiplication", None)
-        self._unit = getattr(data, "unit", getattr(data, "unit_morphism", None))
+    def __init__(self, data: AlgebraObjectData) -> None:
+        self._module = data.module
+        self._multiplication = data.multiplication
+        self._unit = data.unit
         super().__init__()
 
-    def module(self) -> Any:
+    def module(self) -> ModuleObjectDeclaration:
         """The underlying module object in ``Modules(R, C)``."""
         return self._module
 
-    def carrier(self) -> Any:
+    def carrier(self) -> CategoryOfCategories.ElementType:
         """The underlying object in ``C``."""
-        if hasattr(self._module, "carrier"):
-            return self._module.carrier()
-        return self._module
+        return self._module.carrier()
 
-    def multiplication(self) -> Any:
+    def multiplication(self) -> MorphismCategory.ObjectType:
         r"""``m_B: B \otimes_R B -> B``."""
         return self._multiplication
 
-    def unit_morphism(self) -> Any:
+    def unit_morphism(self) -> MorphismCategory.ObjectType:
         r"""``u_B: I_R -> B``."""
         return self._unit
 
@@ -84,24 +96,24 @@ class AlgebraObjectDeclaration:
 class AlgebraMorphismData:
     """A morphism in ``Algebras(R, C)``."""
 
-    module_morphism: Any
+    module_morphism: MorphismCategory.ObjectType
 
     @property
-    def carrier_morphism(self) -> Any:
+    def carrier_morphism(self) -> MorphismCategory.ObjectType:
         return self.module_morphism
 
 
 class AlgebraMorphismDeclaration:
     """A morphism in ``Algebras(R, C)``."""
 
-    def __init__(self, data: Any) -> None:
-        self._module_morphism = getattr(data, "module_morphism", getattr(data, "carrier_morphism", data))
+    def __init__(self, data: AlgebraMorphismData) -> None:
+        self._module_morphism = data.module_morphism
         super().__init__()
 
-    def module_morphism(self) -> Any:
+    def module_morphism(self) -> MorphismCategory.ObjectType:
         return self._module_morphism
 
-    def carrier_morphism(self) -> Any:
+    def carrier_morphism(self) -> MorphismCategory.ObjectType:
         return self._module_morphism
 
     def __repr__(self) -> str:
@@ -114,9 +126,9 @@ class AlgebraPresentation:
 
     presented_algebra: AlgebraObjectDeclaration
     generators: tuple[str, ...]
-    relations: tuple[Any, ...]
-    free_algebra_on_generators: Any
-    evaluation_morphism: Any
+    relations: tuple[str, ...]
+    free_algebra_on_generators: AlgebraObjectDeclaration
+    evaluation_morphism: MorphismCategory.ObjectType
 
 
 class AlgebrasCategory(Category[[], []]):
@@ -128,25 +140,16 @@ class AlgebrasCategory(Category[[], []]):
     class ElementType:
         """A generalized element of an algebra object."""
 
-    def __init__(
-        self,
-        base: Any,
-        ambient: Category | None = None,
-        module_category: ModulesCategory | None = None,
-    ) -> None:
-        if ambient is None:
-            ambient = Sets()
+    def __init__(self, base: MonoidObjectDeclaration, ambient: Category) -> None:
         self._base = base
         self._ambient = ambient
-        if module_category is None:
-            module_category = Modules(base, ambient)
-        self._module_category = module_category
-        self._algebras: dict[Any, AlgebrasCategory.ObjectType] = {}
+        self._module_category = Modules(base, ambient)
+        self._algebras: dict[Key, AlgebrasCategory.ObjectType] = {}
         super().__init__()
 
         self._commutative = PropertySubcategory(self, "Commutative", ())
 
-    def base(self) -> Any:
+    def base(self) -> MonoidObjectDeclaration:
         return self._base
 
     def ambient(self) -> Category:
@@ -162,19 +165,19 @@ class AlgebrasCategory(Category[[], []]):
         """The presentation equivalence to Monoids(V_R) (specs/algebras.md)."""
         target = Monoids(self._module_category)
 
-        def on_object(B: AlgebrasCategory.ObjectType) -> Any:
+        def on_object(B: AlgebrasCategory.ObjectType) -> MonoidsCategory.ObjectType:
             return target(B.module(), B.multiplication(), B.unit_morphism())
 
-        def on_morphism(f: AlgebrasCategory.MorphismType) -> Any:
+        def on_morphism(f: AlgebrasCategory.MorphismType) -> MorphismCategory.ObjectType:
             return target.construct_morphism(
                 on_object(f.domain()),
                 on_object(f.codomain()),
-                f.module_morphism() if hasattr(f, "module_morphism") else f,
+                f.module_morphism(),
             )
 
         return Fun(self, target).Equivalences()(on_object, on_morphism)
 
-    def structure_functors(self) -> tuple[Any, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         """The equivalence to Monoids(V_R) is the sole immediate structure functor."""
         return (self.monoid_presentation(),)
 
@@ -182,12 +185,11 @@ class AlgebrasCategory(Category[[], []]):
         """The composite forgetful functor to the ambient category C."""
         ambient = self._ambient
 
-        def on_object(B: AlgebrasCategory.ObjectType) -> Any:
+        def on_object(B: AlgebrasCategory.ObjectType) -> CategoryOfCategories.ElementType:
             return B.carrier()
 
-        def on_morphism(f: AlgebrasCategory.MorphismType) -> Any:
-            m = f.module_morphism() if hasattr(f, "module_morphism") else f
-            return m.carrier_morphism() if hasattr(m, "carrier_morphism") else m
+        def on_morphism(f: AlgebrasCategory.MorphismType) -> MorphismCategory.ObjectType:
+            return f.module_morphism().carrier_morphism()
 
         return Fun(self, ambient).Faithful()(on_object, on_morphism)
 
@@ -195,7 +197,7 @@ class AlgebrasCategory(Category[[], []]):
         self,
         domain: AlgebrasCategory.ObjectType,
         codomain: AlgebrasCategory.ObjectType,
-        module_morphism: Any,
+        module_morphism: MorphismCategory.ObjectType,
     ) -> AlgebrasCategory.MorphismType:
         return self.MorphismType(
             self.morphism_category(1),
@@ -207,7 +209,7 @@ class AlgebrasCategory(Category[[], []]):
     def presentation(
         self,
         generators: tuple[str, ...],
-        relations: tuple[Any, ...] = (),
+        relations: tuple[str, ...],
     ) -> AlgebraPresentation:
         r"""A finite presentation \(B = R[x_1, \dots, x_n]/(p_1, \dots, p_m)\)."""
         sets = Sets()
@@ -237,11 +239,11 @@ class AlgebrasCategory(Category[[], []]):
 
     def __call__(
         self,
-        module: Any,
-        multiplication: Any = None,
-        unit: Any = None,
+        module: ModuleObjectDeclaration,
+        multiplication: MorphismCategory.ObjectType,
+        unit: MorphismCategory.ObjectType,
     ) -> AlgebrasCategory.ObjectType:
-        key = (module, multiplication, unit)
+        key = ((id(module), module), (id(multiplication), multiplication), (id(unit), unit))
         if key not in self._algebras:
             self._algebras[key] = self.ObjectType(
                 category=self,
@@ -253,14 +255,16 @@ class AlgebrasCategory(Category[[], []]):
         return f"Algebras({self._base!r}, {self._ambient!r})"
 
 
-_ALGEBRA_CATEGORIES: dict[tuple[Any, Category], AlgebrasCategory] = {}
+# ``Algebras(R, C)`` retained per (base, ambient) pair: a MonoDict of MonoDicts, each
+# level keyed by identity (POL-SAGE-013).
+_ALGEBRA_CATEGORIES: MonoDict = MonoDict()
 
 
-def Algebras(base: Any, ambient: Category | None = None) -> AlgebrasCategory:
-    """Construct or retrieve ``Algebras(base, ambient)``."""
-    if ambient is None:
-        ambient = Sets()
-    key = (base, ambient)
-    if key not in _ALGEBRA_CATEGORIES:
-        _ALGEBRA_CATEGORIES[key] = AlgebrasCategory(base, ambient)
-    return _ALGEBRA_CATEGORIES[key]
+def Algebras(base: MonoidObjectDeclaration, ambient: Category) -> AlgebrasCategory:
+    """Construct or retrieve ``Algebras(base, ambient)``, one category per pair of values."""
+    if base not in _ALGEBRA_CATEGORIES:
+        _ALGEBRA_CATEGORIES[base] = MonoDict()
+    by_ambient = _ALGEBRA_CATEGORIES[base]
+    if ambient not in by_ambient:
+        by_ambient[ambient] = AlgebrasCategory(base, ambient)
+    return by_ambient[ambient]

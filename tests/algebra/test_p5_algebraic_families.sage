@@ -39,8 +39,6 @@ def test_magmas_construction_and_structure_functors() -> None:
     M = Magmas(S)
     assert M.ambient() is S
 
-    # Default ambient is Sets()
-    assert Magmas() is Magmas(S)
 
     # Carrier and multiplication
     carrier = S.Simplex(2)
@@ -76,7 +74,6 @@ def test_monoids_construction_and_to_magmas() -> None:
     S = Sets()
     Mon = Monoids(S)
     assert Mon.ambient() is S
-    assert Monoids() is Monoids(S)
 
     carrier = S.Simplex(2)
     square = carrier * carrier
@@ -117,7 +114,6 @@ def test_groups_construction_and_to_monoids() -> None:
     S = Sets()
     Grp = Groups(S)
     assert Grp.ambient() is S
-    assert Groups() is Groups(S)
 
     carrier = S.Simplex(2)
     square = carrier * carrier
@@ -154,7 +150,7 @@ def test_groups_construction_and_to_monoids() -> None:
 
 def test_infinite_cyclic_generator_and_presentation() -> None:
     """Groups(Sets()) constructs Z and finite presentations with coequalizer data."""
-    Grp = Groups()
+    Grp = Groups(Sets())
     Z = Grp.infinite_cyclic()
 
     assert Z in Grp
@@ -192,7 +188,6 @@ def test_semirings_projections() -> None:
     S = Sets()
     Semi = Semirings(S)
     assert Semi.ambient() is S
-    assert Semirings() is Semirings(S)
 
     carrier = S.Simplex(2)
     square = carrier * carrier
@@ -237,7 +232,6 @@ def test_rings_pullback_projections() -> None:
     S = Sets()
     Rng = Rings(S)
     assert Rng.ambient() is S
-    assert Rings() is Rings(S)
 
     carrier = S.Simplex(2)
     square = carrier * carrier

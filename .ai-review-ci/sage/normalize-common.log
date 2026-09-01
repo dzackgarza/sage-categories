@@ -10,30 +10,179 @@ No staged Markdown, JSON, or YAML files found
 ┌─────────────┐
 │ Scan Status │
 └─────────────┘
-  Scanning 167 files tracked by git with 228 Code rules:
+  Scanning 231 files tracked by git with 228 Code rules:
                                                                                                                         
   Language      Rules   Files          Origin      Rules                                                                
  ─────────────────────────────        ───────────────────                                                               
-  <multilang>       7     167          Community     160                                                                
-  python           36      79          Custom         68                                                                
+  <multilang>       7     231          Community     160                                                                
+  python           36     136          Custom         68                                                                
   yaml             11       4                                                                                           
                                                                                                                         
 No files modified by autofix.
+                    
+                    
+┌──────────────────┐
+│ 38 Code Findings │
+└──────────────────┘
+                                           
+    src/sage_categories/algebra/algebras.py
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-getattr-default
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+           56┆ self._module = getattr(data, "module", getattr(data, "carrier", data))
+            ⋮┆----------------------------------------
+           56┆ self._module = getattr(data, "module", getattr(data, "carrier", data))
+            ⋮┆----------------------------------------
+           57┆ self._multiplication = getattr(data, "multiplication", None)
+            ⋮┆----------------------------------------
+           58┆ self._unit = getattr(data, "unit", getattr(data, "unit_morphism", None))
+            ⋮┆----------------------------------------
+           58┆ self._unit = getattr(data, "unit", getattr(data, "unit_morphism", None))
+            ⋮┆----------------------------------------
+           98┆ self._module_morphism = getattr(data, "module_morphism", getattr(data, "carrier_morphism",
+               data))                                                                                    
+            ⋮┆----------------------------------------
+           98┆ self._module_morphism = getattr(data, "module_morphism", getattr(data, "carrier_morphism",
+               data))                                                                                    
+                                         
+    src/sage_categories/algebra/groups.py
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-getattr-default
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+           44┆ self._multiplication = getattr(data, "multiplication", getattr(data, "addition", None))
+            ⋮┆----------------------------------------
+           44┆ self._multiplication = getattr(data, "multiplication", getattr(data, "addition", None))
+            ⋮┆----------------------------------------
+           45┆ self._unit = getattr(data, "unit", getattr(data, "zero", getattr(data, "one", None)))
+            ⋮┆----------------------------------------
+           45┆ self._unit = getattr(data, "unit", getattr(data, "zero", getattr(data, "one", None)))
+            ⋮┆----------------------------------------
+           45┆ self._unit = getattr(data, "unit", getattr(data, "zero", getattr(data, "one", None)))
+            ⋮┆----------------------------------------
+           46┆ self._inversion = getattr(data, "inversion", None)
+                                         
+    src/sage_categories/algebra/magmas.py
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-getattr-default
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+           46┆ self._multiplication = getattr(data, "multiplication", getattr(data, "addition", None))
+            ⋮┆----------------------------------------
+           46┆ self._multiplication = getattr(data, "multiplication", getattr(data, "addition", None))
+                                          
+    src/sage_categories/algebra/modules.py
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-getattr-default
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+           45┆ self._action_morphism = getattr(data, "action_morphism", getattr(data, "action", data))
+            ⋮┆----------------------------------------
+           45┆ self._action_morphism = getattr(data, "action_morphism", getattr(data, "action", data))
+            ⋮┆----------------------------------------
+           46┆ carrier = getattr(data, "carrier", None)
+                                          
+    src/sage_categories/algebra/monoids.py
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-getattr-default
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+           49┆ self._multiplication = getattr(data, "multiplication", getattr(data, "addition", None))
+            ⋮┆----------------------------------------
+           49┆ self._multiplication = getattr(data, "multiplication", getattr(data, "addition", None))
+            ⋮┆----------------------------------------
+           50┆ self._unit = getattr(data, "unit", getattr(data, "zero", getattr(data, "one", None)))
+            ⋮┆----------------------------------------
+           50┆ self._unit = getattr(data, "unit", getattr(data, "zero", getattr(data, "one", None)))
+            ⋮┆----------------------------------------
+           50┆ self._unit = getattr(data, "unit", getattr(data, "zero", getattr(data, "one", None)))
+                                        
+    src/sage_categories/algebra/rings.py
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-getattr-default
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+           59┆ self._addition = getattr(data, "addition", getattr(data, "multiplication", None))
+            ⋮┆----------------------------------------
+           59┆ self._addition = getattr(data, "addition", getattr(data, "multiplication", None))
+            ⋮┆----------------------------------------
+           60┆ self._zero = getattr(data, "zero", getattr(data, "unit", None))
+            ⋮┆----------------------------------------
+           60┆ self._zero = getattr(data, "zero", getattr(data, "unit", None))
+            ⋮┆----------------------------------------
+           61┆ self._multiplication = getattr(data, "multiplication", None)
+            ⋮┆----------------------------------------
+           62┆ self._one = getattr(data, "one", None)
+            ⋮┆----------------------------------------
+           63┆ self._inversion = getattr(data, "inversion", None)
+                                     
+    src/sage_categories/cat/images.py
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-getattr-default
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          364┆ assert defining_functor.codomain() in (image, image.narrowing_base(), getattr(image,
+               "_ambient", None))                                                                  
+                                          
+    src/sage_categories/kernel/compiler.py
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-dict-get-default
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          304┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+   
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          304┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+   
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-dict-get-default
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          321┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+   
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          321┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+                                                
+    src/sage_categories/kernel/stub_generator.py
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+           83┆ candidates.setdefault(name, []).append(module)
+   
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-dict-get-default
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          132┆ module = canonical_exports.get(alias.name, statement.module)
+   
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          133┆ grouped.setdefault(module, []).append(alias)
                 
                 
 ┌──────────────┐
 │ Scan Summary │
 └──────────────┘
 ✅ Scan completed successfully.
- • Findings: 0 (0 blocking)
+ • Findings: 38 (38 blocking)
  • Rules run: 54
- • Targets scanned: 167
+ • Targets scanned: 231
  • Parsed lines: ~100.0%
  • Scan was limited to files tracked by git
  • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
-Ran 54 rules on 167 files: 0 findings.
-(need more rules? `semgrep login` for additional free Semgrep Registry rules)
+Ran 54 rules on 231 files: 38 findings.
 
-If Semgrep missed a finding, please send us feedback to let us know!
-See https://semgrep.dev/docs/reporting-false-negatives/
+📢 Too many findings? Try Semgrep Pro for more powerful queries and less noise.
+   See https://sg.run/false-positives.
+
 Common normalization completed

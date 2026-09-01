@@ -13,17 +13,26 @@ expose ``+`` and ``*`` on generalized elements and points.
 
 from __future__ import annotations
 
+from collections.abc import Hashable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
+
+from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.cat.category import Category
-from sage_categories.cat.functors import Cat, Fun
+from sage_categories.cat.functors import Fun
+from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Predicate, predicate
 from sage_categories.cat.properties import PropertySubcategory
-from sage_categories.sets.category import Sets
 
 if TYPE_CHECKING:
+    from sage_categories.cat.category import CategoryOfCategories
     from sage_categories.cat.functors import Functor
+
+# A private retention key: identity pairs ``(id(v), v)``, so cache lookups compare
+# owned values by identity and never ask their proposition-valued equality
+# (POL-SAGE-013).
+type Key = tuple[Hashable, ...]
 
 
 # Operation preservation predicate for magma morphisms: f \circ mu_X = mu_Y \circ (f \otimes f)
@@ -32,24 +41,34 @@ preserves_magma_operation: Predicate = predicate("preserves_magma_operation")
 
 @dataclass(frozen=True, eq=False, slots=True)
 class MagmaObjectData:
-    """The carrier and multiplication morphism of a magma object."""
+    """The carrier and multiplication morphism of a magma object.
 
-    carrier: Any
-    multiplication: Any
+    Every descendant construction datum threaded through the compiled magma
+    implementation exposes these two names (``kernel/compiler.py`` initializes each
+    reached implementation class with the one root datum).
+    """
+
+    carrier: CategoryOfCategories.ElementType
+    multiplication: MorphismCategory.ObjectType
+
+    @property
+    def action_morphism(self) -> MorphismCategory.ObjectType:
+        """The action the compiled module occurrence reads when the ambient is a module category: the carrier module's action."""
+        return self.carrier.action_morphism()
 
 
 class MagmaObjectDeclaration:
     """An object in ``Magmas(V)``."""
 
-    def __init__(self, data: Any) -> None:
+    def __init__(self, data: MagmaObjectData) -> None:
         self._carrier = data.carrier
-        self._multiplication = getattr(data, "multiplication", getattr(data, "addition", None))
+        self._multiplication = data.multiplication
         super().__init__()
 
-    def carrier(self) -> Any:
+    def carrier(self) -> CategoryOfCategories.ElementType:
         return self._carrier
 
-    def multiplication(self) -> Any:
+    def multiplication(self) -> MorphismCategory.ObjectType:
         r"""``mu_X: X \otimes X -> X``."""
         return self._multiplication
 
@@ -61,7 +80,7 @@ class MagmaObjectDeclaration:
 class MagmaMorphismData:
     """A morphism in ``Magmas(V)``."""
 
-    carrier_morphism: Any
+    carrier_morphism: MorphismCategory.ObjectType
 
 
 class MagmaMorphismDeclaration:
@@ -71,7 +90,7 @@ class MagmaMorphismDeclaration:
         self._carrier_morphism = data.carrier_morphism
         super().__init__()
 
-    def carrier_morphism(self) -> Any:
+    def carrier_morphism(self) -> MorphismCategory.ObjectType:
         return self._carrier_morphism
 
     def __repr__(self) -> str:
@@ -89,7 +108,7 @@ class MagmasCategory(Category[[], []]):
 
     def __init__(self, ambient: Category) -> None:
         self._ambient = ambient
-        self._magmas: dict[Any, MagmasCategory.ObjectType] = {}
+        self._magmas: dict[Key, MagmasCategory.ObjectType] = {}
         super().__init__()
         self._additive = PropertySubcategory(self, "Additive", ())
         self._multiplicative = PropertySubcategory(self, "Multiplicative", ())
@@ -114,15 +133,15 @@ class MagmasCategory(Category[[], []]):
         assert index == 0, f"Magmas only has product projection 0, got {index}"
         ambient = self._ambient
 
-        def on_object(M: MagmasCategory.ObjectType) -> Any:
+        def on_object(M: MagmasCategory.ObjectType) -> CategoryOfCategories.ElementType:
             return M.carrier()
 
-        def on_morphism(f: MagmasCategory.MorphismType) -> Any:
-            return f.carrier_morphism() if hasattr(f, "carrier_morphism") else f
+        def on_morphism(f: MagmasCategory.MorphismType) -> MorphismCategory.ObjectType:
+            return f.carrier_morphism()
 
         return Fun(self, ambient)(on_object, on_morphism)
 
-    def structure_functors(self) -> tuple[Any, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         """Structure functor tuple: (self.product_projection(0),)."""
         return (self.product_projection(0),)
 
@@ -130,7 +149,7 @@ class MagmasCategory(Category[[], []]):
         self,
         domain: MagmasCategory.ObjectType,
         codomain: MagmasCategory.ObjectType,
-        carrier_morphism: Any,
+        carrier_morphism: MorphismCategory.ObjectType,
     ) -> MagmasCategory.MorphismType:
         return self.MorphismType(
             self.morphism_category(1),
@@ -139,8 +158,12 @@ class MagmasCategory(Category[[], []]):
             MagmaMorphismData(carrier_morphism),
         )
 
-    def __call__(self, carrier: Any, multiplication: Any) -> MagmasCategory.ObjectType:
-        key = (carrier, multiplication)
+    def __call__(
+        self,
+        carrier: CategoryOfCategories.ElementType,
+        multiplication: MorphismCategory.ObjectType,
+    ) -> MagmasCategory.ObjectType:
+        key = ((id(carrier), carrier), (id(multiplication), multiplication))
         if key not in self._magmas:
             self._magmas[key] = self.ObjectType(category=self, data=MagmaObjectData(carrier, multiplication))
         return self._magmas[key]
@@ -149,13 +172,11 @@ class MagmasCategory(Category[[], []]):
         return f"Magmas({self._ambient!r})"
 
 
-_MAGMA_CATEGORIES: dict[Category, MagmasCategory] = {}
+_MAGMA_CATEGORIES: MonoDict = MonoDict()
 
 
-def Magmas(ambient: Category | None = None) -> MagmasCategory:
-    """Construct or retrieve ``Magmas(ambient)``."""
-    if ambient is None:
-        ambient = Sets()
+def Magmas(ambient: Category) -> MagmasCategory:
+    """Construct or retrieve ``Magmas(ambient)``, one category per ambient value."""
     if ambient not in _MAGMA_CATEGORIES:
         _MAGMA_CATEGORIES[ambient] = MagmasCategory(ambient)
     return _MAGMA_CATEGORIES[ambient]

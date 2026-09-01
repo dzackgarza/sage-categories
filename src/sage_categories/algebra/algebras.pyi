@@ -1,68 +1,74 @@
+from collections.abc import Hashable
 from dataclasses import dataclass
-from sage_categories.algebra.modules import Modules as Modules, ModulesCategory as ModulesCategory
-from sage_categories.algebra.monoids import Monoids as Monoids
-from sage_categories.cat.category import Category as Category
+from sage_categories.algebra.modules import ModuleObjectDeclaration as ModuleObjectDeclaration, Modules as Modules, ModulesCategory as ModulesCategory
+from sage_categories.algebra.monoids import MonoidObjectDeclaration as MonoidObjectDeclaration, Monoids as Monoids, MonoidsCategory as MonoidsCategory
+from sage_categories.cat.category import Category as Category, CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.functors import Fun as Fun, Functor as Functor
+from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
 from sage_categories.cat.predicates import Predicate as Predicate, predicate as predicate
 from sage_categories.cat.properties import PropertySubcategory as PropertySubcategory
 from sage_categories.sets.category import Sets as Sets
-from typing import Any
+type Key = tuple[Hashable, ...]
 preserves_algebra_multiplication: Predicate
 preserves_algebra_unit: Predicate
 
 @dataclass(frozen=True, eq=False)
 class AlgebraObjectData:
-    module: Any
-    multiplication: Any
-    unit: Any
+    module: ModuleObjectDeclaration
+    multiplication: MorphismCategory.ObjectType
+    unit: MorphismCategory.ObjectType
 
     @property
-    def carrier(self) -> Any:
+    def carrier(self) -> ModuleObjectDeclaration:
+        ...
+
+    @property
+    def action_morphism(self) -> MorphismCategory.ObjectType:
         ...
 
 class AlgebraObjectDeclaration:
 
-    def __init__(self, data: Any) -> None:
+    def __init__(self, data: AlgebraObjectData) -> None:
         ...
 
-    def module(self) -> Any:
+    def module(self) -> ModuleObjectDeclaration:
         ...
 
-    def carrier(self) -> Any:
+    def carrier(self) -> CategoryOfCategories.ElementType:
         ...
 
-    def multiplication(self) -> Any:
+    def multiplication(self) -> MorphismCategory.ObjectType:
         ...
 
-    def unit_morphism(self) -> Any:
+    def unit_morphism(self) -> MorphismCategory.ObjectType:
         ...
 
 @dataclass(frozen=True, eq=False, slots=True)
 class AlgebraMorphismData:
-    module_morphism: Any
+    module_morphism: MorphismCategory.ObjectType
 
     @property
-    def carrier_morphism(self) -> Any:
+    def carrier_morphism(self) -> MorphismCategory.ObjectType:
         ...
 
 class AlgebraMorphismDeclaration:
 
-    def __init__(self, data: Any) -> None:
+    def __init__(self, data: AlgebraMorphismData) -> None:
         ...
 
-    def module_morphism(self) -> Any:
+    def module_morphism(self) -> MorphismCategory.ObjectType:
         ...
 
-    def carrier_morphism(self) -> Any:
+    def carrier_morphism(self) -> MorphismCategory.ObjectType:
         ...
 
 @dataclass(frozen=True, eq=False)
 class AlgebraPresentation:
     presented_algebra: AlgebraObjectDeclaration
     generators: tuple[str, ...]
-    relations: tuple[Any, ...]
-    free_algebra_on_generators: Any
-    evaluation_morphism: Any
+    relations: tuple[str, ...]
+    free_algebra_on_generators: AlgebraObjectDeclaration
+    evaluation_morphism: MorphismCategory.ObjectType
 
 class AlgebrasCategory(Category[[], []]):
     ObjectType = AlgebraObjectDeclaration
@@ -71,10 +77,10 @@ class AlgebrasCategory(Category[[], []]):
     class ElementType:
         ...
 
-    def __init__(self, base: Any, ambient: Category | None=None, module_category: ModulesCategory | None=None) -> None:
+    def __init__(self, base: MonoidObjectDeclaration, ambient: Category) -> None:
         ...
 
-    def base(self) -> Any:
+    def base(self) -> MonoidObjectDeclaration:
         ...
 
     def ambient(self) -> Category:
@@ -89,20 +95,20 @@ class AlgebrasCategory(Category[[], []]):
     def monoid_presentation(self) -> Functor:
         ...
 
-    def structure_functors(self) -> tuple[Any, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         ...
 
     def U_R(self) -> Functor:
         ...
 
-    def construct_morphism(self, domain: AlgebrasCategory.ObjectType, codomain: AlgebrasCategory.ObjectType, module_morphism: Any) -> AlgebrasCategory.MorphismType:
+    def construct_morphism(self, domain: AlgebrasCategory.ObjectType, codomain: AlgebrasCategory.ObjectType, module_morphism: MorphismCategory.ObjectType) -> AlgebrasCategory.MorphismType:
         ...
 
-    def presentation(self, generators: tuple[str, ...], relations: tuple[Any, ...]=()) -> AlgebraPresentation:
+    def presentation(self, generators: tuple[str, ...], relations: tuple[str, ...]) -> AlgebraPresentation:
         ...
 
-    def __call__(self, module: Any, multiplication: Any=None, unit: Any=None) -> AlgebrasCategory.ObjectType:
+    def __call__(self, module: ModuleObjectDeclaration, multiplication: MorphismCategory.ObjectType, unit: MorphismCategory.ObjectType) -> AlgebrasCategory.ObjectType:
         ...
 
-def Algebras(base: Any, ambient: Category | None=None) -> AlgebrasCategory:
+def Algebras(base: MonoidObjectDeclaration, ambient: Category) -> AlgebrasCategory:
     ...

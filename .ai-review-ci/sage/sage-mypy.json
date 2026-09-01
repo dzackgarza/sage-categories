@@ -1,13 +1,6 @@
 {
-    "check": "sage-mypy",
-    "log": ".ai-review-ci/sage/sage-mypy.log",
-    "diagnostics": ".ai-review-ci/sage/sage-mypy.diagnostics.log",
-    "status": 2,
-    "total_errors": 279,
-    "owner_partition": {
-        "kernel": 12,
-        "cat": 129,
-        "leaf": 31,
-        "test": 107
-    }
+  "check": "sage-mypy",
+  "diagnostics": ".ai-review-ci/sage/sage-mypy.diagnostics.log",
+  "log": ".ai-review-ci/sage/sage-mypy.log",
+  "status": 1
 }

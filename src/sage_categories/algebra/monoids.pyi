@@ -1,50 +1,48 @@
+from collections.abc import Hashable
 from dataclasses import dataclass
-from sage_categories.algebra.magmas import Magmas as Magmas
-from sage_categories.cat.category import Category as Category
-from sage_categories.cat.category import Cat as Cat
+from sage_categories.algebra.magmas import MagmaObjectData as MagmaObjectData, Magmas as Magmas, MagmasCategory as MagmasCategory
+from sage_categories.cat.category import Category as Category, CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.functors import Fun as Fun, Functor as Functor
+from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
 from sage_categories.cat.predicates import Predicate as Predicate, predicate as predicate
 from sage_categories.cat.properties import PropertySubcategory as PropertySubcategory
-from sage_categories.sets.category import Sets as Sets
-from typing import Any
+type Key = tuple[Hashable, ...]
 preserves_monoid_unit: Predicate
 
 @dataclass(frozen=True, eq=False, slots=True)
-class MonoidObjectData:
-    carrier: Any
-    multiplication: Any
-    unit: Any
+class MonoidObjectData(MagmaObjectData):
+    unit: MorphismCategory.ObjectType | CategoryOfCategories.ElementType
 
 class MonoidObjectDeclaration:
 
-    def __init__(self, data: Any) -> None:
+    def __init__(self, data: MonoidObjectData) -> None:
         ...
 
-    def carrier(self) -> Any:
+    def carrier(self) -> CategoryOfCategories.ElementType:
         ...
 
-    def multiplication(self) -> Any:
+    def multiplication(self) -> MorphismCategory.ObjectType:
         ...
 
-    def unit_morphism(self) -> Any:
+    def unit_morphism(self) -> MorphismCategory.ObjectType | CategoryOfCategories.ElementType:
         ...
 
-    def zero(self) -> Any:
+    def zero(self) -> MorphismCategory.ObjectType | CategoryOfCategories.ElementType:
         ...
 
-    def one(self) -> Any:
+    def one(self) -> MorphismCategory.ObjectType | CategoryOfCategories.ElementType:
         ...
 
 @dataclass(frozen=True, eq=False, slots=True)
 class MonoidMorphismData:
-    carrier_morphism: Any
+    carrier_morphism: MorphismCategory.ObjectType
 
 class MonoidMorphismDeclaration:
 
     def __init__(self, data: MonoidMorphismData) -> None:
         ...
 
-    def carrier_morphism(self) -> Any:
+    def carrier_morphism(self) -> MorphismCategory.ObjectType:
         ...
 
 class MonoidsCategory(Category[[], []]):
@@ -69,14 +67,14 @@ class MonoidsCategory(Category[[], []]):
     def to_magmas(self) -> Functor:
         ...
 
-    def structure_functors(self) -> tuple[Any, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         ...
 
-    def construct_morphism(self, domain: MonoidsCategory.ObjectType, codomain: MonoidsCategory.ObjectType, carrier_morphism: Any) -> MonoidsCategory.MorphismType:
+    def construct_morphism(self, domain: MonoidsCategory.ObjectType, codomain: MonoidsCategory.ObjectType, carrier_morphism: MorphismCategory.ObjectType) -> MonoidsCategory.MorphismType:
         ...
 
-    def __call__(self, carrier: Any, multiplication: Any, unit: Any) -> MonoidsCategory.ObjectType:
+    def __call__(self, carrier: CategoryOfCategories.ElementType, multiplication: MorphismCategory.ObjectType, unit: MorphismCategory.ObjectType | CategoryOfCategories.ElementType) -> MonoidsCategory.ObjectType:
         ...
 
-def Monoids(ambient: Category | None=None) -> MonoidsCategory:
+def Monoids(ambient: Category) -> MonoidsCategory:
     ...

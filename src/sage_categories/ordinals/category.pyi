@@ -5,11 +5,7 @@ from dataclasses import dataclass
 from sage_categories.cat.category import Category
 from sage_categories.cat.predicates import AppliedPredicate, Predicate, UnknownClass
 from sage_categories.sets.cardinals import CardinalObject
-from typing import Any
-__all__ = ['is_natural_number', 'bind_cardinals', 'initial', 'at_most', 'less_than', 'OrdinalsCategory', 'OrdinalObject', 'Ordinals', 'ordinal', 'omega', 'omega0', 'OrdinalOrder']
-
-def is_natural_number(value: Any) -> bool:
-    ...
+__all__ = ['bind_cardinals', 'initial', 'at_most', 'less_than', 'OrdinalsCategory', 'OrdinalObject', 'Ordinals', 'ordinal', 'omega', 'omega0', 'OrdinalOrder']
 
 def bind_cardinals() -> None:
     ...

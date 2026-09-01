@@ -15,57 +15,66 @@ The notation subcategories are:
 
 from __future__ import annotations
 
+from collections.abc import Hashable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-from sage_categories.algebra.magmas import Magmas
+from sage.structure.coerce_dict import MonoDict
+
+from sage_categories.algebra.magmas import MagmaObjectData, Magmas, MagmasCategory
 from sage_categories.cat.category import Category
-from sage_categories.cat.functors import Cat, Fun
+from sage_categories.cat.functors import Fun
+from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Predicate, predicate
 from sage_categories.cat.properties import PropertySubcategory
-from sage_categories.sets.category import Sets
 
 if TYPE_CHECKING:
+    from sage_categories.cat.category import CategoryOfCategories
     from sage_categories.cat.functors import Functor
+
+# A private retention key: identity pairs ``(id(v), v)`` (POL-SAGE-013).
+type Key = tuple[Hashable, ...]
 
 
 preserves_monoid_unit: Predicate = predicate("preserves_monoid_unit")
 
 
 @dataclass(frozen=True, eq=False, slots=True)
-class MonoidObjectData:
-    """The carrier, multiplication morphism, and unit morphism of a monoid object."""
+class MonoidObjectData(MagmaObjectData):
+    """The carrier, multiplication morphism, and unit morphism of a monoid object.
 
-    carrier: Any
-    multiplication: Any
-    unit: Any
+    Extending :class:`MagmaObjectData` states the exact contract the compiled magma
+    implementation reads when the kernel threads this datum through it.
+    """
+
+    unit: MorphismCategory.ObjectType | CategoryOfCategories.ElementType
 
 
 class MonoidObjectDeclaration:
     """An object in ``Monoids(V)``."""
 
-    def __init__(self, data: Any) -> None:
+    def __init__(self, data: MonoidObjectData) -> None:
         self._carrier = data.carrier
-        self._multiplication = getattr(data, "multiplication", getattr(data, "addition", None))
-        self._unit = getattr(data, "unit", getattr(data, "zero", getattr(data, "one", None)))
+        self._multiplication = data.multiplication
+        self._unit = data.unit
         super().__init__()
 
-    def carrier(self) -> Any:
+    def carrier(self) -> CategoryOfCategories.ElementType:
         return self._carrier
 
-    def multiplication(self) -> Any:
+    def multiplication(self) -> MorphismCategory.ObjectType:
         r"""``mu_X: X \otimes X -> X``."""
         return self._multiplication
 
-    def unit_morphism(self) -> Any:
-        r"""``eta_X: I -> X``."""
+    def unit_morphism(self) -> MorphismCategory.ObjectType | CategoryOfCategories.ElementType:
+        r"""``eta_X: I -> X``, or the unit value it selects at a ``Cat()`` ambient."""
         return self._unit
 
-    def zero(self) -> Any:
+    def zero(self) -> MorphismCategory.ObjectType | CategoryOfCategories.ElementType:
         """The additive unit point."""
         return self._unit
 
-    def one(self) -> Any:
+    def one(self) -> MorphismCategory.ObjectType | CategoryOfCategories.ElementType:
         """The multiplicative unit point."""
         return self._unit
 
@@ -77,7 +86,7 @@ class MonoidObjectDeclaration:
 class MonoidMorphismData:
     """A morphism in ``Monoids(V)``."""
 
-    carrier_morphism: Any
+    carrier_morphism: MorphismCategory.ObjectType
 
 
 class MonoidMorphismDeclaration:
@@ -87,7 +96,7 @@ class MonoidMorphismDeclaration:
         self._carrier_morphism = data.carrier_morphism
         super().__init__()
 
-    def carrier_morphism(self) -> Any:
+    def carrier_morphism(self) -> MorphismCategory.ObjectType:
         return self._carrier_morphism
 
     def __repr__(self) -> str:
@@ -105,7 +114,7 @@ class MonoidsCategory(Category[[], []]):
 
     def __init__(self, ambient: Category) -> None:
         self._ambient = ambient
-        self._monoids: dict[Any, MonoidsCategory.ObjectType] = {}
+        self._monoids: dict[Key, MonoidsCategory.ObjectType] = {}
         super().__init__()
         self._additive = PropertySubcategory(self, "Additive", ())
         self._multiplicative = PropertySubcategory(self, "Multiplicative", ())
@@ -127,19 +136,19 @@ class MonoidsCategory(Category[[], []]):
         """Forgets unit and associativity: ``Monoids(V) -> Magmas(V)``."""
         D = Magmas(self._ambient)
 
-        def on_object(M: MonoidsCategory.ObjectType) -> Any:
+        def on_object(M: MonoidsCategory.ObjectType) -> MagmasCategory.ObjectType:
             return D(M.carrier(), M.multiplication())
 
-        def on_morphism(f: MonoidsCategory.MorphismType) -> Any:
+        def on_morphism(f: MonoidsCategory.MorphismType) -> MorphismCategory.ObjectType:
             return D.construct_morphism(
                 on_object(f.domain()),
                 on_object(f.codomain()),
-                f.carrier_morphism() if hasattr(f, "carrier_morphism") else f,
+                f.carrier_morphism(),
             )
 
         return Fun(self, D).Monomorphisms().Isofibrations()(on_object, on_morphism)
 
-    def structure_functors(self) -> tuple[Any, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         """Structure functor tuple: (self.to_magmas(),)."""
         return (self.to_magmas(),)
 
@@ -147,7 +156,7 @@ class MonoidsCategory(Category[[], []]):
         self,
         domain: MonoidsCategory.ObjectType,
         codomain: MonoidsCategory.ObjectType,
-        carrier_morphism: Any,
+        carrier_morphism: MorphismCategory.ObjectType,
     ) -> MonoidsCategory.MorphismType:
         return self.MorphismType(
             self.morphism_category(1),
@@ -156,8 +165,13 @@ class MonoidsCategory(Category[[], []]):
             MonoidMorphismData(carrier_morphism),
         )
 
-    def __call__(self, carrier: Any, multiplication: Any, unit: Any) -> MonoidsCategory.ObjectType:
-        key = (carrier, multiplication, unit)
+    def __call__(
+        self,
+        carrier: CategoryOfCategories.ElementType,
+        multiplication: MorphismCategory.ObjectType,
+        unit: MorphismCategory.ObjectType | CategoryOfCategories.ElementType,
+    ) -> MonoidsCategory.ObjectType:
+        key = ((id(carrier), carrier), (id(multiplication), multiplication), (id(unit), unit))
         if key not in self._monoids:
             self._monoids[key] = self.ObjectType(category=self, data=MonoidObjectData(carrier, multiplication, unit))
         return self._monoids[key]
@@ -166,13 +180,11 @@ class MonoidsCategory(Category[[], []]):
         return f"Monoids({self._ambient!r})"
 
 
-_MONOID_CATEGORIES: dict[Category, MonoidsCategory] = {}
+_MONOID_CATEGORIES: MonoDict = MonoDict()
 
 
-def Monoids(ambient: Category | None = None) -> MonoidsCategory:
-    """Construct or retrieve ``Monoids(ambient)``."""
-    if ambient is None:
-        ambient = Sets()
+def Monoids(ambient: Category) -> MonoidsCategory:
+    """Construct or retrieve ``Monoids(ambient)``, one category per ambient value."""
     if ambient not in _MONOID_CATEGORIES:
         _MONOID_CATEGORIES[ambient] = MonoidsCategory(ambient)
     return _MONOID_CATEGORIES[ambient]

@@ -15,15 +15,22 @@ For a ring or monoid object ``R``, ``Modules(R, C)`` constructs:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
+from sage.structure.coerce_dict import MonoDict
+
+from sage_categories.algebra.monoids import MonoidObjectDeclaration
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun
+from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Predicate, predicate
 from sage_categories.cat.properties import PropertySubcategory
+from sage_categories.kernel.roles import Role, role_of
 from sage_categories.sets.category import Sets
+from sage_categories.sets.elements import Datum
 
 if TYPE_CHECKING:
+    from sage_categories.cat.category import CategoryOfCategories
     from sage_categories.cat.functors import Functor
 
 
@@ -34,30 +41,27 @@ preserves_module_action: Predicate = predicate("preserves_module_action")
 class ModuleObjectData:
     """The carrier and action morphism of a module object."""
 
-    carrier: Any
-    action_morphism: Any
+    carrier: CategoryOfCategories.ElementType
+    action_morphism: MorphismCategory.ObjectType
 
 
 class ModuleObjectDeclaration:
     """An object in ``Modules(A, C)``."""
 
-    def __init__(self, data: Any) -> None:
-        self._action_morphism = getattr(data, "action_morphism", getattr(data, "action", data))
-        carrier = getattr(data, "carrier", None)
-        if carrier is None and hasattr(self._action_morphism, "codomain"):
-            carrier = self._action_morphism.codomain()
-        self._carrier = carrier
+    def __init__(self, data: ModuleObjectData) -> None:
+        self._carrier = data.carrier
+        self._action_morphism = data.action_morphism
         super().__init__()
 
-    def carrier(self) -> Any:
+    def carrier(self) -> CategoryOfCategories.ElementType:
         """The underlying object in ``C``."""
         return self._carrier
 
-    def action(self) -> Any:
+    def action(self) -> MorphismCategory.ObjectType:
         r"""The action morphism ``\rho_X: A \bullet X -> X``."""
         return self._action_morphism
 
-    def action_morphism(self) -> Any:
+    def action_morphism(self) -> MorphismCategory.ObjectType:
         r"""The action morphism ``\rho_X: A \bullet X -> X``."""
         return self._action_morphism
 
@@ -69,7 +73,7 @@ class ModuleObjectDeclaration:
 class ModuleMorphismData:
     """A morphism in ``Modules(A, C)``."""
 
-    carrier_morphism: Any
+    carrier_morphism: MorphismCategory.ObjectType
 
 
 class ModuleMorphismDeclaration:
@@ -79,10 +83,7 @@ class ModuleMorphismDeclaration:
         self._carrier_morphism = data.carrier_morphism
         super().__init__()
 
-    def carrier_morphism(self) -> Any:
-        return self._carrier_morphism
-
-    def _ambient_morphism_data(self) -> Any:
+    def carrier_morphism(self) -> MorphismCategory.ObjectType:
         return self._carrier_morphism
 
     def __repr__(self) -> str:
@@ -94,12 +95,12 @@ class ModulePresentation:
     r"""A finite presentation of a module \(R^m \xrightarrow{A} R^n \twoheadrightarrow M\) (specs/separating-families-and-categorical-generators.md)."""
 
     presented_module: ModuleObjectDeclaration
-    generators_module: Any
-    relations_module: Any
-    matrix_morphism: Any
-    presentation_morphism: Any
+    generators_module: ModuleObjectDeclaration
+    relations_module: ModuleObjectDeclaration
+    matrix_morphism: MorphismCategory.ObjectType
+    presentation_morphism: MorphismCategory.ObjectType
     rank: int
-    relations_matrix: tuple[tuple[Any, ...], ...]
+    relations_matrix: tuple[tuple[Datum, ...], ...]
 
 
 class ModulesCategory(Category[[], []]):
@@ -111,18 +112,10 @@ class ModulesCategory(Category[[], []]):
     class ElementType:
         """A generalized element of a module object."""
 
-    def __init__(
-        self,
-        monoid: Any,
-        ambient: Category | None = None,
-        action: Functor | None = None,
-    ) -> None:
-        if ambient is None:
-            ambient = Sets()
+    def __init__(self, monoid: MonoidObjectDeclaration, ambient: Category) -> None:
         self._monoid = monoid
         self._ambient = ambient
-        self._action = action
-        self._modules: dict[Any, ModulesCategory.ObjectType] = {}
+        self._modules: MonoDict = MonoDict()
         super().__init__()
 
         # Property subcategories
@@ -136,14 +129,11 @@ class ModulesCategory(Category[[], []]):
         self._free.Based = lambda: self._free_based
         self._finite_rank.Based = lambda: self._based
 
-    def monoid(self) -> Any:
+    def monoid(self) -> MonoidObjectDeclaration:
         return self._monoid
 
     def ambient(self) -> Category:
         return self._ambient
-
-    def actegory_action(self) -> Functor | None:
-        return self._action
 
     def Free(self) -> PropertySubcategory:
         return self._free
@@ -158,15 +148,15 @@ class ModulesCategory(Category[[], []]):
         """The faithful forgetful functor to the ambient category C."""
         ambient = self._ambient
 
-        def on_object(M: ModulesCategory.ObjectType) -> Any:
+        def on_object(M: ModulesCategory.ObjectType) -> CategoryOfCategories.ElementType:
             return M.carrier()
 
-        def on_morphism(f: ModulesCategory.MorphismType) -> Any:
-            return f.carrier_morphism() if hasattr(f, "carrier_morphism") else f
+        def on_morphism(f: ModulesCategory.MorphismType) -> MorphismCategory.ObjectType:
+            return f.carrier_morphism()
 
         return Fun(self, ambient).Faithful()(on_object, on_morphism)
 
-    def structure_functors(self) -> tuple[Any, ...]:
+    def structure_functors(self) -> tuple[Functor, ...]:
         """The faithful projection U_A: Modules(A, C) -> C is the sole structure functor."""
         return (self.U_A(),)
 
@@ -174,7 +164,7 @@ class ModulesCategory(Category[[], []]):
         self,
         domain: ModulesCategory.ObjectType,
         codomain: ModulesCategory.ObjectType,
-        carrier_morphism: Any,
+        carrier_morphism: MorphismCategory.ObjectType,
     ) -> ModulesCategory.MorphismType:
         return self.MorphismType(
             self.morphism_category(1),
@@ -185,20 +175,12 @@ class ModulesCategory(Category[[], []]):
 
     def regular(self) -> ModulesCategory.ObjectType:
         r"""The regular module \(R\) as a compact projective generator (specs/separating-families-and-categorical-generators.md)."""
-        A = self._monoid
-        carrier = A.carrier() if hasattr(A, "carrier") else A
-        mult = A.multiplication() if hasattr(A, "multiplication") else None
-
-        if mult is None:
-            square = carrier * carrier
-            mult = self._ambient.morphism_category(1)(square, carrier)(lambda pair: pair(0) if callable(pair) else pair)
-
-        return self(mult)
+        return self(self._monoid.multiplication())
 
     def presentation(
         self,
-        relations_matrix: tuple[tuple[Any, ...], ...] | list[list[Any]] = (),
-        rank: int = 1,
+        relations_matrix: tuple[tuple[Datum, ...], ...],
+        rank: int,
     ) -> ModulePresentation:
         r"""Matrix presentation \(R^m \xrightarrow{A} R^n \twoheadrightarrow M\) (specs/separating-families-and-categorical-generators.md)."""
         tuple_matrix = tuple(tuple(row) for row in relations_matrix)
@@ -231,45 +213,35 @@ class ModulesCategory(Category[[], []]):
             relations_matrix=tuple_matrix,
         )
 
-    def from_endomorphism_action(self, A_to_End_X: Any) -> ModulesCategory.ObjectType:
-        """Construct a module object from an enriched endomorphism morphism A -> End(X)."""
-        X = A_to_End_X.codomain().carrier() if hasattr(A_to_End_X.codomain(), "carrier") else self._ambient.Terminal()
-        carrier = X
-        action_map = self._ambient.morphism_category(1)(carrier, carrier)(lambda x: x)
-        return self(action_map)
-
-    def from_sage_module(self, engine_module: Any) -> ModulesCategory.ObjectType:
-        """Construct a module object from an engine-level Sage module."""
-        sets = Sets()
-        carrier = sets(lambda x: True)
-        action_map = sets.morphism_category(1)(carrier, carrier)(lambda x: x)
-        return self(action_map)
-
-    def __call__(self, rho_X: Any) -> ModulesCategory.ObjectType:
-        """Default constructor accepting the defining action morphism rho_X: A bullet X -> X."""
-        if hasattr(rho_X, "action_morphism"):
+    def __call__(
+        self,
+        rho_X: MorphismCategory.ObjectType | ModuleObjectDeclaration,
+    ) -> ModulesCategory.ObjectType:
+        r"""The module of the defining action morphism ``\rho_X: A \bullet X -> X``; a module answers with its own action's module."""
+        if role_of(rho_X) is Role.OBJECT:
             rho_X = rho_X.action_morphism()
-        carrier = rho_X.codomain() if hasattr(rho_X, "codomain") else None
-        key = rho_X
-        if key not in self._modules:
-            self._modules[key] = self.ObjectType(
+        assert role_of(rho_X) is Role.MORPHISM, f"{rho_X!r} is not an owned action morphism"
+        if rho_X not in self._modules:
+            self._modules[rho_X] = self.ObjectType(
                 category=self,
-                data=ModuleObjectData(carrier=carrier, action_morphism=rho_X),
+                data=ModuleObjectData(carrier=rho_X.codomain(), action_morphism=rho_X),
             )
-        return self._modules[key]
+        return self._modules[rho_X]
 
     def __repr__(self) -> str:
         return f"Modules({self._monoid!r}, {self._ambient!r})"
 
 
-_MODULE_CATEGORIES: dict[tuple[Any, Category], ModulesCategory] = {}
+# ``Modules(A, C)`` retained per (monoid, ambient) pair: a MonoDict of MonoDicts, each
+# level keyed by identity (POL-SAGE-013).
+_MODULE_CATEGORIES: MonoDict = MonoDict()
 
 
-def Modules(monoid: Any, ambient: Category | None = None) -> ModulesCategory:
-    """Construct or retrieve ``Modules(monoid, ambient)``."""
-    if ambient is None:
-        ambient = Sets()
-    key = (monoid, ambient)
-    if key not in _MODULE_CATEGORIES:
-        _MODULE_CATEGORIES[key] = ModulesCategory(monoid, ambient)
-    return _MODULE_CATEGORIES[key]
+def Modules(monoid: MonoidObjectDeclaration, ambient: Category) -> ModulesCategory:
+    """Construct or retrieve ``Modules(monoid, ambient)``, one category per pair of values."""
+    if monoid not in _MODULE_CATEGORIES:
+        _MODULE_CATEGORIES[monoid] = MonoDict()
+    by_ambient = _MODULE_CATEGORIES[monoid]
+    if ambient not in by_ambient:
+        by_ambient[ambient] = ModulesCategory(monoid, ambient)
+    return by_ambient[ambient]

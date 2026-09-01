@@ -17,34 +17,30 @@ __all__ = ["generate_stubs"]
 
 
 def generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
-    """Write the compiler-derived stub projection for ``package`` to ``output_directory``."""
+    """Write the compiler-derived stub projection for ``package`` to its package directory."""
     from mypy.stubgen import main as stubgen_main
 
-    stubgen_main(["--package", package, "--output", str(output_directory)])
+    stubgen_main(["--package", package, "--output", str(output_directory.parent)])
     inheritance = compiler().declared_inheritance()
     written: list[Path] = []
     for stub_path in output_directory.rglob("*.pyi"):
         module = _module_name(package, output_directory, stub_path)
-        if module is None:
-            continue
         providers = _providers_in_module(inheritance, module)
         if not providers:
             continue
         tree = ast.parse(stub_path.read_text(encoding="utf-8"), filename=str(stub_path))
-        _project_provider_bases(tree, providers)
+        _project_provider_bases(tree, module, providers)
         stub_path.write_text(ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8")
         written.append(stub_path)
     return tuple(written)
 
 
-def _module_name(package: str, output_directory: Path, stub_path: Path) -> str | None:
+def _module_name(package: str, output_directory: Path, stub_path: Path) -> str:
     relative = stub_path.relative_to(output_directory).with_suffix("")
     parts = relative.parts
-    if not parts or parts[0] != package:
-        return None
     if parts[-1] == "__init__":
         parts = parts[:-1]
-    return ".".join(parts)
+    return ".".join((package, *parts))
 
 
 def _providers_in_module(
@@ -62,6 +58,7 @@ def _providers_in_module(
 
 def _project_provider_bases(
     tree: ast.Module,
+    module: str,
     providers: dict[str, tuple[str, ...]],
 ) -> None:
     requires_package_import = False

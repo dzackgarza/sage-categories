@@ -57,6 +57,12 @@ class MagmasCategory(Category[[], []]):
 
     ObjectType = MagmaObjectDeclaration
 
+    class ElementType:
+        """A generalized element of a magma object."""
+
+    class MorphismType:
+        """A morphism of magmas."""
+
     def __init__(self, ambient: Category) -> None:
         self._ambient = ambient
         self._magmas: dict[Any, MagmasCategory.ObjectType] = {}

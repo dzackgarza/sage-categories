@@ -649,6 +649,14 @@ class CardinalObjectDeclaration:
     def __rpow__(self, base: int) -> CardinalObject:
         return Cardinal().power(Cardinal()(base), self)
 
+    def __mod__(self, other: CardinalObject | int) -> CardinalObject:
+        cardinals = Cardinal()
+        c_other = cardinals(other)
+        return cardinals(self._finite_value_() % c_other._finite_value_())
+
+    def __rmod__(self, other: int) -> CardinalObject:
+        return Cardinal()(other) % self
+
     def __le__(self, other: CardinalObject | int) -> AppliedPredicate:
         """``kappa <= lambda``: an injection ``R_kappa -> R_lambda`` exists (Mathlib ``Cardinal.le_def``)."""
         cardinals = Cardinal()
@@ -849,7 +857,7 @@ class CardinalCategory(Category[[MorphismCategory.ObjectType], []]):
             self.retain_inverses(morphism, inverse)
         return self._inverses[morphism]
 
-    def hom_inhabited(self, hom_category: Category) -> Decision:
+    def _chosen_hom_inhabited(self, hom_category: Category) -> Decision:
         """Inhabitation of ``Mor(Cardinal())(kappa, lambda)`` and of its monomorphism and isomorphism narrowings.
 
         A function ``R_kappa -> R_lambda`` exists exactly when ``kappa = 0`` or
@@ -872,26 +880,20 @@ class CardinalCategory(Category[[MorphismCategory.ObjectType], []]):
 
     # -- exact decisions -----------------------------------------------------------
 
-    def _is_finite(self, cardinal: CardinalObjectDeclaration) -> Decision:
+    def _is_finite(self, cardinal: CardinalObjectDeclaration, assumptions: Proposition | None = None) -> Decision:
         return self._semiring.is_finite(cardinal._value)
 
-    def _is_countable(self, cardinal: CardinalObjectDeclaration) -> Decision:
+    def _is_countable(self, cardinal: CardinalObjectDeclaration, assumptions: Proposition | None = None) -> Decision:
         return self._semiring.is_countable(cardinal._value)
 
-    def _is_infinite(self, cardinal: CardinalObjectDeclaration) -> Decision:
+    def _is_infinite(self, cardinal: CardinalObjectDeclaration, assumptions: Proposition | None = None) -> Decision:
         return ask(negation(self._is_finite(cardinal)))
 
-    def _is_uncountable(self, cardinal: CardinalObjectDeclaration) -> Decision:
+    def _is_uncountable(self, cardinal: CardinalObjectDeclaration, assumptions: Proposition | None = None) -> Decision:
         return ask(negation(self._is_countable(cardinal)))
 
-    def _equal(self, first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
+    def _equal(self, first: CardinalObjectDeclaration, second: CardinalObjectDeclaration, assumptions: Proposition | None = None) -> Decision:
         if first not in self:
-            return Unknown
-        if candidate in self:
-            second = candidate
-        elif not hasattr(candidate, "_is_object") and is_natural_number(candidate):
-            second = self(candidate)
-        else:
             return Unknown
         if first is second:
             return True
@@ -899,10 +901,10 @@ class CardinalCategory(Category[[MorphismCategory.ObjectType], []]):
         # other (inspected 2026-08-28).
         return ask(conjunction((self._at_most(first, second), self._at_most(second, first))))
 
-    def _at_most(self, first: CardinalObjectDeclaration, second: CardinalObjectDeclaration) -> Decision:
+    def _at_most(self, first: CardinalObjectDeclaration, second: CardinalObjectDeclaration, assumptions: Proposition | None = None) -> Decision:
         return self._semiring.le(first._value, second._value)
 
-    def _less_than(self, first: CardinalObjectDeclaration, second: CardinalObjectDeclaration) -> Decision:
+    def _less_than(self, first: CardinalObjectDeclaration, second: CardinalObjectDeclaration, assumptions: Proposition | None = None) -> Decision:
         if first is second:
             return False
         if established(self._at_most(first, second)):
@@ -923,10 +925,11 @@ class CardinalCategory(Category[[MorphismCategory.ObjectType], []]):
 
             def add_morphisms(m_pair: Any) -> CardinalityMorphism:
                 m1, m2 = m_pair
-                return self.morphism_category(1)(
+                return self.construct_morphism(
                     self.sum(m1.domain(), m2.domain()),
                     self.sum(m1.codomain(), m2.codomain()),
-                )(m1._set_map + m2._set_map)
+                    _sets.Sets().Coproducts()((m1._set_map, m2._set_map)),
+                )
 
             def mul_objects(pair: Any) -> CardinalObject:
                 c1, c2 = pair
@@ -934,10 +937,11 @@ class CardinalCategory(Category[[MorphismCategory.ObjectType], []]):
 
             def mul_morphisms(m_pair: Any) -> CardinalityMorphism:
                 m1, m2 = m_pair
-                return self.morphism_category(1)(
+                return self.construct_morphism(
                     self.product(m1.domain(), m2.domain()),
                     self.product(m1.codomain(), m2.codomain()),
-                )(m1._set_map * m2._set_map)
+                    _sets.Sets().Products()((m1._set_map, m2._set_map)),
+                )
 
             cat = Cat()
             card_prod = self * self

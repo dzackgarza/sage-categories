@@ -21,7 +21,7 @@ from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun
 
 
-@dataclass(frozen=True, eq=False, slots=True)
+@dataclass(frozen=True, eq=False)
 class SemiringObjectData:
     """The carrier, additive monoid, and multiplicative monoid data of a semiring object."""
 
@@ -30,6 +30,10 @@ class SemiringObjectData:
     zero: Any
     multiplication: Any
     one: Any
+
+    @property
+    def unit(self) -> Any:
+        return self.one
 
 
 class SemiringObjectDeclaration:
@@ -70,6 +74,12 @@ class SemiringsCategory(Category[[], []]):
     """``Semirings(C)``: strict internal semiring objects in a category ``C`` with finite products."""
 
     ObjectType = SemiringObjectDeclaration
+
+    class ElementType:
+        """A generalized element of a semiring object."""
+
+    class MorphismType:
+        """A morphism of semirings."""
 
     def __init__(self, ambient: Category) -> None:
         self._ambient = ambient

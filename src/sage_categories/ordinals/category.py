@@ -395,7 +395,7 @@ class OrdinalsCategory(Category[[], []]):
 
     # -- exact decisions -----------------------------------------------------------
 
-    def _initial(self, alpha: OrdinalObjectDeclaration) -> Decision:
+    def _initial(self, alpha: OrdinalObjectDeclaration, assumptions: Proposition | None = None) -> Decision:
         """An initial-ordinal expression is initial and a finite ordinal is not (``Ordinal.natCast_lt_omega0``,
         ``Ordinal.omega0_le_omega``); a symbolic expression may still equal one, so it is ``Unknown``."""
         match alpha._kind_():
@@ -405,14 +405,8 @@ class OrdinalsCategory(Category[[], []]):
                 return False
         return Unknown
 
-    def _equal(self, first: CategoryOfCategories.ElementType, candidate: Any) -> Decision:
+    def _equal(self, first: OrdinalObjectDeclaration, second: OrdinalObjectDeclaration, assumptions: Proposition | None = None) -> Decision:
         if first not in self:
-            return Unknown
-        if candidate in self:
-            second = candidate
-        elif not hasattr(candidate, "_is_object") and is_natural_number(candidate):
-            second = self(candidate)
-        else:
             return Unknown
         if first._key == second._key:
             return True
@@ -420,7 +414,7 @@ class OrdinalsCategory(Category[[], []]):
         # other (inspected 2026-08-28).
         return ask(conjunction((self._at_most(first, second), self._at_most(second, first))))
 
-    def _at_most(self, first: OrdinalObjectDeclaration, second: OrdinalObjectDeclaration) -> Decision:
+    def _at_most(self, first: OrdinalObjectDeclaration, second: OrdinalObjectDeclaration, assumptions: Proposition | None = None) -> Decision:
         if first._key == second._key:
             return True
         if first._kind_() == "finite":
@@ -433,7 +427,7 @@ class OrdinalsCategory(Category[[], []]):
             return self._at_most(first.initial_index(), second.initial_index())
         return Unknown
 
-    def _less_than(self, first: OrdinalObjectDeclaration, second: OrdinalObjectDeclaration) -> Decision:
+    def _less_than(self, first: OrdinalObjectDeclaration, second: OrdinalObjectDeclaration, assumptions: Proposition | None = None) -> Decision:
         # Each ``True`` of ``_at_most`` between distinct expressions is strict: the
         # finite and finite-below-nonfinite cases by definition, the initial case by
         # induction on the indices (``Ordinal.omega_lt_omega``).

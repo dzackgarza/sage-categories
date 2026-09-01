@@ -74,6 +74,12 @@ class MonoidsCategory(Category[[], []]):
 
     ObjectType = MonoidObjectDeclaration
 
+    class ElementType:
+        """A generalized element of a monoid object."""
+
+    class MorphismType:
+        """A morphism of monoids."""
+
     def __init__(self, ambient: Category) -> None:
         self._ambient = ambient
         self._monoids: dict[Any, MonoidsCategory.ObjectType] = {}

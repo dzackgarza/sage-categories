@@ -10,6 +10,8 @@ Verifies the P2 acceptance criteria:
 7. Aleph and InitialOrdinal order functors map between OrdinalOrder() and CardinalOrder().
 """
 
+from sage.rings.integer import Integer
+
 import pytest
 
 from sage_categories.algebra import Groups, Magmas, Monoids, Semirings

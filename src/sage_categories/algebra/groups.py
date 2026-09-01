@@ -63,6 +63,12 @@ class GroupsCategory(Category[[], []]):
 
     ObjectType = GroupObjectDeclaration
 
+    class ElementType:
+        """A generalized element of a group object."""
+
+    class MorphismType:
+        """A morphism of groups."""
+
     def __init__(self, ambient: Category) -> None:
         self._ambient = ambient
         self._groups: dict[Any, GroupsCategory.ObjectType] = {}

@@ -143,7 +143,7 @@ reads.
 | `POL-ONT-005` | Never widen an exact semantic type (e.g. `Poset`, `SetMap`) to a generic ancestor type (e.g. `CategoryOfCategories.ElementType`, `CategoryPoint`) to resolve import cycles or forward-reference errors. Resolve module import ordering or defer handler registration instead. |
 | `POL-ONT-006` | Inspect established placement via `is_placed(X, C)` inside property deduction handlers. Never invoke active deduction via `X in C` or `ask()` within complementary property handlers, which triggers infinite mutual deduction cycles. |
 | `POL-ONT-007` | Treat raw Python callables (`lambda`, functions) solely as constructor input rules, never as morphisms. Morphisms require explicit category endpoints $A \to B$ and must be constructed through `Mor(C)(A, B)(rule)`. |
-| `POL-ONT-008` | Ban catch-all constructors, implicit fallback heuristics, and polymorphic argument sniffing. Provide dedicated explicit constructors named `X.from_Y(...)` for distinct representation inputs. The canonical constructor performs an explicit, exhaustive match on exact supported types and raises a hard error on any unhandled case. |
+| `POL-ONT-008` | Ban catch-all constructors, implicit fallback heuristics, and loose `@overload` sniffing. Provide dedicated explicit constructors of the form `X.from_Y(...)` for distinct input modalities. The main constructor must perform an explicit `match`/`case` on the exact supported input types, route them directly with no fallback paths, and unconditionally raise a hard `TypeError` on the default `case _:`. |
 
 ### `POL-ONT-001`: The False Prior "Sets Are Containers of Python Data"
 
@@ -217,8 +217,8 @@ reads.
   - Writing catch-all `__call__(*args, **kwargs)` constructors or broad `@overload` suites that try to guess user intent, trial-and-error multiple representations, or fall back across loose `if/elif/else` branches.
 - **The Internalized Reality (`POL-API-021`, `POL-API-028`)**:
   - Distinct mathematical source representations require **explicit, dedicated constructor methods** of the form `X.from_Y(...)` (e.g. `Sets.from_enumeration(...)`, `Sets.from_rule(...)`, `Posets.from_relation(...)`).
-  - The canonical constructor performs an explicit, exhaustive match/case on the exact supported mathematical types.
-  - There are **zero silent coercions and zero fallback heuristics**. Any unhandled or invalid input raises an immediate, informative hard error.
+  - The main constructor does an explicit `match`/`case` on *exactly* what types of inputs come in, and routes them directly to the appropriate dedicated constructor.
+  - There are **zero fallback heuristics and zero silent coercions**. The default `case _:` branch unconditionally raises a hard `TypeError` or `ValueError`.
 
 ### Core Project Philosophy Summary
 
@@ -234,7 +234,7 @@ reads.
 | **Semantic Types** | Widen to avoid import issues | Exact mathematical types; defer handler registration | `POL-ONT-005` |
 | **Deduction Handlers** | Call `in` / `ask()` on complements | Inspect established structure via `is_placed` | `POL-ONT-006` |
 | **Morphisms** | Bare Python callables / lambdas | Explicit arrows with domain and codomain endpoints | `POL-ONT-007` |
-| **Constructor Architecture** | Catch-all `*args` with heuristic fallbacks | Dedicated `from_Y` methods; strict match with hard error on default | `POL-ONT-008` |
+| **Constructor Architecture** | Catch-all `*args` with heuristic fallbacks | Dedicated `from_Y` methods; explicit `match`/`case` with hard error on default `case _:` | `POL-ONT-008` |
 
 ### The Core Categorical Philosophy
 
@@ -271,9 +271,9 @@ Mathematical truths, relations, and capabilities are modeled through constructiv
 
 #### 6. Explicit Construction and Total Pattern Matching
 A robust categorical framework requires unambiguous mathematical construction:
-- **Explicit Named Constructors `X.from_Y(...)`**: When an object or morphism can be presented from different data modalities (e.g. from an explicit enumeration, a characteristic predicate, a generator list, a relation matrix), each representation receives its own dedicated, explicitly named constructor (`from_enumeration`, `from_rule`, `from_matrix`).
-- **Exhaustive Matching on Canonical Constructors**: The canonical constructor (`__call__` or primary factory) performs an explicit, total match on the exact supported mathematical types.
-- **Zero Fallback Heuristics and Hard Errors**: Never guess user intent or chain fallback attempts. If an input does not match the exact expected types, raise an immediate, informative hard error (`TypeError` or `ValueError`).
+- **Explicit Named Constructors `X.from_Y(...)`**: When an object or morphism can be presented from different data modalities (e.g. from an explicit enumeration, a characteristic predicate, a generator list, a relation matrix), each representation receives its own dedicated, explicitly named constructor (`from_enumeration`, `from_rule`, `from_matrix`). Never rely on polymorphic overloads to guess the representation.
+- **Exhaustive Matching on Canonical Constructors**: The main constructor (`__call__` or primary factory) performs an explicit `match`/`case` on *exactly* what types or structural signatures of inputs arrive, routing each matched case directly to the appropriate dedicated constructor.
+- **Zero Fallback Heuristics and Hard Error on Default**: There are zero fallback branches and zero heuristic coercions. The default `case _:` branch must unconditionally raise an immediate, informative hard error (`TypeError` or `ValueError`), ensuring that unrecognized input forms fail fast and noisily.
 
 ## Predicates, hypotheses, and assumptions
 

@@ -10,11 +10,11 @@ No staged Markdown, JSON, or YAML files found
 ┌─────────────┐
 │ Scan Status │
 └─────────────┘
-  Scanning 119 files tracked by git with 228 Code rules:
+  Scanning 167 files tracked by git with 228 Code rules:
                                                                                                                         
   Language      Rules   Files          Origin      Rules                                                                
  ─────────────────────────────        ───────────────────                                                               
-  <multilang>       7     119          Community     160                                                                
+  <multilang>       7     167          Community     160                                                                
   python           36      79          Custom         68                                                                
   yaml             11       4                                                                                           
                                                                                                                         
@@ -27,11 +27,11 @@ No files modified by autofix.
 ✅ Scan completed successfully.
  • Findings: 0 (0 blocking)
  • Rules run: 54
- • Targets scanned: 119
+ • Targets scanned: 167
  • Parsed lines: ~100.0%
  • Scan was limited to files tracked by git
  • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
-Ran 54 rules on 119 files: 0 findings.
+Ran 54 rules on 167 files: 0 findings.
 (need more rules? `semgrep login` for additional free Semgrep Registry rules)
 
 If Semgrep missed a finding, please send us feedback to let us know!

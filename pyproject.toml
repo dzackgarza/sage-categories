@@ -28,6 +28,7 @@ dev = [
     "pytest>=9.1,<10",
     "ruff>=0.16.5,<1",
     "sage-mypy-category-plugin @ git+https://github.com/dzackgarza/sagemath-mypy-plugin@main",
+    "microsoft-python-type-stubs @ git+https://github.com/microsoft/python-type-stubs.git",
 ]
 migration = [
     "libcst>=1.9,<2",

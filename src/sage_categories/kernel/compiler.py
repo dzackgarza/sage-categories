@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import inspect
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from types import CellType, FunctionType, GenericAlias
 from typing import TYPE_CHECKING, Concatenate, Generic, NamedTuple
 
@@ -56,6 +56,9 @@ __all__ = [
     "Node",
     "SemanticCollisionError",
     "compile_category",
+    "compiler",
+    "declared_inheritance",
+    "declared_subtyping",
     "apply_level_shift",
     "install_on_declaration",
     "node",
@@ -214,6 +217,116 @@ def successors(current: Node) -> tuple[tuple[Functor, Node], ...]:
         (functor, node(functor.codomain(), current.role))
         for functor in current.category.structure_functors()
     )
+
+
+def declared_inheritance(
+    category: Category,
+    role: Role,
+) -> tuple[type[CategoryPoint], ...]:
+    """Return one compiled role's semantic declarations in controlled-C3 order.
+
+    The role class is already installed when a category is constructed.  Reading its
+    retained C3 relation therefore allocates neither a dynamic class nor a parallel
+    linearization; Sage remains the sole owner of C3 (`POL-TYPE-024`,
+    `POL-TYPE-025`).
+    """
+    current = node(category, role)
+    declared = runtime_semantic_bases(current.category.role_class(current.role))
+    assert declared is not None, (
+        f"{current.category!r}.{current.role.value} has no compiled declaration relation"
+    )
+    return declared
+
+
+def declared_subtyping(category: Category, role: Role) -> tuple[Category, ...]:
+    """Return the distinct direct structure-functor targets for one role.
+
+    This reports category relations exactly as declared by selected functors.  It does
+    not infer containment from Python classes, placement, or a public functor image
+    (`POL-TYPE-024`, `POL-TYPE-027`).
+    """
+    current = node(category, role)
+    targets: list[Category] = []
+    for _, target in successors(current):
+        if not any(target.category is known for known in targets):
+            targets.append(target.category)
+    return tuple(targets)
+
+
+def _declaration_name(declaration: type[CategoryPoint]) -> str:
+    """Return the importable source name of one category-owned declaration."""
+    return f"{declaration.__module__}.{declaration.__qualname__}"
+
+
+class _CompilerProjection:
+    """The plugin's read-only view of the compiler's already-installed declarations."""
+
+    def declared_inheritance(self) -> dict[str, dict[str, tuple[str, ...]]]:
+        return _inheritance_projection()
+
+    def declared_subtyping(self) -> dict[str, dict[str, tuple[str, ...]]]:
+        return _subtyping_projection()
+
+
+def _projection_surface(role: Role) -> str:
+    match role:
+        case Role.OBJECT:
+            return "object"
+        case Role.ELEMENT:
+            return "element"
+        case Role.MORPHISM:
+            return "arrow"
+
+
+def _projection_providers() -> Iterator[tuple[str, Category, Role, type[CategoryPoint]]]:
+    """Yield normalized declaration providers once for every installed role surface."""
+    seen: list[Node] = []
+    for role in Role:
+        for category, _ in _node_runtimes[role].items():
+            current = node(category, role)
+            if any(same_node(current, known) for known in seen):
+                continue
+            seen.append(current)
+            provider = current.category.local_role_class(current.role)
+            yield _projection_surface(role), current.category, current.role, provider
+
+
+def _inheritance_projection() -> dict[str, dict[str, tuple[str, ...]]]:
+    """Project the compiler's C3 declaration order for the static plugin."""
+    result: dict[str, dict[str, tuple[str, ...]]] = {}
+    for surface_name, category, role, provider in _projection_providers():
+        provider_name = _declaration_name(provider)
+        names = tuple(
+            _declaration_name(declaration)
+            for declaration in declared_inheritance(category, role)
+        )
+        result.setdefault(surface_name, {})[provider_name] = tuple(
+            name for name in names if name != provider_name
+        )
+    return result
+
+
+def _subtyping_projection() -> dict[str, dict[str, tuple[str, ...]]]:
+    """Project direct selected-functor targets for the static plugin."""
+    result: dict[str, dict[str, tuple[str, ...]]] = {}
+    for surface_name, category, role, provider in _projection_providers():
+        provider_name = _declaration_name(provider)
+        names = tuple(
+            _declaration_name(node(target, role).category.local_role_class(node(target, role).role))
+            for target in declared_subtyping(category, role)
+        )
+        result.setdefault(surface_name, {})[provider_name] = tuple(
+            name for name in names if name != provider_name
+        )
+    return result
+
+
+_COMPILER_PROJECTION = _CompilerProjection()
+
+
+def compiler() -> _CompilerProjection:
+    """Return the declaration reporter consumed by the static projection plugin."""
+    return _COMPILER_PROJECTION
 
 
 def _local_method_names(local_class: type[CategoryPoint]) -> tuple[str, ...]:

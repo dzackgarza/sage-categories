@@ -132,6 +132,52 @@ certification machinery between the mathematical definition and its typed constr
 None of it applies to the wiring that realizes those declarations, which no mathematician
 reads.
 
+## Foundational architectural ontology
+
+### 1. The False Prior: "Sets Are Containers of Python Data"
+
+- **The False Model**:
+  - Viewing `Sets()` as a Python wrapper around collections.
+  - Treating `(1, 2)` or `((),)` as mathematical objects, assuming mathematical elements are bare Python values.
+- **The Internalized Reality**:
+  - In `sage-categories`, **there is no global element universe**.
+  - A raw Python tuple `(1, 2)` is only private carrier representation (`Datum`). It has no mathematical meaning by itself.
+  - A mathematical element exists **only** as a morphism from the terminal object:
+    $$x: \mathbf{1} \to X \quad (\text{an owned } \texttt{ElementOfObject})$$
+  - Categories contain **only** category-owned `CategoryPoint` instances, never raw Python literals.
+
+### 2. The False Prior: "Constructors Should Be Convenient Polymorphic Parsers"
+
+- **The False Model**:
+  - Designing `__call__` as a flexible Python function that sniffs inputs:
+    *"If passed an object, refine it; if passed a tuple, parse it into a set."*
+  - When this fails, trying to add `isinstance` checks.
+- **The Internalized Reality (`POL-API-021`, `POL-API-028`)**:
+  - Mathematical constructors are **total functions with a single exact domain**.
+  - **Category Refinement** ($X \mapsto X \text{ with placement in } \mathcal{P}$) is mathematically distinct from **Object Construction from Carrier Data** ($\text{data} \mapsto X$).
+  - Merging these two operations into one overloaded `__call__` violates categorical clarity and forces runtime type sniffing.
+
+### 3. The False Prior: "`in` Is a Python Container Lookup"
+
+- **The False Model**:
+  - Treating `x in C` as checking whether `x` is in an internal Python collection on `C`.
+- **The Internalized Reality (`specs/undecidable-properties.md`)**:
+  - In this architecture, `X in C` is the categorical membership proposition:
+    $$\mathrm{ask}(C.\mathrm{membership\_proposition}(X))$$
+  - Evaluating `((),) in Sets()` is a category error because raw Python memory structures have no categorical propositions.
+  - Checking whether an owned value already carries category placement uses `is_placed(X, C)`, not `in`.
+
+### Core Project Philosophy Summary
+
+| Concept | Python / SWE Prior (The Mistake) | `sage-categories` Architecture (The Truth) |
+| :--- | :--- | :--- |
+| **Elements** | Raw Python values (`1`, `(1, 2)`) | Arrows $x: \mathbf{1} \to X$ owned by a specific parent set $X$ |
+| **Carrier Data** | The mathematical object itself | Private implementation representation (`Datum`), not in any category |
+| **Categories** | Collections / registries of objects | Mathematical category structures with role-compiled classes |
+| **Constructors** | Polymorphic helper functions (`*args`) | Total, single-purpose mathematical operations (`POL-API-021`) |
+| **Refinement** | Dynamic mutation / wrapper allocation | Same-object placement in subcategory without wrapper classes |
+| **Membership `in`** | Container item containment | Three-valued proposition evaluation via SymPy / `ask()` |
+
 ## Predicates, hypotheses, and assumptions
 
 A predicate application is a public SymPy proposition with typed mathematical arguments.

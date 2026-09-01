@@ -1,65 +1,1352 @@
 tests/test_version.sage
-tests/kernel/test_m5_vertical_witnesses.sage
 tests/kernel/test_m1_sage_runtime.sage
 tests/kernel/test_m2_cat_core.sage
 tests/kernel/test_m3_properties_queries_refinement.sage
+tests/kernel/test_m5_vertical_witnesses.sage
 =============================
 === Running: mypy static type analysis (Sage-aware) ===
 # Type checks Python and preparsed Sage files
 # Preparsing 5 Sage file(s) for mypy
 /home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage/categories/category.py:1612: UserWarning: _RuntimeImplementationCategory.ParentMethods should not have a super class
   warn("%s.%s should not have a super class" % (cls.__name__, method_provider))
-error: INTERNAL ERROR -- Please try using mypy master on GitHub:
-https://mypy.readthedocs.io/en/stable/common_issues.html#using-a-development-mypy-build
-Please report a bug at https://github.com/python/mypy/issues
-version: 2.0.0
-note: use --pdb to drop into pdb
-Error constructing plugin instance of SageCategoryProjectionPlugin
-
-Traceback (most recent call last):
-  File "<frozen runpy>", line 203, in _run_module_as_main
-  File "<frozen runpy>", line 88, in _run_code
-  File "/home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/mypy/__main__.py", line 16, in console_entry
-    main()
-    ~~~~^^
-  File "mypy/main.py", line 154, in main
-    res, messages, blockers = run_build(sources, options, fscache, t0, stdout, stderr)
-  File "mypy/main.py", line 244, in run_build
-    res = build.build(sources, options, None, flush_errors, fscache, stdout, stderr)
-  File "mypy/build.py", line 422, in build
-    result = build_inner(
-  File "mypy/build.py", line 500, in build_inner
-    plugin, snapshot = load_plugins(options, errors, stdout, extra_plugins)
-  File "mypy/build.py", line 732, in load_plugins
-    custom_plugins, snapshot = load_plugins_from_config(options, errors, stdout)
-  File "mypy/build.py", line 713, in load_plugins_from_config
-    custom_plugins.append(plugin_type(options))
-  File "/home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage_mypy_category_plugin/plugin.py", line 69, in __init__
-    self._manifest, self._manifest_path = _generate_and_cache(config)
-                                          ~~~~~~~~~~~~~~~~~~~^^^^^^^^
-  File "/home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage_mypy_category_plugin/plugin.py", line 612, in _generate_and_cache
-    category_fullnames = discover_category_fullnames(config.packages)
-  File "/home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage_mypy_category_plugin/resolver.py", line 132, in discover_category_fullnames
-    if compiler_in(package_names) is not None:
-       ~~~~~~~~~~~^^^^^^^^^^^^^^^
-  File "/home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage_mypy_category_plugin/declared.py", line 65, in compiler_in
-    modules = _imported_modules(module_names)
-  File "/home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage_mypy_category_plugin/declared.py", line 216, in _imported_modules
-    imported[found] = import_module(found)
-                      ~~~~~~~~~~~~~^^^^^^^
-  File "/home/dzack/.local/share/uv/python/cpython-3.14.7-linux-x86_64-gnu/lib/python3.14/importlib/__init__.py", line 88, in import_module
-    return _bootstrap._gcd_import(name[level:], package, level)
-           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "<frozen importlib._bootstrap>", line 1406, in _gcd_import
-  File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
-  File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
-  File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
-  File "<frozen importlib._bootstrap_external>", line 759, in exec_module
-  File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
-  File "/home/dzack/gitclones/sage-categories/src/sage_categories/sets/products.py", line 57, in <module>
-    from sage_categories.cat.shapes import DiscreteObject, index_set_of
-ImportError: cannot import name 'DiscreteObject' from 'sage_categories.cat.shapes' (/home/dzack/gitclones/sage-categories/src/sage_categories/cat/shapes.py)
-
+src/sage_categories/cat/predicates.py:92: error: Returning Any from function declared to return "Predicate"  [no-any-return]
+src/sage_categories/cat/predicates.py:191: error: Module not callable  [operator]
+src/sage_categories/cat/predicates.py:292: error: Incompatible return value type (got "type[CategoryPoint]", expected "type[ElementType]")  [return-value]
+src/sage_categories/cat/predicates.py:320: error: Returning Any from function declared to return "CategoryDeclaration[Any, Any]"  [no-any-return]
+src/sage_categories/cat/predicates.py:326: error: Returning Any from function declared to return "CategoryDeclaration[Any, Any]"  [no-any-return]
+src/sage_categories/cat/predicates.py:339: error: Returning Any from function declared to return "CategoryDeclaration[Any, Any]"  [no-any-return]
+src/sage_categories/cat/predicates.py:347: error: Returning Any from function declared to return "str"  [no-any-return]
+src/sage_categories/cat/points.pyi:20: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/canonical.pyi:18: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/canonical.pyi:18: note: Did you mean "List[...]"?
+src/sage_categories/cat/canonical.pyi:60: error: Argument 1 of "object_point" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/canonical.pyi:60: note: This violates the Liskov substitution principle
+src/sage_categories/cat/canonical.pyi:60: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/canonical.pyi:69: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/canonical.pyi:69: note:      Superclass:
+src/sage_categories/cat/canonical.pyi:69: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
+src/sage_categories/cat/canonical.pyi:69: note:      Subclass:
+src/sage_categories/cat/canonical.pyi:69: note:          def construct_morphism(self, domain: ObjectType, codomain: ObjectType, word: tuple[str, ...]) -> MorphismType
+src/sage_categories/cat/canonical.pyi:72: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/canonical.pyi:72: note: This violates the Liskov substitution principle
+src/sage_categories/cat/canonical.pyi:72: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/canonical.pyi:75: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/canonical.pyi:75: note: This violates the Liskov substitution principle
+src/sage_categories/cat/canonical.pyi:75: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/canonical.pyi:75: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/canonical.pyi:78: error: Argument 1 of "inverse_morphism" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/canonical.pyi:78: note: This violates the Liskov substitution principle
+src/sage_categories/cat/canonical.pyi:78: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/declarations.pyi:8: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/morphisms.pyi:3: error: Module "sage_categories.cat.category" has no attribute "Decision"  [attr-defined]
+src/sage_categories/cat/morphisms.pyi:3: error: Module "sage_categories.cat.category" does not explicitly export attribute "Predicate"  [attr-defined]
+src/sage_categories/cat/morphisms.pyi:3: error: Module "sage_categories.cat.category" does not explicitly export attribute "Proposition"  [attr-defined]
+src/sage_categories/cat/morphisms.pyi:32: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/morphisms.pyi:84: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/morphisms.pyi:84: note: This violates the Liskov substitution principle
+src/sage_categories/cat/morphisms.pyi:84: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/morphisms.pyi:90: error: Argument 1 of "construct_morphism" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/morphisms.pyi:90: note: This violates the Liskov substitution principle
+src/sage_categories/cat/morphisms.pyi:90: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/morphisms.pyi:90: error: Argument 2 of "construct_morphism" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/functors.pyi:6: error: Module "sage_categories.cat.category" does not explicitly export attribute "Proposition"  [attr-defined]
+src/sage_categories/cat/functors.pyi:66: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/cat/functors.pyi:66: note:      Superclass:
+src/sage_categories/cat/functors.pyi:66: note:          def __call__(self, *arguments: ElementType) -> ElementType
+src/sage_categories/cat/functors.pyi:66: note:      Subclass:
+src/sage_categories/cat/functors.pyi:66: note:          def __call__(self, *args: Callable[[ElementType], ElementType] | Callable[[ObjectType], ObjectType], **kwargs: Callable[[ElementType], ElementType] | Callable[[ObjectType], ObjectType]) -> Any
+src/sage_categories/cat/functors.pyi:71: error: Definition of "__mul__" in base class "ObjectType" is incompatible with definition in base class "ObjectType"  [misc]
+src/sage_categories/cat/functors.pyi:80: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.NarrowedProperty"  [override]
+src/sage_categories/cat/functors.pyi:80: note:      Superclass:
+src/sage_categories/cat/functors.pyi:80: note:          def __call__(self, value: ElementType) -> ElementType
+src/sage_categories/cat/functors.pyi:80: note:      Subclass:
+src/sage_categories/cat/functors.pyi:80: note:          def __call__(self, *args: Callable[[ElementType], ElementType] | Callable[[ObjectType], ObjectType], **kwargs: Callable[[ElementType], ElementType] | Callable[[ObjectType], ObjectType]) -> Any
+src/sage_categories/cat/functors.pyi:136: error: Return type "ObjectType" of "object_at" incompatible with return type "ElementType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/functors.pyi:146: error: Incompatible types in assignment (expression has type "type[MorphismType]", base class "MorphismCategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/cat/functors.pyi:183: error: Argument 1 of "__call__" is incompatible with supertype "sage_categories.cat.morphisms.MorphismCategory"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/functors.pyi:183: note: This violates the Liskov substitution principle
+src/sage_categories/cat/functors.pyi:183: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/functors.pyi:203: error: Signature of "subcategory_monomorphism" incompatible with supertype "sage_categories.cat.morphisms.MorphismCategory"  [override]
+src/sage_categories/cat/functors.pyi:203: note:      Superclass:
+src/sage_categories/cat/functors.pyi:203: note:          def subcategory_monomorphism(self) -> Any
+src/sage_categories/cat/functors.pyi:203: note:      Subclass:
+src/sage_categories/cat/functors.pyi:203: note:          def subcategory_monomorphism(self, source: CategoryDeclaration[Any, Any], target: CategoryDeclaration[Any, Any]) -> Any
+src/sage_categories/cat/functors.pyi:203: error: Signature of "subcategory_monomorphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/functors.pyi:203: note:      Superclass:
+src/sage_categories/cat/functors.pyi:203: note:          def subcategory_monomorphism(self) -> Any
+src/sage_categories/cat/functors.pyi:203: note:      Subclass:
+src/sage_categories/cat/functors.pyi:203: note:          def subcategory_monomorphism(self, source: CategoryDeclaration[Any, Any], target: CategoryDeclaration[Any, Any]) -> Any
+src/sage_categories/cat/properties.pyi:180: error: Signature of "__call__" incompatible with supertype "NarrowedProperty"  [override]
+src/sage_categories/cat/properties.pyi:180: note:      Superclass:
+src/sage_categories/cat/properties.pyi:180: note:          def __call__(self, value: ElementType) -> ElementType
+src/sage_categories/cat/properties.pyi:180: note:      Subclass:
+src/sage_categories/cat/properties.pyi:180: note:          def __call__(self, *args: MorphismData.args, **kwargs: MorphismData.kwargs) -> ObjectType
+src/sage_categories/cat/category.pyi:54: error: A function returning TypeVar should receive at least one argument containing the same TypeVar  [type-var]
+src/sage_categories/cat/category.pyi:351: error: Argument 1 of "construct_morphism" is incompatible with supertype "CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/category.pyi:351: note: This violates the Liskov substitution principle
+src/sage_categories/cat/category.pyi:351: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/category.pyi:351: error: Argument 2 of "construct_morphism" is incompatible with supertype "CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/category.pyi:354: error: Argument 1 of "construct_identity" is incompatible with supertype "CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/category.pyi:354: note: This violates the Liskov substitution principle
+src/sage_categories/cat/category.pyi:354: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/category.pyi:360: error: Argument 1 of "construct_two_morphism" is incompatible with supertype "CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/category.pyi:360: note: This violates the Liskov substitution principle
+src/sage_categories/cat/category.pyi:360: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/category.pyi:360: error: Argument 2 of "construct_two_morphism" is incompatible with supertype "CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/category.pyi:363: error: Argument 1 of "identity_two_morphism" is incompatible with supertype "CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/category.pyi:363: note: This violates the Liskov substitution principle
+src/sage_categories/cat/category.pyi:363: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/category.pyi:381: error: Argument 1 of "exponential" is incompatible with supertype "CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/category.pyi:381: note: This violates the Liskov substitution principle
+src/sage_categories/cat/category.pyi:381: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/category.pyi:381: error: Argument 2 of "exponential" is incompatible with supertype "CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/cat_constructions.pyi:19: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/cat_constructions.pyi:19: note: Did you mean "List[...]"?
+src/sage_categories/cat/cat_constructions.pyi:55: error: Return type "ObjectType" of "object_at" incompatible with return type "ElementType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/cat_constructions.pyi:58: error: Return type "MorphismType" of "morphism_at" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/cat_constructions.pyi:64: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/cat_constructions.pyi:64: note:      Superclass:
+src/sage_categories/cat/cat_constructions.pyi:64: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
+src/sage_categories/cat/cat_constructions.pyi:64: note:      Subclass:
+src/sage_categories/cat/cat_constructions.pyi:64: note:          def construct_morphism(self, domain: ObjectType, codomain: ObjectType, family: Callable[[ElementType], ObjectType] | tuple[ObjectType, ...]) -> MorphismType
+src/sage_categories/cat/cat_constructions.pyi:67: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/cat_constructions.pyi:67: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/cat_constructions.pyi:67: note: This violates the Liskov substitution principle
+src/sage_categories/cat/cat_constructions.pyi:67: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/cat_constructions.pyi:70: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/cat_constructions.pyi:70: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/cat_constructions.pyi:70: note: This violates the Liskov substitution principle
+src/sage_categories/cat/cat_constructions.pyi:70: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/cat_constructions.pyi:70: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/cat_constructions.pyi:91: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/cat_constructions.pyi:91: note: Did you mean "List[...]"?
+src/sage_categories/cat/cat_constructions.pyi:127: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/cat_constructions.pyi:127: note:      Superclass:
+src/sage_categories/cat/cat_constructions.pyi:127: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
+src/sage_categories/cat/cat_constructions.pyi:127: note:      Subclass:
+src/sage_categories/cat/cat_constructions.pyi:127: note:          def construct_morphism(self, domain: ObjectType, codomain: ObjectType, morphism: ObjectType) -> MorphismType
+src/sage_categories/cat/cat_constructions.pyi:130: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/cat_constructions.pyi:130: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/cat_constructions.pyi:130: note: This violates the Liskov substitution principle
+src/sage_categories/cat/cat_constructions.pyi:130: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/cat_constructions.pyi:133: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/cat_constructions.pyi:133: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/cat_constructions.pyi:133: note: This violates the Liskov substitution principle
+src/sage_categories/cat/cat_constructions.pyi:133: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/cat_constructions.pyi:133: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/opposites.pyi:12: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/opposites.pyi:12: note: Did you mean "List[...]"?
+src/sage_categories/cat/adjunctions.pyi:29: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/adjunctions.pyi:80: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/adjunctions.pyi:80: note:      Superclass:
+src/sage_categories/cat/adjunctions.pyi:80: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
+src/sage_categories/cat/adjunctions.pyi:80: note:      Subclass:
+src/sage_categories/cat/adjunctions.pyi:80: note:          def construct_morphism(self, source: ObjectType, target: ObjectType, forward: Any, inverse: Any) -> MorphismType
+src/sage_categories/cat/adjunctions.pyi:83: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/adjunctions.pyi:83: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/adjunctions.pyi:83: note: This violates the Liskov substitution principle
+src/sage_categories/cat/adjunctions.pyi:83: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/adjunctions.pyi:86: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/adjunctions.pyi:86: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/adjunctions.pyi:86: note: This violates the Liskov substitution principle
+src/sage_categories/cat/adjunctions.pyi:86: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/adjunctions.pyi:86: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/adjunctions.pyi:89: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/adjunctions.pyi:89: note: Did you mean "List[...]"?
+src/sage_categories/cat/adjunctions.pyi:134: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/adjunctions.pyi:134: note:      Superclass:
+src/sage_categories/cat/adjunctions.pyi:134: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
+src/sage_categories/cat/adjunctions.pyi:134: note:      Subclass:
+src/sage_categories/cat/adjunctions.pyi:134: note:          def construct_morphism(self, source: ObjectType, target: ObjectType, transformation: Any) -> MorphismType
+src/sage_categories/cat/adjunctions.pyi:137: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/adjunctions.pyi:137: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/adjunctions.pyi:137: note: This violates the Liskov substitution principle
+src/sage_categories/cat/adjunctions.pyi:137: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/adjunctions.pyi:140: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/adjunctions.pyi:140: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/adjunctions.pyi:140: note: This violates the Liskov substitution principle
+src/sage_categories/cat/adjunctions.pyi:140: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/adjunctions.pyi:140: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/cones.pyi:35: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/cones.pyi:35: note: Did you mean "List[...]"?
+src/sage_categories/cat/cones.pyi:74: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/cones.pyi:74: note:      Superclass:
+src/sage_categories/cat/cones.pyi:74: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
+src/sage_categories/cat/cones.pyi:74: note:      Subclass:
+src/sage_categories/cat/cones.pyi:74: note:          def construct_morphism(self, source: ObjectType, target: ObjectType, apex_morphism: ObjectType) -> MorphismType
+src/sage_categories/cat/cones.pyi:77: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/cones.pyi:77: note: This violates the Liskov substitution principle
+src/sage_categories/cat/cones.pyi:77: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/cones.pyi:80: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/cones.pyi:80: note: This violates the Liskov substitution principle
+src/sage_categories/cat/cones.pyi:80: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/cones.pyi:80: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/shapes.pyi:12: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/shapes.pyi:37: error: Return type "ObjectType" of "object_at" incompatible with return type "ElementType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/shapes.pyi:40: error: Argument 1 of "object_point" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/shapes.pyi:40: note: This violates the Liskov substitution principle
+src/sage_categories/cat/shapes.pyi:40: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/shapes.pyi:43: error: Return type "MorphismType" of "morphism_at" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/shapes.pyi:52: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/shapes.pyi:52: note:      Superclass:
+src/sage_categories/cat/shapes.pyi:52: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
+src/sage_categories/cat/shapes.pyi:52: note:      Subclass:
+src/sage_categories/cat/shapes.pyi:52: note:          def construct_morphism(self, domain: ObjectType, codomain: ObjectType) -> MorphismType
+src/sage_categories/cat/shapes.pyi:55: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/shapes.pyi:55: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/shapes.pyi:55: note: This violates the Liskov substitution principle
+src/sage_categories/cat/shapes.pyi:55: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/shapes.pyi:58: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/shapes.pyi:58: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/shapes.pyi:58: note: This violates the Liskov substitution principle
+src/sage_categories/cat/shapes.pyi:58: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/shapes.pyi:58: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/shapes.pyi:86: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/shapes.pyi:117: error: Return type "ObjectType" of "object_at" incompatible with return type "ElementType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/shapes.pyi:120: error: Argument 1 of "object_point" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/shapes.pyi:120: note: This violates the Liskov substitution principle
+src/sage_categories/cat/shapes.pyi:120: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/shapes.pyi:126: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/shapes.pyi:126: note:      Superclass:
+src/sage_categories/cat/shapes.pyi:126: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
+src/sage_categories/cat/shapes.pyi:126: note:      Subclass:
+src/sage_categories/cat/shapes.pyi:126: note:          def construct_morphism(self, domain: ObjectType, codomain: ObjectType) -> MorphismType
+src/sage_categories/cat/shapes.pyi:129: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/shapes.pyi:129: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/shapes.pyi:129: note: This violates the Liskov substitution principle
+src/sage_categories/cat/shapes.pyi:129: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/shapes.pyi:132: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/shapes.pyi:132: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/shapes.pyi:132: note: This violates the Liskov substitution principle
+src/sage_categories/cat/shapes.pyi:132: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/shapes.pyi:132: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/kernel/roles.pyi:31: error: Return type "AppliedPredicate" of "__eq__" incompatible with return type "bool" in supertype "builtins.object"  [override]
+src/sage_categories/kernel/roles.pyi:31: error: Argument 1 of "__eq__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
+src/sage_categories/kernel/roles.pyi:31: note: This violates the Liskov substitution principle
+src/sage_categories/kernel/roles.pyi:31: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/kernel/roles.pyi:31: note: It is recommended for "__eq__" to work with arbitrary objects, for example:
+src/sage_categories/kernel/roles.pyi:31: note:     def __eq__(self, other: object) -> bool:
+src/sage_categories/kernel/roles.pyi:31: note:         if not isinstance(other, CategoryPoint):
+src/sage_categories/kernel/roles.pyi:31: note:             return NotImplemented
+src/sage_categories/kernel/roles.pyi:31: note:         return <logic to compare two CategoryPoint instances>
+src/sage_categories/kernel/roles.pyi:34: error: Return type "Boolean" of "__ne__" incompatible with return type "bool" in supertype "builtins.object"  [override]
+src/sage_categories/kernel/roles.pyi:34: error: Argument 1 of "__ne__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
+src/sage_categories/kernel/roles.pyi:34: note: This violates the Liskov substitution principle
+src/sage_categories/kernel/roles.pyi:34: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/kernel/roles.pyi:60: error: Return type "AppliedPredicate" of "__eq__" incompatible with return type "bool" in supertype "builtins.object"  [override]
+src/sage_categories/kernel/roles.pyi:60: error: Argument 1 of "__eq__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
+src/sage_categories/kernel/roles.pyi:60: note: This violates the Liskov substitution principle
+src/sage_categories/kernel/roles.pyi:60: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/kernel/roles.pyi:60: note: It is recommended for "__eq__" to work with arbitrary objects, for example:
+src/sage_categories/kernel/roles.pyi:60: note:     def __eq__(self, other: object) -> bool:
+src/sage_categories/kernel/roles.pyi:60: note:         if not isinstance(other, ObjectOfCategory):
+src/sage_categories/kernel/roles.pyi:60: note:             return NotImplemented
+src/sage_categories/kernel/roles.pyi:60: note:         return <logic to compare two ObjectOfCategory instances>
+src/sage_categories/kernel/roles.pyi:63: error: Return type "Boolean" of "__ne__" incompatible with return type "bool" in supertype "builtins.object"  [override]
+src/sage_categories/kernel/roles.pyi:63: error: Argument 1 of "__ne__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
+src/sage_categories/kernel/roles.pyi:63: note: This violates the Liskov substitution principle
+src/sage_categories/kernel/roles.pyi:63: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/kernel/roles.pyi:89: error: Return type "AppliedPredicate" of "__eq__" incompatible with return type "bool" in supertype "builtins.object"  [override]
+src/sage_categories/kernel/roles.pyi:89: error: Argument 1 of "__eq__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
+src/sage_categories/kernel/roles.pyi:89: note: This violates the Liskov substitution principle
+src/sage_categories/kernel/roles.pyi:89: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/kernel/roles.pyi:89: note: It is recommended for "__eq__" to work with arbitrary objects, for example:
+src/sage_categories/kernel/roles.pyi:89: note:     def __eq__(self, other: object) -> bool:
+src/sage_categories/kernel/roles.pyi:89: note:         if not isinstance(other, MorphismOfCategory):
+src/sage_categories/kernel/roles.pyi:89: note:             return NotImplemented
+src/sage_categories/kernel/roles.pyi:89: note:         return <logic to compare two MorphismOfCategory instances>
+src/sage_categories/kernel/roles.pyi:92: error: Return type "Boolean" of "__ne__" incompatible with return type "bool" in supertype "builtins.object"  [override]
+src/sage_categories/kernel/roles.pyi:92: error: Argument 1 of "__ne__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
+src/sage_categories/kernel/roles.pyi:92: note: This violates the Liskov substitution principle
+src/sage_categories/kernel/roles.pyi:92: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/ordinals/category.py:96: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:96: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:108: error: Incompatible return value type (got "Hashable", expected "str")  [return-value]
+src/sage_categories/ordinals/category.py:114: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:114: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:119: error: Incompatible return value type (got "Hashable", expected "int")  [return-value]
+src/sage_categories/ordinals/category.py:124: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:124: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:128: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:128: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:151: error: Returning Any from function declared to return CardinalObject?  [no-any-return]
+src/sage_categories/ordinals/category.py:151: error: OrdinalObject? has no attribute "cardinality"  [attr-defined]
+src/sage_categories/ordinals/category.py:153: error: Returning Any from function declared to return CardinalObject?  [no-any-return]
+src/sage_categories/ordinals/category.py:153: error: OrdinalObject? has no attribute "cardinality"  [attr-defined]
+src/sage_categories/ordinals/category.py:155: error: OrdinalObject? has no attribute "cardinality"  [attr-defined]
+src/sage_categories/ordinals/category.py:157: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:157: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:180: error: OrdinalObject? has no attribute "_kind_"  [attr-defined]
+src/sage_categories/ordinals/category.py:184: error: OrdinalObject? has no attribute "_kind_"  [attr-defined]
+src/sage_categories/ordinals/category.py:186: error: OrdinalObject? has no attribute "_finite_value_"  [attr-defined]
+src/sage_categories/ordinals/category.py:188: error: OrdinalObject? has no attribute "cofinality"  [attr-defined]
+src/sage_categories/ordinals/category.py:191: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:191: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:194: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:194: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:197: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:197: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:200: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:200: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:203: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:203: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:206: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:206: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:209: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:209: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:212: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:212: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:215: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:215: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:218: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:218: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:221: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:221: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:252: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:264: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:264: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:267: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/ordinals/category.py:268: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/ordinals/category.py:269: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/ordinals/category.py:273: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:273: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:275: error: Unexpected keyword argument "category"  [call-arg]
+src/sage_categories/ordinals/category.py:278: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:278: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:291: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:291: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:294: error: OrdinalObject? has no attribute "_expression_key_"  [attr-defined]
+src/sage_categories/ordinals/category.py:296: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:296: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:299: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:299: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:302: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:302: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:303: error: Returning Any from function declared to return "bool"  [no-any-return]
+src/sage_categories/ordinals/category.py:303: error: OrdinalObject? has no attribute "_kind_"  [attr-defined]
+src/sage_categories/ordinals/category.py:303: error: OrdinalObject? has no attribute "_finite_value_"  [attr-defined]
+src/sage_categories/ordinals/category.py:305: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:305: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:306: error: OrdinalObject? has no attribute "_expression_key_"  [attr-defined]
+src/sage_categories/ordinals/category.py:308: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:308: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:309: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:309: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:312: error: OrdinalObject? has no attribute "_kind_"  [attr-defined]
+src/sage_categories/ordinals/category.py:314: error: OrdinalObject? has no attribute "_finite_value_"  [attr-defined]
+src/sage_categories/ordinals/category.py:316: error: OrdinalObject? has no attribute "_terms_"  [attr-defined]
+src/sage_categories/ordinals/category.py:328: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:328: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:330: error: OrdinalObject? has no attribute "_kind_"  [attr-defined]
+src/sage_categories/ordinals/category.py:332: error: OrdinalObject? has no attribute "_terms_"  [attr-defined]
+src/sage_categories/ordinals/category.py:333: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:333: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:336: error: OrdinalObject? has no attribute "_kind_"  [attr-defined]
+src/sage_categories/ordinals/category.py:338: error: OrdinalObject? has no attribute "_finite_value_"  [attr-defined]
+src/sage_categories/ordinals/category.py:340: error: OrdinalObject? has no attribute "_finite_value_"  [attr-defined]
+src/sage_categories/ordinals/category.py:342: error: OrdinalObject? has no attribute "_terms_"  [attr-defined]
+src/sage_categories/ordinals/category.py:352: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:352: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:353: error: OrdinalObject? has no attribute "_kind_"  [attr-defined]
+src/sage_categories/ordinals/category.py:354: error: OrdinalObject? has no attribute "_finite_value_"  [attr-defined]
+src/sage_categories/ordinals/category.py:361: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:361: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:362: error: OrdinalObject? has no attribute "_kind_"  [attr-defined]
+src/sage_categories/ordinals/category.py:363: error: OrdinalObject? has no attribute "_finite_value_"  [attr-defined]
+src/sage_categories/ordinals/category.py:372: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:372: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:373: error: OrdinalObject? has no attribute "_kind_"  [attr-defined]
+src/sage_categories/ordinals/category.py:374: error: OrdinalObject? has no attribute "_finite_value_"  [attr-defined]
+src/sage_categories/ordinals/category.py:404: error: "ElementType" has no attribute "_key"  [attr-defined]
+src/sage_categories/ordinals/category.py:408: error: Argument 1 to "_at_most" of "OrdinalsCategory" has incompatible type "ElementType"; expected "OrdinalObjectDeclaration"  [arg-type]
+src/sage_categories/ordinals/category.py:408: error: Argument 2 to "_at_most" of "OrdinalsCategory" has incompatible type "ElementType"; expected "OrdinalObjectDeclaration"  [arg-type]
+src/sage_categories/ordinals/category.py:444: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:444: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:449: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:449: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/ordinals/category.py:454: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/ordinals/category.py:454: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/cat/slices.pyi:19: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/slices.pyi:19: note: Did you mean "List[...]"?
+src/sage_categories/cat/slices.pyi:85: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/slices.pyi:85: note:      Superclass:
+src/sage_categories/cat/slices.pyi:85: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
+src/sage_categories/cat/slices.pyi:85: note:      Subclass:
+src/sage_categories/cat/slices.pyi:85: note:          def construct_morphism(self, domain: ObjectType, codomain: ObjectType, varying: ObjectType) -> MorphismType
+src/sage_categories/cat/slices.pyi:88: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/slices.pyi:88: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/slices.pyi:88: note: This violates the Liskov substitution principle
+src/sage_categories/cat/slices.pyi:88: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/slices.pyi:91: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/slices.pyi:91: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/slices.pyi:91: note: This violates the Liskov substitution principle
+src/sage_categories/cat/slices.pyi:91: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/slices.pyi:91: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/constructions.pyi:138: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/cat/constructions.pyi:138: note:      Superclass:
+src/sage_categories/cat/constructions.pyi:138: note:          def __call__(self, *arguments: ElementType) -> ElementType
+src/sage_categories/cat/constructions.pyi:138: note:      Subclass:
+src/sage_categories/cat/constructions.pyi:138: note:          def __call__(self, family: Any | tuple[ElementType, ...]) -> ElementType
+src/sage_categories/cat/constructions.pyi:254: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/cat/constructions.pyi:254: note:      Superclass:
+src/sage_categories/cat/constructions.pyi:254: note:          def __call__(self, *arguments: ElementType) -> ElementType
+src/sage_categories/cat/constructions.pyi:254: note:      Subclass:
+src/sage_categories/cat/constructions.pyi:254: note:          def __call__(self, family: Any | tuple[ElementType, ...]) -> ElementType
+src/sage_categories/sets/objects.py:84: error: "ElementType" has no attribute "_is_object"  [attr-defined]
+src/sage_categories/sets/objects.py:106: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/objects.py:106: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/objects.py:107: error: Variable "sage_categories.sets.category.SetElement" is not valid as a type  [valid-type]
+src/sage_categories/sets/objects.py:107: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/objects.py:139: error: Variable "sage_categories.sets.category.SetElement" is not valid as a type  [valid-type]
+src/sage_categories/sets/objects.py:139: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/objects.py:155: error: Variable "sage_categories.sets.category.SetElement" is not valid as a type  [valid-type]
+src/sage_categories/sets/objects.py:155: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/objects.py:168: error: Returning Any from function declared to return SetElement?  [no-any-return]
+src/sage_categories/sets/objects.py:170: error: Variable "sage_categories.sets.category.SetElement" is not valid as a type  [valid-type]
+src/sage_categories/sets/objects.py:170: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/objects.py:176: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/objects.py:176: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/objects.py:190: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/objects.py:190: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/objects.py:196: error: Returning Any from function declared to return SetObject?  [no-any-return]
+src/sage_categories/sets/objects.py:202: error: Returning Any from function declared to return "AppliedPredicate"  [no-any-return]
+src/sage_categories/sets/objects.py:205: error: Returning Any from function declared to return "AppliedPredicate"  [no-any-return]
+src/sage_categories/sets/objects.py:208: error: Returning Any from function declared to return "AppliedPredicate"  [no-any-return]
+src/sage_categories/sets/objects.py:217: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/sets/objects.py:218: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/sets/objects.py:224: error: Variable "sage_categories.sets.category.SetElement" is not valid as a type  [valid-type]
+src/sage_categories/sets/objects.py:224: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/maps.py:74: error: Variable "sage_categories.sets.category.SetElement" is not valid as a type  [valid-type]
+src/sage_categories/sets/maps.py:74: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/maps.py:76: error: Unsupported right operand type for in ("ObjectOfCategory")  [operator]
+src/sage_categories/sets/maps.py:80: error: SetElement? has no attribute "defining_morphism"  [attr-defined]
+src/sage_categories/sets/maps.py:81: error: Returning Any from function declared to return SetElement?  [no-any-return]
+src/sage_categories/sets/maps.py:81: error: "ObjectOfCategory" has no attribute "point"  [attr-defined]
+src/sage_categories/sets/maps.py:82: error: SetElement? has no attribute "_point_datum_"  [attr-defined]
+src/sage_categories/sets/maps.py:84: error: SetElement? has no attribute "defining_morphism"  [attr-defined]
+src/sage_categories/sets/maps.py:86: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/maps.py:86: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/maps.py:88: error: Returning Any from function declared to return SetObject?  [no-any-return]
+src/sage_categories/sets/maps.py:103: error: "ElementType" has no attribute "domain"  [attr-defined]
+src/sage_categories/sets/maps.py:104: error: "ElementType" has no attribute "codomain"  [attr-defined]
+src/sage_categories/sets/maps.py:108: error: "ElementType" has no attribute "domain"  [attr-defined]
+src/sage_categories/sets/maps.py:110: error: "ElementType" has no attribute "_set_morphism_data"  [attr-defined]
+src/sage_categories/sets/maps.py:115: error: "ElementType" has no attribute "domain"  [attr-defined]
+src/sage_categories/sets/maps.py:169: error: Missing positional argument "assumptions" in call to "injective_on_finite_domain"  [call-arg]
+src/sage_categories/sets/maps.py:170: error: Missing positional argument "assumptions" in call to "surjective_on_finite_domain"  [call-arg]
+src/sage_categories/sets/cardinals.py:172: error: Returning Any from function declared to return "AlephElement"  [no-any-return]
+src/sage_categories/sets/cardinals.py:198: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:198: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:199: error: Returning Any from function declared to return "AlephElement"  [no-any-return]
+src/sage_categories/sets/cardinals.py:204: error: Returning Any from function declared to return "AlephElement"  [no-any-return]
+src/sage_categories/sets/cardinals.py:270: error: Returning Any from function declared to return "CardinalValue"  [no-any-return]
+src/sage_categories/sets/cardinals.py:273: error: Returning Any from function declared to return "CardinalValue"  [no-any-return]
+src/sage_categories/sets/cardinals.py:279: error: Returning Any from function declared to return "CardinalValue"  [no-any-return]
+src/sage_categories/sets/cardinals.py:280: error: Returning Any from function declared to return "CardinalValue"  [no-any-return]
+src/sage_categories/sets/cardinals.py:282: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:282: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:286: error: Returning Any from function declared to return OrdinalObject?  [no-any-return]
+src/sage_categories/sets/cardinals.py:354: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:354: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:422: error: Unsupported left operand type for <= ("Power")  [operator]
+src/sage_categories/sets/cardinals.py:422: error: Unsupported left operand type for <= ("Join")  [operator]
+src/sage_categories/sets/cardinals.py:422: note: Both left and right operands are unions
+src/sage_categories/sets/cardinals.py:462: error: Unsupported left operand type for + ("Power")  [operator]
+src/sage_categories/sets/cardinals.py:462: error: Unsupported left operand type for + ("Join")  [operator]
+src/sage_categories/sets/cardinals.py:462: note: Both left and right operands are unions
+src/sage_categories/sets/cardinals.py:475: error: Unsupported left operand type for * ("Power")  [operator]
+src/sage_categories/sets/cardinals.py:475: error: Unsupported left operand type for * ("Join")  [operator]
+src/sage_categories/sets/cardinals.py:475: note: Both left and right operands are unions
+src/sage_categories/sets/cardinals.py:477: error: Returning Any from function declared to return "CardinalValue"  [no-any-return]
+src/sage_categories/sets/cardinals.py:490: error: Returning Any from function declared to return "CardinalValue"  [no-any-return]
+src/sage_categories/sets/cardinals.py:492: error: Returning Any from function declared to return "CardinalValue"  [no-any-return]
+src/sage_categories/sets/cardinals.py:494: error: Unsupported left operand type for ** ("Power")  [operator]
+src/sage_categories/sets/cardinals.py:494: error: Unsupported left operand type for ** ("Join")  [operator]
+src/sage_categories/sets/cardinals.py:494: note: Both left and right operands are unions
+src/sage_categories/sets/cardinals.py:543: error: OrdinalObject? has no attribute "cofinality"  [attr-defined]
+src/sage_categories/sets/cardinals.py:592: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:592: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:602: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:602: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:610: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:610: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:614: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:614: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:618: error: Returning Any from function declared to return "AppliedPredicate"  [no-any-return]
+src/sage_categories/sets/cardinals.py:621: error: Returning Any from function declared to return "AppliedPredicate"  [no-any-return]
+src/sage_categories/sets/cardinals.py:624: error: Returning Any from function declared to return "AppliedPredicate"  [no-any-return]
+src/sage_categories/sets/cardinals.py:627: error: Returning Any from function declared to return "AppliedPredicate"  [no-any-return]
+src/sage_categories/sets/cardinals.py:629: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:629: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:632: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:632: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:635: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:635: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:638: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:638: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:641: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:641: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:644: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:644: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:647: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:647: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:650: error: Returning Any from function declared to return "AppliedPredicate"  [no-any-return]
+src/sage_categories/sets/cardinals.py:652: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:652: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:655: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:655: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:663: error: Returning Any from function declared to return "AppliedPredicate"  [no-any-return]
+src/sage_categories/sets/cardinals.py:665: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:665: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:687: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:687: note: Did you mean "List[...]"?
+src/sage_categories/sets/cardinals.py:698: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:698: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:702: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/sets/cardinals.py:703: error: Need type annotation for "_countable_cardinals"  [var-annotated]
+src/sage_categories/sets/cardinals.py:704: error: Need type annotation for "_infinite_cardinals"  [var-annotated]
+src/sage_categories/sets/cardinals.py:705: error: Need type annotation for "_finite_cardinals"  [var-annotated]
+src/sage_categories/sets/cardinals.py:706: error: Need type annotation for "_uncountable_cardinals"  [var-annotated]
+src/sage_categories/sets/cardinals.py:707: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/sets/cardinals.py:708: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/sets/cardinals.py:709: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/sets/cardinals.py:710: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/sets/cardinals.py:738: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:738: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:738: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:740: error: Returning Any from function declared to return SetObject?  [no-any-return]
+src/sage_categories/sets/cardinals.py:742: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:742: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:742: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:756: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:756: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:758: error: Unexpected keyword argument "category"  [call-arg]
+src/sage_categories/sets/cardinals.py:761: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:761: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:773: error: Variable "sage_categories.ordinals.category.OrdinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:773: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:773: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:777: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:777: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:780: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:780: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:783: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:783: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:785: error: CardinalObject? has no attribute "_value"  [attr-defined]
+src/sage_categories/sets/cardinals.py:787: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:787: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:788: error: CardinalObject? has no attribute "_value"  [attr-defined]
+src/sage_categories/sets/cardinals.py:790: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:790: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:791: error: CardinalObject? has no attribute "_value"  [attr-defined]
+src/sage_categories/sets/cardinals.py:793: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:793: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:794: error: CardinalObject? has no attribute "_value"  [attr-defined]
+src/sage_categories/sets/cardinals.py:798: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:798: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:798: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:798: error: Variable "sage_categories.sets.cardinals.CardinalityMorphism" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:804: error: Unexpected keyword argument "category"  [call-arg]
+src/sage_categories/sets/cardinals.py:804: error: Unexpected keyword argument "domain"  [call-arg]
+src/sage_categories/sets/cardinals.py:804: error: Unexpected keyword argument "codomain"  [call-arg]
+src/sage_categories/sets/cardinals.py:811: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:811: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:811: error: Variable "sage_categories.sets.cardinals.CardinalityMorphism" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:812: error: Unexpected keyword argument "category"  [call-arg]
+src/sage_categories/sets/cardinals.py:812: error: Unexpected keyword argument "domain"  [call-arg]
+src/sage_categories/sets/cardinals.py:812: error: Unexpected keyword argument "codomain"  [call-arg]
+src/sage_categories/sets/cardinals.py:816: error: SetObject? has no attribute "identity"  [attr-defined]
+src/sage_categories/sets/cardinals.py:819: error: Variable "sage_categories.sets.cardinals.CardinalityMorphism" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:819: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:823: error: CardinalityMorphism? has no attribute "codomain"  [attr-defined]
+src/sage_categories/sets/cardinals.py:823: error: CardinalityMorphism? has no attribute "domain"  [attr-defined]
+src/sage_categories/sets/cardinals.py:824: error: Unexpected keyword argument "category"  [call-arg]
+src/sage_categories/sets/cardinals.py:824: error: Unexpected keyword argument "domain"  [call-arg]
+src/sage_categories/sets/cardinals.py:824: error: Unexpected keyword argument "codomain"  [call-arg]
+src/sage_categories/sets/cardinals.py:826: error: CardinalityMorphism? has no attribute "domain"  [attr-defined]
+src/sage_categories/sets/cardinals.py:827: error: CardinalityMorphism? has no attribute "codomain"  [attr-defined]
+src/sage_categories/sets/cardinals.py:828: error: CardinalityMorphism? has no attribute "_set_map"  [attr-defined]
+src/sage_categories/sets/cardinals.py:831: error: Variable "sage_categories.sets.cardinals.CardinalityMorphism" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:831: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:834: error: CardinalityMorphism? has no attribute "_set_map"  [attr-defined]
+src/sage_categories/sets/cardinals.py:835: error: Unexpected keyword argument "category"  [call-arg]
+src/sage_categories/sets/cardinals.py:835: error: Unexpected keyword argument "domain"  [call-arg]
+src/sage_categories/sets/cardinals.py:835: error: Unexpected keyword argument "codomain"  [call-arg]
+src/sage_categories/sets/cardinals.py:837: error: CardinalityMorphism? has no attribute "codomain"  [attr-defined]
+src/sage_categories/sets/cardinals.py:838: error: CardinalityMorphism? has no attribute "domain"  [attr-defined]
+src/sage_categories/sets/cardinals.py:841: error: Argument 2 to "retain_inverses" of "CategoryDeclaration" has incompatible type "CardinalMorphismDeclaration"; expected "ObjectType"  [arg-type]
+src/sage_categories/sets/cardinals.py:842: error: Returning Any from function declared to return CardinalityMorphism?  [no-any-return]
+src/sage_categories/sets/cardinals.py:892: error: Argument 1 to "_at_most" of "CardinalCategory" has incompatible type "ElementType"; expected "CardinalObjectDeclaration"  [arg-type]
+src/sage_categories/sets/cardinals.py:892: error: Argument 2 to "_at_most" of "CardinalCategory" has incompatible type "ElementType"; expected "CardinalObjectDeclaration"  [arg-type]
+src/sage_categories/sets/cardinals.py:924: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:924: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:930: error: Returning Any from function declared to return CardinalObject?  [no-any-return]
+src/sage_categories/sets/cardinals.py:930: error: Unsupported left operand type for ** (CardinalObject?)  [operator]
+src/sage_categories/sets/cardinals.py:935: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:935: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:936: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:936: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:944: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:944: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:944: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:948: error: SetObject? has no attribute "cardinality"  [attr-defined]
+src/sage_categories/sets/cardinals.py:953: error: SetObject? has no attribute "identity"  [attr-defined]
+src/sage_categories/sets/cardinals.py:958: error: Argument 4 to "construct_morphism" of "SetsCategory" has incompatible type overloaded function; expected "Callable[[Hashable], Hashable]"  [arg-type]
+src/sage_categories/sets/cardinals.py:965: error: Returning Any from function declared to return SetMap?  [no-any-return]
+src/sage_categories/sets/cardinals.py:972: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:972: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:972: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:973: error: SetObject? has no attribute "cardinality"  [attr-defined]
+src/sage_categories/sets/cardinals.py:975: error: Returning Any from function declared to return CardinalObject?  [no-any-return]
+src/sage_categories/sets/cardinals.py:977: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:977: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/cardinals.py:977: error: Variable "sage_categories.sets.cardinals.CardinalityMorphism" is not valid as a type  [valid-type]
+src/sage_categories/sets/cardinals.py:978: error: SetMap? has no attribute "domain"  [attr-defined]
+src/sage_categories/sets/cardinals.py:978: error: SetMap? has no attribute "codomain"  [attr-defined]
+src/sage_categories/sets/cardinals.py:979: error: Unsupported left operand type for * (SetMap?)  [operator]
+src/sage_categories/sets/cardinals.py:979: error: SetMap? has no attribute "inverse"  [attr-defined]
+src/sage_categories/sets/cardinals.py:980: error: Returning Any from function declared to return CardinalityMorphism?  [no-any-return]
+src/sage_categories/cat/total_cones.pyi:57: error: Return type "sage_categories.cat.total_cones.TotalConesCategory.ObjectType" of "__call__" incompatible with return type "sage_categories.cat.cat_constructions.LimitCategory.ObjectType" in supertype "sage_categories.cat.cat_constructions.LimitCategory"  [override]
+src/sage_categories/cat/total_cones.pyi:57: error: Argument 1 of "__call__" is incompatible with supertype "sage_categories.cat.cat_constructions.LimitCategory"; supertype defines the argument type as "Callable[[ElementType], ElementType] | tuple[ElementType, ...]"  [override]
+src/sage_categories/cat/total_cones.pyi:57: note: This violates the Liskov substitution principle
+src/sage_categories/cat/total_cones.pyi:57: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/total_cones.pyi:60: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.cat_constructions.LimitCategory"  [override]
+src/sage_categories/cat/total_cones.pyi:60: note:      Superclass:
+src/sage_categories/cat/total_cones.pyi:60: note:          def construct_morphism(self, domain: ObjectType, codomain: ObjectType, family: Callable[[ElementType], ObjectType] | tuple[ObjectType, ...]) -> MorphismType
+src/sage_categories/cat/total_cones.pyi:60: note:      Subclass:
+src/sage_categories/cat/total_cones.pyi:60: note:          def construct_morphism(self, source: ObjectType, target: ObjectType, apex: ObjectType, diagram: Any) -> MorphismType
+src/sage_categories/cat/total_cones.pyi:60: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/total_cones.pyi:60: note:      Superclass:
+src/sage_categories/cat/total_cones.pyi:60: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
+src/sage_categories/cat/total_cones.pyi:60: note:      Subclass:
+src/sage_categories/cat/total_cones.pyi:60: note:          def construct_morphism(self, source: ObjectType, target: ObjectType, apex: ObjectType, diagram: Any) -> MorphismType
+src/sage_categories/cat/total_cones.pyi:63: error: Return type "sage_categories.cat.total_cones.TotalConesCategory.MorphismType" of "construct_identity" incompatible with return type "sage_categories.cat.cat_constructions.LimitCategory.MorphismType" in supertype "sage_categories.cat.cat_constructions.LimitCategory"  [override]
+src/sage_categories/cat/total_cones.pyi:63: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/total_cones.pyi:63: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.cat_constructions.LimitCategory"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/total_cones.pyi:63: note: This violates the Liskov substitution principle
+src/sage_categories/cat/total_cones.pyi:63: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/total_cones.pyi:63: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/total_cones.pyi:66: error: Return type "sage_categories.cat.total_cones.TotalConesCategory.MorphismType" of "composite" incompatible with return type "sage_categories.cat.cat_constructions.LimitCategory.MorphismType" in supertype "sage_categories.cat.cat_constructions.LimitCategory"  [override]
+src/sage_categories/cat/total_cones.pyi:66: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/total_cones.pyi:66: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.cat_constructions.LimitCategory"; supertype defines the argument type as "MorphismType"  [override]
+src/sage_categories/cat/total_cones.pyi:66: note: This violates the Liskov substitution principle
+src/sage_categories/cat/total_cones.pyi:66: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/total_cones.pyi:66: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/cat/total_cones.pyi:66: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.cat_constructions.LimitCategory"; supertype defines the argument type as "MorphismType"  [override]
+src/sage_categories/cat/total_cones.pyi:66: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/sets/subobjects.py:43: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:43: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:49: error: SetObject? has no attribute "_set_object_data"  [attr-defined]
+src/sage_categories/sets/subobjects.py:97: error: "ElementType" has no attribute "underlying_set"  [attr-defined]
+src/sage_categories/sets/subobjects.py:105: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/sets/subobjects.py:106: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/sets/subobjects.py:112: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:112: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:114: error: Returning Any from function declared to return SetMap?  [no-any-return]
+src/sage_categories/sets/subobjects.py:116: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:116: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:118: error: Returning Any from function declared to return SetObject?  [no-any-return]
+src/sage_categories/sets/subobjects.py:118: error: SetMap? has no attribute "codomain"  [attr-defined]
+src/sage_categories/sets/subobjects.py:120: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:120: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:122: error: Returning Any from function declared to return SetMap?  [no-any-return]
+src/sage_categories/sets/subobjects.py:124: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:124: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:128: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:128: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:133: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:133: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:138: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:138: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:146: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:146: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:159: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:159: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:160: error: "ChosenSubsetObject" has no attribute "_set_object_data"  [attr-defined]
+src/sage_categories/sets/subobjects.py:161: error: Returning Any from function declared to return SetObject?  [no-any-return]
+src/sage_categories/sets/subobjects.py:161: error: SetObject? has no attribute "subset_from"  [attr-defined]
+src/sage_categories/sets/subobjects.py:165: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:165: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:168: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:168: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:172: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:172: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:173: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:173: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:177: error: SetObject? has no attribute "underlying_set"  [attr-defined]
+src/sage_categories/sets/subobjects.py:179: error: "ChosenSubsetObject" has no attribute "_set_object_data"  [attr-defined]
+src/sage_categories/sets/subobjects.py:180: error: SetObject? has no attribute "_set_object_data"  [attr-defined]
+src/sage_categories/sets/subobjects.py:181: error: Returning Any from function declared to return SetObject?  [no-any-return]
+src/sage_categories/sets/subobjects.py:181: error: SetObject? has no attribute "subset_from"  [attr-defined]
+src/sage_categories/sets/subobjects.py:189: error: Incompatible types in assignment (expression has type "type[ChosenSubsetObject]", base class "FullSubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/sets/subobjects.py:197: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:197: note: Did you mean "List[...]"?
+src/sage_categories/sets/subobjects.py:208: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:208: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:210: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:210: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:211: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:211: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:222: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:222: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:223: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:223: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:227: error: SetObject? has no attribute "_set_object_data"  [attr-defined]
+src/sage_categories/sets/subobjects.py:236: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:236: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:236: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:239: error: SetObject? has no attribute "_set_object_data"  [attr-defined]
+src/sage_categories/sets/subobjects.py:248: error: SetObject? has no attribute "underlying_set"  [attr-defined]
+src/sage_categories/sets/subobjects.py:252: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:252: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:279: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:279: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:279: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:288: error: SetMap? has no attribute "domain"  [attr-defined]
+src/sage_categories/sets/subobjects.py:288: error: SetMap? has no attribute "codomain"  [attr-defined]
+src/sage_categories/sets/subobjects.py:291: error: SetMap? has no attribute "_set_morphism_data"  [attr-defined]
+src/sage_categories/sets/subobjects.py:338: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:338: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:351: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:351: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:353: error: Returning Any from function declared to return SetMap?  [no-any-return]
+src/sage_categories/sets/subobjects.py:355: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:355: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:357: error: Returning Any from function declared to return SetObject?  [no-any-return]
+src/sage_categories/sets/subobjects.py:357: error: SetMap? has no attribute "domain"  [attr-defined]
+src/sage_categories/sets/subobjects.py:373: error: Incompatible types in assignment (expression has type "type[ChosenQuotientObject]", base class "FullSubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/sets/subobjects.py:381: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:381: note: Did you mean "List[...]"?
+src/sage_categories/sets/subobjects.py:392: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:392: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:395: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:395: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:414: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:414: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:415: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:415: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/subobjects.py:417: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/subobjects.py:417: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:85: error: Incompatible types in assignment (expression has type "type[FiniteSetObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/sets/category.py:95: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:95: note: Did you mean "List[...]"?
+src/sage_categories/sets/category.py:102: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/sets/category.py:102: note:      Superclass:
+src/sage_categories/sets/category.py:102: note:          def __call__(self, *arguments: ElementType) -> ElementType
+src/sage_categories/sets/category.py:102: note:      Subclass:
+src/sage_categories/sets/category.py:102: note:          def __call__(self, members: SetObject? | Iterable[Hashable]) -> SetObject?
+src/sage_categories/sets/category.py:102: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:102: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:107: error: Argument 1 to "refine" has incompatible type "SetObject? | Iterable[Hashable]"; expected "CategoryPoint"  [arg-type]
+src/sage_categories/sets/category.py:113: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:113: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:114: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:114: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:138: error: Returning Any from function declared to return SetObject?  [no-any-return]
+src/sage_categories/sets/category.py:140: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:140: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:143: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:143: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:148: error: Returning Any from function declared to return "tuple[Hashable, ...]"  [no-any-return]
+src/sage_categories/sets/category.py:151: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:151: note: Did you mean "List[...]"?
+src/sage_categories/sets/category.py:164: error: Need type annotation for "_countable"  [var-annotated]
+src/sage_categories/sets/category.py:165: error: Need type annotation for "_infinite"  [var-annotated]
+src/sage_categories/sets/category.py:167: error: Need type annotation for "_uncountable"  [var-annotated]
+src/sage_categories/sets/category.py:170: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/sets/category.py:171: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/sets/category.py:172: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/sets/category.py:173: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/sets/category.py:174: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/sets/category.py:175: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/sets/category.py:191: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:191: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:193: error: Too many arguments  [call-arg]
+src/sage_categories/sets/category.py:196: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:196: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:197: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:197: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:202: error: Too many arguments  [call-arg]
+src/sage_categories/sets/category.py:207: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:207: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:208: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:208: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:215: error: Too many arguments  [call-arg]
+src/sage_categories/sets/category.py:219: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:219: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:226: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:226: note: Did you mean "List[...]"?
+src/sage_categories/sets/category.py:229: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:229: note: Did you mean "List[...]"?
+src/sage_categories/sets/category.py:232: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:232: note: Did you mean "List[...]"?
+src/sage_categories/sets/category.py:249: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:249: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:256: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:256: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:260: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:260: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:274: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:274: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:274: error: Variable "sage_categories.sets.category.SetElement" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:280: error: SetMap? has no attribute "domain"  [attr-defined]
+src/sage_categories/sets/category.py:281: error: SetMap? has no attribute "_set_morphism_data"  [attr-defined]
+src/sage_categories/sets/category.py:283: error: Incompatible types in assignment (expression has type "SetElementData", variable has type "SetPointData")  [assignment]
+src/sage_categories/sets/category.py:285: error: SetMap? has no attribute "codomain"  [attr-defined]
+src/sage_categories/sets/category.py:289: error: Returning Any from function declared to return SetElement?  [no-any-return]
+src/sage_categories/sets/category.py:295: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:295: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:296: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:296: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:300: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:300: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:301: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:301: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:303: error: Overloaded function implementation does not accept all possible parameters of signature 2  [misc]
+src/sage_categories/sets/category.py:304: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:304: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:305: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:305: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:309: error: Too many arguments  [call-arg]
+src/sage_categories/sets/category.py:314: error: Argument 1 to "retain_inverses" of "CategoryDeclaration" has incompatible type "SetMapDeclaration"; expected "ObjectType"  [arg-type]
+src/sage_categories/sets/category.py:315: error: Too many arguments  [call-arg]
+src/sage_categories/sets/category.py:315: error: Argument 2 to "retain_inverses" of "CategoryDeclaration" has incompatible type "SetMapDeclaration"; expected "ObjectType"  [arg-type]
+src/sage_categories/sets/category.py:321: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:321: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:321: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:322: error: Too many arguments  [call-arg]
+src/sage_categories/sets/category.py:329: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:329: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:332: error: SetMap? has no attribute "codomain"  [attr-defined]
+src/sage_categories/sets/category.py:332: error: SetMap? has no attribute "domain"  [attr-defined]
+src/sage_categories/sets/category.py:335: error: SetMap? has no attribute "_set_morphism_data"  [attr-defined]
+src/sage_categories/sets/category.py:336: error: SetMap? has no attribute "_set_morphism_data"  [attr-defined]
+src/sage_categories/sets/category.py:337: error: Too many arguments  [call-arg]
+src/sage_categories/sets/category.py:339: error: SetMap? has no attribute "domain"  [attr-defined]
+src/sage_categories/sets/category.py:340: error: SetMap? has no attribute "codomain"  [attr-defined]
+src/sage_categories/sets/category.py:344: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:344: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:348: error: SetMap? has no attribute "domain"  [attr-defined]
+src/sage_categories/sets/category.py:348: error: SetMap? has no attribute "codomain"  [attr-defined]
+src/sage_categories/sets/category.py:350: error: SetMap? has no attribute "_set_morphism_data"  [attr-defined]
+src/sage_categories/sets/category.py:356: error: Too many arguments  [call-arg]
+src/sage_categories/sets/category.py:356: error: Argument 2 to "retain_inverses" of "CategoryDeclaration" has incompatible type "SetMapDeclaration"; expected "ObjectType"  [arg-type]
+src/sage_categories/sets/category.py:365: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:365: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:371: error: Returning Any from function declared to return SetMap?  [no-any-return]
+src/sage_categories/sets/category.py:372: error: SetMap? has no attribute "codomain"  [attr-defined]
+src/sage_categories/sets/category.py:372: error: SetMap? has no attribute "domain"  [attr-defined]
+src/sage_categories/sets/category.py:377: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:377: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:387: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:387: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:397: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:397: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:403: error: Returning Any from function declared to return SetObject?  [no-any-return]
+src/sage_categories/sets/category.py:436: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:436: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:436: error: Variable "sage_categories.sets.category.SetElement" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:443: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:443: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:443: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:450: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/category.py:450: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/category.py:475: error: Argument 1 to "disjunction" has incompatible type "tuple[Any | bool | ElementType, Boolean]"; expected "Iterable[bool | Boolean]"  [arg-type]
+src/sage_categories/sets/category.py:475: error: Argument 1 to "negation" has incompatible type "Any | bool | ElementType"; expected "bool | Boolean"  [arg-type]
+src/sage_categories/sets/category.py:504: error: Argument 1 to "is_placed" has incompatible type "SetObjectDeclaration"; expected "CategoryPoint | int"  [arg-type]
+src/sage_categories/sets/category.py:509: error: Argument 1 to "is_placed" has incompatible type "SetObjectDeclaration"; expected "CategoryPoint | int"  [arg-type]
+src/sage_categories/sets/category.py:514: error: Argument 1 to "is_placed" has incompatible type "SetObjectDeclaration"; expected "CategoryPoint | int"  [arg-type]
+src/sage_categories/sets/category.py:519: error: Argument 1 to "is_placed" has incompatible type "SetObjectDeclaration"; expected "CategoryPoint | int"  [arg-type]
+src/sage_categories/sets/category.py:532: error: Module has no attribute "SetElement"; maybe "SetElementData"?  [attr-defined]
+src/sage_categories/posets/category.py:22: error: Module "sage_categories.sets.elements" has no attribute "SetElement"; maybe "SetElementData"?  [attr-defined]
+src/sage_categories/posets/category.py:44: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:44: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:52: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:52: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:62: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:62: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:66: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:66: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:79: error: Returning Any from function declared to return PosetElement?  [no-any-return]
+src/sage_categories/posets/category.py:81: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:81: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:88: error: Returning Any from function declared to return Poset?  [no-any-return]
+src/sage_categories/posets/category.py:88: error: SetObject? has no attribute "monomorphism"  [attr-defined]
+src/sage_categories/posets/category.py:92: error: Returning Any from function declared to return "AppliedPredicate"  [no-any-return]
+src/sage_categories/posets/category.py:98: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/posets/category.py:98: error: Unsupported left operand type for <= (PosetElement?)  [operator]
+src/sage_categories/posets/category.py:111: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:111: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:113: error: "PosetElementDeclaration" has no attribute "parent"  [attr-defined]
+src/sage_categories/posets/category.py:115: error: PosetElement? has no attribute "parent"  [attr-defined]
+src/sage_categories/posets/category.py:117: error: Returning Any from function declared to return "AppliedPredicate"  [no-any-return]
+src/sage_categories/posets/category.py:119: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:119: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:120: error: Returning Any from function declared to return "Boolean"  [no-any-return]
+src/sage_categories/posets/category.py:120: error: "_SympifyWrapper" not callable  [operator]
+src/sage_categories/posets/category.py:122: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:122: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:125: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:125: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:126: error: Returning Any from function declared to return "Boolean"  [no-any-return]
+src/sage_categories/posets/category.py:126: error: "_SympifyWrapper" not callable  [operator]
+src/sage_categories/posets/category.py:129: error: "PosetElementDeclaration" has no attribute "parent"  [attr-defined]
+src/sage_categories/posets/category.py:129: error: "PosetElementDeclaration" has no attribute "defining_morphism"  [attr-defined]
+src/sage_categories/posets/category.py:158: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:158: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:191: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:191: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:196: error: SetObject? has no attribute "product_projection"  [attr-defined]
+src/sage_categories/posets/category.py:200: error: SetObject? has no attribute "membership_proposition"  [attr-defined]
+src/sage_categories/posets/category.py:204: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:204: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:210: error: SetObject? has no attribute "underlying_set"  [attr-defined]
+src/sage_categories/posets/category.py:212: error: Returning Any from function declared to return SetObject?  [no-any-return]
+src/sage_categories/posets/category.py:215: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:215: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:218: error: SetObject? has no attribute "diagram"  [attr-defined]
+src/sage_categories/posets/category.py:218: error: Argument 1 to "sequence_position" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+src/sage_categories/posets/category.py:219: error: SetObject? has no attribute "universal_morphism"  [attr-defined]
+src/sage_categories/posets/category.py:223: error: "ElementType" has no attribute "element"  [attr-defined]
+src/sage_categories/posets/category.py:242: error: "ElementType" not callable  [operator]
+src/sage_categories/posets/category.py:249: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:249: note: Did you mean "List[...]"?
+src/sage_categories/posets/category.py:260: error: Need type annotation for "_totally_ordered"  [var-annotated]
+src/sage_categories/posets/category.py:285: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:285: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:285: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:292: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:292: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:295: error: SetObject? has no attribute "product_projection"  [attr-defined]
+src/sage_categories/posets/category.py:297: error: Returning Any from function declared to return SetObject?  [no-any-return]
+src/sage_categories/posets/category.py:299: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:299: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:299: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:302: error: Too many arguments  [call-arg]
+src/sage_categories/posets/category.py:307: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:307: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:311: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:311: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:311: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:316: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:316: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:320: error: Unsupported left operand type for * (SetObject?)  [operator]
+src/sage_categories/posets/category.py:323: error: Returning Any from function declared to return Poset?  [no-any-return]
+src/sage_categories/posets/category.py:326: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:326: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:329: error: Returning Any from function declared to return Poset?  [no-any-return]
+src/sage_categories/posets/category.py:332: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:332: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:332: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:341: error: Unsupported left operand type for ** (SetObject?)  [operator]
+src/sage_categories/posets/category.py:344: error: "Hashable" not callable  [operator]
+src/sage_categories/posets/category.py:349: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:349: note: Did you mean "List[...]"?
+src/sage_categories/posets/category.py:355: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:355: note: Did you mean "List[...]"?
+src/sage_categories/posets/category.py:360: error: Variable "sage_categories.posets.category.MonotoneMap" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:360: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:360: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:369: error: MonotoneMap? has no attribute "codomain"  [attr-defined]
+src/sage_categories/posets/category.py:370: error: Returning Any from function declared to return PosetElement?  [no-any-return]
+src/sage_categories/posets/category.py:374: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:374: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:374: error: Variable "sage_categories.posets.category.MonotoneMap" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:382: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:382: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:382: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:382: error: Variable "sage_categories.posets.category.MonotoneMap" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:384: error: Too many arguments  [call-arg]
+src/sage_categories/posets/category.py:386: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:386: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:386: error: Variable "sage_categories.posets.category.MonotoneMap" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:390: error: Variable "sage_categories.posets.category.MonotoneMap" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:390: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:394: error: MonotoneMap? has no attribute "codomain"  [attr-defined]
+src/sage_categories/posets/category.py:394: error: MonotoneMap? has no attribute "domain"  [attr-defined]
+src/sage_categories/posets/category.py:397: error: MonotoneMap? has no attribute "domain"  [attr-defined]
+src/sage_categories/posets/category.py:397: error: MonotoneMap? has no attribute "codomain"  [attr-defined]
+src/sage_categories/posets/category.py:399: error: Variable "sage_categories.posets.category.MonotoneMap" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:399: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:403: error: MonotoneMap? has no attribute "codomain"  [attr-defined]
+src/sage_categories/posets/category.py:403: error: MonotoneMap? has no attribute "domain"  [attr-defined]
+src/sage_categories/posets/category.py:405: error: Returning Any from function declared to return MonotoneMap?  [no-any-return]
+src/sage_categories/posets/category.py:407: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:407: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/category.py:407: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:407: error: Variable "sage_categories.posets.category.MonotoneMap" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:415: error: SetMap? has no attribute "domain"  [attr-defined]
+src/sage_categories/posets/category.py:418: error: SetMap? not callable  [misc]
+src/sage_categories/posets/category.py:419: error: Poset? has no attribute "relation"  [attr-defined]
+src/sage_categories/posets/category.py:419: error: Poset? has no attribute "_pair"  [attr-defined]
+src/sage_categories/posets/category.py:428: error: "ElementType" has no attribute "parent"  [attr-defined]
+src/sage_categories/posets/category.py:447: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/posets/category.py:448: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/posets/category.py:449: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/posets/category.py:457: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:457: note: Did you mean "List[...]"?
+src/sage_categories/posets/category.py:459: error: Returning Any from function declared to return "CategoryDeclaration[Any, Any]"  [no-any-return]
+src/sage_categories/posets/category.py:462: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:462: note: Did you mean "List[...]"?
+src/sage_categories/posets/category.py:467: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/category.py:467: note: Did you mean "List[...]"?
+src/sage_categories/posets/category.py:469: error: Returning Any from function declared to return "CategoryDeclaration[Any, Any]"  [no-any-return]
+src/sage_categories/sets/exponentials.pyi:10: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/exponentials.pyi:10: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/exponentials.pyi:13: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/exponentials.pyi:13: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/exponentials.pyi:22: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/exponentials.pyi:22: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/exponentials.pyi:25: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/exponentials.pyi:25: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/exponentials.pyi:25: error: Variable "sage_categories.sets.category.SetElement" is not valid as a type  [valid-type]
+src/sage_categories/sets/exponentials.pyi:28: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/exponentials.pyi:28: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/exponentials.pyi:28: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/exponentials.pyi:31: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/exponentials.pyi:31: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/products.pyi:11: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/products.pyi:11: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/products.pyi:14: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/products.pyi:14: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/products.pyi:26: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/products.pyi:26: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/products.pyi:29: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/products.pyi:29: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/limits.pyi:11: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/limits.pyi:11: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/limits.pyi:33: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/limits.pyi:33: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/limits.pyi:42: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/limits.pyi:42: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/limits.pyi:57: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/limits.pyi:57: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/power_objects.pyi:12: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/power_objects.pyi:12: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/power_objects.pyi:15: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/power_objects.pyi:15: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/power_objects.pyi:18: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/power_objects.pyi:18: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/power_objects.pyi:18: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/power_objects.pyi:21: error: Variable "sage_categories.sets.category.SetElement" is not valid as a type  [valid-type]
+src/sage_categories/sets/power_objects.pyi:21: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/power_objects.pyi:21: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/power_objects.pyi:24: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/power_objects.pyi:24: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/power_objects.pyi:27: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/power_objects.pyi:27: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/power_objects.pyi:30: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/power_objects.pyi:30: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/power_objects.pyi:33: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/power_objects.pyi:33: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/power_objects.pyi:37: error: Incompatible types in assignment (expression has type "type[PowerObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/sets/power_objects.pyi:45: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/power_objects.pyi:45: note: Did you mean "List[...]"?
+src/sage_categories/sets/power_objects.pyi:48: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/sets/power_objects.pyi:48: note:      Superclass:
+src/sage_categories/sets/power_objects.pyi:48: note:          def __call__(self, *arguments: ElementType) -> ElementType
+src/sage_categories/sets/power_objects.pyi:48: note:      Subclass:
+src/sage_categories/sets/power_objects.pyi:48: note:          def __call__(self, base_set: SetObject?) -> SetObject?
+src/sage_categories/sets/power_objects.pyi:48: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/power_objects.pyi:48: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/power_objects.pyi:51: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/power_objects.pyi:51: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/power_objects.pyi:51: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/power_objects.pyi:54: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/power_objects.pyi:54: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/power_objects.pyi:57: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/power_objects.pyi:57: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/power_objects.pyi:57: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/power_objects.pyi:60: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/power_objects.pyi:60: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/power_objects.pyi:60: error: Variable "sage_categories.sets.category.SetMap" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:11: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:11: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/finite_subsets.pyi:14: error: Variable "sage_categories.sets.category.SetElement" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:14: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/finite_subsets.pyi:14: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:17: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:17: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/finite_subsets.pyi:17: error: Variable "sage_categories.sets.category.SetElement" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:20: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:20: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/finite_subsets.pyi:20: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:23: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:23: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/finite_subsets.pyi:23: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:28: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:28: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/finite_subsets.pyi:32: error: Incompatible types in assignment (expression has type "type[SizedSubsetsObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/sets/finite_subsets.pyi:40: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:40: note: Did you mean "List[...]"?
+src/sage_categories/sets/finite_subsets.pyi:43: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:43: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/finite_subsets.pyi:46: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/sets/finite_subsets.pyi:46: note:      Superclass:
+src/sage_categories/sets/finite_subsets.pyi:46: note:          def __call__(self, *arguments: ElementType) -> ElementType
+src/sage_categories/sets/finite_subsets.pyi:46: note:      Subclass:
+src/sage_categories/sets/finite_subsets.pyi:46: note:          def __call__(self, base_set: SetObject?) -> SetObject?
+src/sage_categories/sets/finite_subsets.pyi:46: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:46: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/finite_subsets.pyi:50: error: Incompatible types in assignment (expression has type "type[FiniteSubsetsObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/sets/finite_subsets.pyi:58: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:58: note: Did you mean "List[...]"?
+src/sage_categories/sets/finite_subsets.pyi:61: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/sets/finite_subsets.pyi:61: note:      Superclass:
+src/sage_categories/sets/finite_subsets.pyi:61: note:          def __call__(self, *arguments: ElementType) -> ElementType
+src/sage_categories/sets/finite_subsets.pyi:61: note:      Subclass:
+src/sage_categories/sets/finite_subsets.pyi:61: note:          def __call__(self, base_set: SetObject?) -> SetObject?
+src/sage_categories/sets/finite_subsets.pyi:61: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:61: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/finite_subsets.pyi:64: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:64: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/finite_subsets.pyi:67: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:67: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/finite_subsets.pyi:67: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:70: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:70: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/finite_subsets.pyi:70: error: Variable "sage_categories.sets.category.SetElement" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:73: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:73: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/finite_subsets.pyi:73: error: Variable "sage_categories.sets.category.SetElement" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:76: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:76: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/finite_subsets.pyi:76: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:79: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:79: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/finite_subsets.pyi:79: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:84: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:84: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/finite_subsets.pyi:87: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:87: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/finite_subsets.pyi:90: error: Variable "sage_categories.sets.category.SetElement" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:90: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/finite_subsets.pyi:94: error: Incompatible types in assignment (expression has type "type[FinitelySupportedFunctionsObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/sets/finite_subsets.pyi:102: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:102: note: Did you mean "List[...]"?
+src/sage_categories/sets/finite_subsets.pyi:105: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/sets/finite_subsets.pyi:105: note:      Superclass:
+src/sage_categories/sets/finite_subsets.pyi:105: note:          def __call__(self, *arguments: ElementType) -> ElementType
+src/sage_categories/sets/finite_subsets.pyi:105: note:      Subclass:
+src/sage_categories/sets/finite_subsets.pyi:105: note:          def __call__(self, index_set: SetObject?, basepoint: SetElement?) -> SetObject?
+src/sage_categories/sets/finite_subsets.pyi:105: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:105: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/sets/finite_subsets.pyi:105: error: Variable "sage_categories.sets.category.SetElement" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:108: error: Variable "sage_categories.sets.category.SetObject" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite_subsets.pyi:108: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:25: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:25: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:28: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:28: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:31: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:31: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:34: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:34: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:34: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:37: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:37: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:37: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:40: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:40: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:43: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:43: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:46: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:46: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:49: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:49: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:52: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:52: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:52: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:55: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:55: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:55: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:58: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:58: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:58: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:61: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:61: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:61: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:64: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:64: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:67: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:67: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:70: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:70: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:73: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:73: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:76: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:76: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:81: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:81: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:86: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:86: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:91: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:91: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:94: error: Variable "sage_categories.posets.category.PosetElement" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:94: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:94: error: Variable "sage_categories.sets.cardinals.CardinalObject" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:104: error: Incompatible types in assignment (expression has type "type[WithBottomObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/posets/finite.pyi:113: error: Incompatible types in assignment (expression has type "type[WithTopObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/posets/finite.pyi:122: error: Incompatible types in assignment (expression has type "type[RankedObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/posets/finite.pyi:131: error: Incompatible types in assignment (expression has type "type[GradedObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/posets/finite.pyi:140: error: Incompatible types in assignment (expression has type "type[FinitePosetObject]", base class "PropertySubcategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/posets/finite.pyi:148: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:148: note: Did you mean "List[...]"?
+src/sage_categories/posets/finite.pyi:158: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/posets/finite.pyi:158: note:      Superclass:
+src/sage_categories/posets/finite.pyi:158: note:          def __call__(self, *arguments: ElementType) -> ElementType
+src/sage_categories/posets/finite.pyi:158: note:      Subclass:
+src/sage_categories/posets/finite.pyi:158: note:          def __call__(self, poset: Poset?) -> Poset?
+src/sage_categories/posets/finite.pyi:158: error: Variable "sage_categories.posets.category.Poset" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:158: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/posets/finite.pyi:161: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:161: note: Did you mean "List[...]"?
+src/sage_categories/posets/finite.pyi:164: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:164: note: Did you mean "List[...]"?
+src/sage_categories/posets/finite.pyi:167: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:167: note: Did you mean "List[...]"?
+src/sage_categories/posets/finite.pyi:170: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:170: note: Did you mean "List[...]"?
+src/sage_categories/posets/finite.pyi:173: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/posets/finite.pyi:173: note: Did you mean "List[...]"?
+src/sage_categories/number_sets/reals.pyi:14: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/number_sets/reals.pyi:14: note: Did you mean "List[...]"?
+src/sage_categories/number_sets/reals.pyi:29: error: Variable "sage_categories.number_sets.reals.RealsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/number_sets/reals.pyi:29: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/number_sets/reals.pyi:34: error: Variable "sage_categories.number_sets.reals.RealsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/number_sets/reals.pyi:34: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/number_sets/rationals.pyi:13: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/number_sets/rationals.pyi:13: note: Did you mean "List[...]"?
+src/sage_categories/number_sets/rationals.pyi:28: error: Variable "sage_categories.number_sets.rationals.RationalsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/number_sets/rationals.pyi:28: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/number_sets/rationals.pyi:33: error: Variable "sage_categories.number_sets.rationals.RationalsCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/number_sets/rationals.pyi:33: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/number_sets/integers.pyi:12: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/number_sets/integers.pyi:12: note: Did you mean "List[...]"?
+src/sage_categories/number_sets/integers.pyi:27: error: Variable "sage_categories.number_sets.integers.IntegersCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/number_sets/integers.pyi:27: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/number_sets/integers.pyi:32: error: Variable "sage_categories.number_sets.integers.IntegersCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/number_sets/integers.pyi:32: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+tests/kernel/test_m5_vertical_witnesses.py:11: error: Module "sage_categories.cat.category" has no attribute "ask"  [attr-defined]
+tests/kernel/test_m5_vertical_witnesses.py:13: error: Module "sage_categories.cat.diagrams" has no attribute "cospan_diagram"  [attr-defined]
+tests/kernel/test_m5_vertical_witnesses.py:32: error: Item "ObjectType" of "ObjectType | Any" has no attribute "is_fully_faithful"  [union-attr]
+tests/kernel/test_m5_vertical_witnesses.py:34: error: Argument 1 to "membership_proposition" of "CategoryDeclaration" has incompatible type "ObjectType | Any"; expected "ElementType"  [arg-type]
+tests/kernel/test_m5_vertical_witnesses.py:87: error: Item "ObjectType" of "ObjectType | Any" has no attribute "inverse_image"  [union-attr]
+tests/kernel/test_m5_vertical_witnesses.py:97: error: Item "ObjectType" of "ObjectType | Any" has no attribute "inverse_image"  [union-attr]
+tests/kernel/test_m5_vertical_witnesses.py:125: error: Item "ObjectType" of "ObjectType | Any" has no attribute "inverse_image"  [union-attr]
+tests/kernel/test_m3_properties_queries_refinement.py:17: error: Module "sage_categories.cat.category" has no attribute "Axiom"  [attr-defined]
+tests/kernel/test_m3_properties_queries_refinement.py:17: error: Module "sage_categories.cat.category" does not explicitly export attribute "Predicate"  [attr-defined]
+tests/kernel/test_m3_properties_queries_refinement.py:17: error: Module "sage_categories.cat.category" does not explicitly export attribute "Proposition"  [attr-defined]
+tests/kernel/test_m3_properties_queries_refinement.py:17: error: Module "sage_categories.cat.category" has no attribute "Query"  [attr-defined]
+tests/kernel/test_m3_properties_queries_refinement.py:17: error: Module "sage_categories.cat.category" has no attribute "ask"  [attr-defined]
+tests/kernel/test_m3_properties_queries_refinement.py:17: error: Module "sage_categories.cat.category" has no attribute "assume"  [attr-defined]
+tests/kernel/test_m3_properties_queries_refinement.py:24: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+tests/kernel/test_m3_properties_queries_refinement.py:30: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_m3_properties_queries_refinement.py:34: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_m3_properties_queries_refinement.py:43: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_m3_properties_queries_refinement.py:48: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_m3_properties_queries_refinement.py:49: error: "CategoryPoint" has no attribute "value"  [attr-defined]
+tests/kernel/test_m3_properties_queries_refinement.py:53: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_m3_properties_queries_refinement.py:55: error: Unexpected keyword argument "category" for "ObjectType"  [call-arg]
+tests/kernel/test_m3_properties_queries_refinement.py:55: error: Unexpected keyword argument "data" for "ObjectType"  [call-arg]
+tests/kernel/test_m3_properties_queries_refinement.py:68: error: Definition of "ElementType" in base class "FullSubcategory" is incompatible with definition in base class "Tiny"  [misc]
+tests/kernel/test_m3_properties_queries_refinement.py:68: error: Definition of "MorphismType" in base class "FullSubcategory" is incompatible with definition in base class "Tiny"  [misc]
+tests/kernel/test_m3_properties_queries_refinement.py:68: error: Definition of "ObjectType" in base class "FullSubcategory" is incompatible with definition in base class "Tiny"  [misc]
+tests/kernel/test_m3_properties_queries_refinement.py:143: error: Item "ObjectType" of "ObjectType | Any" has no attribute "inverse_image"  [union-attr]
+tests/kernel/test_m2_cat_core.py:10: error: Module "sage_categories.cat.diagrams" has no attribute "cospan_diagram"  [attr-defined]
+tests/kernel/test_m2_cat_core.py:14: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_m2_cat_core.py:18: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:19: error: Need type annotation for "_BASE_OBJECT_INITIALIZATIONS" (hint: "_BASE_OBJECT_INITIALIZATIONS: list[<type>] = ...")  [var-annotated]
+tests/kernel/test_m1_sage_runtime.py:20: error: Need type annotation for "_BASE_ELEMENT_INITIALIZATIONS" (hint: "_BASE_ELEMENT_INITIALIZATIONS: list[<type>] = ...")  [var-annotated]
+tests/kernel/test_m1_sage_runtime.py:21: error: Need type annotation for "_BASE_MORPHISM_INITIALIZATIONS" (hint: "_BASE_MORPHISM_INITIALIZATIONS: list[<type>] = ...")  [var-annotated]
+tests/kernel/test_m1_sage_runtime.py:22: error: Need type annotation for "_SELECTED_FUNCTORS" (hint: "_SELECTED_FUNCTORS: dict[<type>, <type>] = ...")  [var-annotated]
+tests/kernel/test_m1_sage_runtime.py:23: error: Need type annotation for "_DIAMOND_TO_LEFT_OBJECT_ACTIONS" (hint: "_DIAMOND_TO_LEFT_OBJECT_ACTIONS: list[<type>] = ...")  [var-annotated]
+tests/kernel/test_m1_sage_runtime.py:24: error: Need type annotation for "_DIAMOND_TO_LEFT_MORPHISM_ACTIONS" (hint: "_DIAMOND_TO_LEFT_MORPHISM_ACTIONS: list[<type>] = ...")  [var-annotated]
+tests/kernel/test_m1_sage_runtime.py:31: error: Need type annotation for "_synthetic_objects" (hint: "_synthetic_objects: dict[<type>, <type>] = ...")  [var-annotated]
+tests/kernel/test_m1_sage_runtime.py:34: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:36: error: "_SyntheticCategoryOperations" has no attribute "ObjectType"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:39: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:42: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:43: error: "_SyntheticCategoryOperations" has no attribute "_elements"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:44: error: "_SyntheticCategoryOperations" has no attribute "_elements"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:48: error: "_SyntheticCategoryOperations" has no attribute "_elements"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:50: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:52: error: "_SyntheticCategoryOperations" has no attribute "MorphismType"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:53: error: "_SyntheticCategoryOperations" has no attribute "morphism_category"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:59: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:60: error: "_SyntheticCategoryOperations" has no attribute "MorphismType"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:61: error: "_SyntheticCategoryOperations" has no attribute "morphism_category"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:67: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:72: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+tests/kernel/test_m1_sage_runtime.py:74: error: Function is missing a type annotation for one or more parameters  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:80: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:83: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:86: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:90: error: Function is missing a type annotation for one or more parameters  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:96: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:100: error: Function is missing a type annotation for one or more parameters  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:106: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:113: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+tests/kernel/test_m1_sage_runtime.py:115: error: Function is missing a type annotation for one or more parameters  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:120: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:124: error: Function is missing a type annotation for one or more parameters  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:129: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:133: error: Function is missing a type annotation for one or more parameters  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:138: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:141: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:149: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:152: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:161: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+tests/kernel/test_m1_sage_runtime.py:163: error: Function is missing a type annotation for one or more parameters  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:168: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:172: error: Function is missing a type annotation for one or more parameters  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:177: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:181: error: Function is missing a type annotation for one or more parameters  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:186: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:189: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:197: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:200: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:209: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+tests/kernel/test_m1_sage_runtime.py:211: error: Function is missing a type annotation for one or more parameters  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:216: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:219: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:223: error: Function is missing a type annotation for one or more parameters  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:228: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:232: error: Function is missing a type annotation for one or more parameters  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:237: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:240: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:243: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:247: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:257: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:260: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:265: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:268: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:384: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+tests/kernel/test_m1_sage_runtime.py:394: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:398: error: "ObjectType" has no attribute "domain"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:398: error: "ObjectType" has no attribute "codomain"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:399: error: "ObjectType" has no attribute "domain"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:399: error: "ObjectType" has no attribute "codomain"  [attr-defined]
+tests/kernel/test_m1_sage_runtime.py:411: error: Need type annotation for "property_category"  [var-annotated]
+tests/kernel/test_m1_sage_runtime.py:424: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+tests/kernel/test_m1_sage_runtime.py:426: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:437: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+tests/kernel/test_m1_sage_runtime.py:439: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_m1_sage_runtime.py:450: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+tests/kernel/test_m1_sage_runtime.py:460: error: Function is missing a return type annotation  [no-untyped-def]
+src/sage_categories/number_sets/positive_integers.py:20: error: Module "sage_categories.number_sets.integers" has no attribute "_is_integer"  [attr-defined]
+src/sage_categories/number_sets/positive_integers.py:41: error: Unsupported operand types for < ("int" and "Hashable")  [operator]
+src/sage_categories/number_sets/positive_integers.py:54: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/number_sets/positive_integers.py:54: note: Did you mean "List[...]"?
+src/sage_categories/number_sets/positive_integers.py:74: error: Variable "sage_categories.number_sets.positive_integers.PositiveIntegersCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/number_sets/positive_integers.py:74: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+src/sage_categories/number_sets/positive_integers.py:93: error: PositiveIntegersCategory.ObjectType? has no attribute "__iter__" (not iterable)  [attr-defined]
+src/sage_categories/number_sets/positive_integers.py:95: error: "ElementType" has no attribute "_point_datum_"  [attr-defined]
+src/sage_categories/number_sets/positive_integers.py:98: error: "Predicate" has no attribute "register_handler"; maybe "register_many"?  [attr-defined]
+src/sage_categories/number_sets/positive_integers.py:106: error: Variable "sage_categories.number_sets.positive_integers.PositiveIntegersCategory.ObjectType" is not valid as a type  [valid-type]
+src/sage_categories/number_sets/positive_integers.py:106: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+/home/dzack/ai-review-ci/justfiles/../tool-configs/mypy-sage.ini: note: unused section(s): [mypy-slop_detector.*], [mypy-fpylll.*], [mypy-tree_sitter_sage.*], [mypy-setuptools.*], [mypy-wheel.*], [mypy-networkx.*], [mypy-tqdm.*], [mypy-IPython.*], [mypy-flowmark.formats.flowmark_markdown]
+Found 858 errors in 38 files (checked 14 source files)
 ERROR: mypy found type errors in project code.
 
 ================================================================================
@@ -74,4 +1361,4 @@ ERROR: mypy found type errors in project code.
   edit ai-review-ci to make the signal disappear.
 
 ================================================================================
-error: recipe `_sage-mypy` failed with exit code 2
+error: recipe `_sage-mypy` failed with exit code 1

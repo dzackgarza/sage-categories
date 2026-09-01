@@ -54,7 +54,7 @@ from sage.misc.cachefunc import cached_function
 import sage_categories.sets.category as _sets
 from sage_categories.cat.constructions import cocone, cocone_apex, cone, cone_apex
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
-from sage_categories.cat.shapes import DiscreteObject, index_set_of
+from sage_categories.cat.shapes import DiscreteCategory, index_set_of
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
 from sage_categories.cat.predicates import ask, conjunction, established, negation
 from sage_categories.kernel.refinement import is_subcategory, refine
@@ -121,7 +121,7 @@ class Family:
         return "(" + ", ".join(repr(self(datum)) for datum in enumeration) + ")"
 
 
-def _index_datum(vertex: DiscreteObject) -> Datum:
+def _index_datum(vertex: DiscreteCategory.ObjectType) -> Datum:
     return vertex.point()._point_datum_()
 
 
@@ -206,7 +206,7 @@ def product_of_sets(diagram: Functor) -> SetObject:
             refine(apex, placement)
 
     @cached_function(key=lambda vertex: (id(vertex), vertex))
-    def projection(vertex: DiscreteObject) -> SetMap:
+    def projection(vertex: DiscreteCategory.ObjectType) -> SetMap:
         index_datum = _index_datum(vertex)
         return sets.construct_morphism(apex, diagram.on_object(vertex), lambda family: family(index_datum))
 
@@ -294,7 +294,7 @@ def coproduct_of_sets(diagram: Functor) -> SetObject:
             refine(apex, placement)
 
     @cached_function(key=lambda vertex: (id(vertex), vertex))
-    def injection(vertex: DiscreteObject) -> SetMap:
+    def injection(vertex: DiscreteCategory.ObjectType) -> SetMap:
         index_datum = _index_datum(vertex)
         return sets.construct_morphism(diagram.on_object(vertex), apex, lambda value: (index_datum, value))
 

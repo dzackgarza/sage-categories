@@ -300,8 +300,10 @@ def _inheritance_projection() -> dict[str, dict[str, tuple[str, ...]]]:
             _declaration_name(declaration)
             for declaration in declared_inheritance(category, role)
         )
-        result.setdefault(surface_name, {})[provider_name] = tuple(
-            name for name in names if name != provider_name
+        entry = tuple(name for name in names if name != provider_name)
+        existing = result.setdefault(surface_name, {}).get(provider_name, ())
+        result[surface_name][provider_name] = tuple(
+            dict.fromkeys(existing + entry)
         )
     return result
 
@@ -315,8 +317,10 @@ def _subtyping_projection() -> dict[str, dict[str, tuple[str, ...]]]:
             _declaration_name(node(target, role).category.local_role_class(node(target, role).role))
             for target in declared_subtyping(category, role)
         )
-        result.setdefault(surface_name, {})[provider_name] = tuple(
-            name for name in names if name != provider_name
+        entry = tuple(name for name in names if name != provider_name)
+        existing = result.setdefault(surface_name, {}).get(provider_name, ())
+        result[surface_name][provider_name] = tuple(
+            dict.fromkeys(existing + entry)
         )
     return result
 

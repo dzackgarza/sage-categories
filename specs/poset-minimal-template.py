@@ -1,22 +1,23 @@
 """Local declarations for the ``Relations()`` and ``Posets()`` design specimen.
 
-``Relations()`` constructs a relation from its subobject ``R -> X * X`` and selects the
-retained first projection ``(X, R) |-> X`` to ``Sets()``. It declares the ``PartialOrder``
-axiom together with the proposition deciding it, applying a new SymPy predicate with its
-exact handlers. ``Posets()`` is ``Relations().PartialOrder()``; the poset class declares
-itself the implementation of that implicit subcategory by selecting its identity functor
-as a structure functor, adds order comparison and monotone maps, and wires no constructor.
+``Relations()`` is sets with additional structure, a structure category: its datum is
+``(X, R <= X * X)``, and it declares its structure functor to ``Sets()``,
+``(X, R) |-> X``, as ``Fun(Relations(), Sets()).Fibrations()()``. It declares the
+``PartialOrder`` axiom together with the private proposition deciding it, applying a new
+SymPy predicate; the kernel generates the public ``R.is_partial_order()``. ``Posets()`` is
+``Relations().PartialOrder()``, its axiom subcategory, and inherits that functor; the poset
+class declares itself the implementation of that implicit subcategory by selecting its
+identity functor as a structure functor, declares its own forgetful structure functor to
+``Sets()`` with its theorem, adds order comparison and monotone maps, and wires no
+constructor.
 """
 
 from __future__ import annotations
 
 from collections.abc import Callable
 
-from sympy import ask
 from sympy.assumptions import Predicate
 from sympy.logic.boolalg import Boolean
-
-from ._relations_sage import sage_is_partial_order
 
 
 class PartialOrderPredicate(Predicate):
@@ -42,16 +43,16 @@ class RelationsCategory(Category):
             self._relation = relation
 
     class ElementType:
-        """Inherit the points of ``X`` through the first projection."""
+        """Inherit the points of ``X`` through the structure functor to ``Sets()``."""
 
     class MorphismType:
         """Implement relation-preserving set maps."""
 
-    def partial_order(self, R: Relations().ObjectType) -> Boolean:
+    def _partial_order(self, R: Relations().ObjectType) -> Boolean:
         """State the proposition deciding membership in ``Relations().PartialOrder()``."""
-        return partial_order_laws(owned_value_atom(R))
+        return partial_order_laws(R)
 
-    PartialOrder = Axiom(partial_order)
+    PartialOrder = Axiom(_partial_order)
 
     def __call__(
         self,
@@ -69,12 +70,12 @@ class RelationsCategory(Category):
         return self(Sets().Subobjects(Sets().Products()(X, X)).from_predicate(predicate))
 
     def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-        """Select the first projection ``(X, R) |-> X`` for inherited set operations.
+        """Declare the forgetful fibration ``(X, R) |-> X`` to ``Sets()``.
 
-        A relation inherits the structure of its set ``X``, so only the first projection
-        is selected. The projection to ``R`` stays an ordinary retained functor.
+        A relation inherits the structure of its set ``X`` through this functor; it
+        computes nothing, so the leaf writes no action for it.
         """
-        return (self.product_projection(0),)
+        return (Fun(Relations(), Sets()).Fibrations()(),)
 
 
 class PosetsCategory(Category):
@@ -95,27 +96,15 @@ class PosetsCategory(Category):
         """Implement monotone maps."""
 
     def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-        """Declare this class the implementation of ``Relations().PartialOrder()``.
+        """Select the identity of ``Relations().PartialOrder()`` and declare ``U``.
 
-        The identity functor of that category is the whole declaration; the kernel
-        constructs its inclusion into ``Relations()``.
+        The identity functor of that category is the whole implementation declaration; the
+        kernel constructs its inclusion into ``Relations()``. The forgetful structure
+        functor ``U: Posets() -> Sets()`` is declared with its theorem, creation of the
+        limits of every discrete shape (poset-products template).
         """
         x = Relations().PartialOrder()
-        return (End_Cat(x).one(),)
-
-
-@partial_order_laws.register(OwnedValueAtom)
-def decide_partial_order(
-    R: OwnedValueAtom,
-    assumptions: Boolean,
-) -> bool | None:
-    """Decide the partial-order laws for exact supported relations.
-
-    The guard asks an exact subquestion; the finite case runs an exhaustive check in the
-    private engine module ``_relations_sage.py``.
-    """
-    match R.owned_value():
-        case relation if ask(relation.ambient_object().is_finite()):
-            return sage_is_partial_order(relation)
-        case _:
-            return None
+        return (
+            End_Cat(x).one(),
+            Fun(Posets(), Sets()).Fibrations().CreatesLimits(Discrete)(),
+        )

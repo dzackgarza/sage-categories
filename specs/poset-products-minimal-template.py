@@ -1,23 +1,31 @@
 """Local declarations for the poset-product design specimen, a universal-construction realization.
 
-``U: Posets() -> Sets()`` is the retained composite of the inclusion into ``Relations()``
-with the first projection, ``(X, R) |-> X``. The poset leaf states once that ``U`` creates
-the limits of every discrete shape, by placing ``U`` in
-``Fun(Posets(), Sets()).CreatesLimits(Discrete)``: a functor's theorem is the property
-subcategory it is constructed into. The generic creates-limits construction then supplies
-the lifted cone, its monotone projections, and the universal morphism, and
-``Posets().Products()(P, Q)`` is inherited from ``Cat``. The leaf writes no product code.
+``Posets()`` is sets with additional structure, a structure category, so the poset leaf
+defines its own functors to the categories it inherits methods from. Its forgetful
+structure functor ``U: Posets() -> Sets()``, ``(X, R) |-> X``, computes nothing. The leaf
+declares it as the zero-argument call on the property subcategory of
+``Fun(Posets(), Sets())`` that states everything known about it: a fibration that creates
+the limits of every discrete shape. A functor's theorem is the property subcategory it is
+constructed into. The generic creates-limits construction then supplies the lifted cone,
+its monotone projections, and the universal morphism, and ``Posets().Products()(P, Q)`` is
+inherited from ``Cat``. The leaf writes no product code.
 """
 
 from __future__ import annotations
 
-from sympy import assume
 
+class PosetsCategory(Category):
+    """Implement ``Relations().PartialOrder()``: declare the forgetful functor with its theorem."""
 
-U = Relations().product_projection(0) * Fun(Posets(), Relations()).Monomorphisms().Isofibrations().Full()()
+    def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
+        """Select the identity of ``Relations().PartialOrder()`` and declare ``U``.
 
-# The componentwise-order theorem: the apex of the lifted set-product cone carries the
-# order ``x <= y`` iff ``x_i <= y_i`` for every ``i``, and applying ``U`` to the lifted
-# cone returns the selected set-product cone. ``U`` is already constructed, so the
-# statement refines it into ``Fun(Posets(), Sets()).CreatesLimits(Discrete)``.
-assume(U.is_limit_creating(Discrete))
+        The componentwise-order theorem: the apex of the lifted set-product cone carries the
+        order ``x <= y`` iff ``x_i <= y_i`` for every ``i``, and applying ``U`` to the lifted
+        cone returns the selected set-product cone. ``CreatesLimits(Discrete)`` states it.
+        """
+        x = Relations().PartialOrder()
+        return (
+            End_Cat(x).one(),
+            Fun(Posets(), Sets()).Fibrations().CreatesLimits(Discrete)(),
+        )

@@ -98,7 +98,7 @@ The codomain and retained product projections determine `X`.
 The caller does not repeat `X`.
 `Relations()` owns this constructor, and `Posets() = Relations().PartialOrder()` has exactly the same constructors (D147, D150).
 
-The [poset template](poset-minimal-template.py) shows this constructor, the axiom, and the retained first projection to `Sets()`.
+The [poset template](poset-minimal-template.py) shows this constructor, the axiom, and the structure functor `Fun(Relations(), Sets()).Fibrations()()` to `Sets()`.
 
 ## Structure functors
 
@@ -143,10 +143,12 @@ A subcategory inclusion computes nothing.
 The leaf declares it as `Fun(S, T).Monomorphisms().Isofibrations()()`, the zero-argument
 call on the property category of `Fun(S, T)`, and writes no action (D10, D11, D146;
 [functor.md](functor.md#declaring-one)).
-A point functor is `D.Point()`, an arrow `* -> D`: a leaf class whose sole object is `X`
-places `X` in `D` by adding `D.Point()` to its structure functors, which gives `X` the
-`D.ObjectType` inheritance and `X.ObjectType` the `D.ElementType` inheritance (D154;
-[functor.md](functor.md#point-categories-and-point-functors)).
+A point functor is `D.Point()`, an arrow `* -> D`: a named object `X` is a leaf class, a
+new category, which registers itself as a point in `D` by adding `D.Point()` to its
+structure functors; `X` then inherits `D.ObjectType` and `X.ObjectType` inherits
+`D.ElementType` (D154, D161; [functor.md](functor.md#point-categories-and-point-functors)).
+A structure category, sets with additional structure, defines its own functors to the categories it inherits methods from (D161).
+A structure functor that computes nothing is declared as the zero-argument call on the property subcategory of `Fun(C, D)` that states everything known about it, such as `Fun(Relations(), Sets()).Fibrations()()` and `Fun(Posets(), Sets()).Fibrations().CreatesLimits(Discrete)()` (D146, D158, D160).
 The leaf selects a projection retained by its defining construction (`POL-LEAF-071`), by the named method of that construction: `C.CosliceUnder(X).projection()`, `Fun(I, C).ev(i)`, `P.product_projection(i)`; a composite is `G * F` (D157; [functor.md](functor.md#selecting-a-retained-functor)).
 A leaf states a theorem about a functor by constructing that functor into the property subcategory of `Fun(C, D)` that names it, such as `Fun(C, D).CreatesLimits(I)` (D158; [functor.md](functor.md#diagram-shapes-and-universal-constructions)).
 
@@ -168,7 +170,7 @@ A leaf reuses that data and states only its added structure or theorem.
 Examples include:
 
 - a pullback-defined category selects the retained pullback projections ([finite-poset template](finite-poset-minimal-template.py));
-- a category of structured pairs selects the relevant product projections ([poset template](poset-minimal-template.py));
+- a structure category declares its forgetful structure functor as the zero-argument call on the property subcategory of `Fun(C, Sets())` that states everything known about it ([poset template](poset-minimal-template.py));
 - a chosen-datum fibration selects the retained coslice projection composed with evaluation ([pointed-sets template](pointed-sets-minimal-template.py));
 - a subcategory selects its retained monomorphism;
 - a lifted limit reuses the selected cone and universal morphism ([poset-products template](poset-products-minimal-template.py));

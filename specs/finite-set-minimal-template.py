@@ -1,10 +1,10 @@
 """Finite-set design specimen for the axiom declaration contract.
 
 This pseudocode shows only the declarations owned by ``Sets()`` for its ``Finite`` axiom.
-The proposition deciding membership in ``Sets().Finite()`` uses methods that already exist
-on ``Sets()``; ``Sets().Finite()`` exists implicitly, and the kernel constructs its
-structure functor to ``Sets()`` and generates ``X.is_finite()``. A class implementing an
-axiom subcategory appears in the poset and finite-poset templates.
+The private proposition deciding membership in ``Sets().Finite()`` uses methods that
+already exist on ``Sets()``; ``Sets().Finite()`` exists implicitly, and the kernel
+constructs its structure functor to ``Sets()`` and generates the public ``X.is_finite()``.
+A class implementing an axiom subcategory appears in the poset and finite-poset templates.
 """
 
 from __future__ import annotations
@@ -24,8 +24,8 @@ class SetsCategory(Category):
     class MorphismType:
         """Implement total set maps."""
 
-    def finite(self, X: Sets().ObjectType) -> Boolean:
+    def _finite(self, X: Sets().ObjectType) -> Boolean:
         """State the proposition deciding membership in ``Sets().Finite()``."""
         return X.cardinality() < aleph0
 
-    Finite = Axiom(finite)
+    Finite = Axiom(_finite)

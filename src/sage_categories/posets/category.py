@@ -11,7 +11,7 @@ from sage.rings.integer import Integer
 from sage.structure.coerce_dict import MonoDict
 
 from sage_categories.cat.category import Category
-from sage_categories.cat.constructions import ProductsCategory, cone
+from sage_categories.cat.constructions import cone
 from sage_categories.cat.diagrams import sequence_position
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.properties import PropertySubcategory
@@ -258,10 +258,7 @@ def _square(relation: CategoryOfCategories.ElementType) -> SetObject:
     that object owns the projections and the mediator (POL-CAT-046, POL-FUN-019).
     """
     square = relation.underlying_set()
-    placement = square.category()
-    assert any(
-        isinstance(root, ProductsCategory) for root in (placement, *placement.narrowing_roots())
-    ), f"{relation!r} is not a chosen subset of a chosen product"
+    assert is_placed(square, Sets().Products()), f"{relation!r} is not a chosen subset of a chosen product"
     return square
 
 

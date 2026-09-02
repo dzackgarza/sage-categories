@@ -245,8 +245,17 @@ class Axiom:
     ``Finite = Axiom()`` in the body of ``SetsCategory`` gives every value of that class
     the accessor ``Finite()``, whose value is the property subcategory ``Sets().Finite()``.
     A category ``D`` declared as a subcategory of ``C`` derives ``D.Finite()`` from that
-    one declaration, as the narrowing of ``D`` by ``C.Finite()``; it states no class,
-    predicate, constructor, or transport of its own (POL-CAT-084).
+    one declaration, as the inverse image of ``C.Finite()`` along its subcategory
+    monomorphism; it states no class, predicate, constructor, or transport of its own
+    (POL-CAT-084, D83).
+
+    A regressive functorial construction is an axiom too: ``X`` is a chosen product
+    exactly when it lies in the image of the nontrivial product functor, so ``Products``,
+    ``Coproducts``, ``Limits``, and ``Colimits`` are declared once on the base category
+    class and every category receives them (D31, D89; Sage
+    ``RegressiveCovariantConstructionCategory``, ``sage/categories/covariant_functorial_construction.py``,
+    inspected 2026-09-02).  An axiom may take parameters, ``C.Limits(J)``, and its
+    subcategory is retained once per category and parameter values.
 
     ``full_subcategory_of`` lists the categories ``C.P()`` is a full subcategory of beyond
     its ambient, by their axioms; each is recorded on the constructed subcategory as the
@@ -278,7 +287,8 @@ class Axiom:
     def __init__(self, full_subcategory_of: tuple[Axiom, ...] = ()) -> None:
         self._full_subcategory_of = full_subcategory_of
         self._implementation: type[PropertySubcategory] | None = None
-        self._constructed: MonoDict = MonoDict()
+        # Retained per category and parameter values, by identity (POL-SAGE-013).
+        self._constructed: dict[tuple[tuple[int, Category], ...], Category] = {}
 
     def __set_name__(self, declaring_class: type[Category], name: str) -> None:
         self._declaring_class = declaring_class
@@ -326,22 +336,23 @@ class Axiom:
         )
         self._implementation = implementation
 
-    def subcategory(self, category: Category) -> Category:
-        """``category.P()``: one property subcategory per category value."""
-        if category not in self._constructed:
-            self._constructed[category] = self._construct(category)
-        return self._constructed[category]
+    def subcategory(self, category: Category, *parameters: Category) -> Category:
+        """``category.P(*parameters)``: one property subcategory per category and parameter values."""
+        key = tuple((id(value), value) for value in (category, *parameters))
+        if key not in self._constructed:
+            self._constructed[key] = self._construct(category, *parameters)
+        return self._constructed[key]
 
-    def _construct(self, category: Category) -> Category:
-        """The narrowing of a declared subcategory, else the implementation of this axiom."""
+    def _construct(self, category: Category, *parameters: Category) -> Category:
+        """The inverse image along a declared subcategory's monomorphism, else the implementation of this axiom."""
         if category.has_ambient():
             defining_functor = category.subcategory_monomorphism()
-            return defining_functor.inverse_image(self._declared_on(defining_functor.codomain()))
+            return defining_functor.inverse_image(self._declared_on(defining_functor.codomain(), *parameters))
         containing = tuple(axiom._declared_on(category) for axiom in self._full_subcategory_of)
-        return (self._implementation or _property_subcategory())(category, self._name, containing)
+        return (self._implementation or _property_subcategory())(category, self._name, containing, *parameters)
 
-    def _declared_on(self, category: Category) -> Category:
-        """``category.P()``, through the accessor that category declares for this axiom.
+    def _declared_on(self, category: Category, *parameters: Category) -> Category:
+        """``category.P(*parameters)``, through the accessor that category declares for this axiom.
 
         A category can build the subcategory itself -- ``Fun`` builds its property
         categories eagerly, before any of them can be constructed on demand -- and that
@@ -349,7 +360,7 @@ class Axiom:
         category writes, exactly as a role is (``Category.local_role_class``,
         POL-KERNEL-028), so this reads the declaration rather than probing for it.
         """
-        return getattr(category, self._name)()
+        return getattr(category, self._name)(*parameters)
 
     def __repr__(self) -> str:
         return f"{self._declaring_class.__name__}.{self._name}"

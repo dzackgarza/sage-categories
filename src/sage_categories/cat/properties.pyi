@@ -5,9 +5,11 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Predicate, Proposition
+from typing import ClassVar
 __all__ = ['FullSubcategory', 'InverseImageSubcategory', 'inverse_image', 'PropertySubcategory', 'PredicateSubcategory', 'NarrowedProperty', 'FixedEndpointProperty']
 
 class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, TwoMorphismData]):
+    _constructs_from_diagrams: ClassVar[bool]
 
     class ObjectType:
         ...

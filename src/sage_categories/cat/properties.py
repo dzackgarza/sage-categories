@@ -38,9 +38,9 @@ from sage.misc.cachefunc import cached_method
 
 from sage_categories.cat.category import Category
 from sage_categories.cat.predicates import Decision
-from sage_categories.cat.predicates import Axiom, Predicate, Proposition, property_predicate, register_handler
-from sage_categories.kernel.refinement import is_subcategory, refine
-from sage_categories.kernel.roles import CategoryPoint
+from sage_categories.cat.predicates import Axiom, Predicate, Proposition, ask, property_predicate, register_handler
+from sage_categories.kernel.refinement import is_subcategory, refine, traces_placement
+from sage_categories.kernel.roles import CategoryPoint, Role, role_of
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -114,6 +114,11 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
         stated here.
         """
 
+    # A construction family is the image of a construction functor and constructs its
+    # objects from diagrams; a property subcategory only admits objects of its ambient.
+    # A narrowing constructs through the one root that constructs.
+    _constructs_from_diagrams: ClassVar[bool] = False
+
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData]) -> None:
         self._ambient = ambient
         super().__init__()
@@ -185,6 +190,14 @@ class InverseImageSubcategory[**MorphismData, **TwoMorphismData](FullSubcategory
         return _functors().full_subcategory_monomorphism(self, self._ambient)
 
     def target_projection(self) -> Functor:
+        """The restriction of ``F`` to ``P``, the second projection of the retained pullback.
+
+        It is the pullback of ``F`` along ``P -> C``.  Monomorphisms of ``Cat`` and
+        isofibrations are each stable under pullback (nLab, "canonical model structure on
+        Cat", https://ncatlab.org/nlab/show/canonical+model+structure+on+Cat, inspected
+        2026-09-02), so when ``F`` is declared a subcategory monomorphism this projection
+        is one too, and placement traces through the square (POL-FUN-036).
+        """
         if self._target_projection is None:
             target = self._target_subcategory
             defining = self._functor
@@ -197,7 +210,10 @@ class InverseImageSubcategory[**MorphismData, **TwoMorphismData](FullSubcategory
                 refine(image, target.morphism_category(1))
                 return image
 
-            self._target_projection = _functors()(self, target)(on_object, on_morphism)
+            projections = _functors()(self, target)
+            if traces_placement(defining):
+                projections = projections.Monomorphisms().Isofibrations()
+            self._target_projection = projections(on_object, on_morphism)
         return self._target_projection
 
     def structure_functors(self) -> tuple[Functor, ...]:
@@ -225,12 +241,28 @@ def inverse_image(functor: Functor, target_subcategory: Category) -> Category:
     This is a chosen pullback in ``Cat`` whose source projection is identity on the
     values of ``D``.  The mediator is therefore the first leg of any candidate cone,
     refined into the inverse-image subcategory.
+
+    Along a declared subcategory monomorphism ``D -> C`` the pullback is the narrowing
+    of ``D`` by ``P`` (POL-CAT-084): one category, the placement the kernel joins with,
+    whose monomorphisms into ``D`` and into ``P`` are the two projections.
     """
     from sage_categories.cat.functors import Cat
 
     key = (functor, target_subcategory, Cat())
     if key in _inverse_images:
         return _inverse_images[key]
+
+    if traces_placement(functor):
+        narrowing = functor.domain().property_subcategory(target_subcategory)
+        functors = _functors()
+        retain_inverse_image(
+            functor,
+            target_subcategory,
+            narrowing,
+            functors.full_subcategory_monomorphism(narrowing, functor.domain()),
+            functors.full_subcategory_monomorphism(narrowing, target_subcategory),
+        )
+        return narrowing
 
     result = InverseImageSubcategory(functor, target_subcategory)
     retain_inverse_image(
@@ -549,9 +581,25 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
         return proposition
 
     def __call__(self, value: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-        assert value in self._ambient, f"{value!r} is not an object of {self._ambient!r}"
-        refine(value, self)
-        return value
+        """Admit an object of the base, or construct through the one root and admit the result.
+
+        ``D.P()(diagram)`` constructs in ``C.P()``, which reads a diagram into ``D``
+        through the subcategory monomorphism.  The result lies in ``D`` by the evidence
+        ``D``'s own predicates supply -- the theorem that the construction restricts to
+        the subcategory (D104) -- and then enters this narrowing.
+        """
+        if role_of(value) is Role.OBJECT:
+            assert value in self._ambient, f"{value!r} is not an object of {self._ambient!r}"
+            refine(value, self)
+            return value
+        (root,) = tuple(root for root in self._roots if root._constructs_from_diagrams)
+        constructed = root(value)
+        assert ask(self.membership_proposition(constructed)) is True, (
+            f"{root!r} constructed {constructed!r}, which is not established to lie in {self!r}; "
+            f"the restriction of {root.name()} to this subcategory needs its theorem"
+        )
+        refine(constructed, self)
+        return constructed
 
     def __repr__(self) -> str:
         return f"{self._ambient!r}." + ".".join(f"{root.name()}()" for root in self._roots)

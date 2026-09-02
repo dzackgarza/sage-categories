@@ -204,6 +204,21 @@ def test_binary_product_exists() -> None:
     assert repr(prod) == "{(0, 'a'), (0, 'b'), (0, 'c'), (1, 'a'), (1, 'b'), (1, 'c')}"
 
 
+def test_finite_product_is_the_root_product_placed_in_the_finite_family() -> None:
+    """A product of finite sets is chosen once by ``Sets().Products()`` and lies in ``Sets().Finite().Products()``, the inverse image of that family."""
+    from sage_categories.kernel.refinement import is_placed
+
+    S = _get_sets()
+    A = S.Finite()((0, 1))
+    B = S.Finite()(('a', 'b', 'c'))
+    prod = A * B
+    assert prod is S.Products()((A, B))
+    assert is_placed(prod, S.Products())
+    assert is_placed(prod, S.Finite())
+    assert S.Finite().Products() is S.Finite().subcategory_monomorphism().inverse_image(S.Products())
+    assert is_placed(prod, S.Finite().Products())
+
+
 def test_binary_product_projections() -> None:
     """The projections pi_i: A x B -> A, pi_j: A x B -> B are set morphisms."""
     S = _get_sets()

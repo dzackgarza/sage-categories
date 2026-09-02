@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from inspect import get_annotations, signature
-from typing import get_origin
+from typing import TYPE_CHECKING, get_origin
 
 from sage.misc.unknown import Unknown
 from sage.structure.coerce_dict import MonoDict
@@ -27,6 +27,9 @@ from sage_categories.cat.predicates import (
 from sage_categories.kernel.compiler import install_on_declaration
 from sage_categories.kernel.refinement import is_placed, refine
 from sage_categories.kernel.roles import CategoryPoint, Role, category_of, role_of
+
+if TYPE_CHECKING:
+    from sage_categories.cat.category import Category
 
 
 class _OwnedValueAtom(AtomicExpr):
@@ -230,20 +233,45 @@ def assume_property(proposition: Proposition) -> None:
         refine(argument, category)
 
 
-def axiom_application_owner(axiom: Axiom) -> type[CategoryPoint]:
-    declaring_class = axiom._declaring_class
-    assert hasattr(declaring_class, Role.OBJECT.value)
-    declared = getattr(declaring_class, Role.OBJECT.value)
-    assert declared is not None
-    return declared
+def axiom_application_owner(axiom: Axiom) -> type[CategoryPoint] | None:
+    """The object declaration of the declaring category class, or ``None`` for the base class.
+
+    The base category class declares no object role of its own: the objects of an
+    arbitrary category are the points of ``Cat()`` (POL-CAT-058), whose declaration is
+    written after the base class exists, so its axioms install when that declaration
+    is created (``install_base_axiom_applications``).
+    """
+    for declaring in axiom._declaring_class.__mro__:
+        declared = vars(declaring).get(Role.OBJECT.value)
+        if declared is not None:
+            return declared
+    return None
+
+
+_base_axioms: list[Axiom] = []
 
 
 def install_axiom_application(axiom: Axiom) -> None:
-    name, owner = axiom.application_name(), axiom_application_owner(axiom)
+    owner = axiom_application_owner(axiom)
+    if owner is None:
+        _base_axioms.append(axiom)
+        return
+    _install_application(axiom, owner)
 
-    def application(value: CategoryPoint) -> Proposition:
+
+def install_base_axiom_applications(owner: type[CategoryPoint]) -> None:
+    """Install the applications of the axioms declared on the base category class onto the objects of every category."""
+    for axiom in _base_axioms:
+        _install_application(axiom, owner)
+    _base_axioms.clear()
+
+
+def _install_application(axiom: Axiom, owner: type[CategoryPoint]) -> None:
+    name = axiom.application_name()
+
+    def application(value: CategoryPoint, *parameters: Category) -> Proposition:
         placement = category_of(value, role_of(value)).narrowing_base()
-        return axiom._declared_on(placement).membership_proposition(value)
+        return axiom._declared_on(placement, *parameters).membership_proposition(value)
 
     application.__name__ = name
     application.__qualname__ = f"{owner.__name__}.{name}"

@@ -48,7 +48,7 @@ from typing import TYPE_CHECKING
 
 from sage.structure.coerce_dict import MonoDict
 
-from sage_categories.cat.category import Category
+from sage_categories.cat.category import Category, member
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.cones import (
     ConeCategory,
@@ -63,9 +63,9 @@ from sage_categories.cat.cones import (
 )
 from sage_categories.cat.diagrams import from_sequence
 from sage_categories.cat.dual_functor_categories import dual_functor_category_equivalence
-from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
+from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.properties import FullSubcategory, PredicateSubcategory
+from sage_categories.cat.properties import PredicateSubcategory, PropertySubcategory
 from sage_categories.cat.predicates import Unknown
 from sage_categories.cat.predicates import Proposition, ask
 from sage_categories.kernel.refinement import is_subcategory, refine
@@ -81,10 +81,8 @@ __all__ = [
     "ProductsCategory",
     "cocone",
     "cocone_apex",
-    "colimits",
     "cone",
     "cone_apex",
-    "limits",
     "presenting_family",
     "vertex_of",
 ]
@@ -139,22 +137,26 @@ def presenting_family(constructed: CategoryOfCategories.ElementType) -> Category
     raise AssertionError(f"{constructed!r} is in no construction family of {placement!r}")
 
 
+def family_owner(category: Category) -> Category:
+    """The category whose construction families retain universal data: the root of the declared-subcategory chain.
+
+    A declared subcategory's family is the narrowing of the root's family (D31, D83), so
+    the universal data of every apex lives at the root.
+    """
+    owner = category.narrowing_base()
+    while owner.has_ambient():
+        owner = owner.ambient()
+    return owner
+
+
 def product_presenting_family(constructed: CategoryOfCategories.ElementType) -> Category:
-    """Return the shape-specific limit family that presents one product apex."""
-    placement = constructed.category()
-    for candidate in (placement, *placement.narrowing_roots()):
-        if isinstance(candidate, ProductsCategory):
-            return candidate.presenting_family(constructed)
-    raise AssertionError(f"{constructed!r} is in no product family")
+    """The shape-specific limit family that presents one product apex."""
+    return family_owner(constructed.category()).Products().presenting_family(constructed)
 
 
 def coproduct_presenting_family(constructed: CategoryOfCategories.ElementType) -> Category:
-    """Return the shape-specific colimit family that presents one coproduct apex."""
-    placement = constructed.category()
-    for candidate in (placement, *placement.narrowing_roots()):
-        if isinstance(candidate, CoproductsCategory):
-            return candidate.presenting_family(constructed)
-    raise AssertionError(f"{constructed!r} is in no coproduct family")
+    """The shape-specific colimit family that presents one coproduct apex."""
+    return family_owner(constructed.category()).Coproducts().presenting_family(constructed)
 
 
 # -- construction families --------------------------------------------------------------------
@@ -166,15 +168,18 @@ def coproduct_presenting_family(constructed: CategoryOfCategories.ElementType) -
 # and the kernel compiles a class per family (POL-API-025, POL-KERNEL-028).
 
 
-class ApexCategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):
-    """``C.Products()`` and ``C.Limits(I)``: full subcategories of ``C`` on chosen apexes.
+class ApexCategory[**MorphismData, **TwoMorphismData](PropertySubcategory[MorphismData, TwoMorphismData]):
+    """``C.Limits(I)``: the property subcategory of ``C`` on chosen apexes, an axiom implementation.
 
     Its objects are the constructed objects themselves and its morphisms are the
     morphisms of ``C`` between them; its one selected functor is the retained
     monomorphism ``Fun(P, C).Monomorphisms().Isofibrations().Full()()``, identity on values
     (POL-CAT-046, POL-FUN-019).  The family retains the universal data of each
-    diagram it constructed from.
+    diagram it constructed from, and a constructed apex enters by placement, which
+    is how the axiom's predicate decides membership (D97).
     """
+
+    _constructs_from_diagrams = True
 
     # An apex is a value of ``C``, not a wrapper around one, and the family's
     # monomorphism is identity on values.  A subclass nests its own ``ObjectType`` for
@@ -188,13 +193,22 @@ class ApexCategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismDa
     class MorphismType:
         """A morphism of ``C`` between two chosen apexes."""
 
-    def __init__(self, ambient: Category[MorphismData, TwoMorphismData]) -> None:
+    def __init__(
+        self,
+        ambient: Category[MorphismData, TwoMorphismData],
+        name: str,
+        full_subcategory_of: tuple[Category, ...],
+    ) -> None:
         self._data: MonoDict = MonoDict()
         self._constructed: MonoDict = MonoDict()
         self._source_diagrams: MonoDict = MonoDict()
         self._lowered: MonoDict = MonoDict()
         self._image_factor: Functor | None = None
-        super().__init__(ambient)
+        super().__init__(ambient, name, full_subcategory_of)
+
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
+        """Membership in a construction family is established placement, two-valued: the family is the full image of its construction (POL-CAT-068)."""
+        return member(candidate, self)
 
     # -- the diagrams this family accepts ----------------------------------------------
 
@@ -286,6 +300,8 @@ class ApexCategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismDa
 class LimitsCategory(ApexCategory):
     """``C.Limits(I)``: chosen limits of diagrams of one shape ``I``."""
 
+    _base_category_class_and_axiom = (Category, "Limits")
+
     # A point of a chosen limit is a cone over the diagram with apex ``1_C``; the
     # mediator of a cone is a morphism of ``C`` and not a further kind.
     class ElementType:
@@ -297,11 +313,19 @@ class LimitsCategory(ApexCategory):
     class ObjectType:
         """A chosen limit apex. Its limiting presentation is a separate owned cone."""
 
-    def __init__(self, ambient: Category, shape: Category) -> None:
+    def __init__(
+        self,
+        ambient: Category,
+        name: str,
+        full_subcategory_of: tuple[Category, ...],
+        shape: Category,
+    ) -> None:
+        assert shape in Cat(), f"{shape!r} is not a shape"
         self._shape = shape
         self._limit_functor: MonoDict = MonoDict()
         self._limit_adjunction: CategoryOfCategories.ElementType | None = None
-        super().__init__(ambient)
+        super().__init__(ambient, name, full_subcategory_of)
+        self.limit_functor()
 
     def shape(self) -> Category:
         return self._shape
@@ -377,6 +401,9 @@ class LimitsCategory(ApexCategory):
 class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
     """``C.Products()``: the union of full images of the known nontrivial discrete limit functors."""
 
+    _base_category_class_and_axiom = (Category, "Products")
+    _constructs_from_diagrams = True
+
     # A point of a chosen product is a family of points, one into each factor.
     class ElementType:
         """A point of a chosen product: a family of points, one into each factor."""
@@ -410,9 +437,9 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
             presentation = product_presenting_family(self).presentation(self)
             return presentation.lift(cones(presentation.diagram())(candidate_cone))
 
-    def __init__(self, ambient: Category) -> None:
+    def __init__(self, ambient: Category, name: str, full_subcategory_of: tuple[Category, ...]) -> None:
         self._candidate_families: list[LimitsCategory] = []
-        super().__init__(ambient, "Products", ())
+        super().__init__(ambient, name, full_subcategory_of)
 
     def retain_full_image(self, family: Category) -> None:
         assert isinstance(family, LimitsCategory)
@@ -521,8 +548,11 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
         return f"{self.ambient()!r}.Products()"
 
 
-class ColimitsCategory(FullSubcategory[[MorphismCategory.ObjectType], []]):
+class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
     """``C.Colimits(I)``: the public opposite view of ``C.op().Limits(I.op())``."""
+
+    _base_category_class_and_axiom = (Category, "Colimits")
+    _constructs_from_diagrams = True
 
     class ElementType:
         """A point of a chosen colimit."""
@@ -566,14 +596,26 @@ class ColimitsCategory(FullSubcategory[[MorphismCategory.ObjectType], []]):
             )
             return presentation.lift(cones(presentation.diagram())(candidate)).op()
 
-    def __init__(self, ambient: Category, shape: Category) -> None:
+    def __init__(
+        self,
+        ambient: Category,
+        name: str,
+        full_subcategory_of: tuple[Category, ...],
+        shape: Category,
+    ) -> None:
+        assert shape in Cat(), f"{shape!r} is not a shape"
         self._shape = shape
         self._duality = dual_functor_category_equivalence(shape, ambient)
         self._dual_limits = ambient.op().Limits(shape.op())
         self._lowered: MonoDict = MonoDict()
         self._dual_diagrams: MonoDict = MonoDict()
         self._colimit_functor: Functor | None = None
-        super().__init__(ambient)
+        super().__init__(ambient, name, full_subcategory_of)
+        self.colimit_functor()
+
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
+        """Membership in a construction family is established placement, two-valued (POL-CAT-068)."""
+        return member(candidate, self)
 
     def shape(self) -> Category:
         return self._shape
@@ -707,6 +749,9 @@ class ColimitsCategory(FullSubcategory[[MorphismCategory.ObjectType], []]):
 class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
     """``C.Coproducts()``: the union of nontrivial discrete colimit full images."""
 
+    _base_category_class_and_axiom = (Category, "Coproducts")
+    _constructs_from_diagrams = True
+
     # A point of a chosen coproduct is unconstrained, as for a colimit.  That a point of
     # a disjoint union factors through one injection is a fact about ``Sets()``.
     class ElementType:
@@ -726,9 +771,9 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
             """``iota_i: X_i -> self`` for ``i`` an object of the index category or a datum of the index set (POL-CAT-093)."""
             return coproduct_presenting_family(self).presentation(self).leg(index).op()
 
-    def __init__(self, ambient: Category) -> None:
+    def __init__(self, ambient: Category, name: str, full_subcategory_of: tuple[Category, ...]) -> None:
         self._candidate_families: list[ColimitsCategory] = []
-        super().__init__(ambient, "Coproducts", ())
+        super().__init__(ambient, name, full_subcategory_of)
 
     def retain_full_image(self, family: Category) -> None:
         assert isinstance(family, ColimitsCategory)
@@ -899,18 +944,3 @@ def limit_adjunction(family: Category) -> CategoryOfCategories.ElementType:
     return Adjunctions(diagonal_functor, limit)(unit, counit)
 
 
-# -- the families owned once on ``Category`` (POL-CAT-050) ---------------------------
-
-
-def limits(ambient: Category, shape: Category) -> Category:
-    """``C.Limits(I)``: the full image of the selected limit functor for the shape ``I``."""
-    family = LimitsCategory(ambient, shape)
-    family.limit_functor()
-    return family
-
-
-def colimits(ambient: Category, shape: Category) -> Category:
-    """``C.Colimits(I)``: the public opposite view of ``C.op().Limits(I.op())``."""
-    family = ColimitsCategory(ambient, shape)
-    family.colimit_functor()
-    return family

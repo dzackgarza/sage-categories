@@ -163,6 +163,12 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         runtime; those state no category and are not checked.
         """
         super().__init_subclass__()
+        if cls.__dict__.get(Role.OBJECT.value) is CategoryDeclaration:
+            # ``Cat()``'s declaration: its points are the objects of every category
+            # (POL-CAT-058), the owner of the applications of the base-class axioms.
+            from sage_categories.kernel.predicates import install_base_axiom_applications
+
+            install_base_axiom_applications(cls.__dict__[Role.ELEMENT.value])
         name = cls.__dict__.get("_implements")
         if name is not None:
             Cat().implement(name, cls)
@@ -195,8 +201,6 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         self._points: MonoDict = MonoDict()
         self._arrows: MonoDict = MonoDict()
         self._elements: MonoDict = MonoDict()
-        self._limits: MonoDict = MonoDict()
-        self._colimits: MonoDict = MonoDict()
         self._slices: MonoDict = MonoDict()
         self._coslices: MonoDict = MonoDict()
         self._retained_data: MonoDict = MonoDict()
@@ -580,43 +584,21 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         self._arrows[morphism] = Fun(walking_arrow, self)(on_object, on_morphism)
         return self._arrows[morphism]
 
-    # -- universal constructions, defined once (POL-CAT-050/092, POL-CAT-093) --------
+    # -- universal constructions, declared once (D31, POL-CAT-050/092, POL-CAT-093) --------
     #
-    # Each category owns its construction families. Each family exists for every supplied shape without asserting that the
-    # category has those limits (POL-CAT-051): constructing an object needs an
-    # owned construction or supplied universal data.
-
-    @cached_method
-    def Products(self) -> Category:
-        """The category of chosen products over every discrete shape."""
-        from sage_categories.cat.constructions import ProductsCategory
-
-        return ProductsCategory(self)
-
-    @cached_method
-    def Coproducts(self) -> Category:
-        """The category of chosen coproducts over every discrete shape."""
-        from sage_categories.cat.constructions import CoproductsCategory
-
-        return CoproductsCategory(self)
-
-    def Limits(self, shape: Category) -> Category:
-        """``C.Limits(I)``: chosen limits of diagrams of shape ``I``, one family per shape."""
-        from sage_categories.cat.constructions import limits
-
-        assert shape in Cat(), f"{shape!r} is not a shape"
-        if shape not in self._limits:
-            self._limits[shape] = limits(self, shape)
-        return self._limits[shape]
-
-    def Colimits(self, shape: Category) -> Category:
-        """``C.Colimits(I)``: chosen colimits of diagrams of shape ``I``, one family per shape."""
-        from sage_categories.cat.constructions import colimits
-
-        assert shape in Cat(), f"{shape!r} is not a shape"
-        if shape not in self._colimits:
-            self._colimits[shape] = colimits(self, shape)
-        return self._colimits[shape]
+    # A construction family is a regressive functorial construction, which is an
+    # axiom: ``X`` is in ``C.Products()`` exactly when it lies in the image of the
+    # nontrivial product functor.  Declared here on the base class, every category
+    # receives ``C.Products()``, ``C.Coproducts()``, ``C.Limits(I)``, and
+    # ``C.Colimits(I)`` from the kernel: a declared subcategory as the inverse image
+    # of its ambient's family, any other category as the family's own implementation
+    # (``cat/constructions.py``).  Each family exists for every supplied shape without
+    # asserting that the category has those limits (POL-CAT-051): constructing an
+    # object needs an owned construction or supplied universal data.
+    Products = Axiom()
+    Coproducts = Axiom()
+    Limits = Axiom()
+    Colimits = Axiom()
 
     def Pullbacks(self) -> Category:
         """``C.Limits(L(2, 2))``: limits over the walking cospan."""

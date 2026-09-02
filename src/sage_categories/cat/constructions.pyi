@@ -4,8 +4,8 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.cones import LimitConesCategory, cocone as cocone, cocone_apex as cocone_apex, cone as cone, cone_apex as cone_apex, vertex_of as vertex_of
 from sage_categories.cat.functors import Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.properties import FullSubcategory, PredicateSubcategory
-__all__ = ['cocone', 'cocone_apex', 'cone', 'cone_apex', 'vertex_of', 'presenting_family', 'ApexCategory', 'LimitsCategory', 'ProductsCategory', 'ColimitsCategory', 'CoproductsCategory', 'limits', 'colimits']
+from sage_categories.cat.properties import PredicateSubcategory, PropertySubcategory
+__all__ = ['cocone', 'cocone_apex', 'cone', 'cone_apex', 'vertex_of', 'presenting_family', 'ApexCategory', 'LimitsCategory', 'ProductsCategory', 'ColimitsCategory', 'CoproductsCategory']
 type Mediator = Callable[[NaturalTransformation], MorphismCategory.ObjectType]
 type Construction = Callable[[Functor], 'CategoryOfCategories.ElementType']
 type UniversalPresentation = LimitConesCategory.ObjectType
@@ -13,7 +13,7 @@ type UniversalPresentation = LimitConesCategory.ObjectType
 def presenting_family(constructed: CategoryOfCategories.ElementType) -> Category:
     ...
 
-class ApexCategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):
+class ApexCategory[**MorphismData, **TwoMorphismData](PropertySubcategory[MorphismData, TwoMorphismData]):
 
     class ObjectType:
         ...
@@ -24,7 +24,7 @@ class ApexCategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismDa
     class MorphismType:
         ...
 
-    def __init__(self, ambient: Category[MorphismData, TwoMorphismData]) -> None:
+    def __init__(self, ambient: Category[MorphismData, TwoMorphismData], name: str, full_subcategory_of: tuple[Category, ...]) -> None:
         ...
 
     def accepts(self, diagram: Functor, shape: Category) -> None:
@@ -52,6 +52,7 @@ class ApexCategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismDa
         ...
 
 class LimitsCategory(ApexCategory):
+    _base_category_class_and_axiom: tuple[type[Category], str]
 
     class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
@@ -62,7 +63,7 @@ class LimitsCategory(ApexCategory):
     class ObjectType(sage_categories.cat.category.CategoryDeclaration, sage_categories.kernel.roles.ObjectOfCategory):
         ...
 
-    def __init__(self, ambient: Category, shape: Category) -> None:
+    def __init__(self, ambient: Category, name: str, full_subcategory_of: tuple[Category, ...], shape: Category) -> None:
         ...
 
     def shape(self) -> Category:
@@ -93,6 +94,7 @@ class LimitsCategory(ApexCategory):
         ...
 
 class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
+    _base_category_class_and_axiom: tuple[type[Category], str]
 
     class ElementType:
         ...
@@ -117,7 +119,7 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
         def universal_morphism(self, candidate_cone: NaturalTransformation) -> MorphismCategory.ObjectType:
             ...
 
-    def __init__(self, ambient: Category) -> None:
+    def __init__(self, ambient: Category, name: str, full_subcategory_of: tuple[Category, ...]) -> None:
         ...
 
     def retain_full_image(self, family: Category) -> None:
@@ -144,7 +146,8 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
     def name(self) -> str:
         ...
 
-class ColimitsCategory(FullSubcategory[[MorphismCategory.ObjectType], []]):
+class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
+    _base_category_class_and_axiom: tuple[type[Category], str]
 
     class ElementType:
         ...
@@ -169,7 +172,7 @@ class ColimitsCategory(FullSubcategory[[MorphismCategory.ObjectType], []]):
         def universal_morphism(self, candidate_cocone: NaturalTransformation) -> MorphismCategory.ObjectType:
             ...
 
-    def __init__(self, ambient: Category, shape: Category) -> None:
+    def __init__(self, ambient: Category, name: str, full_subcategory_of: tuple[Category, ...], shape: Category) -> None:
         ...
 
     def shape(self) -> Category:
@@ -218,6 +221,7 @@ class ColimitsCategory(FullSubcategory[[MorphismCategory.ObjectType], []]):
         ...
 
 class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
+    _base_category_class_and_axiom: tuple[type[Category], str]
 
     class ElementType:
         ...
@@ -233,7 +237,7 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
         def coproduct_injection(self, index: CategoryOfCategories.ElementType | Hashable) -> MorphismCategory.ObjectType:
             ...
 
-    def __init__(self, ambient: Category) -> None:
+    def __init__(self, ambient: Category, name: str, full_subcategory_of: tuple[Category, ...]) -> None:
         ...
 
     def retain_full_image(self, family: Category) -> None:
@@ -260,8 +264,3 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
     def name(self) -> str:
         ...
 
-def limits(ambient: Category, shape: Category) -> Category:
-    ...
-
-def colimits(ambient: Category, shape: Category) -> Category:
-    ...

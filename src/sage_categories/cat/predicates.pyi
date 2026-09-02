@@ -107,5 +107,5 @@ class Axiom:
     def implemented_by(self, implementation: type[PropertySubcategory]) -> None:
         ...
 
-    def subcategory(self, category: Category) -> Category:
+    def subcategory(self, category: Category, *parameters: Category) -> Category:
         ...

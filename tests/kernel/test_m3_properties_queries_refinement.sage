@@ -16,7 +16,7 @@ import pytest
 
 from sage_categories.cat.predicates import AppliedQuery, UnknownClass, predicate
 from sage_categories.cat.properties import FullSubcategory, PredicateSubcategory
-from sage_categories.kernel.refinement import is_placed, refine
+from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
 from sage_categories.kernel.roles import CategoryPoint
 
 
@@ -164,12 +164,18 @@ def test_inherited_property_is_the_inverse_image_along_the_defining_functor() ->
     subcategory = TinySubcategory(tiny)
     defining_functor = subcategory.structure_functors()[0]
     inherited = subcategory.Special()
-    assert inherited.defining_functor() is defining_functor
-    assert inherited.target_subcategory() is tiny.Special()
-    assert inherited.subcategory_monomorphism().domain() is inherited
-    assert inherited.subcategory_monomorphism().codomain() is subcategory
-    assert inherited.target_projection().domain() is inherited
-    assert inherited.target_projection().codomain() is tiny.Special()
+    assert inherited is defining_functor.inverse_image(tiny.Special())
+    assert is_subcategory(inherited, subcategory)
+    assert is_subcategory(inherited, tiny.Special())
+
+    presentation = Cat().Pullbacks().presentation(inherited)
+    shape = presentation.diagram().domain()
+    assert presentation.diagram().on_object(shape(0)) is subcategory
+    assert presentation.diagram().on_object(shape(1)) is tiny.Special()
+    assert presentation.transformation().component(shape(0)).domain() is inherited
+    assert presentation.transformation().component(shape(0)).codomain() is subcategory
+    assert presentation.transformation().component(shape(1)).domain() is inherited
+    assert presentation.transformation().component(shape(1)).codomain() is tiny.Special()
 
 
 def test_sympy_owns_each_property_predicate_and_its_handler() -> None:
@@ -206,6 +212,22 @@ def test_each_exact_dispatch_signature_has_one_owning_handler() -> None:
     with pytest.raises(AssertionError):
         marked.register_handler(by_other_rule)
     assert ask(marked(tiny(2))) is True
+
+
+def test_construction_families_are_axioms_applied_by_the_kernel() -> None:
+    """``Products`` and the parameterized ``Limits`` are declared once on the base class; a declared subcategory's family is the inverse image of its ambient's (D31, D89)."""
+    cat = Cat()
+    inhabited = cat.Inhabited()
+    monomorphism = inhabited.subcategory_monomorphism()
+    assert inhabited.Products() is monomorphism.inverse_image(cat.Products())
+    assert is_subcategory(inhabited.Products(), cat.Products())
+    assert is_subcategory(inhabited.Products(), inhabited)
+
+    shape = cat.Simplex(1)
+    assert inhabited.Limits(shape) is monomorphism.inverse_image(cat.Limits(shape))
+    assert cat.Limits(shape) is cat.Limits(shape)
+    assert cat.Limits(shape) is not cat.Limits(cat.Simplex(2))
+    assert is_subcategory(inhabited.Limits(shape), cat.Limits(shape))
 
 
 def test_one_declaration_compiled_at_two_incomparable_nodes_is_one_owner() -> None:

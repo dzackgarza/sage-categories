@@ -512,7 +512,7 @@ A poset is not thereby an object of `Sets()`, and `Posets()` is not thereby a su
 
 A leaf's ordered list of selected structure functors determines what is inherited and in what precedence, the first chosen and coherence assumed (D37, D159, D165); a functor to the same target that is not selected, such as `(X, R) |-> R` for posets, supplies nothing (D164).
 `Posets()` admits two functors to `Sets()` that do not agree, `(X, R) |-> X` and `(X, R) |-> R`.
-The poset leaf selects `(X, R) |-> X`, declared into `Fun(Posets(), Sets()).Fibrations()` (D128, D139), as its structure functor; `(X, R) |-> R` is not selected and supplies nothing. For a lattice `(L, b)`, both projections are selected: the first, to `L`, determines the inheritance, and the second, to `b`, supplies `L.b()`, `L.q()`, and the rest (D165).
+The poset leaf selects `(X, R) |-> X`, declared into `Fun(Posets(), Sets()).Fibrations()` (D128, D139), as its structure functor; `(X, R) |-> R` is not selected and supplies nothing. For a lattice `(L, b)`, both projections are structure functors, declared with the projection to `L` first: a lattice is a module with a bilinear form, so it inherits along `(L, b) |-> L`, while `(L, b) |-> b` gives access to `b`, through which `L.b()` and `L.q()` are reached, and inherits nothing from bilinear forms (D165, D166).
 
 The fixed-endpoint category `Fun(C, D)` owns construction of every functor `C -> D`.
 `Cat()` supplies the categorical calculus but does not construct or choose a leaf-specific

@@ -35,3 +35,39 @@ migration = [
     "libcst>=1.9,<2",
 ]
 platform = ["juliacall>=0.9.35,<0.10"]
+
+# D132: the source dependency directions of specs/system.md, as a hard stop at the push tier.
+[tool.importlinter]
+root_package = "sage_categories"
+
+[[tool.importlinter.contracts]]
+name = "Cat and the kernel import no production leaf"
+type = "forbidden"
+source_modules = ["sage_categories.cat", "sage_categories.kernel"]
+forbidden_modules = [
+    "sage_categories.sets",
+    "sage_categories.posets",
+    "sage_categories.algebra",
+    "sage_categories.number_sets",
+    "sage_categories.ordinals",
+]
+
+[[tool.importlinter.contracts]]
+name = "A leaf imports no kernel internal; kernel.refinement is the placement API"
+type = "forbidden"
+allow_indirect_imports = true
+source_modules = [
+    "sage_categories.sets",
+    "sage_categories.posets",
+    "sage_categories.algebra",
+    "sage_categories.number_sets",
+    "sage_categories.ordinals",
+]
+forbidden_modules = [
+    "sage_categories.kernel.roles",
+    "sage_categories.kernel.compiler",
+    "sage_categories.kernel.construction",
+    "sage_categories.kernel.functor_cache",
+    "sage_categories.kernel.predicates",
+    "sage_categories.kernel.stub_generator",
+]

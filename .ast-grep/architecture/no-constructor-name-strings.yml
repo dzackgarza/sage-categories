@@ -1,0 +1,18 @@
+id: no-constructor-name-strings
+language: python
+severity: error
+files:
+  - src/sage_categories/**/*.py
+ignores:
+  - src/sage_categories/kernel/**
+message: >-
+  D132 / POL-MATH-031 and POL-MATH-045: a category, property, or construction is
+  named by its declaration, never by a string passed through a constructor. A
+  string literal inside `super().__init__(...)` is runtime metadata that repeats a
+  declared fact; move the fact to the declaration and delete the argument.
+rule:
+  pattern: super().__init__($$$ARGS)
+  has:
+    kind: argument_list
+    has:
+      kind: string

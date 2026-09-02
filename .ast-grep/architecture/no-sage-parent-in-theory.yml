@@ -1,0 +1,19 @@
+id: no-sage-parent-in-theory
+language: python
+severity: error
+files:
+  - src/sage_categories/**/*.py
+ignores:
+  - src/sage_categories/kernel/**
+message: >-
+  D132 / POL-SHADOW-004 and specs/resolution.md "Acceptance conditions": the
+  private Sage implementation graph stays inside the kernel. A theory module
+  declares `ObjectType`, `ElementType`, and `MorphismType` for the kernel to
+  compile; it never subclasses Sage `Parent`, `Element`, or `ElementWrapper`.
+rule:
+  kind: class_definition
+  has:
+    kind: argument_list
+    has:
+      kind: identifier
+      regex: ^(Parent|Element|ElementWrapper)$

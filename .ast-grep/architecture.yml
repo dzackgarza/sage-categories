@@ -1,0 +1,4 @@
+# D132 architecture invariants, run by `just architecture` at the push tier.
+# Each rule names the specification line it enforces.
+ruleDirs:
+  - architecture

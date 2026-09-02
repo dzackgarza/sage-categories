@@ -1,0 +1,17 @@
+id: no-sage-category-graph
+language: python
+severity: error
+files:
+  - src/sage_categories/**/*.py
+message: >-
+  D132 / POL-SCOPE-012 and specs/system.md "Dependency directions": the owned
+  `Cat()` graph is entirely new and never imports Sage's mathematical category
+  graph. Only the kernel's `Category` base and the axiom-name helper come from
+  `sage.categories`. Construct the owned category instead.
+rule:
+  all:
+    - pattern: from sage.categories.$MOD import $$$
+    - not:
+        any:
+          - pattern: from sage.categories.category import $$$
+          - pattern: from sage.categories.category_with_axiom import $$$

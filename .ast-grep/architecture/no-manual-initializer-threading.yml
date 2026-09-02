@@ -1,0 +1,14 @@
+id: no-manual-initializer-threading
+language: python
+severity: error
+files:
+  - src/sage_categories/**/*.py
+ignores:
+  - src/sage_categories/kernel/**
+message: >-
+  D132 / specs/resolution.md "Acceptance conditions": each reached implementation
+  owner initializes once, and the kernel threads the initializer chain through
+  controlled C3. A theory class never names a base class initializer by hand;
+  it stores its data and calls bare `super().__init__()`.
+rule:
+  pattern: $BASE.__init__(self, $$$ARGS)
